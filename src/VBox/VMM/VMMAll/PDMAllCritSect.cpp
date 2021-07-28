@@ -128,8 +128,10 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
  * @param   pCritSect           The critsect.
  * @param   hNativeSelf         The native thread handle.
  * @param   pSrcPos             The source position of the lock operation.
+ * @param   rcBusy              The status code to return when we're in RC or R0
  */
-static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
+static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf,
+                                         PCRTLOCKVALSRCPOS pSrcPos, int rcBusy)
 {
     /*
      * Start waiting.
@@ -168,7 +170,11 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
          * In ring-0 we have to deal with the possibility that the thread has
          * been signalled and the interruptible wait function returning
          * immediately.  In that case we do normal R0/RC rcBusy handling.
+         *
+         * We always do a timed wait here, so the event handle is revalidated
+         * regularly and we won't end up stuck waiting for a destroyed critsect.
          */
+        /** @todo Make SUPSemEventClose wake up all waiters. */
 # ifdef IN_RING3
 #  ifdef PDMCRITSECT_STRICT
         int rc9 = RTLockValidatorRecExclCheckBlocking(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos,
@@ -179,20 +185,28 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
 #  else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, true);
 #  endif
-        int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
+        int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_MS_5SEC);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
 # else  /* IN_RING0 */
-        int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_INDEFINITE_WAIT);
+        int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_MS_5SEC);
 # endif /* IN_RING0 */
 
         /*
          * Deal with the return code and critsect destruction.
          */
-        if (RT_UNLIKELY(pCritSect->s.Core.u32Magic != RTCRITSECT_MAGIC))
+        if (RT_LIKELY(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC))
+        { /* likely */ }
+        else
             return VERR_SEM_DESTROYED;
         if (rc == VINF_SUCCESS)
             return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
-        AssertMsg(rc == VERR_INTERRUPTED, ("rc=%Rrc\n", rc));
+        if (RT_LIKELY(rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED))
+        { /* likely */ }
+        else
+        {
+            AssertMsgFailed(("rc=%Rrc\n", rc));
+            return rc;
+        }
 
 # ifdef IN_RING0
         /* Something is pending (signal, APC, debugger, whatever), just go back
@@ -201,11 +215,14 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
            Note! We've incremented cLockers already and cannot safely decrement
                  it without creating a race with PDMCritSectLeave, resulting in
                  spurious wakeups. */
+        RT_NOREF(rcBusy);
+        /** @todo eliminate this and return rcBusy instead.  Guru if
+         *        rcBusy is VINF_SUCCESS. */
         PVMCPUCC pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
         rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
         AssertRC(rc);
 # else
-        RT_NOREF(pVM);
+        RT_NOREF(pVM, rcBusy);
 # endif
     }
     /* won't get here */
@@ -217,13 +234,13 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
  * Common worker for the debug and normal APIs.
  *
  * @returns VINF_SUCCESS if entered successfully.
- * @returns rcBusy when encountering a busy critical section in GC/R0.
+ * @returns rcBusy when encountering a busy critical section in RC/R0.
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  *
  * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The PDM critical section to enter.
- * @param   rcBusy              The status code to return when we're in GC or R0
+ * @param   rcBusy              The status code to return when we're in RC or R0
  * @param   pSrcPos             The source position of the lock operation.
  */
 DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos)
@@ -289,7 +306,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
      * Take the slow path.
      */
     NOREF(rcBusy);
-    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
+    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
 #elif defined(IN_RING0)
 # if 0 /* new code */
@@ -313,7 +330,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
         {
             Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-            rc = pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
+            rc = pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
             VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
         }
@@ -324,7 +341,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
 
     /* Non-EMT. */
     Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
+    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
 # else /* old code: */
     /*
@@ -332,7 +349,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
      */
     if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
         && ASMIntAreEnabled())
-        return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos);
+        return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
 
