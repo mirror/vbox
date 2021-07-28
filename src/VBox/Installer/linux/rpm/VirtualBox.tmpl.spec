@@ -123,9 +123,9 @@ mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 %if %{?is_ose:0}%{!?is_ose:1}
 %if "%BUILDREL%" == "el7"
 # For el7 we use gcc from devtoolset-4, which is not suitable for kernel work.
+# See the PATH trickery in src/VBox/Installer/linux/rpm/rules.
 old_path="$PATH"
-PATH=${PATH%/opt/rh/devtoolset-4/root/bin:}
-PATH=${PATH%/opt/rh/devtoolset-4/root/usr/bin:}
+PATH=${PATH#/opt/rh/devtoolset-4/root/usr/bin:}
 %endif
 for d in /lib/modules/*; do
   if [ -L $d/build ]; then

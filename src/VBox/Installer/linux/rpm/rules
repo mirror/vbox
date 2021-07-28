@@ -149,6 +149,9 @@ endif
 
 ifeq ($(NOQT),)
  ifeq ($(rpmrel),el7)
+  # Protect against the fact that this Makefile is run several times, updating
+  # PATH every time. Still assumes that nothing else is added as a prefix.
+  PATH := $(PATH:/opt/rh/devtoolset-4/root/usr/bin:%=%)
   export PATH := /opt/rh/devtoolset-4/root/usr/bin:$(PATH)
  endif
 endif
