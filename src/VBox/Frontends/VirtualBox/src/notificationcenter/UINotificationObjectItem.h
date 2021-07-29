@@ -103,6 +103,9 @@ private:
 
     /** Holds the notification-progress this item created for. */
     UINotificationProgress *progress() const;
+
+    /** Updates details. */
+    void updateDetails();
 };
 
 /** Notification-object factory. */

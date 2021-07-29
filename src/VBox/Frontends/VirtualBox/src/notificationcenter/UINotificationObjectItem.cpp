@@ -188,11 +188,11 @@ UINotificationProgressItem::UINotificationProgressItem(QWidget *pParent, UINotif
         /* Details label was prepared in base-class: */
         if (m_pLabelDetails)
         {
-            m_pLabelDetails->setText(progress()->details());
             int iHint = m_pLabelName->minimumSizeHint().width()
                       + m_pLayoutUpper->spacing()
                       + m_pButtonClose->minimumSizeHint().width();
             m_pLabelDetails->setMinimumTextWidth(iHint);
+            updateDetails();
         }
 
         /* Prepare progress-bar: */
@@ -243,19 +243,28 @@ void UINotificationProgressItem::sltHandleProgressFinished()
         m_pProgressBar->setValue(100);
     /* Update details with error text if any: */
     if (m_pLabelDetails)
-    {
-        const QString strDetails = progress()->details();
-        const QString strError = progress()->error();
-        const QString strFullDetails = strError.isNull()
-                                     ? strDetails
-                                     : QString("%1<br>%2").arg(strDetails, strError);
-        m_pLabelDetails->setText(strFullDetails);
-    }
+        updateDetails();
 }
 
 UINotificationProgress *UINotificationProgressItem::progress() const
 {
     return qobject_cast<UINotificationProgress*>(m_pObject);
+}
+
+void UINotificationProgressItem::updateDetails()
+{
+    AssertPtrReturnVoid(m_pLabelDetails);
+    const QString strDetails = progress()->details();
+    const QString strError = progress()->error();
+    const QString strFullDetails = strError.isNull()
+                                 ? strDetails
+                                 : QString("%1<br>%2").arg(strDetails, strError);
+    m_pLabelDetails->setText(strFullDetails);
+    if (!strError.isEmpty())
+    {
+        m_fToggled = true;
+        m_pLabelDetails->setVisible(m_fToggled);
+    }
 }
 
 
