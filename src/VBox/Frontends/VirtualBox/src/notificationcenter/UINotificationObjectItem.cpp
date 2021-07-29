@@ -223,6 +223,9 @@ void UINotificationProgressItem::sltHandleProgressStarted()
         m_pButtonClose->setEnabled(progress()->isCancelable());
     if (m_pProgressBar)
         m_pProgressBar->setValue(0);
+    /* Update details with fetched stuff if any: */
+    if (m_pLabelDetails)
+        updateDetails();
 }
 
 void UINotificationProgressItem::sltHandleProgressChange(ulong uPercent)
