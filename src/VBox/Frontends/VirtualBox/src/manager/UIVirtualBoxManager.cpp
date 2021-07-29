@@ -1812,21 +1812,10 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
         /* For real cloud machine: */
         else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
         {
-            /* Acquire cloud machine: */
-            CCloudMachine comCloudMachine = pItem->toCloud()->machine();
-            /* Prepare machine ACPI shutdown: */
-            CProgress comProgress = comCloudMachine.Shutdown();
-            if (!comCloudMachine.isOk())
-                msgCenter().cannotACPIShutdownCloudMachine(comCloudMachine);
-            else
-            {
-                /* Show machine ACPI shutdown progress: */
-                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png", 0, 0);
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    msgCenter().cannotACPIShutdownCloudMachine(comProgress, pItem->name());
-                /* Update info in any case: */
-                pItem->toCloud()->updateInfoAsync(false /* delayed? */);
-            }
+            /* Shutting cloud VM down: */
+            UINotificationProgressCloudMachineShutdown *pNotification =
+                    new UINotificationProgressCloudMachineShutdown(pItem->toCloud()->machine());
+            notificationCenter().append(pNotification);
         }
     }
 }
