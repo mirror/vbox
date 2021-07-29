@@ -179,7 +179,7 @@ signals:
 
 public:
 
-    /** Constructs medium move notification-progress.
+    /** Constructs machine copy notification-progress.
       * @param  comSource     Brings the machine being copied.
       * @param  comTarget     Brings the machine being the target.
       * @param  enmCloneMode  Brings the cloning mode.
@@ -260,6 +260,41 @@ private:
     QString   m_strDestination;
     /** Holds the moving type. */
     QString   m_strType;
+};
+
+/** UINotificationProgress extension for machine save-state functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMachineSaveState : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs machine save-state notification-progress.
+      * @param  comMachine  Brings the machine being saved. */
+    UINotificationProgressMachineSaveState(const QUuid &uId);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine id. */
+    QUuid     m_uId;
+    /** Holds the session being opened. */
+    CSession  m_comSession;
+    /** Holds the machine name. */
+    QString   m_strName;
 };
 
 /** UINotificationProgress extension for machine media remove functionality. */

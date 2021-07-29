@@ -1706,43 +1706,9 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
         if (!isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
-        /* Open a session to modify VM state: */
-        CSession comSession = uiCommon().openExistingSession(pItem->id());
-        if (comSession.isNull())
-            return;
-
-        /* Get session console: */
-        CConsole comConsole = comSession.GetConsole();
-        /* Get session machine: */
-        CMachine comMachine = comSession.GetMachine();
-
-        /* Get local machine item state: */
-        UIVirtualMachineItemLocal *pLocalItem = pItem->toLocal();
-        AssertPtrReturnVoid(pLocalItem);
-        const KMachineState enmState = pLocalItem->machineState();
-
-        /* Pause VM first if necessary: */
-        if (enmState != KMachineState_Paused)
-            comConsole.Pause();
-        if (comConsole.isOk())
-        {
-            /* Prepare machine state saving progress: */
-            CProgress comProgress = comMachine.SaveState();
-            if (comMachine.isOk())
-            {
-                /* Show machine state saving progress: */
-                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_state_save_90px.png");
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    msgCenter().cannotSaveMachineState(comProgress, comMachine.GetName());
-            }
-            else
-                msgCenter().cannotSaveMachineState(comMachine);
-        }
-        else
-            msgCenter().cannotPauseMachine(comConsole);
-
-        /* Unlock machine finally: */
-        comSession.UnlockMachine();
+        /* Saving VM state: */
+        UINotificationProgressMachineSaveState *pNotification = new UINotificationProgressMachineSaveState(pItem->id());
+        notificationCenter().append(pNotification);
     }
 }
 

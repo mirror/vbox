@@ -23,6 +23,9 @@
 #include "UICommon.h"
 #include "UINotificationObjects.h"
 
+/* COM includes: */
+#include "CConsole.h"
+
 
 /*********************************************************************************************************************************
 *   Class UINotificationProgressMediumCreate implementation.                                                                     *
@@ -294,6 +297,98 @@ CProgress UINotificationProgressMachineMove::createProgress(COMResult &comResult
 }
 
 void UINotificationProgressMachineMove::sltHandleProgressFinished()
+{
+    /* Unlock session finally: */
+    m_comSession.UnlockMachine();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressMachineSaveState implementation.                                                                 *
+*********************************************************************************************************************************/
+
+UINotificationProgressMachineSaveState::UINotificationProgressMachineSaveState(const QUuid &uId)
+    : m_uId(uId)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressMachineSaveState::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressMachineSaveState::name() const
+{
+    return UINotificationProgress::tr("Saving VM state ...");
+}
+
+QString UINotificationProgressMachineSaveState::details() const
+{
+    return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
+}
+
+CProgress UINotificationProgressMachineSaveState::createProgress(COMResult &comResult)
+{
+    /* Open a session thru which we will modify the machine: */
+    m_comSession = uiCommon().openExistingSession(m_uId);
+    if (m_comSession.isNull())
+        return CProgress();
+
+    /* Get session machine: */
+    CMachine comMachine = m_comSession.GetMachine();
+    if (!m_comSession.isOk())
+    {
+        comResult = m_comSession;
+        m_comSession.UnlockMachine();
+        return CProgress();
+    }
+
+    /* Acquire VM name: */
+    m_strName = comMachine.GetName();
+    if (!comMachine.isOk())
+    {
+        comResult = comMachine;
+        m_comSession.UnlockMachine();
+        return CProgress();
+    }
+
+    /* Get machine state: */
+    const KMachineState enmState = comMachine.GetState();
+    if (!comMachine.isOk())
+    {
+        comResult = comMachine;
+        m_comSession.UnlockMachine();
+        return CProgress();
+    }
+
+    /* If VM isn't yet paused: */
+    if (enmState != KMachineState_Paused)
+    {
+        /* Get session console: */
+        CConsole comConsole = m_comSession.GetConsole();
+        if (!m_comSession.isOk())
+        {
+            comResult = m_comSession;
+            m_comSession.UnlockMachine();
+            return CProgress();
+        }
+
+        /* Pause VM first: */
+        comConsole.Pause();
+        if (!comConsole.isOk())
+        {
+            comResult = comConsole;
+            m_comSession.UnlockMachine();
+            return CProgress();
+        }
+    }
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = comMachine.SaveState();
+    /* Store COM result: */
+    comResult = comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressMachineSaveState::sltHandleProgressFinished()
 {
     /* Unlock session finally: */
     m_comSession.UnlockMachine();
