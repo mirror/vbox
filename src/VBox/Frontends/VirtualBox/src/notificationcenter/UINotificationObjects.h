@@ -270,7 +270,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMachineSaveState : public UINot
 public:
 
     /** Constructs machine save-state notification-progress.
-      * @param  comMachine  Brings the machine being saved. */
+      * @param  uId  Brings the machine id. */
     UINotificationProgressMachineSaveState(const QUuid &uId);
 
 protected:
@@ -305,7 +305,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMachinePowerDown : public UINot
 public:
 
     /** Constructs machine power-down notification-progress.
-      * @param  comMachine  Brings the machine being powered-down. */
+      * @param  uId  Brings the machine id. */
     UINotificationProgressMachinePowerDown(const QUuid &uId);
 
 protected:
@@ -529,6 +529,34 @@ private:
     QString        m_strProviderShortName;
     /** Holds the profile name. */
     QString        m_strProfileName;
+};
+
+/** UINotificationProgress extension for cloud machine power-down functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachinePowerDown : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs cloud machine power-down notification-progress.
+      * @param  comMachine  Brings the machine being powered-down. */
+    UINotificationProgressCloudMachinePowerDown(const CCloudMachine &comMachine);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the machine being powered-down. */
+    CCloudMachine  m_comMachine;
+    /** Holds the machine name. */
+    QString        m_strName;
 };
 
 /** UINotificationProgress extension for cloud console connection create functionality. */

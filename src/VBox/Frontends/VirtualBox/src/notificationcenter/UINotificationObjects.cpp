@@ -580,7 +580,7 @@ QString UINotificationProgressCloudMachineCreate::name() const
 
 QString UINotificationProgressCloudMachineCreate::details() const
 {
-    return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2<br><b>Name:</b> %3")
+    return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2<br><b>VM Name:</b> %3")
                                       .arg(m_strProviderShortName, m_strProfileName, m_strName);
 }
 
@@ -610,7 +610,7 @@ void UINotificationProgressCloudMachineCreate::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
-*   Class UINotificationProgressCloudMachineCreate implementation.                                                               *
+*   Class UINotificationProgressCloudMachineRemove implementation.                                                               *
 *********************************************************************************************************************************/
 
 UINotificationProgressCloudMachineRemove::UINotificationProgressCloudMachineRemove(const CCloudMachine &comMachine,
@@ -635,7 +635,7 @@ QString UINotificationProgressCloudMachineRemove::name() const
 
 QString UINotificationProgressCloudMachineRemove::details() const
 {
-    return UINotificationProgress::tr("<b>Name:</b> %1").arg(m_strName);
+    return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
 }
 
 CProgress UINotificationProgressCloudMachineRemove::createProgress(COMResult &comResult)
@@ -664,6 +664,46 @@ void UINotificationProgressCloudMachineRemove::sltHandleProgressFinished()
 {
     if (error().isEmpty())
         emit sigCloudMachineRemoved(m_strProviderShortName, m_strProfileName, m_strName);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudMachinePowerDown implementation.                                                            *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudMachinePowerDown::UINotificationProgressCloudMachinePowerDown(const CCloudMachine &comMachine)
+    : m_comMachine(comMachine)
+{
+}
+
+QString UINotificationProgressCloudMachinePowerDown::name() const
+{
+    return   UINotificationProgress::tr("Powering cloud VM down ...");
+}
+
+QString UINotificationProgressCloudMachinePowerDown::details() const
+{
+    return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
+}
+
+CProgress UINotificationProgressCloudMachinePowerDown::createProgress(COMResult &comResult)
+{
+    /* Acquire cloud VM name: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comMachine;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMachine.PowerDown();
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
 }
 
 

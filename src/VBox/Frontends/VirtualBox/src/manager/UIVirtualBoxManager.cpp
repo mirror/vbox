@@ -1864,27 +1864,17 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
         if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
             /* Powering VM down: */
-            UINotificationProgressMachinePowerDown *pNotification = new UINotificationProgressMachinePowerDown(pItem->id());
+            UINotificationProgressMachinePowerDown *pNotification =
+                new UINotificationProgressMachinePowerDown(pItem->id());
             notificationCenter().append(pNotification);
         }
         /* For real cloud machine: */
         else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
         {
-            /* Acquire cloud machine: */
-            CCloudMachine comCloudMachine = pItem->toCloud()->machine();
-            /* Prepare machine power down: */
-            CProgress comProgress = comCloudMachine.PowerDown();
-            if (!comCloudMachine.isOk())
-                msgCenter().cannotPowerDownCloudMachine(comCloudMachine);
-            else
-            {
-                /* Show machine power down progress: */
-                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png", 0, 0);
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    msgCenter().cannotPowerDownCloudMachine(comProgress, pItem->name());
-                /* Update info in any case: */
-                pItem->toCloud()->updateInfoAsync(false /* delayed? */);
-            }
+            /* Powering cloud VM down: */
+            UINotificationProgressCloudMachinePowerDown *pNotification =
+                new UINotificationProgressCloudMachinePowerDown(pItem->toCloud()->machine());
+            notificationCenter().append(pNotification);
         }
     }
 }
