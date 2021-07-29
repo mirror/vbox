@@ -3182,7 +3182,6 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
-	generic/RTThreadQueryTerminationStatus-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic-online.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \

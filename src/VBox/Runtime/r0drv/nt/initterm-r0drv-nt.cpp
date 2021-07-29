@@ -111,6 +111,8 @@ decltype(MmAllocateContiguousMemorySpecifyCache) *g_pfnrtMmAllocateContiguousMem
 decltype(MmSecureVirtualMemory)        *g_pfnrtMmSecureVirtualMemory;
 /** MmUnsecureVirtualMemory - Introduced in NT 3.51.   */
 decltype(MmUnsecureVirtualMemory)      *g_pfnrtMmUnsecureVirtualMemory;
+/** PsIsThreadTerminating - Introduced in NT 3.50. */
+decltype(PsIsThreadTerminating)        *g_pfnrtPsIsThreadTerminating;
 /** RtlGetVersion, introduced in ??. */
 PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifdef RT_ARCH_X86

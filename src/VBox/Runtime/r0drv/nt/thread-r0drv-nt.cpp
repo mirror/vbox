@@ -36,7 +36,7 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/mp.h>
 #include "internal-r0drv-nt.h"
 
@@ -224,5 +224,17 @@ RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 
     KIRQL CurIrql = KeGetCurrentIrql();
     return CurIrql > PASSIVE_LEVEL; /** @todo Is there a more correct way? */
+}
+
+
+RTDECL(int) RTThreadQueryTerminationStatus(RTTHREAD hThread)
+{
+    AssertReturn(hThread == NIL_RTTHREAD, VERR_INVALID_HANDLE);
+    if (RT_LIKELY(g_pfnrtPsIsThreadTerminating))
+    {
+        BOOLEAN fRc = g_pfnrtPsIsThreadTerminating(PsGetCurrentThread());
+        return !fRc ? VINF_SUCCESS : VINF_THREAD_IS_TERMINATING;
+    }
+    return VERR_NOT_SUPPORTED;
 }
 

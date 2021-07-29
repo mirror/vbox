@@ -95,6 +95,7 @@ extern decltype(MmMapLockedPagesSpecifyCache) *g_pfnrtMmMapLockedPagesSpecifyCac
 extern decltype(MmAllocateContiguousMemorySpecifyCache) *g_pfnrtMmAllocateContiguousMemorySpecifyCache;
 extern decltype(MmSecureVirtualMemory)        *g_pfnrtMmSecureVirtualMemory;
 extern decltype(MmUnsecureVirtualMemory)      *g_pfnrtMmUnsecureVirtualMemory;
+extern decltype(PsIsThreadTerminating)        *g_pfnrtPsIsThreadTerminating;
 
 extern PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifdef RT_ARCH_X86
