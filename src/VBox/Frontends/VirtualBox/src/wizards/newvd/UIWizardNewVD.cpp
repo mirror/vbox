@@ -153,7 +153,6 @@ bool UIWizardNewVD::createVirtualDisk()
         variants[i] = (KMediumVariant)temp;
     }
 
-    /* Copy medium: */
     UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
                                                                                                m_uMediumSize,
                                                                                                variants);

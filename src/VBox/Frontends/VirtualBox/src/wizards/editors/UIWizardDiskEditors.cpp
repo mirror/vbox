@@ -572,7 +572,6 @@ void UIMediumSizeAndPathGroupBox::setMediumSize(qulonglong uSize)
         return m_pMediumSizeEditor->setMediumSize(uSize);
 }
 
-
 /* static */
 QString UIMediumSizeAndPathGroupBox::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
 {
