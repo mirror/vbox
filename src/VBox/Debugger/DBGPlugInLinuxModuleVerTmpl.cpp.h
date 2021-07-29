@@ -19,6 +19,10 @@
  * Newest first so the list walker can select the right instance.
  */
 
+#define LNX_VER     LNX_MK_VER(4,5,0)
+#define LNX_SUFFIX  RT_CONCAT(_4_5_0,LNX_BIT_SUFFIX)
+#include LNX_TEMPLATE_HEADER
+
 #define LNX_VER     LNX_MK_VER(2,6,27)
 #define LNX_SUFFIX  RT_CONCAT(_2_6_27,LNX_BIT_SUFFIX)
 #include LNX_TEMPLATE_HEADER
