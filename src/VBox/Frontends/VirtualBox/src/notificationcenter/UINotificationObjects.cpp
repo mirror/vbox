@@ -46,12 +46,21 @@ QString UINotificationProgressMediumCreate::name() const
 
 QString UINotificationProgressMediumCreate::details() const
 {
-    return UINotificationProgress::tr("<b>Location:</b> %1<br><b>Size:</b> %2")
-                                     .arg(m_comTarget.GetLocation()).arg(m_uSize);
+    return UINotificationProgress::tr("<b>Location:</b> %1<br><b>Size:</b> %2").arg(m_strLocation).arg(m_uSize);
 }
 
 CProgress UINotificationProgressMediumCreate::createProgress(COMResult &comResult)
 {
+    /* Acquire location: */
+    m_strLocation = m_comTarget.GetLocation();
+    if (!m_comTarget.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comTarget;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
     /* Initialize progress-wrapper: */
     CProgress comProgress = m_comTarget.CreateBaseStorage(m_uSize, m_variants);
     /* Store COM result: */
@@ -89,12 +98,29 @@ QString UINotificationProgressMediumCopy::name() const
 
 QString UINotificationProgressMediumCopy::details() const
 {
-    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2")
-                                     .arg(m_comSource.GetLocation(), m_comTarget.GetLocation());
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2").arg(m_strSourceLocation, m_strTargetLocation);
 }
 
 CProgress UINotificationProgressMediumCopy::createProgress(COMResult &comResult)
 {
+    /* Acquire locations: */
+    m_strSourceLocation = m_comSource.GetLocation();
+    if (!m_comSource.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comSource;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+    m_strTargetLocation = m_comTarget.GetLocation();
+    if (!m_comTarget.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comTarget;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
     /* Initialize progress-wrapper: */
     CProgress comProgress = m_comSource.CloneTo(m_comTarget, m_variants, CMedium());
     /* Store COM result: */
@@ -168,12 +194,29 @@ QString UINotificationProgressMachineCopy::name() const
 
 QString UINotificationProgressMachineCopy::details() const
 {
-    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2")
-                                     .arg(m_comSource.GetName(), m_comTarget.GetName());
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2").arg(m_strSourceName, m_strTargetName);
 }
 
 CProgress UINotificationProgressMachineCopy::createProgress(COMResult &comResult)
 {
+    /* Acquire names: */
+    m_strSourceName = m_comSource.GetName();
+    if (!m_comSource.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comSource;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+    m_strTargetName = m_comTarget.GetName();
+    if (!m_comTarget.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comTarget;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
     /* Initialize progress-wrapper: */
     CProgress comProgress = m_comSource.CloneTo(m_comTarget, m_enmCloneMode, m_options);
     /* Store COM result: */
@@ -211,20 +254,22 @@ QString UINotificationProgressMachineMove::name() const
 
 QString UINotificationProgressMachineMove::details() const
 {
-    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2")
-                                     .arg(m_strSource, m_strDestination);
+    return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2").arg(m_strSource, m_strDestination);
 }
 
 CProgress UINotificationProgressMachineMove::createProgress(COMResult &comResult)
 {
     /* Open a session thru which we will modify the machine: */
     m_comSession = uiCommon().openSession(m_uId, KLockType_Write);
+    if (m_comSession.isNull())
+        return CProgress();
 
     /* Get session machine: */
     CMachine comMachine = m_comSession.GetMachine();
     if (!m_comSession.isOk())
     {
         comResult = m_comSession;
+        m_comSession.UnlockMachine();
         return CProgress();
     }
 
@@ -233,6 +278,7 @@ CProgress UINotificationProgressMachineMove::createProgress(COMResult &comResult
     if (!comMachine.isOk())
     {
         comResult = comMachine;
+        m_comSession.UnlockMachine();
         return CProgress();
     }
     QDir parentDir = QFileInfo(strSettingFilePath).absoluteDir();
@@ -272,11 +318,21 @@ QString UINotificationProgressMachineMediaRemove::name() const
 
 QString UINotificationProgressMachineMediaRemove::details() const
 {
-    return UINotificationProgress::tr("<b>Machine Name:</b> %1").arg(m_comMachine.GetName());
+    return UINotificationProgress::tr("<b>Machine Name:</b> %1").arg(m_strName);
 }
 
 CProgress UINotificationProgressMachineMediaRemove::createProgress(COMResult &comResult)
 {
+    /* Acquire names: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comMachine;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
     /* Initialize progress-wrapper: */
     CProgress comProgress = m_comMachine.DeleteConfig(m_media);
     /* Store COM result: */
@@ -313,7 +369,7 @@ QString UINotificationProgressCloudMachineAdd::name() const
 QString UINotificationProgressCloudMachineAdd::details() const
 {
     return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2<br><b>Instance Name:</b> %3")
-                                     .arg(m_strProviderShortName, m_strProfileName, m_strInstanceName);
+                                      .arg(m_strProviderShortName, m_strProfileName, m_strInstanceName);
 }
 
 CProgress UINotificationProgressCloudMachineAdd::createProgress(COMResult &comResult)
@@ -348,15 +404,6 @@ UINotificationProgressCloudMachineCreate::UINotificationProgressCloudMachineCrea
     , m_strProviderShortName(strProviderShortName)
     , m_strProfileName(strProfileName)
 {
-    /* Parse cloud VM name: */
-    QVector<KVirtualSystemDescriptionType> types;
-    QVector<QString> refs, origValues, configValues, extraConfigValues;
-    m_comVSD.GetDescriptionByType(KVirtualSystemDescriptionType_Name, types,
-                                  refs, origValues, configValues, extraConfigValues);
-    if (!origValues.isEmpty())
-        m_strName = origValues.first();
-
-    /* Listen for last progress signal: */
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressCloudMachineCreate::sltHandleProgressFinished);
 }
@@ -374,6 +421,14 @@ QString UINotificationProgressCloudMachineCreate::details() const
 
 CProgress UINotificationProgressCloudMachineCreate::createProgress(COMResult &comResult)
 {
+    /* Parse cloud VM name: */
+    QVector<KVirtualSystemDescriptionType> types;
+    QVector<QString> refs, origValues, configValues, extraConfigValues;
+    m_comVSD.GetDescriptionByType(KVirtualSystemDescriptionType_Name, types,
+                                  refs, origValues, configValues, extraConfigValues);
+    if (!origValues.isEmpty())
+        m_strName = origValues.first();
+
     /* Initialize progress-wrapper: */
     CProgress comProgress = m_comClient.CreateCloudMachine(m_comVSD, m_comMachine);
     /* Store COM result: */
@@ -402,10 +457,6 @@ UINotificationProgressCloudMachineRemove::UINotificationProgressCloudMachineRemo
     , m_strProviderShortName(strProviderShortName)
     , m_strProfileName(strProfileName)
 {
-    /* Acquire cloud VM name: */
-    m_strName = m_comMachine.GetName();
-
-    /* Listen for last progress signal: */
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressCloudMachineRemove::sltHandleProgressFinished);
 }
@@ -424,6 +475,16 @@ QString UINotificationProgressCloudMachineRemove::details() const
 
 CProgress UINotificationProgressCloudMachineRemove::createProgress(COMResult &comResult)
 {
+    /* Acquire cloud VM name: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comMachine;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
     /* Initialize progress-wrapper: */
     CProgress comProgress = m_fFullRemoval
                           ? m_comMachine.Remove()

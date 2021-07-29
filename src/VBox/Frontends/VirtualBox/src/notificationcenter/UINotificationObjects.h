@@ -77,6 +77,8 @@ private:
 
     /** Holds the medium being the target. */
     CMedium                  m_comTarget;
+    /** Holds the target location. */
+    QString                  m_strLocation;
     /** Holds the target medium size. */
     qulonglong               m_uSize;
     /** Holds the target medium options. */
@@ -123,6 +125,10 @@ private:
     CMedium                  m_comSource;
     /** Holds the medium being the target. */
     CMedium                  m_comTarget;
+    /** Holds the source location. */
+    QString                  m_strSourceLocation;
+    /** Holds the target location. */
+    QString                  m_strTargetLocation;
     /** Holds the target medium options. */
     QVector<KMediumVariant>  m_variants;
 };
@@ -203,6 +209,10 @@ private:
     CMachine                m_comSource;
     /** Holds the machine being the target. */
     CMachine                m_comTarget;
+    /** Holds the source name. */
+    QString                 m_strSourceName;
+    /** Holds the target name. */
+    QString                 m_strTargetName;
     /** Holds the machine cloning mode. */
     KCloneMode              m_enmCloneMode;
     /** Holds the target machine options. */
@@ -278,6 +288,8 @@ private:
 
     /** Holds the machine being removed. */
     CMachine       m_comMachine;
+    /** Holds the machine name. */
+    QString        m_strName;
     /** Holds the machine media being removed. */
     CMediumVector  m_media;
 };
@@ -388,7 +400,7 @@ private:
     CCloudMachine              m_comMachine;
     /** Holds the the virtual system description. */
     CVirtualSystemDescription  m_comVSD;
-    /** Holds the name acquired from VSD. */
+    /** Holds the cloud machine name. */
     QString                    m_strName;
     /** Holds the short provider name. */
     QString                    m_strProviderShortName;
@@ -439,7 +451,7 @@ private:
 
     /** Holds the cloud machine being removed. */
     CCloudMachine  m_comMachine;
-    /** Holds the name acquired from cloud machine. */
+    /** Holds the cloud machine name. */
     QString        m_strName;
     /** Holds whether cloud machine should be removed fully. */
     bool           m_fFullRemoval;
@@ -475,7 +487,7 @@ private:
 
     /** Holds the cloud machine for which console connection being created. */
     CCloudMachine  m_comMachine;
-    /** Holds the name acquired from cloud machine. */
+    /** Holds the cloud machine name. */
     QString        m_strName;
     /** Holds the public key used for console connection being created. */
     QString        m_strPublicKey;
