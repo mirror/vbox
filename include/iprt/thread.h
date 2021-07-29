@@ -453,13 +453,6 @@ RTDECL(bool) RTThreadIsSelfKnown(void);
 RTDECL(bool) RTThreadIsSelfAlive(void);
 
 /**
- * Checks if the calling thread is known to IPRT.
- *
- * @returns @c true if it is, @c false if it isn't.
- */
-RTDECL(bool) RTThreadIsOperational(void);
-
-/**
  * Signal the user event.
  *
  * @returns     iprt status code.
