@@ -2509,6 +2509,7 @@
 # define RTThreadPreemptIsPendingTrusty                 RT_MANGLER(RTThreadPreemptIsPendingTrusty) /* r0drv */
 # define RTThreadPreemptIsPossible                      RT_MANGLER(RTThreadPreemptIsPossible)  /* r0drv */
 # define RTThreadPreemptRestore                         RT_MANGLER(RTThreadPreemptRestore)     /* r0drv */
+# define RTThreadQueryTerminationStatus                 RT_MANGLER(RTThreadQueryTerminationStatus) /* r0drv */
 # define RTThreadSelf                                   RT_MANGLER(RTThreadSelf)
 # define RTThreadSelfAutoAdopt                          RT_MANGLER(RTThreadSelfAutoAdopt)
 # define RTThreadSelfName                               RT_MANGLER(RTThreadSelfName)

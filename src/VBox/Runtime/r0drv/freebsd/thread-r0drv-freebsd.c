@@ -184,3 +184,11 @@ RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
     return !ASMIntAreEnabled();
 }
 
+
+RTDECL(int) RTThreadQueryTerminationStatus(RTTHREAD hThread)
+{
+    RT_NOREF(hThread);
+    /** @todo implement. */
+    return VERR_NOT_SUPPORTED;
+}
+

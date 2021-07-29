@@ -3181,9 +3181,10 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strpbrk.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
+	generic/RTThreadQueryTerminationStatus-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic-online.cpp \
-	generic/RTMpGetCoreCount-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	nt/RTNtPathExpand8dot3Path.cpp \
@@ -3324,6 +3325,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTFileReadAllFree-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	generic/RTMpOnPair-generic.cpp \
+	generic/RTThreadQueryTerminationStatus-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/memsafer-generic.cpp \
 	generic/mppresent-generic.cpp \
@@ -3391,6 +3393,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	generic/RTMpGetOnlineSet-generic.cpp \
 	generic/RTMpGetSet-generic.cpp \
 	generic/RTMpIsCpuOnline-generic.cpp \
+	generic/RTThreadQueryTerminationStatus-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \
@@ -3512,6 +3515,7 @@ RuntimeR0Drv_SOURCES.netbsd = \
 	common/string/strpbrk.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTThreadQueryTerminationStatus-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \
@@ -3543,6 +3547,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
+	generic/RTThreadQueryTerminationStatus-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \
@@ -3580,6 +3585,7 @@ RuntimeR0Drv_SOURCES.haiku = \
 	common/string/strchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTMpOnPair-generic.cpp \
+	generic/RTThreadQueryTerminationStatus-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/rtStrFormatKernelAddress-generic.cpp \

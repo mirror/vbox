@@ -452,6 +452,23 @@ RTDECL(bool) RTThreadIsSelfKnown(void);
  */
 RTDECL(bool) RTThreadIsSelfAlive(void);
 
+#ifdef IN_RING0
+/**
+ * Checks whether the specified thread is terminating.
+ *
+ * @retval  VINF_SUCCESS if not terminating.
+ * @retval  VINF_THREAD_IS_TERMINATING if terminating.
+ * @retval  VERR_INVALID_HANDLE if hThread is not NIL_RTTHREAD.
+ * @retval  VERR_NOT_SUPPORTED if the OS doesn't provide ways to check.
+ *
+ * @param   hThread     The thread to query about, NIL_RTTHREAD is an alias for
+ *                      the calling thread.  Must be NIL_RTTHREAD for now.
+ *
+ * @note    Not suppored on all OSes, so check for VERR_NOT_SUPPORTED.
+ */
+RTDECL(int) RTThreadQueryTerminationStatus(RTTHREAD hThread);
+#endif
+
 /**
  * Signal the user event.
  *

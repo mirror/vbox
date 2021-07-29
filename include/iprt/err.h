@@ -379,6 +379,9 @@
 #define VERR_EMPTY_STRING                   (-22422)
 /** Too many references to an object. */
 #define VERR_TOO_MANY_REFERENCES            (-22423)
+/** Returned by RTThreadQueryTerminationStatus to indicate that the thread is
+ * (or should be) terminating. */
+#define VINF_THREAD_IS_TERMINATING          (22424)
 /** @} */
 
 

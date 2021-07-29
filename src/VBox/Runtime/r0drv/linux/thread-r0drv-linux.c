@@ -232,3 +232,35 @@ RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 }
 RT_EXPORT_SYMBOL(RTThreadIsInInterrupt);
 
+
+RTDECL(int) RTThreadQueryTerminationStatus(RTTHREAD hThread)
+{
+    struct task_struct *pTask = current;
+    AssertReturn(hThread == NIL_RTTHREAD, VERR_NOT_SUPPORTED);
+
+    /* Check out pending signals.  ASSUMES we can get away w/o locking
+       anything because we're only reading the data.  */
+    if (sigismember(&pTask->pending.signal, SIGKILL))
+        return VINF_THREAD_IS_TERMINATING;
+
+#if RTLNX_VER_MIN(2,5,34)
+    /* Check the pending signals shared with other threads in
+       the same process/group.  ASSUME since we're alive that
+       the signal_struct won't be freed while we're looking
+       at it here... */
+    {
+# if RTLNX_VER_MIN(2,5,60)
+        struct signal_struct *pSignal = current->signal;
+# else
+        struct signal_struct *pSignal = current->sig;
+# endif
+        if (   pSignal
+            && sigismember(&pSignal->shared_pending.signal, SIGKILL))
+            return VINF_THREAD_IS_TERMINATING;
+    }
+#endif
+
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTThreadQueryTerminationStatus);
+
