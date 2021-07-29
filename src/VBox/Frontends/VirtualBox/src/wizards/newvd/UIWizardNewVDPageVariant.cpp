@@ -189,11 +189,11 @@ void UIWizardNewVDPageVariant::retranslateUi()
 
 void UIWizardNewVDPageVariant::initializePage()
 {
-    retranslateUi();
     UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
     AssertReturnVoid(pWizard && m_pVariantGroupBox);
     setWidgetVisibility(pWizard->mediumFormat());
     newVDWizardPropertySet(MediumVariant, m_pVariantGroupBox->mediumVariant());
+    retranslateUi();
 }
 
 bool UIWizardNewVDPageVariant::isComplete() const

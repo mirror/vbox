@@ -278,8 +278,14 @@
 //         m_pMediumSizeEditorLabel->setText(UIWizardNewVD::tr("D&isk Size:"));
 // }
 
-UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &/*strDefaultName*/, const QString &/*strDefaultPath*/, qulonglong /*uDefaultSize*/)
+UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &strDefaultName,
+                                                             const QString &strDefaultPath, qulonglong uDefaultSize)
     : m_pMediumSizePathGroup(0)
+    , m_uMediumSizeMin(_4M)
+    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
+    , m_strDefaultPath(strDefaultPath)
+    , m_uDefaultSize(uDefaultSize)
 {
 
 
@@ -299,7 +305,7 @@ void UIWizardNewVDPageSizeLocation::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
-    m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false, 0);
+    m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false /* fExpertMode */, 0);
 //     {
 //         m_pLocationLabel = new QIRichTextLabel(this);
 //         QHBoxLayout *pLocationLayout = new QHBoxLayout;
@@ -319,6 +325,12 @@ void UIWizardNewVDPageSizeLocation::prepare()
 //         pMainLayout->addWidget(m_pLocationLabel);
 //         pMainLayout->addLayout(pLocationLayout);
 //         pMainLayout->addWidget(m_pSizeLabel);
+    connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
+            this, &UIWizardNewVDPageSizeLocation::sltMediumSizeChanged);
+    connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
+            this, &UIWizardNewVDPageSizeLocation::sltMediumPathChanged);
+    connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
+            this, &UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked);
     pMainLayout->addWidget(m_pMediumSizePathGroup);
     pMainLayout->addStretch();
 //     }
@@ -331,6 +343,16 @@ void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
     //onSelectLocationButtonClicked();
 }
 
+void UIWizardNewVDPageSizeLocation::sltMediumSizeChanged(qulonglong /*uSize*/)
+{
+
+}
+
+void UIWizardNewVDPageSizeLocation::sltMediumPathChanged(const QString &/*strPath*/)
+{
+
+}
+
 void UIWizardNewVDPageSizeLocation::retranslateUi()
 {
     setTitle(UIWizardNewVD::tr("File location and size"));
@@ -339,13 +361,26 @@ void UIWizardNewVDPageSizeLocation::retranslateUi()
 void UIWizardNewVDPageSizeLocation::initializePage()
 {
     // /* Translate page: */
-    // retranslateUi();
+
 
     // /* Get default extension for new virtual-disk: */
     // m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
     // /* Set default name as text for location editor: */
     // if (m_pLocationEditor)
     //     m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
+
+    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    AssertReturnVoid(pWizard && m_pMediumSizePathGroup);
+    const CMediumFormat comMediumFormat = pWizard->mediumFormat();
+    AssertReturnVoid(!comMediumFormat.isNull());
+
+    QString strExtension = UIDiskEditorGroupBox::defaultExtensionForMediumFormat(comMediumFormat);
+    QString strMediumFilePath =
+        UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_strDefaultName,
+                                                                                             strExtension), m_strDefaultPath);
+    m_pMediumSizePathGroup->setMediumPath(strMediumFilePath);
+    m_pMediumSizePathGroup->setMediumSize(m_uDefaultSize > m_uMediumSizeMin && m_uDefaultSize < m_uMediumSizeMax ? m_uDefaultSize : m_uMediumSizeMin);
+    retranslateUi();
 }
 
 bool UIWizardNewVDPageSizeLocation::isComplete() const

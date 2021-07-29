@@ -57,6 +57,10 @@ public:
 
     UIDiskEditorGroupBox(bool fExpertMode, QWidget *pParent = 0);
 
+    static QString appendExtension(const QString &strName, const QString &strExtension);
+    static QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
+    static QString defaultExtensionForMediumFormat(const CMediumFormat &mediumFormatRef);
+
 protected:
 
     bool m_fExpertMode;

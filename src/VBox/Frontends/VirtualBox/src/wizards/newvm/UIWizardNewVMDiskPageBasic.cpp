@@ -36,6 +36,7 @@
 #include "UIMediumSizeEditor.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewVMDiskPageBasic.h"
+#include "UIWizardDiskEditors.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"
@@ -44,55 +45,6 @@
 /* Other VBox includes: */
 #include <iprt/path.h>
 
-
-QString UIWizardNewVMDiskPage::defaultExtension(const CMediumFormat &mediumFormatRef)
-{
-    if (!mediumFormatRef.isNull())
-    {
-        /* Load extension / device list: */
-        QVector<QString> fileExtensions;
-        QVector<KDeviceType> deviceTypes;
-        CMediumFormat mediumFormat(mediumFormatRef);
-        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-        for (int i = 0; i < fileExtensions.size(); ++i)
-            if (deviceTypes[i] == KDeviceType_HardDisk)
-                return fileExtensions[i].toLower();
-    }
-    AssertMsgFailed(("Extension can't be NULL!\n"));
-    return QString();
-}
-
-QString UIWizardNewVMDiskPage::toFileName(const QString &strName, const QString &strExtension)
-{
-    /* Convert passed name to native separators (it can be full, actually): */
-    QString strFileName = QDir::toNativeSeparators(strName);
-
-    /* Remove all trailing dots to avoid multiple dots before extension: */
-    int iLen;
-    while (iLen = strFileName.length(), iLen > 0 && strFileName[iLen - 1] == '.')
-        strFileName.truncate(iLen - 1);
-
-    /* Add passed extension if its not done yet: */
-    if (QFileInfo(strFileName).suffix().toLower() != strExtension)
-        strFileName += QString(".%1").arg(strExtension);
-
-    /* Return result: */
-    return strFileName;
-}
-
-QString UIWizardNewVMDiskPage::absoluteFilePath(const QString &strFileName, const QString &strPath)
-{
-    /* Wrap file-info around received file name: */
-    QFileInfo fileInfo(strFileName);
-    /* If path-info is relative or there is no path-info at all: */
-    if (fileInfo.fileName() == strFileName || fileInfo.isRelative())
-    {
-        /* Resolve path on the basis of  path we have: */
-        fileInfo = QFileInfo(strPath, strFileName);
-    }
-    /* Return full absolute hard disk file path: */
-    return QDir::toNativeSeparators(fileInfo.absoluteFilePath());
-}
 
 QUuid UIWizardNewVMDiskPage::getWithFileOpenDialog(const QString &strOSTypeID,
                                                    const QString &strMachineFolder,
@@ -424,13 +376,13 @@ void UIWizardNewVMDiskPageBasic::initializePage()
             AssertMsgFailed(("No medium format corresponding to VDI could be found!"));
         setWidgetVisibility(pWizard->mediumFormat());
     }
-    QString strDefaultExtension =  UIWizardNewVMDiskPage::defaultExtension(pWizard->mediumFormat());
+    QString strDefaultExtension =  UIDiskEditorGroupBox::defaultExtensionForMediumFormat(pWizard->mediumFormat());
 
     /* We set the medium name and path according to machine name/path and do not allow user change these in the guided mode: */
     QString strDefaultName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
     const QString &strMachineFolder = pWizard->machineFolder();
     QString strMediumPath =
-        UIWizardNewVMDiskPage::absoluteFilePath(UIWizardNewVMDiskPage::toFileName(strDefaultName,
+        UIDiskEditorGroupBox::constructMediumFilePath(UIDiskEditorGroupBox::appendExtension(strDefaultName,
                                                                                   strDefaultExtension), strMachineFolder);
     newVMWizardPropertySet(MediumPath, strMediumPath);
 

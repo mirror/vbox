@@ -71,8 +71,7 @@ class UIMediumSizeAndPathGroupBox;
 //        QString m_strDefaultName;
 //        QString m_strDefaultPath;
 //        QString m_strDefaultExtension;
-//        qulonglong m_uMediumSizeMin;
-//        qulonglong m_uMediumSizeMax;
+
 //     /** @} */
 
 //     /** @name Widgets
@@ -100,8 +99,9 @@ protected:
 
 private slots:
 
-    /** Location editors stuff: */
     void sltSelectLocationButtonClicked();
+    void sltMediumSizeChanged(qulonglong uSize);
+    void sltMediumPathChanged(const QString &strPath);
 
 private:
 
@@ -112,6 +112,12 @@ private:
     void prepare();
 
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroup;
+    qulonglong m_uMediumSizeMin;
+    qulonglong m_uMediumSizeMax;
+    QString m_strDefaultName;
+    QString m_strDefaultPath;
+    qulonglong m_uDefaultSize;
+    QSet<QString> m_userModifiedParameters;
 };
 
 

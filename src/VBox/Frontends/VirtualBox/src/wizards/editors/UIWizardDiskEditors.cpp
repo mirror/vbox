@@ -56,6 +56,59 @@ UIDiskEditorGroupBox::UIDiskEditorGroupBox(bool fExpertMode, QWidget *pParent /*
         setFlat(true);
 }
 
+/* static */
+QString UIDiskEditorGroupBox::appendExtension(const QString &strName, const QString &strExtension)
+{
+    /* Convert passed name to native separators: */
+    QString strFileName = QDir::toNativeSeparators(strName);
+
+    /* Remove all trailing dots to avoid multiple dots before extension: */
+    int iLen;
+    while (iLen = strFileName.length(), iLen > 0 && strFileName[iLen - 1] == '.')
+        strFileName.truncate(iLen - 1);
+
+    /* Add passed extension if its not done yet: */
+    if (QFileInfo(strFileName).suffix().toLower() != strExtension)
+        strFileName += QString(".%1").arg(strExtension);
+
+    /* Return result: */
+    return strFileName;
+}
+
+/* static */
+QString UIDiskEditorGroupBox::constructMediumFilePath(const QString &strFileName, const QString &strPath)
+{
+    /* Wrap file-info around received file name: */
+    QFileInfo fileInfo(strFileName);
+    /* If path-info is relative or there is no path-info at all: */
+    if (fileInfo.fileName() == strFileName || fileInfo.isRelative())
+    {
+        /* Resolve path on the basis of  path we have: */
+        fileInfo = QFileInfo(strPath, strFileName);
+    }
+    /* Return full absolute hard disk file path: */
+    return QDir::toNativeSeparators(fileInfo.absoluteFilePath());
+}
+
+/* static */
+QString UIDiskEditorGroupBox::defaultExtensionForMediumFormat(const CMediumFormat &mediumFormatRef)
+{
+    if (!mediumFormatRef.isNull())
+    {
+        /* Load extension / device list: */
+        QVector<QString> fileExtensions;
+        QVector<KDeviceType> deviceTypes;
+        CMediumFormat mediumFormat(mediumFormatRef);
+        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+        for (int i = 0; i < fileExtensions.size(); ++i)
+            if (deviceTypes[i] == KDeviceType_HardDisk)
+                return fileExtensions[i].toLower();
+    }
+    AssertMsgFailed(("Extension can't be NULL!\n"));
+    return QString();
+}
+
+
 /*********************************************************************************************************************************
 *   UIDiskFormatsGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
