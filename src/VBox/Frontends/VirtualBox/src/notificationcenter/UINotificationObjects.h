@@ -493,6 +493,34 @@ private:
     QString        m_strPublicKey;
 };
 
+/** UINotificationProgress extension for cloud console connection delete functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudConsoleConnectionDelete : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs cloud console connection delete notification-progress.
+      * @param  comMachine  Brings the cloud machine for which console connection being deleted. */
+    UINotificationProgressCloudConsoleConnectionDelete(const CCloudMachine &comMachine);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the cloud machine for which console connection being deleted. */
+    CCloudMachine  m_comMachine;
+    /** Holds the cloud machine name. */
+    QString        m_strName;
+};
+
 /** UINotificationProgress extension for export appliance functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressApplianceExport : public UINotificationProgress
 {

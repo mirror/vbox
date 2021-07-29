@@ -543,6 +543,44 @@ CProgress UINotificationProgressCloudConsoleConnectionCreate::createProgress(COM
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressCloudConsoleConnectionDelete implementation.                                                     *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudConsoleConnectionDelete::UINotificationProgressCloudConsoleConnectionDelete(const CCloudMachine &comMachine)
+    : m_comMachine(comMachine)
+{
+}
+
+QString UINotificationProgressCloudConsoleConnectionDelete::name() const
+{
+    return UINotificationProgress::tr("Deleting cloud console connection ...");
+}
+
+QString UINotificationProgressCloudConsoleConnectionDelete::details() const
+{
+    return UINotificationProgress::tr("<b>Cloud VM Name:</b> %1").arg(m_strName);
+}
+
+CProgress UINotificationProgressCloudConsoleConnectionDelete::createProgress(COMResult &comResult)
+{
+    /* Acquire cloud VM name: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        comResult = m_comMachine;
+        return CProgress();
+    }
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMachine.DeleteConsoleConnection();
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressApplianceExport implementation.                                                                  *
 *********************************************************************************************************************************/
 
