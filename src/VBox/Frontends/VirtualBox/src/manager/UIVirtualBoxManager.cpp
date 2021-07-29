@@ -1246,16 +1246,11 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup()
                             /* Only if no fingerprint exist: */
                             if (strConsoleConnectionFingerprint.isEmpty())
                             {
-                                /* Acquire machine name: */
-                                QString strName;
-                                if (cloudMachineName(comMachine, strName))
-                                {
-                                    /* Create cloud console connection: */
-                                    UINotificationProgressCloudConsoleConnectionCreate *pNotification =
-                                        new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
-                                                                                               pDialog->publicKey());
-                                    notificationCenter().append(pNotification);
-                                }
+                                /* Create cloud console connection: */
+                                UINotificationProgressCloudConsoleConnectionCreate *pNotification =
+                                    new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
+                                                                                           pDialog->publicKey());
+                                notificationCenter().append(pNotification);
                             }
                         }
                     }
@@ -1293,16 +1288,11 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine()
                     /* Only if no fingerprint exist: */
                     if (strConsoleConnectionFingerprint.isEmpty())
                     {
-                        /* Acquire machine name: */
-                        QString strName;
-                        if (cloudMachineName(comMachine, strName))
-                        {
-                            /* Create cloud console connection: */
-                            UINotificationProgressCloudConsoleConnectionCreate *pNotification =
-                                new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
-                                                                                       pDialog->publicKey());
-                            notificationCenter().append(pNotification);
-                        }
+                        /* Create cloud console connection: */
+                        UINotificationProgressCloudConsoleConnectionCreate *pNotification =
+                            new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
+                                                                                   pDialog->publicKey());
+                        notificationCenter().append(pNotification);
                     }
                 }
             }
@@ -1337,15 +1327,10 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup()
                     /* Only if fingerprint exists: */
                     if (!strConsoleConnectionFingerprint.isEmpty())
                     {
-                        /* Acquire machine name: */
-                        QString strName;
-                        if (cloudMachineName(comMachine, strName))
-                        {
-                            /* Delete cloud console connection: */
-                            UINotificationProgressCloudConsoleConnectionDelete *pNotification =
-                                new UINotificationProgressCloudConsoleConnectionDelete(comMachine);
-                            notificationCenter().append(pNotification);
-                        }
+                        /* Delete cloud console connection: */
+                        UINotificationProgressCloudConsoleConnectionDelete *pNotification =
+                            new UINotificationProgressCloudConsoleConnectionDelete(comMachine);
+                        notificationCenter().append(pNotification);
                     }
                 }
             }
@@ -1374,15 +1359,10 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine()
             /* Only if fingerprint exists: */
             if (!strConsoleConnectionFingerprint.isEmpty())
             {
-                /* Acquire machine name: */
-                QString strName;
-                if (cloudMachineName(comMachine, strName))
-                {
-                    /* Delete cloud console connection: */
-                    UINotificationProgressCloudConsoleConnectionDelete *pNotification =
-                        new UINotificationProgressCloudConsoleConnectionDelete(comMachine);
-                    notificationCenter().append(pNotification);
-                }
+                /* Delete cloud console connection: */
+                UINotificationProgressCloudConsoleConnectionDelete *pNotification =
+                    new UINotificationProgressCloudConsoleConnectionDelete(comMachine);
+                notificationCenter().append(pNotification);
             }
         }
     }
@@ -1701,8 +1681,10 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, items)
     {
-        /* Check if current item could be saved: */
+        /* Sanity check: */
         AssertPtrReturnVoid(pItem);
+
+        /* Check if current item could be saved: */
         if (!isActionEnabled(UIActionIndexMN_M_Machine_M_Close_S_SaveState, QList<UIVirtualMachineItem*>() << pItem))
             continue;
 
@@ -1739,29 +1721,13 @@ void UIVirtualBoxManager::sltPerformTerminateMachine()
     /* For every confirmed item to terminate: */
     foreach (UIVirtualMachineItem *pItem, itemsToTerminate)
     {
-        /* Get cloud machine: */
+        /* Sanity check: */
         AssertPtrReturnVoid(pItem);
-        UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
-        AssertPtrReturnVoid(pCloudItem);
-        CCloudMachine comMachine = pCloudItem->machine();
 
-        /* Acquire machine name: */
-        QString strName;
-        if (!cloudMachineName(comMachine, strName))
-            continue;
-
-        /* Prepare terminate cloud instance progress: */
-        CProgress comProgress = comMachine.Terminate();
-        if (!comMachine.isOk())
-        {
-            msgCenter().cannotTerminateCloudInstance(comMachine);
-            continue;
-        }
-
-        /* Show terminate cloud instance progress: */
-        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_delete_cloud_vm_90px.png", 0, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotTerminateCloudInstance(comProgress, strName);
+        /* Terminating cloud VM: */
+        UINotificationProgressCloudMachineTerminate *pNotification =
+            new UINotificationProgressCloudMachineTerminate(pItem->toCloud()->machine());
+        notificationCenter().append(pNotification);
     }
 }
 
@@ -1791,6 +1757,9 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, itemsToShutdown)
     {
+        /* Sanity check: */
+        AssertPtrReturnVoid(pItem);
+
         /* For local machine: */
         if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
@@ -1814,7 +1783,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
         {
             /* Shutting cloud VM down: */
             UINotificationProgressCloudMachineShutdown *pNotification =
-                    new UINotificationProgressCloudMachineShutdown(pItem->toCloud()->machine());
+                new UINotificationProgressCloudMachineShutdown(pItem->toCloud()->machine());
             notificationCenter().append(pNotification);
         }
     }

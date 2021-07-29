@@ -748,6 +748,46 @@ CProgress UINotificationProgressCloudMachineShutdown::createProgress(COMResult &
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressCloudMachineTerminate implementation.                                                            *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudMachineTerminate::UINotificationProgressCloudMachineTerminate(const CCloudMachine &comMachine)
+    : m_comMachine(comMachine)
+{
+}
+
+QString UINotificationProgressCloudMachineTerminate::name() const
+{
+    return   UINotificationProgress::tr("Terminating cloud VM ...");
+}
+
+QString UINotificationProgressCloudMachineTerminate::details() const
+{
+    return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
+}
+
+CProgress UINotificationProgressCloudMachineTerminate::createProgress(COMResult &comResult)
+{
+    /* Acquire cloud VM name: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comMachine;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMachine.Terminate();
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressCloudConsoleConnectionCreate implementation.                                                     *
 *********************************************************************************************************************************/
 
