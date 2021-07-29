@@ -267,7 +267,7 @@ typedef enum RTTHREADFLAGS
     RTTHREADFLAGS_NO_SIGNALS = RT_BIT(3),
 
     /** Mask of valid flags, use for validation. */
-    RTTHREADFLAGS_MASK = UINT32_C(0x7)
+    RTTHREADFLAGS_MASK = UINT32_C(0xf)
 } RTTHREADFLAGS;
 
 
