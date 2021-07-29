@@ -216,8 +216,26 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
                  it without creating a race with PDMCritSectLeave, resulting in
                  spurious wakeups. */
         RT_NOREF(rcBusy);
-        /** @todo eliminate this and return rcBusy instead.  Guru if
-         *        rcBusy is VINF_SUCCESS. */
+        /** @todo eliminate this and return rcBusy instead.  Guru if rcBusy is
+         *        VINF_SUCCESS.
+         *
+         * Update: If we use cmpxchg to carefully decrement cLockers, we can avoid the
+         * race and spurious wakeup.  The race in question are the two decrement
+         * operations, if we lose out to the PDMCritSectLeave CPU, it will signal the
+         * semaphore and leave it signalled while cLockers is zero.  If we use cmpxchg
+         * to make sure this won't happen and repeate the loop should cLockers reach
+         * zero (i.e. we're the only one around and the semaphore is or will soon be
+         * signalled), we can make this work.
+         *
+         * The ring-0 RTSemEventWaitEx code never return VERR_INTERRUPTED for an already
+         * signalled event, however we're racing the signal call here so it may not yet
+         * be sinalled when we call RTSemEventWaitEx again...  Maybe do a
+         * non-interruptible wait for a short while?  Or put a max loop count on this?
+         * There is always the possiblity that the thread is in user mode and will be
+         * killed before it gets to waking up the next waiting thread...  We probably
+         * need a general timeout here for ring-0 waits and retun rcBusy/guru if it
+         * we get stuck here for too long...
+         */
         PVMCPUCC pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
         rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
         AssertRC(rc);
