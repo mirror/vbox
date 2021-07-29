@@ -297,6 +297,41 @@ private:
     QString   m_strName;
 };
 
+/** UINotificationProgress extension for machine power-down functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMachinePowerDown : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs machine power-down notification-progress.
+      * @param  comMachine  Brings the machine being powered-down. */
+    UINotificationProgressMachinePowerDown(const QUuid &uId);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine id. */
+    QUuid     m_uId;
+    /** Holds the session being opened. */
+    CSession  m_comSession;
+    /** Holds the machine name. */
+    QString   m_strName;
+};
+
 /** UINotificationProgress extension for machine media remove functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressMachineMediaRemove : public UINotificationProgress
 {

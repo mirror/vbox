@@ -1863,36 +1863,9 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
         /* For local machine: */
         if (pItem->itemType() == UIVirtualMachineItemType_Local)
         {
-            /* Open a session to modify VM state: */
-            CSession comSession = uiCommon().openExistingSession(pItem->id());
-            if (comSession.isNull())
-                break;
-
-            /* Get session console: */
-            CConsole comConsole = comSession.GetConsole();
-            /* Prepare machine power down: */
-            CProgress comProgress = comConsole.PowerDown();
-            if (!comConsole.isOk())
-                msgCenter().cannotPowerDownMachine(comConsole);
-            else
-            {
-                /* Show machine power down progress: */
-                msgCenter().showModalProgressDialog(comProgress, pItem->name(), ":/progress_poweroff_90px.png");
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    msgCenter().cannotPowerDownMachine(comProgress, pItem->name());
-                else
-                {
-                    /* Sanity check: */
-                    AssertPtrReturnVoid(pItem->toLocal());
-                    /* Restore snapshot if requested: */
-                    const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(pItem->id());
-                    if (fDiscardStateOnPowerOff && pItem->toLocal()->snapshotCount() > 0)
-                        uiCommon().restoreCurrentSnapshot(pItem->id());
-                }
-            }
-
-            /* Unlock machine finally: */
-            comSession.UnlockMachine();
+            /* Powering VM down: */
+            UINotificationProgressMachinePowerDown *pNotification = new UINotificationProgressMachinePowerDown(pItem->id());
+            notificationCenter().append(pNotification);
         }
         /* For real cloud machine: */
         else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
