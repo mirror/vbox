@@ -124,6 +124,9 @@ protected slots:
     /** Handles medium move progress result. */
     void sltHandleMoveProgressFinished();
 
+    /** Handles @a comMedium remove request. */
+    void sltHandleMediumRemoveRequest(CMedium comMedium);
+
 private:
 
     /** A simple struct used to save some parameters of machine device attachment.

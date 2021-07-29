@@ -241,6 +241,14 @@ void UIMediumItem::sltHandleMoveProgressFinished()
     refreshAll();
 }
 
+void UIMediumItem::sltHandleMediumRemoveRequest(CMedium comMedium)
+{
+    /* Close medium finally: */
+    comMedium.Close();
+    if (!comMedium.isOk())
+        msgCenter().cannotCloseMedium(medium(), comMedium, treeWidget());
+}
+
 void UIMediumItem::refresh()
 {
     /* Fill-in columns: */
@@ -413,20 +421,9 @@ bool UIMediumItemHD::remove()
     if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
         return false;
 
-    /* Remember some of hard-disk attributes: */
-    CMedium hardDisk = medium().medium();
-
     /* Propose to remove medium storage: */
     if (!maybeRemoveStorage())
         return false;
-
-    /* Close hard-disk: */
-    hardDisk.Close();
-    if (!hardDisk.isOk())
-    {
-        msgCenter().cannotCloseMedium(medium(), hardDisk, treeWidget());
-        return false;
-    }
 
     /* True by default: */
     return true;
@@ -472,9 +469,8 @@ bool UIMediumItemHD::releaseFrom(CMachine comMachine)
 
 bool UIMediumItemHD::maybeRemoveStorage()
 {
-    /* Remember some of hard-disk attributes: */
-    CMedium hardDisk = medium().medium();
-    QString strLocation = location();
+    /* Acquire medium: */
+    CMedium comMedium = medium().medium();
 
     /* We don't want to try to delete inaccessible storage as it will most likely fail.
      * Note that UIMessageCenter::confirmMediumRemoval() is aware of that and
@@ -482,12 +478,11 @@ bool UIMediumItemHD::maybeRemoveStorage()
      * the hint should be re-checked for validity. */
     bool fDeleteStorage = false;
     qulonglong uCapability = 0;
-    QVector<KMediumFormatCapabilities> capabilities = hardDisk.GetMediumFormat().GetCapabilities();
-    foreach (KMediumFormatCapabilities capability, capabilities)
+    foreach (KMediumFormatCapabilities capability, comMedium.GetMediumFormat().GetCapabilities())
         uCapability |= capability;
     if (state() != KMediumState_Inaccessible && uCapability & KMediumFormatCapabilities_File)
     {
-        int rc = msgCenter().confirmDeleteHardDiskStorage(strLocation, treeWidget());
+        int rc = msgCenter().confirmDeleteHardDiskStorage(location(), treeWidget());
         if (rc == AlertButton_Cancel)
             return false;
         fDeleteStorage = rc == AlertButton_Choice1;
@@ -496,22 +491,15 @@ bool UIMediumItemHD::maybeRemoveStorage()
     /* If user wish to delete storage: */
     if (fDeleteStorage)
     {
-        /* Prepare delete storage progress: */
-        CProgress progress = hardDisk.DeleteStorage();
-        if (!hardDisk.isOk())
-        {
-            msgCenter().cannotDeleteHardDiskStorage(hardDisk, strLocation, treeWidget());
-            return false;
-        }
-        /* Show delete storage progress: */
-        msgCenter().showModalProgressDialog(progress, UIMediumItem::tr("Removing medium ..."),
-                                            ":/progress_media_delete_90px.png", treeWidget());
-        if (!progress.isOk() || progress.GetResultCode() != 0)
-        {
-            msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, treeWidget());
-            return false;
-        }
+        /* Deleting medium storage first of all: */
+        UINotificationProgressMediumDeletingStorage *pNotification = new UINotificationProgressMediumDeletingStorage(comMedium);
+        connect(pNotification, &UINotificationProgressMediumDeletingStorage::sigMediumStorageDeleted,
+                this, &UIMediumItemHD::sltHandleMediumRemoveRequest);
+        notificationCenter().append(pNotification);
     }
+    /* Otherwise go to last step immediatelly: */
+    else
+        sltHandleMediumRemoveRequest(comMedium);
 
     /* True by default: */
     return true;
@@ -538,16 +526,8 @@ bool UIMediumItemCD::remove()
     if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
         return false;
 
-    /* Remember some of optical-disk attributes: */
-    CMedium image = medium().medium();
-
     /* Close optical-disk: */
-    image.Close();
-    if (!image.isOk())
-    {
-        msgCenter().cannotCloseMedium(medium(), image, treeWidget());
-        return false;
-    }
+    sltHandleMediumRemoveRequest(medium().medium());
 
     /* True by default: */
     return true;
@@ -607,16 +587,8 @@ bool UIMediumItemFD::remove()
     if (!msgCenter().confirmMediumRemoval(medium(), treeWidget()))
         return false;
 
-    /* Remember some of floppy-disk attributes: */
-    CMedium image = medium().medium();
-
     /* Close floppy-disk: */
-    image.Close();
-    if (!image.isOk())
-    {
-        msgCenter().cannotCloseMedium(medium(), image, treeWidget());
-        return false;
-    }
+    sltHandleMediumRemoveRequest(medium().medium());
 
     /* True by default: */
     return true;
