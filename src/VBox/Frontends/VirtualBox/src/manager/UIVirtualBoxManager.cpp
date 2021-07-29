@@ -333,7 +333,7 @@ void UIAcquirePublicKeyDialog::prepareEditorContents()
         foreach (const QString &strPath, defaultKeyFolders())
         {
             /* Gather possible file names, there can be few of them: */
-            const QStringList fileNames = QStringList() << "id_rsa" << "id_rsa.pub";
+            const QStringList fileNames = QStringList() << "id_rsa.pub" << "id_rsa";
             /* For each file name we have to: */
             foreach (const QString &strFileName, fileNames)
             {
