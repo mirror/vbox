@@ -323,7 +323,10 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
 	dh_makeshlibs
 	dh_installdeb
 	dh_perl
-	# for some reason, the Qt libraries couldn't be found on newer releases (e.g. Ubuntu hardy)
+	# For some reason, the Qt libraries couldn't be found on newer releases (e.g. Ubuntu hardy).
+	# Python is deliberately not listed as a dependency (see also comment in the "control" file.
+	# It is expected that dh_gencontrol shows a warning "substitution variable ${python:Versions}
+	# used, but is not defined" because of this.
 	LD_LIBRARY_PATH=$(prefix)/usr/lib/virtualbox dh_shlibdeps --exclude=VBoxPython
 	dh_gencontrol -- \
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
