@@ -23,31 +23,17 @@
 
 /* Qt includes: */
 #include <QSet>
-#include <QVariant>
 
 /* GUI includes: */
 #include "UINativeWizardPage.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMedium.h"
-
 /* Forward declarations: */
-class QRadioButton;
-class QCheckBox;
 class QIRichTextLabel;
-class UIBaseMemoryEditor;
 class UINewVMHardwareContainer;
-class UIVirtualCPUEditor;
-class UIWizardNewVM;
 
 namespace UIWizardNewVMHardwarePage
 {
 }
-//        int baseMemory() const;
-//        int VCPUCount() const;
-//        bool EFIEnabled() const;
-
 
 class UIWizardNewVMHardwarePageBasic : public UINativeWizardPage
 {

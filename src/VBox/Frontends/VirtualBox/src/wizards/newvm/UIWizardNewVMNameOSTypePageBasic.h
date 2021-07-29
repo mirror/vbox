@@ -23,17 +23,11 @@
 
 /* Local includes: */
 #include "UINativeWizardPage.h"
-#include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
-class QBoxLayout;
 class QCheckBox;
-class QFrame;
-class QLabel;
-class QRadioButton;
 class QGridLayout;
 class QIRichTextLabel;
-class UIFilePathSelector;
 class UINameAndSystemEditor;
 class UIWizardNewVM;
 

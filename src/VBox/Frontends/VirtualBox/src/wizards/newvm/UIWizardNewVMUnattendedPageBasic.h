@@ -22,23 +22,13 @@
 #endif
 
 /* Local includes: */
-#include "QIWithRetranslateUI.h"
 #include "UINativeWizardPage.h"
 
 /* Forward declarations: */
-class QCheckBox;
-class QGridLayout;
-class QGroupBox;
-class QLabel;
-class QLineEdit;
 class QIRichTextLabel;
 class UIAdditionalUnattendedOptions;
 class UIGAInstallationGroupBox;
-class UIFilePathSelector;
 class UIUserNamePasswordGroupBox;
-class UIHostnameDomainNameEditor;
-struct UIUnattendedInstallData;
-
 
 namespace UIWizardNewVMUnattendedPage
 {

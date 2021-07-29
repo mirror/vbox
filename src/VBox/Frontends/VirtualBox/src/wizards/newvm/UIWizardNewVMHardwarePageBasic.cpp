@@ -16,20 +16,15 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QGridLayout>
-#include <QMetaType>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UIBaseMemoryEditor.h"
-#include "UIMessageCenter.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMEditors.h"
 #include "UIWizardNewVMHardwarePageBasic.h"
-#include "UIWizardNewVDPageSizeLocation.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"

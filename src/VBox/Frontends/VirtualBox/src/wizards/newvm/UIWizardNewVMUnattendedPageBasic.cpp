@@ -16,29 +16,14 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
 #include <QFileInfo>
 #include <QGridLayout>
-#include <QGroupBox>
-#include <QLabel>
-#include <QLineEdit>
-#include <QSpacerItem>
-#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
-#include "UICommon.h"
-#include "UIFilePathSelector.h"
-#include "UIIconPool.h"
 #include "UIWizardNewVMEditors.h"
-#include "UIHostnameDomainNameEditor.h"
 #include "UIWizardNewVMUnattendedPageBasic.h"
 #include "UIWizardNewVM.h"
-
-/* COM includes: */
-#include "CHost.h"
-#include "CSystemProperties.h"
-#include "CUnattended.h"
 
 bool UIWizardNewVMUnattendedPage::checkGAISOFile(const QString &strPath)
 {

@@ -18,29 +18,18 @@
 /* Qt includes: */
 #include <QButtonGroup>
 #include <QCheckBox>
-#include <QGridLayout>
-#include <QGroupBox>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
 #include <QRadioButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIRichTextLabel.h"
+#include "UICommon.h"
 #include "QIToolButton.h"
-#include "UIBaseMemoryEditor.h"
-#include "UIConverter.h"
-#include "UIHostnameDomainNameEditor.h"
-#include "UIFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
-#include "UIMediumSizeEditor.h"
 #include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
 #include "UIToolBox.h"
-#include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVMEditors.h"

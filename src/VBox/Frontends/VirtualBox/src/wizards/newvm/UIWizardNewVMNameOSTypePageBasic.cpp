@@ -18,16 +18,11 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QDir>
-#include <QGridLayout>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QRadioButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
-#include "UIFilePathSelector.h"
 #include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
 #include "UIWizardNewVMNameOSTypePageBasic.h"
@@ -35,7 +30,6 @@
 
 /* COM includes: */
 #include "CHost.h"
-#include "CSystemProperties.h"
 #include "CUnattended.h"
 
 

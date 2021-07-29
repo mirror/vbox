@@ -28,7 +28,6 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UINativeWizardPage.h"
-//
 
 /* COM includes: */
 #include "COMEnums.h"

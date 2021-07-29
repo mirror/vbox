@@ -17,7 +17,6 @@
 
 /* Qt includes: */
 #include <QVBoxLayout>
-#include <QButtonGroup>
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"

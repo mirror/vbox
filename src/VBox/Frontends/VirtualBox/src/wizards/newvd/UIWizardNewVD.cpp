@@ -17,7 +17,6 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIMedium.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVD.h"
