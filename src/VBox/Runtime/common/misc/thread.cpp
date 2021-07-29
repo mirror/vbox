@@ -769,26 +769,12 @@ RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUse
     /*
      * Validate input.
      */
-    if (!VALID_PTR(pThread) && pThread)
-    {
-        Assert(VALID_PTR(pThread));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!VALID_PTR(pfnThread))
-    {
-        Assert(VALID_PTR(pfnThread));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!pszName || !*pszName || strlen(pszName) >= RTTHREAD_NAME_LEN)
-    {
-        AssertMsgFailed(("pszName=%s (max len is %d because of logging)\n", pszName, RTTHREAD_NAME_LEN - 1));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (fFlags & ~RTTHREADFLAGS_MASK)
-    {
-        AssertMsgFailed(("fFlags=%#x\n", fFlags));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrNullReturn(pThread, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnThread, VERR_INVALID_POINTER);
+    AssertMsgReturn(pszName && *pszName != '\0' && strlen(pszName) < RTTHREAD_NAME_LEN,
+                    ("pszName=%s (max len is %d because of logging)\n", pszName, RTTHREAD_NAME_LEN - 1),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fFlags & ~RTTHREADFLAGS_MASK), ("fFlags=%#x\n", fFlags), VERR_INVALID_FLAGS);
 
     /*
      * Allocate thread argument.
