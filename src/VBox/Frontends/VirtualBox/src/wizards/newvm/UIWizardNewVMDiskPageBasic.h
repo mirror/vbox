@@ -58,7 +58,6 @@ namespace UIWizardNewVMDiskPage
                                 const QString &strMachineFolder,
                                 const QString &strMachineBaseName,
                                 QWidget *pCaller);
-    bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
     QString selectNewMediumLocation(UIWizardNewVM *pWizard);
 }
 

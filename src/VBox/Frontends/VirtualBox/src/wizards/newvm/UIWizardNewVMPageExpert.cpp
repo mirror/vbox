@@ -621,7 +621,7 @@ bool UIWizardNewVMPageExpert::validatePage()
         qulonglong uSize = pWizard->mediumSize();
         qulonglong uVariant = pWizard->mediumVariant();
         /* Check FAT size limitation of the host hard drive: */
-        fResult =  UIWizardNewVMDiskPage::checkFATSizeLimitation(uVariant, strMediumPath, uSize);
+        fResult =  UIDiskEditorGroupBox::checkFATSizeLimitation(uVariant, strMediumPath, uSize);
         if (!fResult)
         {
             msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);

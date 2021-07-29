@@ -63,28 +63,6 @@ QUuid UIWizardNewVMDiskPage::getWithFileOpenDialog(const QString &strOSTypeID,
     return uMediumId;
 }
 
-bool UIWizardNewVMDiskPage::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
-{
-    /* If the hard disk is split into 2GB parts then no need to make further checks: */
-    if (uVariant & KMediumVariant_VmdkSplit2G)
-        return true;
-
-    RTFSTYPE enmType;
-    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
-    if (RT_SUCCESS(rc))
-    {
-        if (enmType == RTFSTYPE_FAT)
-        {
-            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
-            qulonglong fatLimit = _4G - _128M;
-            if (uSize >= fatLimit)
-                return false;
-        }
-    }
-
-    return true;
-}
-
 QString UIWizardNewVMDiskPage::selectNewMediumLocation(UIWizardNewVM *pWizard)
 {
     AssertReturn(pWizard, QString());
@@ -457,7 +435,7 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
             return fResult;
         }
         /* Check FAT size limitation of the host hard drive: */
-        fResult = UIWizardNewVMDiskPage::checkFATSizeLimitation(pWizard->mediumVariant(),
+        fResult = UIDiskEditorGroupBox::checkFATSizeLimitation(pWizard->mediumVariant(),
                                                                 strMediumPath,
                                                                 pWizard->mediumSize());
         if (!fResult)

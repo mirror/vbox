@@ -49,6 +49,7 @@ public:
                   const QString &strDefaultName, const QString &strDefaultPath,
                   qulonglong uDefaultSize, WizardMode mode = WizardMode_Auto);
 
+    bool createVirtualDisk();
 
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
@@ -63,9 +64,6 @@ public:
     void setMediumSize(qulonglong mediumSize);
 
 protected:
-
-    /* Creates virtual-disk: */
-    bool createVirtualDisk();
 
     virtual void populatePages() /* final override */;
 

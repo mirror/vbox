@@ -41,6 +41,7 @@
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
+#include "iprt/fs.h"
 #include "CSystemProperties.h"
 
 
@@ -107,6 +108,28 @@ QString UIDiskEditorGroupBox::defaultExtensionForMediumFormat(const CMediumForma
     AssertMsgFailed(("Extension can't be NULL!\n"));
     return QString();
 }
+
+/* static */
+bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
+{
+    /* If the hard disk is split into 2GB parts then no need to make further checks: */
+    if (uVariant & KMediumVariant_VmdkSplit2G)
+        return true;
+    RTFSTYPE enmType;
+    int rc = RTFsQueryType(QFileInfo(strMediumPath).absolutePath().toLatin1().constData(), &enmType);
+    if (RT_SUCCESS(rc))
+    {
+        if (enmType == RTFSTYPE_FAT)
+        {
+            /* Limit the medium size to 4GB. minus 128 MB for file overhead: */
+            qulonglong fatLimit = _4G - _128M;
+            if (uSize >= fatLimit)
+                return false;
+        }
+    }
+    return true;
+}
+
 
 
 /*********************************************************************************************************************************

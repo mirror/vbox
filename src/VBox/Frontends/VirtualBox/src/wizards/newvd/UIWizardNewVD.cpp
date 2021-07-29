@@ -128,37 +128,38 @@ bool UIWizardNewVD::createVirtualDisk()
     // const qulonglong uVariant = field("mediumVariant").toULongLong();
     // const QString strMediumPath = field("mediumPath").toString();
     // const qulonglong uSize = field("mediumSize").toULongLong();
-    // /* Check attributes: */
-    // AssertReturn(!strMediumPath.isNull(), false);
-    // AssertReturn(uSize > 0, false);
+    /* Check attributes: */
+    AssertReturn(!m_strMediumPath.isNull(), false);
+    AssertReturn(m_uMediumSize > 0, false);
 
-    // /* Get VBox object: */
-    // CVirtualBox comVBox = uiCommon().virtualBox();
+    /* Get VBox object: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
 
-    // /* Create new virtual disk image: */
-    // CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
-    // if (!comVBox.isOk())
-    // {
-    //     msgCenter().cannotCreateMediumStorage(comVBox, strMediumPath, this);
-    //     return false;
-    // }
+    /* Create new virtual disk image: */
+    CMedium comVirtualDisk = comVBox.CreateMedium(m_comMediumFormat.GetName(),
+                                                  m_strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
+    if (!comVBox.isOk())
+    {
+        msgCenter().cannotCreateMediumStorage(comVBox, m_strMediumPath, this);
+        return false;
+    }
 
-    // /* Compose medium-variant: */
-    // QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
-    // for (int i = 0; i < variants.size(); ++i)
-    // {
-    //     qulonglong temp = uVariant;
-    //     temp &= Q_UINT64_C(1) << i;
-    //     variants[i] = (KMediumVariant)temp;
-    // }
+    /* Compose medium-variant: */
+    QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
+    for (int i = 0; i < variants.size(); ++i)
+    {
+        qulonglong temp = m_uMediumVariant;
+        temp &= Q_UINT64_C(1) << i;
+        variants[i] = (KMediumVariant)temp;
+    }
 
-    // /* Copy medium: */
-    // UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
-    //                                                                                            uSize,
-    //                                                                                            variants);
-    // connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
-    //         &uiCommon(), &UICommon::sltHandleMediumCreated);
-    // notificationCenter().append(pNotification);
+    /* Copy medium: */
+    UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(comVirtualDisk,
+                                                                                               m_uMediumSize,
+                                                                                               variants);
+    connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
+            &uiCommon(), &UICommon::sltHandleMediumCreated);
+    notificationCenter().append(pNotification);
 
     /* Positive: */
     return true;

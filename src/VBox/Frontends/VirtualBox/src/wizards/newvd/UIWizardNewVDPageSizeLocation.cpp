@@ -395,32 +395,32 @@ bool UIWizardNewVDPageSizeLocation::isComplete() const
 
 bool UIWizardNewVDPageSizeLocation::validatePage()
 {
-    /* Initial result: */
     bool fResult = true;
+    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    AssertReturn(pWizard, false);
+    /* Make sure such file doesn't exist already: */
+    const QString strMediumPath(pWizard->mediumPath());
+    fResult = !QFileInfo(strMediumPath).exists();
+    if (!fResult)
+    {
+        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+        return fResult;
+    }
 
-    // /* Make sure such file doesn't exist already: */
-    // const QString strMediumPath(mediumPath());
-    // fResult = !QFileInfo(strMediumPath).exists();
-    // if (!fResult)
-    // {
-    //     msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-    //     return fResult;
-    // }
-
-    // /* Make sure we are passing FAT size limitation: */
-    // fResult = checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-    //                                  fieldImp("mediumPath").toString(),
-    //                                  fieldImp("mediumSize").toULongLong());
-    // if (!fResult)
-    // {
-    //     msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-    //     return fResult;
-    // }
+    /* Make sure we are passing FAT size limitation: */
+    fResult = UIDiskEditorGroupBox::checkFATSizeLimitation(pWizard->mediumVariant(),
+                                     pWizard->mediumPath(),
+                                     pWizard->mediumSize());
+    if (!fResult)
+    {
+        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+        return fResult;
+    }
 
     // /* Lock finish button: */
     // startProcessing();
-    // /* Try to create virtual-disk: */
-    // fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
+    /* Try to create virtual-disk: */
+    fResult = pWizard->createVirtualDisk();
     // /* Unlock finish button: */
     // endProcessing();
 
