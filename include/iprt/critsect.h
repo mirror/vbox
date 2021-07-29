@@ -88,7 +88,7 @@ typedef struct RTCRITSECT
     RTSEMEVENT                          EventSem;
     /** Lock validator record.  Only used in strict builds. */
     R3R0PTRTYPE(PRTLOCKVALRECEXCL)      pValidatorRec;
-    /** Alignmnet padding. */
+    /** Alignment padding. */
     RTHCPTR                             Alignment;
 } RTCRITSECT;
 AssertCompileSize(RTCRITSECT, HC_ARCH_BITS == 32 ? 32 : 48);
