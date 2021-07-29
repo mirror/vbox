@@ -261,6 +261,11 @@ typedef enum RTTHREADFLAGS
      *  COINIT_SPEED_OVER_MEMORY.   Ignored on non-windows platforms.  */
     RTTHREADFLAGS_COM_STA = RT_BIT(2),
 
+    /** Mask all signals that we can mask.  Ignored on most non-posix platforms.
+     * @note RTThreadPoke() will not necessarily work for a thread create with
+     *       this flag. */
+    RTTHREADFLAGS_NO_SIGNALS = RT_BIT(3),
+
     /** Mask of valid flags, use for validation. */
     RTTHREADFLAGS_MASK = UINT32_C(0x7)
 } RTTHREADFLAGS;
