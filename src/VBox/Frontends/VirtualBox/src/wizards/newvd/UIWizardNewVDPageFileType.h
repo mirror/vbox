@@ -24,28 +24,12 @@
 /* GUI includes: */
 #include "UINativeWizardPage.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMediumFormat.h"
-
 /* Forward declarations: */
-class QVBoxLayout;
-class QButtonGroup;
-class QRadioButton;
 class QIRichTextLabel;
 class UIDiskFormatsGroupBox;
 
 namespace UIWizardNewVDFileType
 {
-
-//     CMediumFormat mediumFormat() const;
-//     void setMediumFormat(const CMediumFormat &mediumFormat);
-//     void retranslateWidgets();
-
-
-//     QList<CMediumFormat> m_formats;
-//     QStringList m_formatNames;
-//     QStringList m_formatExtensions;
 }
 
 
@@ -71,7 +55,6 @@ private:
 
     /* Validation stuff: */
     bool isComplete() const;
-
 
     QIRichTextLabel *m_pLabel;
     UIDiskFormatsGroupBox *m_pFormatButtonGroup;

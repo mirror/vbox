@@ -37,6 +37,7 @@
 #include "UIMessageCenter.h"
 #include "UIWizardNewVMDiskPageBasic.h"
 #include "UIWizardDiskEditors.h"
+#include "UIWizardNewVM.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"

@@ -26,28 +26,8 @@
 
 /* Forward declarations: */
 class CMediumFormat;
-class QButtonGroup;
-class QCheckBox;
 class QIRichTextLabel;
 class UIDiskVariantGroupBox;
-
-// /* 2nd page of the New Virtual Hard Drive wizard (base part): */
-// class SHARED_LIBRARY_STUFF UIWizardNewVDPageBaseVariant : public UIWizardPageBase
-// {
-// protected:
-
-//     /** Constructor: */
-//     UIWizardNewVDPageBaseVariant();
-
-//     QWidget *createMediumVariantWidgets(bool fWithLabels);
-//     qulonglong mediumVariant() const;
-//     void setMediumVariant(qulonglong uMediumVariant);
-//     void retranslateWidgets();
-//     /** Check Medium format capability and decide if certain widgets can be shown. */
-//     void setWidgetVisibility(CMediumFormat &mediumFormat);
-//     void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
-
-// };
 
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageVariant : public UINativeWizardPage
 {

@@ -18,8 +18,6 @@
 /* Qt includes: */
 #include <QVBoxLayout>
 #include <QButtonGroup>
-#include <QRadioButton>
-#include <QCheckBox>
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
@@ -29,93 +27,6 @@
 
 /* COM includes: */
 #include "CMediumFormat.h"
-
-// UIWizardNewVDPageBaseVariant::UIWizardNewVDPageBaseVariant()
-//     : m_pFixedCheckBox(0)
-//     , m_pSplitBox(0)
-//     , m_pDescriptionLabel(0)
-//     , m_pDynamicLabel(0)
-//     , m_pFixedLabel(0)
-//     , m_pSplitLabel(0)
-// {
-// }
-
-// QWidget *UIWizardNewVDPageBaseVariant::createMediumVariantWidgets(bool fWithLabels)
-// {
-//     QWidget *pContainerWidget = new QWidget;
-//     return pContainerWidget;
-// }
-
-// qulonglong UIWizardNewVDPageBaseVariant::mediumVariant() const
-// {
-//     /* Initial value: */
-//     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
-
-//     /* Exclusive options: */
-//     if (m_pFixedCheckBox && m_pFixedCheckBox->isChecked())
-//         uMediumVariant = (qulonglong)KMediumVariant_Fixed;
-//     else
-//         uMediumVariant = (qulonglong)KMediumVariant_Standard;
-
-//     /* Additional options: */
-//     if (m_pSplitBox && m_pSplitBox->isChecked())
-//         uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
-
-//     /* Return options: */
-//     return uMediumVariant;
-// }
-
-// void UIWizardNewVDPageBaseVariant::setMediumVariant(qulonglong uMediumVariant)
-// {
-//     /* Exclusive options: */
-//     if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
-//     {
-//         m_pFixedCheckBox->click();
-//         m_pFixedCheckBox->setFocus();
-//     }
-
-//     /* Additional options: */
-//     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
-// }
-
-// void UIWizardNewVDPageBaseVariant::retranslateWidgets()
-// {
-//     if (m_pFixedCheckBox)
-//     {
-//         m_pFixedCheckBox->setText(UIWizardNewVD::tr("Pre-allocate &Full Size"));
-//         m_pFixedCheckBox->setToolTip(UIWizardNewVD::tr("<p>When checked, the virtual disk image will be fully allocated at "
-//                                                        "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
-//     }
-
-//     if (m_pSplitBox)
-//         m_pSplitBox->setText(UIWizardNewVD::tr("&Split Into Files of Less Than 2GB"));
-
-
-// }
-
-// void UIWizardNewVDPageBaseVariant::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
-// {
-//     /* Enable/disable widgets: */
-//     ULONG uCapabilities = 0;
-//     QVector<KMediumFormatCapabilities> capabilities;
-//     capabilities = mediumFormat.GetCapabilities();
-//     for (int i = 0; i < capabilities.size(); i++)
-//         uCapabilities |= capabilities[i];
-
-//     bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
-//     bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-//     bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-
-//     if (m_pFixedCheckBox)
-//     {
-//         m_pFixedCheckBox->setEnabled(fIsCreateDynamicPossible || fIsCreateFixedPossible);
-//         if (!fIsCreateDynamicPossible)
-//             m_pFixedCheckBox->setChecked(true);
-//         if (!fIsCreateFixedPossible)
-//             m_pFixedCheckBox->setChecked(false);
-//     }
-//     m_pSplitBox->setEnabled(fIsCreateSplitPossible);
-// }
 
 UIWizardNewVDPageVariant::UIWizardNewVDPageVariant()
     : m_pDescriptionLabel(0)
@@ -150,20 +61,6 @@ void UIWizardNewVDPageVariant::prepare()
     connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
             this, &UIWizardNewVDPageVariant::sltMediumVariantChanged);
     retranslateUi();
-
-    /* Create widgets: */
-    // QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    // pMainLayout->addWidget(createMediumVariantWidgets(true));
-    // pMainLayout->addStretch();
-
-    // /* Setup connections: */
-    // connect(m_pFixedCheckBox, &QAbstractButton::toggled,
-    //         this, &UIWizardNewVDPageVariant::completeChanged);
-    // connect(m_pSplitBox, &QCheckBox::stateChanged,
-    //         this, &UIWizardNewVDPageVariant::completeChanged);
-
-    // /* Register fields: */
-    // registerField("mediumVariant", this, "mediumVariant");
 }
 
 void UIWizardNewVDPageVariant::retranslateUi()

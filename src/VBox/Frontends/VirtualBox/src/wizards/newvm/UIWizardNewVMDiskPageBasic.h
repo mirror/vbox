@@ -28,10 +28,7 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UINativeWizardPage.h"
-#include "UIWizardNewVDPageFileType.h"
-#include "UIWizardNewVDPageVariant.h"
-#include "UIWizardNewVDPageSizeLocation.h"
-#include "UIWizardNewVM.h"
+//
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -39,10 +36,14 @@
 
 /* Forward declarations: */
 class QButtonGroup;
+class QCheckBox;
 class QRadioButton;
+class QLabel;
 class QIRichTextLabel;
 class QIToolButton;
 class UIMediaComboBox;
+class UIMediumSizeEditor;
+class UIWizardNewVM;
 
 enum SelectedDiskSource
 {

@@ -15,10 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Qt includes: */
-#include <QVariant>
-#include <QPushButton>
-
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIMedium.h"
@@ -29,9 +25,6 @@
 #include "UIWizardNewVDPageVariant.h"
 #include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVDPageExpert.h"
-
-/* COM includes: */
-#include "CMediumFormat.h"
 
 
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
@@ -123,12 +116,6 @@ void UIWizardNewVD::populatePages()
 
 bool UIWizardNewVD::createVirtualDisk()
 {
-    /* Gather attributes: */
-    // const CMediumFormat comMediumFormat = field("mediumFormat").value<CMediumFormat>();
-    // const qulonglong uVariant = field("mediumVariant").toULongLong();
-    // const QString strMediumPath = field("mediumPath").toString();
-    // const qulonglong uSize = field("mediumSize").toULongLong();
-    /* Check attributes: */
     AssertReturn(!m_strMediumPath.isNull(), false);
     AssertReturn(m_uMediumSize > 0, false);
 
