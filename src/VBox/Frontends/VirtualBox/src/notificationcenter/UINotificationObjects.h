@@ -449,6 +449,38 @@ private:
     QString        m_strProfileName;
 };
 
+/** UINotificationProgress extension for cloud console connection create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudConsoleConnectionCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs cloud console connection create notification-progress.
+      * @param  comMachine    Brings the cloud machine for which console connection being created.
+      * @param  strPublicKey  Brings the public key used for console connection being created. */
+    UINotificationProgressCloudConsoleConnectionCreate(const CCloudMachine &comMachine,
+                                                       const QString &strPublicKey);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the cloud machine for which console connection being created. */
+    CCloudMachine  m_comMachine;
+    /** Holds the name acquired from cloud machine. */
+    QString        m_strName;
+    /** Holds the public key used for console connection being created. */
+    QString        m_strPublicKey;
+};
+
 /** UINotificationProgress extension for export appliance functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressApplianceExport : public UINotificationProgress
 {

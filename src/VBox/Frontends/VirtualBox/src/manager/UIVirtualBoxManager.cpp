@@ -1250,17 +1250,11 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup()
                                 QString strName;
                                 if (cloudMachineName(comMachine, strName))
                                 {
-                                    /* Prepare "create console connection" progress: */
-                                    CProgress comProgress = comMachine.CreateConsoleConnection(pDialog->publicKey());
-                                    if (!comMachine.isOk())
-                                        msgCenter().cannotCreateConsoleConnection(comMachine);
-                                    else
-                                    {
-                                        /* Show "create console connection" progress: */
-                                        msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_new_cloud_vm_90px.png", 0, 0);
-                                        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                                            msgCenter().cannotCreateConsoleConnection(comProgress, strName);
-                                    }
+                                    /* Create cloud console connection: */
+                                    UINotificationProgressCloudConsoleConnectionCreate *pNotification =
+                                        new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
+                                                                                               pDialog->publicKey());
+                                    notificationCenter().append(pNotification);
                                 }
                             }
                         }
@@ -1303,17 +1297,11 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine()
                         QString strName;
                         if (cloudMachineName(comMachine, strName))
                         {
-                            /* Prepare "create console connection" progress: */
-                            CProgress comProgress = comMachine.CreateConsoleConnection(pDialog->publicKey());
-                            if (!comMachine.isOk())
-                                msgCenter().cannotCreateConsoleConnection(comMachine);
-                            else
-                            {
-                                /* Show "create console connection" progress: */
-                                msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_new_cloud_vm_90px.png", 0, 0);
-                                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                                    msgCenter().cannotCreateConsoleConnection(comProgress, strName);
-                            }
+                            /* Create cloud console connection: */
+                            UINotificationProgressCloudConsoleConnectionCreate *pNotification =
+                                new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
+                                                                                       pDialog->publicKey());
+                            notificationCenter().append(pNotification);
                         }
                     }
                 }

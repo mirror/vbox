@@ -442,6 +442,46 @@ void UINotificationProgressCloudMachineRemove::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressCloudConsoleConnectionCreate implementation.                                                     *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudConsoleConnectionCreate::UINotificationProgressCloudConsoleConnectionCreate(const CCloudMachine &comMachine,
+                                                                                                       const QString &strPublicKey)
+    : m_comMachine(comMachine)
+    , m_strPublicKey(strPublicKey)
+{
+}
+
+QString UINotificationProgressCloudConsoleConnectionCreate::name() const
+{
+    return UINotificationProgress::tr("Creating cloud console connection ...");
+}
+
+QString UINotificationProgressCloudConsoleConnectionCreate::details() const
+{
+    return UINotificationProgress::tr("<b>Cloud VM Name:</b> %1").arg(m_strName);
+}
+
+CProgress UINotificationProgressCloudConsoleConnectionCreate::createProgress(COMResult &comResult)
+{
+    /* Acquire cloud VM name: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        comResult = m_comMachine;
+        return CProgress();
+    }
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMachine.CreateConsoleConnection(m_strPublicKey);
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressApplianceExport implementation.                                                                  *
 *********************************************************************************************************************************/
 
