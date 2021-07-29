@@ -2173,6 +2173,15 @@ check_gsoap()
         return
       fi
     fi
+    if [ -d "$DEVDIR/common/gsoap" ]; then
+      GSOAP_DIR=`ls -d1 "$DEVDIR"/common/gsoap/v* 2>/dev/null | tail -1`
+      if [ -n "$GSOAP_DIR" -a -d "$GSOAP_DIR" ]; then
+        gsoap_version=`echo "$GSOAP_DIR" | sed -ne 's/^.*\/v\([1-9][0-9.]*\).*$/\1/p'`
+        log_success "found gSOAP tool version $gsoap_version"
+        # No need to configure anything, the build system knows what to do.
+        return
+      fi
+    fi
   fi
   if [ -z "$GSOAP" ]; then
     GSOAP="/usr"
