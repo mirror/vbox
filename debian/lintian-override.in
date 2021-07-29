@@ -5,7 +5,6 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxKeyboard.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSettings.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVMM.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxXPCOM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxXPCOMC.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedFolders.so
@@ -16,14 +15,11 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDragAndDropSvc.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetDHCP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetNAT.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVRDP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxAuth.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxSVCM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxC.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxHeadless.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxPython.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM32.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM64.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSDL.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VirtualBox.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDbg.so
@@ -34,7 +30,6 @@
 %VERPKG%: binary-without-manpage usr/bin/VBoxManage
 %VERPKG%: binary-without-manpage usr/bin/VBoxSDL
 %VERPKG%: binary-without-manpage usr/bin/VBoxTunctl
-%VERPKG%: binary-without-manpage usr/bin/VBoxVRDP
 %VERPKG%: binary-without-manpage usr/bin/VirtualBox
 %VERPKG%: binary-without-manpage usr/bin/VirtualBoxVM
 %VERPKG%: binary-without-manpage usr/bin/rdesktop-vrdp
@@ -57,7 +52,6 @@
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxKeyboard.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxSettings.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxVMM.so
-%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxREM.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxXPCOM.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxSharedFolders.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxSharedClipboard.so
@@ -65,7 +59,6 @@
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxGuestControlSvc.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxHostChannel.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxDragAndDropSvc.so
-%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxVRDP.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxAuth.so
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/bin/rdesktop-vrdp /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDD.so /usr/lib/virtualbox
@@ -81,9 +74,6 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxKeyboard.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxManage /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxPython.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM32.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM64.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxRT.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSDL /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSDL.so /usr/lib/virtualbox
@@ -94,7 +84,6 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDragAndDropSvc.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxTestOGL /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxVMM.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxVRDP.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOM.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOMIPCD /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxAuth.so /usr/lib/virtualbox

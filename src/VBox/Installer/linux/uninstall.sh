@@ -102,6 +102,9 @@ rm -f \
   $PREV_INSTALLATION/components/VBoxRT.so \
   $PREV_INSTALLATION/components/VBoxDDU.so \
   $PREV_INSTALLATION/components/VBoxXPCOM.so \
+  $PREV_INSTALLATION/VBoxREM.so \
+  $PREV_INSTALLATION/VBoxVRDP \
+  $PREV_INSTALLATION/VBoxVRDP.so \
   2> /dev/null
 
 cwd=`pwd`

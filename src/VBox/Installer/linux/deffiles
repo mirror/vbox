@@ -32,7 +32,6 @@ DEFAULT_FILE_NAMES=" \
     VBoxManage \
     VBoxNetDHCP \
     VBoxNetDHCP.so \
-    VBoxREM.so \
     VBoxRT.so \
     VBoxSDL \
     VBoxSDL.so \
@@ -60,8 +59,6 @@ DEFAULT_FILE_NAMES=" \
     VBoxDbg3.so \
     DbgPlugInDiggers.so \
     DBGCPlugInDiggers.so \
-    VBoxVRDP.so \
-    VBoxVRDP \
     VBoxHeadless \
     VBoxHeadless.so \
     VBoxDD2RC.rc \
@@ -82,7 +79,6 @@ DEFAULT_FILE_NAMES=" \
     components/xpti.dat \
     components/VBoxC.so \
     components/VBoxDDU.so \
-    components/VBoxREM.so \
     components/VBoxRT.so \
     components/VBoxVMM.so \
     components/VBoxXPCOM.so \

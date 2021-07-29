@@ -15,7 +15,6 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDragAndDropSvc.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetDHCP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetNAT.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVRDP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxAuth.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxSVCM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxC.so
@@ -32,7 +31,6 @@
 %VERPKG%: binary-without-manpage usr/bin/VBoxManage
 %VERPKG%: binary-without-manpage usr/bin/VBoxSDL
 %VERPKG%: binary-without-manpage usr/bin/VBoxTunctl
-%VERPKG%: binary-without-manpage usr/bin/VBoxVRDP
 %VERPKG%: binary-without-manpage usr/bin/VirtualBox
 %VERPKG%: binary-without-manpage usr/bin/VirtualBoxVM
 %VERPKG%: binary-without-manpage usr/bin/rdesktop-vrdp
@@ -63,7 +61,6 @@
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxGuestControlSvc.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxHostChannel.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxDragAndDropSvc.so
-%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxVRDP.so
 %VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxAuth.so
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/bin/rdesktop-vrdp /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDD.so /usr/lib/virtualbox
@@ -90,7 +87,6 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDragAndDropSvc.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxTestOGL /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxVMM.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxVRDP.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOM.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOMIPCD /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxAuth.so /usr/lib/virtualbox
