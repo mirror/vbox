@@ -2524,9 +2524,11 @@ for option in "$@"; do
     --with-openssl-dir=*)
       OPENSSLDIR=`echo $option | cut -d'=' -f2`
       INCCRYPTO="-I${OPENSSLDIR}/include"
-      LIBCRYPTO="${OPENSSLDIR}/lib/libcrypto.a ${OPENSSLDIR}/lib/libssl.a"
+      LIBCRYPTO="${OPENSSLDIR}/lib/libssl.a ${OPENSSLDIR}/lib/libcrypto.a"
       # On Darwin (at least for macports) static OpenSSL also needs zlib.
       [ "$OS" = "darwin" ] && LIBCRYPTO="$LIBCRYPTO ${OPENSSLDIR}/lib/libz.a"
+      # On Linux static OpenSSL typically needs a few additional libraries.
+      [ "$OS" = "linux" ] && LIBCRYPTO="-ldl $LIBPTHREAD -lm"
       ;;
     --with-ow-dir=*)
       WATCOM=`echo $option | cut -d'=' -f2`
