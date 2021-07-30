@@ -98,6 +98,31 @@ VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM);
 # endif
 #endif
 
+/** @def PDM_CRITSECT_RELEASE_ASSERT_RC
+ * Helper for PDMCritSectEnter w/ rcBusy VINF_SUCCESS when there is no way
+ * to forward failures to the caller. */
+#define PDM_CRITSECT_RELEASE_ASSERT_RC(a_pVM, a_pCritSect, a_rc) \
+    AssertReleaseMsg(RT_SUCCESS(a_rc), ("pVM=%p pCritSect=%p: %Rrc\n", (a_pVM), (a_pCritSect), (a_rc))
+
+/** @def PDM_CRITSECT_RELEASE_ASSERT_RC_DEV
+ * Helper for PDMCritSectEnter w/ rcBusy VINF_SUCCESS when there is no way
+ * to forward failures to the caller, device edition. */
+#define PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(a_pDevIns, a_pCritSect, a_rc) \
+    AssertReleaseMsg(RT_SUCCESS(a_rc), ("pDevIns=%p pCritSect=%p: %Rrc\n", (a_pDevIns), (a_pCritSect), (a_rc))
+
+/** @def PDM_CRITSECT_RELEASE_ASSERT_RC_DRV
+ * Helper for PDMCritSectEnter w/ rcBusy VINF_SUCCESS when there is no way
+ * to forward failures to the caller, driver edition. */
+#define PDM_CRITSECT_RELEASE_ASSERT_RC_DRV(a_pDevIns, a_pCritSect, a_rc) \
+    AssertReleaseMsg(RT_SUCCESS(a_rc), ("pDrvIns=%p pCritSect=%p: %Rrc\n", (a_pDrvIns), (a_pCritSect), (a_rc))
+
+/** @def PDM_CRITSECT_RELEASE_ASSERT_RC_USB
+ * Helper for PDMCritSectEnter w/ rcBusy VINF_SUCCESS when there is no way
+ * to forward failures to the caller, USB device edition. */
+#define PDM_CRITSECT_RELEASE_ASSERT_RC_USB(a_pUsbIns, a_pCritSect, a_rc) \
+    AssertReleaseMsg(RT_SUCCESS(a_rc), ("pUsbIns=%p pCritSect=%p: %Rrc\n", (a_pUsbIns), (a_pCritSect), (a_rc))
+
+
 /** @} */
 
 RT_C_DECLS_END

@@ -7890,8 +7890,9 @@ DECLINLINE(int) PDMDevHlpSetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCri
  *                              call if necessary.
  *
  * @note    Even callers setting @a rcBusy to VINF_SUCCESS must either handle
- *          possible failures in ring-0 or apply an AssertReleaseRC() to the
- *          return value of this function.
+ *          possible failures in ring-0 or at least apply
+ *          PDM_CRITSECT_RELEASE_ASSERT_RC_DEV() to the return value of this
+ *          function.
  *
  * @sa      PDMCritSectEnter
  */

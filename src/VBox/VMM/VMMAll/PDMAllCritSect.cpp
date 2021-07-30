@@ -517,8 +517,12 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
  *                              call if necessary.
  *
  * @note    Even callers setting @a rcBusy to VINF_SUCCESS must either handle
- *          possible failures in ring-0 or apply an AssertReleaseRC() to the
- *          return value of this function.
+ *          possible failures in ring-0 or apply
+ *          PDM_CRITSECT_RELEASE_ASSERT_RC(),
+ *          PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(),
+ *          PDM_CRITSECT_RELEASE_ASSERT_RC_DRV() or
+ *          PDM_CRITSECT_RELEASE_ASSERT_RC_USB() to the return value of this
+ *          function.
  */
 VMMDECL(int) PDMCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy)
 {
