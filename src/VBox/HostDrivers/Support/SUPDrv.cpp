@@ -448,6 +448,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTThreadPreemptIsPendingTrusty",         (void *)(uintptr_t)RTThreadPreemptIsPendingTrusty },
     { "RTThreadPreemptIsPossible",              (void *)(uintptr_t)RTThreadPreemptIsPossible },
     { "RTThreadPreemptRestore",                 (void *)(uintptr_t)RTThreadPreemptRestore },
+    { "RTThreadQueryTerminationStatus",         (void *)(uintptr_t)RTThreadQueryTerminationStatus },
     { "RTThreadSelf",                           (void *)(uintptr_t)RTThreadSelf },
     { "RTThreadSelfName",                       (void *)(uintptr_t)RTThreadSelfName },
     { "RTThreadSleep",                          (void *)(uintptr_t)RTThreadSleep },
