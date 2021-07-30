@@ -282,26 +282,41 @@ struct DiskImage
 };
 
 enum ResourceType_T
-{   ResourceType_Other   = 1,
-    ResourceType_ComputerSystem  = 2,
-    ResourceType_Processor   = 3,
-    ResourceType_Memory  = 4,
-    ResourceType_IDEController   = 5,
-    ResourceType_ParallelSCSIHBA = 6,
-    ResourceType_FCHBA   = 7,
-    ResourceType_iSCSIHBA    = 8,
-    ResourceType_IBHCA   = 9,
-    ResourceType_EthernetAdapter = 10,
-    ResourceType_OtherNetworkAdapter = 11,
-    ResourceType_IOSlot  = 12,
-    ResourceType_IODevice    = 13,
-    ResourceType_FloppyDrive = 14,
-    ResourceType_CDDrive = 15,
-    ResourceType_DVDDrive    = 16,
-    ResourceType_HardDisk    = 17,
+{
+    ResourceType_Other  = 1,
+    ResourceType_ComputerSystem = 2,
+    ResourceType_Processor  = 3,
+    ResourceType_Memory = 4,
+    ResourceType_IDEController  = 5,
+    ResourceType_ParallelSCSIHBA    = 6,
+    ResourceType_FCHBA  = 7,
+    ResourceType_iSCSIHBA   = 8,
+    ResourceType_IBHCA  = 9,
+    ResourceType_EthernetAdapter    = 10,
+    ResourceType_OtherNetworkAdapter    = 11,
+    ResourceType_IOSlot = 12,
+    ResourceType_IODevice   = 13,
+    ResourceType_FloppyDrive    = 14,
+    ResourceType_CDDrive    = 15,
+    ResourceType_DVDDrive   = 16,
+    ResourceType_HardDisk   = 17,
+    ResourceType_TapeDrive  = 18,
+    ResourceType_StorageExtent  = 19,
     ResourceType_OtherStorageDevice  = 20,
-    ResourceType_USBController   = 23,
-    ResourceType_SoundCard   = 35
+    ResourceType_SerialPort = 21,
+    ResourceType_ParallelPort   = 22,
+    ResourceType_USBController  = 23,
+    ResourceType_GraphicsController = 24,
+    ResourceType_IEEE1394Controller = 25,
+    ResourceType_PartitionableUnit  = 26,
+    ResourceType_BasePartitionableUnit  = 27,
+    ResourceType_Power  = 28,
+    ResourceType_CoolingCapacity    = 29,
+    ResourceType_EthernetSwitchPort = 30,
+    ResourceType_LogicalDisk    = 31,
+    ResourceType_StorageVolume  = 32,
+    ResourceType_EthernetConnection = 33,
+    ResourceType_SoundCard  = 35    /**< @todo r=klaus: Not part of OVF/CIM spec, should use "Other" or some value from 0x8000..0xffff. */
 };
 
 
@@ -326,8 +341,8 @@ public:
     RTCString strCaption;
     RTCString strElementName;
 
-    uint32_t ulInstanceID;
-    uint32_t ulParent;
+    RTCString strInstanceID;
+    RTCString strParent;
 
     ResourceType_T resourceType;
     RTCString strOtherResourceType;
@@ -360,8 +375,7 @@ public:
     int m_iLineNumber;           ///< line number of \<Item\> element in XML source; cached for error messages
 
     VirtualHardwareItem()
-        : ulInstanceID(0)
-        , fResourceRequired(false)
+        : fResourceRequired(false)
         , fAutomaticAllocation(false)
         , fAutomaticDeallocation(false)
         , ullVirtualQuantity(0)
@@ -541,12 +555,12 @@ private:
 
 struct HardDiskController
 {
-    uint32_t                idController;       // instance ID (Item/InstanceId); this gets referenced from VirtualDisk
+    RTCString               strIdController;    // instance ID (Item/InstanceId); this gets referenced from VirtualDisk
 
     enum ControllerSystemType { IDE, SATA, SCSI, VIRTIOSCSI };
     ControllerSystemType    system;             // one of IDE, SATA, SCSI, VIRTIOSCSI
 
-    RTCString        strControllerType;
+    RTCString               strControllerType;
             // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
             // note that we treat LsiLogicSAS as a SCSI controller (system == SCSI) even though VirtualBox
             // treats it as a fourth class besides IDE, SATA, SCSI
@@ -557,25 +571,24 @@ struct HardDiskController
                                                 // false for the next (e.g. IDE secondary ctler)
 
     HardDiskController()
-        : idController(0),
-          lAddress(0),
+        : lAddress(0),
           fPrimary(true)
     { }
 };
 
-typedef std::map<uint32_t, HardDiskController> ControllersMap;
+typedef std::map<RTCString, HardDiskController> ControllersMap;
 
 struct VirtualDisk
 {
-    uint32_t    idController;// SCSI (or IDE) controller this disk is connected to;
-                             // this must match HardDiskController.idController and
-                             // points into VirtualSystem.mapControllers
-    uint32_t    ulAddressOnParent;// parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
-                                  // and possibly higher for disks attached to SCSI controllers (untested)
-    RTCString   strDiskId;// if the hard disk has an ovf:/disk/<id> reference,
-                          // this receives the <id> component; points to one of the
-                          // references in Appliance::Data.mapDisks
-    bool        fEmpty;//true - empty disk, e.g. the component <rasd:HostResource>...</rasd:HostResource> is absent.
+    RTCString   strIdController;    // SCSI (or IDE) controller this disk is connected to;
+                                    // this must match HardDiskController.strIdController and
+                                    // points into VirtualSystem.mapControllers
+    uint32_t    ulAddressOnParent;  // parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
+                                    // and possibly higher for disks attached to SCSI controllers (untested)
+    RTCString   strDiskId;          // if the hard disk has an ovf:/disk/<id> reference,
+                                    // this receives the <id> component; points to one of the
+                                    // references in Appliance::Data.mapDisks
+    bool        fEmpty; //true - empty disk, e.g. the component <rasd:HostResource>...</rasd:HostResource> is absent.
 };
 
 typedef std::map<RTCString, VirtualDisk> VirtualDisksMap;
@@ -602,7 +615,7 @@ struct VirtualSystem
 
     RTCString    strDescription;         // copy of VirtualSystem/AnnotationSection content, if any
 
-    CIMOSType_T         cimos;
+    CIMOSType_T  cimos;
     RTCString    strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
     RTCString    strTypeVBox;            // optional type from @vbox:ostype attribute (VirtualBox 4.0 or higher)
 
