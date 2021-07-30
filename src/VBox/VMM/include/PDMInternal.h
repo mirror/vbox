@@ -443,12 +443,18 @@ typedef struct PDMCRITSECTINT
     STAMCOUNTER                     StatContentionRZUnlock;
     /** R3 lock contention. */
     STAMCOUNTER                     StatContentionR3;
+    /** Profiling waiting on the lock (all rings). */
+    STAMPROFILE                     StatContentionWait;
     /** Profiling the time the section is locked. */
     STAMPROFILEADV                  StatLocked;
 } PDMCRITSECTINT;
 AssertCompileMemberAlignment(PDMCRITSECTINT, StatContentionRZLock, 8);
 /** Pointer to private critical section data. */
 typedef PDMCRITSECTINT *PPDMCRITSECTINT;
+
+/** Special magic value set when we failed to abort entering in ring-0 due to a
+ * timeout, interruption or pending thread termination. */
+#define PDMCRITSECT_MAGIC_FAILED_ABORT      UINT32_C(0x0bad0326)
 
 /** Indicates that the critical section is queued for unlock.
  * PDMCritSectIsOwner and PDMCritSectIsOwned optimizations. */
@@ -1465,6 +1471,11 @@ typedef struct PDM
 
     /** Number of times a critical section leave request needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;
+    /** Number of times we've successfully aborted a wait in ring-0. */
+    STAMCOUNTER                     StatAbortedCritSectEnters;
+    /** Number of times we've got the critical section ownership while trying to
+     * abort a wait due to VERR_INTERRUPTED. */
+    STAMCOUNTER                     StatCritSectEntersWhileAborting;
 } PDM;
 AssertCompileMemberAlignment(PDM, CritSect, 8);
 AssertCompileMemberAlignment(PDM, aTaskSets, 64);

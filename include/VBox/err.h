@@ -1602,6 +1602,8 @@
 
 /** Returned by PCI config space callbacks to indicate taking default action. */
 #define VINF_PDM_PCI_DO_DEFAULT                     (7200)
+/** Failed to abort entering a critical section in ring-0. */
+#define VERR_PDM_CRITSECT_ABORT_FAILED              (-7201)
 /** @} */
 
 

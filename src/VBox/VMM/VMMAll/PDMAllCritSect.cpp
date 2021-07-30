@@ -36,6 +36,9 @@
 # include <iprt/lockvalidator.h>
 # include <iprt/semaphore.h>
 #endif
+#ifdef IN_RING0
+# include <iprt/time.h>
+#endif
 #if defined(IN_RING3) || defined(IN_RING0)
 # include <iprt/thread.h>
 #endif
@@ -124,13 +127,15 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_SEM_DESTROYED if destroyed.
  *
- * @param   pVM                 The cross context VM structure.
- * @param   pCritSect           The critsect.
- * @param   hNativeSelf         The native thread handle.
- * @param   pSrcPos             The source position of the lock operation.
- * @param   rcBusy              The status code to return when we're in RC or R0
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure if ring-0 and on
+ *                      an EMT, otherwise NULL.
+ * @param   pCritSect   The critsect.
+ * @param   hNativeSelf The native thread handle.
+ * @param   pSrcPos     The source position of the lock operation.
+ * @param   rcBusy      The status code to return when we're in RC or R0
  */
-static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf,
+static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf,
                                          PCRTLOCKVALSRCPOS pSrcPos, int rcBusy)
 {
     /*
@@ -146,18 +151,26 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
 
     /*
      * The wait loop.
+     *
+     * This handles VERR_TIMEOUT and VERR_INTERRUPTED.
      */
-    PSUPDRVSESSION  pSession    = pVM->pSession;
-    SUPSEMEVENT     hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
+    STAM_REL_PROFILE_START(&pCritSect->s.StatWait, a);
+    PSUPDRVSESSION const    pSession    = pVM->pSession;
+    SUPSEMEVENT const       hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
 # ifdef IN_RING3
 #  ifdef PDMCRITSECT_STRICT
-    RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
+    RTTHREAD const          hThreadSelf = RTThreadSelfAutoAdopt();
     int rc2 = RTLockValidatorRecExclCheckOrder(pCritSect->s.Core.pValidatorRec, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc2))
         return rc2;
 #  else
-    RTTHREAD        hThreadSelf = RTThreadSelf();
+    RTTHREAD const          hThreadSelf = RTThreadSelf();
 #  endif
+# else /* IN_RING0 */
+    uint64_t const          tsStart     = RTTimeNanoTS();
+    uint64_t                cNsMaxTotal = RT_NS_5MIN;
+    uint64_t const          cNsMaxRetry = RT_NS_15SEC;
+    uint32_t                cMsMaxOne   = RT_MS_5SEC;
 # endif
     for (;;)
     {
@@ -185,63 +198,158 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PPDMCRITSECT pCritSect, RTNA
 #  else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_CRITSECT, true);
 #  endif
-        int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_MS_5SEC);
+        int const rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_MS_5SEC);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
 # else  /* IN_RING0 */
-        int rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_MS_5SEC);
+        int const rc = SUPSemEventWaitNoResume(pSession, hEvent, cMsMaxOne);
 # endif /* IN_RING0 */
 
         /*
-         * Deal with the return code and critsect destruction.
+         * Make sure the critical section hasn't been delete before continuing.
          */
         if (RT_LIKELY(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC))
         { /* likely */ }
         else
+        {
+            LogRel(("PDMCritSectEnter: Destroyed while waiting; pCritSect=%p rc=%Rrc\n", pCritSect, rc));
             return VERR_SEM_DESTROYED;
+        }
+
+        /*
+         * Most likely we're here because we got signalled.
+         */
         if (rc == VINF_SUCCESS)
+        {
+            STAM_REL_PROFILE_STOP(&pCritSect->s.StatContentionWait, a);
             return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
-        if (RT_LIKELY(rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED))
-        { /* likely */ }
+        }
+
+        /*
+         * Timeout and interrupted waits needs careful handling in ring-0
+         * because we're cooperating with ring-3 on this critical section
+         * and thus need to make absolutely sure we won't get stuck here.
+         *
+         * The r0 interrupted case means something is pending (termination,
+         * signal, APC, debugger, whatever), so we must try our best to
+         * return to the caller and to ring-3 so it can be dealt with.
+         */
+        if (RT_LIKELY(rc == VINF_TIMEOUT || rc == VERR_INTERRUPTED))
+        {
+# ifdef IN_RING0
+            uint64_t const cNsElapsed = RTTimeNanoTS() - tsStart;
+            int const      rcTerm     = RTThreadQueryTerminationStatus(NIL_RTTHREAD);
+            AssertMsg(rcTerm == VINF_SUCCESS || rcTerm == VERR_NOT_SUPPORTED || rcTerm == VINF_THREAD_IS_TERMINATING,
+                      ("rcTerm=%Rrc\n", rcTerm));
+            if (rcTerm == VERR_NOT_SUPPORTED)
+                cNsMaxTotal = RT_NS_1MIN;
+
+            if (rc == VERR_TIMEOUT)
+            {
+                /* Try return get out of here with a non-VINF_SUCCESS status if
+                   the thread is terminating or if the timeout has been exceeded. */
+                if (   rcTerm != VINF_THREAD_IS_TERMINATING
+                    && cNsElapsed <= cNsMaxTotal)
+                    continue;
+            }
+            else
+            {
+                /* For interrupt cases, we must return if we can.  Only if we */
+                if (   rcTerm != VINF_THREAD_IS_TERMINATING
+                    && rcBusy == VINF_SUCCESS
+                    && pVCpu != NULL
+                    && cNsElapsed <= cNsMaxTotal)
+                    continue;
+            }
+
+            /*
+             * Let try get out of here.  We must very carefully undo the
+             * cLockers increment we did using compare-and-exchange so that
+             * we don't race the semaphore signalling in PDMCritSectLeave
+             * and end up with spurious wakeups and two owners at once.
+             */
+            uint32_t cNoIntWaits = 0;
+            uint32_t cCmpXchgs   = 0;
+            int32_t  cLockers    = ASMAtomicReadS32(&pCritSect->s.Core.cLockers);
+            for (;;)
+            {
+                if (pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC)
+                {
+                    if (cLockers > 0 && cCmpXchgs < _64M)
+                    {
+                        bool fRc = ASMAtomicCmpXchgExS32(&pCritSect->s.Core.cLockers, cLockers - 1, cLockers, &cLockers);
+                        if (fRc)
+                        {
+                            LogFunc(("Aborting wait on %p (rc=%Rrc rcTerm=%Rrc cNsElapsed=%'RU64) -> %Rrc\n", pCritSect,
+                                     rc, rcTerm, cNsElapsed, rcBusy != VINF_SUCCESS ? rcBusy : rc));
+                            STAM_REL_COUNTER_INC(&pVM->pdm.s.StatAbortedCritSectEnters);
+                            return rcBusy != VINF_SUCCESS ? rcBusy : rc;
+                        }
+                        cCmpXchgs++;
+                        ASMNopPause();
+                        continue;
+                    }
+
+                    if (cLockers == 0)
+                    {
+                        /*
+                         * We are racing someone in PDMCritSectLeave.
+                         *
+                         * For the VERR_TIMEOUT case we'll just retry taking it the normal
+                         * way for a while.  For VERR_INTERRUPTED we're in for more fun as
+                         * the previous owner might not have signalled the semaphore yet,
+                         * so we'll do a short non-interruptible wait instead and then guru.
+                         */
+                        if (   rc == VERR_TIMEOUT
+                            && RTTimeNanoTS() - tsStart <= cNsMaxTotal + cNsMaxRetry)
+                            break;
+
+                        if (   rc == VERR_INTERRUPTED
+                            && (   cNoIntWaits == 0
+                                || RTTimeNanoTS() - (tsStart + cNsElapsed) < RT_NS_100MS))
+                        {
+                            int const rc2 = SUPSemEventWait(pSession, hEvent, 1 /*ms*/);
+                            if (rc2 == VINF_SUCCESS)
+                            {
+                                STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectEntersWhileAborting);
+                                STAM_REL_PROFILE_STOP(&pCritSect->s.StatContentionWait, a);
+                                return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
+                            }
+                            cNoIntWaits++;
+                            cLockers = ASMAtomicReadS32(&pCritSect->s.Core.cLockers);
+                            continue;
+                        }
+                    }
+                    else
+                        LogFunc(("Critical section %p has a broken cLockers count. Aborting.\n", pCritSect));
+
+                    /* Sabotage the critical section and return error to caller. */
+                    ASMAtomicWriteU32(&pCritSect->s.Core.u32Magic, PDMCRITSECT_MAGIC_FAILED_ABORT);
+                    LogRel(("PDMCritSectEnter: Failed to abort wait on pCritSect=%p (rc=%Rrc rcTerm=%Rrc)\n",
+                            pCritSect, rc, rcTerm));
+                    return VERR_PDM_CRITSECT_ABORT_FAILED;
+                }
+                LogRel(("PDMCritSectEnter: Destroyed while aborting wait; pCritSect=%p/%#x rc=%Rrc rcTerm=%Rrc\n",
+                        pCritSect, pCritSect->s.Core.u32Magic, rc, rcTerm));
+                return VERR_SEM_DESTROYED;
+            }
+
+            /* We get here if we timed out.  Just retry now that it
+               appears someone left already. */
+            Assert(rc == VINF_TIMEOUT);
+            cMsMaxOne = 10 /*ms*/;
+
+# else  /* IN_RING3 */
+            RT_NOREF(pVM, pVCpu, rcBusy);
+# endif /* IN_RING3 */
+        }
+        /*
+         * Any other return code is fatal.
+         */
         else
         {
             AssertMsgFailed(("rc=%Rrc\n", rc));
-            return rc;
+            return RT_FAILURE_NP(rc) ? rc : -rc;
         }
-
-# ifdef IN_RING0
-        /* Something is pending (signal, APC, debugger, whatever), just go back
-           to ring-3 so the kernel can deal with it when leaving kernel context.
-
-           Note! We've incremented cLockers already and cannot safely decrement
-                 it without creating a race with PDMCritSectLeave, resulting in
-                 spurious wakeups. */
-        RT_NOREF(rcBusy);
-        /** @todo eliminate this and return rcBusy instead.  Guru if rcBusy is
-         *        VINF_SUCCESS.
-         *
-         * Update: If we use cmpxchg to carefully decrement cLockers, we can avoid the
-         * race and spurious wakeup.  The race in question are the two decrement
-         * operations, if we lose out to the PDMCritSectLeave CPU, it will signal the
-         * semaphore and leave it signalled while cLockers is zero.  If we use cmpxchg
-         * to make sure this won't happen and repeate the loop should cLockers reach
-         * zero (i.e. we're the only one around and the semaphore is or will soon be
-         * signalled), we can make this work.
-         *
-         * The ring-0 RTSemEventWaitEx code never return VERR_INTERRUPTED for an already
-         * signalled event, however we're racing the signal call here so it may not yet
-         * be sinalled when we call RTSemEventWaitEx again...  Maybe do a
-         * non-interruptible wait for a short while?  Or put a max loop count on this?
-         * There is always the possiblity that the thread is in user mode and will be
-         * killed before it gets to waking up the next waiting thread...  We probably
-         * need a general timeout here for ring-0 waits and retun rcBusy/guru if it
-         * we get stuck here for too long...
-         */
-        PVMCPUCC pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
-        rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
-        AssertRC(rc);
-# else
-        RT_NOREF(pVM, rcBusy);
-# endif
     }
     /* won't get here */
 }
@@ -324,7 +432,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
      * Take the slow path.
      */
     NOREF(rcBusy);
-    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
+    return pdmR3R0CritSectEnterContended(pVM, NULL, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
 #elif defined(IN_RING0)
 # if 0 /* new code */
@@ -348,7 +456,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
         {
             Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-            rc = pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
+            rc = pdmR3R0CritSectEnterContended(pVM, pVCpu, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
             VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
         }
@@ -359,7 +467,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
 
     /* Non-EMT. */
     Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
+    return pdmR3R0CritSectEnterContended(pVM, NULL, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
 # else /* old code: */
     /*
@@ -367,7 +475,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
      */
     if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
         && ASMIntAreEnabled())
-        return pdmR3R0CritSectEnterContended(pVM, pCritSect, hNativeSelf, pSrcPos, rcBusy);
+        return pdmR3R0CritSectEnterContended(pVM, VMMGetCpu(pVM), pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
 

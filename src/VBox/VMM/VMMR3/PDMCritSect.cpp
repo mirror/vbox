@@ -54,8 +54,12 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
 int pdmR3CritSectBothInitStats(PVM pVM)
 {
     RT_NOREF_PV(pVM);
-    STAM_REG(pVM, &pVM->pdm.s.StatQueuedCritSectLeaves, STAMTYPE_COUNTER, "/PDM/QueuedCritSectLeaves", STAMUNIT_OCCURENCES,
-             "Number of times a critical section leave request needed to be queued for ring-3 execution.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatQueuedCritSectLeaves, STAMTYPE_COUNTER, "/PDM/QueuedCritSectLeaves", STAMUNIT_OCCURENCES,
+                 "Number of times a critical section leave request needed to be queued for ring-3 execution.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatAbortedCritSectEnters, STAMTYPE_COUNTER, "/PDM/AbortedCritSectEnters", STAMUNIT_OCCURENCES,
+                 "Number of times we've successfully aborted a wait in ring-0.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectEntersWhileAborting, STAMTYPE_COUNTER, "/PDM/CritSectEntersWhileAborting", STAMUNIT_OCCURENCES,
+                 "Number of times we've got the critical section ownership while trying to abort a wait due to VERR_INTERRUPTED.");
     return VINF_SUCCESS;
 }
 
@@ -163,12 +167,19 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 pCritSect->hEventToSignal            = NIL_SUPSEMEVENT;
                 pCritSect->pszName                   = pszName;
 
-                STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pCritSect->pszName);
-                STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLockBusy,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLockBusy", pCritSect->pszName);
-                STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pCritSect->pszName);
-                STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLockBusy,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLockBusy", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatContentionWait,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/ContentionWait", pCritSect->pszName);
 #ifdef VBOX_WITH_STATISTICS
-                STAMR3RegisterF(pVM, &pCritSect->StatLocked,            STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatLocked,            STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pCritSect->pszName);
 #endif
 
                 PUVM pUVM = pVM->pUVM;
