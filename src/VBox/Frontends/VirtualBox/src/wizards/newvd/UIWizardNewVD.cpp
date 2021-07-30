@@ -93,18 +93,17 @@ void UIWizardNewVD::populatePages()
     switch (mode())
     {
         case WizardMode_Basic:
-        case WizardMode_Expert:
         {
             addPage(new UIWizardNewVDPageFileType);
             m_iMediumVariantPageIndex = addPage(new UIWizardNewVDPageVariant);
             addPage(new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;
         }
-
-        // {
-        //     //addPage(new UIWizardNewVDPageExpert);
-        //     break;
-        // }
+       case WizardMode_Expert:
+        {
+            addPage(new UIWizardNewVDPageExpert(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+            break;
+        }
         default:
         {
             AssertMsgFailed(("Invalid mode: %d", mode()));

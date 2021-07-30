@@ -46,6 +46,9 @@ private slots:
 
     void sltMediumFormatChanged();
     void sltSelectLocationButtonClicked();
+    void sltMediumVariantChanged(qulonglong uVariant);
+    void sltMediumPathChanged(const QString &strPath);
+    void sltMediumSizeChanged(qulonglong uSize);
 
 private:
 

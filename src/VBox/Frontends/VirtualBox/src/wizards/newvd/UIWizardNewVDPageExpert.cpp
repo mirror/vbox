@@ -73,6 +73,9 @@ void UIWizardNewVDPageExpert::prepare()
 
     connect(m_pFormatGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
             this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);
+    connect(m_pVariantGroup, &UIDiskVariantGroupBox::sigMediumVariantChanged,
+            this, &UIWizardNewVDPageExpert::sltMediumVariantChanged);
+
 //     connect(m_pFixedCheckBox, &QAbstractButton::toggled,
 //             this, &UIWizardNewVDPageExpert::completeChanged);
 //     connect(m_pSplitBox, &QCheckBox::stateChanged,
@@ -84,9 +87,32 @@ void UIWizardNewVDPageExpert::prepare()
 //     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
 //             this, &UIWizardNewVDPageExpert::completeChanged);
 
+    connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
+            this, &UIWizardNewVDPageExpert::sltMediumSizeChanged);
+
+    connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
+            this, &UIWizardNewVDPageExpert::sltMediumPathChanged);
 
     retranslateUi();
 
+}
+
+void UIWizardNewVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
+{
+    newVDWizardPropertySet(MediumSize, uSize);
+    emit completeChanged();
+}
+
+void UIWizardNewVDPageExpert::sltMediumPathChanged(const QString &strPath)
+{
+    newVDWizardPropertySet(MediumPath, strPath);
+    emit completeChanged();
+}
+
+void UIWizardNewVDPageExpert::sltMediumVariantChanged(qulonglong uVariant)
+{
+    newVDWizardPropertySet(MediumVariant, uVariant);
+    emit completeChanged();
 }
 
 void UIWizardNewVDPageExpert::sltMediumFormatChanged()
@@ -109,6 +135,7 @@ void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
                                               UIDiskEditorGroupBox::defaultExtensionForMediumFormat(pWizard->mediumFormat()));
     QFileInfo mediumPath(strMediumPath);
     m_pSizeAndPathGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
+    emit completeChanged();
 }
 
 void UIWizardNewVDPageExpert::retranslateUi()
@@ -172,47 +199,44 @@ void UIWizardNewVDPageExpert::initializePage()
 
 bool UIWizardNewVDPageExpert::isComplete() const
 {
-    /* Make sure medium format/variant is correct,
-     * current name is not empty and current size feats the bounds: */
-    // return !mediumFormat().isNull() &&
-    //        mediumVariant() != (qulonglong)KMediumVariant_Max &&
-    //        !m_pLocationEditor->text().trimmed().isEmpty() &&
-    //        mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
-    return false;
+    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    AssertReturn(pWizard, false);
+    if (pWizard->mediumFormat().isNull())
+        return false;
+    if (pWizard->mediumVariant() == (qulonglong)KMediumVariant_Max)
+        return false;
+    if (pWizard->mediumPath().isEmpty())
+        return false;
+    if (pWizard->mediumSize() > m_uMediumSizeMax || pWizard->mediumSize() < m_uMediumSizeMin)
+        return false;
+    return true;
 }
 
 bool UIWizardNewVDPageExpert::validatePage()
 {
-    /* Initial result: */
     bool fResult = true;
+    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    AssertReturn(pWizard, false);
+    /* Make sure such file doesn't exist already: */
+    const QString strMediumPath(pWizard->mediumPath());
+    fResult = !QFileInfo(strMediumPath).exists();
+    if (!fResult)
+    {
+        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+        return fResult;
+    }
 
-    // /* Make sure such file doesn't exist already: */
-    // const QString strMediumPath(mediumPath());
-    // fResult = !QFileInfo(strMediumPath).exists();
-    // if (!fResult)
-    // {
-    //     msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-    //     return fResult;
-    // }
+    /* Make sure we are passing FAT size limitation: */
+    fResult = UIDiskEditorGroupBox::checkFATSizeLimitation(pWizard->mediumVariant(),
+                                     pWizard->mediumPath(),
+                                     pWizard->mediumSize());
+    if (!fResult)
+    {
+        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+        return fResult;
+    }
 
-    // /* Make sure we are passing FAT size limitation: */
-    // fResult = UIWizardNewVDPageBaseSizeLocation::checkFATSizeLimitation(fieldImp("mediumVariant").toULongLong(),
-    //                                                      fieldImp("mediumPath").toString(),
-    //                                                      fieldImp("mediumSize").toULongLong());
-    // if (!fResult)
-    // {
-    //     msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-    //     return fResult;
-    // }
-
-    // /* Lock finish button: */
-    // startProcessing();
-    // /* Try to create virtual-disk: */
-    // fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
-    // /* Unlock finish button: */
-    // endProcessing();
-
-    /* Return result: */
+    fResult = pWizard->createVirtualDisk();
     return fResult;
 }
 
