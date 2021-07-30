@@ -440,7 +440,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineAdd : public UINoti
 signals:
 
     /** Notifies listeners about cloud @a comMachine was added.
-      * @param  strProviderShortName  Brigns the short provider name.
+      * @param  strProviderShortName  Brings the short provider name.
       * @param  strProfileName        Brings the profile name. */
     void sigCloudMachineAdded(const QString &strProviderShortName,
                               const QString &strProfileName,
@@ -496,7 +496,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineCreate : public UIN
 signals:
 
     /** Notifies listeners about cloud @a comMachine was created.
-      * @param  strProviderShortName  Brigns the short provider name.
+      * @param  strProviderShortName  Brings the short provider name.
       * @param  strProfileName        Brings the profile name. */
     void sigCloudMachineCreated(const QString &strProviderShortName,
                                 const QString &strProfileName,
@@ -554,7 +554,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineRemove : public UIN
 signals:
 
     /** Notifies listeners about cloud machine was removed.
-      * @param  strProviderShortName  Brigns the short provider name.
+      * @param  strProviderShortName  Brings the short provider name.
       * @param  strProfileName        Brings the profile name.
       * @param  strName               Brings the machine name. */
     void sigCloudMachineRemoved(const QString &strProviderShortName,
@@ -819,7 +819,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressExtensionPackInstall : public U
 signals:
 
     /** Notifies listeners about extension pack installed.
-      * @param  strExtensionPackName  Brigns extension pack name. */
+      * @param  strExtensionPackName  Brings extension pack name. */
     void sigExtensionPackInstalled(const QString &strExtensionPackName);
 
 public:
@@ -868,7 +868,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressExtensionPackUninstall : public
 signals:
 
     /** Notifies listeners about extension pack uninstalled.
-      * @param  strExtensionPackName  Brigns extension pack name. */
+      * @param  strExtensionPackName  Brings extension pack name. */
     void sigExtensionPackUninstalled(const QString &strExtensionPackName);
 
 public:

@@ -560,7 +560,7 @@ void DarwinDisableGlobalHotKeys(bool fDisable)
 
 /** Callback function for consuming queued events.
   * @param   pvTarget  Brings the queue?
-  * @param   rcIn      Brigns what?
+  * @param   rcIn      Brings what?
   * @param   pvRefcon  Brings the pointer to the keyboard cache entry.
   * @param   pvSender  Brings what? */
 static void darwinQueueCallback(void *pvTarget, IOReturn rcIn, void *pvRefcon, void *pvSender)

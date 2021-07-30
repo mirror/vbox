@@ -31,7 +31,6 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
-#include "UIFDCreationDialog.h"
 #include "UIMediumSearchWidget.h"
 #include "UIMediumSelector.h"
 #include "UIMessageCenter.h"

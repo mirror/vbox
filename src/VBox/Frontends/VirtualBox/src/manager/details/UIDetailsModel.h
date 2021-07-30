@@ -268,14 +268,14 @@ signals:
 
     /** Notifies listeners about all animations finished.
       * @param  enmType   Brings the type of element item which was animated.
-      * @param  fToggled  Brigns whether elements being toggled to be closed or opened. */
+      * @param  fToggled  Brings whether elements being toggled to be closed or opened. */
     void sigAllAnimationFinished(DetailsElementType enmType, bool fToggled);
 
 public:
 
     /** Constructors details element animation callback passing @a pParent to the base-class.
       * @param  enmType   Brings the type of element item which was animated.
-      * @param  fToggled  Brigns whether elements being toggled to be closed or opened. */
+      * @param  fToggled  Brings whether elements being toggled to be closed or opened. */
     UIDetailsElementAnimationCallback(QObject *pParent, DetailsElementType enmType, bool fToggled);
 
     /** Adds notifier for a certain details @a pItem. */

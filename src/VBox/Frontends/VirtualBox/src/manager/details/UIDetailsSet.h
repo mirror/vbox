@@ -57,7 +57,7 @@ public:
         /** Cleanups set, wiping out machine-item and [cloud]machine information for good. */
         void clearSet();
         /** Builds set based on passed @a pMachineItem.
-          * @param  fFullSet  Brigns whether full set should be built.
+          * @param  fFullSet  Brings whether full set should be built.
           * @param  settings  Brings details related settings. */
         void buildSet(UIVirtualMachineItem *pMachineItem, bool fFullSet, const QMap<DetailsElementType, bool> &settings);
 
