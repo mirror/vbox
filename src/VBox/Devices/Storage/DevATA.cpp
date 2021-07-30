@@ -896,7 +896,7 @@ static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED,  { { 0, 0,
 static void ataR3AsyncIOClearRequests(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
 {
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->AsyncIORequestLock, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->AsyncIORequestLock, rc);
 
     pCtl->AsyncIOReqHead = 0;
     pCtl->AsyncIOReqTail = 0;
@@ -909,7 +909,7 @@ static void ataR3AsyncIOClearRequests(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
 static void ataHCAsyncIOPutRequest(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, const ATARequest *pReq)
 {
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->AsyncIORequestLock, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->AsyncIORequestLock, rc);
 
     uint8_t const iAsyncIORequest = pCtl->AsyncIOReqHead % RT_ELEMENTS(pCtl->aAsyncIORequests);
     Assert((iAsyncIORequest + 1) % RT_ELEMENTS(pCtl->aAsyncIORequests) != pCtl->AsyncIOReqTail);
@@ -934,7 +934,7 @@ static const ATARequest *ataR3AsyncIOGetCurrentRequest(PPDMDEVINS pDevIns, PATAC
     const ATARequest *pReq;
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->AsyncIORequestLock, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->AsyncIORequestLock, rc);
 
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail)
         pReq = &pCtl->aAsyncIORequests[pCtl->AsyncIOReqTail];
@@ -959,7 +959,7 @@ static const ATARequest *ataR3AsyncIOGetCurrentRequest(PPDMDEVINS pDevIns, PATAC
 static void ataR3AsyncIORemoveCurrentRequest(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, ATAAIO ReqType)
 {
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->AsyncIORequestLock, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->AsyncIORequestLock, rc);
 
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail && pCtl->aAsyncIORequests[pCtl->AsyncIOReqTail].ReqType == ReqType)
     {
@@ -983,7 +983,7 @@ static void ataR3AsyncIORemoveCurrentRequest(PPDMDEVINS pDevIns, PATACONTROLLER 
 static void ataR3AsyncIODumpRequests(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
 {
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->AsyncIORequestLock, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->AsyncIORequestLock, rc);
 
     LogRel(("PIIX3 ATA: Ctl#%d: request queue dump (topmost is current):\n", pCtl->iCtl));
     uint8_t curr = pCtl->AsyncIOReqTail;
@@ -1037,7 +1037,7 @@ static void ataR3AsyncIODumpRequests(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
 static bool ataR3AsyncIOIsIdle(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, bool fStrict)
 {
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->AsyncIORequestLock, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->AsyncIORequestLock, rc);
 
     bool fIdle = pCtl->fRedoIdle;
     if (!fIdle)
@@ -1267,7 +1267,8 @@ static void ataHCPIOTransferLimitATAPI(PATADEVSTATE s)
 DECLINLINE(void) ataR3LockEnter(PPDMDEVINS pDevIns, PATACONTROLLER pCtl)
 {
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_SUCCESS);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pCtl->lock, VINF_SUCCESS);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->lock, rcLock);
     STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
 }
 
@@ -5765,7 +5766,7 @@ static void ataR3AsyncSignalIdle(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATACO
      * unnecessary work and racing ataR3WaitForAsyncIOIsIdle.
      */
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pCtl->AsyncIORequestLock, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pCtl->AsyncIORequestLock, rc);
 
     if (    pCtlR3->fSignalIdle
         &&  ataR3AsyncIOIsIdle(pDevIns, pCtl, false /*fStrict*/))

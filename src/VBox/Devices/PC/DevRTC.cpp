@@ -923,16 +923,21 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     pHlp->pfnSSMGetS64(pSSM, &pThis->next_second_time);
     PDMDevHlpTimerLoad(pDevIns, pThis->hSecondTimer, pSSM);
-    PDMDevHlpTimerLoad(pDevIns, pThis->hSecondTimer2, pSSM);
+    rc = PDMDevHlpTimerLoad(pDevIns, pThis->hSecondTimer2, pSSM);
+    AssertRCReturn(rc, rc);
 
     if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_31)
-         pHlp->pfnSSMGetBool(pSSM, &pThis->fDisabledByHpet);
+    {
+        rc = pHlp->pfnSSMGetBool(pSSM, &pThis->fDisabledByHpet);
+        AssertRCReturn(rc, rc);
+    }
 
     if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_32PRE)
     {
         /* Second CMOS bank. */
         pHlp->pfnSSMGetMem(pSSM, &pThis->cmos_data[CMOS_BANK_SIZE], CMOS_BANK_SIZE);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->cmos_index[1]);
+        rc = pHlp->pfnSSMGetU8(pSSM, &pThis->cmos_index[1]);
+        AssertRCReturn(rc, rc);
     }
 
     int period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
@@ -943,7 +948,8 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             period_code += 7;
         int period = 1 << (period_code - 1);
         LogRel(("RTC: period=%#x (%d) %u Hz (restore)\n", period, period, _32K / period));
-        PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VINF_SUCCESS);
+        rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VINF_SUCCESS);
+        AssertRCReturn(rc, rc);
         PDMDevHlpTimerSetFrequencyHint(pDevIns, pThis->hPeriodicTimer, _32K / period);
         PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
         pThis->CurLogPeriod  = period;

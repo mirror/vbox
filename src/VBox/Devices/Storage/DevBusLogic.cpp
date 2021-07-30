@@ -1374,7 +1374,7 @@ static void buslogicR3SendIncomingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pThis, R
     MbxIn.u.in.uCompletionCode     = uMailboxCompletionCode;
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIntr, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSectIntr, rc);
 
     RTGCPHYS GCPhysAddrMailboxIncoming = pThis->GCPhysAddrMailboxIncomingBase
                                        + (   pThis->uMailboxIncomingPositionCurrent

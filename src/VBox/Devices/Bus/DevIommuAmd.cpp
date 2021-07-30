@@ -172,15 +172,15 @@
 # define IOMMU_DTE_CACHE_F_IGNORE_UNMAPPED_INTR_SHIFT    10
 
 /** Acquires the cache lock. */
-#ifdef IN_RING3
-# define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis)       PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VERR_IGNORED)
-#else
-# define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis) \
+# ifdef IN_RING3
+#  define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis)      PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VERR_IGNORED)
+# else
+#  define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis) \
     do { \
         int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VINF_SUCCESS); \
-        AssertRC(rcLock); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), &(a_pThis)->CritSectCache, rcLock); \
     } while (0)
-#endif
+# endif
 
 /** Releases the cache lock.  */
 # define IOMMU_CACHE_UNLOCK(a_pDevIns, a_pThis)     PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSectCache)

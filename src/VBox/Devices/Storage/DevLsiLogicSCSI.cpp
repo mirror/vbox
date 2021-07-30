@@ -728,15 +728,13 @@ static void lsilogicR3ConfigurationPagesFree(PLSILOGICSCSI pThis, PLSILOGICSCSIC
  */
 static void lsilogicR3FinishContextReply(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, uint32_t u32MessageContext)
 {
-    int rc;
-
     LogFlowFunc(("pThis=%#p u32MessageContext=%#x\n", pThis, u32MessageContext));
 
     AssertMsg(pThis->enmDoorbellState == LSILOGICDOORBELLSTATE_NOT_IN_USE, ("We are in a doorbell function\n"));
 
     /* Write message context ID into reply post queue. */
-    rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
-    AssertRC(rc);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->ReplyPostQueueCritSect, rc);
 
     /* Check for a entry in the queue. */
     if (!lsilogicReplyPostQueueGetFrameCount(pThis))
@@ -791,10 +789,9 @@ static void lsilogicFinishAddressReply(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, 
          * that this case happens in R0 or GC.
          */
 # ifdef IN_RING3
-        int rc;
         /* Grab a free reply message from the queue. */
-        rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->ReplyFreeQueueCritSect, VINF_SUCCESS);
-        AssertRC(rc);
+        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->ReplyFreeQueueCritSect, VINF_SUCCESS);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->ReplyFreeQueueCritSect, rc);
 
         /* Check for a free reply frame. */
         if (!lsilogicReplyFreeQueueGetFrameCount(pThis))
@@ -821,7 +818,7 @@ static void lsilogicFinishAddressReply(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, 
 
         /* Write low 32bits of reply frame into post reply queue. */
         rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
-        AssertRC(rc);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->ReplyPostQueueCritSect, rc);
 
         /* Check for a entry in the queue. */
         if (!lsilogicReplyPostQueueGetFrameCount(pThis))

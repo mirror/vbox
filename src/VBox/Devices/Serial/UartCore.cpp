@@ -876,7 +876,7 @@ static VBOXSTRICTRC uartXmit(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
         else
             PDMDevHlpTimerSetRelative(pDevIns, pThis->hTimerTxUnconnected, pThis->cSymbolXferTicks, NULL);
 
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+        rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
     }
 #endif
 
