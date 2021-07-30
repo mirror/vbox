@@ -101,9 +101,9 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
         pType->pfnPfHandlerR0   = pfnPfHandlerR0;
         pType->pszDesc          = pszDesc;
 
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
         RTListOff32Append(&pVM->pgm.s.CTX_SUFF(pTrees)->HeadPhysHandlerTypes, &pType->ListNode);
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
 
         *phType = MMHyperHeapPtrToOffset(pVM, pType);
         LogFlow(("PGMR3HandlerPhysicalTypeRegisterEx: %p/%#x: enmKind=%d pfnHandlerR3=%RHv pfnHandlerR0=%RHv pszDesc=%s\n",
@@ -222,10 +222,10 @@ void pgmR3HandlerPhysicalUpdateAll(PVM pVM)
      * Clear and set.
      * (the right -> left on the setting pass is just bird speculating on cache hits)
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers,  true, pgmR3HandlerPhysicalOneClear, pVM);
     RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, false, pgmR3HandlerPhysicalOneSet, pVM);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 

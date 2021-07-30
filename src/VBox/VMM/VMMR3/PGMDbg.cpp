@@ -689,7 +689,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
      * Search the memory - ignore MMIO and zero pages, also don't
      * bother to match across ranges.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
@@ -749,7 +749,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                         if (fRc)
                         {
                             *pGCPhysHit = GCPhys + offHit;
-                            pgmUnlock(pVM);
+                            PGM_UNLOCK(pVM);
                             return VINF_SUCCESS;
                         }
                     }
@@ -763,7 +763,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                 GCPhys += (RTGCPHYS)cIncPages << PAGE_SHIFT;
                 if (GCPhys >= GCPhysLast) /* (may not always hit, but we're run out of ranges.) */
                 {
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     return VERR_DBGF_MEM_NOT_FOUND;
                 }
                 iPage += cIncPages;
@@ -773,7 +773,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
             }
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return VERR_DBGF_MEM_NOT_FOUND;
 }
 
@@ -871,7 +871,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
     PGMPTWALKGST    Walk;
     RT_ZERO(Walk);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (;; offPage = 0)
     {
         int rc;
@@ -917,7 +917,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
                         if (fRc)
                         {
                             *pGCPtrHit = GCPtr + offHit;
-                            pgmUnlock(pVM);
+                            PGM_UNLOCK(pVM);
                             return VINF_SUCCESS;
                         }
                     }
@@ -1004,7 +1004,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
             cYieldCountDown = cYieldCountDownReload;
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return VERR_DBGF_MEM_NOT_FOUND;
 }
 
@@ -1162,7 +1162,7 @@ static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  */
 static void pgmR3DumpHierarchyShwTablePageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
 {
-    pgmLock(pState->pVM);
+    PGM_LOCK_VOID(pState->pVM);
     char            szPage[80];
     PPGMPOOLPAGE    pPage = pgmPoolQueryPageForDbg(pState->pVM->pgm.s.CTX_SUFF(pPool), HCPhys);
     if (pPage)
@@ -1191,7 +1191,7 @@ static void pgmR3DumpHierarchyShwTablePageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
         }
 #endif /* !PGM_WITHOUT_MAPPINGS */
     }
-    pgmUnlock(pState->pVM);
+    PGM_UNLOCK(pState->pVM);
     pState->pHlp->pfnPrintf(pState->pHlp, "%s", szPage);
 }
 
@@ -1210,13 +1210,13 @@ static void pgmR3DumpHierarchyShwGuestPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
     int rc = PGMR3DbgHCPhys2GCPhys(pState->pVM->pUVM, HCPhys, &GCPhys);
     if (RT_SUCCESS(rc))
     {
-        pgmLock(pState->pVM);
+        PGM_LOCK_VOID(pState->pVM);
         PCPGMPAGE pPage = pgmPhysGetPage(pState->pVM, GCPhys);
         if (pPage)
             RTStrPrintf(szPage, sizeof(szPage), "%R[pgmpage]", pPage);
         else
             strcpy(szPage, "not found");
-        pgmUnlock(pState->pVM);
+        PGM_UNLOCK(pState->pVM);
         pState->pHlp->pfnPrintf(pState->pHlp, " -> %RGp %s", GCPhys, szPage);
     }
     else
@@ -1919,13 +1919,13 @@ static int pgmR3DumpHierarchyGstMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHY
 static void pgmR3DumpHierarchyGstPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS GCPhys, uint32_t cbPage)
 {
     char szPage[80];
-    pgmLock(pState->pVM);
+    PGM_LOCK_VOID(pState->pVM);
     PCPGMPAGE pPage = pgmPhysGetPage(pState->pVM, GCPhys);
     if (pPage)
         RTStrPrintf(szPage, sizeof(szPage), " %R[pgmpage]", pPage);
     else
         strcpy(szPage, " not found");
-    pgmUnlock(pState->pVM);
+    PGM_UNLOCK(pState->pVM);
     pState->pHlp->pfnPrintf(pState->pHlp, "%s", szPage);
     NOREF(cbPage);
 }

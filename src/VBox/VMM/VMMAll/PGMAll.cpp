@@ -946,7 +946,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
     if (fLockTaken)
     {
         PGM_LOCK_ASSERT_OWNER(pVM);
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
     }
     LogFlow(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv rc=%Rrc\n", uErr, pvFault, rc));
 
@@ -1224,14 +1224,14 @@ VMMDECL(int) PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
      * Call paging mode specific worker.
      */
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage), a);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
-    AssertReturnStmt(idxBth < RT_ELEMENTS(g_aPgmBothModeData), pgmUnlock(pVM), VERR_PGM_MODE_IPE);
-    AssertReturnStmt(g_aPgmBothModeData[idxBth].pfnInvalidatePage, pgmUnlock(pVM), VERR_PGM_MODE_IPE);
+    AssertReturnStmt(idxBth < RT_ELEMENTS(g_aPgmBothModeData), PGM_UNLOCK(pVM), VERR_PGM_MODE_IPE);
+    AssertReturnStmt(g_aPgmBothModeData[idxBth].pfnInvalidatePage, PGM_UNLOCK(pVM), VERR_PGM_MODE_IPE);
     rc = g_aPgmBothModeData[idxBth].pfnInvalidatePage(pVCpu, GCPtrPage);
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage), a);
 
 #ifdef IN_RING3
@@ -1292,14 +1292,14 @@ VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCT
 VMMDECL(int) PGMShwGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData;
     AssertReturn(idxShw < RT_ELEMENTS(g_aPgmShadowModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmShadowModeData[idxShw].pfnGetPage, VERR_PGM_MODE_IPE);
     int rc = g_aPgmShadowModeData[idxShw].pfnGetPage(pVCpu, GCPtr, pfFlags, pHCPhys);
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -1326,14 +1326,14 @@ DECLINLINE(int) pdmShwModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t fFlags,
     GCPtr &= PAGE_BASE_GC_MASK; /** @todo this ain't necessary, right... */
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData;
     AssertReturn(idxShw < RT_ELEMENTS(g_aPgmShadowModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmShadowModeData[idxShw].pfnModifyPage, VERR_PGM_MODE_IPE);
     int rc = g_aPgmShadowModeData[idxShw].pfnModifyPage(pVCpu, GCPtr, PAGE_SIZE, fFlags, fMask, fOpFlags);
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -2196,7 +2196,7 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_
 int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
 {
     PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     Assert(!pVCpu->pgm.s.CTX_SUFF(pGst32BitPd));
 
@@ -2216,7 +2216,7 @@ int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
             pVCpu->pgm.s.pGst32BitPdR3 = NIL_RTR0PTR;
             pVCpu->pgm.s.pGst32BitPdR0 = *ppPd;
 #  endif
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # else
@@ -2230,13 +2230,13 @@ int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
 #  endif
             *ppPd = (PX86PD)HCPtrGuestCR3;
 
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # endif
         AssertRC(rc);
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     *ppPd = NULL;
     return rc;
@@ -2255,7 +2255,7 @@ int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
 {
     Assert(!pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt));
     PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
     PPGMPAGE    pPage;
@@ -2273,7 +2273,7 @@ int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
             pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
             pVCpu->pgm.s.pGstPaePdptR0 = *ppPdpt;
 #  endif
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # else
@@ -2287,14 +2287,14 @@ int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
 #  endif
             *ppPdpt = (PX86PDPT)HCPtrGuestCR3;
 
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # endif
         AssertRC(rc);
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     *ppPdpt = NULL;
     return rc;
 }
@@ -2313,7 +2313,7 @@ int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
 int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
 {
     PVMCC           pVM         = pVCpu->CTX_SUFF(pVM);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     PX86PDPT        pGuestPDPT  = pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt);
     Assert(pGuestPDPT);
@@ -2339,7 +2339,7 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
 #  endif
             if (fChanged)
                 pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = GCPhys;
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # else
@@ -2356,7 +2356,7 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
                 pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = GCPhys;
 
             *ppPd = pVCpu->pgm.s.CTX_SUFF(apGstPaePDs)[iPdpt];
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # endif
@@ -2369,7 +2369,7 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
     pVCpu->pgm.s.apGstPaePDsR0[iPdpt]      = NIL_RTR0PTR;
 # endif
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -2386,7 +2386,7 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
 {
     Assert(!pVCpu->pgm.s.CTX_SUFF(pGstAmd64Pml4));
     PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK;
     PPGMPAGE    pPage;
@@ -2404,7 +2404,7 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
             pVCpu->pgm.s.pGstAmd64Pml4R3 = NIL_RTR3PTR;
             pVCpu->pgm.s.pGstAmd64Pml4R0 = *ppPml4;
 #  endif
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # else
@@ -2418,13 +2418,13 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
 #  endif
             *ppPml4 = (PX86PML4)HCPtrGuestCR3;
 
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 # endif
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     *ppPml4 = NULL;
     return rc;
 }
@@ -2581,9 +2581,9 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
         if (pPool->cDirtyPages)
         {
-            pgmLock(pVM);
+            PGM_LOCK_VOID(pVM);
             pgmPoolResetDirtyPages(pVM);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
         }
 #endif
         /*
@@ -3516,24 +3516,35 @@ VMMDECL(int) PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages)
  *
  * @returns VBox status code
  * @param   pVM         The cross context VM structure.
+ * @param   fVoid       Set if the caller cannot handle failure returns.
  * @param   SRC_POS     The source position of the caller (RT_SRC_POS).
  */
-#if (defined(VBOX_STRICT) && defined(IN_RING3)) || defined(DOXYGEN_RUNNING)
-int pgmLockDebug(PVMCC pVM, RT_SRC_POS_DECL)
+#if defined(VBOX_STRICT) || defined(DOXYGEN_RUNNING)
+int pgmLockDebug(PVMCC pVM, bool fVoid, RT_SRC_POS_DECL)
 #else
-int pgmLock(PVMCC pVM)
+int pgmLock(PVMCC pVM, bool fVoid)
 #endif
 {
-#if defined(VBOX_STRICT) && defined(IN_RING3)
+#if defined(VBOX_STRICT)
     int rc = PDMCritSectEnterDebug(pVM, &pVM->pgm.s.CritSectX, VERR_SEM_BUSY, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
 #else
     int rc = PDMCritSectEnter(pVM, &pVM->pgm.s.CritSectX, VERR_SEM_BUSY);
 #endif
+    if (RT_SUCCESS(rc))
+        return rc;
+
 #ifdef IN_RING0
     if (rc == VERR_SEM_BUSY)
+    {
         rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_LOCK, 0);
+        if (RT_SUCCESS(rc))
+            return rc;
+    }
 #endif
-    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+    if (fVoid)
+        PDM_CRITSECT_RELEASE_ASSERT_RC(pVM, &pVM->pgm.s.CritSectX, rc);
+    else
+        AssertRC(rc);
     return rc;
 }
 
@@ -3770,9 +3781,9 @@ VMMDECL(unsigned) PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), -VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmBothModeData[idxBth].pfnAssertCR3, -VERR_PGM_MODE_IPE);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     unsigned cErrors = g_aPgmBothModeData[idxBth].pfnAssertCR3(pVCpu, cr3, cr4, 0, ~(RTGCPTR)0);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;

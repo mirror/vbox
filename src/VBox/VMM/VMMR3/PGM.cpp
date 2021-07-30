@@ -1996,7 +1996,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     LogFlow(("PGMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Unfix any fixed mappings and disable CR3 monitoring.
@@ -2073,7 +2073,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     }
 
     //pgmLogState(pVM);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -2088,7 +2088,7 @@ VMMR3_INT_DECL(void) PGMR3MemSetup(PVM pVM, bool fAtReset)
 {
     if (fAtReset)
     {
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
 
         int rc = pgmR3PhysRamZeroAll(pVM);
         AssertReleaseRC(rc);
@@ -2096,7 +2096,7 @@ VMMR3_INT_DECL(void) PGMR3MemSetup(PVM pVM, bool fAtReset)
         rc = pgmR3PhysRomReset(pVM);
         AssertReleaseRC(rc);
 
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
     }
 }
 
@@ -2132,10 +2132,10 @@ VMMR3_INT_DECL(void) PGMR3ResetNoMorePhysWritesFlag(PVM pVM)
 VMMR3DECL(int) PGMR3Term(PVM pVM)
 {
     /* Must free shared pages here. */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     pgmR3PhysRamTerm(pVM);
     pgmR3PhysRomTerm(pVM);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     PGMDeregisterStringFormatTypes();
     return PDMR3CritSectDelete(pVM, &pVM->pgm.s.CritSectX);
@@ -2277,11 +2277,11 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     case PGMPAGETYPE_MMIO:
                     {
                         pszType = "MMIO";
-                        pgmLock(pVM);
+                        PGM_LOCK_VOID(pVM);
                         PPGMPHYSHANDLER pHandler = pgmHandlerPhysicalLookup(pVM, iFirstPage * X86_PAGE_SIZE);
                         if (pHandler)
                             pszMore = pHandler->pszDesc;
-                        pgmUnlock(pVM);
+                        PGM_UNLOCK(pVM);
                         break;
                     }
 
@@ -2334,7 +2334,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
     /*
      * Get page directory addresses.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PX86PD     pPDSrc = pgmGstGet32bitPDPtr(pVCpu);
     Assert(pPDSrc);
 
@@ -2360,7 +2360,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
                                 !!(PdeSrc.u & X86_PDE_RW), (PdeSrc.u & X86_PDE4M_G) && fPGE);
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -2635,7 +2635,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     char        abZeroPg[PAGE_SIZE];
     RT_ZERO(abZeroPg);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
          pRam && pRam->GCPhys < GCPhysEnd && RT_SUCCESS(rc);
          pRam = pRam->pNextR3)
@@ -2709,7 +2709,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             pPage++;
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     RTFileClose(hFile);
     if (RT_SUCCESS(rc))

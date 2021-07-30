@@ -513,7 +513,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     STAM_PROFILE_START(&pPool->StatClearAll, c);
     NOREF(pVCpu);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     Log(("pgmR3PoolClearAllRendezvous: cUsedPages=%d fpvFlushRemTlb=%RTbool\n", pPool->cUsedPages, !!fpvFlushRemTlb));
 
     /*
@@ -728,7 +728,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     /* Flush job finished. */
     VM_FF_CLEAR(pVM, VM_FF_PGM_POOL_FLUSH_PENDING);
     pPool->cPresent = 0;
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     PGM_INVL_ALL_VCPU_TLBS(pVM);
 

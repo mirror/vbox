@@ -275,8 +275,7 @@ pgmPhysRomWriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
                  * guest physical addresses and entering the shadow page would
                  * kind of screw things up...
                  */
-                int rc = pgmLock(pVM);
-                AssertRC(rc);
+                PGM_LOCK_VOID(pVM);
 
                 PPGMPAGE pShadowPage = &pRomPage->Shadow;
                 if (!PGMROMPROT_IS_ROM(pRomPage->enmProt))
@@ -286,7 +285,7 @@ pgmPhysRomWriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
                 }
 
                 void *pvDstPage;
-                rc = pgmPhysPageMakeWritableAndMap(pVM, pShadowPage, GCPhys & X86_PTE_PG_MASK, &pvDstPage);
+                int rc = pgmPhysPageMakeWritableAndMap(pVM, pShadowPage, GCPhys & X86_PTE_PG_MASK, &pvDstPage);
                 if (RT_SUCCESS(rc))
                 {
                     memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
@@ -299,7 +298,7 @@ pgmPhysRomWriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
                     rc = VINF_SUCCESS;
                 }
 
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 return rc;
             }
 
@@ -319,10 +318,10 @@ pgmPhysRomWriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
  */
 void pgmPhysInvalidRamRangeTlbs(PVMCC pVM)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     RT_ZERO(pVM->pgm.s.apRamRangesTlbR3);
     RT_ZERO(pVM->pgm.s.apRamRangesTlbR0);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -548,12 +547,12 @@ VMMDECL(bool) PGMPhysIsGCPhysNormal(PVMCC pVM, RTGCPHYS GCPhys)
  */
 VMM_INT_DECL(int) PGMPhysGCPhys2HCPhys(PVMCC pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
     if (RT_SUCCESS(rc))
         *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -565,7 +564,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2HCPhys(PVMCC pVM, RTGCPHYS GCPhys, PRTHCPHYS pHC
  */
 void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatPageMapTlbFlushes);
 
     /* Clear the R3 & R0 TLBs completely. */
@@ -587,7 +586,7 @@ void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
         pVM->pgm.s.PhysTlbR3.aEntries[i].pv = 0;
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -1777,7 +1776,7 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
  */
 VMM_INT_DECL(int) PGMPhysGCPhys2CCPtr(PVMCC pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    int rc = pgmLock(pVM);
+    int rc = PGM_LOCK(pVM);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1811,7 +1810,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2CCPtr(PVMCC pVM, RTGCPHYS GCPhys, void **ppv, PP
         }
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -1846,7 +1845,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2CCPtr(PVMCC pVM, RTGCPHYS GCPhys, void **ppv, PP
  */
 VMM_INT_DECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVMCC pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    int rc = pgmLock(pVM);
+    int rc = PGM_LOCK(pVM);
     AssertRCReturn(rc, rc);
 
     /*
@@ -1870,7 +1869,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVMCC pVM, RTGCPHYS GCPhys, void c
         }
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -1969,7 +1968,7 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVMCC pVM, PPGMPAGEMAPLOCK pLock)
     pLock->uPageAndType = 0;
     pLock->pvMap = NULL;
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     if (fWriteLock)
     {
         unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
@@ -2011,7 +2010,7 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVMCC pVM, PPGMPAGEMAPLOCK pLock)
         pMap->cRefs--;
     }
 # endif
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -2039,7 +2038,7 @@ VMMDECL(void) PGMPhysBulkReleasePageMappingLocks(PVMCC pVM, uint32_t cPages, PPG
     }
 #endif
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     if (fWriteLock)
     {
         /*
@@ -2075,8 +2074,8 @@ VMMDECL(void) PGMPhysBulkReleasePageMappingLocks(PVMCC pVM, uint32_t cPages, PPG
             /* Yield the lock: */
             if ((i & 1023) == 1023 && i + 1 < cPages)
             {
-                pgmUnlock(pVM);
-                pgmLock(pVM);
+                PGM_UNLOCK(pVM);
+                PGM_LOCK_VOID(pVM);
             }
         }
     }
@@ -2110,12 +2109,12 @@ VMMDECL(void) PGMPhysBulkReleasePageMappingLocks(PVMCC pVM, uint32_t cPages, PPG
             /* Yield the lock: */
             if ((i & 1023) == 1023 && i + 1 < cPages)
             {
-                pgmUnlock(pVM);
-                pgmLock(pVM);
+                PGM_UNLOCK(pVM);
+                PGM_LOCK_VOID(pVM);
             }
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     RT_BZERO(paLocks, sizeof(paLocks[0]) * cPages);
 }
@@ -2165,7 +2164,7 @@ int pgmPhysGCPhys2R3Ptr(PVMCC pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
 #endif
 
     Log(("pgmPhysGCPhys2R3Ptr(,%RGp,): dont use this API!\n", GCPhys)); /** @todo eliminate this API! */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
@@ -2173,7 +2172,7 @@ int pgmPhysGCPhys2R3Ptr(PVMCC pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
     if (RT_SUCCESS(rc))
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)pR3Ptr);
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     Assert(rc <= VINF_SUCCESS);
     return rc;
 }
@@ -2322,9 +2321,9 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
         PGM_LOCK_ASSERT_OWNER(pVM);
 
         /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         rcStrict = pfnHandler(pVM, pVCpu, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, enmOrigin, pvUser);
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
 
 #ifdef VBOX_WITH_STATISTICS
         pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2398,7 +2397,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVMCC pVM, RTGCPHYS GCPhys, void *pvBuf, size_
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PhysRead));
     STAM_COUNTER_ADD(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PhysReadBytes), cbRead);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Copy loop on ram ranges.
@@ -2457,7 +2456,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVMCC pVM, RTGCPHYS GCPhys, void *pvBuf, size_
                     else
                     {
                         memset(pvBuf, 0xff, cb);
-                        pgmUnlock(pVM);
+                        PGM_UNLOCK(pVM);
                         return rcStrict2;
                     }
                 }
@@ -2465,7 +2464,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVMCC pVM, RTGCPHYS GCPhys, void *pvBuf, size_
                 /* next page */
                 if (cb >= cbRead)
                 {
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     return rcStrict;
                 }
                 cbRead -= cb;
@@ -2500,7 +2499,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVMCC pVM, RTGCPHYS GCPhys, void *pvBuf, size_
             pRam = pRam->CTX_SUFF(pNext);
     } /* Ram range walk */
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rcStrict;
 }
 
@@ -2562,9 +2561,9 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
 
             /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
             PGM_LOCK_ASSERT_OWNER(pVM);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             rcStrict = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
-            pgmLock(pVM);
+            PGM_LOCK_VOID(pVM);
 
 #ifdef VBOX_WITH_STATISTICS
             pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2681,9 +2680,9 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
 
             /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
             PGM_LOCK_ASSERT_OWNER(pVM);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             rcStrict2 = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
-            pgmLock(pVM);
+            PGM_LOCK_VOID(pVM);
 
 #ifdef VBOX_WITH_STATISTICS
             pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2784,7 +2783,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVMCC pVM, RTGCPHYS GCPhys, const void *pvBuf
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PhysWrite));
     STAM_COUNTER_ADD(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PhysWriteBytes), cbWrite);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Copy loop on ram ranges.
@@ -2838,7 +2837,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVMCC pVM, RTGCPHYS GCPhys, const void *pvBuf
                         PGM_PHYS_RW_DO_UPDATE_STRICT_RC(rcStrict, rcStrict2);
                     else
                     {
-                        pgmUnlock(pVM);
+                        PGM_UNLOCK(pVM);
                         return rcStrict2;
                     }
                 }
@@ -2846,7 +2845,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVMCC pVM, RTGCPHYS GCPhys, const void *pvBuf
                 /* next page */
                 if (cb >= cbWrite)
                 {
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     return rcStrict;
                 }
 
@@ -2877,7 +2876,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVMCC pVM, RTGCPHYS GCPhys, const void *pvBuf
             pRam = pRam->CTX_SUFF(pNext);
     } /* Ram range walk */
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rcStrict;
 }
 
@@ -3055,7 +3054,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPtrSr
     /* Take the PGM lock here, because many called functions take the lock for a very short period. That's counter-productive
      * when many VCPUs are fighting for the lock.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /* map the 1st page */
     void const *pvSrc;
@@ -3063,7 +3062,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPtrSr
     int rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, GCPtrSrc, &pvSrc, &Lock);
     if (RT_FAILURE(rc))
     {
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return rc;
     }
 
@@ -3073,7 +3072,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPtrSr
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return VINF_SUCCESS;
     }
 
@@ -3093,7 +3092,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPtrSr
         rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, GCPtrSrc, &pvSrc, &Lock);
         if (RT_FAILURE(rc))
         {
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return rc;
         }
 
@@ -3102,7 +3101,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPtrSr
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 
@@ -4068,10 +4067,10 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtx
  */
 VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVMCC pVM, RTGCPHYS GCPhys)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
     PGMPAGETYPE enmPgType = pPage ? (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage) : PGMPAGETYPE_INVALID;
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     return enmPgType;
 }
@@ -4106,7 +4105,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhys);
     Assert(!(GCPhys & X86_PAGE_OFFSET_MASK));
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
@@ -4203,7 +4202,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
         Log6(("PGMPhysIemGCPhys2PtrNoLock: GCPhys=%RGp *ppb=%p *pfTlb=%#RX64 (rc=%Rrc)\n", GCPhys, *ppb, *pfTlb, rc));
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return VINF_SUCCESS;
 }
 
@@ -4239,7 +4238,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 {
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhys);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
@@ -4309,7 +4308,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     else
         rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -4339,7 +4338,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
  */
 VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVMCC pVM, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PGM_A20_ASSERT_MASKED(VMMGetCpu(pVM), GCPhys);
 
     PPGMRAMRANGE pRam;
@@ -4369,7 +4368,7 @@ VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVMCC pVM, RTGCPHYS GCPhys, bool fWritab
         }
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -4393,7 +4392,7 @@ VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVMCC pVM, RTGCPHYS GCPhys, bool fWritab
 VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, bool fMakeWritable, PPGMPHYSNEMPAGEINFO pInfo,
                                             PFNPGMPHYSNEMCHECKPAGE pfnChecker, void *pvUser)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
@@ -4455,11 +4454,11 @@ VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS 
         }
 
         /* Done. */
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
     }
     else
     {
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
 
         pInfo->HCPhys       = NIL_RTHCPHYS;
         pInfo->fNemProt     = NEM_PAGE_PROT_NONE;
@@ -4491,7 +4490,7 @@ VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC pVCpu, uint8_t 
     /*
      * Just brute force this problem.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     int rc = VINF_SUCCESS;
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX); pRam; pRam = pRam->CTX_SUFF(pNext))
     {
@@ -4511,7 +4510,7 @@ VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC pVCpu, uint8_t 
             }
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     return rc;
 }

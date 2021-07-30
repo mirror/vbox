@@ -113,7 +113,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     Assert((HMIsNestedPagingActive(pVM) || VM_IS_NEM_ENABLED(pVM)) == pVM->pgm.s.fNestedPaging);
     Assert(!pVM->pgm.s.fNestedPaging);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     /* Note: we only really need shadow paging in real and protected mode for VT-x and AMD-V (excluding nested paging/EPT modes),
      *       but any calls to GC need a proper shadow page setup as well.
      */
@@ -159,7 +159,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
 # endif
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 #else
     NOREF(pVCpu); NOREF(GCPhysCR3);
@@ -345,18 +345,18 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
                 STAM_PROFILE_START(&pCur->Stat, h);
                 if (pCur->hType != pPool->hAccessHandlerType)
                 {
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     *pfLockTaken = false;
                 }
 
                 rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
 
 #  ifdef VBOX_WITH_STATISTICS
-                pgmLock(pVM);
+                PGM_LOCK_VOID(pVM);
                 pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
                 if (pCur)
                     STAM_PROFILE_STOP(&pCur->Stat, h);
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
 #  endif
             }
             else
@@ -465,7 +465,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
 
     /* Take the big lock now before we update flags. */
     *pfLockTaken = true;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Set the accessed and dirty flags.
@@ -545,7 +545,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
 
     /* Take the big lock now. */
     *pfLockTaken = true;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 #  endif /* !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
 #  ifdef PGM_WITH_MMIO_OPTIMIZATIONS
@@ -3184,7 +3184,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     if ((PdeSrc.u & (X86_PDE_P | X86_PDE_A)) == (X86_PDE_P | X86_PDE_A))
     {
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
 
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
         const X86PDE    PdeDst = pgmShwGet32BitPDE(pVCpu, GCPtrPage);
@@ -3201,7 +3201,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         rc = pgmShwSyncPaePDPtr(pVCpu, GCPtrPage, PdpeSrc.u, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             AssertRC(rc);
             return rc;
         }
@@ -3227,7 +3227,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         rc = pgmShwSyncLongModePDPtr(pVCpu, GCPtrPage, pPml4eSrc->u, PdpeSrc.u, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             AssertRC(rc);
             return rc;
         }
@@ -3255,7 +3255,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
                     rc = VINF_SUCCESS;
             }
         }
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
     }
     return rc;
 
@@ -3335,7 +3335,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsig
 # endif /* !PGM_WITH_PAGING */
     int             rc = VINF_SUCCESS;
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * First check if the shadow pd is present.
@@ -3355,7 +3355,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsig
     rc = pgmShwSyncPaePDPtr(pVCpu, GCPtrPage, PdpeSrc.u, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertRC(rc);
         return rc;
     }
@@ -3379,7 +3379,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsig
     rc = pgmShwSyncLongModePDPtr(pVCpu, GCPtrPage, pPml4eSrc->u, PdpeSrc.u, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertRC(rc);
         return rc;
     }
@@ -3393,7 +3393,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsig
         if (rc != VINF_SUCCESS)
         {
             PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             AssertRC(rc);
             return rc;
         }
@@ -3433,7 +3433,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsig
         }
     }
     PGM_DYNMAP_UNUSED_HINT(pVCpu, pPdeDst);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 
 #else  /* PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) */
@@ -3467,11 +3467,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t 
 
 #if !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) && PGM_SHW_TYPE != PGM_TYPE_NONE
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     if (pPool->cDirtyPages)
         pgmPoolResetDirtyPages(pVM);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 # endif
 #endif /* !NESTED && !EPT */
 
@@ -4313,12 +4313,12 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
      * Map the page CR3 points at.
      */
     RTHCPTR     HCPtrGuestCR3;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
     AssertReturn(pPageCR3, VERR_PGM_INVALID_CR3_ADDR);
     /** @todo this needs some reworking wrt. locking?  */
     int rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCR3, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysCR3 masking isn't necessary. */
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     if (RT_SUCCESS(rc))
     {
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -4364,11 +4364,11 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
             {
                 RTHCPTR     HCPtr;
                 RTGCPHYS    GCPhys = PGM_A20_APPLY(pVCpu, pGuestPDPT->a[i].u & X86_PDPE_PG_MASK);
-                pgmLock(pVM);
+                PGM_LOCK_VOID(pVM);
                 PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
                 AssertReturn(pPage, VERR_PGM_INVALID_PDPE_ADDR);
                 int rc2 = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)&HCPtr);
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 if (RT_SUCCESS(rc2))
                 {
 #  ifdef VBOX_WITH_RAM_IN_KERNEL
@@ -4441,7 +4441,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     PPGMPOOLPAGE pOldShwPageCR3    = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
     PPGMPOOLPAGE pNewShwPageCR3;
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     if (pPool->cDirtyPages)
@@ -4492,7 +4492,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 
         pgmPoolFreeByPage(pPool, pOldShwPageCR3, NIL_PGMPOOL_IDX, UINT32_MAX);
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 # else
     NOREF(GCPhysCR3);
 # endif
@@ -4555,7 +4555,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
 # if PGM_GST_TYPE != PGM_TYPE_REAL
     Assert(!pVM->pgm.s.fNestedPaging);
 # endif
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
 # ifndef PGM_WITHOUT_MAPPINGS
     if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
@@ -4580,7 +4580,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
         pVCpu->pgm.s.pShwPageCR3R0 = 0;
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 #endif
 
     return rc;

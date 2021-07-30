@@ -3896,13 +3896,17 @@ typedef struct PGMR0PERVM
 
 RT_C_DECLS_BEGIN
 
-#if defined(VBOX_STRICT) && defined(IN_RING3)
-int             pgmLockDebug(PVMCC pVM, RT_SRC_POS_DECL);
-# define pgmLock(a_pVM) pgmLockDebug(a_pVM, RT_SRC_POS)
+#if defined(VBOX_STRICT)
+int             pgmLockDebug(PVMCC pVM, bool fVoid, RT_SRC_POS_DECL);
+# define PGM_LOCK_VOID(a_pVM)       pgmLockDebug((a_pVM), true,  RT_SRC_POS)
+# define PGM_LOCK(a_pVM)            pgmLockDebug((a_pVM), false, RT_SRC_POS)
 #else
-int             pgmLock(PVMCC pVM);
+int             pgmLock(PVMCC pVM, bool fVoid);
+# define PGM_LOCK_VOID(a_pVM)       pgmLock((a_pVM), true)
+# define PGM_LOCK(a_pVM)            pgmLock((a_pVM), false)
 #endif
 void            pgmUnlock(PVMCC pVM);
+# define PGM_UNLOCK(a_pVM)          pgmUnlock((a_pVM))
 /**
  * Asserts that the caller owns the PDM lock.
  * This is the internal variant of PGMIsLockOwner.

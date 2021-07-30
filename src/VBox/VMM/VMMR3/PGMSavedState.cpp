@@ -236,7 +236,7 @@ static int pgmR3PrepRomPages(PVM pVM)
     /*
      * Initialize the live save tracking in the ROM page descriptors.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
         PPGMRAMRANGE    pRamHint = NULL;;
@@ -270,7 +270,7 @@ static int pgmR3PrepRomPages(PVM pVM)
         if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
             pVM->pgm.s.LiveSave.Rom.cDirtyPages += cPages;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     return VINF_SUCCESS;
 }
@@ -285,7 +285,7 @@ static int pgmR3PrepRomPages(PVM pVM)
  */
 static int pgmR3SaveRomRanges(PVM pVM, PSSMHANDLE pSSM)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     uint8_t id = 1;
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3, id++)
     {
@@ -300,7 +300,7 @@ static int pgmR3SaveRomRanges(PVM pVM, PSSMHANDLE pSSM)
         if (RT_FAILURE(rc))
             break;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return SSMR3PutU8(pSSM, UINT8_MAX);
 }
 
@@ -401,7 +401,7 @@ static void pgmR3ScanRomPages(PVM pVM)
     /*
      * The shadow ROMs.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
         if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
@@ -426,7 +426,7 @@ static void pgmR3ScanRomPages(PVM pVM)
             }
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -443,7 +443,7 @@ static void pgmR3ScanRomPages(PVM pVM)
  */
 static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
         uint32_t const cPages = pRom->cb >> PAGE_SHIFT;
@@ -472,7 +472,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
             }
             else
                 ASMMemZeroPage(abPage);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
 
             /* Save it. */
@@ -490,7 +490,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
                 return rc;
 
             /* Update state. */
-            pgmLock(pVM);
+            PGM_LOCK_VOID(pVM);
             pRom->aPages[iPage].LiveSave.u8Prot = (uint8_t)enmProt;
             if (fLiveSave)
             {
@@ -500,7 +500,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
             }
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return VINF_SUCCESS;
 }
 
@@ -524,7 +524,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
      * ASSUMES that the ROM ranges are fixed.
      * ASSUMES that all the ROM ranges are mapped.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
         if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
@@ -564,7 +564,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                         pVM->pgm.s.LiveSave.Rom.cDirtyPages--;
                         pVM->pgm.s.LiveSave.cSavedPages++;
                     }
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
 
                     if (iPage - 1U == iPrevPage && iPage > 0)
@@ -581,7 +581,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                     if (RT_FAILURE(rc))
                         return rc;
 
-                    pgmLock(pVM);
+                    PGM_LOCK_VOID(pVM);
                     iPrevPage = iPage;
                 }
                 /*
@@ -592,7 +592,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                 {
                     PGMROMPROT enmProt = pRomPage->enmProt;
                     pRomPage->LiveSave.u8Prot = (uint8_t)enmProt;
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
 
                     if (iPage - 1U == iPrevPage && iPage > 0)
                         SSMR3PutU8(pSSM, PGM_STATE_REC_ROM_PROT);
@@ -606,13 +606,13 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                     if (RT_FAILURE(rc))
                         return rc;
 
-                    pgmLock(pVM);
+                    PGM_LOCK_VOID(pVM);
                     iPrevPage = iPage;
                 }
             }
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return VINF_SUCCESS;
 }
 
@@ -640,13 +640,13 @@ static int pgmR3PrepMmio2Pages(PVM pVM)
      * Initialize the live save tracking in the MMIO2 ranges.
      * ASSUME nothing changes here.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
     {
         if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
             uint32_t const  cPages = pRegMmio->RamRange.cb >> PAGE_SHIFT;
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
 
             PPGMLIVESAVEMMIO2PAGE paLSPages = (PPGMLIVESAVEMMIO2PAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, sizeof(PGMLIVESAVEMMIO2PAGE) * cPages);
             if (!paLSPages)
@@ -661,12 +661,12 @@ static int pgmR3PrepMmio2Pages(PVM pVM)
                 paLSPages[iPage].u32CrcH2        = PGM_STATE_CRC32_ZERO_HALF_PAGE;
             }
 
-            pgmLock(pVM);
+            PGM_LOCK_VOID(pVM);
             pRegMmio->paLSPages = paLSPages;
             pVM->pgm.s.LiveSave.Mmio2.cDirtyPages += cPages;
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return VINF_SUCCESS;
 }
 
@@ -680,7 +680,7 @@ static int pgmR3PrepMmio2Pages(PVM pVM)
  */
 static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     uint8_t id = 1;
     for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
     {
@@ -698,7 +698,7 @@ static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
             id++;
         }
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return SSMR3PutU8(pSSM, UINT8_MAX);
 }
 
@@ -882,13 +882,13 @@ static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
         ||  uPass == SSM_PASS_FINAL)
         return;
 
-    pgmLock(pVM);                       /* paranoia */
+    PGM_LOCK_VOID(pVM);                 /* paranoia */
     for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
         if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
             PPGMLIVESAVEMMIO2PAGE paLSPages = pRegMmio->paLSPages;
             uint32_t              cPages    = pRegMmio->RamRange.cb >> PAGE_SHIFT;
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
 
             for (uint32_t iPage = 0; iPage < cPages; iPage++)
             {
@@ -896,9 +896,9 @@ static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
                 pgmR3ScanMmio2Page(pVM, pbPage, &paLSPages[iPage]);
             }
 
-            pgmLock(pVM);
+            PGM_LOCK_VOID(pVM);
         }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
 }
 
@@ -923,7 +923,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
         /*
          * The mop up round.
          */
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
         for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3;
              pRegMmio && RT_SUCCESS(rc);
              pRegMmio = pRegMmio->pNextR3)
@@ -971,7 +971,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                     iPageLast = iPage;
                 }
             }
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
     }
     /*
      * Reduce the rate after a little while since the current MMIO2 approach is
@@ -981,7 +981,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
     else if (   uPass <= 10
              || (uPass & 3) == 2)
     {
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
         for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3;
              pRegMmio && RT_SUCCESS(rc);
              pRegMmio = pRegMmio->pNextR3)
@@ -991,7 +991,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                 uint8_t const        *pbPage    = (uint8_t const *)pRegMmio->RamRange.pvR3;
                 uint32_t              cPages    = pRegMmio->RamRange.cb >> PAGE_SHIFT;
                 uint32_t              iPageLast = cPages;
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
 
                 for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += PAGE_SIZE)
                 {
@@ -1036,9 +1036,9 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                     iPageLast = iPage;
                 }
 
-                pgmLock(pVM);
+                PGM_LOCK_VOID(pVM);
             }
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
     }
 
     return rc;
@@ -1056,7 +1056,7 @@ static void pgmR3DoneMmio2Pages(PVM pVM)
      * Free the tracking structures for the MMIO2 pages.
      * We do the freeing outside the lock in case the VM is running.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
         if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
@@ -1064,12 +1064,12 @@ static void pgmR3DoneMmio2Pages(PVM pVM)
             if (pvMmio2ToFree)
             {
                 pRegMmio->paLSPages = NULL;
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 MMR3HeapFree(pvMmio2ToFree);
-                pgmLock(pVM);
+                PGM_LOCK_VOID(pVM);
             }
         }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -1093,7 +1093,7 @@ static int pgmR3PrepRamPages(PVM pVM)
      *       for cleaning up.
      */
     PPGMRAMRANGE pCur;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     do
     {
         for (pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
@@ -1103,16 +1103,16 @@ static int pgmR3PrepRamPages(PVM pVM)
             {
                 uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
                 uint32_t const  cPages = pCur->cb >> PAGE_SHIFT;
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 PPGMLIVESAVERAMPAGE paLSPages = (PPGMLIVESAVERAMPAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, cPages * sizeof(PGMLIVESAVERAMPAGE));
                 if (!paLSPages)
                     return VERR_NO_MEMORY;
-                pgmLock(pVM);
+                PGM_LOCK_VOID(pVM);
                 if (pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                 {
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     MMR3HeapFree(paLSPages);
-                    pgmLock(pVM);
+                    PGM_LOCK_VOID(pVM);
                     break;              /* try again */
                 }
                 pCur->paLSPages = paLSPages;
@@ -1207,7 +1207,7 @@ static int pgmR3PrepRamPages(PVM pVM)
             }
         }
     } while (pCur);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     return VINF_SUCCESS;
 }
@@ -1358,7 +1358,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
      */
     RTGCPHYS GCPhysCur = 0;
     PPGMRAMRANGE pCur;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     do
     {
         uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
@@ -1548,7 +1548,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
             }
         } /* for each range */
     } while (pCur);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -1572,7 +1572,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
     RTGCPHYS GCPhysCur = 0;
     PPGMRAMRANGE pCur;
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     do
     {
         uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
@@ -1667,7 +1667,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
 #endif
                             pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                         }
-                        pgmUnlock(pVM);
+                        PGM_UNLOCK(pVM);
                         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
 
                         /* Try save some memory when restoring. */
@@ -1702,7 +1702,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         if (paLSPages)
                             pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage, "save#2");
 #endif
-                        pgmUnlock(pVM);
+                        PGM_UNLOCK(pVM);
 
                         uint8_t u8RecType = fBallooned ? PGM_STATE_REC_RAM_BALLOONED : PGM_STATE_REC_RAM_ZERO;
                         if (GCPhys == GCPhysLast + PAGE_SIZE)
@@ -1716,7 +1716,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     if (RT_FAILURE(rc))
                         return rc;
 
-                    pgmLock(pVM);
+                    PGM_LOCK_VOID(pVM);
                     if (!fSkipped)
                         GCPhysLast = GCPhys;
                     if (paLSPages)
@@ -1743,7 +1743,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
         } /* for each range */
     } while (pCur);
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     return VINF_SUCCESS;
 }
@@ -1767,7 +1767,7 @@ static void pgmR3DoneRamPages(PVM pVM)
     void *pvToFree = NULL;
     PPGMRAMRANGE pCur;
     uint32_t cMonitoredPages = 0;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     do
     {
         for (pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
@@ -1777,10 +1777,10 @@ static void pgmR3DoneRamPages(PVM pVM)
                 if (pvToFree)
                 {
                     uint32_t idRamRangesGen = pVM->pgm.s.idRamRangesGen;
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     MMR3HeapFree(pvToFree);
                     pvToFree = NULL;
-                    pgmLock(pVM);
+                    PGM_LOCK_VOID(pVM);
                     if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
                         break;          /* start over again. */
                 }
@@ -1809,7 +1809,7 @@ static void pgmR3DoneRamPages(PVM pVM)
     else
         pVM->pgm.s.cMonitoredPages -= cMonitoredPages;
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     MMR3HeapFree(pvToFree);
     pvToFree = NULL;
@@ -1886,9 +1886,9 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
     const uint32_t cHistoryEntries = RT_ELEMENTS(pVM->pgm.s.LiveSave.acDirtyPagesHistory);
 
     /* update history. */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     uint32_t const cWrittenToPages = pVM->pgm.s.cWrittenToPages;
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     uint32_t const cDirtyNow = pVM->pgm.s.LiveSave.Rom.cDirtyPages
                              + pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
                              + pVM->pgm.s.LiveSave.Ram.cDirtyPages
@@ -1990,15 +1990,15 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Indicate that we will be using the write monitoring.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     /** @todo find a way of mediating this when more users are added. */
     if (pVM->pgm.s.fPhysWriteMonitoringEngaged)
     {
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertLogRelFailedReturn(VERR_PGM_WRITE_MONITOR_ENGAGED);
     }
     pVM->pgm.s.fPhysWriteMonitoringEngaged = true;
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     /*
      * Initialize the statistics.
@@ -2043,7 +2043,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Lock PGM and set the no-more-writes indicator.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     pVM->pgm.s.fNoMorePhysWrites = true;
 
     /*
@@ -2093,7 +2093,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutU8(pSSM, PGM_STATE_REC_END);    /* (Ignore the rc, SSM takes of it.) */
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -2116,12 +2116,12 @@ static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Clear the live save indicator and disengage write monitoring.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     pVM->pgm.s.LiveSave.fActive = false;
     /** @todo this is blindly assuming that we're the only user of write
      *        monitoring. Fix this when more users are added. */
     pVM->pgm.s.fPhysWriteMonitoringEngaged = false;
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     NOREF(pSSM);
     return VINF_SUCCESS;
@@ -3147,7 +3147,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
      */
     if (uPass != SSM_PASS_FINAL)
     {
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
         if (uPass != 0)
             rc = pgmR3LoadMemory(pVM, pSSM, uVersion, uPass);
         else
@@ -3164,14 +3164,14 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
             if (RT_SUCCESS(rc))
                 rc = pgmR3LoadMemory(pVM, pSSM, uVersion, uPass);
         }
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
     }
     else
     {
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
         rc = pgmR3LoadFinalLocked(pVM, pSSM, uVersion);
         pVM->pgm.s.LiveSave.fActive = false;
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         if (RT_SUCCESS(rc))
         {
             /*

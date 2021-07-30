@@ -956,20 +956,20 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
 
     LogFlow(("pgmRZPoolAccessPfHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     if (PHYS_PAGE_ADDRESS(GCPhysFault) != PHYS_PAGE_ADDRESS(pPage->GCPhys))
     {
         /* Pool page changed while we were waiting for the lock; ignore. */
         Log(("CPU%d: pgmRZPoolAccessPfHandler pgm pool page for %RGp changed (to %RGp) while waiting!\n", pVCpu->idCpu, PHYS_PAGE_ADDRESS(GCPhysFault), PHYS_PAGE_ADDRESS(pPage->GCPhys)));
         STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->StatMonitorPfRZ, &pPool->StatMonitorPfRZHandled, a);
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return VINF_SUCCESS;
     }
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     if (pPage->fDirty)
     {
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH));
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return VINF_SUCCESS;    /* SMP guest case where we were blocking on the pgm lock while the same page was being marked dirty. */
     }
 # endif
@@ -994,7 +994,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
         AssertMsg(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("Unexpected rc %d\n", rc));
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return rc;
     }
 
@@ -1089,7 +1089,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
             }
 
             STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->StatMonitorPfRZ, &pPool->StatMonitorPfRZHandled, a);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return rc;
         }
 
@@ -1131,7 +1131,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
             {
                 rc = pgmRZPoolAccessPfHandlerSTOSD(pVM, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
                 STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->StatMonitorPfRZ, &pPool->StatMonitorPfRZRepStosd, a);
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 return rc;
             }
         }
@@ -1209,7 +1209,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
 #  endif
 
                 STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pPool)->StatMonitorPfRZ, a);
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 return rc;
             }
         }
@@ -1235,7 +1235,7 @@ flushPage:
             rc = VINF_SUCCESS;  /* safe to restart the instruction. */
     }
     STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->StatMonitorPfRZ, &pPool->StatMonitorPfRZFlushPage, a);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -1259,7 +1259,7 @@ pgmPoolAccessHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
 
     NOREF(pvPhys); NOREF(pvBuf); NOREF(enmAccessType);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1341,7 +1341,7 @@ pgmPoolAccessHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
     }
     else
         Log(("CPU%d: PGM_ALL_CB_DECL pgm pool page for %RGp changed (to %RGp) while waiting!\n", pVCpu->idCpu, PHYS_PAGE_ADDRESS(GCPhys), PHYS_PAGE_ADDRESS(pPage->GCPhys)));
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
@@ -2669,7 +2669,7 @@ static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 static void pgmPoolMonitorModifiedClearAll(PVMCC pVM)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     LogFlow(("pgmPoolMonitorModifiedClearAll: cModifiedPages=%d\n", pPool->cModifiedPages));
 
@@ -2692,7 +2692,7 @@ static void pgmPoolMonitorModifiedClearAll(PVMCC pVM)
     }
     AssertMsg(cPages == pPool->cModifiedPages, ("%d != %d\n", cPages, pPool->cModifiedPages));
     pPool->cModifiedPages = 0;
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 }
 
 
@@ -3460,7 +3460,7 @@ static void pgmPoolTrackFlushGCPhysPTs(PVMCC pVM, PPGMPAGE pPhysPage, bool fFlus
 int pgmPoolTrackUpdateGCPhys(PVMCC pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs)
 {
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     int rc = VINF_SUCCESS;
 
 #ifdef PGM_WITH_LARGE_PAGES
@@ -3492,7 +3492,7 @@ int pgmPoolTrackUpdateGCPhys(PVMCC pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage,
             rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysBase, pLargePage, fFlushPTEs, pfFlushTLBs);
 
             *pfFlushTLBs = true;
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return rc;
         }
     }
@@ -3536,7 +3536,7 @@ int pgmPoolTrackUpdateGCPhys(PVMCC pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage,
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         rc = VINF_PGM_SYNC_CR3;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -4040,7 +4040,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVMCC pVM, uint16_t iPhysExt, uint16_t
  */
 uint16_t pgmPoolTrackPhysExtAddref(PVMCC pVM, PPGMPAGE pPhysPage, uint16_t u16, uint16_t iShwPT, uint16_t iPte)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
     {
         /*
@@ -4071,7 +4071,7 @@ uint16_t pgmPoolTrackPhysExtAddref(PVMCC pVM, PPGMPAGE pPhysPage, uint16_t u16, 
     }
     else
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedLots);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return u16;
 }
 
@@ -4093,7 +4093,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
     uint16_t iPhysExt = PGM_PAGE_GET_TD_IDX(pPhysPage);
     if (iPhysExt != PGMPOOL_TD_IDX_OVERFLOWED)
     {
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
 
         uint16_t        iPhysExtPrev = NIL_PGMPOOL_PHYSEXT_INDEX;
         PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
@@ -4116,7 +4116,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                         if (paPhysExts[iPhysExt].aidx[i] != NIL_PGMPOOL_IDX)
                         {
                             Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d\n", pPhysPage, pPage->idx));
-                            pgmUnlock(pVM);
+                            PGM_UNLOCK(pVM);
                             return;
                         }
 
@@ -4145,7 +4145,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
                     iPhysExt = iPhysExtNext;
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     return;
                 }
             }
@@ -4155,7 +4155,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
             iPhysExt = paPhysExts[iPhysExt].iNext;
         } while (iPhysExt != NIL_PGMPOOL_PHYSEXT_INDEX);
 
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertFatalMsgFailed(("not-found! cRefs=%d pPhysPage=%R[pgmpage] pPage=%p:{.idx=%d}\n", cRefs, pPhysPage, pPage, pPage->idx));
     }
     else /* nothing to do */
@@ -4807,7 +4807,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
                      pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx),
                     VINF_SUCCESS);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
@@ -4826,7 +4826,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
                   || pPage->enmKind == PGMPOOLKIND_ROOT_NESTED,
                   ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pVM)), pPage->Core.Key, pPage->enmKind));
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return VINF_SUCCESS;
     }
 
@@ -4883,7 +4883,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
         PGM_INVL_ALL_VCPU_TLBS(pVM);
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     STAM_PROFILE_STOP(&pPool->StatFlushPage, f);
     return rc;
 }
@@ -4911,12 +4911,12 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
              pPage, pPage->Core.Key, pPage->idx, pgmPoolPoolKindToStr(pPage->enmKind), iUser, iUserTable));
     AssertReturnVoid(pPage->idx >= PGMPOOL_IDX_FIRST); /* paranoia (#6349) */
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     if (iUser != NIL_PGMPOOL_IDX)
         pgmPoolTrackFreeUser(pPool, pPage, iUser, iUserTable);
     if (!pPage->fCached)
         pgmPoolFlushPage(pPool, pPage);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     STAM_PROFILE_STOP(&pPool->StatFree, a);
 }
 
@@ -4997,7 +4997,7 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
      *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
      *  Assert(!(pVM->pgm.s.fGlobalSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)); */
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     if (pPool->fCacheEnabled)
     {
@@ -5006,7 +5006,7 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
         {
             if (fLockPage)
                 pgmPoolLockPage(pPool, *ppPage);
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
             LogFlow(("pgmPoolAlloc: cached returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
             return rc2;
@@ -5023,7 +5023,7 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
         rc = pgmPoolMakeMoreFreePages(pPool, enmKind, iUser);
         if (RT_FAILURE(rc))
         {
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             Log(("pgmPoolAlloc: returns %Rrc (Free)\n", rc));
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
             return rc;
@@ -5076,7 +5076,7 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
         pPage->GCPhys       = NIL_RTGCPHYS;
         pPage->iNext        = pPool->iFreeHead;
         pPool->iFreeHead    = pPage->idx;
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
         Log(("pgmPoolAlloc: returns %Rrc (Insert)\n", rc3));
         return rc3;
@@ -5101,7 +5101,7 @@ int pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     *ppPage = pPage;
     if (fLockPage)
         pgmPoolLockPage(pPool, pPage);
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     LogFlow(("pgmPoolAlloc: returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
              rc, pPage, pPage->Core.Key, pPage->idx, pPage->fCached, pPage->fMonitored));
     STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);

@@ -543,7 +543,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM)
          * The Simplistic Approach - Enumerate all the pages and call tell the
          * IOMMU about each of them.
          */
-        pgmLock(pGVM);
+        PGM_LOCK_VOID(pGVM);
         rc = GPciRawR0GuestPageBeginAssignments(pGVM);
         if (RT_SUCCESS(rc))
         {
@@ -572,7 +572,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM)
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
         }
-        pgmUnlock(pGVM);
+        PGM_UNLOCK(pGVM);
     }
     else
 #endif
@@ -682,7 +682,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
     if (fLockTaken)
     {
         PGM_LOCK_ASSERT_OWNER(pGVM);
-        pgmUnlock(pGVM);
+        PGM_UNLOCK(pGVM);
     }
 
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
@@ -733,7 +733,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
     /*
      * Try lookup the all access physical handler for the address.
      */
-    pgmLock(pGVM);
+    PGM_LOCK_VOID(pGVM);
     PPGMPHYSHANDLER         pHandler     = pgmHandlerPhysicalLookup(pGVM, GCPhysFault);
     PPGMPHYSHANDLERTYPEINT  pHandlerType = RT_LIKELY(pHandler) ? PGMPHYSHANDLER_GET_TYPE(pGVM, pHandler) : NULL;
     if (RT_LIKELY(pHandler && pHandlerType->enmKind != PGMPHYSHANDLERKIND_WRITE))
@@ -753,7 +753,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
             Log(("PGMR0Trap0eHandlerNPMisconfig: Resyncing aliases / tmp-off page at %RGp (uErr=%#x) %R[pgmpage]\n", GCPhysFault, uErr, pPage));
             STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
             rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
-            pgmUnlock(pGVM);
+            PGM_UNLOCK(pGVM);
         }
         else
         {
@@ -761,23 +761,23 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
             {
                 void *pvUser = pHandler->CTX_SUFF(pvUser);
                 STAM_PROFILE_START(&pHandler->Stat, h);
-                pgmUnlock(pGVM);
+                PGM_UNLOCK(pGVM);
 
                 Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->CTX_SUFF(pfnPfHandler), uErr, GCPhysFault, pvUser));
                 rc = pHandlerType->CTX_SUFF(pfnPfHandler)(pGVM, pGVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
                                                           GCPhysFault, GCPhysFault, pvUser);
 
 #ifdef VBOX_WITH_STATISTICS
-                pgmLock(pGVM);
+                PGM_LOCK_VOID(pGVM);
                 pHandler = pgmHandlerPhysicalLookup(pGVM, GCPhysFault);
                 if (pHandler)
                     STAM_PROFILE_STOP(&pHandler->Stat, h);
-                pgmUnlock(pGVM);
+                PGM_UNLOCK(pGVM);
 #endif
             }
             else
             {
-                pgmUnlock(pGVM);
+                PGM_UNLOCK(pGVM);
                 Log(("PGMR0Trap0eHandlerNPMisconfig: %RGp (uErr=%#x) -> R3\n", GCPhysFault, uErr));
                 rc = VINF_EM_RAW_EMULATE_INSTR;
             }
@@ -794,7 +794,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
         Log(("PGMR0Trap0eHandlerNPMisconfig: Out of sync page at %RGp (uErr=%#x)\n", GCPhysFault, uErr));
         STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
         rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
-        pgmUnlock(pGVM);
+        PGM_UNLOCK(pGVM);
     }
 
     STAM_PROFILE_STOP(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfg, a);

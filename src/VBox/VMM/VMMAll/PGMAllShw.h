@@ -237,17 +237,17 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
     Assert(pVM->pgm.s.fNestedPaging);
     Assert(!pVCpu->pgm.s.pShwPageCR3R3);
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     int rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_ROOT_NESTED, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                           NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/,
                           &pNewShwPageCR3);
-    AssertLogRelRCReturnStmt(rc, pgmUnlock(pVM), rc);
+    AssertLogRelRCReturnStmt(rc, PGM_UNLOCK(pVM), rc);
 
     pVCpu->pgm.s.pShwPageCR3R3 = (R3PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR3(pVM, pNewShwPageCR3);
     pVCpu->pgm.s.pShwPageCR3R0 = (R0PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR0(pVM, pNewShwPageCR3);
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVCpu->pgm.s.pShwPageCR3R3, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key));
 #else
@@ -271,7 +271,7 @@ PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu)
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
 
         /* Do *not* unlock this page as we have two of them floating around in the 32-bit host & 64-bit guest case.
          * We currently assert when you try to free one of them; don't bother to really allow this.
@@ -284,7 +284,7 @@ PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu)
         pVCpu->pgm.s.pShwPageCR3R3 = 0;
         pVCpu->pgm.s.pShwPageCR3R0 = 0;
 
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
 
         Log(("Leave nested shadow paging mode\n"));
     }

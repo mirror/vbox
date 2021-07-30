@@ -66,10 +66,10 @@ DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRelease(PVMCC pVM, PPGMPHYSHANDLERTYP
     uint32_t cRefs = ASMAtomicDecU32(&pType->cRefs);
     if (cRefs == 0)
     {
-        pgmLock(pVM);
+        PGM_LOCK_VOID(pVM);
         pType->u32Magic = PGMPHYSHANDLERTYPEINT_MAGIC_DEAD;
         RTListOff32NodeRemove(&pType->ListNode);
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         MMHyperFree(pVM, pType);
     }
     return cRefs;
@@ -278,7 +278,7 @@ int pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPH
     pPhysHandler->Core.KeyLast = GCPhysLast;
     pPhysHandler->cPages       = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
 
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pPhysHandler->Core))
     {
         int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pPhysHandler, pRam);
@@ -288,13 +288,13 @@ int pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPH
 #if defined(IN_RING3) || defined(IN_RING0)
         NEMHCNotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1);
 #endif
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
 
         if (rc != VINF_SUCCESS)
             Log(("PGMHandlerPhysicalRegisterEx: returns %Rrc (%RGp-%RGp)\n", rc, GCPhys, GCPhysLast));
         return rc;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     pPhysHandler->Core.Key     = NIL_RTGCPHYS;
     pPhysHandler->Core.KeyLast = NIL_RTGCPHYS;
@@ -440,7 +440,7 @@ int pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, int 
     /*
      * Remove the handler from the tree.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pRemoved = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers,
                                                                     pPhysHandler->Core.Key);
     if (pRemoved == pPhysHandler)
@@ -457,7 +457,7 @@ int pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, int 
         pPhysHandler->Core.Key     = NIL_RTGCPHYS;
         pPhysHandler->Core.KeyLast = NIL_RTGCPHYS;
 
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
 
         return VINF_SUCCESS;
     }
@@ -471,7 +471,7 @@ int pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, int 
     if (pRemoved)
         RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pRemoved->Core);
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     if (!pRemoved)
         AssertMsgFailed(("Didn't find range starting at %RGp in the tree!\n", pPhysHandler->Core.Key));
@@ -516,7 +516,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVMCC pVM, RTGCPHYS GCPhys)
     /*
      * Find the handler.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pRemoved = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pRemoved)
     {
@@ -532,14 +532,14 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVMCC pVM, RTGCPHYS GCPhys)
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
 
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
 
         pRemoved->Core.Key = NIL_RTGCPHYS;
         pgmHandlerPhysicalExDestroy(pVM, pRemoved);
         return VINF_SUCCESS;
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys));
     return VERR_PGM_HANDLER_NOT_FOUND;
@@ -836,7 +836,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHY
      * Remove it.
      */
     int rc;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysCurrent);
     if (pCur)
     {
@@ -879,7 +879,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHY
                     /** @todo NEM: not sure we need this notification... */
                     NEMHCNotifyHandlerPhysicalModify(pVM, enmKind, GCPhysCurrent, GCPhys, cb, fRestoreAsRAM);
 
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
 
                     PGM_INVL_ALL_VCPU_TLBS(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
@@ -918,7 +918,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHY
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -938,7 +938,7 @@ VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVMCC pVM, RTGCPHYS GCPhys, RTR3PT
      * Find the handler.
      */
     int rc = VINF_SUCCESS;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
@@ -954,7 +954,7 @@ VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVMCC pVM, RTGCPHYS GCPhys, RTR3PT
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -982,7 +982,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhys
     /*
      * Get the handler.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (RT_LIKELY(pCur))
     {
@@ -1002,7 +1002,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhys
             {
                 LogFlow(("PGMHandlerPhysicalSplit: %RGp-%RGp and %RGp-%RGp\n",
                          pCur->Core.Key, pCur->Core.KeyLast, pNew->Core.Key, pNew->Core.KeyLast));
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 return VINF_SUCCESS;
             }
             AssertMsgFailed(("whu?\n"));
@@ -1019,7 +1019,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhys
         AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys));
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     MMHyperFree(pVM, pNew);
     return rc;
 }
@@ -1039,7 +1039,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys
      * Get the handlers.
      */
     int rc;
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pCur1 = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys1);
     if (RT_LIKELY(pCur1))
     {
@@ -1064,7 +1064,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys
                         pVM->pgm.s.pLastPhysHandlerR3 = 0;
                         PGMHandlerPhysicalTypeRelease(pVM, pCur2->hType);
                         MMHyperFree(pVM, pCur2);
-                        pgmUnlock(pVM);
+                        PGM_UNLOCK(pVM);
                         return VINF_SUCCESS;
                     }
 
@@ -1095,7 +1095,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys
         AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys1));
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 
 }
@@ -1118,7 +1118,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys
 VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
 {
     LogFlow(("PGMHandlerPhysicalReset GCPhys=%RGp\n", GCPhys));
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Find the handler.
@@ -1204,7 +1204,7 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return rc;
 }
 
@@ -1231,8 +1231,8 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
 VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
 {
     LogFlow(("PGMHandlerPhysicalPageTempOff GCPhysPage=%RGp\n", GCPhysPage));
+    PGM_LOCK_VOID(pVM);
 
-    pgmLock(pVM);
     /*
      * Validate the range.
      */
@@ -1248,14 +1248,14 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
             PPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
             AssertReturnStmt(   pCurType->enmKind == PGMPHYSHANDLERKIND_WRITE
                              || pCurType->enmKind == PGMPHYSHANDLERKIND_ALL,
-                             pgmUnlock(pVM), VERR_ACCESS_DENIED);
+                             PGM_UNLOCK(pVM), VERR_ACCESS_DENIED);
 
             /*
              * Change the page status.
              */
             PPGMPAGE pPage;
             int rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
-            AssertReturnStmt(RT_SUCCESS_NP(rc), pgmUnlock(pVM), rc);
+            AssertReturnStmt(RT_SUCCESS_NP(rc), PGM_UNLOCK(pVM), rc);
             if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
             {
                 PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
@@ -1271,15 +1271,15 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
                     PGM_PAGE_SET_NEM_STATE(pPage, u2State);
                 }
             }
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertMsgFailed(("The page %#x is outside the range %#x-%#x\n",
                          GCPhysPage, pCur->Core.Key, pCur->Core.KeyLast));
         return VERR_INVALID_PARAMETER;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     AssertMsgFailed(("Specified physical handler start address %#x is invalid.\n", GCPhys));
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
@@ -1380,7 +1380,7 @@ static PPGMPAGE pgmPhysResolveMmio2PageLocked(PVMCC pVM, PPDMDEVINS pDevIns, PGM
 VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage,
                                                PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, RTGCPHYS offMmio2PageRemap)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Resolve the MMIO2 reference.
@@ -1389,10 +1389,10 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
     if (RT_LIKELY(pPageRemap))
         AssertMsgReturnStmt(PGM_PAGE_GET_TYPE(pPageRemap) == PGMPAGETYPE_MMIO2,
                             ("hMmio2=%RU64 offMmio2PageRemap=%RGp %R[pgmpage]\n", hMmio2, offMmio2PageRemap, pPageRemap),
-                            pgmUnlock(pVM), VERR_PGM_PHYS_NOT_MMIO2);
+                            PGM_UNLOCK(pVM), VERR_PGM_PHYS_NOT_MMIO2);
     else
     {
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return VERR_OUT_OF_RANGE;
     }
 
@@ -1406,16 +1406,16 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
                       && GCPhysPage <= pCur->Core.KeyLast))
         {
             PPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
-            AssertReturnStmt(pCurType->enmKind == PGMPHYSHANDLERKIND_MMIO, pgmUnlock(pVM), VERR_ACCESS_DENIED);
-            AssertReturnStmt(!(pCur->Core.Key & PAGE_OFFSET_MASK), pgmUnlock(pVM), VERR_INVALID_PARAMETER);
-            AssertReturnStmt((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, pgmUnlock(pVM), VERR_INVALID_PARAMETER);
+            AssertReturnStmt(pCurType->enmKind == PGMPHYSHANDLERKIND_MMIO, PGM_UNLOCK(pVM), VERR_ACCESS_DENIED);
+            AssertReturnStmt(!(pCur->Core.Key & PAGE_OFFSET_MASK), PGM_UNLOCK(pVM), VERR_INVALID_PARAMETER);
+            AssertReturnStmt((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, PGM_UNLOCK(pVM), VERR_INVALID_PARAMETER);
 
             /*
              * Validate the page.
              */
             PPGMPAGE pPage;
             int rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
-            AssertReturnStmt(RT_SUCCESS_NP(rc), pgmUnlock(pVM), rc);
+            AssertReturnStmt(RT_SUCCESS_NP(rc), PGM_UNLOCK(pVM), rc);
             if (PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO)
             {
                 AssertMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO,
@@ -1423,7 +1423,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
                                 VERR_PGM_PHYS_NOT_MMIO2);
                 if (PGM_PAGE_GET_HCPHYS(pPage) == PGM_PAGE_GET_HCPHYS(pPageRemap))
                 {
-                    pgmUnlock(pVM);
+                    PGM_UNLOCK(pVM);
                     return VINF_PGM_HANDLER_ALREADY_ALIASED;
                 }
 
@@ -1465,17 +1465,17 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
             LogFlow(("PGMHandlerPhysicalPageAliasMmio2: => %R[pgmpage]\n", pPage));
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
 
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertMsgFailed(("The page %#x is outside the range %#x-%#x\n",
                          GCPhysPage, pCur->Core.Key, pCur->Core.KeyLast));
         return VERR_INVALID_PARAMETER;
     }
 
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     AssertMsgFailed(("Specified physical handler start address %#x is invalid.\n", GCPhys));
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
@@ -1515,7 +1515,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
 VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTHCPHYS HCPhysPageRemap)
 {
 ///    Assert(!IOMIsLockOwner(pVM)); /* We mustn't own any other locks when calling this */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
 
     /*
      * Lookup and validate the range.
@@ -1527,19 +1527,19 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
                       &&  GCPhysPage <= pCur->Core.KeyLast))
         {
             PPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
-            AssertReturnStmt(pCurType->enmKind == PGMPHYSHANDLERKIND_MMIO, pgmUnlock(pVM), VERR_ACCESS_DENIED);
-            AssertReturnStmt(!(pCur->Core.Key & PAGE_OFFSET_MASK), pgmUnlock(pVM), VERR_INVALID_PARAMETER);
-            AssertReturnStmt((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, pgmUnlock(pVM), VERR_INVALID_PARAMETER);
+            AssertReturnStmt(pCurType->enmKind == PGMPHYSHANDLERKIND_MMIO, PGM_UNLOCK(pVM), VERR_ACCESS_DENIED);
+            AssertReturnStmt(!(pCur->Core.Key & PAGE_OFFSET_MASK), PGM_UNLOCK(pVM), VERR_INVALID_PARAMETER);
+            AssertReturnStmt((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, PGM_UNLOCK(pVM), VERR_INVALID_PARAMETER);
 
             /*
              * Get and validate the pages.
              */
             PPGMPAGE pPage;
             int rc = pgmPhysGetPageEx(pVM, GCPhysPage, &pPage);
-            AssertReturnStmt(RT_SUCCESS_NP(rc), pgmUnlock(pVM), rc);
+            AssertReturnStmt(RT_SUCCESS_NP(rc), PGM_UNLOCK(pVM), rc);
             if (PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO)
             {
-                pgmUnlock(pVM);
+                PGM_UNLOCK(pVM);
                 AssertMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO,
                                 ("GCPhysPage=%RGp %R[pgmpage]\n", GCPhysPage, pPage),
                                 VERR_PGM_PHYS_NOT_MMIO2);
@@ -1575,15 +1575,15 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
             LogFlow(("PGMHandlerPhysicalPageAliasHC: => %R[pgmpage]\n", pPage));
-            pgmUnlock(pVM);
+            PGM_UNLOCK(pVM);
             return VINF_SUCCESS;
         }
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertMsgFailed(("The page %#x is outside the range %#x-%#x\n",
                          GCPhysPage, pCur->Core.Key, pCur->Core.KeyLast));
         return VERR_INVALID_PARAMETER;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
 
     AssertMsgFailed(("Specified physical handler start address %#x is invalid.\n", GCPhys));
     return VERR_PGM_HANDLER_NOT_FOUND;
@@ -1604,7 +1604,7 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVMCC pVM, RTGCPHYS GCPhys)
     /*
      * Find the handler.
      */
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
     if (pCur)
     {
@@ -1615,10 +1615,10 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVMCC pVM, RTGCPHYS GCPhys)
                || pCurType->enmKind == PGMPHYSHANDLERKIND_ALL
                || pCurType->enmKind == PGMPHYSHANDLERKIND_MMIO);
 #endif
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         return true;
     }
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return false;
 }
 
@@ -1636,11 +1636,11 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVMCC pVM, RTGCPHYS GCPhys)
  */
 bool pgmHandlerPhysicalIsAll(PVMCC pVM, RTGCPHYS GCPhys)
 {
-    pgmLock(pVM);
+    PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
     if (!pCur)
     {
-        pgmUnlock(pVM);
+        PGM_UNLOCK(pVM);
         AssertFailed();
         return true;
     }
@@ -1653,7 +1653,7 @@ bool pgmHandlerPhysicalIsAll(PVMCC pVM, RTGCPHYS GCPhys)
            && pCur->Core.KeyLast >= (GCPhys | PAGE_OFFSET_MASK));
 
     bool bRet = pCurType->enmKind != PGMPHYSHANDLERKIND_WRITE;
-    pgmUnlock(pVM);
+    PGM_UNLOCK(pVM);
     return bRet;
 }
 
