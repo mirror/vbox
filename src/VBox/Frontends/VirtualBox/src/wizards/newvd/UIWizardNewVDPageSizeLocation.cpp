@@ -20,6 +20,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIFileDialog.h"
 #include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
@@ -28,6 +29,44 @@
 
 /* COM includes: */
 #include "CSystemProperties.h"
+
+
+QString UIWizardNewVDSizeLocation::selectNewMediumLocation(UIWizardNewVD *pWizard)
+{
+    AssertReturn(pWizard, QString());
+    QString strChosenFilePath;
+    /* Get current folder and filename: */
+    QFileInfo fullFilePath(pWizard->mediumPath());
+    QDir folder = fullFilePath.path();
+    QString strFileName = fullFilePath.fileName();
+
+    /* Set the first parent folder that exists as the current: */
+    while (!folder.exists() && !folder.isRoot())
+    {
+        QFileInfo folderInfo(folder.absolutePath());
+        if (folder == QDir(folderInfo.absolutePath()))
+            break;
+        folder = folderInfo.absolutePath();
+    }
+    AssertReturn(folder.exists() && !folder.isRoot(), strChosenFilePath);
+
+    QVector<QString> fileExtensions;
+    QVector<KDeviceType> deviceTypes;
+    CMediumFormat mediumFormat = pWizard->mediumFormat();
+    mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+    QStringList validExtensionList;
+    for (int i = 0; i < fileExtensions.size(); ++i)
+        if (deviceTypes[i] == KDeviceType_HardDisk)
+            validExtensionList << QString("*.%1").arg(fileExtensions[i]);
+    /* Compose full filter list: */
+    QString strBackendsList = QString("%1 (%2)").arg(mediumFormat.GetName()).arg(validExtensionList.join(" "));
+
+    strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
+                                                              strBackendsList, pWizard,
+                                                              UICommon::tr("Please choose a location for new virtual hard disk file"));
+    return strChosenFilePath;
+}
+
 
 UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &strDefaultName,
                                                              const QString &strDefaultPath, qulonglong uDefaultSize)
@@ -60,6 +99,7 @@ void UIWizardNewVDPageSizeLocation::prepare()
 
 void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
 {
+
 }
 
 void UIWizardNewVDPageSizeLocation::sltMediumSizeChanged(qulonglong /*uSize*/)

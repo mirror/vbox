@@ -26,6 +26,9 @@
 
 /* Forward declarations: */
 class QGroupBox;
+class UIDiskFormatsGroupBox;
+class UIDiskVariantGroupBox;
+class UIMediumSizeAndPathGroupBox;
 
 /* Expert page of the New Virtual Hard Drive wizard: */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UINativeWizardPage
@@ -34,7 +37,6 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UINativeWizardPage
 
 public:
 
-    /* Constructor: */
     UIWizardNewVDPageExpert(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
 
 protected:
@@ -42,10 +44,7 @@ protected:
 
 private slots:
 
-    /* Medium format stuff: */
     void sltMediumFormatChanged();
-
-    /* Location editors stuff: */
     void sltSelectLocationButtonClicked();
 
 private:
@@ -54,17 +53,25 @@ private:
     void retranslateUi();
 
     /* Prepare stuff: */
+    void prepare();
     void initializePage();
 
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
+    void updateDiskWidgetsAfterMediumFormatChange();
+
 
     /* Widgets: */
-    QGroupBox *m_pFormatGroupBox;
-    QGroupBox *m_pVariantGroupBox;
-    QGroupBox *m_pLocationGroupBox;
-    QGroupBox *m_pSizeGroupBox;
+    UIMediumSizeAndPathGroupBox *m_pSizeAndPathGroup;
+    UIDiskFormatsGroupBox *m_pFormatGroup;
+    UIDiskVariantGroupBox *m_pVariantGroup;
+
+    QString m_strDefaultName;
+    QString m_strDefaultPath;
+    qulonglong m_uDefaultSize;
+    qulonglong m_uMediumSizeMin;
+    qulonglong m_uMediumSizeMax;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageExpert_h */

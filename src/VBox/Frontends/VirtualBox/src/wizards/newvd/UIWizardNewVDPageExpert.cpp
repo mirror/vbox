@@ -29,6 +29,7 @@
 #include <QLabel>
 
 /* GUI includes: */
+#include "UIWizardDiskEditors.h"
 #include "UIConverter.h"
 #include "UIWizardNewVDPageExpert.h"
 #include "UIWizardNewVD.h"
@@ -39,115 +40,75 @@
 #include "QIToolButton.h"
 #include "QILineEdit.h"
 #include "UIMediumSizeEditor.h"
+#include "UIWizardNewVDPageSizeLocation.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
 
 
-UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &/*strDefaultName*/, const QString &/*strDefaultPath*/, qulonglong /*uDefaultSize*/)
+UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
     : UINativeWizardPage()
-    , m_pFormatGroupBox(0)
-    , m_pVariantGroupBox(0)
-    , m_pLocationGroupBox(0)
-    , m_pSizeGroupBox(0)
+    , m_pSizeAndPathGroup(0)
+    , m_pFormatGroup(0)
+    , m_pVariantGroup(0)
+    , m_strDefaultName(strDefaultName)
+    , m_strDefaultPath(strDefaultPath)
+    , m_uDefaultSize(uDefaultSize)
+    , m_uMediumSizeMin(_4M)
+    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
 {
-    /* Get default extension for new virtual-disk: */
-    /* Create widgets: */
-//     QGridLayout *pMainLayout = new QGridLayout(this);
-//     {
-//         m_pLocationGroupBox = new QGroupBox(this);
-//         {
-//             m_pLocationGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-//             QHBoxLayout *pLocationGroupBoxLayout = new QHBoxLayout(m_pLocationGroupBox);
-//             {
-//                 m_pLocationEditor = new QLineEdit(m_pLocationGroupBox);
-//                 m_pLocationOpenButton = new QIToolButton(m_pLocationGroupBox);
-//                 {
-//                     m_pLocationOpenButton->setAutoRaise(true);
-//                     m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
-//                 }
-//                 pLocationGroupBoxLayout->addWidget(m_pLocationEditor);
-//                 pLocationGroupBoxLayout->addWidget(m_pLocationOpenButton);
-//             }
-//         }
-//         m_pSizeGroupBox = new QGroupBox(this);
-//         {
-//             m_pSizeGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-//             QVBoxLayout *pSizeGroupBoxLayout = new QVBoxLayout(m_pSizeGroupBox);
-//             {
-//                 m_pMediumSizeEditor = new UIMediumSizeEditor;
-//                 {
-//                     pSizeGroupBoxLayout->addWidget(m_pMediumSizeEditor);
-//                 }
-//             }
-//         }
-//         m_pFormatGroupBox = new QGroupBox(this);
-//         {
-//             m_pFormatGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-//             QVBoxLayout *pFormatGroupBoxLayout = new QVBoxLayout(m_pFormatGroupBox);
-//             pFormatGroupBoxLayout->addWidget(createFormatButtonGroup(true));
-//         }
-//         m_pVariantGroupBox = new QGroupBox(this);
-//         {
-//             m_pVariantGroupBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-//             QVBoxLayout *pVariantGroupBoxLayout = new QVBoxLayout(m_pVariantGroupBox);
-//             {
-//                 m_pFixedCheckBox = new QCheckBox;
-//                 m_pSplitBox = new QCheckBox(m_pVariantGroupBox);
-//                 pVariantGroupBoxLayout->addWidget(m_pFixedCheckBox);
-//                 pVariantGroupBoxLayout->addWidget(m_pSplitBox);
-//             }
-//         }
-//         pMainLayout->addWidget(m_pLocationGroupBox, 0, 0, 1, 2);
-//         pMainLayout->addWidget(m_pSizeGroupBox, 1, 0, 1, 2);
-//         pMainLayout->addWidget(m_pFormatGroupBox, 2, 0, Qt::AlignTop);
-//         pMainLayout->addWidget(m_pVariantGroupBox, 2, 1, Qt::AlignTop);
-//         setMediumSize(uDefaultSize);
-//         sltMediumFormatChanged();
-//     }
+    prepare();
+}
 
-//     /* Setup connections: */
-//     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-//             this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);
+void UIWizardNewVDPageExpert::prepare()
+{
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0);
+    m_pFormatGroup = new UIDiskFormatsGroupBox(true /* fExpertMode */, 0);
+    m_pVariantGroup = new UIDiskVariantGroupBox(true /* fExpertMode */, 0);
+
+    pMainLayout->addWidget(m_pSizeAndPathGroup, 0, 0, 2, 2);
+    pMainLayout->addWidget(m_pFormatGroup, 2, 0, 6, 1);
+    pMainLayout->addWidget(m_pVariantGroup, 2, 1, 6, 1);
+
+    connect(m_pFormatGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
+            this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);
 //     connect(m_pFixedCheckBox, &QAbstractButton::toggled,
 //             this, &UIWizardNewVDPageExpert::completeChanged);
 //     connect(m_pSplitBox, &QCheckBox::stateChanged,
 //             this, &UIWizardNewVDPageExpert::completeChanged);
 //     connect(m_pLocationEditor, &QLineEdit::textChanged,
 //             this, &UIWizardNewVDPageExpert::completeChanged);
-//     connect(m_pLocationOpenButton, &QIToolButton::clicked,
-//             this, &UIWizardNewVDPageExpert::sltSelectLocationButtonClicked);
+    connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
+            this, &UIWizardNewVDPageExpert::sltSelectLocationButtonClicked);
 //     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
 //             this, &UIWizardNewVDPageExpert::completeChanged);
 
-//     /* Register classes: */
-//     qRegisterMetaType<CMediumFormat>();
-//     /* Register fields: */
-//     registerField("mediumFormat", this, "mediumFormat");
-//     registerField("mediumVariant", this, "mediumVariant");
-//     registerField("mediumPath", this, "mediumPath");
-//     registerField("mediumSize", this, "mediumSize");
+
+    retranslateUi();
+
 }
 
 void UIWizardNewVDPageExpert::sltMediumFormatChanged()
 {
-    // CMediumFormat comMediumFormat = mediumFormat();
-    // if (comMediumFormat.isNull())
-    // {
-    //     AssertMsgFailed(("No medium format set!"));
-    //     return;
-    // }
-    // updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
-    // updateLocationEditorAfterFormatChange(comMediumFormat, m_formatExtensions);
-
-    // /* Broadcast complete-change: */
-    // completeChanged();
+    AssertReturnVoid(m_pFormatGroup);
+    newVDWizardPropertySet(MediumFormat, m_pFormatGroup->mediumFormat());
+    updateDiskWidgetsAfterMediumFormatChange();
+    completeChanged();
 }
 
 void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
 {
-    /* Call to base-class: */
-    //onSelectLocationButtonClicked();
+    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    AssertReturnVoid(pWizard);
+    QString strSelectedPath = UIWizardNewVDSizeLocation::selectNewMediumLocation(pWizard);
+    if (strSelectedPath.isEmpty())
+        return;
+    QString strMediumPath =
+        UIDiskEditorGroupBox::appendExtension(strSelectedPath,
+                                              UIDiskEditorGroupBox::defaultExtensionForMediumFormat(pWizard->mediumFormat()));
+    QFileInfo mediumPath(strMediumPath);
+    m_pSizeAndPathGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
 
 void UIWizardNewVDPageExpert::retranslateUi()
@@ -180,15 +141,33 @@ void UIWizardNewVDPageExpert::retranslateUi()
 
 void UIWizardNewVDPageExpert::initializePage()
 {
-    // /* Get default extension for new virtual-disk: */
-    // m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
-    // /* Set default name as text for location editor: */
-    // if (m_pLocationEditor)
-    //     m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
+    /* First set the medium format of the wizard: */
+    AssertReturnVoid(m_pFormatGroup);
+    const CMediumFormat &comMediumFormat = m_pFormatGroup->mediumFormat();
+    AssertReturnVoid(!comMediumFormat.isNull());
+    newVDWizardPropertySet(MediumFormat, comMediumFormat);
 
+    QString strExtension = UIDiskEditorGroupBox::defaultExtensionForMediumFormat(comMediumFormat);
+    QString strMediumFilePath =
+        UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_strDefaultName,
+                                                                                             strExtension), m_strDefaultPath);
+    m_pSizeAndPathGroup->blockSignals(true);
+    m_pSizeAndPathGroup->setMediumPath(strMediumFilePath);
+    m_pSizeAndPathGroup->blockSignals(false);
+    newVDWizardPropertySet(MediumPath, m_pSizeAndPathGroup->mediumPath());
 
-    // /* Translate page: */
-    // retranslateUi();
+    m_pSizeAndPathGroup->blockSignals(true);
+    m_pSizeAndPathGroup->setMediumSize(m_uDefaultSize > m_uMediumSizeMin && m_uDefaultSize < m_uMediumSizeMax ? m_uDefaultSize : m_uMediumSizeMin);
+    m_pSizeAndPathGroup->blockSignals(false);
+    newVDWizardPropertySet(MediumSize, m_pSizeAndPathGroup->mediumSize());
+
+    m_pVariantGroup->blockSignals(true);
+    m_pVariantGroup->updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
+    m_pVariantGroup->blockSignals(false);
+
+    newVDWizardPropertySet(MediumVariant, m_pVariantGroup->mediumVariant());
+
+    retranslateUi();
 }
 
 bool UIWizardNewVDPageExpert::isComplete() const
@@ -235,4 +214,24 @@ bool UIWizardNewVDPageExpert::validatePage()
 
     /* Return result: */
     return fResult;
+}
+
+void UIWizardNewVDPageExpert::updateDiskWidgetsAfterMediumFormatChange()
+{
+    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    AssertReturnVoid(pWizard && m_pVariantGroup && m_pSizeAndPathGroup && m_pFormatGroup);
+    const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
+    AssertReturnVoid(!comMediumFormat.isNull());
+
+    /* Block signals of the updated widgets to avoid calling corresponding slots since they add the parameters to m_userModifiedParameters: */
+    m_pVariantGroup->blockSignals(true);
+    m_pVariantGroup->updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
+    m_pVariantGroup->blockSignals(false);
+
+    m_pSizeAndPathGroup->blockSignals(true);
+    m_pSizeAndPathGroup->updateMediumPath(comMediumFormat, m_pFormatGroup->formatExtensions());
+    m_pSizeAndPathGroup->blockSignals(false);
+    /* Update the wizard parameters explicitly since we blocked th signals: */
+    newVDWizardPropertySet(MediumPath, m_pSizeAndPathGroup->mediumPath());
+    newVDWizardPropertySet(MediumVariant, m_pVariantGroup->mediumVariant());
 }
