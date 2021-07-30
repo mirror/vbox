@@ -1065,6 +1065,8 @@ typedef struct PDMPCIHLPRC
      * @returns rc if we failed to acquire the lock.
      * @param   pDevIns         The PCI device instance.
      * @param   rc              What to return if we fail to acquire the lock.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -1148,6 +1150,8 @@ typedef struct PDMPCIHLPR0
      * @returns rc if we failed to acquire the lock.
      * @param   pDevIns         The PCI device instance.
      * @param   rc              What to return if we fail to acquire the lock.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLR0CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -1227,6 +1231,8 @@ typedef struct PDMPCIHLPR3
      * @returns Fatal error on failure.
      * @param   pDevIns         The PCI device instance.
      * @param   rc              Dummy for making the interface identical to the RC and R0 versions.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -1501,6 +1507,8 @@ typedef struct PDMIOMMUHLPR0
      * @returns rc if we failed to acquire the lock.
      * @param   pDevIns     The PCI device instance.
      * @param   rc          What to return if we fail to acquire the lock.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLR0CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -1555,6 +1563,8 @@ typedef struct PDMIOMMUHLPRC
      * @returns rc if we failed to acquire the lock.
      * @param   pDevIns     The PCI device instance.
      * @param   rc          What to return if we fail to acquire the lock.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -1609,6 +1619,8 @@ typedef struct PDMIOMMUHLPR3
      * @returns rc if we failed to acquire the lock.
      * @param   pDevIns     The PCI device instance.
      * @param   rc          What to return if we fail to acquire the lock.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -1715,6 +1727,8 @@ typedef struct PDMPICHLP
      * @returns rc if we failed to acquire the lock.
      * @param   pDevIns         The PIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLCALLBACKMEMBER(int, pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -1921,6 +1935,8 @@ typedef struct PDMIOAPICHLP
      * @returns rc if we failed to acquire the lock.
      * @param   pDevIns         The IOAPIC device instance.
      * @param   rc              What to return if we fail to acquire the lock.
+     *
+     * @sa      PDMCritSectEnter
      */
     DECLCALLBACKMEMBER(int, pfnLock,(PPDMDEVINS pDevIns, int rc));
 
@@ -7872,6 +7888,11 @@ DECLINLINE(int) PDMDevHlpSetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCri
  *                              and the section is busy.  Pass VINF_SUCCESS to
  *                              acquired the critical section thru a ring-3
  *                              call if necessary.
+ *
+ * @note    Even callers setting @a rcBusy to VINF_SUCCESS must either handle
+ *          possible failures in ring-0 or apply an AssertReleaseRC() to the
+ *          return value of this function.
+ *
  * @sa      PDMCritSectEnter
  */
 DECLINLINE(int) PDMDevHlpCritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
