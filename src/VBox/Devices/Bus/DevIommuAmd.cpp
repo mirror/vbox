@@ -907,7 +907,7 @@ DECLINLINE(uint16_t) iommuAmdDteCacheEntryGetUnused(PCIOMMU pThis)
 
 
 /**
- * Adds or updates the I/O device flags for the given device ID.
+ * Adds a device-table entry to the cache.
  *
  * @returns VBox status code.
  * @retval  VERR_OUT_OF_RESOURCES if the cache is full.
@@ -915,16 +915,11 @@ DECLINLINE(uint16_t) iommuAmdDteCacheEntryGetUnused(PCIOMMU pThis)
  * @param   pDevIns     The IOMMU instance data.
  * @param   idDevice    The device ID (bus, device, function).
  * @param   pDte        The device table entry.
- * @param   fOrMask     The device flags (usually compound flags) to OR in with the
- *                      basic flags, see IOMMU_DTE_CACHE_F_XXX.
  */
-static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pDte, uint16_t fOrMask)
+static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pDte)
 {
-    Assert(pDte);
-    Assert(idDevice);
-
     int rc = VINF_SUCCESS;
-    uint16_t const fFlags   = iommuAmdGetBasicDevFlags(pDte) | IOMMU_DTE_CACHE_F_PRESENT | fOrMask;
+    uint16_t const fFlags   = iommuAmdGetBasicDevFlags(pDte) | IOMMU_DTE_CACHE_F_PRESENT;
     uint16_t const idDomain = pDte->n.u16DomainId;
 
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
@@ -932,19 +927,19 @@ static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pD
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
     uint16_t idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
-    if (idxDte < cDteCache)
+    if (idxDte >= cDteCache)
     {
-        pThis->aDteCache[idxDte].fFlags   = fFlags;
-        pThis->aDteCache[idxDte].idDomain = idDomain;
+        idxDte = iommuAmdDteCacheEntryGetUnused(pThis);
+        if (idxDte < cDteCache)
+        {
+            pThis->aDeviceIds[idxDte] = idDevice;
+            pThis->aDteCache[idxDte].fFlags   = fFlags;
+            pThis->aDteCache[idxDte].idDomain = idDomain;
+        }
+        else
+            rc = VERR_OUT_OF_RESOURCES;
     }
-    else if ((idxDte = iommuAmdDteCacheEntryGetUnused(pThis)) < cDteCache)
-    {
-        pThis->aDeviceIds[idxDte] = idDevice;
-        pThis->aDteCache[idxDte].fFlags   = fFlags;
-        pThis->aDteCache[idxDte].idDomain = idDomain;
-    }
-    else
-        rc = VERR_OUT_OF_RESOURCES;
+    /* else: A DTE cache entry already exists, do nothing. */
 
     IOMMU_CACHE_UNLOCK(pDevIns, pThis);
     return rc;
@@ -956,10 +951,12 @@ static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pD
  *
  * @param   pDevIns     The IOMMU instance data.
  * @param   idDevice    The device ID (bus, device, function).
- * @param   fFlags      Additional device flags to OR with existing flags, see
+ * @param   fOrMask     Device flags to add to the existing flags, see
+ *                      IOMMU_DTE_CACHE_F_XXX.
+ * @param   fAndMask    Device flags to remove from the existing flags, see
  *                      IOMMU_DTE_CACHE_F_XXX.
  */
-static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t fFlags)
+static void iommuAmdDteCacheUpdateFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint16_t fOrMask, uint16_t fAndMask)
 {
     PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
     IOMMU_CACHE_LOCK(pDevIns, pThis);
@@ -968,7 +965,10 @@ static void iommuAmdDteCacheAddFlags(PPDMDEVINS pDevIns, uint16_t idDevice, uint
     uint16_t const idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
     if (   idxDte < cDteCache
         && (pThis->aDteCache[idxDte].fFlags & IOMMU_DTE_CACHE_F_PRESENT))
-        pThis->aDteCache[idxDte].fFlags |= fFlags;
+    {
+        uint16_t const fNewFlags = (pThis->aDteCache[idxDte].fFlags | fOrMask) & ~fAndMask;
+        pThis->aDteCache[idxDte].fFlags = fNewFlags;
+    }
 
     IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
@@ -1152,18 +1152,18 @@ static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOMMUR3 pThisR3, PIOTLBE pIo
                                      PCIOPAGELOOKUP pPageLookup)
 {
     /* Initialize the IOTLB entry with results of the I/O page walk. */
-    pIotlbe->Core.Key   = IOMMU_IOTLB_KEY_MAKE(idDomain, uIova);
-    pIotlbe->PageLookup = *pPageLookup;
-
-    /* Validate. */
-    Assert(pIotlbe->Core.Key != IOMMU_IOTLB_KEY_NIL);
-    Assert(!pIotlbe->fEvictPending);
+    AVLU64KEY const uKey = IOMMU_IOTLB_KEY_MAKE(idDomain, uIova);
+    Assert(uKey != IOMMU_IOTLB_KEY_NIL);
 
     /* Check if the entry already exists. */
-    PIOTLBE pFound = (PIOTLBE)RTAvlU64Get(&pThisR3->TreeIotlbe, pIotlbe->Core.Key);
+    PIOTLBE pFound = (PIOTLBE)RTAvlU64Get(&pThisR3->TreeIotlbe, uKey);
     if (!pFound)
     {
         /* Insert the entry into the cache. */
+        pIotlbe->Core.Key   = uKey;
+        pIotlbe->PageLookup = *pPageLookup;
+        Assert(!pIotlbe->fEvictPending);
+
         bool const fInserted = RTAvlU64Insert(&pThisR3->TreeIotlbe, &pIotlbe->Core);
         Assert(fInserted); NOREF(fInserted);
         Assert(pThisR3->cCachedIotlbes < IOMMU_IOTLBE_MAX);
@@ -1173,14 +1173,13 @@ static void iommuAmdIotlbEntryInsert(PIOMMU pThis, PIOMMUR3 pThisR3, PIOTLBE pIo
     else
     {
         /* Update the existing entry. */
+        Assert(pFound->Core.Key == uKey);
         if (pFound->fEvictPending)
         {
             pFound->fEvictPending = false;
             STAM_COUNTER_INC(&pThis->StatIotlbeLazyEvictReuse); NOREF(pThis);
         }
-        Assert(pFound->PageLookup.cShift == pPageLookup->cShift);
-        pFound->PageLookup.fPerm     = pPageLookup->fPerm;
-        pFound->PageLookup.GCPhysSpa = pPageLookup->GCPhysSpa;
+        pFound->PageLookup = *pPageLookup;
     }
 }
 
@@ -1401,7 +1400,7 @@ static void iommuAmdIotlbAddRange(PPDMDEVINS pDevIns, uint16_t idDomain, uint64_
     PIOMMUR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PIOMMUR3);
 
     IOPAGELOOKUP PageLookup;
-    PageLookup.GCPhysSpa = pAddrOut->GCPhysSpa & X86_PAGE_4K_BASE_MASK;;
+    PageLookup.GCPhysSpa = pAddrOut->GCPhysSpa & X86_PAGE_4K_BASE_MASK;
     PageLookup.cShift    = pAddrOut->cShift;
     PageLookup.fPerm     = pAddrOut->fPerm;
 
@@ -3330,8 +3329,9 @@ static void iommuAmdIoPageFaultEventRaise(PPDMDEVINS pDevIns, uint16_t fIoDevFla
     STAM_COUNTER_INC(&pThis->StatIopfs); NOREF(pThis);
 
 #ifdef IOMMU_WITH_DTE_CACHE
-# define IOMMU_DTE_CACHE_SET_PF_RAISED(a_pDevIns, a_DevId)  iommuAmdDteCacheAddFlags((a_pDevIns), (a_DevId), \
-                                                                                     IOMMU_DTE_CACHE_F_IO_PAGE_FAULT_RAISED)
+# define IOMMU_DTE_CACHE_SET_PF_RAISED(a_pDevIns, a_DevId)  iommuAmdDteCacheUpdateFlags((a_pDevIns), (a_DevId), \
+                                                                                        IOMMU_DTE_CACHE_F_IO_PAGE_FAULT_RAISED, \
+                                                                                        0 /* fAndMask */)
 #else
 # define IOMMU_DTE_CACHE_SET_PF_RAISED(a_pDevIns, a_DevId)  do { } while (0)
 #endif
@@ -3895,9 +3895,13 @@ static int iommuAmdLookupIoAddrRange(PPDMDEVINS pDevIns, PFNIOPAGELOOKUP pfnIoPa
         rc = pfnIoPageLookup(pDevIns, uIovaPage, fPerm, pAux, &PageLookup);
         if (RT_SUCCESS(rc))
         {
-            /* Validate results of the translation. */
+            /*
+             * Validate results of the translation.
+             */
+            /* The IOTLB cache preserves the original page sizes even though the IOVAs are split into 4K pages. */
             Assert(PageLookup.cShift >= X86_PAGE_4K_SHIFT && PageLookup.cShift <= 51);
-            Assert(!(PageLookup.GCPhysSpa & X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift)));
+            Assert(   pfnIoPageLookup != iommuAmdDteLookupPage
+                   || !(PageLookup.GCPhysSpa & X86_GET_PAGE_OFFSET_MASK(PageLookup.cShift)));
             Assert((PageLookup.fPerm & fPerm) == fPerm);
 
             /* Store the translated address before continuing to access more pages. */
@@ -3986,6 +3990,9 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
     int rc = iommuAmdDteRead(pDevIns, idDevice, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
+#ifdef IOMMU_WITH_IOTLBE_CACHE
+        iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte);
+#endif
         if (Dte.n.u1Valid)
         {
             /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
@@ -4035,7 +4042,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
                     if (RT_SUCCESS(rc))
                     {
                         /* Update that addresses requires translation (cumulative permissions of DTE and I/O page tables). */
-                        iommuAmdDteCacheAdd(pDevIns, Aux.idDevice, &Dte, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
+                        iommuAmdDteCacheUpdateFlags(pDevIns, idDevice, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE, 0 /* fAndMask */);
                         /* Update IOTLB for the contiguous range of I/O virtual addresses. */
                         iommuAmdIotlbAddRange(pDevIns, Aux.idDomain, uIova & X86_PAGE_4K_BASE_MASK, cbContiguous, &AddrOut);
                     }
@@ -4053,7 +4060,7 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
                     /* Update that addresses permissions of DTE apply (but omit address translation). */
-                    iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, IOMMU_DTE_CACHE_F_IO_PERM);
+                    iommuAmdDteCacheUpdateFlags(pDevIns, idDevice, IOMMU_DTE_CACHE_F_IO_PERM, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
 #endif
                 }
                 else
@@ -4083,11 +4090,6 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
              */
             GCPhysSpa    = uIova;
             cbContiguous = cbIova;
-
-#ifdef IOMMU_WITH_IOTLBE_CACHE
-            /* Update that addresses don't require translation (nor permission checks) but a DTE is present. */
-            iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, 0 /* fFlags */);
-#endif
         }
     }
     else
@@ -4600,7 +4602,7 @@ static int iommuAmdIntrTableLookup(PPDMDEVINS pDevIns, uint16_t idDevice, IOMMUO
     if (RT_SUCCESS(rc))
     {
 #ifdef IOMMU_WITH_IRTE_CACHE
-        iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte, 0 /* fFlags */);
+        iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte);
 #endif
         /* If the DTE is not valid, all interrupts are forwarded without remapping. */
         if (Dte.n.u1IntrMapValid)
