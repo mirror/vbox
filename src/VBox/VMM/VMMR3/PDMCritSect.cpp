@@ -869,7 +869,7 @@ VMMR3DECL(bool) PDMR3CritSectYield(PVM pVM, PPDMCRITSECT pCritSect)
 #else
     int rc = PDMCritSectEnter(pVM, pCritSect, VERR_IGNORED);
 #endif
-    AssertLogRelRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC(pVM, pCritSect, rc);
     return true;
 }
 

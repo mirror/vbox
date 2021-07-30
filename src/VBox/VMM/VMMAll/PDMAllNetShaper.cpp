@@ -44,8 +44,15 @@ VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter
 
     PPDMNSBWGROUP pBwGroup = ASMAtomicReadPtrT(&pFilter->CTX_SUFF(pBwGroup), PPDMNSBWGROUP);
     int rc = PDMCritSectEnter(pVM, &pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
-    if (RT_UNLIKELY(rc == VERR_SEM_BUSY))
-        return true;
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+    {
+        if (rc == VERR_SEM_BUSY)
+            return true;
+        PDM_CRITSECT_RELEASE_ASSERT_RC(pVM, &pBwGroup->Lock, rc);
+        return false;
+    }
 
     bool fAllowed = true;
     if (pBwGroup->cbPerSecMax)
