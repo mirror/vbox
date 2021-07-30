@@ -27035,7 +27035,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IProgressCreatedEvent" extends="IProgressEvent"
     uuid="a85bba40-1b93-47bb-b125-dec708c30fc0"
     wsmap="managed" autogen="VBoxEvent" id="OnProgressCreated">
-    <desc>Notification of a new progress object creation/deletion. 
+    <desc>Notification of a new progress object creation/deletion.
       Covers purely projess objects in VBoxSVC. This
       event is signaled on the event source of IVirtualBox, unlike
       the other progress events.</desc>
