@@ -1127,7 +1127,7 @@
  *
  * @note    This macro can be combined with other macros, for example
  * @code
- *   EMR3DECL(DECL_NOTHROW(void)) foo(void);
+ *   RTR3DECL(DECL_NOTHROW(void)) foo(void);
  * @endcode
  *
  * @note    GCC is currently restricted to 4.2+ given the ominous comments on
@@ -1497,7 +1497,7 @@
  * How to declare a function which does not return.
  * @note This macro can be combined with other macros, for example
  * @code
- *   EMR3DECL(DECL_NO_RETURN(void)) foo(void);
+ *   RTR3DECL(DECL_NO_RETURN(void)) foo(void);
  * @endcode
  */
 #ifdef _MSC_VER
@@ -1512,13 +1512,37 @@
  * How to declare a function which may return more than once.
  * @note This macro can be combined with other macros, for example
  * @code
- *   EMR3DECL(DECL_RETURNS_TWICE(void)) MySetJmp(void);
+ *   RTR3DECL(DECL_RETURNS_TWICE(void)) MySetJmp(void);
  * @endcode
  */
 #if RT_GNUC_PREREQ(4, 1)
 # define DECL_RETURNS_TWICE(a_RetType)  __attribute__((returns_twice)) a_RetType
-# else
+#else
 # define DECL_RETURNS_TWICE(a_RetType)  a_RetType
+#endif
+
+/** @def DECL_CHECK_RETURN
+ * Require a return value to be checked.
+ * @note This macro can be combined with other macros, for example
+ * @code
+ *   RTR3DECL(DECL_CHECK_RETURN(int)) MayReturnInfoStatus(void);
+ * @endcode
+ * @todo Visual C++: check _Check_return_ from SAL.
+ */
+#if RT_GNUC_PREREQ(3, 4)
+# define DECL_CHECK_RETURN(a_RetType)  __attribute__((warn_unused_result)) a_RetType
+#else
+# define DECL_CHECK_RETURN(a_RetType)  a_RetType
+#endif
+
+/** @def DECL_CHECK_RETURN_NOT_R3
+ * Variation of DECL_CHECK_RETURN that only applies the required to non-ring-3
+ * code.
+ */
+#ifndef IN_RING3
+# define DECL_CHECK_RETURN_NOT_R3(a_RetType)  DECL_CHECK_RETURN(a_RetType)
+#else
+# define DECL_CHECK_RETURN_NOT_R3(a_RetType)  a_RetType
 #endif
 
 /** @def DECLWEAK
@@ -1526,7 +1550,7 @@
  * runtime.
  * @note This macro can be combined with other macros, for example
  * @code
- *   EMR3DECL(DECLWEAK(int)) foo;
+ *   RTR3DECL(DECLWEAK(int)) foo;
  * @endcode
  */
 #if defined(__GNUC__)
