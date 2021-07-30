@@ -37,6 +37,7 @@
 #include "UIMediumItem.h"
 #include "UIMediumManager.h"
 #include "UIMediumSearchWidget.h"
+#include "UINotificationCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIMessageCenter.h"
 #include "QIToolBar.h"
@@ -274,64 +275,6 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
         && newData.m_options.m_enmMediumType != oldData.m_options.m_enmMediumType)
         pMediumItem->changeMediumType(oldData.m_options.m_enmMediumType, newData.m_options.m_enmMediumType);
 
-    /* Try to assign new medium location: */
-    if (   comMedium.isOk()
-        && newData.m_options.m_strLocation != oldData.m_options.m_strLocation)
-    {
-        /* Prepare move storage progress: */
-        CProgress comProgress = comMedium.MoveTo(newData.m_options.m_strLocation);
-
-        /* Show error message if necessary: */
-        if (!comMedium.isOk())
-            msgCenter().cannotMoveMediumStorage(comMedium,
-                                                oldData.m_options.m_strLocation,
-                                                newData.m_options.m_strLocation,
-                                                this);
-        else
-        {
-            /* Show move storage progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIMediumManager::tr("Moving medium ..."),
-                                                ":/progress_media_move_90px.png", this);
-
-            /* Show error message if necessary: */
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotMoveMediumStorage(comProgress,
-                                                    oldData.m_options.m_strLocation,
-                                                    newData.m_options.m_strLocation,
-                                                    this);
-        }
-    }
-
-    /* Try to assign new medium size: */
-    if (   comMedium.isOk()
-        && newData.m_options.m_uLogicalSize != oldData.m_options.m_uLogicalSize)
-    {
-        /* Prepare resize storage progress: */
-        CProgress comProgress = comMedium.Resize(newData.m_options.m_uLogicalSize);
-
-        /* Show error message if necessary: */
-        if (!comMedium.isOk())
-            msgCenter().cannotResizeHardDiskStorage(comMedium,
-                                                    oldData.m_options.m_strLocation,
-                                                    uiCommon().formatSize(oldData.m_options.m_uLogicalSize),
-                                                    uiCommon().formatSize(newData.m_options.m_uLogicalSize),
-                                                    this);
-        else
-        {
-            /* Show resize storage progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIMediumManager::tr("Resizing medium ..."),
-                                                ":/progress_media_resize_90px.png", this);
-
-            /* Show error message if necessary: */
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotResizeHardDiskStorage(comProgress,
-                                                        oldData.m_options.m_strLocation,
-                                                        uiCommon().formatSize(oldData.m_options.m_uLogicalSize),
-                                                        uiCommon().formatSize(newData.m_options.m_uLogicalSize),
-                                                        this);
-        }
-    }
-
     /* Try to assign new medium description: */
     if (   comMedium.isOk()
         && newData.m_options.m_strDescription != oldData.m_options.m_strDescription)
@@ -343,6 +286,30 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
             msgCenter().cannotChangeMediumDescription(comMedium,
                                                       oldData.m_options.m_strLocation,
                                                       this);
+    }
+
+    /* Try to assign new medium location: */
+    if (   comMedium.isOk()
+        && newData.m_options.m_strLocation != oldData.m_options.m_strLocation)
+    {
+        /* Assign new medium location: */
+        UINotificationProgressMediumMove *pNotification = new UINotificationProgressMediumMove(comMedium,
+                                                                                               newData.m_options.m_strLocation);
+        connect(pNotification, &UINotificationProgressMediumMove::sigProgressFinished,
+                this, &UIMediumManagerWidget::sltHandleMoveProgressFinished);
+        notificationCenter().append(pNotification);
+    }
+
+    /* Try to assign new medium size: */
+    if (   comMedium.isOk()
+        && newData.m_options.m_uLogicalSize != oldData.m_options.m_uLogicalSize)
+    {
+        /* Assign new medium size: */
+        UINotificationProgressMediumResize *pNotification = new UINotificationProgressMediumResize(comMedium,
+                                                                                                   newData.m_options.m_uLogicalSize);
+        connect(pNotification, &UINotificationProgressMediumResize::sigProgressFinished,
+                this, &UIMediumManagerWidget::sltHandleResizeProgressFinished);
+        notificationCenter().append(pNotification);
     }
 
     /* Recache current item: */
@@ -580,6 +547,34 @@ void UIMediumManagerWidget::sltRefreshAll()
 {
     /* Restart full medium-enumeration: */
     uiCommon().enumerateMedia();
+}
+
+void UIMediumManagerWidget::sltHandleMoveProgressFinished()
+{
+    /* Get current medium-item: */
+    UIMediumItem *pMediumItem = currentMediumItem();
+    AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
+    AssertReturnVoid(!pMediumItem->id().isNull());
+
+    /* Recache current item: */
+    pMediumItem->refreshAll();
+
+    /* Push the current item data into details-widget: */
+    sltHandleCurrentTabChanged();
+}
+
+void UIMediumManagerWidget::sltHandleResizeProgressFinished()
+{
+    /* Get current medium-item: */
+    UIMediumItem *pMediumItem = currentMediumItem();
+    AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
+    AssertReturnVoid(!pMediumItem->id().isNull());
+
+    /* Recache current item: */
+    pMediumItem->refreshAll();
+
+    /* Push the current item data into details-widget: */
+    sltHandleCurrentTabChanged();
 }
 
 void UIMediumManagerWidget::sltHandleCurrentTabChanged()

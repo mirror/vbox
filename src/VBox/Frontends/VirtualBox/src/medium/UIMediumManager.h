@@ -186,6 +186,14 @@ private slots:
         void sltRefreshAll();
     /** @} */
 
+    /** @name Menu/action handler stuff.
+      * @{ */
+        /** Handles medium move progress finished signal. */
+        void sltHandleMoveProgressFinished();
+        /** Handles medium resize progress finished signal. */
+        void sltHandleResizeProgressFinished();
+    /** @} */
+
     /** @name Tab-widget stuff.
       * @{ */
         /** Handles tab change case. */
