@@ -157,11 +157,11 @@ public:
     int i_loadVDPlugin(const char *pszPluginLibrary);
     int i_unloadVDPlugin(const char *pszPluginLibrary);
 
-    void i_onMediumRegistered(const Guid &aMediumId, const DeviceType_T aDevType, const BOOL aRegistered);
+    void i_onMediumRegistered(const Guid &aMediumId, const DeviceType_T aDevType, BOOL aRegistered);
     void i_onMediumConfigChanged(IMedium *aMedium);
     void i_onMediumChanged(IMediumAttachment* aMediumAttachment);
     void i_onStorageControllerChanged(const Guid &aMachineId, const com::Utf8Str &aControllerName);
-    void i_onStorageDeviceChanged(IMediumAttachment* aStorageDevice, const BOOL fRemoved, const BOOL fSilent);
+    void i_onStorageDeviceChanged(IMediumAttachment* aStorageDevice, BOOL fRemoved, BOOL fSilent);
     void i_onMachineStateChanged(const Guid &aId, MachineState_T aState);
     void i_onMachineDataChanged(const Guid &aId, BOOL aTemporary = FALSE);
     BOOL i_onExtraDataCanChange(const Guid &aId, const Utf8Str &aKey, const Utf8Str &aValue, Bstr &aError);
@@ -198,6 +198,8 @@ public:
     void i_onCloudProviderListChanged(BOOL aRegistered);
     void i_onCloudProviderRegistered(const Utf8Str &aProviderId, BOOL aRegistered);
     void i_onCloudProviderUninstall(const Utf8Str &aProviderId);
+
+    void i_onProgressCreated(const Guid &aId, BOOL aCreated);
 
 #ifdef VBOX_WITH_CLOUD_NET
     HRESULT i_findCloudNetworkByName(const com::Utf8Str &aNetworkName,
@@ -389,6 +391,8 @@ private:
                                  com::Utf8Str &aUrl,
                                  com::Utf8Str &aFile,
                                  BOOL *aResult);
+    HRESULT findProgressById(const com::Guid &aId,
+                             ComPtr<IProgress> &aProgressObject);
 
     static HRESULT i_setErrorStaticBoth(HRESULT aResultCode, int vrc, const Utf8Str &aText)
     {

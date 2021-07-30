@@ -2543,7 +2543,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="d0a0163f-e254-4e5b-a1f2-011cf991c38d"
+    uuid="0efe109d-9b2e-48cf-9969-3fb7b711062e"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     wrap-gen-hook="yes"
@@ -3561,6 +3561,23 @@
 
       <param name="result" type="boolean" dir="return">
         <desc>If firmware of this type and version is available.</desc>
+      </param>
+    </method>
+
+    <method name="findProgressById">
+      <desc>
+        Searches through all progress objects known to VBoxSVC for an
+        instance with the given GUID.
+        <note>
+          The method returns an error if the given GUID does not
+          correspond to any currently known progress object.
+        </note>
+      </desc>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>GUID of the progress object to search for.</desc>
+      </param>
+      <param name="progressObject" type="IProgress" dir="return">
+        <desc>Found progress object.</desc>
       </param>
     </method>
 
@@ -24465,7 +24482,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="2ab7c196-f232-11ea-a5d2-83b96bc30bcc"
+    uuid="c88a66ed-fbce-4c21-9196-12354bd96b89"
     >
 
     <desc>
@@ -24919,9 +24936,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ICloudProfileChangedEvent"/>.
       </desc>
     </const>
+    <const name="OnProgressCreated" value="110">
+      <desc>
+        See <link to="IProgressCreatedEvent"/>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="110">
+    <const name="Last" value="111">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -27005,6 +27027,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="progressId" readonly="yes" type="uuid" mod="string">
       <desc>GUID of the progress this event relates to.</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IProgressCreatedEvent" extends="IProgressEvent"
+    uuid="a85bba40-1b93-47bb-b125-dec708c30fc0"
+    wsmap="managed" autogen="VBoxEvent" id="OnProgressCreated">
+    <desc>Notification of a new progress object creation/deletion. 
+      Covers purely projess objects in VBoxSVC. This
+      event is signaled on the event source of IVirtualBox, unlike
+      the other progress events.</desc>
+
+    <attribute name="create" readonly="yes" type="boolean">
+      <desc>If @c true, the progress object was created, otherwise it
+        was deleted.</desc>
     </attribute>
 
   </interface>

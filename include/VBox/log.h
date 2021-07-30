@@ -544,6 +544,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_PROCESS,
     /** Main group, IProgress. */
     LOG_GROUP_MAIN_PROGRESS,
+    /** Main group, IProgressCreatedEvent. */
+    LOG_GROUP_MAIN_PROGRESSCREATEDEVENT,
     /** Main group, IProgressEvent. */
     LOG_GROUP_MAIN_PROGRESSEVENT,
     /** Main group, IRangedIntegerFormValue. */

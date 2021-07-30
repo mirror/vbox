@@ -1270,6 +1270,8 @@ HRESULT VirtualBox::getProgressOperations(std::vector<ComPtr<IProgress> > &aProg
     /* protect mProgressOperations */
     AutoReadLock safeLock(m->mtxProgressOperations COMMA_LOCKVAL_SRC_POS);
     ProgressMap pmap(m->mapProgressOperations);
+    /* Can release lock now. The following code works on a copy of the map. */
+    safeLock.release();
     aProgressOperations.resize(pmap.size());
     size_t i = 0;
     for (ProgressMap::iterator it = pmap.begin(); it != pmap.end(); ++it, ++i)
@@ -3511,6 +3513,12 @@ void VirtualBox::i_onCloudProviderUninstall(const Utf8Str &aProviderId)
     hrc = m->pEventSource->FireEvent(pEvent, /* :timeout */ 10000, &fDelivered);
     if (FAILED(hrc))
         return;
+}
+
+
+void VirtualBox::i_onProgressCreated(const Guid &aId, BOOL aCreated)
+{
+    ::FireProgressCreatedEvent(m->pEventSource, aId.toString(), aCreated);
 }
 
 
@@ -5791,6 +5799,27 @@ HRESULT VirtualBox::i_unregisterNATNetwork(NATNetwork *aNATNetwork,
 }
 
 
+HRESULT VirtualBox::findProgressById(const com::Guid &aId,
+                                     ComPtr<IProgress> &aProgressObject)
+{
+    if (!aId.isValid())
+        return setError(E_INVALIDARG,
+                        tr("The provided progress object GUID is invalid"));
+
+    /* protect mProgressOperations */
+    AutoReadLock safeLock(m->mtxProgressOperations COMMA_LOCKVAL_SRC_POS);
+
+    ProgressMap::const_iterator it = m->mapProgressOperations.find(aId);
+    if (it != m->mapProgressOperations.end())
+    {
+        aProgressObject = it->second;
+        return S_OK;
+    }
+    return setError(E_INVALIDARG,
+                    tr("The progress object with the given GUID could not be found"));
+}
+
+
 #ifdef RT_OS_WINDOWS
 #include <psapi.h>
 
@@ -5997,7 +6026,7 @@ void VirtualBox::i_callHook(const char *a_pszFunction)
 
 
 /**
- * Wathces @a a_pidClient for termination.
+ * Watches @a a_pidClient for termination.
  *
  * @returns true if successfully enabled watching of it, false if not.
  * @param   a_pidClient     The PID to watch.
