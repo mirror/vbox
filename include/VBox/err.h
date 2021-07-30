@@ -3069,51 +3069,51 @@
  * @{
  */
 /** Failed to read the device table entry from guest memory. */
-#define VERR_IOMMU_DTE_READ_FAILED                  (-7200)
+#define VERR_IOMMU_DTE_READ_FAILED                  (-7300)
 /** Failed to read the device table entry due to an invalid offset. */
-#define VERR_IOMMU_DTE_BAD_OFFSET                   (-7201)
+#define VERR_IOMMU_DTE_BAD_OFFSET                   (-7301)
 /** Address translation failed. */
-#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7202)
+#define VERR_IOMMU_ADDR_TRANSLATION_FAILED          (-7302)
 /** Access denied for the address. */
-#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7203)
+#define VERR_IOMMU_ADDR_ACCESS_DENIED               (-7303)
 /** Remapping failed for the interrupt. */
-#define VERR_IOMMU_INTR_REMAP_FAILED                (-7204)
+#define VERR_IOMMU_INTR_REMAP_FAILED                (-7304)
 /** Remapping denied for the interrupt (might have caused a PCI target abort). */
-#define VERR_IOMMU_INTR_REMAP_DENIED                (-7205)
+#define VERR_IOMMU_INTR_REMAP_DENIED                (-7305)
 /** Command not supported. */
-#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7206)
+#define VERR_IOMMU_CMD_NOT_SUPPORTED                (-7306)
 /** Command format (or reserved bits) invalid. */
-#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7207)
+#define VERR_IOMMU_CMD_INVALID_FORMAT               (-7307)
 /** Command hardware failure. */
-#define VERR_IOMMU_CMD_HW_ERROR                     (-7208)
+#define VERR_IOMMU_CMD_HW_ERROR                     (-7308)
 /** IOMMU device is not present. */
-#define VERR_IOMMU_NOT_PRESENT                      (-7209)
+#define VERR_IOMMU_NOT_PRESENT                      (-7309)
 /** IOMMU instance cannot call itself (for remapping interrupts or translating
  *  addresses). */
-#define VERR_IOMMU_CANNOT_CALL_SELF                 (-7210)
+#define VERR_IOMMU_CANNOT_CALL_SELF                 (-7310)
 /** Address translation disabled (but permission bits apply). */
-#define VINF_IOMMU_ADDR_TRANSLATION_DISABLED        7211
+#define VINF_IOMMU_ADDR_TRANSLATION_DISABLED        7311
 
 /** IOMMU Internal processing error \#0. */
-#define VERR_IOMMU_IPE_0                            (-7290)
+#define VERR_IOMMU_IPE_0                            (-7390)
 /** IOMMU Internal processing error \#1. */
-#define VERR_IOMMU_IPE_1                            (-7291)
+#define VERR_IOMMU_IPE_1                            (-7391)
 /** IOMMU Internal processing error \#2. */
-#define VERR_IOMMU_IPE_2                            (-7292)
+#define VERR_IOMMU_IPE_2                            (-7392)
 /** IOMMU Internal processing error \#3. */
-#define VERR_IOMMU_IPE_3                            (-7293)
+#define VERR_IOMMU_IPE_3                            (-7393)
 /** IOMMU Internal processing error \#4. */
-#define VERR_IOMMU_IPE_4                            (-7294)
+#define VERR_IOMMU_IPE_4                            (-7394)
 /** IOMMU Internal processing error \#5. */
-#define VERR_IOMMU_IPE_5                            (-7295)
+#define VERR_IOMMU_IPE_5                            (-7395)
 /** IOMMU Internal processing error \#6. */
-#define VERR_IOMMU_IPE_6                            (-7296)
+#define VERR_IOMMU_IPE_6                            (-7396)
 /** IOMMU Internal processing error \#7. */
-#define VERR_IOMMU_IPE_7                            (-7297)
+#define VERR_IOMMU_IPE_7                            (-7397)
 /** IOMMU Internal processing error \#8. */
-#define VERR_IOMMU_IPE_8                            (-7298)
+#define VERR_IOMMU_IPE_8                            (-7398)
 /** IOMMU Internal processing error \#9. */
-#define VERR_IOMMU_IPE_9                            (-7299)
+#define VERR_IOMMU_IPE_9                            (-7399)
 /** @} */
 
 /* SED-END */
