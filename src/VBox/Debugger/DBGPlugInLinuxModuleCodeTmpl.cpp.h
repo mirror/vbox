@@ -37,6 +37,16 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/**
+ * Kernel module symbol (hasn't changed in ages).
+ */
+typedef struct RT_CONCAT(LNXMODKSYM,LNX_SUFFIX)
+{
+    LNX_ULONG_T         uValue;
+    LNX_PTR_T           uPtrSymName;
+} RT_CONCAT(LNXMODKSYM,LNX_SUFFIX);
+
+
 #if LNX_VER >= LNX_MK_VER(2,6,11)
 typedef struct RT_CONCAT(LNXMODKOBJECT,LNX_SUFFIX)
 {
@@ -375,6 +385,64 @@ AssertCompileMemberOffset(RT_CONCAT(LNXKMODULE,LNX_SUFFIX), uPtrUnwindInfo, 392)
 
 
 /**
+ * Loads the kernel symbols at the given start address.
+ *
+ * @returns VBox status code.
+ * @param   hDbgMod             The module handle to add the loaded symbols to.
+ * @param   uPtrSymStart        The start address of the array of symbols.
+ * @param   cSyms               Number of symbols in the array.
+ * @param  
+ */
+static int RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(PUVM pUVM, RTDBGMOD hDbgMod, LNX_PTR_T uPtrModuleStart, LNX_PTR_T uPtrSymStart, uint32_t cSyms)
+{
+    int rc = VINF_SUCCESS;
+    DBGFADDRESS AddrSym;
+    DBGFR3AddrFromFlat(pUVM, &AddrSym, uPtrSymStart);
+
+    while (   cSyms
+           && RT_SUCCESS(rc))
+    {
+        RT_CONCAT(LNXMODKSYM,LNX_SUFFIX) aSyms[64];
+        uint32_t cThisLoad = RT_MIN(cSyms, RT_ELEMENTS(aSyms));
+
+        rc = DBGFR3MemRead(pUVM, 0, &AddrSym, &aSyms[0], cThisLoad * sizeof(aSyms[0]));
+        if (RT_SUCCESS(rc))
+        {
+            cSyms -= cThisLoad;
+            DBGFR3AddrAdd(&AddrSym, cThisLoad * sizeof(aSyms[0]));
+
+            for (uint32_t i = 0; i < cThisLoad; i++)
+            {
+                char szSymName[128];
+                DBGFADDRESS AddrSymName;
+                rc = DBGFR3MemRead(pUVM, 0, DBGFR3AddrFromFlat(pUVM, &AddrSymName, aSyms[i].uPtrSymName),
+                                   &szSymName[0], sizeof(szSymName));
+                if (RT_FAILURE(rc))
+                    break;
+
+                /* Verify string encoding - ignore the symbol if it fails. */
+                rc = RTStrValidateEncodingEx(&szSymName[0], sizeof(szSymName), RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                if (RT_FAILURE(rc))
+                    continue;
+
+                Assert(aSyms[i].uValue >= uPtrModuleStart);
+                rc = RTDbgModSymbolAdd(hDbgMod, szSymName, RTDBGSEGIDX_RVA, aSyms[i].uValue - uPtrModuleStart, 0 /*cb*/, 0 /*fFlags*/, NULL);
+                if (RT_SUCCESS(rc))
+                    LogFlowFunc(("Added symbol '%s' successfully\n", szSymName));
+                else
+                {
+                    LogFlowFunc(("Adding symbol '%s' failed with: %Rrc\n", szSymName, rc));
+                    rc = VINF_SUCCESS;
+                }
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+/**
  * Version specific module processing code.
  */
 static uint64_t RT_CONCAT(dbgDiggerLinuxLoadModule,LNX_SUFFIX)(PDBGDIGGERLINUX pThis, PUVM pUVM, PDBGFADDRESS pAddrModule)
@@ -428,6 +496,39 @@ static uint64_t RT_CONCAT(dbgDiggerLinuxLoadModule,LNX_SUFFIX)(PDBGDIGGERLINUX p
             RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
             rc = RTDbgAsModuleLink(hAs, hDbgMod, uPtrModuleCore, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
             RTDbgAsRelease(hAs);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                                                                           Module.uPtrSyms, Module.num_syms);
+                if (RT_FAILURE(rc))
+                    LogRelFunc((" Faild to load symbols: %Rrc\n", rc));
+
+#if LNX_VER >= LNX_MK_VER(2,5,55)
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                                                                           Module.uPtrGplSyms, Module.num_gpl_syms);
+                if (RT_FAILURE(rc))
+                    LogRelFunc((" Faild to load GPL symbols: %Rrc\n", rc));
+#endif
+
+#if LNX_VER >= LNX_MK_VER(2,6,17)
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                                                                           Module.uPtrGplFutureSyms, Module.num_gpl_future_syms);
+                if (RT_FAILURE(rc))
+                    LogRelFunc((" Faild to load future GPL symbols: %Rrc\n", rc));
+#endif
+
+#if LNX_VER >= LNX_MK_VER(2,6,18)
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                                                                           Module.uPtrUnusedSyms, Module.num_unused_syms);
+                if (RT_FAILURE(rc))
+                    LogRelFunc((" Faild to load unused symbols: %Rrc\n", rc));
+
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                                                                           Module.uPtrUnusedGplSyms, Module.num_unused_gpl_syms);
+                if (RT_FAILURE(rc))
+                    LogRelFunc((" Faild to load unused GPL symbols: %Rrc\n", rc));
+#endif
+            }
         }
         else
             LogRel(("DbgDiggerOs2: RTDbgModSetTag failed: %Rrc\n", rc));
