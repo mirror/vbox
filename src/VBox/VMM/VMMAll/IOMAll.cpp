@@ -64,11 +64,14 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
 
     /* For lookups we need to share lock IOM. */
     int rc2 = IOM_LOCK_SHARED(pVM);
+    if (RT_SUCCESS(rc2))
+    { /* likely */ }
 #ifndef IN_RING3
-    if (rc2 == VERR_SEM_BUSY)
+    else if (rc2 == VERR_SEM_BUSY)
         return VINF_IOM_R3_IOPORT_READ;
 #endif
-    AssertRC(rc2);
+    else
+        AssertMsgFailedReturn(("rc2=%Rrc\n", rc2), rc2);
 
     /*
      * Get the entry for the current context.
@@ -188,11 +191,14 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
 
     /* For lookups we need to share lock IOM. */
     int rc2 = IOM_LOCK_SHARED(pVM);
+    if (RT_SUCCESS(rc2))
+    { /* likely */ }
 #ifndef IN_RING3
-    if (rc2 == VERR_SEM_BUSY)
+    else if (rc2 == VERR_SEM_BUSY)
         return VINF_IOM_R3_IOPORT_READ;
 #endif
-    AssertRC(rc2);
+    else
+        AssertMsgFailedReturn(("rc2=%Rrc\n", rc2), rc2);
 
     const uint32_t cRequestedTransfers = *pcTransfers;
     Assert(cRequestedTransfers > 0);
@@ -364,11 +370,14 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
 
     /* For lookups we need to share lock IOM. */
     int rc2 = IOM_LOCK_SHARED(pVM);
+    if (RT_SUCCESS(rc2))
+    { /* likely */ }
 #ifndef IN_RING3
-    if (rc2 == VERR_SEM_BUSY)
+    else if (rc2 == VERR_SEM_BUSY)
         return iomIOPortRing3WritePending(pVCpu, Port, u32Value, cbValue);
 #endif
-    AssertRC(rc2);
+    else
+        AssertMsgFailedReturn(("rc2=%Rrc\n", rc2), rc2);
 
     /*
      * Get the entry for the current context.
@@ -474,11 +483,14 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
 
     /* Take the IOM lock before performing any device I/O. */
     int rc2 = IOM_LOCK_SHARED(pVM);
+    if (RT_SUCCESS(rc2))
+    { /* likely */ }
 #ifndef IN_RING3
-    if (rc2 == VERR_SEM_BUSY)
+    else if (rc2 == VERR_SEM_BUSY)
         return VINF_IOM_R3_IOPORT_WRITE;
 #endif
-    AssertRC(rc2);
+    else
+        AssertMsgFailedReturn(("rc2=%Rrc\n", rc2), rc2);
 
     const uint32_t cRequestedTransfers = *pcTransfers;
     Assert(cRequestedTransfers > 0);

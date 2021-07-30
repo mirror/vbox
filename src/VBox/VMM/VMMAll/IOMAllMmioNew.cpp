@@ -1020,6 +1020,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
  *
  * @returns VBox status code.  This API may return VINF_SUCCESS even if no
  *          remapping is made.
+ * @retval  VERR_SEM_BUSY in ring-0 if we cannot get the IOM lock.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance @a hRegion and @a hMmio2 are
