@@ -327,7 +327,7 @@ module_available()
     # Extract last component of module path and check whether it is located
     # outside of /lib/modules/*/misc.
     mod_dir="$(dirname "$mod_path" | sed 's;^.*/;;')"
-    [ "$mod_dir" != "misc" ] || return
+    [ "$mod_dir" = "misc" ] || return
 
     echo "1"
 }
