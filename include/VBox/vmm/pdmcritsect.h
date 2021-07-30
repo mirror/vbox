@@ -71,10 +71,14 @@ VMMR3DECL(int)      PDMR3CritSectDelete(PVM pVM, PPDMCRITSECT pCritSect);
 VMMDECL(int)        PDMHCCritSectScheduleExitEvent(PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal);
 #endif
 
-VMMDECL(int)        PDMCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy);
-VMMDECL(int)        PDMCritSectEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(int)        PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect);
-VMMDECL(int)        PDMCritSectTryEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
+                    PDMCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy);
+VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
+                    PDMCritSectEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
+                    PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect);
+VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
+                    PDMCritSectTryEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 VMMDECL(int)        PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect);
 
 VMMDECL(bool)       PDMCritSectIsOwner(PVMCC pVM, PCPDMCRITSECT pCritSect);
@@ -113,7 +117,7 @@ VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM);
 /** @def PDM_CRITSECT_RELEASE_ASSERT_RC_DRV
  * Helper for PDMCritSectEnter w/ rcBusy VINF_SUCCESS when there is no way
  * to forward failures to the caller, driver edition. */
-#define PDM_CRITSECT_RELEASE_ASSERT_RC_DRV(a_pDevIns, a_pCritSect, a_rc) \
+#define PDM_CRITSECT_RELEASE_ASSERT_RC_DRV(a_pDrvIns, a_pCritSect, a_rc) \
     AssertReleaseMsg(RT_SUCCESS(a_rc), ("pDrvIns=%p pCritSect=%p: %Rrc\n", (a_pDrvIns), (a_pCritSect), (a_rc)))
 
 /** @def PDM_CRITSECT_RELEASE_ASSERT_RC_USB
