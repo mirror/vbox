@@ -58,10 +58,11 @@
 /** Acquires the DMAR lock but returns with the given busy error code on failure. */
 #define DMAR_LOCK_RET(a_pDevIns, a_pThisCC, a_rcBusy) \
     do { \
-        if ((a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), (a_rcBusy)) == VINF_SUCCESS) \
+        int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), (a_rcBusy)); \
+        if (RT_LIKELY(rcLock == VINF_SUCCESS)) \
         { /* likely */ } \
         else \
-            return (a_rcBusy); \
+            return rcLock; \
     } while (0)
 
 /** Acquires the DMAR lock (not expected to fail). */
