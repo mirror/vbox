@@ -141,12 +141,10 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMediumMove : public UINotificat
 public:
 
     /** Constructs medium move notification-progress.
-      * @param  comMedium  Brings the medium being moved.
-      * @param  strFrom    Brings the initial location.
-      * @param  strTo      Brings the final location. */
+      * @param  comMedium    Brings the medium being moved.
+      * @param  strLocation  Brings the desired location. */
     UINotificationProgressMediumMove(const CMedium &comMedium,
-                                     const QString &strFrom,
-                                     const QString &strTo);
+                                     const QString &strLocation);
 
 protected:
 
@@ -163,7 +161,7 @@ private:
     CMedium  m_comMedium;
     /** Holds the initial location. */
     QString  m_strFrom;
-    /** Holds the final location. */
+    /** Holds the desired location. */
     QString  m_strTo;
 };
 

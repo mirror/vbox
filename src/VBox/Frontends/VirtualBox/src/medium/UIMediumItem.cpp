@@ -80,7 +80,6 @@ bool UIMediumItem::move()
 
     /* Assign new medium location: */
     UINotificationProgressMediumMove *pNotification = new UINotificationProgressMediumMove(comMedium,
-                                                                                           location(),
                                                                                            strFileName);
     connect(pNotification, &UINotificationProgressMediumMove::sigProgressFinished,
             this, &UIMediumItem::sltHandleMoveProgressFinished);
