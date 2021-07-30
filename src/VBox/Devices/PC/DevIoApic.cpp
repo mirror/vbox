@@ -873,7 +873,7 @@ static DECLCALLBACK(void) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 
     bool fRemoteIrrCleared = false;
     int rc = IOAPIC_LOCK(pDevIns, pThis, pThisCC, VINF_SUCCESS);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, NULL, rc);
 
     for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
     {
@@ -936,7 +936,7 @@ static DECLCALLBACK(void) ioapicSetIrq(PPDMDEVINS pDevIns, PCIBDF uBusDevFn, int
     if (RT_LIKELY((unsigned)iIrq < RT_ELEMENTS(pThis->au64RedirTable)))
     {
         int rc = IOAPIC_LOCK(pDevIns, pThis, pThisCC, VINF_SUCCESS);
-        AssertRC(rc);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, NULL, rc);
 
         uint8_t  const idxRte        = iIrq;
         uint32_t const uPinMask      = UINT32_C(1) << idxRte;

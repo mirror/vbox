@@ -196,14 +196,14 @@
             return rcLock; \
     } while (0)
 
-/** Acquires the PDM lock (shouldn't really fail). */
+/** Acquires the PDM lock (can fail under extraordinary circumstance in in ring-0). */
 #ifdef IN_RING3
 # define IOMMU_LOCK(a_pDevIns, a_pThisCC)           (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_IGNORED)
 #else
 # define IOMMU_LOCK(a_pDevIns, a_pThisCC) \
     do { \
         int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VINF_SUCCESS); \
-        AssertRC(rcLock); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), NULL, rcLock); \
     } while (0)
 #endif
 

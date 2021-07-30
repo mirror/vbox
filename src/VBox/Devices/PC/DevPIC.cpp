@@ -57,16 +57,18 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def PIC_LOCK
+/** @def PIC_LOCK_RET
  * Acquires the PDM lock. This is a NOP if locking is disabled. */
+#define PIC_LOCK_RET(a_pDevIns, a_pThisCC, rcBusy) \
+    do { \
+        int const rcLock = (a_pThisCC)->pPicHlp->pfnLock((a_pDevIns), rcBusy); \
+        if (rcLock == VINF_SUCCESS) \
+        { /* likely */ } \
+        else \
+            return rcLock; \
+    } while (0)
 /** @def PIC_UNLOCK
  * Releases the PDM lock. This is a NOP if locking is disabled. */
-#define PIC_LOCK(a_pDevIns, a_pThisCC, rc) \
-    do { \
-        int rc2 = (a_pThisCC)->pPicHlp->pfnLock((a_pDevIns), rc); \
-        if (rc2 != VINF_SUCCESS) \
-            return rc2; \
-    } while (0)
 #define PIC_UNLOCK(a_pDevIns, a_pThisCC) \
     (a_pThisCC)->pPicHlp->pfnUnlock((a_pDevIns))
 
@@ -680,7 +682,7 @@ static DECLCALLBACK(VBOXSTRICTRC) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser
     if (cb == 1)
     {
         int rc;
-        PIC_LOCK(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_READ);
+        PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pic_ioport_read(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, &rc);
         PIC_UNLOCK(pDevIns, pThisCC);
         return rc;
@@ -703,7 +705,7 @@ static DECLCALLBACK(VBOXSTRICTRC) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUse
     if (cb == 1)
     {
         VBOXSTRICTRC rc;
-        PIC_LOCK(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_WRITE);
+        PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_WRITE);
         rc = pic_ioport_write(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, u32);
         PIC_UNLOCK(pDevIns, pThisCC);
         return rc;
@@ -721,7 +723,7 @@ static DECLCALLBACK(VBOXSTRICTRC) picIOPortElcrRead(PPDMDEVINS pDevIns, void *pv
     {
         PDEVPICCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPICCC);
         PPICSTATE   pPic    = (PPICSTATE)pvUser;
-        PIC_LOCK(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_READ);
+        PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pPic->elcr;
         PIC_UNLOCK(pDevIns, pThisCC);
         return VINF_SUCCESS;
@@ -740,7 +742,7 @@ static DECLCALLBACK(VBOXSTRICTRC) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *p
     {
         PDEVPICCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPICCC);
         PPICSTATE   pPic    = (PPICSTATE)pvUser;
-        PIC_LOCK(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_WRITE);
+        PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_WRITE);
         pPic->elcr = u32 & pPic->elcr_mask;
         PIC_UNLOCK(pDevIns, pThisCC);
     }

@@ -299,7 +299,9 @@ VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
 
 /**
  * Locks PDM.
- * This might call back to Ring-3 in order to deal with lock contention in GC and R3.
+ *
+ * This might call back to Ring-3 in order to deal with lock contention in RC
+ * and R0.
  *
  * @param   pVM     The cross context VM structure.
  */
@@ -307,12 +309,18 @@ void pdmLock(PVMCC pVM)
 {
 #ifdef IN_RING3
     int rc = PDMCritSectEnter(pVM, &pVM->pdm.s.CritSect, VERR_IGNORED);
+    AssertRC(rc);
 #else
     int rc = PDMCritSectEnter(pVM, &pVM->pdm.s.CritSect, VERR_GENERAL_FAILURE);
-    if (rc == VERR_GENERAL_FAILURE)
-        rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PDM_LOCK, 0);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+    {
+        if (rc == VERR_GENERAL_FAILURE)
+            rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PDM_LOCK, 0);
+        PDM_CRITSECT_RELEASE_ASSERT_RC(pVM, &pVM->pdm.s.CritSect, rc);
+    }
 #endif
-    AssertRC(rc);
 }
 
 
@@ -322,11 +330,11 @@ void pdmLock(PVMCC pVM)
  * @returns VINF_SUCCESS on success.
  * @returns rc if we're in GC or R0 and can't get the lock.
  * @param   pVM     The cross context VM structure.
- * @param   rc      The RC to return in GC or R0 when we can't get the lock.
+ * @param   rcBusy  The RC to return in GC or R0 when we can't get the lock.
  */
-int pdmLockEx(PVMCC pVM, int rc)
+int pdmLockEx(PVMCC pVM, int rcBusy)
 {
-    return PDMCritSectEnter(pVM, &pVM->pdm.s.CritSect, rc);
+    return PDMCritSectEnter(pVM, &pVM->pdm.s.CritSect, rcBusy);
 }
 
 

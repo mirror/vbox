@@ -281,7 +281,7 @@ ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
          */
         u32 &= ~3;
 
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
         pThis->uConfigReg = u32;
         PCI_UNLOCK(pDevIns);
     }
@@ -305,7 +305,7 @@ ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uin
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
 
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
 
@@ -387,7 +387,7 @@ ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (!(offPort % cb))
     {
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
 
         if (pThis->uConfigReg & (1 << 31))
         {
@@ -485,7 +485,7 @@ ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
         *pu32 = 0xffffffff;
 
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_READ);
 
         /* Configuration space mapping enabled? */
         VBOXSTRICTRC rcStrict;
@@ -677,7 +677,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void 
     }
 
     /* Perform configuration space write */
-    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_WRITE);
+    PCI_LOCK_RET(pDevIns, VINF_IOM_R3_MMIO_WRITE);
     VBOXSTRICTRC rcStrict = ich9pciConfigWrite(pDevIns, pPciRoot, &aDest, u32, cb, VINF_IOM_R3_MMIO_WRITE);
     PCI_UNLOCK(pDevIns);
 
@@ -701,7 +701,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *
 
     /* Perform configuration space read */
     uint32_t     u32Value = 0;
-    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_READ);
+    PCI_LOCK_RET(pDevIns, VINF_IOM_R3_MMIO_READ);
     VBOXSTRICTRC rcStrict = ich9pciConfigRead(pPciRoot, &aDest, cb, &u32Value, VINF_IOM_R3_MMIO_READ);
     PCI_UNLOCK(pDevIns);
 

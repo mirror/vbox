@@ -1693,7 +1693,7 @@ int         pdmR3BlkCacheResume(PVM pVM);
 #endif /* IN_RING3 */
 
 void        pdmLock(PVMCC pVM);
-int         pdmLockEx(PVMCC pVM, int rc);
+int         pdmLockEx(PVMCC pVM, int rcBusy);
 void        pdmUnlock(PVMCC pVM);
 bool        pdmLockIsOwner(PVMCC pVM);
 

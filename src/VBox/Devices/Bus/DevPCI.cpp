@@ -818,7 +818,7 @@ pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
         pThis->uConfigReg = u32 & ~3; /* Bits 0-1 are reserved and we silently clear them */
         PCI_UNLOCK(pDevIns);
     }
@@ -838,7 +838,7 @@ pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
         LogFunc(("offPort=%#x cb=%d -> %#x\n", offPort, cb, *pu32));
@@ -862,7 +862,7 @@ pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (!(offPort % cb))
     {
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
         rcStrict = pci_data_write(pDevIns, PDMINS_2_DATA(pDevIns, PDEVPCIROOT), offPort, u32, cb);
         PCI_UNLOCK(pDevIns);
     }
@@ -881,7 +881,7 @@ pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *
     Assert(offPort < 4); NOREF(pvUser);
     if (!(offPort % cb))
     {
-        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
+        PCI_LOCK_RET(pDevIns, VINF_IOM_R3_IOPORT_READ);
         VBOXSTRICTRC rcStrict = pci_data_read(PDMINS_2_DATA(pDevIns, PDEVPCIROOT), offPort, cb, pu32);
         PCI_UNLOCK(pDevIns);
         LogFunc(("offPort=%#x cb=%#x -> %#x (%Rrc)\n", offPort, cb, *pu32, VBOXSTRICTRC_VAL(rcStrict)));
