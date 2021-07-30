@@ -510,6 +510,10 @@ HRESULT Appliance::interpret()
                             nwAdapterVBox = NetworkAdapterType_I82545EM;
                     }
 #endif /* VBOX_WITH_E1000 */
+                    else if (   !ea.strAdapterType.compare("VirtioNet", Utf8Str::CaseInsensitive)
+                             || !ea.strAdapterType.compare("virtio-net", Utf8Str::CaseInsensitive)
+                             || !ea.strAdapterType.compare("3", Utf8Str::CaseInsensitive))
+                        nwAdapterVBox = NetworkAdapterType_Virtio;
 
                     pNewDesc->i_addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                          "",      // ref
@@ -571,7 +575,6 @@ HRESULT Appliance::interpret()
                  ++hdcIt)
             {
                 const ovf::HardDiskController &hdc = hdcIt->second;
-                Utf8Str strControllerID = Utf8StrFmt("%RI32", (uint32_t)hdc.idController);
 
                 switch (hdc.system)
                 {
@@ -587,9 +590,9 @@ HRESULT Appliance::interpret()
                             else if (!hdc.strControllerType.compare("ICH6", Utf8Str::CaseInsensitive))
                                 strType = "ICH6";
                             pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                                 strControllerID,         // strRef
-                                                 hdc.strControllerType,   // aOvfValue
-                                                 strType);                // aVBoxValue
+                                                 hdc.strIdController,       // strRef
+                                                 hdc.strControllerType,     // aOvfValue
+                                                 strType);                  // aVBoxValue
                         }
                         else
                             /* Warn only once */
@@ -608,7 +611,7 @@ HRESULT Appliance::interpret()
                             /// @todo figure out the SATA types
                             /* We only support a plain AHCI controller, so use them always */
                             pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
-                                                 strControllerID,
+                                                 hdc.strIdController,
                                                  hdc.strControllerType,
                                                  "AHCI");
                         }
@@ -639,7 +642,7 @@ HRESULT Appliance::interpret()
                             else if (!hdc.strControllerType.compare("BusLogic", Utf8Str::CaseInsensitive))
                                 hdcController = "BusLogic";
                             pNewDesc->i_addEntry(vsdet,
-                                                 strControllerID,
+                                                 hdc.strIdController,
                                                  hdc.strControllerType,
                                                  hdcController);
                         }
@@ -649,7 +652,7 @@ HRESULT Appliance::interpret()
                                             "supports only one SCSI controller."),
                                             vsysThis.strName.c_str(),
                                             hdc.strControllerType.c_str(),
-                                            strControllerID.c_str());
+                                            hdc.strIdController.c_str());
                         ++cSCSIused;
                     break;
 
@@ -658,7 +661,7 @@ HRESULT Appliance::interpret()
                         if (cVIRTIOSCSIused < 1)
                         {
                             pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI,
-                                                 strControllerID,
+                                                 hdc.strIdController,
                                                  hdc.strControllerType,
                                                  "VirtioSCSI");
                         }
@@ -752,13 +755,13 @@ HRESULT Appliance::interpret()
                     i_ensureUniqueImageFilePath(strMachineFolder, devType, strFilename); /** @todo check the return code! */
 
                     /* find the description for the storage controller
-                     * that has the same ID as hd.idController */
+                     * that has the same ID as hd.strIdController */
                     const VirtualSystemDescriptionEntry *pController;
-                    if (!(pController = pNewDesc->i_findControllerFromID(hd.idController)))
+                    if (!(pController = pNewDesc->i_findControllerFromID(hd.strIdController)))
                         throw setError(E_FAIL,
-                                       tr("Cannot find storage controller with OVF instance ID %RI32 "
+                                       tr("Cannot find storage controller with OVF instance ID \"%s\" "
                                           "to which medium \"%s\" should be attached"),
-                                       hd.idController,
+                                       hd.strIdController,
                                        di.strHref.c_str());
 
                     /* controller to attach to, and the bus within that controller */
@@ -1316,6 +1319,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     LogFlowFunc(("Appliance %p\n", this));
 
     int vrc = VINF_SUCCESS;
+    /** @todo r=klaus This should be a MultiResult, because this can cause
+     * multiple errors and warnings which should be relevant for the caller.
+     * Needs some work, because there might be errors which need to be
+     * excluded if they happen in error recovery code paths. */
     HRESULT hrc = S_OK;
     bool fKeepDownloadedObject = false;//in the future should be passed from the caller
     Utf8Str strLastActualErrorDesc("No errors");
@@ -1788,7 +1795,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 {
                     //It's thought that SATA is supported by any OS types
                     hdc.system = ovf::HardDiskController::SATA;
-                    hdc.idController = 0;
+                    hdc.strIdController = "0";
 
                     GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskControllerSATA)//aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
@@ -1797,7 +1804,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         hdc.strControllerType = "AHCI";
 
                     LogRel(("%s: Hard disk controller type is %s\n", __FUNCTION__, hdc.strControllerType.c_str()));
-                    vsys.mapControllers[hdc.idController] = hdc;
+                    vsys.mapControllers[hdc.strIdController] = hdc;
 
                     if (aVBoxValues.size() == 0)
                     {
@@ -2029,7 +2036,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                                    d.ulSuggestedSizeMB);
 
                             ovf::VirtualDisk vd;
-                            vd.idController = vsys.mapControllers[0].idController;
+                            vd.strIdController = vsys.mapControllers[0].strIdController;
                             vd.ulAddressOnParent = 0;
                             vd.strDiskId = d.strDiskId;
                             vsys.mapVirtualDisks[vd.strDiskId] = vd;
@@ -5018,7 +5025,7 @@ l_skipped:
                     throw rc;
 
                 // find the hard disk controller to which we should attach
-                ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(ovfVdisk.idController)).second;
+                ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(ovfVdisk.strIdController)).second;
 
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
