@@ -644,7 +644,7 @@ static int pdmCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect, PCRTLOCKVALSRC
  * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The critical section.
  */
-VMMDECL(DECL_CHECK_RETURN_NOT_R3(int)) PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect)
+VMMDECL(DECL_CHECK_RETURN(int)) PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect)
 {
 #ifndef PDMCRITSECT_STRICT
     return pdmCritSectTryEnter(pVM, pCritSect, NULL);
@@ -671,7 +671,7 @@ VMMDECL(DECL_CHECK_RETURN_NOT_R3(int)) PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSE
  * @param   SRC_POS             The source position where to lock is being
  *                              acquired from.  Optional.
  */
-VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
+VMMDECL(DECL_CHECK_RETURN(int))
 PDMCritSectTryEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #ifdef PDMCRITSECT_STRICT

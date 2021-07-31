@@ -75,9 +75,9 @@ VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
                     PDMCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy);
 VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
                     PDMCritSectEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
-VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
+VMMDECL(DECL_CHECK_RETURN(int))
                     PDMCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect);
-VMMDECL(DECL_CHECK_RETURN_NOT_R3(int))
+VMMDECL(DECL_CHECK_RETURN(int))
                     PDMCritSectTryEnterDebug(PVMCC pVM, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 VMMDECL(int)        PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect);
 
