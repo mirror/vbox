@@ -4753,7 +4753,10 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
 
     if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
-        (void)PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    {
+        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        AssertRC(rc);
+    }
 
     PHDADRIVER pDrv;
     while (!RTListIsEmpty(&pThisCC->lstDrv))

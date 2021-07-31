@@ -7896,7 +7896,7 @@ DECLINLINE(int) PDMDevHlpSetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCri
  *
  * @sa      PDMCritSectEnter
  */
-DECLINLINE(DECL_CHECK_RETURN_NOT_R3(int)) PDMDevHlpCritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
+DECLINLINE(DECL_CHECK_RETURN(int)) PDMDevHlpCritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnCritSectEnter(pDevIns, pCritSect, rcBusy);
 }
@@ -7921,7 +7921,7 @@ DECLINLINE(DECL_CHECK_RETURN_NOT_R3(int)) PDMDevHlpCritSectEnter(PPDMDEVINS pDev
  *                              acquired from.  Optional.
  * @sa      PDMCritSectEnterDebug
  */
-DECLINLINE(DECL_CHECK_RETURN_NOT_R3(int))
+DECLINLINE(DECL_CHECK_RETURN(int))
 PDMDevHlpCritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnCritSectEnterDebug(pDevIns, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
@@ -7940,7 +7940,7 @@ PDMDevHlpCritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBu
  * @param   pCritSect   The critical section.
  * @sa      PDMCritSectTryEnter
  */
-DECLINLINE(DECL_CHECK_RETURN_NOT_R3(int))
+DECLINLINE(DECL_CHECK_RETURN(int))
 PDMDevHlpCritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnCritSectTryEnter(pDevIns, pCritSect);
@@ -7963,7 +7963,7 @@ PDMDevHlpCritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
  *                              acquired from.  Optional.
  * @sa      PDMCritSectTryEnterDebug
  */
-DECLINLINE(DECL_CHECK_RETURN_NOT_R3(int))
+DECLINLINE(DECL_CHECK_RETURN(int))
 PDMDevHlpCritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnCritSectTryEnterDebug(pDevIns, pCritSect, uId, RT_SRC_POS_ARGS);

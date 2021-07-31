@@ -66,15 +66,11 @@
     } while (0)
 
 /** Acquires the DMAR lock (can fail under extraordinary circumstance in in ring-0). */
-#ifdef IN_RING3
-# define DMAR_LOCK(a_pDevIns, a_pThisCC)            (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_IGNORED)
-#else
-# define DMAR_LOCK(a_pDevIns, a_pThisCC) \
+#define DMAR_LOCK(a_pDevIns, a_pThisCC) \
     do { \
         int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VINF_SUCCESS); \
         PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), NULL, rcLock); \
     } while (0)
-#endif
 
 /** Release the DMAR lock. */
 #define DMAR_UNLOCK(a_pDevIns, a_pThisCC)           (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnUnlock(a_pDevIns)

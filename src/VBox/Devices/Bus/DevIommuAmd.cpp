@@ -172,15 +172,11 @@
 # define IOMMU_DTE_CACHE_F_IGNORE_UNMAPPED_INTR_SHIFT    10
 
 /** Acquires the cache lock. */
-# ifdef IN_RING3
-#  define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis)      PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VERR_IGNORED)
-# else
-#  define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis) \
+# define IOMMU_CACHE_LOCK(a_pDevIns, a_pThis) \
     do { \
         int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSectCache, VINF_SUCCESS); \
         PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), &(a_pThis)->CritSectCache, rcLock); \
     } while (0)
-# endif
 
 /** Releases the cache lock.  */
 # define IOMMU_CACHE_UNLOCK(a_pDevIns, a_pThis)     PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSectCache)
@@ -197,15 +193,11 @@
     } while (0)
 
 /** Acquires the PDM lock (can fail under extraordinary circumstance in in ring-0). */
-#ifdef IN_RING3
-# define IOMMU_LOCK(a_pDevIns, a_pThisCC)           (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VERR_IGNORED)
-#else
-# define IOMMU_LOCK(a_pDevIns, a_pThisCC) \
+#define IOMMU_LOCK(a_pDevIns, a_pThisCC) \
     do { \
         int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VINF_SUCCESS); \
         PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), NULL, rcLock); \
     } while (0)
-#endif
 
 /** Checks if the current thread owns the PDM lock. */
 # define IOMMU_ASSERT_LOCK_IS_OWNER(a_pDevIns, a_pThisCC) \
