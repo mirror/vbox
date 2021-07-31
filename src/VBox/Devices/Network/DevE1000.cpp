@@ -1656,20 +1656,45 @@ DECLINLINE(void) e1kCancelTimer(PPDMDEVINS pDevIns, PE1KSTATE pThis, TMTIMERHAND
 }
 #endif /* IN_RING3 */
 
-#define e1kCsEnter(ps, rc) PDMDevHlpCritSectEnter(pDevIns, &ps->cs, rc)
-#define e1kCsLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &ps->cs)
 
-#define e1kCsRxEnter(ps, rc) PDMDevHlpCritSectEnter(pDevIns, &ps->csRx, rc)
-#define e1kCsRxLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &ps->csRx)
-#define e1kCsRxIsOwner(ps) PDMDevHlpCritSectIsOwner(pDevIns, &ps->csRx)
+#define e1kCsEnter(ps, rcBusy) PDMDevHlpCritSectEnter(pDevIns, &(ps)->cs, (rcBusy))
+#define e1kCsEnterReturn(ps, rcBusy) do { \
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &(ps)->cs, (rcBusy)); \
+        if (rcLock == VINF_SUCCESS) { /* likely */ } \
+        else return rcLock; \
+    } while (0)
+#define e1kR3CsEnterAsserted(ps) do { \
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &(ps)->cs, VERR_SEM_BUSY); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &(ps)->cs, rcLock); \
+    } while (0)
+#define e1kCsLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &(ps)->cs)
+
+
+#define e1kCsRxEnter(ps, rcBusy) PDMDevHlpCritSectEnter(pDevIns, &(ps)->csRx, (rcBusy))
+#define e1kCsRxEnterReturn(ps) do { \
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &(ps)->csRx, VERR_SEM_BUSY); \
+        AssertRCReturn(rcLock, rcLock); \
+    } while (0)
+#define e1kR3CsRxEnterAsserted(ps) do { \
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &(ps)->csRx, VERR_SEM_BUSY); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &(ps)->csRx, rcLock); \
+    } while (0)
+#define e1kCsRxLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &(ps)->csRx)
+#define e1kCsRxIsOwner(ps) PDMDevHlpCritSectIsOwner(pDevIns, &(ps)->csRx)
+
 
 #ifndef E1K_WITH_TX_CS
-# define e1kCsTxEnter(ps, rc) VINF_SUCCESS
+# define e1kCsTxEnter(ps, rcBusy) VINF_SUCCESS
+# define e1kR3CsTxEnterAsserted(ps) do { } while (0)
 # define e1kCsTxLeave(ps) do { } while (0)
 #else /* E1K_WITH_TX_CS */
-# define e1kCsTxEnter(ps, rc) PDMDevHlpCritSectEnter(pDevIns, &ps->csTx, rc)
-# define e1kCsTxLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &ps->csTx)
-# define e1kCsTxIsOwner(ps) PDMDevHlpCritSectIsOwner(pDevIns, &ps->csTx)
+# define e1kCsTxEnter(ps, rcBusy) PDMDevHlpCritSectEnter(pDevIns, &(ps)->csTx, (rcBusy))
+# define e1kR3CsTxEnterAsserted(ps) do { \
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &(ps)->csTx, VERR_SEM_BUSY); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &(ps)->csTx, rcLock); \
+    } while (0)
+# define e1kCsTxLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &(ps)->csTx)
+# define e1kCsTxIsOwner(ps) PDMDevHlpCritSectIsOwner(pDevIns, &(ps)->csTx)
 #endif /* E1K_WITH_TX_CS */
 
 
@@ -1798,11 +1823,11 @@ static void e1kR3HardReset(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThi
     }
     memset(pThis->auRegs,        0, sizeof(pThis->auRegs));
     memset(pThis->aRecAddr.au32, 0, sizeof(pThis->aRecAddr.au32));
-#ifdef E1K_INIT_RA0
+# ifdef E1K_INIT_RA0
     memcpy(pThis->aRecAddr.au32, pThis->macConfigured.au8,
            sizeof(pThis->macConfigured.au8));
     pThis->aRecAddr.array[0].ctl |= RA_CTL_AV;
-#endif /* E1K_INIT_RA0 */
+# endif /* E1K_INIT_RA0 */
     STATUS = 0x0081;    /* SPEED=10b (1000 Mb/s), FD=1b (Full Duplex) */
     EECD   = 0x0100;    /* EE_PRES=1b (EEPROM present) */
     CTRL   = 0x0a09;    /* FRCSPD=1b SPEED=10b LRST=1b FD=1b */
@@ -1818,29 +1843,24 @@ static void e1kR3HardReset(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThi
     if (pThisCC->pDrvR3)
         pThisCC->pDrvR3->pfnSetPromiscuousMode(pThisCC->pDrvR3, false);
 
-#ifdef E1K_WITH_TXD_CACHE
-    int rc = e1kCsTxEnter(pThis, VERR_SEM_BUSY);
-    if (RT_LIKELY(rc == VINF_SUCCESS))
-    {
-        pThis->nTxDFetched  = 0;
-        pThis->iTxDCurrent  = 0;
-        pThis->fGSO         = false;
-        pThis->cbTxAlloc    = 0;
-        e1kCsTxLeave(pThis);
-    }
-#endif /* E1K_WITH_TXD_CACHE */
-#ifdef E1K_WITH_RXD_CACHE
-    if (RT_LIKELY(e1kCsRxEnter(pThis, VERR_SEM_BUSY) == VINF_SUCCESS))
-    {
-        pThis->iRxDCurrent = pThis->nRxDFetched = 0;
-        e1kCsRxLeave(pThis);
-    }
-#endif /* E1K_WITH_RXD_CACHE */
-#ifdef E1K_LSC_ON_RESET
+# ifdef E1K_WITH_TXD_CACHE
+    e1kR3CsTxEnterAsserted(pThis);
+    pThis->nTxDFetched  = 0;
+    pThis->iTxDCurrent  = 0;
+    pThis->fGSO         = false;
+    pThis->cbTxAlloc    = 0;
+    e1kCsTxLeave(pThis);
+# endif /* E1K_WITH_TXD_CACHE */
+# ifdef E1K_WITH_RXD_CACHE
+    e1kR3CsRxEnterAsserted(pThis);
+    pThis->iRxDCurrent = pThis->nRxDFetched = 0;
+    e1kCsRxLeave(pThis);
+# endif /* E1K_WITH_RXD_CACHE */
+# ifdef E1K_LSC_ON_RESET
     E1kLog(("%s Will trigger LSC in %d seconds...\n",
             pThis->szPrf, pThis->cMsLinkUpDelay / 1000));
     e1kArmTimer(pDevIns, pThis, pThis->hLUTimer, pThis->cMsLinkUpDelay * 1000);
-#endif /* E1K_LSC_ON_RESET */
+# endif /* E1K_LSC_ON_RESET */
 }
 
 #endif /* IN_RING3 */
@@ -2183,9 +2203,16 @@ DECLINLINE(void) e1kPostponeInterrupt(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint6
  */
 static int e1kRaiseInterrupt(PPDMDEVINS pDevIns, PE1KSTATE pThis, int rcBusy, uint32_t u32IntCause)
 {
+    /* Do NOT use e1kCsEnterReturn here as most callers doesn't check the
+       status code.  They'll pass a negative rcBusy. */
     int rc = e1kCsEnter(pThis, rcBusy);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+    { /* likely */ }
+    else
+    {
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->cs, rc);
         return rc;
+    }
 
     E1K_INC_ISTAT_CNT(pThis->uStatIntTry);
     ICR |= u32IntCause;
@@ -2264,7 +2291,7 @@ DECLINLINE(RTGCPHYS) e1kDescAddr(uint32_t baseHigh, uint32_t baseLow, uint32_t i
 DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KRXDC pRxdc)
 {
     Assert(e1kCsRxIsOwner(pThis));
-    //e1kCsEnter(pThis, RT_SRC_POS);
+    //e1kR3CsEnterAsserted(pThis);
     if (++pRxdc->rdh * sizeof(E1KRXDESC) >= pRxdc->rdlen)
         pRxdc->rdh = 0;
     RDH = pRxdc->rdh; /* Sync the actual register and RXDC */
@@ -2534,8 +2561,8 @@ static int e1kRxChecksumOffload(PE1KSTATE pThis, const uint8_t *pFrame, size_t c
  *          from real Ethernet: pad it and insert FCS.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pThis          The device state structure.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The device state structure.
  * @param   pvBuf           The available data.
  * @param   cb              Number of bytes available in the buffer.
  * @param   status          Bit fields containing status info.
@@ -2549,9 +2576,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
     E1KRXDC   rxdc;
 # endif /* E1K_WITH_RXD_CACHE */
 
-    int rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    e1kCsRxEnterReturn(pThis);
 # ifdef E1K_WITH_RXD_CACHE
     if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kHandleRxPacket")))
     {
@@ -2685,9 +2710,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
                 pDesc->status.fEOP = false;
                 e1kCsRxLeave(pThis);
                 e1kStoreRxFragment(pDevIns, pThis, pDesc, ptr, u16RxBufferSize);
-                rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
-                if (RT_UNLIKELY(rc != VINF_SUCCESS))
-                    return rc;
+                e1kCsRxEnterReturn(pThis);
 # ifdef E1K_WITH_RXD_CACHE
                 if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kHandleRxPacket")))
                 {
@@ -2705,9 +2728,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
                 e1kCsRxLeave(pThis);
                 e1kStoreRxFragment(pDevIns, pThis, pDesc, ptr, cb);
 # ifdef E1K_WITH_RXD_CACHE
-                rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
-                if (RT_UNLIKELY(rc != VINF_SUCCESS))
-                    return rc;
+                e1kCsRxEnterReturn(pThis);
                 if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kHandleRxPacket")))
                 {
                     e1kCsRxLeave(pThis);
@@ -3211,12 +3232,10 @@ static int e1kRegWriteICR(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
  */
 static int e1kRegReadICR(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    int rc = e1kCsEnter(pThis, VINF_IOM_R3_MMIO_READ);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    e1kCsEnterReturn(pThis, VINF_IOM_R3_MMIO_READ);
 
     uint32_t value = 0;
-    rc = e1kRegReadDefault(pDevIns, pThis, offset, index, &value);
+    int rc = e1kRegReadDefault(pDevIns, pThis, offset, index, &value);
     if (RT_SUCCESS(rc))
     {
         if (value)
@@ -3348,9 +3367,7 @@ static int e1kRegWriteIMC(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
 {
     RT_NOREF_PV(offset); RT_NOREF_PV(index);
 
-    int rc = e1kCsEnter(pThis, VINF_IOM_R3_MMIO_WRITE);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    e1kCsEnterReturn(pThis, VINF_IOM_R3_MMIO_WRITE);
     if (pThis->fIntRaised)
     {
         /*
@@ -3673,7 +3690,7 @@ static DECLCALLBACK(void) e1kR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
 
     /*
      * This can happen if we set the link status to down when the Link up timer was
-     * already armed (shortly after e1kLoadDone() or when the cable was disconnected
+     * already armed (shortly after e1kR3LoadDone() or when the cable was disconnected
      * and connect+disconnect the cable very quick. Moreover, 82543GC triggers LSC
      * on reset even if the cable is unplugged (see @bugref{8942}).
      */
@@ -4241,7 +4258,7 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pT
             STAM_PROFILE_START(&pThis->CTX_SUFF_Z(StatTransmitSend), a);
             rc = pDrv->pfnSendBuf(pDrv, pSg, fOnWorkerThread);
             STAM_PROFILE_STOP(&pThis->CTX_SUFF_Z(StatTransmitSend), a);
-            //e1kCsEnter(pThis, RT_SRC_POS);
+            //e1kR3CsEnterAsserted(pThis);
         }
     }
     else if (pSg)
@@ -6211,9 +6228,7 @@ static int e1kRegReadUnaligned(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t off
              * Read it. Pass the mask so the handler knows what has to be read.
              * Mask out irrelevant bits.
              */
-            //rc = e1kCsEnter(pThis, VERR_SEM_BUSY, RT_SRC_POS);
-            if (RT_UNLIKELY(rc != VINF_SUCCESS))
-                return rc;
+            //e1kCsEnterReturn(pThis, VERR_SEM_BUSY);
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
@@ -6272,9 +6287,7 @@ static VBOXSTRICTRC e1kRegReadAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, ui
              * Read it. Pass the mask so the handler knows what has to be read.
              * Mask out irrelevant bits.
              */
-            //rc = e1kCsEnter(pThis, VERR_SEM_BUSY, RT_SRC_POS);
-            //if (RT_UNLIKELY(rc != VINF_SUCCESS))
-            //    return rc;
+            //e1kCsEnterReturn(pThis, VERR_SEM_BUSY);
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
@@ -6322,9 +6335,7 @@ static VBOXSTRICTRC e1kRegWriteAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, u
              */
             Log6(("%s At %08X write          %08X  to  %s (%s)\n",
                      pThis->szPrf, offReg, u32Value, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
-            //rc = e1kCsEnter(pThis, VERR_SEM_BUSY, RT_SRC_POS);
-            //if (RT_UNLIKELY(rc != VINF_SUCCESS))
-            //    return rc;
+            //e1kCsEnterReturn(pThis, VERR_SEM_BUSY);
             //pThis->fDelayInts = false;
             //pThis->iStatIntLost += pThis->iStatIntLostOne;
             //pThis->iStatIntLostOne = 0;
@@ -6542,18 +6553,18 @@ static void e1kDumpState(PE1KSTATE pThis)
  * Check if the device can receive data now.
  * This must be called before the pfnRecieve() method is called.
  *
- * @returns Number of bytes the device can receive.
+ * @returns VBox status code.
+ * @retval  VERR_NET_NO_BUFFER_SPACE if we cannot receive.
  * @param   pDevIns     The device instance.
  * @param   pThis       The instance data.
  * @thread  EMT
  */
-static int e1kCanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+static int e1kR3CanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
-#ifndef E1K_WITH_RXD_CACHE
+# ifndef E1K_WITH_RXD_CACHE
     size_t cb;
 
-    if (RT_UNLIKELY(e1kCsRxEnter(pThis, VERR_SEM_BUSY) != VINF_SUCCESS))
-        return VERR_NET_NO_BUFFER_SPACE;
+    e1kCsRxEnterReturn(pThis);
 
     if (RT_UNLIKELY(RDLEN == sizeof(E1KRXDESC)))
     {
@@ -6567,30 +6578,30 @@ static int e1kCanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     else if (RDH < RDT)
         cb = (RDT - RDH) * pThis->u16RxBSize;
     else if (RDH > RDT)
-        cb = (RDLEN/sizeof(E1KRXDESC) - RDH + RDT) * pThis->u16RxBSize;
+        cb = (RDLEN / sizeof(E1KRXDESC) - RDH + RDT) * pThis->u16RxBSize;
     else
     {
         cb = 0;
         E1kLogRel(("E1000: OUT of RX descriptors!\n"));
     }
-    E1kLog2(("%s e1kCanReceive: at exit RDH=%d RDT=%d RDLEN=%d u16RxBSize=%d cb=%lu\n",
+    E1kLog2(("%s e1kR3CanReceive: at exit RDH=%d RDT=%d RDLEN=%d u16RxBSize=%d cb=%lu\n",
              pThis->szPrf, RDH, RDT, RDLEN, pThis->u16RxBSize, cb));
 
     e1kCsRxLeave(pThis);
     return cb > 0 ? VINF_SUCCESS : VERR_NET_NO_BUFFER_SPACE;
-#else /* E1K_WITH_RXD_CACHE */
-    int rc = VINF_SUCCESS;
+# else /* E1K_WITH_RXD_CACHE */
 
-    if (RT_UNLIKELY(e1kCsRxEnter(pThis, VERR_SEM_BUSY) != VINF_SUCCESS))
-        return VERR_NET_NO_BUFFER_SPACE;
+    e1kCsRxEnterReturn(pThis);
+
     E1KRXDC rxdc;
-    if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kCanReceive")))
+    if (RT_UNLIKELY(!e1kUpdateRxDContext(pDevIns, pThis, &rxdc, "e1kR3CanReceive")))
     {
         e1kCsRxLeave(pThis);
-        E1kLog(("%s e1kCanReceive: failed to update Rx context, returning VERR_NET_NO_BUFFER_SPACE\n",  pThis->szPrf));
+        E1kLog(("%s e1kR3CanReceive: failed to update Rx context, returning VERR_NET_NO_BUFFER_SPACE\n", pThis->szPrf));
         return VERR_NET_NO_BUFFER_SPACE;
     }
 
+    int rc = VINF_SUCCESS;
     if (RT_UNLIKELY(rxdc.rdlen == sizeof(E1KRXDESC)))
     {
         E1KRXDESC desc;
@@ -6603,13 +6614,12 @@ static int e1kCanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
         /* Cache is empty, so is the RX ring. */
         rc = VERR_NET_NO_BUFFER_SPACE;
     }
-    E1kLog2(("%s e1kCanReceive: at exit in_cache=%d RDH=%d RDT=%d RDLEN=%d"
-             " u16RxBSize=%d rc=%Rrc\n", pThis->szPrf,
+    E1kLog2(("%s e1kR3CanReceive: at exit in_cache=%d RDH=%d RDT=%d RDLEN=%d u16RxBSize=%d rc=%Rrc\n", pThis->szPrf,
              e1kRxDInCache(pThis), rxdc.rdh, rxdc.rdt, rxdc.rdlen, pThis->u16RxBSize, rc));
 
     e1kCsRxLeave(pThis);
     return rc;
-#endif /* E1K_WITH_RXD_CACHE */
+# endif /* E1K_WITH_RXD_CACHE */
 }
 
 /**
@@ -6621,10 +6631,10 @@ static DECLCALLBACK(int) e1kR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInt
     PE1KSTATE   pThis   = pThisCC->pShared;
     PPDMDEVINS  pDevIns = pThisCC->pDevInsR3;
 
-    int rc = e1kCanReceive(pDevIns, pThis);
-
+    int rc = e1kR3CanReceive(pDevIns, pThis);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
+
     if (RT_UNLIKELY(cMillies == 0))
         return VERR_NET_NO_BUFFER_SPACE;
 
@@ -6635,7 +6645,7 @@ static DECLCALLBACK(int) e1kR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInt
     while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pDevIns)) == VMSTATE_RUNNING
                      ||  enmVMState == VMSTATE_RUNNING_LS))
     {
-        int rc2 = e1kCanReceive(pDevIns, pThis);
+        int rc2 = e1kR3CanReceive(pDevIns, pThis);
         if (RT_SUCCESS(rc2))
         {
             rc = VINF_SUCCESS;
@@ -6863,18 +6873,16 @@ static DECLCALLBACK(int) e1kR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
 
-    //if (!e1kCsEnter(pThis, RT_SRC_POS))
-    //    return VERR_PERMISSION_DENIED;
+    //e1kR3CsEnterAsserted(pThis);
 
     e1kPacketDump(pDevIns, pThis, (const uint8_t*)pvBuf, cb, "<-- Incoming");
 
     /* Update stats */
-    if (RT_LIKELY(e1kCsEnter(pThis, VERR_SEM_BUSY) == VINF_SUCCESS))
-    {
-        E1K_INC_CNT32(TPR);
-        E1K_ADD_CNT64(TORL, TORH, cb < 64? 64 : cb);
-        e1kCsLeave(pThis);
-    }
+    e1kR3CsEnterAsserted(pThis);
+    E1K_INC_CNT32(TPR);
+    E1K_ADD_CNT64(TORL, TORH, cb < 64? 64 : cb);
+    e1kCsLeave(pThis);
+
     STAM_PROFILE_ADV_START(&pThis->StatReceiveFilter, a);
     E1KRXDST status;
     RT_ZERO(status);
@@ -7000,7 +7008,7 @@ static DECLCALLBACK(void *) e1kR3QueryInterface(struct PDMIBASE *pInterface, con
  * @param   pThis      The E1K state.
  * @param   pSSM        The handle to the saved state.
  */
-static void e1kSaveConfig(PCPDMDEVHLPR3 pHlp, PE1KSTATE pThis, PSSMHANDLE pSSM)
+static void e1kR3SaveConfig(PCPDMDEVHLPR3 pHlp, PE1KSTATE pThis, PSSMHANDLE pSSM)
 {
     pHlp->pfnSSMPutMem(pSSM, &pThis->macConfigured, sizeof(pThis->macConfigured));
     pHlp->pfnSSMPutU32(pSSM, pThis->eChip);
@@ -7009,24 +7017,22 @@ static void e1kSaveConfig(PCPDMDEVHLPR3 pHlp, PE1KSTATE pThis, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNSSMDEVLIVEEXEC,Save basic configuration.}
  */
-static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+static DECLCALLBACK(int) e1kR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    e1kSaveConfig(pDevIns->pHlpR3, PDMDEVINS_2_DATA(pDevIns, PE1KSTATE), pSSM);
+    e1kR3SaveConfig(pDevIns->pHlpR3, PDMDEVINS_2_DATA(pDevIns, PE1KSTATE), pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
 /**
  * @callback_method_impl{FNSSMDEVSAVEPREP,Synchronize.}
  */
-static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) e1kR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
     PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
-    int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    e1kCsEnterReturn(pThis, VERR_SEM_BUSY);
     e1kCsLeave(pThis);
     return VINF_SUCCESS;
 #if 0
@@ -7059,13 +7065,13 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
-static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) e1kR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PE1KSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     PE1KSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     PCPDMDEVHLPR3 pHlp    = pDevIns->pHlpR3;
 
-    e1kSaveConfig(pHlp, pThis, pSSM);
+    e1kR3SaveConfig(pHlp, pThis, pSSM);
     pThisCC->eeprom.save(pHlp, pSSM);
     e1kDumpState(pThis);
     pHlp->pfnSSMPutMem(pSSM, pThis->auRegs, sizeof(pThis->auRegs));
@@ -7129,14 +7135,12 @@ static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNSSMDEVLOADPREP,Synchronize.}
  */
-static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) e1kR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
     PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
-    int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    e1kCsEnterReturn(pThis, VERR_SEM_BUSY);
     e1kCsLeave(pThis);
     return VINF_SUCCESS;
 }
@@ -7144,7 +7148,7 @@ static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
-static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) e1kR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PE1KSTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     PE1KSTATECC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
@@ -7256,7 +7260,7 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 /**
  * @callback_method_impl{FNSSMDEVLOADDONE, Link status adjustments after loading.}
  */
-static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) e1kR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PE1KSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
@@ -7287,14 +7291,14 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /**
  * @callback_method_impl{FNRTSTRFORMATTYPE}
  */
-static DECLCALLBACK(size_t) e1kFmtRxDesc(PFNRTSTROUTPUT pfnOutput,
-                                         void *pvArgOutput,
-                                         const char *pszType,
-                                         void const *pvValue,
-                                         int cchWidth,
-                                         int cchPrecision,
-                                         unsigned fFlags,
-                                         void *pvUser)
+static DECLCALLBACK(size_t) e1kR3FmtRxDesc(PFNRTSTROUTPUT pfnOutput,
+                                           void *pvArgOutput,
+                                           const char *pszType,
+                                           void const *pvValue,
+                                           int cchWidth,
+                                           int cchPrecision,
+                                           unsigned fFlags,
+                                           void *pvUser)
 {
     RT_NOREF(cchWidth,  cchPrecision,  fFlags, pvUser);
     AssertReturn(strcmp(pszType, "e1krxd") == 0, 0);
@@ -7326,14 +7330,14 @@ static DECLCALLBACK(size_t) e1kFmtRxDesc(PFNRTSTROUTPUT pfnOutput,
 /**
  * @callback_method_impl{FNRTSTRFORMATTYPE}
  */
-static DECLCALLBACK(size_t) e1kFmtTxDesc(PFNRTSTROUTPUT pfnOutput,
-                                         void *pvArgOutput,
-                                         const char *pszType,
-                                         void const *pvValue,
-                                         int cchWidth,
-                                         int cchPrecision,
-                                         unsigned fFlags,
-                                         void *pvUser)
+static DECLCALLBACK(size_t) e1kR3FmtTxDesc(PFNRTSTROUTPUT pfnOutput,
+                                           void *pvArgOutput,
+                                           const char *pszType,
+                                           void const *pvValue,
+                                           int cchWidth,
+                                           int cchPrecision,
+                                           unsigned fFlags,
+                                           void *pvUser)
 {
     RT_NOREF(cchWidth, cchPrecision, fFlags, pvUser);
     AssertReturn(strcmp(pszType, "e1ktxd") == 0, 0);
@@ -7411,16 +7415,16 @@ static DECLCALLBACK(size_t) e1kFmtTxDesc(PFNRTSTROUTPUT pfnOutput,
 }
 
 /** Initializes debug helpers (logging format types). */
-static int e1kInitDebugHelpers(void)
+static int e1kR3InitDebugHelpers(void)
 {
     int         rc                   = VINF_SUCCESS;
     static bool s_fHelpersRegistered = false;
     if (!s_fHelpersRegistered)
     {
         s_fHelpersRegistered = true;
-        rc = RTStrFormatTypeRegister("e1krxd", e1kFmtRxDesc, NULL);
+        rc = RTStrFormatTypeRegister("e1krxd", e1kR3FmtRxDesc, NULL);
         AssertRCReturn(rc, rc);
-        rc = RTStrFormatTypeRegister("e1ktxd", e1kFmtTxDesc, NULL);
+        rc = RTStrFormatTypeRegister("e1ktxd", e1kR3FmtTxDesc, NULL);
         AssertRCReturn(rc, rc);
     }
     return rc;
@@ -7433,7 +7437,7 @@ static int e1kInitDebugHelpers(void)
  * @param   pHlp        The output helpers.
  * @param   pszArgs     The arguments.
  */
-static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) e1kR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
     PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
@@ -7460,7 +7464,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
                     &pThis->macConfigured, g_aChips[pThis->eChip].pcszName,
                     pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
 
-    e1kCsEnter(pThis, VERR_INTERNAL_ERROR); /* Not sure why but PCNet does it */
+    e1kR3CsEnterAsserted(pThis); /* Not sure why but PCNet does it */
 
     for (i = 0; i < E1K_NUM_OF_32BIT_REGS; ++i)
         pHlp->pfnPrintf(pHlp, "%8.8s = %08x\n", g_aE1kRegMap[i].abbrev, pThis->auRegs[i]);
@@ -7613,11 +7617,7 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->cs, VERR_SEM_BUSY);
-
-    /** @todo r=pritesh still need to check if i missed
-     * to clean something in this function
-     */
+    e1kR3CsEnterAsserted(pThis);
 
     /*
      * Zero some important members.
@@ -7653,7 +7653,7 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->cs, VERR_SEM_BUSY);
+    e1kR3CsEnterAsserted(pThis);
 
     /*
      * Attach the driver.
@@ -8030,9 +8030,9 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /* Saved state registration. */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, E1K_SAVEDSTATE_VERSION, sizeof(E1KSTATE), NULL,
-                                NULL,        e1kLiveExec, NULL,
-                                e1kSavePrep, e1kSaveExec, NULL,
-                                e1kLoadPrep, e1kLoadExec, e1kLoadDone);
+                                NULL,        e1kR3LiveExec, NULL,
+                                e1kR3SavePrep, e1kR3SaveExec, NULL,
+                                e1kR3LoadPrep, e1kR3LoadExec, e1kR3LoadDone);
     AssertRCReturn(rc, rc);
 
     /* Set PCI config registers and register ourselves with the PCI bus. */
@@ -8135,7 +8135,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* Register the info item */
     char szTmp[20];
     RTStrPrintf(szTmp, sizeof(szTmp), "e1k%d", iInstance);
-    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "E1000 info.", e1kInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "E1000 info.", e1kR3Info);
 
     /* Status driver */
     PPDMIBASE pBase;
@@ -8168,7 +8168,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEventMoreRxDescAvail);
     AssertRCReturn(rc, rc);
 
-    rc = e1kInitDebugHelpers();
+    rc = e1kR3InitDebugHelpers();
     AssertRCReturn(rc, rc);
 
     e1kR3HardReset(pDevIns, pThis, pThisCC);

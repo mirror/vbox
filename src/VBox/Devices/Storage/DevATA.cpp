@@ -7103,8 +7103,11 @@ static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
             if (!fRc)
             {
                 /* Make it signal PDM & itself when its done */
-                PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
+                int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
+                PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->aCts[i].AsyncIORequestLock, rcLock);
+
                 ASMAtomicWriteBool(&pThisCC->aCts[i].fSignalIdle, true);
+
                 PDMDevHlpCritSectLeave(pDevIns, &pThis->aCts[i].AsyncIORequestLock);
 
                 fRc = ataR3AsyncIOIsIdle(pDevIns, &pThis->aCts[i], false /*fStrict*/);
@@ -7556,9 +7559,12 @@ static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->aCts[i].lock, rcLock);
+
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
             ataR3ResetDevice(pDevIns, &pThis->aCts[i], &pThis->aCts[i].aIfs[j]);
+
         PDMDevHlpCritSectLeave(pDevIns, &pThis->aCts[i].lock);
     }
     return true;
@@ -7579,7 +7585,8 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->aCts[i].lock, rcLock);
 
         pThis->aCts[i].iSelectedIf = 0;
         pThis->aCts[i].iAIOIf = 0;
@@ -7626,7 +7633,7 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
             if (pThisCC->aCts[i].hAsyncIOThread != NIL_RTTHREAD)
             {
                 int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
-                AssertRC(rc);
+                PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->aCts[i].AsyncIORequestLock, rc);
 
                 ASMAtomicWriteBool(&pThisCC->aCts[i].fSignalIdle, true);
                 rc = RTThreadUserReset(pThisCC->aCts[i].hAsyncIOThread);

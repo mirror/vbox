@@ -930,9 +930,6 @@ int vpciR3Init(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVPCISTATECC pThisCC, uint1
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteR3,   STAMTYPE_PROFILE, "IO/WriteR3",         STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteR0,   STAMTYPE_PROFILE, "IO/WriteR0",         STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R0");
     PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteRC,   STAMTYPE_PROFILE, "IO/WriteRC",         STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RC");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCsR3,        STAMTYPE_PROFILE, "Cs/CsR3",            STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R3");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCsR0,        STAMTYPE_PROFILE, "Cs/CsR0",            STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R0");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCsRC,        STAMTYPE_PROFILE, "Cs/CsRC",            STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in RC");
 # endif /* VBOX_WITH_STATISTICS */
 
     return VINF_SUCCESS;

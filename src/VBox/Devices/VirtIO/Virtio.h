@@ -217,9 +217,6 @@ typedef struct VPCISTATE
     STAMPROFILEADV          StatIOWriteR3;
     STAMPROFILEADV          StatIOWriteR0;
     STAMPROFILEADV          StatIOWriteRC;
-    STAMPROFILE             StatCsR3;
-    STAMPROFILE             StatCsR0;
-    STAMPROFILE             StatCsRC;
 #endif
 } VPCISTATE;
 
@@ -297,13 +294,20 @@ int   vpciIOPortOut(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVPCISTATECC pThisCC, 
                     uint32_t u32, unsigned cb, PCVPCIIOCALLBACKS pCallbacks);
 
 #define VPCI_CS
+
+#ifdef VPCI_CS
+# define VPCI_R3_CS_ENTER_RETURN_VOID(a_pDevIns, a_pThis) do { \
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &(a_pThis)->cs, VERR_IGNORED); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &(a_pThis)->cs, rcLock); \
+    } while (0)
+#else
+# define VPCI_R3_CS_ENTER_RETURN_VOID(a_pDevIns, a_pThis) do { } while (0)
+#endif
+
 DECLINLINE(int) vpciCsEnter(PPDMDEVINS pDevIns, PVPCISTATE pThis, int rcBusy)
 {
 #ifdef VPCI_CS
-    STAM_PROFILE_START(&pThis->CTX_SUFF(StatCs), a);
-    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->cs, rcBusy);
-    STAM_PROFILE_STOP(&pThis->CTX_SUFF(StatCs), a);
-    return rc;
+    return PDMDevHlpCritSectEnter(pDevIns, &pThis->cs, rcBusy);
 #else
     RT_NOREF(pDevIns, pThis, rcBusy);
     return VINF_SUCCESS;

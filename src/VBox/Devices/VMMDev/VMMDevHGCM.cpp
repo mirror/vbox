@@ -472,7 +472,8 @@ static void vmmdevR3HgcmCmdFree(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pTh
         uintptr_t idx = pCmd->idxHeapAcc;
         AssertStmt(idx < RT_ELEMENTS(pThisCC->aHgcmAcc), idx %= RT_ELEMENTS(pThisCC->aHgcmAcc));
 
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
         Log5Func(("aHgcmAcc[%zu] %#RX64 += %#x (%p)\n", idx, pThisCC->aHgcmAcc[idx].cbHeapBudget, pCmd->cbHeapCost, pCmd));
         pThisCC->aHgcmAcc[idx].cbHeapBudget += pCmd->cbHeapCost;

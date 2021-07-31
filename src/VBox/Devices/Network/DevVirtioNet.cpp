@@ -328,6 +328,8 @@ DECLINLINE(bool) vnetR3MergeableRxBuffers(PVNETSTATE pThis)
     return !!(pThis->VPCI.uGuestFeatures & VNET_F_MRG_RXBUF);
 }
 
+#define VNET_R3_CS_ENTER_RETURN_VOID(a_pDevIns, a_pThis) VPCI_R3_CS_ENTER_RETURN_VOID(a_pDevIns, &(a_pThis)->VPCI)
+
 DECLINLINE(int) vnetR3CsEnter(PPDMDEVINS pDevIns, PVNETSTATE pThis, int rcBusy)
 {
     return vpciCsEnter(pDevIns, &pThis->VPCI, rcBusy);
@@ -647,8 +649,7 @@ static DECLCALLBACK(void) vnetR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
     PVNETSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVNETSTATECC);
     RT_NOREF(hTimer, pvUser);
 
-    int rc = vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY);
-    AssertRCReturnVoid(rc);
+    VNET_R3_CS_ENTER_RETURN_VOID(pDevIns, pThis);
 
     pThis->config.uStatus |= VNET_S_LINK_UP;
     vnetR3RaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
@@ -1508,25 +1509,22 @@ static DECLCALLBACK(void) vnetR3QueueTransmit(PPDMDEVINS pDevIns, PVQUEUE pQueue
         PDMDevHlpTimerStop(pDevIns, pThis->hTxTimer);
         Log3(("%s vnetR3QueueTransmit: Got kicked with notification disabled, re-enable notification and flush TX queue\n", INSTANCE(pThis)));
         vnetR3TransmitPendingPackets(pDevIns, pThis, pThisCC, pQueue, false /*fOnWorkerThread*/);
-        if (RT_FAILURE(vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY)))
-            LogRel(("vnetR3QueueTransmit: Failed to enter critical section!/n"));
-        else
-        {
-            vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, true);
-            vnetR3CsLeave(pDevIns, pThis);
-        }
+
+        VNET_R3_CS_ENTER_RETURN_VOID(pDevIns, pThis);
+
+        vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, true);
+
+        vnetR3CsLeave(pDevIns, pThis);
     }
     else
     {
-        if (RT_FAILURE(vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY)))
-            LogRel(("vnetR3QueueTransmit: Failed to enter critical section!/n"));
-        else
-        {
-            vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, false);
-            PDMDevHlpTimerSetMicro(pDevIns, pThis->hTxTimer, VNET_TX_DELAY);
-            pThis->u64NanoTS = RTTimeNanoTS();
-            vnetR3CsLeave(pDevIns, pThis);
-        }
+        VNET_R3_CS_ENTER_RETURN_VOID(pDevIns, pThis);
+
+        vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, false);
+        PDMDevHlpTimerSetMicro(pDevIns, pThis->hTxTimer, VNET_TX_DELAY);
+        pThis->u64NanoTS = RTTimeNanoTS();
+
+        vnetR3CsLeave(pDevIns, pThis);
     }
 }
 
@@ -1551,8 +1549,8 @@ static DECLCALLBACK(void) vnetR3TxTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer
 
 //    Log3(("%s vnetR3TxTimer: Expired\n", INSTANCE(pThis)));
     vnetR3TransmitPendingPackets(pDevIns, pThis, pThisCC, pThisCC->pTxQueue, false /*fOnWorkerThread*/);
-    int rc = vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY)
-    AssertLogRelRCReturnVoid(rc);
+
+    VNET_R3_CS_ENTER_RETURN_VOID(pDevIns, pThis);
     vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, true);
     vnetR3CsLeave(pDevIns, pThis);
 }
@@ -2042,12 +2040,7 @@ static DECLCALLBACK(void) vnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    int rc = vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("vnetR3Detach failed to enter critical section!\n"));
-        return;
-    }
+    VNET_R3_CS_ENTER_RETURN_VOID(pDevIns, pThis);
 
     vnetR3DestroyTxThreadAndEvent(pDevIns, pThis, pThisCC);
 
@@ -2074,11 +2067,7 @@ static DECLCALLBACK(int) vnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
     int rc = vnetR3CsEnter(pDevIns, pThis, VERR_SEM_BUSY);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("vnetR3Attach failed to enter critical section!\n"));
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
 
     /*
      * Attach the driver.

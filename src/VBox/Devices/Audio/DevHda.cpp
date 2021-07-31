@@ -82,8 +82,8 @@
  */
 #define DEVHDA_LOCK(a_pDevIns, a_pThis) \
     do { \
-        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
-        AssertRC(rcLock); \
+        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), &(a_pThis)->CritSect, rcLock); \
     } while (0)
 
 /**
@@ -91,7 +91,7 @@
  */
 #define DEVHDA_LOCK_RETURN(a_pDevIns, a_pThis, a_rcBusy) \
     do { \
-        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, a_rcBusy); \
+        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, a_rcBusy); \
         if (rcLock == VINF_SUCCESS) \
         { /* likely */ } \
         else \
@@ -106,12 +106,12 @@
  */
 # define DEVHDA_LOCK_RETURN_VOID(a_pDevIns, a_pThis) \
     do { \
-        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
+        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
         if (rcLock == VINF_SUCCESS) \
         { /* likely */ } \
         else \
         { \
-            AssertRC(rcLock); \
+            PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), &(a_pThis)->CritSect, rcLock); \
             return; \
         } \
     } while (0)
@@ -4080,7 +4080,8 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
                             ("HDA stream ID=%RU8 not supported, skipping loadingit ...\n", idStream),
                             RT_ZERO(StreamDummyShared); RT_ZERO(StreamDummyR3));
 
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED); /* timer code requires this */
+        rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED); /* timer code requires this */
+        AssertRCReturn(rc, rc);
         rc = hdaR3StreamSetUp(pDevIns, pThis, pStreamShared, pStreamR3, idStream);
         PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         if (RT_FAILURE(rc))
@@ -4752,7 +4753,7 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
     PHDASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
 
     if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        (void)PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
 
     PHDADRIVER pDrv;
     while (!RTListIsEmpty(&pThisCC->lstDrv))

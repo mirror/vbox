@@ -1250,7 +1250,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
                 rc = VINF_IOM_R3_IOPORT_READ;
                 RT_NOREF(pDevIns);
                 break;
-#else
+#else /* IN_RING3 */
 # if defined(VMSVGA_USE_EMT_HALT_CODE)
                 /* The guest is basically doing a HLT via the device here, but with
                    a special wake up condition on FIFO completion. */
@@ -1264,7 +1264,8 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
                 {
                     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* hack around lock order issue. */
                     rc = VMR3WaitForDeviceReady(pVM, idCpu);
-                    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+                    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+                    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
                 }
                 ASMAtomicDecU32(&pSVGAState->cBusyDelayedEmts);
                 VMCPUSET_ATOMIC_DEL(&pSVGAState->BusyDelayedEmts, idCpu);
@@ -1300,7 +1301,7 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
                 STAM_REL_PROFILE_STOP(&pSVGAState->StatBusyDelayEmts, EmtDelay);
 # endif
                 *pu32 = pThis->svga.fBusy != 0;
-#endif
+#endif /* IN_RING3 */
             }
             else
                 *pu32 = false;
@@ -2961,8 +2962,8 @@ static void vmsvgaR3CmdBufWriteStatus(PPDMDEVINS pDevIns, RTGCPHYS GCPhysCB, SVG
  */
 static void vmsvgaR3CmdBufRaiseIRQ(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t u32IrqStatus)
 {
-    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
-    AssertRC(rc);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     if (pThis->svga.u32IrqMask & u32IrqStatus)
     {
@@ -5046,8 +5047,8 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
             if (   u32IrqStatus
                 || (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS))
             {
-                int rc2 = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
-                AssertRC(rc2);
+                int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+                PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
                 /* FIFO progress might trigger an interrupt. */
                 if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS)

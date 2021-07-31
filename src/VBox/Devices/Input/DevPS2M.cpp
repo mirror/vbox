@@ -872,8 +872,8 @@ static DECLCALLBACK(int) ps2mR3MousePort_PutEvent(PPDMIMOUSEPORT pInterface, int
     PPS2MR3     pThisCC = RT_FROM_MEMBER(pInterface, PS2MR3, Mouse.IPort);
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
     PPS2M       pThis   = &PDMDEVINS_2_DATA(pDevIns, PKBDSTATE)->Aux;
-    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    int const   rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
     LogRelFlowFunc(("dX=%d dY=%d dZ=%d dW=%d buttons=%02X\n", dx, dy, dz, dw, fButtons));
     /* NB: The PS/2 Y axis direction is inverted relative to ours. */

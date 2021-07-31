@@ -1034,15 +1034,18 @@ static DECLCALLBACK(unsigned) ohciR3RhGetAvailablePorts(PVUSBIROOTHUBPORT pInter
 
     memset(pAvailable, 0, sizeof(*pAvailable));
 
-    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
+
     for (unsigned iPort = 0; iPort < OHCI_NDP_CFG(pThis); iPort++)
         if (!pThis->RootHub.aPorts[iPort].pDev)
         {
             cPorts++;
             ASMBitSet(pAvailable, iPort + 1);
         }
-    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
     return cPorts;
 }
 
@@ -1074,7 +1077,8 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
     POHCI      pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
     VUSBSPEED  enmSpeed;
     LogFlow(("ohciR3RhAttach: pDev=%p uPort=%u\n", pDev, uPort));
-    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
     /*
      * Validate and adjust input.
@@ -1117,7 +1121,8 @@ static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEV
     POHCI      pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
     RT_NOREF(pDev);
     LogFlow(("ohciR3RhDetach: pDev=%p uPort=%u\n", pDev, uPort));
-    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
     /*
      * Validate and adjust input.
@@ -1176,7 +1181,8 @@ static DECLCALLBACK(int) ohciR3RhReset(PVUSBIROOTHUBPORT pInterface, bool fReset
     POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
     POHCI      pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
-    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
     Log(("ohci: root hub reset%s\n", fResetOnLinux ? " (reset on linux)" : ""));
 
@@ -5608,7 +5614,9 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Detach all proxied devices.
      */
-    PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    AssertRCReturn(rc, rc);
+
     /** @todo this won't work well when continuing after saving! */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->RootHub.aPorts); i++)
     {
@@ -5627,6 +5635,7 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             }
         }
     }
+
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 
     /*

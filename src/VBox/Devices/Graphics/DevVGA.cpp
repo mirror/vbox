@@ -3146,7 +3146,8 @@ vgaR3IOPortHgsmiWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32
 # if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM)
                 if (u32 == HGSMIOFFSET_VOID)
                 {
-                    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIRQ, VERR_SEM_BUSY);
+                    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSectIRQ, VERR_SEM_BUSY);
+                    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSectIRQ, rcLock);
 
                     if (pThis->fu32PendingGuestFlags == 0)
                     {
@@ -4758,7 +4759,7 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
 # ifdef VBOX_WITH_VMSVGA
     if (    pThis->svga.fEnabled
@@ -4843,7 +4844,7 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, 
 # endif /* DEBUG_sunlover */
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     rc = vboxR3UpdateDisplayAllInternal(pDevIns, pThis, pThisCC, fFailOnResize);
 
@@ -5031,7 +5032,7 @@ static DECLCALLBACK(int) vgaR3PortDisplayBlt(PPDMIDISPLAYPORT pInterface, const 
     LogFlow(("vgaR3PortDisplayBlt: pvData=%p x=%d y=%d cx=%d cy=%d\n", pvData, x, y, cx, cy));
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     /*
      * Validate input.
@@ -5128,7 +5129,7 @@ static DECLCALLBACK(void) vgaR3PortUpdateDisplayRect(PPDMIDISPLAYPORT pInterface
     Assert(pInterface);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rc);
 
     /* Check if there is something to do at all. */
     if (!pThis->fRenderVRAM)
@@ -5339,7 +5340,7 @@ vgaR3PortCopyRect(PPDMIDISPLAYPORT pInterface,
     }
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     /* This method only works if the VGA device is in a VBE mode or not paused VBVA mode.
      * VGA modes are reported to the caller by returning VERR_INVALID_STATE.
@@ -5429,8 +5430,8 @@ static DECLCALLBACK(void) vgaR3PortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bo
 
     LogFlow(("vgaR3PortSetRenderVRAM: fRender = %d\n", fRender));
 
-    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     pThis->fRenderVRAM = fRender;
 
@@ -6070,9 +6071,12 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     if (pThisCC->pDrv)
     {
         PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* hack around lock order issue. */
+
         pThisCC->pDrv->pfnReset(pThisCC->pDrv);
         pThisCC->pDrv->pfnVBVAMousePointerShape(pThisCC->pDrv, false, false, 0, 0, 0, 0, NULL);
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+
+        int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
     }
 
     /* Reset latched access mask. */

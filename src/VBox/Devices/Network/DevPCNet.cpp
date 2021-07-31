@@ -1337,11 +1337,13 @@ pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
 # endif
            )
         {
-            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-            AssertReleaseRC(rc);
+            int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+            PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
+
             /* Check if we can do something now */
             pcnetPollRxTx(pDevIns, pThis, pThisCC);
             pcnetUpdateIrq(pDevIns, pThis);
+
             PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         }
     }
@@ -2037,7 +2039,7 @@ static void pcnetReceiveNoSync(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTAT
             PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
             pcnetPhysWrite(pDevIns, pThis, rbadr, src, cbBuf);
             int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-            AssertReleaseRC(rc);
+            PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rc);
 
             /* RX disabled in the meantime? If so, abort RX. */
             if (RT_UNLIKELY(CSR_DRX(pThis) || CSR_STOP(pThis) || CSR_SPND(pThis)))
@@ -2084,7 +2086,7 @@ static void pcnetReceiveNoSync(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTAT
                 PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
                 pcnetPhysWrite(pDevIns, pThis, rbadr2, src, cbBuf);
                 rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-                AssertReleaseRC(rc);
+                PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rc);
 
                 /* RX disabled in the meantime? If so, abort RX. */
                 if (RT_UNLIKELY(CSR_DRX(pThis) || CSR_STOP(pThis) || CSR_SPND(pThis)))
@@ -4047,7 +4049,7 @@ static DECLCALLBACK(void) pcnetR3TimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE 
     Assert(hTimer == pThis->hTimerRestore); RT_NOREF(pvUser);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rc);
 
     rc = VERR_GENERAL_FAILURE;
 
@@ -4167,7 +4169,8 @@ static DECLCALLBACK(void) pcnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
                     &pThis->MacConfigured, pcszModel, pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
 
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     pHlp->pfnPrintf(pHlp,
                     "CSR0=%#06x: INIT=%d STRT=%d STOP=%d TDMD=%d TXON=%d RXON=%d IENA=%d INTR=%d IDON=%d TINT=%d RINT=%d MERR=%d\n"
@@ -4470,9 +4473,8 @@ static DECLCALLBACK(int) pcnetR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PPCNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
-
     return VINF_SUCCESS;
 }
 
@@ -4523,7 +4525,7 @@ static DECLCALLBACK(int) pcnetR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     uint32_t uVer = pHlp->pfnSSMHandleVersion(pSSM);
     if (    uVer  < VBOX_FULL_VERSION_MAKE(4, 3,  6)
@@ -4681,7 +4683,7 @@ static DECLCALLBACK(int) pcnetR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static int pcnetR3CanReceive(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 {
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rc);
 
     rc = VERR_NET_NO_BUFFER_SPACE;
 
@@ -4737,7 +4739,7 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pI
         /* Start the poll timer once which will remain active as long fMaybeOutOfSpace
          * is true -- even if (transmit) polling is disabled (CSR_DPOLL). */
         rc2 = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-        AssertReleaseRC(rc2);
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rc2);
 #ifndef PCNET_NO_POLLING
         pcnetPollTimerStart(pDevIns, pThis);
 #endif
@@ -4762,7 +4764,7 @@ static DECLCALLBACK(int) pcnetR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface,
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rc);
 
     /*
      * Check for the max ethernet frame size, taking the IEEE 802.1Q (VLAN) tag into
@@ -4967,7 +4969,8 @@ static DECLCALLBACK(void) pcnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     /** @todo r=pritesh still need to check if i missed
      * to clean something in this function
@@ -5000,7 +5003,8 @@ static DECLCALLBACK(int) pcnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     /*
      * Attach the driver.

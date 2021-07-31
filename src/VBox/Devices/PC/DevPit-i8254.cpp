@@ -106,9 +106,9 @@
  */
 #define DEVPIT_LOCK_RETURN(a_pDevIns, a_pThis, a_rcBusy)  \
     do { \
-        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
-        if (rcLock != VINF_SUCCESS) \
-            return rcLock; \
+        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, (a_rcBusy)); \
+        if (rcLock == VINF_SUCCESS) { /* likely */ } \
+        else return rcLock; \
     } while (0)
 
 /**
@@ -980,7 +980,8 @@ static DECLCALLBACK(int) pitR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PPITSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    AssertRCReturn(rc, rc);
 
     /* The config. */
     pitR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
@@ -1084,10 +1085,12 @@ static DECLCALLBACK(int) pitR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         pHlp->pfnSSMGetS64(pSSM, &pChan->next_transition_time);
         if (pChan->hTimer != NIL_TMTIMERHANDLE)
         {
-            PDMDevHlpTimerLoad(pDevIns, pChan->hTimer, pSSM);
+            rc = PDMDevHlpTimerLoad(pDevIns, pChan->hTimer, pSSM);
+            AssertRCReturn(rc, rc);
             LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n",
                     pChan->mode, pChan->count, pChan->count, PIT_FREQ / pChan->count, (PIT_FREQ * 100 / pChan->count) % 100, i));
-            PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+            rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+            AssertRCReturn(rc, rc);
             PDMDevHlpTimerSetFrequencyHint(pDevIns, pChan->hTimer, PIT_FREQ / pChan->count);
             PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
         }
@@ -1102,7 +1105,7 @@ static DECLCALLBACK(int) pitR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     pHlp->pfnSSMGetS32(pSSM, &u32Dummy);
 # endif
     if (uVersion > PIT_SAVED_STATE_VERSION_VBOX_31)
-        pHlp->pfnSSMGetBool(pSSM, &pThis->fDisabledByHpet);
+        rc = pHlp->pfnSSMGetBool(pSSM, &pThis->fDisabledByHpet);
 
     return VINF_SUCCESS;
 }
@@ -1182,7 +1185,8 @@ static DECLCALLBACK(void) pitR3NotifyHpetLegacyNotify_ModeChanged(PPDMIHPETLEGAC
     PPITSTATER3  pThisCC = RT_FROM_MEMBER(pInterface, PITSTATER3, IHpetLegacyNotify);
     PPDMDEVINS   pDevIns = pThisCC->pDevIns;
     PPITSTATE    pThis   = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    int const    rcLock  = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     pThis->fDisabledByHpet = fActivated;
 

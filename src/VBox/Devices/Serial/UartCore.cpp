@@ -1597,7 +1597,9 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
 
     AssertMsg((uint32_t)cbAvail == cbAvail, ("Too much data available\n"));
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    int rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    AssertRCReturn(rcLock, rcLock);
+
     uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
     LogFlow(("    cbAvailRdr=%u -> cbAvailRdr=%u\n", cbAvailOld, cbAvail + cbAvailOld));
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
@@ -1614,8 +1616,8 @@ static DECLCALLBACK(int) uartR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, si
             uartIrqUpdate(pDevIns, pThis, pThisCC);
         }
     }
-    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -1631,9 +1633,12 @@ static DECLCALLBACK(int) uartR3DataSentNotify(PPDMISERIALPORT pInterface)
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
 
     /* Set the transmitter empty bit because everything was sent. */
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    AssertRCReturn(rcLock, rcLock);
+
     UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
     uartIrqUpdate(pDevIns, pThis, pThisCC);
+
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1651,10 +1656,12 @@ static DECLCALLBACK(int) uartR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, s
 
     AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
-    uartR3TxQueueCopyFrom(pDevIns, pThis, pThisCC, pvBuf, cbRead, pcbRead);
-    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    AssertRCReturn(rcLock, rcLock);
 
+    uartR3TxQueueCopyFrom(pDevIns, pThis, pThisCC, pvBuf, cbRead, pcbRead);
+
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     LogFlowFunc(("-> VINF_SUCCESS{*pcbRead=%zu}\n", *pcbRead));
     return VINF_SUCCESS;
 }
@@ -1669,9 +1676,11 @@ static DECLCALLBACK(int) uartR3NotifyStsLinesChanged(PPDMISERIALPORT pInterface,
     PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, ISerialPort);
     PUARTCORE   pThis   = pThisCC->pShared;
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    int const   rcLock  = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    AssertRCReturn(rcLock, rcLock);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fNewStatusLines);
+
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1686,10 +1695,12 @@ static DECLCALLBACK(int) uartR3NotifyBrk(PPDMISERIALPORT pInterface)
     PUARTCORECC pThisCC = RT_FROM_MEMBER(pInterface, UARTCORECC, ISerialPort);
     PUARTCORE   pThis   = pThisCC->pShared;
     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    int const   rcLock  = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    AssertRCReturn(rcLock, rcLock);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
     UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_BI);
     uartIrqUpdate(pDevIns, pThis, pThisCC);
+
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1948,18 +1959,23 @@ DECLHIDDEN(int) uartR3Attach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC pT
             AssertLogRelMsgFailed(("Configuration error: instance %d has no serial interface!\n", pDevIns->iInstance));
             return VERR_PDM_MISSING_INTERFACE;
         }
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
-        uartR3XferReset(pDevIns, pThis, pThisCC);
-        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        if (RT_SUCCESS(rc))
+        {
+            uartR3XferReset(pDevIns, pThis, pThisCC);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        }
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
         pThisCC->pDrvBase = NULL;
         pThisCC->pDrvSerial = NULL;
-        rc = VINF_SUCCESS;
-        PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
-        uartR3XferReset(pDevIns, pThis, pThisCC);
-        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+        if (RT_SUCCESS(rc))
+        {
+            uartR3XferReset(pDevIns, pThis, pThisCC);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        }
         LogRel(("Serial#%d: no unit\n", pDevIns->iInstance));
     }
     else /* Don't call VMSetError here as we assume that the driver already set an appropriate error */
@@ -1982,8 +1998,11 @@ DECLHIDDEN(void) uartR3Detach(PPDMDEVINS pDevIns, PUARTCORE pThis, PUARTCORECC p
     /* Zero out important members. */
     pThisCC->pDrvBase   = NULL;
     pThisCC->pDrvSerial = NULL;
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
+
     uartR3XferReset(pDevIns, pThis, pThisCC);
+
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
 

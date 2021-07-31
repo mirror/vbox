@@ -639,8 +639,8 @@ typedef AC97STATER3 *PAC97STATER3;
  */
 #define DEVAC97_LOCK(a_pDevIns, a_pThis) \
     do { \
-        int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
-        AssertRC(rcLock); \
+        int const rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), &(a_pThis)->CritSect, rcLock); \
     } while (0)
 
 /**
@@ -650,9 +650,12 @@ typedef AC97STATER3 *PAC97STATER3;
     do { \
         int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, a_rcBusy); \
         if (rcLock == VINF_SUCCESS) \
-            break; \
-        AssertRC(rcLock); \
-        return rcLock; \
+        { /* likely */ } \
+        else \
+        { \
+            AssertRC(rcLock); \
+            return rcLock; \
+        } \
     } while (0)
 
 /**

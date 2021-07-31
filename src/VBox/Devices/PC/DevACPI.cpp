@@ -64,7 +64,7 @@
 # define DEVACPI_LOCK_R3(a_pDevIns, a_pThis) \
     do { \
         int rcLock = PDMDevHlpCritSectEnter((a_pDevIns), &(a_pThis)->CritSect, VERR_IGNORED); \
-        AssertRC(rcLock); \
+        PDM_CRITSECT_RELEASE_ASSERT_RC_DEV((a_pDevIns), &(a_pThis)->CritSect, rcLock); \
     } while (0)
 #endif
 /** Unlocks the device state (all contexts). */
