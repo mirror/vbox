@@ -1527,10 +1527,11 @@
  * @code
  *   RTR3DECL(DECL_CHECK_RETURN(int)) MayReturnInfoStatus(void);
  * @endcode
- * @todo Visual C++: check _Check_return_ from SAL.
  */
 #if RT_GNUC_PREREQ(3, 4)
 # define DECL_CHECK_RETURN(a_RetType)  __attribute__((warn_unused_result)) a_RetType
+#elif defined(_MSC_VER)
+# define DECL_CHECK_RETURN(a_RetType)  __declspec("SAL_checkReturn") a_RetType
 #else
 # define DECL_CHECK_RETURN(a_RetType)  a_RetType
 #endif
