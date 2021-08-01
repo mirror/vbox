@@ -581,41 +581,41 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                     break;
                 }
 
-                /*
-                 * Configure the locking contention test.
-                 */
-                case VMMDEV_TESTING_IOPORT_LOCKED - VMMDEV_TESTING_IOPORT_BASE:
-                    switch (cb)
-                    {
-                        case 4:
-                        case 2:
-                        case 1:
-                        {
-                            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
-                            AssertRCReturn(rc, rc);
-
-                            u32 &= ~VMMDEV_TESTING_LOCKED_MBZ_MASK;
-                            if (pThis->TestingLockControl.u32 != u32)
-                            {
-                                pThis->TestingLockControl.u32 = u32;
-                                PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTestingLockEvt);
-                            }
-
-                            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
-                            return VINF_SUCCESS;
-                        }
-
-                        default:
-                            AssertFailed();
-                            return VERR_INTERNAL_ERROR_2;
-                    }
-
                 default:
                     break;
             }
             Log(("VMMDEV_TESTING_IOPORT_CMD: bad access; cmd=%#x off=%#x cb=%#x u32=%#x\n", uCmd, off, cb, u32));
             return VINF_SUCCESS;
         }
+
+        /*
+         * Configure the locking contention test.
+         */
+        case VMMDEV_TESTING_IOPORT_LOCKED - VMMDEV_TESTING_IOPORT_BASE:
+            switch (cb)
+            {
+                case 4:
+                case 2:
+                case 1:
+                {
+                    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                    AssertRCReturn(rc, rc);
+
+                    u32 &= ~VMMDEV_TESTING_LOCKED_MBZ_MASK;
+                    if (pThis->TestingLockControl.u32 != u32)
+                    {
+                        pThis->TestingLockControl.u32 = u32;
+                        PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTestingLockEvt);
+                    }
+
+                    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+                    return VINF_SUCCESS;
+                }
+
+                default:
+                    AssertFailed();
+                    return VERR_INTERNAL_ERROR_2;
+            }
 
         default:
             break;
@@ -694,6 +694,31 @@ vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
                 return VINF_SUCCESS;
             }
             break;
+
+        /*
+         * Just return the current locking configuration value after first
+         * acquiring the lock of course.
+         */
+        case VMMDEV_TESTING_IOPORT_LOCKED - VMMDEV_TESTING_IOPORT_BASE:
+            switch (cb)
+            {
+                case 4:
+                case 2:
+                case 1:
+                {
+                    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                    AssertRCReturn(rc, rc);
+
+                    *pu32 = pThis->TestingLockControl.u32;
+
+                    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+                    return VINF_SUCCESS;
+                }
+
+                default:
+                    AssertFailed();
+                    return VERR_INTERNAL_ERROR_2;
+            }
 
         /*
          * The command and data registers are write-only.
