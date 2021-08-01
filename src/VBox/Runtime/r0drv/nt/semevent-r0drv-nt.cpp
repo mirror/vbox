@@ -180,7 +180,7 @@ DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, u
     /*
      * Convert the timeout to a relative one because KeWaitForSingleObject
      * takes system time instead of interrupt time as input for absolute
-     * timeout specifications.  So, we're best of by giving it relative time.
+     * timeout specifications.  So, we're best off by giving it relative time.
      *
      * Lazy bird converts uTimeout to relative nanoseconds and then to Nt time.
      */
