@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2020 Oracle Corporation
+ * Copyright (C) 2008-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,33 +34,43 @@ class QComboBox;
 class QDialogButtonBox;
 class QLabel;
 class UIFilePathSelector;
+class CMedium;
 
-/* A QDialog extension to get necessary setting from the user for floppy disk creation */
+/* A QDialog extension to get necessary setting from the user for floppy disk creation. */
 class SHARED_LIBRARY_STUFF UIFDCreationDialog : public QIWithRetranslateUI<QDialog>
-
 {
     Q_OBJECT;
 
-
 public:
 
+    /** Constructs the floppy disc creation dialog passing @a pParent to the base-class.
+      * @param  strDefaultFolder  Brings the default folder.
+      * @param  strMachineName    Brings the machine name. */
     UIFDCreationDialog(QWidget *pParent,
                        const QString &strDefaultFolder,
                        const QString &strMachineName = QString());
 
-
-    virtual void accept() /* override */;
-    /* Return the mediumID */
+    /** Return the medium ID. */
     QUuid mediumID() const;
+
+public slots:
+
+    /** Creates the floppy disc image, asynchronously. */
+    virtual void accept() /* override final */;
 
 protected:
 
-    void retranslateUi();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override final */;
 
 private slots:
 
+    /** Handles signal about @a comMedium was created. */
+    void sltHandleMediumCreated(const CMedium &comMedium);
 
 private:
+
+    /** Floppy disc sizes. */
     enum FDSize
     {
         //FDSize_2_88M,
@@ -69,18 +79,33 @@ private:
         FDSize_720K,
         FDSize_360K
     };
-    void                prepare();
-    QString             getDefaultFolder() const;
 
-    UIFilePathSelector *m_pFilePathselector;
-    QLabel             *m_pPathLabel;
+    /** Prepares all. */
+    void prepare();
+
+    /** Returns default file-path. */
+    QString getDefaultFilePath() const;
+
+    /** Holds the default folder. */
+    QString  m_strDefaultFolder;
+    /** Holds the machine name. */
+    QString  m_strMachineName;
+
+    /** Holds the path label instance. */
+    QLabel             *m_pLabelPath;
+    /** Holds the file path selector instance. */
+    UIFilePathSelector *m_pFilePathSelector;
+    /** Holds the size label instance. */
     QLabel             *m_pSizeLabel;
-    QComboBox          *m_pSizeCombo;
+    /** Holds the size combo instance. */
+    QComboBox          *m_pComboSize;
+    /** Holds the format check-box instance. */
+    QCheckBox          *m_pCheckBoxFormat;
+    /** holds the button-box instance. */
     QDialogButtonBox   *m_pButtonBox;
-    QCheckBox          *m_pFormatCheckBox;
-    QString             m_strDefaultFolder;
-    QString             m_strMachineName;
-    QUuid               m_uMediumID;
+
+    /** Holds the created medium ID. */
+    QUuid  m_uMediumID;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIFDCreationDialog_h */
