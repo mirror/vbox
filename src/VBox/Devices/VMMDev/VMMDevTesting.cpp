@@ -33,6 +33,11 @@
 #include <iprt/time.h>
 #include <iprt/test.h>
 
+#ifdef IN_RING3
+# define USING_VMM_COMMON_DEFS /* HACK ALERT! We ONLY want the EMT thread handles, so the common defs doesn't matter. */
+# include <VBox/vmm/vmcc.h>
+#endif
+
 #include "VMMDevState.h"
 #include "VMMDevTesting.h"
 
@@ -576,6 +581,35 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                     break;
                 }
 
+                /*
+                 * Configure the locking contention test.
+                 */
+                case VMMDEV_TESTING_IOPORT_LOCKED - VMMDEV_TESTING_IOPORT_BASE:
+                    switch (cb)
+                    {
+                        case 4:
+                        case 2:
+                        case 1:
+                        {
+                            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                            AssertRCReturn(rc, rc);
+
+                            u32 &= ~VMMDEV_TESTING_LOCKED_MBZ_MASK;
+                            if (pThis->TestingLockControl.u32 != u32)
+                            {
+                                pThis->TestingLockControl.u32 = u32;
+                                PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTestingLockEvt);
+                            }
+
+                            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+                            return VINF_SUCCESS;
+                        }
+
+                        default:
+                            AssertFailed();
+                            return VERR_INTERNAL_ERROR_2;
+                    }
+
                 default:
                     break;
             }
@@ -675,8 +709,66 @@ vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
     return VERR_IOM_IOPORT_UNUSED;
 }
 
-
 #ifdef IN_RING3
+
+/**
+ * @callback_method_impl{FNPDMTHREADDEV}
+ */
+static DECLCALLBACK(int)  vmmdevR3TestingLockingThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PVMMDEV pThis = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
+    PVM     pVM   = PDMDevHlpGetVM(pDevIns);
+    AssertPtr(pVM);
+
+    while (RT_LIKELY(pThread->enmState == PDMTHREADSTATE_RUNNING))
+    {
+        /*
+         * Enter the critical section and
+         */
+        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+        AssertLogRelRCReturn(rc, rc);
+
+        uint32_t cNsNextWait;
+        if (pThis->TestingLockControl.s.cUsHold)
+        {
+            PDMDevHlpSUPSemEventWaitNsRelIntr(pDevIns, pThis->hTestingLockEvt, pThis->TestingLockControl.s.cUsHold);
+            if (pThis->TestingLockControl.s.fPokeBeforeRelease)
+                VMCC_FOR_EACH_VMCPU_STMT(pVM, RTThreadPoke(pVCpu->hThread));
+            cNsNextWait = pThis->TestingLockControl.s.cUsBetween * RT_NS_1US;
+        }
+        else
+            cNsNextWait = 0;
+
+        rc = PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+        AssertLogRelRCReturn(rc, rc);
+
+        /*
+         * Wait for the next iteration.
+         */
+        if (RT_LIKELY(pThread->enmState == PDMTHREADSTATE_RUNNING))
+        { /* likely */ }
+        else
+            break;
+        if (cNsNextWait > 0)
+            PDMDevHlpSUPSemEventWaitNsRelIntr(pDevIns, pThis->hTestingLockEvt, cNsNextWait);
+        else
+            PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hTestingLockEvt, RT_INDEFINITE_WAIT);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNPDMTHREADWAKEUPDEV}
+ */
+static DECLCALLBACK(int) vmmdevR3TestingLockingThreadWakeup(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PVMMDEV pThis = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
+    RT_NOREF(pThread);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTestingLockEvt);
+}
+
 
 /**
  * Initializes the testing part of the VMMDev if enabled.
@@ -735,6 +827,15 @@ int vmmdevR3TestingInitialize(PPDMDEVINS pDevIns)
     rc = PDMDevHlpIoPortCreateAndMap(pDevIns, VMMDEV_TESTING_IOPORT_BASE, VMMDEV_TESTING_IOPORT_COUNT,
                                      vmmdevTestingIoWrite, vmmdevTestingIoRead, "VMMDev Testing", NULL /*paExtDescs*/,
                                      &pThis->hIoPortTesting);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Create the locking thread.
+     */
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hTestingLockEvt);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->pTestingLockThread, NULL /*pvUser*/, vmmdevR3TestingLockingThread,
+                               vmmdevR3TestingLockingThreadWakeup, 0 /*cbStack*/, RTTHREADTYPE_IO, "VMMLockT");
     AssertRCReturn(rc, rc);
 
     /*

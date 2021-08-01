@@ -4481,6 +4481,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     pThis->hIoPortTesting       = NIL_IOMIOPORTHANDLE;
     pThis->hMmioTesting         = NIL_IOMMMIOHANDLE;
+    pThis->hTestingLockEvt      = NIL_SUPSEMEVENT;
 #endif
 
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];

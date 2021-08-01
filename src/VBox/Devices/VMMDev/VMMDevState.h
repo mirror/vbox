@@ -26,6 +26,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmifs.h>
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
+# include <VBox/vmm/pdmthread.h>
 # include <iprt/test.h>
 # include <VBox/VMMDevTesting.h>
 #endif
@@ -259,13 +260,15 @@ typedef struct VMMDEV
 
     uint32_t            StatMemBalloonChunks;
 
+    /** @name Testing
+     * @{ */
     /** Set if testing is enabled. */
     bool                fTestingEnabled;
     /** Set if testing the MMIO testing range is enabled. */
     bool                fTestingMMIO;
     /** Alignment padding. */
     bool                afPadding9[HC_ARCH_BITS == 32 ? 2 : 6];
-#ifndef VBOX_WITHOUT_TESTING_FEATURES
+#if !defined(VBOX_WITHOUT_TESTING_FEATURES) || defined(DOXYGEN_RUNNING)
     /** The high timestamp value. */
     uint32_t            u32TestingHighTimestamp;
     /** The current testing command (VMMDEV_TESTING_CMD_XXX). */
@@ -302,12 +305,33 @@ typedef struct VMMDEV
          *  VMMDEV_TESTING_MMIO_OFF_READBACK_R3). */
         uint8_t         abReadBack[VMMDEV_TESTING_READBACK_SIZE];
     } TestingData;
-
+    /** The locking testing control dword. */
+    union
+    {
+        /** Plain view. */
+        uint32_t        u32;
+        struct
+        {
+            /** Number of microseconds to hold the lock. Zero means disabled. */
+            uint32_t    cUsHold : 14;
+            /** Number of microseconds to wait before retaking the lock again. */
+            uint32_t    cUsBetween : 14;
+            /** Reserved MBZ. */
+            uint32_t    uReserved : 3;
+            /** Whether to poke EMTs before releasing it. */
+            uint32_t    fPokeBeforeRelease : 1;
+        } s;
+    } TestingLockControl;
+    /** Alignment padding.  */
+    uint32_t            uPadding10;
+    /** Event semaphore that the locking thread blocks. */
+    SUPSEMEVENT         hTestingLockEvt;
     /** Handle for the I/O ports used by the testing component. */
     IOMIOPORTHANDLE     hIoPortTesting;
     /** Handle for the MMIO region used by the testing component. */
     IOMMMIOHANDLE       hMmioTesting;
-#endif /* !VBOX_WITHOUT_TESTING_FEATURES */
+#endif /* !VBOX_WITHOUT_TESTING_FEATURES || DOXYGEN_RUNNING */
+    /** @} */
 
     /** @name Heartbeat
      * @{ */
@@ -452,6 +476,8 @@ typedef struct VMMDEVR3
     R3PTRTYPE(char *)               pszTestingXmlOutput;
     /** Testing instance for dealing with the output. */
     RTTEST                          hTestingTest;
+    /** The locking test thread (). */
+    PPDMTHREAD                      pTestingLockThread;
 #endif
 } VMMDEVR3;
 /** Pointer to the ring-3 VMM device state. */

@@ -89,6 +89,13 @@
 #define VMMDEV_TESTING_IOPORT_DATA      (VMMDEV_TESTING_IOPORT_BASE + 4)
 /** The go-to-ring-3-NOP I/O port - 1,2,4 RW. */
 #define VMMDEV_TESTING_IOPORT_NOP_R3    (VMMDEV_TESTING_IOPORT_BASE + 5)
+/** Take the VMMDev lock in arrival context and return - 1,2,4 RW.
+ * Writing configures counter action by a thread taking the lock to trigger
+ * contention:
+ *  - Bits 19-0 is the lock hold time in microseconds. Zero disables it.
+ *  - Bit 31 make the thread poke the EMT(s) prior to releasing the lock.
+ *  - Bits 30-20 are reserved and must be zero. */
+#define VMMDEV_TESTING_IOPORT_LOCKED    (VMMDEV_TESTING_IOPORT_BASE + 6)
 
 /** @name Commands.
  * @{ */
@@ -152,9 +159,22 @@
 #define VMMDEV_TESTING_UNIT_NONE                UINT8_C(0x1b)   /**< No unit. */
 /** @}  */
 
-
 /** What the NOP accesses returns. */
-#define VMMDEV_TESTING_NOP_RET          UINT32_C(0x64726962) /* bird */
+#define VMMDEV_TESTING_NOP_RET                  UINT32_C(0x64726962) /* bird */
+
+/** @name Locked Control dword
+ * @{ */
+/** Locked Control: Lock hold interval in microseconds. */
+#define VMMDEV_TESTING_LOCKED_HOLD_MASK         UINT32_C(0x00003fff)
+/** Locked Control: Wait time in microseconds between locking attempts. */
+#define VMMDEV_TESTING_LOCKED_WAIT_MASK         UINT32_C(0x0fffc000)
+/** Locked Control: Wait time shift count. */
+#define VMMDEV_TESTING_LOCKED_WAIT_SHIFT        14
+/** Locked Control: Must be zero. */
+#define VMMDEV_TESTING_LOCKED_MBZ_MASK          UINT32_C(0x70000000)
+/** Locked Control: Poke EMT(s) flag.   */
+#define VMMDEV_TESTING_LOCKED_POKE              UINT32_C(0x80000000)
+/** @} */
 
 /** @} */
 
