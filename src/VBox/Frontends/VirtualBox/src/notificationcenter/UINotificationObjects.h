@@ -294,7 +294,7 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMachineMove : public UINotifica
 
 public:
 
-    /** Constructs medium move notification-progress.
+    /** Constructs machine move notification-progress.
       * @param  uId             Brings the machine id.
       * @param  strDestination  Brings the move destination.
       * @param  strType         Brings the moving type. */
@@ -741,6 +741,49 @@ private:
     CCloudMachine  m_comMachine;
     /** Holds the cloud machine name. */
     QString        m_strName;
+};
+
+/** UINotificationProgress extension for snapshot take functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressSnapshotTake : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs snapshot take notification-progress.
+      * @param  comMachine              Brings the machine we are taking snapshot for.
+      * @param  strSnapshotName         Brings the name of snapshot being taken.
+      * @param  strSnapshotDescription  Brings the description of snapshot being taken. */
+    UINotificationProgressSnapshotTake(const CMachine &comMachine,
+                                       const QString &strSnapshotName,
+                                       const QString &strSnapshotDescription);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine we are taking snapshot for. */
+    CMachine  m_comMachine;
+    /** Holds the name of snapshot being taken. */
+    QString   m_strSnapshotName;
+    /** Holds the description of snapshot being taken. */
+    QString   m_strSnapshotDescription;
+    /** Holds the machine name. */
+    QString   m_strName;
+    /** Holds the session being opened. */
+    CSession  m_comSession;
 };
 
 /** UINotificationProgress extension for export appliance functionality. */

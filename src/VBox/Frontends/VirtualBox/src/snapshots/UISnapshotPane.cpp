@@ -38,6 +38,7 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
+#include "UINotificationCenter.h"
 #include "UISnapshotDetailsWidget.h"
 #include "UISnapshotPane.h"
 #include "UITakeSnapshotDialog.h"
@@ -940,45 +941,11 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
         /* Get item data: */
         UIDataSnapshot newData = m_pDetailsWidget->data();
 
-        /* Open a session (this call will handle all errors): */
-        CSession comSession;
-        if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = uiCommon().openExistingSession(m_uMachineId);
-        else
-            comSession = uiCommon().openSession(m_uMachineId);
-        if (comSession.isNotNull())
-        {
-            /* Get corresponding machine object: */
-            CMachine comMachine = comSession.GetMachine();
-
-            /* Perform separate linked steps: */
-            do
-            {
-                /* Take snapshot: */
-                QUuid uSnapshotId;
-                CProgress comProgress = comMachine.TakeSnapshot(newData.m_strName,
-                                                                newData.m_strDescription,
-                                                                true, uSnapshotId);
-                if (!comMachine.isOk())
-                {
-                    msgCenter().cannotTakeSnapshot(comMachine, comMachine.GetName());
-                    break;
-                }
-
-                /* Show snapshot taking progress: */
-                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(),
-                                                    ":/progress_snapshot_create_90px.png");
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                {
-                    msgCenter().cannotTakeSnapshot(comProgress, comMachine.GetName());
-                    break;
-                }
-            }
-            while (0);
-
-            /* Cleanup session: */
-            comSession.UnlockMachine();
-        }
+        /* Take snapshot: */
+        UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(m_comMachine,
+                                                                                                   newData.m_strName,
+                                                                                                   newData.m_strDescription);
+        notificationCenter().append(pNotification);
     }
     /* For snapshot items: */
     else
@@ -1547,111 +1514,67 @@ void UISnapshotPane::updateActionStates()
 
 bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
 {
-    /* Simulate try-catch block: */
-    bool fSuccess = false;
-    do
+    /* Search for a maximum existing snapshot index: */
+    int iMaximumIndex = 0;
+    const QString strNameTemplate = tr("Snapshot %1");
+    const QRegExp reName(QString("^") + strNameTemplate.arg("([0-9]+)") + QString("$"));
+    QTreeWidgetItemIterator iterator(m_pSnapshotTree);
+    while (*iterator)
     {
-        /* Open a session (this call will handle all errors): */
-        CSession comSession;
-        if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = uiCommon().openExistingSession(m_uMachineId);
-        else
-            comSession = uiCommon().openSession(m_uMachineId);
-        if (comSession.isNull())
-            break;
-
-        /* Simulate try-catch block: */
-        do
-        {
-            /* Get corresponding machine object: */
-            CMachine comMachine = comSession.GetMachine();
-
-            /* Search for a maximum available snapshot index: */
-            int iMaximumIndex = 0;
-            const QString strNameTemplate = tr("Snapshot %1");
-            const QRegExp reName(QString("^") + strNameTemplate.arg("([0-9]+)") + QString("$"));
-            QTreeWidgetItemIterator iterator(m_pSnapshotTree);
-            while (*iterator)
-            {
-                const QString strName = static_cast<UISnapshotItem*>(*iterator)->text(Column_Name);
-                const int iPosition = reName.indexIn(strName);
-                if (iPosition != -1)
-                    iMaximumIndex = reName.cap(1).toInt() > iMaximumIndex
-                                  ? reName.cap(1).toInt()
-                                  : iMaximumIndex;
-                ++iterator;
-            }
-
-            /* Prepare final snapshot name/description: */
-            QString strFinalName = strNameTemplate.arg(iMaximumIndex + 1);
-            QString strFinalDescription;
-
-            /* In manual mode we should show take snapshot dialog: */
-            if (!fAutomatically)
-            {
-                /* Create take-snapshot dialog: */
-                QWidget *pDlgParent = windowManager().realParentWindow(this);
-                QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, comMachine);
-                windowManager().registerNewParent(pDlg, pDlgParent);
-
-                /* Assign corresponding icon: */
-                QIcon icon = uiCommon().vmUserIcon(comMachine);
-                if (icon.isNull())
-                    icon = uiCommon().vmGuestOSTypeIcon(comMachine.GetOSTypeId());
-                pDlg->setIcon(icon);
-
-                /* Assign corresponding snapshot name: */
-                pDlg->setName(strFinalName);
-
-                /* Show Take Snapshot dialog: */
-                if (pDlg->exec() != QDialog::Accepted)
-                {
-                    /* Cleanup dialog if it wasn't destroyed in own loop: */
-                    if (pDlg)
-                        delete pDlg;
-                    break;
-                }
-
-                /* Acquire final snapshot name/description: */
-                strFinalName = pDlg->name().trimmed();
-                strFinalDescription = pDlg->description();
-
-                /* Cleanup dialog: */
-                delete pDlg;
-            }
-
-            /* Take snapshot: */
-            QUuid uSnapshotId;
-            CProgress comProgress = comMachine.TakeSnapshot(strFinalName, strFinalDescription, true, uSnapshotId);
-            if (!comMachine.isOk())
-            {
-                msgCenter().cannotTakeSnapshot(comMachine, comMachine.GetName());
-                break;
-            }
-
-            /* Show snapshot taking progress: */
-            msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_snapshot_create_90px.png");
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotTakeSnapshot(comProgress, comMachine.GetName());
-                break;
-            }
-
-            /* Mark snapshot restoring successful: */
-            fSuccess = true;
-        }
-        while (0);
-
-        /* Cleanup try-catch block: */
-        comSession.UnlockMachine();
+        const QString strName = static_cast<UISnapshotItem*>(*iterator)->text(Column_Name);
+        const int iPosition = reName.indexIn(strName);
+        if (iPosition != -1)
+            iMaximumIndex = reName.cap(1).toInt() > iMaximumIndex
+                          ? reName.cap(1).toInt()
+                          : iMaximumIndex;
+        ++iterator;
     }
-    while (0);
 
-    /* Adjust snapshot tree: */
-    adjustTreeWidget();
+    /* Prepare snapshot name/description: */
+    QString strFinalName = strNameTemplate.arg(iMaximumIndex + 1);
+    QString strFinalDescription;
+
+    /* In manual mode we should show take snapshot dialog: */
+    if (!fAutomatically)
+    {
+        /* Create take-snapshot dialog: */
+        QWidget *pDlgParent = windowManager().realParentWindow(this);
+        QPointer<UITakeSnapshotDialog> pDlg = new UITakeSnapshotDialog(pDlgParent, m_comMachine);
+        windowManager().registerNewParent(pDlg, pDlgParent);
+
+        /* Assign corresponding icon: */
+        QIcon icon = uiCommon().vmUserIcon(m_comMachine);
+        if (icon.isNull())
+            icon = uiCommon().vmGuestOSTypeIcon(m_comMachine.GetOSTypeId());
+        pDlg->setIcon(icon);
+
+        /* Assign corresponding snapshot name: */
+        pDlg->setName(strFinalName);
+
+        /* Show Take Snapshot dialog: */
+        if (pDlg->exec() != QDialog::Accepted)
+        {
+            /* Cleanup dialog if it wasn't destroyed in own loop: */
+            delete pDlg;
+            return false;
+        }
+
+        /* Acquire final snapshot name/description: */
+        strFinalName = pDlg->name().trimmed();
+        strFinalDescription = pDlg->description();
+
+        /* Cleanup dialog: */
+        delete pDlg;
+    }
+
+    /* Take snapshot: */
+    UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(m_comMachine,
+                                                                                               strFinalName,
+                                                                                               strFinalDescription);
+    notificationCenter().append(pNotification);
 
     /* Return result: */
-    return fSuccess;
+    return true;
 }
 
 bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
