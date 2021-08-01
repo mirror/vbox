@@ -25,7 +25,6 @@
 
 /* COM includes: */
 #include "CConsole.h"
-#include "CSnapshot.h"
 
 
 /*********************************************************************************************************************************
@@ -1046,6 +1045,94 @@ CProgress UINotificationProgressSnapshotTake::createProgress(COMResult &comResul
 }
 
 void UINotificationProgressSnapshotTake::sltHandleProgressFinished()
+{
+    m_comSession.UnlockMachine();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressSnapshotRestore implementation.                                                                  *
+*********************************************************************************************************************************/
+
+UINotificationProgressSnapshotRestore::UINotificationProgressSnapshotRestore(const CMachine &comMachine,
+                                                                             const CSnapshot &comSnapshot)
+    : m_comMachine(comMachine)
+    , m_comSnapshot(comSnapshot)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressSnapshotRestore::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressSnapshotRestore::name() const
+{
+    return UINotificationProgress::tr("Restoring snapshot ...");
+}
+
+QString UINotificationProgressSnapshotRestore::details() const
+{
+    return UINotificationProgress::tr("<b>VM Name:</b> %1<br><b>Snapshot Name:</b> %2").arg(m_strMachineName, m_strSnapshotName);
+}
+
+CProgress UINotificationProgressSnapshotRestore::createProgress(COMResult &comResult)
+{
+    /* Acquire VM id: */
+    const QUuid uId = m_comMachine.GetId();
+    if (!m_comMachine.isOk())
+    {
+        comResult = m_comMachine;
+        return CProgress();
+    }
+
+    /* Acquire VM name: */
+    m_strMachineName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        comResult = m_comMachine;
+        return CProgress();
+    }
+
+    /* Acquire snapshot name: */
+    m_strSnapshotName = m_comSnapshot.GetName();
+    if (!m_comSnapshot.isOk())
+    {
+        comResult = m_comSnapshot;
+        return CProgress();
+    }
+
+    /* Acquire session state: */
+    const KSessionState enmSessionState = m_comMachine.GetSessionState();
+    if (!m_comMachine.isOk())
+    {
+        comResult = m_comMachine;
+        return CProgress();
+    }
+
+    /* Open a session thru which we will modify the machine: */
+    if (enmSessionState != KSessionState_Unlocked)
+        m_comSession = uiCommon().openExistingSession(uId);
+    else
+        m_comSession = uiCommon().openSession(uId);
+    if (m_comSession.isNull())
+        return CProgress();
+
+    /* Get session machine: */
+    CMachine comMachine = m_comSession.GetMachine();
+    if (!m_comSession.isOk())
+    {
+        comResult = m_comSession;
+        m_comSession.UnlockMachine();
+        return CProgress();
+    }
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = comMachine.RestoreSnapshot(m_comSnapshot);
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressSnapshotRestore::sltHandleProgressFinished()
 {
     m_comSession.UnlockMachine();
 }

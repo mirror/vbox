@@ -37,6 +37,7 @@
 #include "CMachine.h"
 #include "CMedium.h"
 #include "CSession.h"
+#include "CSnapshot.h"
 #include "CVirtualSystemDescription.h"
 
 /** UINotificationProgress extension for medium create functionality. */
@@ -784,6 +785,47 @@ private:
     QString   m_strMachineName;
     /** Holds the session being opened. */
     CSession  m_comSession;
+};
+
+/** UINotificationProgress extension for snapshot restore functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressSnapshotRestore : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs snapshot restore notification-progress.
+      * @param  comMachine   Brings the machine we are restoring snapshot for.
+      * @param  comSnapshot  Brings the snapshot being restored. */
+    UINotificationProgressSnapshotRestore(const CMachine &comMachine,
+                                          const CSnapshot &comSnapshot);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine we are restoring snapshot for. */
+    CMachine   m_comMachine;
+    /** Holds the snapshot being restored. */
+    CSnapshot  m_comSnapshot;
+    /** Holds the machine name. */
+    QString    m_strMachineName;
+    /** Holds the snapshot name. */
+    QString    m_strSnapshotName;
+    /** Holds the session being opened. */
+    CSession   m_comSession;
 };
 
 /** UINotificationProgress extension for snapshot delete functionality. */

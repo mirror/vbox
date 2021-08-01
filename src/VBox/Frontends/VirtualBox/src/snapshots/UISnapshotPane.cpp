@@ -1611,80 +1611,38 @@ bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
 
 bool UISnapshotPane::restoreSnapshot(bool fAutomatically /* = false */)
 {
-    /* Simulate try-catch block: */
-    bool fSuccess = false;
-    do
+    /* Acquire "current snapshot" item: */
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+    AssertPtrReturn(pSnapshotItem, false);
+
+    /* Get corresponding snapshot: */
+    const CSnapshot comSnapshot = pSnapshotItem->snapshot();
+    AssertReturn(!comSnapshot.isNull(), false);
+
+    /* In manual mode we should check whether current state is changed: */
+    if (!fAutomatically && m_comMachine.GetCurrentStateModified())
     {
-        /* Acquire "current snapshot" item: */
-        const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
-        AssertPtr(pSnapshotItem);
-        if (!pSnapshotItem)
-            break;
+        /* Ask if user really wants to restore the selected snapshot: */
+        int iResultCode = msgCenter().confirmSnapshotRestoring(comSnapshot.GetName(), m_comMachine.GetCurrentStateModified());
+        if (iResultCode & AlertButton_Cancel)
+            return false;
 
-        /* Get corresponding snapshot: */
-        const CSnapshot comSnapshot = pSnapshotItem->snapshot();
-        Assert(!comSnapshot.isNull());
-        if (comSnapshot.isNull())
-            break;
-
-        /* In manual mode we should check whether current state is changed: */
-        if (!fAutomatically && m_comMachine.GetCurrentStateModified())
+        /* Ask if user also wants to create new snapshot of current state which is changed: */
+        if (iResultCode & AlertOption_CheckBox)
         {
-            /* Ask if user really wants to restore the selected snapshot: */
-            int iResultCode = msgCenter().confirmSnapshotRestoring(comSnapshot.GetName(), m_comMachine.GetCurrentStateModified());
-            if (iResultCode & AlertButton_Cancel)
-                break;
-
-            /* Ask if user also wants to create new snapshot of current state which is changed: */
-            if (iResultCode & AlertOption_CheckBox)
-            {
-                /* Take snapshot of changed current state: */
-                m_pSnapshotTree->setCurrentItem(m_pCurrentStateItem);
-                if (!takeSnapshot())
-                    break;
-            }
+            /* Take snapshot of changed current state: */
+            m_pSnapshotTree->setCurrentItem(m_pCurrentStateItem);
+            if (!takeSnapshot())
+                return false;
         }
-
-        /* Open a direct session (this call will handle all errors): */
-        CSession comSession = uiCommon().openSession(m_uMachineId);
-        if (comSession.isNull())
-            break;
-
-        /* Simulate try-catch block: */
-        do
-        {
-            /* Restore chosen snapshot: */
-            CMachine comMachine = comSession.GetMachine();
-            CProgress comProgress = comMachine.RestoreSnapshot(comSnapshot);
-            if (!comMachine.isOk())
-            {
-                msgCenter().cannotRestoreSnapshot(comMachine, comSnapshot.GetName(), m_comMachine.GetName());
-                break;
-            }
-
-            /* Show snapshot restoring progress: */
-            msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_restore_90px.png");
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotRestoreSnapshot(comProgress, comSnapshot.GetName(), m_comMachine.GetName());
-                break;
-            }
-
-            /* Mark snapshot restoring successful: */
-            fSuccess = true;
-        }
-        while (0);
-
-        /* Cleanup try-catch block: */
-        comSession.UnlockMachine();
     }
-    while (0);
 
-    /* Adjust snapshot tree: */
-    adjustTreeWidget();
+    /* Restore snapshot: */
+    UINotificationProgressSnapshotRestore *pNotification = new UINotificationProgressSnapshotRestore(m_comMachine, comSnapshot);
+    notificationCenter().append(pNotification);
 
     /* Return result: */
-    return fSuccess;
+    return true;
 }
 
 void UISnapshotPane::cloneSnapshot()
