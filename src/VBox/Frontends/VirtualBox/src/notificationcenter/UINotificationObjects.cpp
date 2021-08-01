@@ -49,7 +49,7 @@ QString UINotificationProgressMediumCreate::name() const
 
 QString UINotificationProgressMediumCreate::details() const
 {
-    return UINotificationProgress::tr("<b>Location:</b> %1<br><b>Size:</b> %2").arg(m_strLocation).arg(m_uSize);
+    return UINotificationProgress::tr("<b>Location:</b> %1<br><b>Size:</b> %2").arg(m_strLocation, uiCommon().formatSize(m_uSize));
 }
 
 CProgress UINotificationProgressMediumCreate::createProgress(COMResult &comResult)
