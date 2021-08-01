@@ -604,6 +604,7 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
             pVCpu->pUVCpu            = &pUVM->aCpus[i];
             pVCpu->idCpu             = i;
             pVCpu->hNativeThread     = pUVM->aCpus[i].vm.s.NativeThreadEMT;
+            pVCpu->hThread           = pUVM->aCpus[i].vm.s.ThreadEMT;
             Assert(pVCpu->hNativeThread != NIL_RTNATIVETHREAD);
             /* hNativeThreadR0 is initialized on EMT registration. */
             pUVM->aCpus[i].pVCpu     = pVCpu;

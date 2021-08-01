@@ -54,8 +54,9 @@ struc VMCPU
     .pVCpuR0ForVtg          RTR0PTR_RES 1
     .pVMRC                  resq 1
     .pUVCpu                 RTR3PTR_RES 1
-    .hNativeThread          RTR0PTR_RES 1
+    .hNativeThread          RTR3PTR_RES 1
     .hNativeThreadR0        RTR0PTR_RES 1
+    .hThread                RTR3PTR_RES 1
     .idCpu                  resd 1
 
     alignb 64

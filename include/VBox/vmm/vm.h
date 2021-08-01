@@ -31,7 +31,7 @@
 
 #ifndef VBOX_FOR_DTRACE_LIB
 # ifndef USING_VMM_COMMON_DEFS
-#  error "Compile job does not include VMM_COMMON_DEFS from src/VBox/Config.kmk - make sure you really need to include this file!"
+#  error "Compile job does not include VMM_COMMON_DEFS from src/VBox/VMM/Config.kmk - make sure you really need to include this file!"
 # endif
 # include <iprt/param.h>
 # include <VBox/param.h>
@@ -155,6 +155,8 @@ typedef struct VMCPU
     RTNATIVETHREAD          hNativeThread;
     /** The native R0 thread handle. (different from the R3 handle!) */
     RTNATIVETHREAD          hNativeThreadR0;
+    /** The IPRT thread handle (for VMMDevTesting). */
+    RTTHREAD                hThread;
     /** The CPU ID.
      * This is the index into the VM::aCpu array. */
 #ifdef IN_RING0
@@ -171,7 +173,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      */
-    uint8_t                 abAlignment1[64 - 5 * (HC_ARCH_BITS == 32 ? 4 : 8) - 8 - 4];
+    uint8_t                 abAlignment1[64 - 6 * (HC_ARCH_BITS == 32 ? 4 : 8) - 8 - 4];
     /** @} */
 
     /** HM part. */
