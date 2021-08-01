@@ -1579,79 +1579,34 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
 
 bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
 {
-    /* Simulate try-catch block: */
-    bool fSuccess = false;
-    do
-    {
-        /* Acquire "current snapshot" item: */
-        const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
-        AssertPtr(pSnapshotItem);
-        if (!pSnapshotItem)
-            break;
+    /* Acquire "current snapshot" item: */
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
+    AssertPtrReturn(pSnapshotItem, false);
 
-        /* Get corresponding snapshot: */
-        const CSnapshot comSnapshot = pSnapshotItem->snapshot();
-        Assert(!comSnapshot.isNull());
-        if (comSnapshot.isNull())
-            break;
+    /* Get corresponding snapshot: */
+    const CSnapshot comSnapshot = pSnapshotItem->snapshot();
+    AssertReturn(!comSnapshot.isNull(), false);
 
-        /* In manual mode we should ask if user really wants to remove the selected snapshot: */
-        if (!fAutomatically && !msgCenter().confirmSnapshotRemoval(comSnapshot.GetName()))
-            break;
+    /* In manual mode we should ask if user really wants to remove the selected snapshot: */
+    if (!fAutomatically && !msgCenter().confirmSnapshotRemoval(comSnapshot.GetName()))
+        return false;
 
-        /** @todo check available space on the target filesystem etc etc. */
 #if 0
-        if (!msgCenter().warnAboutSnapshotRemovalFreeSpace(comSnapshot.GetName(),
-                                                           "/home/juser/.VirtualBox/Machines/SampleVM/Snapshots/{01020304-0102-0102-0102-010203040506}.vdi",
-                                                           "59 GiB",
-                                                           "15 GiB"))
-            break;
+    /** @todo check available space on the target filesystem etc etc. */
+    if (!msgCenter().warnAboutSnapshotRemovalFreeSpace(comSnapshot.GetName(),
+                                                       "/home/juser/.VirtualBox/Machines/SampleVM/Snapshots/{01020304-0102-0102-0102-010203040506}.vdi",
+                                                       "59 GiB",
+                                                       "15 GiB"))
+        return false;
 #endif
 
-        /* Open a session (this call will handle all errors): */
-        CSession comSession;
-        if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = uiCommon().openExistingSession(m_uMachineId);
-        else
-            comSession = uiCommon().openSession(m_uMachineId);
-        if (comSession.isNull())
-            break;
-
-        /* Simulate try-catch block: */
-        do
-        {
-            /* Remove chosen snapshot: */
-            CMachine comMachine = comSession.GetMachine();
-            CProgress comProgress = comMachine.DeleteSnapshot(pSnapshotItem->snapshotID());
-            if (!comMachine.isOk())
-            {
-                msgCenter().cannotRemoveSnapshot(comMachine,  comSnapshot.GetName(), m_comMachine.GetName());
-                break;
-            }
-
-            /* Show snapshot removing progress: */
-            msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_discard_90px.png");
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotRemoveSnapshot(comProgress,  comSnapshot.GetName(), m_comMachine.GetName());
-                break;
-            }
-
-            /* Mark snapshot removing successful: */
-            fSuccess = true;
-        }
-        while (0);
-
-        /* Cleanup try-catch block: */
-        comSession.UnlockMachine();
-    }
-    while (0);
-
-    /* Adjust snapshot tree: */
-    adjustTreeWidget();
+    /* Delete snapshot: */
+    UINotificationProgressSnapshotDelete *pNotification = new UINotificationProgressSnapshotDelete(m_comMachine,
+                                                                                                   pSnapshotItem->snapshotID());
+    notificationCenter().append(pNotification);
 
     /* Return result: */
-    return fSuccess;
+    return true;
 }
 
 bool UISnapshotPane::restoreSnapshot(bool fAutomatically /* = false */)

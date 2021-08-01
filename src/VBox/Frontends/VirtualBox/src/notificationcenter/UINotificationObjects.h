@@ -781,7 +781,48 @@ private:
     /** Holds the description of snapshot being taken. */
     QString   m_strSnapshotDescription;
     /** Holds the machine name. */
-    QString   m_strName;
+    QString   m_strMachineName;
+    /** Holds the session being opened. */
+    CSession  m_comSession;
+};
+
+/** UINotificationProgress extension for snapshot delete functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressSnapshotDelete : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs snapshot delete notification-progress.
+      * @param  comMachine   Brings the machine we are deleting snapshot from.
+      * @param  uSnapshotId  Brings the ID of snapshot being deleted. */
+    UINotificationProgressSnapshotDelete(const CMachine &comMachine,
+                                         const QUuid &uSnapshotId);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine we are deleting snapshot from. */
+    CMachine  m_comMachine;
+    /** Holds the ID of snapshot being deleted. */
+    QUuid     m_uSnapshotId;
+    /** Holds the machine name. */
+    QString   m_strMachineName;
+    /** Holds the snapshot name. */
+    QString   m_strSnapshotName;
     /** Holds the session being opened. */
     CSession  m_comSession;
 };
