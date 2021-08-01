@@ -4143,8 +4143,18 @@ void UICommon::sltGUILanguageChange(QString strLanguage)
 
 void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
 {
-    /* Make sure we cached created medium in GUI: */
-    createMedium(UIMedium(comMedium, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    /* Acquire device type: */
+    const KDeviceType enmDeviceType = comMedium.GetDeviceType();
+    if (!comMedium.isOk())
+        msgCenter().cannotAcquireMediumAttribute(comMedium);
+    else
+    {
+        /* Convert to medium type: */
+        const UIMediumDeviceType enmMediumType = mediumTypeToLocal(enmDeviceType);
+
+        /* Make sure we cached created medium in GUI: */
+        createMedium(UIMedium(comMedium, enmMediumType, KMediumState_Created));
+    }
 }
 
 void UICommon::sltHandleMachineCreated(const CMachine &comMachine)
