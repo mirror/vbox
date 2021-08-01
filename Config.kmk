@@ -4588,6 +4588,9 @@ ifdef VBOX_WITH_RAW_MODE
   TEMPLATE_VBoxRc_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
   TEMPLATE_VBoxRc_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) \
   	$(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
+  ifdef VBOX_WITH_MSC_ANALYZE_THIS
+   TEMPLATE_VBoxRc_CXXFLAGS         += /analyze
+  endif
   TEMPLATE_VBoxRc_CFLAGS             = $(TEMPLATE_VBoxRc_CXXFLAGS)
   TEMPLATE_VBoxRc_LDFLAGS            =  -Ignore:4197 \
   	-Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Release -Debug -Opt:Ref -Opt:Icf \
@@ -4731,6 +4734,9 @@ TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
 TEMPLATE_VBoxR0_RCDEFS              = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
   	$(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
+ ifdef VBOX_WITH_MSC_ANALYZE_THIS
+TEMPLATE_VBoxR0_CXXFLAGS           += /analyze
+ endif
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
 TEMPLATE_VBoxR0_LDFLAGS             = -Ignore:4197 \
 	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Release -Debug -Opt:Ref -Opt:Icf \
@@ -4895,6 +4901,9 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_DEFS.win           = IPRT_NT_MAP_TO_ZW
  TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
 	$(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ ifdef VBOX_WITH_MSC_ANALYZE_THIS
+  TEMPLATE_VBOXR0DRV_CXXFLAGS         += /analyze
+ endif
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
  TEMPLATE_VBOXR0DRV_LDFLAGS            = -Ignore:4197 \
  	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Release -Debug -Opt:Ref -Opt:Icf \
@@ -5445,6 +5454,9 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  TEMPLATE_VBOXR3EXE_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
  	$(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ ifdef VBOX_WITH_MSC_ANALYZE_THIS
+  TEMPLATE_VBOXR3EXE_CXXFLAGS         += /analyze
+ endif
  TEMPLATE_VBOXR3EXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXR3EXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile  = -Gh -GH
@@ -6452,6 +6464,9 @@ ifeq ($(KBUILD_TARGET),win)
  #             The two above can be cured by adding private: DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(xxxx); but too much work.
  #    -wd4355: 'this' : used in base member initializer list (e.g. VirtualBoxBase.cpp)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS          += $(VBOX_VCC_WARN_ALL) -wd4625 -wd4626 -wd4355 $(VBOX_VCC_WERR)
+ ifdef VBOX_WITH_MSC_ANALYZE_THIS
+  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += /analyze
+ endif
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile  = -Gh -GH
@@ -7104,6 +7119,9 @@ ifdef VBOX_WITH_QTGUI
    #   -wd4946: qmap.h(213): warning C4946: reinterpret_cast used between related classes: 'QMapNodeBase' and 'QMapNode<Key,T>'
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458 -wd4946
   endif
+  ifdef VBOX_WITH_MSC_ANALYZE_THIS
+   TEMPLATE_VBOXR0DRV_CXXFLAGS += /analyze
+  endif
 
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
@@ -7357,6 +7375,9 @@ ifeq ($(KBUILD_HOST),win)
  endif
  TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -MT$(VBOX_VCC_CRT_TYPE) \
 	$(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ ifdef VBOX_WITH_MSC_ANALYZE_THIS
+  TEMPLATE_VBoxBldProg_CXXFLAGS         += /analyze
+ endif
  TEMPLATE_VBoxBldProg_CXXFLAGS.debug    := -RTCsu
  TEMPLATE_VBoxBldProg_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBoxBldProg_CXXFLAGS.profile   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.release)
