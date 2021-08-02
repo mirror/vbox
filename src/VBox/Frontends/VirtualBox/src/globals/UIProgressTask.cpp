@@ -67,11 +67,12 @@ void UIProgressTask::start()
     m_comProgress = createProgress();
 
     /* Make sure progress valid: */
-    if (m_comProgress.isNull())
+    if (   m_comProgress.isNull()
+        || m_comProgress.GetCompleted())
     {
         /* Notify external listeners: */
         emit sigProgressStarted();
-        emit sigProgressFinished();
+        sltHandleProgressEventHandlingFinished();
     }
     else
     {
