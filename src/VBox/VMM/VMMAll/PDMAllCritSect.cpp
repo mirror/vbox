@@ -453,7 +453,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
     return pdmR3R0CritSectEnterContended(pVM, NULL, pCritSect, hNativeSelf, pSrcPos, rcBusy);
 
 #elif defined(IN_RING0)
-# if 0 /* new code */
+# if 1 /* new code */
     /*
      * In ring-0 context we have to take the special VT-x/AMD-V HM context into
      * account when waiting on contended locks.
