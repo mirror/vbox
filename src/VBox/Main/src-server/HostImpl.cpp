@@ -1185,7 +1185,7 @@ void Host::i_updateProcessorFeatures()
     {
         uint32_t fVTCaps;
         rc = SUPR3QueryVTCaps(&fVTCaps);
-        AssertRC(rc);
+        AssertMsgRC(rc, ("SUPR3QueryVTCaps failed rc=%Rrc\n", rc));
 
         SUPR3Term(false);
 
