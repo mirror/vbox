@@ -49,6 +49,6 @@ CProgress UINotificationProgressTask::createProgress()
 void UINotificationProgressTask::handleProgressFinished(CProgress &comProgress)
 {
     /* Handle progress-wrapper errors: */
-    if (!comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
+    if (comProgress.isNotNull() && !comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
         m_strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
 }
