@@ -80,7 +80,7 @@
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
 /** The maximum number of IOTLB entries. */
-# define IOMMU_IOTLBE_MAX                           96
+# define IOMMU_IOTLBE_MAX                           64
 /** The mask of bits covering the domain ID in the IOTLBE key. */
 # define IOMMU_IOTLB_DOMAIN_ID_MASK                 UINT64_C(0xffffff0000000000)
 /** The mask of bits covering the IOVA in the IOTLBE key. */
@@ -182,7 +182,7 @@
 # define IOMMU_CACHE_UNLOCK(a_pDevIns, a_pThis)     PDMDevHlpCritSectLeave((a_pDevIns), &(a_pThis)->CritSectCache)
 #endif  /* IOMMU_WITH_DTE_CACHE */
 
-/** Acquires the PDM lock (returns a_rcBusy on contention). */
+/** Acquires the IOMMU lock (returns a_rcBusy on contention). */
 #define IOMMU_LOCK_RET(a_pDevIns, a_pThisCC, a_rcBusy)  \
     do { \
         int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), (a_rcBusy)); \
@@ -192,7 +192,7 @@
             return rcLock; \
     } while (0)
 
-/** Acquires the PDM lock (can fail under extraordinary circumstance in in ring-0). */
+/** Acquires the IOMMU lock (can fail under extraordinary circumstance in ring-0). */
 #define IOMMU_LOCK(a_pDevIns, a_pThisCC) \
     do { \
         int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VINF_SUCCESS); \
@@ -899,18 +899,34 @@ DECLINLINE(uint16_t) iommuAmdDteCacheEntryGetUnused(PCIOMMU pThis)
 
 
 /**
- * Adds a device-table entry to the cache.
+ * Adds a DTE cache entry at the given index.
  *
- * @returns VBox status code.
- * @retval  VERR_OUT_OF_RESOURCES if the cache is full.
+ * @param   pThis       The shared IOMMU device state.
+ * @param   idxDte      The index of the DTE cache entry.
+ * @param   idDevice    The device ID (bus, device, function).
+ * @param   fOrMask     Device flags to set, see IOMMU_DTE_CACHE_F_XXX.
+ * @param   idDomain    The domain ID.
+ *
+ * @remarks Requires the cache lock to be taken.
+ */
+DECL_FORCE_INLINE(void) iommuAmdDteCacheAddAtIndex(PIOMMU pThis, uint16_t idxDte, uint16_t idDevice, uint16_t fFlags,
+                                                   uint16_t idDomain)
+{
+    pThis->aDeviceIds[idxDte]         = idDevice;
+    pThis->aDteCache[idxDte].fFlags   = fFlags;
+    pThis->aDteCache[idxDte].idDomain = idDomain;
+}
+
+
+/**
+ * Adds a DTE cache entry.
  *
  * @param   pDevIns     The IOMMU instance data.
  * @param   idDevice    The device ID (bus, device, function).
  * @param   pDte        The device table entry.
  */
-static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pDte)
+static void iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pDte)
 {
-    int rc = VINF_SUCCESS;
     uint16_t const fFlags   = iommuAmdGetBasicDevFlags(pDte) | IOMMU_DTE_CACHE_F_PRESENT;
     uint16_t const idDomain = pDte->n.u16DomainId;
 
@@ -919,27 +935,70 @@ static int iommuAmdDteCacheAdd(PPDMDEVINS pDevIns, uint16_t idDevice, PCDTE_T pD
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
     uint16_t idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
-    if (idxDte >= cDteCache)
-    {
-        idxDte = iommuAmdDteCacheEntryGetUnused(pThis);
-        if (idxDte < cDteCache)
-        {
-            pThis->aDeviceIds[idxDte] = idDevice;
-            pThis->aDteCache[idxDte].fFlags   = fFlags;
-            pThis->aDteCache[idxDte].idDomain = idDomain;
-        }
-        else
-            rc = VERR_OUT_OF_RESOURCES;
-    }
-    /* else: A DTE cache entry already exists, do nothing. */
+    if (   idxDte >= cDteCache                                              /* Not found. */
+        && (idxDte = iommuAmdDteCacheEntryGetUnused(pThis)) < cDteCache)    /* Get new/unused slot index. */
+        iommuAmdDteCacheAddAtIndex(pThis, idxDte, idDevice, fFlags, idDomain);
 
     IOMMU_CACHE_UNLOCK(pDevIns, pThis);
-    return rc;
 }
 
 
 /**
- * Adds one or more I/O device flags if the device is already present in the cache.
+ * Updates flags for an existing DTE cache entry given its index.
+ *
+ * @param   pThis       The shared IOMMU device state.
+ * @param   idxDte      The index of the DTE cache entry.
+ * @param   fOrMask     Device flags to add to the existing flags, see
+ *                      IOMMU_DTE_CACHE_F_XXX.
+ * @param   fAndMask    Device flags to remove from the existing flags, see
+ *                      IOMMU_DTE_CACHE_F_XXX.
+ *
+ * @remarks Requires the cache lock to be taken.
+ */
+DECL_FORCE_INLINE(void) iommuAmdDteCacheUpdateFlagsForIndex(PIOMMU pThis, uint16_t idxDte, uint16_t fOrMask, uint16_t fAndMask)
+{
+    uint16_t const fOldFlags = pThis->aDteCache[idxDte].fFlags;
+    uint16_t const fNewFlags = (fOldFlags | fOrMask) & ~fAndMask;
+    Assert(fOldFlags & IOMMU_DTE_CACHE_F_PRESENT);
+    pThis->aDteCache[idxDte].fFlags = fNewFlags;
+}
+
+
+/**
+ * Adds a new DTE cache entry or updates flags for an existing DTE cache entry.
+ * If the cache is full, nothing happens.
+ *
+ * @param   pDevIns     The IOMMU instance data.
+ * @param   pDte                The device table entry.
+ * @param   idDevice    The device ID (bus, device, function).
+ * @param   fOrMask     Device flags to add to the existing flags, see
+ *                      IOMMU_DTE_CACHE_F_XXX.
+ * @param   fAndMask    Device flags to remove from the existing flags, see
+ *                      IOMMU_DTE_CACHE_F_XXX.
+ */
+static void iommuAmdDteCacheAddOrUpdateFlags(PPDMDEVINS pDevIns, PCDTE_T pDte, uint16_t idDevice, uint16_t fOrMask,
+                                             uint16_t fAndMask)
+{
+    PIOMMU pThis = PDMDEVINS_2_DATA(pDevIns, PIOMMU);
+    IOMMU_CACHE_LOCK(pDevIns, pThis);
+
+    uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
+    uint16_t idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
+    if (idxDte < cDteCache)
+        iommuAmdDteCacheUpdateFlagsForIndex(pThis, idxDte, fOrMask, fAndMask);
+    else if ((idxDte = iommuAmdDteCacheEntryGetUnused(pThis)) < cDteCache)
+    {
+        uint16_t const fFlags = (iommuAmdGetBasicDevFlags(pDte) | IOMMU_DTE_CACHE_F_PRESENT | fOrMask) & ~fAndMask;
+        iommuAmdDteCacheAddAtIndex(pThis, idxDte, idDevice, fFlags, pDte->n.u16DomainId);
+    }
+    /* else: cache is full, shouldn't really happen. */
+
+    IOMMU_CACHE_UNLOCK(pDevIns, pThis);
+}
+
+
+/**
+ * Updates flags for an existing DTE cache entry.
  *
  * @param   pDevIns     The IOMMU instance data.
  * @param   idDevice    The device ID (bus, device, function).
@@ -955,12 +1014,8 @@ static void iommuAmdDteCacheUpdateFlags(PPDMDEVINS pDevIns, uint16_t idDevice, u
 
     uint16_t const cDteCache = RT_ELEMENTS(pThis->aDteCache);
     uint16_t const idxDte = iommuAmdDteCacheEntryLookup(pThis, idDevice);
-    if (   idxDte < cDteCache
-        && (pThis->aDteCache[idxDte].fFlags & IOMMU_DTE_CACHE_F_PRESENT))
-    {
-        uint16_t const fNewFlags = (pThis->aDteCache[idxDte].fFlags | fOrMask) & ~fAndMask;
-        pThis->aDteCache[idxDte].fFlags = fNewFlags;
-    }
+    if (idxDte < cDteCache)
+        iommuAmdDteCacheUpdateFlagsForIndex(pThis, idxDte, fOrMask, fAndMask);
 
     IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
@@ -3982,9 +4037,6 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
     int rc = iommuAmdDteRead(pDevIns, idDevice, enmOp, &Dte);
     if (RT_SUCCESS(rc))
     {
-#ifdef IOMMU_WITH_IOTLBE_CACHE
-        iommuAmdDteCacheAdd(pDevIns, idDevice, &Dte);
-#endif
         if (Dte.n.u1Valid)
         {
             /* Validate bits 127:0 of the device table entry when DTE.V is 1. */
@@ -4034,7 +4086,8 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
                     if (RT_SUCCESS(rc))
                     {
                         /* Update that addresses requires translation (cumulative permissions of DTE and I/O page tables). */
-                        iommuAmdDteCacheUpdateFlags(pDevIns, idDevice, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE, 0 /* fAndMask */);
+                        iommuAmdDteCacheAddOrUpdateFlags(pDevIns, &Dte, idDevice, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE,
+                                                         0 /* fAndMask */);
                         /* Update IOTLB for the contiguous range of I/O virtual addresses. */
                         iommuAmdIotlbAddRange(pDevIns, Aux.idDomain, uIova & X86_PAGE_4K_BASE_MASK, cbContiguous, &AddrOut);
                     }
@@ -4052,7 +4105,8 @@ static int iommuAmdDteLookup(PPDMDEVINS pDevIns, uint16_t idDevice, uint64_t uIo
 
 #ifdef IOMMU_WITH_IOTLBE_CACHE
                     /* Update that addresses permissions of DTE apply (but omit address translation). */
-                    iommuAmdDteCacheUpdateFlags(pDevIns, idDevice, IOMMU_DTE_CACHE_F_IO_PERM, IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
+                    iommuAmdDteCacheAddOrUpdateFlags(pDevIns, &Dte, idDevice, IOMMU_DTE_CACHE_F_IO_PERM,
+                                                     IOMMU_DTE_CACHE_F_ADDR_TRANSLATE);
 #endif
                 }
                 else
