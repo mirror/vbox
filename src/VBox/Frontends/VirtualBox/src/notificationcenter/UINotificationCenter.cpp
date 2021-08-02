@@ -39,6 +39,85 @@
 #include "iprt/assert.h"
 
 
+/** QScrollArea extension to make notification scroll-area more versatile. */
+class UINotificationScrollArea : public QScrollArea
+{
+    Q_OBJECT;
+
+public:
+
+    /** Creates notification scroll-area passing @a pParent to the base-class. */
+    UINotificationScrollArea(QWidget *pParent = 0);
+
+    /** Returns minimum size-hint. */
+    virtual QSize minimumSizeHint() const /* override final */;
+
+    /** Assigns scrollable @a pWidget.
+      * @note  Keep in mind that's an override, but NOT a virtual method. */
+    void setWidget(QWidget *pWidget);
+
+protected:
+
+    /** Preprocesses @a pEvent for registered @a pWatched object. */
+    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) /* override final */;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationScrollArea implementation.                                                                               *
+*********************************************************************************************************************************/
+
+UINotificationScrollArea::UINotificationScrollArea(QWidget *pParent /* = 0 */)
+    : QScrollArea(pParent)
+{
+    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+}
+
+QSize UINotificationScrollArea::minimumSizeHint() const
+{
+    /* So, here is the logic,
+     * we are taking width from widget if it's present,
+     * while keeping height calculated by the base-class. */
+    const QSize msh = QScrollArea::minimumSizeHint();
+    return widget() ? QSize(widget()->minimumSizeHint().width(), msh.height()) : msh;
+}
+
+void UINotificationScrollArea::setWidget(QWidget *pWidget)
+{
+    /* We'd like to listen for a new widget's events: */
+    if (widget())
+        widget()->removeEventFilter(this);
+    pWidget->installEventFilter(this);
+
+    /* Call to base-class: */
+    QScrollArea::setWidget(pWidget);
+}
+
+bool UINotificationScrollArea::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* For listened widget: */
+    if (pWatched == widget())
+    {
+        switch (pEvent->type())
+        {
+            /* We'd like to handle layout-request events: */
+            case QEvent::LayoutRequest:
+                updateGeometry();
+                break;
+            default:
+                break;
+        }
+    }
+
+    /* Call to base-class: */
+    return QScrollArea::eventFilter(pWatched, pEvent);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationCenter implementation.                                                                                   *
+*********************************************************************************************************************************/
+
 /* static */
 UINotificationCenter *UINotificationCenter::s_pInstance = 0;
 
@@ -126,6 +205,13 @@ bool UINotificationCenter::event(QEvent *pEvent)
     /* Handle required event types: */
     switch (pEvent->type())
     {
+        /* When we are being asked to update layout
+         * we want to adjust overlay accordingly. */
+        case QEvent::LayoutRequest:
+        {
+            adjustGeometry();
+            break;
+        }
         /* When we are being resized or moved we want
          * to adjust transparency mask accordingly. */
         case QEvent::Move:
@@ -232,7 +318,7 @@ void UINotificationCenter::prepareWidgets()
         }
 
         /* Create items scroll-area: */
-        QScrollArea *pScrollAreaItems = new QScrollArea(this);
+        UINotificationScrollArea *pScrollAreaItems = new UINotificationScrollArea(this);
         if (pScrollAreaItems)
         {
             /* Prepare items widget: */
@@ -445,3 +531,6 @@ void UINotificationCenter::adjustMask()
         region += QRect(m_pOpenButton->mapToParent(QPoint(0, 0)), m_pOpenButton->size());
     setMask(region);
 }
+
+
+#include "UINotificationCenter.moc"
