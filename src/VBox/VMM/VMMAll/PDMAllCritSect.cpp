@@ -171,6 +171,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
     uint64_t                cNsMaxTotal = RT_NS_5MIN;
     uint64_t const          cNsMaxRetry = RT_NS_15SEC;
     uint32_t                cMsMaxOne   = RT_MS_5SEC;
+    bool                    fNonInterruptible = false;
 # endif
     for (;;)
     {
@@ -201,7 +202,9 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
         int const rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_MS_5SEC);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_CRITSECT);
 # else  /* IN_RING0 */
-        int const rc = SUPSemEventWaitNoResume(pSession, hEvent, cMsMaxOne);
+        int const rc = !fNonInterruptible
+                     ? SUPSemEventWaitNoResume(pSession, hEvent, cMsMaxOne)
+                     : SUPSemEventWait(pSession, hEvent, cMsMaxOne);
 # endif /* IN_RING0 */
 
         /*
@@ -247,18 +250,33 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
             {
                 /* Try return get out of here with a non-VINF_SUCCESS status if
                    the thread is terminating or if the timeout has been exceeded. */
+                STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectVerrTimeout);
                 if (   rcTerm != VINF_THREAD_IS_TERMINATING
                     && cNsElapsed <= cNsMaxTotal)
                     continue;
             }
             else
             {
-                /* For interrupt cases, we must return if we can.  Only if we */
+                /* For interrupt cases, we must return if we can.  If rcBusy is VINF_SUCCESS,
+                   we will try non-interruptible sleep for a while to help resolve the issue
+                   w/o guru'ing. */
+                STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectVerrInterrupted);
                 if (   rcTerm != VINF_THREAD_IS_TERMINATING
                     && rcBusy == VINF_SUCCESS
                     && pVCpu != NULL
                     && cNsElapsed <= cNsMaxTotal)
+                {
+                    if (!fNonInterruptible)
+                    {
+                        STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectNonInterruptibleWaits);
+                        fNonInterruptible   = true;
+                        cMsMaxOne           = 32;
+                        uint64_t cNsLeft = cNsMaxTotal - cNsElapsed;
+                        if (cNsLeft > RT_NS_10SEC)
+                            cNsMaxTotal = cNsElapsed + RT_NS_10SEC;
+                    }
                     continue;
+                }
             }
 
             /*

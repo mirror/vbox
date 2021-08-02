@@ -54,12 +54,18 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
 int pdmR3CritSectBothInitStats(PVM pVM)
 {
     RT_NOREF_PV(pVM);
-    STAM_REL_REG(pVM, &pVM->pdm.s.StatQueuedCritSectLeaves, STAMTYPE_COUNTER, "/PDM/QueuedCritSectLeaves", STAMUNIT_OCCURENCES,
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatQueuedCritSectLeaves, STAMTYPE_COUNTER, "/PDM/CritSects/00-QueuedLeaves", STAMUNIT_OCCURENCES,
                  "Number of times a critical section leave request needed to be queued for ring-3 execution.");
-    STAM_REL_REG(pVM, &pVM->pdm.s.StatAbortedCritSectEnters, STAMTYPE_COUNTER, "/PDM/AbortedCritSectEnters", STAMUNIT_OCCURENCES,
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatAbortedCritSectEnters, STAMTYPE_COUNTER, "/PDM/CritSects/00-AbortedEnters", STAMUNIT_OCCURENCES,
                  "Number of times we've successfully aborted a wait in ring-0.");
-    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectEntersWhileAborting, STAMTYPE_COUNTER, "/PDM/CritSectEntersWhileAborting", STAMUNIT_OCCURENCES,
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectEntersWhileAborting, STAMTYPE_COUNTER, "/PDM/CritSects/00-EntersWhileAborting", STAMUNIT_OCCURENCES,
                  "Number of times we've got the critical section ownership while trying to abort a wait due to VERR_INTERRUPTED.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectVerrInterrupted, STAMTYPE_COUNTER, "/PDM/CritSects/00-VERR_INTERRUPTED", STAMUNIT_OCCURENCES,
+                 "Number of VERR_INTERRUPTED returns.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectVerrTimeout, STAMTYPE_COUNTER, "/PDM/CritSects/00-VERR_TIMEOUT", STAMUNIT_OCCURENCES,
+                 "Number of VERR_TIMEOUT returns.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectNonInterruptibleWaits, STAMTYPE_COUNTER, "/PDM/CritSects/00-Non-interruptible-Waits-VINF_SUCCESS",
+                 STAMUNIT_OCCURENCES, "Number of non-interruptible waits for rcBusy=VINF_SUCCESS");
     return VINF_SUCCESS;
 }
 

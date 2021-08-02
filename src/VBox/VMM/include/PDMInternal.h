@@ -1476,6 +1476,9 @@ typedef struct PDM
     /** Number of times we've got the critical section ownership while trying to
      * abort a wait due to VERR_INTERRUPTED. */
     STAMCOUNTER                     StatCritSectEntersWhileAborting;
+    STAMCOUNTER                     StatCritSectVerrTimeout;
+    STAMCOUNTER                     StatCritSectVerrInterrupted;
+    STAMCOUNTER                     StatCritSectNonInterruptibleWaits;
 } PDM;
 AssertCompileMemberAlignment(PDM, CritSect, 8);
 AssertCompileMemberAlignment(PDM, aTaskSets, 64);
