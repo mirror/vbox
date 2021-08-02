@@ -65,7 +65,15 @@ private slots:
     /** Handles request about to close sender() notification object. */
     void sltHandleAboutToClose();
 
+    /** Handles broadcast request to detach COM stuff. */
+    void sltDetachCOM();
+
 private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the list of registered notification object IDs. */
     QList<QUuid>                        m_ids;
