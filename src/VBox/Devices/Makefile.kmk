@@ -583,6 +583,12 @@ endif
   	Storage/DevVirtioSCSI.cpp
  endif
 
+ if defined(VBOX_WITH_TPM)
+  VBoxDD_DEFS           += VBOX_WITH_TPM
+  VBoxDD_SOURCES        += \
+  	TPM/DevTpm.cpp
+ endif
+
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
   VBoxDD_DEFS           += VBOX_WITH_PDM_ASYNC_COMPLETION
  endif
