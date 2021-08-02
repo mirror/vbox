@@ -1011,6 +1011,7 @@ void UIKeyboardHandler::prepareCommon()
 
     /* Pressed keys: */
     ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));
+    ::memset(m_pressedKeysCopy, 0, sizeof(m_pressedKeysCopy));
 }
 
 void UIKeyboardHandler::loadSettings()
