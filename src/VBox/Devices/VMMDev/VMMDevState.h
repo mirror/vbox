@@ -317,7 +317,9 @@ typedef struct VMMDEV
             /** Number of microseconds to wait before retaking the lock again. */
             uint32_t    cUsBetween : 14;
             /** Reserved MBZ. */
-            uint32_t    uReserved : 3;
+            uint32_t    uReserved : 2;
+            /** Pass VINF_SUCCESS as rcBusy if set. */
+            uint32_t    fMustSucceed : 1;
             /** Whether to poke EMTs before releasing it. */
             uint32_t    fPokeBeforeRelease : 1;
         } s;

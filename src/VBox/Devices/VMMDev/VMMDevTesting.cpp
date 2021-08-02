@@ -598,8 +598,19 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                 case 2:
                 case 1:
                 {
-                    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
-                    AssertRCReturn(rc, rc);
+#ifndef IN_RING3
+                    if (!pThis->TestingLockControl.s.fMustSucceed)
+                    {
+                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
+                        if (rc != VINF_SUCCESS)
+                            return rc;
+                    }
+                    else
+#endif
+                    {
+                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                        AssertRCReturn(rc, rc);
+                    }
 
                     u32 &= ~VMMDEV_TESTING_LOCKED_MBZ_MASK;
                     if (pThis->TestingLockControl.u32 != u32)
@@ -706,8 +717,19 @@ vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
                 case 2:
                 case 1:
                 {
-                    int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
-                    AssertRCReturn(rc, rc);
+#ifndef IN_RING3
+                    if (!pThis->TestingLockControl.s.fMustSucceed)
+                    {
+                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
+                        if (rc != VINF_SUCCESS)
+                            return rc;
+                    }
+                    else
+#endif
+                    {
+                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                        AssertRCReturn(rc, rc);
+                    }
 
                     *pu32 = pThis->TestingLockControl.u32;
 

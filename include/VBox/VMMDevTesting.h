@@ -171,7 +171,9 @@
 /** Locked Control: Wait time shift count. */
 #define VMMDEV_TESTING_LOCKED_WAIT_SHIFT        14
 /** Locked Control: Must be zero. */
-#define VMMDEV_TESTING_LOCKED_MBZ_MASK          UINT32_C(0x70000000)
+#define VMMDEV_TESTING_LOCKED_MBZ_MASK          UINT32_C(0x30000000)
+/** Locked Control: Take lock with rcBusy set to VINF_SUCCESS.   */
+#define VMMDEV_TESTING_LOCKED_BUSY_SUCCESS      UINT32_C(0x40000000)
 /** Locked Control: Poke EMT(s) flag.   */
 #define VMMDEV_TESTING_LOCKED_POKE              UINT32_C(0x80000000)
 /** @} */
