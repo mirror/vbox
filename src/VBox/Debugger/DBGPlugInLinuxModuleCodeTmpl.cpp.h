@@ -388,10 +388,11 @@ AssertCompileMemberOffset(RT_CONCAT(LNXKMODULE,LNX_SUFFIX), uPtrUnwindInfo, 392)
  * Loads the kernel symbols at the given start address.
  *
  * @returns VBox status code.
+ * @param   pUVM                Pointer to the user-mode VM instance.
  * @param   hDbgMod             The module handle to add the loaded symbols to.
+ * @param   uPtrModuleStart     The virtual address where the kernel module starts we want to  extract symbols from.
  * @param   uPtrSymStart        The start address of the array of symbols.
  * @param   cSyms               Number of symbols in the array.
- * @param  
  */
 static int RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(PUVM pUVM, RTDBGMOD hDbgMod, LNX_PTR_T uPtrModuleStart, LNX_PTR_T uPtrSymStart, uint32_t cSyms)
 {
