@@ -3210,6 +3210,11 @@ BS3_CMN_PROTO_STUB(void, Bs3TestSubV,(const char BS3_FAR *pszFormat, va_list BS3
 BS3_CMN_PROTO_STUB(void, Bs3TestSubDone,(void));
 
 /**
+ * Equivalent to RTTestIValue.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3TestValue,(const char BS3_FAR *pszName, uint64_t u64Value, uint8_t bUnit));
+
+/**
  * Equivalent to RTTestSubErrorCount.
  */
 BS3_CMN_PROTO_STUB(uint16_t, Bs3TestSubErrorCount,(void));

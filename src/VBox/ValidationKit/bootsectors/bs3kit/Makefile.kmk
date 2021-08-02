@@ -196,6 +196,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TestCheckRegCtxEx.c \
 	bs3-cmn-TestHostPrintf.c \
 	bs3-cmn-TestPrintf.c \
+	bs3-cmn-TestValue.c \
 	bs3-cmn-TrapReInit.c \
 	bs3-cmn-TrapRmV86Init.c \
 	bs3-cmn-TrapRmV86SetGate.c \

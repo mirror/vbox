@@ -172,6 +172,7 @@
 #undef Bs3TestSubF
 #undef Bs3TestSubV
 #undef Bs3TestTerm
+#undef Bs3TestValue
 #undef Bs3Trap16Init
 #undef Bs3Trap16InitEx
 #undef Bs3Trap16SetGate
@@ -188,8 +189,8 @@
 #undef Bs3TrapSetDpl
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
-#undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapSetJmp
+#undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
 #undef Bs3UInt64Div
