@@ -730,10 +730,10 @@
 #pragma aux ASMOutStrU8 = \
     ".186" \
     "mov ax, ds" \
-    "mov ds, bx" \
+    "mov ds, di" \
     "rep outsb" \
     "mov ds, ax" \
-    parm [dx] [bx si] [cx] nomemory \
+    parm [dx] [si di] [cx] nomemory \
     modify exact [si cx ax] nomemory;
 #endif
 
@@ -742,7 +742,7 @@
 #pragma aux ASMInStrU8 = \
     ".186" \
     "rep insb" \
-    parm [dx] [es di] [cx] \
+    parm [dx] [di es] [cx] \
     modify exact [di cx];
 #endif
 
@@ -751,10 +751,10 @@
 #pragma aux ASMOutStrU16 = \
     ".186" \
     "mov ax, ds" \
-    "mov ds, bx" \
+    "mov ds, di" \
     "rep outsw" \
     "mov ds, ax" \
-    parm [dx] [bx si] [cx] nomemory \
+    parm [dx] [si di] [cx] nomemory \
     modify exact [si cx ax] nomemory;
 #endif
 
@@ -763,7 +763,7 @@
 #pragma aux ASMInStrU16 = \
     ".186" \
     "rep insw" \
-    parm [dx] [es di] [cx] \
+    parm [dx] [di es] [cx] \
     modify exact [di cx];
 #endif
 
@@ -772,10 +772,10 @@
 #pragma aux ASMOutStrU32 = \
     ".386" \
     "mov ax, ds" \
-    "mov ds, bx" \
+    "mov ds, di" \
     "rep outsd" \
     "mov ds, ax" \
-    parm [dx] [bx si] [cx] nomemory \
+    parm [dx] [si di] [cx] nomemory \
     modify exact [si cx ax] nomemory;
 #endif
 
