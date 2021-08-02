@@ -64,13 +64,24 @@ static struct
         10000 + 4096,
         100 | (UINT32_C(50)  << VMMDEV_TESTING_LOCKED_WAIT_SHIFT) | VMMDEV_TESTING_LOCKED_POKE
     },
+    {
+        "Contention 500us/250us poke void",
+        2000 + 16384,
+        500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_WAIT_SHIFT) | VMMDEV_TESTING_LOCKED_POKE | VMMDEV_TESTING_LOCKED_BUSY_SUCCESS
+    },
+    {
+        "Contention 50us/25us poke void",
+        20000 + 4096,
+        50 | (UINT32_C(25)  << VMMDEV_TESTING_LOCKED_WAIT_SHIFT) | VMMDEV_TESTING_LOCKED_POKE | VMMDEV_TESTING_LOCKED_BUSY_SUCCESS
+    },
 };
 
 
 BS3_DECL(void) Main_rm()
 {
-    uint64_t const  cNsPerTest = RT_NS_10SEC;
+    uint64_t const  cNsPerTest = RT_NS_15SEC;
     unsigned        i;
+
     Bs3InitAll_rm();
     Bs3TestInit("bs3-locking-1");
 
@@ -80,18 +91,20 @@ BS3_DECL(void) Main_rm()
      */
     for (i = 0; i < RT_ELEMENTS(g_aLockingTests); i++)
     {
-        uint64_t const nsStart = Bs3TestNow();
+        uint64_t const nsStart    = Bs3TestNow();
+        uint64_t       cNsElapsed = 0;
+        uint32_t       cTotal     = 0;
         uint32_t       j;
 
         Bs3TestSub(g_aLockingTests[i].pszName);
         ASMOutU32(VMMDEV_TESTING_IOPORT_LOCKED, g_aLockingTests[i].uCtrlWord);
 
-        for (j = 0; j < _2M; j++)
+        for (j = 0; j < _2M && cTotal < _1G; j++)
         {
-            uint64_t cNsElapsed;
 
             /* The inner loop should avoid calling Bs3TestNow too often, while not overshooting the . */
             unsigned iInner = (unsigned)g_aLockingTests[i].cInnerLoops;
+            cTotal += iInner;
             while (iInner-- > 0)
                 ASMInU32(VMMDEV_TESTING_IOPORT_LOCKED);
 
@@ -102,6 +115,9 @@ BS3_DECL(void) Main_rm()
 
         /* Disable locking. */
         ASMOutU32(VMMDEV_TESTING_IOPORT_LOCKED, 0);
+
+        Bs3TestValue("Loops", cTotal, VMMDEV_TESTING_UNIT_OCCURRENCES);
+        Bs3TestValue("Elapsed", cNsElapsed, VMMDEV_TESTING_UNIT_NS);
     }
 
     Bs3TestTerm();
