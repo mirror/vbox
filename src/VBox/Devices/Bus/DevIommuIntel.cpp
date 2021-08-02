@@ -65,7 +65,7 @@
             return rcLock; \
     } while (0)
 
-/** Acquires the DMAR lock (can fail under extraordinary circumstance in in ring-0). */
+/** Acquires the DMAR lock (can fail under extraordinary circumstance in ring-0). */
 #define DMAR_LOCK(a_pDevIns, a_pThisCC) \
     do { \
         int const rcLock = (a_pThisCC)->CTX_SUFF(pIommuHlp)->pfnLock((a_pDevIns), VINF_SUCCESS); \
