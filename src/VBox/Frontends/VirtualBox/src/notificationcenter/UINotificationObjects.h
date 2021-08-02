@@ -34,6 +34,8 @@
 #include "CCloudMachine.h"
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
+#include "CHost.h"
+#include "CHostNetworkInterface.h"
 #include "CMachine.h"
 #include "CMedium.h"
 #include "CSession.h"
@@ -1029,6 +1031,90 @@ private:
     QString          m_strExtensionPackName;
     /** Holds the display info. */
     QString          m_strDisplayInfo;
+};
+
+/** UINotificationProgress extension for host-only network interface create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressHostOnlyNetworkInterfaceCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about host-only network interface created.
+      * @param  comInterface  Brings network interface created. */
+    void sigHostOnlyNetworkInterfaceCreated(const CHostNetworkInterface &comInterface);
+
+public:
+
+    /** Constructs host-only network interface create notification-progress.
+      * @param  comHost       Brings the host network interface being created for.
+      * @param  comInterface  Brings the network interface being created. */
+    UINotificationProgressHostOnlyNetworkInterfaceCreate(const CHost &comHost,
+                                                         const CHostNetworkInterface &comInterface);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the host network interface being created for. */
+    CHost                  m_comHost;
+    /** Holds the network interface being created. */
+    CHostNetworkInterface  m_comInterface;
+};
+
+/** UINotificationProgress extension for host-only network interface remove functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressHostOnlyNetworkInterfaceRemove : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about host-only network interface removed.
+      * @param  strInterfaceName  Brings the name of network interface removed. */
+    void sigHostOnlyNetworkInterfaceRemoved(const QString &strInterfaceName);
+
+public:
+
+    /** Constructs host-only network interface remove notification-progress.
+      * @param  comHost       Brings the host network interface being removed for.
+      * @param  uInterfaceId  Brings the ID of network interface being removed. */
+    UINotificationProgressHostOnlyNetworkInterfaceRemove(const CHost &comHost,
+                                                         const QUuid &uInterfaceId);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the host network interface being removed for. */
+    CHost    m_comHost;
+    /** Holds the ID of network interface being removed. */
+    QUuid    m_uInterfaceId;
+    /** Holds the network interface name. */
+    QString  m_strInterfaceName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */

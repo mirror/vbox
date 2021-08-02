@@ -34,6 +34,7 @@
 #include "UIMessageCenter.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
+#include "UINotificationCenter.h"
 #include "QIToolBar.h"
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
@@ -390,53 +391,45 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
 
     /* Get host for further activities: */
     CHost comHost = uiCommon().host();
+    CHostNetworkInterface comInterface;
 
     /* Create interface: */
-    CHostNetworkInterface comInterface;
-    CProgress comProgress = comHost.CreateHostOnlyNetworkInterface(comInterface);
+    UINotificationProgressHostOnlyNetworkInterfaceCreate *pNotification =
+        new UINotificationProgressHostOnlyNetworkInterfaceCreate(comHost, comInterface);
+    connect(pNotification, &UINotificationProgressHostOnlyNetworkInterfaceCreate::sigHostOnlyNetworkInterfaceCreated,
+            this, &UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated);
+    notificationCenter().append(pNotification);
+}
+
+void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated(const CHostNetworkInterface &comInterface)
+{
+    /* Get network name for further activities: */
+    const QString strNetworkName = comInterface.GetNetworkName();
 
     /* Show error message if necessary: */
-    if (!comHost.isOk() || comProgress.isNull())
-        msgCenter().cannotCreateHostNetworkInterface(comHost, this);
+    if (!comInterface.isOk())
+        msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface);
     else
     {
-        /* Show interface creation progress: */
-        msgCenter().showModalProgressDialog(comProgress, UINetworkManager::tr("Adding network ..."), ":/progress_network_interface_90px.png", this, 0);
+        /* Get VBox for further activities: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+
+        /* Find corresponding DHCP server (create if necessary): */
+        CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
+        if (!comVBox.isOk() || comServer.isNull())
+            comServer = comVBox.CreateDHCPServer(strNetworkName);
 
         /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotCreateHostNetworkInterface(comProgress, this);
-        else
-        {
-            /* Get network name for further activities: */
-            const QString strNetworkName = comInterface.GetNetworkName();
+        if (!comVBox.isOk() || comServer.isNull())
+            msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
 
-            /* Show error message if necessary: */
-            if (!comInterface.isOk())
-                msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
-            else
-            {
-                /* Get VBox for further activities: */
-                CVirtualBox comVBox = uiCommon().virtualBox();
+        /* Add interface to the tree: */
+        UIDataHostNetwork data;
+        loadHostNetwork(comInterface, data);
+        createItemForHostNetwork(data, true);
 
-                /* Find corresponding DHCP server (create if necessary): */
-                CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
-                if (!comVBox.isOk() || comServer.isNull())
-                    comServer = comVBox.CreateDHCPServer(strNetworkName);
-
-                /* Show error message if necessary: */
-                if (!comVBox.isOk() || comServer.isNull())
-                    msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
-            }
-
-            /* Add interface to the tree: */
-            UIDataHostNetwork data;
-            loadHostNetwork(comInterface, data);
-            createItemForHostNetwork(data, true);
-
-            /* Adjust tree-widgets: */
-            sltAdjustTreeWidgets();
-        }
+        /* Adjust tree-widgets: */
+        sltAdjustTreeWidgets();
     }
 }
 
@@ -464,7 +457,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
     CHost comHost = uiCommon().host();
 
     /* Find corresponding interface: */
-    const CHostNetworkInterface &comInterface = comHost.FindHostNetworkInterfaceByName(strInterfaceName);
+    const CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(strInterfaceName);
 
     /* Show error message if necessary: */
     if (!comHost.isOk() || comInterface.isNull())
@@ -500,39 +493,39 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
                     msgCenter().cannotRemoveDHCPServer(comVBox, strInterfaceName, this);
             }
 
-            /* Remove interface finally: */
-            CProgress comProgress = comHost.RemoveHostOnlyNetworkInterface(uInterfaceId);
-
-            /* Show error message if necessary: */
-            if (!comHost.isOk() || comProgress.isNull())
-                msgCenter().cannotRemoveHostNetworkInterface(comHost, strInterfaceName, this);
-            else
-            {
-                /* Show interface removal progress: */
-                msgCenter().showModalProgressDialog(comProgress, UINetworkManager::tr("Removing network ..."), ":/progress_network_interface_90px.png", this, 0);
-
-                /* Show error message if necessary: */
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    return msgCenter().cannotRemoveHostNetworkInterface(comProgress, strInterfaceName, this);
-                else
-                {
-                    /* Move selection to somewhere else: */
-                    if (m_pTreeWidgetHostNetwork->itemBelow(pItem))
-                        m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemBelow(pItem));
-                    else if (m_pTreeWidgetHostNetwork->itemAbove(pItem))
-                        m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemAbove(pItem));
-                    else
-                        m_pTreeWidgetHostNetwork->setCurrentItem(0);
-
-                    /* Remove interface from the tree: */
-                    delete pItem;
-
-                    /* Adjust tree-widgets: */
-                    sltAdjustTreeWidgets();
-                }
-            }
+            /* Create interface: */
+            UINotificationProgressHostOnlyNetworkInterfaceRemove *pNotification =
+                new UINotificationProgressHostOnlyNetworkInterfaceRemove(comHost, uInterfaceId);
+            connect(pNotification, &UINotificationProgressHostOnlyNetworkInterfaceRemove::sigHostOnlyNetworkInterfaceRemoved,
+                    this, &UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceRemoved);
+            notificationCenter().append(pNotification);
         }
     }
+}
+
+void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceRemoved(const QString &strInterfaceName)
+{
+    /* Check host network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetHostNetwork, ("Host network tree-widget isn't created!\n"));
+
+    /* Search for required item: */
+    QList<QTreeWidgetItem*> items = m_pTreeWidgetHostNetwork->findItems(strInterfaceName, Qt::MatchCaseSensitive);
+    AssertReturnVoid(!items.isEmpty());
+    QTreeWidgetItem *pItem = items.first();
+
+    /* Move selection to somewhere else: */
+    if (m_pTreeWidgetHostNetwork->itemBelow(pItem))
+        m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemBelow(pItem));
+    else if (m_pTreeWidgetHostNetwork->itemAbove(pItem))
+        m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemAbove(pItem));
+    else
+        m_pTreeWidgetHostNetwork->setCurrentItem(0);
+
+    /* Remove interface from the tree: */
+    delete pItem;
+
+    /* Adjust tree-widgets: */
+    sltAdjustTreeWidgets();
 }
 
 void UINetworkManagerWidget::sltCreateNATNetwork()
