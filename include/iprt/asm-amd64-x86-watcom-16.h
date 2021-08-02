@@ -729,10 +729,12 @@
 #ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutStrU8 = \
     ".186" \
+    "mov ax, ds" \
     "mov ds, bx" \
     "rep outsb" \
+    "mov ds, ax" \
     parm [dx] [bx si] [cx] nomemory \
-    modify exact [si cx ds] nomemory;
+    modify exact [si cx ax] nomemory;
 #endif
 
 #undef      ASMInStrU8
@@ -748,10 +750,12 @@
 #ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutStrU16 = \
     ".186" \
+    "mov ax, ds" \
     "mov ds, bx" \
     "rep outsw" \
+    "mov ds, ax" \
     parm [dx] [bx si] [cx] nomemory \
-    modify exact [si cx ds] nomemory;
+    modify exact [si cx ax] nomemory;
 #endif
 
 #undef      ASMInStrU16
@@ -767,10 +771,12 @@
 #ifdef IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
 #pragma aux ASMOutStrU32 = \
     ".386" \
+    "mov ax, ds" \
     "mov ds, bx" \
     "rep outsd" \
+    "mov ds, ax" \
     parm [dx] [bx si] [cx] nomemory \
-    modify exact [si cx ds] nomemory;
+    modify exact [si cx ax] nomemory;
 #endif
 
 #undef      ASMInStrU32
