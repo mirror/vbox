@@ -964,6 +964,7 @@ DECL_FORCE_INLINE(void) iommuAmdDteCacheUpdateFlagsForIndex(PIOMMU pThis, uint16
 }
 
 
+#ifdef IOMMU_WITH_IOTLBE_CACHE
 /**
  * Adds a new DTE cache entry or updates flags for an existing DTE cache entry.
  * If the cache is full, nothing happens.
@@ -995,6 +996,7 @@ static void iommuAmdDteCacheAddOrUpdateFlags(PPDMDEVINS pDevIns, PCDTE_T pDte, u
 
     IOMMU_CACHE_UNLOCK(pDevIns, pThis);
 }
+#endif
 
 
 /**
