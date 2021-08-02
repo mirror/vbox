@@ -45,19 +45,21 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** The number loops to spin for shared access in ring-3. */
-#define PDMCRITSECTRW_SHRD_SPIN_COUNT_R3       20
+#define PDMCRITSECTRW_SHRD_SPIN_COUNT_R3        20
 /** The number loops to spin for shared access in ring-0. */
-#define PDMCRITSECTRW_SHRD_SPIN_COUNT_R0       128
+#define PDMCRITSECTRW_SHRD_SPIN_COUNT_R0        128
 /** The number loops to spin for shared access in the raw-mode context. */
-#define PDMCRITSECTRW_SHRD_SPIN_COUNT_RC       128
+#define PDMCRITSECTRW_SHRD_SPIN_COUNT_RC        128
 
 /** The number loops to spin for exclusive access in ring-3. */
-#define PDMCRITSECTRW_EXCL_SPIN_COUNT_R3       20
+#define PDMCRITSECTRW_EXCL_SPIN_COUNT_R3        20
 /** The number loops to spin for exclusive access in ring-0. */
-#define PDMCRITSECTRW_EXCL_SPIN_COUNT_R0       256
+#define PDMCRITSECTRW_EXCL_SPIN_COUNT_R0        256
 /** The number loops to spin for exclusive access in the raw-mode context. */
-#define PDMCRITSECTRW_EXCL_SPIN_COUNT_RC       256
+#define PDMCRITSECTRW_EXCL_SPIN_COUNT_RC        256
 
+/** Max number of write or write/read recursions. */
+#define PDM_CRITSECTRW_MAX_RECURSIONS           _1M
 
 /* Undefine the automatic VBOX_STRICT API mappings. */
 #undef PDMCritSectRwEnterExcl
@@ -90,6 +92,11 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectRwGetNativeSelf(PVMCC pVM, PCPDMCRI
 }
 
 
+DECL_NO_INLINE(static, int) pdmCritSectRwCorrupted(PPDMCRITSECTRW pThis)
+{
+    ASMAtomicWriteU32(&pThis->s.Core.u32Magic, PDMCRITSECTRW_MAGIC_CORRUPT);
+    return VERR_PDM_CRITSECTRW_IPE;
+}
 
 
 
@@ -197,7 +204,8 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
             /* It flows in the right direction, try follow it before it changes. */
             uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
             c++;
-            Assert(c < RTCSRW_CNT_MASK / 2);
+            Assert(c < RTCSRW_CNT_MASK / 4);
+            AssertReturn(c < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_READERS);
             u64State &= ~RTCSRW_CNT_RD_MASK;
             u64State |= c << RTCSRW_CNT_RD_SHIFT;
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
@@ -227,23 +235,28 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
         else
         {
             /* Is the writer perhaps doing a read recursion? */
-            RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
             RTNATIVETHREAD hNativeWriter;
             ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
-            if (hNativeSelf == hNativeWriter)
+            if (hNativeWriter != NIL_RTNATIVETHREAD)
             {
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                if (!fNoVal)
+                RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
+                if (hNativeSelf == hNativeWriter)
                 {
-                    int rc9 = RTLockValidatorRecExclRecursionMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core, pSrcPos);
-                    if (RT_FAILURE(rc9))
-                        return rc9;
-                }
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+                    if (!fNoVal)
+                    {
+                        int rc9 = RTLockValidatorRecExclRecursionMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core, pSrcPos);
+                        if (RT_FAILURE(rc9))
+                            return rc9;
+                    }
 #endif
-                Assert(pThis->s.Core.cWriterReads < UINT32_MAX / 2);
-                ASMAtomicIncU32(&pThis->s.Core.cWriterReads);
-                STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterShared));
-                return VINF_SUCCESS; /* don't break! */
+                    uint32_t const cReads = ASMAtomicIncU32(&pThis->s.Core.cWriterReads);
+                    Assert(cReads < _16K);
+                    AssertReturnStmt(cReads < PDM_CRITSECTRW_MAX_RECURSIONS, ASMAtomicDecU32(&pThis->s.Core.cWriterReads),
+                                     VERR_PDM_CRITSECTRW_TOO_MANY_RECURSIONS);
+                    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterShared));
+                    return VINF_SUCCESS; /* don't break! */
+                }
             }
 
             /*
@@ -267,11 +280,13 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                 uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
                 c++;
                 Assert(c < RTCSRW_CNT_MASK / 2);
+                AssertReturn(c < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_READERS);
 
                 uint64_t cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
                 cWait++;
                 Assert(cWait <= c);
                 Assert(cWait < RTCSRW_CNT_MASK / 2);
+                AssertReturn(cWait < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_READERS);
 
                 u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
                 u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
@@ -316,9 +331,11 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                             for (;;)
                             {
                                 u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                                c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT; Assert(c > 0);
+                                c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
+                                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
                                 c--;
-                                cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT; Assert(cWait > 0);
+                                cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+                                AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis));
                                 cWait--;
                                 u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
                                 u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
@@ -341,7 +358,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                         u64OldState = u64State;
 
                         cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                        Assert(cWait > 0);
+                        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis));
                         cWait--;
                         u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
                         u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
@@ -632,6 +649,7 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
                     uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
                     LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
                     AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves));
+/** @todo This doesn't work any more for devices. */
                     pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = MMHyperCCToR3(pVM, pThis);
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
@@ -649,7 +667,12 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
     }
     else
     {
+        /*
+         * Write direction. Check that it's the owner calling and that it has reads to undo.
+         */
         RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
+        AssertReturn(hNativeSelf != NIL_RTNATIVETHREAD, VERR_VM_THREAD_NOT_EMT);
+
         RTNATIVETHREAD hNativeWriter;
         ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
         AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
@@ -662,11 +685,13 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
                 return rc;
         }
 #endif
-        ASMAtomicDecU32(&pThis->s.Core.cWriterReads);
+        uint32_t cDepth = ASMAtomicDecU32(&pThis->s.Core.cWriterReads);
+        AssertReturn(cDepth < PDM_CRITSECTRW_MAX_RECURSIONS, pdmCritSectRwCorrupted(pThis));
     }
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * Leave a critical section held with shared access.
@@ -743,7 +768,8 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     /*
      * Check if we're already the owner and just recursing.
      */
-    RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
+    RTNATIVETHREAD const hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
+    AssertReturn(hNativeSelf != NIL_RTNATIVETHREAD, VERR_VM_THREAD_NOT_EMT);
     RTNATIVETHREAD hNativeWriter;
     ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
     if (hNativeSelf == hNativeWriter)
@@ -757,9 +783,11 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
                 return rc9;
         }
 #endif
-        Assert(pThis->s.Core.cWriteRecursions < UINT32_MAX / 2);
         STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
-        ASMAtomicIncU32(&pThis->s.Core.cWriteRecursions);
+        uint32_t const cDepth = ASMAtomicIncU32(&pThis->s.Core.cWriteRecursions);
+        AssertReturnStmt(cDepth > 1 && cDepth <= PDM_CRITSECTRW_MAX_RECURSIONS,
+                         ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions),
+                         VERR_PDM_CRITSECTRW_TOO_MANY_RECURSIONS);
         return VINF_SUCCESS;
     }
 
@@ -776,8 +804,9 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
         {
             /* It flows in the right direction, try follow it before it changes. */
             uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+            AssertReturn(c < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_WRITERS);
             c++;
-            Assert(c < RTCSRW_CNT_MASK / 2);
+            Assert(c < RTCSRW_CNT_WR_MASK / 4);
             u64State &= ~RTCSRW_CNT_WR_MASK;
             u64State |= c << RTCSRW_CNT_WR_SHIFT;
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
@@ -801,8 +830,9 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
         {
             /* Add ourselves to the write count and break out to do the wait. */
             uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+            AssertReturn(c < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_WRITERS);
             c++;
-            Assert(c < RTCSRW_CNT_MASK / 2);
+            Assert(c < RTCSRW_CNT_WR_MASK / 4);
             u64State &= ~RTCSRW_CNT_WR_MASK;
             u64State |= c << RTCSRW_CNT_WR_SHIFT;
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
@@ -819,7 +849,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
 
     /*
      * If we're in write mode now try grab the ownership. Play fair if there
-     * are threads already waiting.
+     * are threads already waiting, unless we're in ring-0.
      */
     bool fDone = (u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT)
 #if defined(IN_RING3)
@@ -885,7 +915,8 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
                     for (;;)
                     {
                         u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                        uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
+                        uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+                        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
                         c--;
                         u64State &= ~RTCSRW_CNT_WR_MASK;
                         u64State |= c << RTCSRW_CNT_WR_SHIFT;
@@ -919,7 +950,8 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
             for (;;)
             {
                 u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
+                uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
                 c--;
                 u64State &= ~RTCSRW_CNT_WR_MASK;
                 u64State |= c << RTCSRW_CNT_WR_SHIFT;
@@ -1124,7 +1156,12 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
     NOREF(fNoVal);
 #endif
 
+    /*
+     * Check ownership.
+     */
     RTNATIVETHREAD hNativeSelf = pdmCritSectRwGetNativeSelf(pVM, pThis);
+    AssertReturn(hNativeSelf != NIL_RTNATIVETHREAD, VERR_VM_THREAD_NOT_EMT);
+
     RTNATIVETHREAD hNativeWriter;
     ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
     AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
@@ -1164,7 +1201,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                 uint64_t u64OldState = u64State;
 
                 uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-                Assert(c > 0);
+                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
                 c--;
 
                 if (   c > 0
@@ -1216,7 +1253,8 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
             PVMCPUCC    pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
             uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
             LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
-            AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
+            AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwExclLeaves));
+/** @todo This doesn't work anymore for devices. */
             pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = MMHyperCCToR3(pVM, pThis);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
@@ -1230,7 +1268,6 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
         /*
          * Not the final recursion.
          */
-        Assert(pThis->s.Core.cWriteRecursions != 0);
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         if (fNoVal)
             Assert(pThis->s.Core.pValidatorWrite->hThread == NIL_RTTHREAD);
@@ -1241,7 +1278,8 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                 return rc9;
         }
 #endif
-        ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions);
+        uint32_t const cDepth = ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions);
+        AssertReturn(cDepth != 0 && cDepth < UINT32_MAX, pdmCritSectRwCorrupted(pThis));
     }
 
     return VINF_SUCCESS;

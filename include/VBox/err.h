@@ -1604,6 +1604,14 @@
 #define VINF_PDM_PCI_DO_DEFAULT                     (7200)
 /** Failed to abort entering a critical section in ring-0. */
 #define VERR_PDM_CRITSECT_ABORT_FAILED              (-7201)
+/** Too many readers on read/write critical section. */
+#define VERR_PDM_CRITSECTRW_TOO_MANY_READERS        (-7202)
+/** Too many writes on read/write critical section. */
+#define VERR_PDM_CRITSECTRW_TOO_MANY_WRITERS        (-7203)
+/** Too many write or write/read recursions on read/write critical section. */
+#define VERR_PDM_CRITSECTRW_TOO_MANY_RECURSIONS     (-7204)
+/** Internal error in read-write critical section. */
+#define VERR_PDM_CRITSECTRW_IPE                     (-7205)
 /** @} */
 
 

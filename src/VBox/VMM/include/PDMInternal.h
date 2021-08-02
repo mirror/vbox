@@ -507,6 +507,8 @@ AssertCompileMemberAlignment(PDMCRITSECTRWINT, Core.u64State, 8);
 /** Pointer to private critical section data. */
 typedef PDMCRITSECTRWINT *PPDMCRITSECTRWINT;
 
+/** Special magic value we set the structure has become corrupted. */
+#define PDMCRITSECTRW_MAGIC_CORRUPT     UINT32_C(0x0bad0620)
 
 
 /**
