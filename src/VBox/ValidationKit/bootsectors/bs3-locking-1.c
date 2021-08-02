@@ -123,4 +123,3 @@ BS3_DECL(void) Main_rm()
     Bs3TestTerm();
 }
 
-
