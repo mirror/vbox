@@ -21,6 +21,7 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QPropertyAnimation>
+#include <QScrollArea>
 #include <QSignalTransition>
 #include <QState>
 #include <QStateMachine>
@@ -177,6 +178,10 @@ void UINotificationCenter::sltModelChanged()
     /* Populate model contents again: */
     foreach (const QUuid &uId, m_pModel->ids())
         m_pLayoutItems->addWidget(UINotificationItem::create(this, m_pModel->objectById(uId)));
+
+    /* Since there is a scroll-area expanded up to whole
+     * height, we will have to align items added above up. */
+    m_pLayoutItems->addStretch();
 }
 
 void UINotificationCenter::prepare()
@@ -226,12 +231,33 @@ void UINotificationCenter::prepareWidgets()
             m_pLayoutMain->addLayout(m_pLayoutOpenButton);
         }
 
-        /* Prepare items layout: */
-        m_pLayoutItems = new QVBoxLayout;
-        if (m_pLayoutItems)
-            m_pLayoutMain->addLayout(m_pLayoutItems);
+        /* Create items scroll-area: */
+        QScrollArea *pScrollAreaItems = new QScrollArea(this);
+        if (pScrollAreaItems)
+        {
+            /* Prepare items widget: */
+            QWidget *pWidgetItems = new QWidget(pScrollAreaItems);
+            if (pWidgetItems)
+            {
+                /* Prepare items layout: */
+                m_pLayoutItems = new QVBoxLayout(pWidgetItems);
+                if (m_pLayoutItems)
+                    m_pLayoutItems->setContentsMargins(0, 0, 0, 0);
 
-        m_pLayoutMain->addStretch();
+                /* Add to scroll-area: */
+                pScrollAreaItems->setWidget(pWidgetItems);
+            }
+
+            /* Configure items scroll-area: */
+            pScrollAreaItems->setWidgetResizable(true);
+            pScrollAreaItems->setFrameShape(QFrame::NoFrame);
+            pScrollAreaItems->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+            pScrollAreaItems->viewport()->setAutoFillBackground(false);
+            pScrollAreaItems->widget()->setAutoFillBackground(false);
+
+            /* Add to layout: */
+            m_pLayoutMain->addWidget(pScrollAreaItems);
+        }
     }
 }
 
