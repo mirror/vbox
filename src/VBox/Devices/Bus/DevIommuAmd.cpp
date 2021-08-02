@@ -904,7 +904,7 @@ DECLINLINE(uint16_t) iommuAmdDteCacheEntryGetUnused(PCIOMMU pThis)
  * @param   pThis       The shared IOMMU device state.
  * @param   idxDte      The index of the DTE cache entry.
  * @param   idDevice    The device ID (bus, device, function).
- * @param   fOrMask     Device flags to set, see IOMMU_DTE_CACHE_F_XXX.
+ * @param   fFlags      Device flags to set, see IOMMU_DTE_CACHE_F_XXX.
  * @param   idDomain    The domain ID.
  *
  * @remarks Requires the cache lock to be taken.
