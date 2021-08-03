@@ -30,6 +30,7 @@
 #endif
 
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmcritsectrw.h>
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmtask.h>
 #ifdef IN_RING3
@@ -2421,7 +2422,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 47, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 48, 1)
 
 /**
  * PDM Device API.
@@ -3879,6 +3880,32 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int,      pfnCritSectDelete,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
     /** @} */
 
+    /** @name Exported PDM Read/Write Critical Section Functions
+     * @{ */
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwInit,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RT_SRC_POS_DECL,
+                                                      const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwDelete,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwEnterShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwEnterSharedDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwTryEnterShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwTryEnterSharedDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwLeaveShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwEnterExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwEnterExclDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwTryEnterExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwTryEnterExclDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectRwLeaveExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectRwIsWriteOwner,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectRwIsReadOwner,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, bool fWannaHear));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCritSectRwGetWriteRecursion,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCritSectRwGetWriterReadRecursion,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCritSectRwGetReadCount,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectRwIsInitialized,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    /** @} */
+
     /**
      * Creates a PDM thread.
      *
@@ -4909,6 +4936,28 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
     /** @} */
 
+    /** @name Exported PDM Read/Write Critical Section Functions
+     * @{ */
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwEnterShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwEnterSharedDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwTryEnterShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwTryEnterSharedDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwLeaveShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwEnterExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwEnterExclDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwTryEnterExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwTryEnterExclDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectRwLeaveExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectRwIsWriteOwner,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectRwIsReadOwner,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, bool fWannaHear));
+    DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectRwGetWriteRecursion,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectRwGetWriterReadRecursion,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectRwGetReadCount,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectRwIsInitialized,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    /** @} */
+
     /**
      * Gets the trace buffer handle.
      *
@@ -5024,7 +5073,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 16, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 17, 0)
 
 
 /**
@@ -5429,6 +5478,28 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(int,      pfnCritSectScheduleExitEvent,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal));
     /** @} */
 
+    /** @name Exported PDM Read/Write Critical Section Functions
+     * @{ */
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwEnterShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwEnterSharedDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwTryEnterShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwTryEnterSharedDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwLeaveShared,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwEnterExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwEnterExclDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwTryEnterExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwTryEnterExclDebug,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectRwLeaveExcl,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectRwIsWriteOwner,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectRwIsReadOwner,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, bool fWannaHear));
+    DECLR0CALLBACKMEMBER(uint32_t, pfnCritSectRwGetWriteRecursion,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR0CALLBACKMEMBER(uint32_t, pfnCritSectRwGetWriterReadRecursion,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR0CALLBACKMEMBER(uint32_t, pfnCritSectRwGetReadCount,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectRwIsInitialized,(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect));
+    /** @} */
+
     /**
      * Gets the trace buffer handle.
      *
@@ -5544,7 +5615,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 19, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 20, 0)
 
 
 /**
@@ -8053,6 +8124,197 @@ DECLINLINE(int) PDMDevHlpCritSectDelete(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSe
 {
     return pDevIns->pHlpR3->pfnCritSectDelete(pDevIns, pCritSect);
 }
+
+/**
+ * Initializes a PDM read/write critical section.
+ *
+ * The PDM read/write critical sections are derived from the IPRT critical
+ * sections, but works in RC and R0 as well.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   pCritSect           Pointer to the read/write critical section.
+ * @param   SRC_POS             Use RT_SRC_POS.
+ * @param   pszNameFmt          Format string for naming the critical section.
+ *                              For statistics and lock validation.
+ * @param   ...                 Arguments for the format string.
+ */
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(6, 7) PDMDevHlpCritSectRwInit(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RT_SRC_POS_DECL,
+                                                                  const char *pszNameFmt, ...)
+{
+    int     rc;
+    va_list va;
+    va_start(va, pszNameFmt);
+    rc = pDevIns->pHlpR3->pfnCritSectRwInit(pDevIns, pCritSect, RT_SRC_POS_ARGS, pszNameFmt, va);
+    va_end(va);
+    return rc;
+}
+
+/**
+ * Deletes the read/write critical section.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pCritSect   The PDM read/write critical section to destroy.
+ * @sa      PDMR3CritSectRwDelete
+ */
+DECLINLINE(int) PDMDevHlpCritSectRwDelete(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->pHlpR3->pfnCritSectRwDelete(pDevIns, pCritSect);
+}
+
+#endif /* IN_RING3 */
+
+/**
+ * @sa PDMCritSectRwEnterShared, PDM_CRITSECT_RELEASE_ASSERT_RC_DEV
+ */
+DECLINLINE(DECL_CHECK_RETURN(int)) PDMDevHlpCritSectRwEnterShared(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwEnterShared(pDevIns, pCritSect, rcBusy);
+}
+
+/**
+ * @sa PDMCritSectRwEnterSharedDebug, PDM_CRITSECT_RELEASE_ASSERT_RC_DEV
+ */
+DECLINLINE(DECL_CHECK_RETURN(int))
+PDMDevHlpCritSectRwEnterSharedDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwEnterSharedDebug(pDevIns, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+/**
+ * @sa PDMCritSectRwTryEnterShared
+ */
+DECLINLINE(DECL_CHECK_RETURN(int))
+PDMDevHlpCritSectRwTryEnterShared(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwTryEnterShared(pDevIns, pCritSect);
+}
+
+/**
+ * @sa PDMCritSectRwTryEnterSharedDebug
+ */
+DECLINLINE(DECL_CHECK_RETURN(int))
+PDMDevHlpCritSectRwTryEnterSharedDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwTryEnterSharedDebug(pDevIns, pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+/**
+ * @sa PDMCritSectRwLeaveShared
+ */
+DECLINLINE(int)      PDMDevHlpCritSectRwLeaveShared(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwLeaveShared(pDevIns, pCritSect);
+}
+
+/**
+ * @sa PDMCritSectRwEnterExcl, PDM_CRITSECT_RELEASE_ASSERT_RC_DEV
+ */
+DECLINLINE(DECL_CHECK_RETURN(int)) PDMDevHlpCritSectRwEnterExcl(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwEnterExcl(pDevIns, pCritSect, rcBusy);
+}
+
+/**
+ * @sa PDMCritSectRwEnterExclDebug, PDM_CRITSECT_RELEASE_ASSERT_RC_DEV
+ */
+DECLINLINE(DECL_CHECK_RETURN(int))
+PDMDevHlpCritSectRwEnterExclDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwEnterExclDebug(pDevIns, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+/**
+ * @sa PDMCritSectRwTryEnterExcl
+ */
+DECLINLINE(DECL_CHECK_RETURN(int))
+PDMDevHlpCritSectRwTryEnterExcl(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwTryEnterExcl(pDevIns, pCritSect);
+}
+
+/**
+ * @sa PDMCritSectRwTryEnterExclDebug
+ */
+DECLINLINE(DECL_CHECK_RETURN(int))
+PDMDevHlpCritSectRwTryEnterExclDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwTryEnterExclDebug(pDevIns, pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+/**
+ * @sa PDMCritSectRwLeaveExcl
+ */
+DECLINLINE(int)      PDMDevHlpCritSectRwLeaveExcl(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwLeaveExcl(pDevIns, pCritSect);
+}
+
+/**
+ * @see PDMCritSectRwIsWriteOwner
+ */
+DECLINLINE(bool)     PDMDevHlpCritSectRwIsWriteOwner(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwIsWriteOwner(pDevIns, pCritSect);
+}
+
+/**
+ * @see PDMCritSectRwIsReadOwner
+ */
+DECLINLINE(bool)     PDMDevHlpCritSectRwIsReadOwner(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, bool fWannaHear)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwIsReadOwner(pDevIns, pCritSect, fWannaHear);
+}
+
+/**
+ * @see PDMCritSectRwGetWriteRecursion
+ */
+DECLINLINE(uint32_t) PDMDevHlpCritSectRwGetWriteRecursion(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwGetWriteRecursion(pDevIns, pCritSect);
+}
+
+/**
+ * @see PDMCritSectRwGetWriterReadRecursion
+ */
+DECLINLINE(uint32_t) PDMDevHlpCritSectRwGetWriterReadRecursion(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwGetWriterReadRecursion(pDevIns, pCritSect);
+}
+
+/**
+ * @see PDMCritSectRwGetReadCount
+ */
+DECLINLINE(uint32_t) PDMDevHlpCritSectRwGetReadCount(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwGetReadCount(pDevIns, pCritSect);
+}
+
+/**
+ * @see PDMCritSectRwIsInitialized
+ */
+DECLINLINE(bool)     PDMDevHlpCritSectRwIsInitialized(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectRwIsInitialized(pDevIns, pCritSect);
+}
+
+/* Strict build: Remap the two enter calls to the debug versions. */
+#ifdef VBOX_STRICT
+# ifdef IPRT_INCLUDED_asm_h
+#  define PDMDevHlpCritSectRwEnterShared(pDevIns, pCritSect, rcBusy) PDMDevHlpCritSectRwEnterSharedDebug((pDevIns), (pCritSect), (rcBusy), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMDevHlpCritSectRwTryEnterShared(pDevIns, pCritSect)      PDMDevHlpCritSectRwTryEnterSharedDebug((pDevIns), (pCritSect), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMDevHlpCritSectRwEnterExcl(pDevIns, pCritSect, rcBusy)   PDMDevHlpCritSectRwEnterExclDebug((pDevIns), (pCritSect), (rcBusy), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define PDMDevHlpCritSectRwTryEnterExcl(pDevIns, pCritSect)        PDMDevHlpCritSectRwTryEnterExclDebug((pDevIns), (pCritSect), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+# else
+#  define PDMDevHlpCritSectRwEnterShared(pDevIns, pCritSect, rcBusy) PDMDevHlpCritSectRwEnterSharedDebug((pDevIns), (pCritSect), (rcBusy), 0, RT_SRC_POS)
+#  define PDMDevHlpCritSectRwTryEnterShared(pDevIns, pCritSect)      PDMDevHlpCritSectRwTryEnterSharedDebug((pDevIns), (pCritSect), 0, RT_SRC_POS)
+#  define PDMDevHlpCritSectRwEnterExcl(pDevIns, pCritSect, rcBusy)   PDMDevHlpCritSectRwEnterExclDebug((pDevIns), (pCritSect), (rcBusy), 0, RT_SRC_POS)
+#  define PDMDevHlpCritSectRwTryEnterExcl(pDevIns, pCritSect)        PDMDevHlpCritSectRwTryEnterExclDebug((pDevIns), (pCritSect), 0, RT_SRC_POS)
+# endif
+#endif
+
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
  * @copydoc PDMDEVHLPR3::pfnThreadCreate

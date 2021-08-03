@@ -943,6 +943,143 @@ static DECLCALLBACK(int) pdmR0DevHlp_CritSectScheduleExitEvent(PPDMDEVINS pDevIn
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwEnterShared} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwEnterShared(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwEnterShared(pDevIns->Internal.s.pGVM, pCritSect, rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwEnterSharedDebug} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwEnterSharedDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy,
+                                                                     RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwEnterSharedDebug(pDevIns->Internal.s.pGVM, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwTryEnterShared} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwTryEnterShared(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwTryEnterShared(pDevIns->Internal.s.pGVM, pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwTryEnterSharedDebug} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwTryEnterSharedDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect,
+                                                                        RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwTryEnterSharedDebug(pDevIns->Internal.s.pGVM, pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwLeaveShared} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwLeaveShared(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwLeaveShared(pDevIns->Internal.s.pGVM, pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwEnterExcl} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwEnterExcl(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwEnterExcl(pDevIns->Internal.s.pGVM, pCritSect, rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwEnterExclDebug} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwEnterExclDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, int rcBusy,
+                                                                   RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwEnterExclDebug(pDevIns->Internal.s.pGVM, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwTryEnterExcl} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwTryEnterExcl(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwTryEnterExcl(pDevIns->Internal.s.pGVM, pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwTryEnterExclDebug} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwTryEnterExclDebug(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect,
+                                                                      RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwTryEnterExclDebug(pDevIns->Internal.s.pGVM, pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwLeaveExcl} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectRwLeaveExcl(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwLeaveExcl(pDevIns->Internal.s.pGVM, pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwIsWriteOwner} */
+static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectRwIsWriteOwner(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwIsWriteOwner(pDevIns->Internal.s.pGVM, pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwIsReadOwner} */
+static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectRwIsReadOwner(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, bool fWannaHear)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMCritSectRwIsReadOwner(pDevIns->Internal.s.pGVM, pCritSect, fWannaHear);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwGetWriteRecursion} */
+static DECLCALLBACK(uint32_t) pdmR0DevHlp_CritSectRwGetWriteRecursion(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectRwGetWriteRecursion(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwGetWriterReadRecursion} */
+static DECLCALLBACK(uint32_t) pdmR0DevHlp_CritSectRwGetWriterReadRecursion(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectRwGetWriterReadRecursion(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwGetReadCount} */
+static DECLCALLBACK(uint32_t) pdmR0DevHlp_CritSectRwGetReadCount(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectRwGetReadCount(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectRwIsInitialized} */
+static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectRwIsInitialized(PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectRwIsInitialized(pCritSect);
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnDBGFTraceBuf} */
 static DECLCALLBACK(RTTRACEBUF) pdmR0DevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
 {
@@ -1309,6 +1446,22 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_CritSectHasWaiters,
     pdmR0DevHlp_CritSectGetRecursion,
     pdmR0DevHlp_CritSectScheduleExitEvent,
+    pdmR0DevHlp_CritSectRwEnterShared,
+    pdmR0DevHlp_CritSectRwEnterSharedDebug,
+    pdmR0DevHlp_CritSectRwTryEnterShared,
+    pdmR0DevHlp_CritSectRwTryEnterSharedDebug,
+    pdmR0DevHlp_CritSectRwLeaveShared,
+    pdmR0DevHlp_CritSectRwEnterExcl,
+    pdmR0DevHlp_CritSectRwEnterExclDebug,
+    pdmR0DevHlp_CritSectRwTryEnterExcl,
+    pdmR0DevHlp_CritSectRwTryEnterExclDebug,
+    pdmR0DevHlp_CritSectRwLeaveExcl,
+    pdmR0DevHlp_CritSectRwIsWriteOwner,
+    pdmR0DevHlp_CritSectRwIsReadOwner,
+    pdmR0DevHlp_CritSectRwGetWriteRecursion,
+    pdmR0DevHlp_CritSectRwGetWriterReadRecursion,
+    pdmR0DevHlp_CritSectRwGetReadCount,
+    pdmR0DevHlp_CritSectRwIsInitialized,
     pdmR0DevHlp_DBGFTraceBuf,
     pdmR0DevHlp_PCIBusSetUpContext,
     pdmR0DevHlp_IommuSetUpContext,
@@ -1406,6 +1559,22 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
     pdmR0DevHlp_CritSectHasWaiters,
     pdmR0DevHlp_CritSectGetRecursion,
     pdmR0DevHlp_CritSectScheduleExitEvent,
+    pdmR0DevHlp_CritSectRwEnterShared,
+    pdmR0DevHlp_CritSectRwEnterSharedDebug,
+    pdmR0DevHlp_CritSectRwTryEnterShared,
+    pdmR0DevHlp_CritSectRwTryEnterSharedDebug,
+    pdmR0DevHlp_CritSectRwLeaveShared,
+    pdmR0DevHlp_CritSectRwEnterExcl,
+    pdmR0DevHlp_CritSectRwEnterExclDebug,
+    pdmR0DevHlp_CritSectRwTryEnterExcl,
+    pdmR0DevHlp_CritSectRwTryEnterExclDebug,
+    pdmR0DevHlp_CritSectRwLeaveExcl,
+    pdmR0DevHlp_CritSectRwIsWriteOwner,
+    pdmR0DevHlp_CritSectRwIsReadOwner,
+    pdmR0DevHlp_CritSectRwGetWriteRecursion,
+    pdmR0DevHlp_CritSectRwGetWriterReadRecursion,
+    pdmR0DevHlp_CritSectRwGetReadCount,
+    pdmR0DevHlp_CritSectRwIsInitialized,
     pdmR0DevHlp_DBGFTraceBuf,
     pdmR0DevHlp_PCIBusSetUpContext,
     pdmR0DevHlp_IommuSetUpContext,

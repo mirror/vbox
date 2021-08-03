@@ -172,6 +172,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 pCritSect->fUsedByTimerOrSimilar     = false;
                 pCritSect->hEventToSignal            = NIL_SUPSEMEVENT;
                 pCritSect->pszName                   = pszName;
+                pCritSect->pSelfR3                   = (PPDMCRITSECT)pCritSect;
 
                 STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                 STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pCritSect->pszName);
@@ -179,10 +180,12 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                                 STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLockBusy", pCritSect->pszName);
                 STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                 STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatContentionRZWait,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/ContentionRZWait", pCritSect->pszName);
                 STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                 STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pCritSect->pszName);
-                STAMR3RegisterF(pVM, &pCritSect->StatContentionWait,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
-                                STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/ContentionWait", pCritSect->pszName);
+                STAMR3RegisterF(pVM, &pCritSect->StatContentionR3Wait,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/ContentionR3Wait", pCritSect->pszName);
 #ifdef VBOX_WITH_STATISTICS
                 STAMR3RegisterF(pVM, &pCritSect->StatLocked,            STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS,
                                 STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pCritSect->pszName);
