@@ -278,6 +278,17 @@ static void vmmR3FatalDumpInfoHlpDelete(PVMMR3FATALDUMPINFOHLP pHlp)
 
 
 /**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) vmmR3FatalDumpRendezvousDoneCallback(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    VM_FF_CLEAR(pVM, VM_FF_CHECK_VM_STATE);
+    RT_NOREF(pVCpu, pvUser);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Dumps the VM state on a fatal error.
  *
  * @param   pVM         The cross context VM structure.
@@ -707,5 +718,11 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
      * Delete the output instance (flushing and restoring of flags).
      */
     vmmR3FatalDumpInfoHlpDelete(&Hlp);
+
+    /*
+     * Rendezvous with the other EMTs and clear the VM_FF_CHECK_VM_STATE so we can
+     * stop burning CPU cycles.
+     */
+    VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmmR3FatalDumpRendezvousDoneCallback, NULL);
 }
 
