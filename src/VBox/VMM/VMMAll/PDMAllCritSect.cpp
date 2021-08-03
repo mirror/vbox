@@ -34,6 +34,8 @@
 #include <iprt/assert.h>
 #ifdef IN_RING3
 # include <iprt/lockvalidator.h>
+#endif
+#if defined(IN_RING3) || defined(IN_RING0)
 # include <iprt/semaphore.h>
 #endif
 #ifdef IN_RING0
@@ -85,6 +87,19 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PVMCC pVM, PCPDMCRITS
 #endif
     return hNativeSelf;
 }
+
+
+#ifdef IN_RING0
+/**
+ * Marks the critical section as corrupted.
+ */
+DECL_NO_INLINE(static, int) pdmCritSectCorrupted(PPDMCRITSECT pCritSect, const char *pszMsg)
+{
+    ASMAtomicWriteU32(&pCritSect->s.Core.u32Magic, PDMCRITSECT_MAGIC_CORRUPTED);
+    LogRel(("PDMCritSect: %s pCritSect=%p\n", pszMsg, pCritSect));
+    return VERR_PDM_CRITSECT_IPE;
+}
+#endif
 
 
 /**
@@ -154,7 +169,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
      *
      * This handles VERR_TIMEOUT and VERR_INTERRUPTED.
      */
-    STAM_REL_PROFILE_START(&pCritSect->s.StatWait, a);
+    STAM_REL_PROFILE_START(&pCritSect->s.CTX_MID_Z(StatContention,Wait), a);
     PSUPDRVSESSION const    pSession    = pVM->pSession;
     SUPSEMEVENT const       hEvent      = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
 # ifdef IN_RING3
@@ -223,7 +238,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
          */
         if (rc == VINF_SUCCESS)
         {
-            STAM_REL_PROFILE_STOP(&pCritSect->s.StatContentionWait, a);
+            STAM_REL_PROFILE_STOP(&pCritSect->s.CTX_MID_Z(StatContention,Wait), a);
             return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
         }
 
@@ -329,7 +344,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
                             if (rc2 == VINF_SUCCESS)
                             {
                                 STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectEntersWhileAborting);
-                                STAM_REL_PROFILE_STOP(&pCritSect->s.StatContentionWait, a);
+                                STAM_REL_PROFILE_STOP(&pCritSect->s.CTX_MID_Z(StatContention,Wait), a);
                                 return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
                             }
                             cNoIntWaits++;
@@ -391,6 +406,12 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
 {
     Assert(pCritSect->s.Core.cNestings < 8);  /* useful to catch incorrect locking */
     Assert(pCritSect->s.Core.cNestings >= 0);
+#if defined(VBOX_STRICT) && defined(IN_RING0)
+    /* Hope we're not messing with critical sections while in the no-block
+       zone, that would complicate things a lot. */
+    PVMCPUCC pVCpuAssert = VMMGetCpu(pVM);
+    Assert(pVCpuAssert && VMMRZCallRing3IsEnabled(pVCpuAssert));
+#endif
 
     /*
      * If the critical section has already been destroyed, then inform the caller.
@@ -738,13 +759,18 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PVM pVM, PPDMCRITSECT pCritSect, bool fCallR
  *
  * @param   pVM         The cross context VM structure.
  * @param   pCritSect   The PDM critical section to leave.
+ *
+ * @remarks Can be called from no-ring-3-call context in ring-0 (TM/VirtualSync)
+ *          where we'll queue leaving operation for ring-3 processing.
  */
 VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
 {
     AssertMsg(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%p %RX32\n", pCritSect, pCritSect->s.Core.u32Magic));
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
 
-    /* Check for NOP sections before asserting ownership. */
+    /*
+     * Check for NOP sections before asserting ownership.
+     */
     if (!(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP))
     { /* We're more likely to end up here with real critsects than a NOP one. */ }
     else
@@ -767,38 +793,85 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
     Assert(cNestings >= 1);
     if (cNestings > 1)
     {
-# ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
+#ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
         pCritSect->s.Core.cNestings = cNestings - 1;
-# else
+#else
         ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, cNestings - 1);
-# endif
+#endif
         ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
         Assert(pCritSect->s.Core.cLockers >= 0);
         return VINF_SEM_NESTED;
     }
 
-#ifdef IN_RING0
-# if 0 /** @todo Make SUPSemEventSignal interrupt safe (handle table++) and enable this for: defined(RT_OS_LINUX) || defined(RT_OS_OS2) */
-    if (1) /* SUPSemEventSignal is safe */
-# else
-    if (ASMIntAreEnabled())
-# endif
-#endif
-#if defined(IN_RING3) || defined(IN_RING0)
-    {
-        /*
-         * Leave for real.
-         */
-        /* update members. */
-        SUPSEMEVENT hEventToSignal  = pCritSect->s.hEventToSignal;
-        pCritSect->s.hEventToSignal = NIL_SUPSEMEVENT;
+
+#ifdef IN_RING3
+    /*
+     * Ring-3: Leave for real.
+     */
+    SUPSEMEVENT const hEventToSignal = pCritSect->s.hEventToSignal;
+    pCritSect->s.hEventToSignal = NIL_SUPSEMEVENT;
+
 # ifdef IN_RING3
 #  if defined(PDMCRITSECT_STRICT)
-        if (pCritSect->s.Core.pValidatorRec->hThread != NIL_RTTHREAD)
-            RTLockValidatorRecExclReleaseOwnerUnchecked(pCritSect->s.Core.pValidatorRec);
+    if (pCritSect->s.Core.pValidatorRec->hThread != NIL_RTTHREAD)
+        RTLockValidatorRecExclReleaseOwnerUnchecked(pCritSect->s.Core.pValidatorRec);
 #  endif
-        Assert(!pCritSect->s.Core.pValidatorRec || pCritSect->s.Core.pValidatorRec->hThread == NIL_RTTHREAD);
+    Assert(!pCritSect->s.Core.pValidatorRec || pCritSect->s.Core.pValidatorRec->hThread == NIL_RTTHREAD);
 # endif
+
+# ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
+    //pCritSect->s.Core.cNestings = 0; /* not really needed */
+    pCritSect->s.Core.NativeThreadOwner = NIL_RTNATIVETHREAD;
+# else
+    ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 0);
+    ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
+# endif
+    ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+
+    /* Stop profiling and decrement lockers. */
+    STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
+    ASMCompilerBarrier();
+    int32_t const cLockers = ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
+    if (cLockers < 0)
+        AssertMsg(cLockers == -1, ("cLockers=%d\n", cLockers));
+    else
+    {
+        /* Someone is waiting, wake up one of them. */
+        Assert(cLockers < _8K);
+        SUPSEMEVENT hEvent = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
+        int rc = SUPSemEventSignal(pVM->pSession, hEvent);
+        AssertRC(rc);
+    }
+
+    /* Signal exit event. */
+    if (RT_LIKELY(hEventToSignal == NIL_SUPSEMEVENT))
+    { /* likely */ }
+    else
+    {
+        Log8(("Signalling %#p\n", hEventToSignal));
+        int rc = SUPSemEventSignal(pVM->pSession, hEventToSignal);
+        AssertRC(rc);
+    }
+
+    return VINF_SUCCESS;
+
+
+#elif defined(IN_RING0)
+    /*
+     * Ring-0: Try leave for real, depends on host and context.
+     */
+    SUPSEMEVENT const hEventToSignal = pCritSect->s.hEventToSignal;
+    pCritSect->s.hEventToSignal = NIL_SUPSEMEVENT;
+    PVMCPUCC pVCpu           = VMMGetCpu(pVM);
+    bool     fQueueOnTrouble = true;
+    if (   pVCpu == NULL /* non-EMT access, if we implement it must be able to block */
+        || VMMRZCallRing3IsEnabled(pVCpu)
+        || RTSemEventIsSignalSafe()
+        || (fQueueOnTrouble = (   hEventToSignal == NIL_SUPSEMEVENT
+                               && ASMAtomicUoReadS32(&pCritSect->s.Core.cLockers) == 0)) )
+    {
+        pCritSect->s.hEventToSignal = NIL_SUPSEMEVENT;
+
 # ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
         //pCritSect->s.Core.cNestings = 0; /* not really needed */
         pCritSect->s.Core.NativeThreadOwner = NIL_RTNATIVETHREAD;
@@ -808,88 +881,155 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
 # endif
         ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
 
-        /* stop and decrement lockers. */
+        /*
+         * Stop profiling and decrement lockers.
+         */
         STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
         ASMCompilerBarrier();
-        if (ASMAtomicDecS32(&pCritSect->s.Core.cLockers) < 0)
-        { /* hopefully likely */ }
+
+        bool    fQueueIt = false;
+        int32_t cLockers;
+        if (!fQueueOnTrouble)
+            cLockers = ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
         else
         {
-            /* Someone is waiting, wake up one of them. */
-            SUPSEMEVENT     hEvent   = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
-            PSUPDRVSESSION  pSession = pVM->pSession;
-            int rc = SUPSemEventSignal(pSession, hEvent);
-            AssertRC(rc);
+            cLockers = -1;
+            if (!ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, -1, 0))
+                fQueueIt = true;
         }
-
-        /* Signal exit event. */
-        if (RT_LIKELY(hEventToSignal == NIL_SUPSEMEVENT))
-        { /* likely */ }
-        else
+        if (!fQueueIt)
         {
-            Log8(("Signalling %#p\n", hEventToSignal));
-            int rc = SUPSemEventSignal(pVM->pSession, hEventToSignal);
-            AssertRC(rc);
-        }
+            VMMR0EMTBLOCKCTX    Ctx;
+            bool                fLeaveCtx = false;
+            if (cLockers < 0)
+                AssertMsg(cLockers == -1, ("cLockers=%d\n", cLockers));
+            else
+            {
+                /* Someone is waiting, wake up one of them. */
+                Assert(cLockers < _8K);
+                SUPSEMEVENT hEvent = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
+                if (!RTSemEventIsSignalSafe() && (pVCpu = VMMGetCpu(pVM)) != NULL)
+                {
+                    int rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pCritSect, &Ctx);
+                    AssertReleaseRCReturn(rc, rc);
+                    fLeaveCtx = true;
+                }
+                int rc = SUPSemEventSignal(pVM->pSession, hEvent);
+                AssertRC(rc);
+            }
 
-# if defined(DEBUG_bird) && defined(IN_RING0)
-        VMMTrashVolatileXMMRegs();
+            /*
+             * Signal exit event.
+             */
+            if (RT_LIKELY(hEventToSignal == NIL_SUPSEMEVENT))
+            { /* likely */ }
+            else
+            {
+                if (!fLeaveCtx && pVCpu != NULL && !RTSemEventIsSignalSafe() && (pVCpu = VMMGetCpu(pVM)) != NULL)
+                {
+                    int rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pCritSect, &Ctx);
+                    AssertReleaseRCReturn(rc, rc);
+                    fLeaveCtx = true;
+                }
+                Log8(("Signalling %#p\n", hEventToSignal));
+                int rc = SUPSemEventSignal(pVM->pSession, hEventToSignal);
+                AssertRC(rc);
+            }
+
+            /*
+             * Restore HM context if needed.
+             */
+            if (!fLeaveCtx)
+            { /* contention should be unlikely */ }
+            else
+                VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
+
+# ifdef DEBUG_bird
+            VMMTrashVolatileXMMRegs();
 # endif
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Darn, someone raced in on us.  Restore the state (this works only
+         * because the semaphore is effectively controlling ownership).
+         */
+        bool fRc;
+        RTNATIVETHREAD hMessOwner = NIL_RTNATIVETHREAD;
+        ASMAtomicCmpXchgExHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeSelf, NIL_RTNATIVETHREAD, fRc, &hMessOwner);
+        AssertLogRelMsgReturn(fRc, ("pCritSect=%p hMessOwner=%p\n", pCritSect, hMessOwner),
+                              pdmCritSectCorrupted(pCritSect, "owner race"));
+        STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
+# ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
+        //pCritSect->s.Core.cNestings = 1;
+        Assert(pCritSect->s.Core.cNestings == 1);
+# else
+        //Assert(pCritSect->s.Core.cNestings == 0);
+        ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
+# endif
+        Assert(hEventToSignal == NIL_SUPSEMEVENT);
     }
-#endif  /* IN_RING3 || IN_RING0 */
-#ifdef IN_RING0
-    else
-#endif
-#if defined(IN_RING0) || defined(IN_RC)
+
+
+#else /* IN_RC */
+    /*
+     * Raw-mode: Try leave it.
+     */
+# error "This context is not use..."
+    if (pCritSect->s.Core.cLockers == 0)
     {
-        /*
-         * Try leave it.
-         */
-        if (pCritSect->s.Core.cLockers == 0)
-        {
 # ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
-            //pCritSect->s.Core.cNestings = 0; /* not really needed */
+        //pCritSect->s.Core.cNestings = 0; /* not really needed */
 # else
-            ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 0);
+        ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 0);
 # endif
-            RTNATIVETHREAD hNativeThread = pCritSect->s.Core.NativeThreadOwner;
-            ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
-            STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
+        ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+        STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
 
-            ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
-            if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, -1, 0))
-                return VINF_SUCCESS;
-
-            /* darn, someone raced in on us. */
-            ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeThread);
-            STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
-# ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
-            //pCritSect->s.Core.cNestings = 1;
-            Assert(pCritSect->s.Core.cNestings == 1);
-# else
-            //Assert(pCritSect->s.Core.cNestings == 0);
-            ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
-# endif
-        }
-        ASMAtomicOrU32(&pCritSect->s.Core.fFlags, PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
+        if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, -1, 0))
+            return VINF_SUCCESS;
 
         /*
-         * Queue the request.
+         * Darn, someone raced in on us.  Restore the state (this works only
+         * because the semaphore is effectively controlling ownership).
          */
-        PVMCPUCC    pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
-        uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectLeaves++;
-        LogFlow(("PDMCritSectLeave: [%d]=%p => R3\n", i, pCritSect));
-        AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
-/** @todo This doesn't work any more for devices. */
-        pVCpu->pdm.s.apQueuedCritSectLeaves[i] = MMHyperCCToR3(pVM, pCritSect);
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-        STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
-        STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
+        bool fRc;
+        RTNATIVETHREAD hMessOwner = NIL_RTNATIVETHREAD;
+        ASMAtomicCmpXchgExHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeSelf, NIL_RTNATIVETHREAD, fRc, &hMessOwner);
+        AssertLogRelMsgReturn(fRc, ("pCritSect=%p hMessOwner=%p\n", pCritSect, hMessOwner),
+                              pdmCritSectCorrupted(pCritSect, "owner race"));
+        STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
+# ifdef PDMCRITSECT_WITH_LESS_ATOMIC_STUFF
+        //pCritSect->s.Core.cNestings = 1;
+        Assert(pCritSect->s.Core.cNestings == 1);
+# else
+        //Assert(pCritSect->s.Core.cNestings == 0);
+        ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
+# endif
     }
-#endif /* IN_RING0 || IN_RC */
+#endif /* IN_RC */
+
+
+#ifndef IN_RING3
+    /*
+     * Ring-0/raw-mode: Unable to leave. Queue the leave for ring-3.
+     */
+    ASMAtomicOrU32(&pCritSect->s.Core.fFlags, PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+# ifndef IN_RING0
+    PVMCPUCC    pVCpu = VMMGetCpu(pVM);
+# endif
+    uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectLeaves++;
+    LogFlow(("PDMCritSectLeave: [%d]=%p => R3\n", i, pCritSect));
+    AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
+    pVCpu->pdm.s.apQueuedCritSectLeaves[i] = pCritSect->s.pSelfR3;
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT); /** @todo handle VMCPU_FF_PDM_CRITSECT in ring-0 outside the no-call-ring-3 part. */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3); /* unnecessary paranoia */
+    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
 
     return VINF_SUCCESS;
+#endif /* IN_RING3 */
 }
 
 

@@ -432,19 +432,23 @@ typedef struct PDMCRITSECTINT
     bool                            afPadding[2+4];
     /** Support driver event semaphore that is scheduled to be signaled upon leaving
      * the critical section. This is only for Ring-3 and Ring-0. */
-    SUPSEMEVENT                     hEventToSignal;
+    SUPSEMEVENT volatile            hEventToSignal;
     /** The lock name. */
     R3PTRTYPE(const char *)         pszName;
+    /** The ring-3 pointer to this critical section, for leave queueing. */
+    R3PTRTYPE(PPDMCRITSECT)         pSelfR3;
     /** R0/RC lock contention. */
     STAMCOUNTER                     StatContentionRZLock;
-    /** R0/RC lock contention, returning rcBusy or VERR_SEM_BUSY (try). */
+    /** R0/RC lock contention: returning rcBusy or VERR_SEM_BUSY (try). */
     STAMCOUNTER                     StatContentionRZLockBusy;
+    /** R0/RC lock contention: Profiling waiting time. */
+    STAMPROFILE                     StatContentionRZWait;
     /** R0/RC unlock contention. */
     STAMCOUNTER                     StatContentionRZUnlock;
     /** R3 lock contention. */
     STAMCOUNTER                     StatContentionR3;
-    /** Profiling waiting on the lock (all rings). */
-    STAMPROFILE                     StatContentionWait;
+    /** R3 lock contention: Profiling waiting time. */
+    STAMPROFILE                     StatContentionR3Wait;
     /** Profiling the time the section is locked. */
     STAMPROFILEADV                  StatLocked;
 } PDMCRITSECTINT;
@@ -455,6 +459,8 @@ typedef PDMCRITSECTINT *PPDMCRITSECTINT;
 /** Special magic value set when we failed to abort entering in ring-0 due to a
  * timeout, interruption or pending thread termination. */
 #define PDMCRITSECT_MAGIC_FAILED_ABORT      UINT32_C(0x0bad0326)
+/** Special magic value set if we detected data/state corruption. */
+#define PDMCRITSECT_MAGIC_CORRUPTED         UINT32_C(0x0bad2603)
 
 /** Indicates that the critical section is queued for unlock.
  * PDMCritSectIsOwner and PDMCritSectIsOwned optimizations. */
