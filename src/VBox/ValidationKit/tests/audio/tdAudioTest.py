@@ -363,26 +363,26 @@ class tdAudioTest(vbox.TestDriver):
             # Set extra data.
             for sExtraData in self.asOptExtraData:
                 sKey, sValue = sExtraData.split(':');
-                reporter.log('Set extradata: %s => %s' % (sKey, sValue))
+                reporter.log('Set extradata: %s => %s' % (sKey, sValue));
                 fRc = oSession.setExtraData(sKey, sValue) and fRc;
 
             # Save the settings.
-            fRc = fRc and oSession.saveSettings()
+            fRc = fRc and oSession.saveSettings();
             fRc = oSession.close() and fRc;
 
         reporter.testStart('Waiting for TXS');
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
-                                                                fCdWait = True,
-                                                                cMsTimeout = 3 * 60 * 1000,
-                                                                sFileCdWait = '${CDROM}/${OS/ARCH}/vkat${EXESUFF}');
+                                                                  fCdWait = True,
+                                                                  cMsTimeout = 3 * 60 * 1000,
+                                                                  sFileCdWait = '${OS/ARCH}/vkat${EXESUFF}');
         reporter.testDone();
-        if  oSession    is not None \
-        and oTxsSession is not None:
+
+        if  oSession is not None:
             self.addTask(oTxsSession);
 
-        fRc = self.doTest(oTestVm, oSession, oTxsSession);
+            fRc = self.doTest(oTestVm, oSession, oTxsSession);
 
-        if oSession is not None:
+            # Cleanup.
             self.removeTask(oTxsSession);
             self.terminateVmBySession(oSession);
 
