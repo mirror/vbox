@@ -231,6 +231,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceQemuFwCfg);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef VBOX_WITH_TPM
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceTpm);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
 
     return VINF_SUCCESS;
 }

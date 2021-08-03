@@ -200,6 +200,9 @@ extern const PDMDEVREG g_DeviceIommuAmd;
 #ifdef VBOX_WITH_IOMMU_INTEL
 extern const PDMDEVREG g_DeviceIommuIntel;
 #endif
+#ifdef VBOX_WITH_TPM
+extern const PDMDEVREG g_DeviceTpm;
+#endif
 
 /* VBoxAcpi.cpp */
 int acpiPrepareDsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbDsdt);

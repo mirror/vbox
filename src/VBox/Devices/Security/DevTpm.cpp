@@ -2,8 +2,8 @@
 /** @file
  * DevTpm - Trusted Platform Module emulation.
  *
- * This emulation is based on the spec available under (as of 2021-07-30):
- *     https://trustedcomputinggroup.org/wp-content/uploads/TCG_PCClientTPMInterfaceSpecification_TIS__1-3_27_03212013.pdf
+ * This emulation is based on the spec available under (as of 2021-08-02):
+ *     https://trustedcomputinggroup.org/wp-content/uploads/PC-Client-Specific-Platform-TPM-Profile-for-TPM-2p0-v1p05p_r14_pub.pdf
  */
 
 /*
@@ -51,7 +51,7 @@
 
 /** Number of localities as mandated by the TPM spec. */
 #define TPM_LOCALITY_COUNT                              5
-/** Size of each locality in the TPM MMIO area (chapter 5.2).*/
+/** Size of each locality in the TPM MMIO area (chapter 6.5.2).*/
 #define TPM_LOCALITY_MMIO_SIZE                          0x1000
 
 /** @name TPM locality register related defines.
@@ -71,8 +71,10 @@
 # define TPM_LOCALITY_REG_ACCESS_BEEN_SEIZED            RT_BIT(4)
 /** On reads indicates whether this locality is active (1) or not (0), writing a 1 relinquishes control for this locality. */
 # define TPM_LOCALITY_REG_ACCESS_ACTIVE                 RT_BIT(5)
-/** Set bit indicates whether all other bits in the status register have valid data. */
-# define TPM_LOCALITY_REG_ACCESS_STS_VALID              RT_BIT(7)
+/** Set bit indicates whether all other bits in this register have valid data. */
+# define TPM_LOCALITY_REG_ACCESS_VALID                  RT_BIT(7)
+/** Writable mask. */
+# define TPM_LOCALITY_REG_ACCESS_WR_MASK                0x3a
 
 /** Interrupt enable register. */
 #define TPM_LOCALITY_REG_INT_ENABLE                     0x08
@@ -113,6 +115,8 @@
 # define TPM_LOCALITY_REG_INT_STS_LOCALITY_CHANGE       RT_BIT_32(2)
 /** Command ready occured bit, writing a 1 clears the bit. */
 # define TPM_LOCALITY_REG_INT_STS_CMD_RDY               RT_BIT_32(7)
+/** Writable mask. */
+# define TPM_LOCALITY_REG_INT_STS_WR_MASK               UINT32_C(0x87)
 
 /** Interfacce capabilities register. */
 #define TPM_LOCALITY_REG_IF_CAP                         0x14
@@ -153,7 +157,9 @@
 /** Interface 1.21 or ealier. */
 #  define TPM_LOCALITY_REG_IF_CAP_IF_VERSION_IF_1_21    0
 /** Interface 1.3. */
-#  define TPM_LOCALITY_REG_IF_CAP_IF_VERSION_IF_1_3     1
+#  define TPM_LOCALITY_REG_IF_CAP_IF_VERSION_IF_1_3     2
+/** Interface 1.3 for TPM 2.0. */
+#  define TPM_LOCALITY_REG_IF_CAP_IF_VERSION_IF_1_3_TPM2    3
 
 /** TPM status register. */
 #define TPM_LOCALITY_REG_STS                            0x18
@@ -196,10 +202,37 @@
 *********************************************************************************************************************************/
 
 /**
+ * Possible locality states
+ * (see chapter 5.6.12.1 Figure 3 State Transition Diagram).
+ */
+typedef enum DEVTPMLOCALITYSTATE
+{
+    /** Invalid state, do not use. */
+    DEVTPMLOCALITYSTATE_INVALID = 0,
+    /** Init state. */
+    DEVTPMLOCALITYSTATE_INIT,
+    /** Ready to accept command data. */
+    DEVTPMLOCALITYSTATE_READY,
+    /** Command data being transfered. */
+    DEVTPMLOCALITYSTATE_CMD_RECEPTION,
+    /** Command is being executed by the TPM. */
+    DEVTPMLOCALITYSTATE_CMD_EXEC,
+    /** Command has completed and data can be read. */
+    DEVTPMLOCALITYSTATE_CMD_COMPLETION,
+    /** 32bit hack. */
+    DEVTPMLOCALITYSTATE_32BIT_HACK = 0x7fffffff
+} DEVTPMLOCALITYSTATE;
+
+
+/**
  * Locality state.
  */
 typedef struct DEVTPMLOCALITY
 {
+    /** The current state of the locality. */
+    DEVTPMLOCALITYSTATE             enmState;
+    /** Access register state. */
+    uint32_t                        uRegAccess;
     /** The interrupt enable register. */
     uint32_t                        uRegIntEn;
     /** The interrupt status register. */
@@ -225,12 +258,17 @@ typedef struct DEVTPM
     /** The IRQ value. */
     uint8_t                         uIrq;
 
+    /** Currently selected locality. */
+    uint8_t                         bLoc;
     /** States of the implemented localities. */
     DEVTPMLOCALITY                  aLoc[TPM_LOCALITY_COUNT];
 
 } DEVTPM;
 /** Pointer to the shared TPM device state. */
 typedef DEVTPM *PDEVTPM;
+
+/** The special no current locality selected value. */
+#define TPM_NO_LOCALITY_SELECTED    0xff
 
 
 /**
@@ -275,21 +313,55 @@ typedef CTX_SUFF(PDEVTPM) PDEVTPMCC;
 
 
 
-#if 0
-PDMBOTHCBDECL(void) tpmIrqReq(PPDMDEVINS pDevIns, int iLvl)
+/**
+ * Sets the IRQ line of the given device to the given state.
+ *
+ * @returns nothing.
+ * @param   pDevIns             Pointer to the PDM device instance data.
+ * @param   pThis               Pointer to the shared TPM device.
+ * @param   iLvl                The interrupt level to set.
+ */
+DECLINLINE(void) tpmIrqReq(PPDMDEVINS pDevIns, PDEVTPM pThis, int iLvl)
 {
-    PDEVTPM pThis = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
     PDMDevHlpISASetIrqNoWait(pDevIns, pThis->uIrq, iLvl);
 }
-#endif
 
 
+/**
+ * Updates the IRQ status of the given locality.
+ *
+ * @returns nothing.
+ * @param   pDevIns             Pointer to the PDM device instance data.
+ * @param   pThis               Pointer to the shared TPM device.
+ * @param   pLoc                The locality state.
+ */
+PDMBOTHCBDECL(void) tpmLocIrqUpdate(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc)
+{
+    if (pLoc->uRegIntEn & pLoc->uRegIntSts)
+        tpmIrqReq(pDevIns, pThis, 1);
+    else
+        tpmIrqReq(pDevIns, pThis, 0);
+}
+
+
+/**
+ * Returns the given locality being accessed from the given TPM MMIO offset.
+ *
+ * @returns Locality number.
+ * @param   off                 The offset into the TPM MMIO region.
+ */
 DECLINLINE(uint8_t) tpmGetLocalityFromOffset(RTGCPHYS off)
 {
     return off / TPM_LOCALITY_MMIO_SIZE;
 }
 
 
+/**
+ * Returns the given register of a particular locality being accessed from the given TPM MMIO offset.
+ *
+ * @returns Register index being accessed.
+ * @param   off                 The offset into the TPM MMIO region.
+ */
 DECLINLINE(uint32_t) tpmGetRegisterFromOffset(RTGCPHYS off)
 {
     return off % TPM_LOCALITY_MMIO_SIZE;
@@ -312,16 +384,43 @@ static DECLCALLBACK(VBOXSTRICTRC) tpmMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
     LogFlowFunc((": %RGp %#x\n", off, cb));
     VBOXSTRICTRC rc = VINF_SUCCESS;
     uint32_t uReg = tpmGetRegisterFromOffset(off);
-    uint8_t uLoc = tpmGetLocalityFromOffset(off);
-    PDEVTPMLOCALITY pLoc = &pThis->aLoc[uLoc];
+    uint8_t bLoc = tpmGetLocalityFromOffset(off);
+    PDEVTPMLOCALITY pLoc = &pThis->aLoc[bLoc];
     uint32_t u32;
     switch (uReg)
     {
+        case TPM_LOCALITY_REG_ACCESS:
+            u32 = 0;
+            break;
         case TPM_LOCALITY_REG_INT_ENABLE:
             u32 = pLoc->uRegIntEn;
             break;
+        case TPM_LOCALITY_REG_INT_VEC:
+            u32 = pThis->uIrq;
+            break;
         case TPM_LOCALITY_REG_INT_STS:
             u32 = pLoc->uRegIntSts;
+            break;
+        case TPM_LOCALITY_REG_IF_CAP:
+            u32 =   TPM_LOCALITY_REG_IF_CAP_INT_DATA_AVAIL
+                  | TPM_LOCALITY_REG_IF_CAP_INT_STS_VALID
+                  | TPM_LOCALITY_REG_IF_CAP_INT_LOCALITY_CHANGE
+                  | TPM_LOCALITY_REG_IF_CAP_INT_LVL_LOW
+                  | TPM_LOCALITY_REG_IF_CAP_INT_CMD_RDY
+                  | TPM_LOCALITY_REG_IF_CAP_DATA_XFER_SZ_SET(TPM_LOCALITY_REG_IF_CAP_DATA_XFER_SZ_64B)
+                  | TPM_LOCALITY_REG_IF_CAP_IF_VERSION_SET(TPM_LOCALITY_REG_IF_CAP_IF_VERSION_IF_1_3); /** @todo Make some of them configurable? */
+            break;
+        case TPM_LOCALITY_REG_STS:
+            if (bLoc != pThis->bLoc)
+            {
+                u32 = UINT32_MAX;
+                break;
+            }
+            /** @todo */
+            break;
+        case TPM_LOCALITY_REG_DATA_FIFO:
+        case TPM_LOCALITY_REG_DATA_XFIFO:
+            /** @todo */
             break;
         case TPM_LOCALITY_REG_DID_VID:
             u32 = RT_H2BE_U32(RT_MAKE_U32(pThis->uVenId, pThis->uDevId));
@@ -367,12 +466,59 @@ static DECLCALLBACK(VBOXSTRICTRC) tpmMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
 
     LogFlowFunc((": %RGp %#x\n", off, u32));
 
-    uint32_t uReg = tpmGetRegisterFromOffset(off);
-    uint8_t uLoc = tpmGetLocalityFromOffset(off);
-    PDEVTPMLOCALITY pLoc = &pThis->aLoc[uLoc];
-    RT_NOREF(uReg, uLoc, pLoc);
-
     VBOXSTRICTRC rc = VINF_SUCCESS;
+    uint32_t uReg = tpmGetRegisterFromOffset(off);
+    uint8_t bLoc = tpmGetLocalityFromOffset(off);
+    PDEVTPMLOCALITY pLoc = &pThis->aLoc[bLoc];
+    switch (uReg)
+    {
+        case TPM_LOCALITY_REG_ACCESS:
+            u32 &= TPM_LOCALITY_REG_ACCESS_WR_MASK;
+             /*
+              * Chapter 5.6.11, 2 states that writing to this register with more than one
+              * bit set to '1' is vendor specific, we decide to ignore such writes to make the logic
+              * below simpler.
+              */
+            if (!RT_IS_POWER_OF_TWO(u32))
+                break;
+            /** @todo */
+            break;
+        case TPM_LOCALITY_REG_INT_ENABLE:
+            if (bLoc != pThis->bLoc)
+                break;
+            /** @todo */
+            break;
+        case TPM_LOCALITY_REG_INT_STS:
+            if (bLoc != pThis->bLoc)
+                break;
+            pLoc->uRegSts &= ~(u32 & TPM_LOCALITY_REG_INT_STS_WR_MASK);
+            tpmLocIrqUpdate(pDevIns, pThis, pLoc);
+            break;
+        case TPM_LOCALITY_REG_STS:
+            /*
+             * Writes are ignored completely if the locality being accessed is not the
+             * current active one or if the value has multiple bits set (not a power of two),
+             * see chapter 5.6.12.1.
+             */
+            if (   bLoc != pThis->bLoc
+                || !RT_IS_POWER_OF_TWO(u32))
+                break;
+            /** @todo */
+            break;
+        case TPM_LOCALITY_REG_DATA_FIFO:
+        case TPM_LOCALITY_REG_DATA_XFIFO:
+            if (bLoc != pThis->bLoc)
+                break;
+            /** @todo */
+            break;
+        case TPM_LOCALITY_REG_INT_VEC:
+        case TPM_LOCALITY_REG_IF_CAP:
+        case TPM_LOCALITY_REG_DID_VID:
+        case TPM_LOCALITY_REG_RID:
+        default: /* Ignore. */
+            break;
+    }
+
     return rc;
 }
 
@@ -451,9 +597,16 @@ static DECLCALLBACK(int) tpmR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
 {
     PDEVTPM   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
-    PDEVTPMCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMCC);
-    RT_NOREF(pThis, pThisCC);
-    /** @todo */
+
+    pThis->bLoc = TPM_NO_LOCALITY_SELECTED;
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aLoc); i++)
+    {
+        PDEVTPMLOCALITY pLoc = &pThis->aLoc[i];
+
+        pLoc->enmState   = DEVTPMLOCALITYSTATE_INIT;
+        pLoc->aRegIntEn  = 0;
+        pLoc->aRegIntSts = 0;
+    }
 }
 
 
