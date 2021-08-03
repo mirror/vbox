@@ -260,6 +260,26 @@ typedef struct VMMDEV
 
     uint32_t            StatMemBalloonChunks;
 
+    /** @name Heartbeat
+     * @{ */
+    /** Timestamp of the last heartbeat from guest in nanosec. */
+    uint64_t volatile   nsLastHeartbeatTS;
+    /** Indicates whether we missed HB from guest on last check. */
+    bool volatile       fFlatlined;
+    /** Indicates whether heartbeat check is active. */
+    bool volatile       fHeartbeatActive;
+    /** Alignment padding. */
+    bool                afAlignment8[6];
+    /** Guest heartbeat interval in nanoseconds.
+     * This is the interval the guest is told to produce heartbeats at. */
+    uint64_t            cNsHeartbeatInterval;
+    /** The amount of time without a heartbeat (nanoseconds) before we
+     * conclude the guest is doing a Dixie Flatline (Neuromancer) impression. */
+    uint64_t            cNsHeartbeatTimeout;
+    /** Timer for signalling a flatlined guest. */
+    TMTIMERHANDLE       hFlatlinedTimer;
+    /** @} */
+
     /** @name Testing
      * @{ */
     /** Set if testing is enabled. */
@@ -267,7 +287,7 @@ typedef struct VMMDEV
     /** Set if testing the MMIO testing range is enabled. */
     bool                fTestingMMIO;
     /** Alignment padding. */
-    bool                afPadding9[HC_ARCH_BITS == 32 ? 2 : 6];
+    bool                afPadding9[2];
 #if !defined(VBOX_WITHOUT_TESTING_FEATURES) || defined(DOXYGEN_RUNNING)
     /** The high timestamp value. */
     uint32_t            u32TestingHighTimestamp;
@@ -309,50 +329,45 @@ typedef struct VMMDEV
     union
     {
         /** Plain view. */
-        uint32_t        u32;
+        uint64_t        u64;
+        /** Plain 32-bit view. */
+        uint32_t        au32[2];
         struct
         {
-            /** Number of microseconds to hold the lock. Zero means disabled. */
-            uint32_t    cUsHold : 14;
-            /** Number of microseconds to wait before retaking the lock again. */
-            uint32_t    cUsBetween : 14;
-            /** Reserved MBZ. */
-            uint32_t    uReserved : 2;
-            /** Pass VINF_SUCCESS as rcBusy if set. */
+            /** bits 15:0: Number of microseconds to hold the lock. */
+            uint32_t    cUsHold : 16;
+            /** bits 31:16: Number of microseconds to wait before retaking the lock again. */
+            uint32_t    cUsBetween : 16;
+            /** bits 51:32: Kilo (1024) ticks the EMT should hold the lock for. */
+            uint32_t    cKiloTicksEmtHold : 20;
+            /** bits 57:52: Reserved MBZ. */
+            uint32_t    uReserved : 6;
+            /** bit 58: Thread takes lock in shared mode when set, exclusive when clear.  */
+            uint32_t    fThreadShared : 1;
+            /** bit 59: EMT takes lock in shared mode when set, exclusive when clear.  */
+            uint32_t    fEmtShared : 1;
+            /** bit 60: Use read/write critical section instead of regular.  */
+            uint32_t    fReadWriteSection : 1;
+            /** bit 61: EMT passes VINF_SUCCESS as rcBusy if set. */
             uint32_t    fMustSucceed : 1;
-            /** Whether to poke EMTs before releasing it. */
+            /** bit 62: Thread pokes EMTs before releasing it when set. */
             uint32_t    fPokeBeforeRelease : 1;
+            /** bit 63: Enabled/disabled. */
+            uint32_t    fEnabled : 1;
         } s;
     } TestingLockControl;
-    /** Alignment padding.  */
-    uint32_t            uPadding10;
     /** Event semaphore that the locking thread blocks. */
     SUPSEMEVENT         hTestingLockEvt;
+# if HC_ARCH_BITS == 32
+    uint32_t            uPadding10;
+# endif
     /** Handle for the I/O ports used by the testing component. */
     IOMIOPORTHANDLE     hIoPortTesting;
     /** Handle for the MMIO region used by the testing component. */
     IOMMMIOHANDLE       hMmioTesting;
+    /** Read write critical section of lock testing. */
+    PDMCRITSECTRW       CritSectRw;
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES || DOXYGEN_RUNNING */
-    /** @} */
-
-    /** @name Heartbeat
-     * @{ */
-    /** Timestamp of the last heartbeat from guest in nanosec. */
-    uint64_t volatile   nsLastHeartbeatTS;
-    /** Indicates whether we missed HB from guest on last check. */
-    bool volatile       fFlatlined;
-    /** Indicates whether heartbeat check is active. */
-    bool volatile       fHeartbeatActive;
-    /** Alignment padding. */
-    bool                afAlignment8[6];
-    /** Guest heartbeat interval in nanoseconds.
-     * This is the interval the guest is told to produce heartbeats at. */
-    uint64_t            cNsHeartbeatInterval;
-    /** The amount of time without a heartbeat (nanoseconds) before we
-     * conclude the guest is doing a Dixie Flatline (Neuromancer) impression. */
-    uint64_t            cNsHeartbeatTimeout;
-    /** Timer for signalling a flatlined guest. */
-    TMTIMERHANDLE       hFlatlinedTimer;
     /** @} */
 
     /** Handle for the backdoor logging I/O port. */

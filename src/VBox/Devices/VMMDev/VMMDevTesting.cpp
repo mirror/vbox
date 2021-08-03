@@ -37,6 +37,7 @@
 # define USING_VMM_COMMON_DEFS /* HACK ALERT! We ONLY want the EMT thread handles, so the common defs doesn't matter. */
 # include <VBox/vmm/vmcc.h>
 #endif
+#include <VBox/AssertGuest.h>
 
 #include "VMMDevState.h"
 #include "VMMDevTesting.h"
@@ -591,37 +592,63 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
         /*
          * Configure the locking contention test.
          */
-        case VMMDEV_TESTING_IOPORT_LOCKED - VMMDEV_TESTING_IOPORT_BASE:
+        case VMMDEV_TESTING_IOPORT_LOCKED_HI - VMMDEV_TESTING_IOPORT_BASE:
+        case VMMDEV_TESTING_IOPORT_LOCKED_LO - VMMDEV_TESTING_IOPORT_BASE:
             switch (cb)
             {
                 case 4:
-                case 2:
-                case 1:
                 {
+                    bool const  fReadWriteSection = pThis->TestingLockControl.s.fReadWriteSection;
+                    int         rc;
 #ifndef IN_RING3
                     if (!pThis->TestingLockControl.s.fMustSucceed)
                     {
-                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
+                        if (!fReadWriteSection)
+                            rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
+                        else
+                            rc = PDMDevHlpCritSectRwEnterExcl(pDevIns, &pThis->CritSectRw, VINF_IOM_R3_IOPORT_WRITE);
                         if (rc != VINF_SUCCESS)
                             return rc;
                     }
                     else
 #endif
                     {
-                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                        if (!fReadWriteSection)
+                            rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                        else
+                            rc = PDMDevHlpCritSectRwEnterExcl(pDevIns, &pThis->CritSectRw, VINF_SUCCESS);
                         AssertRCReturn(rc, rc);
                     }
 
-                    u32 &= ~VMMDEV_TESTING_LOCKED_MBZ_MASK;
-                    if (pThis->TestingLockControl.u32 != u32)
+                    if (offPort == VMMDEV_TESTING_IOPORT_LOCKED_LO - VMMDEV_TESTING_IOPORT_BASE)
                     {
-                        pThis->TestingLockControl.u32 = u32;
-                        PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTestingLockEvt);
+                        if (pThis->TestingLockControl.au32[0] != u32)
+                        {
+                            pThis->TestingLockControl.au32[0] = u32;
+                            PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTestingLockEvt);
+                        }
+                    }
+                    else
+                    {
+                        u32 &= ~VMMDEV_TESTING_LOCKED_HI_MBZ_MASK;
+                        if (pThis->TestingLockControl.au32[1] != u32)
+                        {
+                            pThis->TestingLockControl.au32[1] = u32;
+                            PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTestingLockEvt);
+                        }
                     }
 
-                    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+                    if (!fReadWriteSection)
+                        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+                    else
+                        PDMDevHlpCritSectRwLeaveExcl(pDevIns, &pThis->CritSectRw);
                     return VINF_SUCCESS;
                 }
+
+                case 2:
+                case 1:
+                    ASSERT_GUEST_FAILED();
+                    break;
 
                 default:
                     AssertFailed();
@@ -710,30 +737,70 @@ vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
          * Just return the current locking configuration value after first
          * acquiring the lock of course.
          */
-        case VMMDEV_TESTING_IOPORT_LOCKED - VMMDEV_TESTING_IOPORT_BASE:
+        case VMMDEV_TESTING_IOPORT_LOCKED_LO - VMMDEV_TESTING_IOPORT_BASE:
+        case VMMDEV_TESTING_IOPORT_LOCKED_HI - VMMDEV_TESTING_IOPORT_BASE:
             switch (cb)
             {
                 case 4:
                 case 2:
                 case 1:
                 {
+                    /*
+                     * Check configuration and enter the designation critical
+                     * section in the specific fashion.
+                     */
+                    bool const  fReadWriteSection = pThis->TestingLockControl.s.fReadWriteSection;
+                    bool const  fEmtShared        = pThis->TestingLockControl.s.fEmtShared;
+                    int         rc;
 #ifndef IN_RING3
                     if (!pThis->TestingLockControl.s.fMustSucceed)
                     {
-                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
+                        if (!fReadWriteSection)
+                            rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
+                        else if (!fEmtShared)
+                            rc = PDMDevHlpCritSectRwEnterExcl(pDevIns, &pThis->CritSectRw, VINF_IOM_R3_IOPORT_READ);
+                        else
+                            rc = PDMDevHlpCritSectRwEnterShared(pDevIns, &pThis->CritSectRw, VINF_IOM_R3_IOPORT_READ);
                         if (rc != VINF_SUCCESS)
                             return rc;
                     }
                     else
 #endif
                     {
-                        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                        if (!fReadWriteSection)
+                            rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+                        else if (!fEmtShared)
+                            rc = PDMDevHlpCritSectRwEnterExcl(pDevIns, &pThis->CritSectRw, VINF_SUCCESS);
+                        else
+                            rc = PDMDevHlpCritSectRwEnterShared(pDevIns, &pThis->CritSectRw, VINF_SUCCESS);
                         AssertRCReturn(rc, rc);
                     }
 
-                    *pu32 = pThis->TestingLockControl.u32;
+                    /*
+                     * Grab return value and, if requested, hold for a while.
+                     */
+                    *pu32 = pThis->TestingLockControl.au32[  offPort
+                                                           - (VMMDEV_TESTING_IOPORT_LOCKED_LO - VMMDEV_TESTING_IOPORT_BASE)];
+                    uint64_t cTicks = (uint64_t)pThis->TestingLockControl.s.cKiloTicksEmtHold * _1K;
+                    if (cTicks)
+                    {
+                        uint64_t const uStartTick = ASMReadTSC();
+                        do
+                        {
+                            ASMNopPause();
+                            ASMNopPause();
+                        } while (ASMReadTSC() - uStartTick < cTicks);
+                    }
 
-                    PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+                    /*
+                     * Leave.
+                     */
+                    if (!fReadWriteSection)
+                        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+                    else if (!fEmtShared)
+                        PDMDevHlpCritSectRwLeaveExcl(pDevIns, &pThis->CritSectRw);
+                    else
+                        PDMDevHlpCritSectRwLeaveShared(pDevIns, &pThis->CritSectRw);
                     return VINF_SUCCESS;
                 }
 
@@ -867,13 +934,18 @@ int vmmdevR3TestingInitialize(PPDMDEVINS pDevIns)
         AssertRCReturn(rc, rc);
     }
 
-
     /*
      * Register the I/O ports used for testing.
      */
     rc = PDMDevHlpIoPortCreateAndMap(pDevIns, VMMDEV_TESTING_IOPORT_BASE, VMMDEV_TESTING_IOPORT_COUNT,
                                      vmmdevTestingIoWrite, vmmdevTestingIoRead, "VMMDev Testing", NULL /*paExtDescs*/,
                                      &pThis->hIoPortTesting);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Initialize the read/write critical section used for the locking tests.
+     */
+    rc = PDMDevHlpCritSectRwInit(pDevIns, &pThis->CritSectRw, RT_SRC_POS, "VMMLockRW");
     AssertRCReturn(rc, rc);
 
     /*

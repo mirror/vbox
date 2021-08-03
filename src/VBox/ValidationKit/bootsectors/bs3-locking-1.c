@@ -41,38 +41,51 @@ static struct
 {
     const char * BS3_FAR    pszName;
     uint32_t                cInnerLoops;
-    uint32_t                uCtrlWord;
+    uint32_t                uCtrlLo;
+    uint32_t                uCtrlHi;
 } g_aLockingTests[] =
 {
     {
-        "Contention 500us/250us",
+        "Contention 500us/250us/64k",
         2000 + 16384,
-        500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_WAIT_SHIFT)
+        500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        64 | VMMDEV_TESTING_LOCKED_HI_ENABLED,
     },
     {
-        "Contention 100us/50us",
+        "Contention 100us/50us/8k",
         10000 + 4096,
-        100 | (UINT32_C(50)  << VMMDEV_TESTING_LOCKED_WAIT_SHIFT)
+        100 | (UINT32_C(50) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        8 | VMMDEV_TESTING_LOCKED_HI_ENABLED,
     },
     {
-        "Contention 500us/250us poke",
+        "Contention 10us/1us/0k",
+        16384 + 4096,
+        10 | (UINT32_C(1) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        0 | VMMDEV_TESTING_LOCKED_HI_ENABLED,
+    },
+    {
+        "Contention 500us/250us/64k poke",
         2000 + 16384,
-        500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_WAIT_SHIFT) | VMMDEV_TESTING_LOCKED_POKE
+        500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        64 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_POKE,
     },
     {
-        "Contention 100us/50us poke",
+        "Contention 100us/50us/1k poke",
         10000 + 4096,
-        100 | (UINT32_C(50)  << VMMDEV_TESTING_LOCKED_WAIT_SHIFT) | VMMDEV_TESTING_LOCKED_POKE
+        100 | (UINT32_C(50) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        1 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_POKE,
     },
     {
-        "Contention 500us/250us poke void",
+        "Contention 500us/250us/64k poke void",
         2000 + 16384,
-        500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_WAIT_SHIFT) | VMMDEV_TESTING_LOCKED_POKE | VMMDEV_TESTING_LOCKED_BUSY_SUCCESS
+        500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        64 | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
     },
     {
-        "Contention 50us/25us poke void",
+        "Contention 50us/25us/8k poke void",
         20000 + 4096,
-        50 | (UINT32_C(25)  << VMMDEV_TESTING_LOCKED_WAIT_SHIFT) | VMMDEV_TESTING_LOCKED_POKE | VMMDEV_TESTING_LOCKED_BUSY_SUCCESS
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        1 | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
     },
 };
 
@@ -97,7 +110,8 @@ BS3_DECL(void) Main_rm()
         uint32_t       j;
 
         Bs3TestSub(g_aLockingTests[i].pszName);
-        ASMOutU32(VMMDEV_TESTING_IOPORT_LOCKED, g_aLockingTests[i].uCtrlWord);
+        ASMOutU32(VMMDEV_TESTING_IOPORT_LOCKED_LO, g_aLockingTests[i].uCtrlLo);
+        ASMOutU32(VMMDEV_TESTING_IOPORT_LOCKED_HI, g_aLockingTests[i].uCtrlHi);
 
         for (j = 0; j < _2M && cTotal < _1G; j++)
         {
@@ -106,7 +120,7 @@ BS3_DECL(void) Main_rm()
             unsigned iInner = (unsigned)g_aLockingTests[i].cInnerLoops;
             cTotal += iInner;
             while (iInner-- > 0)
-                ASMInU32(VMMDEV_TESTING_IOPORT_LOCKED);
+                ASMInU32(VMMDEV_TESTING_IOPORT_LOCKED_LO);
 
             cNsElapsed = Bs3TestNow() - nsStart;
             if (cNsElapsed >= cNsPerTest)
@@ -114,7 +128,7 @@ BS3_DECL(void) Main_rm()
         }
 
         /* Disable locking. */
-        ASMOutU32(VMMDEV_TESTING_IOPORT_LOCKED, 0);
+        ASMOutU32(VMMDEV_TESTING_IOPORT_LOCKED_HI, 0);
 
         Bs3TestValue("Loops", cTotal, VMMDEV_TESTING_UNIT_OCCURRENCES);
         Bs3TestValue("Elapsed", cNsElapsed, VMMDEV_TESTING_UNIT_NS);

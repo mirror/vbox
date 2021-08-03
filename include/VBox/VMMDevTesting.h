@@ -92,10 +92,22 @@
 /** Take the VMMDev lock in arrival context and return - 1,2,4 RW.
  * Writing configures counter action by a thread taking the lock to trigger
  * contention:
- *  - Bits 19-0 is the lock hold time in microseconds. Zero disables it.
- *  - Bit 31 make the thread poke the EMT(s) prior to releasing the lock.
- *  - Bits 30-20 are reserved and must be zero. */
-#define VMMDEV_TESTING_IOPORT_LOCKED    (VMMDEV_TESTING_IOPORT_BASE + 6)
+ *  - bits 15:0: Number of microseconds thread should hold lock.
+ *  - bits 31:16: Number of microseconds thread should wait before locking
+ *    again. */
+#define VMMDEV_TESTING_IOPORT_LOCKED_LO (VMMDEV_TESTING_IOPORT_BASE + 6)
+/** Take the VMMDev lock in arrival context and return - 1,2,4 RW.
+ * Writing configures counter action by a thread taking the lock to trigger
+ * contention:
+ *  - bits 19:0: Number of kilo (1024) ticks the EMT should hold lock.
+ *  - bits 25:20: Reserved, must be zero.
+ *  - bit 26: Thread takes lock in shared mode when set, exclusive when clear.
+ *  - bit 27: EMT takes lock in shared mode when set, exclusive when clear.
+ *  - bit 28: Use read/write critical section when set, device section if clear.
+ *  - bit 29: EMT passes VINF_SUCCESS as rcBusy when set.
+ *  - bit 30: Makes thread poke all EMTs before release lock.
+ *  - bit 31: Enables the thread. */
+#define VMMDEV_TESTING_IOPORT_LOCKED_HI (VMMDEV_TESTING_IOPORT_BASE + 7)
 
 /** @name Commands.
  * @{ */
@@ -162,20 +174,33 @@
 /** What the NOP accesses returns. */
 #define VMMDEV_TESTING_NOP_RET                  UINT32_C(0x64726962) /* bird */
 
-/** @name Locked Control dword
+/** @name Low and High Locking Control Dwords
  * @{ */
-/** Locked Control: Lock hold interval in microseconds. */
-#define VMMDEV_TESTING_LOCKED_HOLD_MASK         UINT32_C(0x00003fff)
-/** Locked Control: Wait time in microseconds between locking attempts. */
-#define VMMDEV_TESTING_LOCKED_WAIT_MASK         UINT32_C(0x0fffc000)
-/** Locked Control: Wait time shift count. */
-#define VMMDEV_TESTING_LOCKED_WAIT_SHIFT        14
-/** Locked Control: Must be zero. */
-#define VMMDEV_TESTING_LOCKED_MBZ_MASK          UINT32_C(0x30000000)
-/** Locked Control: Take lock with rcBusy set to VINF_SUCCESS.   */
-#define VMMDEV_TESTING_LOCKED_BUSY_SUCCESS      UINT32_C(0x40000000)
-/** Locked Control: Poke EMT(s) flag.   */
-#define VMMDEV_TESTING_LOCKED_POKE              UINT32_C(0x80000000)
+/** Low Locking Control: Thread lock hold interval in microseconds. */
+#define VMMDEV_TESTING_LOCKED_LO_HOLD_MASK      UINT32_C(0x0000ffff)
+/** Low Locking Control: Thread wait time in microseconds between locking
+ *  attempts. */
+#define VMMDEV_TESTING_LOCKED_LO_WAIT_MASK      UINT32_C(0xffff0000)
+/** Low Locking Control: Thread wait time shift count. */
+#define VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT     16
+/** High Locking Control: Kilo (1024) ticks the EMT should hold the lock.  */
+#define VMMDEV_TESTING_LOCKED_HI_TICKS_MASK     UINT32_C(0x000fffff)
+/** High Locking Control: Must be zero. */
+#define VMMDEV_TESTING_LOCKED_HI_MBZ_MASK       UINT32_C(0x03f00000)
+/** High Locking Control: Thread takes lock in shared mode when set, exclusive
+ *  when clear.  */
+#define VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED  UINT32_C(0x04000000)
+/** High Locking Control: EMT takes lock in shared mode when set, exclusive
+ *  when clear.  */
+#define VMMDEV_TESTING_LOCKED_HI_EMT_SHARED     UINT32_C(0x08000000)
+/** High Locking Control: Use read/write critical section instead of regular. */
+#define VMMDEV_TESTING_LOCKED_HI_TYPE_RW        UINT32_C(0x10000000)
+/** High Locking Control: EMT takes lock with rcBusy set to VINF_SUCCESS. */
+#define VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS   UINT32_C(0x20000000)
+/** High Locking Control: Thread pokes EMTs before releasing lock. */
+#define VMMDEV_TESTING_LOCKED_HI_POKE           UINT32_C(0x40000000)
+/** High Locking Control: Thread enabled. */
+#define VMMDEV_TESTING_LOCKED_HI_ENABLED        UINT32_C(0x80000000)
 /** @} */
 
 /** @} */
