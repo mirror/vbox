@@ -47,7 +47,7 @@
 
 /** Enable the IOTLBE cache only in ring-3 for now, see @bugref{9654#c95}. */
 #ifdef IN_RING3
-//# define IOMMU_WITH_IOTLBE_CACHE      /* Disabled for now, see @bugref{9654#c107}. */
+# define IOMMU_WITH_IOTLBE_CACHE      /* Disabled for now, see @bugref{9654#c107}. */
 #endif
 /** Enable the interrupt cache. */
 #define IOMMU_WITH_IRTE_CACHE
