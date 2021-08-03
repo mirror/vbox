@@ -61,10 +61,6 @@ public:
     void setMainWindowShown(QWidget *pWindow) { m_pMainWindowShown = pWindow; }
     /** Returns the main application window shown. */
     QWidget *mainWindowShown() const { return m_pMainWindowShown; }
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /** Returns network manager or main window shown. */
-    QWidget* networkManagerOrMainWindowShown() const;
-#endif
 
 private slots:
 

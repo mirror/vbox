@@ -176,7 +176,7 @@ void UIDownloaderExtensionPack::handleVerifiedObject(UINetworkReply *pReply)
 
         /* Ask the user for another location for the extension-pack file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
-                                                               windowManager().networkManagerOrMainWindowShown(),
+                                                               windowManager().mainWindowShown(),
                                                                tr("Select folder to save %1 to").arg(GUI_ExtPackName), true);
 
         /* Check if user had really set a new target: */

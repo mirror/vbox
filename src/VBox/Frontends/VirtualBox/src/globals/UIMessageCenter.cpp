@@ -2889,13 +2889,13 @@ void UIMessageCenter::cannotAcquireDispayParameter(const CDisplay &comDisplay)
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIMessageCenter::confirmCancelingAllNetworkRequests() const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("Do you wish to cancel all current network operations?"));
 }
 
 void UIMessageCenter::showUpdateSuccess(const QString &strVersion, const QString &strLink) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Info,
+    alert(windowManager().mainWindowShown(), MessageType_Info,
           tr("<p>A new version of VirtualBox has been released! Version <b>%1</b> is available "
              "at <a href=\"https://www.virtualbox.org/\">virtualbox.org</a>.</p>"
              "<p>You can download this version using the link:</p>"
@@ -2905,13 +2905,13 @@ void UIMessageCenter::showUpdateSuccess(const QString &strVersion, const QString
 
 void UIMessageCenter::showUpdateNotFound() const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Info,
+    alert(windowManager().mainWindowShown(), MessageType_Info,
           tr("You are already running the most recent version of VirtualBox."));
 }
 
 void UIMessageCenter::askUserToDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Info,
+    alert(windowManager().mainWindowShown(), MessageType_Info,
           tr("<p>You have version %1 of the <b><nobr>%2</nobr></b> installed.</p>"
              "<p>You should download and install version %3 of this extension pack from Oracle!</p>")
              .arg(strExtPackVersion).arg(strExtPackName).arg(strVBoxVersion));
@@ -2928,7 +2928,7 @@ bool UIMessageCenter::cannotFindGuestAdditions() const
 
 bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> disk image file "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strUrl, QLocale(UICommon::languageId()).toString(uSize)),
@@ -2938,7 +2938,7 @@ bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulon
 
 void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().mainWindowShown(), MessageType_Error,
           tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -2948,7 +2948,7 @@ void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QStr
 
 bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
                              "from <nobr><a href=\"%1\">%1</a></nobr> "
                              "and saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -2960,7 +2960,7 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
 
 void UIMessageCenter::cannotValidateGuestAdditionsSHA256Sum(const QString &strUrl, const QString &strSrc) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().mainWindowShown(), MessageType_Error,
           tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "and saved locally as <nobr><b>%2</b>, </nobr>"
@@ -2989,7 +2989,7 @@ bool UIMessageCenter::cannotFindUserManual(const QString &strMissedLocation) con
 
 bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strURL, QLocale(UICommon::languageId()).toString(uSize)),
@@ -2999,7 +2999,7 @@ bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglon
 
 void UIMessageCenter::cannotSaveUserManual(const QString &strURL, const QString &strTarget) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().mainWindowShown(), MessageType_Error,
           tr("<p>The VirtualBox User Manual has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -3009,7 +3009,7 @@ void UIMessageCenter::cannotSaveUserManual(const QString &strURL, const QString 
 
 void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Warning,
+    alert(windowManager().mainWindowShown(), MessageType_Warning,
           tr("<p>The VirtualBox User Manual has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "and saved locally as <nobr><b>%2</b>.</nobr></p>")
@@ -3018,7 +3018,7 @@ void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const
 
 bool UIMessageCenter::warnAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
                              "<p>Do you wish to download latest one from the Internet?</p>")
                              .arg(strExtPackVersion).arg(strExtPackName),
@@ -3028,7 +3028,7 @@ bool UIMessageCenter::warnAboutOutdatedExtensionPack(const QString &strExtPackNa
 
 bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
                              "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
                              .arg(strExtPackName, strURL, QLocale(UICommon::languageId()).toString(uSize)),
@@ -3038,7 +3038,7 @@ bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName
 
 void UIMessageCenter::cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().mainWindowShown(), MessageType_Error,
           tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
              "from <nobr><a href=\"%2\">%2</a></nobr> "
              "but can't be saved locally as <nobr><b>%3</b>.</nobr></p>"
@@ -3048,7 +3048,7 @@ void UIMessageCenter::cannotSaveExtensionPack(const QString &strExtPackName, con
 
 bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
                              "from <nobr><a href=\"%2\">%2</a></nobr> "
                              "and saved locally as <nobr><b>%3</b>.</nobr></p>"
@@ -3060,7 +3060,7 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
 
 void UIMessageCenter::cannotValidateExtentionPackSHA256Sum(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
 {
-    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().mainWindowShown(), MessageType_Error,
           tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
              "from <nobr><a href=\"%2\">%2</a></nobr> "
              "and saved locally as <nobr><b>%3</b>, </nobr>"
@@ -3071,7 +3071,7 @@ void UIMessageCenter::cannotValidateExtentionPackSHA256Sum(const QString &strExt
 
 bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("Do you want to delete the downloaded file <nobr><b>%1</b></nobr>?")
                              .arg(strTo),
                           0 /* auto-confirm id */,
@@ -3080,7 +3080,7 @@ bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
 
 bool UIMessageCenter::proposeDeleteOldExtentionPacks(const QStringList &strFiles) const
 {
-    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("Do you want to delete following list of files <nobr><b>%1</b></nobr>?")
                              .arg(strFiles.join(",")),
                           0 /* auto-confirm id */,

@@ -72,14 +72,6 @@ UIModalWindowManager::~UIModalWindowManager()
     s_pInstance = 0;
 }
 
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-QWidget *UIModalWindowManager::networkManagerOrMainWindowShown() const
-{
-    /* Return main application window before network-manager initialization: */
-    return gNetworkManager && gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainWindowShown();
-}
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
 QWidget *UIModalWindowManager::realParentWindow(QWidget *pWidget)
 {
     /* Null if widget pointer is null: */

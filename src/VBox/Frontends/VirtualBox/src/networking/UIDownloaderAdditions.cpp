@@ -192,7 +192,7 @@ void UIDownloaderAdditions::handleVerifiedObject(UINetworkReply *pReply)
             msgCenter().cannotSaveGuestAdditions(source().toString(), QDir::toNativeSeparators(target()));
             /* Ask the user for another location for the additions-image file: */
             const QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
-                                                                         windowManager().networkManagerOrMainWindowShown(),
+                                                                         windowManager().mainWindowShown(),
                                                                          tr("Select folder to save Guest Additions image to"), true);
 
             /* Check if user had really set a new target (and exit in opposite case): */
