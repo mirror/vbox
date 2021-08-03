@@ -63,7 +63,7 @@ VMMR3DECL(int)      PDMR3CritSectRwEnterExclEx(PVM pVM, PPDMCRITSECTRW pThis, bo
 VMMDECL(int)        PDMCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy);
 VMMDECL(int)        PDMCritSectRwEnterSharedDebug(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 VMMDECL(int)        PDMCritSectRwTryEnterShared(PVMCC pVM, PPDMCRITSECTRW pCritSect);
-VMMDECL(int)        PDMCritSectRwTryEnterSharedDebug(PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+VMMDECL(int)        PDMCritSectRwTryEnterSharedDebug(PVMCC pVM, PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 VMMDECL(int)        PDMCritSectRwLeaveShared(PVMCC pVM, PPDMCRITSECTRW pCritSect);
 VMMDECL(int)        PDMCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy);
 VMMDECL(int)        PDMCritSectRwEnterExclDebug(PVMCC pVM, PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);
