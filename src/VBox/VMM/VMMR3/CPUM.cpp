@@ -4041,39 +4041,17 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
     if (!pVCpu)
         pVCpu = pVM->apCpusR3[0];
 
-    /*
-     * Figure out what to dump.
-     */
-    /** @todo perhaps make this configurable through pszArgs, depending on how much
-     *        noise we wish to accept when nested hwvirt. isn't used. */
-#define CPUMHWVIRTDUMP_NONE     (0)
-#define CPUMHWVIRTDUMP_SVM      RT_BIT(0)
-#define CPUMHWVIRTDUMP_VMX      RT_BIT(1)
-#define CPUMHWVIRTDUMP_COMMON   RT_BIT(2)
-#define CPUMHWVIRTDUMP_LAST     CPUMHWVIRTDUMP_VMX
-
-    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    static const char *const s_aHwvirtModes[] = { "No/inactive", "SVM", "VMX", "Common" };
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     bool const fSvm = pVM->cpum.s.GuestFeatures.fSvm;
     bool const fVmx = pVM->cpum.s.GuestFeatures.fVmx;
-    uint8_t const idxHwvirtState = fSvm ? CPUMHWVIRTDUMP_SVM : (fVmx ? CPUMHWVIRTDUMP_VMX : CPUMHWVIRTDUMP_NONE);
-    AssertCompile(CPUMHWVIRTDUMP_LAST <= RT_ELEMENTS(s_aHwvirtModes));
-    Assert(idxHwvirtState < RT_ELEMENTS(s_aHwvirtModes));
-    const char *pcszHwvirtMode   = s_aHwvirtModes[idxHwvirtState];
-    uint32_t fDumpState          = idxHwvirtState | CPUMHWVIRTDUMP_COMMON;
 
-    /*
-     * Dump it.
-     */
     pHlp->pfnPrintf(pHlp, "VCPU[%u] hardware virtualization state:\n", pVCpu->idCpu);
+    pHlp->pfnPrintf(pHlp, "fLocalForcedActions          = %#RX32\n",  pCtx->hwvirt.fLocalForcedActions);
+    pHlp->pfnPrintf(pHlp, "In nested-guest hwvirt mode  = %RTbool\n", CPUMIsGuestInNestedHwvirtMode(pCtx));
 
-    if (fDumpState & CPUMHWVIRTDUMP_COMMON)
-        pHlp->pfnPrintf(pHlp, "fLocalForcedActions          = %#RX32\n",  pCtx->hwvirt.fLocalForcedActions);
-
-    pHlp->pfnPrintf(pHlp, "%s hwvirt state%s\n", pcszHwvirtMode, (fDumpState & (CPUMHWVIRTDUMP_SVM | CPUMHWVIRTDUMP_VMX)) ?
-                                                                 ":" : "");
-    if (fDumpState & CPUMHWVIRTDUMP_SVM)
+    if (fSvm)
     {
+        pHlp->pfnPrintf(pHlp, "SVM hwvirt state:\n");
         pHlp->pfnPrintf(pHlp, "  fGif                       = %RTbool\n", pCtx->hwvirt.fGif);
 
         char szEFlags[80];
@@ -4093,18 +4071,18 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "    uRsp                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRsp);
         pHlp->pfnPrintf(pHlp, "    uRax                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uRax);
         pHlp->pfnPrintf(pHlp, "    rflags                     = %#RX64 %31s\n", pCtx->hwvirt.svm.HostState.rflags.u64, szEFlags);
-        PCPUMSELREG pSel = &pCtx->hwvirt.svm.HostState.es;
+        PCCPUMSELREG pSelEs = &pCtx->hwvirt.svm.HostState.es;
         pHlp->pfnPrintf(pHlp, "    es                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
-                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->Attr.u);
-        pSel = &pCtx->hwvirt.svm.HostState.cs;
+                        pSelEs->Sel, pSelEs->u64Base, pSelEs->u32Limit, pSelEs->Attr.u);
+        PCCPUMSELREG pSelCs = &pCtx->hwvirt.svm.HostState.cs;
         pHlp->pfnPrintf(pHlp, "    cs                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
-                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->Attr.u);
-        pSel = &pCtx->hwvirt.svm.HostState.ss;
+                        pSelCs->Sel, pSelCs->u64Base, pSelCs->u32Limit, pSelCs->Attr.u);
+        PCCPUMSELREG pSelSs = &pCtx->hwvirt.svm.HostState.ss;
         pHlp->pfnPrintf(pHlp, "    ss                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
-                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->Attr.u);
-        pSel = &pCtx->hwvirt.svm.HostState.ds;
+                        pSelSs->Sel, pSelSs->u64Base, pSelSs->u32Limit, pSelSs->Attr.u);
+        PCCPUMSELREG pSelDs = &pCtx->hwvirt.svm.HostState.ds;
         pHlp->pfnPrintf(pHlp, "    ds                         = {%04x base=%016RX64 limit=%08x flags=%08x}\n",
-                        pSel->Sel, pSel->u64Base, pSel->u32Limit, pSel->Attr.u);
+                        pSelDs->Sel, pSelDs->u64Base, pSelDs->u32Limit, pSelDs->Attr.u);
         pHlp->pfnPrintf(pHlp, "    gdtr                       = %016RX64:%04x\n", pCtx->hwvirt.svm.HostState.gdtr.pGdt,
                         pCtx->hwvirt.svm.HostState.gdtr.cbGdt);
         pHlp->pfnPrintf(pHlp, "    idtr                       = %016RX64:%04x\n", pCtx->hwvirt.svm.HostState.idtr.pIdt,
@@ -4117,9 +4095,9 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  pvIoBitmapR3               = %p\n",        pCtx->hwvirt.svm.pvIoBitmapR3);
         pHlp->pfnPrintf(pHlp, "  pvIoBitmapR0               = %RKv\n",      pCtx->hwvirt.svm.pvIoBitmapR0);
     }
-
-    if (fDumpState & CPUMHWVIRTDUMP_VMX)
+    else if (fVmx)
     {
+        pHlp->pfnPrintf(pHlp, "VMX hwvirt state:\n");
         pHlp->pfnPrintf(pHlp, "  GCPhysVmxon                = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmxon);
         pHlp->pfnPrintf(pHlp, "  GCPhysVmcs                 = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmcs);
         pHlp->pfnPrintf(pHlp, "  GCPhysShadowVmcs           = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysShadowVmcs);
@@ -4139,6 +4117,8 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  VMCS cache:\n");
         cpumR3InfoVmxVmcs(pVCpu, pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
     }
+    else
+        pHlp->pfnPrintf(pHlp, "Hwvirt state disabled.\n");
 
 #undef CPUMHWVIRTDUMP_NONE
 #undef CPUMHWVIRTDUMP_COMMON
