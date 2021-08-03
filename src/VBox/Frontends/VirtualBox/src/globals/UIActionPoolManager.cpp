@@ -3935,8 +3935,6 @@ void UIActionPoolManager::updateMenuFile()
     /* 'Check for Updates' action goes to Application menu: */
     if (gEDataManager->applicationUpdateEnabled())
         pMenu->addAction(action(UIActionIndex_M_Application_S_CheckForUpdates));
-    /* 'Network Access Manager' action goes to Application menu: */
-    pMenu->addAction(action(UIActionIndex_M_Application_S_NetworkAccessManager));
 # endif
     /* 'Reset Warnings' action goes to Application menu: */
     pMenu->addAction(action(UIActionIndex_M_Application_S_ResetWarnings));
@@ -3980,14 +3978,10 @@ void UIActionPoolManager::updateMenuFile()
     /* Separator after 'Tools' submenu of the 'File' menu: */
     pMenu->addSeparator();
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* 'Network Access Manager' action goes to 'File' menu: */
-    pMenu->addAction(action(UIActionIndex_M_Application_S_NetworkAccessManager));
     /* 'Check for Updates' action goes to 'File' menu: */
     if (gEDataManager->applicationUpdateEnabled())
         pMenu->addAction(action(UIActionIndex_M_Application_S_CheckForUpdates));
 # endif
-    /* Separator after tool actions of the 'File' menu: */
-    pMenu->addSeparator();
     /* 'Reset Warnings' action goes 'File' menu: */
     pMenu->addAction(action(UIActionIndex_M_Application_S_ResetWarnings));
     /* Separator after 'Reset Warnings' action of the 'File' menu: */

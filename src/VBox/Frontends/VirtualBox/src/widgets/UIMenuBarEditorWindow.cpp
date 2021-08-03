@@ -1246,18 +1246,12 @@ void UIMenuBarEditorWidget::prepareMenuApplication()
     {
 #ifdef VBOX_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_About));
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
 #else /* !VBOX_WS_MAC */
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
         pMenu->addSeparator();
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
 #endif /* !VBOX_WS_MAC */
     }

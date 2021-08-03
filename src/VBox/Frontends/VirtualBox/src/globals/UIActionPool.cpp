@@ -926,53 +926,6 @@ protected:
 };
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-/** Simple action extension, used as 'Network Access Manager' action class. */
-class UIActionSimpleNetworkAccessManager : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleNetworkAccessManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/download_manager_16px.png", ":/download_manager_16px.png", true)
-    {
-        setMenuRole(QAction::ApplicationSpecificRole);
-        retranslateUi();
-    }
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
-    {
-        return UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager;
-    }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
-    {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager);
-    }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
-    {
-        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager);
-    }
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("NetworkAccessManager");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Network Operations Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the Network Operations Manager window"));
-    }
-};
-
 /** Simple action extension, used as 'Check for Updates' action class. */
 class UIActionSimpleCheckForUpdates : public UIActionSimple
 {
@@ -2554,7 +2507,6 @@ void UIActionPool::preparePool()
 #endif
     m_pool[UIActionIndex_M_Application_S_Preferences] = new UIActionSimplePreferences(this);
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    m_pool[UIActionIndex_M_Application_S_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
     m_pool[UIActionIndex_M_Application_S_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
 #endif
     m_pool[UIActionIndex_M_Application_S_ResetWarnings] = new UIActionSimpleResetWarnings(this);
@@ -2654,8 +2606,6 @@ void UIActionPool::prepareConnections()
             &msgCenter(), &UIMessageCenter::sltShowHelpAboutDialog, Qt::UniqueConnection);
 #endif
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    connect(action(UIActionIndex_M_Application_S_NetworkAccessManager), &UIAction::triggered,
-            gNetworkManager, &UINetworkRequestManager::show, Qt::UniqueConnection);
     connect(action(UIActionIndex_M_Application_S_CheckForUpdates), &UIAction::triggered,
             gUpdateManager, &UIUpdateManager::sltForceCheck, Qt::UniqueConnection);
 #endif
@@ -2869,10 +2819,6 @@ void UIActionPool::updateMenuApplication()
     }
 #endif
 
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* 'Network Manager' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_NetworkAccessManager)) || fSeparator;
-#endif
     /* 'Reset Warnings' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_ResetWarnings)) || fSeparator;
 

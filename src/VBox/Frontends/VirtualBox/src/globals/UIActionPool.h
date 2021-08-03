@@ -64,7 +64,6 @@ enum UIActionIndex
 #endif
     UIActionIndex_M_Application_S_Preferences,
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    UIActionIndex_M_Application_S_NetworkAccessManager,
     UIActionIndex_M_Application_S_CheckForUpdates,
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     UIActionIndex_M_Application_S_ResetWarnings,
