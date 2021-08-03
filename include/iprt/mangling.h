@@ -1945,11 +1945,13 @@
 # define RTSemEventCreateEx                             RT_MANGLER(RTSemEventCreateEx)
 # define RTSemEventDestroy                              RT_MANGLER(RTSemEventDestroy)
 # define RTSemEventGetResolution                        RT_MANGLER(RTSemEventGetResolution)    /* r0drv */
+# define RTSemEventIsSignalSafe                         RT_MANGLER(RTSemEventIsSignalSafe)     /* r0drv */
 # define RTSemEventMultiAddSignaller                    RT_MANGLER(RTSemEventMultiAddSignaller)
 # define RTSemEventMultiCreate                          RT_MANGLER(RTSemEventMultiCreate)
 # define RTSemEventMultiCreateEx                        RT_MANGLER(RTSemEventMultiCreateEx)
 # define RTSemEventMultiDestroy                         RT_MANGLER(RTSemEventMultiDestroy)
 # define RTSemEventMultiGetResolution                   RT_MANGLER(RTSemEventMultiGetResolution) /* r0drv */
+# define RTSemEventMultiIsSignalSafe                    RT_MANGLER(RTSemEventMultiIsSignalSafe) /* r0drv */
 # define RTSemEventMultiRemoveSignaller                 RT_MANGLER(RTSemEventMultiRemoveSignaller)
 # define RTSemEventMultiReset                           RT_MANGLER(RTSemEventMultiReset)
 # define RTSemEventMultiSetSignaller                    RT_MANGLER(RTSemEventMultiSetSignaller)

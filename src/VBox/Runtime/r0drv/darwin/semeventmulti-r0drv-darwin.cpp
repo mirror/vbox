@@ -448,3 +448,10 @@ RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
     return (uint32_t)cNs ? (uint32_t)cNs : 0;
 }
 
+
+RTR0DECL(bool) RTSemEventMultiIsSignalSafe(void)
+{
+    /** @todo check the code...   */
+    return false;
+}
+

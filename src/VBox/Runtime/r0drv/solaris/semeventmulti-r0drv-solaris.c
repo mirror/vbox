@@ -353,3 +353,10 @@ RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
     return rtR0SemSolWaitGetResolution();
 }
 
+
+RTR0DECL(bool) RTSemEventMultiIsSignalSafe(void)
+{
+    /* Don't trust solaris not to preempt us. */
+    return false;
+}
+

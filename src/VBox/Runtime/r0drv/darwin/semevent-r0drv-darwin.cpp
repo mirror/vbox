@@ -425,3 +425,11 @@ RTDECL(uint32_t) RTSemEventGetResolution(void)
     return (uint32_t)cNs ? (uint32_t)cNs : 0;
 }
 
+
+RTR0DECL(bool) RTSemEventIsSignalSafe(void)
+{
+    /** @todo check the code...   */
+    return false;
+}
+RT_EXPORT_SYMBOL(RTSemEventIsSignalSafe);
+

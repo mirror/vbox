@@ -342,3 +342,10 @@ RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
 }
 RT_EXPORT_SYMBOL(RTSemEventMultiGetResolution);
 
+
+RTR0DECL(bool) RTSemEventMultiIsSignalSafe(void)
+{
+    return true;
+}
+RT_EXPORT_SYMBOL(RTSemEventMultiIsSignalSafe);
+

@@ -345,3 +345,10 @@ RTDECL(uint32_t) RTSemEventGetResolution(void)
     return rtR0SemSolWaitGetResolution();
 }
 
+
+RTR0DECL(bool) RTSemEventIsSignalSafe(void)
+{
+    /* I don't trust Solaris not to preempt us. */
+    return false;
+}
+

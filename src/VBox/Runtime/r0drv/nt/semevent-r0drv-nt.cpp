@@ -275,3 +275,9 @@ RTDECL(uint32_t) RTSemEventGetResolution(void)
     return RTTimerGetSystemGranularity();
 }
 
+
+RTR0DECL(bool) RTSemEventIsSignalSafe(void)
+{
+    return KeGetCurrentIrql() <= DISPATCH_LEVEL;
+}
+

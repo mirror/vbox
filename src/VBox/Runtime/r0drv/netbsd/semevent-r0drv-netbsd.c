@@ -275,3 +275,10 @@ RTDECL(uint32_t) RTSemEventGetResolution(void)
 {
     return 1000000000 / hz;
 }
+
+RTR0DECL(bool) RTSemEventIsSignalSafe(void)
+{
+    /** @todo check the code...   */
+    return false;
+}
+

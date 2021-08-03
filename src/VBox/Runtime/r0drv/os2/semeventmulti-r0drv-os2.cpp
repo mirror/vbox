@@ -303,3 +303,9 @@ RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
     return 32000000; /* 32ms */
 }
 
+
+RTR0DECL(bool) RTSemEventMultiIsSignalSafe(void)
+{
+    return true;
+}
+
