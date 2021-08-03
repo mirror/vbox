@@ -227,7 +227,7 @@ static inline void drm_gem_object_put(struct drm_gem_object *obj)
 				sizeof(HGSMIHOSTFLAGS))
 #define HOST_FLAGS_OFFSET GUEST_HEAP_USABLE_SIZE
 
-/** Field @pdev of struct drm_device was removed in 5.14. This macro
+/** Field "pdev" of struct drm_device was removed in 5.14. This macro
  * transparently handles this change. Input argument is a pointer
  * to struct drm_device. */
 #if RTLNX_VER_MIN(5,14,0)
