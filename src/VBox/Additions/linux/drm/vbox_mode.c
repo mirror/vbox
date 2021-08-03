@@ -245,6 +245,10 @@ static int vbox_crtc_set_base(struct drm_crtc *crtc,
 			vbox_bo_unpin(bo);
 			vbox_bo_unreserve(bo);
 		}
+		else
+		{
+			DRM_ERROR("unable to lock buffer object: error %d\n", ret);
+		}
 	}
 
 	if (&vbox->fbdev->afb == vbox_fb)
@@ -856,7 +860,9 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 	vbox->cursor_data_size = data_size;
 	dst = vbox->cursor_data;
 
-#if RTLNX_VER_MIN(5,12,0)
+#if RTLNX_VER_MIN(5,14,0)
+	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.resource->num_pages, &uobj_map);
+#elif RTLNX_VER_MIN(5,12,0)
 	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.mem.num_pages, &uobj_map);
 #else
 	ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &uobj_map);

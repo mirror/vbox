@@ -41,6 +41,10 @@
 # include <drm/ttm/ttm_page_alloc.h>
 #endif
 
+#if RTLNX_VER_MIN(5,14,0)
+# include <drm/ttm/ttm_range_manager.h>
+#endif
+
 #if RTLNX_VER_MAX(3,18,0) && !RTLNX_RHEL_MAJ_PREREQ(7,2)
 #define PLACEMENT_FLAGS(placement) (placement)
 #else
@@ -174,11 +178,13 @@ vbox_bo_evict_flags(struct ttm_buffer_object *bo, struct ttm_placement *pl)
 	*pl = vboxbo->placement;
 }
 
+#if RTLNX_VER_MAX(5,14,0)
 static int vbox_bo_verify_access(struct ttm_buffer_object *bo,
 				 struct file *filp)
 {
 	return 0;
 }
+#endif
 
 #if RTLNX_VER_MAX(5,10,0)
 static int vbox_ttm_io_mem_reserve(struct ttm_bo_device *bdev,
@@ -234,10 +240,10 @@ static int vbox_ttm_io_mem_reserve(struct ttm_device *bdev,
 		mem->bus.caching = ttm_write_combined;
 # endif
 # if RTLNX_VER_MIN(5,10,0)
-		mem->bus.offset = (mem->start << PAGE_SHIFT) + pci_resource_start(vbox->dev->pdev, 0);
+		mem->bus.offset = (mem->start << PAGE_SHIFT) + pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->dev), 0);
 # else
 		mem->bus.offset = mem->start << PAGE_SHIFT;
-		mem->start = pci_resource_start(vbox->dev->pdev, 0);
+		mem->start = pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->dev), 0);
 # endif
 		mem->bus.is_iomem = true;
 		break;
@@ -373,7 +379,9 @@ static struct ttm_bo_driver vbox_bo_driver = {
 	.eviction_valuable = ttm_bo_eviction_valuable,
 #endif
 	.evict_flags = vbox_bo_evict_flags,
+#if RTLNX_VER_MAX(5,14,0)
 	.verify_access = vbox_bo_verify_access,
+#endif
 	.io_mem_reserve = &vbox_ttm_io_mem_reserve,
 	.io_mem_free = &vbox_ttm_io_mem_free,
 #if RTLNX_VER_MIN(4,12,0) || RTLNX_RHEL_MAJ_PREREQ(7,5)
@@ -451,12 +459,12 @@ int vbox_mm_init(struct vbox_private *vbox)
 	}
 
 #ifdef DRM_MTRR_WC
-	vbox->fb_mtrr = drm_mtrr_add(pci_resource_start(dev->pdev, 0),
-				     pci_resource_len(dev->pdev, 0),
+	vbox->fb_mtrr = drm_mtrr_add(pci_resource_start(VBOX_DRM_TO_PCI_DEV(dev), 0),
+				     pci_resource_len(VBOX_DRM_TO_PCI_DEV(dev), 0),
 				     DRM_MTRR_WC);
 #else
-	vbox->fb_mtrr = arch_phys_wc_add(pci_resource_start(dev->pdev, 0),
-					 pci_resource_len(dev->pdev, 0));
+	vbox->fb_mtrr = arch_phys_wc_add(pci_resource_start(VBOX_DRM_TO_PCI_DEV(dev), 0),
+					 pci_resource_len(VBOX_DRM_TO_PCI_DEV(dev), 0));
 #endif
 	return 0;
 
@@ -477,8 +485,8 @@ void vbox_mm_fini(struct vbox_private *vbox)
 {
 #ifdef DRM_MTRR_WC
 	drm_mtrr_del(vbox->fb_mtrr,
-		     pci_resource_start(vbox->dev->pdev, 0),
-		     pci_resource_len(vbox->dev->pdev, 0), DRM_MTRR_WC);
+		     pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->dev), 0),
+		     pci_resource_len(VBOX_DRM_TO_PCI_DEV(vbox->dev), 0), DRM_MTRR_WC);
 #else
 	arch_phys_wc_del(vbox->fb_mtrr);
 #endif
@@ -560,6 +568,9 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 static const struct drm_gem_object_funcs vbox_drm_gem_object_funcs = {
 	.free   = vbox_gem_free_object,
 	.print_info = drm_gem_ttm_print_info,
+# if RTLNX_VER_MIN(5,14,0)
+	.mmap = drm_gem_ttm_mmap,
+# endif
 };
 #endif
 
@@ -598,6 +609,17 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 				       sizeof(struct vbox_bo));
 #endif
 
+#if RTLNX_VER_MIN(5,14,0)
+	/* Initialization of the following was removed from DRM stack
+	 * in 5.14, so we need to do it manually. */
+	vboxbo->bo.base.funcs = &vbox_drm_gem_object_funcs;
+	kref_init(&vboxbo->bo.base.refcount);
+	vboxbo->bo.base.size = size;
+	vboxbo->bo.base.dev = dev;
+	dma_resv_init(&vboxbo->bo.base._resv);
+	drm_vma_node_reset(&vboxbo->bo.base.vma_node);
+#endif
+
 	ret = ttm_bo_init(&vbox->ttm.bdev, &vboxbo->bo, size,
 			  ttm_bo_type_device, &vboxbo->placement,
 #if RTLNX_VER_MAX(4,17,0) && !RTLNX_RHEL_MAJ_PREREQ(7,6) && !RTLNX_SUSE_MAJ_PREREQ(15,1) && !RTLNX_SUSE_MAJ_PREREQ(12,5)
@@ -613,7 +635,11 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 			  NULL, vbox_bo_ttm_destroy);
 #endif
 	if (ret)
-		goto err_free_vboxbo;
+	{
+		/* In case of failure, ttm_bo_init() supposed to call
+		 * vbox_bo_ttm_destroy() which in turn will free @vboxbo. */
+		goto err_exit;
+	}
 
 	*pvboxbo = vboxbo;
 
@@ -621,12 +647,15 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 
 err_free_vboxbo:
 	kfree(vboxbo);
+err_exit:
 	return ret;
 }
 
 static inline u64 vbox_bo_gpu_offset(struct vbox_bo *bo)
 {
-#if RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
+#if RTLNX_VER_MIN(5,14,0)
+	return bo->bo.resource->start << PAGE_SHIFT;
+#elif RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 	return bo->bo.mem.start << PAGE_SHIFT;
 #else
 	return bo->bo.offset;
@@ -685,7 +714,7 @@ int vbox_bo_unpin(struct vbox_bo *bo)
 	struct ttm_operation_ctx ctx = { false, false };
 # endif
 #endif
-	int ret;
+	int ret = 0;
 #if RTLNX_VER_MAX(5,11,0)
 	int i;
 #endif
@@ -765,6 +794,7 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma)
 {
 	struct drm_file *file_priv;
 	struct vbox_private *vbox;
+	int ret = -EINVAL;
 
 	if (unlikely(vma->vm_pgoff < DRM_FILE_PAGE_OFFSET))
 		return -EINVAL;
@@ -772,5 +802,12 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma)
 	file_priv = filp->private_data;
 	vbox = file_priv->minor->dev->dev_private;
 
-	return ttm_bo_mmap(filp, vma, &vbox->ttm.bdev);
+#if RTLNX_VER_MIN(5,14,0)
+	if (drm_dev_is_unplugged(file_priv->minor->dev))
+		return -ENODEV;
+	ret = drm_gem_mmap(filp, vma);
+#else
+	ret = ttm_bo_mmap(filp, vma, &vbox->ttm.bdev);
+#endif
+	return ret;
 }

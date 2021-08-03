@@ -290,7 +290,7 @@ static int vbox_accel_init(struct vbox_private *vbox)
 	/* Take a command buffer for each screen from the end of usable VRAM. */
 	vbox->available_vram_size -= vbox->num_crtcs * VBVA_MIN_BUFFER_SIZE;
 
-	vbox->vbva_buffers = pci_iomap_range(vbox->dev->pdev, 0,
+	vbox->vbva_buffers = pci_iomap_range(VBOX_DRM_TO_PCI_DEV(vbox->dev), 0,
 					     vbox->available_vram_size,
 					     vbox->num_crtcs *
 					     VBVA_MIN_BUFFER_SIZE);
@@ -311,14 +311,14 @@ static int vbox_accel_init(struct vbox_private *vbox)
 	return 0;
 
 err_pci_iounmap:
-	pci_iounmap(vbox->dev->pdev, vbox->vbva_buffers);
+	pci_iounmap(VBOX_DRM_TO_PCI_DEV(vbox->dev), vbox->vbva_buffers);
 	return ret;
 }
 
 static void vbox_accel_fini(struct vbox_private *vbox)
 {
 	vbox_disable_accel(vbox);
-	pci_iounmap(vbox->dev->pdev, vbox->vbva_buffers);
+	pci_iounmap(VBOX_DRM_TO_PCI_DEV(vbox->dev), vbox->vbva_buffers);
 }
 
 /** Do we support the 4.3 plus mode hint reporting interface? */
@@ -393,7 +393,7 @@ static int vbox_hw_init(struct vbox_private *vbox)
 
 	/* Map guest-heap at end of vram */
 	vbox->guest_heap =
-	    pci_iomap_range(vbox->dev->pdev, 0, GUEST_HEAP_OFFSET(vbox),
+	    pci_iomap_range(VBOX_DRM_TO_PCI_DEV(vbox->dev), 0, GUEST_HEAP_OFFSET(vbox),
 			    GUEST_HEAP_SIZE);
 	if (!vbox->guest_heap)
 		return -ENOMEM;
@@ -442,7 +442,7 @@ static int vbox_hw_init(struct vbox_private *vbox)
 err_destroy_guest_pool:
 	gen_pool_destroy(vbox->guest_pool);
 err_unmap_guest_heap:
-	pci_iounmap(vbox->dev->pdev, vbox->guest_heap);
+	pci_iounmap(VBOX_DRM_TO_PCI_DEV(vbox->dev), vbox->guest_heap);
 	return ret;
 }
 
@@ -452,7 +452,7 @@ static void vbox_hw_fini(struct vbox_private *vbox)
 	cancel_delayed_work(&vbox->refresh_work);
 	vbox_accel_fini(vbox);
 	gen_pool_destroy(vbox->guest_pool);
-	pci_iounmap(vbox->dev->pdev, vbox->guest_heap);
+	pci_iounmap(VBOX_DRM_TO_PCI_DEV(vbox->dev), vbox->guest_heap);
 }
 
 #if RTLNX_VER_MIN(4,19,0) || RTLNX_RHEL_MIN(8,3)
@@ -567,12 +567,16 @@ int vbox_gem_create(struct drm_device *dev,
 
 	size = roundup(size, PAGE_SIZE);
 	if (size == 0)
+	{
+		DRM_ERROR("bad size\n");
 		return -EINVAL;
+	}
 
 	ret = vbox_bo_create(dev, size, 0, 0, &vboxbo);
 	if (ret) {
 		if (ret != -ERESTARTSYS)
 			DRM_ERROR("failed to allocate GEM object\n");
+		DRM_ERROR("failed to allocate GEM (%d)\n", ret);
 		return ret;
 	}
 
@@ -628,6 +632,21 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
 {
 	struct vbox_bo *vbox_bo = gem_to_vbox_bo(obj);
 
+#if RTLNX_VER_MIN(5,14,0)
+	/* Starting from kernel 5.14, there is a warning appears in dmesg
+	 * on attempt to desroy pinned buffer object. Make sure it is unpinned. */
+	while (vbox_bo->bo.pin_count)
+	{
+		int ret;
+		ret = vbox_bo_unpin(vbox_bo);
+		if (ret)
+		{
+			DRM_ERROR("unable to unpin buffer object\n");
+			break;
+		}
+	}
+#endif
+
 	ttm_bo_put(&vbox_bo->bo);
 }
 
@@ -648,7 +667,7 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 		      u32 handle, u64 *offset)
 {
 	struct drm_gem_object *obj;
-	int ret;
+	int ret = 0;
 	struct vbox_bo *bo;
 
 	mutex_lock(&dev->struct_mutex);
@@ -665,8 +684,15 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 	bo = gem_to_vbox_bo(obj);
 	*offset = vbox_bo_mmap_offset(bo);
 
+#if RTLNX_VER_MIN(5,14,0)
+	ret = drm_vma_node_allow(&bo->bo.base.vma_node, file);
+	if (ret)
+	{
+		DRM_ERROR("unable to grant previladges to user");
+	}
+#endif
+
 	drm_gem_object_put(obj);
-	ret = 0;
 
 out_unlock:
 	mutex_unlock(&dev->struct_mutex);

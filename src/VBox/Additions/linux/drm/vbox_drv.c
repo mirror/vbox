@@ -43,6 +43,10 @@
 # include <drm/drm_probe_helper.h>
 #endif
 
+#if RTLNX_VER_MIN(5,14,0)
+# include <drm/drm_aperture.h>
+#endif
+
 #include "version-generated.h"
 #include "revision-generated.h"
 
@@ -65,12 +69,23 @@ static int vbox_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	struct drm_device *dev = NULL;
 	int ret = 0;
 
+# if RTLNX_VER_MIN(5,14,0)
+	ret = drm_aperture_remove_conflicting_pci_framebuffers(pdev, "vboxvideofb");
+	if (ret)
+	{
+		printk("unable to remove conflicting framebuffer devices\n");
+		return ret;
+	}
+# endif /* 5.14 */
+
 	dev = drm_dev_alloc(&driver, &pdev->dev);
 	if (IS_ERR(dev)) {
 		ret = PTR_ERR(dev);
 		goto err_drv_alloc;
 	}
+#if RTLNX_VER_MAX(5,14,0)
 	dev->pdev = pdev;
+#endif
 	pci_set_drvdata(pdev, dev);
 
 	ret = vbox_driver_load(dev);
@@ -125,7 +140,7 @@ static int vbox_drm_freeze(struct drm_device *dev)
 
 	drm_kms_helper_poll_disable(dev);
 
-	pci_save_state(dev->pdev);
+	pci_save_state(VBOX_DRM_TO_PCI_DEV(dev));
 
 	drm_fb_helper_set_suspend_unlocked(&vbox->fbdev->helper, true);
 
@@ -147,7 +162,7 @@ static int vbox_drm_resume(struct drm_device *dev)
 {
 	int ret;
 
-	if (pci_enable_device(dev->pdev))
+	if (pci_enable_device(VBOX_DRM_TO_PCI_DEV(dev)))
 		return -EIO;
 
 	ret = vbox_drm_thaw(dev);
