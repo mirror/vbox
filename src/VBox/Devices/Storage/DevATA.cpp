@@ -582,7 +582,7 @@ typedef struct ATACONTROLLER
     STAMCOUNTER         StatAsyncTimeUS;
     STAMPROFILEADV      StatAsyncTime;
     STAMPROFILE         StatLockWait;
-    uint8_t             abAlignment4[3456];
+    uint8_t             abAlignment4[3328];
 } ATACONTROLLER;
 AssertCompileMemberAlignment(ATACONTROLLER, lock, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, aIfs, 8);

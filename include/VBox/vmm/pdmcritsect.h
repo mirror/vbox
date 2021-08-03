@@ -47,7 +47,7 @@ RT_C_DECLS_BEGIN
 typedef union PDMCRITSECT
 {
     /** Padding. */
-    uint8_t padding[HC_ARCH_BITS == 32 ? 0x80 : 0xc0];
+    uint8_t padding[HC_ARCH_BITS == 32 ? 0xc0 : 0x100];
 #ifdef PDMCRITSECTINT_DECLARED
     /** The internal structure (not normally visible). */
     struct PDMCRITSECTINT s;
