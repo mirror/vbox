@@ -222,7 +222,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Remove pvVMMR0 from SUPLDRLOAD.
  */
-#define SUPDRV_IOC_VERSION                              0x00300002
+#define SUPDRV_IOC_VERSION                              0x00300003
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
