@@ -202,6 +202,7 @@ class tdAudioTest(vbox.TestDriver):
         """
         Kills processes by their name.
         """
+        reporter.log('Trying to kill processes named "%s"' % (sProcName,));
         if sys.platform == 'win32':
             os.system('taskkill /IM "%s.exe" /F' % (sProcName));
         else:
@@ -211,6 +212,7 @@ class tdAudioTest(vbox.TestDriver):
         """
         Kills VKAT (VBoxAudioTest) on the host side.
         """
+        reporter.log('Killing stale/old VKAT processes ...');
         self.killProcessByName("vkat");
         self.killProcessByName("VBoxAudioTest");
 
