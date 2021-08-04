@@ -312,8 +312,9 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
         if (RT_SUCCESS(rc))
         {
-            if (pTstParms->cIterations)
-                RTThreadSleep(RTRandU32Ex(2000, 5000));
+            /* Give the audio stack a random amount of time for draining data before the next iteration. */
+            if (pTstParms->cIterations > 1)
+                RTThreadSleep(RTRandU32Ex(2000, 5000)); /** @todo Implement some dedicated ATS command for this? */
         }
 
         if (RT_FAILURE(rc))
@@ -410,9 +411,12 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
             RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientTonePlay() failed with %Rrc\n",
                          pTstParms->idxCurrent, i, rc);
 
-        /* Wait a bit to let the left over audio bits being processed. */
-        if (pTstParms->cIterations)
-            RTThreadSleep(RTRandU32Ex(2000, 5000));
+        if (RT_SUCCESS(rc))
+        {
+            /* Wait a bit to let the left over audio bits being processed. */
+            if (pTstParms->cIterations > 1)
+                RTThreadSleep(RTRandU32Ex(2000, 5000)); /** @todo Implement some dedicated ATS command for this? */
+        }
 
         if (RT_FAILURE(rc))
             RTTestFailed(g_hTest, "Test #%RU32/%RU16: Recording test tone failed with %Rrc\n", pTstParms->idxCurrent, i, rc);
