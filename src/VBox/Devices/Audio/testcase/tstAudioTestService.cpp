@@ -79,6 +79,17 @@ int main(int argc, char **argv)
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (RT_SUCCESS(rc))
     {
+        RTGETOPTUNION Val;
+        RT_ZERO(Val);
+
+        Val.psz = "server";
+        rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_MODE, &Val);
+        RTTEST_CHECK_RC_OK(hTest, rc);
+
+        Val.u16 = ATS_TCP_DEF_BIND_PORT_HOST;
+        rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_BIND_PORT, &Val);
+        RTTEST_CHECK_RC_OK(hTest, rc);
+
         rc = AudioTestSvcInit(&Srv, &Callbacks);
         RTTEST_CHECK_RC_OK(hTest, rc);
         if (RT_SUCCESS(rc))
@@ -87,16 +98,20 @@ int main(int argc, char **argv)
             RTTEST_CHECK_RC_OK(hTest, rc);
             if (RT_SUCCESS(rc))
             {
-                RTGETOPTUNION Val;
-                RT_ZERO(Val);
+                rc = AudioTestSvcClientCreate(&Client);
+                RTTEST_CHECK_RC_OK(hTest, rc);
+
+                Val.psz = "client";
+                rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_MODE, &Val);
+                RTTEST_CHECK_RC_OK(hTest, rc);
 
                 Val.psz = ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
                 rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_CONNECT_ADDRESS, &Val);
-                AssertRC(rc);
+                RTTEST_CHECK_RC_OK(hTest, rc);
 
-                Val.u16 = ATS_TCP_DEF_CONNECT_PORT_HOST_PORT_FWD;
+                Val.u16 = ATS_TCP_DEF_CONNECT_PORT_GUEST;
                 rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_CONNECT_PORT, &Val);
-                AssertRC(rc);
+                RTTEST_CHECK_RC_OK(hTest, rc);
 
                 rc = AudioTestSvcClientConnect(&Client);
                 RTTEST_CHECK_RC_OK(hTest, rc);
