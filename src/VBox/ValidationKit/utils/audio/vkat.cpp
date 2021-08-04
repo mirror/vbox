@@ -1179,6 +1179,8 @@ int main(int argc, char **argv)
     {
         if (!fDaemonized)
         {
+            audioTestShowLogo(g_pStdOut);
+
             rc = RTProcDaemonize(argv, "--daemonized");
             if (RT_FAILURE(rc))
                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcDaemonize() failed with %Rrc\n", rc);
