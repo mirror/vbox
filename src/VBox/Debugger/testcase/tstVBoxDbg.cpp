@@ -72,7 +72,7 @@ int main(int argc, char **argv)
             if (argc <= 1 || argc == 3)
             {
                 RTPrintf(TESTCASE ": calling pfnShowStatistics...\n");
-                pGuiVT->pfnShowStatistics(pGui);
+                pGuiVT->pfnShowStatistics(pGui, NULL, NULL);
                 if (RT_FAILURE(rc))
                 {
                     RTPrintf(TESTCASE ": error: pfnShowStatistics failed! rc=%Rrc\n", rc);

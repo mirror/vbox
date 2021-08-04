@@ -205,12 +205,14 @@ DBGDECL(void) DBGGuiAdjustRelativePos(PDBGGUI pGui, int x, int y, unsigned cx, u
  *
  * @returns VBox status code.
  * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   pszFilter   Filter pattern.
+ * @param   pszExpand   Expand pattern.
  */
-DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui)
+DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand)
 {
     AssertReturn(pGui, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pGui->u32Magic == DBGGUI_MAGIC, ("u32Magic=%#x\n", pGui->u32Magic), VERR_INVALID_PARAMETER);
-    return pGui->pVBoxDbgGui->showStatistics();
+    return pGui->pVBoxDbgGui->showStatistics(pszFilter, pszExpand);
 }
 
 

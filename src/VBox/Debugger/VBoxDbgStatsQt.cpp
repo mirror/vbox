@@ -157,6 +157,8 @@ typedef struct DBGGUISTATSSTACK
         PDBGGUISTATSNODE    pNode;
         /** The current child. */
         int32_t             iChild;
+        /** Name string offset (if used). */
+        uint16_t            cchName;
     } a[32];
 } DBGGUISTATSSTACK;
 
@@ -223,7 +225,7 @@ public:
      * Similar to updateStatsByPattern, except that it only works on a sub-tree and
      * will not remove anything that's outside that tree.
      *
-     * @param  a_rIndex     The sub-tree root. Invalid index means root.
+     * @param   a_rIndex    The sub-tree root. Invalid index means root.
      *
      * @todo    Create a default implementation using updateStatsByPattern.
      */
@@ -232,7 +234,7 @@ public:
     /**
      * Reset the stats matching the specified pattern.
      *
-     * @param  a_rPatStr    The selection pattern.
+     * @param   a_rPatStr   The selection pattern.
      *
      * @remarks The default implementation is an empty stub.
      */
@@ -247,6 +249,25 @@ public:
      * @remarks The default implementation makes use of resetStatsByPattern
      */
     virtual void resetStatsByIndex(QModelIndex const &a_rIndex, bool a_fSubTree = true);
+
+    /**
+     * Iterator callback function.
+     * @returns true to continue, false to stop.
+     */
+    typedef bool FNITERATOR(PDBGGUISTATSNODE pNode, QModelIndex const &a_rIndex, const char *pszFullName, void *pvUser);
+
+    /**
+     * Callback iterator.
+     *
+     * @param   a_rPatStr           The selection pattern.
+     * @param   a_pfnCallback       Callback function.
+     * @param   a_pvUser            Callback argument.
+     * @param   a_fMatchChildren    How to handle children of matching nodes:
+     *                                - @c true: continue with the children,
+     *                                - @c false: skip children.
+     */
+    virtual void iterateStatsByPattern(QString const &a_rPatStr, FNITERATOR *pfnCallback, void *pvUser,
+                                       bool a_fMatchChildren = true);
 
     /**
      * Gets the model index of the root node.
@@ -1915,7 +1936,7 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
                     {
                         do  pNode->papChildren[iChild]->enmState = kDbgGuiStatsNodeState_kVisible;
                         while (   ++iChild < pNode->cChildren
-                                 && pNode->papChildren[iChild]->enmState == kDbgGuiStatsNodeState_kRefresh);
+                               && pNode->papChildren[iChild]->enmState == kDbgGuiStatsNodeState_kRefresh);
                         QModelIndex BottomRight = createIndex(iChild - 1, DBGGUI_STATS_COLUMNS - 1, pNode->papChildren[iChild - 1]);
 
                         /* emit the refresh signal */
@@ -1993,6 +2014,66 @@ VBoxDbgStatsModel::resetStatsByIndex(QModelIndex const &a_rIndex, bool fSubTree 
         }
 
         resetStatsByPattern(szPat);
+    }
+}
+
+
+void
+VBoxDbgStatsModel::iterateStatsByPattern(QString const &a_rPatStr, VBoxDbgStatsModel::FNITERATOR *pfnCallback, void *pvUser,
+                                         bool a_fMatchChildren /*= true*/)
+{
+    const QByteArray   &PatBytes   = a_rPatStr.toUtf8();
+    const char * const  pszPattern = PatBytes.constData();
+    size_t const        cchPattern = strlen(pszPattern);
+
+    DBGGUISTATSSTACK Stack;
+    Stack.a[0].pNode   = m_pRoot;
+    Stack.a[0].iChild  = -1;
+    Stack.a[0].cchName = 0;
+    Stack.iTop         = 0;
+
+    char szName[1024];
+    szName[0] = '\0';
+
+    while (Stack.iTop >= 0)
+    {
+        /* get top element */
+        PDBGGUISTATSNODE const pNode   = Stack.a[Stack.iTop].pNode;
+        uint16_t               cchName = Stack.a[Stack.iTop].cchName;
+        uint32_t const         iChild  = ++Stack.a[Stack.iTop].iChild;
+        if (iChild < pNode->cChildren)
+        {
+            PDBGGUISTATSNODE pChild = pNode->papChildren[iChild];
+
+            /* Build the name and match the pattern. */
+            Assert(cchName + 1 + pChild->cchName < sizeof(szName));
+            szName[cchName++] = '/';
+            memcpy(&szName[cchName], pChild->pszName, pChild->cchName);
+            cchName += (uint16_t)pChild->cchName;
+            szName[cchName] = '\0';
+
+            if (RTStrSimplePatternMultiMatch(pszPattern, cchPattern, szName, cchName, NULL))
+            {
+                /* Do callback. */
+                QModelIndex const Index = createIndex(iChild, 0, pChild);
+                if (!pfnCallback(pChild, Index, szName, pvUser))
+                    return;
+                if (!a_fMatchChildren)
+                    continue;
+            }
+
+            /* push */
+            Stack.iTop++;
+            Assert(Stack.iTop < (int32_t)RT_ELEMENTS(Stack.a));
+            Stack.a[Stack.iTop].pNode   = pChild;
+            Stack.a[Stack.iTop].iChild  = 0;
+            Stack.a[Stack.iTop].cchName = cchName;
+        }
+        else
+        {
+            /* pop */
+            Stack.iTop--;
+        }
     }
 }
 
@@ -2870,6 +2951,33 @@ VBoxDbgStatsView::resizeColumnsToContent()
 }
 
 
+/*static*/ bool
+VBoxDbgStatsView::expandMatchingCallback(PDBGGUISTATSNODE pNode, QModelIndex const &a_rIndex,
+                                         const char *pszFullName, void *pvUser)
+{
+    VBoxDbgStatsView *pThis = (VBoxDbgStatsView *)pvUser;
+
+    pThis->setExpanded(a_rIndex, true);
+
+    QModelIndex ParentIndex = pThis->m_pModel->parent(a_rIndex);
+    while (ParentIndex.isValid() && !pThis->isExpanded(ParentIndex))
+    {
+        pThis->setExpanded(ParentIndex, true);
+        ParentIndex = pThis->m_pModel->parent(ParentIndex);
+    }
+
+    RT_NOREF(pNode, pszFullName);
+    return true;
+}
+
+
+void
+VBoxDbgStatsView::expandMatching(const QString &rPatStr)
+{
+    m_pModel->iterateStatsByPattern(rPatStr, expandMatchingCallback, this);
+}
+
+
 void
 VBoxDbgStatsView::setSubTreeExpanded(QModelIndex const &a_rIndex, bool a_fExpanded)
 {
@@ -3039,9 +3147,10 @@ VBoxDbgStatsView::actAdjColumns()
  */
 
 
-VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszPat/* = NULL*/, unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
+VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszFilter /*= NULL*/, const char *pszExpand /*= NULL*/,
+                           unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
     : VBoxDbgBaseWindow(a_pDbgGui, pParent, "Statistics")
-    , m_PatStr(pszPat), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
+    , m_PatStr(pszFilter), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
 {
     /* Delete dialog on close: */
     setAttribute(Qt::WA_DeleteOnClose);
@@ -3108,6 +3217,9 @@ VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszPat/* = NULL*/,
     m_pView->expandAll();
     m_pView->resizeColumnsToContent();
     m_pView->collapseAll();
+
+    if (pszExpand && *pszExpand)
+        m_pView->expandMatching(QString(pszExpand));
 
     /*
      * Create a refresh timer and start it.

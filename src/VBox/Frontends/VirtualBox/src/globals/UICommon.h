@@ -276,6 +276,10 @@ public:
         bool isDebuggerAutoShowCommandLineEnabled() const;
         /** Holds whether to show the statistics window when m_fDbgAutoShow is set. */
         bool isDebuggerAutoShowStatisticsEnabled() const;
+        /** Returns the combined --statistics-expand values. */
+        QString const getDebuggerStatisticsExpand() const { return m_strDbgStatisticsExpand; }
+        /** Returns the --statistics-filter value. */
+        QString const getDebuggerStatisticsFilter() const { return m_strDbgStatisticsFilter; }
 
         /** VBoxDbg module handle. */
         RTLDRMOD getDebuggerModule() const { return m_hVBoxDbg; }
@@ -931,15 +935,20 @@ private:
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Holds whether the debugger should be accessible. */
-        mutable int  m_fDbgEnabled;
+        mutable int m_fDbgEnabled;
         /** Holds whether to show the debugger automatically with the console. */
-        mutable int  m_fDbgAutoShow;
+        mutable int m_fDbgAutoShow;
         /** Holds whether to show the command line window when m_fDbgAutoShow is set. */
-        mutable int  m_fDbgAutoShowCommandLine;
+        mutable int m_fDbgAutoShowCommandLine;
         /** Holds whether to show the statistics window when m_fDbgAutoShow is set. */
-        mutable int  m_fDbgAutoShowStatistics;
+        mutable int m_fDbgAutoShowStatistics;
+        /** Pattern of statistics to expand when opening the viewer. */
+        QString     m_strDbgStatisticsExpand;
+        /** The statistics viewer filter. */
+        QString     m_strDbgStatisticsFilter;
+
         /** VBoxDbg module handle. */
-        RTLDRMOD     m_hVBoxDbg;
+        RTLDRMOD    m_hVBoxDbg;
 
         /** Holds whether --start-running, --start-paused or nothing was given. */
         enum LaunchRunning  m_enmLaunchRunning;

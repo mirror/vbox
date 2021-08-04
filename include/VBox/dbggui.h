@@ -58,7 +58,7 @@ typedef struct DBGGUIVT
     /** @copydoc DBGGuiAdjustRelativePos */
     DECLCALLBACKMEMBER(void, pfnAdjustRelativePos,(PDBGGUI pGui, int x, int y, unsigned cx, unsigned cy));
     /** @copydoc DBGGuiShowStatistics */
-    DECLCALLBACKMEMBER(int, pfnShowStatistics,(PDBGGUI pGui));
+    DECLCALLBACKMEMBER(int, pfnShowStatistics,(PDBGGUI pGui, const char *pszFilter, const char *pszExpand));
     /** @copydoc DBGGuiShowCommandLine */
     DECLCALLBACKMEMBER(int, pfnShowCommandLine,(PDBGGUI pGui));
     /** @copydoc DBGGuiSetParent */
@@ -138,8 +138,10 @@ DBGDECL(void) DBGGuiAdjustRelativePos(PDBGGUI pGui, int x, int y, unsigned cx, u
  *
  * @returns VBox status code.
  * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   pszFilter   Filter pattern.
+ * @param   pszExpand   Expand pattern.
  */
-DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui);
+DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui, const char *pszFilter, const char *pszExpand);
 
 /**
  * Shows the default command line window.

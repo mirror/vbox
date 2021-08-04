@@ -165,11 +165,14 @@ VBoxDbgGui::setMenu(QMenu *pMenu)
 
 
 int
-VBoxDbgGui::showStatistics()
+VBoxDbgGui::showStatistics(const char *pszFilter, const char *pszExpand)
 {
     if (!m_pDbgStats)
     {
-        m_pDbgStats = new VBoxDbgStats(this, "*", 2, m_pParent);
+        m_pDbgStats = new VBoxDbgStats(this,
+                                       pszFilter && *pszFilter ? pszFilter :  "*",
+                                       pszExpand && *pszExpand ? pszExpand : NULL,
+                                       2, m_pParent);
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionStatistics();
     }

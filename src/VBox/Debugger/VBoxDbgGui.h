@@ -90,8 +90,10 @@ public:
      * Show the default statistics window, creating it if necessary.
      *
      * @returns VBox status code.
+     * @param   pszFilter   Filter pattern.
+     * @param   pszExpand   Expand pattern.
      */
-    int showStatistics();
+    int showStatistics(const char *pszFilter, const char *pszExpand);
 
     /**
      * Repositions and resizes (optionally) the statistics to its defaults
