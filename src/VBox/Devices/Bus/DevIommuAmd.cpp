@@ -1305,7 +1305,7 @@ static void iommuAmdIotlbAdd(PIOMMU pThis, PIOMMUR3 pThisR3, uint16_t idDomain, 
 {
     Assert(!(uIovaPage & X86_PAGE_4K_OFFSET_MASK));
     Assert(pPageLookup);
-    Assert(pPageLookup->cShift <= 31);
+    Assert(pPageLookup->cShift <= 51);
     Assert(pPageLookup->fPerm != IOMMU_IO_PERM_NONE);
 
     /*
