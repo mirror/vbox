@@ -302,15 +302,22 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
              * 2. Tell the guest ATS to start playback.
              */
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
+            if (RT_FAILURE(rc))
+                RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientTonePlay() failed with %Rrc\n",
+                             pTstParms->idxCurrent, i, rc);
         }
+        else
+            RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientToneRecord() failed with %Rrc\n",
+                         pTstParms->idxCurrent, i, rc);
 
         if (RT_SUCCESS(rc))
         {
             if (pTstParms->cIterations)
                 RTThreadSleep(RTRandU32Ex(2000, 5000));
         }
-        else
-            RTTestFailed(g_hTest, "Test #%RU32/%RU16: Playing tone failed\n", pTstParms->idxCurrent, i);
+
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "Test #%RU32/%RU16: Playing test tone failed with %Rrc\n", pTstParms->idxCurrent, i, rc);
     }
 
     return rc;
@@ -395,14 +402,20 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
              * 2. Tell the guest ATS to start recording.
              */
             rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
+            if (RT_FAILURE(rc))
+                RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientToneRecord() failed with %Rrc\n",
+                             pTstParms->idxCurrent, i, rc);
         }
-
-        if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "Test #%RU32/%RU16: Recording tone failed\n", pTstParms->idxCurrent, i);
+        else
+            RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientTonePlay() failed with %Rrc\n",
+                         pTstParms->idxCurrent, i, rc);
 
         /* Wait a bit to let the left over audio bits being processed. */
         if (pTstParms->cIterations)
             RTThreadSleep(RTRandU32Ex(2000, 5000));
+
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "Test #%RU32/%RU16: Recording test tone failed with %Rrc\n", pTstParms->idxCurrent, i, rc);
     }
 
     return rc;
