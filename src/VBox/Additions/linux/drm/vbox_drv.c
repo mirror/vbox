@@ -365,7 +365,7 @@ static struct drm_driver driver = {
 	.dumb_map_offset = vbox_dumb_mmap_offset,
 #if RTLNX_VER_MAX(3,12,0) && !RTLNX_RHEL_MAJ_PREREQ(7,3)
 	.dumb_destroy = vbox_dumb_destroy,
-#elif RTLNX_VER_MAX(5,12,0) && !RTLNX_RHEL_MAJ_PREREQ(8,5)
+#elif RTLNX_VER_MAX(5,12,0)
 	.dumb_destroy = drm_gem_dumb_destroy,
 #endif
 	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
@@ -375,7 +375,7 @@ static struct drm_driver driver = {
 	.gem_prime_import_sg_table = vbox_gem_prime_import_sg_table,
 	.gem_prime_mmap = vbox_gem_prime_mmap,
 
-#if RTLNX_VER_MAX(5,11,0) && !RTLNX_RHEL_MAJ_PREREQ(8,5)
+#if RTLNX_VER_MAX(5,11,0)
 	.dev_priv_size = 0,
 # if RTLNX_VER_MIN(4,7,0)
 	.gem_free_object_unlocked = vbox_gem_free_object,
