@@ -251,7 +251,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
          * signal, APC, debugger, whatever), so we must try our best to
          * return to the caller and to ring-3 so it can be dealt with.
          */
-        if (RT_LIKELY(rc == VINF_TIMEOUT || rc == VERR_INTERRUPTED))
+        if (RT_LIKELY(rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED))
         {
 # ifdef IN_RING0
             uint64_t const cNsElapsed = RTTimeNanoTS() - tsStart;
@@ -368,7 +368,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
 
             /* We get here if we timed out.  Just retry now that it
                appears someone left already. */
-            Assert(rc == VINF_TIMEOUT);
+            Assert(rc == VERR_TIMEOUT);
             cMsMaxOne = 10 /*ms*/;
 
 # else  /* IN_RING3 */
