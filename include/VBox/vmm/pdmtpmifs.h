@@ -1,0 +1,145 @@
+/** @file
+ * PDM - Pluggable Device Manager, TPM related interfaces.
+ */
+
+/*
+ * Copyright (C) 2021 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+
+#ifndef VBOX_INCLUDED_vmm_pdmtpmifs_h
+#define VBOX_INCLUDED_vmm_pdmtpmifs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
+#include <VBox/types.h>
+
+RT_C_DECLS_BEGIN
+
+/** @defgroup grp_pdm_ifs_serial       PDM TPM Interfaces
+ * @ingroup grp_pdm_interfaces
+ * @{
+ */
+
+
+/** Pointer to a TPM port interface. */
+typedef struct PDMITPMPORT *PPDMITPMPORT;
+/**
+ * TPM port interface (down).
+ */
+typedef struct PDMITPMPORT
+{
+    /**
+     * @todo
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDummy, (PPDMITPMPORT pInterface));
+
+} PDMITPMPORT;
+/** PDMITPMPORT interface ID. */
+#define PDMITPMPORT_IID                       "1e57710f-f820-47ec-afa6-2713195f8f94"
+
+
+/** Pointer to a TPM interface. */
+typedef struct PDMITPMCONNECTOR *PPDMITPMCONNECTOR;
+/**
+ * TPM interface (up).
+ * Pairs with PDMITPMPORT.
+ */
+typedef struct PDMITPMCONNECTOR
+{
+    /**
+     * Starts the TPM.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   cbCmdResp           Size of the command/response buffer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStartup, (PPDMITPMCONNECTOR pInterface, size_t cbCmdResp));
+
+    /**
+     * Shuts down the TPM.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnShutdown, (PPDMITPMCONNECTOR pInterface));
+
+    /**
+     * Resets the TPM.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReset, (PPDMITPMCONNECTOR pInterface));
+
+    /**
+     * Returns the version of the TPM implemented by the driver below.
+     *
+     * @returns The TPM version.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetVersion, (PPDMITPMCONNECTOR pInterface));
+
+    /**
+     * Returns the status of the established flag.
+     *
+     * @returns Status of the established flag.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnGetEstablishedFlag, (PPDMITPMCONNECTOR pInterface));
+
+    /**
+     * Resets the TPM established flag.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   bLoc                The locality issuing this request.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnResetEstablishedFlag, (PPDMITPMCONNECTOR pInterface, uint8_t bLoc));
+
+    /**
+     * Executes the given command.
+     *
+     * @returns Status of the established flag.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pvCmd               Pointer to the command data.
+     * @param   cbCmd               Size of the command in bytes.
+     * @param   pvResp              Where to store the response data.
+     * @param   cbResp              Size of the response buffer in bytes.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnCmdExec, (PPDMITPMCONNECTOR pInterface, const void *pvCmd, size_t cbCmd, void *pvResp, size_t cbResp));
+
+    /**
+     * Cancels the currently executed command.
+     *
+     * @returns Status of the established flag.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnCmdCancel, (PPDMITPMCONNECTOR pInterface));
+
+} PDMITPMCONNECTOR;
+/** PDMITPMCONNECTOR interface ID. */
+#define PDMITPMCONNECTOR_IID                  "30afefd8-c11f-4e2a-a746-424e3d99fa86"
+
+/** @} */
+
+RT_C_DECLS_END
+
+#endif /* !VBOX_INCLUDED_vmm_pdmtpmifs_h */
