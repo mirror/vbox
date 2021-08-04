@@ -73,7 +73,7 @@ typedef DBGGUIVT const *PCDBGGUIVT;
 /** The u32Version value.
  * The first byte is the minor version, the 2nd byte is major version number.
  * The high 16-bit word is a magic.  */
-#define DBGGUIVT_VERSION    UINT32_C(0xbead0100)
+#define DBGGUIVT_VERSION    UINT32_C(0xbead0200)
 /** Macro for determining whether two versions are compatible or not.
  * @returns boolean result.
  * @param   uVer1   The first version number.
