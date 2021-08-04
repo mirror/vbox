@@ -211,8 +211,8 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Trying to kill processes named "%s"' % (sProcName,));
         if sys.platform == 'win32':
             os.system('taskkill /IM "%s.exe" /F' % (sProcName));
-        else:
-            os.system('killall -9 %s' % (sProcName));
+        else: # Note: killall is not available on older Debians (requires psmisc).
+            os.system('kill -9 $(pidof %s)' % (sProcName));
 
     def killHstVkat(self):
         """
