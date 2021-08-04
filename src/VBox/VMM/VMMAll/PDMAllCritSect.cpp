@@ -780,11 +780,11 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
      * Always check that the caller is the owner (screw performance).
      */
     RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
-    AssertReleaseMsgReturn(pCritSect->s.Core.NativeThreadOwner == hNativeSelf || hNativeSelf == NIL_RTNATIVETHREAD,
-                           ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
-                            pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
-                            pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings),
-                           VERR_NOT_OWNER);
+    VMM_ASSERT_RELEASE_MSG_RETURN(pVM, pCritSect->s.Core.NativeThreadOwner == hNativeSelf || hNativeSelf == NIL_RTNATIVETHREAD,
+                                  ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
+                                   pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
+                                   pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings),
+                                  VERR_NOT_OWNER);
 
     /*
      * Nested leave.
@@ -911,7 +911,7 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
                 if (!RTSemEventIsSignalSafe() && (pVCpu = VMMGetCpu(pVM)) != NULL)
                 {
                     int rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pCritSect, &Ctx);
-                    AssertReleaseRCReturn(rc, rc);
+                    VMM_ASSERT_RELEASE_MSG_RETURN(pVM, RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
                     fLeaveCtx = true;
                 }
                 int rc = SUPSemEventSignal(pVM->pSession, hEvent);
@@ -928,7 +928,7 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
                 if (!fLeaveCtx && pVCpu != NULL && !RTSemEventIsSignalSafe() && (pVCpu = VMMGetCpu(pVM)) != NULL)
                 {
                     int rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pCritSect, &Ctx);
-                    AssertReleaseRCReturn(rc, rc);
+                    VMM_ASSERT_RELEASE_MSG_RETURN(pVM, RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
                     fLeaveCtx = true;
                 }
                 Log8(("Signalling %#p\n", hEventToSignal));
@@ -1021,7 +1021,7 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
 # endif
     uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectLeaves++;
     LogFlow(("PDMCritSectLeave: [%d]=%p => R3\n", i, pCritSect));
-    AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
+    VMM_ASSERT_RELEASE_MSG_RETURN(pVM, i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves), ("%d\n", i), VERR_PDM_CRITSECT_IPE);
     pVCpu->pdm.s.apQueuedCritSectLeaves[i] = pCritSect->s.pSelfR3;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT); /** @todo handle VMCPU_FF_PDM_CRITSECT in ring-0 outside the no-call-ring-3 part. */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3); /* unnecessary paranoia */
