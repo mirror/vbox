@@ -600,6 +600,25 @@ VMMRZDECL(bool)     VMMRZCallRing3IsNotificationSet(PVMCPUCC pVCpu);
 #endif
 
 
+/** Wrapper around AssertReleaseMsgReturn that avoid tripping up in the
+ *  kernel when we don't have a setjmp in place. */
+#ifdef IN_RING0
+# define VMM_ASSERT_RELEASE_MSG_RETURN(a_pVM, a_Expr, a_Msg, a_rc) do { \
+        if (RT_LIKELY(a_Expr)) { /* likely */ } \
+        else \
+        { \
+            PVMCPUCC pVCpuAssert = VMMGetCpu(a_pVM); \
+            if (pVCpuAssert && VMMR0IsLongJumpArmed(pVCpuAssert)) \
+                AssertReleaseMsg(a_Expr, a_Msg); \
+            else \
+                AssertLogRelMsg(a_Expr, a_Msg); \
+            return (a_rc); \
+        } \
+    } while (0)
+#else
+# define VMM_ASSERT_RELEASE_MSG_RETURN(a_pVM, a_Expr, a_Msg, a_rc) AssertReleaseMsgReturn(a_Expr, a_Msg, a_rc)
+#endif
+
 /** @} */
 
 /** @} */
