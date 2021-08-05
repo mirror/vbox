@@ -87,7 +87,17 @@ VMM_INT_DECL(void) PDMCritSectBothFF(PVMCC pVM, PVMCPUCC pVCpu)
 # else
         PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC(pVCpu->CTX_SUFF(pVM), pVCpu->pdm.s.apQueuedCritSectLeaves[i]);
 # endif
+        Assert(pCritSect->s.Core.NativeThreadOwner == pVCpu->hNativeThread);
 
+        /* Note! We *must* clear the pending-unlock flag here and not depend on
+                 PDMCritSectLeave to do it, as the EMT might be sitting on
+                 further nestings since it queued the section to be left, and
+                 leaving it set would throw subsequent PDMCritSectIsOwner calls.
+
+                 This will happen with the PGM lock if we nip back to ring-3 for
+                 more handy pages or similar where the lock is supposed to be
+                 held while in ring-3. */
+        ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
         PDMCritSectLeave(pVM, pCritSect);
         LogFlow(("PDMR3CritSectFF: %p\n", pCritSect));
     }
