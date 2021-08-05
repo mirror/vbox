@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_PDM//_CRITSECT
+#define LOG_GROUP LOG_GROUP_PDM_CRITSECT
 #include "PDMInternal.h"
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmcritsectrw.h>
@@ -162,6 +162,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 /*
                  * Initialize the structure (first bit is c&p from RTCritSectInitEx).
                  */
+                Log(("pdmR3CritSectInitOne: %p - %s\n", pCritSect, pszName));
                 pCritSect->Core.u32Magic             = RTCRITSECT_MAGIC;
                 pCritSect->Core.fFlags               = 0;
                 pCritSect->Core.cNestings            = 0;
