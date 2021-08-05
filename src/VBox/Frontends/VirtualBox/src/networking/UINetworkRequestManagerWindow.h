@@ -63,7 +63,7 @@ protected:
     /** Allows adding/removing network-request widgets to UINetworkRequest. */
     friend class UINetworkRequest;
     /** Adds network-request widget. */
-    void addNetworkRequestWidget(UINetworkRequest *pNetworkRequest);
+    void addNetworkRequestWidget(const QUuid &uuid, UINetworkRequest *pNetworkRequest);
     /** Removes network-request widget. */
     void removeNetworkRequestWidget(const QUuid &uuid);
 

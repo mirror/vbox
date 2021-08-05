@@ -43,7 +43,6 @@ UINetworkRequest::UINetworkRequest(UINetworkRequestType enmType,
     , m_requestHeaders(requestHeaders)
     , m_pCustomer(pCustomer)
     , m_pNetworkManager(pNetworkManager)
-    , m_uuid(QUuid::createUuid())
     , m_iUrlIndex(-1)
     , m_fRunning(false)
 {
@@ -62,9 +61,7 @@ const QString UINetworkRequest::description() const
 
 void UINetworkRequest::sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
 {
-    /* Notify common network-request listeners: */
-    emit sigProgress(m_uuid, iReceived, iTotal);
-    /* Notify own network-request listeners: */
+    /* Notify network-request listeners: */
     emit sigProgress(iReceived, iTotal);
 }
 
@@ -80,16 +77,14 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
     /* If network-reply has no errors: */
     if (m_pReply->error() == UINetworkReply::NoError)
     {
-        /* Notify own network-request listeners: */
+        /* Notify network-request listeners: */
         emit sigFinished();
-        /* Notify common network-request listeners: */
-        emit sigFinished(m_uuid);
     }
     /* If network-request was canceled: */
     else if (m_pReply->error() == UINetworkReply::OperationCanceledError)
     {
-        /* Notify network-manager: */
-        emit sigCanceled(m_uuid);
+        /* Notify network-request listeners: */
+        emit sigCanceled();
     }
     /* If some other error occured: */
     else
@@ -142,10 +137,8 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
             }
             else
             {
-                /* Notify own network-request listeners: */
+                /* Notify network-request listeners: */
                 emit sigFailed(m_pReply->errorString());
-                /* Notify common network-request listeners: */
-                emit sigFailed(m_uuid, m_pReply->errorString());
             }
         }
     }
@@ -172,7 +165,7 @@ void UINetworkRequest::sltCancel()
         if (m_fRunning)
             m_pReply->abort();
         else
-            emit sigCanceled(m_uuid);
+            emit sigCanceled();
     }
 }
 
@@ -205,9 +198,7 @@ void UINetworkRequest::prepareNetworkReply()
         /* Mark network-reply as running: */
         m_fRunning = true;
 
-        /* Notify common network-request listeners: */
-        emit sigStarted(m_uuid);
-        /* Notify own network-request listeners: */
+        /* Notify network-request listeners: */
         emit sigStarted();
     }
 }

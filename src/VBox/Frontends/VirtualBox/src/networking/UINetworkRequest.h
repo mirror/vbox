@@ -24,7 +24,6 @@
 /* Qt includes: */
 #include <QObject>
 #include <QPointer>
-#include <QUuid>
 
 /* GUI inludes: */
 #include "UILibraryDefs.h"
@@ -44,28 +43,18 @@ class SHARED_LIBRARY_STUFF UINetworkRequest : public QObject
 
 signals:
 
-    /** Notifies common UINetworkRequestManager about progress with @a uId changed.
-      * @param  iReceived  Holds the amount of bytes received.
-      * @param  iTotal     Holds the amount of total bytes to receive. */
-    void sigProgress(const QUuid &uId, qint64 iReceived, qint64 iTotal);
-    /** Notifies UINetworkRequestManager about progress with @a uId started. */
-    void sigStarted(const QUuid &uId);
-    /** Notifies UINetworkRequestManager about progress with @a uId canceled. */
-    void sigCanceled(const QUuid &uId);
-    /** Notifies UINetworkRequestManager about progress with @a uId finished. */
-    void sigFinished(const QUuid &uId);
-    /** Notifies UINetworkRequestManager about progress with @a uId failed with @a strError. */
-    void sigFailed(const QUuid &uId, const QString &strError);
-
-    /** Notifies own UINetworkRequestWidget about progress changed.
-      * @param  iReceived  Holds the amount of bytes received.
-      * @param  iTotal     Holds the amount of total bytes to receive. */
+    /** Notifies listener about progress changed.
+      * @param  iReceived  Brings the amount of bytes received.
+      * @param  iTotal     Brings the amount of total bytes to receive. */
     void sigProgress(qint64 iReceived, qint64 iTotal);
-    /** Notifies own UINetworkRequestWidget about progress started. */
+    /** Notifies listener about progress started. */
     void sigStarted();
-    /** Notifies own UINetworkRequestWidget about progress finished. */
+    /** Notifies listener about progress canceled. */
+    void sigCanceled();
+    /** Notifies listener about progress finished. */
     void sigFinished();
-    /** Notifies own UINetworkRequestWidget about progress failed with @a strError. */
+    /** Notifies listener about progress failed.
+      * @param  strError  Brings the error progress failed with . */
     void sigFailed(const QString &strError);
 
 public:
@@ -92,8 +81,6 @@ public:
     UINetworkCustomer *customer() { return m_pCustomer; }
     /** Returns the request manager. */
     UINetworkRequestManager *manager() const { return m_pNetworkManager; }
-    /** Returns unique request QUuid. */
-    const QUuid &uuid() const { return m_uuid; }
     /** Returns the request reply. */
     UINetworkReply *reply() { return m_pReply; }
 
@@ -137,8 +124,6 @@ private:
     UINetworkCustomer          *m_pCustomer;
     /** Holds the request manager. */
     UINetworkRequestManager    *m_pNetworkManager;
-    /** Holds unique request QUuid. */
-    const QUuid                 m_uuid;
 
     /** Holds current request url. */
     QUrl  m_url;

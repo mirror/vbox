@@ -100,14 +100,14 @@ private:
 
 private slots:
 
-    /** Handles progress for @a iReceived amount of bytes among @a iTotal for request specified by @a uId. */
-    void sltHandleNetworkRequestProgress(const QUuid &uId, qint64 iReceived, qint64 iTotal);
-    /** Handles canceling of request specified by @a uId. */
-    void sltHandleNetworkRequestCancel(const QUuid &uId);
-    /** Handles finishing of request specified by @a uId. */
-    void sltHandleNetworkRequestFinish(const QUuid &uId);
-    /** Handles @a strError of request specified by @a uId. */
-    void sltHandleNetworkRequestFailure(const QUuid &uId, const QString &strError);
+    /** Handles progress for @a iReceived amount of bytes among @a iTotal. */
+    void sltHandleNetworkRequestProgress(qint64 iReceived, qint64 iTotal);
+    /** Handles request canceling. */
+    void sltHandleNetworkRequestCancel();
+    /** Handles request finishing. */
+    void sltHandleNetworkRequestFinish();
+    /** Handles request @a strError. */
+    void sltHandleNetworkRequestFailure(const QString &strError);
 
 private:
 

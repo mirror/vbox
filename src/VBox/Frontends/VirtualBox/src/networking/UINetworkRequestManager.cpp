@@ -98,20 +98,25 @@ void UINetworkRequestManager::prepare()
 void UINetworkRequestManager::prepareNetworkRequest(UINetworkRequest *pNetworkRequest)
 {
     /* Configure request listeners: */
-    connect(pNetworkRequest, static_cast<void(UINetworkRequest::*)(const QUuid&, qint64, qint64)>(&UINetworkRequest::sigProgress),
+    connect(pNetworkRequest, &UINetworkRequest::sigProgress,
             this, &UINetworkRequestManager::sltHandleNetworkRequestProgress);
     connect(pNetworkRequest, &UINetworkRequest::sigCanceled,
             this, &UINetworkRequestManager::sltHandleNetworkRequestCancel);
-    connect(pNetworkRequest, static_cast<void(UINetworkRequest::*)(const QUuid&)>(&UINetworkRequest::sigFinished),
+    connect(pNetworkRequest, &UINetworkRequest::sigFinished,
             this, &UINetworkRequestManager::sltHandleNetworkRequestFinish);
-    connect(pNetworkRequest, static_cast<void(UINetworkRequest::*)(const QUuid &uuid, const QString &strError)>(&UINetworkRequest::sigFailed),
+    connect(pNetworkRequest, &UINetworkRequest::sigFailed,
             this, &UINetworkRequestManager::sltHandleNetworkRequestFailure);
 
+    /* [Re]generate ID until unique: */
+    QUuid uId = QUuid::createUuid();
+    while (m_requests.contains(uId))
+        uId = QUuid::createUuid();
+
     /* Add request to map: */
-    m_requests.insert(pNetworkRequest->uuid(), pNetworkRequest);
+    m_requests.insert(uId, pNetworkRequest);
 
     /* Add network-request widget to network-manager dialog: */
-    m_pNetworkManagerDialog->addNetworkRequestWidget(pNetworkRequest);
+    m_pNetworkManagerDialog->addNetworkRequestWidget(uId, pNetworkRequest);
 }
 
 void UINetworkRequestManager::cleanupNetworkRequest(const QUuid &uId)
@@ -138,13 +143,13 @@ void UINetworkRequestManager::cleanup()
     delete m_pNetworkManagerDialog;
 }
 
-void UINetworkRequestManager::sltHandleNetworkRequestProgress(const QUuid &uId, qint64 iReceived, qint64 iTotal)
+void UINetworkRequestManager::sltHandleNetworkRequestProgress(qint64 iReceived, qint64 iTotal)
 {
     /* Make sure we have this request registered: */
-    AssertReturnVoid(!uId.isNull());
-    AssertReturnVoid(m_requests.contains(uId));
-    UINetworkRequest *pNetworkRequest = m_requests.value(uId);
+    UINetworkRequest *pNetworkRequest = qobject_cast<UINetworkRequest*>(sender());
     AssertPtrReturnVoid(pNetworkRequest);
+    const QUuid uId = m_requests.key(pNetworkRequest);
+    AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
@@ -152,13 +157,13 @@ void UINetworkRequestManager::sltHandleNetworkRequestProgress(const QUuid &uId, 
     pNetworkCustomer->processNetworkReplyProgress(iReceived, iTotal);
 }
 
-void UINetworkRequestManager::sltHandleNetworkRequestCancel(const QUuid &uId)
+void UINetworkRequestManager::sltHandleNetworkRequestCancel()
 {
     /* Make sure we have this request registered: */
-    AssertReturnVoid(!uId.isNull());
-    AssertReturnVoid(m_requests.contains(uId));
-    UINetworkRequest *pNetworkRequest = m_requests.value(uId);
+    UINetworkRequest *pNetworkRequest = qobject_cast<UINetworkRequest*>(sender());
     AssertPtrReturnVoid(pNetworkRequest);
+    const QUuid uId = m_requests.key(pNetworkRequest);
+    AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
@@ -169,13 +174,13 @@ void UINetworkRequestManager::sltHandleNetworkRequestCancel(const QUuid &uId)
     cleanupNetworkRequest(uId);
 }
 
-void UINetworkRequestManager::sltHandleNetworkRequestFinish(const QUuid &uId)
+void UINetworkRequestManager::sltHandleNetworkRequestFinish()
 {
     /* Make sure we have this request registered: */
-    AssertReturnVoid(!uId.isNull());
-    AssertReturnVoid(m_requests.contains(uId));
-    UINetworkRequest *pNetworkRequest = m_requests.value(uId);
+    UINetworkRequest *pNetworkRequest = qobject_cast<UINetworkRequest*>(sender());
     AssertPtrReturnVoid(pNetworkRequest);
+    const QUuid uId = m_requests.key(pNetworkRequest);
+    AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
@@ -186,13 +191,13 @@ void UINetworkRequestManager::sltHandleNetworkRequestFinish(const QUuid &uId)
     cleanupNetworkRequest(uId);
 }
 
-void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QUuid &uId, const QString &)
+void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QString &)
 {
     /* Make sure we have this request registered: */
-    AssertReturnVoid(!uId.isNull());
-    AssertReturnVoid(m_requests.contains(uId));
-    UINetworkRequest *pNetworkRequest = m_requests.value(uId);
+    UINetworkRequest *pNetworkRequest = qobject_cast<UINetworkRequest*>(sender());
     AssertPtrReturnVoid(pNetworkRequest);
+    const QUuid uId = m_requests.key(pNetworkRequest);
+    AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
