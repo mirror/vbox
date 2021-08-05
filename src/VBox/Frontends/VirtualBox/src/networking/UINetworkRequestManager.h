@@ -64,18 +64,18 @@ public:
       * @param  strTarget       Brings request target path.
       * @param  requestHeaders  Brings request headers in dictionary form.
       * @param  pCustomer       Brings customer this request being ordered by. */
-    void createNetworkRequest(UINetworkRequestType enmType,
-                              const QList<QUrl> &urls,
-                              const QString &strTarget,
-                              const UserDictionary &requestHeaders,
-                              UINetworkCustomer *pCustomer);
+    QUuid createNetworkRequest(UINetworkRequestType enmType,
+                               const QList<QUrl> &urls,
+                               const QString &strTarget,
+                               const UserDictionary &requestHeaders,
+                               UINetworkCustomer *pCustomer);
 
 public slots:
 
     /** Shows network-manager dialog. */
     void show();
 
-private:
+protected:
 
     /** Constructs network manager. */
     UINetworkRequestManager();
@@ -97,8 +97,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares @a pNetworkRequest. */
-    void prepareNetworkRequest(UINetworkRequest *pNetworkRequest);
     /** Cleanups network-request with passed @a uId. */
     void cleanupNetworkRequest(const QUuid &uId);
     /** Cleanups all network-requests. */

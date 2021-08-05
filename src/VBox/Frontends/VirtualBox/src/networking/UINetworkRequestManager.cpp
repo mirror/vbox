@@ -57,16 +57,43 @@ UINetworkRequestManagerWindow *UINetworkRequestManager::window() const
     return m_pNetworkManagerDialog;
 }
 
-void UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType,
-                                                   const QList<QUrl> &urls,
-                                                   const QString &strTarget,
-                                                   const UserDictionary &requestHeaders,
-                                                   UINetworkCustomer *pCustomer)
+QUuid UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType,
+                                                    const QList<QUrl> &urls,
+                                                    const QString &strTarget,
+                                                    const UserDictionary &requestHeaders,
+                                                    UINetworkCustomer *pCustomer)
 {
     /* Create network-request: */
     UINetworkRequest *pNetworkRequest = new UINetworkRequest(enmType, urls, strTarget, requestHeaders, pCustomer, this);
-    /* Prepare created network-request: */
-    prepareNetworkRequest(pNetworkRequest);
+    if (pNetworkRequest)
+    {
+        /* Configure request listeners: */
+        connect(pNetworkRequest, &UINetworkRequest::sigProgress,
+                this, &UINetworkRequestManager::sltHandleNetworkRequestProgress);
+        connect(pNetworkRequest, &UINetworkRequest::sigCanceled,
+                this, &UINetworkRequestManager::sltHandleNetworkRequestCancel);
+        connect(pNetworkRequest, &UINetworkRequest::sigFinished,
+                this, &UINetworkRequestManager::sltHandleNetworkRequestFinish);
+        connect(pNetworkRequest, &UINetworkRequest::sigFailed,
+                this, &UINetworkRequestManager::sltHandleNetworkRequestFailure);
+
+        /* [Re]generate ID until unique: */
+        QUuid uId = QUuid::createUuid();
+        while (m_requests.contains(uId))
+            uId = QUuid::createUuid();
+
+        /* Add request to map: */
+        m_requests.insert(uId, pNetworkRequest);
+
+        /* Add network-request widget to network-manager dialog: */
+        m_pNetworkManagerDialog->addNetworkRequestWidget(uId, pNetworkRequest);
+
+        /* Return ID: */
+        return uId;
+    }
+
+    /* Null ID by default: */
+    return QUuid();
 }
 
 void UINetworkRequestManager::show()
@@ -159,30 +186,6 @@ void UINetworkRequestManager::prepare()
     /* Prepare network-manager dialog: */
     m_pNetworkManagerDialog = new UINetworkRequestManagerWindow;
     connect(m_pNetworkManagerDialog, &UINetworkRequestManagerWindow::sigCancelNetworkRequests, this, &UINetworkRequestManager::sigCancelNetworkRequests);
-}
-
-void UINetworkRequestManager::prepareNetworkRequest(UINetworkRequest *pNetworkRequest)
-{
-    /* Configure request listeners: */
-    connect(pNetworkRequest, &UINetworkRequest::sigProgress,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestProgress);
-    connect(pNetworkRequest, &UINetworkRequest::sigCanceled,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestCancel);
-    connect(pNetworkRequest, &UINetworkRequest::sigFinished,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestFinish);
-    connect(pNetworkRequest, &UINetworkRequest::sigFailed,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestFailure);
-
-    /* [Re]generate ID until unique: */
-    QUuid uId = QUuid::createUuid();
-    while (m_requests.contains(uId))
-        uId = QUuid::createUuid();
-
-    /* Add request to map: */
-    m_requests.insert(uId, pNetworkRequest);
-
-    /* Add network-request widget to network-manager dialog: */
-    m_pNetworkManagerDialog->addNetworkRequestWidget(uId, pNetworkRequest);
 }
 
 void UINetworkRequestManager::cleanupNetworkRequest(const QUuid &uId)
