@@ -113,6 +113,7 @@ DECL_NO_INLINE(static, int) pdmCritSectCorrupted(PPDMCRITSECT pCritSect, const c
  */
 DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
+    Assert(hNativeSelf != NIL_RTNATIVETHREAD);
     AssertMsg(pCritSect->s.Core.NativeThreadOwner == NIL_RTNATIVETHREAD, ("NativeThreadOwner=%p\n", pCritSect->s.Core.NativeThreadOwner));
     Assert(!(pCritSect->s.Core.fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK));
 
@@ -129,6 +130,10 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
 # else
     NOREF(pSrcPos);
 # endif
+    if (pSrcPos)
+        Log12Func(("%p: uId=%p ln=%u fn=%s\n", pCritSect, pSrcPos->uId, pSrcPos->uLine, pSrcPos->pszFunction));
+    else
+        Log12Func(("%p\n", pCritSect));
 
     STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
     return VINF_SUCCESS;
@@ -153,6 +158,23 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
 static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf,
                                          PCRTLOCKVALSRCPOS pSrcPos, int rcBusy)
 {
+# ifdef IN_RING0
+    /*
+     * If we've got queued critical section leave operations and rcBusy isn't
+     * VINF_SUCCESS, return to ring-3 immediately to avoid deadlocks.
+     */
+    if (   !pVCpu
+        || !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PDM_CRITSECT)
+        || rcBusy == VINF_SUCCESS )
+    { /* likely */ }
+    else
+    {
+        /** @todo statistics. */
+        STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
+        return rcBusy;
+    }
+# endif
+
     /*
      * Start waiting.
      */
@@ -220,6 +242,8 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
         int const rc = !fNonInterruptible
                      ? SUPSemEventWaitNoResume(pSession, hEvent, cMsMaxOne)
                      : SUPSemEventWait(pSession, hEvent, cMsMaxOne);
+        Log11Func(("%p: rc=%Rrc %'RU64 ns (cMsMaxOne=%RU64 hOwner=%p)\n",
+                   pCritSect, rc, RTTimeNanoTS() - tsStart, cMsMaxOne, pCritSect->s.Core.NativeThreadOwner));
 # endif /* IN_RING0 */
 
         /*
@@ -318,6 +342,9 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
                             return rcBusy != VINF_SUCCESS ? rcBusy : rc;
                         }
                         cCmpXchgs++;
+                        if ((cCmpXchgs & 0xffff) == 0)
+                            Log11Func(("%p: cLockers=%d cCmpXchgs=%u (hOwner=%p)\n",
+                                       pCritSect, cLockers, cCmpXchgs, pCritSect->s.Core.NativeThreadOwner));
                         ASMNopPause();
                         continue;
                     }
@@ -445,6 +472,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
         ASMAtomicIncS32(&pCritSect->s.Core.cNestings);
 # endif
         ASMAtomicIncS32(&pCritSect->s.Core.cLockers);
+        Log12Func(("%p: cNestings=%d cLockers=%d\n", pCritSect, pCritSect->s.Core.cNestings, pCritSect->s.Core.cLockers));
         return VINF_SUCCESS;
     }
 
@@ -653,6 +681,7 @@ static int pdmCritSectTryEnter(PVMCC pVM, PPDMCRITSECT pCritSect, PCRTLOCKVALSRC
         ASMAtomicIncS32(&pCritSect->s.Core.cNestings);
 # endif
         ASMAtomicIncS32(&pCritSect->s.Core.cLockers);
+        Log12Func(("%p: cNestings=%d cLockers=%d\n", pCritSect, pCritSect->s.Core.cNestings, pCritSect->s.Core.cLockers));
         return VINF_SUCCESS;
     }
 
@@ -780,7 +809,7 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
      * Always check that the caller is the owner (screw performance).
      */
     RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pVM, pCritSect);
-    VMM_ASSERT_RELEASE_MSG_RETURN(pVM, pCritSect->s.Core.NativeThreadOwner == hNativeSelf || hNativeSelf == NIL_RTNATIVETHREAD,
+    VMM_ASSERT_RELEASE_MSG_RETURN(pVM, pCritSect->s.Core.NativeThreadOwner == hNativeSelf && hNativeSelf != NIL_RTNATIVETHREAD,
                                   ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
                                    pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
                                    pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings),
@@ -798,11 +827,14 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
 #else
         ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, cNestings - 1);
 #endif
-        ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
-        Assert(pCritSect->s.Core.cLockers >= 0);
+        int32_t const cLockers = ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
+        Assert(cLockers >= 0); RT_NOREF(cLockers);
+        Log12Func(("%p: cNestings=%d cLockers=%d\n", pCritSect, cNestings - 1, cLockers));
         return VINF_SEM_NESTED;
     }
 
+    Log12Func(("%p: cNestings=%d cLockers=%d hOwner=%p - leave for real\n",
+               pCritSect, cNestings, pCritSect->s.Core.cLockers, pCritSect->s.Core.NativeThreadOwner));
 
 #ifdef IN_RING3
     /*
@@ -838,6 +870,7 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
     {
         /* Someone is waiting, wake up one of them. */
         Assert(cLockers < _8K);
+        Log8(("PDMCritSectLeave: Waking up %p (cLockers=%u)\n", pCritSect, cLockers));
         SUPSEMEVENT hEvent = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
         int rc = SUPSemEventSignal(pVM->pSession, hEvent);
         AssertRC(rc);
@@ -848,7 +881,7 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
     { /* likely */ }
     else
     {
-        Log8(("Signalling %#p\n", hEventToSignal));
+        Log8(("PDMCritSectLeave: Signalling %#p (%p)\n", hEventToSignal, pCritSect));
         int rc = SUPSemEventSignal(pVM->pSession, hEventToSignal);
         AssertRC(rc);
     }
