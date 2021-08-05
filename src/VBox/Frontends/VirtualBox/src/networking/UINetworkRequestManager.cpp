@@ -23,7 +23,6 @@
 #include "UINetworkCustomer.h"
 #include "UINetworkRequest.h"
 #include "UINetworkRequestManager.h"
-#include "UINetworkRequestManagerIndicator.h"
 #include "UINetworkRequestManagerWindow.h"
 
 /* Other VBox includes: */
@@ -58,36 +57,14 @@ UINetworkRequestManagerWindow *UINetworkRequestManager::window() const
     return m_pNetworkManagerDialog;
 }
 
-UINetworkRequestManagerIndicator *UINetworkRequestManager::createIndicator() const
-{
-    /* For Selector UI only: */
-    AssertReturn(uiCommon().uiType() == UICommon::UIType_SelectorUI, 0);
-
-    /* Create network-manager state-indicator: */
-    UINetworkRequestManagerIndicator *pNetworkManagerIndicator = new UINetworkRequestManagerIndicator;
-    connect(pNetworkManagerIndicator, &UINetworkRequestManagerIndicator::sigMouseDoubleClick,
-            this, &UINetworkRequestManager::show);
-    connect(this, &UINetworkRequestManager::sigAddNetworkManagerIndicatorDescription,
-            pNetworkManagerIndicator, &UINetworkRequestManagerIndicator::sltAddNetworkManagerIndicatorDescription);
-    connect(this, &UINetworkRequestManager::sigRemoveNetworkManagerIndicatorDescription,
-            pNetworkManagerIndicator, &UINetworkRequestManagerIndicator::sldRemoveNetworkManagerIndicatorDescription);
-    return pNetworkManagerIndicator;
-}
-
 void UINetworkRequestManager::registerNetworkRequest(UINetworkRequest *pNetworkRequest)
 {
     /* Add network-request widget to network-manager dialog: */
     m_pNetworkManagerDialog->addNetworkRequestWidget(pNetworkRequest);
-
-    /* Add network-request description to network-manager state-indicators: */
-    emit sigAddNetworkManagerIndicatorDescription(pNetworkRequest);
 }
 
 void UINetworkRequestManager::unregisterNetworkRequest(const QUuid &uuid)
 {
-    /* Remove network-request description from network-manager state-indicator: */
-    emit sigRemoveNetworkManagerIndicatorDescription(uuid);
-
     /* Remove network-request widget from network-manager dialog: */
     m_pNetworkManagerDialog->removeNetworkRequestWidget(uuid);
 }

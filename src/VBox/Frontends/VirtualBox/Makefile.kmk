@@ -937,7 +937,6 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/networking/UINetworkCustomer.h \
 	src/networking/UINetworkRequestManager.h \
 	src/networking/UINetworkRequestManagerWindow.h \
-	src/networking/UINetworkRequestManagerIndicator.h \
 	src/networking/UINetworkRequest.h \
 	src/networking/UINetworkRequestWidget.h \
 	src/networking/UINetworkReply.h \
@@ -1491,7 +1490,6 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/networking/UINetworkCustomer.cpp \
 	src/networking/UINetworkRequestManager.cpp \
 	src/networking/UINetworkRequestManagerWindow.cpp \
-	src/networking/UINetworkRequestManagerIndicator.cpp \
 	src/networking/UINetworkRequest.cpp \
 	src/networking/UINetworkRequestWidget.cpp \
 	src/networking/UINetworkReply.cpp \

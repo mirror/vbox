@@ -24,7 +24,6 @@
 #include "UINetworkRequest.h"
 #include "UINetworkRequestManager.h"
 #include "UINetworkRequestManagerWindow.h"
-#include "UINetworkRequestManagerIndicator.h"
 #include "UINetworkRequestWidget.h"
 
 /* Other VBox includes: */

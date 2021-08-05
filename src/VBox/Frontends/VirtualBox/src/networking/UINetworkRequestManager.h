@@ -33,7 +33,6 @@
 class QUrl;
 class UINetworkCustomer;
 class UINetworkRequestManagerWindow;
-class UINetworkRequestManagerIndicator;
 class UINetworkRequest;
 
 /** QObject class extension.
@@ -47,11 +46,6 @@ signals:
     /** Asks listeners (network-requests) to cancel. */
     void sigCancelNetworkRequests();
 
-    /** Requests to add @a pNetworkRequest to network-manager state-indicators. */
-    void sigAddNetworkManagerIndicatorDescription(UINetworkRequest *pNetworkRequest);
-    /** Requests to remove network-request with @a uuid from network-manager state-indicators. */
-    void sigRemoveNetworkManagerIndicatorDescription(const QUuid &uuid);
-
 public:
 
     /** Creates singleton instance. */
@@ -63,10 +57,6 @@ public:
 
     /** Returns pointer to network-manager dialog. */
     UINetworkRequestManagerWindow *window() const;
-
-    /** Creates network-manager state-indicator.
-      * @remarks To be cleaned up by the caller. */
-    UINetworkRequestManagerIndicator *createIndicator() const;
 
     /** Registers @a pNetworkRequest in network-manager. */
     void registerNetworkRequest(UINetworkRequest *pNetworkRequest);

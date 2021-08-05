@@ -34,7 +34,6 @@
 /* Forward declarations: */
 class UINetworkRequestManager;
 class UINetworkRequestManagerWindow;
-class UINetworkRequestManagerIndicator;
 class UINetworkRequestWidget;
 class UINetworkCustomer;
 
