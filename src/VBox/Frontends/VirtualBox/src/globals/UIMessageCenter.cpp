@@ -42,7 +42,6 @@
 #include "VBoxAboutDlg.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
-# include "UINetworkRequestManagerWindow.h"
 #endif
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
