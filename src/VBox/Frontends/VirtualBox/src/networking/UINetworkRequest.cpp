@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2020 Oracle Corporation
+ * Copyright (C) 2011-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,14 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QVariant>
+
 /* GUI includes: */
+#include "UICommon.h"
+#include "UINetworkCustomer.h"
 #include "UINetworkRequest.h"
-#include "UINetworkRequestWidget.h"
 #include "UINetworkRequestManager.h"
 #include "UINetworkRequestManagerWindow.h"
 #include "UINetworkRequestManagerIndicator.h"
-#include "UINetworkCustomer.h"
-#include "UICommon.h"
+#include "UINetworkRequestWidget.h"
+
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 
 UINetworkRequest::UINetworkRequest(UINetworkRequestType enmType,
@@ -42,13 +48,11 @@ UINetworkRequest::UINetworkRequest(UINetworkRequestType enmType,
     , m_iUrlIndex(-1)
     , m_fRunning(false)
 {
-    /* Prepare: */
     prepare();
 }
 
 UINetworkRequest::~UINetworkRequest()
 {
-    /* Cleanup: */
     cleanup();
 }
 
@@ -229,4 +233,3 @@ void UINetworkRequest::cleanup()
     /* Unregister network-request from network-manager: */
     manager()->unregisterNetworkRequest(m_uuid);
 }
-

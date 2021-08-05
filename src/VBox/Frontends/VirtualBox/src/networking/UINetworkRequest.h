@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2020 Oracle Corporation
+ * Copyright (C) 2011-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,8 +22,9 @@
 #endif
 
 /* Qt includes: */
-#include <QUuid>
+#include <QObject>
 #include <QPointer>
+#include <QUuid>
 
 /* GUI inludes: */
 #include "UILibraryDefs.h"
@@ -44,18 +45,18 @@ class SHARED_LIBRARY_STUFF UINetworkRequest : public QObject
 
 signals:
 
-    /** Notifies common UINetworkRequestManager about progress with @a uuid changed.
+    /** Notifies common UINetworkRequestManager about progress with @a uId changed.
       * @param  iReceived  Holds the amount of bytes received.
       * @param  iTotal     Holds the amount of total bytes to receive. */
-    void sigProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal);
-    /** Notifies UINetworkRequestManager about progress with @a uuid started. */
-    void sigStarted(const QUuid &uuid);
-    /** Notifies UINetworkRequestManager about progress with @a uuid canceled. */
-    void sigCanceled(const QUuid &uuid);
-    /** Notifies UINetworkRequestManager about progress with @a uuid finished. */
-    void sigFinished(const QUuid &uuid);
-    /** Notifies UINetworkRequestManager about progress with @a uuid failed with @a strError. */
-    void sigFailed(const QUuid &uuid, const QString &strError);
+    void sigProgress(const QUuid &uId, qint64 iReceived, qint64 iTotal);
+    /** Notifies UINetworkRequestManager about progress with @a uId started. */
+    void sigStarted(const QUuid &uId);
+    /** Notifies UINetworkRequestManager about progress with @a uId canceled. */
+    void sigCanceled(const QUuid &uId);
+    /** Notifies UINetworkRequestManager about progress with @a uId finished. */
+    void sigFinished(const QUuid &uId);
+    /** Notifies UINetworkRequestManager about progress with @a uId failed with @a strError. */
+    void sigFailed(const QUuid &uId, const QString &strError);
 
     /** Notifies own UINetworkRequestWidget about progress changed.
       * @param  iReceived  Holds the amount of bytes received.
@@ -70,9 +71,13 @@ signals:
 
 public:
 
-    /** Constructs network-request of the passed @a enmType
-      * on the basis of the passed @a urls, @a strTarget and the @a requestHeaders
-      * for the @a pCustomer and @a pNetworkManager specified. */
+    /** Constructs network-request.
+      * @param  enmType          Brings request type.
+      * @param  urls             Brings request urls, there can be few of them.
+      * @param  strTarget        Brings request target path.
+      * @param  requestHeaders   Brings request headers in dictionary form.
+      * @param  pCustomer        Brings customer this request ordered by.
+      * @param  pNetworkManager  Brings network access manager this requests managed by. */
     UINetworkRequest(UINetworkRequestType enmType,
                      const QList<QUrl> &urls,
                      const QString &strTarget,
@@ -80,18 +85,18 @@ public:
                      UINetworkCustomer *pCustomer,
                      UINetworkRequestManager *pNetworkManager);
     /** Destructs network-request. */
-    ~UINetworkRequest();
+    virtual ~UINetworkRequest() /* override final */;
 
     /** Returns the request description. */
     const QString description() const;
     /** Returns the request customer. */
-    UINetworkCustomer* customer() { return m_pCustomer; }
+    UINetworkCustomer *customer() { return m_pCustomer; }
     /** Returns the request manager. */
-    UINetworkRequestManager* manager() const { return m_pNetworkManager; }
+    UINetworkRequestManager *manager() const { return m_pNetworkManager; }
     /** Returns unique request QUuid. */
-    const QUuid& uuid() const { return m_uuid; }
+    const QUuid &uuid() const { return m_uuid; }
     /** Returns the request reply. */
-    UINetworkReply* reply() { return m_pReply; }
+    UINetworkReply *reply() { return m_pReply; }
 
 public slots:
 
@@ -122,30 +127,29 @@ private:
     void cleanup();
 
     /** Holds the request type. */
-    const UINetworkRequestType m_enmType;
+    const UINetworkRequestType  m_enmType;
     /** Holds the request urls. */
-    const QList<QUrl> m_urls;
+    const QList<QUrl>           m_urls;
     /** Holds the request target. */
-    const QString m_strTarget;
+    const QString               m_strTarget;
     /** Holds the request headers. */
-    const UserDictionary m_requestHeaders;
+    const UserDictionary        m_requestHeaders;
     /** Holds the request customer. */
-    UINetworkCustomer *m_pCustomer;
+    UINetworkCustomer          *m_pCustomer;
     /** Holds the request manager. */
-    UINetworkRequestManager *m_pNetworkManager;
+    UINetworkRequestManager    *m_pNetworkManager;
     /** Holds unique request QUuid. */
-    const QUuid m_uuid;
+    const QUuid                 m_uuid;
 
     /** Holds current request url. */
-    QUrl m_url;
+    QUrl  m_url;
     /** Holds index of current request url. */
-    int m_iUrlIndex;
+    int   m_iUrlIndex;
     /** Holds whether current request url is in progress. */
-    bool m_fRunning;
+    bool  m_fRunning;
 
     /** Holds the request reply. */
-    QPointer<UINetworkReply> m_pReply;
+    QPointer<UINetworkReply>  m_pReply;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networking_UINetworkRequest_h */
-

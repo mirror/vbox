@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QUrl>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -30,7 +31,6 @@
 
 /* Forward declarations: */
 class UINetworkReply;
-class QUrl;
 
 /** Interface to access UINetworkRequestManager protected functionality. */
 class SHARED_LIBRARY_STUFF UINetworkCustomer : public QObject
@@ -58,15 +58,20 @@ public:
 
 protected:
 
-    /** Creates network-request of the passed @a type on the basis of the passed @a urls, @a strTarget and the @a requestHeaders. */
-    void createNetworkRequest(UINetworkRequestType enmType, const QList<QUrl> urls, const QString &strTarget = QString(),
+    /** Creates network-request.
+      * @param  enmType         Brings request type.
+      * @param  urls            Brings request urls, there can be few of them.
+      * @param  strTarget       Brings request target path.
+      * @param  requestHeaders  Brings request headers in dictionary form. */
+    void createNetworkRequest(UINetworkRequestType enmType,
+                              const QList<QUrl> urls,
+                              const QString &strTarget = QString(),
                               const UserDictionary requestHeaders = UserDictionary());
 
 private:
 
     /** Holds whether this customer has forced privelegies. */
-    bool m_fForceCall;
+    bool  m_fForceCall;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networking_UINetworkCustomer_h */
-
