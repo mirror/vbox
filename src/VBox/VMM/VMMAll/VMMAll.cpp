@@ -248,7 +248,11 @@ VMMDECL(PVMCPUCC) VMMGetCpu(PVMCC pVM)
 #elif defined(IN_RING0)
     VMCPUID const cCpus = pVM->cCpus;
     if (pVM->cCpus == 1)
-        return VMCC_GET_CPU_0(pVM);
+    {
+        PVMCPUCC pVCpu = VMCC_GET_CPU_0(pVM);
+        Assert(pVCpu->hNativeThreadR0 == RTThreadNativeSelf());
+        return pVCpu;
+    }
 
     /*
      * Search first by host cpu id (most common case)
@@ -266,7 +270,10 @@ VMMDECL(PVMCPUCC) VMMGetCpu(PVMCC pVM)
         {
             PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
             if (pVCpu->idHostCpu == idHostCpu)
+            {
+                Assert(pVCpu->hNativeThreadR0 == RTThreadNativeSelf());
                 return pVCpu;
+            }
         }
     }
 
