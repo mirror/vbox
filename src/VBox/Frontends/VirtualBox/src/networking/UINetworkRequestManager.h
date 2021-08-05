@@ -58,11 +58,6 @@ public:
     /** Returns pointer to network-manager dialog. */
     UINetworkRequestManagerWindow *window() const;
 
-    /** Registers @a pNetworkRequest in network-manager. */
-    void registerNetworkRequest(UINetworkRequest *pNetworkRequest);
-    /** Unregisters network-request with @a uuid from network-manager. */
-    void unregisterNetworkRequest(const QUuid &uuid);
-
 public slots:
 
     /** Shows network-manager dialog. */

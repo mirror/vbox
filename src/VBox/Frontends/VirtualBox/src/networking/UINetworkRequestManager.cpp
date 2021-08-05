@@ -57,18 +57,6 @@ UINetworkRequestManagerWindow *UINetworkRequestManager::window() const
     return m_pNetworkManagerDialog;
 }
 
-void UINetworkRequestManager::registerNetworkRequest(UINetworkRequest *pNetworkRequest)
-{
-    /* Add network-request widget to network-manager dialog: */
-    m_pNetworkManagerDialog->addNetworkRequestWidget(pNetworkRequest);
-}
-
-void UINetworkRequestManager::unregisterNetworkRequest(const QUuid &uuid)
-{
-    /* Remove network-request widget from network-manager dialog: */
-    m_pNetworkManagerDialog->removeNetworkRequestWidget(uuid);
-}
-
 void UINetworkRequestManager::show()
 {
     /* Show network-manager dialog: */
@@ -121,10 +109,16 @@ void UINetworkRequestManager::prepareNetworkRequest(UINetworkRequest *pNetworkRe
 
     /* Add request to map: */
     m_requests.insert(pNetworkRequest->uuid(), pNetworkRequest);
+
+    /* Add network-request widget to network-manager dialog: */
+    m_pNetworkManagerDialog->addNetworkRequestWidget(pNetworkRequest);
 }
 
 void UINetworkRequestManager::cleanupNetworkRequest(const QUuid &uId)
 {
+    /* Remove network-request widget from network-manager dialog: */
+    m_pNetworkManagerDialog->removeNetworkRequestWidget(uId);
+
     delete m_requests.value(uId);
     m_requests.remove(uId);
 }
