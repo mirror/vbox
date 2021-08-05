@@ -434,7 +434,9 @@ PyXPCOM_TypeObject::PyXPCOM_TypeObject( const char *name, PyXPCOM_TypeObject *pB
 
 	/* Initialize the PyObject part - needed so we can keep instance in a PyDict: */
 	ob_type = PyXPCOM_GetInterfaceType();
+# if defined(Py_TRACE_REFS) || PY_VERSION_HEX < 0x03090000 /* VBox: Removed in 3.9, harmless. @bugref{10079} */
 	_Py_NewReference(this);
+# endif
 
 #endif /* Py_LIMITED_API */
 

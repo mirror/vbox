@@ -145,7 +145,9 @@ Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyXPCOM_Type
 	// refcnt of object managed by caller.
 	PR_AtomicIncrement(&cInterfaces);
 	PyXPCOM_DLLAddRef();
+#if defined(Py_TRACE_REFS) || PY_VERSION_HEX < 0x03090000 /* VBox: Removed in 3.9, harmless. @bugref{10079} */
 	_Py_NewReference(this);
+#endif
 
 #ifdef VBOX_DEBUG_LIFETIMES
         RTOnce(&g_Once, initOnceCallback, NULL);
