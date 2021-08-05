@@ -56,6 +56,22 @@ typedef struct PDMITPMPORT
 #define PDMITPMPORT_IID                       "1e57710f-f820-47ec-afa6-2713195f8f94"
 
 
+/**
+ * TPM version enumeration.
+ */
+typedef enum TPMVERSION
+{
+    /** Invalid TPM version, don't use. */
+    TPMVERSION_INVALID = 0,
+    /** TPM works according to version 1.2 of the specification. */
+    TPMVERSION_1_2,
+    /** TPM works according to version 2.0 of the specification. */
+    TPMVERSION_2_0,
+    /** TPM version is unknown. */
+    TPMVERSION_UNKNOWN
+} TPMVERSION;
+
+
 /** Pointer to a TPM interface. */
 typedef struct PDMITPMCONNECTOR *PPDMITPMCONNECTOR;
 /**
@@ -95,7 +111,7 @@ typedef struct PDMITPMCONNECTOR
      * @returns The TPM version.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnGetVersion, (PPDMITPMCONNECTOR pInterface));
+    DECLR3CALLBACKMEMBER(TPMVERSION, pfnGetVersion, (PPDMITPMCONNECTOR pInterface));
 
     /**
      * Returns the status of the established flag.
@@ -117,22 +133,23 @@ typedef struct PDMITPMCONNECTOR
     /**
      * Executes the given command.
      *
-     * @returns Status of the established flag.
+     * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   bLoc                The locality the command is issued from.
      * @param   pvCmd               Pointer to the command data.
      * @param   cbCmd               Size of the command in bytes.
      * @param   pvResp              Where to store the response data.
      * @param   cbResp              Size of the response buffer in bytes.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnCmdExec, (PPDMITPMCONNECTOR pInterface, const void *pvCmd, size_t cbCmd, void *pvResp, size_t cbResp));
+    DECLR3CALLBACKMEMBER(int, pfnCmdExec, (PPDMITPMCONNECTOR pInterface, uint8_t bLoc, const void *pvCmd, size_t cbCmd, void *pvResp, size_t cbResp));
 
     /**
      * Cancels the currently executed command.
      *
-     * @returns Status of the established flag.
+     * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnCmdCancel, (PPDMITPMCONNECTOR pInterface));
+    DECLR3CALLBACKMEMBER(int, pfnCmdCancel, (PPDMITPMCONNECTOR pInterface));
 
 } PDMITPMCONNECTOR;
 /** PDMITPMCONNECTOR interface ID. */

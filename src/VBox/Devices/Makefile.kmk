@@ -586,7 +586,8 @@ endif
  if defined(VBOX_WITH_TPM)
   VBoxDD_DEFS           += VBOX_WITH_TPM
   VBoxDD_SOURCES        += \
-  	Security/DevTpm.cpp
+  	Security/DevTpm.cpp \
+    Security/DrvTpmEmu.cpp
  endif
 
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
