@@ -33,7 +33,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_pdm_ifs_serial       PDM TPM Interfaces
+/** @defgroup grp_pdm_ifs_tpm       PDM TPM Interfaces
  * @ingroup grp_pdm_interfaces
  * @{
  */
