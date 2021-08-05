@@ -58,16 +58,6 @@ public:
     /** Returns pointer to network-manager dialog. */
     UINetworkRequestManagerWindow *window() const;
 
-public slots:
-
-    /** Shows network-manager dialog. */
-    void show();
-
-protected:
-
-    /** Allows UINetworkCustomer to create network-request. */
-    friend class UINetworkCustomer;
-
     /** Creates network-request returning request ID.
       * @param  enmType         Brings request type.
       * @param  urls            Brings request urls, there can be few of them.
@@ -80,23 +70,17 @@ protected:
                               const UserDictionary &requestHeaders,
                               UINetworkCustomer *pCustomer);
 
+public slots:
+
+    /** Shows network-manager dialog. */
+    void show();
+
 private:
 
     /** Constructs network manager. */
     UINetworkRequestManager();
     /** Destructs network manager. */
     virtual ~UINetworkRequestManager() /* override final */;
-
-    /** Prepares all. */
-    void prepare();
-    /** Prepares @a pNetworkRequest. */
-    void prepareNetworkRequest(UINetworkRequest *pNetworkRequest);
-    /** Cleanups network-request with passed @a uId. */
-    void cleanupNetworkRequest(const QUuid &uId);
-    /** Cleanups all network-requests. */
-    void cleanupNetworkRequests();
-    /** Cleanups all. */
-    void cleanup();
 
 private slots:
 
@@ -110,6 +94,17 @@ private slots:
     void sltHandleNetworkRequestFailure(const QString &strError);
 
 private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Prepares @a pNetworkRequest. */
+    void prepareNetworkRequest(UINetworkRequest *pNetworkRequest);
+    /** Cleanups network-request with passed @a uId. */
+    void cleanupNetworkRequest(const QUuid &uId);
+    /** Cleanups all network-requests. */
+    void cleanupNetworkRequests();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the singleton instance. */
     static UINetworkRequestManager *s_pInstance;

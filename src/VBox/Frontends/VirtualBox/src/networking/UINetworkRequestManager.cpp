@@ -57,12 +57,6 @@ UINetworkRequestManagerWindow *UINetworkRequestManager::window() const
     return m_pNetworkManagerDialog;
 }
 
-void UINetworkRequestManager::show()
-{
-    /* Show network-manager dialog: */
-    m_pNetworkManagerDialog->showNormal();
-}
-
 void UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType,
                                                    const QList<QUrl> &urls,
                                                    const QString &strTarget,
@@ -73,6 +67,12 @@ void UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType,
     UINetworkRequest *pNetworkRequest = new UINetworkRequest(enmType, urls, strTarget, requestHeaders, pCustomer, this);
     /* Prepare created network-request: */
     prepareNetworkRequest(pNetworkRequest);
+}
+
+void UINetworkRequestManager::show()
+{
+    /* Show network-manager dialog: */
+    m_pNetworkManagerDialog->showNormal();
 }
 
 UINetworkRequestManager::UINetworkRequestManager()
@@ -86,61 +86,6 @@ UINetworkRequestManager::~UINetworkRequestManager()
 {
     cleanup();
     s_pInstance = 0;
-}
-
-void UINetworkRequestManager::prepare()
-{
-    /* Prepare network-manager dialog: */
-    m_pNetworkManagerDialog = new UINetworkRequestManagerWindow;
-    connect(m_pNetworkManagerDialog, &UINetworkRequestManagerWindow::sigCancelNetworkRequests, this, &UINetworkRequestManager::sigCancelNetworkRequests);
-}
-
-void UINetworkRequestManager::prepareNetworkRequest(UINetworkRequest *pNetworkRequest)
-{
-    /* Configure request listeners: */
-    connect(pNetworkRequest, &UINetworkRequest::sigProgress,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestProgress);
-    connect(pNetworkRequest, &UINetworkRequest::sigCanceled,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestCancel);
-    connect(pNetworkRequest, &UINetworkRequest::sigFinished,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestFinish);
-    connect(pNetworkRequest, &UINetworkRequest::sigFailed,
-            this, &UINetworkRequestManager::sltHandleNetworkRequestFailure);
-
-    /* [Re]generate ID until unique: */
-    QUuid uId = QUuid::createUuid();
-    while (m_requests.contains(uId))
-        uId = QUuid::createUuid();
-
-    /* Add request to map: */
-    m_requests.insert(uId, pNetworkRequest);
-
-    /* Add network-request widget to network-manager dialog: */
-    m_pNetworkManagerDialog->addNetworkRequestWidget(uId, pNetworkRequest);
-}
-
-void UINetworkRequestManager::cleanupNetworkRequest(const QUuid &uId)
-{
-    /* Remove network-request widget from network-manager dialog: */
-    m_pNetworkManagerDialog->removeNetworkRequestWidget(uId);
-
-    delete m_requests.value(uId);
-    m_requests.remove(uId);
-}
-
-void UINetworkRequestManager::cleanupNetworkRequests()
-{
-    foreach (const QUuid &uId, m_requests.keys())
-        cleanupNetworkRequest(uId);
-}
-
-void UINetworkRequestManager::cleanup()
-{
-    /* Cleanup network-requests first: */
-    cleanupNetworkRequests();
-
-    /* Cleanup network-manager dialog: */
-    delete m_pNetworkManagerDialog;
 }
 
 void UINetworkRequestManager::sltHandleNetworkRequestProgress(qint64 iReceived, qint64 iTotal)
@@ -207,4 +152,59 @@ void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QString &)
         /* Just show the dialog: */
         show();
     }
+}
+
+void UINetworkRequestManager::prepare()
+{
+    /* Prepare network-manager dialog: */
+    m_pNetworkManagerDialog = new UINetworkRequestManagerWindow;
+    connect(m_pNetworkManagerDialog, &UINetworkRequestManagerWindow::sigCancelNetworkRequests, this, &UINetworkRequestManager::sigCancelNetworkRequests);
+}
+
+void UINetworkRequestManager::prepareNetworkRequest(UINetworkRequest *pNetworkRequest)
+{
+    /* Configure request listeners: */
+    connect(pNetworkRequest, &UINetworkRequest::sigProgress,
+            this, &UINetworkRequestManager::sltHandleNetworkRequestProgress);
+    connect(pNetworkRequest, &UINetworkRequest::sigCanceled,
+            this, &UINetworkRequestManager::sltHandleNetworkRequestCancel);
+    connect(pNetworkRequest, &UINetworkRequest::sigFinished,
+            this, &UINetworkRequestManager::sltHandleNetworkRequestFinish);
+    connect(pNetworkRequest, &UINetworkRequest::sigFailed,
+            this, &UINetworkRequestManager::sltHandleNetworkRequestFailure);
+
+    /* [Re]generate ID until unique: */
+    QUuid uId = QUuid::createUuid();
+    while (m_requests.contains(uId))
+        uId = QUuid::createUuid();
+
+    /* Add request to map: */
+    m_requests.insert(uId, pNetworkRequest);
+
+    /* Add network-request widget to network-manager dialog: */
+    m_pNetworkManagerDialog->addNetworkRequestWidget(uId, pNetworkRequest);
+}
+
+void UINetworkRequestManager::cleanupNetworkRequest(const QUuid &uId)
+{
+    /* Remove network-request widget from network-manager dialog: */
+    m_pNetworkManagerDialog->removeNetworkRequestWidget(uId);
+
+    delete m_requests.value(uId);
+    m_requests.remove(uId);
+}
+
+void UINetworkRequestManager::cleanupNetworkRequests()
+{
+    foreach (const QUuid &uId, m_requests.keys())
+        cleanupNetworkRequest(uId);
+}
+
+void UINetworkRequestManager::cleanup()
+{
+    /* Cleanup network-requests first: */
+    cleanupNetworkRequests();
+
+    /* Cleanup network-manager dialog: */
+    delete m_pNetworkManagerDialog;
 }
