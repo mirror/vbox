@@ -79,6 +79,9 @@ private slots:
     /** Handles request finishing. */
     void sltHandleNetworkRequestFinish();
 
+    /** Handles signal about @a pNetworkCustomer being destroyed. */
+    void sltHandleNetworkCustomerBeingDestroyed(UINetworkCustomer *pNetworkCustomer);
+
 private:
 
     /** Prepares all. */

@@ -26,6 +26,11 @@ UINetworkCustomer::UINetworkCustomer(QObject *pParent /* = 0 */, bool fForceCall
 {
 }
 
+UINetworkCustomer::~UINetworkCustomer()
+{
+    emit sigBeingDestroyed(this);
+}
+
 void UINetworkCustomer::createNetworkRequest(UINetworkRequestType enmType,
                                              const QList<QUrl> urls,
                                              const QString &strTarget /* = QString() */,

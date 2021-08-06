@@ -78,6 +78,9 @@ QUuid UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType
         /* Add request&customer to map: */
         m_requests.insert(uId, pNetworkRequest);
         m_customers.insert(uId, pCustomer);
+        connect(pCustomer, &UINetworkCustomer::sigBeingDestroyed,
+                this, &UINetworkRequestManager::sltHandleNetworkCustomerBeingDestroyed,
+                Qt::UniqueConnection);
 
         /* Return ID: */
         return uId;
@@ -109,8 +112,8 @@ void UINetworkRequestManager::sltHandleNetworkRequestProgress(qint64 iReceived, 
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
-    AssertPtrReturnVoid(pNetworkCustomer);
-    pNetworkCustomer->processNetworkReplyProgress(iReceived, iTotal);
+    if (pNetworkCustomer)
+        pNetworkCustomer->processNetworkReplyProgress(iReceived, iTotal);
 }
 
 void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QString &strError)
@@ -123,8 +126,8 @@ void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QString &strE
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
-    AssertPtrReturnVoid(pNetworkCustomer);
-    pNetworkCustomer->processNetworkReplyFailed(strError);
+    if (pNetworkCustomer)
+        pNetworkCustomer->processNetworkReplyFailed(strError);
 
     /* Cleanup request: */
     cleanupNetworkRequest(uId);
@@ -140,8 +143,8 @@ void UINetworkRequestManager::sltHandleNetworkRequestCancel()
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
-    AssertPtrReturnVoid(pNetworkCustomer);
-    pNetworkCustomer->processNetworkReplyCanceled(pNetworkRequest->reply());
+    if (pNetworkCustomer)
+        pNetworkCustomer->processNetworkReplyCanceled(pNetworkRequest->reply());
 
     /* Cleanup request: */
     cleanupNetworkRequest(uId);
@@ -157,11 +160,21 @@ void UINetworkRequestManager::sltHandleNetworkRequestFinish()
 
     /* Delegate request to customer: */
     UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
-    AssertPtrReturnVoid(pNetworkCustomer);
-    pNetworkCustomer->processNetworkReplyFinished(pNetworkRequest->reply());
+    if (pNetworkCustomer)
+        pNetworkCustomer->processNetworkReplyFinished(pNetworkRequest->reply());
 
     /* Cleanup request: */
     cleanupNetworkRequest(uId);
+}
+
+void UINetworkRequestManager::sltHandleNetworkCustomerBeingDestroyed(UINetworkCustomer *pNetworkCustomer)
+{
+    /* Make sure customer was and still registered: */
+    const QList<QUuid> ids = m_customers.keys(pNetworkCustomer);
+    AssertReturnVoid(!ids.isEmpty());
+    /* Unregister it: */
+    foreach (const QUuid &uId, ids)
+        m_customers.remove(uId);
 }
 
 void UINetworkRequestManager::prepare()
@@ -173,7 +186,6 @@ void UINetworkRequestManager::cleanupNetworkRequest(const QUuid &uId)
 {
     delete m_requests.value(uId);
     m_requests.remove(uId);
-    m_customers.remove(uId);
 }
 
 void UINetworkRequestManager::cleanupNetworkRequests()
