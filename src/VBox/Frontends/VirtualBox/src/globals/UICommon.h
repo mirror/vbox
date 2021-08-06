@@ -905,9 +905,9 @@ private:
         /** Holds the --startvm option value (managed VM id). */
         QUuid  m_strManagedVMId;
         /** Holds the --separate option value (whether GUI process is separate from VM process). */
-        bool     m_fSeparateProcess;
+        bool   m_fSeparateProcess;
         /** Holds the --no-startvm-errormsgbox option value (whether startup VM errors are disabled). */
-        bool     m_fShowStartVMErrors;
+        bool   m_fShowStartVMErrors;
 
         /** Holds the --aggressive-caching / --no-aggressive-caching option value (whether medium-enumeration is required). */
         bool  m_fAgressiveCaching;
@@ -935,20 +935,20 @@ private:
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Holds whether the debugger should be accessible. */
-        mutable int m_fDbgEnabled;
+        mutable int  m_fDbgEnabled;
         /** Holds whether to show the debugger automatically with the console. */
-        mutable int m_fDbgAutoShow;
+        mutable int  m_fDbgAutoShow;
         /** Holds whether to show the command line window when m_fDbgAutoShow is set. */
-        mutable int m_fDbgAutoShowCommandLine;
+        mutable int  m_fDbgAutoShowCommandLine;
         /** Holds whether to show the statistics window when m_fDbgAutoShow is set. */
-        mutable int m_fDbgAutoShowStatistics;
+        mutable int  m_fDbgAutoShowStatistics;
         /** Pattern of statistics to expand when opening the viewer. */
-        QString     m_strDbgStatisticsExpand;
+        QString      m_strDbgStatisticsExpand;
         /** The statistics viewer filter. */
-        QString     m_strDbgStatisticsFilter;
+        QString      m_strDbgStatisticsFilter;
 
         /** VBoxDbg module handle. */
-        RTLDRMOD    m_hVBoxDbg;
+        RTLDRMOD  m_hVBoxDbg;
 
         /** Holds whether --start-running, --start-paused or nothing was given. */
         enum LaunchRunning  m_enmLaunchRunning;
@@ -1030,7 +1030,7 @@ private:
      * @{ */
         /** Holds the ATL module instance (for use with UICommon shared library only).
           * @note  Required internally by ATL (constructor records instance in global variable). */
-        ATL::CComModule _Module;
+        ATL::CComModule  _Module;
     /** @} */
 #endif
 
