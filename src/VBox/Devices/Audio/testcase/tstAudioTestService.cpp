@@ -126,17 +126,16 @@ int main(int argc, char **argv)
         RTTEST_CHECK_RC_OK(hTest, rc);
         if (RT_SUCCESS(rc))
         {
-            char szFile[RTPATH_MAX];
-            rc = RTPathJoin(szFile, sizeof(szFile), szTemp, "tstAudioTestService");
-            RTTEST_CHECK_RC_OK(hTest, rc);
+            char szName[RTPATH_MAX];
+            RTTESTI_CHECK_RC(rc = RTStrCopy(szName, sizeof(szName), szTemp), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc = RTPathAppend(szName, sizeof(szName), "tstAudioTestService-XXXXX"), VINF_SUCCESS);
             if (RT_SUCCESS(rc))
             {
-                rc = AudioTestSvcClientTestSetDownload(&Client, "ignored", szFile);
+                rc = AudioTestSvcClientTestSetDownload(&Client, "ignored", szName);
                 RTTEST_CHECK_RC_OK(hTest, rc);
-            }
 
-            rc = RTFileDelete(szFile);
-            RTTEST_CHECK_RC_OK(hTest, rc);
+                /* ignore rc */ RTFileDelete(szName);
+            }
         }
     }
 
