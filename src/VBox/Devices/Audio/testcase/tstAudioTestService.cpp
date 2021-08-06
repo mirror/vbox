@@ -86,18 +86,33 @@ int main(int argc, char **argv)
         rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_MODE, &Val);
         RTTEST_CHECK_RC_OK(hTest, rc);
 
-        Val.u16 = ATS_TCP_DEF_BIND_PORT_HOST;
-        rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_BIND_PORT, &Val);
-        RTTEST_CHECK_RC_OK(hTest, rc);
-
         rc = AudioTestSvcInit(&Srv, &Callbacks);
         RTTEST_CHECK_RC_OK(hTest, rc);
         if (RT_SUCCESS(rc))
         {
-            rc = AudioTestSvcStart(&Srv);
-            RTTEST_CHECK_RC_OK(hTest, rc);
+            uint16_t uPort = ATS_TCP_DEF_BIND_PORT_HOST;
+
+            for (unsigned i = 0; i < 64; i++)
+            {
+                Val.u16 = uPort;
+                rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_BIND_PORT, &Val);
+                RTTEST_CHECK_RC_OK(hTest, rc);
+
+                rc = AudioTestSvcStart(&Srv);
+                if (RT_SUCCESS(rc))
+                    break;
+
+                RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Port %RU32 already used\n", uPort);
+
+                /* Use a different port base in case VBox already is running
+                 * with the same service using ATS_TCP_DEF_BIND_PORT_HOST. */
+                uPort = ATS_TCP_DEF_BIND_PORT_HOST + RTRandU32Ex(0, 4242);
+            }
+
             if (RT_SUCCESS(rc))
             {
+                RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Using port %RU32\n", uPort);
+
                 rc = AudioTestSvcClientCreate(&Client);
                 RTTEST_CHECK_RC_OK(hTest, rc);
 
@@ -109,7 +124,7 @@ int main(int argc, char **argv)
                 rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_CONNECT_ADDRESS, &Val);
                 RTTEST_CHECK_RC_OK(hTest, rc);
 
-                Val.u16 = ATS_TCP_DEF_CONNECT_PORT_GUEST;
+                Val.u16 = uPort;
                 rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_CONNECT_PORT, &Val);
                 RTTEST_CHECK_RC_OK(hTest, rc);
 
