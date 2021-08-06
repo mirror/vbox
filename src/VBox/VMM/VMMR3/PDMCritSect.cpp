@@ -1177,9 +1177,9 @@ static void pdmR3CritSectInfoRwWorker(PUVM pUVM, const char *pszPatterns, PCDBGF
         {
             uint16_t const fFlags = pCritSect->Core.fFlags;
             pHlp->pfnPrintf(pHlp, "%p: '%s'%s%s%s\n", pCritSect, pCritSect->pszName,
-                            pCritSect->Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING ? " no-testing" : "",
-                            pCritSect->Core.fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL ? " no-lock-val" : "",
-                            pCritSect->Core.fFlags & RTCRITSECT_FLAGS_NOP ? " nop" : "");
+                            fFlags & RTCRITSECT_FLAGS_NO_NESTING ? " no-testing" : "",
+                            fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL ? " no-lock-val" : "",
+                            fFlags & RTCRITSECT_FLAGS_NOP ? " nop" : "");
 
             /*
              * Get the volatile data:
