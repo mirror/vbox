@@ -3414,8 +3414,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
     /* If downloader is running already: */
     else if (UIDownloaderUserManual::current())
     {
-        /* Just show network access manager: */
-        gNetworkManager->show();
+        /// @todo show notification-center
     }
     /* Else propose to download user manual: */
     else if (cannotFindUserManual(strUserManualFileName1))

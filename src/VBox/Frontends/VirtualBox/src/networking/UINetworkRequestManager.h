@@ -32,7 +32,6 @@
 /* Forward declarations: */
 class QUrl;
 class UINetworkCustomer;
-class UINetworkRequestManagerWindow;
 class UINetworkRequest;
 
 /** QObject class extension.
@@ -40,11 +39,6 @@ class UINetworkRequest;
 class SHARED_LIBRARY_STUFF UINetworkRequestManager : public QObject
 {
     Q_OBJECT;
-
-signals:
-
-    /** Asks listeners (network-requests) to cancel. */
-    void sigCancelNetworkRequests();
 
 public:
 
@@ -54,9 +48,6 @@ public:
     static void destroy();
     /** Returns the singleton instance. */
     static UINetworkRequestManager *instance();
-
-    /** Returns pointer to network-manager dialog. */
-    UINetworkRequestManagerWindow *window() const;
 
     /** Creates network-request returning request ID.
       * @param  enmType         Brings request type.
@@ -69,11 +60,6 @@ public:
                                const QString &strTarget,
                                const UserDictionary &requestHeaders,
                                UINetworkCustomer *pCustomer);
-
-public slots:
-
-    /** Shows network-manager dialog. */
-    void show();
 
 protected:
 
@@ -109,9 +95,8 @@ private:
 
     /** Holds the map of current requests. */
     QMap<QUuid, UINetworkRequest*>   m_requests;
-
-    /** Holds the network manager dialog instance. */
-    UINetworkRequestManagerWindow *m_pNetworkManagerDialog;
+    /** Holds the map of current customers. */
+    QMap<QUuid, UINetworkCustomer*>  m_customers;
 };
 
 /** Singleton Network Manager 'official' name. */

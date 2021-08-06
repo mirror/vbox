@@ -19,11 +19,9 @@
 #include <QUrl>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UINetworkCustomer.h"
 #include "UINetworkRequest.h"
 #include "UINetworkRequestManager.h"
-#include "UINetworkRequestManagerWindow.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -52,11 +50,6 @@ UINetworkRequestManager *UINetworkRequestManager::instance()
     return s_pInstance;
 }
 
-UINetworkRequestManagerWindow *UINetworkRequestManager::window() const
-{
-    return m_pNetworkManagerDialog;
-}
-
 QUuid UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType,
                                                     const QList<QUrl> &urls,
                                                     const QString &strTarget,
@@ -64,7 +57,7 @@ QUuid UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType
                                                     UINetworkCustomer *pCustomer)
 {
     /* Create network-request: */
-    UINetworkRequest *pNetworkRequest = new UINetworkRequest(enmType, urls, strTarget, requestHeaders, pCustomer, this);
+    UINetworkRequest *pNetworkRequest = new UINetworkRequest(enmType, urls, strTarget, requestHeaders);
     if (pNetworkRequest)
     {
         /* Configure request listeners: */
@@ -82,11 +75,9 @@ QUuid UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType
         while (m_requests.contains(uId))
             uId = QUuid::createUuid();
 
-        /* Add request to map: */
+        /* Add request&customer to map: */
         m_requests.insert(uId, pNetworkRequest);
-
-        /* Add network-request widget to network-manager dialog: */
-        m_pNetworkManagerDialog->addNetworkRequestWidget(uId, pNetworkRequest);
+        m_customers.insert(uId, pCustomer);
 
         /* Return ID: */
         return uId;
@@ -96,14 +87,7 @@ QUuid UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType
     return QUuid();
 }
 
-void UINetworkRequestManager::show()
-{
-    /* Show network-manager dialog: */
-    m_pNetworkManagerDialog->showNormal();
-}
-
 UINetworkRequestManager::UINetworkRequestManager()
-    : m_pNetworkManagerDialog(0)
 {
     s_pInstance = this;
     prepare();
@@ -124,7 +108,7 @@ void UINetworkRequestManager::sltHandleNetworkRequestProgress(qint64 iReceived, 
     AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
-    UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
+    UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
     AssertPtrReturnVoid(pNetworkCustomer);
     pNetworkCustomer->processNetworkReplyProgress(iReceived, iTotal);
 }
@@ -138,7 +122,7 @@ void UINetworkRequestManager::sltHandleNetworkRequestCancel()
     AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
-    UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
+    UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
     AssertPtrReturnVoid(pNetworkCustomer);
     pNetworkCustomer->processNetworkReplyCanceled(pNetworkRequest->reply());
 
@@ -155,7 +139,7 @@ void UINetworkRequestManager::sltHandleNetworkRequestFinish()
     AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
-    UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
+    UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
     AssertPtrReturnVoid(pNetworkCustomer);
     pNetworkCustomer->processNetworkReplyFinished(pNetworkRequest->reply());
 
@@ -172,29 +156,24 @@ void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QString &)
     AssertReturnVoid(!uId.isNull());
 
     /* Delegate request to customer: */
-    UINetworkCustomer *pNetworkCustomer = pNetworkRequest->customer();
+    UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
     AssertPtrReturnVoid(pNetworkCustomer);
     if (pNetworkCustomer->isItForceCall())
     {
-        /* Just show the dialog: */
-        show();
+        /// @todo show notification-center
     }
 }
 
 void UINetworkRequestManager::prepare()
 {
-    /* Prepare network-manager dialog: */
-    m_pNetworkManagerDialog = new UINetworkRequestManagerWindow;
-    connect(m_pNetworkManagerDialog, &UINetworkRequestManagerWindow::sigCancelNetworkRequests, this, &UINetworkRequestManager::sigCancelNetworkRequests);
+    // nothing for now
 }
 
 void UINetworkRequestManager::cleanupNetworkRequest(const QUuid &uId)
 {
-    /* Remove network-request widget from network-manager dialog: */
-    m_pNetworkManagerDialog->removeNetworkRequestWidget(uId);
-
     delete m_requests.value(uId);
     m_requests.remove(uId);
+    m_customers.remove(uId);
 }
 
 void UINetworkRequestManager::cleanupNetworkRequests()
@@ -205,9 +184,5 @@ void UINetworkRequestManager::cleanupNetworkRequests()
 
 void UINetworkRequestManager::cleanup()
 {
-    /* Cleanup network-requests first: */
     cleanupNetworkRequests();
-
-    /* Cleanup network-manager dialog: */
-    delete m_pNetworkManagerDialog;
 }

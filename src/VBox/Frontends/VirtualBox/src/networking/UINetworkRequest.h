@@ -30,12 +30,6 @@
 #include "UINetworkDefs.h"
 #include "UINetworkReply.h"
 
-/* Forward declarations: */
-class UINetworkRequestManager;
-class UINetworkRequestManagerWindow;
-class UINetworkRequestWidget;
-class UINetworkCustomer;
-
 /** QObject extension used as network-request container. */
 class SHARED_LIBRARY_STUFF UINetworkRequest : public QObject
 {
@@ -60,27 +54,17 @@ signals:
 public:
 
     /** Constructs network-request.
-      * @param  enmType          Brings request type.
-      * @param  urls             Brings request urls, there can be few of them.
-      * @param  strTarget        Brings request target path.
-      * @param  requestHeaders   Brings request headers in dictionary form.
-      * @param  pCustomer        Brings customer this request ordered by.
-      * @param  pNetworkManager  Brings network access manager this requests managed by. */
+      * @param  enmType         Brings request type.
+      * @param  urls            Brings request urls, there can be few of them.
+      * @param  strTarget       Brings request target path.
+      * @param  requestHeaders  Brings request headers in dictionary form. */
     UINetworkRequest(UINetworkRequestType enmType,
                      const QList<QUrl> &urls,
                      const QString &strTarget,
-                     const UserDictionary &requestHeaders,
-                     UINetworkCustomer *pCustomer,
-                     UINetworkRequestManager *pNetworkManager);
+                     const UserDictionary &requestHeaders);
     /** Destructs network-request. */
     virtual ~UINetworkRequest() /* override final */;
 
-    /** Returns the request description. */
-    const QString description() const;
-    /** Returns the request customer. */
-    UINetworkCustomer *customer() { return m_pCustomer; }
-    /** Returns the request manager. */
-    UINetworkRequestManager *manager() const { return m_pNetworkManager; }
     /** Returns the request reply. */
     UINetworkReply *reply() { return m_pReply; }
 
@@ -120,10 +104,6 @@ private:
     const QString               m_strTarget;
     /** Holds the request headers. */
     const UserDictionary        m_requestHeaders;
-    /** Holds the request customer. */
-    UINetworkCustomer          *m_pCustomer;
-    /** Holds the request manager. */
-    UINetworkRequestManager    *m_pNetworkManager;
 
     /** Holds current request url. */
     QUrl  m_url;

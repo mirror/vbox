@@ -19,12 +19,8 @@
 #include <QVariant>
 
 /* GUI includes: */
-#include "UICommon.h"
-#include "UINetworkCustomer.h"
 #include "UINetworkRequest.h"
 #include "UINetworkRequestManager.h"
-#include "UINetworkRequestManagerWindow.h"
-#include "UINetworkRequestWidget.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -33,16 +29,11 @@
 UINetworkRequest::UINetworkRequest(UINetworkRequestType enmType,
                                    const QList<QUrl> &urls,
                                    const QString &strTarget,
-                                   const UserDictionary &requestHeaders,
-                                   UINetworkCustomer *pCustomer,
-                                   UINetworkRequestManager *pNetworkManager)
-    : QObject(pNetworkManager)
-    , m_enmType(enmType)
+                                   const UserDictionary &requestHeaders)
+    : m_enmType(enmType)
     , m_urls(urls)
     , m_strTarget(strTarget)
     , m_requestHeaders(requestHeaders)
-    , m_pCustomer(pCustomer)
-    , m_pNetworkManager(pNetworkManager)
     , m_iUrlIndex(-1)
     , m_fRunning(false)
 {
@@ -52,11 +43,6 @@ UINetworkRequest::UINetworkRequest(UINetworkRequestType enmType,
 UINetworkRequest::~UINetworkRequest()
 {
     cleanup();
-}
-
-const QString UINetworkRequest::description() const
-{
-    return m_pCustomer->description();
 }
 
 void UINetworkRequest::sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
@@ -171,10 +157,6 @@ void UINetworkRequest::sltCancel()
 
 void UINetworkRequest::prepare()
 {
-    /* Prepare listeners for network-manager: */
-    connect(manager(), &UINetworkRequestManager::sigCancelNetworkRequests,
-            this, &UINetworkRequest::sltCancel, Qt::QueuedConnection);
-
     /* Choose first url as current: */
     m_iUrlIndex = 0;
     m_url = m_urls.at(m_iUrlIndex);

@@ -2526,8 +2526,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
     /* If downloader is running already: */
     if (UIDownloaderAdditions::current())
     {
-        /* Just show network access manager: */
-        gNetworkManager->show();
+        /// @todo show notification-center
     }
     /* Else propose to download additions: */
     else if (msgCenter().cannotFindGuestAdditions())

@@ -585,8 +585,7 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
         /* And we have a force-call: */
         if (fForceCall)
         {
-            /* Just show Network Access Manager: */
-            gNetworkManager->show();
+            /// @todo show notification-center
         }
         return;
     }
