@@ -113,6 +113,23 @@ void UINetworkRequestManager::sltHandleNetworkRequestProgress(qint64 iReceived, 
     pNetworkCustomer->processNetworkReplyProgress(iReceived, iTotal);
 }
 
+void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QString &strError)
+{
+    /* Make sure we have this request registered: */
+    UINetworkRequest *pNetworkRequest = qobject_cast<UINetworkRequest*>(sender());
+    AssertPtrReturnVoid(pNetworkRequest);
+    const QUuid uId = m_requests.key(pNetworkRequest);
+    AssertReturnVoid(!uId.isNull());
+
+    /* Delegate request to customer: */
+    UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
+    AssertPtrReturnVoid(pNetworkCustomer);
+    pNetworkCustomer->processNetworkReplyFailed(strError);
+
+    /* Cleanup request: */
+    cleanupNetworkRequest(uId);
+}
+
 void UINetworkRequestManager::sltHandleNetworkRequestCancel()
 {
     /* Make sure we have this request registered: */
@@ -145,23 +162,6 @@ void UINetworkRequestManager::sltHandleNetworkRequestFinish()
 
     /* Cleanup request: */
     cleanupNetworkRequest(uId);
-}
-
-void UINetworkRequestManager::sltHandleNetworkRequestFailure(const QString &)
-{
-    /* Make sure we have this request registered: */
-    UINetworkRequest *pNetworkRequest = qobject_cast<UINetworkRequest*>(sender());
-    AssertPtrReturnVoid(pNetworkRequest);
-    const QUuid uId = m_requests.key(pNetworkRequest);
-    AssertReturnVoid(!uId.isNull());
-
-    /* Delegate request to customer: */
-    UINetworkCustomer *pNetworkCustomer = m_customers.value(uId);
-    AssertPtrReturnVoid(pNetworkCustomer);
-    if (pNetworkCustomer->isItForceCall())
-    {
-        /// @todo show notification-center
-    }
 }
 
 void UINetworkRequestManager::prepare()

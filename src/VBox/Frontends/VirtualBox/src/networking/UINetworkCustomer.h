@@ -48,6 +48,8 @@ public:
 
     /** Handles network reply progress for @a iReceived amount of bytes among @a iTotal. */
     virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) = 0;
+    /** Handles network reply failed with specified @a strError. */
+    virtual void processNetworkReplyFailed(const QString &strError) = 0;
     /** Handles network reply canceling for a passed @a pReply. */
     virtual void processNetworkReplyCanceled(UINetworkReply *pReply) = 0;
     /** Handles network reply finishing for a passed @a pReply. */

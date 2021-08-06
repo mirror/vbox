@@ -130,19 +130,6 @@ void UINetworkRequest::sltHandleNetworkReplyFinish()
     }
 }
 
-void UINetworkRequest::sltRetry()
-{
-    /* Cleanup current network-reply first: */
-    cleanupNetworkReply();
-
-    /* Choose first url as current: */
-    m_iUrlIndex = 0;
-    m_url = m_urls.at(m_iUrlIndex);
-
-    /* Create new network-reply finally: */
-    prepareNetworkReply();
-}
-
 void UINetworkRequest::sltCancel()
 {
     /* Abort network-reply if present: */

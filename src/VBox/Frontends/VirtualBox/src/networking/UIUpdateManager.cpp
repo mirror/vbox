@@ -114,6 +114,8 @@ protected:
 
     /** Handles network reply progress for @a iReceived amount of bytes among @a iTotal. */
     virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) /* override */;
+    /** Handles network reply finishing with specified @a strError. */
+    virtual void processNetworkReplyFailed(const QString &strError) /* override */;
     /** Handles network reply canceling for a passed @a pReply. */
     virtual void processNetworkReplyCanceled(UINetworkReply *pReply) /* override */;
     /** Handles network reply finishing for a passed @a pReply. */
@@ -141,6 +143,8 @@ public:
 
 protected:
 
+    /** Handles network reply finishing with specified @a strError. */
+    virtual void processNetworkReplyFailed(const QString &strError) /* override */;
     /** Handles network reply canceling for a passed @a pReply. */
     virtual void processNetworkReplyCanceled(UINetworkReply *pReply) /* override */;
     /** Handles network reply finishing for a passed @a pReply. */
@@ -227,6 +231,10 @@ void UIUpdateStep::processNetworkReplyProgress(qint64, qint64)
 {
 }
 
+void UIUpdateStep::processNetworkReplyFailed(const QString &)
+{
+}
+
 void UIUpdateStep::processNetworkReplyCanceled(UINetworkReply *)
 {
 }
@@ -239,6 +247,14 @@ void UIUpdateStep::processNetworkReplyFinished(UINetworkReply *)
 /*********************************************************************************************************************************
 *   Class UIUpdateStepVirtualBox implementation.                                                                                 *
 *********************************************************************************************************************************/
+
+void UIUpdateStepVirtualBox::processNetworkReplyFailed(const QString &strError)
+{
+    Q_UNUSED(strError);
+
+    /* Notify about step completion: */
+    emit sigStepComplete();
+}
 
 void UIUpdateStepVirtualBox::processNetworkReplyCanceled(UINetworkReply *pReply)
 {

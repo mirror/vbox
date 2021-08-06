@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -108,6 +108,8 @@ protected:
 
     /** Handles network-reply progress for @a iReceived bytes of @a iTotal. */
     void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
+    /** Handles network-reply failed with specified @a strError. */
+    void processNetworkReplyFailed(const QString &strError);
     /** Handles network-reply cancel request for @a pReply. */
     void processNetworkReplyCanceled(UINetworkReply *pReply);
     /** Handles network-reply finish for @a pReply. */
