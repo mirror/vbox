@@ -44,6 +44,7 @@
 static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect, PPDMCRITSECTINT pPrev, bool fFinal);
 static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritSect, PPDMCRITSECTRWINT pPrev, bool fFinal);
 static FNDBGFINFOARGVINT pdmR3CritSectInfo;
+static FNDBGFINFOARGVINT pdmR3CritSectRwInfo;
 
 
 
@@ -75,6 +76,8 @@ int pdmR3CritSectBothInitStatsAndInfo(PVM pVM)
      * Info items.
      */
     DBGFR3InfoRegisterInternalArgv(pVM, "critsect", "Show critical section: critsect [-v] [pattern[...]]", pdmR3CritSectInfo, 0);
+    DBGFR3InfoRegisterInternalArgv(pVM, "critsectrw", "Show read/write critical section: critsectrw [-v] [pattern[...]]",
+                                   pdmR3CritSectRwInfo, 0);
 
     return VINF_SUCCESS;
 }
@@ -1090,9 +1093,14 @@ static void pdmR3CritSectInfoWorker(PUVM pUVM, const char *pszPatterns, PCDBGFIN
         if (   !pszPatterns
             || RTStrSimplePatternMultiMatch(pszPatterns, cchPatterns, pCritSect->pszName, RTSTR_MAX, NULL))
         {
-            pHlp->pfnPrintf(pHlp, "%p: '%s'%s\n", pCritSect, pCritSect->pszName,
+            uint32_t fFlags = pCritSect->Core.fFlags;
+            pHlp->pfnPrintf(pHlp, "%p: '%s'%s%s%s%s%s\n", pCritSect, pCritSect->pszName,
                             pCritSect->fAutomaticDefaultCritsect ? " default" : "",
-                            pCritSect->fUsedByTimerOrSimilar ? " used-by-timer-or-similar" : "");
+                            pCritSect->fUsedByTimerOrSimilar ? " used-by-timer-or-similar" : "",
+                            fFlags & RTCRITSECT_FLAGS_NO_NESTING ? " no-testing" : "",
+                            fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL ? " no-lock-val" : "",
+                            fFlags & RTCRITSECT_FLAGS_NOP ? " nop" : "");
+
 
             /*
              * Get the volatile data:
@@ -1100,7 +1108,6 @@ static void pdmR3CritSectInfoWorker(PUVM pUVM, const char *pszPatterns, PCDBGFIN
             RTNATIVETHREAD hOwner;
             int32_t        cLockers;
             int32_t        cNestings;
-            uint32_t       fFlags;
             uint32_t       uMagic;
             for (uint32_t iTry = 0; iTry < 16; iTry++)
             {
@@ -1135,7 +1142,7 @@ static void pdmR3CritSectInfoWorker(PUVM pUVM, const char *pszPatterns, PCDBGFIN
             /*
              * If locked, print details
              */
-            if (cLockers != -1 || cNestings != 1 || hOwner != NIL_RTNATIVETHREAD || cVerbosity > 1)
+            if (cLockers != -1 || cNestings > 1 || cNestings < 0 || hOwner != NIL_RTNATIVETHREAD || cVerbosity > 1)
             {
                 /* Translate the owner to a name if we have one and can. */
                 const char *pszOwner = NULL;
@@ -1157,9 +1164,97 @@ static void pdmR3CritSectInfoWorker(PUVM pUVM, const char *pszPatterns, PCDBGFIN
 
 
 /**
- * @callback_method_impl{FNDBGFINFOARGVINT, critsect}
+ * Display matching read/write critical sections.
  */
-static DECLCALLBACK(void) pdmR3CritSectInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+static void pdmR3CritSectInfoRwWorker(PUVM pUVM, const char *pszPatterns, PCDBGFINFOHLP pHlp, unsigned cVerbosity)
+{
+    size_t const cchPatterns = pszPatterns ? strlen(pszPatterns) : 0;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+
+    for (PPDMCRITSECTRWINT pCritSect = pUVM->pdm.s.pRwCritSects; pCritSect; pCritSect = pCritSect->pNext)
+        if (   !pszPatterns
+            || RTStrSimplePatternMultiMatch(pszPatterns, cchPatterns, pCritSect->pszName, RTSTR_MAX, NULL))
+        {
+            uint16_t const fFlags = pCritSect->Core.fFlags;
+            pHlp->pfnPrintf(pHlp, "%p: '%s'%s%s%s\n", pCritSect, pCritSect->pszName,
+                            pCritSect->Core.fFlags & RTCRITSECT_FLAGS_NO_NESTING ? " no-testing" : "",
+                            pCritSect->Core.fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL ? " no-lock-val" : "",
+                            pCritSect->Core.fFlags & RTCRITSECT_FLAGS_NOP ? " nop" : "");
+
+            /*
+             * Get the volatile data:
+             */
+            RTNATIVETHREAD  hOwner;
+            uint64_t        u64State;
+            uint32_t        cWriterReads;
+            uint32_t        cWriteRecursions;
+            bool            fNeedReset;
+            uint32_t        uMagic;
+            unsigned        cTries = 16;
+            do
+            {
+                u64State         = pCritSect->Core.u64State;
+                hOwner           = pCritSect->Core.hNativeWriter;
+                cWriterReads     = pCritSect->Core.cWriterReads;
+                cWriteRecursions = pCritSect->Core.cWriteRecursions;
+                fNeedReset       = pCritSect->Core.fNeedReset;
+                uMagic           = pCritSect->Core.u32Magic;
+            } while (   cTries-- > 0
+                     && (   u64State         != pCritSect->Core.u64State
+                         || hOwner           != pCritSect->Core.hNativeWriter
+                         || cWriterReads     != pCritSect->Core.cWriterReads
+                         || cWriteRecursions != pCritSect->Core.cWriteRecursions
+                         || fNeedReset       != pCritSect->Core.fNeedReset
+                         || uMagic           != pCritSect->Core.u32Magic));
+
+            /*
+             * Check and resolve the magic to a string, print if not RTCRITSECT_MAGIC.
+             */
+            const char *pszMagic;
+            switch (uMagic)
+            {
+                case RTCRITSECTRW_MAGIC:            pszMagic = NULL; break;
+                case ~RTCRITSECTRW_MAGIC:           pszMagic = " deleted"; break;
+                case PDMCRITSECTRW_MAGIC_CORRUPT:   pszMagic = " PDMCRITSECTRW_MAGIC_CORRUPT!"; break;
+                default:                            pszMagic = " !unknown!"; break;
+            }
+            if (pszMagic || cVerbosity > 1)
+                pHlp->pfnPrintf(pHlp, "  uMagic=%#x%s\n", uMagic, pszMagic ? pszMagic : "");
+
+            /*
+             * If locked, print details
+             */
+            if ((u64State & ~RTCSRW_DIR_MASK) || hOwner != NIL_RTNATIVETHREAD || cVerbosity > 1)
+            {
+                /* Translate the owner to a name if we have one and can. */
+                const char *pszOwner = NULL;
+                if (hOwner != NIL_RTNATIVETHREAD)
+                {
+                    RTTHREAD hOwnerThread = RTThreadFromNative(hOwner); /* Note! Does not return a reference (crazy). */
+                    if (hOwnerThread != NIL_RTTHREAD)
+                        pszOwner = RTThreadGetName(hOwnerThread);
+                }
+                else
+                    pszOwner = "<no-owner>";
+
+                pHlp->pfnPrintf(pHlp, "  u64State=%#RX64 %s cReads=%u cWrites=%u cWaitingReads=%u\n",
+                                u64State, (u64State & RTCSRW_DIR_MASK) == RTCSRW_DIR_WRITE ? "writing" : "reading",
+                                (unsigned)((u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT),
+                                (unsigned)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_RD_SHIFT),
+                                (unsigned)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT));
+                if (hOwner != NIL_RTNATIVETHREAD || cVerbosity > 2)
+                    pHlp->pfnPrintf(pHlp, "  cNestings=%u cReadNestings=%u hWriter=%p %s\n",
+                                    cWriteRecursions, cWriterReads, hOwner, pszOwner ? pszOwner : "???");
+            }
+        }
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+}
+
+
+/**
+ * Common worker for critsect and critsectrw info items.
+ */
+static void pdmR3CritSectInfoCommon(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs, bool fReadWrite)
 {
     PUVM pUVM = pVM->pUVM;
 
@@ -1187,7 +1282,10 @@ static DECLCALLBACK(void) pdmR3CritSectInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                pdmR3CritSectInfoWorker(pUVM, ValueUnion.psz, pHlp, cVerbosity);
+                if (!fReadWrite)
+                    pdmR3CritSectInfoWorker(pUVM, ValueUnion.psz, pHlp, cVerbosity);
+                else
+                    pdmR3CritSectInfoRwWorker(pUVM, ValueUnion.psz, pHlp, cVerbosity);
                 cProcessed++;
                 break;
 
@@ -1201,7 +1299,29 @@ static DECLCALLBACK(void) pdmR3CritSectInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
      * If we did nothing above, dump all.
      */
     if (!cProcessed)
-        pdmR3CritSectInfoWorker(pUVM, NULL, pHlp, cVerbosity);
+    {
+        if (!fReadWrite)
+            pdmR3CritSectInfoWorker(pUVM, NULL, pHlp, cVerbosity);
+        else
+            pdmR3CritSectInfoRwWorker(pUVM, NULL, pHlp, cVerbosity);
+    }
 }
 
+
+/**
+ * @callback_method_impl{FNDBGFINFOARGVINT, critsect}
+ */
+static DECLCALLBACK(void) pdmR3CritSectInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+{
+    return pdmR3CritSectInfoCommon(pVM, pHlp, cArgs, papszArgs, false);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFINFOARGVINT, critsectrw}
+ */
+static DECLCALLBACK(void) pdmR3CritSectRwInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+{
+    return pdmR3CritSectInfoCommon(pVM, pHlp, cArgs, papszArgs, true);
+}
 
