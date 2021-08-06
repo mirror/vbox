@@ -90,6 +90,14 @@ QUuid UINetworkRequestManager::createNetworkRequest(UINetworkRequestType enmType
     return QUuid();
 }
 
+void UINetworkRequestManager::cancelNetworkRequest(const QUuid &uId)
+{
+    /* Cleanup request: */
+    UINetworkRequest *pNetworkRequest = m_requests.value(uId);
+    if (pNetworkRequest)
+        pNetworkRequest->sltCancel();
+}
+
 UINetworkRequestManager::UINetworkRequestManager()
 {
     s_pInstance = this;

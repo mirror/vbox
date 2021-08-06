@@ -61,6 +61,9 @@ public:
                                const UserDictionary &requestHeaders,
                                UINetworkCustomer *pCustomer);
 
+    /** Aborts network-request. */
+    void cancelNetworkRequest(const QUuid &uId);
+
 protected:
 
     /** Constructs network manager. */

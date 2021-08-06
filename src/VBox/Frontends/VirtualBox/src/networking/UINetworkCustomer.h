@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QObject>
 #include <QUrl>
+#include <QUuid>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -77,10 +78,16 @@ protected:
                               const QString &strTarget = QString(),
                               const UserDictionary requestHeaders = UserDictionary());
 
+    /** Aborts network-request. */
+    void cancelNetworkRequest();
+
 private:
 
     /** Holds whether this customer has forced privelegies. */
     bool  m_fForceCall;
+
+    /** Holds the network-request ID. */
+    QUuid  m_uId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networking_UINetworkCustomer_h */
