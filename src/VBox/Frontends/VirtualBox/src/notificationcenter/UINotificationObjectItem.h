@@ -31,6 +31,7 @@ class QProgressBar;
 class QVBoxLayout;
 class QIRichTextLabel;
 class QIToolButton;
+class UINotificationDownloader;
 class UINotificationObject;
 class UINotificationProgress;
 
@@ -103,6 +104,41 @@ private:
 
     /** Holds the notification-progress this item created for. */
     UINotificationProgress *progress() const;
+
+    /** Updates details. */
+    void updateDetails();
+};
+
+/** UINotificationObjectItem extension for notification-downloader. */
+class UINotificationDownloaderItem : public UINotificationObjectItem
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs notification-downloader item, passing @a pParent to the base-class.
+      * @param  pDownloader  Brings the notification-downloader this item created for. */
+    UINotificationDownloaderItem(QWidget *pParent, UINotificationDownloader *pDownloader = 0);
+
+protected:
+
+    /** Holds the progress-bar instance. */
+    QProgressBar *m_pProgressBar;
+
+private slots:
+
+    /** Handles signal about progress started. */
+    void sltHandleProgressStarted();
+    /** Handles signal about progress changed.
+      * @param  uPercent  Brings new progress percentage value. */
+    void sltHandleProgressChange(ulong uPercent);
+    /** Handles signal about progress finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the notification-downloader this item created for. */
+    UINotificationDownloader *downloader() const;
 
     /** Updates details. */
     void updateDetails();

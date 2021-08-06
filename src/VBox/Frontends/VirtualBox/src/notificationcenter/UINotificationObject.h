@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QPointer>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -31,6 +32,7 @@
 #include "CProgress.h"
 
 /* Forward declarations: */
+class UIDownloader;
 class UINotificationProgressTask;
 
 /** QObject-based notification-object. */
@@ -116,6 +118,71 @@ private:
 
     /** Holds the last cached progress percentage value. */
     ulong  m_uPercent;
+};
+
+/** UINotificationObject extension for notification-downloader. */
+class SHARED_LIBRARY_STUFF UINotificationDownloader : public UINotificationObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about progress started. */
+    void sigProgressStarted();
+    /** Notifies listeners about progress changed.
+      * @param  uPercent  Brings new progress percentage value. */
+    void sigProgressChange(ulong uPercent);
+    /** Notifies listeners about progress failed. */
+    void sigProgressFailed();
+    /** Notifies listeners about progress canceled. */
+    void sigProgressCanceled();
+    /** Notifies listeners about progress finished. */
+    void sigProgressFinished();
+
+    /** Notifies listeners about downloader destroyed. */
+    void sigDownloaderDestroyed();
+
+public:
+
+    /** Constructs notification-downloader. */
+    UINotificationDownloader();
+    /** Destructs notification-downloader. */
+    virtual ~UINotificationDownloader() /* override final */;
+
+    /** Creates and returns started downloader-wrapper. */
+    virtual UIDownloader *createDownloader() = 0;
+
+    /** Returns current progress percentage value. */
+    ulong percent() const;
+    /** Returns error-message if any. */
+    QString error() const;
+
+    /** Handles notification-object being added. */
+    virtual void handle() /* override final */;
+
+public slots:
+
+    /** Stops the downloader and notifies model about closing. */
+    virtual void close() /* override final */;
+
+private slots:
+
+    /** Handles signal about progress changed.
+      * @param  uPercent  Brings new progress percentage value. */
+    void sltHandleProgressChange(ulong uPercent);
+    /** Handles signal about progress failed.
+      * @param  strError  Brings error message if any. */
+    void sltHandleProgressFailed(const QString &strError);
+
+private:
+
+    /** Holds the instance of downloader being wrapped by this notification-downloader. */
+    QPointer<UIDownloader>  m_pDownloader;
+
+    /** Holds the last cached progress percentage value. */
+    ulong    m_uPercent;
+    /** Holds the error message is any. */
+    QString  m_strError;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObject_h */

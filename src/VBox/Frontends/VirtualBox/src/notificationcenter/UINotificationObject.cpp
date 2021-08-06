@@ -16,6 +16,7 @@
  */
 
 /* GUI includes: */
+#include "UIDownloader.h"
 #include "UINotificationObject.h"
 #include "UINotificationProgressTask.h"
 
@@ -77,10 +78,10 @@ void UINotificationProgress::handle()
                 this, &UINotificationProgress::sltHandleProgressChange);
         connect(m_pTask, &UIProgressTask::sigProgressFinished,
                 this, &UINotificationProgress::sltHandleProgressFinished);
-    }
 
-    /* And start it finally: */
-    m_pTask->start();
+        /* And start it finally: */
+        m_pTask->start();
+    }
 }
 
 void UINotificationProgress::close()
@@ -102,4 +103,77 @@ void UINotificationProgress::sltHandleProgressFinished()
 {
     m_uPercent = 100;
     emit sigProgressFinished();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationDownloader implementation.                                                                               *
+*********************************************************************************************************************************/
+
+UINotificationDownloader::UINotificationDownloader()
+{
+}
+
+UINotificationDownloader::~UINotificationDownloader()
+{
+    delete m_pDownloader;
+}
+
+ulong UINotificationDownloader::percent() const
+{
+    return m_uPercent;
+}
+
+QString UINotificationDownloader::error() const
+{
+    return m_strError;
+}
+
+void UINotificationDownloader::handle()
+{
+    /* Prepare downloader: */
+    m_pDownloader = createDownloader();
+    if (m_pDownloader)
+    {
+        connect(m_pDownloader, &UIDownloader::sigToStartAcknowledging,
+                this, &UINotificationDownloader::sigProgressStarted);
+        connect(m_pDownloader, &UIDownloader::sigToStartDownloading,
+                this, &UINotificationDownloader::sigProgressStarted);
+        connect(m_pDownloader, &UIDownloader::sigToStartVerifying,
+                this, &UINotificationDownloader::sigProgressStarted);
+        connect(m_pDownloader, &UIDownloader::sigProgressChange,
+                this, &UINotificationDownloader::sltHandleProgressChange);
+        connect(m_pDownloader, &UIDownloader::sigProgressFailed,
+                this, &UINotificationDownloader::sltHandleProgressFailed);
+        connect(m_pDownloader, &UIDownloader::sigProgressCanceled,
+                this, &UINotificationDownloader::sigProgressCanceled);
+        connect(m_pDownloader, &UIDownloader::sigProgressFinished,
+                this, &UINotificationDownloader::sigProgressFinished);
+        connect(m_pDownloader, &UIDownloader::destroyed,
+                this, &UINotificationDownloader::sigDownloaderDestroyed);
+
+        /* And start it finally: */
+        m_pDownloader->start();
+    }
+}
+
+void UINotificationDownloader::close()
+{
+    /* Cancel downloader: */
+    if (m_pDownloader)
+        m_pDownloader->cancel();
+    /* Call to base-class: */
+    UINotificationObject::close();
+}
+
+void UINotificationDownloader::sltHandleProgressChange(ulong uPercent)
+{
+    m_uPercent = uPercent;
+    emit sigProgressChange(uPercent);
+}
+
+void UINotificationDownloader::sltHandleProgressFailed(const QString &strError)
+{
+    m_strError = strError;
+    emit sigProgressFailed();
 }

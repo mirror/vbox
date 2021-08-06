@@ -272,6 +272,104 @@ void UINotificationProgressItem::updateDetails()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationDownloaderItem implementation.                                                                           *
+*********************************************************************************************************************************/
+
+UINotificationDownloaderItem::UINotificationDownloaderItem(QWidget *pParent, UINotificationDownloader *pDownloader /* = 0 */)
+    : UINotificationObjectItem(pParent, pDownloader)
+    , m_pProgressBar(0)
+{
+    /* Main layout was prepared in base-class: */
+    if (m_pLayoutMain)
+    {
+        /* Name label was prepared in base-class: */
+        if (m_pLabelName)
+            m_pLabelName->setText(downloader()->name());
+        /* Details label was prepared in base-class: */
+        if (m_pLabelDetails)
+        {
+            int iHint = m_pLabelName->minimumSizeHint().width()
+                      + m_pLayoutUpper->spacing()
+                      + m_pButtonClose->minimumSizeHint().width();
+            m_pLabelDetails->setMinimumTextWidth(iHint);
+            updateDetails();
+        }
+
+        /* Prepare progress-bar: */
+        m_pProgressBar = new QProgressBar(this);
+        if (m_pProgressBar)
+        {
+            m_pProgressBar->setMinimum(0);
+            m_pProgressBar->setMaximum(100);
+            m_pProgressBar->setValue(downloader()->percent());
+
+            m_pLayoutMain->addWidget(m_pProgressBar);
+        }
+    }
+
+    /* Prepare downloader connections: */
+    connect(downloader(), &UINotificationDownloader::sigProgressStarted,
+            this, &UINotificationDownloaderItem::sltHandleProgressStarted);
+    connect(downloader(), &UINotificationDownloader::sigProgressChange,
+            this, &UINotificationDownloaderItem::sltHandleProgressChange);
+    connect(downloader(), &UINotificationDownloader::sigProgressFailed,
+            this, &UINotificationDownloaderItem::sltHandleProgressFinished);
+    connect(downloader(), &UINotificationDownloader::sigProgressCanceled,
+            this, &UINotificationDownloaderItem::sltHandleProgressFinished);
+    connect(downloader(), &UINotificationDownloader::sigProgressFinished,
+            this, &UINotificationDownloaderItem::sltHandleProgressFinished);
+}
+
+void UINotificationDownloaderItem::sltHandleProgressStarted()
+{
+    /* Init progress-bar state: */
+    if (m_pProgressBar)
+        m_pProgressBar->setValue(0);
+    /* Update details with fetched stuff if any: */
+    if (m_pLabelDetails)
+        updateDetails();
+}
+
+void UINotificationDownloaderItem::sltHandleProgressChange(ulong uPercent)
+{
+    /* Update progress-bar state: */
+    if (m_pProgressBar)
+        m_pProgressBar->setValue(uPercent);
+}
+
+void UINotificationDownloaderItem::sltHandleProgressFinished()
+{
+    /* Finalize progress-bar state: */
+    if (m_pProgressBar)
+        m_pProgressBar->setValue(100);
+    /* Update details with error text if any: */
+    if (m_pLabelDetails)
+        updateDetails();
+}
+
+UINotificationDownloader *UINotificationDownloaderItem::downloader() const
+{
+    return qobject_cast<UINotificationDownloader*>(m_pObject);
+}
+
+void UINotificationDownloaderItem::updateDetails()
+{
+    AssertPtrReturnVoid(m_pLabelDetails);
+    const QString strDetails = downloader()->details();
+    const QString strError = downloader()->error();
+    const QString strFullDetails = strError.isNull()
+                                 ? strDetails
+                                 : QString("%1<br>%2").arg(strDetails, strError);
+    m_pLabelDetails->setText(strFullDetails);
+    if (!strError.isEmpty())
+    {
+        m_fToggled = true;
+        m_pLabelDetails->setVisible(m_fToggled);
+    }
+}
+
+
+/*********************************************************************************************************************************
 *   Namespace UINotificationProgressItem implementation.                                                                         *
 *********************************************************************************************************************************/
 
@@ -280,6 +378,8 @@ UINotificationObjectItem *UINotificationItem::create(QWidget *pParent, UINotific
     /* Handle known types: */
     if (pObject->inherits("UINotificationProgress"))
         return new UINotificationProgressItem(pParent, static_cast<UINotificationProgress*>(pObject));
+    if (pObject->inherits("UINotificationDownloader"))
+        return new UINotificationDownloaderItem(pParent, static_cast<UINotificationDownloader*>(pObject));
     /* Handle defaults: */
     return new UINotificationObjectItem(pParent, pObject);
 }
