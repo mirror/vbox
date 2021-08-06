@@ -73,12 +73,17 @@ QString UIDownloader::description() const
     return QString();
 }
 
-void UIDownloader::processNetworkReplyProgress(qint64, qint64)
+void UIDownloader::processNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
 {
+    /* Notify listeners: */
+    emit sigProgressChange((double)iReceived / iTotal * 100);
 }
 
-void UIDownloader::processNetworkReplyFailed(const QString &)
+void UIDownloader::processNetworkReplyFailed(const QString &strError)
 {
+    /* Notify listeners: */
+    emit sigProgressFailed(strError);
+
     /* Delete downloader: */
     deleteLater();
 }

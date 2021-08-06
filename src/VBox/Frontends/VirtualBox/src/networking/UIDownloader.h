@@ -49,6 +49,11 @@ signals:
     /** Signals to start verifying. */
     void sigToStartVerifying();
 
+    /** Notifies listeners about progress change to @a iPercent. */
+    void sigProgressChange(ulong uPercent);
+    /** Notifies listeners about operation progress failed with @a strError. */
+    void sigProgressFailed(const QString &strError);
+
 public:
 
     /** Constructs downloader. */
