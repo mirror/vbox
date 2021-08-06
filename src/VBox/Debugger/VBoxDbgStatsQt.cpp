@@ -266,7 +266,7 @@ public:
      *                                - @c true: continue with the children,
      *                                - @c false: skip children.
      */
-    virtual void iterateStatsByPattern(QString const &a_rPatStr, FNITERATOR *a_pfnCallback, void *pvUser,
+    virtual void iterateStatsByPattern(QString const &a_rPatStr, FNITERATOR *a_pfnCallback, void *a_pvUser,
                                        bool a_fMatchChildren = true);
 
     /**
@@ -2019,7 +2019,7 @@ VBoxDbgStatsModel::resetStatsByIndex(QModelIndex const &a_rIndex, bool fSubTree 
 
 
 void
-VBoxDbgStatsModel::iterateStatsByPattern(QString const &a_rPatStr, VBoxDbgStatsModel::FNITERATOR *a_pfnCallback, void *pvUser,
+VBoxDbgStatsModel::iterateStatsByPattern(QString const &a_rPatStr, VBoxDbgStatsModel::FNITERATOR *a_pfnCallback, void *a_pvUser,
                                          bool a_fMatchChildren /*= true*/)
 {
     const QByteArray   &PatBytes   = a_rPatStr.toUtf8();
@@ -2056,7 +2056,7 @@ VBoxDbgStatsModel::iterateStatsByPattern(QString const &a_rPatStr, VBoxDbgStatsM
             {
                 /* Do callback. */
                 QModelIndex const Index = createIndex(iChild, 0, pChild);
-                if (!a_pfnCallback(pChild, Index, szName, pvUser))
+                if (!a_pfnCallback(pChild, Index, szName, a_pvUser))
                     return;
                 if (!a_fMatchChildren)
                     continue;
