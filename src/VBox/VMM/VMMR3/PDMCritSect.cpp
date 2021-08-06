@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_PDM_CRITSECT
+#define LOG_GROUP LOG_GROUP_PDM//_CRITSECT
 #include "PDMInternal.h"
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmcritsectrw.h>
@@ -32,6 +32,7 @@
 #include <VBox/sup.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/getopt.h>
 #include <iprt/lockvalidator.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
@@ -42,18 +43,21 @@
 *********************************************************************************************************************************/
 static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect, PPDMCRITSECTINT pPrev, bool fFinal);
 static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritSect, PPDMCRITSECTRWINT pPrev, bool fFinal);
+static FNDBGFINFOARGVINT pdmR3CritSectInfo;
 
 
 
 /**
- * Register statistics related to the critical sections.
+ * Register statistics and info items related to the critical sections.
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-int pdmR3CritSectBothInitStats(PVM pVM)
+int pdmR3CritSectBothInitStatsAndInfo(PVM pVM)
 {
-    RT_NOREF_PV(pVM);
+    /*
+     * Statistics.
+     */
     STAM_REL_REG(pVM, &pVM->pdm.s.StatQueuedCritSectLeaves, STAMTYPE_COUNTER, "/PDM/CritSects/00-QueuedLeaves", STAMUNIT_OCCURENCES,
                  "Number of times a critical section leave request needed to be queued for ring-3 execution.");
     STAM_REL_REG(pVM, &pVM->pdm.s.StatAbortedCritSectEnters, STAMTYPE_COUNTER, "/PDM/CritSects/00-AbortedEnters", STAMUNIT_OCCURENCES,
@@ -66,6 +70,12 @@ int pdmR3CritSectBothInitStats(PVM pVM)
                  "Number of VERR_TIMEOUT returns.");
     STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectNonInterruptibleWaits, STAMTYPE_COUNTER, "/PDM/CritSects/00-Non-interruptible-Waits-VINF_SUCCESS",
                  STAMUNIT_OCCURENCES, "Number of non-interruptible waits for rcBusy=VINF_SUCCESS");
+
+    /*
+     * Info items.
+     */
+    DBGFR3InfoRegisterInternalArgv(pVM, "critsect", "Show critical section: critsect [-v] [pattern[...]]", pdmR3CritSectInfo, 0);
+
     return VINF_SUCCESS;
 }
 
@@ -162,7 +172,6 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 /*
                  * Initialize the structure (first bit is c&p from RTCritSectInitEx).
                  */
-                Log(("pdmR3CritSectInitOne: %p - %s\n", pCritSect, pszName));
                 pCritSect->Core.u32Magic             = RTCRITSECT_MAGIC;
                 pCritSect->Core.fFlags               = 0;
                 pCritSect->Core.cNestings            = 0;
@@ -1067,4 +1076,132 @@ VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, NIL_RTRCPTR);
     return MMHyperR3ToRC(pVM, &pVM->pdm.s.NopCritSect);
 }
+
+
+/**
+ * Display matching critical sections.
+ */
+static void pdmR3CritSectInfoWorker(PUVM pUVM, const char *pszPatterns, PCDBGFINFOHLP pHlp, unsigned cVerbosity)
+{
+    size_t const cchPatterns = pszPatterns ? strlen(pszPatterns) : 0;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+
+    for (PPDMCRITSECTINT pCritSect = pUVM->pdm.s.pCritSects; pCritSect; pCritSect = pCritSect->pNext)
+        if (   !pszPatterns
+            || RTStrSimplePatternMultiMatch(pszPatterns, cchPatterns, pCritSect->pszName, RTSTR_MAX, NULL))
+        {
+            pHlp->pfnPrintf(pHlp, "%p: '%s'%s\n", pCritSect, pCritSect->pszName,
+                            pCritSect->fAutomaticDefaultCritsect ? " default" : "",
+                            pCritSect->fUsedByTimerOrSimilar ? " used-by-timer-or-similar" : "");
+
+            /*
+             * Get the volatile data:
+             */
+            RTNATIVETHREAD hOwner;
+            int32_t        cLockers;
+            int32_t        cNestings;
+            uint32_t       fFlags;
+            uint32_t       uMagic;
+            for (uint32_t iTry = 0; iTry < 16; iTry++)
+            {
+                hOwner    = pCritSect->Core.NativeThreadOwner;
+                cLockers  = pCritSect->Core.cLockers;
+                cNestings = pCritSect->Core.cNestings;
+                fFlags    = pCritSect->Core.fFlags;
+                uMagic    = pCritSect->Core.u32Magic;
+                if (   hOwner    == pCritSect->Core.NativeThreadOwner
+                    && cLockers  == pCritSect->Core.cLockers
+                    && cNestings == pCritSect->Core.cNestings
+                    && fFlags    == pCritSect->Core.fFlags
+                    && uMagic    == pCritSect->Core.u32Magic)
+                    break;
+            }
+
+            /*
+             * Check and resolve the magic to a string, print if not RTCRITSECT_MAGIC.
+             */
+            const char *pszMagic;
+            switch (uMagic)
+            {
+                case RTCRITSECT_MAGIC:                  pszMagic = NULL; break;
+                case ~RTCRITSECT_MAGIC:                 pszMagic = " deleted"; break;
+                case PDMCRITSECT_MAGIC_CORRUPTED:       pszMagic = " PDMCRITSECT_MAGIC_CORRUPTED!"; break;
+                case PDMCRITSECT_MAGIC_FAILED_ABORT:    pszMagic = " PDMCRITSECT_MAGIC_FAILED_ABORT!"; break;
+                default:                                pszMagic = " !unknown!"; break;
+            }
+            if (pszMagic || cVerbosity > 1)
+                pHlp->pfnPrintf(pHlp, "  uMagic=%#x%s\n", uMagic, pszMagic ? pszMagic : "");
+
+            /*
+             * If locked, print details
+             */
+            if (cLockers != -1 || cNestings != 1 || hOwner != NIL_RTNATIVETHREAD || cVerbosity > 1)
+            {
+                /* Translate the owner to a name if we have one and can. */
+                const char *pszOwner = NULL;
+                if (hOwner != NIL_RTNATIVETHREAD)
+                {
+                    RTTHREAD hOwnerThread = RTThreadFromNative(hOwner); /* Note! Does not return a reference (crazy). */
+                    if (hOwnerThread != NIL_RTTHREAD)
+                        pszOwner = RTThreadGetName(hOwnerThread);
+                }
+                else
+                    pszOwner = "<no-owner>";
+
+                pHlp->pfnPrintf(pHlp, "  cLockers=%d cNestings=%d hOwner=%p %s%s\n", cLockers, cNestings, hOwner,
+                                pszOwner ? pszOwner : "???", fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK ? " pending-unlock" : "");
+            }
+        }
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFINFOARGVINT, critsect}
+ */
+static DECLCALLBACK(void) pdmR3CritSectInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+{
+    PUVM pUVM = pVM->pUVM;
+
+    /*
+     * Process arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        {   "--verbose", 'v', RTGETOPT_REQ_NOTHING },
+    };
+    RTGETOPTSTATE State;
+    int rc = RTGetOptInit(&State, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRC(rc);
+
+    unsigned cVerbosity = 1;
+    unsigned cProcessed = 0;
+
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&State, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'v':
+                cVerbosity++;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                pdmR3CritSectInfoWorker(pUVM, ValueUnion.psz, pHlp, cVerbosity);
+                cProcessed++;
+                break;
+
+            default:
+                pHlp->pfnGetOptError(pHlp, rc, &ValueUnion, &State);
+                return;
+        }
+    }
+
+    /*
+     * If we did nothing above, dump all.
+     */
+    if (!cProcessed)
+        pdmR3CritSectInfoWorker(pUVM, NULL, pHlp, cVerbosity);
+}
+
 

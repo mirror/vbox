@@ -1621,7 +1621,7 @@ extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
 #ifdef IN_RING3
 bool        pdmR3IsValidName(const char *pszName);
 
-int         pdmR3CritSectBothInitStats(PVM pVM);
+int         pdmR3CritSectBothInitStatsAndInfo(PVM pVM);
 int         pdmR3CritSectBothDeleteDevice(PVM pVM, PPDMDEVINS pDevIns);
 int         pdmR3CritSectBothDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns);
 int         pdmR3CritSectInitDevice(        PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
