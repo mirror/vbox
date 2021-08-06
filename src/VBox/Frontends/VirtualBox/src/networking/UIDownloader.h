@@ -51,7 +51,7 @@ signals:
 
     /** Notifies listeners about progress change to @a iPercent. */
     void sigProgressChange(ulong uPercent);
-    /** Notifies listeners about operation progress failed with @a strError. */
+    /** Notifies listeners about progress failed with @a strError. */
     void sigProgressFailed(const QString &strError);
 
 public:
@@ -63,6 +63,8 @@ public slots:
 
     /** Starts the sequence. */
     void start() { startDelayedAcknowledging(); }
+    /** Cancels the sequence. */
+    void cancel() { cancelNetworkRequest(); }
 
 protected slots:
 
