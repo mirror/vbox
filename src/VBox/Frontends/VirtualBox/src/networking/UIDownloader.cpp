@@ -23,9 +23,13 @@
 #include "UINetworkReply.h"
 
 
-void UIDownloader::start()
+UIDownloader::UIDownloader()
+    : m_state(UIDownloaderState_Null)
 {
-    startDelayedAcknowledging();
+    /* Connect async listeners for our own commands: */
+    connect(this, &UIDownloader::sigToStartAcknowledging, this, &UIDownloader::sltStartAcknowledging, Qt::QueuedConnection);
+    connect(this, &UIDownloader::sigToStartDownloading,   this, &UIDownloader::sltStartDownloading,   Qt::QueuedConnection);
+    connect(this, &UIDownloader::sigToStartVerifying,     this, &UIDownloader::sltStartVerifying,     Qt::QueuedConnection);
 }
 
 void UIDownloader::sltStartAcknowledging()
@@ -55,16 +59,7 @@ void UIDownloader::sltStartVerifying()
     createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << m_strPathSHA256SumsFile);
 }
 
-UIDownloader::UIDownloader()
-    : m_state(UIDownloaderState_Null)
-{
-    /* Connect listeners: */
-    connect(this, &UIDownloader::sigToStartAcknowledging, this, &UIDownloader::sltStartAcknowledging, Qt::QueuedConnection);
-    connect(this, &UIDownloader::sigToStartDownloading,   this, &UIDownloader::sltStartDownloading,   Qt::QueuedConnection);
-    connect(this, &UIDownloader::sigToStartVerifying,     this, &UIDownloader::sltStartVerifying,     Qt::QueuedConnection);
-}
-
-const QString UIDownloader::description() const
+QString UIDownloader::description() const
 {
     /* Look for known state: */
     switch (m_state)

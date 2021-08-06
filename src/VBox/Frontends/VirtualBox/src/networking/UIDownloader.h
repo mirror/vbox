@@ -51,8 +51,13 @@ signals:
 
 public:
 
+    /** Constructs downloader. */
+    UIDownloader();
+
+public slots:
+
     /** Starts the sequence. */
-    void start();
+    void start() { startDelayedAcknowledging(); }
 
 protected slots:
 
@@ -64,18 +69,6 @@ protected slots:
     void sltStartVerifying();
 
 protected:
-
-    /** UIDownloader states. */
-    enum UIDownloaderState
-    {
-        UIDownloaderState_Null,
-        UIDownloaderState_Acknowledging,
-        UIDownloaderState_Downloading,
-        UIDownloaderState_Verifying
-    };
-
-    /** Constructs downloader. */
-    UIDownloader();
 
     /** Appends subsequent source to try to download from. */
     void addSource(const QString &strSource) { m_sources << QUrl(strSource); }
@@ -97,30 +90,16 @@ protected:
     QString pathSHA256SumsFile() const { return m_strPathSHA256SumsFile; }
 
     /** Returns description of the current network operation. */
-    virtual const QString description() const;
-
-    /** Starts delayed acknowledging. */
-    void startDelayedAcknowledging() { emit sigToStartAcknowledging(); }
-    /** Starts delayed downloading. */
-    void startDelayedDownloading() { emit sigToStartDownloading(); }
-    /** Starts delayed verifying. */
-    void startDelayedVerifying() { emit sigToStartVerifying(); }
+    virtual QString description() const;
 
     /** Handles network-reply progress for @a iReceived bytes of @a iTotal. */
-    void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
+    virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) /* override */;
     /** Handles network-reply failed with specified @a strError. */
-    void processNetworkReplyFailed(const QString &strError);
+    virtual void processNetworkReplyFailed(const QString &strError) /* override */;
     /** Handles network-reply cancel request for @a pReply. */
-    void processNetworkReplyCanceled(UINetworkReply *pReply);
+    virtual void processNetworkReplyCanceled(UINetworkReply *pReply) /* override */;
     /** Handles network-reply finish for @a pReply. */
-    void processNetworkReplyFinished(UINetworkReply *pReply);
-
-    /** Handles acknowledging result. */
-    virtual void handleAcknowledgingResult(UINetworkReply *pReply);
-    /** Handles downloading result. */
-    virtual void handleDownloadingResult(UINetworkReply *pReply);
-    /** Handles verifying result. */
-    virtual void handleVerifyingResult(UINetworkReply *pReply);
+    virtual void processNetworkReplyFinished(UINetworkReply *pReply) /* override */;
 
     /** Asks user for downloading confirmation for passed @a pReply. */
     virtual bool askForDownloadingConfirmation(UINetworkReply *pReply) = 0;
@@ -130,6 +109,29 @@ protected:
     virtual void handleVerifiedObject(UINetworkReply *pReply) { Q_UNUSED(pReply); }
 
 private:
+
+    /** UIDownloader states. */
+    enum UIDownloaderState
+    {
+        UIDownloaderState_Null,
+        UIDownloaderState_Acknowledging,
+        UIDownloaderState_Downloading,
+        UIDownloaderState_Verifying
+    };
+
+    /** Starts delayed acknowledging. */
+    void startDelayedAcknowledging() { emit sigToStartAcknowledging(); }
+    /** Starts delayed downloading. */
+    void startDelayedDownloading() { emit sigToStartDownloading(); }
+    /** Starts delayed verifying. */
+    void startDelayedVerifying() { emit sigToStartVerifying(); }
+
+    /** Handles acknowledging result. */
+    void handleAcknowledgingResult(UINetworkReply *pReply);
+    /** Handles downloading result. */
+    void handleDownloadingResult(UINetworkReply *pReply);
+    /** Handles verifying result. */
+    void handleVerifyingResult(UINetworkReply *pReply);
 
     /** Holds the downloader state. */
     UIDownloaderState m_state;

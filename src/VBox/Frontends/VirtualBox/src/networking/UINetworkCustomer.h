@@ -46,6 +46,9 @@ public:
     /** Returns whether this customer has forced privelegies. */
     bool isItForceCall() const { return m_fForceCall; }
 
+    /** Returns description of the current network operation. */
+    virtual QString description() const { return QString(); }
+
     /** Handles network reply progress for @a iReceived amount of bytes among @a iTotal. */
     virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) = 0;
     /** Handles network reply failed with specified @a strError. */
@@ -54,9 +57,6 @@ public:
     virtual void processNetworkReplyCanceled(UINetworkReply *pReply) = 0;
     /** Handles network reply finishing for a passed @a pReply. */
     virtual void processNetworkReplyFinished(UINetworkReply *pReply) = 0;
-
-    /** Returns description of the current network operation. */
-    virtual const QString description() const { return QString(); }
 
 protected:
 

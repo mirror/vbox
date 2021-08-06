@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,7 +72,7 @@ UIDownloaderUserManual::~UIDownloaderUserManual()
         s_pInstance = 0;
 }
 
-const QString UIDownloaderUserManual::description() const
+QString UIDownloaderUserManual::description() const
 {
     return UIDownloader::description().arg(tr("VirtualBox User Manual"));
 }

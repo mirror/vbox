@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,7 +50,7 @@ private:
     ~UIDownloaderUserManual();
 
     /** Returns description of the current network operation. */
-    virtual const QString description() const /* override */;
+    virtual QString description() const /* override */;
 
     /** Asks user for downloading confirmation for passed @a pReply. */
     virtual bool askForDownloadingConfirmation(UINetworkReply *pReply) /* override */;

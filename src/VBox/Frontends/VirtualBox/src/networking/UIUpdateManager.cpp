@@ -143,15 +143,15 @@ public:
 
 protected:
 
+    /** Returns description of the current network operation. */
+    virtual QString description() const /* override */;
+
     /** Handles network reply finishing with specified @a strError. */
     virtual void processNetworkReplyFailed(const QString &strError) /* override */;
     /** Handles network reply canceling for a passed @a pReply. */
     virtual void processNetworkReplyCanceled(UINetworkReply *pReply) /* override */;
     /** Handles network reply finishing for a passed @a pReply. */
     virtual void processNetworkReplyFinished(UINetworkReply *pReply) /* override */;
-
-    /** Returns description of the current network operation. */
-    virtual const QString description() const /* override */;
 
 protected slots:
 
@@ -248,6 +248,11 @@ void UIUpdateStep::processNetworkReplyFinished(UINetworkReply *)
 *   Class UIUpdateStepVirtualBox implementation.                                                                                 *
 *********************************************************************************************************************************/
 
+QString UIUpdateStepVirtualBox::description() const
+{
+    return tr("Checking for a new VirtualBox version...");
+}
+
 void UIUpdateStepVirtualBox::processNetworkReplyFailed(const QString &strError)
 {
     Q_UNUSED(strError);
@@ -290,11 +295,6 @@ void UIUpdateStepVirtualBox::processNetworkReplyFinished(UINetworkReply *pReply)
 
     /* Notify about step completion: */
     emit sigStepComplete();
-}
-
-const QString UIUpdateStepVirtualBox::description() const
-{
-    return tr("Checking for a new VirtualBox version...");
 }
 
 void UIUpdateStepVirtualBox::sltStartStep()
