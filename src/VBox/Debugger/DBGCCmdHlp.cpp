@@ -1309,7 +1309,7 @@ static DECLCALLBACK(PCDBGFINFOHLP) dbgcHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
     {
         pDbgc->DbgfOutputHlp.pfnPrintf      = dbgcHlpGetDbgfOutputHlp_Printf;
         pDbgc->DbgfOutputHlp.pfnPrintfV     = dbgcHlpGetDbgfOutputHlp_PrintfV;
-        pDbgc->DbgfOutputHlp.pfnGetOptError = DBGFR3InfoGenricGetOptError;
+        pDbgc->DbgfOutputHlp.pfnGetOptError = DBGFR3InfoGenericGetOptError;
     }
 
     return &pDbgc->DbgfOutputHlp;

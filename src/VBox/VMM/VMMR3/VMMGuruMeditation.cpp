@@ -200,7 +200,7 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
 
     pHlp->Core.pfnPrintf      = vmmR3FatalDumpInfoHlp_pfnPrintf;
     pHlp->Core.pfnPrintfV     = vmmR3FatalDumpInfoHlp_pfnPrintfV;
-    pHlp->Core.pfnGetOptError = DBGFR3InfoGenricGetOptError;
+    pHlp->Core.pfnGetOptError = DBGFR3InfoGenericGetOptError;
 
     /*
      * The loggers.

@@ -118,7 +118,7 @@ EXPORTS
     DBGFR3Info
     DBGFR3InfoRegisterExternal
     DBGFR3InfoDeregisterExternal
-    DBGFR3InfoGenricGetOptError
+    DBGFR3InfoGenericGetOptError
     DBGFR3InjectNMI
     DBGFR3LogModifyDestinations
     DBGFR3LogModifyFlags

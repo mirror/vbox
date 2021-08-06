@@ -1368,8 +1368,8 @@ typedef FNDBGFINFOENUM *PFNDBGFINFOENUM;
 VMMR3DECL(int)              DBGFR3InfoEnum(PUVM pUVM, PFNDBGFINFOENUM pfnCallback, void *pvUser);
 VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogHlp(void);
 VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogRelHlp(void);
-VMMR3DECL(void)             DBGFR3InfoGenricGetOptError(PCDBGFINFOHLP pHlp, int rc, union RTGETOPTUNION *pValueUnion,
-                                                        struct RTGETOPTSTATE *pState);
+VMMR3DECL(void)             DBGFR3InfoGenericGetOptError(PCDBGFINFOHLP pHlp, int rc, union RTGETOPTUNION *pValueUnion,
+                                                         struct RTGETOPTSTATE *pState);
 
 #endif /* IN_RING3 */
 

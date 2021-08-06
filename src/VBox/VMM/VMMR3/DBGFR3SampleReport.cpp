@@ -229,7 +229,7 @@ static void dbgfR3SampleReportInfoHlpInit(PDBGFSAMPLEREPORTINFOHLP pHlp)
 
     pHlp->Core.pfnPrintf      = dbgfR3SampleReportInfoHlp_pfnPrintf;
     pHlp->Core.pfnPrintfV     = dbgfR3SampleReportInfoHlp_pfnPrintfV;
-    pHlp->Core.pfnGetOptError = DBGFR3InfoGenricGetOptError;
+    pHlp->Core.pfnGetOptError = DBGFR3InfoGenericGetOptError;
 
     pHlp->pachBuf = (char *)RTMemAllocZ(_4K);
     if (pHlp->pachBuf)

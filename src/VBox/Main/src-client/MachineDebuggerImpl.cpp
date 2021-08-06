@@ -924,7 +924,7 @@ static void MachineDebuggerInfoInit(PMACHINEDEBUGGERINOFHLP pHlp)
 {
     pHlp->Core.pfnPrintf        = MachineDebuggerInfoPrintf;
     pHlp->Core.pfnPrintfV       = MachineDebuggerInfoPrintfV;
-    pHlp->Core.pfnGetOptError   = DBGFR3InfoGenricGetOptError;
+    pHlp->Core.pfnGetOptError   = DBGFR3InfoGenericGetOptError;
     pHlp->pszBuf                = NULL;
     pHlp->cbBuf                 = 0;
     pHlp->offBuf                = 0;
