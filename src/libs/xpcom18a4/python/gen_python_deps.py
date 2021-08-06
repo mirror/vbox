@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Copyright (C) 2009-2016 Oracle Corporation
+Copyright (C) 2009-2021 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@ from __future__ import print_function
 import os,sys
 from distutils.version import StrictVersion
 
-versions = ["2.6", "2.7", "3.1", "3.2", "3.2m", "3.3", "3.3m", "3.4", "3.4m", "3.5", "3.5m", "3.6", "3.6m", "3.7", "3.7m", "3.8", "3.8m", "3.9", "3.9m" ]
+versions = ["2.6", "2.7", "3.1", "3.2", "3.2m", "3.3", "3.3m", "3.4", "3.4m", "3.5", "3.5m", "3.6", "3.6m", "3.7", "3.7m", "3.8", "3.8m", "3.9", "3.9m", "3.10", "3.10m" ]
 prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
 known = {}
 
