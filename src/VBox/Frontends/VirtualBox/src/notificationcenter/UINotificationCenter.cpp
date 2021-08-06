@@ -125,7 +125,7 @@ UINotificationCenter *UINotificationCenter::s_pInstance = 0;
 void UINotificationCenter::create(QWidget *pParent)
 {
     AssertReturnVoid(!s_pInstance);
-    s_pInstance = new UINotificationCenter(pParent);
+    new UINotificationCenter(pParent);
 }
 
 /* static */
@@ -139,6 +139,11 @@ void UINotificationCenter::destroy()
 UINotificationCenter *UINotificationCenter::instance()
 {
     return s_pInstance;
+}
+
+void UINotificationCenter::invoke()
+{
+    emit sigOpen();
 }
 
 QUuid UINotificationCenter::append(UINotificationObject *pObject)

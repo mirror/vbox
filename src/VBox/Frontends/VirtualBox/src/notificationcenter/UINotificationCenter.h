@@ -60,6 +60,9 @@ public:
     /** Returns notification-center singleton instance. */
     static UINotificationCenter *instance();
 
+    /** Invokes notification-center. */
+    void invoke();
+
     /** Appends a notification @a pObject to intenal model. */
     QUuid append(UINotificationObject *pObject);
     /** Revokes a notification object referenced by @a uId from intenal model. */
