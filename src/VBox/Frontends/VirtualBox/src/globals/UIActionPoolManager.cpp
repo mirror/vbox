@@ -453,7 +453,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "E&xit"));
+        setName(QApplication::translate("UIActionPool", "&Quit"));
         setStatusTip(QApplication::translate("UIActionPool", "Close application"));
     }
 };
