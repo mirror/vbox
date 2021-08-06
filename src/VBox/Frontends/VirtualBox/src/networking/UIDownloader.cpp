@@ -83,13 +83,14 @@ void UIDownloader::processNetworkReplyFailed(const QString &strError)
 {
     /* Notify listeners: */
     emit sigProgressFailed(strError);
-
     /* Delete downloader: */
     deleteLater();
 }
 
 void UIDownloader::processNetworkReplyCanceled(UINetworkReply *)
 {
+    /* Notify listeners: */
+    emit sigProgressCanceled();
     /* Delete downloader: */
     deleteLater();
 }
@@ -132,6 +133,8 @@ void UIDownloader::handleAcknowledgingResult(UINetworkReply *pNetworkReply)
     }
     else
     {
+        /* Notify listeners: */
+        emit sigProgressFinished();
         /* Delete downloader: */
         deleteLater();
     }
@@ -150,6 +153,8 @@ void UIDownloader::handleDownloadingResult(UINetworkReply *pNetworkReply)
     }
     else
     {
+        /* Notify listeners: */
+        emit sigProgressFinished();
         /* Delete downloader: */
         deleteLater();
     }
@@ -160,6 +165,8 @@ void UIDownloader::handleVerifyingResult(UINetworkReply *pNetworkReply)
     /* Handle verified object: */
     handleVerifiedObject(pNetworkReply);
 
+    /* Notify listeners: */
+    emit sigProgressFinished();
     /* Delete downloader: */
     deleteLater();
 }

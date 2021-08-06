@@ -53,6 +53,10 @@ signals:
     void sigProgressChange(ulong uPercent);
     /** Notifies listeners about progress failed with @a strError. */
     void sigProgressFailed(const QString &strError);
+    /** Notifies listeners about progress canceled. */
+    void sigProgressCanceled();
+    /** Notifies listeners about progress finished. */
+    void sigProgressFinished();
 
 public:
 
