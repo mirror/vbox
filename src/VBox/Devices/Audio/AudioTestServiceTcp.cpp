@@ -698,8 +698,13 @@ static DECLCALLBACK(int) atsTcpCreate(PATSTRANSPORTINST *ppThis)
     PATSTRANSPORTINST pThis = (PATSTRANSPORTINST)RTMemAllocZ(sizeof(ATSTRANSPORTINST));
     AssertPtrReturn(pThis, VERR_NO_MEMORY);
 
-    *ppThis = pThis;
-    return VINF_SUCCESS;
+    int rc = RTCritSectInit(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        *ppThis = pThis;
+    }
+
+    return rc;
 }
 
 /**
@@ -721,8 +726,9 @@ static DECLCALLBACK(int) atsTcpDestroy(PATSTRANSPORTINST pThis)
  */
 static DECLCALLBACK(int) atsTcpStart(PATSTRANSPORTINST pThis)
 {
-    int rc = RTCritSectInit(&pThis->CritSect);
-    if (RT_SUCCESS(rc) && pThis->enmMode != ATSTCPMODE_CLIENT)
+    int rc = VINF_SUCCESS;
+
+    if (pThis->enmMode != ATSTCPMODE_CLIENT)
     {
         rc = RTTcpServerCreateEx(pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, &pThis->pTcpServer);
         if (RT_FAILURE(rc))
