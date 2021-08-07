@@ -416,7 +416,7 @@ typedef struct PDMCRITSECTINT
      * @note The semaphore is a SUPSEMEVENT.  */
     RTCRITSECT                      Core;
     /** Pointer to the next critical section.
-     * This chain is used for relocating pVMRC and device cleanup. */
+    * This chain is used for device cleanup and the dbgf info item. */
     R3PTRTYPE(struct PDMCRITSECTINT *) pNext;
     /** Owner identifier.
      * This is pDevIns if the owner is a device. Similarly for a driver or service.
@@ -477,14 +477,17 @@ typedef struct PDMCRITSECTRWINT
     RTCRITSECTRW                        Core;
 
     /** Pointer to the next critical section.
-     * This chain is used for relocating pVMRC and device cleanup. */
+     * This chain is used for device cleanup and the dbgf info item. */
     R3PTRTYPE(struct PDMCRITSECTRWINT *) pNext;
+    /** Self pointer. */
+    R3PTRTYPE(PPDMCRITSECTRW)           pSelfR3;
     /** Owner identifier.
      * This is pDevIns if the owner is a device. Similarly for a driver or service.
-     * PDMR3CritSectInit() sets this to point to the critsect itself. */
+     * PDMR3CritSectRwInit() sets this to point to the critsect itself. */
     RTR3PTR                             pvKey;
     /** The lock name. */
     R3PTRTYPE(const char *)             pszName;
+
     /** R0/RC write lock contention. */
     STAMCOUNTER                         StatContentionRZEnterExcl;
     /** R0/RC write unlock contention. */

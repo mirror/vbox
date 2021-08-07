@@ -649,8 +649,7 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
                     uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
                     LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
                     AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves));
-/** @todo This doesn't work any more for devices. */
-                    pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = MMHyperCCToR3(pVM, pThis);
+                    pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = pThis->s.pSelfR3;
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
                     STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
@@ -1254,8 +1253,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
             uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
             LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
             AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwExclLeaves));
-/** @todo This doesn't work anymore for devices. */
-            pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = MMHyperCCToR3(pVM, pThis);
+            pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = pThis->s.pSelfR3;
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
             STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);

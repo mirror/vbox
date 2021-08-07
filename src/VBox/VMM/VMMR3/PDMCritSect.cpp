@@ -204,6 +204,9 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                                 STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pCritSect->pszName);
 #endif
 
+                /*
+                 * Prepend to the list.
+                 */
                 PUVM pUVM = pVM->pUVM;
                 RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
                 pCritSect->pNext = pUVM->pdm.s.pCritSects;
@@ -278,6 +281,8 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
                      */
                     pCritSect->Core.u32Magic             = RTCRITSECTRW_MAGIC;
                     pCritSect->Core.fNeedReset           = false;
+                    pCritSect->Core.afPadding[0]         = false;
+                    pCritSect->Core.fFlags               = 0;
                     pCritSect->Core.u64State             = 0;
                     pCritSect->Core.hNativeWriter        = NIL_RTNATIVETHREAD;
                     pCritSect->Core.cWriterReads         = 0;
@@ -287,6 +292,7 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
 #endif
                     pCritSect->pvKey                     = pvKey;
                     pCritSect->pszName                   = pszName;
+                    pCritSect->pSelfR3                   = (PPDMCRITSECTRW)pCritSect;
 
                     STAMR3RegisterF(pVM, &pCritSect->StatContentionRZEnterExcl,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSectsRw/%s/ContentionRZEnterExcl", pCritSect->pszName);
                     STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLeaveExcl,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSectsRw/%s/ContentionRZLeaveExcl", pCritSect->pszName);
@@ -302,6 +308,9 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
                     STAMR3RegisterF(pVM, &pCritSect->StatWriteLocked,         STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSectsRw/%s/WriteLocked", pCritSect->pszName);
 #endif
 
+                    /*
+                     * Prepend to the list.
+                     */
                     PUVM pUVM = pVM->pUVM;
                     RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
                     pCritSect->pNext = pUVM->pdm.s.pRwCritSects;
