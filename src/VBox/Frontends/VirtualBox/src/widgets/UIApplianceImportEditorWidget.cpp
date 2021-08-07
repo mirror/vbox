@@ -271,7 +271,7 @@ bool UIApplianceImportEditorWidget::import()
         /* Import appliance: */
         UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(*m_pAppliance,
                                                                                                          options);
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
 
         /* Positive: */
         return true;

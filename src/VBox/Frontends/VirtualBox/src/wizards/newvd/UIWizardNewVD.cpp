@@ -143,7 +143,7 @@ bool UIWizardNewVD::createVirtualDisk()
                                                                                                variants);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
             &uiCommon(), &UICommon::sltHandleMediumCreated);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     /* Positive: */
     return true;

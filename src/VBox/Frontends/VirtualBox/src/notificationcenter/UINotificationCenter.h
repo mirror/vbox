@@ -143,6 +143,6 @@ private:
 };
 
 /** Singleton notification-center 'official' name. */
-inline UINotificationCenter &notificationCenter() { return *UINotificationCenter::instance(); }
+#define gpNotificationCenter UINotificationCenter::instance()
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationCenter_h */

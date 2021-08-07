@@ -297,7 +297,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
                                                                                                newData.m_options.m_strLocation);
         connect(pNotification, &UINotificationProgressMediumMove::sigProgressFinished,
                 this, &UIMediumManagerWidget::sltHandleMoveProgressFinished);
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
     }
 
     /* Try to assign new medium size: */
@@ -309,7 +309,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
                                                                                                    newData.m_options.m_uLogicalSize);
         connect(pNotification, &UINotificationProgressMediumResize::sigProgressFinished,
                 this, &UIMediumManagerWidget::sltHandleResizeProgressFinished);
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
     }
 
     /* Recache current item: */

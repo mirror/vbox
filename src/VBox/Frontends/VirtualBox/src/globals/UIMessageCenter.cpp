@@ -3425,7 +3425,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
         connect(pNotification, &UINotificationDownloaderUserManual::sigUserManualDownloaded,
                 this, &UIMessageCenter::sltShowUserManual);
         /* Append and start notification: */
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
     }
 #endif /* #ifdef VBOX_OSE */
 #endif

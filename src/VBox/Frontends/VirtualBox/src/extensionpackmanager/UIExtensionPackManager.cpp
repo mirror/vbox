@@ -272,7 +272,7 @@ void UIExtensionPackManagerWidget::sltUninstallExtensionPack()
                                                                          displayInfo);
                 connect(pNotification, &UINotificationProgressExtensionPackUninstall::sigExtensionPackUninstalled,
                         this, &UIExtensionPackManagerWidget::sltHandleExtensionPackUninstalled);
-                notificationCenter().append(pNotification);
+                gpNotificationCenter->append(pNotification);
             }
         }
     }

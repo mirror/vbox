@@ -127,7 +127,7 @@ bool UIWizardNewCloudVM::createCloudVM()
                                                                                                            profileName());
     connect(pNotification, &UINotificationProgressCloudMachineCreate::sigCloudMachineCreated,
             &uiCommon(), &UICommon::sltHandleCloudMachineAdded);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     /* Positive: */
     fResult = true;

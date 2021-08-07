@@ -212,7 +212,7 @@ bool UIWizardImportApp::importAppliance()
         /* Import appliance: */
         UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(comAppliance,
                                                                                                          options);
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
 
         /* Positive: */
         return true;

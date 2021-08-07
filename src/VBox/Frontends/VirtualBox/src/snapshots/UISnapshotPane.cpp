@@ -945,7 +945,7 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
         UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(m_comMachine,
                                                                                                    newData.m_strName,
                                                                                                    newData.m_strDescription);
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
     }
     /* For snapshot items: */
     else
@@ -1571,7 +1571,7 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
     UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(m_comMachine,
                                                                                                strFinalName,
                                                                                                strFinalDescription);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     /* Return result: */
     return true;
@@ -1603,7 +1603,7 @@ bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
     /* Delete snapshot: */
     UINotificationProgressSnapshotDelete *pNotification = new UINotificationProgressSnapshotDelete(m_comMachine,
                                                                                                    pSnapshotItem->snapshotID());
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     /* Return result: */
     return true;
@@ -1639,7 +1639,7 @@ bool UISnapshotPane::restoreSnapshot(bool fAutomatically /* = false */)
 
     /* Restore snapshot: */
     UINotificationProgressSnapshotRestore *pNotification = new UINotificationProgressSnapshotRestore(m_comMachine, comSnapshot);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     /* Return result: */
     return true;

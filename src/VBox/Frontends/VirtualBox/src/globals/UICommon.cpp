@@ -3853,7 +3853,7 @@ void UICommon::doExtPackInstallation(QString const &strFilePath, QString const &
                                                            strDisplayInfo);
     connect(pNotification, &UINotificationProgressExtensionPackInstall::sigExtensionPackInstalled,
             this, &UICommon::sigExtensionPackInstalled);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     /* Store the name: */
     if (pstrExtPackName)

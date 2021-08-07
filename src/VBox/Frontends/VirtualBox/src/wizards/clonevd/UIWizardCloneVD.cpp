@@ -81,7 +81,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
                                                                                            variants);
     connect(pNotification, &UINotificationProgressMediumCopy::sigMediumCopied,
             &uiCommon(), &UICommon::sltHandleMediumCreated);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     /* Positive: */
     return true;

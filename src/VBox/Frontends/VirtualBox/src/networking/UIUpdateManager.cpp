@@ -497,7 +497,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     connect(pNotification, &UINotificationDownloaderExtensionPack::sigDownloaderDestroyed,
             this, &UIUpdateStepVirtualBoxExtensionPack::sigStepComplete);
     /* Append and start notification: */
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 }
 
 void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const QString &strSource,

@@ -1160,7 +1160,7 @@ void UIVirtualBoxManager::sltPerformMachineMove()
         UINotificationProgressMachineMove *pNotification = new UINotificationProgressMachineMove(pItem->id(),
                                                                                                  strDestinationFolder,
                                                                                                  "basic");
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
     }
 }
 
@@ -1250,7 +1250,7 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForGroup()
                                 UINotificationProgressCloudConsoleConnectionCreate *pNotification =
                                     new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
                                                                                            pDialog->publicKey());
-                                notificationCenter().append(pNotification);
+                                gpNotificationCenter->append(pNotification);
                             }
                         }
                     }
@@ -1292,7 +1292,7 @@ void UIVirtualBoxManager::sltPerformCreateConsoleConnectionForMachine()
                         UINotificationProgressCloudConsoleConnectionCreate *pNotification =
                             new UINotificationProgressCloudConsoleConnectionCreate(comMachine,
                                                                                    pDialog->publicKey());
-                        notificationCenter().append(pNotification);
+                        gpNotificationCenter->append(pNotification);
                     }
                 }
             }
@@ -1330,7 +1330,7 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForGroup()
                         /* Delete cloud console connection: */
                         UINotificationProgressCloudConsoleConnectionDelete *pNotification =
                             new UINotificationProgressCloudConsoleConnectionDelete(comMachine);
-                        notificationCenter().append(pNotification);
+                        gpNotificationCenter->append(pNotification);
                     }
                 }
             }
@@ -1362,7 +1362,7 @@ void UIVirtualBoxManager::sltPerformDeleteConsoleConnectionForMachine()
                 /* Delete cloud console connection: */
                 UINotificationProgressCloudConsoleConnectionDelete *pNotification =
                     new UINotificationProgressCloudConsoleConnectionDelete(comMachine);
-                notificationCenter().append(pNotification);
+                gpNotificationCenter->append(pNotification);
             }
         }
     }
@@ -1690,7 +1690,7 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
 
         /* Saving VM state: */
         UINotificationProgressMachineSaveState *pNotification = new UINotificationProgressMachineSaveState(pItem->id());
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
     }
 }
 
@@ -1727,7 +1727,7 @@ void UIVirtualBoxManager::sltPerformTerminateMachine()
         /* Terminating cloud VM: */
         UINotificationProgressCloudMachineTerminate *pNotification =
             new UINotificationProgressCloudMachineTerminate(pItem->toCloud()->machine());
-        notificationCenter().append(pNotification);
+        gpNotificationCenter->append(pNotification);
     }
 }
 
@@ -1784,7 +1784,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
             /* Shutting cloud VM down: */
             UINotificationProgressCloudMachineShutdown *pNotification =
                 new UINotificationProgressCloudMachineShutdown(pItem->toCloud()->machine());
-            notificationCenter().append(pNotification);
+            gpNotificationCenter->append(pNotification);
         }
     }
 }
@@ -1824,7 +1824,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
             /* Powering VM down: */
             UINotificationProgressMachinePowerDown *pNotification =
                 new UINotificationProgressMachinePowerDown(pItem->id());
-            notificationCenter().append(pNotification);
+            gpNotificationCenter->append(pNotification);
         }
         /* For real cloud machine: */
         else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
@@ -1832,7 +1832,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
             /* Powering cloud VM down: */
             UINotificationProgressCloudMachinePowerDown *pNotification =
                 new UINotificationProgressCloudMachinePowerDown(pItem->toCloud()->machine());
-            notificationCenter().append(pNotification);
+            gpNotificationCenter->append(pNotification);
         }
     }
 }

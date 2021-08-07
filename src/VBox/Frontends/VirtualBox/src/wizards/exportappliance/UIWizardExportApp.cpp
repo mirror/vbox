@@ -414,7 +414,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
                                                                                                              field("format").toString(),
                                                                                                              options,
                                                                                                              uri());
-            notificationCenter().append(pNotification);
+            gpNotificationCenter->append(pNotification);
         }
 
         /* Success finally: */

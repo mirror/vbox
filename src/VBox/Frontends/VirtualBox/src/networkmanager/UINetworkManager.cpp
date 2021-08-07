@@ -398,7 +398,7 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
         new UINotificationProgressHostOnlyNetworkInterfaceCreate(comHost, comInterface);
     connect(pNotification, &UINotificationProgressHostOnlyNetworkInterfaceCreate::sigHostOnlyNetworkInterfaceCreated,
             this, &UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 }
 
 void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated(const CHostNetworkInterface &comInterface)
@@ -498,7 +498,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
                 new UINotificationProgressHostOnlyNetworkInterfaceRemove(comHost, uInterfaceId);
             connect(pNotification, &UINotificationProgressHostOnlyNetworkInterfaceRemove::sigHostOnlyNetworkInterfaceRemoved,
                     this, &UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceRemoved);
-            notificationCenter().append(pNotification);
+            gpNotificationCenter->append(pNotification);
         }
     }
 }

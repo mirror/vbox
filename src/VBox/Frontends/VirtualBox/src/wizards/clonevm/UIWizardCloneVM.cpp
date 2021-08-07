@@ -154,7 +154,7 @@ bool UIWizardCloneVM::cloneVM()
                                                                                              options);
     connect(pNotification, &UINotificationProgressMachineCopy::sigMachineCopied,
             &uiCommon(), &UICommon::sltHandleMachineCreated);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 
     return true;
 }

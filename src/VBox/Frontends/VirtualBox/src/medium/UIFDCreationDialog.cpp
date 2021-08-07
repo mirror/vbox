@@ -95,7 +95,7 @@ void UIFDCreationDialog::accept()
             &uiCommon(), &UICommon::sltHandleMediumCreated);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
             this, &UIFDCreationDialog::sltHandleMediumCreated);
-    notificationCenter().append(pNotification);
+    gpNotificationCenter->append(pNotification);
 }
 
 void UIFDCreationDialog::retranslateUi()
