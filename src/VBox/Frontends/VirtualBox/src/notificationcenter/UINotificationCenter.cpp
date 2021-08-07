@@ -286,10 +286,18 @@ void UINotificationCenter::sltModelChanged()
     /* Since there is a scroll-area expanded up to whole
      * height, we will have to align items added above up. */
     m_pLayoutItems->addStretch();
+
+    /* Hide and slide away if there are no notifications to show: */
+    setHidden(m_pModel->ids().isEmpty());
+    if (m_pModel->ids().isEmpty() && m_pOpenButton->isChecked())
+        m_pOpenButton->toggle();
 }
 
 void UINotificationCenter::prepare()
 {
+    /* Hide initially: */
+    setHidden(true);
+
     /* Listen for parent events: */
     if (parent())
         parent()->installEventFilter(this);
