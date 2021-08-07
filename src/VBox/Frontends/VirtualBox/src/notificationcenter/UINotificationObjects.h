@@ -1166,6 +1166,51 @@ private:
     QString  m_strPackName;
 };
 
+/** UINotificationDownloader extension for guest additions downloading functionality. */
+class SHARED_LIBRARY_STUFF UINotificationDownloaderGuestAdditions : public UINotificationDownloader
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about guest additions downloaded.
+      * @param  strLocation  Brings the UM location. */
+    void sigGuestAdditionsDownloaded(const QString &strLocation);
+
+public:
+
+    /** Returns singleton instance, creates if necessary.
+      * @param  strFileName  Brings the file name. */
+    static UINotificationDownloaderGuestAdditions *instance(const QString &strFileName);
+    /** Returns whether singleton instance already created. */
+    static bool exists();
+
+    /** Destructs guest additions downloading notification-progress.
+      * @note  Notification-center can destroy us at any time. */
+    virtual ~UINotificationDownloaderGuestAdditions() /* override final */;
+
+protected:
+
+    /** Constructs guest additions downloading notification-progress.
+      * @param  strFileName  Brings the file name. */
+    UINotificationDownloaderGuestAdditions(const QString &strFileName);
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual UIDownloader *createDownloader() /* override final */;
+
+private:
+
+    /** Holds the singleton instance. */
+    static UINotificationDownloaderGuestAdditions *s_pInstance;
+
+    /** Holds the name of file being dowloaded. */
+    QString  m_strFileName;
+};
+
 /** UINotificationDownloader extension for user manual downloading functionality. */
 class SHARED_LIBRARY_STUFF UINotificationDownloaderUserManual : public UINotificationDownloader
 {

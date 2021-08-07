@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIDownloaderAdditions.h"
 #include "UIDownloaderExtensionPack.h"
 #include "UIDownloaderUserManual.h"
 #include "UINotificationObjects.h"
@@ -1538,6 +1539,62 @@ UIDownloader *UINotificationDownloaderExtensionPack::createDownloader()
     {
         connect(pDownloader, &UIDownloaderExtensionPack::sigDownloadFinished,
                 this, &UINotificationDownloaderExtensionPack::sigExtensionPackDownloaded);
+        return pDownloader;
+    }
+    return 0;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationDownloaderGuestAdditions implementation.                                                                 *
+*********************************************************************************************************************************/
+
+/* static */
+UINotificationDownloaderGuestAdditions *UINotificationDownloaderGuestAdditions::s_pInstance = 0;
+
+/* static */
+UINotificationDownloaderGuestAdditions *UINotificationDownloaderGuestAdditions::instance(const QString &strFileName)
+{
+    if (!s_pInstance)
+        new UINotificationDownloaderGuestAdditions(strFileName);
+    return s_pInstance;
+}
+
+/* static */
+bool UINotificationDownloaderGuestAdditions::exists()
+{
+    return !!s_pInstance;
+}
+
+UINotificationDownloaderGuestAdditions::UINotificationDownloaderGuestAdditions(const QString &strFileName)
+    : m_strFileName(strFileName)
+{
+    s_pInstance = this;
+}
+
+UINotificationDownloaderGuestAdditions::~UINotificationDownloaderGuestAdditions()
+{
+    s_pInstance = 0;
+}
+
+QString UINotificationDownloaderGuestAdditions::name() const
+{
+    return UINotificationDownloader::tr("Downloading Guest Additions ...");
+}
+
+QString UINotificationDownloaderGuestAdditions::details() const
+{
+    return UINotificationProgress::tr("<b>Name:</b> %1").arg(m_strFileName);
+}
+
+UIDownloader *UINotificationDownloaderGuestAdditions::createDownloader()
+{
+    /* Create and configure the User Manual downloader: */
+    UIDownloaderAdditions *pDownloader = new UIDownloaderAdditions;
+    if (pDownloader)
+    {
+        connect(pDownloader, &UIDownloaderAdditions::sigDownloadFinished,
+                this, &UINotificationDownloaderGuestAdditions::sigGuestAdditionsDownloaded);
         return pDownloader;
     }
     return 0;

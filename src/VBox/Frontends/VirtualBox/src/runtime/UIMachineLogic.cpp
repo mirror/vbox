@@ -34,7 +34,7 @@
 #include "UIActionPoolRuntime.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
-# include "UIDownloaderAdditions.h"
+# include "UINotificationCenter.h"
 #endif
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"
@@ -2524,19 +2524,20 @@ void UIMachineLogic::sltInstallGuestAdditions()
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* If downloader is running already: */
-    if (UIDownloaderAdditions::current())
+    if (UINotificationDownloaderGuestAdditions::exists())
     {
         /// @todo show notification-center
     }
     /* Else propose to download additions: */
     else if (msgCenter().cannotFindGuestAdditions())
     {
-        /* Create Additions downloader: */
-        UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
-        /* After downloading finished => propose to install the Additions: */
-        connect(pDl, &UIDownloaderAdditions::sigDownloadFinished, uisession(), &UISession::sltInstallGuestAdditionsFrom);
-        /* Start downloading: */
-        pDl->start();
+        /* Download guest additions: */
+        UINotificationDownloaderGuestAdditions *pNotification = UINotificationDownloaderGuestAdditions::instance(GUI_GuestAdditionsName);
+        /* After downloading finished => propose to install the guest additions: */
+        connect(pNotification, &UINotificationDownloaderGuestAdditions::sigGuestAdditionsDownloaded,
+                uisession(), &UISession::sltInstallGuestAdditionsFrom);
+        /* Append and start notification: */
+        gpNotificationCenter->append(pNotification);
     }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 }
