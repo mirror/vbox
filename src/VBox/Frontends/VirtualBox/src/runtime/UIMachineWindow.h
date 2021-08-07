@@ -163,6 +163,7 @@ protected:
     virtual void prepareMenu() {}
     virtual void prepareStatusBar() {}
     virtual void prepareMachineView();
+    virtual void prepareNotificationCenter();
     virtual void prepareVisualState() {}
     virtual void prepareHandlers();
     virtual void loadSettings() {}
@@ -171,6 +172,7 @@ protected:
     virtual void saveSettings() {}
     virtual void cleanupHandlers();
     virtual void cleanupVisualState() {}
+    virtual void cleanupNotificationCenter();
     virtual void cleanupMachineView();
     virtual void cleanupStatusBar() {}
     virtual void cleanupMenu() {}

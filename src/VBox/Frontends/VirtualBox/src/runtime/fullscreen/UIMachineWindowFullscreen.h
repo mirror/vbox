@@ -87,6 +87,8 @@ private slots:
 
 private:
 
+    /** Prepare notification-center routine. */
+    void prepareNotificationCenter();
     /** Prepare visual-state routine. */
     void prepareVisualState();
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
@@ -100,6 +102,8 @@ private:
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
     /** Cleanup visual-state routine. */
     void cleanupVisualState();
+    /** Cleanup notification-center routine. */
+    void cleanupNotificationCenter();
 
     /** Updates geometry according to visual-state. */
     void placeOnScreen();

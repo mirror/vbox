@@ -31,6 +31,7 @@
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
 #include "UIMachineView.h"
+#include "UINotificationCenter.h"
 #if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 # include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"
@@ -217,6 +218,12 @@ void UIMachineWindowFullscreen::sltShowMinimized()
     showMinimized();
 }
 
+void UIMachineWindowFullscreen::prepareNotificationCenter()
+{
+    if (gpNotificationCenter && (m_uScreenId == 0))
+        gpNotificationCenter->setParent(centralWidget());
+}
+
 void UIMachineWindowFullscreen::prepareVisualState()
 {
     /* Call to base-class: */
@@ -324,6 +331,12 @@ void UIMachineWindowFullscreen::cleanupVisualState()
 
     /* Call to base-class: */
     UIMachineWindow::cleanupVisualState();
+}
+
+void UIMachineWindowFullscreen::cleanupNotificationCenter()
+{
+    if (gpNotificationCenter && (gpNotificationCenter->parent() == centralWidget()))
+        gpNotificationCenter->setParent(0);
 }
 
 void UIMachineWindowFullscreen::placeOnScreen()

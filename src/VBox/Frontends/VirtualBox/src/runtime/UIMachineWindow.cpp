@@ -111,6 +111,9 @@ void UIMachineWindow::prepare()
     /* Prepare machine-view: */
     prepareMachineView();
 
+    /* Prepare notification-center: */
+    prepareNotificationCenter();
+
     /* Prepare handlers: */
     prepareHandlers();
 
@@ -150,6 +153,9 @@ void UIMachineWindow::cleanup()
 
     /* Cleanup visual-state: */
     cleanupVisualState();
+
+    /* Cleanup notification-center: */
+    cleanupNotificationCenter();
 
     /* Cleanup machine-view: */
     cleanupMachineView();
@@ -518,6 +524,11 @@ void UIMachineWindow::prepareMachineView()
     setFocusProxy(m_pMachineView);
 }
 
+void UIMachineWindow::prepareNotificationCenter()
+{
+    // for now it will be added from within particular visual mode windows ..
+}
+
 void UIMachineWindow::prepareHandlers()
 {
     /* Register keyboard-handler: */
@@ -534,6 +545,11 @@ void UIMachineWindow::cleanupHandlers()
 
     /* Unregister keyboard-handler: */
     machineLogic()->keyboardHandler()->cleanupListener(m_uScreenId);
+}
+
+void UIMachineWindow::cleanupNotificationCenter()
+{
+    // for now it will be removed from within particular visual mode windows ..
 }
 
 void UIMachineWindow::cleanupMachineView()

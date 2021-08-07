@@ -32,6 +32,7 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindowScale.h"
 #include "UIMachineView.h"
+#include "UINotificationCenter.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
 # include "UIImageTools.h"
@@ -55,6 +56,12 @@ void UIMachineWindowScale::prepareMainLayout()
     m_pBottomSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
     m_pLeftSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
     m_pRightSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+}
+
+void UIMachineWindowScale::prepareNotificationCenter()
+{
+    if (gpNotificationCenter && (m_uScreenId == 0))
+        gpNotificationCenter->setParent(centralWidget());
 }
 
 #ifdef VBOX_WS_MAC
@@ -138,6 +145,12 @@ void UIMachineWindowScale::cleanupVisualState()
         UICocoaApplication::instance()->unregisterCallbackForStandardWindowButton(this, StandardWindowButtonType_Zoom);
 }
 #endif /* VBOX_WS_MAC */
+
+void UIMachineWindowScale::cleanupNotificationCenter()
+{
+    if (gpNotificationCenter && (gpNotificationCenter->parent() == centralWidget()))
+        gpNotificationCenter->setParent(0);
+}
 
 void UIMachineWindowScale::showInNecessaryMode()
 {

@@ -39,6 +39,8 @@ private:
 
     /** Prepare main-layout routine. */
     void prepareMainLayout();
+    /** Prepare notification-center routine. */
+    void prepareNotificationCenter();
 #ifdef VBOX_WS_MAC
     /** Prepare visual-state routine. */
     void prepareVisualState();
@@ -50,6 +52,8 @@ private:
     /** Cleanup visual-state routine. */
     void cleanupVisualState();
 #endif /* VBOX_WS_MAC */
+    /** Cleanup notification-center routine. */
+    void cleanupNotificationCenter();
 
     /** Updates visibility according to visual-state. */
     void showInNecessaryMode();

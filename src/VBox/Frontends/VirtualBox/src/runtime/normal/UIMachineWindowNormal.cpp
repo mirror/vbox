@@ -36,6 +36,7 @@
 #include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
+#include "UINotificationCenter.h"
 #include "UIIconPool.h"
 #include "UISession.h"
 #include "QIStatusBar.h"
@@ -318,6 +319,12 @@ void UIMachineWindowNormal::prepareStatusBar()
 #endif /* VBOX_WS_MAC */
 }
 
+void UIMachineWindowNormal::prepareNotificationCenter()
+{
+    if (gpNotificationCenter && (m_uScreenId == 0))
+        gpNotificationCenter->setParent(centralWidget());
+}
+
 void UIMachineWindowNormal::prepareVisualState()
 {
     /* Call to base-class: */
@@ -421,6 +428,12 @@ void UIMachineWindowNormal::cleanupVisualState()
     if (uiCommon().osRelease() >= MacOSXRelease_Yosemite)
         UICocoaApplication::instance()->unregisterCallbackForStandardWindowButton(this, StandardWindowButtonType_Zoom);
 #endif /* VBOX_WS_MAC */
+}
+
+void UIMachineWindowNormal::cleanupNotificationCenter()
+{
+    if (gpNotificationCenter && (gpNotificationCenter->parent() == centralWidget()))
+        gpNotificationCenter->setParent(0);
 }
 
 void UIMachineWindowNormal::cleanupSessionConnections()

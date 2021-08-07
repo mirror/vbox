@@ -97,6 +97,8 @@ private:
 #endif /* !VBOX_WS_MAC */
     /** Prepare status-bar routine. */
     void prepareStatusBar();
+    /** Prepare notification-center routine. */
+    void prepareNotificationCenter();
     /** Prepare visual-state routine. */
     void prepareVisualState();
     /** Load settings routine. */
@@ -104,6 +106,8 @@ private:
 
     /** Cleanup visual-state routine. */
     void cleanupVisualState();
+    /** Cleanup notification-center routine. */
+    void cleanupNotificationCenter();
     /** Cleanup session connections routine. */
     void cleanupSessionConnections();
 
