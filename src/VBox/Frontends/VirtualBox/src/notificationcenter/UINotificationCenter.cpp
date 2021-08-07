@@ -143,15 +143,24 @@ UINotificationCenter *UINotificationCenter::instance()
 
 void UINotificationCenter::setParent(QWidget *pParent)
 {
+    /* Additionally hide if parent unset: */
     if (!pParent)
-        hide();
+        setHidden(true);
+
+    /* Uninstall filter from previous parent: */
     if (parent())
         parent()->removeEventFilter(this);
+
+    /* Reparent: */
     QWidget::setParent(pParent);
+
+    /* Install filter to new parent: */
     if (parent())
         parent()->installEventFilter(this);
+
+    /* Show only if there is something to show: */
     if (parent())
-        show();
+        setHidden(m_pModel->ids().isEmpty());
 }
 
 void UINotificationCenter::invoke()
