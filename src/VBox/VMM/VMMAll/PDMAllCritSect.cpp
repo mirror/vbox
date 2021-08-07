@@ -1059,6 +1059,12 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
     LogFlow(("PDMCritSectLeave: [%d]=%p => R3\n", i, pCritSect));
     VMM_ASSERT_RELEASE_MSG_RETURN(pVM, i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves), ("%d\n", i), VERR_PDM_CRITSECT_IPE);
     pVCpu->pdm.s.apQueuedCritSectLeaves[i] = pCritSect->s.pSelfR3;
+    VMM_ASSERT_RELEASE_MSG_RETURN(pVM,
+                                     RT_VALID_PTR(pVCpu->pdm.s.apQueuedCritSectLeaves[i])
+                                  &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectLeaves[i] & PAGE_OFFSET_MASK)
+                                     == ((uintptr_t)pCritSect & PAGE_OFFSET_MASK),
+                                  ("%p vs %p\n", pVCpu->pdm.s.apQueuedCritSectLeaves[i], pCritSect),
+                                  pdmCritSectCorrupted(pCritSect, "Invalid pSelfR3 value"));
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT); /** @todo handle VMCPU_FF_PDM_CRITSECT in ring-0 outside the no-call-ring-3 part. */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3); /* unnecessary paranoia */
     STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
