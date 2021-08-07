@@ -508,8 +508,11 @@ int UINotificationCenter::animatedValue() const
 
 void UINotificationCenter::adjustGeometry()
 {
-    /* Acquire parent width and height: */
+    /* Make sure parent exists: */
     QWidget *pParent = parentWidget();
+    if (!pParent)
+        return;
+    /* Acquire parent width and height: */
     const int iParentWidth = pParent->width();
     const int iParentHeight = pParent->height();
 
