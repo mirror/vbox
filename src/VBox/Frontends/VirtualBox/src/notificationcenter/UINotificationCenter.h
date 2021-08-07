@@ -54,11 +54,14 @@ signals:
 public:
 
     /** Creates notification-center for passed @a pParent. */
-    static void create(QWidget *pParent);
+    static void create(QWidget *pParent = 0);
     /** Destroys notification-center. */
     static void destroy();
     /** Returns notification-center singleton instance. */
     static UINotificationCenter *instance();
+
+    /** Defines notification-center @a pParent. */
+    void setParent(QWidget *pParent);
 
     /** Invokes notification-center. */
     void invoke();

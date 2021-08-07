@@ -122,7 +122,7 @@ bool UINotificationScrollArea::eventFilter(QObject *pWatched, QEvent *pEvent)
 UINotificationCenter *UINotificationCenter::s_pInstance = 0;
 
 /* static */
-void UINotificationCenter::create(QWidget *pParent)
+void UINotificationCenter::create(QWidget *pParent /* = 0 */)
 {
     AssertReturnVoid(!s_pInstance);
     new UINotificationCenter(pParent);
@@ -139,6 +139,19 @@ void UINotificationCenter::destroy()
 UINotificationCenter *UINotificationCenter::instance()
 {
     return s_pInstance;
+}
+
+void UINotificationCenter::setParent(QWidget *pParent)
+{
+    if (!pParent)
+        hide();
+    if (parent())
+        parent()->removeEventFilter(this);
+    QWidget::setParent(pParent);
+    if (parent())
+        parent()->installEventFilter(this);
+    if (parent())
+        show();
 }
 
 void UINotificationCenter::invoke()
@@ -278,7 +291,8 @@ void UINotificationCenter::sltModelChanged()
 void UINotificationCenter::prepare()
 {
     /* Listen for parent events: */
-    parent()->installEventFilter(this);
+    if (parent())
+        parent()->installEventFilter(this);
 
     /* Prepare the rest of stuff: */
     prepareModel();
