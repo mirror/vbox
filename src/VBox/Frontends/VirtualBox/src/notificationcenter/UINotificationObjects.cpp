@@ -1491,9 +1491,32 @@ void UINotificationProgressHostOnlyNetworkInterfaceRemove::sltHandleProgressFini
 *   Class UINotificationDownloaderExtensionPack implementation.                                                                  *
 *********************************************************************************************************************************/
 
+/* static */
+UINotificationDownloaderExtensionPack *UINotificationDownloaderExtensionPack::s_pInstance = 0;
+
+/* static */
+UINotificationDownloaderExtensionPack *UINotificationDownloaderExtensionPack::instance(const QString &strPackName)
+{
+    if (!s_pInstance)
+        new UINotificationDownloaderExtensionPack(strPackName);
+    return s_pInstance;
+}
+
+/* static */
+bool UINotificationDownloaderExtensionPack::exists()
+{
+    return !!s_pInstance;
+}
+
 UINotificationDownloaderExtensionPack::UINotificationDownloaderExtensionPack(const QString &strPackName)
     : m_strPackName(strPackName)
 {
+    s_pInstance = this;
+}
+
+UINotificationDownloaderExtensionPack::~UINotificationDownloaderExtensionPack()
+{
+    s_pInstance = 0;
 }
 
 QString UINotificationDownloaderExtensionPack::name() const
@@ -1509,7 +1532,7 @@ QString UINotificationDownloaderExtensionPack::details() const
 UIDownloader *UINotificationDownloaderExtensionPack::createDownloader()
 {
     /* Create and configure the Extension Pack downloader: */
-    UIDownloaderExtensionPack *pDownloader = UIDownloaderExtensionPack::create();
+    UIDownloaderExtensionPack *pDownloader = new UIDownloaderExtensionPack;
     if (pDownloader)
     {
         connect(pDownloader, &UIDownloaderExtensionPack::sigDownloadFinished,

@@ -26,7 +26,6 @@
 #include "QIProcess.h"
 #include "UICommon.h"
 #include "VBoxUtils.h"
-#include "UIDownloaderExtensionPack.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -419,7 +418,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     }
 
     /* Return if already downloading: */
-    if (UIDownloaderExtensionPack::current())
+    if (UINotificationDownloaderExtensionPack::exists())
     {
         emit sigStepComplete();
         return;
@@ -490,7 +489,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     }
 
     /* Download extension pack: */
-    UINotificationDownloaderExtensionPack *pNotification = new UINotificationDownloaderExtensionPack(GUI_ExtPackName);
+    UINotificationDownloaderExtensionPack *pNotification = UINotificationDownloaderExtensionPack::instance(GUI_ExtPackName);
     /* After downloading finished => propose to install the Extension Pack: */
     connect(pNotification, &UINotificationDownloaderExtensionPack::sigExtensionPackDownloaded,
             this, &UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack);

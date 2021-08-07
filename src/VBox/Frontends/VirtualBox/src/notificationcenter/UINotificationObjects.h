@@ -1117,7 +1117,7 @@ private:
     QString  m_strInterfaceName;
 };
 
-/** UINotificationDownloader extension for Extension Pack downloading functionality. */
+/** UINotificationDownloader extension for extension pack downloading functionality. */
 class SHARED_LIBRARY_STUFF UINotificationDownloaderExtensionPack : public UINotificationDownloader
 {
     Q_OBJECT;
@@ -1134,10 +1134,21 @@ signals:
 
 public:
 
-    /** Constructs host-only network interface remove notification-progress. */
-    UINotificationDownloaderExtensionPack(const QString &strPackName);
+    /** Returns singleton instance, creates if necessary.
+      * @param  strPackName  Brings the package name. */
+    static UINotificationDownloaderExtensionPack *instance(const QString &strPackName);
+    /** Returns whether singleton instance already created. */
+    static bool exists();
+
+    /** Destructs extension pack downloading notification-progress.
+      * @note  Notification-center can destroy us at any time. */
+    virtual ~UINotificationDownloaderExtensionPack() /* override final */;
 
 protected:
+
+    /** Constructs extension pack downloading notification-progress.
+      * @param  strPackName  Brings the package name. */
+    UINotificationDownloaderExtensionPack(const QString &strPackName);
 
     /** Returns object name. */
     virtual QString name() const /* override final */;
@@ -1148,7 +1159,10 @@ protected:
 
 private:
 
-    /** Holds the pack being dowloaded. */
+    /** Holds the singleton instance. */
+    static UINotificationDownloaderExtensionPack *s_pInstance;
+
+    /** Holds the name of pack being dowloaded. */
     QString  m_strPackName;
 };
 

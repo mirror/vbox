@@ -42,17 +42,10 @@ signals:
 
 public:
 
-    /** Creates downloader instance. */
-    static UIDownloaderExtensionPack *create();
-    /** Returns current downloader instance. */
-    static UIDownloaderExtensionPack *current() { return s_pInstance; }
-
-private:
-
     /** Constructs downloader. */
     UIDownloaderExtensionPack();
-    /** Destructs downloader. */
-    ~UIDownloaderExtensionPack();
+
+private:
 
     /** Returns description of the current network operation. */
     virtual QString description() const /* override */;
@@ -64,12 +57,8 @@ private:
     /** Handles verified object for passed @a pReply. */
     virtual void handleVerifiedObject(UINetworkReply *pReply) /* override */;
 
-    /** Holds the static singleton instance. */
-    static UIDownloaderExtensionPack *s_pInstance;
-
     /** Holds the cached received data awaiting for verification. */
     QByteArray m_receivedData;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networking_UIDownloaderExtensionPack_h */
-
