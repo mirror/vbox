@@ -92,9 +92,10 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectRwGetNativeSelf(PVMCC pVM, PCPDMCRI
 }
 
 
-DECL_NO_INLINE(static, int) pdmCritSectRwCorrupted(PPDMCRITSECTRW pThis)
+DECL_NO_INLINE(static, int) pdmCritSectRwCorrupted(PPDMCRITSECTRW pThis, const char *pszMsg)
 {
     ASMAtomicWriteU32(&pThis->s.Core.u32Magic, PDMCRITSECTRW_MAGIC_CORRUPT);
+    LogRel(("PDMCritSect: %s pCritSect=%p\n", pszMsg, pThis));
     return VERR_PDM_CRITSECTRW_IPE;
 }
 
@@ -332,10 +333,10 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                             {
                                 u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
                                 c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
-                                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
+                                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid read count on bailout"));
                                 c--;
                                 cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                                AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis));
+                                AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count on bailout"));
                                 cWait--;
                                 u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
                                 u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
@@ -358,7 +359,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                         u64OldState = u64State;
 
                         cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis));
+                        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count"));
                         cWait--;
                         u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
                         u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
@@ -656,7 +657,7 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
                                                   &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] & PAGE_OFFSET_MASK)
                                                      == ((uintptr_t)pThis & PAGE_OFFSET_MASK),
                                                   ("%p vs %p\n", pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i], pThis),
-                                                  pdmCritSectRwCorrupted(pThis));
+                                                  pdmCritSectRwCorrupted(pThis, "Invalid self pointer"));
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
                     STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
@@ -692,7 +693,7 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
         }
 #endif
         uint32_t cDepth = ASMAtomicDecU32(&pThis->s.Core.cWriterReads);
-        AssertReturn(cDepth < PDM_CRITSECTRW_MAX_RECURSIONS, pdmCritSectRwCorrupted(pThis));
+        AssertReturn(cDepth < PDM_CRITSECTRW_MAX_RECURSIONS, pdmCritSectRwCorrupted(pThis, "too many writer-read recursions"));
     }
 
     return VINF_SUCCESS;
@@ -922,7 +923,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
                     {
                         u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
                         uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-                        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
+                        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on bailout"));
                         c--;
                         u64State &= ~RTCSRW_CNT_WR_MASK;
                         u64State |= c << RTCSRW_CNT_WR_SHIFT;
@@ -957,7 +958,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
             {
                 u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
                 uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
+                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on bailout"));
                 c--;
                 u64State &= ~RTCSRW_CNT_WR_MASK;
                 u64State |= c << RTCSRW_CNT_WR_SHIFT;
@@ -1207,7 +1208,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                 uint64_t u64OldState = u64State;
 
                 uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis));
+                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on leave"));
                 c--;
 
                 if (   c > 0
@@ -1267,7 +1268,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                                           &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] & PAGE_OFFSET_MASK)
                                              == ((uintptr_t)pThis & PAGE_OFFSET_MASK),
                                           ("%p vs %p\n", pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i], pThis),
-                                          pdmCritSectRwCorrupted(pThis));
+                                          pdmCritSectRwCorrupted(pThis, "Invalid self pointer on queue (excl)"));
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
             STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
@@ -1291,7 +1292,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
         }
 #endif
         uint32_t const cDepth = ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions);
-        AssertReturn(cDepth != 0 && cDepth < UINT32_MAX, pdmCritSectRwCorrupted(pThis));
+        AssertReturn(cDepth != 0 && cDepth < UINT32_MAX, pdmCritSectRwCorrupted(pThis, "Invalid write recursion value on leave"));
     }
 
     return VINF_SUCCESS;
