@@ -33,6 +33,7 @@
 #include "UINetworkRequestManager.h"
 #include "UINetworkCustomer.h"
 #include "UINetworkRequest.h"
+#include "UINotificationCenter.h"
 #include "UIUpdateDefs.h"
 #include "UIUpdateManager.h"
 
@@ -488,16 +489,16 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
         return;
     }
 
-    /* Create and configure the Extension Pack downloader: */
-    UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::create();
+    /* Download extension pack: */
+    UINotificationDownloaderExtensionPack *pNotification = new UINotificationDownloaderExtensionPack(GUI_ExtPackName);
     /* After downloading finished => propose to install the Extension Pack: */
-    connect(pDl, &UIDownloaderExtensionPack::sigDownloadFinished,
+    connect(pNotification, &UINotificationDownloaderExtensionPack::sigExtensionPackDownloaded,
             this, &UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack);
     /* Also, destroyed downloader is a signal to finish the step: */
-    connect(pDl, &UIDownloaderExtensionPack::destroyed,
+    connect(pNotification, &UINotificationDownloaderExtensionPack::sigDownloaderDestroyed,
             this, &UIUpdateStepVirtualBoxExtensionPack::sigStepComplete);
-    /* Start downloading: */
-    pDl->start();
+    /* Append and start notification: */
+    notificationCenter().append(pNotification);
 }
 
 void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const QString &strSource,

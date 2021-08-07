@@ -1117,4 +1117,39 @@ private:
     QString  m_strInterfaceName;
 };
 
+/** UINotificationDownloader extension for Extension Pack downloading functionality. */
+class SHARED_LIBRARY_STUFF UINotificationDownloaderExtensionPack : public UINotificationDownloader
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about extension pack downloaded.
+      * @param  strSource  Brings the EP source.
+      * @param  strTarget  Brings the EP target.
+      * @param  strDigest  Brings the EP digest. */
+    void sigExtensionPackDownloaded(const QString &strSource,
+                                    const QString &strTarget,
+                                    const QString &strDigest);
+
+public:
+
+    /** Constructs host-only network interface remove notification-progress. */
+    UINotificationDownloaderExtensionPack(const QString &strPackName);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual UIDownloader *createDownloader() /* override final */;
+
+private:
+
+    /** Holds the pack being dowloaded. */
+    QString  m_strPackName;
+};
+
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */
