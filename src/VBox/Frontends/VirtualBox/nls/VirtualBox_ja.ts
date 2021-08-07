@@ -6058,7 +6058,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>

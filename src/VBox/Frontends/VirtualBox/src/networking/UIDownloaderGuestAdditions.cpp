@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIDownloaderAdditions class implementation.
+ * VBox Qt GUI - UIDownloaderGuestAdditions class implementation.
  */
 
 /*
@@ -23,7 +23,7 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UICommon.h"
-#include "UIDownloaderAdditions.h"
+#include "UIDownloaderGuestAdditions.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkReply.h"
@@ -33,7 +33,7 @@
 #include <iprt/sha.h>
 
 
-UIDownloaderAdditions::UIDownloaderAdditions()
+UIDownloaderGuestAdditions::UIDownloaderGuestAdditions()
 {
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
     const QString strVersion = UIVersion(uiCommon().vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
@@ -51,22 +51,22 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     setPathSHA256SumsFile(strPathSHA256SumsFile);
 }
 
-QString UIDownloaderAdditions::description() const
+QString UIDownloaderGuestAdditions::description() const
 {
     return UIDownloader::description().arg(tr("VirtualBox Guest Additions"));
 }
 
-bool UIDownloaderAdditions::askForDownloadingConfirmation(UINetworkReply *pReply)
+bool UIDownloaderGuestAdditions::askForDownloadingConfirmation(UINetworkReply *pReply)
 {
     return msgCenter().confirmDownloadGuestAdditions(source().toString(), pReply->header(UINetworkReply::ContentLengthHeader).toInt());
 }
 
-void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
+void UIDownloaderGuestAdditions::handleDownloadedObject(UINetworkReply *pReply)
 {
     m_receivedData = pReply->readAll();
 }
 
-void UIDownloaderAdditions::handleVerifiedObject(UINetworkReply *pReply)
+void UIDownloaderGuestAdditions::handleVerifiedObject(UINetworkReply *pReply)
 {
     /* Try to verify the SHA-256 checksum: */
     QString strCalculatedSumm;

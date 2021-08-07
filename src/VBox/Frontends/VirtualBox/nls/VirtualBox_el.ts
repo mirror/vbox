@@ -4719,7 +4719,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Επιλέξτε το φάκελο που θα σώσετε τις Προσθήκες Επισκέπτη</translation>

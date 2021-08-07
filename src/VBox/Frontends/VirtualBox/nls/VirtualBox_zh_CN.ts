@@ -5883,7 +5883,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translation>选择用于保存增强功能包的文件夹</translation>

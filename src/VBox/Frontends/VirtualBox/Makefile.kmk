@@ -931,8 +931,8 @@ endif
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_QT_MOCHDRS += \
 	src/networking/UIDownloader.h \
-	src/networking/UIDownloaderAdditions.h \
 	src/networking/UIDownloaderExtensionPack.h \
+	src/networking/UIDownloaderGuestAdditions.h \
 	src/networking/UIDownloaderUserManual.h \
 	src/networking/UINetworkCustomer.h \
 	src/networking/UINetworkRequestManager.h \
@@ -1482,8 +1482,8 @@ endif
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  UICommon_SOURCES += \
 	src/networking/UIDownloader.cpp \
-	src/networking/UIDownloaderAdditions.cpp \
 	src/networking/UIDownloaderExtensionPack.cpp \
+	src/networking/UIDownloaderGuestAdditions.cpp \
 	src/networking/UIDownloaderUserManual.cpp \
 	src/networking/UINetworkCustomer.cpp \
 	src/networking/UINetworkRequestManager.cpp \

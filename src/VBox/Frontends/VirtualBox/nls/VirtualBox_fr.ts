@@ -5892,7 +5892,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Échec de l&apos;enregistrement du fichier téléchargé &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>

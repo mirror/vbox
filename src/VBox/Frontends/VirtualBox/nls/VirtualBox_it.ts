@@ -6455,7 +6455,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Selezionare la cartella dove salvare l&apos;immagine delle Guest Additions</translation>

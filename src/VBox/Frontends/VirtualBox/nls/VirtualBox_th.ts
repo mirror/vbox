@@ -4397,7 +4397,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translation>เลือกโฟลเดอร์เพื่อบันทึกอิมเมจโปรแกรมเสริมสำหรับเกสต์</translation>

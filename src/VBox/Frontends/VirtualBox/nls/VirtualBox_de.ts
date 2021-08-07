@@ -4803,7 +4803,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Wählen Sie den Ordner aus, in dem die VirtualBox-Gasterweiterungen gespeichert werden sollen</translation>

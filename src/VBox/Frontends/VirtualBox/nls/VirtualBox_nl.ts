@@ -4562,7 +4562,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translatorcomment>Guest Additions is een naam van een pakket, waarnaar op internet gezocht zal worden indien gebruiker deze nog niet heeft. Niet vertalen dus...</translatorcomment>

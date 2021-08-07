@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIDownloaderAdditions class declaration.
+ * VBox Qt GUI - UIDownloaderGuestAdditions class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_networking_UIDownloaderAdditions_h
-#define FEQT_INCLUDED_SRC_networking_UIDownloaderAdditions_h
+#ifndef FEQT_INCLUDED_SRC_networking_UIDownloaderGuestAdditions_h
+#define FEQT_INCLUDED_SRC_networking_UIDownloaderGuestAdditions_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,8 +27,8 @@
 /* Forward declarations: */
 class QByteArray;
 
-/** UIDownloader extension for background additions downloading. */
-class SHARED_LIBRARY_STUFF UIDownloaderAdditions : public UIDownloader
+/** UIDownloader extension for background guest additions downloading. */
+class SHARED_LIBRARY_STUFF UIDownloaderGuestAdditions : public UIDownloader
 {
     Q_OBJECT;
 
@@ -41,7 +41,7 @@ signals:
 public:
 
     /** Constructs downloader. */
-    UIDownloaderAdditions();
+    UIDownloaderGuestAdditions();
 
 private:
 
@@ -59,5 +59,4 @@ private:
     QByteArray m_receivedData;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_networking_UIDownloaderAdditions_h */
-
+#endif /* !FEQT_INCLUDED_SRC_networking_UIDownloaderGuestAdditions_h */

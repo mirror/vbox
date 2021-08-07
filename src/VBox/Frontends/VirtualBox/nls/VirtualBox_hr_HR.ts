@@ -4519,7 +4519,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Odaberite mapu u koju bi spremili sliku Gostnih Dodataka</translation>

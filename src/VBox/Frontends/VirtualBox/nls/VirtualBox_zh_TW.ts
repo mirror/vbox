@@ -4377,7 +4377,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
         <source>VirtualBox Guest Additions</source>
         <translation>VirtualBox Guest Additions</translation>

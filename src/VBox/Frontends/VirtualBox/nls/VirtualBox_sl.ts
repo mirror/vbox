@@ -5829,9 +5829,9 @@
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>UIDownloaderGuestAdditions</name>
     <message>
-        <location filename="../src/net/UIDownloaderAdditions.cpp" line="+196"/>
+        <location filename="../src/net/UIDownloaderGuestAdditions.cpp" line="+196"/>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Izberite mapo za shranjevanje programa Guest Additions</translation>
     </message>
