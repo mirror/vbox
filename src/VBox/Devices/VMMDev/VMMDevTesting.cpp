@@ -515,7 +515,7 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                         else if (off == 8)
                             pThis->TestingData.Value.u32Unit = (uint16_t)u32;
                         else if (off == 10)
-                            pThis->TestingData.Value.u32Unit = u32 << 16;
+                            pThis->TestingData.Value.u32Unit |= u32 << 16;
                         else
                             break;
                         pThis->offTestingData = off + 2;
