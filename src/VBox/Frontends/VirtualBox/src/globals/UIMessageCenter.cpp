@@ -44,7 +44,7 @@
 # include "UINetworkRequestManager.h"
 #endif
 #ifdef VBOX_OSE
-# include "UIDownloaderUserManual.h"
+# include "UINotificationCenter.h"
 #endif
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -3419,12 +3419,13 @@ void UIMessageCenter::sltShowHelpHelpDialog()
     /* Else propose to download user manual: */
     else if (cannotFindUserManual(strUserManualFileName1))
     {
-        /* Create User Manual downloader: */
-        UIDownloaderUserManual *pDl = UIDownloaderUserManual::create();
+        /* Download user manual: */
+        UINotificationDownloaderUserManual *pNotification = UINotificationDownloaderUserManual::instance(UICommon::helpFile());
         /* After downloading finished => show User Manual: */
-        connect(pDl, &UIDownloaderUserManual::sigDownloadFinished, this, &UIMessageCenter::sltShowUserManual);
-        /* Start downloading: */
-        pDl->start();
+        connect(pNotification, &UINotificationDownloaderUserManual::sigUserManualDownloaded,
+                this, &UIMessageCenter::sltShowUserManual);
+        /* Append and start notification: */
+        notificationCenter().append(pNotification);
     }
 #endif /* #ifdef VBOX_OSE */
 #endif

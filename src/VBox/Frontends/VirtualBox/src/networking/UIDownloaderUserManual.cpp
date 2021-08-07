@@ -30,23 +30,8 @@
 #include "UIVersion.h"
 
 
-/* static */
-UIDownloaderUserManual* UIDownloaderUserManual::s_pInstance = 0;
-
-/* static */
-UIDownloaderUserManual* UIDownloaderUserManual::create()
-{
-    if (!s_pInstance)
-        s_pInstance = new UIDownloaderUserManual;
-    return s_pInstance;
-}
-
 UIDownloaderUserManual::UIDownloaderUserManual()
 {
-    /* Prepare instance: */
-    if (!s_pInstance)
-        s_pInstance = this;
-
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
     const QString strVersion = UIVersion(uiCommon().vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
 
@@ -63,13 +48,6 @@ UIDownloaderUserManual::UIDownloaderUserManual()
     /* Set target: */
     QString strUserManualDestination = QDir(uiCommon().homeFolder()).absoluteFilePath(strUserManualShortFileName);
     setTarget(strUserManualDestination);
-}
-
-UIDownloaderUserManual::~UIDownloaderUserManual()
-{
-    /* Cleanup instance: */
-    if (s_pInstance == this)
-        s_pInstance = 0;
 }
 
 QString UIDownloaderUserManual::description() const
@@ -129,4 +107,3 @@ void UIDownloaderUserManual::handleDownloadedObject(UINetworkReply *pReply)
             break;
     }
 }
-
