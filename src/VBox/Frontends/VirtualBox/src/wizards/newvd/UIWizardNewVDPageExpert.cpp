@@ -93,7 +93,12 @@ void UIWizardNewVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
 
 void UIWizardNewVDPageExpert::sltMediumPathChanged(const QString &strPath)
 {
-    newVDWizardPropertySet(MediumPath, strPath);
+    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    AssertReturnVoid(pWizard);
+    QString strMediumPath =
+        UIDiskEditorGroupBox::appendExtension(strPath,
+                                              UIDiskEditorGroupBox::defaultExtensionForMediumFormat(pWizard->mediumFormat()));
+    newVDWizardPropertySet(MediumPath, strMediumPath);
     emit completeChanged();
 }
 
