@@ -176,7 +176,7 @@
 #if RTLNX_VER_MAX(5,13,0)
 # include <drm/ttm/ttm_memory.h>
 #endif
-#if RTLNX_VER_MAX(5,12,0)
+#if RTLNX_VER_MAX(5,12,0) && !RTLNX_RHEL_MAJ_PREREQ(8,5)
 # include <drm/ttm/ttm_module.h>
 #endif
 #if RTLNX_VER_MIN(5,10,0)
