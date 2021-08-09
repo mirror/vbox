@@ -85,7 +85,7 @@
 #if RTLNX_VER_MIN(5,14,0)
 # define VBSF_GET_ITER_TYPE(a_pIter) ((a_pIter)->iter_type)
 #else
-# define VBSF_GET_ITER_TYPE(a_pIter) ((a_pIter)->iter)
+# define VBSF_GET_ITER_TYPE(a_pIter) ((a_pIter)->type)
 #endif
 
 
