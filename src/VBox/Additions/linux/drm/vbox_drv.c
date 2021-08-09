@@ -83,9 +83,9 @@ static int vbox_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		ret = PTR_ERR(dev);
 		goto err_drv_alloc;
 	}
-#if RTLNX_VER_MAX(5,14,0)
+# if RTLNX_VER_MAX(5,14,0)
 	dev->pdev = pdev;
-#endif
+# endif
 	pci_set_drvdata(pdev, dev);
 
 	ret = vbox_driver_load(dev);
