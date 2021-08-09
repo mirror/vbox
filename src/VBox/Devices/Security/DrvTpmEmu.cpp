@@ -114,6 +114,12 @@ typedef SWTPMCMDTPMINIT *PSWTPMCMDTPMINIT;
 typedef const SWTPMCMDTPMINIT *PCSWTPMCMDTPMINIT;
 
 
+/** @name Capabilities as returned by SWTPMCMD_INIT.
+ * @{ */
+#define SWTPMCMD_INIT_F_DELETE_VOLATILE RT_BIT_32(0);
+/** @} */
+
+
 /**
  * Response data for a SWTPMCMD_GET_CAPABILITY command.
  */
@@ -147,6 +153,20 @@ typedef const SWTPMRESPGETCAPABILITY *PCSWTPMRESPGETCAPABILITY;
 #define SWTPM_CAP_GET_INFO              RT_BIT_32(14)
 #define SWTPM_CAP_SEND_COMMAND_HEADER   RT_BIT_32(15)
 /** @} */
+
+
+/**
+ * Additional command data for SWTPMCMD_SET_LOCALITY.
+ */
+typedef struct SWTPMCMDSETLOCALITY
+{
+    /** The locality to set */
+    uint8_t                     bLoc;
+} SWTPMCMDSETLOCALITY;
+/** Pointer to a command data struct for SWTPMCMD_SET_LOCALITY. */
+typedef SWTPMCMDSETLOCALITY *PSWTPMCMDSETLOCALITY;
+/** Pointer to a const command data struct for SWTPMCMD_SET_LOCALITY. */
+typedef const SWTPMCMDSETLOCALITY *PCSWTPMCMDSETLOCALITY;
 
 
 /**
@@ -185,14 +205,39 @@ typedef struct SWTPMRESPGETCONFIG
     uint32_t                    cbTotal;
     /** Size of the chunk returned in this response. */
     uint32_t                    cbThis;
-    /** The data returned. */
-    uint8_t                     abData[3 * _1K];
 } SWTPMRESPGETCONFIG;
 /** Pointer to a response data struct for SWTPMCMD_GET_CONFIG. */
 typedef SWTPMRESPGETCONFIG *PSWTPMRESPGETCONFIG;
 /** Pointer to a const response data struct for SWTPMCMD_GET_CONFIG. */
 typedef const SWTPMRESPGETCONFIG *PCSWTPMRESPGETCONFIG;
-/** @} */
+
+
+/**
+ * Response data for a SWTPMCMD_GET_TPMESTABLISHED command.
+ */
+typedef struct SWTPMRESPGETTPMEST
+{
+    /** Flag whether the TPM established bit is set for the TPM. */
+    uint8_t                     fEst;
+} SWTPMRESPGETTPMEST;
+/** Pointer to a response data struct for SWTPMCMD_GET_TPMESTABLISHED. */
+typedef SWTPMRESPGETTPMEST *PSWTPMRESPGETTPMEST;
+/** Pointer to a const response data struct for SWTPMCMD_GET_TPMESTABLISHED. */
+typedef const SWTPMRESPGETTPMEST *PCSWTPMRESPGETTPMEST;
+
+
+/**
+ * Additional command data for SWTPMCMD_RESET_TPMESTABLISHED.
+ */
+typedef struct SWTPMCMDRSTEST
+{
+    /** The locality resetting trying to reset the established bit. */
+    uint8_t                    bLoc;
+} SWTPMCMDRSTEST;
+/** Pointer to a response data struct for SWTPMCMD_GET_TPMESTABLISHED. */
+typedef SWTPMCMDRSTEST *PSWTPMCMDRSTEST;
+/** Pointer to a const response data struct for SWTPMCMD_GET_TPMESTABLISHED. */
+typedef const SWTPMCMDRSTEST *PCSWTPMCMDRSTEST;
 
 
 /**
@@ -223,12 +268,19 @@ typedef struct DRVTPMEMU
     bool volatile       fShutdown;
     /** Flag to signal whether the thread was woken up from external. */
     bool volatile       fWokenUp;
+    /** Currently set locality. */
+    uint8_t             bLoc;
 
     /** TPM version offered by the emulator. */
     TPMVERSION          enmTpmVers;
+    /** Capabilities offered by the TPM emulator. */
+    uint32_t            fCaps;
 } DRVTPMEMU;
 /** Pointer to the TPM emulator instance data. */
 typedef DRVTPMEMU *PDRVTPMEMU;
+
+/** The special no current locality selected value. */
+#define TPM_NO_LOCALITY_SELECTED    0xff
 
 
 /*********************************************************************************************************************************
@@ -281,10 +333,35 @@ static int drvTpmEmuExecCtrlCmdEx(PDRVTPMEMU pThis, SWTPMCMD enmCmd, const void 
             {
                 *pu32Resp = RT_BE2H_U32(u32Resp);
                 if (*pu32Resp == 0)
-                    rc = RTSocketRead(pThis->hSockCtrl, pvResp, cbResp, NULL /*pcbRead*/);
+                {
+                    if (cbResp)
+                        rc = RTSocketRead(pThis->hSockCtrl, pvResp, cbResp, NULL /*pcbRead*/);
+                }
+                else
+                    rc = VERR_NET_IO_ERROR;
             }
         }
     }
+
+    return rc;
+}
+
+
+/**
+ * Continue receiving a response from a previous call of drvTpmEmuExecCtrlCmdEx() or
+ * drvTpmEmuExecCtrlCmdNoPayload().
+ *
+ * @param   pThis               Pointer to the TPM emulator driver instance data.
+ * @param   enmCmd              The command to execute.
+ * @param   pvResp              Where to store additional resposne data.
+ * @param   cbResp              Size of the additional response data in bytes.
+ * @param   cMillies            Number of milliseconds to wait before aborting the receive with a timeout error.
+ */
+static int drvTpmEmuExecCtrlCmdRespCont(PDRVTPMEMU pThis, void *pvResp, size_t cbResp, RTMSINTERVAL cMillies)
+{
+    int rc = RTSocketSelectOne(pThis->hSockCtrl, cMillies);
+    if (RT_SUCCESS(rc))
+        rc = RTSocketRead(pThis->hSockCtrl, pvResp, cbResp, NULL /*pcbRead*/);
 
     return rc;
 }
@@ -317,6 +394,26 @@ static int drvTpmEmuExecCtrlCmdNoPayload(PDRVTPMEMU pThis, SWTPMCMD enmCmd, void
 
 
 /**
+ * Executes the given command over the control connection to the TPM emulator - variant with no response payload other than the result.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NET_IO_ERROR if the executed command returned an error in the response status field.
+ * @param   pThis               Pointer to the TPM emulator driver instance data.
+ * @param   enmCmd              The command to execute.
+ * @param   pvCmd               Additional command data to send.
+ * @param   cbCmd               Size of the additional command data in bytes.
+ * @param   pu32Resp            Where to store the response code from the reply.
+ * @param   cMillies            Number of milliseconds to wait before aborting the command with a timeout error.
+ */
+static int drvTpmEmuExecCtrlCmdNoResp(PDRVTPMEMU pThis, SWTPMCMD enmCmd, const void *pvCmd, size_t cbCmd, uint32_t *pu32Resp,
+                                      RTMSINTERVAL cMillies)
+{
+    return drvTpmEmuExecCtrlCmdEx(pThis, enmCmd, pvCmd, cbCmd, pu32Resp,
+                                  NULL /*pvResp*/, 0 /*cbResp*/, cMillies);
+}
+
+
+/**
  * Queries the version of the TPM offered by the remote emulator.
  *
  * @returns VBox status code.
@@ -326,23 +423,59 @@ static int drvTpmEmuQueryTpmVersion(PDRVTPMEMU pThis)
 {
     SWTPMCMDGETCONFIG Cmd;
     SWTPMRESPGETCONFIG Resp;
+    uint8_t abData[_4K];
     uint32_t u32Resp = 0;
 
     RT_ZERO(Cmd); RT_ZERO(Resp);
     Cmd.u64Flags = RT_H2BE_U64(SWTPM_GET_CONFIG_F_TPM_SPECIFICATION);
     Cmd.u32Offset = 0;
-    int rc = drvTpmEmuExecCtrlCmdEx(pThis, SWTPMCMD_GET_CONFIG, &Cmd, sizeof(Cmd), &u32Resp,
+    int rc = drvTpmEmuExecCtrlCmdEx(pThis, SWTPMCMD_GET_INFO, &Cmd, sizeof(Cmd), &u32Resp,
                                     &Resp, sizeof(Resp), RT_MS_10SEC);
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Currently it is not necessary to get the information in chunks, a single
+         * transaction is enough. To fend off future versions of swtpm requiring this
+         * we return an error here if the total length is not equal to the length of the chunk.
+         */
         if (RT_BE2H_U32(Resp.cbTotal) == RT_BE2H_U32(Resp.cbThis))
         {
-            RTJSONVAL hJsonVal = NIL_RTJSONVAL;
-            rc = RTJsonParseFromBuf(&hJsonVal, &Resp.abData[0], sizeof(Resp.abData), NULL /*pErrInfo*/);
+            /* Fetch the response body. */
+            rc = drvTpmEmuExecCtrlCmdRespCont(pThis, &abData[0], RT_BE2H_U32(Resp.cbThis), RT_MS_10SEC);
             if (RT_SUCCESS(rc))
             {
-                /** @todo */
-                RTJsonValueRelease(hJsonVal);
+                RTJSONVAL hJsonVal = NIL_RTJSONVAL;
+                rc = RTJsonParseFromBuf(&hJsonVal, &abData[0], RT_BE2H_U32(Resp.cbThis), NULL /*pErrInfo*/);
+                if (RT_SUCCESS(rc))
+                {
+                    RTJSONVAL hJsonTpmSpec = NIL_RTJSONVAL;
+                    rc = RTJsonValueQueryByName(hJsonVal, "TPMSpecification", &hJsonTpmSpec);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTJSONVAL hJsonTpmFam = NIL_RTJSONVAL;
+                        rc = RTJsonValueQueryByName(hJsonTpmSpec, "family", &hJsonTpmFam);
+                        if (RT_SUCCESS(rc))
+                        {
+                            const char *pszFam = NULL;
+                            rc = RTJsonValueQueryString(hJsonTpmFam, &pszFam);
+                            if (RT_SUCCESS(rc))
+                            {
+                                if (!RTStrCmp(pszFam, "1.2"))
+                                    pThis->enmTpmVers = TPMVERSION_1_2;
+                                else if (!RTStrCmp(pszFam, "2.0"))
+                                    pThis->enmTpmVers = TPMVERSION_2_0;
+                                else
+                                    pThis->enmTpmVers = TPMVERSION_UNKNOWN;
+                            }
+
+                            RTJsonValueRelease(hJsonTpmFam);
+                        }
+
+                        RTJsonValueRelease(hJsonTpmSpec);
+                    }
+
+                    RTJsonValueRelease(hJsonVal);
+                }
             }
         }
         else
@@ -360,14 +493,34 @@ static int drvTpmEmuQueryTpmVersion(PDRVTPMEMU pThis)
  * @returns VBox status code.
  * @param   pThis               Pointer to the TPM emulator driver instance data.
  */
-static int drvTpmEmuQueryAndValidateCaps(PDRVTPMEMU pThis)
+static int drvTpmEmuQueryCaps(PDRVTPMEMU pThis)
 {
     SWTPMRESPGETCAPABILITY Resp;
     int rc = drvTpmEmuExecCtrlCmdNoPayload(pThis, SWTPMCMD_GET_CAPABILITY, &Resp, sizeof(Resp), RT_MS_10SEC);
     if (RT_SUCCESS(rc))
-    {
-        /** @todo */
-    }
+        pThis->fCaps = RT_BE2H_U32(Resp.u32Caps);
+
+    return rc;
+}
+
+
+/**
+ * Sets the given locality for the emulated TPM.
+ *
+ * @returns VBox status code.
+ * @param   pThis               Pointer to the TPM emulator driver instance data.
+ * @param   bLoc                The locality to set.
+ */
+static int drvTpmEmuSetLocality(PDRVTPMEMU pThis, uint8_t bLoc)
+{
+    SWTPMCMDSETLOCALITY Cmd;
+    uint32_t u32Resp = 0;
+
+    Cmd.bLoc = bLoc;
+    int rc = drvTpmEmuExecCtrlCmdNoResp(pThis, SWTPMCMD_SET_LOCALITY, &Cmd, sizeof(Cmd), &u32Resp, RT_MS_10SEC);
+    if (   RT_SUCCESS(rc)
+        && u32Resp != 0)
+        rc = VERR_NET_IO_ERROR;
 
     return rc;
 }
@@ -376,16 +529,25 @@ static int drvTpmEmuQueryAndValidateCaps(PDRVTPMEMU pThis)
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnStartup} */
 static DECLCALLBACK(int) drvTpmEmuStartup(PPDMITPMCONNECTOR pInterface, size_t cbCmdResp)
 {
-    RT_NOREF(pInterface, cbCmdResp);
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(cbCmdResp);
+    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
+
+    SWTPMCMDTPMINIT Cmd;
+    uint32_t u32Resp = 0;
+
+    RT_ZERO(Cmd);
+    Cmd.u32Flags = 0;
+    return drvTpmEmuExecCtrlCmdEx(pThis, SWTPMCMD_INIT, &Cmd, sizeof(Cmd), &u32Resp,
+                                  NULL, 0, RT_MS_10SEC);
 }
 
 
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnShutdown} */
 static DECLCALLBACK(int) drvTpmEmuShutdown(PPDMITPMCONNECTOR pInterface)
 {
-    RT_NOREF(pInterface);
-    return VERR_NOT_IMPLEMENTED;
+    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
+
+    return drvTpmEmuExecCtrlCmdNoPayload(pThis, SWTPMCMD_SHUTDOWN, NULL, 0, RT_MS_10SEC);
 }
 
 
@@ -408,7 +570,14 @@ static DECLCALLBACK(TPMVERSION) drvTpmEmuGetVersion(PPDMITPMCONNECTOR pInterface
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnGetEstablishedFlag} */
 static DECLCALLBACK(bool) drvTpmEmuGetEstablishedFlag(PPDMITPMCONNECTOR pInterface)
 {
-    RT_NOREF(pInterface);
+    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
+
+    SWTPMRESPGETTPMEST Resp;
+    int rc = drvTpmEmuExecCtrlCmdNoPayload(pThis, SWTPMCMD_GET_TPMESTABLISHED, &Resp, sizeof(Resp), RT_MS_10SEC);
+    if (RT_SUCCESS(rc)
+        && Resp.fEst != 0)
+        return true;
+
     return false;
 }
 
@@ -416,16 +585,36 @@ static DECLCALLBACK(bool) drvTpmEmuGetEstablishedFlag(PPDMITPMCONNECTOR pInterfa
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnGetEstablishedFlag} */
 static DECLCALLBACK(int) drvTpmEmuResetEstablishedFlag(PPDMITPMCONNECTOR pInterface, uint8_t bLoc)
 {
-    RT_NOREF(pInterface, bLoc);
-    return VERR_NOT_IMPLEMENTED;
+    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
+
+    SWTPMCMDRSTEST Cmd;
+    uint32_t u32Resp = 0;
+
+    Cmd.bLoc = bLoc;
+    int rc = drvTpmEmuExecCtrlCmdNoResp(pThis, SWTPMCMD_RESET_TPMESTABLISHED, &Cmd, sizeof(Cmd), &u32Resp, RT_MS_10SEC);
+    if (   RT_SUCCESS(rc)
+        && u32Resp != 0)
+        rc = VERR_NET_IO_ERROR;
+
+    return rc;
 }
 
 
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnCmdExec} */
 static DECLCALLBACK(int) drvTpmEmuCmdExec(PPDMITPMCONNECTOR pInterface, uint8_t bLoc, const void *pvCmd, size_t cbCmd, void *pvResp, size_t cbResp)
 {
-    RT_NOREF(pInterface, bLoc, pvCmd, cbCmd, pvResp, cbResp);
-    return VERR_NOT_IMPLEMENTED;
+    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
+
+    int rc = VINF_SUCCESS;
+    if (pThis->bLoc != bLoc)
+        rc = drvTpmEmuSetLocality(pThis, bLoc);
+
+    if (RT_SUCCESS(rc))
+    {
+        RT_NOREF(pInterface, bLoc, pvCmd, cbCmd, pvResp, cbResp);
+    }
+
+    return rc;
 }
 
 
@@ -525,6 +714,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     pThis->hSockCtrl                                = NIL_RTSOCKET;
     pThis->hSockData                                = NIL_RTSOCKET;
     pThis->enmTpmVers                               = TPMVERSION_UNKNOWN;
+    pThis->bLoc                                     = TPM_NO_LOCALITY_SELECTED;
 
     pThis->hPollSet                                 = NIL_RTPOLLSET;
     pThis->hPipeWakeR                               = NIL_RTPIPE;
@@ -603,19 +793,53 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
                                    N_("DrvTpmEmu#%d failed to add socket for %s to poll set"),
                                    pDrvIns->iInstance, szLocation);
 
+    rc = drvTpmEmuQueryCaps(pThis);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("DrvTpmEmu#%d failed to query capabilities offered by %s"),
+                                   pDrvIns->iInstance, szLocation);
+
+    if (!(pThis->fCaps & SWTPM_CAP_GET_CONFIG))
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                   N_("DrvTpmEmu#%d Emulated TPM misses the GET_CONFIG capability"),
+                                   pDrvIns->iInstance, szLocation);
+
     rc = drvTpmEmuQueryTpmVersion(pThis);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("DrvTpmEmu#%d failed to query TPM version from %s"),
                                    pDrvIns->iInstance, szLocation);
 
-    rc = drvTpmEmuQueryAndValidateCaps(pThis);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmEmu#%d failed to query and validate all capabilities offeres by %s"),
+    if (pThis->enmTpmVers == TPMVERSION_UNKNOWN)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                   N_("DrvTpmEmu#%d Emulated TPM version of %s is not supported"),
                                    pDrvIns->iInstance, szLocation);
 
-    LogRel(("DrvTpmEmu#%d: Connected to %s\n", pDrvIns->iInstance, szLocation));
+    const char *pszTpmVers = NULL;
+    uint32_t fCapsReq =   SWTPM_CAP_INIT | SWTPM_CAP_SHUTDOWN | SWTPM_CAP_GET_TPMESTABLISHED
+                        | SWTPM_CAP_SET_LOCALITY | SWTPM_CAP_CANCEL_TPM_CMD | SWTPM_CAP_GET_STATEBLOB
+                        | SWTPM_CAP_SET_STATEBLOB | SWTPM_CAP_STOP | SWTPM_CAP_SET_BUFFERSIZE;
+    switch (pThis->enmTpmVers)
+    {
+        case TPMVERSION_1_2:
+            /* No additional capabilities needed. */
+            pszTpmVers = "1.2";
+            break;
+        case TPMVERSION_2_0:
+            fCapsReq |= SWTPM_CAP_RESET_TPMESTABLISHED;
+            pszTpmVers = "2.0";
+            break;
+        default:
+            AssertLogRelReturn(("DrvTpmEmu#%d Emulated TPM version %d is not correctly handled", pDrvIns->iInstance, pThis->enmTpmVers),
+                               VERR_INVALID_STATE);
+    }
+
+    if ((pThis->fCaps & fCapsReq) != fCapsReq)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                   N_("DrvTpmEmu#%d Emulated TPM version of %s does not offer required set of capabilities (%#x requested vs. %#x offered)"),
+                                   pDrvIns->iInstance, szLocation, fCapsReq, pThis->fCaps);
+
+    LogRel(("DrvTpmEmu#%d: Connected to %s, emulating TPM version %s\n", pDrvIns->iInstance, szLocation, pszTpmVers));
     return VINF_SUCCESS;
 }
 

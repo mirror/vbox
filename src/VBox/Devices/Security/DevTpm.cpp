@@ -874,8 +874,10 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
     if (   uReg >= TPM_CRB_LOCALITY_REG_DATA_BUFFER
         && uReg < TPM_CRB_LOCALITY_REG_DATA_BUFFER + TPM_CRB_LOCALITY_REG_DATA_BUFFER_SIZE
         && bLoc == pThis->bLoc
-        && pThis->enmState == DEVTPMSTATE_CMD_RECEPTION)
+        && (   pThis->enmState == DEVTPMSTATE_READY
+            || pThis->enmState == DEVTPMSTATE_CMD_RECEPTION))
     {
+        pThis->enmState = DEVTPMSTATE_CMD_RECEPTION;
         memcpy(&pThis->abCmdResp[uReg - TPM_CRB_LOCALITY_REG_DATA_BUFFER], &u64, cb);
         return VINF_SUCCESS;
     }
@@ -885,8 +887,10 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
         case TPM_CRB_LOCALITY_REG_CTRL:
         {
             /* See chapter 6.5.3.2.2.1. */
+#if 0
             if (u64 & TPM_CRB_LOCALITY_REG_CTRL_RST_ESTABLISHMENT)
                 /** @todo */;
+#endif
 
             /*
              * The following three checks should be mutually exclusive as the writer shouldn't
@@ -1082,6 +1086,7 @@ static DECLCALLBACK(void) tpmR3CmdExecWorker(PPDMDEVINS pDevIns, void *pvUser)
 
     /** @todo */
     RT_NOREF(pThis, pThisCC);
+    pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
 }
 
 
