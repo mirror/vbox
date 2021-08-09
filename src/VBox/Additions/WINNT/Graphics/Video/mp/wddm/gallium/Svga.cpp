@@ -26,20 +26,23 @@
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
 
-static NTSTATUS SvgaCmdBufSubmit(VBOXWDDM_EXT_VMSVGA *pSvga, uint32_t cbSubmit)
+static NTSTATUS SvgaCmdBufSubmit(VBOXWDDM_EXT_VMSVGA *pSvga, uint32_t cbSubmit, uint32_t idx)
 {
+    AssertReturn(idx < pSvga->u32NumCmdBufs, VERR_INVALID_PARAMETER);
+    AssertReturn(cbSubmit <= PAGE_SIZE, VERR_INVALID_PARAMETER);
     int rc = STATUS_SUCCESS;
-    SVGACBHeader *pHdr = (SVGACBHeader *)pSvga->pvR0Hdr;
+    SVGACBHeader *pHdr = &((SVGACBHeader *)pSvga->pvR0Hdr)[idx];
+    RTHCPHYS paHdr = pSvga->paHdr + idx * sizeof(SVGACBHeader);
 
     pHdr->status = SVGA_CB_STATUS_NONE;
     pHdr->errorOffset = 0;
     pHdr->id = 0;
-    pHdr->flags = SVGA_CB_FLAG_NONE;
+    pHdr->flags = SVGA_CB_FLAG_NO_IRQ;
     pHdr->length = cbSubmit;
     pHdr->ptr.pa = pSvga->paCmd;
 
-    SVGARegWrite(pSvga, SVGA_REG_COMMAND_HIGH, (uint32_t)(pSvga->paHdr >> 32));
-    SVGARegWrite(pSvga, SVGA_REG_COMMAND_LOW, (uint32_t)pSvga->paHdr | SVGA_CB_CONTEXT_0);
+    SVGARegWrite(pSvga, SVGA_REG_COMMAND_HIGH, (uint32_t)(paHdr >> 32));
+    SVGARegWrite(pSvga, SVGA_REG_COMMAND_LOW, (uint32_t)paHdr | SVGA_CB_CONTEXT_0);
 
     return rc;
 }
@@ -52,14 +55,18 @@ static NTSTATUS SvgaCmdBufCtxInit(VBOXWDDM_EXT_VMSVGA *pSvga, bool enable)
 
     if (enable)
     {
-        rc = RTR0MemObjAllocPageTag(&pSvga->hMemObj, 2 << PAGE_SHIFT,
+        pSvga->u32NumCmdBufs = 8;
+
+        rc = RTR0MemObjAllocPageTag(&pSvga->hMemObj, 2 * PAGE_SIZE,
                                 false /* executable R0 mapping */, "WDDMGA");
 
         pSvga->pvR0Hdr = RTR0MemObjAddress(pSvga->hMemObj);
         pSvga->paHdr   = RTR0MemObjGetPagePhysAddr(pSvga->hMemObj, 0/*iPage*/);
+        memset(pSvga->pvR0Hdr, 0, PAGE_SIZE);
 
         pSvga->pvR0Cmd = (uint8_t *)pSvga->pvR0Hdr + PAGE_SIZE;
         pSvga->paCmd   = RTR0MemObjGetPagePhysAddr(pSvga->hMemObj, 1/*iPage*/);
+        memset(pSvga->pvR0Cmd, 0, PAGE_SIZE);
     }
 
     SVGACBHeader *pHdr = (SVGACBHeader *)pSvga->pvR0Hdr;
@@ -67,7 +74,7 @@ static NTSTATUS SvgaCmdBufCtxInit(VBOXWDDM_EXT_VMSVGA *pSvga, bool enable)
     pHdr->status = SVGA_CB_STATUS_NONE;
     pHdr->errorOffset = 0;
     pHdr->id = 0;
-    pHdr->flags = SVGA_CB_FLAG_NONE;
+    pHdr->flags = SVGA_CB_FLAG_NO_IRQ;
     pHdr->length = sizeof(uint32_t) + sizeof(SVGADCCmdStartStop);
     pHdr->ptr.pa = pSvga->paCmd;
 
@@ -86,9 +93,43 @@ static NTSTATUS SvgaCmdBufCtxInit(VBOXWDDM_EXT_VMSVGA *pSvga, bool enable)
         rc = RTR0MemObjFree(pSvga->hMemObj, true);
         pSvga->hMemObj = NIL_RTR0MEMOBJ;
     }
+    else
+    {
+        uint32_t idx;
+
+        for(idx = 0; idx < pSvga->u32NumCmdBufs; idx++)
+        {
+            pHdr->status = SVGA_CB_STATUS_COMPLETED;
+            pHdr->errorOffset = 0;
+            pHdr->id = 0;
+            pHdr->flags = SVGA_CB_FLAG_NO_IRQ;
+            pHdr->length = 0;
+            pHdr->ptr.pa = 0;
+
+            pHdr++;
+        }
+    }
 
     AssertRC(rc);
     return rc;
+}
+
+static uint32_t SvgaCmdBufReserve(VBOXWDDM_EXT_VMSVGA *pSvga)
+{
+    SVGACBHeader *pHdr = (SVGACBHeader *)pSvga->pvR0Hdr;
+    uint32_t idx;
+
+    for(idx = 0; idx < pSvga->u32NumCmdBufs; idx++)
+    {
+        if (ASMAtomicCmpXchgU32((volatile uint32_t *)&pHdr->status, SVGA_CB_STATUS_NONE, SVGA_CB_STATUS_COMPLETED))
+        {
+            return idx;
+        }
+
+        pHdr++;
+    }
+
+    return UINT32_MAX;
 }
 
 static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
@@ -1127,16 +1168,25 @@ NTSTATUS SvgaBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
                                RECT const *pDstRect)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-
     uint32_t cbSubmit = 0;
+    uint32_t idx = UINT32_MAX;
+    void *pvCmd = NULL;
+
     SvgaGenBlitGMRFBToScreen(pSvga, idDstScreen, xSrc, ySrc, pDstRect,
                              NULL, 0, &cbSubmit);
 
-    void *pvCmd;
-
     if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
     {
-        pvCmd = pSvga->pvR0Cmd;
+        idx = SvgaCmdBufReserve(pSvga);
+
+        if (idx < pSvga->u32NumCmdBufs)
+        {
+            pvCmd = pSvga->pvR0Cmd;
+        }
+        else
+        {
+            GALOGREL(32, ("WDDM: SvgaCmdBufReserve failed\n"));
+        }
     }
     else
     {
@@ -1151,7 +1201,7 @@ NTSTATUS SvgaBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
 
         if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
         {
-            SvgaCmdBufSubmit(pSvga, cbSubmit);
+            SvgaCmdBufSubmit(pSvga, cbSubmit, idx);
         }
         else
         {
