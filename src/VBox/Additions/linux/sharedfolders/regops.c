@@ -78,6 +78,18 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @def  VBSF_GET_ITER_TYPE
+ * Accessor for getting iov iter type member which changed name in 5.14. */
+#if RTLNX_VER_MIN(5,14,0)
+# define VBSF_GET_ITER_TYPE(a_pIter) ((a_pIter)->iter_type)
+#else
+# define VBSF_GET_ITER_TYPE(a_pIter) ((a_pIter)->iter)
+#endif
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 #if RTLNX_VER_MAX(3,16,0)
@@ -2126,11 +2138,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
     int    rc       = 0;
 
     Assert(iov_iter_count(iter) + pStash->cb > 0);
-# if RTLNX_VER_MIN(5,14,0)
-    if (!(iter->iter_type & ITER_KVEC)) {
-#else
-    if (!(iter->type & ITER_KVEC)) {
-#endif
+    if (!(VBSF_GET_ITER_TYPE(iter) & ITER_KVEC)) {
         /*
          * Do we have a stashed page?
          */
@@ -2376,11 +2384,9 @@ DECLINLINE(void) vbsf_iter_cleanup_stash(struct iov_iter *iter, struct vbsf_iter
 static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
 {
     size_t cPages;
-#if RTLNX_VER_MIN(5,14,0)
-    if (iter_is_iovec(iter) || (iter->iter_type & ITER_KVEC)) {
-#elif RTLNX_VER_MIN(3,16,0)
-    if (iter_is_iovec(iter) || (iter->type & ITER_KVEC)) {
-#endif
+# if RTLNX_VER_MIN(3,16,0)
+    if (iter_is_iovec(iter) || (VBSF_GET_ITER_TYPE(iter) & ITER_KVEC)) {
+# endif
         const struct iovec *pCurIov    = iter->iov;
         size_t              cLeft      = iter->nr_segs;
         size_t              cPagesSpan = 0;
@@ -2442,11 +2448,7 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
     } else {
         /* Won't bother with accurate counts for the next two types, just make
            some rough estimates (does pipes have segments?): */
-#  if RTLNX_VER_MIN(5,14,0)
-        size_t cSegs = iter->iter_type & ITER_BVEC ? RT_MAX(1, iter->nr_segs) : 1;
-#  else
-        size_t cSegs = iter->type & ITER_BVEC ? RT_MAX(1, iter->nr_segs) : 1;
-#endif
+        size_t cSegs = VBSF_GET_ITER_TYPE(iter) & ITER_BVEC ? RT_MAX(1, iter->nr_segs) : 1;
         cPages = (iov_iter_count(iter) + (PAGE_SIZE * 2 - 2) * cSegs) >> PAGE_SHIFT;
     }
 # endif
@@ -2598,14 +2600,8 @@ static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, uns
     struct vbsf_reg_info   *sf_r       = kio->ki_filp->private_data;
     struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
 
-#if RTLNX_VER_MIN(5,14,0)
     SFLOGFLOW(("vbsf_reg_read_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
-               inode, kio->ki_filp, cbToRead, kio->ki_pos, iter->iter_type));
-#else
-    SFLOGFLOW(("vbsf_reg_read_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
-               inode, kio->ki_filp, cbToRead, kio->ki_pos, iter->type));
-#endif
-
+               inode, kio->ki_filp, cbToRead, kio->ki_pos, VBSF_GET_ITER_TYPE(iter) ));
     AssertReturn(S_ISREG(inode->i_mode), -EINVAL);
 
     /*
@@ -2839,13 +2835,9 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
     bool const              fAppend    = RT_BOOL(kio->ki_filp->f_flags & O_APPEND);
 # endif
 
-#if RTLNX_VER_MIN(5,14,0)
+
     SFLOGFLOW(("vbsf_reg_write_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
-               inode, kio->ki_filp, cbToWrite, offFile, iter->iter_type));
-#else
-    SFLOGFLOW(("vbsf_reg_write_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
-               inode, kio->ki_filp, cbToWrite, offFile, iter->type));
-#endif
+               inode, kio->ki_filp, cbToWrite, offFile, VBSF_GET_ITER_TYPE(iter) ));
     AssertReturn(S_ISREG(inode->i_mode), -EINVAL);
 
     /*
@@ -3758,9 +3750,12 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
 #endif /* KERNEL_VERSION >= 2.6.24 */
 
 #if RTLNX_VER_MIN(5,14,0)
+/**
+ * Companion to vbsf_write_begin (i.e. shouldn't be called).
+ */
 static int vbsf_write_end(struct file *file, struct address_space *mapping,
-                loff_t pos, unsigned int len, unsigned int copied,
-                struct page *page, void *fsdata)
+                          loff_t pos, unsigned int len, unsigned int copied,
+                          struct page *page, void *fsdata)
 {
     static uint64_t volatile s_cCalls = 0;
     if (s_cCalls++ < 16)
@@ -3773,10 +3768,10 @@ static int vbsf_write_end(struct file *file, struct address_space *mapping,
         WARN_ON(1);
 # endif
     }
-
     return -ENOTSUPP;
 }
-#endif
+#endif /* KERNEL_VERSION >= 5.14.0 */
+
 
 #if RTLNX_VER_MIN(2,4,10)
 
