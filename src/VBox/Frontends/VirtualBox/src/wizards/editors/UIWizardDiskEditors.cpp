@@ -329,8 +329,11 @@ void UIDiskVariantGroupBox::retranslateUi()
         m_pFixedCheckBox->setToolTip(tr("<p>When checked, the virtual disk image will be fully allocated at "
                                                        "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
     }
-    m_pSplitBox->setText(tr("&Split into files of less than 2GB"));
-
+    if (m_pSplitBox)
+    {
+        m_pSplitBox->setText(tr("&Split into files of less than 2GB"));
+        m_pSplitBox->setText(tr("&When checked the virtual disk file will be splitted into 2GB parts in the host storage."));
+    }
 }
 
 qulonglong UIDiskVariantGroupBox::mediumVariant() const

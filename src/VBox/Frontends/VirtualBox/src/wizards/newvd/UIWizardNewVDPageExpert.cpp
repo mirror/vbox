@@ -75,26 +75,14 @@ void UIWizardNewVDPageExpert::prepare()
             this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);
     connect(m_pVariantGroup, &UIDiskVariantGroupBox::sigMediumVariantChanged,
             this, &UIWizardNewVDPageExpert::sltMediumVariantChanged);
-
-//     connect(m_pFixedCheckBox, &QAbstractButton::toggled,
-//             this, &UIWizardNewVDPageExpert::completeChanged);
-//     connect(m_pSplitBox, &QCheckBox::stateChanged,
-//             this, &UIWizardNewVDPageExpert::completeChanged);
-//     connect(m_pLocationEditor, &QLineEdit::textChanged,
-//             this, &UIWizardNewVDPageExpert::completeChanged);
     connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
             this, &UIWizardNewVDPageExpert::sltSelectLocationButtonClicked);
-//     connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-//             this, &UIWizardNewVDPageExpert::completeChanged);
-
     connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
             this, &UIWizardNewVDPageExpert::sltMediumSizeChanged);
-
     connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
             this, &UIWizardNewVDPageExpert::sltMediumPathChanged);
 
     retranslateUi();
-
 }
 
 void UIWizardNewVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
@@ -140,30 +128,6 @@ void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
 
 void UIWizardNewVDPageExpert::retranslateUi()
 {
-//     UIWizardNewVDPageBaseFileType::retranslateWidgets();
-//     UIWizardNewVDPageBaseVariant::retranslateWidgets();
-//     UIWizardNewVDPageBaseSizeLocation::retranslateWidgets();
-//     /* Translate widgets: */
-//     if (m_pLocationGroupBox)
-//         m_pLocationGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &location"));
-//     if (m_pSizeGroupBox)
-//         m_pSizeGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &size"));
-//     if (m_pFormatGroupBox)
-//         m_pFormatGroupBox->setTitle(UIWizardNewVD::tr("Hard disk file &type"));
-//     if (m_pFormatButtonGroup)
-//     {
-//         QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-//         for (int i = 0; i < buttons.size(); ++i)
-//         {
-//             QAbstractButton *pButton = buttons[i];
-//             UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-//             pButton->setText(gpConverter->toString(enmFormat));
-//         }
-//     }
-//     if (m_pVariantGroupBox)
-//         m_pVariantGroupBox->setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
-//     if (m_pSplitBox)
-//         m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
 }
 
 void UIWizardNewVDPageExpert::initializePage()
