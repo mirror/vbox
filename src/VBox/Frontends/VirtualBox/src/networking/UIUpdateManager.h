@@ -28,7 +28,7 @@
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
-class UIUpdateQueue;
+class UIExecutionQueue;
 
 /** Singleton to perform new version checks
   * and update of various VirtualBox parts. */
@@ -73,12 +73,12 @@ private:
     /** Holds the singleton instance. */
     static UIUpdateManager *s_pInstance;
 
-    /** Holds the update queue instance. */
-    UIUpdateQueue *m_pQueue;
+    /** Holds the execution queue instance. */
+    UIExecutionQueue *m_pQueue;
     /** Holds whether Update Manager is running. */
-    bool           m_fIsRunning;
+    bool              m_fIsRunning;
     /** Holds the refresh period. */
-    quint64        m_uTime;
+    quint64           m_uTime;
 
     /** Holds whether the Extension Pack installation is requested. */
     bool  m_fEPInstallationRequested;

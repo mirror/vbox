@@ -26,6 +26,7 @@
 #include "QIProcess.h"
 #include "UICommon.h"
 #include "VBoxUtils.h"
+#include "UIExecutionQueue.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -42,7 +43,6 @@
 #include "CSystemProperties.h"
 
 /* Other VBox includes: */
-//# include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/system.h>
 #include <VBox/version.h>
@@ -50,140 +50,86 @@
 /* enable to test the version update check */
 //#define VBOX_NEW_VERSION_TEST "5.1.12_0 http://unknown.unknown.org/0.0.0/VirtualBox-0.0.0-0-unknown.pkg"
 
-/* Forward declarations: */
-class UIUpdateStep;
 
-
-/** QObject subclass providing GUI with
-  * an object to manage queue of update-steps. */
-class UIUpdateQueue : public QObject
+/** UINetworkCustomer extension for new version check. */
+class UINewVersionChecker : public UINetworkCustomer
 {
     Q_OBJECT;
 
 signals:
 
-    /** Starts the queue. */
-    void sigStartQueue();
-
-    /** Notifies about queue is finished. */
-    void sigQueueFinished();
+    /** Notifies about new version check complete. */
+    void sigNewVersionChecked();
 
 public:
 
-    /** Constructs update queue passing @a pParent to the base-class. */
-    UIUpdateQueue(UIUpdateManager *pParent) : QObject(pParent) {}
+    /** Constructs new version checker.
+      * @param  fForceCall  Brings whether this customer has forced privelegies. */
+    UINewVersionChecker(bool fForceCall);
 
-    /** Starts the queue. */
-    void start() { emit sigStartQueue(); }
-
-private:
-
-    /** Returns whether queue is empty. */
-    bool isEmpty() const { return m_pLastStep.isNull(); }
-
-    /** Defines the last queued @a pStep. */
-    void setLastStep(UIUpdateStep *pStep) { m_pLastStep = pStep; }
-    /** Returns the last queued step. */
-    UIUpdateStep *lastStep() const { return m_pLastStep; }
-
-    /** Holds the last queued step reference. */
-    QPointer<UIUpdateStep> m_pLastStep;
-
-    /** Allows step to manage queue. */
-    friend class UIUpdateStep;
-};
-
-
-/** Update step interface.
-  * UINetworkCustomer extension which allows background network updates. */
-class UIUpdateStep : public UINetworkCustomer
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about step is finished. */
-    void sigStepComplete();
-
-public:
-
-    /** Constructs update step passing @a pQueue and @a fForceCall to the base-class. */
-    UIUpdateStep(UIUpdateQueue *pQueue, bool fForceCall);
+    /** Starts new version check. */
+    void start();
 
 protected:
 
     /** Handles network reply progress for @a iReceived amount of bytes among @a iTotal. */
-    virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) /* override */;
-    /** Handles network reply finishing with specified @a strError. */
-    virtual void processNetworkReplyFailed(const QString &strError) /* override */;
+    virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
+    /** Handles network reply failed with specified @a strError. */
+    virtual void processNetworkReplyFailed(const QString &strError);
     /** Handles network reply canceling for a passed @a pReply. */
-    virtual void processNetworkReplyCanceled(UINetworkReply *pReply) /* override */;
+    virtual void processNetworkReplyCanceled(UINetworkReply *pReply);
     /** Handles network reply finishing for a passed @a pReply. */
-    virtual void processNetworkReplyFinished(UINetworkReply *pReply) /* override */;
-
-protected slots:
-
-    /** Starts the step. */
-    virtual void sltStartStep() = 0;
-};
-
-
-/** Update step subclass to check for the new VirtualBox version. */
-class UIUpdateStepVirtualBox : public UIUpdateStep
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs update step passing @a pQueue and @a fForceCall to the base-class. */
-    UIUpdateStepVirtualBox(UIUpdateQueue *pQueue, bool fForceCall)
-        : UIUpdateStep(pQueue, fForceCall)
-        , m_url("https://update.virtualbox.org/query.php")
-    {}
-
-protected:
-
-    /** Returns description of the current network operation. */
-    virtual QString description() const /* override */;
-
-    /** Handles network reply finishing with specified @a strError. */
-    virtual void processNetworkReplyFailed(const QString &strError) /* override */;
-    /** Handles network reply canceling for a passed @a pReply. */
-    virtual void processNetworkReplyCanceled(UINetworkReply *pReply) /* override */;
-    /** Handles network reply finishing for a passed @a pReply. */
-    virtual void processNetworkReplyFinished(UINetworkReply *pReply) /* override */;
-
-protected slots:
-
-    /** Starts the step. */
-    virtual void sltStartStep() /* override */;
+    virtual void processNetworkReplyFinished(UINetworkReply *pReply);
 
 private:
+
+    /** Returns whether this customer has forced privelegies. */
+    bool isItForceCall() const { return m_fForceCall; }
 
     /** Generates platform information. */
     static QString platformInfo();
 
-    /** Holds the update step URL. */
-    QUrl m_url;
+    /** Holds whether this customer has forced privelegies. */
+    bool  m_fForceCall;
+    /** Holds the new version checker URL. */
+    QUrl  m_url;
 };
 
 
-/** Update step subclass to check for the new VirtualBox Extension Pack version. */
-class UIUpdateStepVirtualBoxExtensionPack : public UIUpdateStep
+/** UIExecutionStep extension to check for the new VirtualBox version. */
+class UIUpdateStepVirtualBox : public UIExecutionStep
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs update step passing @a pQueue and @a fForceCall to the base-class. */
-    UIUpdateStepVirtualBoxExtensionPack(UIUpdateQueue *pQueue, bool fForceCall)
-        : UIUpdateStep(pQueue, fForceCall)
-    {}
+    /** Constructs extension step. */
+    UIUpdateStepVirtualBox(bool fForceCall);
+    /** Destructs extension step. */
+    virtual ~UIUpdateStepVirtualBox() /* override final */;
 
-protected slots:
+    /** Executes the step. */
+    virtual void exec() /* override */;
 
-    /** Starts the step. */
-    virtual void sltStartStep() /* override */;
+private:
+
+    /** Holds the new version checker instance. */
+    UINewVersionChecker *m_pNewVersionChecker;
+};
+
+
+/** UIExecutionStep extension to check for the new VirtualBox Extension Pack version. */
+class UIUpdateStepVirtualBoxExtensionPack : public UIExecutionStep
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs extension step. */
+    UIUpdateStepVirtualBoxExtensionPack();
+
+    /** Executes the step. */
+    virtual void exec() /* override */;
 
 private slots:
 
@@ -198,106 +144,16 @@ private slots:
 
 
 /*********************************************************************************************************************************
-*   Class UIUpdateStep implementation.                                                                                           *
+*   Class UINewVersionChecker implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIUpdateStep::UIUpdateStep(UIUpdateQueue *pQueue, bool fForceCall)
-    : UINetworkCustomer(pQueue, fForceCall)
-{
-    /* If queue has no steps yet: */
-    if (pQueue->isEmpty())
-    {
-        /* Connect starting-signal of the queue to starting-slot of this step: */
-        connect(pQueue, &UIUpdateQueue::sigStartQueue, this, &UIUpdateStep::sltStartStep, Qt::QueuedConnection);
-    }
-    /* If queue has at least one step already: */
-    else
-    {
-        /* Reconnect completion-signal of the last-step from completion-signal of the queue to starting-slot of this step: */
-        disconnect(pQueue->lastStep(), &UIUpdateStep::sigStepComplete, pQueue, &UIUpdateQueue::sigQueueFinished);
-        connect(pQueue->lastStep(), &UIUpdateStep::sigStepComplete, this, &UIUpdateStep::sltStartStep, Qt::QueuedConnection);
-    }
-
-    /* Connect completion-signal of this step to the completion-signal of the queue: */
-    connect(this, &UIUpdateStep::sigStepComplete, pQueue, &UIUpdateQueue::sigQueueFinished, Qt::QueuedConnection);
-    /* Connect completion-signal of this step to the destruction-slot of this step: */
-    connect(this, &UIUpdateStep::sigStepComplete, this, &UIUpdateStep::deleteLater, Qt::QueuedConnection);
-
-    /* Remember this step as the last one: */
-    pQueue->setLastStep(this);
-}
-
-void UIUpdateStep::processNetworkReplyProgress(qint64, qint64)
+UINewVersionChecker::UINewVersionChecker(bool fForceCall)
+    : m_fForceCall(fForceCall)
+    , m_url("https://update.virtualbox.org/query.php")
 {
 }
 
-void UIUpdateStep::processNetworkReplyFailed(const QString &)
-{
-}
-
-void UIUpdateStep::processNetworkReplyCanceled(UINetworkReply *)
-{
-}
-
-void UIUpdateStep::processNetworkReplyFinished(UINetworkReply *)
-{
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIUpdateStepVirtualBox implementation.                                                                                 *
-*********************************************************************************************************************************/
-
-QString UIUpdateStepVirtualBox::description() const
-{
-    return tr("Checking for a new VirtualBox version...");
-}
-
-void UIUpdateStepVirtualBox::processNetworkReplyFailed(const QString &strError)
-{
-    Q_UNUSED(strError);
-
-    /* Notify about step completion: */
-    emit sigStepComplete();
-}
-
-void UIUpdateStepVirtualBox::processNetworkReplyCanceled(UINetworkReply *pReply)
-{
-    Q_UNUSED(pReply);
-
-    /* Notify about step completion: */
-    emit sigStepComplete();
-}
-
-void UIUpdateStepVirtualBox::processNetworkReplyFinished(UINetworkReply *pReply)
-{
-    /* Deserialize incoming data: */
-    QString strResponseData(pReply->readAll());
-
-#ifdef VBOX_NEW_VERSION_TEST
-    strResponseData = VBOX_NEW_VERSION_TEST;
-#endif
-    /* Newer version of necessary package found: */
-    if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
-    {
-        QStringList response = strResponseData.split(" ", QString::SkipEmptyParts);
-        msgCenter().showUpdateSuccess(response[0], response[1]);
-    }
-    /* No newer version of necessary package found: */
-    else
-    {
-        if (isItForceCall())
-            msgCenter().showUpdateNotFound();
-    }
-
-    /* Increment update check counter: */
-    gEDataManager->incrementApplicationUpdateCheckCounter();
-
-    /* Notify about step completion: */
-    emit sigStepComplete();
-}
-
-void UIUpdateStepVirtualBox::sltStartStep()
+void UINewVersionChecker::start()
 {
     /* Compose query: */
     QUrlQuery url;
@@ -319,7 +175,7 @@ void UIUpdateStepVirtualBox::sltStartStep()
     }
     url.addQueryItem("count", QString::number(gEDataManager->applicationUpdateCheckCounter()));
     url.addQueryItem("branch", VBoxUpdateData(gEDataManager->applicationUpdateData()).branchName());
-    QString strUserAgent(QString("VirtualBox %1 <%2>").arg(uiCommon().virtualBox().GetVersion()).arg(platformInfo()));
+    const QString strUserAgent(QString("VirtualBox %1 <%2>").arg(uiCommon().virtualBox().GetVersion()).arg(platformInfo()));
 
     /* Send GET request: */
     UserDictionary headers;
@@ -329,8 +185,50 @@ void UIUpdateStepVirtualBox::sltStartStep()
     createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << fullUrl, QString(), headers);
 }
 
+void UINewVersionChecker::processNetworkReplyProgress(qint64, qint64)
+{
+}
+
+void UINewVersionChecker::processNetworkReplyFailed(const QString &)
+{
+    emit sigNewVersionChecked();
+}
+
+void UINewVersionChecker::processNetworkReplyCanceled(UINetworkReply *)
+{
+    emit sigNewVersionChecked();
+}
+
+void UINewVersionChecker::processNetworkReplyFinished(UINetworkReply *pReply)
+{
+    /* Deserialize incoming data: */
+    const QString strResponseData(pReply->readAll());
+
+#ifdef VBOX_NEW_VERSION_TEST
+    strResponseData = VBOX_NEW_VERSION_TEST;
+#endif
+    /* Newer version of necessary package found: */
+    if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
+    {
+        const QStringList response = strResponseData.split(" ", QString::SkipEmptyParts);
+        msgCenter().showUpdateSuccess(response[0], response[1]);
+    }
+    /* No newer version of necessary package found: */
+    else
+    {
+        if (isItForceCall())
+            msgCenter().showUpdateNotFound();
+    }
+
+    /* Increment update check counter: */
+    gEDataManager->incrementApplicationUpdateCheckCounter();
+
+    /* Notify about completion: */
+    emit sigNewVersionChecked();
+}
+
 /* static */
-QString UIUpdateStepVirtualBox::platformInfo()
+QString UINewVersionChecker::platformInfo()
 {
     /* Prepare platform report: */
     QString strPlatform;
@@ -405,22 +303,51 @@ QString UIUpdateStepVirtualBox::platformInfo()
 
 
 /*********************************************************************************************************************************
+*   Class UIUpdateStepVirtualBox implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+UIUpdateStepVirtualBox::UIUpdateStepVirtualBox(bool fForceCall)
+    : m_pNewVersionChecker(0)
+{
+    m_pNewVersionChecker = new UINewVersionChecker(fForceCall);
+    if (m_pNewVersionChecker)
+        connect(m_pNewVersionChecker, &UINewVersionChecker::sigNewVersionChecked,
+                this, &UIUpdateStepVirtualBox::sigStepFinished);
+}
+
+UIUpdateStepVirtualBox::~UIUpdateStepVirtualBox()
+{
+    delete m_pNewVersionChecker;
+    m_pNewVersionChecker = 0;
+}
+
+void UIUpdateStepVirtualBox::exec()
+{
+    m_pNewVersionChecker->start();
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIUpdateStepVirtualBoxExtensionPack implementation.                                                                    *
 *********************************************************************************************************************************/
 
-void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
+UIUpdateStepVirtualBoxExtensionPack::UIUpdateStepVirtualBoxExtensionPack()
 {
-    /* Return if Selector UI issued a direct request to install EP: */
+}
+
+void UIUpdateStepVirtualBoxExtensionPack::exec()
+{
+    /* Return if VirtualBox Manager issued a direct request to install EP: */
     if (gUpdateManager->isEPInstallationRequested())
     {
-        emit sigStepComplete();
+        emit sigStepFinished();
         return;
     }
 
     /* Return if already downloading: */
     if (UINotificationDownloaderExtensionPack::exists())
     {
-        emit sigStepComplete();
+        emit sigStepFinished();
         return;
     }
 
@@ -429,7 +356,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     /* Return if extension pack manager is NOT available: */
     if (extPackManager.isNull())
     {
-        emit sigStepComplete();
+        emit sigStepFinished();
         return;
     }
 
@@ -438,7 +365,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     /* Return if extension pack is NOT installed: */
     if (extPack.isNull())
     {
-        emit sigStepComplete();
+        emit sigStepFinished();
         return;
     }
 
@@ -456,7 +383,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
         /* If this version being developed on trunk (we skip check at all): */
         else
         {
-            emit sigStepComplete();
+            emit sigStepFinished();
             return;
         }
     }
@@ -467,7 +394,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     /* Skip the check if the extension pack is equal to or newer than VBox. */
     if (UIVersion(strExtPackVersion) >= vboxVersion)
     {
-        emit sigStepComplete();
+        emit sigStepFinished();
         return;
     }
 
@@ -477,14 +404,14 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
         /* Inform the user that he should update the extension pack: */
         msgCenter().askUserToDownloadExtensionPack(GUI_ExtPackName, strExtPackVersion, strVBoxVersion);
         /* Never try to download for ENTERPRISE version: */
-        emit sigStepComplete();
+        emit sigStepFinished();
         return;
     }
 
     /* Ask the user about extension pack downloading: */
     if (!msgCenter().warnAboutOutdatedExtensionPack(GUI_ExtPackName, strExtPackVersion))
     {
-        emit sigStepComplete();
+        emit sigStepFinished();
         return;
     }
 
@@ -495,7 +422,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
             this, &UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack);
     /* Also, destroyed downloader is a signal to finish the step: */
     connect(pNotification, &UINotificationDownloaderExtensionPack::sigDownloaderDestroyed,
-            this, &UIUpdateStepVirtualBoxExtensionPack::sigStepComplete);
+            this, &UIUpdateStepVirtualBoxExtensionPack::sigStepFinished);
     /* Append and start notification: */
     gpNotificationCenter->append(pNotification);
 }
@@ -514,7 +441,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
         QFile::remove(QDir::toNativeSeparators(strTarget));
         /* Get the list of old extension pack files in VirtualBox homefolder: */
         const QStringList oldExtPackFiles = QDir(uiCommon().homeFolder()).entryList(QStringList("*.vbox-extpack"),
-                                                                                      QDir::Files);
+                                                                                    QDir::Files);
         /* Propose to delete old extension pack files if there are any: */
         if (oldExtPackFiles.size())
         {
@@ -539,7 +466,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
 UIUpdateManager* UIUpdateManager::s_pInstance = 0;
 
 UIUpdateManager::UIUpdateManager()
-    : m_pQueue(new UIUpdateQueue(this))
+    : m_pQueue(new UIExecutionQueue(this))
     , m_fIsRunning(false)
     , m_uTime(1 /* day */ * 24 /* hours */ * 60 /* minutes */ * 60 /* seconds */ * 1000 /* ms */)
     , m_fEPInstallationRequested(false)
@@ -549,7 +476,7 @@ UIUpdateManager::UIUpdateManager()
         s_pInstance = this;
 
     /* Configure queue: */
-    connect(m_pQueue, &UIUpdateQueue::sigQueueFinished, this, &UIUpdateManager::sltHandleUpdateFinishing);
+    connect(m_pQueue, &UIExecutionQueue::sigQueueFinished, this, &UIUpdateManager::sltHandleUpdateFinishing);
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the first time, for Selector UI only: */
@@ -620,8 +547,8 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
         fForceCall || currentData.isNeedToCheck())
     {
         /* Prepare update queue: */
-        new UIUpdateStepVirtualBox(m_pQueue, fForceCall);
-        new UIUpdateStepVirtualBoxExtensionPack(m_pQueue, fForceCall);
+        m_pQueue->enqueue(new UIUpdateStepVirtualBox(fForceCall));
+        m_pQueue->enqueue(new UIUpdateStepVirtualBoxExtensionPack);
         /* Start update queue: */
         m_pQueue->start();
     }

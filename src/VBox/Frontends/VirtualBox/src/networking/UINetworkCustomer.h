@@ -45,14 +45,10 @@ signals:
 
 public:
 
-    /** Constructs network customer passing @a pParent to the base-class.
-      * @param  fForceCall  Brings whether this customer has forced privelegies. */
-    UINetworkCustomer(QObject *pParent = 0, bool fForceCall = true);
+    /** Constructs network customer passing @a pParent to the base-class. */
+    UINetworkCustomer();
     /** Destructs network customer. */
     virtual ~UINetworkCustomer() /* override */;
-
-    /** Returns whether this customer has forced privelegies. */
-    bool isItForceCall() const { return m_fForceCall; }
 
     /** Returns description of the current network operation. */
     virtual QString description() const { return QString(); }
@@ -82,9 +78,6 @@ protected:
     void cancelNetworkRequest();
 
 private:
-
-    /** Holds whether this customer has forced privelegies. */
-    bool  m_fForceCall;
 
     /** Holds the network-request ID. */
     QUuid  m_uId;

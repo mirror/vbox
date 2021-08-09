@@ -20,9 +20,7 @@
 #include "UINetworkRequestManager.h"
 
 
-UINetworkCustomer::UINetworkCustomer(QObject *pParent /* = 0 */, bool fForceCall /* = true */)
-    : QObject(pParent)
-    , m_fForceCall(fForceCall)
+UINetworkCustomer::UINetworkCustomer()
 {
 }
 
