@@ -836,25 +836,44 @@ static DECLCALLBACK(int)  vmmdevR3TestingLockingThread(PPDMDEVINS pDevIns, PPDMT
 
     while (RT_LIKELY(pThread->enmState == PDMTHREADSTATE_RUNNING))
     {
-        /*
-         * Enter the critical section and
-         */
-        int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
-        AssertLogRelRCReturn(rc, rc);
-
-        uint32_t cNsNextWait;
-        if (pThis->TestingLockControl.s.cUsHold)
+        int             rc;
+        uint32_t        cNsNextWait = 0;
+        uint32_t const  fCfgHi      = pThis->TestingLockControl.au32[1];
+        if (fCfgHi & VMMDEV_TESTING_LOCKED_HI_ENABLED)
         {
-            PDMDevHlpSUPSemEventWaitNsRelIntr(pDevIns, pThis->hTestingLockEvt, pThis->TestingLockControl.s.cUsHold);
-            if (pThis->TestingLockControl.s.fPokeBeforeRelease)
-                VMCC_FOR_EACH_VMCPU_STMT(pVM, RTThreadPoke(pVCpu->hThread));
-            cNsNextWait = pThis->TestingLockControl.s.cUsBetween * RT_NS_1US;
-        }
-        else
-            cNsNextWait = 0;
+            /*
+             * take lock
+             */
+            if (!(fCfgHi & VMMDEV_TESTING_LOCKED_HI_TYPE_RW))
+                rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_SUCCESS);
+            else if (!(fCfgHi & VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED))
+                rc = PDMDevHlpCritSectRwEnterExcl(pDevIns, &pThis->CritSectRw, VINF_SUCCESS);
+            else
+                rc = PDMDevHlpCritSectRwEnterShared(pDevIns, &pThis->CritSectRw, VINF_SUCCESS);
+            AssertLogRelRCReturn(rc, rc);
 
-        rc = PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
-        AssertLogRelRCReturn(rc, rc);
+            /*
+             * Delay releasing lock.
+             */
+            cNsNextWait = pThis->TestingLockControl.s.cUsBetween * RT_NS_1US;
+            if (pThis->TestingLockControl.s.cUsHold)
+            {
+                PDMDevHlpSUPSemEventWaitNsRelIntr(pDevIns, pThis->hTestingLockEvt, pThis->TestingLockControl.s.cUsHold);
+                if (pThis->TestingLockControl.s.fPokeBeforeRelease)
+                    VMCC_FOR_EACH_VMCPU_STMT(pVM, RTThreadPoke(pVCpu->hThread));
+            }
+
+            /*
+             * Release lock.
+             */
+            if (!(fCfgHi & VMMDEV_TESTING_LOCKED_HI_TYPE_RW))
+                rc = PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
+            else if (!(fCfgHi & VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED))
+                rc = PDMDevHlpCritSectRwLeaveExcl(pDevIns, &pThis->CritSectRw);
+            else
+                rc = PDMDevHlpCritSectRwLeaveShared(pDevIns, &pThis->CritSectRw);
+            AssertLogRelRCReturn(rc, rc);
+        }
 
         /*
          * Wait for the next iteration.
