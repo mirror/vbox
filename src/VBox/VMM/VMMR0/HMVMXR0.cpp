@@ -6079,10 +6079,19 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
         int rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_DR7, CPUMGetGuestDR7(pVCpu));
         AssertRC(rc);
 
-        /* Always intercept Mov DRx accesses for the nested-guest for now. */
-        pVmcsInfo->u32ProcCtls |= VMX_PROC_CTLS_MOV_DR_EXIT;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
-        AssertRC(rc);
+        /*
+         * We don't want to always intercept MOV DRx for nested-guests as it causes
+         * problems when the nested hypervisor isn't intercepting them, see @bugref{10080}.
+         * Instead, they are strictly only requested when the nested hypervisor intercepts
+         * them -- handled while merging VMCS controls.
+         *
+         * If neither the outer nor the nested-hypervisor is intercepting MOV DRx,
+         * then the guest debug state should be actively loaded on the host so that
+         * nested-guest reads its own debug registers without causing VM-exits.
+         */
+        if (   !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT)
+            && !CPUMIsGuestDebugStateActive(pVCpu))
+            CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
         return VINF_SUCCESS;
     }
 
@@ -10451,6 +10460,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     uint32_t       u32ProcCtls = (pVmcsNstGst->u32ProcCtls  & ~VMX_PROC_CTLS_USE_IO_BITMAPS)
                                | (pVmcsInfoGst->u32ProcCtls & ~(  VMX_PROC_CTLS_INT_WINDOW_EXIT
                                                                 | VMX_PROC_CTLS_NMI_WINDOW_EXIT
+                                                                | VMX_PROC_CTLS_MOV_DR_EXIT
                                                                 | VMX_PROC_CTLS_USE_TPR_SHADOW
                                                                 | VMX_PROC_CTLS_MONITOR_TRAP_FLAG));
 
@@ -10819,10 +10829,9 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
      * If any new events (interrupts/NMI) are pending currently, we try to set up the
      * guest to cause a VM-exit the next time they are ready to receive the event.
      *
-     * With nested-guests, evaluating pending events may cause VM-exits. Also, verify
-     * that the event in TRPM that we will inject using hardware-assisted VMX is -not-
-     * subject to interecption. Otherwise, we should have checked and injected them
-     * manually elsewhere (IEM).
+     * For nested-guests, verify that the TRPM event that we're about to inject using
+     * hardware-assisted VMX is -not- subject to nested-hypervisor interception.
+     * Otherwise, we should have checked and injected them manually elsewhere (IEM).
      */
     if (TRPMHasTrap(pVCpu))
     {
@@ -11302,6 +11311,8 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
             }
 
             Assert(VMMRZCallRing3IsEnabled(pVCpu));
+            Assert(   pVmxTransient->fWasGuestDebugStateActive == false
+                   || pVmxTransient->fWasHyperDebugStateActive == false);
             return;
         }
     }
@@ -16134,7 +16145,11 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
 
-    /* We might get this VM-exit if the nested-guest is not intercepting MOV DRx accesses. */
+    /*
+     * We might also get this VM-exit if the nested-guest isn't intercepting MOV DRx accesses.
+     * In such a case, rather than disabling MOV DRx intercepts and resuming execution, we
+     * must emulate the MOV DRx access.
+     */
     if (!pVmxTransient->fIsNestedGuest)
     {
         /* We should -not- get this VM-exit if the guest's debug registers were active. */
