@@ -271,6 +271,7 @@ void UINotificationProgressItem::updateDetails()
 }
 
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 /*********************************************************************************************************************************
 *   Class UINotificationDownloaderItem implementation.                                                                           *
 *********************************************************************************************************************************/
@@ -367,6 +368,7 @@ void UINotificationDownloaderItem::updateDetails()
         m_pLabelDetails->setVisible(m_fToggled);
     }
 }
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 
 /*********************************************************************************************************************************
@@ -378,8 +380,10 @@ UINotificationObjectItem *UINotificationItem::create(QWidget *pParent, UINotific
     /* Handle known types: */
     if (pObject->inherits("UINotificationProgress"))
         return new UINotificationProgressItem(pParent, static_cast<UINotificationProgress*>(pObject));
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     if (pObject->inherits("UINotificationDownloader"))
         return new UINotificationDownloaderItem(pParent, static_cast<UINotificationDownloader*>(pObject));
+#endif
     /* Handle defaults: */
     return new UINotificationObjectItem(pParent, pObject);
 }

@@ -3411,8 +3411,9 @@ void UIMessageCenter::sltShowHelpHelpDialog()
         sltShowUserManual(strUserManualFileName1);
     else if (QFile::exists(strUserManualFileName2))
         sltShowUserManual(strUserManualFileName2);
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* If downloader is running already: */
-    else if (UIDownloaderUserManual::current())
+    else if (UINotificationDownloaderUserManual::exists())
     {
         /// @todo show notification-center
     }
@@ -3427,6 +3428,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
         /* Append and start notification: */
         gpNotificationCenter->append(pNotification);
     }
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #endif /* #ifdef VBOX_OSE */
 #endif
 }

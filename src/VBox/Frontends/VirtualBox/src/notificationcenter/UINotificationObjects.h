@@ -1117,6 +1117,7 @@ private:
     QString  m_strInterfaceName;
 };
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 /** UINotificationDownloader extension for extension pack downloading functionality. */
 class SHARED_LIBRARY_STUFF UINotificationDownloaderExtensionPack : public UINotificationDownloader
 {
@@ -1255,5 +1256,6 @@ private:
     /** Holds the name of file being dowloaded. */
     QString  m_strFileName;
 };
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */

@@ -32,8 +32,10 @@
 #include "CProgress.h"
 
 /* Forward declarations: */
-class UIDownloader;
 class UINotificationProgressTask;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+class UIDownloader;
+#endif
 
 /** QObject-based notification-object. */
 class SHARED_LIBRARY_STUFF UINotificationObject : public QObject
@@ -120,6 +122,7 @@ private:
     ulong  m_uPercent;
 };
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 /** UINotificationObject extension for notification-downloader. */
 class SHARED_LIBRARY_STUFF UINotificationDownloader : public UINotificationObject
 {
@@ -184,5 +187,6 @@ private:
     /** Holds the error message is any. */
     QString  m_strError;
 };
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObject_h */
