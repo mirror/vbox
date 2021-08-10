@@ -87,11 +87,6 @@ public:
       * @param  pProgress  Brings the notification-progress this item created for. */
     UINotificationProgressItem(QWidget *pParent, UINotificationProgress *pProgress = 0);
 
-protected:
-
-    /** Holds the progress-bar instance. */
-    QProgressBar *m_pProgressBar;
-
 private slots:
 
     /** Handles signal about progress started. */
@@ -109,6 +104,9 @@ private:
 
     /** Updates details. */
     void updateDetails();
+
+    /** Holds the progress-bar instance. */
+    QProgressBar *m_pProgressBar;
 };
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -122,11 +120,6 @@ public:
     /** Constructs notification-downloader item, passing @a pParent to the base-class.
       * @param  pDownloader  Brings the notification-downloader this item created for. */
     UINotificationDownloaderItem(QWidget *pParent, UINotificationDownloader *pDownloader = 0);
-
-protected:
-
-    /** Holds the progress-bar instance. */
-    QProgressBar *m_pProgressBar;
 
 private slots:
 
@@ -145,6 +138,9 @@ private:
 
     /** Updates details. */
     void updateDetails();
+
+    /** Holds the progress-bar instance. */
+    QProgressBar *m_pProgressBar;
 };
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 

@@ -384,7 +384,7 @@ UINotificationObjectItem *UINotificationItem::create(QWidget *pParent, UINotific
     if (pObject->inherits("UINotificationProgress"))
         return new UINotificationProgressItem(pParent, static_cast<UINotificationProgress*>(pObject));
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    if (pObject->inherits("UINotificationDownloader"))
+    else if (pObject->inherits("UINotificationDownloader"))
         return new UINotificationDownloaderItem(pParent, static_cast<UINotificationDownloader*>(pObject));
 #endif
     /* Handle defaults: */
