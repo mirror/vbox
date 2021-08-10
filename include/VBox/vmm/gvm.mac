@@ -66,7 +66,7 @@ struc GVM
         .cCpus              resd 1
 
         alignb 64
-        .gvmm               resb 256
+        .gvmm               resb 4352
         alignb 64
         .gmm                resb 1024
         alignb 64

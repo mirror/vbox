@@ -274,8 +274,9 @@ typedef struct VMCPU
 
     /** Trace groups enable flags.  */
     uint32_t                fTraceGroups;                           /* 64 / 44 */
-    /** State data for use by ad hoc profiling. */
-    uint32_t                uAdHoc;
+    /** Number of collisions hashing the ring-0 EMT handle. */
+    uint8_t                 cEmtHashCollisions;
+    uint8_t                 abAdHoc[3];
     /** Profiling samples for use by ad hoc profiling. */
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
@@ -1239,8 +1240,11 @@ typedef struct VM
     R0PTRTYPE(RTTRACEBUF)       hTraceBufR0;
     /** @} */
 
+    /** Max EMT hash lookup collisions (in GVMM). */
+    uint8_t                     cMaxEmtHashCollisions;
+
     /** Padding - the unions must be aligned on a 64 bytes boundary. */
-    uint8_t                     abAlignment3[HC_ARCH_BITS == 64 ? 24 : 52];
+    uint8_t                     abAlignment3[HC_ARCH_BITS == 64 ? 23 : 51];
 
     /** CPUM part. */
     union

@@ -462,7 +462,9 @@ typedef struct VMMR0PERVCPU
     /** Set if we've entered HM context. */
     bool volatile                       fInHmContext;
 
-    bool                                afPadding[7];
+    bool                                afPadding[5];
+    /** The EMT hash table index. */
+    uint16_t                            idxEmtHash;
     /** Pointer to the VMMR0EntryFast preemption state structure.
      * This is used to temporarily restore preemption before blocking.  */
     R0PTRTYPE(PRTTHREADPREEMPTSTATE)    pPreemptState;

@@ -82,7 +82,8 @@ struc VMCPU
 
     alignb 64
     .fTraceGroups           resd 1
-    .uAdHoc                 resd 1
+    .cEmtHashCollisions     resb 1
+    .abAdHoc                resb 3
     alignb 8
     .aStatAdHoc             resb STAMPROFILEADV_size * 8
 

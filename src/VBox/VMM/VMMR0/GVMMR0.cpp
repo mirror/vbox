@@ -142,6 +142,9 @@
 # define GVMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr)   NOREF(fKernelFeatures)
 #endif
 
+/** Special value that GVMMR0DeregisterVCpu sets. */
+#define GVMM_RTNATIVETHREAD_DESTROYED       (~(RTNATIVETHREAD)1)
+AssertCompile(GVMM_RTNATIVETHREAD_DESTROYED != NIL_RTNATIVETHREAD);
 
 
 /*********************************************************************************************************************************
@@ -973,13 +976,18 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                     rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
                                     AssertRC(rc);
 
-                                    pHandle->pGVM                   = pGVM;
-                                    pHandle->hEMT0                  = hEMT0;
-                                    pHandle->ProcId                 = ProcId;
-                                    pGVM->pVMR3                     = pVMR3;
-                                    pGVM->pVMR3Unsafe               = pVMR3;
-                                    pGVM->aCpus[0].hEMT             = hEMT0;
-                                    pGVM->aCpus[0].hNativeThreadR0  = hEMT0;
+                                    pHandle->pGVM                       = pGVM;
+                                    pHandle->hEMT0                      = hEMT0;
+                                    pHandle->ProcId                     = ProcId;
+                                    pGVM->pVMR3                         = pVMR3;
+                                    pGVM->pVMR3Unsafe                   = pVMR3;
+                                    pGVM->aCpus[0].hEMT                 = hEMT0;
+                                    pGVM->aCpus[0].hNativeThreadR0      = hEMT0;
+                                    pGVM->aCpus[0].cEmtHashCollisions   = 0;
+                                    uint32_t const idxHash = GVMM_EMT_HASH_1(hEMT0);
+                                    pGVM->aCpus[0].gvmm.s.idxEmtHash    = (uint16_t)idxHash;
+                                    pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt = hEMT0;
+                                    pGVM->gvmm.s.aEmtHash[idxHash].idVCpu     = 0;
                                     pGVMM->cEMTs += cCpus;
 
                                     /* Associate it with the session and create the context hook for EMT0. */
@@ -1101,6 +1109,11 @@ static void gvmmR0InitPerVMData(PGVM pGVM, int16_t hSelf, VMCPUID cCpus, PSUPDRV
     pGVM->gvmm.s.VMPagesMapObj  = NIL_RTR0MEMOBJ;
     pGVM->gvmm.s.fDoneVMMR0Init = false;
     pGVM->gvmm.s.fDoneVMMR0Term = false;
+    for (size_t i = 0; i < RT_ELEMENTS(pGVM->gvmm.s.aEmtHash); i++)
+    {
+        pGVM->gvmm.s.aEmtHash[i].hNativeEmt = NIL_RTNATIVETHREAD;
+        pGVM->gvmm.s.aEmtHash[i].idVCpu     = NIL_VMCPUID;
+    }
 
     /*
      * Per virtual CPU.
@@ -1111,6 +1124,7 @@ static void gvmmR0InitPerVMData(PGVM pGVM, int16_t hSelf, VMCPUID cCpus, PSUPDRV
         pGVM->aCpus[i].idCpuUnsafe           = i;
         pGVM->aCpus[i].gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
         pGVM->aCpus[i].gvmm.s.VMCpuMapObj    = NIL_RTR0MEMOBJ;
+        pGVM->aCpus[i].gvmm.s.idxEmtHash     = UINT16_MAX;
         pGVM->aCpus[i].hEMT                  = NIL_RTNATIVETHREAD;
         pGVM->aCpus[i].pGVM                  = pGVM;
         pGVM->aCpus[i].idHostCpu             = NIL_RTCPUID;
@@ -1251,7 +1265,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM)
         /* Check that other EMTs have deregistered. */
         uint32_t cNotDeregistered = 0;
         for (VMCPUID idCpu = 1; idCpu < pGVM->cCpus; idCpu++)
-            cNotDeregistered += pGVM->aCpus[idCpu].hEMT != ~(RTNATIVETHREAD)1; /* see GVMMR0DeregisterVCpu for the value */
+            cNotDeregistered += pGVM->aCpus[idCpu].hEMT != GVMM_RTNATIVETHREAD_DESTROYED;
         if (cNotDeregistered == 0)
         {
             /* Grab the object pointer. */
@@ -1502,18 +1516,21 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PGVM pGVM, VMCPUID idCpu)
      * Validate the VM structure, state and handle.
      */
     PGVMM pGVMM;
-    int rc = gvmmR0ByGVM(pGVM, &pGVMM, false /* fTakeUsedLock */); /** @todo take lock here. */
+    int rc = gvmmR0ByGVM(pGVM, &pGVMM, false /* fTakeUsedLock */);
     if (RT_SUCCESS(rc))
     {
         if (idCpu < pGVM->cCpus)
         {
+            RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
+
+            gvmmR0CreateDestroyLock(pGVMM); /** @todo per-VM lock? */
+
             /* Check that the EMT isn't already assigned to a thread. */
             if (pGVM->aCpus[idCpu].hEMT == NIL_RTNATIVETHREAD)
             {
                 Assert(pGVM->aCpus[idCpu].hNativeThreadR0 == NIL_RTNATIVETHREAD);
 
-                /* A thread may only be one EMT. */
-                RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
+                /* A thread may only be one EMT (this makes sure hNativeSelf isn't NIL). */
                 for (VMCPUID iCpu = 0; iCpu < pGVM->cCpus; iCpu++)
                     AssertBreakStmt(pGVM->aCpus[iCpu].hEMT != hNativeSelf, rc = VERR_INVALID_PARAMETER);
                 if (RT_SUCCESS(rc))
@@ -1521,17 +1538,42 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PGVM pGVM, VMCPUID idCpu)
                     /*
                      * Do the assignment, then try setup the hook. Undo if that fails.
                      */
-                    pGVM->aCpus[idCpu].hNativeThreadR0 = pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();
+                    unsigned cCollisions = 0;
+                    uint32_t idxHash     = GVMM_EMT_HASH_1(hNativeSelf);
+                    if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt != NIL_RTNATIVETHREAD)
+                    {
+                        uint32_t const idxHash2 = GVMM_EMT_HASH_2(hNativeSelf);
+                        do
+                        {
+                            cCollisions++;
+                            Assert(cCollisions < GVMM_EMT_HASH_SIZE);
+                            idxHash = (idxHash + idxHash2) % GVMM_EMT_HASH_SIZE;
+                        } while (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt != NIL_RTNATIVETHREAD);
+                    }
+                    pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt = hNativeSelf;
+                    pGVM->gvmm.s.aEmtHash[idxHash].idVCpu     = idCpu;
+                    pGVM->aCpus[idCpu].hNativeThreadR0        = hNativeSelf;
+                    pGVM->aCpus[idCpu].hEMT                   = hNativeSelf;
+                    pGVM->aCpus[idCpu].cEmtHashCollisions     = (uint8_t)cCollisions;
+                    pGVM->aCpus[idCpu].gvmm.s.idxEmtHash      = (uint16_t)idxHash;
 
                     rc = VMMR0ThreadCtxHookCreateForEmt(&pGVM->aCpus[idCpu]);
                     if (RT_SUCCESS(rc))
                         CPUMR0RegisterVCpuThread(&pGVM->aCpus[idCpu]);
                     else
-                        pGVM->aCpus[idCpu].hNativeThreadR0 = pGVM->aCpus[idCpu].hEMT = NIL_RTNATIVETHREAD;
+                    {
+                        pGVM->aCpus[idCpu].hNativeThreadR0        = NIL_RTNATIVETHREAD;
+                        pGVM->aCpus[idCpu].hEMT                   = NIL_RTNATIVETHREAD;
+                        pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt = NIL_RTNATIVETHREAD;
+                        pGVM->gvmm.s.aEmtHash[idxHash].idVCpu     = NIL_VMCPUID;
+                        pGVM->aCpus[idCpu].gvmm.s.idxEmtHash      = UINT16_MAX;
+                    }
                 }
             }
             else
                 rc = VERR_ACCESS_DENIED;
+
+            gvmmR0CreateDestroyUnlock(pGVMM);
         }
         else
             rc = VERR_INVALID_CPU_ID;
@@ -1565,6 +1607,7 @@ GVMMR0DECL(int) GVMMR0DeregisterVCpu(PGVM pGVM, VMCPUID idCpu)
          * prevent racing GVMMR0DestroyVM.
          */
         gvmmR0CreateDestroyLock(pGVMM);
+
         uint32_t hSelf = pGVM->hSelf;
         ASMCompilerBarrier();
         if (   hSelf < RT_ELEMENTS(pGVMM->aHandles)
@@ -1580,9 +1623,12 @@ GVMMR0DECL(int) GVMMR0DeregisterVCpu(PGVM pGVM, VMCPUID idCpu)
              * Invalidate hEMT.  We don't use NIL here as that would allow
              * GVMMR0RegisterVCpu to be called again, and we don't want that.
              */
-            AssertCompile(~(RTNATIVETHREAD)1 != NIL_RTNATIVETHREAD);
-            pGVM->aCpus[idCpu].hEMT           = ~(RTNATIVETHREAD)1;
+            pGVM->aCpus[idCpu].hEMT            = GVMM_RTNATIVETHREAD_DESTROYED;
             pGVM->aCpus[idCpu].hNativeThreadR0 = NIL_RTNATIVETHREAD;
+
+            uint32_t const idxHash = pGVM->aCpus[idCpu].gvmm.s.idxEmtHash;
+            if (idxHash < RT_ELEMENTS(pGVM->gvmm.s.aEmtHash))
+                pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt = GVMM_RTNATIVETHREAD_DESTROYED;
         }
 
         gvmmR0CreateDestroyUnlock(pGVMM);
@@ -1899,6 +1945,70 @@ GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByEMT(RTNATIVETHREAD hEMT)
         }
     }
     return NULL;
+}
+
+
+/**
+ * Get the GVMCPU structure for the given EMT.
+ *
+ * @returns The VCpu structure for @a hEMT, NULL if not an EMT.
+ * @param   pGVM    The global (ring-0) VM structure.
+ * @param   hEMT    The native thread handle of the EMT.
+ *                  NIL_RTNATIVETHREAD means the current thread
+ */
+GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByGVMandEMT(PGVM pGVM, RTNATIVETHREAD hEMT)
+{
+    /*
+     * Validate & adjust input.
+     */
+    AssertPtr(pGVM);
+    Assert(pGVM->u32Magic == GVM_MAGIC);
+    if (hEMT == NIL_RTNATIVETHREAD /* likely */)
+    {
+        hEMT = RTThreadNativeSelf();
+        AssertReturn(hEMT != NIL_RTNATIVETHREAD, NULL);
+    }
+
+    /*
+     * Find the matching hash table entry.
+     */
+    uint32_t idxHash = GVMM_EMT_HASH_1(hEMT);
+    if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt == hEMT)
+    { /* likely */ }
+    else
+    {
+#ifdef VBOX_STRICT
+        unsigned       cCollisions = 0;
+#endif
+        uint32_t const idxHash2    = GVMM_EMT_HASH_2(hEMT);
+        for (;;)
+        {
+            Assert(cCollisions++ < GVMM_EMT_HASH_SIZE);
+            idxHash = (idxHash + idxHash2) % GVMM_EMT_HASH_SIZE;
+            if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt == hEMT)
+                break;
+            if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt == NIL_RTNATIVETHREAD)
+            {
+#ifdef VBOX_STRICT
+                uint32_t idxCpu = pGVM->cCpus;
+                AssertStmt(idxCpu < VMM_MAX_CPU_COUNT, idxCpu = VMM_MAX_CPU_COUNT);
+                while (idxCpu-- > 0)
+                    Assert(pGVM->aCpus[idxCpu].hNativeThreadR0 != hEMT);
+#endif
+                return NULL;
+            }
+        }
+    }
+
+    /*
+     * Validate the VCpu number and translate it into a pointer.
+     */
+    VMCPUID const idCpu = pGVM->gvmm.s.aEmtHash[idxHash].idVCpu;
+    AssertReturn(idCpu < pGVM->cCpus, NULL);
+    PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+    Assert(pGVCpu->hNativeThreadR0   == hEMT);
+    Assert(pGVCpu->gvmm.s.idxEmtHash == idxHash);
+    return pGVCpu;
 }
 
 
