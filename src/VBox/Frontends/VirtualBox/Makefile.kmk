@@ -939,6 +939,7 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/networking/UINetworkRequestManager.h \
 	src/networking/UINetworkRequest.h \
 	src/networking/UINetworkReply.h \
+	src/networking/UINewVersionChecker.h \
 	src/networking/UIUpdateManager.h \
 	src/settings/editors/UIUpdateSettingsEditor.h \
 	src/settings/global/UIGlobalSettingsProxy.h \
@@ -1492,6 +1493,7 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/networking/UINetworkRequest.cpp \
 	src/networking/UINetworkReply.cpp \
 	src/networking/UIUpdateDefs.cpp \
+	src/networking/UINewVersionChecker.cpp \
 	src/networking/UIUpdateManager.cpp \
 	src/settings/editors/UIUpdateSettingsEditor.cpp \
 	src/settings/global/UIGlobalSettingsProxy.cpp \
