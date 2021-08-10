@@ -83,14 +83,14 @@ void UINewVersionChecker::processNetworkReplyProgress(qint64, qint64)
 {
 }
 
-void UINewVersionChecker::processNetworkReplyFailed(const QString &)
+void UINewVersionChecker::processNetworkReplyFailed(const QString &strError)
 {
-    emit sigNewVersionChecked();
+    emit sigProgressFailed(strError);
 }
 
 void UINewVersionChecker::processNetworkReplyCanceled(UINetworkReply *)
 {
-    emit sigNewVersionChecked();
+    emit sigProgressCanceled();
 }
 
 void UINewVersionChecker::processNetworkReplyFinished(UINetworkReply *pReply)
@@ -118,7 +118,7 @@ void UINewVersionChecker::processNetworkReplyFinished(UINetworkReply *pReply)
     gEDataManager->incrementApplicationUpdateCheckCounter();
 
     /* Notify about completion: */
-    emit sigNewVersionChecked();
+    emit sigProgressFinished();
 }
 
 /* static */

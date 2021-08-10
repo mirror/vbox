@@ -92,8 +92,14 @@ UIUpdateStepVirtualBox::UIUpdateStepVirtualBox(bool fForcedCall)
 {
     m_pNewVersionChecker = new UINewVersionChecker(fForcedCall);
     if (m_pNewVersionChecker)
-        connect(m_pNewVersionChecker, &UINewVersionChecker::sigNewVersionChecked,
+    {
+        connect(m_pNewVersionChecker, &UINewVersionChecker::sigProgressFailed,
                 this, &UIUpdateStepVirtualBox::sigStepFinished);
+        connect(m_pNewVersionChecker, &UINewVersionChecker::sigProgressCanceled,
+                this, &UIUpdateStepVirtualBox::sigStepFinished);
+        connect(m_pNewVersionChecker, &UINewVersionChecker::sigProgressFinished,
+                this, &UIUpdateStepVirtualBox::sigStepFinished);
+    }
 }
 
 UIUpdateStepVirtualBox::~UIUpdateStepVirtualBox()
