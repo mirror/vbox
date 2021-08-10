@@ -170,12 +170,14 @@ void UINotificationCenter::invoke()
 
 QUuid UINotificationCenter::append(UINotificationObject *pObject)
 {
-    /* Open if not yet: */
-    if (!m_pOpenButton->isChecked())
+    AssertPtrReturn(m_pModel, QUuid());
+    const QUuid uId = m_pModel->appendObject(pObject);
+
+    /* Open if object is critical and center isn't opened yet: */
+    if (!m_pOpenButton->isChecked() && pObject->isCritical())
         m_pOpenButton->animateClick();
 
-    AssertPtrReturn(m_pModel, QUuid());
-    return m_pModel->appendObject(pObject);
+    return uId;
 }
 
 void UINotificationCenter::revoke(const QUuid &uId)
