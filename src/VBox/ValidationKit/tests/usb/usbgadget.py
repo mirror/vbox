@@ -591,7 +591,11 @@ class Session(TdTaskBase):
             return False;
 
         oThread.join(61.0);
-        return oThread.isAlive();
+
+        if sys.version_info < (3, 9, 0):
+            # Removed since Python 3.9.
+            return oThread.isAlive(); # pylint: disable=no-member
+        return oThread.is_alive();
 
     def taskThread(self):
         """
@@ -1462,4 +1466,3 @@ class UsbGadget(object):
             fRc = self.oUtsSession.syncDisconnect();
 
         return fRc;
-
