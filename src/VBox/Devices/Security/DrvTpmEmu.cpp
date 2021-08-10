@@ -35,6 +35,8 @@
 #include <iprt/uuid.h>
 #include <iprt/json.h>
 
+#include <iprt/formats/tpm.h>
+
 #include "VBoxDD.h"
 
 
@@ -257,6 +259,7 @@ typedef struct DRVTPMEMU
     /** Socket handle for the data connection. */
     RTSOCKET            hSockData;
 
+#if 0
     /** Poll set used to wait for I/O events. */
     RTPOLLSET           hPollSet;
     /** Reading end of the wakeup pipe. */
@@ -268,6 +271,8 @@ typedef struct DRVTPMEMU
     bool volatile       fShutdown;
     /** Flag to signal whether the thread was woken up from external. */
     bool volatile       fWokenUp;
+#endif
+
     /** Currently set locality. */
     uint8_t             bLoc;
 
@@ -414,6 +419,32 @@ static int drvTpmEmuExecCtrlCmdNoResp(PDRVTPMEMU pThis, SWTPMCMD enmCmd, const v
 
 
 /**
+ * Executes the given command over the control connection to the TPM emulator - variant with no command payload.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NET_IO_ERROR if the executed command returned an error in the response status field.
+ * @param   pThis               Pointer to the TPM emulator driver instance data.
+ * @param   enmCmd              The command to execute.
+ * @param   pvResp              Where to store additional resposne data.
+ * @param   cbResp              Size of the Response data in bytes (excluding the response status code which is implicit).
+ * @param   cMillies            Number of milliseconds to wait before aborting the command with a timeout error.
+ */
+static int drvTpmEmuExecCtrlCmdNoPayloadAndResp(PDRVTPMEMU pThis, SWTPMCMD enmCmd, RTMSINTERVAL cMillies)
+{
+    uint32_t u32Resp = 0;
+    int rc = drvTpmEmuExecCtrlCmdEx(pThis, enmCmd, NULL /*pvCmd*/, 0 /*cbCmd*/, &u32Resp,
+                                    NULL /*pvResp*/, 0 /*cbResp*/, cMillies);
+    if (RT_SUCCESS(rc))
+    {
+        if (u32Resp != 0)
+            rc = VERR_NET_IO_ERROR;
+    }
+
+    return rc;
+}
+
+
+/**
  * Queries the version of the TPM offered by the remote emulator.
  *
  * @returns VBox status code.
@@ -522,6 +553,9 @@ static int drvTpmEmuSetLocality(PDRVTPMEMU pThis, uint8_t bLoc)
         && u32Resp != 0)
         rc = VERR_NET_IO_ERROR;
 
+    if (RT_SUCCESS(rc))
+        pThis->bLoc = bLoc;
+
     return rc;
 }
 
@@ -611,7 +645,31 @@ static DECLCALLBACK(int) drvTpmEmuCmdExec(PPDMITPMCONNECTOR pInterface, uint8_t 
 
     if (RT_SUCCESS(rc))
     {
-        RT_NOREF(pInterface, bLoc, pvCmd, cbCmd, pvResp, cbResp);
+        rc = RTSocketWrite(pThis->hSockData, pvCmd, cbCmd);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTSocketSelectOne(pThis->hSockData, RT_MS_10SEC);
+            if (RT_SUCCESS(rc))
+            {
+                /* Read the response header in first. */
+                TPMRESPHDR RespHdr;
+                rc = RTSocketRead(pThis->hSockData, &RespHdr, sizeof(RespHdr), NULL /*pcbRead*/);
+                if (RT_SUCCESS(rc))
+                {
+                    size_t cbHdrResp = RTTpmRespGetSz(&RespHdr);
+                    if (cbHdrResp <= cbResp - sizeof(RespHdr))
+                    {
+                        memcpy(pvResp, &RespHdr, sizeof(RespHdr));
+
+                        if (cbHdrResp > sizeof(RespHdr))
+                            rc = RTSocketRead(pThis->hSockData, (uint8_t *)pvResp + sizeof(RespHdr), cbHdrResp - sizeof(RespHdr),
+                                              NULL /*pcbRead*/);
+                    }
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+                }
+            }
+        }
     }
 
     return rc;
@@ -621,8 +679,9 @@ static DECLCALLBACK(int) drvTpmEmuCmdExec(PPDMITPMCONNECTOR pInterface, uint8_t 
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnCmdCancel} */
 static DECLCALLBACK(int) drvTpmEmuCmdCancel(PPDMITPMCONNECTOR pInterface)
 {
-    RT_NOREF(pInterface);
-    return VERR_NOT_IMPLEMENTED;
+    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
+
+    return drvTpmEmuExecCtrlCmdNoPayloadAndResp(pThis, SWTPMCMD_CANCEL_TPM_CMD, RT_MS_10SEC);
 }
 
 
@@ -648,10 +707,12 @@ static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->hSockCtrl != NIL_RTSOCKET)
     {
+#if 0
         int rc = RTPollSetRemove(pThis->hPollSet, DRVTPMEMU_POLLSET_ID_SOCKET_CTRL);
         AssertRC(rc);
+#endif
 
-        rc = RTSocketShutdown(pThis->hSockCtrl, true /* fRead */, true /* fWrite */);
+        int rc = RTSocketShutdown(pThis->hSockCtrl, true /* fRead */, true /* fWrite */);
         AssertRC(rc);
 
         rc = RTSocketClose(pThis->hSockCtrl);
@@ -662,10 +723,12 @@ static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->hSockData != NIL_RTSOCKET)
     {
+#if 0
         int rc = RTPollSetRemove(pThis->hPollSet, DRVTPMEMU_POLLSET_ID_SOCKET_DATA);
         AssertRC(rc);
+#endif
 
-        rc = RTSocketShutdown(pThis->hSockData, true /* fRead */, true /* fWrite */);
+        int rc = RTSocketShutdown(pThis->hSockData, true /* fRead */, true /* fWrite */);
         AssertRC(rc);
 
         rc = RTSocketClose(pThis->hSockData);
@@ -674,6 +737,7 @@ static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
         pThis->hSockCtrl = NIL_RTSOCKET;
     }
 
+#if 0
     if (pThis->hPipeWakeR != NIL_RTPIPE)
     {
         int rc = RTPipeClose(pThis->hPipeWakeR);
@@ -697,6 +761,7 @@ static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
 
         pThis->hPollSet = NIL_RTPOLLSET;
     }
+#endif
 }
 
 
@@ -716,9 +781,11 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     pThis->enmTpmVers                               = TPMVERSION_UNKNOWN;
     pThis->bLoc                                     = TPM_NO_LOCALITY_SELECTED;
 
+#if 0
     pThis->hPollSet                                 = NIL_RTPOLLSET;
     pThis->hPipeWakeR                               = NIL_RTPIPE;
     pThis->hPipeWakeW                               = NIL_RTPIPE;
+#endif
 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvTpmEmuQueryInterface;
@@ -743,6 +810,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"Location\" resulted in %Rrc"), rc);
 
+#if 0
     rc = RTPipeCreate(&pThis->hPipeWakeR, &pThis->hPipeWakeW, 0 /* fFlags */);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
@@ -760,6 +828,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("DrvTpmEmu#%d failed to add wakeup pipe for %s to poll set"),
                                    pDrvIns->iInstance, szLocation);
+#endif
 
     /*
      * Create/Open the socket.
@@ -782,9 +851,10 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     *pszPort = ':'; /* Restore delimiter before checking the status. */
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmEmu#%d failed to connect to socket %s"),
+                                   N_("DrvTpmEmu#%d failed to connect to control socket %s"),
                                    pDrvIns->iInstance, szLocation);
 
+#if 0
     rc = RTPollSetAddSocket(pThis->hPollSet, pThis->hSockCtrl,
                             RTPOLL_EVT_READ | RTPOLL_EVT_WRITE | RTPOLL_EVT_ERROR,
                             DRVTPMEMU_POLLSET_ID_SOCKET_CTRL);
@@ -792,6 +862,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("DrvTpmEmu#%d failed to add socket for %s to poll set"),
                                    pDrvIns->iInstance, szLocation);
+#endif
 
     rc = drvTpmEmuQueryCaps(pThis);
     if (RT_FAILURE(rc))
@@ -838,6 +909,16 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
         return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_SUPPORTED, RT_SRC_POS,
                                    N_("DrvTpmEmu#%d Emulated TPM version of %s does not offer required set of capabilities (%#x requested vs. %#x offered)"),
                                    pDrvIns->iInstance, szLocation, fCapsReq, pThis->fCaps);
+
+    /* Connect the data channel now. */
+    /** @todo Allow configuring a different port. */
+    *pszPort = '\0'; /* Overwrite temporarily to avoid copying the hostname into a temporary buffer. */
+    rc = RTTcpClientConnect(szLocation, uPort + 1, &pThis->hSockData);
+    *pszPort = ':'; /* Restore delimiter before checking the status. */
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("DrvTpmEmu#%d failed to connect to data socket %s"),
+                                   pDrvIns->iInstance, szLocation);
 
     LogRel(("DrvTpmEmu#%d: Connected to %s, emulating TPM version %s\n", pDrvIns->iInstance, szLocation, pszTpmVers));
     return VINF_SUCCESS;

@@ -29,6 +29,8 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
+#include <iprt/formats/tpm.h>
+
 #include "VBoxDD.h"
 
 
@@ -347,7 +349,7 @@
 #define TPM_CRB_LOCALITY_REG_CTRL_CMD_HADDR                  0x60
 /** Locality response buffer size register. */
 #define TPM_CRB_LOCALITY_REG_CTRL_RSP_SZ                     0x64
-/** Locality response buffer size register. */
+/** Locality response buffer address register. */
 #define TPM_CRB_LOCALITY_REG_CTRL_RSP_ADDR                   0x68
 /** Locality data buffer. */
 #define TPM_CRB_LOCALITY_REG_DATA_BUFFER                     0x80
@@ -451,6 +453,8 @@ typedef DEVTPM *PDEVTPM;
  */
 typedef struct DEVTPMR3
 {
+    /** Pointer to the device instance. */
+    PPDMDEVINS                      pDevIns;
     /** The base interface for LUN\#0. */
     PDMIBASE                        IBase;
     /** The base interface below. */
@@ -935,7 +939,8 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
                 || !RT_IS_POWER_OF_TWO(u32)) /* Ignore if multiple bits are set. */
                 break;
             if (   (u32 & TPM_CRB_LOCALITY_REG_CTRL_REQ_CMD_RDY)
-                && pThis->enmState == DEVTPMSTATE_IDLE)
+                && (   pThis->enmState == DEVTPMSTATE_IDLE
+                    || pThis->enmState == DEVTPMSTATE_CMD_COMPLETION))
             {
                 pThis->enmState = DEVTPMSTATE_READY;
                 tpmLocSetIntSts(pDevIns, pThis, pLoc, TPM_CRB_LOCALITY_REG_INT_STS_CMD_RDY);
@@ -966,7 +971,7 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
             if (   pThis->enmState == DEVTPMSTATE_CMD_RECEPTION
                 && u32 == 0x1)
             {
-                pThis->enmState == DEVTPMSTATE_CMD_EXEC;
+                pThis->enmState = DEVTPMSTATE_CMD_EXEC;
                 rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hTpmCmdTask);
             }
             break;
@@ -1007,18 +1012,18 @@ static DECLCALLBACK(VBOXSTRICTRC) tpmMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
 
     Assert(!(off & (cb - 1)));
 
-    LogFlowFunc((": %RGp %#x\n", off, cb));
     VBOXSTRICTRC rc = VINF_SUCCESS;
     uint32_t uReg = tpmGetRegisterFromOffset(off);
     uint8_t bLoc = tpmGetLocalityFromOffset(off);
     PDEVTPMLOCALITY pLoc = &pThis->aLoc[bLoc];
-
 
     uint64_t u64;
     if (pThis->fCrb)
         rc = tpmMmioCrbRead(pDevIns, pThis, pLoc, bLoc, uReg, &u64, cb);
     else
         rc = tpmMmioFifoRead(pDevIns, pThis, pLoc, bLoc, uReg, &u64);
+
+    LogFlowFunc((": %RGp %#x %#llx\n", off, cb, u64));
 
     if (rc == VINF_SUCCESS)
     {
@@ -1084,9 +1089,27 @@ static DECLCALLBACK(void) tpmR3CmdExecWorker(PPDMDEVINS pDevIns, void *pvUser)
     RT_NOREF(pvUser);
     LogFlowFunc(("\n"));
 
-    /** @todo */
-    RT_NOREF(pThis, pThisCC);
-    pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
+    if (pThisCC->pDrvTpm)
+    {
+        size_t cbCmd = RTTpmReqGetSz((PCTPMREQHDR)&pThis->abCmdResp[0]);
+        int rc = pThisCC->pDrvTpm->pfnCmdExec(pThisCC->pDrvTpm, pThis->bLoc, &pThis->abCmdResp[0], cbCmd,
+                                              &pThis->abCmdResp[0], sizeof(pThis->abCmdResp));
+        if (RT_SUCCESS(rc))
+        {
+            pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
+            tpmLocSetIntSts(pThisCC->pDevIns, pThis, &pThis->aLoc[pThis->bLoc], TPM_CRB_LOCALITY_REG_INT_STS_START);
+        }
+        else
+        {
+            /* Set fatal error. */
+            pThis->enmState = DEVTPMSTATE_FATAL_ERROR;
+        }
+    }
+
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 }
 
 
@@ -1170,6 +1193,21 @@ static DECLCALLBACK(void *) tpmR3QueryInterface(PPDMIBASE pInterface, const char
 /* -=-=-=-=-=-=-=-=- PDMDEVREG -=-=-=-=-=-=-=-=- */
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnPowerOff}
+ */
+static DECLCALLBACK(void) tpmR3PowerOff(PPDMDEVINS pDevIns)
+{
+    PDEVTPMCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMCC);
+
+    if (pThisCC->pDrvTpm)
+    {
+        int rc = pThisCC->pDrvTpm->pfnShutdown(pThisCC->pDrvTpm);
+        AssertRC(rc);
+    }
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
@@ -1217,6 +1255,8 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     RT_NOREF(iInstance);
 
     pThis->hTpmCmdTask = NIL_PDMTASKHANDLE;
+
+    pThisCC->pDevIns   = pDevIns;
 
     /* IBase */
     pThisCC->IBase.pfnQueryInterface = tpmR3QueryInterface;
@@ -1274,6 +1314,11 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         pThisCC->pDrvTpm = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMITPMCONNECTOR);
         AssertLogRelMsgReturn(pThisCC->pDrvTpm, ("TPM#%d: Driver is missing the TPM interface.\n", iInstance), VERR_PDM_MISSING_INTERFACE);
+
+        /* Startup the TPM here instead of in the power on callback as we can convey errors here to the upper layer. */
+        rc = pThisCC->pDrvTpm->pfnStartup(pThisCC->pDrvTpm, sizeof(pThis->abCmdResp));
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to startup the TPM"));
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
@@ -1352,7 +1397,7 @@ const PDMDEVREG g_DeviceTpm =
     /* .pfnDetach = */              NULL,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            NULL,
+    /* .pfnPowerOff = */            tpmR3PowerOff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
