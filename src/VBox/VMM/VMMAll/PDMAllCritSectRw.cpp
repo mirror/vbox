@@ -736,7 +736,7 @@ void pdmCritSectRwLeaveSharedQueued(PVMCC pVM, PPDMCRITSECTRW pThis)
  * Worker for pdmCritSectRwEnterExcl that bails out on wait failure.
  *
  * @returns @a rc unless corrupted.
- * @param   pVM         The cross context VM structure.
+ * @param   pThis       Pointer to the read/write critical section.
  * @param   rc          The status to return.
  */
 DECL_NO_INLINE(static, int) pdmCritSectRwEnterExclBailOut(PPDMCRITSECTRW pThis, int rc)
@@ -761,6 +761,72 @@ DECL_NO_INLINE(static, int) pdmCritSectRwEnterExclBailOut(PPDMCRITSECTRW pThis, 
         ASMNopPause();
     }
 }
+
+#if defined(IN_RING3) || defined(IN_RING0)
+/**
+ * Worker for pdmCritSectRwEnterExcl that handles waiting when the section is
+ * contended.
+ */
+static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECTRW pThis, RTNATIVETHREAD hNativeSelf,
+                                               PCRTLOCKVALSRCPOS pSrcPos, int rcBusy, RTTHREAD hThreadSelf)
+{
+    RT_NOREF(hThreadSelf, rcBusy, pSrcPos, pVCpu);
+
+    for (uint32_t iLoop = 0; ; iLoop++)
+    {
+        /*
+         * Wait for our turn.
+         */
+        int rc;
+# ifdef IN_RING3
+#  ifdef PDMCRITSECTRW_STRICT
+        rc = RTLockValidatorRecExclCheckBlocking(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true,
+                                                 RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
+        if (RT_SUCCESS(rc))
+#  else
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
+#  endif
+# endif
+        {
+            for (;;)
+            {
+                rc = SUPSemEventWaitNoResume(pVM->pSession,
+                                             (SUPSEMEVENT)pThis->s.Core.hEvtWrite,
+                                             RT_INDEFINITE_WAIT);
+                if (   rc != VERR_INTERRUPTED
+                    || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+                    break;
+# ifdef IN_RING0
+                pdmR0CritSectRwYieldToRing3(pVM);
+# endif
+            }
+
+# ifdef IN_RING3
+            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
+            if (pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC)
+            { /* likely */ }
+            else
+                return VERR_SEM_DESTROYED;
+        }
+        if (RT_FAILURE(rc))
+            return pdmCritSectRwEnterExclBailOut(pThis, rc);
+
+        /*
+         * Try take exclusive write ownership.
+         */
+        uint64_t u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+        if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
+        {
+            bool fDone;
+            ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
+            if (fDone)
+                return VINF_SUCCESS;
+        }
+        AssertMsg(iLoop < 1000, ("%u\n", iLoop)); /* may loop a few times here... */
+    }
+}
+#endif /* IN_RING3 || IN_RING0 */
 
 
 /**
@@ -909,57 +975,19 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
 # endif
            )
         {
-            /*
-             * Wait for our turn.
-             */
-            for (uint32_t iLoop = 0; ; iLoop++)
-            {
-                int rc;
-# ifdef IN_RING3
-#  ifdef PDMCRITSECTRW_STRICT
-                if (hThreadSelf == NIL_RTTHREAD)
-                    hThreadSelf = RTThreadSelfAutoAdopt();
-                rc = RTLockValidatorRecExclCheckBlocking(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true,
-                                                         RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
-                if (RT_SUCCESS(rc))
-#  else
-                RTTHREAD hThreadSelf = RTThreadSelf();
-                RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
-#  endif
+# if defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT)
+            if (hThreadSelf == NIL_RTTHREAD)
+                hThreadSelf = RTThreadSelfAutoAdopt();
+            int rc = pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, rcBusy, hThreadSelf);
+# elif defined(IN_RING3)
+            int rc = pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, rcBusy, RTThreadSelf());
+# else
+            int rc = pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, rcBusy, NIL_RTTHREAD);
 # endif
-                {
-                    for (;;)
-                    {
-                        rc = SUPSemEventWaitNoResume(pVM->pSession,
-                                                     (SUPSEMEVENT)pThis->s.Core.hEvtWrite,
-                                                     RT_INDEFINITE_WAIT);
-                        if (   rc != VERR_INTERRUPTED
-                            || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                            break;
-# ifdef IN_RING0
-                        pdmR0CritSectRwYieldToRing3(pVM);
-# endif
-                    }
-# ifdef IN_RING3
-                    RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
-# endif
-                    if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                        return VERR_SEM_DESTROYED;
-                }
-                if (RT_FAILURE(rc))
-                    return pdmCritSectRwEnterExclBailOut(pThis, rc);
-
-                /* Try take exclusive write ownership. */
-                u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
-                {
-                    ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
-                    if (fDone)
-                        break;
-                }
-                AssertMsg(iLoop < 1000, ("%u\n", iLoop)); /* may loop a few times here... */
-            }
-
+            if (RT_SUCCESS(rc))
+            { /*likely*/ }
+            else
+                return rc;
         }
         else
 #endif /* IN_RING3 || IN_RING0 */
