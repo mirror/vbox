@@ -271,7 +271,11 @@ class VirtualTestSheriffCaseFile(object):
             else:
                 try:
                     oHash = hashlib.sha256();
-                    oHash.update(oImage.tostring());
+                    if sys.version_info < (3, 9, 0):
+                        # Removed since Python 3.9.
+                        oHash.update(oImage.tostring()); # pylint: disable=no-member
+                    else:
+                        oHash.update(oImage.tobytes());
                 except Exception as oXcpt:
                     self.oSheriff.vprint(u'Error hashing the uncompressed image bytes for "%s": %s' % (oFile.sFile, oXcpt,))
                 else:
@@ -1752,4 +1756,3 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
 
 if __name__ == '__main__':
     sys.exit(VirtualTestSheriff().main());
-

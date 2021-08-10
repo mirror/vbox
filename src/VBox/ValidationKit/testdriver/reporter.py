@@ -1222,7 +1222,11 @@ class FileWrapper(object):
         if not utils.isString(sText):
             if isinstance(sText, array.array):
                 try:
-                    sText = sText.tostring();
+                    if sys.version_info < (3, 9, 0):
+                        # Removed since Python 3.9.
+                        sText.tostring(); # pylint: disable=no-member
+                    else:
+                        sText.tobytes();
                 except:
                     pass;
             if hasattr(sText, 'decode'):
@@ -1282,8 +1286,14 @@ class FileWrapperTestPipe(object):
         # Turn non-string stuff into strings.
         if not utils.isString(sText):
             if isinstance(sText, array.array):
-                try:    sText = sText.tostring();
-                except: pass;
+                try:
+                    if sys.version_info < (3, 9, 0):
+                        # Removed since Python 3.9.
+                        sText = sText.tostring(); # pylint: disable=no-member
+                    else:
+                        sText = sText.tobytes();
+                except:
+                    pass;
             if hasattr(sText, 'decode'):
                 try:    sText = sText.decode('utf-8', 'ignore');
                 except: pass;
