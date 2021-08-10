@@ -66,8 +66,7 @@ class StdInOutBuffer(object):
                 if sys.version_info < (3, 9, 0):
                     # Removed since Python 3.9.
                     return str(sText.tostring()); # pylint: disable=no-member
-                else:
-                    return str(sText.tobytes());
+                return str(sText.tobytes());
             except:
                 pass;
         elif isinstance(sText, bytes):
