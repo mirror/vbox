@@ -36,8 +36,8 @@
 #endif
 
 
-UINewVersionChecker::UINewVersionChecker(bool fForceCall)
-    : m_fForceCall(fForceCall)
+UINewVersionChecker::UINewVersionChecker(bool fForcedCall)
+    : m_fForcedCall(fForcedCall)
     , m_url("https://update.virtualbox.org/query.php")
 {
 }
@@ -105,7 +105,7 @@ void UINewVersionChecker::processNetworkReplyFinished(UINetworkReply *pReply)
     /* No newer version of necessary package found: */
     else
     {
-        if (isItForceCall())
+        if (isItForcedCall())
             msgCenter().showUpdateNotFound();
     }
 

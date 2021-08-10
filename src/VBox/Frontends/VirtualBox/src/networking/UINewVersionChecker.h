@@ -38,8 +38,11 @@ signals:
 public:
 
     /** Constructs new version checker.
-      * @param  fForceCall  Brings whether this customer has forced privelegies. */
-    UINewVersionChecker(bool fForceCall);
+      * @param  fForcedCall  Brings whether this customer has forced privelegies. */
+    UINewVersionChecker(bool fForcedCall);
+
+    /** Returns whether this customer has forced privelegies. */
+    bool isItForcedCall() const { return m_fForcedCall; }
 
     /** Starts new version check. */
     void start();
@@ -57,14 +60,11 @@ protected:
 
 private:
 
-    /** Returns whether this customer has forced privelegies. */
-    bool isItForceCall() const { return m_fForceCall; }
-
     /** Generates platform information. */
     static QString platformInfo();
 
     /** Holds whether this customer has forced privelegies. */
-    bool  m_fForceCall;
+    bool  m_fForcedCall;
     /** Holds the new version checker URL. */
     QUrl  m_url;
 };

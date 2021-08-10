@@ -62,8 +62,9 @@ public slots:
 
 private slots:
 
-    /** Checks whether update is necessary. */
-    void sltCheckIfUpdateIsNecessary(bool fForceCall = false);
+    /** Checks whether update is necessary.
+      * @param  fForcedCall  Brings whether this customer has forced privelegies. */
+    void sltCheckIfUpdateIsNecessary(bool fForcedCall = false);
 
     /** Handles update finishing. */
     void sltHandleUpdateFinishing();

@@ -42,8 +42,9 @@ class UIUpdateStepVirtualBox : public UIExecutionStep
 
 public:
 
-    /** Constructs extension step. */
-    UIUpdateStepVirtualBox(bool fForceCall);
+    /** Constructs extension step.
+      * @param  fForcedCall  Brings whether this customer has forced privelegies. */
+    UIUpdateStepVirtualBox(bool fForcedCall);
     /** Destructs extension step. */
     virtual ~UIUpdateStepVirtualBox() /* override final */;
 
@@ -86,10 +87,10 @@ private slots:
 *   Class UIUpdateStepVirtualBox implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIUpdateStepVirtualBox::UIUpdateStepVirtualBox(bool fForceCall)
+UIUpdateStepVirtualBox::UIUpdateStepVirtualBox(bool fForcedCall)
     : m_pNewVersionChecker(0)
 {
-    m_pNewVersionChecker = new UINewVersionChecker(fForceCall);
+    m_pNewVersionChecker = new UINewVersionChecker(fForcedCall);
     if (m_pNewVersionChecker)
         connect(m_pNewVersionChecker, &UINewVersionChecker::sigNewVersionChecked,
                 this, &UIUpdateStepVirtualBox::sigStepFinished);
@@ -300,13 +301,13 @@ void UIUpdateManager::sltForceCheck()
     sltCheckIfUpdateIsNecessary(true /* force call */);
 }
 
-void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
+void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForcedCall /* = false */)
 {
     /* If already running: */
     if (m_fIsRunning)
     {
         /* And we have a force-call: */
-        if (fForceCall)
+        if (fForcedCall)
         {
             /// @todo show notification-center
         }
@@ -324,10 +325,10 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
 #ifdef VBOX_NEW_VERSION_TEST
         true ||
 #endif
-        fForceCall || currentData.isNeedToCheck())
+        fForcedCall || currentData.isNeedToCheck())
     {
         /* Prepare update queue: */
-        m_pQueue->enqueue(new UIUpdateStepVirtualBox(fForceCall));
+        m_pQueue->enqueue(new UIUpdateStepVirtualBox(fForcedCall));
         m_pQueue->enqueue(new UIUpdateStepVirtualBoxExtensionPack);
         /* Start update queue: */
         m_pQueue->start();
