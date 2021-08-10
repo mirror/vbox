@@ -17,6 +17,9 @@
 
 #ifndef FEQT_INCLUDED_SRC_objects_UIExecutionQueue_h
 #define FEQT_INCLUDED_SRC_objects_UIExecutionQueue_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QObject>
