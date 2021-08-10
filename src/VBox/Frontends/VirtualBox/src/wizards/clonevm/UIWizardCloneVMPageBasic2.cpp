@@ -17,98 +17,62 @@
 
 /* Qt includes: */
 #include <QVBoxLayout>
-#include <QRadioButton>
-#include <QButtonGroup>
 
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIWizardCloneVMPageBasic2.h"
 #include "UIWizardCloneVM.h"
 #include "QIRichTextLabel.h"
+#include "UIWizardCloneVMEditors.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
 
 
-UIWizardCloneVMPage2::UIWizardCloneVMPage2(bool fAdditionalInfo)
-    : m_fAdditionalInfo(fAdditionalInfo)
-    , m_pButtonGroup(0)
-    , m_pFullCloneRadio(0)
-    , m_pLinkedCloneRadio(0)
-{
-}
+// UIWizardCloneVMPage2::UIWizardCloneVMPage2(bool fAdditionalInfo)
+//     : m_fAdditionalInfo(fAdditionalInfo)
+//     , m_pButtonGroup(0)
+//     , m_pFullCloneRadio(0)
+//     , m_pLinkedCloneRadio(0)
+// {
+// }
 
-bool UIWizardCloneVMPage2::linkedClone() const
-{
-    return m_pLinkedCloneRadio ? m_pLinkedCloneRadio->isChecked() : false;
-}
+// bool UIWizardCloneVMPage2::linkedClone() const
+// {
+//     return m_pLinkedCloneRadio ? m_pLinkedCloneRadio->isChecked() : false;
+// }
 
 UIWizardCloneVMPageBasic2::UIWizardCloneVMPageBasic2(bool fAdditionalInfo)
-    : UIWizardCloneVMPage2(fAdditionalInfo)
-    , m_pLabel(0)
+    : m_pLabel(0)
+    , m_fAdditionalInfo(fAdditionalInfo)
+    , m_pCloneTypeGroupBox(0)
 {
-    /* Prepare main layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    if (pMainLayout)
-    {
-        /* Prepare description label: */
-        m_pLabel = new QIRichTextLabel(this);
-        if (m_pLabel)
-            pMainLayout->addWidget(m_pLabel);
-
-        /* Prepare clone-type options layout: */
-        QVBoxLayout *pCloneTypeCntLayout = new QVBoxLayout;
-        if (pCloneTypeCntLayout)
-        {
-            /* Prepare clone-type options button-group: */
-            m_pButtonGroup = new QButtonGroup(this);
-            if (m_pButtonGroup)
-            {
-                /* Prepare full clone option radio-button: */
-                m_pFullCloneRadio = new QRadioButton(this);
-                if (m_pFullCloneRadio)
-                {
-                    m_pFullCloneRadio->setChecked(true);
-                    m_pButtonGroup->addButton(m_pFullCloneRadio);
-                    pCloneTypeCntLayout->addWidget(m_pFullCloneRadio);
-                }
-
-                /* Load currently supported clone options: */
-                CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-                const QVector<KCloneOptions> supportedOptions = comProperties.GetSupportedCloneOptions();
-                /* Check whether we support linked clone option at all: */
-                const bool fSupportedLinkedClone = supportedOptions.contains(KCloneOptions_Link);
-
-                /* Prepare linked clone option radio-button: */
-                if (fSupportedLinkedClone)
-                {
-                    m_pLinkedCloneRadio = new QRadioButton(this);
-                    if (m_pLinkedCloneRadio)
-                    {
-                        m_pButtonGroup->addButton(m_pLinkedCloneRadio);
-                        pCloneTypeCntLayout->addWidget(m_pLinkedCloneRadio);
-                    }
-                }
-            }
-
-            pMainLayout->addLayout(pCloneTypeCntLayout);
-        }
-
-        /* Stretch under buttons: */
-        pMainLayout->addStretch();
-    }
-
-    /* Setup connections: */
-    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-            this, &UIWizardCloneVMPageBasic2::sltButtonClicked);
-
-    /* Register fields: */
-    registerField("linkedClone", this, "linkedClone");
+    prepare();
 }
 
-void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton *pButton)
+void UIWizardCloneVMPageBasic2::prepare()
 {
-    setFinalPage(pButton != m_pFullCloneRadio);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
+    m_pLabel = new QIRichTextLabel(this);
+    if (m_pLabel)
+        pMainLayout->addWidget(m_pLabel);
+
+    m_pCloneTypeGroupBox = new UICloneVMCloneTypeGroupBox;
+    if (m_pCloneTypeGroupBox)
+    {
+        m_pCloneTypeGroupBox->setFlat(true);
+        pMainLayout->addWidget(m_pCloneTypeGroupBox);
+    }
+
+    pMainLayout->addStretch();
+
+
+}
+
+void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton */*pButton*/)
+{
+    //setFinalPage(pButton != m_pFullCloneRadio);
 }
 
 void UIWizardCloneVMPageBasic2::retranslateUi()
@@ -129,11 +93,8 @@ void UIWizardCloneVMPageBasic2::retranslateUi()
     if (m_fAdditionalInfo)
         strLabel += UIWizardCloneVM::tr("<p>If you create a <b>Linked clone</b> then a new snapshot will be created "
                                         "in the original virtual machine as part of the cloning process.</p>");
-    m_pLabel->setText(strLabel);
-
-    m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full clone"));
-    if (m_pLinkedCloneRadio)
-        m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked clone"));
+    if (m_pLabel)
+        m_pLabel->setText(strLabel);
 }
 
 void UIWizardCloneVMPageBasic2::initializePage()

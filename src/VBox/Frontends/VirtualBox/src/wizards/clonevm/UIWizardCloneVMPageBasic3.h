@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -30,33 +30,32 @@
 /* Forward declaration: */
 class QRadioButton;
 class QIRichTextLabel;
+class UICloneVMCloneModeGroupBox;
 
-/* 3rd page of the Clone Virtual Machine wizard (base part): */
-class UIWizardCloneVMPage3 : public UIWizardPageBase
-{
-protected:
+// /* 3rd page of the Clone Virtual Machine wizard (base part): */
+// class UIWizardCloneVMPage3 : public UIWizardPageBase
+// {
+// protected:
 
-    /* Constructor: */
-    UIWizardCloneVMPage3(bool fShowChildsOption);
+//     /* Constructor: */
+//     UIWizardCloneVMPage3(bool fShowChildsOption);
 
-    /* Stuff for 'cloneMode' field: */
-    KCloneMode cloneMode() const;
-    void setCloneMode(KCloneMode cloneMode);
+//     /* Stuff for 'cloneMode' field: */
+//     KCloneMode cloneMode() const;
+//     void setCloneMode(KCloneMode cloneMode);
 
-    /* Variables: */
-    bool m_fShowChildsOption;
+//     /* Variables: */
 
-    /* Widgets: */
-    QRadioButton *m_pMachineRadio;
-    QRadioButton *m_pMachineAndChildsRadio;
-    QRadioButton *m_pAllRadio;
-};
+//     /* Widgets: */
+//     QRadioButton *m_pMachineRadio;
+//     QRadioButton *m_pMachineAndChildsRadio;
+//     QRadioButton *m_pAllRadio;
+// };
 
 /* 3rd page of the Clone Virtual Machine wizard (basic extension): */
-class UIWizardCloneVMPageBasic3 : public UIWizardPage, public UIWizardCloneVMPage3
+class UIWizardCloneVMPageBasic3 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(KCloneMode cloneMode READ cloneMode WRITE setCloneMode);
 
 public:
 
@@ -70,13 +69,17 @@ private:
 
     /* Prepare stuff: */
     void initializePage();
+    void prepare();
 
     /* Validation stuff: */
     bool validatePage();
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
+    UICloneVMCloneModeGroupBox *m_pCloneModeGroupBox;
+
+    bool m_fShowChildsOption;
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic3_h */
-

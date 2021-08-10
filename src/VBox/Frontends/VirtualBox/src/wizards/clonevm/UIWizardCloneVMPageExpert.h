@@ -22,18 +22,14 @@
 #endif
 
 /* Local includes: */
-#include "UIWizardCloneVMPageBasic1.h"
-#include "UIWizardCloneVMPageBasic2.h"
-#include "UIWizardCloneVMPageBasic3.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
 class QGroupBox;
 class QGridLayout;
 
 /* Expert page of the Clone Virtual Machine wizard: */
-class UIWizardCloneVMPageExpert : public UIWizardPage,
-                                  public UIWizardCloneVMPage2,
-                                  public UIWizardCloneVMPage3
+class UIWizardCloneVMPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
     // Q_PROPERTY(QString cloneName READ cloneName WRITE setCloneName);
@@ -53,9 +49,9 @@ public:
 private slots:
 
     /* Button toggle handler: */
-    void sltButtonToggled(QAbstractButton *pButton, bool fChecked);
-    void sltNameChanged();
-    void sltPathChanged();
+    // void sltButtonToggled(QAbstractButton *pButton, bool fChecked);
+    // void sltNameChanged();
+    // void sltPathChanged();
 
 private:
 
@@ -75,6 +71,8 @@ private:
     QGroupBox   *m_pCloneModeCnt;
     QGroupBox   *m_pCloneOptionsCnt;
     QGridLayout *m_pCloneOptionsLayout;
+
+    bool m_fShowChildsOption;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageExpert_h */

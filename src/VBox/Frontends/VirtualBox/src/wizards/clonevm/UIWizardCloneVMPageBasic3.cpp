@@ -20,68 +20,63 @@
 #include <QRadioButton>
 
 /* Local includes: */
-#include "UIWizardCloneVMPageBasic3.h"
 #include "UIWizardCloneVM.h"
+#include "UIWizardCloneVMEditors.h"
+#include "UIWizardCloneVMPageBasic3.h"
 #include "QIRichTextLabel.h"
 
 
-UIWizardCloneVMPage3::UIWizardCloneVMPage3(bool fShowChildsOption)
-    : m_fShowChildsOption(fShowChildsOption)
-{
-}
+// UIWizardCloneVMPage3::UIWizardCloneVMPage3(bool fShowChildsOption)
+//     : m_fShowChildsOption(fShowChildsOption)
+// {
+// }
 
-KCloneMode UIWizardCloneVMPage3::cloneMode() const
-{
-    if (m_pMachineAndChildsRadio->isChecked())
-        return KCloneMode_MachineAndChildStates;
-    else if (m_pAllRadio->isChecked())
-        return KCloneMode_AllStates;
-    return KCloneMode_MachineState;
-}
+// KCloneMode UIWizardCloneVMPage3::cloneMode() const
+// {
+//     if (m_pMachineAndChildsRadio->isChecked())
+//         return KCloneMode_MachineAndChildStates;
+//     else if (m_pAllRadio->isChecked())
+//         return KCloneMode_AllStates;
+//     return KCloneMode_MachineState;
+// }
 
-void UIWizardCloneVMPage3::setCloneMode(KCloneMode cloneMode)
-{
-    switch (cloneMode)
-    {
-        case KCloneMode_MachineState: m_pMachineRadio->setChecked(true); break;
-        case KCloneMode_MachineAndChildStates: m_pMachineAndChildsRadio->setChecked(true); break;
-        case KCloneMode_AllStates: m_pAllRadio->setChecked(true); break;
-        case KCloneMode_Max: break; /* Shut up, MSC! */
-    }
-}
+// void UIWizardCloneVMPage3::setCloneMode(KCloneMode cloneMode)
+// {
+//     switch (cloneMode)
+//     {
+//         case KCloneMode_MachineState: m_pMachineRadio->setChecked(true); break;
+//         case KCloneMode_MachineAndChildStates: m_pMachineAndChildsRadio->setChecked(true); break;
+//         case KCloneMode_AllStates: m_pAllRadio->setChecked(true); break;
+//         case KCloneMode_Max: break; /* Shut up, MSC! */
+//     }
+// }
 
 UIWizardCloneVMPageBasic3::UIWizardCloneVMPageBasic3(bool fShowChildsOption)
-    : UIWizardCloneVMPage3(fShowChildsOption)
+    : m_pLabel(0)
+    , m_pCloneModeGroupBox(0)
+    , m_fShowChildsOption(fShowChildsOption)
 {
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    {
-        m_pLabel = new QIRichTextLabel(this);
-        QVBoxLayout *pCloneModeCntLayout = new QVBoxLayout;
-        {
-            m_pMachineRadio = new QRadioButton(this);
-            {
-                m_pMachineRadio->setChecked(true);
-            }
-            m_pMachineAndChildsRadio = new QRadioButton(this);
-            {
-                if (!m_fShowChildsOption)
-                   m_pMachineAndChildsRadio->hide();
-            }
-            m_pAllRadio = new QRadioButton(this);
-            pCloneModeCntLayout->addWidget(m_pMachineRadio);
-            pCloneModeCntLayout->addWidget(m_pMachineAndChildsRadio);
-            pCloneModeCntLayout->addWidget(m_pAllRadio);
-        }
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pCloneModeCntLayout);
-        pMainLayout->addStretch();
-    }
+    prepare();
+}
 
-    /* Register classes: */
-    qRegisterMetaType<KCloneMode>();
-    /* Register fields: */
-    registerField("cloneMode", this, "cloneMode");
+void UIWizardCloneVMPageBasic3::prepare()
+{
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
+    m_pLabel = new QIRichTextLabel(this);
+
+    if (m_pLabel)
+        pMainLayout->addWidget(m_pLabel);
+
+    m_pCloneModeGroupBox = new UICloneVMCloneModeGroupBox(m_fShowChildsOption);
+    if (m_pCloneModeGroupBox)
+    {
+        pMainLayout->addWidget(m_pCloneModeGroupBox);
+        m_pCloneModeGroupBox->setFlat(true);
+    }
+    pMainLayout->addStretch();
+
+    retranslateUi();
 }
 
 void UIWizardCloneVMPageBasic3::retranslateUi()
@@ -116,9 +111,9 @@ void UIWizardCloneVMPageBasic3::retranslateUi()
                           .arg(strOpt1)
                           .arg(strOpt3));
 
-    m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
-    m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
-    m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
+    // m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
+    // m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
+    // m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
 }
 
 void UIWizardCloneVMPageBasic3::initializePage()

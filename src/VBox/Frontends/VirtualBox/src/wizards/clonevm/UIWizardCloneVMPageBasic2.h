@@ -22,38 +22,36 @@
 #endif
 
 /* Local includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
+class QAbstractButton;
 class QButtonGroup;
 class QRadioButton;
 class QIRichTextLabel;
+class UICloneVMCloneTypeGroupBox;
 
-/* 2nd page of the Clone Virtual Machine wizard (base part): */
-class UIWizardCloneVMPage2 : public UIWizardPageBase
-{
-protected:
+// /* 2nd page of the Clone Virtual Machine wizard (base part): */
+// class UIWizardCloneVMPage2 : public UIWizardPageBase
+// {
+// protected:
 
-    /* Constructor: */
-    UIWizardCloneVMPage2(bool fAdditionalInfo);
+//     /* Constructor: */
+//     UIWizardCloneVMPage2(bool fAdditionalInfo);
 
-    /* Stuff for 'linkedClone' field: */
-    bool linkedClone() const;
+//     /* Stuff for 'linkedClone' field: */
+//     bool linkedClone() const;
 
-    /* Variables: */
-    bool m_fAdditionalInfo;
+//     /* Variables: */
 
-    /* Widgets: */
-    QButtonGroup *m_pButtonGroup;
-    QRadioButton *m_pFullCloneRadio;
-    QRadioButton *m_pLinkedCloneRadio;
-};
+//     /* Widgets: */
+// };
 
 /* 2nd page of the Clone Virtual Machine wizard (basic extension): */
-class UIWizardCloneVMPageBasic2 : public UIWizardPage, public UIWizardCloneVMPage2
+class UIWizardCloneVMPageBasic2 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(bool linkedClone READ linkedClone);
+    //Q_PROPERTY(bool linkedClone READ linkedClone);
 
 public:
 
@@ -72,12 +70,15 @@ private:
 
     /* Prepare stuff: */
     void initializePage();
+    void prepare();
 
     /* Validation stuff: */
     bool validatePage();
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
+    bool m_fAdditionalInfo;
+    UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic2_h */

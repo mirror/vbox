@@ -35,9 +35,8 @@
 
 
 UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &/*strOriginalName*/, const QString &/*strDefaultPath*/,
-                                                     bool fAdditionalInfo, bool fShowChildsOption, const QString &/*strGroup*/)
-    : UIWizardCloneVMPage2(fAdditionalInfo)
-    , UIWizardCloneVMPage3(fShowChildsOption)
+                                                     bool /*fAdditionalInfo*/, bool fShowChildsOption, const QString &/*strGroup*/)
+    : m_fShowChildsOption(fShowChildsOption)
 {
     /* Create widgets: */
     // QGridLayout *pMainLayout = new QGridLayout(this);
@@ -216,18 +215,18 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &/*strOrigina
     //composeCloneFilePath();
 }
 
-void UIWizardCloneVMPageExpert::sltButtonToggled(QAbstractButton *pButton, bool fChecked)
-{
-    if (m_pLinkedCloneRadio && pButton == m_pLinkedCloneRadio && fChecked)
-    {
-        m_pCloneModeCnt->setEnabled(false);
-        m_pMachineRadio->setChecked(true);
-    }
-    else
-    {
-        m_pCloneModeCnt->setEnabled(true);
-    }
-}
+//void UIWizardCloneVMPageExpert::sltButtonToggled(QAbstractButton */*pButton*/, bool /*fChecked*/)
+//{
+    // if (m_pLinkedCloneRadio && pButton == m_pLinkedCloneRadio && fChecked)
+    // {
+    //     m_pCloneModeCnt->setEnabled(false);
+    //     m_pMachineRadio->setChecked(true);
+    // }
+    // else
+    // {
+    //     m_pCloneModeCnt->setEnabled(true);
+    // }
+//}
 
 void UIWizardCloneVMPageExpert::retranslateUi()
 {
@@ -326,12 +325,12 @@ bool UIWizardCloneVMPageExpert::validatePage()
     return fResult;
 }
 
-void UIWizardCloneVMPageExpert::sltNameChanged()
-{
+//void UIWizardCloneVMPageExpert::sltNameChanged()
+//{
     //composeCloneFilePath();
-}
+//}
 
-void UIWizardCloneVMPageExpert::sltPathChanged()
-{
+//void UIWizardCloneVMPageExpert::sltPathChanged()
+//{
     //composeCloneFilePath();
-}
+//}

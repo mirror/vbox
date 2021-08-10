@@ -16,13 +16,13 @@
  */
 
 /* Qt includes: */
-// #include <QButtonGroup>
+#include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
 // #include <QDir>
 // #include <QFileInfo>
 #include <QLabel>
-// #include <QRadioButton>
+#include <QRadioButton>
 #include <QGridLayout>
 
 /* GUI includes: */
@@ -49,8 +49,8 @@
 
 
 /*********************************************************************************************************************************
-*   UICloneVMNamePathEditor implementation.                                                                                      *
-*********************************************************************************************************************************/
+ *   UICloneVMNamePathEditor implementation.                                                                                      *
+ *********************************************************************************************************************************/
 
 UICloneVMNamePathEditor::UICloneVMNamePathEditor(const QString &strOriginalName, const QString &strDefaultPath, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QGroupBox>(pParent)
@@ -129,10 +129,9 @@ void UICloneVMNamePathEditor::retranslateUi()
 }
 
 
-
 /*********************************************************************************************************************************
-*   UICloneVMAdditionalOptionsEditor implementation.                                                                             *
-*********************************************************************************************************************************/
+ *   UICloneVMAdditionalOptionsEditor implementation.                                                                             *
+ *********************************************************************************************************************************/
 
 
 UICloneVMAdditionalOptionsEditor::UICloneVMAdditionalOptionsEditor(QWidget *pParent /* = 0 */)
@@ -236,23 +235,23 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
         switch (enmPolicy)
         {
             case MACAddressClonePolicy_KeepAllMACs:
-            {
-                m_pMACComboBox->setItemText(i, tr("Include all network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
-                break;
-            }
+                {
+                    m_pMACComboBox->setItemText(i, tr("Include all network adapter MAC addresses"));
+                    m_pMACComboBox->setItemData(i, tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
+                    break;
+                }
             case MACAddressClonePolicy_KeepNATMACs:
-            {
-                m_pMACComboBox->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
-                break;
-            }
+                {
+                    m_pMACComboBox->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
+                    m_pMACComboBox->setItemData(i, tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
+                    break;
+                }
             case MACAddressClonePolicy_StripAllMACs:
-            {
-                m_pMACComboBox->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
-                m_pMACComboBox->setItemData(i, tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
-                break;
-            }
+                {
+                    m_pMACComboBox->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
+                    m_pMACComboBox->setItemData(i, tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
+                    break;
+                }
             default:
                 break;
         }
@@ -304,4 +303,111 @@ void UICloneVMAdditionalOptionsEditor::populateMACAddressClonePolicies()
         setMACAddressClonePolicy(MACAddressClonePolicy_KeepNATMACs);
     else
         setMACAddressClonePolicy(MACAddressClonePolicy_StripAllMACs);
+}
+
+/*********************************************************************************************************************************
+ *   UICloneVMAdditionalOptionsEditor implementation.                                                                             *
+ *********************************************************************************************************************************/
+
+UICloneVMCloneTypeGroupBox::UICloneVMCloneTypeGroupBox(QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_pButtonGroup(0)
+    , m_pFullCloneRadio(0)
+    , m_pLinkedCloneRadio(0)
+{
+    prepare();
+}
+
+void UICloneVMCloneTypeGroupBox::prepare()
+{
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
+    /* Prepare clone-type options button-group: */
+    m_pButtonGroup = new QButtonGroup(this);
+    if (m_pButtonGroup)
+    {
+        /* Prepare full clone option radio-button: */
+        m_pFullCloneRadio = new QRadioButton(this);
+        if (m_pFullCloneRadio)
+        {
+            m_pFullCloneRadio->setChecked(true);
+            m_pButtonGroup->addButton(m_pFullCloneRadio);
+            pMainLayout->addWidget(m_pFullCloneRadio);
+        }
+
+        /* Load currently supported clone options: */
+        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        const QVector<KCloneOptions> supportedOptions = comProperties.GetSupportedCloneOptions();
+        /* Check whether we support linked clone option at all: */
+        const bool fSupportedLinkedClone = supportedOptions.contains(KCloneOptions_Link);
+
+        /* Prepare linked clone option radio-button: */
+        if (fSupportedLinkedClone)
+        {
+            m_pLinkedCloneRadio = new QRadioButton(this);
+            if (m_pLinkedCloneRadio)
+            {
+                m_pButtonGroup->addButton(m_pLinkedCloneRadio);
+                pMainLayout->addWidget(m_pLinkedCloneRadio);
+            }
+        }
+    }
+
+    retranslateUi();
+}
+
+void UICloneVMCloneTypeGroupBox::retranslateUi()
+{
+    if (m_pFullCloneRadio)
+        m_pFullCloneRadio->setText(tr("&Full clone"));
+    if (m_pLinkedCloneRadio)
+        m_pLinkedCloneRadio->setText(tr("&Linked clone"));
+
+}
+
+/*********************************************************************************************************************************
+ *   UICloneVMAdditionalOptionsEditor implementation.                                                                             *
+ *********************************************************************************************************************************/
+
+UICloneVMCloneModeGroupBox::UICloneVMCloneModeGroupBox(bool fShowChildsOption, QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_fShowChildsOption(fShowChildsOption)
+    , m_pMachineRadio(0)
+    , m_pMachineAndChildsRadio(0)
+    , m_pAllRadio(0)
+{
+    prepare();
+}
+
+void UICloneVMCloneModeGroupBox::prepare()
+{
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
+
+    m_pMachineRadio = new QRadioButton(this);
+    {
+        m_pMachineRadio->setChecked(true);
+    }
+    m_pMachineAndChildsRadio = new QRadioButton(this);
+    {
+        if (!m_fShowChildsOption)
+            m_pMachineAndChildsRadio->hide();
+    }
+    m_pAllRadio = new QRadioButton(this);
+    pMainLayout->addWidget(m_pMachineRadio);
+    pMainLayout->addWidget(m_pMachineAndChildsRadio);
+    pMainLayout->addWidget(m_pAllRadio);
+    pMainLayout->addStretch();
+
+    retranslateUi();
+}
+
+void UICloneVMCloneModeGroupBox::retranslateUi()
+{
+    if (m_pMachineRadio)
+        m_pMachineRadio->setText(tr("Current &machine state"));
+    if (m_pMachineAndChildsRadio)
+        m_pMachineAndChildsRadio->setText(tr("Current &snapshot tree branch"));
+    if (m_pAllRadio)
+        m_pAllRadio->setText(tr("&Everything"));
 }
