@@ -186,40 +186,8 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVMCC pVM)
     return VMR3GetVMCPUId(pVM);
 
 #elif defined(IN_RING0)
-    if (pVM->cCpus == 1)
-        return 0;
-    VMCPUID const cCpus = pVM->cCpus;
-
-    /* Search first by host cpu id (most common case)
-     * and then by native thread id (page fusion case).
-     */
-    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-    {
-        /** @todo r=ramshankar: This doesn't buy us anything in terms of performance
-         *        leaving it here for hysterical raisins and as a reference if we
-         *        implemented a hashing approach in the future. */
-        RTCPUID idHostCpu = RTMpCpuId();
-
-        /** @todo optimize for large number of VCPUs when that becomes more common. */
-        for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
-        {
-            PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-            if (pVCpu->idHostCpu == idHostCpu)
-                return pVCpu->idCpu;
-        }
-    }
-
-    /* RTThreadGetNativeSelf had better be cheap. */
-    RTNATIVETHREAD hThread = RTThreadNativeSelf();
-
-    /** @todo optimize for large number of VCPUs when that becomes more common. */
-    for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
-    {
-        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        if (pVCpu->hNativeThreadR0 == hThread)
-            return pVCpu->idCpu;
-    }
-    return NIL_VMCPUID;
+    PVMCPUCC pVCpu = GVMMR0GetGVCpuByGVMandEMT(pVM, NIL_RTNATIVETHREAD);
+    return pVCpu ? pVCpu->idCpu : NIL_VMCPUID;
 
 #else /* RC: Always EMT(0) */
     NOREF(pVM);
