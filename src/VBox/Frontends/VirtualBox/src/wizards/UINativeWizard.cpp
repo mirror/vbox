@@ -161,9 +161,11 @@ void UINativeWizard::retranslateUi()
 {
     /* Translate Help button: */
     QPushButton *pButtonHelp = wizardButton(WizardButtonType_Help);
-    AssertMsgReturnVoid(pButtonHelp, ("No Help wizard button found!\n"));
-    pButtonHelp->setText(tr("&Help"));
-    pButtonHelp->setToolTip(tr("Open corresponding Help topic."));
+    if (pButtonHelp)
+    {
+        pButtonHelp->setText(tr("&Help"));
+        pButtonHelp->setToolTip(tr("Open corresponding Help topic."));
+    }
 
     /* Translate basic/expert button: */
     QPushButton *pButtonExpert = wizardButton(WizardButtonType_Expert);
@@ -455,6 +457,9 @@ void UINativeWizard::prepare()
                 // So we are hardcoding order, same on all platforms, which is the case.
                 for (int i = WizardButtonType_Invalid + 1; i < WizardButtonType_Max; ++i)
                 {
+                    /* Create the help button only if the help hash tag is set: */
+                    if (m_strHelpHashtag.isEmpty() && i == WizardButtonType_Help)
+                        continue;
                     const WizardButtonType enmType = (WizardButtonType)i;
                     m_buttons[enmType] = new QPushButton(pWidgetBottom);
                     QPushButton *pButton = wizardButton(enmType);
@@ -467,10 +472,13 @@ void UINativeWizard::prepare()
                         pButton->setDefault(true);
                 }
                 /* Connect buttons: */
-                connect(wizardButton(WizardButtonType_Help), &QPushButton::pressed,
-                        &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
-                wizardButton(WizardButtonType_Help)->setShortcut(QKeySequence::HelpContents);
-                uiCommon().setHelpKeyword(wizardButton(WizardButtonType_Help), m_strHelpHashtag);
+                if (wizardButton(WizardButtonType_Help))
+                {
+                    connect(wizardButton(WizardButtonType_Help), &QPushButton::pressed,
+                            &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
+                    wizardButton(WizardButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+                    uiCommon().setHelpKeyword(wizardButton(WizardButtonType_Help), m_strHelpHashtag);
+                }
                 connect(wizardButton(WizardButtonType_Expert), &QPushButton::pressed,
                         this, &UINativeWizard::sltExpert);
                 connect(wizardButton(WizardButtonType_Back), &QPushButton::pressed,

@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizard.h"
+#include "UINativeWizard.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -30,25 +30,13 @@
 #include "CSnapshot.h"
 
 /* Clone VM wizard: */
-class UIWizardCloneVM : public UIWizard
+class UIWizardCloneVM : public UINativeWizard
 {
     Q_OBJECT;
 
 public:
 
-    /* Page IDs: */
-    enum
-    {
-        Page1,
-        Page2,
-        Page3
-    };
 
-    /* Page IDs: */
-    enum
-    {
-        PageExpert
-    };
 
     /* Constructor: */
     UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
@@ -58,11 +46,7 @@ protected:
 
     /* CLone VM stuff: */
     bool cloneVM();
-
-    /* Who will be able to clone virtual-machine: */
-    friend class UIWizardCloneVMPageBasic2;
-    friend class UIWizardCloneVMPageBasic3;
-    friend class UIWizardCloneVMPageExpert;
+    virtual void populatePages() /* final override */;
 
 private:
 

@@ -1665,8 +1665,7 @@ void UISnapshotPane::cloneSnapshot()
     AssertReturnVoid(!comMachine.isNull());
 
     /* Show Clone VM wizard: */
-    UISafePointerWizard pWizard = new UIWizardCloneVM(this, comMachine, QString(), comSnapshot);
-    pWizard->prepare();
+    QPointer<UINativeWizard> pWizard = new UIWizardCloneVM(this, comMachine, QString(), comSnapshot);
     pWizard->exec();
     if (pWizard)
         delete pWizard;

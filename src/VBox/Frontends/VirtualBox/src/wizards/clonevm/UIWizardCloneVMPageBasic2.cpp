@@ -145,30 +145,29 @@ void UIWizardCloneVMPageBasic2::initializePage()
 bool UIWizardCloneVMPageBasic2::validatePage()
 {
     /* This page could be final: */
-    if (isFinalPage())
-    {
-        /* Initial result: */
-        bool fResult = true;
+    // if (isFinalPage())
+    // {
+    //     /* Initial result: */
+    //     bool fResult = true;
 
-        /* Lock finish button: */
-        startProcessing();
+    //     /* Lock finish button: */
+    //     startProcessing();
 
-        /* Trying to clone VM: */
-        if (fResult)
-            fResult = qobject_cast<UIWizardCloneVM*>(wizard())->cloneVM();
+    //     /* Trying to clone VM: */
+    //     if (fResult)
+    //         fResult = qobject_cast<UIWizardCloneVM*>(wizard())->cloneVM();
 
-        /* Unlock finish button: */
-        endProcessing();
+    //     /* Unlock finish button: */
+    //     endProcessing();
 
-        /* Return result: */
-        return fResult;
-    }
-    else
+    //     /* Return result: */
+    //     return fResult;
+    // }
+    // else
         return true;
 }
 
-int UIWizardCloneVMPageBasic2::nextId() const
-{
-    return m_pFullCloneRadio->isChecked() && wizard()->page(UIWizardCloneVM::Page3) ? UIWizardCloneVM::Page3 : -1;
-}
-
+// int UIWizardCloneVMPageBasic2::nextId() const
+// {
+//     return m_pFullCloneRadio->isChecked() && wizard()->page(UIWizardCloneVM::Page3) ? UIWizardCloneVM::Page3 : -1;
+// }

@@ -76,12 +76,8 @@ private:
     /* Validation stuff: */
     bool validatePage();
 
-    /* Navigation stuff: */
-    int nextId() const;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic2_h */
-

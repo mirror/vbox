@@ -1137,9 +1137,8 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
     QWidget *pWizardParent = windowManager().realParentWindow(this);
     const QStringList &machineGroupNames = pItemLocal->groups();
     const QString strGroup = !machineGroupNames.isEmpty() ? machineGroupNames.at(0) : QString();
-    UISafePointerWizard pWizard = new UIWizardCloneVM(pWizardParent, pItemLocal->machine(), strGroup);
+    QPointer<UINativeWizard> pWizard = new UIWizardCloneVM(pWizardParent, pItemLocal->machine(), strGroup);
     windowManager().registerNewParent(pWizard, pWizardParent);
-    pWizard->prepare();
     pWizard->exec();
     delete pWizard;
 }

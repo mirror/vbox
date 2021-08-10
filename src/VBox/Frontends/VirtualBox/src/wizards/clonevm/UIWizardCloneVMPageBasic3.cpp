@@ -132,17 +132,16 @@ bool UIWizardCloneVMPageBasic3::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
+    // /* Lock finish button: */
+    // startProcessing();
 
     /* Try to clone VM: */
-    if (fResult)
-        fResult = qobject_cast<UIWizardCloneVM*>(wizard())->cloneVM();
+    // if (fResult)
+    //     fResult = qobject_cast<UIWizardCloneVM*>(wizard())->cloneVM();
 
-    /* Unlock finish button: */
-    endProcessing();
+    // /* Unlock finish button: */
+    // endProcessing();
 
     /* Return result: */
     return fResult;
 }
-

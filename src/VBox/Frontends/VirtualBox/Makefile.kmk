@@ -652,6 +652,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.h \
 	src/wizards/editors/UIHostnameDomainNameEditor.h \
 	src/wizards/editors/UIUserNamePasswordEditor.h \
+	src/wizards/editors/UIWizardCloneVMEditors.h \
 	src/wizards/editors/UIWizardNewVMEditors.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVM.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.h \
@@ -1158,6 +1159,7 @@ VirtualBox_SOURCES = \
 	src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.cpp \
 	src/wizards/editors/UIHostnameDomainNameEditor.cpp \
 	src/wizards/editors/UIUserNamePasswordEditor.cpp \
+	src/wizards/editors/UIWizardCloneVMEditors.cpp \
 	src/wizards/editors/UIWizardNewVMEditors.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVM.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.cpp \
