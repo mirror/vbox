@@ -30,6 +30,8 @@
 # pragma once
 #endif
 
+#include <iprt/asm.h>
+#include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>
 #include <iprt/string.h>
