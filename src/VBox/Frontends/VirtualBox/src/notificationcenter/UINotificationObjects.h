@@ -1141,13 +1141,13 @@ public:
     /** Returns whether singleton instance already created. */
     static bool exists();
 
-    /** Destructs extension pack downloading notification-progress.
+    /** Destructs extension pack downloading notification-downloader.
       * @note  Notification-center can destroy us at any time. */
     virtual ~UINotificationDownloaderExtensionPack() /* override final */;
 
 protected:
 
-    /** Constructs extension pack downloading notification-progress.
+    /** Constructs extension pack downloading notification-downloader.
       * @param  strPackName  Brings the package name. */
     UINotificationDownloaderExtensionPack(const QString &strPackName);
 
@@ -1155,7 +1155,7 @@ protected:
     virtual QString name() const /* override final */;
     /** Returns object details. */
     virtual QString details() const /* override final */;
-    /** Creates and returns started progress-wrapper. */
+    /** Creates and returns started downloader. */
     virtual UIDownloader *createDownloader() /* override final */;
 
 private:
@@ -1186,13 +1186,13 @@ public:
     /** Returns whether singleton instance already created. */
     static bool exists();
 
-    /** Destructs guest additions downloading notification-progress.
+    /** Destructs guest additions downloading notification-downloader.
       * @note  Notification-center can destroy us at any time. */
     virtual ~UINotificationDownloaderGuestAdditions() /* override final */;
 
 protected:
 
-    /** Constructs guest additions downloading notification-progress.
+    /** Constructs guest additions downloading notification-downloader.
       * @param  strFileName  Brings the file name. */
     UINotificationDownloaderGuestAdditions(const QString &strFileName);
 
@@ -1200,7 +1200,7 @@ protected:
     virtual QString name() const /* override final */;
     /** Returns object details. */
     virtual QString details() const /* override final */;
-    /** Creates and returns started progress-wrapper. */
+    /** Creates and returns started downloader. */
     virtual UIDownloader *createDownloader() /* override final */;
 
 private:
@@ -1231,13 +1231,13 @@ public:
     /** Returns whether singleton instance already created. */
     static bool exists();
 
-    /** Destructs user manual downloading notification-progress.
+    /** Destructs user manual downloading notification-downloader.
       * @note  Notification-center can destroy us at any time. */
     virtual ~UINotificationDownloaderUserManual() /* override final */;
 
 protected:
 
-    /** Constructs user manual downloading notification-progress.
+    /** Constructs user manual downloading notification-downloader.
       * @param  strFileName  Brings the file name. */
     UINotificationDownloaderUserManual(const QString &strFileName);
 
@@ -1245,7 +1245,7 @@ protected:
     virtual QString name() const /* override final */;
     /** Returns object details. */
     virtual QString details() const /* override final */;
-    /** Creates and returns started progress-wrapper. */
+    /** Creates and returns started downloader. */
     virtual UIDownloader *createDownloader() /* override final */;
 
 private:
