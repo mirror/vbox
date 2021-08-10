@@ -74,6 +74,11 @@ void UINewVersionChecker::start()
     createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << fullUrl, QString(), headers);
 }
 
+void UINewVersionChecker::cancel()
+{
+    cancelNetworkRequest();
+}
+
 void UINewVersionChecker::processNetworkReplyProgress(qint64, qint64)
 {
 }

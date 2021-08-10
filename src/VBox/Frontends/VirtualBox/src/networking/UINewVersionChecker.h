@@ -43,9 +43,15 @@ public:
 
     /** Returns whether this customer has forced privelegies. */
     bool isItForcedCall() const { return m_fForcedCall; }
+    /** Returns url. */
+    QUrl url() const { return m_url; }
+
+public slots:
 
     /** Starts new version check. */
     void start();
+    /** Cancels new version check. */
+    void cancel();
 
 protected:
 
