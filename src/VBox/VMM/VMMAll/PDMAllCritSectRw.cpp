@@ -762,15 +762,46 @@ DECL_NO_INLINE(static, int) pdmCritSectRwEnterExclBailOut(PPDMCRITSECTRW pThis, 
     }
 }
 
+
+/**
+ * Worker for pdmCritSectRwEnterExcl that handles the red tape after we've
+ * gotten exclusive ownership of the critical section.
+ */
+DECLINLINE(int) pdmCritSectRwEnterExclFirst(PPDMCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, RTTHREAD hThreadSelf)
+{
+    RT_NOREF(hThreadSelf, fNoVal, pSrcPos);
+    Assert((ASMAtomicReadU64(&pThis->s.Core.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
+
+#if 1 /** @todo consider generating less noise... */
+    ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 1);
+#else
+    pThis->s.Core.cWriteRecursions = 1;
+#endif
+    Assert(pThis->s.Core.cWriterReads == 0);
+
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+    if (!fNoVal)
+    {
+        if (hThreadSelf == NIL_RTTHREAD)
+            hThreadSelf = RTThreadSelfAutoAdopt();
+        RTLockValidatorRecExclSetOwner(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true);
+    }
+#endif
+    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
+    STAM_PROFILE_ADV_START(&pThis->s.StatWriteLocked, swl);
+    return VINF_SUCCESS;
+}
+
+
 #if defined(IN_RING3) || defined(IN_RING0)
 /**
  * Worker for pdmCritSectRwEnterExcl that handles waiting when the section is
  * contended.
  */
 static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECTRW pThis, RTNATIVETHREAD hNativeSelf,
-                                               PCRTLOCKVALSRCPOS pSrcPos, int rcBusy, RTTHREAD hThreadSelf)
+                                               PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, int rcBusy, RTTHREAD hThreadSelf)
 {
-    RT_NOREF(hThreadSelf, rcBusy, pSrcPos, pVCpu);
+    RT_NOREF(hThreadSelf, rcBusy, pSrcPos, fNoVal, pVCpu);
 
     for (uint32_t iLoop = 0; ; iLoop++)
     {
@@ -821,7 +852,7 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
             bool fDone;
             ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
             if (fDone)
-                return VINF_SUCCESS;
+                return pdmCritSectRwEnterExclFirst(pThis, pSrcPos, fNoVal, hThreadSelf);
         }
         AssertMsg(iLoop < 1000, ("%u\n", iLoop)); /* may loop a few times here... */
     }
@@ -858,8 +889,8 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     NOREF(pVM);
 #endif
 
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     RTTHREAD hThreadSelf = NIL_RTTHREAD;
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     if (!fTryOnly)
     {
         hThreadSelf = RTThreadSelfAutoAdopt();
@@ -943,7 +974,11 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
                 break;
         }
 
-        if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+        ASMNopPause();
+
+        if (pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC)
+        { /* likely */ }
+        else
             return VERR_SEM_DESTROYED;
 
         ASMNopPause();
@@ -962,74 +997,56 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
 #endif
                ;
     if (fDone)
-        ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
-    if (!fDone)
     {
-        STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
-
-#if defined(IN_RING3) || defined(IN_RING0)
-        if (   !fTryOnly
-# ifdef IN_RING0
-            && RTThreadPreemptIsEnabled(NIL_RTTHREAD)
-            && ASMIntAreEnabled()
-# endif
-           )
-        {
-# if defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT)
-            if (hThreadSelf == NIL_RTTHREAD)
-                hThreadSelf = RTThreadSelfAutoAdopt();
-            int rc = pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, rcBusy, hThreadSelf);
-# elif defined(IN_RING3)
-            int rc = pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, rcBusy, RTThreadSelf());
-# else
-            int rc = pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, rcBusy, NIL_RTTHREAD);
-# endif
-            if (RT_SUCCESS(rc))
-            { /*likely*/ }
-            else
-                return rc;
-        }
-        else
-#endif /* IN_RING3 || IN_RING0 */
-        {
-#ifdef IN_RING3
-            /* TryEnter call - decrement the number of (waiting) writers.  */
-            return pdmCritSectRwEnterExclBailOut(pThis, VERR_SEM_BUSY);
-#else
-            /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
-               ring-3 and do it there or return rcBusy. */
-            rcBusy = pdmCritSectRwEnterExclBailOut(pThis, rcBusy);
-            if (rcBusy == VINF_SUCCESS)
-            {
-                Assert(!fTryOnly);
-                PVMCPUCC  pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
-                /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
-                 *        back to ring-3. Goes for both kind of crit sects. */
-                return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL, MMHyperCCToR3(pVM, pThis));
-            }
-            return rcBusy;
-#endif
-        }
+        ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
+        if (fDone)
+            return pdmCritSectRwEnterExclFirst(pThis, pSrcPos, fNoVal, hThreadSelf);
     }
 
     /*
-     * Got it!
+     * Okay, we have contention and will have to wait unless we're just trying.
      */
-    Assert((ASMAtomicReadU64(&pThis->s.Core.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
-#if 1 /** @todo consider generating less noise... */
-    ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 1);
-#else
-    pThis->s.Core.cWriteRecursions = 1;
-#endif
-    Assert(pThis->s.Core.cWriterReads == 0);
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-    if (!fNoVal)
-        RTLockValidatorRecExclSetOwner(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true);
-#endif
-    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
-    STAM_PROFILE_ADV_START(&pThis->s.StatWriteLocked, swl);
+    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
 
-    return VINF_SUCCESS;
+#if defined(IN_RING3) || defined(IN_RING0)
+    if (   !fTryOnly
+# ifdef IN_RING0
+        && RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+        && ASMIntAreEnabled()
+# endif
+       )
+    {
+# if defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT)
+        if (hThreadSelf == NIL_RTTHREAD)
+            hThreadSelf = RTThreadSelfAutoAdopt();
+        return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, hThreadSelf);
+# elif defined(IN_RING3)
+        return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, RTThreadSelf());
+# else
+        return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, NIL_RTTHREAD);
+# endif
+    }
+#endif /* IN_RING3 || IN_RING0 */
+
+#ifdef IN_RING3
+    /* TryEnter call - decrement the number of (waiting) writers.  */
+    return pdmCritSectRwEnterExclBailOut(pThis, VERR_SEM_BUSY);
+
+#else
+
+    /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
+       ring-3 and do it there or return rcBusy. */
+    rcBusy = pdmCritSectRwEnterExclBailOut(pThis, rcBusy);
+    if (rcBusy == VINF_SUCCESS)
+    {
+        Assert(!fTryOnly);
+        PVMCPUCC  pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
+        /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
+         *        back to ring-3. Goes for both kind of crit sects. */
+        return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL, MMHyperCCToR3(pVM, pThis));
+    }
+    return rcBusy;
+#endif
 }
 
 
