@@ -1490,6 +1490,8 @@ void UINotificationProgressHostOnlyNetworkInterfaceRemove::sltHandleProgressFini
 
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+
+
 /*********************************************************************************************************************************
 *   Class UINotificationDownloaderExtensionPack implementation.                                                                  *
 *********************************************************************************************************************************/
@@ -1656,4 +1658,5 @@ UIDownloader *UINotificationDownloaderUserManual::createDownloader()
     }
     return 0;
 }
+
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */

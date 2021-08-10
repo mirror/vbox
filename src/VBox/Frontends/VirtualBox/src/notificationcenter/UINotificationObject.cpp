@@ -109,6 +109,8 @@ void UINotificationProgress::sltHandleProgressFinished()
 
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+
+
 /*********************************************************************************************************************************
 *   Class UINotificationDownloader implementation.                                                                               *
 *********************************************************************************************************************************/
@@ -180,4 +182,5 @@ void UINotificationDownloader::sltHandleProgressFailed(const QString &strError)
     m_strError = strError;
     emit sigProgressFailed();
 }
+
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */

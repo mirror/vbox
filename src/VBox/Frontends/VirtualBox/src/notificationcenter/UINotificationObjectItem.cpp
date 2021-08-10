@@ -272,6 +272,8 @@ void UINotificationProgressItem::updateDetails()
 
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+
+
 /*********************************************************************************************************************************
 *   Class UINotificationDownloaderItem implementation.                                                                           *
 *********************************************************************************************************************************/
@@ -368,6 +370,7 @@ void UINotificationDownloaderItem::updateDetails()
         m_pLabelDetails->setVisible(m_fToggled);
     }
 }
+
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 
