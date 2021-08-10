@@ -78,8 +78,6 @@ class QIRichTextLabel;
 //     QString      m_strCloneFolder;
 //     QLabel      *m_pMACComboBoxLabel;
 //     QComboBox   *m_pMACComboBox;
-//     QCheckBox   *m_pKeepDiskNamesCheckBox;
-//     QCheckBox   *m_pKeepHWUUIDsCheckBox;
 // };
 
 /* 1st page of the Clone Virtual Machine wizard (basic extension): */
@@ -114,7 +112,6 @@ private:
 
     QIRichTextLabel *m_pMainLabel;
     // QGridLayout     *m_pContainerLayout;
-    // QLabel          *m_pAdditionalOptionsLabel;
 
     UICloneVMNamePathEditor *m_pNamePathEditor;
     UICloneVMAdditionalOptionsEditor *m_pAdditionalOptionsEditor;

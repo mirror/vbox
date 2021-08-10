@@ -17,7 +17,7 @@
 
 /* Qt includes: */
 // #include <QButtonGroup>
-// #include <QCheckBox>
+#include <QCheckBox>
 #include <QComboBox>
 // #include <QDir>
 // #include <QFileInfo>
@@ -54,6 +54,7 @@
 
 UICloneVMNamePathEditor::UICloneVMNamePathEditor(const QString &strOriginalName, const QString &strDefaultPath, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_pContainerLayout(0)
     , m_pNameLineEdit(0)
     , m_pPathSelector(0)
     , m_pNameLabel(0)
@@ -64,23 +65,39 @@ UICloneVMNamePathEditor::UICloneVMNamePathEditor(const QString &strOriginalName,
     prepare();
 }
 
+void UICloneVMNamePathEditor::setFirstColumnWidth(int iWidth)
+{
+    if (m_pContainerLayout)
+        m_pContainerLayout->setColumnMinimumWidth(0, iWidth);
+}
+
+int UICloneVMNamePathEditor::firstColumnWidth() const
+{
+    int iMaxWidth = 0;
+    if (m_pNameLabel)
+        iMaxWidth = qMax(iMaxWidth, m_pNameLabel->minimumSizeHint().width());
+    if (m_pPathLabel)
+        iMaxWidth = qMax(iMaxWidth, m_pPathLabel->minimumSizeHint().width());
+    return iMaxWidth;
+}
+
 void UICloneVMNamePathEditor::prepare()
 {
-    QGridLayout *pContainerLayout = new QGridLayout(this);
-    pContainerLayout->setContentsMargins(0, 0, 0, 0);
+    m_pContainerLayout = new QGridLayout(this);
+    m_pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pNameLabel = new QLabel;
     if (m_pNameLabel)
     {
         m_pNameLabel->setAlignment(Qt::AlignRight);
         m_pNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        pContainerLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
+        m_pContainerLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
     }
 
     m_pNameLineEdit = new QILineEdit();
     if (m_pNameLineEdit)
     {
-        pContainerLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
+        m_pContainerLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
         m_pNameLineEdit->setText(tr("%1 Clone").arg(m_strOriginalName));
     }
 
@@ -89,15 +106,16 @@ void UICloneVMNamePathEditor::prepare()
     {
         m_pPathLabel->setAlignment(Qt::AlignRight);
         m_pPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        pContainerLayout->addWidget(m_pPathLabel, 1, 0, 1, 1);
+        m_pContainerLayout->addWidget(m_pPathLabel, 1, 0, 1, 1);
     }
 
     m_pPathSelector = new UIFilePathSelector(this);
     if (m_pPathSelector)
     {
-        pContainerLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
+        m_pContainerLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
         m_pPathSelector->setPath(m_strDefaultPath);
     }
+
     retranslateUi();
 }
 
@@ -111,6 +129,7 @@ void UICloneVMNamePathEditor::retranslateUi()
 }
 
 
+
 /*********************************************************************************************************************************
 *   UICloneVMAdditionalOptionsEditor implementation.                                                                             *
 *********************************************************************************************************************************/
@@ -118,10 +137,30 @@ void UICloneVMNamePathEditor::retranslateUi()
 
 UICloneVMAdditionalOptionsEditor::UICloneVMAdditionalOptionsEditor(QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QGroupBox>(pParent)
+    , m_pContainerLayout(0)
     , m_pMACComboBoxLabel(0)
     , m_pMACComboBox(0)
+    , m_pAdditionalOptionsLabel(0)
+    , m_pKeepDiskNamesCheckBox(0)
+    , m_pKeepHWUUIDsCheckBox(0)
 {
     prepare();
+}
+
+void UICloneVMAdditionalOptionsEditor::setFirstColumnWidth(int iWidth)
+{
+    if (m_pContainerLayout)
+        m_pContainerLayout->setColumnMinimumWidth(0, iWidth);
+}
+
+int UICloneVMAdditionalOptionsEditor::firstColumnWidth() const
+{
+    int iMaxWidth = 0;
+    if (m_pMACComboBoxLabel)
+        iMaxWidth = qMax(iMaxWidth, m_pMACComboBoxLabel->minimumSizeHint().width());
+    if (m_pAdditionalOptionsLabel)
+        iMaxWidth = qMax(iMaxWidth, m_pAdditionalOptionsLabel->minimumSizeHint().width());
+    return iMaxWidth;
 }
 
 MACAddressClonePolicy UICloneVMAdditionalOptionsEditor::macAddressClonePolicy() const
@@ -138,21 +177,53 @@ void UICloneVMAdditionalOptionsEditor::setMACAddressClonePolicy(MACAddressCloneP
 
 void UICloneVMAdditionalOptionsEditor::prepare()
 {
-    QGridLayout *pContainerLayout = new QGridLayout(this);
-    pContainerLayout->setContentsMargins(0, 0, 0, 0);
+    m_pContainerLayout = new QGridLayout(this);
+    m_pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pMACComboBoxLabel = new QLabel;
     if (m_pMACComboBoxLabel)
     {
         m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
         m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
-        pContainerLayout->addWidget(m_pMACComboBoxLabel, 2, 0, 1, 1);
+        m_pContainerLayout->addWidget(m_pMACComboBoxLabel, 2, 0, 1, 1);
     }
 
     m_pMACComboBox = new QComboBox;
     if (m_pMACComboBox)
-        pContainerLayout->addWidget(m_pMACComboBox, 2, 1, 1, 1);
+        m_pContainerLayout->addWidget(m_pMACComboBox, 2, 1, 1, 1);
     populateMACAddressClonePolicies();
+
+
+    /* Load currently supported clone options: */
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    const QVector<KCloneOptions> supportedOptions = comProperties.GetSupportedCloneOptions();
+    /* Check whether we support additional clone options at all: */
+    int iVerticalPosition = 3;
+    const bool fSupportedKeepDiskNames = supportedOptions.contains(KCloneOptions_KeepDiskNames);
+    const bool fSupportedKeepHWUUIDs = supportedOptions.contains(KCloneOptions_KeepHwUUIDs);
+    if (fSupportedKeepDiskNames || fSupportedKeepHWUUIDs)
+    {
+        m_pAdditionalOptionsLabel = new QLabel;
+        if (m_pAdditionalOptionsLabel)
+        {
+            m_pAdditionalOptionsLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+            m_pContainerLayout->addWidget(m_pAdditionalOptionsLabel, iVerticalPosition, 0, 1, 1);
+        }
+    }
+    if (fSupportedKeepDiskNames)
+    {
+        m_pKeepDiskNamesCheckBox = new QCheckBox;
+        if (m_pKeepDiskNamesCheckBox)
+            m_pContainerLayout->addWidget(m_pKeepDiskNamesCheckBox, iVerticalPosition++, 1, 1, 1);
+    }
+    if (fSupportedKeepHWUUIDs)
+    {
+        m_pKeepHWUUIDsCheckBox = new QCheckBox;
+        if (m_pKeepHWUUIDsCheckBox)
+            m_pContainerLayout->addWidget(m_pKeepHWUUIDsCheckBox, iVerticalPosition++, 1, 1, 1);
+    }
+
+
     retranslateUi();
 }
 
@@ -186,6 +257,20 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
                 break;
         }
     }
+
+    if (m_pAdditionalOptionsLabel)
+        m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
+    if (m_pKeepDiskNamesCheckBox)
+    {
+        m_pKeepDiskNamesCheckBox->setToolTip(tr("Don't change the disk names during cloning."));
+        m_pKeepDiskNamesCheckBox->setText(tr("Keep &Disk Names"));
+    }
+    if (m_pKeepHWUUIDsCheckBox)
+    {
+        m_pKeepHWUUIDsCheckBox->setToolTip(tr("Don't change hardware UUIDs during cloning."));
+        m_pKeepHWUUIDsCheckBox->setText(tr("Keep &Hardware UUIDs"));
+    }
+
 }
 
 void UICloneVMAdditionalOptionsEditor::populateMACAddressClonePolicies()

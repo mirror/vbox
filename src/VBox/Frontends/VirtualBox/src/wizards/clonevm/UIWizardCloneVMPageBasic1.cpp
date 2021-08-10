@@ -198,13 +198,23 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
 
 void UIWizardCloneVMPageBasic1::retranslateUi()
 {
-    // /* Translate page: */
     setTitle(UIWizardCloneVM::tr("New machine name and path"));
 
     if (m_pMainLabel)
         m_pMainLabel->setText(UIWizardCloneVM::tr("<p>Please choose a name and optionally a folder for the new virtual machine. "
                                                   "The new machine will be a clone of the machine <b>%1</b>.</p>")
                               .arg(m_strOriginalName));
+
+    int iMaxWidth = 0;
+    if (m_pNamePathEditor)
+        iMaxWidth = qMax(iMaxWidth, m_pNamePathEditor->firstColumnWidth());
+    if (m_pAdditionalOptionsEditor)
+        iMaxWidth = qMax(iMaxWidth, m_pAdditionalOptionsEditor->firstColumnWidth());
+
+    if (m_pNamePathEditor)
+        m_pNamePathEditor->setFirstColumnWidth(iMaxWidth);
+    if (m_pAdditionalOptionsEditor)
+        m_pAdditionalOptionsEditor->setFirstColumnWidth(iMaxWidth);
 }
 
 void UIWizardCloneVMPageBasic1::initializePage()

@@ -32,8 +32,8 @@
 /* Forward declarations: */
 // class CMediumFormat;
 // class QButtonGroup;
-// class QCheckBox;
-// class QGridLayout;
+class QCheckBox;
+class QGridLayout;
 class QComboBox;
 class QLabel;
 // class QVBoxLayout;
@@ -73,6 +73,9 @@ public:
 
     UICloneVMNamePathEditor(const QString &strOriginalName, const QString &strDefaultPath, QWidget *pParent = 0);
 
+    void setFirstColumnWidth(int iWidth);
+    int firstColumnWidth() const;
+
     QString name() const;
     void setName(const QString &strName);
 
@@ -80,11 +83,13 @@ public:
     void setPath(const QString &strPath);
     bool isComplete();
 
+
 private:
 
     void prepare();
     virtual void retranslateUi() /* override final */;
 
+    QGridLayout *m_pContainerLayout;
     QILineEdit  *m_pNameLineEdit;
     UIFilePathSelector *m_pPathSelector;
     QLabel      *m_pNameLabel;
@@ -110,6 +115,8 @@ public:
 
     MACAddressClonePolicy macAddressClonePolicy() const;
     void setMACAddressClonePolicy(MACAddressClonePolicy enmMACAddressClonePolicy);
+    void setFirstColumnWidth(int iWidth);
+    int firstColumnWidth() const;
 
 private:
 
@@ -117,9 +124,12 @@ private:
     virtual void retranslateUi() /* override final */;
     void populateMACAddressClonePolicies();
 
+    QGridLayout *m_pContainerLayout;
     QLabel *m_pMACComboBoxLabel;
     QComboBox *m_pMACComboBox;
-
+    QLabel *m_pAdditionalOptionsLabel;
+    QCheckBox   *m_pKeepDiskNamesCheckBox;
+    QCheckBox   *m_pKeepHWUUIDsCheckBox;
 };
 
 
