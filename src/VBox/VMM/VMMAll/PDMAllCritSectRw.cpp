@@ -733,6 +733,37 @@ void pdmCritSectRwLeaveSharedQueued(PVMCC pVM, PPDMCRITSECTRW pThis)
 
 
 /**
+ * Worker for pdmCritSectRwEnterExcl that bails out on wait failure.
+ *
+ * @returns @a rc unless corrupted.
+ * @param   pVM         The cross context VM structure.
+ * @param   rc          The status to return.
+ */
+DECL_NO_INLINE(static, int) pdmCritSectRwEnterExclBailOut(PPDMCRITSECTRW pThis, int rc)
+{
+    /*
+     * Decrement the counts and return the error.
+     */
+    for (;;)
+    {
+        uint64_t       u64State    = ASMAtomicReadU64(&pThis->s.Core.u64State);
+        uint64_t const u64OldState = u64State;
+        uint64_t c                 = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on bailout"));
+        c--;
+        u64State &= ~RTCSRW_CNT_WR_MASK;
+        u64State |= c << RTCSRW_CNT_WR_SHIFT;
+        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+            return rc;
+
+        ASMNopPause();
+        AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+        ASMNopPause();
+    }
+}
+
+
+/**
  * Worker that enters a read/write critical section with exclusive access.
  *
  * @returns VBox status code.
@@ -878,7 +909,6 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
 # endif
            )
         {
-
             /*
              * Wait for our turn.
              */
@@ -917,22 +947,9 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
                         return VERR_SEM_DESTROYED;
                 }
                 if (RT_FAILURE(rc))
-                {
-                    /* Decrement the counts and return the error. */
-                    for (;;)
-                    {
-                        u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                        uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-                        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on bailout"));
-                        c--;
-                        u64State &= ~RTCSRW_CNT_WR_MASK;
-                        u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
-                            break;
-                    }
-                    return rc;
-                }
+                    return pdmCritSectRwEnterExclBailOut(pThis, rc);
 
+                /* Try take exclusive write ownership. */
                 u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
                 if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
                 {
@@ -949,26 +966,11 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
         {
 #ifdef IN_RING3
             /* TryEnter call - decrement the number of (waiting) writers.  */
+            return pdmCritSectRwEnterExclBailOut(pThis, VERR_SEM_BUSY);
 #else
             /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
                ring-3 and do it there or return rcBusy. */
-#endif
-
-            for (;;)
-            {
-                u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on bailout"));
-                c--;
-                u64State &= ~RTCSRW_CNT_WR_MASK;
-                u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
-                    break;
-            }
-
-#ifdef IN_RING3
-            return VERR_SEM_BUSY;
-#else
+            rcBusy = pdmCritSectRwEnterExclBailOut(pThis, rcBusy);
             if (rcBusy == VINF_SUCCESS)
             {
                 Assert(!fTryOnly);
@@ -986,7 +988,11 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
      * Got it!
      */
     Assert((ASMAtomicReadU64(&pThis->s.Core.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
+#if 1 /** @todo consider generating less noise... */
     ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 1);
+#else
+    pThis->s.Core.cWriteRecursions = 1;
+#endif
     Assert(pThis->s.Core.cWriterReads == 0);
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     if (!fNoVal)

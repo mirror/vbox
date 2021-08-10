@@ -507,12 +507,11 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
      * In ring-0 context we have to take the special VT-x/AMD-V HM context into
      * account when waiting on contended locks.
      *
-     * While we usually (it can be VINF_SUCCESS) have to option via the rcBusy
-     * parameter of going to back to ring-3 and to re-start the work there, it's
-     * almost always more efficient to try wait for the lock here.  The rcBusy
-     * will be used if we encounter an VERR_INTERRUPTED situation though.
-     *
-     * We must never block if VMMRZCallRing3Disable is active.
+     * While we usually (it can be VINF_SUCCESS) have the option of returning
+     * rcBusy and force the caller to go back to ring-3 and to re-start the work
+     * there, it's almost always more efficient to try wait for the lock here.
+     * The rcBusy will be used if we encounter an VERR_INTERRUPTED situation
+     * though.
      */
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
     if (pVCpu)
