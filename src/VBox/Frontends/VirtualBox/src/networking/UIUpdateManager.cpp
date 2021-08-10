@@ -25,7 +25,6 @@
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
-#include "UINewVersionChecker.h"
 #include "UINotificationCenter.h"
 #include "UIUpdateDefs.h"
 #include "UIUpdateManager.h"
@@ -45,16 +44,14 @@ public:
     /** Constructs extension step.
       * @param  fForcedCall  Brings whether this customer has forced privelegies. */
     UIUpdateStepVirtualBox(bool fForcedCall);
-    /** Destructs extension step. */
-    virtual ~UIUpdateStepVirtualBox() /* override final */;
 
     /** Executes the step. */
     virtual void exec() /* override */;
 
 private:
 
-    /** Holds the new version checker instance. */
-    UINewVersionChecker *m_pNewVersionChecker;
+    /** Holds whether this customer has forced privelegies. */
+    bool  m_fForcedCall;
 };
 
 
@@ -88,29 +85,32 @@ private slots:
 *********************************************************************************************************************************/
 
 UIUpdateStepVirtualBox::UIUpdateStepVirtualBox(bool fForcedCall)
-    : m_pNewVersionChecker(0)
+    : m_fForcedCall(fForcedCall)
 {
-    m_pNewVersionChecker = new UINewVersionChecker(fForcedCall);
-    if (m_pNewVersionChecker)
-    {
-        connect(m_pNewVersionChecker, &UINewVersionChecker::sigProgressFailed,
-                this, &UIUpdateStepVirtualBox::sigStepFinished);
-        connect(m_pNewVersionChecker, &UINewVersionChecker::sigProgressCanceled,
-                this, &UIUpdateStepVirtualBox::sigStepFinished);
-        connect(m_pNewVersionChecker, &UINewVersionChecker::sigProgressFinished,
-                this, &UIUpdateStepVirtualBox::sigStepFinished);
-    }
-}
-
-UIUpdateStepVirtualBox::~UIUpdateStepVirtualBox()
-{
-    delete m_pNewVersionChecker;
-    m_pNewVersionChecker = 0;
 }
 
 void UIUpdateStepVirtualBox::exec()
 {
-    m_pNewVersionChecker->start();
+    /* Return if already checking: */
+    if (UINotificationNewVersionCheckerVirtualBox::exists())
+    {
+        // @todo show notification-center
+        emit sigStepFinished();
+        return;
+    }
+
+    /* Check for new VirtualBox version: */
+    UINotificationNewVersionCheckerVirtualBox *pNotification =
+        UINotificationNewVersionCheckerVirtualBox::instance(m_fForcedCall);
+    /* Handle any signal as step-finished: */
+    connect(pNotification, &UINotificationNewVersionCheckerVirtualBox::sigProgressFailed,
+            this, &UIUpdateStepVirtualBox::sigStepFinished);
+    connect(pNotification, &UINotificationNewVersionCheckerVirtualBox::sigProgressCanceled,
+            this, &UIUpdateStepVirtualBox::sigStepFinished);
+    connect(pNotification, &UINotificationNewVersionCheckerVirtualBox::sigProgressFinished,
+            this, &UIUpdateStepVirtualBox::sigStepFinished);
+    /* Append and start notification: */
+    gpNotificationCenter->append(pNotification);
 }
 
 

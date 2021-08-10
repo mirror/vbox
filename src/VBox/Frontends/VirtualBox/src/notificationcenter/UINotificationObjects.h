@@ -1256,6 +1256,48 @@ private:
     /** Holds the name of file being dowloaded. */
     QString  m_strFileName;
 };
+
+/** UINotificationNewVersionChecker extension for VirtualBox new version check functionality. */
+class SHARED_LIBRARY_STUFF UINotificationNewVersionCheckerVirtualBox : public UINotificationNewVersionChecker
+{
+    Q_OBJECT;
+
+public:
+
+    /** Returns singleton instance, creates if necessary.
+      * @param  fForcedCall  Brings whether this customer has forced privelegies. */
+    static UINotificationNewVersionCheckerVirtualBox *instance(bool fForcedCall);
+    /** Returns whether singleton instance already created. */
+    static bool exists();
+
+    /** Destructs VirtualBox notification-new-version-checker.
+      * @note  Notification-center can destroy us at any time. */
+    virtual ~UINotificationNewVersionCheckerVirtualBox() /* override final */;
+
+protected:
+
+    /** Constructs VirtualBox notification-new-version-checker.
+      * @param  fForcedCall  Brings whether this customer has forced privelegies. */
+    UINotificationNewVersionCheckerVirtualBox(bool fForcedCall);
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started new-version-checker. */
+    virtual UINewVersionChecker *createChecker() /* override final */;
+
+private:
+
+    /** Holds the singleton instance. */
+    static UINotificationNewVersionCheckerVirtualBox *s_pInstance;
+
+    /** Holds whether this customer has forced privelegies. */
+    bool  m_fForcedCall;
+
+    /** Holds the url. */
+    QString  m_strUrl;
+};
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationObjects_h */

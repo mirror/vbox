@@ -20,6 +20,7 @@
 #include "UINotificationProgressTask.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIDownloader.h"
+# include "UINewVersionChecker.h"
 #endif
 
 
@@ -191,6 +192,81 @@ void UINotificationDownloader::sltHandleProgressFailed(const QString &strError)
 {
     m_strError = strError;
     emit sigProgressFailed();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationNewVersionChecker implementation.                                                                        *
+*********************************************************************************************************************************/
+
+UINotificationNewVersionChecker::UINotificationNewVersionChecker()
+    : m_pChecker(0)
+{
+}
+
+UINotificationNewVersionChecker::~UINotificationNewVersionChecker()
+{
+    delete m_pChecker;
+    m_pChecker = 0;
+}
+
+QString UINotificationNewVersionChecker::error() const
+{
+    return m_strError;
+}
+
+bool UINotificationNewVersionChecker::isCritical() const
+{
+    return m_pChecker ? m_pChecker->isItForcedCall() : true;
+}
+
+void UINotificationNewVersionChecker::handle()
+{
+    /* Prepare new-version-checker: */
+    m_pChecker = createChecker();
+    if (m_pChecker)
+    {
+        connect(m_pChecker, &UINewVersionChecker::sigProgressFailed,
+                this, &UINotificationNewVersionChecker::sltHandleProgressFailed);
+        connect(m_pChecker, &UINewVersionChecker::sigProgressCanceled,
+                this, &UINotificationNewVersionChecker::sltHandleProgressCanceled);
+        connect(m_pChecker, &UINewVersionChecker::sigProgressFinished,
+                this, &UINotificationNewVersionChecker::sltHandleProgressFinished);
+
+        /* And start it finally: */
+        m_pChecker->start();
+    }
+}
+
+void UINotificationNewVersionChecker::close()
+{
+    /* Cancel new-version-checker: */
+    if (m_pChecker)
+        m_pChecker->cancel();
+    /* Call to base-class: */
+    UINotificationObject::close();
+}
+
+void UINotificationNewVersionChecker::sltHandleProgressFailed(const QString &strError)
+{
+    delete m_pChecker;
+    m_pChecker = 0;
+    m_strError = strError;
+    emit sigProgressFailed();
+}
+
+void UINotificationNewVersionChecker::sltHandleProgressCanceled()
+{
+    delete m_pChecker;
+    m_pChecker = 0;
+    emit sigProgressCanceled();
+}
+
+void UINotificationNewVersionChecker::sltHandleProgressFinished()
+{
+    delete m_pChecker;
+    m_pChecker = 0;
+    emit sigProgressFinished();
 }
 
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
