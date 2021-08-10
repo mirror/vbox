@@ -1006,15 +1006,18 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     /*
      * Okay, we have contention and will have to wait unless we're just trying.
      */
-    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
+    if (fTryOnly)
+    {
+        STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl)); /** @todo different statistics for this */
+        return pdmCritSectRwEnterExclBailOut(pThis, VERR_SEM_BUSY);
+    }
 
+    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
 #if defined(IN_RING3) || defined(IN_RING0)
-    if (   !fTryOnly
 # ifdef IN_RING0
-        && RTThreadPreemptIsEnabled(NIL_RTTHREAD)
-        && ASMIntAreEnabled()
+    if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+        && ASMIntAreEnabled())
 # endif
-       )
     {
 # if defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT)
         if (hThreadSelf == NIL_RTTHREAD)
@@ -1028,12 +1031,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     }
 #endif /* IN_RING3 || IN_RING0 */
 
-#ifdef IN_RING3
-    /* TryEnter call - decrement the number of (waiting) writers.  */
-    return pdmCritSectRwEnterExclBailOut(pThis, VERR_SEM_BUSY);
-
-#else
-
+#ifndef IN_RING3
     /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
        ring-3 and do it there or return rcBusy. */
     rcBusy = pdmCritSectRwEnterExclBailOut(pThis, rcBusy);
