@@ -21,10 +21,12 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIDownloaderExtensionPack.h"
-#include "UIDownloaderGuestAdditions.h"
-#include "UIDownloaderUserManual.h"
 #include "UINotificationObjects.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIDownloaderExtensionPack.h"
+# include "UIDownloaderGuestAdditions.h"
+# include "UIDownloaderUserManual.h"
+#endif
 
 /* COM includes: */
 #include "CConsole.h"
