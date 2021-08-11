@@ -232,6 +232,10 @@ class _ShutdownObserver:
         manager = registrar = classes = interfaces = interfaceInfoManager = _shutdownObserver = serviceManager = _constants_by_iid_map = None
         xpcom.client._shutdown()
         xpcom.server._shutdown()
+    def _query_interface_(self, iid): # VBox: Needed so that the interface check in the DefaultPolicy initialization will pass; @bugref{10079}.
+        if iid == interfaces.nsIObserver:
+            return 1
+        return None
 
 svc = _xpcom.GetServiceManager().getServiceByContractID("@mozilla.org/observer-service;1", interfaces.nsIObserverService)
 # Observers will be QI'd for a weak-reference, so we must keep the
