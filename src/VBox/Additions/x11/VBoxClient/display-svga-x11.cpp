@@ -1387,9 +1387,9 @@ static DECLCALLBACK(int) vbclSVGAWorker(bool volatile *pfShutdown)
         rc = VbglR3GetDisplayChangeRequestMulti(VMW_MAX_HEADS, &cDisplaysOut, aDisplays, fAck);
         fAck = true;
         if (RT_FAILURE(rc))
-            VBClLogFatalError("Failed to get display change request, rc=%Rrc\n", rc);
+            VBClLogError("Failed to get display change request, rc=%Rrc\n", rc);
         if (cDisplaysOut > VMW_MAX_HEADS)
-            VBClLogFatalError("Display change request contained, rc=%Rrc\n", rc);
+            VBClLogError("Display change request contained, rc=%Rrc\n", rc);
         if (cDisplaysOut > 0)
         {
             for (unsigned i = 0; i < cDisplaysOut && i < VMW_MAX_HEADS; ++i)
