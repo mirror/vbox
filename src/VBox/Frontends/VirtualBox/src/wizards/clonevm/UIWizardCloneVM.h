@@ -43,11 +43,11 @@ public:
                     const QString &strGroup, CSnapshot snapshot = CSnapshot());
     void setCloneModePageVisible(bool fIsFullClone);
     bool isCloneModePageVisible() const;
+    /* CLone VM stuff: */
+    bool cloneVM();
 
 protected:
 
-    /* CLone VM stuff: */
-    bool cloneVM();
     virtual void populatePages() /* final override */;
 
 private:

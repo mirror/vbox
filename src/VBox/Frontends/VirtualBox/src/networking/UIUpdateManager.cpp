@@ -94,7 +94,7 @@ void UIUpdateStepVirtualBox::exec()
     /* Return if already checking: */
     if (UINotificationNewVersionCheckerVirtualBox::exists())
     {
-        // @todo show notification-center
+        /// @todo show notification-center
         emit sigStepFinished();
         return;
     }

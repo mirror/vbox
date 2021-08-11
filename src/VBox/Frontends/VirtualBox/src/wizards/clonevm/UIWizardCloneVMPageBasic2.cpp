@@ -107,26 +107,22 @@ void UIWizardCloneVMPageBasic2::initializePage()
 
 bool UIWizardCloneVMPageBasic2::validatePage()
 {
+    UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard());
+    AssertReturn(pWizard, false);
+
     /* This page could be final: */
-    // if (isFinalPage())
-    // {
-    //     /* Initial result: */
-    //     bool fResult = true;
+    if (!pWizard->isCloneModePageVisible())
+    {
+        /* Initial result: */
+        bool fResult = true;
 
-    //     /* Lock finish button: */
-    //     startProcessing();
+        /* Trying to clone VM: */
+        fResult = pWizard->cloneVM();
 
-    //     /* Trying to clone VM: */
-    //     if (fResult)
-    //         fResult = qobject_cast<UIWizardCloneVM*>(wizard())->cloneVM();
-
-    //     /* Unlock finish button: */
-    //     endProcessing();
-
-    //     /* Return result: */
-    //     return fResult;
-    // }
-    // else
+        /* Return result: */
+        return fResult;
+    }
+    else
         return true;
 }
 
