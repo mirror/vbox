@@ -148,6 +148,9 @@ Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyXPCOM_Type
 #if defined(Py_TRACE_REFS) || PY_VERSION_HEX < 0x03090000 /* VBox: Removed in 3.9, harmless. @bugref{10079} */
 	_Py_NewReference(this);
 #endif
+#if PY_VERSION_HEX >= 0x03090000 /* VBox: Needed for 3.9 and up. @bugref{10079} */
+    PyObject_Init(this, ob_type);
+#endif
 
 #ifdef VBOX_DEBUG_LIFETIMES
         RTOnce(&g_Once, initOnceCallback, NULL);
