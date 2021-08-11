@@ -811,7 +811,6 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
 # ifdef IN_RING0
     uint64_t const          tsStart           = RTTimeNanoTS();
     uint64_t                cNsMaxTotal       = RT_NS_5MIN;
-    uint64_t const          cNsMaxRetry       = RT_NS_15SEC;
     uint32_t                cMsMaxOne         = RT_MS_5SEC;
     bool                    fNonInterruptible = false;
 # endif
