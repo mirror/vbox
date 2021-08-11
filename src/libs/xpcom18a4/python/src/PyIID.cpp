@@ -265,11 +265,7 @@ Py_nsIID::Py_nsIID(const nsIID &riid)
 #else
 	ob_type = GetTypeObject();
 #endif
-#if PY_VERSION_HEX >= 0x03090000 /* VBox: Needed for 3.9 and up, includes _Py_NewReferences. @bugref{10079} */ /** @todo do this for older pythons too?  We probably really should for Py_LIMITED_API builds... */
-	PyObject_Init(this, ob_type);
-#else
-	_Py_NewReference(this);
-#endif
+	PyObject_Init(this, ob_type); /* VBox: Needed for 3.9 and up (also works on Python 2.7), includes _Py_NewReferences. @bugref{10079} */
 
 	m_iid = riid;
 }

@@ -145,11 +145,7 @@ Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyXPCOM_Type
 	// refcnt of object managed by caller.
 	PR_AtomicIncrement(&cInterfaces);
 	PyXPCOM_DLLAddRef();
-#if PY_VERSION_HEX >= 0x03090000 /* VBox: Needed for 3.9 and up, includes _Py_NewReferences. @bugref{10079} */ /** @todo do this for older pythons too?  We probably really should for Py_LIMITED_API builds... */
-	PyObject_Init(this, ob_type);
-#else
-	_Py_NewReference(this);
-#endif
+	PyObject_Init(this, ob_type); /* VBox: Needed for 3.9 and up (also works on Python 2.7), includes _Py_NewReferences. @bugref{10079} */
 
 #ifdef VBOX_DEBUG_LIFETIMES
         RTOnce(&g_Once, initOnceCallback, NULL);

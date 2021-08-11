@@ -434,11 +434,7 @@ PyXPCOM_TypeObject::PyXPCOM_TypeObject( const char *name, PyXPCOM_TypeObject *pB
 
 	/* Initialize the PyObject part - needed so we can keep instance in a PyDict: */
 	ob_type = PyXPCOM_GetInterfaceType();
-# if PY_VERSION_HEX >= 0x03090000 /* VBox: Needed for 3.9 and up, includes _Py_NewReferences. @bugref{10079} */ /** @todo do this for older pythons too?  We probably really should for Py_LIMITED_API builds... */
-	PyObject_Init(this, ob_type);
-# else
-	_Py_NewReference(this);
-# endif
+	PyObject_Init(this, ob_type); /* VBox: Needed for 3.9 and up (also works on Python 2.7), includes _Py_NewReferences. @bugref{10079} */
 
 #endif /* Py_LIMITED_API */
 
