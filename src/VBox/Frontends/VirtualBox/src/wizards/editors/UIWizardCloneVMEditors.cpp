@@ -353,6 +353,9 @@ void UICloneVMCloneTypeGroupBox::prepare()
         }
     }
 
+    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+            this, &UICloneVMCloneTypeGroupBox::sltButtonClicked);
+
     retranslateUi();
 }
 
@@ -363,6 +366,11 @@ void UICloneVMCloneTypeGroupBox::retranslateUi()
     if (m_pLinkedCloneRadio)
         m_pLinkedCloneRadio->setText(tr("&Linked clone"));
 
+}
+
+void UICloneVMCloneTypeGroupBox::sltButtonClicked(QAbstractButton *)
+{
+    emit sigFullCloneSelected(m_pFullCloneRadio && m_pFullCloneRadio->isChecked());
 }
 
 /*********************************************************************************************************************************

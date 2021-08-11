@@ -63,6 +63,8 @@ void UIWizardCloneVMPageBasic2::prepare()
     {
         m_pCloneTypeGroupBox->setFlat(true);
         pMainLayout->addWidget(m_pCloneTypeGroupBox);
+        connect(m_pCloneTypeGroupBox, &UICloneVMCloneTypeGroupBox::sigFullCloneSelected,
+                this, &UIWizardCloneVMPageBasic2::sltCloneTypeChanged);
     }
 
     pMainLayout->addStretch();
@@ -72,7 +74,9 @@ void UIWizardCloneVMPageBasic2::prepare()
 
 void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton * /* pButton */)
 {
-    //setFinalPage(pButton != m_pFullCloneRadio);
+    UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard());
+    AssertReturnVoid(pWizard);
+    pWizard->setCloneModePageVisible(fIsFullClone);
 }
 
 void UIWizardCloneVMPageBasic2::retranslateUi()

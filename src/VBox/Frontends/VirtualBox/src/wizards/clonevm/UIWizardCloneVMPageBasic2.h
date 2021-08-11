@@ -60,8 +60,7 @@ public:
 
 private slots:
 
-    /* Button click handler: */
-    void sltButtonClicked(QAbstractButton *pButton);
+    void sltCloneTypeChanged(bool fIsFullClone);
 
 private:
 

@@ -41,6 +41,7 @@ public:
     /* Constructor: */
     UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
                     const QString &strGroup, CSnapshot snapshot = CSnapshot());
+    void setCloneModePageVisible(bool fIsFullClone);
 
 protected:
 
@@ -60,6 +61,7 @@ private:
     CMachine  m_machine;
     CSnapshot m_snapshot;
     QString   m_strGroup;
+    int m_iCloneModePageIndex;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVM_h */

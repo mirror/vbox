@@ -36,6 +36,7 @@ UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
     , m_machine(machine)
     , m_snapshot(snapshot)
     , m_strGroup(strGroup)
+    , m_iCloneModePageIndex(-1)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -44,6 +45,13 @@ UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
     /* Assign background image: */
     setPixmapName(":/wizard_clone_bg.png");
 #endif /* VBOX_WS_MAC */
+}
+
+void UIWizardCloneVM::setCloneModePageVisible(bool fIsFullClone)
+{
+    if (m_iCloneModePageIndex == -1)
+        return;
+    setPageVisible(m_iCloneModePageIndex, fIsFullClone);
 }
 
 bool UIWizardCloneVM::cloneVM()
@@ -181,7 +189,7 @@ void UIWizardCloneVM::populatePages()
             addPage(new UIWizardCloneVMPageBasic1(m_machine.GetName(), strDefaultMachineFolder, m_strGroup));
             addPage(new UIWizardCloneVMPageBasic2(m_snapshot.isNull()));
             if (m_machine.GetSnapshotCount() > 0)
-                addPage(new UIWizardCloneVMPageBasic3(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
+                m_iCloneModePageIndex = addPage(new UIWizardCloneVMPageBasic3(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
             break;
         }
 

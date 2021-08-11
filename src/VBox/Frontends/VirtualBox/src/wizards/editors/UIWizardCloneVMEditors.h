@@ -31,6 +31,7 @@
 
 /* Forward declarations: */
 // class CMediumFormat;
+class QAbstractButton;
 class QButtonGroup;
 class QCheckBox;
 class QGridLayout;
@@ -139,9 +140,15 @@ class UICloneVMCloneTypeGroupBox : public QIWithRetranslateUI<QGroupBox>
 
 signals:
 
+    void sigFullCloneSelected(bool fSelected);
+
 public:
 
     UICloneVMCloneTypeGroupBox(QWidget *pParent = 0);
+
+private slots:
+
+    void sltButtonClicked(QAbstractButton *);
 
 private:
 
