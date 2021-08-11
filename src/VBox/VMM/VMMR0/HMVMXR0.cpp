@@ -6086,7 +6086,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
          * them -- handled while merging VMCS controls.
          *
          * If neither the outer nor the nested-hypervisor is intercepting MOV DRx,
-         * then the guest debug state should be actively loaded on the host so that
+         * then the nested-guest debug state should be actively loaded on the host so that
          * nested-guest reads its own debug registers without causing VM-exits.
          */
         if (   !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT)
