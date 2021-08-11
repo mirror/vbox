@@ -265,7 +265,11 @@ Py_nsIID::Py_nsIID(const nsIID &riid)
 #else
 	ob_type = GetTypeObject();
 #endif
-	PyObject_Init(this, ob_type); /* VBox: Needed for 3.9 and up (also works on Python 2.7), includes _Py_NewReferences. @bugref{10079} */
+#if 1 /* VBox: Must use for 3.9+, includes _Py_NewReferences. Works for all older versions too. @bugref{10079} */
+	PyObject_Init(this, ob_type);
+#else
+	_Py_NewReference(this);
+#endif
 
 	m_iid = riid;
 }
