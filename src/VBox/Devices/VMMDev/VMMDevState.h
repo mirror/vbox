@@ -126,6 +126,11 @@ typedef struct VMMDEV
      *          the driver interfaces where we have to waste time digging out the
      *          PDMDEVINS structure. */
     PDMCRITSECT         CritSect;
+#if !defined(VBOX_WITHOUT_TESTING_FEATURES) || defined(DOXYGEN_RUNNING)
+    /** Read write critical section of lock testing.
+     * @remarks At the beginning to satisfy 64 byte alignment requirement.  */
+    PDMCRITSECTRW       CritSectRw;
+#endif
 
     /** mouse capabilities of host and guest */
     uint32_t            fMouseCapabilities;
@@ -365,8 +370,6 @@ typedef struct VMMDEV
     IOMIOPORTHANDLE     hIoPortTesting;
     /** Handle for the MMIO region used by the testing component. */
     IOMMMIOHANDLE       hMmioTesting;
-    /** Read write critical section of lock testing. */
-    PDMCRITSECTRW       CritSectRw;
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES || DOXYGEN_RUNNING */
     /** @} */
 
@@ -392,7 +395,7 @@ AssertCompileMemberAlignment(VMMDEV, enmCpuHotPlugEvent, 4);
 AssertCompileMemberAlignment(VMMDEV, aFacilityStatuses, 8);
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
 AssertCompileMemberAlignment(VMMDEV, TestingData.Value.u64Value, 8);
-AssertCompileMemberAlignment(VMMDEV, CritSectRw, 32);
+AssertCompileMemberAlignment(VMMDEV, CritSectRw, 64);
 #endif
 
 

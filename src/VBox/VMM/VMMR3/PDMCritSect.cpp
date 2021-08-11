@@ -250,7 +250,7 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
 {
     VM_ASSERT_EMT(pVM);
     Assert(pCritSect->Core.u32Magic != RTCRITSECTRW_MAGIC);
-    AssertMsgReturn(((uintptr_t)&pCritSect->Core & 31) == 0, ("&Core=%p, must be 32-byte aligned!\n", &pCritSect->Core),
+    AssertMsgReturn(((uintptr_t)&pCritSect->Core & 63) == 0, ("&Core=%p, must be 64-byte aligned!\n", &pCritSect->Core),
                     VERR_PDM_CRITSECTRW_MISALIGNED);
     AssertMsgReturn(((uintptr_t)&pCritSect->Core.u & (sizeof(pCritSect->Core.u.u128) - 1)) == 0 /* paranoia */,
                     ("&Core.u=%p, must be 16-byte aligned!\n", &pCritSect->Core.u),

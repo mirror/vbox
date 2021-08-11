@@ -469,7 +469,7 @@ typedef struct IOM
     /** @} */
 } IOM;
 #ifdef IOM_WITH_CRIT_SECT_RW
-AssertCompileMemberAlignment(IOM, CritSect, 32);
+AssertCompileMemberAlignment(IOM, CritSect, 64);
 #endif
 /** Pointer to IOM instance data. */
 typedef IOM *PIOM;
