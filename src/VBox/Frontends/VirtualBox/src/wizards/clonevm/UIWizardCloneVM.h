@@ -42,6 +42,7 @@ public:
     UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
                     const QString &strGroup, CSnapshot snapshot = CSnapshot());
     void setCloneModePageVisible(bool fIsFullClone);
+    bool isCloneModePageVisible() const;
 
 protected:
 

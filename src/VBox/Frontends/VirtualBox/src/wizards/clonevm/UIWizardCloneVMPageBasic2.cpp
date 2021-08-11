@@ -68,11 +68,9 @@ void UIWizardCloneVMPageBasic2::prepare()
     }
 
     pMainLayout->addStretch();
-
-
 }
 
-void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton * /* pButton */)
+void UIWizardCloneVMPageBasic2::sltCloneTypeChanged(bool fIsFullClone)
 {
     UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard());
     AssertReturnVoid(pWizard);

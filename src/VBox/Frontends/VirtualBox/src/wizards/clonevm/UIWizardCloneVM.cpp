@@ -54,6 +54,13 @@ void UIWizardCloneVM::setCloneModePageVisible(bool fIsFullClone)
     setPageVisible(m_iCloneModePageIndex, fIsFullClone);
 }
 
+bool UIWizardCloneVM::isCloneModePageVisible() const
+{
+    if (m_iCloneModePageIndex == -1)
+        return true;
+    return isPageVisible(m_iCloneModePageIndex);
+}
+
 bool UIWizardCloneVM::cloneVM()
 {
     // /* Get the clone name: */
