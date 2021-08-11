@@ -72,6 +72,13 @@ int pdmR3CritSectBothInitStatsAndInfo(PVM pVM)
     STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectNonInterruptibleWaits, STAMTYPE_COUNTER, "/PDM/CritSects/00-Non-interruptible-Waits-VINF_SUCCESS",
                  STAMUNIT_OCCURENCES, "Number of non-interruptible waits for rcBusy=VINF_SUCCESS");
 
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwExclVerrInterrupted, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Excl-VERR_INTERRUPTED", STAMUNIT_OCCURENCES,
+                 "Number of VERR_INTERRUPTED returns in exclusive mode.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwExclVerrTimeout, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Excl-VERR_TIMEOUT", STAMUNIT_OCCURENCES,
+                 "Number of VERR_TIMEOUT returns in exclusive mode.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwExclNonInterruptibleWaits, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Excl-Non-interruptible-Waits-VINF_SUCCESS",
+                 STAMUNIT_OCCURENCES, "Number of non-interruptible waits for rcBusy=VINF_SUCCESS in exclusive mode");
+
     /*
      * Info items.
      */

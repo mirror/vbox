@@ -39,6 +39,9 @@
 #if defined(IN_RING3) || defined(IN_RING0)
 # include <iprt/thread.h>
 #endif
+#ifdef IN_RING0
+# include <iprt/time.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -803,6 +806,16 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
 {
     RT_NOREF(hThreadSelf, rcBusy, pSrcPos, fNoVal, pVCpu);
 
+    PSUPDRVSESSION const    pSession          = pVM->pSession;
+    SUPSEMEVENT const       hEvent            = (SUPSEMEVENT)pThis->s.Core.hEvtWrite;
+# ifdef IN_RING0
+    uint64_t const          tsStart           = RTTimeNanoTS();
+    uint64_t                cNsMaxTotal       = RT_NS_5MIN;
+    uint64_t const          cNsMaxRetry       = RT_NS_15SEC;
+    uint32_t                cMsMaxOne         = RT_MS_5SEC;
+    bool                    fNonInterruptible = false;
+# endif
+
     for (uint32_t iLoop = 0; ; iLoop++)
     {
         /*
@@ -814,34 +827,114 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
         rc = RTLockValidatorRecExclCheckBlocking(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true,
                                                  RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
         if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            return pdmCritSectRwEnterExclBailOut(pThis, rc);
 #  else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
 #  endif
 # endif
+        for (;;)
         {
-            for (;;)
-            {
-                rc = SUPSemEventWaitNoResume(pVM->pSession,
-                                             (SUPSEMEVENT)pThis->s.Core.hEvtWrite,
-                                             RT_INDEFINITE_WAIT);
-                if (   rc != VERR_INTERRUPTED
-                    || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                    break;
-# ifdef IN_RING0
-                pdmR0CritSectRwYieldToRing3(pVM);
-# endif
-            }
-
+            /*
+             * We always wait with a timeout so we can re-check the structure sanity
+             * and not get stuck waiting on a corrupt or deleted section.
+             */
 # ifdef IN_RING3
-            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+            rc = SUPSemEventWaitNoResume(pSession, hEvent, RT_MS_5SEC);
+# else
+            rc = !fNonInterruptible
+               ? SUPSemEventWaitNoResume(pSession, hEvent, cMsMaxOne)
+               : SUPSemEventWait(pSession, hEvent, cMsMaxOne);
+            Log11Func(("%p: rc=%Rrc %'RU64 ns (cMsMaxOne=%RU64 hNativeWriter=%p)\n",
+                       pThis, rc, RTTimeNanoTS() - tsStart, cMsMaxOne, pThis->s.Core.hNativeWriter));
 # endif
-            if (pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC)
+            if (RT_LIKELY(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC))
             { /* likely */ }
             else
+            {
+# ifdef IN_RING3
+                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
                 return VERR_SEM_DESTROYED;
+            }
+            if (rc == VINF_SUCCESS)
+            {
+# ifdef IN_RING3
+                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
+                break;
+            }
+
+            /*
+             * Timeout and interrupted waits needs careful handling in ring-0
+             * because we're cooperating with ring-3 on this critical section
+             * and thus need to make absolutely sure we won't get stuck here.
+             *
+             * The r0 interrupted case means something is pending (termination,
+             * signal, APC, debugger, whatever), so we must try our best to
+             * return to the caller and to ring-3 so it can be dealt with.
+             */
+            if (RT_LIKELY(rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED))
+            {
+# ifdef IN_RING0
+                uint64_t const cNsElapsed = RTTimeNanoTS() - tsStart;
+                int const      rcTerm     = RTThreadQueryTerminationStatus(NIL_RTTHREAD);
+                AssertMsg(rcTerm == VINF_SUCCESS || rcTerm == VERR_NOT_SUPPORTED || rcTerm == VINF_THREAD_IS_TERMINATING,
+                          ("rcTerm=%Rrc\n", rcTerm));
+                if (rcTerm == VERR_NOT_SUPPORTED)
+                    cNsMaxTotal = RT_NS_1MIN;
+
+                if (rc == VERR_TIMEOUT)
+                {
+                    /* Try return get out of here with a non-VINF_SUCCESS status if
+                       the thread is terminating or if the timeout has been exceeded. */
+                    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectRwExclVerrTimeout);
+                    if (   rcTerm == VINF_THREAD_IS_TERMINATING
+                        || cNsElapsed > cNsMaxTotal)
+                        return pdmCritSectRwEnterExclBailOut(pThis, rcBusy != VINF_SUCCESS ? rcBusy : rc);
+                }
+                else
+                {
+                    /* For interrupt cases, we must return if we can.  If rcBusy is VINF_SUCCESS,
+                       we will try non-interruptible sleep for a while to help resolve the issue
+                       w/o guru'ing. */
+                    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectRwExclVerrInterrupted);
+                    if (   rcTerm != VINF_THREAD_IS_TERMINATING
+                        && rcBusy == VINF_SUCCESS
+                        && pVCpu != NULL
+                        && cNsElapsed <= cNsMaxTotal)
+                    {
+                        if (!fNonInterruptible)
+                        {
+                            STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectRwExclNonInterruptibleWaits);
+                            fNonInterruptible   = true;
+                            cMsMaxOne           = 32;
+                            uint64_t cNsLeft = cNsMaxTotal - cNsElapsed;
+                            if (cNsLeft > RT_NS_10SEC)
+                                cNsMaxTotal = cNsElapsed + RT_NS_10SEC;
+                        }
+                    }
+                    else
+                        return pdmCritSectRwEnterExclBailOut(pThis, rcBusy != VINF_SUCCESS ? rcBusy : rc);
+
+                }
+# else  /* IN_RING3 */
+                RT_NOREF(pVM, pVCpu, rcBusy);
+# endif /* IN_RING3 */
+            }
+            /*
+             * Any other return code is fatal.
+             */
+            else
+            {
+# ifdef IN_RING3
+                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
+                AssertMsgFailed(("rc=%Rrc\n", rc));
+                return RT_FAILURE_NP(rc) ? rc : -rc;
+            }
         }
-        if (RT_FAILURE(rc))
-            return pdmCritSectRwEnterExclBailOut(pThis, rc);
 
         /*
          * Try take exclusive write ownership.
@@ -879,15 +972,6 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-
-#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    NOREF(pSrcPos);
-    NOREF(fNoVal);
-#endif
-#ifdef IN_RING3
-    NOREF(rcBusy);
-    NOREF(pVM);
-#endif
 
     RTTHREAD hThreadSelf = NIL_RTTHREAD;
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
@@ -1013,27 +1097,50 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     }
 
     STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
-#if defined(IN_RING3) || defined(IN_RING0)
-# ifdef IN_RING0
-    if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
-        && ASMIntAreEnabled())
-# endif
-    {
-# if defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT)
-        if (hThreadSelf == NIL_RTTHREAD)
-            hThreadSelf = RTThreadSelfAutoAdopt();
-        return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, hThreadSelf);
-# elif defined(IN_RING3)
-        return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, RTThreadSelf());
-# else
-        return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, NIL_RTTHREAD);
-# endif
-    }
-#endif /* IN_RING3 || IN_RING0 */
 
-#ifndef IN_RING3
-    /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
-       ring-3 and do it there or return rcBusy. */
+    /*
+     * Ring-3 is pretty straight forward.
+     */
+#if defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT)
+    return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, hThreadSelf);
+#elif defined(IN_RING3)
+    return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, RTThreadSelf());
+
+#elif defined(IN_RING0)
+    /*
+     * In ring-0 context we have to take the special VT-x/AMD-V HM context into
+     * account when waiting on contended locks.
+     */
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
+    if (pVCpu)
+    {
+        VMMR0EMTBLOCKCTX Ctx;
+        int rc = VMMR0EmtPrepareToBlock(pVCpu, rcBusy, __FUNCTION__, pThis, &Ctx);
+        if (rc == VINF_SUCCESS)
+        {
+            Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+            rc = pdmR3R0CritSectRwEnterExclContended(pVM, pVCpu, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, NIL_RTTHREAD);
+
+            VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
+        }
+        else
+        {
+            //STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLockBusy);
+            rc = pdmCritSectRwEnterExclBailOut(pThis, rc);
+        }
+        return rc;
+    }
+
+    /* Non-EMT. */
+    Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    return pdmR3R0CritSectRwEnterExclContended(pVM, NULL, pThis, hNativeSelf, pSrcPos, fNoVal, rcBusy, NIL_RTTHREAD);
+
+#else
+# error "Unused."
+    /*
+     * Raw-mode: Call host and take it there if rcBusy is VINF_SUCCESS.
+     */
     rcBusy = pdmCritSectRwEnterExclBailOut(pThis, rcBusy);
     if (rcBusy == VINF_SUCCESS)
     {
