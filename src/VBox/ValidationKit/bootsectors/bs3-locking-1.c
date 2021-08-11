@@ -45,6 +45,27 @@ static struct
     uint32_t                uCtrlHi;
 } g_aLockingTests[] =
 {
+#if 1 /* no contention benchmark */
+    {
+        "None 0us/inf/0k",
+        _32K,
+        0,
+        0,
+    },
+    {
+        "RW None Exl 0us/inf/0k",
+        _32K,
+        0,
+        0 | VMMDEV_TESTING_LOCKED_HI_TYPE_RW,
+    },
+    {
+        "RW None Shr 0us/inf/0k",
+        _32K,
+        0,
+        0 | VMMDEV_TESTING_LOCKED_HI_TYPE_RW | VMMDEV_TESTING_LOCKED_HI_EMT_SHARED,
+    },
+#endif
+#if 1
     {
         "Contention 500us/250us/64k",
         2000 + 16384,
@@ -79,14 +100,76 @@ static struct
         "Contention 500us/250us/64k poke void",
         2000 + 16384,
         500 | (UINT32_C(250) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
-        64 | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
+        64 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
     },
     {
         "Contention 50us/25us/8k poke void",
         20000 + 4096,
         50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
-        1 | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
+        1 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
     },
+#endif
+    {
+        "RW Contention Exl/Exl 50us/25us/16k",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW
+    },
+    {
+        "RW Contention Shr/Exl 50us/25us/16k",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW | VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED
+    },
+    {
+        "RW Contention Exl/Exl 50us/25us/16k poke",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW | VMMDEV_TESTING_LOCKED_HI_POKE
+    },
+    {
+        "RW Contention Shr/Exl 50us/25us/16k poke",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW | VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED
+        | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
+    },
+    {
+        "RW Contention Exl/Exl 50us/25us/16k poke void",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW | VMMDEV_TESTING_LOCKED_HI_POKE
+    },
+    {
+        "RW Contention Shr/Exl 50us/25us/16k poke void",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW | VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED
+        | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
+    },
+
+
+    {
+        "RW Contention Exl/Shr 50us/25us/16k",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW | VMMDEV_TESTING_LOCKED_HI_EMT_SHARED
+    },
+    {
+        "RW Contention Shr/Shr 50us/25us/16k",
+        20000 + 4096,
+        50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW
+           | VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED | VMMDEV_TESTING_LOCKED_HI_EMT_SHARED
+    },
+    {
+        "RW Contention Shr/Shr 1us/1us/1k",
+        32767,
+        1 | (UINT32_C(1) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
+        1 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW
+          | VMMDEV_TESTING_LOCKED_HI_THREAD_SHARED | VMMDEV_TESTING_LOCKED_HI_EMT_SHARED
+    },
+
 };
 
 
