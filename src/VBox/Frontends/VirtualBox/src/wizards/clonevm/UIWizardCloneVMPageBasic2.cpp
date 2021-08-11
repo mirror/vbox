@@ -70,7 +70,7 @@ void UIWizardCloneVMPageBasic2::prepare()
 
 }
 
-void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton */*pButton*/)
+void UIWizardCloneVMPageBasic2::sltButtonClicked(QAbstractButton * /* pButton */)
 {
     //setFinalPage(pButton != m_pFullCloneRadio);
 }
