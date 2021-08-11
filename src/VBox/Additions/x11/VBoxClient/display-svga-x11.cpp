@@ -557,9 +557,9 @@ static void queryMonitorPositions()
             if (iMonitorID >= x11Context.hOutputCount || iMonitorID == -1)
             {
                 VBClLogInfo("queryMonitorPositions: skip monitor %d (id %d) (w,h)=(%d,%d) (x,y)=(%d,%d)\n",
-                        i, iMonitorID,
-                        pMonitorInfo[i].width, pMonitorInfo[i].height,
-                        pMonitorInfo[i].x, pMonitorInfo[i].y);
+                            i, iMonitorID,
+                            pMonitorInfo[i].width, pMonitorInfo[i].height,
+                            pMonitorInfo[i].x, pMonitorInfo[i].y);
                 continue;
             }
             VBClLogInfo("Monitor %d (w,h)=(%d,%d) (x,y)=(%d,%d)\n",
@@ -1124,7 +1124,7 @@ static bool resizeFrameBuffer(struct RANDROUTPUT *paOutputs)
     if (!event || newSize.width != (int)iXRes || newSize.height != (int)iYRes)
     {
         VBClLogError("Resizing frame buffer to %d %d has failed, current mode %d %d\n",
-            iXRes, iYRes, newSize.width, newSize.height);
+                     iXRes, iYRes, newSize.width, newSize.height);
         return false;
     }
     return true;
