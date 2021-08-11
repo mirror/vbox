@@ -19,7 +19,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIWizardCloneVMPageBasic2.h"
 #include "UIWizardCloneVM.h"
 #include "QIRichTextLabel.h"
@@ -28,19 +27,6 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-
-// UIWizardCloneVMPage2::UIWizardCloneVMPage2(bool fAdditionalInfo)
-//     : m_fAdditionalInfo(fAdditionalInfo)
-//     , m_pButtonGroup(0)
-//     , m_pFullCloneRadio(0)
-//     , m_pLinkedCloneRadio(0)
-// {
-// }
-
-// bool UIWizardCloneVMPage2::linkedClone() const
-// {
-//     return m_pLinkedCloneRadio ? m_pLinkedCloneRadio->isChecked() : false;
-// }
 
 UIWizardCloneVMPageBasic2::UIWizardCloneVMPageBasic2(bool fAdditionalInfo)
     : m_pLabel(0)
@@ -125,8 +111,3 @@ bool UIWizardCloneVMPageBasic2::validatePage()
     else
         return true;
 }
-
-// int UIWizardCloneVMPageBasic2::nextId() const
-// {
-//     return m_pFullCloneRadio->isChecked() && wizard()->page(UIWizardCloneVM::Page3) ? UIWizardCloneVM::Page3 : -1;
-// }

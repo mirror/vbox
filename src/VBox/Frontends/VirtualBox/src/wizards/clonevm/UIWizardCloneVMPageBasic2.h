@@ -25,37 +25,15 @@
 #include "UINativeWizardPage.h"
 
 /* Forward declarations: */
-class QAbstractButton;
-class QButtonGroup;
-class QRadioButton;
 class QIRichTextLabel;
 class UICloneVMCloneTypeGroupBox;
 
-// /* 2nd page of the Clone Virtual Machine wizard (base part): */
-// class UIWizardCloneVMPage2 : public UIWizardPageBase
-// {
-// protected:
-
-//     /* Constructor: */
-//     UIWizardCloneVMPage2(bool fAdditionalInfo);
-
-//     /* Stuff for 'linkedClone' field: */
-//     bool linkedClone() const;
-
-//     /* Variables: */
-
-//     /* Widgets: */
-// };
-
-/* 2nd page of the Clone Virtual Machine wizard (basic extension): */
 class UIWizardCloneVMPageBasic2 : public UINativeWizardPage
 {
     Q_OBJECT;
-    //Q_PROPERTY(bool linkedClone READ linkedClone);
 
 public:
 
-    /* Constructor: */
     UIWizardCloneVMPageBasic2(bool fAdditionalInfo);
 
 private slots:
@@ -64,17 +42,11 @@ private slots:
 
 private:
 
-    /* Translation stuff: */
     void retranslateUi();
-
-    /* Prepare stuff: */
     void initializePage();
     void prepare();
-
-    /* Validation stuff: */
     bool validatePage();
 
-    /* Widgets: */
     QIRichTextLabel *m_pLabel;
     bool m_fAdditionalInfo;
     UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;
