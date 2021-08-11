@@ -101,6 +101,32 @@
         CHECKVAL(a_uVar2, a_ExpectVarVal2, a_FmtVar); \
     } while (0)
 
+#define CHECKVAL128(a_pu128Val, a_u64HiExpect, a_u64LoExpect) \
+    do \
+    { \
+        if ((a_pu128Val)->s.Hi != (a_u64HiExpect) || (a_pu128Val)->s.Lo != (a_u64LoExpect)) \
+            RTTestFailed(g_hTest, "%s, %d: " #a_pu128Val ": expected %#RX64'%016RX64 got %#RX64'%016RX64\n", \
+                         __FUNCTION__, __LINE__, (a_u64HiExpect), (a_u64LoExpect), (a_pu128Val)->s.Hi, (a_pu128Val)->s.Lo); \
+    } while (0)
+#define CHECKVAL128_C(a_pu128Val, a_u64HiExpect, a_u64LoExpect) \
+    do \
+    { \
+        if ((a_pu128Val)->s.Hi != UINT64_C(a_u64HiExpect) || (a_pu128Val)->s.Lo != UINT64_C(a_u64LoExpect)) \
+            RTTestFailed(g_hTest, "%s, %d: " #a_pu128Val ": expected %#RX64'%016RX64 got %#RX64'%016RX64\n", \
+                         __FUNCTION__, __LINE__, UINT64_C(a_u64HiExpect), UINT64_C(a_u64LoExpect), \
+                         (a_pu128Val)->s.Hi, (a_pu128Val)->s.Lo); \
+    } while (0)
+#define CHECK_OP_AND_VAL_128(a_TypeRet, a_FmtRet, a_pu128Val, a_Operation, a_ExpectRetVal, a_u64HiExpect, a_u64LoExpect) \
+    do { \
+        CHECKOP(a_Operation, a_ExpectRetVal, a_FmtRet, a_TypeRet); \
+        CHECKVAL128(a_pu128Val, a_u64HiExpect, a_u64LoExpect); \
+    } while (0)
+#define CHECK_OP_AND_VAL_128_C(a_TypeRet, a_FmtRet, a_pu128Val, a_Operation, a_ExpectRetVal, a_u64HiExpect, a_u64LoExpect) \
+    do { \
+        CHECKOP(a_Operation, a_ExpectRetVal, a_FmtRet, a_TypeRet); \
+        CHECKVAL128_C(a_pu128Val, a_u64HiExpect, a_u64LoExpect); \
+    } while (0)
+
 /**
  * Calls a worker function with different worker variable storage types.
  */
@@ -1481,11 +1507,65 @@ DECLINLINE(void) tstASMAtomicCmpXchgU64Worker(uint64_t volatile *pu64)
 }
 
 
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+DECLINLINE(void) tstASMAtomicCmpWriteU128Worker(RTUINT128U volatile *pu128)
+{
+    pu128->s.Lo = UINT64_C(0xffffffffffffff);
+    pu128->s.Hi = UINT64_C(0xffffffffffffff);
+
+    RTUINT128U u128A, u128B;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0, 0),
+                                                                     u128B = RTUINT128_INIT_C(0, 0)),
+                           false, 0xffffffffffffff, 0xffffffffffffff);
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0, 0),
+                                                                     u128B = RTUINT128_INIT_C(0xffffffffffffff, 0xffffffffffffff)),
+                           true, 0, 0);
+
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def),
+                                                                     u128B = RTUINT128_INIT_C(0, 1)),
+                           false, 0, 0);
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def),
+                                                                     u128B = RTUINT128_INIT_C(1, 0)),
+                           false, 0, 0);
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def),
+                                                                     u128B = RTUINT128_INIT_C(0, 0)),
+                           true, 0x80040008008efd, 0x40080004004def);
+
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0xfff40ff8f08ef3, 0x4ee8ee04cc4de4),
+                                                                     u128B = RTUINT128_INIT_C(0x80040008008efd, 0)),
+                           false, 0x80040008008efd, 0x40080004004def);
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0xfff40ff8f08ef3, 0x4ee8ee04cc4de4),
+                                                                     u128B = RTUINT128_INIT_C(0, 0x40080004004def)),
+                           false, 0x80040008008efd, 0x40080004004def);
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128U(pu128,
+                                                                     u128A = RTUINT128_INIT_C(0xfff40ff8f08ef3, 0x4ee8ee04cc4de4),
+                                                                     u128B = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def)),
+                           true, 0xfff40ff8f08ef3, 0x4ee8ee04cc4de4);
+}
+#endif /* RTASM_HAVE_CMP_WRITE_U128 */
+
+
 static void tstASMAtomicCmpXchg(void)
 {
     DO_SIMPLE_TEST(ASMAtomicCmpXchgU8, uint8_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgU32, uint32_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgU64, uint64_t);
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+# ifdef RT_ARCH_AMD64
+    if (ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16)
+# endif
+    {
+        RTTestISub("ASMAtomicCmpWriteU128U");
+        DO_SIMPLE_TEST_NO_SUB_NO_STACK(tstASMAtomicCmpWriteU128Worker, RTUINT128U);
+    }
+#endif
 }
 
 
