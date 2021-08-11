@@ -319,6 +319,7 @@ typedef struct TMTIMERQUEUE
      *       implement runtime array growing. */
     PDMCRITSECTRW           AllocLock;
 } TMTIMERQUEUE;
+AssertCompileMemberAlignment(TMTIMERQUEUE, AllocLock, 32);
 AssertCompileSizeAlignment(TMTIMERQUEUE, 64);
 /** Pointer to a timer queue. */
 typedef TMTIMERQUEUE *PTMTIMERQUEUE;

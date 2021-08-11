@@ -392,6 +392,7 @@ AssertCompileMemberAlignment(VMMDEV, enmCpuHotPlugEvent, 4);
 AssertCompileMemberAlignment(VMMDEV, aFacilityStatuses, 8);
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
 AssertCompileMemberAlignment(VMMDEV, TestingData.Value.u64Value, 8);
+AssertCompileMemberAlignment(VMMDEV, CritSectRw, 32);
 #endif
 
 

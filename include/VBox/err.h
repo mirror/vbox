@@ -1612,6 +1612,8 @@
 #define VERR_PDM_CRITSECTRW_TOO_MANY_RECURSIONS     (-7204)
 /** Internal error in read-write critical section. */
 #define VERR_PDM_CRITSECTRW_IPE                     (-7205)
+/** Misaligned read/write critical section. */
+#define VERR_PDM_CRITSECTRW_MISALIGNED              (-7206)
 /** @} */
 
 
