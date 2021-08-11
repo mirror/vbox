@@ -106,17 +106,16 @@ RTDECL(int) RTCritSectRwInitEx(PRTCRITSECTRW pThis, uint32_t fFlags,
 #else
     pThis->fFlags           = (uint16_t)(fFlags & ~RTCRITSECT_FLAGS_RING0);
 #endif
-    pThis->u64State         = 0;
-    pThis->hNativeWriter    = NIL_RTNATIVETHREAD;
+    pThis->u.u128.s.Hi      = 0;
+    pThis->u.u128.s.Lo      = 0;
+    pThis->u.s.hNativeWriter= NIL_RTNATIVETHREAD;
+    AssertCompile(sizeof(pThis->u.u128) >= sizeof(pThis->u.s));
     pThis->cWriterReads     = 0;
     pThis->cWriteRecursions = 0;
     pThis->hEvtWrite        = NIL_RTSEMEVENT;
     pThis->hEvtRead         = NIL_RTSEMEVENTMULTI;
     pThis->pValidatorWrite  = NULL;
     pThis->pValidatorRead   = NULL;
-#if HC_ARCH_BITS == 32
-    pThis->HCPtrPadding     = NIL_RTHCPTR;
-#endif
 
 #ifdef RTCRITSECTRW_STRICT
     bool const fLVEnabled = !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL);
@@ -215,7 +214,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
     {
         int            rc9;
         RTNATIVETHREAD hNativeWriter;
-        ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+        ASMAtomicUoReadHandle(&pThis->u.s.hNativeWriter, &hNativeWriter);
         if (hNativeWriter != NIL_RTTHREAD && hNativeWriter == RTThreadNativeSelf())
             rc9 = RTLockValidatorRecExclCheckOrder(pThis->pValidatorWrite, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
         else
@@ -228,7 +227,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
     /*
      * Get cracking...
      */
-    uint64_t u64State    = ASMAtomicReadU64(&pThis->u64State);
+    uint64_t u64State    = ASMAtomicReadU64(&pThis->u.s.u64State);
     uint64_t u64OldState = u64State;
 
     for (;;)
@@ -241,7 +240,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
             Assert(c < RTCSRW_CNT_MASK / 2);
             u64State &= ~RTCSRW_CNT_RD_MASK;
             u64State |= c << RTCSRW_CNT_RD_SHIFT;
-            if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+            if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
             {
 #ifdef RTCRITSECTRW_STRICT
                 RTLockValidatorRecSharedAddOwner(pThis->pValidatorRead, hThreadSelf, pSrcPos);
@@ -254,7 +253,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
             /* Wrong direction, but we're alone here and can simply try switch the direction. */
             u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
             u64State |= (UINT64_C(1) << RTCSRW_CNT_RD_SHIFT) | (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT);
-            if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+            if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
             {
                 Assert(!pThis->fNeedReset);
 #ifdef RTCRITSECTRW_STRICT
@@ -268,7 +267,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
             /* Is the writer perhaps doing a read recursion? */
             RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
             RTNATIVETHREAD hNativeWriter;
-            ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+            ASMAtomicUoReadHandle(&pThis->u.s.hNativeWriter, &hNativeWriter);
             if (hNativeSelf == hNativeWriter)
             {
 #ifdef RTCRITSECTRW_STRICT
@@ -290,7 +289,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
             if (fTryOnly)
             {
                 IPRT_CRITSECTRW_SHARED_BUSY(pThis, NULL,
-                                            (void *)pThis->hNativeWriter,
+                                            (void *)pThis->u.s.hNativeWriter,
                                             (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                             (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
                 return VERR_SEM_BUSY;
@@ -309,10 +308,10 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
             u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
             u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
 
-            if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+            if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
             {
                 IPRT_CRITSECTRW_SHARED_WAITING(pThis, NULL,
-                                               (void *)pThis->hNativeWriter,
+                                               (void *)pThis->u.s.hNativeWriter,
                                                (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                                (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
                 for (uint32_t iLoop = 0; ; iLoop++)
@@ -339,21 +338,21 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
                         /* Decrement the counts and return the error. */
                         for (;;)
                         {
-                            u64OldState = u64State = ASMAtomicReadU64(&pThis->u64State);
+                            u64OldState = u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
                             c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT; Assert(c > 0);
                             c--;
                             cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT; Assert(cWait > 0);
                             cWait--;
                             u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
                             u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
-                            if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                            if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                                 break;
                         }
                         return rc;
                     }
 
                     Assert(pThis->fNeedReset);
-                    u64State = ASMAtomicReadU64(&pThis->u64State);
+                    u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
                     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
                         break;
                     AssertMsg(iLoop < 1, ("%u\n", iLoop));
@@ -370,7 +369,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
                     u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
                     u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
 
-                    if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                    if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                     {
                         if (cWait == 0)
                         {
@@ -382,7 +381,7 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
                         }
                         break;
                     }
-                    u64State = ASMAtomicReadU64(&pThis->u64State);
+                    u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
                 }
 
 #ifdef RTCRITSECTRW_STRICT
@@ -396,12 +395,12 @@ static int rtCritSectRwEnterShared(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPo
             return VERR_SEM_DESTROYED;
 
         ASMNopPause();
-        u64State = ASMAtomicReadU64(&pThis->u64State);
+        u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
         u64OldState = u64State;
     }
 
     /* got it! */
-    Assert((ASMAtomicReadU64(&pThis->u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT));
+    Assert((ASMAtomicReadU64(&pThis->u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT));
     IPRT_CRITSECTRW_SHARED_ENTERED(pThis, NULL,
                                    (uint32_t)((u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT),
                                    (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
@@ -466,7 +465,7 @@ RTDECL(int) RTCritSectRwLeaveShared(PRTCRITSECTRW pThis)
     /*
      * Check the direction and take action accordingly.
      */
-    uint64_t u64State    = ASMAtomicReadU64(&pThis->u64State);
+    uint64_t u64State    = ASMAtomicReadU64(&pThis->u.s.u64State);
     uint64_t u64OldState = u64State;
     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
     {
@@ -491,7 +490,7 @@ RTDECL(int) RTCritSectRwLeaveShared(PRTCRITSECTRW pThis)
                 /* Don't change the direction. */
                 u64State &= ~RTCSRW_CNT_RD_MASK;
                 u64State |= c << RTCSRW_CNT_RD_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                     break;
             }
             else
@@ -499,7 +498,7 @@ RTDECL(int) RTCritSectRwLeaveShared(PRTCRITSECTRW pThis)
                 /* Reverse the direction and signal the reader threads. */
                 u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_DIR_MASK);
                 u64State |= RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                 {
                     int rc = RTSemEventSignal(pThis->hEvtWrite);
                     AssertRC(rc);
@@ -508,7 +507,7 @@ RTDECL(int) RTCritSectRwLeaveShared(PRTCRITSECTRW pThis)
             }
 
             ASMNopPause();
-            u64State = ASMAtomicReadU64(&pThis->u64State);
+            u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
             u64OldState = u64State;
         }
     }
@@ -516,7 +515,7 @@ RTDECL(int) RTCritSectRwLeaveShared(PRTCRITSECTRW pThis)
     {
         RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
         RTNATIVETHREAD hNativeWriter;
-        ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+        ASMAtomicUoReadHandle(&pThis->u.s.hNativeWriter, &hNativeWriter);
         AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
         AssertReturn(pThis->cWriterReads > 0, VERR_NOT_OWNER);
 #ifdef RTCRITSECTRW_STRICT
@@ -566,10 +565,10 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
      */
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeWriter;
-    ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+    ASMAtomicUoReadHandle(&pThis->u.s.hNativeWriter, &hNativeWriter);
     if (hNativeSelf == hNativeWriter)
     {
-        Assert((ASMAtomicReadU64(&pThis->u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
+        Assert((ASMAtomicReadU64(&pThis->u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
 #ifdef RTCRITSECTRW_STRICT
         int rc9 = RTLockValidatorRecExclRecursion(pThis->pValidatorWrite, pSrcPos);
         if (RT_FAILURE(rc9))
@@ -581,7 +580,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
 #ifdef IPRT_WITH_DTRACE
         if (IPRT_CRITSECTRW_EXCL_ENTERED_ENABLED())
         {
-            uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
+            uint64_t u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
             IPRT_CRITSECTRW_EXCL_ENTERED(pThis, NULL, cNestings + pThis->cWriterReads,
                                          (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                          (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
@@ -593,7 +592,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
     /*
      * Get cracking.
      */
-    uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
+    uint64_t u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
     uint64_t u64OldState = u64State;
 
     for (;;)
@@ -607,7 +606,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
             Assert(c < RTCSRW_CNT_MASK / 2);
             u64State &= ~RTCSRW_CNT_WR_MASK;
             u64State |= c << RTCSRW_CNT_WR_SHIFT;
-            if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+            if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                 break;
         }
         else if ((u64State & (RTCSRW_CNT_RD_MASK | RTCSRW_CNT_WR_MASK)) == 0)
@@ -615,7 +614,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
             /* Wrong direction, but we're alone here and can simply try switch the direction. */
             u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
             u64State |= (UINT64_C(1) << RTCSRW_CNT_WR_SHIFT) | (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT);
-            if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+            if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                 break;
         }
         else if (fTryOnly)
@@ -629,7 +628,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
             Assert(c < RTCSRW_CNT_MASK / 2);
             u64State &= ~RTCSRW_CNT_WR_MASK;
             u64State |= c << RTCSRW_CNT_WR_SHIFT;
-            if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+            if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                 break;
         }
 
@@ -637,7 +636,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
             return VERR_SEM_DESTROYED;
 
         ASMNopPause();
-        u64State = ASMAtomicReadU64(&pThis->u64State);
+        u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
         u64OldState = u64State;
     }
 
@@ -649,7 +648,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
               && (  ((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT) == 1
                   || fTryOnly);
     if (fDone)
-        ASMAtomicCmpXchgHandle(&pThis->hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
+        ASMAtomicCmpXchgHandle(&pThis->u.s.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
     if (!fDone)
     {
         /*
@@ -659,12 +658,12 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
         {
             for (;;)
             {
-                u64OldState = u64State = ASMAtomicReadU64(&pThis->u64State);
+                u64OldState = u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
                 uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
                 c--;
                 u64State &= ~RTCSRW_CNT_WR_MASK;
                 u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                     break;
             }
             IPRT_CRITSECTRW_EXCL_BUSY(pThis, NULL,
@@ -672,7 +671,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
                                       (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                       (uint32_t)((u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT),
                                       (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT),
-                                      (void *)pThis->hNativeWriter);
+                                      (void *)pThis->u.s.hNativeWriter);
             return VERR_SEM_BUSY;
         }
 
@@ -684,7 +683,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
                                      (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                      (uint32_t)((u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT),
                                      (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT),
-                                     (void *)pThis->hNativeWriter);
+                                     (void *)pThis->u.s.hNativeWriter);
         for (uint32_t iLoop = 0; ; iLoop++)
         {
             int rc;
@@ -711,21 +710,21 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
                 /* Decrement the counts and return the error. */
                 for (;;)
                 {
-                    u64OldState = u64State = ASMAtomicReadU64(&pThis->u64State);
+                    u64OldState = u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
                     uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
                     c--;
                     u64State &= ~RTCSRW_CNT_WR_MASK;
                     u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                    if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                    if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                         break;
                 }
                 return rc;
             }
 
-            u64State = ASMAtomicReadU64(&pThis->u64State);
+            u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
             if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
             {
-                ASMAtomicCmpXchgHandle(&pThis->hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
+                ASMAtomicCmpXchgHandle(&pThis->u.s.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
                 if (fDone)
                     break;
             }
@@ -736,7 +735,7 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
     /*
      * Got it!
      */
-    Assert((ASMAtomicReadU64(&pThis->u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
+    Assert((ASMAtomicReadU64(&pThis->u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
     ASMAtomicWriteU32(&pThis->cWriteRecursions, 1);
     Assert(pThis->cWriterReads == 0);
 #ifdef RTCRITSECTRW_STRICT
@@ -805,7 +804,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
 
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeWriter;
-    ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+    ASMAtomicUoReadHandle(&pThis->u.s.hNativeWriter, &hNativeWriter);
     AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
 
     /*
@@ -823,9 +822,9 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
          * Update the state.
          */
         ASMAtomicWriteU32(&pThis->cWriteRecursions, 0);
-        ASMAtomicWriteHandle(&pThis->hNativeWriter, NIL_RTNATIVETHREAD);
+        ASMAtomicWriteHandle(&pThis->u.s.hNativeWriter, NIL_RTNATIVETHREAD);
 
-        uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
+        uint64_t u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
         IPRT_CRITSECTRW_EXCL_LEAVING(pThis, NULL, 0,
                                      (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                      (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
@@ -844,7 +843,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
                 /* Don't change the direction, wait up the next writer if any. */
                 u64State &= ~RTCSRW_CNT_WR_MASK;
                 u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                 {
                     if (c > 0)
                     {
@@ -859,7 +858,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
                 /* Reverse the direction and signal the reader threads. */
                 u64State &= ~(RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
                 u64State |= RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                if (ASMAtomicCmpXchgU64(&pThis->u.s.u64State, u64State, u64OldState))
                 {
                     Assert(!pThis->fNeedReset);
                     ASMAtomicWriteBool(&pThis->fNeedReset, true);
@@ -872,7 +871,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
             ASMNopPause();
             if (pThis->u32Magic != RTCRITSECTRW_MAGIC)
                 return VERR_SEM_DESTROYED;
-            u64State = ASMAtomicReadU64(&pThis->u64State);
+            u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
         }
     }
     else
@@ -887,7 +886,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
 #ifdef IPRT_WITH_DTRACE
         if (IPRT_CRITSECTRW_EXCL_LEAVING_ENABLED())
         {
-            uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
+            uint64_t u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
             IPRT_CRITSECTRW_EXCL_LEAVING(pThis, NULL, cNestings + pThis->cWriterReads,
                                          (uint32_t)((u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT),
                                          (uint32_t)((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT));
@@ -918,7 +917,7 @@ RTDECL(bool) RTCritSectRwIsWriteOwner(PRTCRITSECTRW pThis)
      */
     RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
     RTNATIVETHREAD hNativeWriter;
-    ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hNativeWriter);
+    ASMAtomicUoReadHandle(&pThis->u.s.hNativeWriter, &hNativeWriter);
     return hNativeWriter == hNativeSelf;
 }
 RT_EXPORT_SYMBOL(RTCritSectRwIsWriteOwner);
@@ -942,7 +941,7 @@ RTDECL(bool) RTCritSectRwIsReadOwner(PRTCRITSECTRW pThis, bool fWannaHear)
     /*
      * Inspect the state.
      */
-    uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
+    uint64_t u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
     {
         /*
@@ -951,7 +950,7 @@ RTDECL(bool) RTCritSectRwIsReadOwner(PRTCRITSECTRW pThis, bool fWannaHear)
          */
         RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
         RTNATIVETHREAD hWriter;
-        ASMAtomicUoReadHandle(&pThis->hNativeWriter, &hWriter);
+        ASMAtomicUoReadHandle(&pThis->u.s.hNativeWriter, &hWriter);
         return hWriter == hNativeSelf;
     }
 
@@ -1019,7 +1018,7 @@ RTDECL(uint32_t) RTCritSectRwGetReadCount(PRTCRITSECTRW pThis)
     /*
      * Return the requested data.
      */
-    uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
+    uint64_t u64State = ASMAtomicReadU64(&pThis->u.s.u64State);
     if ((u64State & RTCSRW_DIR_MASK) != (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
         return 0;
     return (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
@@ -1036,7 +1035,7 @@ RTDECL(int) RTCritSectRwDelete(PRTCRITSECTRW pThis)
     Assert(pThis->u32Magic == RTCRITSECTRW_MAGIC);
     //Assert(pThis->cNestings == 0);
     //Assert(pThis->cLockers == -1);
-    Assert(pThis->hNativeWriter == NIL_RTNATIVETHREAD);
+    Assert(pThis->u.s.hNativeWriter == NIL_RTNATIVETHREAD);
 #ifdef IN_RING0
     Assert(pThis->fFlags & RTCRITSECT_FLAGS_RING0);
 #else
@@ -1050,7 +1049,7 @@ RTDECL(int) RTCritSectRwDelete(PRTCRITSECTRW pThis)
         return VERR_INVALID_PARAMETER;
 
     pThis->fFlags   = 0;
-    pThis->u64State = 0;
+    pThis->u.s.u64State = 0;
 
     RTSEMEVENT      hEvtWrite = pThis->hEvtWrite;
     pThis->hEvtWrite = NIL_RTSEMEVENT;

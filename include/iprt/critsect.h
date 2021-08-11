@@ -396,25 +396,34 @@ typedef struct RTCRITSECTRW
     /** Section flags - the RTCRITSECT_FLAGS_* \#defines. */
     uint16_t                            fFlags;
 
-    /** The state variable.
-     * All accesses are atomic and it bits are defined like this:
-     *      Bits 0..14  - cReads.
-     *      Bit 15      - Unused.
-     *      Bits 16..31 - cWrites. - doesn't make sense here
-     *      Bit 31      - fDirection; 0=Read, 1=Write.
-     *      Bits 32..46 - cWaitingReads
-     *      Bit 47      - Unused.
-     *      Bits 48..62 - cWaitingWrites
-     *      Bit 63      - Unused.
-     */
-    uint64_t volatile                   u64State;
-    /** The write owner. */
-    RTNATIVETHREAD volatile             hNativeWriter;
     /** The number of reads made by the current writer. */
     uint32_t volatile                   cWriterReads;
     /** The number of recursions made by the current writer. (The initial grabbing
      *  of the lock counts as the first one.) */
     uint32_t volatile                   cWriteRecursions;
+    /** Union that allows us to atomically update both the state and
+     * exclusive owner if the hardware supports cmpxchg16b or similar. */
+    union
+    {
+        struct
+        {
+            /** The state variable.
+             * All accesses are atomic and it bits are defined like this:
+             *      Bits 0..14  - cReads.
+             *      Bit 15      - Unused.
+             *      Bits 16..31 - cWrites.
+             *      Bit 31      - fDirection; 0=Read, 1=Write.
+             *      Bits 32..46 - cWaitingReads
+             *      Bit 47      - Unused.
+             *      Bits 48..62 - cWaitingWrites - doesn't make sense here, not used.
+             *      Bit 63      - Unused.
+             */
+            uint64_t volatile           u64State;
+            /** The write owner. */
+            RTNATIVETHREAD volatile     hNativeWriter;
+        } s;
+        RTUINT128U volatile             u128;
+    } u;
 
     /** What the writer threads are blocking on. */
     RTSEMEVENT                          hEvtWrite;
@@ -426,10 +435,6 @@ typedef struct RTCRITSECTRW
     R3R0PTRTYPE(PRTLOCKVALRECEXCL)      pValidatorWrite;
     /** The validator record for the readers. */
     R3R0PTRTYPE(PRTLOCKVALRECSHRD)      pValidatorRead;
-#if HC_ARCH_BITS == 32
-    /** Size padding.  */
-    RTHCPTR                             HCPtrPadding;
-#endif
 } RTCRITSECTRW;
 AssertCompileSize(RTCRITSECTRW, HC_ARCH_BITS == 32 ? 48 : 64);
 

@@ -512,7 +512,8 @@ typedef struct PDMCRITSECTRWINT
     STAMPROFILEADV                      StatWriteLocked;
 } PDMCRITSECTRWINT;
 AssertCompileMemberAlignment(PDMCRITSECTRWINT, StatContentionRZEnterExcl, 8);
-AssertCompileMemberAlignment(PDMCRITSECTRWINT, Core.u64State, 8);
+AssertCompileMemberAlignment(PDMCRITSECTRWINT, Core.u, 16);
+AssertCompileMemberAlignment(PDMCRITSECTRWINT, Core.u.s.u64State, 8);
 /** Pointer to private critical section data. */
 typedef PDMCRITSECTRWINT *PPDMCRITSECTRWINT;
 

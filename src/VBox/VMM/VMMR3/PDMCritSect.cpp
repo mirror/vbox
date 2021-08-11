@@ -290,13 +290,11 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
                     pCritSect->Core.fNeedReset           = false;
                     pCritSect->Core.afPadding[0]         = false;
                     pCritSect->Core.fFlags               = 0;
-                    pCritSect->Core.u64State             = 0;
-                    pCritSect->Core.hNativeWriter        = NIL_RTNATIVETHREAD;
+                    pCritSect->Core.u.u128.s.Lo          = 0;
+                    pCritSect->Core.u.u128.s.Hi          = 0;
+                    pCritSect->Core.u.s.hNativeWriter    = NIL_RTNATIVETHREAD;
                     pCritSect->Core.cWriterReads         = 0;
                     pCritSect->Core.cWriteRecursions     = 0;
-#if HC_ARCH_BITS == 32
-                    pCritSect->Core.HCPtrPadding         = NIL_RTHCPTR;
-#endif
                     pCritSect->pvKey                     = pvKey;
                     pCritSect->pszName                   = pszName;
                     pCritSect->pSelfR3                   = (PPDMCRITSECTRW)pCritSect;
@@ -582,7 +580,7 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
     Assert(pCritSect->Core.u32Magic == RTCRITSECTRW_MAGIC);
     //Assert(pCritSect->Core.cNestings == 0);
     //Assert(pCritSect->Core.cLockers == -1);
-    Assert(pCritSect->Core.hNativeWriter == NIL_RTNATIVETHREAD);
+    Assert(pCritSect->Core.u.s.hNativeWriter == NIL_RTNATIVETHREAD);
 
     /*
      * Invalidate the structure and free the semaphores.
@@ -602,8 +600,8 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
      * Delete it (parts taken from RTCritSectRwDelete).
      * In case someone is waiting we'll signal the semaphore cLockers + 1 times.
      */
-    pCritSect->Core.fFlags   = 0;
-    pCritSect->Core.u64State = 0;
+    pCritSect->Core.fFlags       = 0;
+    pCritSect->Core.u.s.u64State = 0;
 
     SUPSEMEVENT      hEvtWrite = (SUPSEMEVENT)pCritSect->Core.hEvtWrite;
     pCritSect->Core.hEvtWrite  = NIL_RTSEMEVENT;
@@ -1017,7 +1015,7 @@ VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNa
          pCur;
          pCur = pCur->pNext)
     {
-        if (   pCur->Core.hNativeWriter == hNativeThread
+        if (   pCur->Core.u.s.hNativeWriter == hNativeThread
             || PDMCritSectRwIsReadOwner(pVM, (PPDMCRITSECTRW)pCur, false /*fWannaHear*/) )
         {
             cCritSects++;
@@ -1209,15 +1207,15 @@ static void pdmR3CritSectInfoRwWorker(PUVM pUVM, const char *pszPatterns, PCDBGF
             unsigned        cTries = 16;
             do
             {
-                u64State         = pCritSect->Core.u64State;
-                hOwner           = pCritSect->Core.hNativeWriter;
+                u64State         = pCritSect->Core.u.s.u64State;
+                hOwner           = pCritSect->Core.u.s.hNativeWriter;
                 cWriterReads     = pCritSect->Core.cWriterReads;
                 cWriteRecursions = pCritSect->Core.cWriteRecursions;
                 fNeedReset       = pCritSect->Core.fNeedReset;
                 uMagic           = pCritSect->Core.u32Magic;
             } while (   cTries-- > 0
-                     && (   u64State         != pCritSect->Core.u64State
-                         || hOwner           != pCritSect->Core.hNativeWriter
+                     && (   u64State         != pCritSect->Core.u.s.u64State
+                         || hOwner           != pCritSect->Core.u.s.hNativeWriter
                          || cWriterReads     != pCritSect->Core.cWriterReads
                          || cWriteRecursions != pCritSect->Core.cWriteRecursions
                          || fNeedReset       != pCritSect->Core.fNeedReset
