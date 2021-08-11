@@ -1224,9 +1224,9 @@ class FileWrapper(object):
                 try:
                     if sys.version_info < (3, 9, 0):
                         # Removed since Python 3.9.
-                        sText.tostring(); # pylint: disable=no-member
+                        sText = sText.tostring(); # pylint: disable=no-member
                     else:
-                        sText.tobytes();
+                        sText = sText.tobytes();
                 except:
                     pass;
             if hasattr(sText, 'decode'):
@@ -1238,6 +1238,7 @@ class FileWrapper(object):
         try:
             sTsPrf  = utils.getTimePrefix();
             sCaller = utils.getCallerName();
+            import pdb; pdb.set_trace();
             asLines = sText.splitlines();
             for sLine in asLines:
                 g_oReporter.log(0, '%s: %s' % (self.sPrefix, sLine), sCaller, sTsPrf);
