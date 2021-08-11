@@ -1238,7 +1238,6 @@ class FileWrapper(object):
         try:
             sTsPrf  = utils.getTimePrefix();
             sCaller = utils.getCallerName();
-            import pdb; pdb.set_trace();
             asLines = sText.splitlines();
             for sLine in asLines:
                 g_oReporter.log(0, '%s: %s' % (self.sPrefix, sLine), sCaller, sTsPrf);
