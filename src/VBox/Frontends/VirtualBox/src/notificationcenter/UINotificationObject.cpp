@@ -201,6 +201,7 @@ void UINotificationDownloader::sltHandleProgressFailed(const QString &strError)
 
 UINotificationNewVersionChecker::UINotificationNewVersionChecker()
     : m_pChecker(0)
+    , m_fDone(false)
 {
 }
 
@@ -208,6 +209,11 @@ UINotificationNewVersionChecker::~UINotificationNewVersionChecker()
 {
     delete m_pChecker;
     m_pChecker = 0;
+}
+
+bool UINotificationNewVersionChecker::isDone() const
+{
+    return m_fDone;
 }
 
 QString UINotificationNewVersionChecker::error() const
@@ -266,6 +272,7 @@ void UINotificationNewVersionChecker::sltHandleProgressFinished()
 {
     delete m_pChecker;
     m_pChecker = 0;
+    m_fDone = true;
     emit sigProgressFinished();
 }
 

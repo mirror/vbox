@@ -219,6 +219,8 @@ public:
     /** Creates and returns started checker-wrapper. */
     virtual UINewVersionChecker *createChecker() = 0;
 
+    /** Returns whether current progress is done. */
+    bool isDone() const;
     /** Returns error-message if any. */
     QString error() const;
 
@@ -237,9 +239,9 @@ private slots:
     /** Handles signal about progress failed.
       * @param  strError  Brings error message if any. */
     void sltHandleProgressFailed(const QString &strError);
-    /** Handles signal about progress failed. */
+    /** Handles signal about progress canceled. */
     void sltHandleProgressCanceled();
-    /** Handles signal about progress failed. */
+    /** Handles signal about progress finished. */
     void sltHandleProgressFinished();
 
 private:
@@ -247,6 +249,8 @@ private:
     /** Holds the instance of checker being wrapped by this notification-new-version-checker. */
     UINewVersionChecker *m_pChecker;
 
+    /** Holds whether current progress is done. */
+    bool     m_fDone;
     /** Holds the error message is any. */
     QString  m_strError;
 };

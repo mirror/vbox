@@ -400,7 +400,13 @@ UINotificationNewVersionCheckerItem::UINotificationNewVersionCheckerItem(QWidget
         m_pProgressBar = new QProgressBar(this);
         if (m_pProgressBar)
         {
-            m_pProgressBar->setMaximum(0);
+            if (!checker()->isDone())
+                m_pProgressBar->setMaximum(0);
+            else
+            {
+                m_pProgressBar->setMaximum(1);
+                m_pProgressBar->setValue(1);
+            }
             m_pLayoutMain->addWidget(m_pProgressBar);
         }
     }
