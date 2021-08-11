@@ -1918,6 +1918,34 @@ static void hmR0SvmExportSharedDebugState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
 
+    /** @todo Figure out stepping with nested-guest. */
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        /*
+         * We don't want to always intercept DRx read/writes for nested-guests as it causes
+         * problems when the nested hypervisor isn't intercepting them, see @bugref{10080}.
+         * Instead, they are strictly only requested when the nested hypervisor intercepts
+         * them -- handled while merging VMCB controls.
+         *
+         * If neither the outer nor the nested-hypervisor is intercepting DRx read/writes,
+         * then the nested-guest debug state should be actively loaded on the host so that
+         * nested-guest reads/writes its own debug registers without causing VM-exits.
+         */
+        if (   (   pVmcb->ctrl.u16InterceptRdDRx != 0xffff
+                || pVmcb->ctrl.u16InterceptWrDRx != 0xffff)
+            && !CPUMIsGuestDebugStateActive(pVCpu))
+        {
+           CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
+           STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
+           Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+           Assert(CPUMIsGuestDebugStateActive(pVCpu));
+        }
+
+        pVmcb->guest.u64DR6 = pCtx->dr[6];
+        pVmcb->guest.u64DR7 = pCtx->dr[7];
+        return;
+    }
+
     /*
      * Anyone single stepping on the host side? If so, we'll have to use the
      * trap flag in the guest EFLAGS since AMD-V doesn't have a trap flag on
@@ -2221,10 +2249,9 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
         pVmcbNstGstCtrl->u16InterceptWrCRx |= RT_BIT(3);
     }
 
-    /** @todo Figure out debugging with nested-guests, till then just intercept
-     *        all DR[0-15] accesses. */
-    pVmcbNstGstCtrl->u16InterceptRdDRx |= 0xffff;
-    pVmcbNstGstCtrl->u16InterceptWrDRx |= 0xffff;
+    /* Merge the guest's DR intercepts into the nested-guest VMCB. */
+    pVmcbNstGstCtrl->u16InterceptRdDRx |= pVmcb->ctrl.u16InterceptRdDRx;
+    pVmcbNstGstCtrl->u16InterceptWrDRx |= pVmcb->ctrl.u16InterceptWrDRx;
 
     /*
      * Merge the guest's exception intercepts into the nested-guest VMCB.
@@ -2634,17 +2661,7 @@ static void hmR0SvmExportSharedState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
     if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_GUEST_DR_MASK)
-    {
-        /** @todo Figure out stepping with nested-guest. */
-        PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-        if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            hmR0SvmExportSharedDebugState(pVCpu, pVmcb);
-        else
-        {
-            pVmcb->guest.u64DR6 = pCtx->dr[6];
-            pVmcb->guest.u64DR7 = pCtx->dr[7];
-        }
-    }
+        hmR0SvmExportSharedDebugState(pVCpu, pVmcb);
 
     pVCpu->hm.s.fCtxChanged &= ~HM_CHANGED_GUEST_DR_MASK;
     AssertMsg(!(pVCpu->hm.s.fCtxChanged & HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE),
@@ -4212,7 +4229,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransi
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
 
-    PVMCC      pVM   = pVCpu->CTX_SUFF(pVM);
+    PVMCC      pVM = pVCpu->CTX_SUFF(pVM);
     PSVMVMCB pVmcb = pSvmTransient->pVmcb;
 
     hmR0SvmInjectPendingEvent(pVCpu, pVmcb);
