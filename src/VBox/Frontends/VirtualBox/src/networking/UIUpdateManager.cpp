@@ -94,7 +94,7 @@ void UIUpdateStepVirtualBox::exec()
     /* Return if already checking: */
     if (UINotificationNewVersionCheckerVirtualBox::exists())
     {
-        /// @todo show notification-center
+        gpNotificationCenter->invoke();
         emit sigStepFinished();
         return;
     }
@@ -134,6 +134,7 @@ void UIUpdateStepVirtualBoxExtensionPack::exec()
     /* Return if already downloading: */
     if (UINotificationDownloaderExtensionPack::exists())
     {
+        gpNotificationCenter->invoke();
         emit sigStepFinished();
         return;
     }
@@ -318,9 +319,7 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForcedCall /* = false */
     {
         /* And we have a force-call: */
         if (fForcedCall)
-        {
-            /// @todo show notification-center
-        }
+            gpNotificationCenter->invoke();
         return;
     }
 

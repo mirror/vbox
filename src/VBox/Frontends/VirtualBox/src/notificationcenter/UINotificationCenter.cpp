@@ -165,7 +165,9 @@ void UINotificationCenter::setParent(QWidget *pParent)
 
 void UINotificationCenter::invoke()
 {
-    emit sigOpen();
+    /* Open if center isn't opened yet: */
+    if (!m_pOpenButton->isChecked())
+        m_pOpenButton->animateClick();
 }
 
 QUuid UINotificationCenter::append(UINotificationObject *pObject)

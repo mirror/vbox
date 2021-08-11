@@ -2525,9 +2525,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* If downloader is running already: */
     if (UINotificationDownloaderGuestAdditions::exists())
-    {
-        /// @todo show notification-center
-    }
+        gpNotificationCenter->invoke();
     /* Else propose to download additions: */
     else if (msgCenter().cannotFindGuestAdditions())
     {

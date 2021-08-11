@@ -3414,9 +3414,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* If downloader is running already: */
     else if (UINotificationDownloaderUserManual::exists())
-    {
-        /// @todo show notification-center
-    }
+        gpNotificationCenter->invoke();
     /* Else propose to download user manual: */
     else if (cannotFindUserManual(strUserManualFileName1))
     {
