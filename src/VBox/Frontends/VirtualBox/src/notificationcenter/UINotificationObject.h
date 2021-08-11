@@ -23,7 +23,6 @@
 
 /* Qt includes: */
 #include <QObject>
-#include <QPointer>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -147,9 +146,6 @@ signals:
     /** Notifies listeners about progress finished. */
     void sigProgressFinished();
 
-    /** Notifies listeners about downloader destroyed. */
-    void sigDownloaderDestroyed();
-
 public:
 
     /** Constructs notification-downloader. */
@@ -183,11 +179,15 @@ private slots:
     /** Handles signal about progress failed.
       * @param  strError  Brings error message if any. */
     void sltHandleProgressFailed(const QString &strError);
+    /** Handles signal about progress canceled. */
+    void sltHandleProgressCanceled();
+    /** Handles signal about progress finished. */
+    void sltHandleProgressFinished();
 
 private:
 
     /** Holds the instance of downloader being wrapped by this notification-downloader. */
-    QPointer<UIDownloader>  m_pDownloader;
+    UIDownloader *m_pDownloader;
 
     /** Holds the last cached progress percentage value. */
     ulong    m_uPercent;

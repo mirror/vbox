@@ -122,12 +122,14 @@ void UINotificationProgress::sltHandleProgressFinished()
 *********************************************************************************************************************************/
 
 UINotificationDownloader::UINotificationDownloader()
+    : m_pDownloader(0)
 {
 }
 
 UINotificationDownloader::~UINotificationDownloader()
 {
     delete m_pDownloader;
+    m_pDownloader = 0;
 }
 
 ulong UINotificationDownloader::percent() const
@@ -162,11 +164,9 @@ void UINotificationDownloader::handle()
         connect(m_pDownloader, &UIDownloader::sigProgressFailed,
                 this, &UINotificationDownloader::sltHandleProgressFailed);
         connect(m_pDownloader, &UIDownloader::sigProgressCanceled,
-                this, &UINotificationDownloader::sigProgressCanceled);
+                this, &UINotificationDownloader::sltHandleProgressCanceled);
         connect(m_pDownloader, &UIDownloader::sigProgressFinished,
-                this, &UINotificationDownloader::sigProgressFinished);
-        connect(m_pDownloader, &UIDownloader::destroyed,
-                this, &UINotificationDownloader::sigDownloaderDestroyed);
+                this, &UINotificationDownloader::sltHandleProgressFinished);
 
         /* And start it finally: */
         m_pDownloader->start();
@@ -190,8 +190,24 @@ void UINotificationDownloader::sltHandleProgressChange(ulong uPercent)
 
 void UINotificationDownloader::sltHandleProgressFailed(const QString &strError)
 {
+    delete m_pDownloader;
+    m_pDownloader = 0;
     m_strError = strError;
     emit sigProgressFailed();
+}
+
+void UINotificationDownloader::sltHandleProgressCanceled()
+{
+    delete m_pDownloader;
+    m_pDownloader = 0;
+    emit sigProgressCanceled();
+}
+
+void UINotificationDownloader::sltHandleProgressFinished()
+{
+    delete m_pDownloader;
+    m_pDownloader = 0;
+    emit sigProgressFinished();
 }
 
 
