@@ -29,6 +29,16 @@
 #include "CMachine.h"
 #include "CSnapshot.h"
 
+#define cloneVMWizardPropertySet(functionName, value)                   \
+    do                                                                  \
+    {                                                                   \
+        UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard()); \
+        if (pWizard)                                                    \
+            pWizard->set##functionName(value);                          \
+    }                                                                   \
+    while(0)
+
+
 /* Clone VM wizard: */
 class UIWizardCloneVM : public UINativeWizard
 {
@@ -43,6 +53,12 @@ public:
     /** Clone VM stuff. */
     bool cloneVM();
 
+    void setCloneName(const QString &strCloneName);
+    const QString &cloneName() const;
+
+    void setCloneFilePath(const QString &strCloneFilePath);
+    const QString &cloneFilePath() const;
+
 protected:
 
     virtual void populatePages() /* final override */;
@@ -56,6 +72,14 @@ private:
     CSnapshot m_snapshot;
     QString   m_strGroup;
     int m_iCloneModePageIndex;
+
+    /** @name Parameters needed during machine cloning
+      * @{ */
+        QString m_strCloneName;
+        QString m_strCloneFilePath;
+    /** @} */
+
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVM_h */

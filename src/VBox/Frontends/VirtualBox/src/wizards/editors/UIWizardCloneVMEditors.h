@@ -68,8 +68,8 @@ class UICloneVMNamePathEditor : public QIWithRetranslateUI<QGroupBox>
 
 signals:
 
-    // void sigNameChanged(const QString &strUserName);
-    // void sigPathChanged(const QString &strPassword);
+    void sigCloneNameChanged(const QString &strCloneName);
+    void sigClonePathChanged(const QString &strClonePath);
 
 public:
 
@@ -78,11 +78,12 @@ public:
     void setFirstColumnWidth(int iWidth);
     int firstColumnWidth() const;
 
-    QString name() const;
-    void setName(const QString &strName);
+    QString cloneName() const;
+    void setCloneName(const QString &strName);
 
-    QString path() const;
-    void setPath(const QString &strPath);
+    QString clonePath() const;
+    void setClonePath(const QString &strPath);
+
     bool isComplete();
 
 

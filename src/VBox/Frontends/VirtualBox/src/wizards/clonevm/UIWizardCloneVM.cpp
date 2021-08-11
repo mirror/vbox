@@ -37,6 +37,7 @@ UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
     , m_snapshot(snapshot)
     , m_strGroup(strGroup)
     , m_iCloneModePageIndex(-1)
+    , m_strCloneName(!machine.isNull() ? machine.GetName() : QString())
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -59,6 +60,26 @@ bool UIWizardCloneVM::isCloneModePageVisible() const
     if (m_iCloneModePageIndex == -1)
         return true;
     return isPageVisible(m_iCloneModePageIndex);
+}
+
+void UIWizardCloneVM::setCloneName(const QString &strCloneName)
+{
+    m_strCloneName = strCloneName;
+}
+
+const QString &UIWizardCloneVM::cloneName() const
+{
+    return m_strCloneName;
+}
+
+void UIWizardCloneVM::setCloneFilePath(const QString &strCloneFilePath)
+{
+    m_strCloneFilePath = strCloneFilePath;
+}
+
+const QString &UIWizardCloneVM::cloneFilePath() const
+{
+    return m_strCloneFilePath;
 }
 
 bool UIWizardCloneVM::cloneVM()
@@ -181,7 +202,6 @@ void UIWizardCloneVM::retranslateUi()
 
     /* Translate wizard: */
     setWindowTitle(tr("Clone Virtual Machine"));
-    //setButtonText(QWizard::FinishButton, tr("Clone"));
 }
 
 void UIWizardCloneVM::populatePages()
@@ -193,7 +213,7 @@ void UIWizardCloneVM::populatePages()
         case WizardMode_Basic:
         case WizardMode_Expert:
         {
-            addPage(new UIWizardCloneVMPageBasic1(m_machine.GetName(), strDefaultMachineFolder, m_strGroup));
+            addPage(new UIWizardCloneVMPageBasic1(m_strCloneName, strDefaultMachineFolder, m_strGroup));
             addPage(new UIWizardCloneVMPageBasic2(m_snapshot.isNull()));
             if (m_machine.GetSnapshotCount() > 0)
                 m_iCloneModePageIndex = addPage(new UIWizardCloneVMPageBasic3(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
