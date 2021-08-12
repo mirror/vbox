@@ -1441,8 +1441,10 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_
  * @returns false if write wasn't done.
  *
  * @param   pu128       Pointer to the 128-bit variable to update.
- * @param   u128New     The 128-bit value to assign to *pu128.
- * @param   u128Old     The value to compare with.
+ * @param   u64NewHi    The high 64 bits of the value to assign to *pu128.
+ * @param   u64NewLo    The low 64 bits of the value to assign to *pu128.
+ * @param   u64OldHi    The high 64-bit of the value to compare with.
+ * @param   u64OldLo    The low 64-bit of the value to compare with.
  *
  * @remarks AMD64: Not present in the earliest CPUs, so check CPUID.
  */
