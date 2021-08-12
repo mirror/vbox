@@ -42,6 +42,9 @@
 #ifdef IN_RING0
 # include <iprt/time.h>
 #endif
+#ifdef RT_ARCH_AMD64
+# include <iprt/x86.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -70,6 +73,46 @@
 #undef PDMCritSectRwEnterShared
 #undef PDMCritSectRwTryEnterShared
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#if defined(RTASM_HAVE_CMP_WRITE_U128) && defined(RT_ARCH_AMD64)
+static int32_t g_fCmpWriteSupported = -1;
+#endif
+
+
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+
+# ifdef RT_ARCH_AMD64
+/**
+ * Called once to initialize g_fCmpWriteSupported.
+ */
+DECL_NO_INLINE(static, bool) pdmCritSectRwIsCmpWriteU128SupportedSlow(void)
+{
+    bool const fCmpWriteSupported = RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16);
+    ASMAtomicWriteS32(&g_fCmpWriteSupported, fCmpWriteSupported);
+    return fCmpWriteSupported;
+}
+# endif
+
+
+/**
+ * Indicates whether hardware actually supports 128-bit compare & write.
+ */
+DECL_FORCE_INLINE(bool) pdmCritSectRwIsCmpWriteU128Supported(void)
+{
+# ifdef RT_ARCH_AMD64
+    int32_t const fCmpWriteSupported = g_fCmpWriteSupported;
+    if (RT_LIKELY(fCmpWriteSupported >= 0))
+        return fCmpWriteSupported != 0;
+    return pdmCritSectRwIsCmpWriteU128SupportedSlow();
+# else
+    return true;
+# endif
+}
+
+#endif /* RTASM_HAVE_CMP_WRITE_U128 */
 
 /**
  * Gets the ring-3 native thread handle of the calling thread.
@@ -1344,6 +1387,36 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                 return rc9;
         }
 #endif
+
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+        /*
+         * See if we can get out w/o any signalling as this is a common case.
+         */
+        if (pdmCritSectRwIsCmpWriteU128Supported())
+        {
+            RTCRITSECTRWSTATE OldState;
+            OldState.s.u64State = ASMAtomicUoReadU64(&pThis->s.Core.u.s.u64State);
+            if (OldState.s.u64State == ((UINT64_C(1) << RTCSRW_CNT_WR_SHIFT) | (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT)))
+            {
+                OldState.s.hNativeWriter = hNativeSelf;
+                AssertCompile(sizeof(OldState.s.hNativeWriter) == sizeof(OldState.u128.s.Lo));
+
+                RTCRITSECTRWSTATE NewState;
+                NewState.s.u64State      = RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
+                NewState.s.hNativeWriter = NIL_RTNATIVETHREAD;
+
+                pThis->s.Core.cWriteRecursions = 0;
+                STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
+
+                if (ASMAtomicCmpWriteU128U(&pThis->s.Core.u.u128, NewState.u128, OldState.u128))
+                    return VINF_SUCCESS;
+
+                /* bail out. */
+                pThis->s.Core.cWriteRecursions = 1;
+            }
+        }
+#endif
+
         /*
          * Update the state.
          */
