@@ -206,7 +206,7 @@ class tdAudioTest(vbox.TestDriver):
         reporter.error('Unable to find guest VKAT in any of these places:\n%s' % ('\n'.join(self.asGstVkatPaths),));
         return (False, "");
 
-    def killProcessByName(self, sProcName):
+    def killHstProcessByName(self, sProcName):
         """
         Kills processes by their name.
         """
@@ -228,8 +228,8 @@ class tdAudioTest(vbox.TestDriver):
         Kills VKAT (VBoxAudioTest) on the host side.
         """
         reporter.log('Killing stale/old VKAT processes ...');
-        self.killProcessByName("vkat");
-        self.killProcessByName("VBoxAudioTest");
+        self.killHstProcessByName("vkat");
+        self.killHstProcessByName("VBoxAudioTest");
 
     def getWinFirewallArgsDisable(self, sOsType):
         """
