@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,12 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
+#include <QImageWriter>
 #include <QPainter>
 #include <QTimer>
-#include <QDateTime>
-#include <QImageWriter>
 #ifdef VBOX_WS_MAC
 # include <QMenuBar>
 #endif /* VBOX_WS_MAC */
@@ -32,60 +32,60 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkRequestManager.h"
-# include "UINotificationCenter.h"
-#endif
+#include "UIAddDiskEncryptionPasswordDialog.h"
+#include "UICommon.h"
+#include "UIConverter.h"
+#include "UIExtraDataManager.h"
+#include "UIFileManagerDialog.h"
+#include "UIFrameBuffer.h"
+#include "UIGuestProcessControlDialog.h"
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"
 #include "UIKeyboardHandler.h"
-#include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineLogicScale.h"
-#include "UIFrameBuffer.h"
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
-#include "UISession.h"
-#include "UICommon.h"
+#include "UIMedium.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
+#include "UIMouseHandler.h"
+#include "UINotificationCenter.h"
 #include "UIPopupCenter.h"
+#include "UISession.h"
 #include "UISettingsDialogSpecific.h"
+#include "UISoftKeyboard.h"
 #include "UITakeSnapshotDialog.h"
 #include "UIVMLogViewerDialog.h"
-#include "UIConverter.h"
-#include "UIModalWindowManager.h"
-#include "UIMedium.h"
-#include "UIExtraDataManager.h"
-#include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UIVMInformationDialog.h"
-#include "UIFileManagerDialog.h"
-#include "UIGuestProcessControlDialog.h"
-#include "UISoftKeyboard.h"
 #ifdef VBOX_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataManager.h"
 #endif
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkRequestManager.h"
+#endif
 
 /* COM includes: */
 #include "CAudioAdapter.h"
-#include "CGraphicsAdapter.h"
-#include "CRecordingSettings.h"
-#include "CVirtualBoxErrorInfo.h"
-#include "CMachineDebugger.h"
-#include "CSnapshot.h"
 #include "CDisplay.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
-#include "CHostUSBDevice.h"
-#include "CUSBDevice.h"
-#include "CVRDEServer.h"
-#include "CSystemProperties.h"
-#include "CHostVideoInputDevice.h"
 #include "CEmulatedUSB.h"
+#include "CGraphicsAdapter.h"
+#include "CHostUSBDevice.h"
+#include "CHostVideoInputDevice.h"
+#include "CMachineDebugger.h"
+#include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
+#include "CRecordingSettings.h"
+#include "CSnapshot.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
+#include "CUSBDevice.h"
+#include "CVirtualBoxErrorInfo.h"
+#include "CVRDEServer.h"
 #ifdef VBOX_WS_MAC
 # include "CGuest.h"
 #endif
