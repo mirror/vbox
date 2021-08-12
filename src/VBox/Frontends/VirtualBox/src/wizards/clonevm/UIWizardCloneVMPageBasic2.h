@@ -53,7 +53,6 @@ private:
     QIRichTextLabel *m_pLabel;
     bool m_fAdditionalInfo;
     UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;
-
     QSet<QString> m_userModifiedParameters;
 };
 

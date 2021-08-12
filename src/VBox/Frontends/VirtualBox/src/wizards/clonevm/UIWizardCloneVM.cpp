@@ -134,113 +134,102 @@ void UIWizardCloneVM::setCloneMode(KCloneMode enmCloneMode)
 
 bool UIWizardCloneVM::cloneVM()
 {
-    // /* Get the clone name: */
-    // QString strName = field("cloneName").toString();
-    // /* Get the clone setting file path: */
-    // QString strSettingsFile = field("cloneFilePath").toString();
+    /* Get VBox object: */
+    CVirtualBox vbox = uiCommon().virtualBox();
 
-    // /* Should we create linked clone? */
-    // bool fLinked = field("linkedClone").toBool();
-    // /* Get clone mode: */
-    // KCloneMode cloneMode = (mode() == WizardMode_Basic && page(Page3)) ||
-    //                        (mode() == WizardMode_Expert && page(PageExpert)) ?
-    //                        field("cloneMode").value<KCloneMode>() : KCloneMode_MachineState;
+    /* Prepare machine for cloning: */
+    CMachine srcMachine = m_machine;
 
-    // /* Get VBox object: */
-    // CVirtualBox vbox = uiCommon().virtualBox();
+    /* If the user like to create a linked clone from the current machine, we
+     * have to take a little bit more action. First we create an snapshot, so
+     * that new differencing images on the source VM are created. Based on that
+     * we could use the new snapshot machine for cloning. */
+    if (m_fLinkedClone && m_snapshot.isNull())
+    {
 
-    // /* Prepare machine for cloning: */
-    // CMachine srcMachine = m_machine;
+        /* Open session: */
+        CSession session = uiCommon().openSession(m_machine.GetId());
+        if (session.isNull())
+            return false;
 
-    // /* If the user like to create a linked clone from the current machine, we
-    //  * have to take a little bit more action. First we create an snapshot, so
-    //  * that new differencing images on the source VM are created. Based on that
-    //  * we could use the new snapshot machine for cloning. */
-    // if (fLinked && m_snapshot.isNull())
-    // {
-    //     /* Open session: */
-    //     CSession session = uiCommon().openSession(m_machine.GetId());
-    //     if (session.isNull())
-    //         return false;
+        /* Prepare machine: */
+        CMachine machine = session.GetMachine();
 
-    //     /* Prepare machine: */
-    //     CMachine machine = session.GetMachine();
+        /* Take the snapshot: */
+        QString strSnapshotName = tr("Linked Base for %1 and %2").arg(m_machine.GetName()).arg(m_strCloneName);
+        QUuid uSnapshotId;
+        CProgress progress = machine.TakeSnapshot(strSnapshotName, "", true, uSnapshotId);
 
-    //     /* Take the snapshot: */
-    //     QString strSnapshotName = tr("Linked Base for %1 and %2").arg(m_machine.GetName()).arg(strName);
-    //     QUuid uSnapshotId;
-    //     CProgress progress = machine.TakeSnapshot(strSnapshotName, "", true, uSnapshotId);
+        if (machine.isOk())
+        {
+            /* Show the "Taking Snapshot" progress dialog: */
+            msgCenter().showModalProgressDialog(progress, m_machine.GetName(), ":/progress_snapshot_create_90px.png", this);
 
-    //     if (machine.isOk())
-    //     {
-    //         /* Show the "Taking Snapshot" progress dialog: */
-    //         msgCenter().showModalProgressDialog(progress, m_machine.GetName(), ":/progress_snapshot_create_90px.png", this);
+            if (!progress.isOk() || progress.GetResultCode() != 0)
+            {
+                msgCenter().cannotTakeSnapshot(progress, m_machine.GetName(), this);
+                return false;
+            }
+        }
+        else
+        {
+            msgCenter().cannotTakeSnapshot(machine, m_machine.GetName(), this);
+            return false;
+        }
 
-    //         if (!progress.isOk() || progress.GetResultCode() != 0)
-    //         {
-    //             msgCenter().cannotTakeSnapshot(progress, m_machine.GetName(), this);
-    //             return false;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         msgCenter().cannotTakeSnapshot(machine, m_machine.GetName(), this);
-    //         return false;
-    //     }
+        /* Unlock machine finally: */
+        session.UnlockMachine();
 
-    //     /* Unlock machine finally: */
-    //     session.UnlockMachine();
+        /* Get the new snapshot and the snapshot machine. */
+        const CSnapshot &newSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
+        if (newSnapshot.isNull())
+        {
+            msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
+            return false;
+        }
+        srcMachine = newSnapshot.GetMachine();
+    }
 
-    //     /* Get the new snapshot and the snapshot machine. */
-    //     const CSnapshot &newSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
-    //     if (newSnapshot.isNull())
-    //     {
-    //         msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
-    //         return false;
-    //     }
-    //     srcMachine = newSnapshot.GetMachine();
-    // }
+    /* Create a new machine object. */
+    CMachine cloneMachine = vbox.CreateMachine(m_strCloneFilePath, m_strCloneName, QVector<QString>(), QString(), QString());
+    if (!vbox.isOk())
+    {
+        msgCenter().cannotCreateMachine(vbox, this);
+        return false;
+    }
 
-    // /* Create a new machine object. */
-    // CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QVector<QString>(), QString(), QString());
-    // if (!vbox.isOk())
-    // {
-    //     msgCenter().cannotCreateMachine(vbox, this);
-    //     return false;
-    // }
+    /* Clone options vector to pass to cloning: */
+    QVector<KCloneOptions> options;
+    /* Set the selected MAC address policy: */
+    switch (m_enmMACAddressClonePolicy)
+    {
+        case MACAddressClonePolicy_KeepAllMACs:
+            options.append(KCloneOptions_KeepAllMACs);
+            break;
+        case MACAddressClonePolicy_KeepNATMACs:
+            options.append(KCloneOptions_KeepNATMACs);
+            break;
+        default:
+            break;
+    }
 
-    // /* Clone options vector to pass to cloning: */
-    // QVector<KCloneOptions> options;
-    // /* Set the selected MAC address policy: */
-    // switch (field("macAddressClonePolicy").value<MACAddressClonePolicy>())
-    // {
-    //     case MACAddressClonePolicy_KeepAllMACs:
-    //         options.append(KCloneOptions_KeepAllMACs);
-    //         break;
-    //     case MACAddressClonePolicy_KeepNATMACs:
-    //         options.append(KCloneOptions_KeepNATMACs);
-    //         break;
-    //     default:
-    //         break;
-    // }
+    if (m_fKeepDiskNames)
+        options.append(KCloneOptions_KeepDiskNames);
+    if (m_fKeepHardwareUUIDs)
+        options.append(KCloneOptions_KeepHwUUIDs);
 
-    // if (field("keepDiskNames").value<bool>())
-    //     options.append(KCloneOptions_KeepDiskNames);
-    // if (field("keepHWUUIDs").value<bool>())
-    //     options.append(KCloneOptions_KeepHwUUIDs);
+    /* Linked clones requested? */
+    if (m_fLinkedClone)
+        options.append(KCloneOptions_Link);
 
-    // /* Linked clones requested? */
-    // if (fLinked)
-    //     options.append(KCloneOptions_Link);
-
-    // /* Clone VM: */
-    // UINotificationProgressMachineCopy *pNotification = new UINotificationProgressMachineCopy(srcMachine,
-    //                                                                                          cloneMachine,
-    //                                                                                          cloneMode,
-    //                                                                                          options);
-    // connect(pNotification, &UINotificationProgressMachineCopy::sigMachineCopied,
-    //         &uiCommon(), &UICommon::sltHandleMachineCreated);
-    // gpNotificationCenter->append(pNotification);
+    /* Clone VM: */
+    UINotificationProgressMachineCopy *pNotification = new UINotificationProgressMachineCopy(srcMachine,
+                                                                                             cloneMachine,
+                                                                                             m_enmCloneMode,
+                                                                                             options);
+    connect(pNotification, &UINotificationProgressMachineCopy::sigMachineCopied,
+            &uiCommon(), &UICommon::sltHandleMachineCreated);
+    gpNotificationCenter->append(pNotification);
 
     return true;
 }

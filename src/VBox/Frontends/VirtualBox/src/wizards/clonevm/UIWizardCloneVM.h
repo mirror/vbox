@@ -100,7 +100,7 @@ private:
         bool m_fKeepDiskNames;
         bool m_fKeepHardwareUUIDs;
         bool m_fLinkedClone;
-       KCloneMode m_enmCloneMode;
+        KCloneMode m_enmCloneMode;
     /** @} */
 };
 

@@ -120,7 +120,10 @@ void UIWizardCloneVMPageBasic3::retranslateUi()
 
 void UIWizardCloneVMPageBasic3::initializePage()
 {
-    /* Translate page: */
+
+    if (m_pCloneModeGroupBox && !m_userModifiedParameters.contains("CloneMode"))
+        cloneVMWizardPropertySet(CloneMode, m_pCloneModeGroupBox->cloneMode());
+
     retranslateUi();
 }
 

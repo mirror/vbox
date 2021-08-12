@@ -70,10 +70,26 @@ void UIWizardCloneVMPageBasic1::retranslateUi()
 
 void UIWizardCloneVMPageBasic1::initializePage()
 {
-    /* Translate page: */
-    // retranslateUi();
-    // if (m_pNameLineEdit)
-    //     m_pNameLineEdit->setFocus();
+    retranslateUi();
+    if (m_pNamePathEditor)
+        m_pNamePathEditor->setFocus();
+    if (m_pNamePathEditor)
+    {
+        if (!m_userModifiedParameters.contains("CloneName"))
+            cloneVMWizardPropertySet(CloneName, m_pNamePathEditor->cloneName());
+            if (!m_userModifiedParameters.contains("CloneFilePath"))
+                cloneVMWizardPropertySet(CloneFilePath,
+                             UIWizardCloneVMNamePage::composeCloneFilePath(m_pNamePathEditor->cloneName(), m_strGroup, m_pNamePathEditor->clonePath()));
+    }
+    if (m_pAdditionalOptionsEditor)
+    {
+        if (!m_userModifiedParameters.contains("MacAddressPolicy"))
+            cloneVMWizardPropertySet(MacAddressPolicy, m_pAdditionalOptionsEditor->macAddressClonePolicy());
+        if (!m_userModifiedParameters.contains("KeepDiskNames"))
+            cloneVMWizardPropertySet(KeepDiskNames, m_pAdditionalOptionsEditor->keepDiskNames());
+        if (!m_userModifiedParameters.contains("KeepHardwareUUIDs"))
+            cloneVMWizardPropertySet(KeepHardwareUUIDs, m_pAdditionalOptionsEditor->keepHardwareUUIDs());
+    }
 }
 
 void UIWizardCloneVMPageBasic1::prepare(const QString &strDefaultClonePath)

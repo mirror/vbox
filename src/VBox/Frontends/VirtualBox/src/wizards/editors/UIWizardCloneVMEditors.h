@@ -128,6 +128,9 @@ public:
     void setFirstColumnWidth(int iWidth);
     int firstColumnWidth() const;
 
+    bool keepHardwareUUIDs() const;
+    bool keepDiskNames() const;
+
 private slots:
 
     void sltMACAddressClonePolicyChanged();
@@ -158,6 +161,7 @@ signals:
 public:
 
     UICloneVMCloneTypeGroupBox(QWidget *pParent = 0);
+    bool isFullClone() const;
 
 private slots:
 
@@ -185,6 +189,7 @@ signals:
 public:
 
     UICloneVMCloneModeGroupBox(bool fShowChildsOption, QWidget *pParent = 0);
+    KCloneMode cloneMode() const;
 
 private slots:
 

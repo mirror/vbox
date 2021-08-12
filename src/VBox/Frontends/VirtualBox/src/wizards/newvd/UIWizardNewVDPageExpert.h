@@ -64,7 +64,6 @@ private:
     bool validatePage();
     void updateDiskWidgetsAfterMediumFormatChange();
 
-
     /* Widgets: */
     UIMediumSizeAndPathGroupBox *m_pSizeAndPathGroup;
     UIDiskFormatsGroupBox *m_pFormatGroup;

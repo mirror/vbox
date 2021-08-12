@@ -90,8 +90,9 @@ void UIWizardCloneVMPageBasic2::retranslateUi()
 
 void UIWizardCloneVMPageBasic2::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
+    if (m_pCloneTypeGroupBox && !m_userModifiedParameters.contains("LinkedClone"))
+        cloneVMWizardPropertySet(LinkedClone, !m_pCloneTypeGroupBox->isFullClone());
 }
 
 bool UIWizardCloneVMPageBasic2::validatePage()
