@@ -207,6 +207,26 @@ static void pdmR0CritSectRwYieldToRing3(PVMCC pVM)
 
 
 /**
+ * Worker for pdmCritSectRwEnterShared returning with read-ownership of the CS.
+ */
+DECL_FORCE_INLINE(int) pdmCritSectRwEnterSharedGotIt(PPDMCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
+                                                     bool fNoVal, RTTHREAD hThreadSelf)
+{
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+    if (!fNoVal)
+        RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
+#else
+    RT_NOREF(pSrcPos, fNoVal, hThreadSelf);
+#endif
+
+    /* got it! */
+    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterShared));
+    Assert((PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Worker that enters a read/write critical section with shard access.
  *
  * @returns VBox status code.
@@ -225,14 +245,8 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-
-#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    NOREF(pSrcPos);
-    NOREF(fNoVal);
-#endif
 #ifdef IN_RING3
-    NOREF(rcBusy);
-    NOREF(pVM);
+    RT_NOREF(rcBusy);
 #endif
 
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
@@ -249,6 +263,8 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
         if (RT_FAILURE(rc9))
             return rc9;
     }
+#else
+    RTTHREAD hThreadSelf = NIL_RTTHREAD;
 #endif
 
     /*
@@ -269,13 +285,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
             u64State &= ~RTCSRW_CNT_RD_MASK;
             u64State |= c << RTCSRW_CNT_RD_SHIFT;
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-            {
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                if (!fNoVal)
-                    RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
-#endif
-                break;
-            }
+                return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
         }
         else if ((u64State & (RTCSRW_CNT_RD_MASK | RTCSRW_CNT_WR_MASK)) == 0)
         {
@@ -285,11 +295,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
             {
                 Assert(!pThis->s.Core.fNeedReset);
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                if (!fNoVal)
-                    RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
-#endif
-                break;
+                return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
             }
         }
         else
@@ -353,6 +359,10 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
 
                 if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
                 {
+# if !defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+                    hThreadSelf = RTThreadSelf();
+# endif
+
                     for (uint32_t iLoop = 0; ; iLoop++)
                     {
                         int rc;
@@ -362,7 +372,6 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                                                                    RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
                         if (RT_SUCCESS(rc))
 #  else
-                        RTTHREAD hThreadSelf = RTThreadSelf();
                         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
 #  endif
 # endif
@@ -401,6 +410,9 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                                 u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
                                 if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
                                     break;
+
+                                ASMNopPause();
+                                AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
                             }
                             return rc;
                         }
@@ -433,16 +445,17 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                                     AssertRCReturn(rc, rc);
                                 }
                             }
-                            break;
+                            return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
                         }
+
+                        ASMNopPause();
+                        AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+                        ASMNopPause();
+
                         u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
                     }
 
-# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                    if (!fNoVal)
-                        RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
-# endif
-                    break;
+                    /* not reached */
                 }
             }
 #endif /* IN_RING3 || IN_RING3 */
@@ -468,19 +481,17 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
 #endif /* !IN_RING3 */
         }
 
-        if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-            return VERR_SEM_DESTROYED;
-
         ASMNopPause();
+        if (RT_LIKELY(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC))
+        { /* likely */ }
+        else
+            return VERR_SEM_DESTROYED;
+        ASMNopPause();
+
         u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
         u64OldState = u64State;
     }
-
-    /* got it! */
-    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterShared));
-    Assert((PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT));
-    return VINF_SUCCESS;
-
+    /* not reached */
 }
 
 
