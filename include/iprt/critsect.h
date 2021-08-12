@@ -381,6 +381,33 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
  */
 
 /**
+ * Union that allows us to atomically update both the state and
+ * exclusive owner if the hardware supports cmpxchg16b or similar.
+ */
+typedef union RTCRITSECTRWSTATE
+{
+    struct
+    {
+        /** The state variable.
+         * All accesses are atomic and it bits are defined like this:
+         *      Bits 0..14  - cReads.
+         *      Bit 15      - Unused.
+         *      Bits 16..31 - cWrites.
+         *      Bit 31      - fDirection; 0=Read, 1=Write.
+         *      Bits 32..46 - cWaitingReads
+         *      Bit 47      - Unused.
+         *      Bits 48..62 - cWaitingWrites - doesn't make sense here, not used.
+         *      Bit 63      - Unused.
+         */
+        uint64_t                    u64State;
+        /** The write owner. */
+        RTNATIVETHREAD              hNativeWriter;
+    } s;
+    RTUINT128U                      u128;
+} RTCRITSECTRWSTATE;
+
+
+/**
  * Read/write critical section.
  */
 typedef struct RTCRITSECTRW
@@ -401,29 +428,8 @@ typedef struct RTCRITSECTRW
     /** The number of recursions made by the current writer. (The initial grabbing
      *  of the lock counts as the first one.) */
     uint32_t volatile                   cWriteRecursions;
-    /** Union that allows us to atomically update both the state and
-     * exclusive owner if the hardware supports cmpxchg16b or similar. */
-    union
-    {
-        struct
-        {
-            /** The state variable.
-             * All accesses are atomic and it bits are defined like this:
-             *      Bits 0..14  - cReads.
-             *      Bit 15      - Unused.
-             *      Bits 16..31 - cWrites.
-             *      Bit 31      - fDirection; 0=Read, 1=Write.
-             *      Bits 32..46 - cWaitingReads
-             *      Bit 47      - Unused.
-             *      Bits 48..62 - cWaitingWrites - doesn't make sense here, not used.
-             *      Bit 63      - Unused.
-             */
-            uint64_t volatile           u64State;
-            /** The write owner. */
-            RTNATIVETHREAD volatile     hNativeWriter;
-        } s;
-        RTUINT128U volatile             u128;
-    } u;
+    /** The core state. */
+    RTCRITSECTRWSTATE volatile          u;
 
     /** What the writer threads are blocking on. */
     RTSEMEVENT                          hEvtWrite;
