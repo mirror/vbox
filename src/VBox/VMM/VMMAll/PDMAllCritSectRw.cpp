@@ -826,7 +826,8 @@ DECL_NO_INLINE(static, int) pdmCritSectRwEnterExclBailOut(PPDMCRITSECTRW pThis, 
  * Worker for pdmCritSectRwEnterExcl that handles the red tape after we've
  * gotten exclusive ownership of the critical section.
  */
-DECLINLINE(int) pdmCritSectRwEnterExclFirst(PPDMCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, RTTHREAD hThreadSelf)
+DECL_FORCE_INLINE(int) pdmCritSectRwEnterExclFirst(PPDMCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
+                                                   bool fNoVal, RTTHREAD hThreadSelf)
 {
     RT_NOREF(hThreadSelf, fNoVal, pSrcPos);
     Assert((PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
@@ -1070,9 +1071,33 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     }
 
     /*
-     * Get cracking.
+     * First we try grab an idle critical section using 128-bit atomics.
      */
-    uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+    /** @todo This could be moved up before the recursion check. */
+    uint64_t u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+    if (   (u64State & ~RTCSRW_DIR_MASK) == 0
+        && pdmCritSectRwIsCmpWriteU128Supported())
+    {
+        RTCRITSECTRWSTATE OldState;
+        OldState.s.u64State      = u64State;
+        OldState.s.hNativeWriter = NIL_RTNATIVETHREAD;
+        AssertCompile(sizeof(OldState.s.hNativeWriter) == sizeof(OldState.u128.s.Lo));
+
+        RTCRITSECTRWSTATE NewState;
+        NewState.s.u64State      = (UINT64_C(1) << RTCSRW_CNT_WR_SHIFT) | (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT);
+        NewState.s.hNativeWriter = hNativeSelf;
+
+        if (ASMAtomicCmpWriteU128U(&pThis->s.Core.u.u128, NewState.u128, OldState.u128))
+            return pdmCritSectRwEnterExclFirst(pThis, pSrcPos, fNoVal, hThreadSelf);
+
+        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+    }
+#endif
+
+    /*
+     * Do it step by step.  Update the state to reflect our desire.
+     */
     uint64_t u64OldState = u64State;
 
     for (;;)
@@ -1385,6 +1410,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
     ASMAtomicUoReadHandle(&pThis->s.Core.u.s.hNativeWriter, &hNativeWriter);
     AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
 
+
     /*
      * Unwind one recursion. Not the last?
      */
@@ -1409,6 +1435,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
         return VINF_SUCCESS;
     }
 
+
     /*
      * Final recursion.
      */
@@ -1423,6 +1450,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
             return rc9;
     }
 #endif
+
 
 #ifdef RTASM_HAVE_CMP_WRITE_U128
     /*
@@ -1455,7 +1483,8 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
             pThis->s.Core.cWriteRecursions = 1;
         }
     }
-#endif
+#endif /* RTASM_HAVE_CMP_WRITE_U128 */
+
 
 #if defined(IN_RING3) || defined(IN_RING0)
     /*
@@ -1564,6 +1593,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
         /* not reached! */
     }
 #endif /* IN_RING3 || IN_RING0 */
+
 
 #ifndef IN_RING3
     /*
