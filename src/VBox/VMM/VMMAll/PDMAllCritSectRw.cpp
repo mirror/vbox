@@ -67,6 +67,19 @@
 /** Max number of write or write/read recursions. */
 #define PDM_CRITSECTRW_MAX_RECURSIONS           _1M
 
+/** Skips some of the overly paranoid atomic reads and updates.
+ * Makes some assumptions about cache coherence, though not brave enough not to
+ * always end with an atomic update. */
+#define PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+
+/** For reading RTCRITSECTRWSTATE::s::u64State. */
+#ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+# define PDMCRITSECTRW_READ_STATE(a_pu64State)  ASMAtomicUoReadU64(a_pu64State)
+#else
+# define PDMCRITSECTRW_READ_STATE(a_pu64State)  ASMAtomicReadU64(a_pu64State)
+#endif
+
+
 /* Undefine the automatic VBOX_STRICT API mappings. */
 #undef PDMCritSectRwEnterExcl
 #undef PDMCritSectRwTryEnterExcl
@@ -241,7 +254,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
     /*
      * Get cracking...
      */
-    uint64_t u64State    = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+    uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
     uint64_t u64OldState = u64State;
 
     for (;;)
@@ -377,7 +390,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                             /* Decrement the counts and return the error. */
                             for (;;)
                             {
-                                u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+                                u64OldState = u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
                                 c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
                                 AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid read count on bailout"));
                                 c--;
@@ -393,7 +406,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                         }
 
                         Assert(pThis->s.Core.fNeedReset);
-                        u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+                        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
                         if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
                             break;
                         AssertMsg(iLoop < 1, ("%u\n", iLoop));
@@ -422,7 +435,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
                             }
                             break;
                         }
-                        u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+                        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
                     }
 
 # if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
@@ -459,13 +472,13 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
             return VERR_SEM_DESTROYED;
 
         ASMNopPause();
-        u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
         u64OldState = u64State;
     }
 
     /* got it! */
     STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterShared));
-    Assert((ASMAtomicReadU64(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT));
+    Assert((PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT));
     return VINF_SUCCESS;
 
 }
@@ -638,7 +651,7 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
     /*
      * Check the direction and take action accordingly.
      */
-    uint64_t u64State    = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+    uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
     uint64_t u64OldState = u64State;
     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
     {
@@ -714,7 +727,7 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
             }
 
             ASMNopPause();
-            u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+            u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
             u64OldState = u64State;
         }
     }
@@ -792,7 +805,7 @@ DECL_NO_INLINE(static, int) pdmCritSectRwEnterExclBailOut(PPDMCRITSECTRW pThis, 
      */
     for (;;)
     {
-        uint64_t       u64State    = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+        uint64_t       u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
         uint64_t const u64OldState = u64State;
         uint64_t c                 = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
         AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on bailout"));
@@ -816,12 +829,12 @@ DECL_NO_INLINE(static, int) pdmCritSectRwEnterExclBailOut(PPDMCRITSECTRW pThis, 
 DECLINLINE(int) pdmCritSectRwEnterExclFirst(PPDMCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, RTTHREAD hThreadSelf)
 {
     RT_NOREF(hThreadSelf, fNoVal, pSrcPos);
-    Assert((ASMAtomicReadU64(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
+    Assert((PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
 
-#if 1 /** @todo consider generating less noise... */
-    ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 1);
-#else
+#ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
     pThis->s.Core.cWriteRecursions = 1;
+#else
+    ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 1);
 #endif
     Assert(pThis->s.Core.cWriterReads == 0);
 
@@ -981,7 +994,7 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
         /*
          * Try take exclusive write ownership.
          */
-        uint64_t u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+        uint64_t u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
         if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
         {
             bool fDone;
@@ -1035,7 +1048,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     ASMAtomicUoReadHandle(&pThis->s.Core.u.s.hNativeWriter, &hNativeWriter);
     if (hNativeSelf == hNativeWriter)
     {
-        Assert((ASMAtomicReadU64(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
+        Assert((PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         if (!fNoVal)
         {
@@ -1045,7 +1058,11 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
         }
 #endif
         STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
+#ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+        uint32_t const cDepth = ++pThis->s.Core.cWriteRecursions;
+#else
         uint32_t const cDepth = ASMAtomicIncU32(&pThis->s.Core.cWriteRecursions);
+#endif
         AssertReturnStmt(cDepth > 1 && cDepth <= PDM_CRITSECTRW_MAX_RECURSIONS,
                          ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions),
                          VERR_PDM_CRITSECTRW_TOO_MANY_RECURSIONS);
@@ -1055,7 +1072,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
     /*
      * Get cracking.
      */
-    uint64_t u64State    = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+    uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
     uint64_t u64OldState = u64State;
 
     for (;;)
@@ -1108,7 +1125,7 @@ static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, b
             return VERR_SEM_DESTROYED;
 
         ASMNopPause();
-        u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
         u64OldState = u64State;
     }
 
@@ -1395,7 +1412,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
         if (pdmCritSectRwIsCmpWriteU128Supported())
         {
             RTCRITSECTRWSTATE OldState;
-            OldState.s.u64State = ASMAtomicUoReadU64(&pThis->s.Core.u.s.u64State);
+            OldState.s.u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
             if (OldState.s.u64State == ((UINT64_C(1) << RTCSRW_CNT_WR_SHIFT) | (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT)))
             {
                 OldState.s.hNativeWriter = hNativeSelf;
@@ -1405,7 +1422,11 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                 NewState.s.u64State      = RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
                 NewState.s.hNativeWriter = NIL_RTNATIVETHREAD;
 
+# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
                 pThis->s.Core.cWriteRecursions = 0;
+# else
+                ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
+# endif
                 STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
 
                 if (ASMAtomicCmpWriteU128U(&pThis->s.Core.u.u128, NewState.u128, OldState.u128))
@@ -1426,13 +1447,17 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
             && ASMIntAreEnabled())
 # endif
         {
+# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+            pThis->s.Core.cWriteRecursions = 0;
+# else
             ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
+# endif
             STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
             ASMAtomicWriteHandle(&pThis->s.Core.u.s.hNativeWriter, NIL_RTNATIVETHREAD);
 
             for (;;)
             {
-                uint64_t u64State    = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+                uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
                 uint64_t u64OldState = u64State;
 
                 uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
@@ -1519,7 +1544,11 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                 return rc9;
         }
 #endif
+#ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+        uint32_t const cDepth = --pThis->s.Core.cWriteRecursions;
+#else
         uint32_t const cDepth = ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions);
+#endif
         AssertReturn(cDepth != 0 && cDepth < UINT32_MAX, pdmCritSectRwCorrupted(pThis, "Invalid write recursion value on leave"));
     }
 
@@ -1617,7 +1646,7 @@ VMMDECL(bool) PDMCritSectRwIsReadOwner(PVMCC pVM, PPDMCRITSECTRW pThis, bool fWa
     /*
      * Inspect the state.
      */
-    uint64_t u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+    uint64_t u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
     {
         /*
@@ -1721,7 +1750,7 @@ VMMDECL(uint32_t) PDMCritSectRwGetReadCount(PPDMCRITSECTRW pThis)
     /*
      * Return the requested data.
      */
-    uint64_t u64State = ASMAtomicReadU64(&pThis->s.Core.u.s.u64State);
+    uint64_t u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
     if ((u64State & RTCSRW_DIR_MASK) != (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
         return 0;
     return (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
