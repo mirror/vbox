@@ -1389,151 +1389,10 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
     AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
 
     /*
-     * Unwind one recursion. Is it the final one?
+     * Unwind one recursion. Not the last?
      */
-    if (pThis->s.Core.cWriteRecursions == 1)
+    if (pThis->s.Core.cWriteRecursions != 1)
     {
-        AssertReturn(pThis->s.Core.cWriterReads == 0, VERR_WRONG_ORDER); /* (must release all read recursions before the final write.) */
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-        if (fNoVal)
-            Assert(pThis->s.Core.pValidatorWrite->hThread == NIL_RTTHREAD);
-        else
-        {
-            int rc9 = RTLockValidatorRecExclReleaseOwner(pThis->s.Core.pValidatorWrite, true);
-            if (RT_FAILURE(rc9))
-                return rc9;
-        }
-#endif
-
-#ifdef RTASM_HAVE_CMP_WRITE_U128
-        /*
-         * See if we can get out w/o any signalling as this is a common case.
-         */
-        if (pdmCritSectRwIsCmpWriteU128Supported())
-        {
-            RTCRITSECTRWSTATE OldState;
-            OldState.s.u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-            if (OldState.s.u64State == ((UINT64_C(1) << RTCSRW_CNT_WR_SHIFT) | (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT)))
-            {
-                OldState.s.hNativeWriter = hNativeSelf;
-                AssertCompile(sizeof(OldState.s.hNativeWriter) == sizeof(OldState.u128.s.Lo));
-
-                RTCRITSECTRWSTATE NewState;
-                NewState.s.u64State      = RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
-                NewState.s.hNativeWriter = NIL_RTNATIVETHREAD;
-
-# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
-                pThis->s.Core.cWriteRecursions = 0;
-# else
-                ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
-# endif
-                STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
-
-                if (ASMAtomicCmpWriteU128U(&pThis->s.Core.u.u128, NewState.u128, OldState.u128))
-                    return VINF_SUCCESS;
-
-                /* bail out. */
-                pThis->s.Core.cWriteRecursions = 1;
-            }
-        }
-#endif
-
-        /*
-         * Update the state.
-         */
-#if defined(IN_RING3) || defined(IN_RING0)
-# ifdef IN_RING0
-        if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
-            && ASMIntAreEnabled())
-# endif
-        {
-# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
-            pThis->s.Core.cWriteRecursions = 0;
-# else
-            ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
-# endif
-            STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
-            ASMAtomicWriteHandle(&pThis->s.Core.u.s.hNativeWriter, NIL_RTNATIVETHREAD);
-
-            for (;;)
-            {
-                uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-                uint64_t u64OldState = u64State;
-
-                uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on leave"));
-                c--;
-
-                if (   c > 0
-                    || (u64State & RTCSRW_CNT_RD_MASK) == 0)
-                {
-                    /* Don't change the direction, wake up the next writer if any. */
-                    u64State &= ~RTCSRW_CNT_WR_MASK;
-                    u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-                    {
-                        if (c > 0)
-                        {
-                            int rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
-                            AssertRC(rc);
-                        }
-                        break;
-                    }
-                }
-                else
-                {
-                    /* Reverse the direction and signal the reader threads. */
-                    u64State &= ~(RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
-                    u64State |= RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT;
-                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-                    {
-                        Assert(!pThis->s.Core.fNeedReset);
-                        ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
-                        int rc = SUPSemEventMultiSignal(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
-                        AssertRC(rc);
-                        break;
-                    }
-                }
-
-                ASMNopPause();
-                if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                    return VERR_SEM_DESTROYED;
-            }
-        }
-#endif /* IN_RING3 || IN_RING0 */
-#ifndef IN_RING3
-# ifdef IN_RING0
-        else
-# endif
-        {
-            /*
-             * We cannot call neither SUPSemEventSignal nor SUPSemEventMultiSignal,
-             * so queue the exit request (ring-3).
-             */
-            PVMCPUCC    pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
-            uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
-            LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
-            VMM_ASSERT_RELEASE_MSG_RETURN(pVM, i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwExclLeaves),
-                                          ("i=%u\n", i), VERR_PDM_CRITSECTRW_IPE);
-            pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = pThis->s.pSelfR3;
-            VMM_ASSERT_RELEASE_MSG_RETURN(pVM,
-                                             RT_VALID_PTR(pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i])
-                                          &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] & PAGE_OFFSET_MASK)
-                                             == ((uintptr_t)pThis & PAGE_OFFSET_MASK),
-                                          ("%p vs %p\n", pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i], pThis),
-                                          pdmCritSectRwCorrupted(pThis, "Invalid self pointer on queue (excl)"));
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-            STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
-            STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveExcl);
-        }
-#endif
-    }
-    else
-    {
-        /*
-         * Not the final recursion.
-         */
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         if (fNoVal)
             Assert(pThis->s.Core.pValidatorWrite->hThread == NIL_RTTHREAD);
@@ -1550,9 +1409,199 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
         uint32_t const cDepth = ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions);
 #endif
         AssertReturn(cDepth != 0 && cDepth < UINT32_MAX, pdmCritSectRwCorrupted(pThis, "Invalid write recursion value on leave"));
+        return VINF_SUCCESS;
     }
 
+    /*
+     * Final recursion.
+     */
+    AssertReturn(pThis->s.Core.cWriterReads == 0, VERR_WRONG_ORDER); /* (must release all read recursions before the final write.) */
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+    if (fNoVal)
+        Assert(pThis->s.Core.pValidatorWrite->hThread == NIL_RTTHREAD);
+    else
+    {
+        int rc9 = RTLockValidatorRecExclReleaseOwner(pThis->s.Core.pValidatorWrite, true);
+        if (RT_FAILURE(rc9))
+            return rc9;
+    }
+#endif
+
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+    /*
+     * See if we can get out w/o any signalling as this is a common case.
+     */
+    if (pdmCritSectRwIsCmpWriteU128Supported())
+    {
+        RTCRITSECTRWSTATE OldState;
+        OldState.s.u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+        if (OldState.s.u64State == ((UINT64_C(1) << RTCSRW_CNT_WR_SHIFT) | (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT)))
+        {
+            OldState.s.hNativeWriter = hNativeSelf;
+            AssertCompile(sizeof(OldState.s.hNativeWriter) == sizeof(OldState.u128.s.Lo));
+
+            RTCRITSECTRWSTATE NewState;
+            NewState.s.u64State      = RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
+            NewState.s.hNativeWriter = NIL_RTNATIVETHREAD;
+
+# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+            pThis->s.Core.cWriteRecursions = 0;
+# else
+            ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
+# endif
+            STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
+
+            if (ASMAtomicCmpWriteU128U(&pThis->s.Core.u.u128, NewState.u128, OldState.u128))
+                return VINF_SUCCESS;
+
+            /* bail out. */
+            pThis->s.Core.cWriteRecursions = 1;
+        }
+    }
+#endif
+
+#if defined(IN_RING3)
+    /*
+     * Ring-3: Straight forward, just update the state and if necessary signal waiters.
+     */
+# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+    pThis->s.Core.cWriteRecursions = 0;
+# else
+    ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
+# endif
+    STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
+    ASMAtomicWriteHandle(&pThis->s.Core.u.s.hNativeWriter, NIL_RTNATIVETHREAD);
+
+    for (;;)
+    {
+        uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+        uint64_t u64OldState = u64State;
+
+        uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on leave"));
+        c--;
+
+        if (   c > 0
+            || (u64State & RTCSRW_CNT_RD_MASK) == 0)
+        {
+            /* Don't change the direction, wake up the next writer if any. */
+            u64State &= ~RTCSRW_CNT_WR_MASK;
+            u64State |= c << RTCSRW_CNT_WR_SHIFT;
+            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+            {
+                if (c > 0)
+                {
+                    int rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+                    AssertRC(rc);
+                }
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            /* Reverse the direction and signal the reader threads. */
+            u64State &= ~(RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
+            u64State |= RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT;
+            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+            {
+                Assert(!pThis->s.Core.fNeedReset);
+                ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
+                int rc = SUPSemEventMultiSignal(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                AssertRC(rc);
+                return VINF_SUCCESS;
+            }
+        }
+
+        ASMNopPause();
+        if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+            return VERR_SEM_DESTROYED;
+    }
+
+
+#elif defined(IN_RING0)
+    /*
+     * Update the state.
+     */
+    if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+        && ASMIntAreEnabled())
+    {
+# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
+        pThis->s.Core.cWriteRecursions = 0;
+# else
+        ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
+# endif
+        STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
+        ASMAtomicWriteHandle(&pThis->s.Core.u.s.hNativeWriter, NIL_RTNATIVETHREAD);
+
+        for (;;)
+        {
+            uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+            uint64_t u64OldState = u64State;
+
+            uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+            AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on leave"));
+            c--;
+
+            if (   c > 0
+                || (u64State & RTCSRW_CNT_RD_MASK) == 0)
+            {
+                /* Don't change the direction, wake up the next writer if any. */
+                u64State &= ~RTCSRW_CNT_WR_MASK;
+                u64State |= c << RTCSRW_CNT_WR_SHIFT;
+                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+                {
+                    if (c > 0)
+                    {
+                        int rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+                        AssertRC(rc);
+                    }
+                    break;
+                }
+            }
+            else
+            {
+                /* Reverse the direction and signal the reader threads. */
+                u64State &= ~(RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
+                u64State |= RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT;
+                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+                {
+                    Assert(!pThis->s.Core.fNeedReset);
+                    ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
+                    int rc = SUPSemEventMultiSignal(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                    AssertRC(rc);
+                    break;
+                }
+            }
+
+            ASMNopPause();
+            if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+                return VERR_SEM_DESTROYED;
+        }
+    }
+#endif /* IN_RING0 */
+
+#ifndef IN_RING3
+    /*
+     * Queue the requested exit for ring-3 execution.
+     */
+    PVMCPUCC    pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
+    uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
+    LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
+    VMM_ASSERT_RELEASE_MSG_RETURN(pVM, i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwExclLeaves),
+                                  ("i=%u\n", i), VERR_PDM_CRITSECTRW_IPE);
+    pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = pThis->s.pSelfR3;
+    VMM_ASSERT_RELEASE_MSG_RETURN(pVM,
+                                     RT_VALID_PTR(pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i])
+                                  &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] & PAGE_OFFSET_MASK)
+                                     == ((uintptr_t)pThis & PAGE_OFFSET_MASK),
+                                  ("%p vs %p\n", pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i], pThis),
+                                  pdmCritSectRwCorrupted(pThis, "Invalid self pointer on queue (excl)"));
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+    STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveExcl);
     return VINF_SUCCESS;
+#endif
 }
 
 
