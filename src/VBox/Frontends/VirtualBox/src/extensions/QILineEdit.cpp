@@ -100,7 +100,6 @@ bool QILineEdit::event(QEvent *pEvent)
 
 void QILineEdit::paintEvent(QPaintEvent *pPaintEvent)
 {
-    printf("%d\n", QTime::currentTime().second());
     QLineEdit::paintEvent(pPaintEvent);
 
     if (m_fMarkForError)
