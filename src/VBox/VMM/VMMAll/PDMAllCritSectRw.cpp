@@ -227,6 +227,117 @@ DECL_FORCE_INLINE(int) pdmCritSectRwEnterSharedGotIt(PPDMCRITSECTRW pThis, PCRTL
 
 
 /**
+ * Worker for pdmCritSectRwEnterShared that handles waiting for a contended CS.
+ * Caller has already added us to the read and read-wait counters.
+ */
+static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECTRW pThis,
+                                             int rcBusy, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, RTTHREAD hThreadSelf)
+{
+    RT_NOREF(pVCpu, rcBusy);
+
+# if !defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+    hThreadSelf = RTThreadSelf();
+# endif
+
+    uint64_t u64State;
+    uint64_t u64OldState;
+    for (uint32_t iLoop = 0; ; iLoop++)
+    {
+        int rc;
+# ifdef IN_RING3
+#  if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+        rc = RTLockValidatorRecSharedCheckBlocking(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, true,
+                                                   RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
+        if (RT_SUCCESS(rc))
+#  else
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
+#  endif
+# endif
+        {
+            for (;;)
+            {
+                rc = SUPSemEventMultiWaitNoResume(pVM->pSession,
+                                                  (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead,
+                                                  RT_INDEFINITE_WAIT);
+                if (   rc != VERR_INTERRUPTED
+                    || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+                    break;
+# ifdef IN_RING0
+                pdmR0CritSectRwYieldToRing3(pVM);
+# endif
+            }
+# ifdef IN_RING3
+            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
+# endif
+            if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+                return VERR_SEM_DESTROYED;
+        }
+        if (RT_FAILURE(rc))
+        {
+            /* Decrement the counts and return the error. */
+            for (;;)
+            {
+                u64OldState = u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+                uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
+                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid read count on bailout"));
+                c--;
+                uint64_t cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+                AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count on bailout"));
+                cWait--;
+                u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
+                u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
+                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+                    break;
+
+                ASMNopPause();
+                AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+            }
+            return rc;
+        }
+
+        Assert(pThis->s.Core.fNeedReset);
+        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+        if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
+            break;
+        AssertMsg(iLoop < 1, ("%u\n", iLoop));
+    }
+
+    /* Decrement the wait count and maybe reset the semaphore (if we're last). */
+    for (;;)
+    {
+        u64OldState = u64State;
+
+        uint64_t cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count"));
+        cWait--;
+        u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
+        u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
+
+        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+        {
+            if (cWait == 0)
+            {
+                if (ASMAtomicXchgBool(&pThis->s.Core.fNeedReset, false))
+                {
+                    int rc = SUPSemEventMultiReset(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                    AssertRCReturn(rc, rc);
+                }
+            }
+            return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
+        }
+
+        ASMNopPause();
+        AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+        ASMNopPause();
+
+        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+    }
+
+    /* not reached */
+}
+
+
+/**
  * Worker that enters a read/write critical section with shard access.
  *
  * @returns VBox status code.
@@ -359,103 +470,7 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
 
                 if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
                 {
-# if !defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                    hThreadSelf = RTThreadSelf();
-# endif
-
-                    for (uint32_t iLoop = 0; ; iLoop++)
-                    {
-                        int rc;
-# ifdef IN_RING3
-#  if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                        rc = RTLockValidatorRecSharedCheckBlocking(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, true,
-                                                                   RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
-                        if (RT_SUCCESS(rc))
-#  else
-                        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
-#  endif
-# endif
-                        {
-                            for (;;)
-                            {
-                                rc = SUPSemEventMultiWaitNoResume(pVM->pSession,
-                                                                  (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead,
-                                                                  RT_INDEFINITE_WAIT);
-                                if (   rc != VERR_INTERRUPTED
-                                    || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                                    break;
-# ifdef IN_RING0
-                                pdmR0CritSectRwYieldToRing3(pVM);
-# endif
-                            }
-# ifdef IN_RING3
-                            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
-# endif
-                            if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                                return VERR_SEM_DESTROYED;
-                        }
-                        if (RT_FAILURE(rc))
-                        {
-                            /* Decrement the counts and return the error. */
-                            for (;;)
-                            {
-                                u64OldState = u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-                                c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
-                                AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid read count on bailout"));
-                                c--;
-                                cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                                AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count on bailout"));
-                                cWait--;
-                                u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
-                                u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
-                                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-                                    break;
-
-                                ASMNopPause();
-                                AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-                            }
-                            return rc;
-                        }
-
-                        Assert(pThis->s.Core.fNeedReset);
-                        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-                        if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
-                            break;
-                        AssertMsg(iLoop < 1, ("%u\n", iLoop));
-                    }
-
-                    /* Decrement the wait count and maybe reset the semaphore (if we're last). */
-                    for (;;)
-                    {
-                        u64OldState = u64State;
-
-                        cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count"));
-                        cWait--;
-                        u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
-                        u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
-
-                        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-                        {
-                            if (cWait == 0)
-                            {
-                                if (ASMAtomicXchgBool(&pThis->s.Core.fNeedReset, false))
-                                {
-                                    int rc = SUPSemEventMultiReset(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
-                                    AssertRCReturn(rc, rc);
-                                }
-                            }
-                            return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
-                        }
-
-                        ASMNopPause();
-                        AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-                        ASMNopPause();
-
-                        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-                    }
-
-                    /* not reached */
+                    return pdmCritSectRwEnterSharedContended(pVM, NULL, pThis, rcBusy, pSrcPos, fNoVal, hThreadSelf);
                 }
             }
 #endif /* IN_RING3 || IN_RING3 */
