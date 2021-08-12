@@ -2494,23 +2494,32 @@ void UIMachineLogic::sltInstallGuestAdditions()
     if (!isMachineWindowsCreated())
         return;
 
-    CSystemProperties systemProperties = uiCommon().virtualBox().GetSystemProperties();
-    QString strAdditions = systemProperties.GetDefaultAdditionsISO();
-    if (systemProperties.isOk() && !strAdditions.isEmpty())
+    /* Try to acquire default additions ISO: */
+    CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
+    const QString strAdditions = comSystemProperties.GetDefaultAdditionsISO();
+    if (comSystemProperties.isOk() && !strAdditions.isEmpty())
         return uisession()->sltInstallGuestAdditionsFrom(strAdditions);
 
-    /* Check for the already registered image */
-    CVirtualBox vbox = uiCommon().virtualBox();
-    const QString &strName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, uiCommon().vboxVersionStringNormalized());
-
-    CMediumVector vec = vbox.GetDVDImages();
-    for (CMediumVector::ConstIterator it = vec.begin(); it != vec.end(); ++ it)
+    /* Check whether we have already registered image: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CMediumVector comMedia = comVBox.GetDVDImages();
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireVirtualBoxParameter(comVBox);
+    else
     {
-        QString path = it->GetLocation();
-        /* Compare the name part ignoring the file case */
-        QString fn = QFileInfo(path).fileName();
-        if (RTPathCompare(strName.toUtf8().constData(), fn.toUtf8().constData()) == 0)
-            return uisession()->sltInstallGuestAdditionsFrom(path);
+        const QString strName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, uiCommon().vboxVersionStringNormalized());
+        foreach (const CMedium &comMedium, comMedia)
+        {
+            /* Compare the name part ignoring the file case: */
+            const QString strPath = comMedium.GetLocation();
+            if (!comMedium.isOk())
+                msgCenter().cannotAcquireMediumAttribute(comMedium);
+            {
+                const QString strFileName = QFileInfo(strPath).fileName();
+                if (RTPathCompare(strName.toUtf8().constData(), strFileName.toUtf8().constData()) == 0)
+                    return uisession()->sltInstallGuestAdditionsFrom(strPath);
+            }
+        }
     }
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
