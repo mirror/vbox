@@ -240,7 +240,8 @@ class tdAudioTest(vbox.TestDriver):
         """
         if   sOsType == 'vista': # Vista and up.
             return (['netsh', 'advfirewall', 'set', 'allprofiles', 'state', 'off']);
-        elif sOsType == 'xp':    # Older stuff (XP / 2003).
+        elif sOsType == 'xp':   # pylint: disable=no-else-return
+            # Older stuff (XP / 2003).
             return(['netsh', 'firewall', 'set', 'opmode', 'mode=DISABLE']);
         # Not supported / available.
         return [];
