@@ -1802,42 +1802,33 @@ void UIMachineLogic::sltTakeSnapshot()
         pDlg->setIcon(*uisession()->machineWindowIcon());
 
     /* Search for the max available filter index: */
-    QString strNameTemplate = UITakeSnapshotDialog::tr("Snapshot %1");
+    const QString strNameTemplate = UITakeSnapshotDialog::tr("Snapshot %1");
     int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine(), machine().FindSnapshot(QString()), strNameTemplate);
     pDlg->setName(strNameTemplate.arg(++ iMaxSnapshotIndex));
 
     /* Exec the dialog: */
-    bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
+    const bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
 
     /* Make sure dialog still valid: */
     if (!pDlg)
         return;
 
     /* Acquire variables: */
-    QString strSnapshotName = pDlg->name().trimmed();
-    QString strSnapshotDescription = pDlg->description();
+    const QString strSnapshotName = pDlg->name().trimmed();
+    const QString strSnapshotDescription = pDlg->description();
 
     /* Destroy dialog early: */
     delete pDlg;
 
     /* Was the dialog accepted? */
-    if (fDialogAccepted)
-    {
-        QUuid uSnapshotId;
-        /* Prepare the take-snapshot progress: */
-        CProgress progress = machine().TakeSnapshot(strSnapshotName, strSnapshotDescription, true, uSnapshotId);
-        if (machine().isOk())
-        {
-            /* Show the take-snapshot progress: */
-            const bool fStillValid = msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_snapshot_create_90px.png");
-            if (!fStillValid)
-                return;
-            if (!progress.isOk() || progress.GetResultCode() != 0)
-                msgCenter().cannotTakeSnapshot(progress, machineName());
-        }
-        else
-            msgCenter().cannotTakeSnapshot(machine(), machineName());
-    }
+    if (!fDialogAccepted)
+        return;
+
+    /* Take snapshot: */
+    UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(machine(),
+                                                                                               strSnapshotName,
+                                                                                               strSnapshotDescription);
+    gpNotificationCenter->append(pNotification);
 }
 
 void UIMachineLogic::sltShowInformationDialog()

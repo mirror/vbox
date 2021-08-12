@@ -1014,29 +1014,48 @@ CProgress UINotificationProgressSnapshotTake::createProgress(COMResult &comResul
         return CProgress();
     }
 
-    /* Acquire session state: */
-    const KSessionState enmSessionState = m_comMachine.GetSessionState();
-    if (!m_comMachine.isOk())
-    {
-        comResult = m_comMachine;
-        return CProgress();
-    }
-
-    /* Open a session thru which we will modify the machine: */
-    if (enmSessionState != KSessionState_Unlocked)
-        m_comSession = uiCommon().openExistingSession(uId);
-    else
-        m_comSession = uiCommon().openSession(uId);
-    if (m_comSession.isNull())
-        return CProgress();
-
     /* Get session machine: */
-    CMachine comMachine = m_comSession.GetMachine();
-    if (!m_comSession.isOk())
+    CMachine comMachine;
+
+    /* For Manager UI: */
+    switch (uiCommon().uiType())
     {
-        comResult = m_comSession;
-        m_comSession.UnlockMachine();
-        return CProgress();
+        case UICommon::UIType_SelectorUI:
+        {
+            /* Acquire session state: */
+            const KSessionState enmSessionState = m_comMachine.GetSessionState();
+            if (!m_comMachine.isOk())
+            {
+                comResult = m_comMachine;
+                return CProgress();
+            }
+
+            /* Open a session thru which we will modify the machine: */
+            if (enmSessionState != KSessionState_Unlocked)
+                m_comSession = uiCommon().openExistingSession(uId);
+            else
+                m_comSession = uiCommon().openSession(uId);
+            if (m_comSession.isNull())
+                return CProgress();
+
+            /* Get session machine: */
+            comMachine = m_comSession.GetMachine();
+            if (!m_comSession.isOk())
+            {
+                comResult = m_comSession;
+                m_comSession.UnlockMachine();
+                return CProgress();
+            }
+
+            break;
+        }
+        case UICommon::UIType_RuntimeUI:
+        {
+            /* Get passed machine: */
+            comMachine = m_comMachine;
+
+            break;
+        }
     }
 
     /* Initialize progress-wrapper: */
@@ -1052,7 +1071,8 @@ CProgress UINotificationProgressSnapshotTake::createProgress(COMResult &comResul
 
 void UINotificationProgressSnapshotTake::sltHandleProgressFinished()
 {
-    m_comSession.UnlockMachine();
+    if (m_comSession.isNotNull())
+        m_comSession.UnlockMachine();
 }
 
 
