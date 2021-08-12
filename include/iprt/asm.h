@@ -1429,6 +1429,11 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_
 
 #if defined(RT_ARCH_AMD64) || defined(DOXYGEN_RUNNING)
 
+/** @def RTASM_HAVE_CMP_WRITE_U128
+ * Indicates that we've got ASMAtomicCmpWriteU128() available.  */
+# define RTASM_HAVE_CMP_WRITE_U128 1
+
+
 /**
  * Atomically compare and write an unsigned 128-bit value, ordered.
  *
@@ -1442,15 +1447,17 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_
  * @remarks AMD64: Not present in the earliest CPUs, so check CPUID.
  */
 # if (RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN)
-DECLASM(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_t u128New, const uint128_t u128Old) RT_NOTHROW_PROTO;
+DECLASM(bool) ASMAtomicCmpWriteU128v2(volatile uint128_t *pu128, const uint64_t u64NewHi, const uint64_t u64NewLo,
+                                      const uint64_t u64OldHi, const uint64_t u64OldLo) RT_NOTHROW_PROTO;
 # else
-DECLINLINE(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_t u128New, const uint128_t u128Old) RT_NOTHROW_DEF
+DECLINLINE(bool) ASMAtomicCmpWriteU128v2(volatile uint128_t *pu128, const uint64_t u64NewHi, const uint64_t u64NewLo,
+                                         const uint64_t u64OldHi, const uint64_t u64OldLo) RT_NOTHROW_DEF
 {
 #  if RT_INLINE_ASM_USES_INTRIN
     __int64 ai64Cmp[2];
-    ai64Cmp[0] = (__int64)u128Old.Lo;
-    ai64Cmp[1] = (__int64)u128Old.Hi;
-    return _InterlockedCompareExchange128((__int64 volatile *)pu128, u128New.Hi, u128New.Lo, ai64Cmp) != 0;
+    ai64Cmp[0] = u64OldLo;
+    ai64Cmp[1] = u64OldHi;
+    return _InterlockedCompareExchange128((__int64 volatile *)pu128, u64NewHi, u64NewLo, ai64Cmp) != 0;
 
 #  elif defined(RT_ARCH_AMD64)
 #   if RT_INLINE_ASM_GNU_STYLE
@@ -1462,9 +1469,10 @@ DECLINLINE(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_
                          : "=a" (u64Ret)
                          , "=d" (u64Spill)
                          , "+m" (*pu128)
-                         : "A" (u128Old)
-                         , "b" ((uint64_t)u128New)
-                         , "c" ((uint64_t)(u128New >> 64))
+                         : "a" (u64OldLo)
+                         , "d" (u64OldHi)
+                         , "b" (u64NewLo)
+                         , "c" (u64NewHi)
                          : "cc");
 
     return (bool)u64Ret;
@@ -1477,9 +1485,29 @@ DECLINLINE(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_
 }
 # endif
 
-/** @def RTASM_HAVE_CMP_WRITE_U128
- * Indicates that we've got ASMAtomicCmpWriteU128() available.  */
-# define RTASM_HAVE_CMP_WRITE_U128 1
+
+/**
+ * Atomically compare and write an unsigned 128-bit value, ordered.
+ *
+ * @returns true if write was done.
+ * @returns false if write wasn't done.
+ *
+ * @param   pu128       Pointer to the 128-bit variable to update.
+ * @param   u128New     The 128-bit value to assign to *pu128.
+ * @param   u128Old     The value to compare with.
+ *
+ * @remarks AMD64: Not present in the earliest CPUs, so check CPUID.
+ */
+DECLINLINE(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_t u128New, const uint128_t u128Old) RT_NOTHROW_DEF
+{
+# ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+    return ASMAtomicCmpWriteU128v2(pu128, (uint64_t)(u128New >> 64), (uint64_t)u128New,
+                                   (uint64_t)(u128Old >> 64), (uint64_t)u128Old);
+# else
+    return ASMAtomicCmpWriteU128v2(pu128, u128New.Hi, u128New.Lo, u128Old.Hi, u128Old.Lo);
+# endif
+}
+
 
 /**
  * RTUINT128U wrapper for ASMAtomicCmpWriteU128.
@@ -1487,7 +1515,7 @@ DECLINLINE(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_
 DECLINLINE(bool) ASMAtomicCmpWriteU128U(volatile RTUINT128U *pu128, const RTUINT128U u128New,
                                         const RTUINT128U u128Old) RT_NOTHROW_DEF
 {
-    return ASMAtomicCmpWriteU128(&pu128->u, u128New.u, u128Old.u);
+    return ASMAtomicCmpWriteU128v2(&pu128->u, u128New.s.Hi, u128New.s.Lo, u128Old.s.Hi, u128Old.s.Lo);
 }
 
 #endif /* RT_ARCH_AMD64 */
