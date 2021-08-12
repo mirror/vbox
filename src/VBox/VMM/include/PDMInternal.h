@@ -502,6 +502,8 @@ typedef struct PDMCRITSECTRWINT
     STAMCOUNTER                         StatRZEnterShared;
     /** R3 write lock contention. */
     STAMCOUNTER                         StatContentionR3EnterExcl;
+    /** R3 write unlock contention. */
+    STAMCOUNTER                         StatContentionR3LeaveExcl;
     /** R3 read lock contention. */
     STAMCOUNTER                         StatContentionR3EnterShared;
     /** R3 writes. */
