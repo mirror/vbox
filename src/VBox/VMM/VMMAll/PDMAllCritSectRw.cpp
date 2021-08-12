@@ -651,6 +651,9 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
     /*
      * Check the direction and take action accordingly.
      */
+#ifdef IN_RING0
+    PVMCPUCC pVCpu       = NULL;
+#endif
     uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
     uint64_t u64OldState = u64State;
     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
@@ -684,8 +687,16 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
             {
 #if defined(IN_RING3) || defined(IN_RING0)
 # ifdef IN_RING0
-                if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
-                    && ASMIntAreEnabled())
+                Assert(RTSemEventIsSignalSafe() == RTSemEventMultiIsSignalSafe());
+                if (!pVCpu)
+                    pVCpu = VMMGetCpu(pVM);
+                if (   pVCpu == NULL /* non-EMT access, if we implement it must be able to block */
+                    || VMMRZCallRing3IsEnabled(pVCpu)
+                    || RTSemEventIsSignalSafe()
+                    || (   VMMR0ThreadCtxHookIsEnabled(pVCpu)       /* Doesn't matter if Signal() blocks if we have hooks, ... */
+                        && RTThreadPreemptIsEnabled(NIL_RTTHREAD)   /* ... and preemption is still enabled, */
+                        && ASMIntAreEnabled())                      /* ... and interrupts hasn't yet been disabled. Special pre-GC HM env. */
+                   )
 # endif
                 {
                     /* Reverse the direction and signal the writer threads. */
@@ -693,9 +704,24 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
                     u64State |= RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
                     if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
                     {
-                        int rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+                        int rc;
+# ifdef IN_RING0
+                        STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveShared);
+                        if (!RTSemEventIsSignalSafe() && pVCpu != NULL)
+                        {
+                            VMMR0EMTBLOCKCTX Ctx;
+                            rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pThis, &Ctx);
+                            VMM_ASSERT_RELEASE_MSG_RETURN(pVM, RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
+
+                            rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+
+                            VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
+                        }
+                        else
+# endif
+                            rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
                         AssertRC(rc);
-                        break;
+                        return rc;
                     }
                 }
 #endif /* IN_RING3 || IN_RING0 */
@@ -705,7 +731,9 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
 # endif
                 {
                     /* Queue the exit request (ring-3). */
-                    PVMCPUCC    pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+# ifndef IN_RING0
+                    PVMCPUCC    pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
+# endif
                     uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
                     LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
                     VMM_ASSERT_RELEASE_MSG_RETURN(pVM, i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves),
@@ -727,6 +755,12 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
             }
 
             ASMNopPause();
+            if (RT_LIKELY(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC))
+            { }
+            else
+                return VERR_SEM_DESTROYED;
+            ASMNopPause();
+
             u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
             u64OldState = u64State;
         }
