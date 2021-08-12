@@ -23,7 +23,6 @@
 #include <QMenu>
 #include <QPalette>
 #include <QStyleOptionFrame>
-#include <QTime>
 
 /* GUI includes: */
 #include "QILineEdit.h"
@@ -66,11 +65,35 @@ void QILineEdit::setFixedWidthByText(const QString &strText)
 
 void QILineEdit::mark(bool fError, const QString &strErrorMessage /* = QString() */)
 {
+    /* Check if something really changed: */
     if (fError == m_fMarkForError && m_strErrorMessage == strErrorMessage)
         return;
+
+    /* Save new values: */
     m_fMarkForError = fError;
     m_strErrorMessage = strErrorMessage;
-    update();
+
+    /* Update accordingly: */
+    if (m_fMarkForError)
+    {
+        /* Create label if absent: */
+        if (!m_pIconLabel)
+            m_pIconLabel = new QLabel(this);
+
+        /* Update label content, visibility & position: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625;
+        const int iShift = height() > iIconMetric ? (height() - iIconMetric) / 2 : 0;
+        m_pIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
+        m_pIconLabel->setToolTip(m_strErrorMessage);
+        m_pIconLabel->move(width() - iIconMetric - iShift, iShift);
+        m_pIconLabel->show();
+    }
+    else
+    {
+        /* Hide label: */
+        if (m_pIconLabel)
+            m_pIconLabel->hide();
+    }
 }
 
 bool QILineEdit::event(QEvent *pEvent)
@@ -98,29 +121,17 @@ bool QILineEdit::event(QEvent *pEvent)
     return QLineEdit::event(pEvent);
 }
 
-void QILineEdit::paintEvent(QPaintEvent *pPaintEvent)
+void QILineEdit::resizeEvent(QResizeEvent *pResizeEvent)
 {
-    QLineEdit::paintEvent(pPaintEvent);
+    /* Call to base-class: */
+    QLineEdit::resizeEvent(pResizeEvent);
 
-    if (m_fMarkForError)
+    /* Update error label position: */
+    if (m_pIconLabel)
     {
-        if (!m_pIconLabel)
-            m_pIconLabel = new QLabel(this);
-
-        if (m_pIconLabel && m_pIconLabel->isHidden())
-        {
-            const int iIconMargin = 1. * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-            int iIconSize = height() - 2 * iIconMargin;
-            m_pIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconSize, iIconSize)));
-            m_pIconLabel->setToolTip(m_strErrorMessage);
-            m_pIconLabel->move(width() - iIconSize - iIconMargin, iIconMargin);
-            m_pIconLabel->show();
-        }
-    }
-    else
-    {
-        if (m_pIconLabel && m_pIconLabel->isVisible())
-            m_pIconLabel->hide();
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625;
+        const int iShift = height() > iIconMetric ? (height() - iIconMetric) / 2 : 0;
+        m_pIconLabel->move(width() - iIconMetric - iShift, iShift);
     }
 }
 
@@ -133,8 +144,6 @@ void QILineEdit::copy()
 
 void QILineEdit::prepare()
 {
-    m_markIcon = UIIconPool::iconSet(":/status_error_16px.png");
-
     /* Prepare invisible copy action: */
     m_pCopyAction = new QAction(this);
     if (m_pCopyAction)
@@ -144,6 +153,9 @@ void QILineEdit::prepare()
         connect(m_pCopyAction, &QAction::triggered, this, &QILineEdit::copy);
         addAction(m_pCopyAction);
     }
+
+    /* Prepare warning icon: */
+    m_markIcon = UIIconPool::iconSet(":/status_error_16px.png");
 }
 
 QSize QILineEdit::featTextWidth(const QString &strText) const

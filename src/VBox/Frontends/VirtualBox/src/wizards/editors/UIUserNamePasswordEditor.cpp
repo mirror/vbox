@@ -52,7 +52,6 @@ public:
 protected:
 
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-    virtual void paintEvent(QPaintEvent *pPaintEvent) /* override */;
 
 private slots:
 
@@ -105,11 +104,38 @@ void UIPasswordLineEdit::toggleTextVisibility(bool fTextVisible)
 
 void UIPasswordLineEdit::mark(bool fError, const QString &strErrorToolTip)
 {
+    /* Check if something really changed: */
     if (m_fMarkForError == fError &&  m_strErrorToolTip == strErrorToolTip)
         return;
+
+    /* Save new values: */
     m_fMarkForError = fError;
     m_strErrorToolTip = strErrorToolTip;
-    update();
+
+    /* Update accordingly: */
+    if (m_fMarkForError)
+    {
+        /* Create label if absent: */
+        if (!m_pErrorIconLabel)
+            m_pErrorIconLabel = new QLabel(this);
+
+        /* Update label content, visibility & position: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625;
+        const int iShift = height() > iIconMetric ? (height() - iIconMetric) / 2 : 0;
+        m_pErrorIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
+        m_pErrorIconLabel->setToolTip(m_strErrorToolTip);
+        int iIconX = width() - iIconMetric - iShift;
+        if (m_pTextVisibilityButton)
+            iIconX -= m_pTextVisibilityButton->width() - iShift;
+        m_pErrorIconLabel->move(iIconX, iShift);
+        m_pErrorIconLabel->show();
+    }
+    else
+    {
+        /* Hide label: */
+        if (m_pErrorIconLabel)
+            m_pErrorIconLabel->hide();
+    }
 }
 
 void UIPasswordLineEdit::prepare()
@@ -155,29 +181,16 @@ void UIPasswordLineEdit::resizeEvent(QResizeEvent *pEvent)
     /* Call to base-class: */
     QLineEdit::resizeEvent(pEvent);
     adjustTextVisibilityButtonGeometry();
-}
 
-void UIPasswordLineEdit::paintEvent(QPaintEvent *pPaintEvent)
-{
-    QLineEdit::paintEvent(pPaintEvent);
-    if (m_fMarkForError)
+    /* Update error label position: */
+    if (m_pErrorIconLabel)
     {
-        const int iIconMargin = 1. * QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-        int iIconSize = height() - 2 * iIconMargin;
-        if (!m_pErrorIconLabel)
-            m_pErrorIconLabel = new QLabel(this);
-        m_pErrorIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconSize, iIconSize)));
-        int iIconX = width() - iIconSize - iIconMargin;
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625;
+        const int iShift = height() > iIconMetric ? (height() - iIconMetric) / 2 : 0;
+        int iIconX = width() - iIconMetric - iShift;
         if (m_pTextVisibilityButton)
-            iIconX -= m_pTextVisibilityButton->width() - iIconMargin;
-        m_pErrorIconLabel->move(iIconX, iIconMargin);
-        m_pErrorIconLabel->setToolTip(m_strErrorToolTip);
-        m_pErrorIconLabel->show();
-    }
-    else
-    {
-        if (m_pErrorIconLabel)
-            m_pErrorIconLabel->hide();
+            iIconX -= m_pTextVisibilityButton->width() - iShift;
+        m_pErrorIconLabel->move(iIconX, iShift);
     }
 }
 

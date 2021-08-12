@@ -58,7 +58,9 @@ protected:
 
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) /* override */;
-    virtual void paintEvent(QPaintEvent *pPaintEvent) /* override */;
+
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pResizeEvent) /* override */;
 
 private slots:
 
