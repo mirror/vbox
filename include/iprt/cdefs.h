@@ -85,6 +85,7 @@
 # define RT_LITTLE_ENDIAN
 # define RT_COMPILER_GROKS_64BIT_BITFIELDS
 # define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+# define RT_COMPILER_WITH_128BIT_INT_TYPES
 # define RT_NO_VISIBILITY_HIDDEN
 # define RT_GCC_SUPPORTS_VISIBILITY_HIDDEN
 # define RT_COMPILER_SUPPORTS_VA_ARGS
@@ -1109,6 +1110,12 @@
 # define RT_COMPILER_WITH_80BIT_LONG_DOUBLE
 #endif
 
+/** @def RT_COMPILER_WITH_128BIT_INT_TYPES
+ * Defined when uint128_t and int128_t are native integer types.  If
+ * undefined, they are structure with Hi & Lo members. */
+#if defined(__GNUC__) && defined(RT_ARCH_AMD64)
+# define RT_COMPILER_WITH_128BIT_INT_TYPES
+#endif
 
 /** @def RT_EXCEPTIONS_ENABLED
  * Defined when C++ exceptions are enabled.

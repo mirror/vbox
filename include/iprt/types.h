@@ -292,10 +292,11 @@ typedef unsigned char bool;
 # endif
 #endif
 
+
 /**
  * 128-bit unsigned integer.
  */
-#if defined(__GNUC__) && defined(RT_ARCH_AMD64)
+#ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
 typedef __uint128_t uint128_t;
 #else
 typedef struct uint128_s
@@ -314,7 +315,7 @@ typedef struct uint128_s
 /**
  * 128-bit signed integer.
  */
-#if defined(__GNUC__) && defined(RT_ARCH_AMD64)
+#ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
 typedef __int128_t int128_t;
 #else
 typedef struct int128_s
