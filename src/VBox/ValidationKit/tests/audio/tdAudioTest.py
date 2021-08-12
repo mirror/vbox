@@ -50,6 +50,7 @@ from testdriver import reporter
 from testdriver import base
 from testdriver import vbox
 from testdriver import vboxtestvms
+from common     import utils;
 
 # pylint: disable=unnecessary-semicolon
 
@@ -230,6 +231,104 @@ class tdAudioTest(vbox.TestDriver):
         self.killProcessByName("vkat");
         self.killProcessByName("VBoxAudioTest");
 
+    def getWinFirewallArgsDisable(self, sOsType):
+        """
+        Returns the command line arguments for Windows OSes
+        to disable the built-in firewall (if any).
+
+        If not supported, returns an empty array.
+        """
+        if   sOsType == 'vista': # Vista and up.
+            return (['netsh', 'advfirewall', 'set', 'allprofiles', 'state', 'off']);
+        elif sOsType == 'xp':    # Older stuff (XP / 2003).
+            return(['netsh', 'firewall', 'set', 'opmode', 'mode=DISABLE']);
+        # Not supported / available.
+        return [];
+
+    def disableGstFirewall(self, oTestVm, oTxsSession):
+        """
+        Disables the firewall on a guest (if any).
+
+        Needs elevated / admin / root privileges.
+
+        Returns success status, not logged.
+        """
+        fRc = False;
+
+        asArgs  = [];
+        sOsType = '';
+        if oTestVm.isWindows():
+            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x']:
+                sOsType = 'nt3x'; # Not supported, but define it anyway.
+            elif oTestVm.sKind in ('Windows2000', 'WindowsXP', 'Windows2003'):
+                sOsType = 'xp';
+            else:
+                sOsType = 'vista';
+            asArgs = self.getWinFirewallArgsDisable(sOsType);
+        else:
+            sOsType = 'unsupported';
+
+        reporter.log('Disabling firewall on guest (type: %s) ...' % (sOsType,));
+
+        if len(asArgs) > 0:
+            fRc = self.txsRunTest(oTxsSession, 'Disabling guest firewall', \
+                                  oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), asArgs[0]), asArgs);
+            if not fRc:
+                reporter.error('Disabling firewall on guest returned exit code error %d' % (self.getLastRcFromTxs(oTxsSession)));
+        else:
+            reporter.log('Firewall not available on guest, skipping');
+            fRc = True; # Not available, just skip.
+
+        return fRc;
+
+    def disableHstFirewall(self):
+        """
+        Disables the firewall on the host (if any).
+
+        Needs elevated / admin / root privileges.
+
+        Returns success status, not logged.
+        """
+        fRc = False;
+
+        asArgs  = [];
+        sOsType = sys.platform;
+
+        if sOsType == 'win32':
+            reporter.log('Disabling firewall on host (type: %s) ...' % (sOsType));
+
+            ## @todo For now we ASSUME that we don't run (and don't support even) on old(er)
+            #        Windows hosts than Vista.
+            asArgs = self.getWinFirewallArgsDisable('vista');
+
+        if len(asArgs) > 0:
+            oProcess = utils.sudoProcessPopen(asArgs, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                              stderr=subprocess.PIPE, shell = False, close_fds = False);
+            if oProcess:
+                sOut, sErr = oProcess.communicate();
+
+                sOut = sOut.decode(sys.stdin.encoding);
+                for sLine in sOut.split('\n'):
+                    reporter.log(sLine);
+
+                sErr = sErr.decode(sys.stdin.encoding);
+                for sLine in sErr.split('\n'):
+                    reporter.log(sLine);
+
+                iExitCode  = oProcess.poll();
+                if iExitCode != 0:
+                    fRc = False;
+            else:
+                fRc = False;
+
+            if not fRc:
+                reporter.error('Disabling firewall on host returned exit code error %d' % iExitCode);
+        else:
+            reporter.log('Firewall not available on host, skipping ');
+            fRc = True; # Not available, just skip.
+
+        return fRc;
+
     def getLastRcFromTxs(self, oTxsSession):
         """
         Extracts the last exit code reported by TXS from a run before.
@@ -352,6 +451,10 @@ class tdAudioTest(vbox.TestDriver):
         """
         Executes the specified audio tests.
         """
+
+        # Disable any OS-specific firewalls preventing VKAT / ATS to run.
+        self.disableHstFirewall();
+        self.disableGstFirewall(oTestVm, oTxsSession);
 
         # First try to kill any old VKAT / VBoxAudioTest processes lurking around on the host.
         # Might happen because of former (aborted) runs.
