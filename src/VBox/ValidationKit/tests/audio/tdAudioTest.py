@@ -270,7 +270,7 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.log('Disabling firewall on guest (type: %s) ...' % (sOsType,));
 
-        if len(asArgs) > 0:
+        if asArgs:
             fRc = self.txsRunTest(oTxsSession, 'Disabling guest firewall', \
                                   oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), asArgs[0]), asArgs);
             if not fRc:
@@ -301,7 +301,7 @@ class tdAudioTest(vbox.TestDriver):
             #        Windows hosts than Vista.
             asArgs = self.getWinFirewallArgsDisable('vista');
 
-        if len(asArgs) > 0:
+        if asArgs:
             oProcess = utils.sudoProcessPopen(asArgs, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
                                               stderr=subprocess.PIPE, shell = False, close_fds = False);
             if oProcess:
