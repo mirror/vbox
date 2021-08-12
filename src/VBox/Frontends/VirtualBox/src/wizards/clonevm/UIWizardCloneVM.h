@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "UINativeWizard.h"
+#include "UIWizardCloneVMEditors.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -53,11 +54,29 @@ public:
     /** Clone VM stuff. */
     bool cloneVM();
 
-    void setCloneName(const QString &strCloneName);
-    const QString &cloneName() const;
+    /** @name Parameter setter/getters
+      * @{ */
+        void setCloneName(const QString &strCloneName);
+        const QString &cloneName() const;
 
-    void setCloneFilePath(const QString &strCloneFilePath);
-    const QString &cloneFilePath() const;
+        void setCloneFilePath(const QString &strCloneFilePath);
+        const QString &cloneFilePath() const;
+
+        MACAddressClonePolicy macAddressClonePolicy() const;
+        void setMacAddressPolicy(MACAddressClonePolicy enmMACAddressClonePolicy);
+
+        bool keepDiskNames() const;
+        void setKeepDiskNames(bool fKeepDiskNames);
+
+        bool keepHardwareUUIDs() const;
+        void setKeepHardwareUUIDs(bool fKeepHardwareUUIDs);
+
+        bool linkedClone() const;
+        void setLinkedClone(bool fLinkedClone);
+
+        KCloneMode cloneMode() const;
+        void setCloneMode(KCloneMode enmCloneMode);
+    /** @} */
 
 protected:
 
@@ -77,9 +96,12 @@ private:
       * @{ */
         QString m_strCloneName;
         QString m_strCloneFilePath;
+        MACAddressClonePolicy m_enmMACAddressClonePolicy;
+        bool m_fKeepDiskNames;
+        bool m_fKeepHardwareUUIDs;
+        bool m_fLinkedClone;
+       KCloneMode m_enmCloneMode;
     /** @} */
-
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVM_h */

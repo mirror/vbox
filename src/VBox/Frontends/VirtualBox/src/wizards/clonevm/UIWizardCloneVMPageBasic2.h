@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QSet>
+
 /* Local includes: */
 #include "UINativeWizardPage.h"
 
@@ -50,6 +53,8 @@ private:
     QIRichTextLabel *m_pLabel;
     bool m_fAdditionalInfo;
     UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;
+
+    QSet<QString> m_userModifiedParameters;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic2_h */

@@ -142,6 +142,8 @@ void UICloneVMNamePathEditor::prepare()
     {
         m_pContainerLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
         m_pPathSelector->setPath(m_strDefaultPath);
+        connect(m_pPathSelector, &UIFilePathSelector::pathChanged,
+                this, &UICloneVMNamePathEditor::sigClonePathChanged);
     }
 
     retranslateUi();
@@ -217,7 +219,11 @@ void UICloneVMAdditionalOptionsEditor::prepare()
 
     m_pMACComboBox = new QComboBox;
     if (m_pMACComboBox)
+    {
         m_pContainerLayout->addWidget(m_pMACComboBox, 2, 1, 1, 1);
+        connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                this, &UICloneVMAdditionalOptionsEditor::sltMACAddressClonePolicyChanged);
+    }
     populateMACAddressClonePolicies();
 
 
@@ -241,13 +247,21 @@ void UICloneVMAdditionalOptionsEditor::prepare()
     {
         m_pKeepDiskNamesCheckBox = new QCheckBox;
         if (m_pKeepDiskNamesCheckBox)
+        {
             m_pContainerLayout->addWidget(m_pKeepDiskNamesCheckBox, iVerticalPosition++, 1, 1, 1);
+            connect(m_pKeepDiskNamesCheckBox, &QCheckBox::toggled,
+                    this, &UICloneVMAdditionalOptionsEditor::sigKeepDiskNamesToggled);
+        }
     }
     if (fSupportedKeepHWUUIDs)
     {
         m_pKeepHWUUIDsCheckBox = new QCheckBox;
         if (m_pKeepHWUUIDsCheckBox)
+        {
             m_pContainerLayout->addWidget(m_pKeepHWUUIDsCheckBox, iVerticalPosition++, 1, 1, 1);
+            connect(m_pKeepHWUUIDsCheckBox, &QCheckBox::toggled,
+                    this, &UICloneVMAdditionalOptionsEditor::sigKeepHardwareUUIDsToggled);
+        }
     }
 
 
@@ -298,6 +312,21 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
         m_pKeepHWUUIDsCheckBox->setText(tr("Keep &Hardware UUIDs"));
     }
 
+}
+
+void UICloneVMAdditionalOptionsEditor::sltMACAddressClonePolicyChanged()
+{
+    emit sigMACAddressClonePolicyChanged(macAddressClonePolicy());
+    updateMACAddressClonePolicyComboToolTip();
+}
+
+void UICloneVMAdditionalOptionsEditor::updateMACAddressClonePolicyComboToolTip()
+{
+    if (!m_pMACComboBox)
+        return;
+    const QString strCurrentToolTip = m_pMACComboBox->currentData(Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Tool-tip data not found!"));
+    m_pMACComboBox->setToolTip(strCurrentToolTip);
 }
 
 void UICloneVMAdditionalOptionsEditor::populateMACAddressClonePolicies()
@@ -422,20 +451,33 @@ void UICloneVMCloneModeGroupBox::prepare()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
 
+    QButtonGroup *pButtonGroup = new QButtonGroup(this);
     m_pMachineRadio = new QRadioButton(this);
+    if (m_pMachineRadio)
     {
         m_pMachineRadio->setChecked(true);
+        pButtonGroup->addButton(m_pMachineRadio);
     }
     m_pMachineAndChildsRadio = new QRadioButton(this);
+    if (m_pMachineAndChildsRadio)
     {
         if (!m_fShowChildsOption)
             m_pMachineAndChildsRadio->hide();
+        pButtonGroup->addButton(m_pMachineAndChildsRadio);
     }
+
     m_pAllRadio = new QRadioButton(this);
+    if (m_pAllRadio)
+        pButtonGroup->addButton(m_pAllRadio);
+
     pMainLayout->addWidget(m_pMachineRadio);
     pMainLayout->addWidget(m_pMachineAndChildsRadio);
     pMainLayout->addWidget(m_pAllRadio);
     pMainLayout->addStretch();
+
+
+    connect(pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+            this, &UICloneVMCloneModeGroupBox::sltButtonClicked);
 
     retranslateUi();
 }
@@ -448,4 +490,15 @@ void UICloneVMCloneModeGroupBox::retranslateUi()
         m_pMachineAndChildsRadio->setText(tr("Current &snapshot tree branch"));
     if (m_pAllRadio)
         m_pAllRadio->setText(tr("&Everything"));
+}
+
+
+void UICloneVMCloneModeGroupBox::sltButtonClicked()
+{
+    KCloneMode enmCloneMode = KCloneMode_MachineState;
+    if (m_pMachineAndChildsRadio && m_pMachineAndChildsRadio->isChecked())
+        enmCloneMode =  KCloneMode_MachineAndChildStates;
+    else if (m_pAllRadio && m_pAllRadio->isChecked())
+        enmCloneMode = KCloneMode_AllStates;
+    emit sigCloneModeChanged(enmCloneMode);
 }

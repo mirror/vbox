@@ -73,6 +73,8 @@ void UIWizardCloneVMPageBasic3::prepare()
     {
         pMainLayout->addWidget(m_pCloneModeGroupBox);
         m_pCloneModeGroupBox->setFlat(true);
+        connect(m_pCloneModeGroupBox, &UICloneVMCloneModeGroupBox::sigCloneModeChanged,
+                this, &UIWizardCloneVMPageBasic3::sltCloneModeChanged);
     }
     pMainLayout->addStretch();
 
@@ -139,4 +141,10 @@ bool UIWizardCloneVMPageBasic3::validatePage()
 
     /* Return result: */
     return fResult;
+}
+
+void UIWizardCloneVMPageBasic3::sltCloneModeChanged(KCloneMode enmCloneMode)
+{
+    m_userModifiedParameters << "CloneMode";
+    cloneVMWizardPropertySet(CloneMode, enmCloneMode);
 }

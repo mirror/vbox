@@ -59,6 +59,9 @@ void UIWizardCloneVMPageBasic2::prepare()
 void UIWizardCloneVMPageBasic2::sltCloneTypeChanged(bool fIsFullClone)
 {
     UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard());
+    m_userModifiedParameters << "LinkedClone";
+    cloneVMWizardPropertySet(LinkedClone, !fIsFullClone);
+    /* Show/hide 3rd page according to linked clone toggle: */
     AssertReturnVoid(pWizard);
     pWizard->setCloneModePageVisible(fIsFullClone);
 }

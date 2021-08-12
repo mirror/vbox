@@ -82,6 +82,56 @@ const QString &UIWizardCloneVM::cloneFilePath() const
     return m_strCloneFilePath;
 }
 
+MACAddressClonePolicy UIWizardCloneVM::macAddressClonePolicy() const
+{
+    return m_enmMACAddressClonePolicy;
+}
+
+void UIWizardCloneVM::setMacAddressPolicy(MACAddressClonePolicy enmMACAddressClonePolicy)
+{
+    m_enmMACAddressClonePolicy = enmMACAddressClonePolicy;
+}
+
+bool UIWizardCloneVM::keepDiskNames() const
+{
+    return m_fKeepDiskNames;
+}
+
+void UIWizardCloneVM::setKeepDiskNames(bool fKeepDiskNames)
+{
+    m_fKeepDiskNames = fKeepDiskNames;
+}
+
+bool UIWizardCloneVM::keepHardwareUUIDs() const
+{
+    return m_fKeepHardwareUUIDs;
+}
+
+void UIWizardCloneVM::setKeepHardwareUUIDs(bool fKeepHardwareUUIDs)
+{
+    m_fKeepHardwareUUIDs = fKeepHardwareUUIDs;
+}
+
+bool UIWizardCloneVM::linkedClone() const
+{
+    return m_fLinkedClone;
+}
+
+void UIWizardCloneVM::setLinkedClone(bool fLinkedClone)
+{
+    m_fLinkedClone = fLinkedClone;
+}
+
+KCloneMode UIWizardCloneVM::cloneMode() const
+{
+    return m_enmCloneMode;
+}
+
+void UIWizardCloneVM::setCloneMode(KCloneMode enmCloneMode)
+{
+    m_enmCloneMode = enmCloneMode;
+}
+
 bool UIWizardCloneVM::cloneVM()
 {
     // /* Get the clone name: */

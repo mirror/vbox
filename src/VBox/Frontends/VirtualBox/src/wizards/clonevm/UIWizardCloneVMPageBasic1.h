@@ -26,6 +26,7 @@
 
 /* Local includes: */
 #include "UINativeWizardPage.h"
+#include "UIWizardCloneVMEditors.h"
 
 /* Forward declarations: */
 class UICloneVMAdditionalOptionsEditor;
@@ -51,8 +52,9 @@ private slots:
 
     void sltCloneNameChanged(const QString &strCloneName);
     void sltClonePathChanged(const QString &strClonePath);
-    /** Handles change in MAC address policy combo-box. */
-    void sltHandleMACAddressClonePolicyComboChange();
+    void sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy);
+    void sltKeepDiskNamesToggled(bool fKeepDiskNames);
+    void sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs);
 
 private:
 

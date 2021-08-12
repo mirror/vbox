@@ -20,7 +20,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIWizardCloneVMEditors.h"
 #include "QIRichTextLabel.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMPageBasic1.h"
@@ -103,6 +102,12 @@ void UIWizardCloneVMPageBasic1::prepare(const QString &strDefaultClonePath)
     {
         m_pAdditionalOptionsEditor->setFlat(true);
         pMainLayout->addWidget(m_pAdditionalOptionsEditor);
+        connect(m_pAdditionalOptionsEditor, &UICloneVMAdditionalOptionsEditor::sigMACAddressClonePolicyChanged,
+                this, &UIWizardCloneVMPageBasic1::sltMACAddressClonePolicyChanged);
+        connect(m_pAdditionalOptionsEditor, &UICloneVMAdditionalOptionsEditor::sigKeepDiskNamesToggled,
+                this, &UIWizardCloneVMPageBasic1::sltKeepDiskNamesToggled);
+        connect(m_pAdditionalOptionsEditor, &UICloneVMAdditionalOptionsEditor::sigKeepHardwareUUIDsToggled,
+                this, &UIWizardCloneVMPageBasic1::sltKeepHardwareUUIDsToggled);
     }
 
     pMainLayout->addStretch();
@@ -142,8 +147,20 @@ void UIWizardCloneVMPageBasic1::sltClonePathChanged(const QString &strClonePath)
                              UIWizardCloneVMNamePage::composeCloneFilePath(m_pNamePathEditor->cloneName(), m_strGroup, strClonePath));
 }
 
-void UIWizardCloneVMPageBasic1::sltHandleMACAddressClonePolicyComboChange()
+void UIWizardCloneVMPageBasic1::sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy)
 {
-    /* Update tool-tip: */
-    //updateMACAddressClonePolicyComboToolTip();
+    m_userModifiedParameters << "MacAddressPolicy";
+    cloneVMWizardPropertySet(MacAddressPolicy, enmMACAddressClonePolicy);
+}
+
+void UIWizardCloneVMPageBasic1::sltKeepDiskNamesToggled(bool fKeepDiskNames)
+{
+    m_userModifiedParameters << "KeepDiskNames";
+    cloneVMWizardPropertySet(KeepDiskNames, fKeepDiskNames);
+}
+
+void UIWizardCloneVMPageBasic1::sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs)
+{
+    m_userModifiedParameters << "KeepHardwareUUIDs";
+    cloneVMWizardPropertySet(KeepHardwareUUIDs, fKeepHardwareUUIDs);
 }
