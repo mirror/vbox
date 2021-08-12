@@ -50,6 +50,7 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#if 0 /* unused */
 /** The number loops to spin for shared access in ring-3. */
 #define PDMCRITSECTRW_SHRD_SPIN_COUNT_R3        20
 /** The number loops to spin for shared access in ring-0. */
@@ -63,6 +64,7 @@
 #define PDMCRITSECTRW_EXCL_SPIN_COUNT_R0        256
 /** The number loops to spin for exclusive access in the raw-mode context. */
 #define PDMCRITSECTRW_EXCL_SPIN_COUNT_RC        256
+#endif
 
 /** Max number of write or write/read recursions. */
 #define PDM_CRITSECTRW_MAX_RECURSIONS           _1M
@@ -266,11 +268,11 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
     hThreadSelf = RTThreadSelf();
 # endif
 
-    /*
-     * Wait for the direction to switch.
-     */
     for (uint32_t iLoop = 0; ; iLoop++)
     {
+        /*
+         * Wait for the direction to switch.
+         */
         int rc;
 # ifdef IN_RING3
 #  if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
@@ -399,11 +401,10 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
 #endif
 
     /*
-     * Get cracking...
+     * Work the state.
      */
     uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
     uint64_t u64OldState = u64State;
-
     for (;;)
     {
         if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
