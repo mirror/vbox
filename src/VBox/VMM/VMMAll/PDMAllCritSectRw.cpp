@@ -1457,71 +1457,12 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
     }
 #endif
 
-#if defined(IN_RING3)
+#if defined(IN_RING3) || defined(IN_RING0)
     /*
      * Ring-3: Straight forward, just update the state and if necessary signal waiters.
-     */
-# ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
-    pThis->s.Core.cWriteRecursions = 0;
-# else
-    ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
-# endif
-    STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
-    ASMAtomicWriteHandle(&pThis->s.Core.u.s.hNativeWriter, NIL_RTNATIVETHREAD);
-
-    for (;;)
-    {
-        uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-        uint64_t u64OldState = u64State;
-
-        uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid write count on leave"));
-        c--;
-
-        if (   c > 0
-            || (u64State & RTCSRW_CNT_RD_MASK) == 0)
-        {
-            /* Don't change the direction, wake up the next writer if any. */
-            u64State &= ~RTCSRW_CNT_WR_MASK;
-            u64State |= c << RTCSRW_CNT_WR_SHIFT;
-            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-            {
-                if (c > 0)
-                {
-                    int rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
-                    AssertRC(rc);
-                }
-                return VINF_SUCCESS;
-            }
-        }
-        else
-        {
-            /* Reverse the direction and signal the reader threads. */
-            u64State &= ~(RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
-            u64State |= RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT;
-            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-            {
-                Assert(!pThis->s.Core.fNeedReset);
-                ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
-                int rc = SUPSemEventMultiSignal(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
-                AssertRC(rc);
-                return VINF_SUCCESS;
-            }
-        }
-
-        ASMNopPause();
-        if (pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC)
-        { /*likely*/ }
-        else
-            return VERR_SEM_DESTROYED;
-        ASMNopPause();
-    }
-
-
-#elif defined(IN_RING0)
-    /*
      * Ring-0: Try leave for real, depends on host and context.
      */
+# ifdef IN_RING0
     Assert(RTSemEventIsSignalSafe() == RTSemEventMultiIsSignalSafe());
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
     if (   pVCpu == NULL /* non-EMT access, if we implement it must be able to block */
@@ -1531,6 +1472,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
             && RTThreadPreemptIsEnabled(NIL_RTTHREAD)   /* ... and preemption is still enabled, */
             && ASMIntAreEnabled())                      /* ... and interrupts hasn't yet been disabled. Special pre-GC HM env. */
        )
+# endif
     {
 # ifdef PDMCRITSECTRW_WITH_LESS_ATOMIC_STUFF
         pThis->s.Core.cWriteRecursions = 0;
@@ -1562,9 +1504,8 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                     int rc;
                     if (c == 0)
                         rc = VINF_SUCCESS;
-                    else if (RTSemEventIsSignalSafe() || pVCpu == NULL)
-                        rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
-                    else
+# ifdef IN_RING0
+                    else if (!RTSemEventIsSignalSafe() && pVCpu != NULL)
                     {
                         VMMR0EMTBLOCKCTX Ctx;
                         rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pThis, &Ctx);
@@ -1574,6 +1515,9 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
 
                         VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
                     }
+# endif
+                    else
+                        rc = SUPSemEventSignal(pVM->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
                     AssertRC(rc);
                     return rc;
                 }
@@ -1591,9 +1535,8 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
                     ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
 
                     int rc;
-                    if (RTSemEventMultiIsSignalSafe() || pVCpu == NULL)
-                        rc = SUPSemEventMultiSignal(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
-                    else
+# ifdef IN_RING0
+                    if (!RTSemEventMultiIsSignalSafe() && pVCpu != NULL)
                     {
                         VMMR0EMTBLOCKCTX Ctx;
                         rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pThis, &Ctx);
@@ -1603,6 +1546,9 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
 
                         VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
                     }
+                    else
+# endif
+                        rc = SUPSemEventMultiSignal(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
                     AssertRC(rc);
                     return rc;
                 }
@@ -1617,7 +1563,7 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
         }
         /* not reached! */
     }
-#endif /* IN_RING0 */
+#endif /* IN_RING3 || IN_RING0 */
 
 #ifndef IN_RING3
     /*
