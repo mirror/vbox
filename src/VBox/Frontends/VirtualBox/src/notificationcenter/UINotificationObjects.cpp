@@ -1417,6 +1417,48 @@ void UINotificationProgressExtensionPackUninstall::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressGuestAdditionsInstall implementation.                                                            *
+*********************************************************************************************************************************/
+
+UINotificationProgressGuestAdditionsInstall::UINotificationProgressGuestAdditionsInstall(const CGuest &comGuest,
+                                                                                         const QString &strSource)
+    : m_comGuest(comGuest)
+    , m_strSource(strSource)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressGuestAdditionsInstall::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressGuestAdditionsInstall::name() const
+{
+    return UINotificationProgress::tr("Installing image ...");
+}
+
+QString UINotificationProgressGuestAdditionsInstall::details() const
+{
+    return UINotificationProgress::tr("<b>Name:</b> %1").arg(m_strSource);
+}
+
+CProgress UINotificationProgressGuestAdditionsInstall::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    QVector<QString> args;
+    QVector<KAdditionsUpdateFlag> flags;
+    CProgress comProgress = m_comGuest.UpdateGuestAdditions(m_strSource, args, flags);
+    /* Store COM result: */
+    comResult = m_comGuest;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressGuestAdditionsInstall::sltHandleProgressFinished()
+{
+    if (!error().isEmpty())
+        emit sigGuestAdditionsInstallationFailed(m_strSource);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressHostOnlyNetworkInterfaceCreate implementation.                                                   *
 *********************************************************************************************************************************/
 

@@ -325,7 +325,12 @@ signals:
 
 public slots:
 
+    /** Handles request to install guest additions image.
+      * @param  strSource  Brings the source of image being installed. */
     void sltInstallGuestAdditionsFrom(const QString &strSource);
+    /** Mounts DVD adhoc.
+      * @param  strSource  Brings the source of image being mounted. */
+    void sltMountDVDAdHoc(const QString &strSource);
 
     /** Defines @a iKeyboardState. */
     void setKeyboardState(int iKeyboardState) { m_iKeyboardState = iKeyboardState; emit sigKeyboardStateChange(m_iKeyboardState); }

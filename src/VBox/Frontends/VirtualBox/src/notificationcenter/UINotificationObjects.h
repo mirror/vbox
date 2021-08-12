@@ -34,6 +34,7 @@
 #include "CCloudMachine.h"
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
+#include "CGuest.h"
 #include "CHost.h"
 #include "CHostNetworkInterface.h"
 #include "CMachine.h"
@@ -1031,6 +1032,47 @@ private:
     QString          m_strExtensionPackName;
     /** Holds the display info. */
     QString          m_strDisplayInfo;
+};
+
+/** UINotificationProgress extension for guest additions install functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressGuestAdditionsInstall : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about guest additions installation failed.
+      * @param  strSource  Brings the guest additions file path. */
+    void sigGuestAdditionsInstallationFailed(const QString &strSource);
+
+public:
+
+    /** Constructs guest additions install notification-progress.
+      * @param  comGuest   Brings the guest additions being installed to.
+      * @param  strSource  Brings the guest additions file path. */
+    UINotificationProgressGuestAdditionsInstall(const CGuest &comGuest,
+                                                const QString &strSource);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the guest additions being installed to. */
+    CGuest   m_comGuest;
+    /** Holds the guest additions file path. */
+    QString  m_strSource;
 };
 
 /** UINotificationProgress extension for host-only network interface create functionality. */

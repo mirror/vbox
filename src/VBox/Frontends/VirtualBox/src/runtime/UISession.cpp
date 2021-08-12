@@ -469,55 +469,16 @@ bool UISession::setPause(bool fOn)
 
 void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 {
-    /* This flag indicates whether we want to do the usual .ISO mounting or not.
-     * First try updating the Guest Additions directly without mounting the .ISO. */
-    bool fDoMount = false;
+    /* Install guest additions: */
+    UINotificationProgressGuestAdditionsInstall *pNotification =
+            new UINotificationProgressGuestAdditionsInstall(guest(), strSource);
+    connect(pNotification, &UINotificationProgressGuestAdditionsInstall::sigGuestAdditionsInstallationFailed,
+            this, &UISession::sltMountDVDAdHoc);
+    gpNotificationCenter->append(pNotification);
+}
 
-    /* Auto-update through GUI is currently disabled. */
-#ifndef VBOX_WITH_ADDITIONS_AUTOUPDATE_UI
-    fDoMount = true;
-#else /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
-    /* Initiate installation progress: */
-    QVector<QString> aArgs;
-    QVector<KAdditionsUpdateFlag> aFlagsUpdate;
-    CProgress comProgressInstall = guest().UpdateGuestAdditions(strSource, aArgs, aFlagsUpdate);
-    if (guest().isOk() && comProgressInstall.isNotNull())
-    {
-        /* Show installation progress: */
-        msgCenter().showModalProgressDialog(comProgressInstall, tr("Updating Guest Additions"),
-                                            ":/progress_install_guest_additions_90px.png",
-                                            0, 500 /* 500ms delay. */);
-        if (comProgressInstall.GetCanceled())
-            return;
-
-        /* Check whether progress result isn't Ok: */
-        const HRESULT rc = comProgressInstall.GetResultCode();
-        if (!comProgressInstall.isOk() || rc != S_OK)
-        {
-            /* If we got back a VBOX_E_NOT_SUPPORTED we don't complain (guest OS simply isn't
-             * supported yet), so silently fall back to "old" .ISO mounting method. */
-            if (   !SUCCEEDED_WARNING(rc)
-                && rc != VBOX_E_NOT_SUPPORTED)
-            {
-                msgCenter().cannotUpdateGuestAdditions(comProgressInstall);
-
-                /* Throw the error message into release log as well: */
-                const QString &strErr = comProgressInstall.GetErrorInfo().GetText();
-                if (!strErr.isEmpty())
-                    LogRel(("%s\n", strErr.toLatin1().constData()));
-            }
-
-            /* Since automatic updating failed, fall back to .ISO mounting: */
-            fDoMount = true;
-        }
-    }
-#endif /* VBOX_WITH_ADDITIONS_AUTOUPDATE_UI */
-
-    /* Check whether we still want mounting? */
-    if (!fDoMount)
-        return;
-
-    /* Mount medium add-hoc: */
+void UISession::sltMountDVDAdHoc(const QString &strSource)
+{
     mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, strSource);
 }
 
