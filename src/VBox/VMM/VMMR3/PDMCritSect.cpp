@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_PDM//_CRITSECT
+#define LOG_GROUP LOG_GROUP_PDM_CRITSECT
 #include "PDMInternal.h"
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmcritsectrw.h>
@@ -77,6 +77,15 @@ int pdmR3CritSectBothInitStatsAndInfo(PVM pVM)
     STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwExclVerrTimeout, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Excl-VERR_TIMEOUT", STAMUNIT_OCCURENCES,
                  "Number of VERR_TIMEOUT returns in exclusive mode.");
     STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwExclNonInterruptibleWaits, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Excl-Non-interruptible-Waits-VINF_SUCCESS",
+                 STAMUNIT_OCCURENCES, "Number of non-interruptible waits for rcBusy=VINF_SUCCESS in exclusive mode");
+
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwEnterSharedWhileAborting, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-EnterSharedWhileAborting", STAMUNIT_OCCURENCES,
+                 "Number of times we've got the critical section ownership in shared mode while trying to abort a wait due to VERR_INTERRUPTED or VERR_TIMEOUT.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwSharedVerrInterrupted, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Shared-VERR_INTERRUPTED", STAMUNIT_OCCURENCES,
+                 "Number of VERR_INTERRUPTED returns in exclusive mode.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwSharedVerrTimeout, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Shared-VERR_TIMEOUT", STAMUNIT_OCCURENCES,
+                 "Number of VERR_TIMEOUT returns in exclusive mode.");
+    STAM_REL_REG(pVM, &pVM->pdm.s.StatCritSectRwSharedNonInterruptibleWaits, STAMTYPE_COUNTER, "/PDM/CritSectsRw/00-Shared-Non-interruptible-Waits-VINF_SUCCESS",
                  STAMUNIT_OCCURENCES, "Number of non-interruptible waits for rcBusy=VINF_SUCCESS in exclusive mode");
 
     /*
@@ -219,6 +228,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 pCritSect->pNext = pUVM->pdm.s.pCritSects;
                 pUVM->pdm.s.pCritSects = pCritSect;
                 RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+                Log(("pdmR3CritSectInitOne: %p %s\n", pCritSect, pszName));
 
                 return VINF_SUCCESS;
             }
@@ -327,6 +337,7 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
                     pCritSect->pNext = pUVM->pdm.s.pRwCritSects;
                     pUVM->pdm.s.pRwCritSects = pCritSect;
                     RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+                    LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_PDM_CRITSECTRW, ("pdmR3CritSectRwInitOne: %p %s\n", pCritSect, pszName));
 
                     return VINF_SUCCESS;
                 }

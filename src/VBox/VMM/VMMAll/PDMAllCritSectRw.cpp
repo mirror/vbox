@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_PDM_CRITSECT
+#define LOG_GROUP LOG_GROUP_PDM_CRITSECTRW
 #include "PDMInternal.h"
 #include <VBox/vmm/pdmcritsectrw.h>
 #include <VBox/vmm/mm.h>
@@ -95,6 +95,12 @@
 #if defined(RTASM_HAVE_CMP_WRITE_U128) && defined(RT_ARCH_AMD64)
 static int32_t g_fCmpWriteSupported = -1;
 #endif
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
 
 
 #ifdef RTASM_HAVE_CMP_WRITE_U128
@@ -192,49 +198,6 @@ VMMDECL(uint32_t) PDMR3CritSectRwSetSubClass(PPDMCRITSECTRW pThis, uint32_t uSub
 #endif /* IN_RING3 */
 
 
-#ifdef IN_RING0
-/**
- * Go back to ring-3 so the kernel can do signals, APCs and other fun things.
- *
- * @param   pVM         The cross context VM structure.
- */
-static void pdmR0CritSectRwYieldToRing3(PVMCC pVM)
-{
-    PVMCPUCC pVCpu = VMMGetCpu(pVM);
-    AssertPtrReturnVoid(pVCpu);
-    int rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
-    AssertRC(rc);
-}
-#endif /* IN_RING0 */
-
-
-/**
- * Worker for pdmCritSectRwEnterSharedContended that decrements both read counts
- * and returns @a rc.
- */
-DECL_FORCE_INLINE(int) pdmCritSectRwEnterSharedBailOut(PPDMCRITSECTRW pThis, int rc)
-{
-    for (;;)
-    {
-        uint64_t       u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-        uint64_t const u64OldState = u64State;
-        uint64_t       c           = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
-        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid read count on bailout"));
-        c--;
-        uint64_t       cWait       = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count on bailout"));
-        cWait--;
-        u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
-        u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
-        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-            return rc;
-
-        ASMNopPause();
-        AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-    }
-}
-
-
 /**
  * Worker for pdmCritSectRwEnterShared returning with read-ownership of the CS.
  */
@@ -254,6 +217,166 @@ DECL_FORCE_INLINE(int) pdmCritSectRwEnterSharedGotIt(PPDMCRITSECTRW pThis, PCRTL
     return VINF_SUCCESS;
 }
 
+/**
+ * Worker for pdmCritSectRwEnterShared and pdmCritSectRwEnterSharedBailOut
+ * that decrement the wait count and maybe resets the semaphore.
+ */
+DECLINLINE(int) pdmCritSectRwEnterSharedGotItAfterWaiting(PVMCC pVM, PPDMCRITSECTRW pThis, uint64_t u64State,
+                                                          PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, RTTHREAD hThreadSelf)
+{
+    for (;;)
+    {
+        uint64_t const u64OldState = u64State;
+        uint64_t       cWait       = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count"));
+        AssertReturn((u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT > 0,
+                     pdmCritSectRwCorrupted(pThis, "Invalid read count"));
+        cWait--;
+        u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
+        u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
+
+        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+        {
+            if (cWait == 0)
+            {
+                if (ASMAtomicXchgBool(&pThis->s.Core.fNeedReset, false))
+                {
+                    int rc = SUPSemEventMultiReset(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                    AssertRCReturn(rc, rc);
+                }
+            }
+            return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
+        }
+
+        ASMNopPause();
+        AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+        ASMNopPause();
+
+        u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+    }
+    /* not reached */
+}
+
+
+#if defined(IN_RING0) || (defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT))
+/**
+ * Worker for pdmCritSectRwEnterSharedContended that decrements both read counts
+ * and returns @a rc.
+ *
+ * @note May return VINF_SUCCESS if we race the exclusive leave function and
+ *       come out on the bottom.
+ *
+ *       Ring-3 only calls in a case where it is _not_ acceptable to take the
+ *       lock, so even if we get the lock we'll have to leave.  In the ring-0
+ *       contexts, we can safely return VINF_SUCCESS in case of a race.
+ */
+DECL_NO_INLINE(static, int) pdmCritSectRwEnterSharedBailOut(PVMCC pVM, PPDMCRITSECTRW pThis, int rc,
+                                                            PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, RTTHREAD hThreadSelf)
+{
+#ifdef IN_RING0
+    uint64_t const tsStart    = RTTimeNanoTS();
+    uint64_t       cNsElapsed = 0;
+#endif
+    for (;;)
+    {
+        uint64_t u64State    = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
+        uint64_t u64OldState = u64State;
+
+        uint64_t cWait       = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+        AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count on bailout"));
+        cWait--;
+
+        uint64_t c           = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
+        AssertReturn(c > 0, pdmCritSectRwCorrupted(pThis, "Invalid read count on bailout"));
+
+        if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
+        {
+            c--;
+            u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
+            u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
+            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+                return rc;
+        }
+        else
+        {
+            /*
+             * The direction changed, so we can actually get the lock now.
+             *
+             * This means that we _have_ to wait on the semaphore to be signalled
+             * so we can properly reset it.  Otherwise the stuff gets out of wack,
+             * because signalling and resetting will race one another.  An
+             * exception would be if we're not the last reader waiting and don't
+             * need to worry about the resetting.
+             *
+             * An option would be to do the resetting in PDMCritSectRwEnterExcl,
+             * but that would still leave a racing PDMCritSectRwEnterShared
+             * spinning hard for a little bit, which isn't great...
+             */
+            if (cWait == 0)
+            {
+# ifdef IN_RING0
+                /* Do timeout processing first to avoid redoing the above. */
+                uint32_t cMsWait;
+                if (cNsElapsed <= RT_NS_10SEC)
+                    cMsWait = 32;
+                else
+                {
+                    u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
+                    u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
+                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+                    {
+                        LogFunc(("%p: giving up\n", pThis));
+                        return rc;
+                    }
+                    cMsWait = 2;
+                }
+
+                int rcWait = SUPSemEventMultiWait(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead, cMsWait);
+                Log11Func(("%p: rc=%Rrc %'RU64 ns (hNativeWriter=%p u64State=%#RX64)\n", pThis, rcWait,
+                           RTTimeNanoTS() - tsStart, pThis->s.Core.u.s.hNativeWriter, pThis->s.Core.u.s.u64State));
+# else
+                RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
+                int rcWait = SUPSemEventMultiWaitNoResume(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead, RT_MS_5SEC);
+                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
+                if (rcWait == VINF_SUCCESS)
+                {
+# ifdef IN_RING0
+                    return pdmCritSectRwEnterSharedGotItAfterWaiting(pVM, pThis, u64State, pSrcPos, fNoVal, hThreadSelf);
+# else
+                    /* ring-3: Cannot return VINF_SUCCESS. */
+                    Assert(RT_FAILURE_NP(rc));
+                    int rc2 = pdmCritSectRwEnterSharedGotItAfterWaiting(pVM, pThis, u64State, pSrcPos, fNoVal, hThreadSelf);
+                    if (RT_SUCCESS(rc2))
+                        rc2 = pdmCritSectRwLeaveSharedWorker(pVM, pThis, fNoVal);
+                    return rc;
+# endif
+                }
+                AssertMsgReturn(rcWait == VERR_TIMEOUT || rcWait == VERR_INTERRUPTED,
+                                ("%p: rcWait=%Rrc rc=%Rrc", pThis, rcWait, rc),
+                                RT_FAILURE_NP(rcWait) ? rcWait : -rcWait);
+            }
+            else
+            {
+                u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
+                u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
+                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
+                    return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
+            }
+
+# ifdef IN_RING0
+            /* Calculate the elapsed time here to avoid redoing state work. */
+            cNsElapsed = RTTimeNanoTS() - tsStart;
+# endif
+        }
+
+        ASMNopPause();
+        AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
+        ASMNopPause();
+    }
+}
+#endif /* IN_RING0  || (IN_RING3 && PDMCRITSECTRW_STRICT) */
+
 
 /**
  * Worker for pdmCritSectRwEnterShared that handles waiting for a contended CS.
@@ -262,10 +385,13 @@ DECL_FORCE_INLINE(int) pdmCritSectRwEnterSharedGotIt(PPDMCRITSECTRW pThis, PCRTL
 static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECTRW pThis,
                                              int rcBusy, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal, RTTHREAD hThreadSelf)
 {
-    RT_NOREF(pVCpu, rcBusy);
-
-# if !defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-    hThreadSelf = RTThreadSelf();
+    PSUPDRVSESSION const    pSession          = pVM->pSession;
+    SUPSEMEVENTMULTI const  hEventMulti       = (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead;
+# ifdef IN_RING0
+    uint64_t const          tsStart           = RTTimeNanoTS();
+    uint64_t                cNsMaxTotal       = RT_NS_5MIN;
+    uint32_t                cMsMaxOne         = RT_MS_5SEC;
+    bool                    fNonInterruptible = false;
 # endif
 
     for (uint32_t iLoop = 0; ; iLoop++)
@@ -279,34 +405,113 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
         rc = RTLockValidatorRecSharedCheckBlocking(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, true,
                                                    RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
         if (RT_FAILURE(rc))
-            return pdmCritSectRwEnterSharedBailOut(pThis, rc);
+            return pdmCritSectRwEnterSharedBailOut(pVM, pThis, rc, pSrcPos, fNoVal, hThreadSelf);
 #  else
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
 #  endif
 # endif
+
         for (;;)
         {
-            rc = SUPSemEventMultiWaitNoResume(pVM->pSession,
-                                              (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead,
-                                              RT_INDEFINITE_WAIT);
-            if (   rc != VERR_INTERRUPTED
-                || pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                break;
-# ifdef IN_RING0
-            pdmR0CritSectRwYieldToRing3(pVM);
+            /*
+             * We always wait with a timeout so we can re-check the structure sanity
+             * and not get stuck waiting on a corrupt or deleted section.
+             */
+# ifdef IN_RING3
+            rc = SUPSemEventMultiWaitNoResume(pSession, hEventMulti, RT_MS_5SEC);
+# else
+            rc = !fNonInterruptible
+               ? SUPSemEventMultiWaitNoResume(pSession, hEventMulti, cMsMaxOne)
+               : SUPSemEventMultiWait(pSession, hEventMulti, cMsMaxOne);
+            Log11Func(("%p: rc=%Rrc %'RU64 ns (cMsMaxOne=%RU64 hNativeWriter=%p u64State=%#RX64)\n", pThis, rc,
+                       RTTimeNanoTS() - tsStart, cMsMaxOne, pThis->s.Core.u.s.hNativeWriter, pThis->s.Core.u.s.u64State));
 # endif
+            if (RT_LIKELY(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC))
+            { /* likely */ }
+            else
+            {
+# ifdef IN_RING3
+                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
+                return VERR_SEM_DESTROYED;
+            }
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                break;
+
+            /*
+             * Timeout and interrupted waits needs careful handling in ring-0
+             * because we're cooperating with ring-3 on this critical section
+             * and thus need to make absolutely sure we won't get stuck here.
+             *
+             * The r0 interrupted case means something is pending (termination,
+             * signal, APC, debugger, whatever), so we must try our best to
+             * return to the caller and to ring-3 so it can be dealt with.
+             */
+            if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
+            {
+# ifdef IN_RING0
+                uint64_t const cNsElapsed = RTTimeNanoTS() - tsStart;
+                int const      rcTerm     = RTThreadQueryTerminationStatus(NIL_RTTHREAD);
+                AssertMsg(rcTerm == VINF_SUCCESS || rcTerm == VERR_NOT_SUPPORTED || rcTerm == VINF_THREAD_IS_TERMINATING,
+                          ("rcTerm=%Rrc\n", rcTerm));
+                if (rcTerm == VERR_NOT_SUPPORTED)
+                    cNsMaxTotal = RT_NS_1MIN;
+
+                if (rc == VERR_TIMEOUT)
+                {
+                    /* Try return get out of here with a non-VINF_SUCCESS status if
+                       the thread is terminating or if the timeout has been exceeded. */
+                    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectRwSharedVerrTimeout);
+                    if (   rcTerm == VINF_THREAD_IS_TERMINATING
+                        || cNsElapsed > cNsMaxTotal)
+                        return pdmCritSectRwEnterSharedBailOut(pVM, pThis, rcBusy != VINF_SUCCESS ? rcBusy : rc,
+                                                               pSrcPos, fNoVal, hThreadSelf);
+                }
+                else
+                {
+                    /* For interrupt cases, we must return if we can.  If rcBusy is VINF_SUCCESS,
+                       we will try non-interruptible sleep for a while to help resolve the issue
+                       w/o guru'ing. */
+                    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectRwSharedVerrInterrupted);
+                    if (   rcTerm != VINF_THREAD_IS_TERMINATING
+                        && rcBusy == VINF_SUCCESS
+                        && pVCpu != NULL
+                        && cNsElapsed <= cNsMaxTotal)
+                    {
+                        if (!fNonInterruptible)
+                        {
+                            STAM_REL_COUNTER_INC(&pVM->pdm.s.StatCritSectRwSharedNonInterruptibleWaits);
+                            fNonInterruptible   = true;
+                            cMsMaxOne           = 32;
+                            uint64_t cNsLeft = cNsMaxTotal - cNsElapsed;
+                            if (cNsLeft > RT_NS_10SEC)
+                                cNsMaxTotal = cNsElapsed + RT_NS_10SEC;
+                        }
+                    }
+                    else
+                        return pdmCritSectRwEnterSharedBailOut(pVM, pThis, rcBusy != VINF_SUCCESS ? rcBusy : rc,
+                                                               pSrcPos, fNoVal, hThreadSelf);
+                }
+# else  /* IN_RING3 */
+                RT_NOREF(pVM, pVCpu, rcBusy);
+# endif /* IN_RING3 */
+            }
+            /*
+             * Any other return code is fatal.
+             */
+            else
+            {
+# ifdef IN_RING3
+                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
+                AssertMsgFailed(("rc=%Rrc\n", rc));
+                return RT_FAILURE_NP(rc) ? rc : -rc;
+            }
         }
+
 # ifdef IN_RING3
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
 # endif
-        if (RT_LIKELY(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC))
-        { /* likely */ }
-        else
-            return VERR_SEM_DESTROYED;
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            return pdmCritSectRwEnterSharedBailOut(pThis, rc);
 
         /*
          * Check the direction.
@@ -318,40 +523,11 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
             /*
              * Decrement the wait count and maybe reset the semaphore (if we're last).
              */
-            for (;;)
-            {
-                uint64_t const u64OldState = u64State;
-                uint64_t       cWait       = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                AssertReturn(cWait > 0, pdmCritSectRwCorrupted(pThis, "Invalid waiting read count"));
-                AssertReturn((u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT > 0,
-                             pdmCritSectRwCorrupted(pThis, "Invalid read count"));
-                cWait--;
-                u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
-                u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
-
-                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-                {
-                    if (cWait == 0)
-                    {
-                        if (ASMAtomicXchgBool(&pThis->s.Core.fNeedReset, false))
-                        {
-                            rc = SUPSemEventMultiReset(pVM->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
-                            AssertRCReturn(rc, rc);
-                        }
-                    }
-                    return pdmCritSectRwEnterSharedGotIt(pThis, pSrcPos, fNoVal, hThreadSelf);
-                }
-
-                ASMNopPause();
-                AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-                ASMNopPause();
-
-                u64State = PDMCRITSECTRW_READ_STATE(&pThis->s.Core.u.s.u64State);
-            }
-            /* not reached */
+            return pdmCritSectRwEnterSharedGotItAfterWaiting(pVM, pThis, u64State, pSrcPos, fNoVal, hThreadSelf);
         }
 
-        AssertMsg(iLoop < 1, ("%u\n", iLoop));
+        AssertMsg(iLoop < 1,
+                  ("%p: %u u64State=%#RX64 hNativeWriter=%p\n", pThis, iLoop, u64State, pThis->s.Core.u.s.hNativeWriter));
         RTThreadYield();
     }
 
@@ -378,9 +554,6 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
      */
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
-#ifdef IN_RING3
-    RT_NOREF(rcBusy);
-#endif
 
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
@@ -467,54 +640,80 @@ static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy,
             }
 
 #if defined(IN_RING3) || defined(IN_RING0)
-# ifdef IN_RING0
-            if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
-                && ASMIntAreEnabled())
-# endif
+            /*
+             * Add ourselves to the queue and wait for the direction to change.
+             */
+            uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
+            c++;
+            Assert(c < RTCSRW_CNT_MASK / 2);
+            AssertReturn(c < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_READERS);
+
+            uint64_t cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+            cWait++;
+            Assert(cWait <= c);
+            Assert(cWait < RTCSRW_CNT_MASK / 2);
+            AssertReturn(cWait < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_READERS);
+
+            u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
+            u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
+
+            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
             {
                 /*
-                 * Add ourselves to the queue and wait for the direction to change.
+                 * In ring-3 it's straight forward, just optimize the RTThreadSelf() call.
                  */
-                uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
-                c++;
-                Assert(c < RTCSRW_CNT_MASK / 2);
-                AssertReturn(c < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_READERS);
-
-                uint64_t cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                cWait++;
-                Assert(cWait <= c);
-                Assert(cWait < RTCSRW_CNT_MASK / 2);
-                AssertReturn(cWait < RTCSRW_CNT_MASK, VERR_PDM_CRITSECTRW_TOO_MANY_READERS);
-
-                u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
-                u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
-
-                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u.s.u64State, u64State, u64OldState))
-                {
-                    return pdmCritSectRwEnterSharedContended(pVM, NULL, pThis, rcBusy, pSrcPos, fNoVal, hThreadSelf);
-                }
-            }
-#endif /* IN_RING3 || IN_RING3 */
-#ifndef IN_RING3
-# ifdef IN_RING0
-            else
-# endif
-            {
+# if defined(IN_RING3) && defined(PDMCRITSECTRW_STRICT)
+                return pdmCritSectRwEnterSharedContended(pVM, NULL, pThis, rcBusy, pSrcPos, fNoVal, hThreadSelf);
+# elif defined(IN_RING3)
+                return pdmCritSectRwEnterSharedContended(pVM, NULL, pThis, rcBusy, pSrcPos, fNoVal, RTThreadSelf());
+# else /* IN_RING0 */
                 /*
-                 * We cannot call SUPSemEventMultiWaitNoResume in this context. Go
-                 * back to ring-3 and do it there or return rcBusy.
+                 * In ring-0 context we have to take the special VT-x/AMD-V HM context into
+                 * account when waiting on contended locks.
                  */
-                STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
-                if (rcBusy == VINF_SUCCESS)
+                PVMCPUCC pVCpu = VMMGetCpu(pVM);
+                if (pVCpu)
                 {
-                    PVMCPUCC  pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
-                    /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
-                     *        back to ring-3. Goes for both kind of crit sects. */
-                    return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED, MMHyperCCToR3(pVM, pThis));
+                    VMMR0EMTBLOCKCTX Ctx;
+                    int rc = VMMR0EmtPrepareToBlock(pVCpu, rcBusy, __FUNCTION__, pThis, &Ctx);
+                    if (rc == VINF_SUCCESS)
+                    {
+                        Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+                        rc = pdmCritSectRwEnterSharedContended(pVM, pVCpu, pThis, rcBusy, pSrcPos, fNoVal, hThreadSelf);
+
+                        VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
+                    }
+                    else
+                    {
+                        //STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLockBusy);
+                        rc = pdmCritSectRwEnterSharedBailOut(pVM, pThis, rc, pSrcPos, fNoVal, hThreadSelf);
+                    }
+                    return rc;
                 }
-                return rcBusy;
+
+                /* Non-EMT. */
+                Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+                return pdmCritSectRwEnterSharedContended(pVM, NULL, pThis, rcBusy, pSrcPos, fNoVal, hThreadSelf);
+# endif /* IN_RING0 */
             }
-#endif /* !IN_RING3 */
+
+#else  /* !IN_RING3 && !IN_RING0 */
+            /*
+             * We cannot call SUPSemEventMultiWaitNoResume in this context. Go
+             * back to ring-3 and do it there or return rcBusy.
+             */
+# error "Unused code."
+            STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
+            if (rcBusy == VINF_SUCCESS)
+            {
+                PVMCPUCC  pVCpu = VMMGetCpu(pVM); AssertPtr(pVCpu);
+                /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
+                 *        back to ring-3. Goes for both kind of crit sects. */
+                return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED, MMHyperCCToR3(pVM, pThis));
+            }
+            return rcBusy;
+#endif /* !IN_RING3 && !IN_RING0 */
         }
 
         ASMNopPause();
@@ -971,6 +1170,7 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
 #  endif
 # endif
+
         for (;;)
         {
             /*
@@ -995,13 +1195,8 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
 # endif
                 return VERR_SEM_DESTROYED;
             }
-            if (rc == VINF_SUCCESS)
-            {
-# ifdef IN_RING3
-                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
-# endif
+            if (RT_LIKELY(rc == VINF_SUCCESS))
                 break;
-            }
 
             /*
              * Timeout and interrupted waits needs careful handling in ring-0
@@ -1012,7 +1207,7 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
              * signal, APC, debugger, whatever), so we must try our best to
              * return to the caller and to ring-3 so it can be dealt with.
              */
-            if (RT_LIKELY(rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED))
+            if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
             {
 # ifdef IN_RING0
                 uint64_t const cNsElapsed = RTTimeNanoTS() - tsStart;
@@ -1072,6 +1267,10 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
                 return RT_FAILURE_NP(rc) ? rc : -rc;
             }
         }
+
+# ifdef IN_RING3
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
 
         /*
          * Try take exclusive write ownership.

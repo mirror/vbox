@@ -1497,6 +1497,11 @@ typedef struct PDM
     STAMCOUNTER                     StatCritSectRwExclVerrTimeout;
     STAMCOUNTER                     StatCritSectRwExclVerrInterrupted;
     STAMCOUNTER                     StatCritSectRwExclNonInterruptibleWaits;
+
+    STAMCOUNTER                     StatCritSectRwEnterSharedWhileAborting;
+    STAMCOUNTER                     StatCritSectRwSharedVerrTimeout;
+    STAMCOUNTER                     StatCritSectRwSharedVerrInterrupted;
+    STAMCOUNTER                     StatCritSectRwSharedNonInterruptibleWaits;
 } PDM;
 AssertCompileMemberAlignment(PDM, CritSect, 8);
 AssertCompileMemberAlignment(PDM, aTaskSets, 64);

@@ -58,7 +58,7 @@ VMM_INT_DECL(void) PDMCritSectBothFF(PVMCC pVM, PVMCPUCC pVCpu)
 # endif
 
         pdmCritSectRwLeaveSharedQueued(pVM, pCritSectRw);
-        LogFlow(("PDMR3CritSectFF: %p (R/W)\n", pCritSectRw));
+        LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP_PDM_CRITSECTRW, ("PDMR3CritSectFF: %p (shared)\n", pCritSectRw));
     }
 
     /* Last, exclusive leaves. */
@@ -74,7 +74,7 @@ VMM_INT_DECL(void) PDMCritSectBothFF(PVMCC pVM, PVMCPUCC pVCpu)
 # endif
 
         pdmCritSectRwLeaveExclQueued(pVM, pCritSectRw);
-        LogFlow(("PDMR3CritSectFF: %p (R/W)\n", pCritSectRw));
+        LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP_PDM_CRITSECTRW, ("PDMR3CritSectFF: %p (exclusive)\n", pCritSectRw));
     }
 
     /* Normal leaves. */
