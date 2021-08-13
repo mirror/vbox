@@ -206,13 +206,48 @@ class tdAudioTest(vbox.TestDriver):
         reporter.error('Unable to find guest VKAT in any of these places:\n%s' % ('\n'.join(self.asGstVkatPaths),));
         return (False, "");
 
+    def executeHstBinaryAsAdmin(self, sWhat, asArgs):
+        """
+        Runs a binary (image) with admin (root) rights on the host.
+
+        Returns success status (exit code is 0).
+        """
+        fRc      = False;
+        oProcess = utils.sudoProcessPopen(asArgs, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                          stderr=subprocess.PIPE, shell = False, close_fds = False);
+        if oProcess:
+            sOut, sErr = oProcess.communicate();
+
+            sOut = sOut.decode(sys.stdin.encoding);
+            for sLine in sOut.split('\n'):
+                reporter.log(sLine);
+
+            sErr = sErr.decode(sys.stdin.encoding);
+            for sLine in sErr.split('\n'):
+                reporter.log(sLine);
+
+            iExitCode = oProcess.poll();
+            if iExitCode == 0:
+                fRc = True;
+            else:
+                reporter.error('%s on host returned exit code error %d' % (sWhat, iExitCode));
+        else:
+            fRc = False;
+
+        if not fRc:
+            reporter.error('%s on host failed' % (sWhat,));
+
+        return fRc;
+
     def killHstProcessByName(self, sProcName):
         """
         Kills processes by their name.
         """
         reporter.log('Trying to kill processes named "%s"' % (sProcName,));
         if sys.platform == 'win32':
-            os.system('taskkill /IM "%s.exe" /F' % (sProcName));
+            sArgProcName = '\"%s.exe\"' % sProcName;
+            asArgs       = [ 'taskkill', '/IM', sArgProcName, '/F' ];
+            self.executeHstBinaryAsAdmin('Killing process', asArgs);
         else: # Note: killall is not available on older Debians (requires psmisc).
             # Using the BSD syntax here; MacOS also should understand this.
             procPs = subprocess.Popen(['ps', 'ax'], stdout=subprocess.PIPE);
@@ -301,31 +336,8 @@ class tdAudioTest(vbox.TestDriver):
             ## @todo For now we ASSUME that we don't run (and don't support even) on old(er)
             #        Windows hosts than Vista.
             asArgs = self.getWinFirewallArgsDisable('vista');
-
-        if asArgs:
-            oProcess = utils.sudoProcessPopen(asArgs, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                              stderr=subprocess.PIPE, shell = False, close_fds = False);
-            if oProcess:
-                sOut, sErr = oProcess.communicate();
-
-                sOut = sOut.decode(sys.stdin.encoding);
-                for sLine in sOut.split('\n'):
-                    reporter.log(sLine);
-
-                sErr = sErr.decode(sys.stdin.encoding);
-                for sLine in sErr.split('\n'):
-                    reporter.log(sLine);
-
-                iExitCode = oProcess.poll();
-                if iExitCode == 0:
-                    fRc = True;
-                else:
-                    reporter.error('Disabling firewall on host returned exit code error %d' % iExitCode);
-            else:
-                fRc = False;
-
-            if not fRc:
-                reporter.error('Disabling firewall on host failed');
+            if asArgs:
+                fRc = self.executeHstBinaryAsAdmin('Disabling firewall', asArgs);
         else:
             reporter.log('Firewall not available on host, skipping');
             fRc = True; # Not available, just skip.
