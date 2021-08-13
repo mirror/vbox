@@ -62,7 +62,10 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
             /* Prepare name label: */
             m_pLabelName = new QLabel(this);
             if (m_pLabelName)
+            {
+                m_pLabelName->setText(m_pObject->name());
                 m_pLayoutUpper->addWidget(m_pLabelName);
+            }
 
             /* Prepare close button: */
             m_pButtonClose = new QIToolButton(this);
@@ -88,6 +91,11 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
             myFont.setPointSize(myFont.pointSize() - 1);
             m_pLabelDetails->setBrowserFont(myFont);
             m_pLabelDetails->setVisible(false);
+            const int iHint = m_pLabelName->minimumSizeHint().width()
+                            + m_pLayoutUpper->spacing()
+                            + m_pButtonClose->minimumSizeHint().width();
+            m_pLabelDetails->setMinimumTextWidth(iHint);
+            m_pLabelDetails->setText(m_pObject->details());
 
             m_pLayoutMain->addWidget(m_pLabelDetails);
         }
@@ -188,9 +196,9 @@ UINotificationProgressItem::UINotificationProgressItem(QWidget *pParent, UINotif
         /* Details label was prepared in base-class: */
         if (m_pLabelDetails)
         {
-            int iHint = m_pLabelName->minimumSizeHint().width()
-                      + m_pLayoutUpper->spacing()
-                      + m_pButtonClose->minimumSizeHint().width();
+            const int iHint = m_pLabelName->minimumSizeHint().width()
+                            + m_pLayoutUpper->spacing()
+                            + m_pButtonClose->minimumSizeHint().width();
             m_pLabelDetails->setMinimumTextWidth(iHint);
             updateDetails();
         }
@@ -291,9 +299,9 @@ UINotificationDownloaderItem::UINotificationDownloaderItem(QWidget *pParent, UIN
         /* Details label was prepared in base-class: */
         if (m_pLabelDetails)
         {
-            int iHint = m_pLabelName->minimumSizeHint().width()
-                      + m_pLayoutUpper->spacing()
-                      + m_pButtonClose->minimumSizeHint().width();
+            const int iHint = m_pLabelName->minimumSizeHint().width()
+                            + m_pLayoutUpper->spacing()
+                            + m_pButtonClose->minimumSizeHint().width();
             m_pLabelDetails->setMinimumTextWidth(iHint);
             updateDetails();
         }
@@ -389,9 +397,9 @@ UINotificationNewVersionCheckerItem::UINotificationNewVersionCheckerItem(QWidget
         /* Details label was prepared in base-class: */
         if (m_pLabelDetails)
         {
-            int iHint = m_pLabelName->minimumSizeHint().width()
-                      + m_pLayoutUpper->spacing()
-                      + m_pButtonClose->minimumSizeHint().width();
+            const int iHint = m_pLabelName->minimumSizeHint().width()
+                            + m_pLayoutUpper->spacing()
+                            + m_pButtonClose->minimumSizeHint().width();
             m_pLabelDetails->setMinimumTextWidth(iHint);
             updateDetails();
         }
