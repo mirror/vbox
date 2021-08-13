@@ -43,12 +43,12 @@ $_?U8DQ:
         push    es
         push    ss
         pop     es
-%ifdef BS3_MODEL_FAR_CODE
+%ifdef ASM_MODEL_FAR_CODE
         push    cs
 %endif
         call    $_?U8DQE
         pop     es
-%ifdef BS3_MODEL_FAR_CODE
+%ifdef ASM_MODEL_FAR_CODE
         retf
 %else
         ret
