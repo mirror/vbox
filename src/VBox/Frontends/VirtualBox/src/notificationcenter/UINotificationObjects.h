@@ -43,6 +43,45 @@
 #include "CSnapshot.h"
 #include "CVirtualSystemDescription.h"
 
+/** UINotificationObject extension for message functionality. */
+class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
+{
+    Q_OBJECT;
+
+public:
+
+protected:
+
+    /** Constructs message notification-object.
+      * @param  strName          Brings the message name.
+      * @param  strDetails       Brings the message details.
+      * @param  strInternalName  Brings the message internal name. */
+    UINotificationMessage(const QString &strName,
+                                const QString &strDetails,
+                                const QString &strInternalName)
+        : UINotificationSimple(strName,
+                               strDetails,
+                               strInternalName)
+    {}
+
+private:
+
+    /** Creates message.
+      * @param  strName          Brings the message name.
+      * @param  strDetails       Brings the message details.
+      * @param  strInternalName  Brings the message internal name. */
+    static void createMessage(const QString &strName,
+                              const QString &strDetails,
+                              const QString &strInternalName);
+
+    /** Holds the message name. */
+    QString  m_strName;
+    /** Holds the message details. */
+    QString  m_strDetails;
+    /** Holds the message internal name. */
+    QString  m_strInternalName;
+};
+
 /** UINotificationProgress extension for medium create functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressMediumCreate : public UINotificationProgress
 {

@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UINotificationCenter.h"
 #include "UINotificationObjects.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIDownloaderExtensionPack.h"
@@ -31,6 +32,26 @@
 
 /* COM includes: */
 #include "CConsole.h"
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationMessage implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+/* static */
+void UINotificationMessage::createMessage(const QString &strName,
+                                          const QString &strDetails,
+                                          const QString &strInternalName)
+{
+    /* Check if message suppressed: */
+    if (isSuppressed(strInternalName))
+        return;
+
+    /* Create message finally: */
+    gpNotificationCenter->append(new UINotificationMessage(strName,
+                                                           strDetails,
+                                                           strInternalName));
+}
 
 
 /*********************************************************************************************************************************

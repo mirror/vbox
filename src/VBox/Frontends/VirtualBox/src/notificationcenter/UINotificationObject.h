@@ -67,6 +67,47 @@ public slots:
     virtual void close();
 };
 
+/** UINotificationObject extension for notification-simple. */
+class SHARED_LIBRARY_STUFF UINotificationSimple : public UINotificationObject
+{
+    Q_OBJECT;
+
+protected:
+
+    /** Constructs notification-simple.
+      * @param  strName          Brings the message name.
+      * @param  strDetails       Brings the message details.
+      * @param  strInternalName  Brings the message internal name.
+      * @param  fCritical        Brings whether message is critical. */
+    UINotificationSimple(const QString &strName,
+                         const QString &strDetails,
+                         const QString &strInternalName,
+                         bool fCritical = true);
+
+    /** Returns whether object is critical. */
+    virtual bool isCritical() const /* override */;
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Handles notification-object being added. */
+    virtual void handle() /* override final */;
+
+    /** Returns whether message with passed @a strInternalName is suppressed. */
+    static bool isSuppressed(const QString &strInternalName);
+
+private:
+
+    /** Holds the message name. */
+    QString  m_strName;
+    /** Holds the message details. */
+    QString  m_strDetails;
+    /** Holds the message internal name. */
+    QString  m_strInternalName;
+    /** Holds whether message is critical. */
+    bool     m_fCritical;
+};
+
 /** UINotificationObject extension for notification-progress. */
 class SHARED_LIBRARY_STUFF UINotificationProgress : public UINotificationObject
 {
@@ -100,7 +141,7 @@ public:
     QString error() const;
 
     /** Returns whether object is critical. */
-    virtual bool isCritical() const;
+    virtual bool isCritical() const /* override */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -162,7 +203,7 @@ public:
     QString error() const;
 
     /** Returns whether object is critical. */
-    virtual bool isCritical() const;
+    virtual bool isCritical() const /* override */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -225,7 +266,7 @@ public:
     QString error() const;
 
     /** Returns whether object is critical. */
-    virtual bool isCritical() const;
+    virtual bool isCritical() const /* override */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
