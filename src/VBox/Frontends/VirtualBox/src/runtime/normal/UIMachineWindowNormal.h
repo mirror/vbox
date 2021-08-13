@@ -108,6 +108,8 @@ private:
     void cleanupVisualState();
     /** Cleanup notification-center routine. */
     void cleanupNotificationCenter();
+    /** Cleanup status-bar routine. */
+    void cleanupStatusBar();
     /** Cleanup session connections routine. */
     void cleanupSessionConnections();
 

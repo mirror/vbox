@@ -190,7 +190,8 @@ void UIMachineWindowNormal::sltHandleStatusBarConfigurationChange(const QUuid &u
     /* Update status-bar visibility: */
     statusBar()->setVisible(pActionStatusBarSwitch->isChecked());
     /* Update status-bar indicators-pool: */
-    m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
+    if (m_pIndicatorsPool)
+        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
 
     /* Normalize geometry without moving: */
     normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
@@ -205,6 +206,8 @@ void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &p
 
 void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType enmIndicatorType, const QPoint &indicatorPosition)
 {
+    /* Sanity check, this slot should be called if m_pIndicatorsPool present anyway: */
+    AssertPtrReturnVoid(m_pIndicatorsPool);
     /* Determine action depending on indicator-type: */
     UIAction *pAction = 0;
     switch (enmIndicatorType)
@@ -373,7 +376,8 @@ void UIMachineWindowNormal::loadSettings()
 #endif /* !VBOX_WS_MAC */
         /* Update status-bar visibility: */
         statusBar()->setVisible(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility)->isChecked());
-        m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
+        if (m_pIndicatorsPool)
+            m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
     }
 
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
@@ -434,6 +438,12 @@ void UIMachineWindowNormal::cleanupNotificationCenter()
 {
     if (gpNotificationCenter && (gpNotificationCenter->parent() == centralWidget()))
         gpNotificationCenter->setParent(0);
+}
+
+void UIMachineWindowNormal::cleanupStatusBar()
+{
+    delete m_pIndicatorsPool;
+    m_pIndicatorsPool = 0;
 }
 
 void UIMachineWindowNormal::cleanupSessionConnections()
@@ -633,10 +643,12 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     UIMachineWindow::updateAppearanceOf(iElement);
 
     /* Set status-bar indicator-pool auto update timer: */
-    if (iElement & UIVisualElement_IndicatorPoolStuff)
+    if (   m_pIndicatorsPool
+        && iElement & UIVisualElement_IndicatorPoolStuff)
         m_pIndicatorsPool->setAutoUpdateIndicatorStates(statusBar()->isVisible() && uisession()->isRunning());
     /* Update status-bar indicator-pool appearance only when status-bar is visible: */
-    if (statusBar()->isVisible())
+    if (   m_pIndicatorsPool
+        && statusBar()->isVisible())
     {
         /* If VM is running: */
         if (uisession()->isRunning())
