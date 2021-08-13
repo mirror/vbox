@@ -635,8 +635,6 @@ int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const c
 {
     RT_NOREF(pTstEnv);
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting %s ...\n", pszWhat);
-
     RTGETOPTUNION Val;
     RT_ZERO(Val);
 
@@ -658,9 +656,11 @@ int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const c
     rc = AudioTestSvcClientHandleOption(pClient, ATSTCPOPT_MODE, &Val);
     AssertRCReturn(rc, rc);
 
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting %s (connection mode '%s') ...\n", pszWhat, Val.psz);
+
     if (   !RTStrCmp(Val.psz, "client")
         || !RTStrCmp(Val.psz, "both"))
-           RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting at %s:%RU32\n", pszTcpConnectAddr, uTcpConnectPort);
+           RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to %s:%RU32\n", pszTcpConnectAddr, uTcpConnectPort);
 
     if (   !RTStrCmp(Val.psz, "server")
         || !RTStrCmp(Val.psz, "both"))
@@ -701,7 +701,7 @@ int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const c
         return rc;
     }
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connected %s\n", pszWhat);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Successfully connected %s\n", pszWhat);
     return rc;
 }
 
