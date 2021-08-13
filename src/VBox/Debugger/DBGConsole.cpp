@@ -746,7 +746,7 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
             }
 
             /* If multi-stepping, take the next step: */
-            if (pDbgc->cMultiStepsLeft > 0 && pEvent->idCpu != idCpuSaved)
+            if (pDbgc->cMultiStepsLeft > 0 && pEvent->idCpu == idCpuSaved)
             {
                 int rc2 = DBGFR3StepEx(pDbgc->pUVM, pDbgc->idCpu, DBGF_STEP_F_INTO, NULL, NULL, 0, pDbgc->uMultiStepStrideLength);
                 if (RT_SUCCESS(rc2))
