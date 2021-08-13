@@ -17,7 +17,7 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
-#include <QRadioButton>
+
 
 /* Local includes: */
 #include "UIWizardCloneVM.h"
@@ -25,31 +25,6 @@
 #include "UIWizardCloneVMPageBasic3.h"
 #include "QIRichTextLabel.h"
 
-
-// UIWizardCloneVMPage3::UIWizardCloneVMPage3(bool fShowChildsOption)
-//     : m_fShowChildsOption(fShowChildsOption)
-// {
-// }
-
-// KCloneMode UIWizardCloneVMPage3::cloneMode() const
-// {
-//     if (m_pMachineAndChildsRadio->isChecked())
-//         return KCloneMode_MachineAndChildStates;
-//     else if (m_pAllRadio->isChecked())
-//         return KCloneMode_AllStates;
-//     return KCloneMode_MachineState;
-// }
-
-// void UIWizardCloneVMPage3::setCloneMode(KCloneMode cloneMode)
-// {
-//     switch (cloneMode)
-//     {
-//         case KCloneMode_MachineState: m_pMachineRadio->setChecked(true); break;
-//         case KCloneMode_MachineAndChildStates: m_pMachineAndChildsRadio->setChecked(true); break;
-//         case KCloneMode_AllStates: m_pAllRadio->setChecked(true); break;
-//         case KCloneMode_Max: break; /* Shut up, MSC! */
-//     }
-// }
 
 UIWizardCloneVMPageBasic3::UIWizardCloneVMPageBasic3(bool fShowChildsOption)
     : m_pLabel(0)
@@ -112,15 +87,10 @@ void UIWizardCloneVMPageBasic3::retranslateUi()
                           .arg(strGeneral)
                           .arg(strOpt1)
                           .arg(strOpt3));
-
-    // m_pMachineRadio->setText(UIWizardCloneVM::tr("Current &machine state"));
-    // m_pMachineAndChildsRadio->setText(UIWizardCloneVM::tr("Current &snapshot tree branch"));
-    // m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
 }
 
 void UIWizardCloneVMPageBasic3::initializePage()
 {
-
     if (m_pCloneModeGroupBox && !m_userModifiedParameters.contains("CloneMode"))
         cloneVMWizardPropertySet(CloneMode, m_pCloneModeGroupBox->cloneMode());
 
@@ -129,20 +99,13 @@ void UIWizardCloneVMPageBasic3::initializePage()
 
 bool UIWizardCloneVMPageBasic3::validatePage()
 {
-    /* Initial result: */
     bool fResult = true;
 
-    // /* Lock finish button: */
-    // startProcessing();
-
+    UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard());
+    AssertReturn(pWizard, false);
     /* Try to clone VM: */
-    // if (fResult)
-    //     fResult = qobject_cast<UIWizardCloneVM*>(wizard())->cloneVM();
+    fResult = pWizard->cloneVM();
 
-    // /* Unlock finish button: */
-    // endProcessing();
-
-    /* Return result: */
     return fResult;
 }
 

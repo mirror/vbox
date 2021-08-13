@@ -31,7 +31,6 @@
 #include "COMEnums.h"
 
 /* Forward declaration: */
-class QRadioButton;
 class QIRichTextLabel;
 class UICloneVMCloneModeGroupBox;
 
