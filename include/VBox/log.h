@@ -650,6 +650,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_PDM_BLK_CACHE,
     /** PDM critical section group. */
     LOG_GROUP_PDM_CRITSECT,
+    /** PDM read/write critical section group. */
+    LOG_GROUP_PDM_CRITSECTRW,
     /** PDM Device group. */
     LOG_GROUP_PDM_DEVICE,
     /** PDM Driver group. */
@@ -1083,6 +1085,7 @@ typedef enum VBOXLOGGROUP
     "PDM_ASYNC_COMPLETION", \
     "PDM_BLK_CACHE", \
     "PDM_CRITSECT", \
+    "PDM_CRITSECTRW", \
     "PDM_DEVICE", \
     "PDM_DRIVER", \
     "PDM_LDR", \
