@@ -177,7 +177,7 @@ static struct
         | VMMDEV_TESTING_LOCKED_HI_POKE | VMMDEV_TESTING_LOCKED_HI_BUSY_SUCCESS
     },
     {
-        "RW Contention Shr/Shr 50us/25us/16k",
+        "RW None Shr/Shr 50us/25us/16k",
         20000 + 4096,
         50 | (UINT32_C(25) << VMMDEV_TESTING_LOCKED_LO_WAIT_SHIFT),
         16 | VMMDEV_TESTING_LOCKED_HI_ENABLED | VMMDEV_TESTING_LOCKED_HI_TYPE_RW
@@ -228,6 +228,7 @@ BS3_DECL(void) Main_rm()
 
         Bs3TestValue("Loops", cTotal, VMMDEV_TESTING_UNIT_OCCURRENCES);
         Bs3TestValue("Elapsed", cNsElapsed, VMMDEV_TESTING_UNIT_NS);
+        Bs3TestValue("PerLoop", cNsElapsed / cTotal, VMMDEV_TESTING_UNIT_NS_PER_OCCURRENCE);
     }
 
     Bs3TestTerm();
