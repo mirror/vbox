@@ -206,6 +206,7 @@ void UINotificationMessage::destroyMessage(const QString &strInternalName)
     m_messages.remove(strInternalName);
 }
 
+
 /*********************************************************************************************************************************
 *   Class UINotificationProgressMediumCreate implementation.                                                                     *
 *********************************************************************************************************************************/
