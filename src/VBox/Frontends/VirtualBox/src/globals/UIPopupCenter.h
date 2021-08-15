@@ -147,13 +147,6 @@ public:
     void recall(QWidget *pParent, const QString &strID);
 
     /* API: Runtime UI stuff: */
-    void cannotSendACPIToMachine(QWidget *pParent);
-    void remindAboutAutoCapture(QWidget *pParent);
-    void remindAboutMouseIntegration(QWidget *pParent, bool fSupportsAbsolute);
-    void remindAboutPausedVMInput(QWidget *pParent);
-    void forgetAboutPausedVMInput(QWidget *pParent);
-    void remindAboutWrongColorDepth(QWidget *pParent, ulong uRealBPP, ulong uWantedBPP);
-    void forgetAboutWrongColorDepth(QWidget *pParent);
     void cannotAttachUSBDevice(QWidget *pParent, const CConsole &comConsole, const QString &strDevice);
     void cannotAttachUSBDevice(QWidget *pParent, const CVirtualBoxErrorInfo &comErrorInfo,
                                const QString &strDevice, const QString &strMachineName);
@@ -169,7 +162,6 @@ public:
                                 const QString &strMachineName, bool fEnable);
     void cannotToggleNetworkAdapterCable(QWidget *pParent, const CNetworkAdapter &comAdapter,
                                          const QString &strMachineName, bool fConnect);
-    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
     void cannotToggleAudioOutput(QWidget *pParent, const CAudioAdapter &comAdapter,
                                  const QString &strMachineName, bool fEnable);
     void cannotToggleAudioInput(QWidget *pParent, const CAudioAdapter &comAdapter,

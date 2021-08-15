@@ -28,7 +28,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
+#include "UINotificationCenter.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
@@ -385,7 +385,7 @@ void UIMouseHandler::sltMachineStateChanged()
     if (machineLogic()->activeMachineWindow() &&
         machineState != KMachineState_Paused &&
         machineState != KMachineState_TeleportingPausedVM)
-        popupCenter().forgetAboutPausedVMInput(machineLogic()->activeMachineWindow());
+        UINotificationMessage::forgetAboutPausedVMInput();
 
     /* Notify all the listeners: */
     emit sigStateChange(state());
@@ -433,14 +433,13 @@ void UIMouseHandler::sltMouseCapabilityChanged()
     }
 #endif
 
-    /* Notify user about mouse supports or not absolute pointing if that method was called by signal: */
+    /* Notify user whether mouse supports absolute pointing
+     * if that method was called by corresponding signal: */
     if (sender())
     {
-        /* don't annoy the user while restoring a VM */
-        KMachineState state = uisession()->machineState();
-        if (state != KMachineState_Restoring)
-            popupCenter().remindAboutMouseIntegration(uisession()->machineLogic()->activeMachineWindow(),
-                                                      uisession()->isMouseSupportsAbsolute());
+        /* Do not annoy user while restoring VM: */
+        if (uisession()->machineState() != KMachineState_Restoring)
+            UINotificationMessage::remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
     }
 
     /* Notify all the listeners: */
@@ -1128,9 +1127,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             if (m_views[uScreenId]->hasFocus() && (iEventType == QEvent::MouseButtonRelease && mouseButtons == Qt::NoButton))
             {
                 if (uisession()->isPaused())
-                {
-                    popupCenter().remindAboutPausedVMInput(machineLogic()->activeMachineWindow());
-                }
+                    UINotificationMessage::remindAboutPausedVMInput();
                 else if (uisession()->isRunning())
                 {
                     /* Temporarily disable auto capture that will take place after this dialog is dismissed because

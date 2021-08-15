@@ -29,7 +29,7 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
-#include "UIPopupCenter.h"
+#include "UINotificationCenter.h"
 #include "UIExtraDataManager.h"
 #include "UICommon.h"
 #ifdef VBOX_WITH_MASKED_SEAMLESS
@@ -1883,10 +1883,9 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
         if (   ulGuestBitsPerPixel != ulBitsPerPixel
             && ulGuestBitsPerPixel != 0
             && m_pMachineView->uisession()->isGuestSupportsGraphics())
-            popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
-                                                     ulGuestBitsPerPixel, ulBitsPerPixel);
+            UINotificationMessage::remindAboutWrongColorDepth(ulGuestBitsPerPixel, ulBitsPerPixel);
         else
-            popupCenter().forgetAboutWrongColorDepth(m_pMachineView->machineWindow());
+            UINotificationMessage::forgetAboutWrongColorDepth();
     }
 
 #ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER

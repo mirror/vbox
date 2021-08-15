@@ -166,7 +166,7 @@ bool UISession::initialize()
 
     /* Notify user about mouse&keyboard auto-capturing: */
     if (gEDataManager->autoCaptureEnabled())
-        popupCenter().remindAboutAutoCapture(activeMachineWindow());
+        UINotificationMessage::remindAboutAutoCapture();
 
     /* Check if we are in teleportation waiting mode.
      * In that case no first run wizard is necessary. */

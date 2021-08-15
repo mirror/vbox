@@ -21,6 +21,8 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIExtraDataManager.h"
+#include "UIHostComboEditor.h"
 #include "UINotificationCenter.h"
 #include "UINotificationObjects.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -40,6 +42,124 @@
 
 /* static */
 QMap<QString, QUuid> UINotificationMessage::m_messages = QMap<QString, QUuid>();
+
+/* static */
+void UINotificationMessage::cannotSendACPIToMachine()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't send ACPI ..."),
+        QApplication::translate("UIMessageCenter", "You are trying to shut down the guest with the ACPI power button. "
+                                                   "This is currently not possible because the guest does not support "
+                                                   "software shutdown."));
+}
+
+/* static */
+void UINotificationMessage::remindAboutAutoCapture()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Auto capture keyboard ..."),
+        QApplication::translate("UIMessageCenter", "<p>You have the <b>Auto capture keyboard</b> option turned on. "
+                                                   "This will cause the Virtual Machine to automatically <b>capture</b> "
+                                                   "the keyboard every time the VM window is activated and make it "
+                                                   "unavailable to other applications running on your host machine: "
+                                                   "when the keyboard is captured, all keystrokes (including system ones "
+                                                   "like Alt-Tab) will be directed to the VM.</p>"
+                                                   "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
+                                                   "keyboard and mouse (if it is captured) and return them to normal "
+                                                   "operation. The currently assigned host key is shown on the status bar "
+                                                   "at the bottom of the Virtual Machine window. This icon, together "
+                                                   "with the mouse icon placed nearby, indicate the current keyboard "
+                                                   "and mouse capture state.</p>") +
+        QApplication::translate("UIMessageCenter", "<p>The host key is currently defined as <b>%1</b>.</p>",
+                                                   "additional message box paragraph")
+                                                   .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
+        "remindAboutAutoCapture");
+}
+
+/* static */
+void UINotificationMessage::remindAboutMouseIntegration(bool fSupportsAbsolute)
+{
+    if (fSupportsAbsolute)
+    {
+        createMessage(
+            QApplication::translate("UIMessageCenter", "Mouse integration ..."),
+            QApplication::translate("UIMessageCenter", "<p>The Virtual Machine reports that the guest OS supports <b>mouse "
+                                                       "pointer integration</b>. This means that you do not need to "
+                                                       "<i>capture</i> the mouse pointer to be able to use it in your guest "
+                                                       "OS -- all mouse actions you perform when the mouse pointer is over the "
+                                                       "Virtual Machine's display are directly sent to the guest OS. If the "
+                                                       "mouse is currently captured, it will be automatically uncaptured.</p>"
+                                                       "<p>The mouse icon on the status bar will look "
+                                                       "like&nbsp;<img src=:/mouse_seamless_16px.png/>&nbsp;to inform you that "
+                                                       "mouse pointer integration is supported by the guest OS and is currently "
+                                                       "turned on.</p><p><b>Note</b>: Some applications may behave incorrectly "
+                                                       "in mouse pointer integration mode. You can always disable it for the "
+                                                       "current session (and enable it again) by selecting the corresponding "
+                                                       "action from the menu bar.</p>"),
+            "remindAboutMouseIntegration");
+    }
+    else
+    {
+        createMessage(
+            QApplication::translate("UIMessageCenter", "Mouse integration ..."),
+            QApplication::translate("UIMessageCenter", "<p>The Virtual Machine reports that the guest OS does not support "
+                                                       "<b>mouse pointer integration</b> in the current video mode. You need to "
+                                                       "capture the mouse (by clicking over the VM display or pressing the host "
+                                                       "key) in order to use the mouse inside the guest OS.</p>"),
+            "remindAboutMouseIntegration");
+    }
+}
+
+/* static */
+void UINotificationMessage::remindAboutPausedVMInput()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Paused VM input ..."),
+        QApplication::translate("UIMessageCenter", "<p>The Virtual Machine is currently in the <b>Paused</b> state and not able "
+                                                   "to see any keyboard or mouse input. If you want to continue to work inside "
+                                                   "the VM, you need to resume it by selecting the corresponding action from the "
+                                                   "menu bar.</p>"),
+        "remindAboutPausedVMInput");
+}
+
+/* static */
+void UINotificationMessage::forgetAboutPausedVMInput()
+{
+    destroyMessage("remindAboutPausedVMInput");
+}
+
+/* static */
+void UINotificationMessage::remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Wrong color depth ..."),
+        QApplication::translate("UIMessageCenter", "<p>The virtual screen is currently set to a <b>%1&nbsp;bit</b> color mode. "
+                                                   "For better performance please change this to <b>%2&nbsp;bit</b>. This can "
+                                                   "usually be done from the <b>Display</b> section of the guest operating "
+                                                   "system's Control Panel or System Settings.</p>")
+                                                   .arg(uRealBPP).arg(uWantedBPP),
+        "remindAboutWrongColorDepth");
+}
+
+/* static */
+void UINotificationMessage::forgetAboutWrongColorDepth()
+{
+    destroyMessage("remindAboutWrongColorDepth");
+}
+
+void UINotificationMessage::remindAboutGuestAdditionsAreNotActive()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "GA not active ..."),
+        QApplication::translate("UIMessageCenter", "<p>The VirtualBox Guest Additions do not appear to be available on this "
+                                                   "virtual machine, and shared folders cannot be used without them. To use "
+                                                   "shared folders inside the virtual machine, please install the Guest "
+                                                   "Additions if they are not installed, or re-install them if they are not "
+                                                   "working correctly, by selecting <b>Insert Guest Additions CD image</b> from "
+                                                   "the <b>Devices</b> menu. If they are installed but the machine is not yet "
+                                                   "fully started then shared folders will be available once it is.</p>"),
+        "remindAboutGuestAdditionsAreNotActive");
+}
 
 UINotificationMessage::UINotificationMessage(const QString &strName,
                                              const QString &strDetails,
