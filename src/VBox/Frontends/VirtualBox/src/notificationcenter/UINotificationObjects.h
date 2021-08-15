@@ -57,12 +57,10 @@ protected:
       * @param  strDetails       Brings the message details.
       * @param  strInternalName  Brings the message internal name. */
     UINotificationMessage(const QString &strName,
-                                const QString &strDetails,
-                                const QString &strInternalName)
-        : UINotificationSimple(strName,
-                               strDetails,
-                               strInternalName)
-    {}
+                          const QString &strDetails,
+                          const QString &strInternalName);
+    /** Destructs message notification-object. */
+    virtual ~UINotificationMessage() /* override final */;
 
 private:
 
@@ -72,7 +70,13 @@ private:
       * @param  strInternalName  Brings the message internal name. */
     static void createMessage(const QString &strName,
                               const QString &strDetails,
-                              const QString &strInternalName);
+                              const QString &strInternalName = QString());
+    /** Destroys message.
+      * @param  strInternalName  Brings the message internal name. */
+    static void destroyMessage(const QString &strInternalName);
+
+    /** Holds the IDs of messages registered. */
+    static QMap<QString, QUuid>  m_messages;
 
     /** Holds the message name. */
     QString  m_strName;

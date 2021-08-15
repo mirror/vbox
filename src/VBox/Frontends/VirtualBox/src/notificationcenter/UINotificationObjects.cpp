@@ -39,20 +39,52 @@
 *********************************************************************************************************************************/
 
 /* static */
+QMap<QString, QUuid> UINotificationMessage::m_messages = QMap<QString, QUuid>();
+
+UINotificationMessage::UINotificationMessage(const QString &strName,
+                                             const QString &strDetails,
+                                             const QString &strInternalName)
+    : UINotificationSimple(strName,
+                           strDetails,
+                           strInternalName)
+{
+}
+
+UINotificationMessage::~UINotificationMessage()
+{
+    /* Remove message from known: */
+    m_messages.remove(m_strInternalName);
+}
+
+/* static */
 void UINotificationMessage::createMessage(const QString &strName,
                                           const QString &strDetails,
-                                          const QString &strInternalName)
+                                          const QString &strInternalName /* = QString() */)
 {
     /* Check if message suppressed: */
     if (isSuppressed(strInternalName))
         return;
+    /* Check if message already exists: */
+    if (m_messages.contains(strInternalName))
+        return;
 
     /* Create message finally: */
-    gpNotificationCenter->append(new UINotificationMessage(strName,
-                                                           strDetails,
-                                                           strInternalName));
+    m_messages[strInternalName] = gpNotificationCenter->append(new UINotificationMessage(strName,
+                                                                                         strDetails,
+                                                                                         strInternalName));
 }
 
+/* static */
+void UINotificationMessage::destroyMessage(const QString &strInternalName)
+{
+    /* Check if message really exists: */
+    if (!m_messages.contains(strInternalName))
+        return;
+
+    /* Destroy message finally: */
+    gpNotificationCenter->revoke(m_messages.value(strInternalName));
+    m_messages.remove(strInternalName);
+}
 
 /*********************************************************************************************************************************
 *   Class UINotificationProgressMediumCreate implementation.                                                                     *
