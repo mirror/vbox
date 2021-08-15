@@ -33,9 +33,14 @@ UINotificationObject::UINotificationObject()
 {
 }
 
+void UINotificationObject::dismiss()
+{
+    emit sigAboutToClose(true);
+}
+
 void UINotificationObject::close()
 {
-    emit sigAboutToClose();
+    emit sigAboutToClose(false);
 }
 
 
@@ -67,6 +72,11 @@ QString UINotificationSimple::name() const
 QString UINotificationSimple::details() const
 {
     return m_strDetails;
+}
+
+QString UINotificationSimple::internalName() const
+{
+    return m_strInternalName;
 }
 
 void UINotificationSimple::handle()
@@ -121,6 +131,11 @@ QString UINotificationProgress::error() const
 bool UINotificationProgress::isCritical() const
 {
     return true;
+}
+
+QString UINotificationProgress::internalName() const
+{
+    return QString();
 }
 
 void UINotificationProgress::handle()
@@ -194,6 +209,11 @@ QString UINotificationDownloader::error() const
 bool UINotificationDownloader::isCritical() const
 {
     return true;
+}
+
+QString UINotificationDownloader::internalName() const
+{
+    return QString();
 }
 
 void UINotificationDownloader::handle()
@@ -289,6 +309,11 @@ QString UINotificationNewVersionChecker::error() const
 bool UINotificationNewVersionChecker::isCritical() const
 {
     return m_pChecker ? m_pChecker->isItForcedCall() : true;
+}
+
+QString UINotificationNewVersionChecker::internalName() const
+{
+    return QString();
 }
 
 void UINotificationNewVersionChecker::handle()

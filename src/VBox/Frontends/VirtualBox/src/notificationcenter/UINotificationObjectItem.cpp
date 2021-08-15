@@ -43,6 +43,7 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
     , m_pLayoutMain(0)
     , m_pLayoutUpper(0)
     , m_pLabelName(0)
+    , m_pButtonForget(0)
     , m_pButtonClose(0)
     , m_pLabelDetails(0)
     , m_fHovered(false)
@@ -65,6 +66,19 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
             {
                 m_pLabelName->setText(m_pObject->name());
                 m_pLayoutUpper->addWidget(m_pLabelName);
+            }
+
+            /* Prepare forget button: */
+            if (!m_pObject->internalName().isEmpty())
+                m_pButtonForget = new QIToolButton(this);
+            if (m_pButtonForget)
+            {
+                m_pButtonForget->setIcon(UIIconPool::iconSet(":/close_popup_16px.png"));
+                m_pButtonForget->setIconSize(QSize(10, 10));
+                connect(m_pButtonForget, &QIToolButton::clicked,
+                        m_pObject, &UINotificationObject::dismiss);
+
+                m_pLayoutUpper->addWidget(m_pButtonForget);
             }
 
             /* Prepare close button: */
@@ -91,9 +105,11 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
             myFont.setPointSize(myFont.pointSize() - 1);
             m_pLabelDetails->setBrowserFont(myFont);
             m_pLabelDetails->setVisible(false);
-            const int iHint = m_pLabelName->minimumSizeHint().width()
-                            + m_pLayoutUpper->spacing()
-                            + m_pButtonClose->minimumSizeHint().width();
+            int iHint = m_pLabelName->minimumSizeHint().width();
+            if (m_pButtonForget)
+                iHint += m_pLayoutUpper->spacing() + m_pButtonForget->minimumSizeHint().width();
+            if (m_pButtonClose)
+                iHint += m_pLayoutUpper->spacing() + m_pButtonClose->minimumSizeHint().width();
             m_pLabelDetails->setMinimumTextWidth(iHint);
             m_pLabelDetails->setText(m_pObject->details());
 

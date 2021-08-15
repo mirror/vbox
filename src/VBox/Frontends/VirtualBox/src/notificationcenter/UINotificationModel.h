@@ -62,8 +62,9 @@ public:
 
 private slots:
 
-    /** Handles request about to close sender() notification object. */
-    void sltHandleAboutToClose();
+    /** Handles request about to close sender() notification object.
+      * @param  fDismiss  Brings whether message closed as dismissed. */
+    void sltHandleAboutToClose(bool fDismiss);
 
     /** Handles broadcast request to detach COM stuff. */
     void sltDetachCOM();

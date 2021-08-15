@@ -66,6 +66,8 @@ protected:
     QHBoxLayout     *m_pLayoutUpper;
     /** Holds the name label instance. */
     QLabel          *m_pLabelName;
+    /** Holds the forget button instance. */
+    QIToolButton    *m_pButtonForget;
     /** Holds the close button instance. */
     QIToolButton    *m_pButtonClose;
     /** Holds the details label instance. */

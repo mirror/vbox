@@ -44,8 +44,9 @@ class SHARED_LIBRARY_STUFF UINotificationObject : public QObject
 
 signals:
 
-    /** Notifies model about closing. */
-    void sigAboutToClose();
+    /** Notifies model about closing.
+      * @param  fDismiss  Brings whether message closed as dismissed. */
+    void sigAboutToClose(bool fDismiss);
 
 public:
 
@@ -58,11 +59,15 @@ public:
     virtual QString name() const = 0;
     /** Returns object details. */
     virtual QString details() const = 0;
+    /** Returns object internal name. */
+    virtual QString internalName() const = 0;
     /** Handles notification-object being added. */
     virtual void handle() = 0;
 
 public slots:
 
+    /** Notifies model about dismissing. */
+    virtual void dismiss();
     /** Notifies model about closing. */
     virtual void close();
 };
@@ -90,6 +95,8 @@ protected:
     virtual QString name() const /* override final */;
     /** Returns object details. */
     virtual QString details() const /* override final */;
+    /** Returns object internal name. */
+    virtual QString internalName() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -142,6 +149,8 @@ public:
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const /* override */;
+    /** Returns object internal name. */
+    virtual QString internalName() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -204,6 +213,8 @@ public:
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const /* override */;
+    /** Returns object internal name. */
+    virtual QString internalName() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -267,6 +278,8 @@ public:
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const /* override */;
+    /** Returns object internal name. */
+    virtual QString internalName() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
