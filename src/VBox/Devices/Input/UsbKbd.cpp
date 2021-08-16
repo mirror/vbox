@@ -38,6 +38,37 @@
  * built and the keyboard queue is flushed. This ensures that queued events
  * are processed as quickly as possible.
  *
+ * A second interface with its own interrupt endpoint is used to deliver
+ * additional key events for media and system control keys. This adds
+ * considerable complexity to the emulated device, but unfortunately the
+ * keyboard boot interface is fixed and fairly limited.
+ *
+ * The second interface is only exposed if the device is configured in
+ * "extended" mode, with a different USB product ID and different
+ * descriptors. The "basic" mode should be indistinguishable from the original
+ * implementation.
+ *
+ * There are various options available for reporting media keys. We chose
+ * a very basic approach which reports system control keys as a bit-field
+ * (since there are only 3 keys defined) and consumer control keys as just
+ * a single 16-bit value.
+ *
+ * As a consequence, only one consumer control key can be reported as
+ * pressed at any one time. While this may seem limiting, the usefulness of
+ * being able to report e.g. volume-up at the same time as volume-down or
+ * mute is highly questionable.
+ *
+ * System control and consumer control keys are reported in a single
+ * 4-byte report in order to avoid sending multiple separate report types.
+ *
+ * There is a slight complication in that both interfaces are configured
+ * together, but a guest does not necessarily "listen" on both (e.g. EFI).
+ * Since all events come through a single queue, we can't just push back
+ * events for the secondary interface because the entire keyboard would be
+ * blocked. After the device is reset/configured, we drop any events destined
+ * for the secondary interface until a URB is actually queued on the second
+ * interrupt endpoint. Once that happens, we assume the guest will be
+ * receiving data on the second endpoint until the next reset/reconfig.
  *
  * References:
  *
@@ -69,6 +100,8 @@
  * @{ */
 #define USBHID_STR_ID_MANUFACTURER  1
 #define USBHID_STR_ID_PRODUCT       2
+#define USBHID_STR_ID_IF_KBD        3
+#define USBHID_STR_ID_IF_EXT        4
 /** @} */
 
 /** @name USB HID specific descriptor types
@@ -80,7 +113,8 @@
 /** @name USB HID vendor and product IDs
  * @{ */
 #define VBOX_USB_VENDOR             0x80EE
-#define USBHID_PID_KEYBOARD         0x0010
+#define USBHID_PID_BAS_KEYBOARD     0x0010
+#define USBHID_PID_EXT_KEYBOARD     0x0011
 /** @} */
 
 /** @name USB HID class specific requests
@@ -110,6 +144,18 @@
 *********************************************************************************************************************************/
 
 /**
+ * The device mode.
+ */
+typedef enum USBKBDMODE
+{
+    /** Basic keyboard only, backward compatible. */
+    USBKBDMODE_BASIC = 0,
+    /** Extended 2nd interface for consumer control and power. */
+    USBKBDMODE_EXTENDED,
+} USBKBDMODE;
+
+
+/**
  * The USB HID request state.
  */
 typedef enum USBHIDREQSTATE
@@ -125,17 +171,6 @@ typedef enum USBHIDREQSTATE
     /** The end of the valid states. */
     USBHIDREQSTATE_END
 } USBHIDREQSTATE;
-
-
-/**
- * Endpoint status data.
- */
-typedef struct USBHIDEP
-{
-    bool                fHalted;
-} USBHIDEP;
-/** Pointer to the endpoint status. */
-typedef USBHIDEP *PUSBHIDEP;
 
 
 /**
@@ -155,6 +190,36 @@ typedef USBHIDURBQUEUE const *PCUSBHIDURBQUEUE;
 
 
 /**
+ * Endpoint state.
+ */
+typedef struct USBHIDEP
+{
+    /** Endpoint halt flag.*/
+    bool                fHalted;
+} USBHIDEP;
+/** Pointer to the endpoint status. */
+typedef USBHIDEP *PUSBHIDEP;
+
+
+/**
+ * Interface state.
+ */
+typedef struct USBHIDIF
+{
+    /** If interface has pending changes. */
+    bool                fHasPendingChanges;
+    /** The state of the HID (state machine).*/
+    USBHIDREQSTATE      enmState;
+    /** Pending to-host queue.
+     * The URBs waiting here are waiting for data to become available.
+     */
+    USBHIDURBQUEUE      ToHostQueue;
+} USBHIDIF;
+/** Pointer to the endpoint status. */
+typedef USBHIDIF *PUSBHIDIF;
+
+
+/**
  * The USB HID report structure for regular keys.
  */
 typedef struct USBHIDK_REPORT
@@ -163,6 +228,24 @@ typedef struct USBHIDK_REPORT
     uint8_t     Reserved;       /**< Currently unused */
     uint8_t     aKeys[6];       /**< Normal keys */
 } USBHIDK_REPORT, *PUSBHIDK_REPORT;
+
+/* Must match 8-byte packet size. */
+AssertCompile(sizeof(USBHIDK_REPORT) == 8);
+
+
+/**
+ * The USB HID report structure for extra keys.
+ */
+typedef struct USBHIDX_REPORT
+{
+    uint16_t    uKeyCC;         /**< Consumer Control key code */
+    uint8_t     uSCKeys;        /**< System Control keys bit map */
+    uint8_t     Reserved;       /**< Unused */
+} USBHIDX_REPORT, *PUSBHIDX_REPORT;
+
+/* Must match 4-byte packet size. */
+AssertCompile(sizeof(USBHIDX_REPORT) == 4);
+
 
 /**
  * The USB HID instance data.
@@ -180,15 +263,14 @@ typedef struct USBHID
     /** USB HID Idle value.
      * (0 - only report state change, !=0 - report in bIdle * 4ms intervals.) */
     uint8_t             bIdle;
-    /** Endpoint 0 is the default control pipe, 1 is the dev->host interrupt one. */
-    USBHIDEP            aEps[2];
-    /** The state of the HID (state machine).*/
-    USBHIDREQSTATE      enmState;
-
-    /** Pending to-host queue.
-     * The URBs waiting here are waiting for data to become available.
-     */
-    USBHIDURBQUEUE      ToHostQueue;
+    /** Is this a relative, absolute or multi-touch pointing device? */
+    USBKBDMODE          enmMode;
+    /** Endpoint 0 is the default control pipe, 1 is the dev->host interrupt one
+     *  for standard keys, 1 is the interrupt EP for extra keys. */
+    USBHIDEP            aEps[3];
+    /** Interface 0 is the standard keyboard interface, 1 is the additional
+     *  control/media key interface. */
+    USBHIDIF            aIfs[2];
 
     /** Done queue
      * The URBs stashed here are waiting to be reaped. */
@@ -198,8 +280,8 @@ typedef struct USBHID
     RTSEMEVENT          hEvtDoneQueue;
     /** Someone is waiting on the done queue. */
     bool                fHaveDoneQueueWaiter;
-    /** If device has pending changes. */
-    bool                fHasPendingChanges;
+    /** The guest expects data coming over second endpoint/pipe. */
+    bool                fExtPipeActive;
     /** Currently depressed keys */
     uint8_t             abDepressedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
 
@@ -233,6 +315,8 @@ static const PDMUSBDESCCACHESTRING g_aUsbHidStrings_en_US[] =
 {
     { USBHID_STR_ID_MANUFACTURER,   "VirtualBox"    },
     { USBHID_STR_ID_PRODUCT,        "USB Keyboard"  },
+    { USBHID_STR_ID_IF_KBD,         "Keyboard"      },
+    { USBHID_STR_ID_IF_EXT,         "System Control"},
 };
 
 static const PDMUSBDESCCACHELANG g_aUsbHidLanguages[] =
@@ -240,7 +324,7 @@ static const PDMUSBDESCCACHELANG g_aUsbHidLanguages[] =
     { 0x0409, RT_ELEMENTS(g_aUsbHidStrings_en_US), g_aUsbHidStrings_en_US }
 };
 
-static const VUSBDESCENDPOINTEX g_aUsbHidEndpointDescs[] =
+static const VUSBDESCENDPOINTEX g_aUsbHidEndpointDescsKbd[] =
 {
     {
         {
@@ -257,8 +341,25 @@ static const VUSBDESCENDPOINTEX g_aUsbHidEndpointDescs[] =
     },
 };
 
-/** HID report descriptor. */
-static const uint8_t g_UsbHidReportDesc[] =
+static const VUSBDESCENDPOINTEX g_aUsbHidEndpointDescsExt[] =
+{
+    {
+        {
+            /* .bLength = */            sizeof(VUSBDESCENDPOINT),
+            /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
+            /* .bEndpointAddress = */   0x82 /* ep=2, in */,
+            /* .bmAttributes = */       3 /* interrupt */,
+            /* .wMaxPacketSize = */     4,
+            /* .bInterval = */          10,
+        },
+        /* .pvMore = */     NULL,
+        /* .pvClass = */    NULL,
+        /* .cbClass = */    0
+    },
+};
+
+/** HID report descriptor for standard keys. */
+static const uint8_t g_UsbHidReportDescKbd[] =
 {
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x06,     /* Keyboard */
@@ -279,7 +380,7 @@ static const uint8_t g_UsbHidReportDesc[] =
     /* Usage Page */                0x05, 0x08,     /* LEDs */
     /* Usage Minimum */             0x19, 0x01,     /* Num Lock */
     /* Usage Maximum */             0x29, 0x05,     /* Kana */
-    /* Output */                    0x91, 0x02,     /* Data, Value, Absolute, Non-volatile,Bit field */
+    /* Output */                    0x91, 0x02,     /* Data, Value, Absolute, Non-volatile, Bit field */
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Report Size */               0x75, 0x03,     /* 3 */
     /* Output */                    0x91, 0x01,     /* Constant, Value, Absolute, Non-volatile, Bit field */
@@ -294,8 +395,41 @@ static const uint8_t g_UsbHidReportDesc[] =
     /* End Collection */            0xC0,
 };
 
-/** Additional HID class interface descriptor. */
-static const uint8_t g_UsbHidIfHidDesc[] =
+/** HID report descriptor for extra multimedia/system keys. */
+static const uint8_t g_UsbHidReportDescExt[] =
+{
+    /* Usage Page */                0x05, 0x0C,         /* Consumer */
+    /* Usage */                     0x09, 0x01,         /* Consumer Control */
+    /* Collection */                0xA1, 0x01,         /* Application */
+
+    /* Usage Page */                0x05, 0x0C,         /* Consumer */
+    /* Usage Minimum */             0x19, 0x00,         /* 0 */
+    /* Usage Maximum */             0x2A, 0x3C, 0x02,   /* 572 */
+    /* Logical Minimum */           0x15, 0x00,         /* 0 */
+    /* Logical Maximum */           0x26, 0x3C, 0x02,   /* 572 */
+    /* Report Count */              0x95, 0x01,         /* 1 */
+    /* Report Size */               0x75, 0x10,         /* 16 */
+    /* Input */                     0x81, 0x80,         /* Data, Array, Absolute, Bytes */
+
+    /* Usage Page */                0x05, 0x01,         /* Generic Desktop */
+    /* Usage Minimum */             0x19, 0x81,         /* 129 */
+    /* Usage Maximum */             0x29, 0x83,         /* 131 */
+    /* Logical Minimum */           0x15, 0x00,         /* 0 */
+    /* Logical Maximum */           0x25, 0x01,         /* 1 */
+    /* Report Size */               0x75, 0x01,         /* 1 */
+    /* Report Count */              0x95, 0x03,         /* 3 */
+    /* Input */                     0x81, 0x02,         /* Data, Value, Absolute, Bit field */
+    /* Report Count */              0x95, 0x05,         /* 5 */
+    /* Input */                     0x81, 0x01,         /* Constant, Array, Absolute, Bit field */
+    /* Report Count */              0x95, 0x01,         /* 1 */
+    /* Report Size */               0x75, 0x08,         /* 8 (padding bits) */
+    /* Input */                     0x81, 0x01,         /* Constant, Array, Absolute, Bit field */
+
+    /* End Collection */            0xC0,
+};
+
+/** Additional HID class interface descriptor for standard keys. */
+static const uint8_t g_UsbHidIfHidDescKbd[] =
 {
     /* .bLength = */                0x09,
     /* .bDescriptorType = */        0x21,       /* HID */
@@ -303,10 +437,23 @@ static const uint8_t g_UsbHidIfHidDesc[] =
     /* .bCountryCode = */           0x0D,       /* International (ISO) */
     /* .bNumDescriptors = */        1,
     /* .bDescriptorType = */        0x22,       /* Report */
-    /* .wDescriptorLength = */      sizeof(g_UsbHidReportDesc), 0x00
+    /* .wDescriptorLength = */      sizeof(g_UsbHidReportDescKbd), 0x00
 };
 
-static const VUSBDESCINTERFACEEX g_UsbHidInterfaceDesc =
+/** Additional HID class interface descriptor for extra keys. */
+static const uint8_t g_UsbHidIfHidDescExt[] =
+{
+    /* .bLength = */                0x09,
+    /* .bDescriptorType = */        0x21,       /* HID */
+    /* .bcdHID = */                 0x10, 0x01, /* 1.1 */
+    /* .bCountryCode = */           0,
+    /* .bNumDescriptors = */        1,
+    /* .bDescriptorType = */        0x22,       /* Report */
+    /* .wDescriptorLength = */      sizeof(g_UsbHidReportDescExt), 0x00
+};
+
+/** Standard keyboard interface. */
+static const VUSBDESCINTERFACEEX g_UsbHidInterfaceDescKbd =
 {
     {
         /* .bLength = */                sizeof(VUSBDESCINTERFACE),
@@ -317,43 +464,90 @@ static const VUSBDESCINTERFACEEX g_UsbHidInterfaceDesc =
         /* .bInterfaceClass = */        3 /* HID */,
         /* .bInterfaceSubClass = */     1 /* Boot Interface */,
         /* .bInterfaceProtocol = */     1 /* Keyboard */,
-        /* .iInterface = */             0
+        /* .iInterface = */             USBHID_STR_ID_IF_KBD
     },
     /* .pvMore = */     NULL,
-    /* .pvClass = */    &g_UsbHidIfHidDesc,
-    /* .cbClass = */    sizeof(g_UsbHidIfHidDesc),
-    &g_aUsbHidEndpointDescs[0],
+    /* .pvClass = */    &g_UsbHidIfHidDescKbd,
+    /* .cbClass = */    sizeof(g_UsbHidIfHidDescKbd),
+    &g_aUsbHidEndpointDescsKbd[0],
     /* .pIAD = */ NULL,
     /* .cbIAD = */ 0
 };
 
-static const VUSBINTERFACE g_aUsbHidInterfaces[] =
+/** Extra keys (multimedia/system) interface. */
+static const VUSBDESCINTERFACEEX g_UsbHidInterfaceDescExt =
 {
-    { &g_UsbHidInterfaceDesc, /* .cSettings = */ 1 },
+    {
+        /* .bLength = */                sizeof(VUSBDESCINTERFACE),
+        /* .bDescriptorType = */        VUSB_DT_INTERFACE,
+        /* .bInterfaceNumber = */       1,
+        /* .bAlternateSetting = */      0,
+        /* .bNumEndpoints = */          1,
+        /* .bInterfaceClass = */        3 /* HID */,
+        /* .bInterfaceSubClass = */     0 /* None */,
+        /* .bInterfaceProtocol = */     0 /* Unspecified */,
+        /* .iInterface = */             USBHID_STR_ID_IF_EXT
+    },
+    /* .pvMore = */     NULL,
+    /* .pvClass = */    &g_UsbHidIfHidDescExt,
+    /* .cbClass = */    sizeof(g_UsbHidIfHidDescExt),
+    &g_aUsbHidEndpointDescsExt[0],
+    /* .pIAD = */ NULL,
+    /* .cbIAD = */ 0
 };
 
-static const VUSBDESCCONFIGEX g_UsbHidConfigDesc =
+static const VUSBINTERFACE g_aUsbHidBasInterfaces[] =
+{
+    { &g_UsbHidInterfaceDescKbd, /* .cSettings = */ 1 },
+};
+
+static const VUSBINTERFACE g_aUsbHidExtInterfaces[] =
+{
+    { &g_UsbHidInterfaceDescKbd, /* .cSettings = */ 1 },
+    { &g_UsbHidInterfaceDescExt, /* .cSettings = */ 1 },
+};
+
+static const VUSBDESCCONFIGEX g_UsbHidBasConfigDesc =
 {
     {
         /* .bLength = */            sizeof(VUSBDESCCONFIG),
         /* .bDescriptorType = */    VUSB_DT_CONFIG,
         /* .wTotalLength = */       0 /* recalculated on read */,
-        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbHidInterfaces),
+        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbHidBasInterfaces),
         /* .bConfigurationValue =*/ 1,
         /* .iConfiguration = */     0,
-        /* .bmAttributes = */       RT_BIT(7),
+        /* .bmAttributes = */       RT_BIT(7),  /* bus-powered */
         /* .MaxPower = */           50 /* 100mA */
     },
     NULL,                           /* pvMore */
     NULL,                           /* pvClass */
     0,                              /* cbClass */
-    &g_aUsbHidInterfaces[0],
+    &g_aUsbHidBasInterfaces[0],
     NULL                            /* pvOriginal */
 };
 
-static const VUSBDESCDEVICE g_UsbHidDeviceDesc =
+static const VUSBDESCCONFIGEX g_UsbHidExtConfigDesc =
 {
-    /* .bLength = */                sizeof(g_UsbHidDeviceDesc),
+    {
+        /* .bLength = */            sizeof(VUSBDESCCONFIG),
+        /* .bDescriptorType = */    VUSB_DT_CONFIG,
+        /* .wTotalLength = */       0 /* recalculated on read */,
+        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbHidExtInterfaces),
+        /* .bConfigurationValue =*/ 1,
+        /* .iConfiguration = */     0,
+        /* .bmAttributes = */       RT_BIT(7),  /* bus-powered */
+        /* .MaxPower = */           50 /* 100mA */
+    },
+    NULL,                           /* pvMore */
+    NULL,                           /* pvClass */
+    0,                              /* cbClass */
+    &g_aUsbHidExtInterfaces[0],
+    NULL                            /* pvOriginal */
+};
+
+static const VUSBDESCDEVICE g_UsbHidBasDeviceDesc =
+{
+    /* .bLength = */                sizeof(g_UsbHidBasDeviceDesc),
     /* .bDescriptorType = */        VUSB_DT_DEVICE,
     /* .bcdUsb = */                 0x110,  /* 1.1 */
     /* .bDeviceClass = */           0 /* Class specified in the interface desc. */,
@@ -361,7 +555,7 @@ static const VUSBDESCDEVICE g_UsbHidDeviceDesc =
     /* .bDeviceProtocol = */        0 /* Protocol specified in the interface desc. */,
     /* .bMaxPacketSize0 = */        8,
     /* .idVendor = */               VBOX_USB_VENDOR,
-    /* .idProduct = */              USBHID_PID_KEYBOARD,
+    /* .idProduct = */              USBHID_PID_BAS_KEYBOARD,
     /* .bcdDevice = */              0x0100, /* 1.0 */
     /* .iManufacturer = */          USBHID_STR_ID_MANUFACTURER,
     /* .iProduct = */               USBHID_STR_ID_PRODUCT,
@@ -369,16 +563,43 @@ static const VUSBDESCDEVICE g_UsbHidDeviceDesc =
     /* .bNumConfigurations = */     1
 };
 
-static const PDMUSBDESCCACHE g_UsbHidDescCache =
+static const VUSBDESCDEVICE g_UsbHidExtDeviceDesc =
 {
-    /* .pDevice = */                &g_UsbHidDeviceDesc,
-    /* .paConfigs = */              &g_UsbHidConfigDesc,
+    /* .bLength = */                sizeof(g_UsbHidExtDeviceDesc),
+    /* .bDescriptorType = */        VUSB_DT_DEVICE,
+    /* .bcdUsb = */                 0x110,  /* 1.1 */
+    /* .bDeviceClass = */           0 /* Class specified in the interface desc. */,
+    /* .bDeviceSubClass = */        0 /* Subclass specified in the interface desc. */,
+    /* .bDeviceProtocol = */        0 /* Protocol specified in the interface desc. */,
+    /* .bMaxPacketSize0 = */        8,
+    /* .idVendor = */               VBOX_USB_VENDOR,
+    /* .idProduct = */              USBHID_PID_EXT_KEYBOARD,
+    /* .bcdDevice = */              0x0100, /* 1.0 */
+    /* .iManufacturer = */          USBHID_STR_ID_MANUFACTURER,
+    /* .iProduct = */               USBHID_STR_ID_PRODUCT,
+    /* .iSerialNumber = */          0,
+    /* .bNumConfigurations = */     1
+};
+
+static const PDMUSBDESCCACHE g_UsbHidBasDescCache =
+{
+    /* .pDevice = */                &g_UsbHidBasDeviceDesc,
+    /* .paConfigs = */              &g_UsbHidBasConfigDesc,
     /* .paLanguages = */            g_aUsbHidLanguages,
     /* .cLanguages = */             RT_ELEMENTS(g_aUsbHidLanguages),
     /* .fUseCachedDescriptors = */  true,
     /* .fUseCachedStringsDescriptors = */ true
 };
 
+static const PDMUSBDESCCACHE g_UsbHidExtDescCache =
+{
+    /* .pDevice = */                &g_UsbHidExtDeviceDesc,
+    /* .paConfigs = */              &g_UsbHidExtConfigDesc,
+    /* .paLanguages = */            g_aUsbHidLanguages,
+    /* .cLanguages = */             RT_ELEMENTS(g_aUsbHidLanguages),
+    /* .fUseCachedDescriptors = */  true,
+    /* .fUseCachedStringsDescriptors = */ true
+};
 
 /**
  * Conversion table for consumer control keys (HID Usage Page 12).
@@ -472,7 +693,7 @@ static int usbHidToInternalCode(uint32_t u32HidCode)
     else if (u8HidPage == USB_HID_DC_PAGE)
     {
         for (unsigned i = 0; i < RT_ELEMENTS(aHidDCKeys); ++i)
-            if (aHidCCKeys[i] == u16HidUsage)
+            if (aHidDCKeys[i] == u16HidUsage)
             {
                 iKeyIndex = USBHID_PAGE_DC_START + i;
                 break;
@@ -483,10 +704,6 @@ static int usbHidToInternalCode(uint32_t u32HidCode)
     {
         AssertMsgFailed(("Unsupported u8HidPage! (%02X)\n", u8HidPage));
     }
-
-    /** @todo We can currently only report the standard HID keyboard page.*/
-    if (u8HidPage != USB_HID_KB_PAGE)
-        return -1;
 
     return iKeyIndex;
 }
@@ -583,7 +800,11 @@ DECLINLINE(bool) usbHidQueueRemove(PUSBHIDURBQUEUE pQueue, PVUSBURB pUrb)
 {
     PVUSBURB pCur = pQueue->pHead;
     if (pCur == pUrb)
+    {
         pQueue->pHead = pUrb->Dev.pNext;
+        if (!pUrb->Dev.pNext)
+            pQueue->ppTail = &pQueue->pHead;
+    }
     else
     {
         while (pCur)
@@ -597,9 +818,10 @@ DECLINLINE(bool) usbHidQueueRemove(PUSBHIDURBQUEUE pQueue, PVUSBURB pUrb)
         }
         if (!pCur)
             return false;
+        if (!pUrb->Dev.pNext)
+            pQueue->ppTail = &pCur->Dev.pNext;
     }
-    if (!pUrb->Dev.pNext)
-        pQueue->ppTail = &pQueue->pHead;
+    pUrb->Dev.pNext = NULL;
     return true;
 }
 
@@ -651,8 +873,8 @@ static int usbHidCompleteStall(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb, cons
         pEp->fHalted = true;
     else
     {
-        pThis->aEps[0].fHalted = true;
-        pThis->aEps[1].fHalted = true;
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->aEps); i++)
+            pThis->aEps[i].fHalted = true;
     }
 
     usbHidLinkDone(pThis, pUrb);
@@ -661,14 +883,47 @@ static int usbHidCompleteStall(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb, cons
 
 
 /**
- * Completes the URB with a OK state.
+ * Completes the URB after device successfully processed it. Optionally copies data
+ * into the URB. May still generate an error if the URB is not big enough.
  */
-static int usbHidCompleteOk(PUSBHID pThis, PVUSBURB pUrb, size_t cbData)
+static int usbHidCompleteOk(PUSBHID pThis, PVUSBURB pUrb, const void *pSrc, size_t cbSrc)
 {
-    Log(("usbHidCompleteOk/#%u: pUrb=%p:%s cbData=%#zx\n", pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, cbData));
+    Log(("usbHidCompleteOk/#%u: pUrb=%p:%s (cbData=%#x) cbSrc=%#zx\n", pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, pUrb->cbData, cbSrc));
 
     pUrb->enmStatus = VUSBSTATUS_OK;
-    pUrb->cbData    = (uint32_t)cbData;
+    size_t  cbCopy  = 0;
+    size_t  cbSetup = 0;
+
+    if (pSrc)   /* Can be NULL if not copying anything. */
+    {
+        Assert(cbSrc);
+        uint8_t *pDst = pUrb->abData;
+
+        /* Returned data is written after the setup message in control URBs. */
+        if (pUrb->enmType == VUSBXFERTYPE_MSG)
+            cbSetup = sizeof(VUSBSETUP);
+
+        Assert(pUrb->cbData >= cbSetup);    /* Only triggers if URB is corrupted. */
+
+        if (pUrb->cbData > cbSetup)
+        {
+            /* There is at least one byte of room in the URB. */
+            cbCopy = RT_MIN(pUrb->cbData - cbSetup, cbSrc);
+            memcpy(pDst + cbSetup, pSrc, cbCopy);
+            pUrb->cbData = (uint32_t)(cbCopy + cbSetup);
+            Log(("Copied %zu bytes to pUrb->abData[%zu], source had %zu bytes\n", cbCopy, cbSetup, cbSrc));
+        }
+
+        /* Need to check length differences. If cbSrc is less than what
+         * the URB has space for, it'll be resolved as a short packet. But
+         * if cbSrc is bigger, there is a real problem and the host needs
+         * to see an overrun/babble error.
+         */
+        if (RT_UNLIKELY(cbSrc > cbCopy))
+            pUrb->enmStatus = VUSBSTATUS_DATA_OVERRUN;
+    }
+    else
+        Assert(cbSrc == 0); /* Make up your mind, caller! */
 
     usbHidLinkDone(pThis, pUrb);
     return VINF_SUCCESS;
@@ -696,12 +951,17 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
     /*
      * Reset the device state.
      */
-    pThis->enmState = USBHIDREQSTATE_READY;
     pThis->bIdle = 0;
-    pThis->fHasPendingChanges = false;
+    pThis->fExtPipeActive = false;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aEps); i++)
         pThis->aEps[i].fHalted = false;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aIfs); i++)
+    {
+        pThis->aIfs[i].fHasPendingChanges = false;
+        pThis->aIfs[i].enmState = USBHIDREQSTATE_READY;
+    }
 
     if (!pUrb && !fSetConfig) /* (only device reset) */
         pThis->bConfigurationValue = 0; /* default */
@@ -710,14 +970,15 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
      * Ditch all pending URBs.
      */
     PVUSBURB pCurUrb;
-    while ((pCurUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue)) != NULL)
-    {
-        pCurUrb->enmStatus = VUSBSTATUS_CRC;
-        usbHidLinkDone(pThis, pCurUrb);
-    }
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aIfs); i++)
+        while ((pCurUrb = usbHidQueueRemoveHead(&pThis->aIfs[i].ToHostQueue)) != NULL)
+        {
+            pCurUrb->enmStatus = VUSBSTATUS_CRC;
+            usbHidLinkDone(pThis, pCurUrb);
+        }
 
     if (pUrb)
-        return usbHidCompleteOk(pThis, pUrb, 0);
+        return usbHidCompleteOk(pThis, pUrb, NULL, 0);
     return VINF_SUCCESS;
 }
 
@@ -743,10 +1004,30 @@ static uint8_t usbHidModifierToFlag(uint8_t u8Usage)
 }
 
 /**
- * Create a USB HID keyboard report reflecting the current state of the
- * keyboard (up/down keys).
+ * Returns true if the usage code corresponds to a System Control key.
+ * The usage codes for these keys are the range 0x81 to 0x83.
  */
-static void usbHidBuildReport(PUSBHIDK_REPORT pReport, uint8_t *pabDepressedKeys)
+static bool usbHidUsageCodeIsSCKey(uint16_t u16Usage)
+{
+    return u16Usage >= 0x81 && u16Usage <= 0x83;
+}
+
+/**
+ * Convert a USB HID usage code to a system control key mask. The system control
+ * keys have usage codes from 0x81 to 0x83, and the lower nibble is the bit
+ * position plus one.
+ */
+static uint8_t usbHidSCKeyToMask(uint16_t u16Usage)
+{
+    Assert(usbHidUsageCodeIsSCKey(u16Usage));
+    return RT_BIT((u16Usage & 0xf) - 1);
+}
+
+/**
+ * Create a USB HID keyboard report reflecting the current state of the
+ * standard keyboard (up/down keys).
+ */
+static void usbHidBuildReportKbd(PUSBHIDK_REPORT pReport, uint8_t *pabDepressedKeys)
 {
     unsigned iBuf = 0;
     RT_ZERO(*pReport);
@@ -771,7 +1052,7 @@ static void usbHidBuildReport(PUSBHIDK_REPORT pReport, uint8_t *pabDepressedKeys
                 /* Key index back to 32-bit HID code. */
                 uint32_t    u32HidCode  = usbInternalCodeToHid(iKey);
                 uint8_t     u8HidPage   = RT_LOBYTE(RT_HIWORD(u32HidCode));
-                uint8_t     u16HidUsage = RT_LOWORD(u32HidCode);
+                uint16_t    u16HidUsage = RT_LOWORD(u32HidCode);
 
                 if (u8HidPage == USB_HID_KB_PAGE)
                 {
@@ -779,6 +1060,33 @@ static void usbHidBuildReport(PUSBHIDK_REPORT pReport, uint8_t *pabDepressedKeys
                     ++iBuf;
                 }
             }
+        }
+    }
+}
+
+/**
+ * Create a USB HID keyboard report reflecting the current state of the
+ * consumer control keys. This is very easy as we have a bit mask that fully
+ * reflects the state of all defined system control keys.
+ */
+static void usbHidBuildReportExt(PUSBHIDX_REPORT pReport, uint8_t *pabDepressedKeys)
+{
+    RT_ZERO(*pReport);
+
+    for (unsigned iKey = 0; iKey < VBOX_USB_USAGE_ARRAY_SIZE; ++iKey)
+    {
+        if (pabDepressedKeys[iKey])
+        {
+            /* Key index back to 32-bit HID code. */
+            uint32_t    u32HidCode  = usbInternalCodeToHid(iKey);
+            uint8_t     u8HidPage   = RT_LOBYTE(RT_HIWORD(u32HidCode));
+            uint16_t    u16HidUsage = RT_LOWORD(u32HidCode);
+
+            if (u8HidPage == USB_HID_CC_PAGE)
+                pReport->uKeyCC = u16HidUsage;
+            else if (u8HidPage == USB_HID_DC_PAGE)
+                if (usbHidUsageCodeIsSCKey(u16HidUsage))
+                    pReport->uSCKeys |= usbHidSCKeyToMask(u16HidUsage);
         }
     }
 }
@@ -814,21 +1122,32 @@ static void usbHidSetReport(PUSBHID pThis, PVUSBURB pUrb)
 /**
  * Sends a state report to the guest if there is a URB available.
  */
-static void usbHidSendReport(PUSBHID pThis)
+static void usbHidSendReport(PUSBHID pThis, PUSBHIDIF pIf)
 {
-    PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
+    PVUSBURB pUrb = usbHidQueueRemoveHead(&pIf->ToHostQueue);
     if (pUrb)
     {
-        PUSBHIDK_REPORT pReport = (PUSBHIDK_REPORT)&pUrb->abData[0];
+        pIf->fHasPendingChanges = false;
+        if (pIf == &pThis->aIfs[0])
+        {
+            USBHIDK_REPORT  ReportKbd;
 
-        usbHidBuildReport(pReport, pThis->abDepressedKeys);
-        pThis->fHasPendingChanges = false;
-        usbHidCompleteOk(pThis, pUrb, sizeof(*pReport));
+            usbHidBuildReportKbd(&ReportKbd, pThis->abDepressedKeys);
+            usbHidCompleteOk(pThis, pUrb, &ReportKbd, sizeof(ReportKbd));
+        }
+        else
+        {
+            Assert(pIf == &pThis->aIfs[1]);
+            USBHIDX_REPORT  ReportExt;
+
+            usbHidBuildReportExt(&ReportExt, pThis->abDepressedKeys);
+            usbHidCompleteOk(pThis, pUrb, &ReportExt, sizeof(ReportExt));
+        }
     }
     else
     {
         Log2(("No available URB for USB kbd\n"));
-        pThis->fHasPendingChanges = true;
+        pIf->fHasPendingChanges = true;
     }
 }
 
@@ -848,14 +1167,30 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
  */
 static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint32_t idUsage)
 {
-    PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
+    PUSBHID     pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
+    PUSBHIDIF   pIf;
     bool        fKeyDown;
     bool        fHaveEvent = true;
     int         rc = VINF_SUCCESS;
     int         iKeyCode;
+    uint8_t     u8HidPage = RT_LOBYTE(RT_HIWORD(idUsage));
 
     /* Let's see what we got... */
     fKeyDown  = !(idUsage & PDMIKBDPORT_KEY_UP);
+
+    /* Always respond to USB_HID_KB_PAGE, but quietly drop USB_HID_CC_PAGE/USB_HID_DC_PAGE
+     * events unless the device is in the extended mode. And drop anything else, too.
+     */
+    if (u8HidPage == USB_HID_KB_PAGE)
+        pIf = &pThis->aIfs[0];
+    else
+    {
+        if (    pThis->fExtPipeActive
+            && ((u8HidPage == USB_HID_CC_PAGE) || (u8HidPage == USB_HID_DC_PAGE)))
+            pIf = &pThis->aIfs[1];
+        else
+            return VINF_SUCCESS;    /* Must consume data to avoid blockage. */
+    }
 
     iKeyCode = usbHidToInternalCode(idUsage);
     AssertReturn(iKeyCode > 0 && iKeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
@@ -872,7 +1207,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
         fHaveEvent = false;
 
     /* If there is already a pending event, we won't accept a new one yet. */
-    if (pThis->fHasPendingChanges && fHaveEvent)
+    if (pIf->fHasPendingChanges && fHaveEvent)
     {
         rc = VERR_TRY_AGAIN;
     }
@@ -888,7 +1223,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
         }
         else
         {
-            /* Clear all currently depressed and unreported keys. */
+            /* Clear all currently depressed keys. */
             RT_ZERO(pThis->abDepressedKeys);
         }
 
@@ -897,7 +1232,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
          * event regardless of whether a URB is available or not. If it's not,
          * we will simply not accept any further events.
          */
-        usbHidSendReport(pThis);
+        usbHidSendReport(pThis, pIf);
     }
 
     RTCritSectLeave(&pThis->CritSect);
@@ -959,10 +1294,11 @@ static DECLCALLBACK(int) usbHidUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
     RTCritSectEnter(&pThis->CritSect);
 
     /*
-     * Remove the URB from the to-host queue and move it onto the done queue.
+     * Remove the URB from its to-host queue and move it onto the done queue.
      */
-    if (usbHidQueueRemove(&pThis->ToHostQueue, pUrb))
-        usbHidLinkDone(pThis, pUrb);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aIfs); i++)
+        if (usbHidQueueRemove(&pThis->aIfs[i].ToHostQueue, pUrb))
+            usbHidLinkDone(pThis, pUrb);
 
     RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
@@ -974,7 +1310,7 @@ static DECLCALLBACK(int) usbHidUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
  * rather different from bulk requests because an interrupt read URB may complete
  * after arbitrarily long time.
  */
-static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
+static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PUSBHIDIF pIf, PVUSBURB pUrb)
 {
     /*
      * Stall the request if the pipe is halted.
@@ -983,9 +1319,9 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
         return usbHidCompleteStall(pThis, NULL, pUrb, "Halted pipe");
 
     /*
-     * Deal with the URB according to the state.
+     * Deal with the URB according to the endpoint/interface state.
      */
-    switch (pThis->enmState)
+    switch (pIf->enmState)
     {
         /*
          * We've data left to transfer to the host.
@@ -994,7 +1330,7 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
         {
             AssertFailed();
             Log(("usbHidHandleIntrDevToHost: Entering STATUS\n"));
-            return usbHidCompleteOk(pThis, pUrb, 0);
+            return usbHidCompleteOk(pThis, pUrb, NULL, 0);
         }
 
         /*
@@ -1004,18 +1340,18 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
         {
             AssertFailed();
             Log(("usbHidHandleIntrDevToHost: Entering READY\n"));
-            pThis->enmState = USBHIDREQSTATE_READY;
-            return usbHidCompleteOk(pThis, pUrb, 0);
+            pIf->enmState = USBHIDREQSTATE_READY;
+            return usbHidCompleteOk(pThis, pUrb, NULL, 0);
         }
 
         case USBHIDREQSTATE_READY:
-            usbHidQueueAddTail(&pThis->ToHostQueue, pUrb);
+            usbHidQueueAddTail(&pIf->ToHostQueue, pUrb);
             /* If device was not set idle, send the current report right away. */
-            if (pThis->bIdle != 0 || pThis->fHasPendingChanges)
+            if (pThis->bIdle != 0 || pIf->fHasPendingChanges)
             {
-                usbHidSendReport(pThis);
+                usbHidSendReport(pThis, pIf);
                 LogFlow(("usbHidHandleIntrDevToHost: Sent report via %p:%s\n", pUrb, pUrb->pszDesc));
-                Assert(!pThis->fHasPendingChanges); /* Since we just got a URB... */
+                Assert(!pIf->fHasPendingChanges);   /* Since we just got a URB... */
                 /* There may be more input queued up. Ask for it now. */
                 pThis->Lun0.pDrv->pfnFlushQueue(pThis->Lun0.pDrv);
             }
@@ -1025,7 +1361,7 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
          * Bad states, stall.
          */
         default:
-            Log(("usbHidHandleIntrDevToHost: enmState=%d cbData=%#x\n", pThis->enmState, pUrb->cbData));
+            Log(("usbHidHandleIntrDevToHost: enmState=%d cbData=%#x\n", pIf->enmState, pUrb->cbData));
             return usbHidCompleteStall(pThis, NULL, pUrb, "Really bad state (D2H)!");
     }
 }
@@ -1069,26 +1405,42 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         {
                             case DT_IF_HID_DESCRIPTOR:
                             {
-                                uint32_t    cbCopy;
+                                uint32_t    cbSrc;
+                                const void  *pSrc;
 
-                                /* Returned data is written after the setup message. */
-                                cbCopy = pUrb->cbData - sizeof(*pSetup);
-                                cbCopy = RT_MIN(cbCopy, sizeof(g_UsbHidIfHidDesc));
-                                Log(("usbHidKbd: GET_DESCRIPTOR DT_IF_HID_DESCRIPTOR wValue=%#x wIndex=%#x cbCopy=%#x\n", pSetup->wValue, pSetup->wIndex, cbCopy));
-                                memcpy(&pUrb->abData[sizeof(*pSetup)], &g_UsbHidIfHidDesc, cbCopy);
-                                return usbHidCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
+                                if (pSetup->wIndex == 0)
+                                {
+                                    cbSrc = RT_MIN(pSetup->wLength, sizeof(g_UsbHidIfHidDescKbd));
+                                    pSrc  = &g_UsbHidIfHidDescKbd;
+                                }
+                                else
+                                {
+                                    cbSrc = RT_MIN(pSetup->wLength, sizeof(g_UsbHidIfHidDescExt));
+                                    pSrc  = &g_UsbHidIfHidDescExt;
+                                }
+                                Log(("usbHidKbd: GET_DESCRIPTOR DT_IF_HID_DESCRIPTOR wValue=%#x wIndex=%#x cbSrc=%#x\n", pSetup->wValue, pSetup->wIndex, cbSrc));
+                                return usbHidCompleteOk(pThis, pUrb, pSrc, cbSrc);
                             }
 
                             case DT_IF_HID_REPORT:
                             {
-                                uint32_t    cbCopy;
+                                uint32_t    cbSrc;
+                                const void  *pSrc;
 
                                 /* Returned data is written after the setup message. */
-                                cbCopy = pUrb->cbData - sizeof(*pSetup);
-                                cbCopy = RT_MIN(cbCopy, sizeof(g_UsbHidReportDesc));
-                                Log(("usbHid: GET_DESCRIPTOR DT_IF_HID_REPORT wValue=%#x wIndex=%#x cbCopy=%#x\n", pSetup->wValue, pSetup->wIndex, cbCopy));
-                                memcpy(&pUrb->abData[sizeof(*pSetup)], &g_UsbHidReportDesc, cbCopy);
-                                return usbHidCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
+                                if (pSetup->wIndex == 0)
+                                {
+                                    cbSrc = RT_MIN(pSetup->wLength, sizeof(g_UsbHidReportDescKbd));
+                                    pSrc  = &g_UsbHidReportDescKbd;
+                                }
+                                else
+                                {
+                                    cbSrc = RT_MIN(pSetup->wLength, sizeof(g_UsbHidReportDescExt));
+                                    pSrc  = &g_UsbHidReportDescExt;
+                                }
+
+                                Log(("usbHid: GET_DESCRIPTOR DT_IF_HID_REPORT wValue=%#x wIndex=%#x cbSrc=%#x\n", pSetup->wValue, pSetup->wIndex, cbSrc));
+                                return usbHidCompleteOk(pThis, pUrb, pSrc, cbSrc);
                             }
 
                             default:
@@ -1122,16 +1474,14 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         Assert(pSetup->wIndex == 0);
                         Log(("usbHid: GET_STATUS (device)\n"));
                         wRet = 0;   /* Not self-powered, no remote wakeup. */
-                        memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
-                        return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
+                        return usbHidCompleteOk(pThis, pUrb, &wRet, sizeof(wRet));
                     }
 
                     case VUSB_TO_INTERFACE | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
                     {
                         if (pSetup->wIndex == 0)
                         {
-                            memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
-                            return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
+                            return usbHidCompleteOk(pThis, pUrb, &wRet, sizeof(wRet));
                         }
                         Log(("usbHid: GET_STATUS (interface) invalid, wIndex=%#x\n", pSetup->wIndex));
                         break;
@@ -1142,8 +1492,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         if (pSetup->wIndex < RT_ELEMENTS(pThis->aEps))
                         {
                             wRet = pThis->aEps[pSetup->wIndex].fHalted ? 1 : 0;
-                            memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
-                            return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
+                            return usbHidCompleteOk(pThis, pUrb, &wRet, sizeof(wRet));
                         }
                         Log(("usbHid: GET_STATUS (endpoint) invalid, wIndex=%#x\n", pSetup->wIndex));
                         break;
@@ -1180,7 +1529,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         pThis->bIdle = pSetup->wValue >> 8;
                         /* Consider 24ms to mean zero for keyboards (see IOUSBHIDDriver) */
                         if (pThis->bIdle == 6) pThis->bIdle = 0;
-                        return usbHidCompleteOk(pThis, pUrb, 0);
+                        return usbHidCompleteOk(pThis, pUrb, NULL, 0);
                     }
                     break;
                 }
@@ -1193,8 +1542,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     case VUSB_TO_INTERFACE | VUSB_REQ_CLASS | VUSB_DIR_TO_HOST:
                     {
                         Log(("usbHid: GET_IDLE wValue=%#x wIndex=%#x, returning %#x\n", pSetup->wValue, pSetup->wIndex, pThis->bIdle));
-                        pUrb->abData[sizeof(*pSetup)] = pThis->bIdle;
-                        return usbHidCompleteOk(pThis, pUrb, 1);
+                        return usbHidCompleteOk(pThis, pUrb, &pThis->bIdle, sizeof(pThis->bIdle));
                     }
                     break;
                 }
@@ -1208,7 +1556,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     {
                         Log(("usbHid: SET_REPORT wValue=%#x wIndex=%#x wLength=%#x\n", pSetup->wValue, pSetup->wIndex, pSetup->wLength));
                         usbHidSetReport(pThis, pUrb);
-                        return usbHidCompleteOk(pThis, pUrb, 0);
+                        return usbHidCompleteOk(pThis, pUrb, NULL, 0);
                     }
                     break;
                 }
@@ -1234,14 +1582,14 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
 /**
  * @interface_method_impl{PDMUSBREG,pfnUrbQueue}
  */
-static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
+static DECLCALLBACK(int) usbHidQueueUrb(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidQueue/#%u: pUrb=%p:%s EndPt=%#x\n", pUsbIns->iInstance, pUrb, pUrb->pszDesc, pUrb->EndPt));
     RTCritSectEnter(&pThis->CritSect);
 
     /*
-     * Parse on a per end-point basis.
+     * Parse on a per-endpoint basis.
      */
     int rc;
     switch (pUrb->EndPt)
@@ -1250,13 +1598,26 @@ static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
             rc = usbHidHandleDefaultPipe(pThis, &pThis->aEps[0], pUrb);
             break;
 
+        /* Standard keyboard interface. */
         case 0x81:
             AssertFailed();
             RT_FALL_THRU();
         case 0x01:
-            rc = usbHidHandleIntrDevToHost(pThis, &pThis->aEps[1], pUrb);
+            rc = usbHidHandleIntrDevToHost(pThis, &pThis->aEps[1], &pThis->aIfs[0], pUrb);
             break;
 
+        /* Extended multimedia/control keys interface. */
+        case 0x82:
+            AssertFailed();
+            RT_FALL_THRU();
+        case 0x02:
+            if (pThis->enmMode == USBKBDMODE_EXTENDED)
+            {
+                rc = usbHidHandleIntrDevToHost(pThis, &pThis->aEps[2], &pThis->aIfs[1], pUrb);
+                pThis->fExtPipeActive = true;
+                break;
+            }
+            RT_FALL_THRU();
         default:
             AssertMsgFailed(("EndPt=%d\n", pUrb->EndPt));
             rc = VERR_VUSB_FAILED_TO_QUEUE_URB;
@@ -1334,9 +1695,17 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
  */
 static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS pUsbIns)
 {
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID); RT_NOREF_PV(pThis);
-    LogFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
-    return &g_UsbHidDescCache;
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogRelFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
+    switch (pThis->enmMode)
+    {
+        case USBKBDMODE_BASIC:
+            return &g_UsbHidBasDescCache;
+        case USBKBDMODE_EXTENDED:
+            return &g_UsbHidExtDescCache;
+        default:
+            return NULL;
+    }
 }
 
 
@@ -1398,8 +1767,9 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
      */
     pThis->pUsbIns                                  = pUsbIns;
     pThis->hEvtDoneQueue                            = NIL_RTSEMEVENT;
-    usbHidQueueInit(&pThis->ToHostQueue);
     usbHidQueueInit(&pThis->DoneQueue);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aIfs); i++)
+        usbHidQueueInit(&pThis->aIfs[i].ToHostQueue);
 
     int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -1410,9 +1780,20 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    rc = CFGMR3ValidateConfig(pCfg, "/", "", "", "UsbHid", iInstance);
+    rc = CFGMR3ValidateConfig(pCfg, "/", "Mode", "Config", "UsbHid", iInstance);
     if (RT_FAILURE(rc))
         return rc;
+    char szMode[64];
+    rc = CFGMR3QueryStringDef(pCfg, "Mode", szMode, sizeof(szMode), "extended");
+    if (RT_FAILURE(rc))
+        return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query settings"));
+    if (!RTStrCmp(szMode, "basic"))
+        pThis->enmMode = USBKBDMODE_BASIC;
+    else if (!RTStrCmp(szMode, "extended"))
+        pThis->enmMode = USBKBDMODE_EXTENDED;
+    else
+        return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS,
+                                   N_("Invalid HID mode"));
 
     pThis->Lun0.IBase.pfnQueryInterface = usbHidKeyboardQueryInterface;
     pThis->Lun0.IPort.pfnPutEventHid    = usbHidKeyboardPutEvent;
@@ -1488,7 +1869,7 @@ const PDMUSBREG g_UsbHidKbd =
     /* pfnUrbNew */
     NULL/*usbHidUrbNew*/,
     /* pfnUrbQueue */
-    usbHidQueue,
+    usbHidQueueUrb,
     /* pfnUrbCancel */
     usbHidUrbCancel,
     /* pfnUrbReap */
