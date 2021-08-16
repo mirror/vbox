@@ -221,7 +221,7 @@ void UIExtensionPackManagerWidget::sltInstallExtensionPack()
     for (int i = 0; i < VBoxExtPackFileExts.size(); ++i)
         extensions << QString("*.%1").arg(VBoxExtPackFileExts[i]);
     const QString strFilter = tr("Extension package files (%1)").arg(extensions.join(" "));
-    const QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
+    const QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, window(), strTitle, 0, true, true);
     QString strFilePath;
     if (!fileNames.isEmpty())
         strFilePath = fileNames.at(0);
