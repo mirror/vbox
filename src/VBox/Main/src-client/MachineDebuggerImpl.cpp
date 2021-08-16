@@ -388,7 +388,7 @@ HRESULT MachineDebugger::getLogEnabled(BOOL *aLogEnabled)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     const PRTLOGGER pLogInstance = RTLogDefaultInstance();
-    *aLogEnabled = pLogInstance && !(pLogInstance->fFlags & RTLOGFLAGS_DISABLED);
+    *aLogEnabled = pLogInstance && !(RTLogGetFlags(pLogInstance) & RTLOGFLAGS_DISABLED);
 #else
     *aLogEnabled = false;
 #endif

@@ -1452,6 +1452,7 @@
 # define RTLogFormatV                                   RT_MANGLER(RTLogFormatV)
 # define RTLogGetDefaultInstance                        RT_MANGLER(RTLogGetDefaultInstance)
 # define RTLogGetDefaultInstanceEx                      RT_MANGLER(RTLogGetDefaultInstanceEx)
+# define RTLogGetFlags                                  RT_MANGLER(RTLogGetFlags)
 # define RTLogGroupSettings                             RT_MANGLER(RTLogGroupSettings)
 # define RTLogLogger                                    RT_MANGLER(RTLogLogger)
 # define RTLogLoggerEx                                  RT_MANGLER(RTLogLoggerEx)

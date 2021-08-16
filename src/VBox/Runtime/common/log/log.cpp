@@ -2136,6 +2136,25 @@ RTDECL(uint32_t) RTLogSetGroupLimit(PRTLOGGER pLogger, uint32_t cMaxEntriesPerGr
 #ifndef IN_RC
 
 /**
+ * Gets the current flag settings for the given logger.
+ *
+ * @returns Logger flags, UINT64_MAX if no logger.
+ * @param   pLogger             Logger instance (NULL for default logger).
+ */
+RTDECL(uint64_t) RTLogGetFlags(PRTLOGGER pLogger)
+{
+    if (!pLogger)
+    {
+        pLogger = RTLogDefaultInstance();
+        if (!pLogger)
+            return UINT64_MAX;
+    }
+    return pLogger->fFlags;
+}
+RT_EXPORT_SYMBOL(RTLogGetFlags);
+
+
+/**
  * Get the current log flags as a string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
