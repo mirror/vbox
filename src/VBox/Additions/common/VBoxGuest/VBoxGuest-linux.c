@@ -1210,7 +1210,7 @@ static int vgdrvLinuxParamLogGrpGet(char *pszBuf, CONST_4_15 struct kernel_param
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
     if (pLogger)
-        RTLogGetGroupSettings(pLogger, pszBuf, _4K);
+        RTLogQueryGroupSettings(pLogger, pszBuf, _4K);
     return strlen(pszBuf);
 }
 
@@ -1235,7 +1235,7 @@ static int vgdrvLinuxParamLogFlagsGet(char *pszBuf, CONST_4_15 struct kernel_par
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
     if (pLogger)
-        RTLogGetFlags(pLogger, pszBuf, _4K);
+        RTLogQueryFlags(pLogger, pszBuf, _4K);
     return strlen(pszBuf);
 }
 
@@ -1260,7 +1260,7 @@ static int vgdrvLinuxParamLogDstGet(char *pszBuf, CONST_4_15 struct kernel_param
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
     if (pLogger)
-        RTLogGetDestinations(pLogger, pszBuf, _4K);
+        RTLogQueryDestinations(pLogger, pszBuf, _4K);
     return strlen(pszBuf);
 }
 

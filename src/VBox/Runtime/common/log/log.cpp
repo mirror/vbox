@@ -1917,7 +1917,7 @@ static int rtLogGetGroupSettingsAddOne(const char *pszName, uint32_t fGroup, cha
  * @param   cchBuf              The size of the output buffer. Must be greater
  *                              than zero.
  */
-RTDECL(int) RTLogGetGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
+RTDECL(int) RTLogQueryGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
 {
     bool        fNotFirst = false;
     int         rc        = VINF_SUCCESS;
@@ -1976,7 +1976,7 @@ RTDECL(int) RTLogGetGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf
     *pszBuf = '\0';
     return rc;
 }
-RT_EXPORT_SYMBOL(RTLogGetGroupSettings);
+RT_EXPORT_SYMBOL(RTLogQueryGroupSettings);
 
 #endif /* !IN_RC */
 
@@ -2144,7 +2144,7 @@ RTDECL(uint32_t) RTLogSetGroupLimit(PRTLOGGER pLogger, uint32_t cMaxEntriesPerGr
  * @param   cchBuf              The size of the output buffer. Must be greater
  *                              than zero.
  */
-RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
+RTDECL(int) RTLogQueryFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
 {
     bool        fNotFirst = false;
     int         rc        = VINF_SUCCESS;
@@ -2194,7 +2194,7 @@ RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
     *pszBuf = '\0';
     return rc;
 }
-RT_EXPORT_SYMBOL(RTLogGetFlags);
+RT_EXPORT_SYMBOL(RTLogQueryFlags);
 
 
 /**
@@ -2499,7 +2499,7 @@ RT_EXPORT_SYMBOL(RTLogClearFileDelayFlag);
  * @param   cchBuf              The size of the output buffer. Must be greater
  *                              than 0.
  */
-RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
+RTDECL(int) RTLogQueryDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
 {
     bool        fNotFirst = false;
     int         rc        = VINF_SUCCESS;
@@ -2600,7 +2600,7 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
 
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTLogGetDestinations);
+RT_EXPORT_SYMBOL(RTLogQueryDestinations);
 
 #endif /* !IN_RC */
 

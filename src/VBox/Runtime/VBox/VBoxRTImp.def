@@ -1276,9 +1276,6 @@ EXPORTS
     RTLogFormatV
     RTLogGetDefaultInstance
     RTLogGetDefaultInstanceEx
-    RTLogGetDestinations
-    RTLogGetFlags
-    RTLogGetGroupSettings
     RTLogGroupSettings
     RTLogLogger
     RTLogLoggerEx
@@ -1286,6 +1283,9 @@ EXPORTS
     RTLogLoggerV
     RTLogPrintf
     RTLogPrintfV
+    RTLogQueryDestinations
+    RTLogQueryFlags
+    RTLogQueryGroupSettings
     RTLogRelGetDefaultInstance
     RTLogRelGetDefaultInstanceEx
     RTLogRelLogger

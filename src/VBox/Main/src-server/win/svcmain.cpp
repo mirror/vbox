@@ -157,7 +157,7 @@ void CExeModule::MonitorShutdown()
             if (pReleaseLogger)
             {
                 char szDest[1024];
-                int rc = RTLogGetDestinations(pReleaseLogger, szDest, sizeof(szDest));
+                int rc = RTLogQueryDestinations(pReleaseLogger, szDest, sizeof(szDest));
                 if (RT_SUCCESS(rc))
                 {
                     rc = RTStrCat(szDest, sizeof(szDest), " nohistory");

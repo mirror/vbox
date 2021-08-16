@@ -2217,7 +2217,7 @@ RTDECL(int) RTLogCopyGroupsAndFlagsForR0(PRTLOGGER pDstLogger, RTR0PTR pDstLogge
  * @param   cchBuf              The size of the output buffer. Must be greater
  *                              than zero.
  */
-RTDECL(int) RTLogGetGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
+RTDECL(int) RTLogQueryGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
 
 /**
  * Updates the group settings for the logger instance using the specified
@@ -2280,7 +2280,7 @@ RTDECL(uint32_t) RTLogSetGroupLimit(PRTLOGGER pLogger, uint32_t cMaxEntriesPerGr
  * @param   cchBuf              The size of the output buffer. Must be greater
  *                              than zero.
  */
-RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
+RTDECL(int) RTLogQueryFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
 
 /**
  * Updates the logger destination using the specified string.
@@ -2309,7 +2309,7 @@ RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
  * @param   cchBuf              The size of the output buffer. Must be greater
  *                              than 0.
  */
-RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
+RTDECL(int) RTLogQueryDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
 
 #endif /* !IN_RC || DOXYGEN_RUNNING */
 

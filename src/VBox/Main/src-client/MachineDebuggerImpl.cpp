@@ -476,32 +476,32 @@ HRESULT MachineDebugger::i_logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLog
 
 HRESULT MachineDebugger::getLogDbgFlags(com::Utf8Str &aLogDbgFlags)
 {
-    return i_logStringProps(RTLogGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", &aLogDbgFlags);
+    return i_logStringProps(RTLogGetDefaultInstance(), RTLogQueryFlags, "RTLogQueryFlags", &aLogDbgFlags);
 }
 
 HRESULT MachineDebugger::getLogDbgGroups(com::Utf8Str &aLogDbgGroups)
 {
-    return i_logStringProps(RTLogGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", &aLogDbgGroups);
+    return i_logStringProps(RTLogGetDefaultInstance(), RTLogQueryGroupSettings, "RTLogQueryGroupSettings", &aLogDbgGroups);
 }
 
 HRESULT MachineDebugger::getLogDbgDestinations(com::Utf8Str &aLogDbgDestinations)
 {
-    return i_logStringProps(RTLogGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", &aLogDbgDestinations);
+    return i_logStringProps(RTLogGetDefaultInstance(), RTLogQueryDestinations, "RTLogQueryDestinations", &aLogDbgDestinations);
 }
 
 HRESULT MachineDebugger::getLogRelFlags(com::Utf8Str &aLogRelFlags)
 {
-    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", &aLogRelFlags);
+    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogQueryFlags, "RTLogQueryFlags", &aLogRelFlags);
 }
 
 HRESULT MachineDebugger::getLogRelGroups(com::Utf8Str &aLogRelGroups)
 {
-    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", &aLogRelGroups);
+    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogQueryGroupSettings, "RTLogQueryGroupSettings", &aLogRelGroups);
 }
 
 HRESULT MachineDebugger::getLogRelDestinations(com::Utf8Str &aLogRelDestinations)
 {
-    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", &aLogRelDestinations);
+    return i_logStringProps(RTLogRelGetDefaultInstance(), RTLogQueryDestinations, "RTLogQueryDestinations", &aLogRelDestinations);
 }
 
 /**

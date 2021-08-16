@@ -2286,7 +2286,7 @@ HRESULT Unattended::setHostname(const com::Utf8Str &aHostname)
      */
     if (aHostname.length() > (aHostname.endsWith(".") ? 254U : 253U))
         return setErrorBoth(E_INVALIDARG, VERR_INVALID_NAME,
-                            tr("Hostname '%s' is %zu bytes long, max is 253 (excluing trailing dot)"),
+                            tr("Hostname '%s' is %zu bytes long, max is 253 (excluding trailing dot)"),
                             aHostname.c_str(), aHostname.length());
     size_t      cLabels  = 0;
     const char *pszSrc   = aHostname.c_str();

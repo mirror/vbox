@@ -1199,9 +1199,9 @@ static DECLCALLBACK(int) dbgcCmdLog(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
     if (cArgs == 0)
     {
         char szBuf[_64K];
-        rc = RTLogGetGroupSettings(NULL, szBuf, sizeof(szBuf));
+        rc = RTLogQueryGroupSettings(NULL, szBuf, sizeof(szBuf));
         if (RT_FAILURE(rc))
-            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogGetDestinations(NULL,,%#zx)\n", sizeof(szBuf));
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogQueryGroupSettings(NULL,,%#zx)\n", sizeof(szBuf));
         DBGCCmdHlpPrintf(pCmdHlp, "VBOX_LOG=%s\n", szBuf);
     }
     else
@@ -1224,9 +1224,9 @@ static DECLCALLBACK(int) dbgcCmdLogDest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
     if (cArgs == 0)
     {
         char szBuf[_16K];
-        rc = RTLogGetDestinations(NULL, szBuf, sizeof(szBuf));
+        rc = RTLogQueryDestinations(NULL, szBuf, sizeof(szBuf));
         if (RT_FAILURE(rc))
-            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogGetDestinations(NULL,,%#zx)\n", sizeof(szBuf));
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogQueryDestinations(NULL,,%#zx)\n", sizeof(szBuf));
         DBGCCmdHlpPrintf(pCmdHlp, "VBOX_LOG_DEST=%s\n", szBuf);
     }
     else
@@ -1249,9 +1249,9 @@ static DECLCALLBACK(int) dbgcCmdLogFlags(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
     if (cArgs == 0)
     {
         char szBuf[_16K];
-        rc = RTLogGetFlags(NULL, szBuf, sizeof(szBuf));
+        rc = RTLogQueryFlags(NULL, szBuf, sizeof(szBuf));
         if (RT_FAILURE(rc))
-            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogGetFlags(NULL,,%#zx)\n", sizeof(szBuf));
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogQueryFlags(NULL,,%#zx)\n", sizeof(szBuf));
         DBGCCmdHlpPrintf(pCmdHlp, "VBOX_LOG_FLAGS=%s\n", szBuf);
     }
     else
