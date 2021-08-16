@@ -754,9 +754,9 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
     if (!error.isNull())
     {
         if (fIsAttached)
-            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), error, uiCommon().details(device), machineName());
+            UINotificationMessage::cannotAttachUSBDevice(error, uiCommon().details(device), machineName());
         else
-            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), error, uiCommon().details(device), machineName());
+            UINotificationMessage::cannotDetachUSBDevice(error, uiCommon().details(device), machineName());
     }
 }
 
@@ -2175,7 +2175,7 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateStatusRecording();
         /* Notify about the error: */
-        return popupCenter().cannotToggleRecording(activeMachineWindow(), machine(), fEnabled);
+        return UINotificationMessage::cannotToggleRecording(machine(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2185,7 +2185,7 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateStatusRecording();
         /* Notify about the error: */
-        return msgCenter().cannotSaveMachineSettings(machine());
+        return UINotificationMessage::cannotSaveMachineSettings(machine());
     }
 }
 
@@ -2211,7 +2211,7 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateStatusVRDE();
         /* Notify about the error: */
-        return popupCenter().cannotToggleVRDEServer(activeMachineWindow(), server, machineName(), fEnabled);
+        return UINotificationMessage::cannotToggleVRDEServer(server, machineName(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2221,7 +2221,7 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateStatusVRDE();
         /* Notify about the error: */
-        return msgCenter().cannotSaveMachineSettings(machine());
+        return UINotificationMessage::cannotSaveMachineSettings(machine());
     }
 }
 
@@ -2287,7 +2287,7 @@ void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateAudioOutput();
         /* Notify about the error: */
-        return popupCenter().cannotToggleAudioOutput(activeMachineWindow(), comAdapter, machineName(), fEnabled);
+        return UINotificationMessage::cannotToggleAudioOutput(comAdapter, machineName(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2297,7 +2297,7 @@ void UIMachineLogic::sltToggleAudioOutput(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateAudioOutput();
         /* Notify about the error: */
-        return msgCenter().cannotSaveMachineSettings(machine());
+        return UINotificationMessage::cannotSaveMachineSettings(machine());
     }
 }
 
@@ -2323,7 +2323,7 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateAudioInput();
         /* Notify about the error: */
-        return popupCenter().cannotToggleAudioInput(activeMachineWindow(), comAdapter, machineName(), fEnabled);
+        return UINotificationMessage::cannotToggleAudioInput(comAdapter, machineName(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2333,7 +2333,7 @@ void UIMachineLogic::sltToggleAudioInput(bool fEnabled)
         /* Make sure action is updated: */
         uisession()->updateAudioInput();
         /* Notify about the error: */
-        return msgCenter().cannotSaveMachineSettings(machine());
+        return UINotificationMessage::cannotSaveMachineSettings(machine());
     }
 }
 
@@ -2396,7 +2396,7 @@ void UIMachineLogic::sltAttachUSBDevice()
             /* Get USB device from host USB device: */
             CUSBDevice device(hostDevice);
             /* Show a message about procedure failure: */
-            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), console(), uiCommon().details(device));
+            UINotificationMessage::cannotAttachUSBDevice(console(), uiCommon().details(device));
         }
     }
     /* Detach USB device: */
@@ -2410,7 +2410,7 @@ void UIMachineLogic::sltAttachUSBDevice()
         if (!console().isOk())
         {
             /* Show a message about procedure failure: */
-            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), console(), uiCommon().details(device));
+            UINotificationMessage::cannotDetachUSBDevice(console(), uiCommon().details(device));
         }
     }
 }
@@ -2434,7 +2434,7 @@ void UIMachineLogic::sltAttachWebCamDevice()
         dispatcher.WebcamAttach(target.path, "");
         /* Check if dispatcher is OK: */
         if (!dispatcher.isOk())
-            popupCenter().cannotAttachWebCam(activeMachineWindow(), dispatcher, target.name, machineName());
+            UINotificationMessage::cannotAttachWebCam(dispatcher, target.name, machineName());
     }
     /* Detach webcam device: */
     else
@@ -2443,7 +2443,7 @@ void UIMachineLogic::sltAttachWebCamDevice()
         dispatcher.WebcamDetach(target.path);
         /* Check if dispatcher is OK: */
         if (!dispatcher.isOk())
-            popupCenter().cannotDetachWebCam(activeMachineWindow(), dispatcher, target.name, machineName());
+            UINotificationMessage::cannotDetachWebCam(dispatcher, target.name, machineName());
     }
 }
 
@@ -2473,12 +2473,12 @@ void UIMachineLogic::sltToggleNetworkAdapterConnection()
     const bool fConnect = !adapter.GetCableConnected();
     adapter.SetCableConnected(fConnect);
     if (!adapter.isOk())
-        return popupCenter().cannotToggleNetworkAdapterCable(activeMachineWindow(), adapter, machineName(), fConnect);
+        return UINotificationMessage::cannotToggleNetworkCable(adapter, machineName(), fConnect);
 
     /* Save machine-settings: */
     machine().SaveSettings();
     if (!machine().isOk())
-        return msgCenter().cannotSaveMachineSettings(machine());
+        return UINotificationMessage::cannotSaveMachineSettings(machine());
 }
 
 void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)

@@ -45,7 +45,6 @@
 #include "UIMessageCenter.h"
 #include "UIMousePointerShapeData.h"
 #include "UINotificationCenter.h"
-#include "UIPopupCenter.h"
 #include "UIWizardFirstRun.h"
 #include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
@@ -1818,7 +1817,7 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
         const CMedium comMedium = comVBox.OpenMedium(strMediumName, enmDeviceType, KAccessMode_ReadWrite, false /* fForceNewUuid */);
         if (!comVBox.isOk() || comMedium.isNull())
         {
-            popupCenter().cannotOpenMedium(activeMachineWindow(), comVBox, enmMediumType, strMediumName);
+            UINotificationMessage::cannotOpenMedium(comVBox, strMediumName);
             return false;
         }
 
@@ -1861,7 +1860,7 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
     QList<ExactStorageSlot> sStorageSlots = aFreeStorageSlots + aBusyStorageSlots;
     if (sStorageSlots.isEmpty())
     {
-        popupCenter().cannotMountImage(activeMachineWindow(), machineName(), strMediumName);
+        UINotificationMessage::cannotMountImage(machineName(), strMediumName);
         return false;
     }
 
@@ -1887,7 +1886,7 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
     /* Show error message if necessary: */
     if (!machine().isOk())
     {
-        popupCenter().cannotSaveMachineSettings(activeMachineWindow(), machine());
+        UINotificationMessage::cannotSaveMachineSettings(machine());
         return false;
     }
 

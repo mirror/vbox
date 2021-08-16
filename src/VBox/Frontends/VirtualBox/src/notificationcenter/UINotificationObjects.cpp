@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
 #include "UINotificationCenter.h"
@@ -33,7 +34,11 @@
 #endif
 
 /* COM includes: */
+#include "CAudioAdapter.h"
 #include "CConsole.h"
+#include "CEmulatedUSB.h"
+#include "CNetworkAdapter.h"
+#include "CVRDEServer.h"
 
 
 /*********************************************************************************************************************************
@@ -42,6 +47,17 @@
 
 /* static */
 QMap<QString, QUuid> UINotificationMessage::m_messages = QMap<QString, QUuid>();
+
+/* static */
+void UINotificationMessage::cannotMountImage(const QString &strMachineName, const QString &strMediumName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't mount image ..."),
+        QApplication::translate("UIMessageCenter", "<p>Could not insert the <b>%1</b> disk image file into the virtual machine "
+                                                   "<b>%2</b>, as the machine has no optical drives. Please add a drive using "
+                                                   "the storage page of the virtual machine settings window.</p>")
+                                                   .arg(strMediumName, strMachineName));
+}
 
 /* static */
 void UINotificationMessage::cannotSendACPIToMachine()
@@ -147,6 +163,7 @@ void UINotificationMessage::forgetAboutWrongColorDepth()
     destroyMessage("remindAboutWrongColorDepth");
 }
 
+/* static */
 void UINotificationMessage::remindAboutGuestAdditionsAreNotActive()
 {
     createMessage(
@@ -159,6 +176,162 @@ void UINotificationMessage::remindAboutGuestAdditionsAreNotActive()
                                                    "the <b>Devices</b> menu. If they are installed but the machine is not yet "
                                                    "fully started then shared folders will be available once it is.</p>"),
         "remindAboutGuestAdditionsAreNotActive");
+}
+
+/* static */
+void UINotificationMessage::cannotAttachUSBDevice(const CConsole &comConsole, const QString &strDevice)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't attach USB device ..."),
+        QApplication::translate("UIMessageCenter", "Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
+                                .arg(strDevice, CConsole(comConsole).GetMachine().GetName()) +
+        UIErrorString::formatErrorInfo(comConsole));
+}
+
+/* static */
+void UINotificationMessage::cannotAttachUSBDevice(const CVirtualBoxErrorInfo &comErrorInfo,
+                                                  const QString &strDevice, const QString &strMachineName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't attach USB device ..."),
+        QApplication::translate("UIMessageCenter", "Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
+                                .arg(strDevice, strMachineName) +
+        UIErrorString::formatErrorInfo(comErrorInfo));
+}
+
+/* static */
+void UINotificationMessage::cannotDetachUSBDevice(const CConsole &comConsole, const QString &strDevice)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't detach USB device ..."),
+        QApplication::translate("UIMessageCenter", "Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
+                                .arg(strDevice, CConsole(comConsole).GetMachine().GetName()) +
+        UIErrorString::formatErrorInfo(comConsole));
+}
+
+/* static */
+void UINotificationMessage::cannotDetachUSBDevice(const CVirtualBoxErrorInfo &comErrorInfo,
+                                                  const QString &strDevice, const QString &strMachineName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't detach USB device ..."),
+        QApplication::translate("UIMessageCenter", "Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
+                                .arg(strDevice, strMachineName) +
+        UIErrorString::formatErrorInfo(comErrorInfo));
+}
+
+/* static */
+void UINotificationMessage::cannotAttachWebCam(const CEmulatedUSB &comDispatcher,
+                                               const QString &strWebCamName, const QString &strMachineName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't attach webcam ..."),
+        QApplication::translate("UIMessageCenter", "Failed to attach the webcam <b>%1</b> to the virtual machine <b>%2</b>.")
+                                .arg(strWebCamName, strMachineName) +
+        UIErrorString::formatErrorInfo(comDispatcher));
+}
+
+/* static */
+void UINotificationMessage::cannotDetachWebCam(const CEmulatedUSB &comDispatcher,
+                                               const QString &strWebCamName, const QString &strMachineName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't detach webcam ..."),
+        QApplication::translate("UIMessageCenter", "Failed to detach the webcam <b>%1</b> from the virtual machine <b>%2</b>.")
+                                .arg(strWebCamName, strMachineName) +
+        UIErrorString::formatErrorInfo(comDispatcher));
+}
+
+/* static */
+void UINotificationMessage::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open medium ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the disk image file <nobr><b>%1</b></nobr>.")
+                                                   .arg(strLocation) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotSaveMachineSettings(const CMachine &comMachine)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't save machine settings ..."),
+        QApplication::translate("UIMessageCenter", "Failed to save the settings of the virtual machine <b>%1</b> to "
+                                                   "<b><nobr>%2</nobr></b>.")
+                                                   .arg(CMachine(comMachine).GetName(),
+                                                        CMachine(comMachine).GetSettingsFilePath()) +
+        UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotToggleAudioInput(const CAudioAdapter &comAdapter,
+                                                   const QString &strMachineName, bool fEnable)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't toggle audio input ..."),
+        (  fEnable
+         ? QApplication::translate("UIMessageCenter", "Failed to enable the audio adapter input for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)
+         : QApplication::translate("UIMessageCenter", "Failed to disable the audio adapter input for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)) +
+        UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
+void UINotificationMessage::cannotToggleAudioOutput(const CAudioAdapter &comAdapter,
+                                                    const QString &strMachineName, bool fEnable)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't toggle audio output ..."),
+        (  fEnable
+         ? QApplication::translate("UIMessageCenter", "Failed to enable the audio adapter output for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)
+         : QApplication::translate("UIMessageCenter", "Failed to disable the audio adapter output for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)) +
+        UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
+void UINotificationMessage::cannotToggleNetworkCable(const CNetworkAdapter &comAdapter,
+                                                     const QString &strMachineName, bool fConnect)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't toggle network cable ..."),
+        (  fConnect
+         ? QApplication::translate("UIMessageCenter", "Failed to connect the network adapter cable of the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)
+         : QApplication::translate("UIMessageCenter", "Failed to disconnect the network adapter cable of the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)) +
+        UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
+void UINotificationMessage::cannotToggleRecording(const CMachine &comMachine, bool fEnable)
+{
+    const QString strMachineName(CMachine(comMachine).GetName());
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't toggle recording ..."),
+        (  fEnable
+         ? QApplication::translate("UIMessageCenter", "Failed to enable recording for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)
+         : QApplication::translate("UIMessageCenter", "Failed to disable recording for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)) +
+        UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotToggleVRDEServer(const CVRDEServer &comServer,
+                                                   const QString &strMachineName, bool fEnable)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't toggle VRDE server ..."),
+        (  fEnable
+         ? QApplication::translate("UIMessageCenter", "Failed to enable the remote desktop server for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)
+         : QApplication::translate("UIMessageCenter", "Failed to disable the remote desktop server for the virtual machine <b>%1</b>.")
+                                   .arg(strMachineName)) +
+        UIErrorString::formatErrorInfo(comServer));
 }
 
 UINotificationMessage::UINotificationMessage(const QString &strName,
