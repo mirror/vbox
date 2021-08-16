@@ -958,9 +958,9 @@ DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterfac
             && pSVGAState->aScreens[i].yOrigin == paPositions[i].y)
             continue;
 
-        if (pSVGAState->aScreens[i].xOrigin == -1)
+        if (paPositions[i].x == -1)
             continue;
-        if (pSVGAState->aScreens[i].yOrigin == -1)
+        if (paPositions[i].y == -1)
             continue;
 
         pSVGAState->aScreens[i].xOrigin = paPositions[i].x;
