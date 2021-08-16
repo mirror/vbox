@@ -460,12 +460,15 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) vmmdevUpdateMonitorPositions(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cPositions, PRTPOINT pPositions)
+/**
+ * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateMonitorPositions}
+ */
+static DECLCALLBACK(int) vmmdevUpdateMonitorPositions(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cPositions, PCRTPOINT paPositions)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
-    pConsole->i_getDisplay()->i_handleUpdateMonitorPositions(cPositions, pPositions);
+    pConsole->i_getDisplay()->i_handleUpdateMonitorPositions(cPositions, paPositions);
 
     return VINF_SUCCESS;
 }

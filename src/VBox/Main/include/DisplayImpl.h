@@ -163,7 +163,7 @@ public:
 
     int  i_saveVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int  i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
-    int  i_handleUpdateMonitorPositions(uint32_t cPositions, PRTPOINT pPosition);
+    int  i_handleUpdateMonitorPositions(uint32_t cPositions, PCRTPOINT paPositions);
     int  i_handleQueryVisibleRegion(uint32_t *pcRects, PRTRECT paRects);
 
     void i_VRDPConnectionEvent(bool fConnect);
