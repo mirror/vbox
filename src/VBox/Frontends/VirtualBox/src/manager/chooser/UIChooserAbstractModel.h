@@ -352,6 +352,12 @@ private:
         UIChooserNode *searchFakeNode(const QString &strProviderShortName, const QString &strProfileName);
     /** @} */
 
+    /** @name Cloud update stuff.
+      * @{ */
+        /** Stops all cloud updates. */
+        void stopCloudUpdates();
+    /** @} */
+
     /** @name General stuff.
       * @{ */
         /** Holds the parent widget reference. */
