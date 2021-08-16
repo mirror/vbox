@@ -27,6 +27,11 @@
 /* Forward declarations: */
 class QGroupBox;
 class QGridLayout;
+class UICloneVMAdditionalOptionsEditor;
+class UICloneVMCloneModeGroupBox;
+class UICloneVMCloneTypeGroupBox;
+class UICloneVMNamePathEditor;
+
 
 /* Expert page of the Clone Virtual Machine wizard: */
 class UIWizardCloneVMPageExpert : public UINativeWizardPage
@@ -60,19 +65,17 @@ private:
 
     /* Prepare stuff: */
     void initializePage();
+    void prepare(const QString &strOriginalName, const QString &strDefaultPath, bool fShowChildsOption);
 
     /* Validation stuff: */
     bool isComplete() const;
     bool validatePage();
 
-    /* Widgets: */
-    QGroupBox   *m_pNameCnt;
-    QGroupBox   *m_pCloneTypeCnt;
-    QGroupBox   *m_pCloneModeCnt;
-    QGroupBox   *m_pCloneOptionsCnt;
-    QGridLayout *m_pCloneOptionsLayout;
-
-    bool m_fShowChildsOption;
+    QGridLayout *m_pMainLayout;
+    UICloneVMNamePathEditor *m_pNamePathGroupBox;
+    UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;
+    UICloneVMCloneModeGroupBox *m_pCloneModeGroupBox;
+    UICloneVMAdditionalOptionsEditor *m_pAdditionalOptionsroupBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageExpert_h */

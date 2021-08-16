@@ -22,7 +22,6 @@
 #endif
 
 /* Qt includes: */
-// #include <QIcon>
 #include <QGroupBox>
 
 /* Local includes: */
@@ -33,7 +32,6 @@
 
 
 /* Forward declarations: */
-// class CMediumFormat;
 class QAbstractButton;
 class QButtonGroup;
 class QCheckBox;
@@ -41,19 +39,8 @@ class QGridLayout;
 class QComboBox;
 class QLabel;
 class QRadioButton;
-// class QVBoxLayout;
-// class QIRichTextLabel;
 class QILineEdit;
-// class QIToolButton;
 class UIFilePathSelector;
-// class UIHostnameDomainNameEditor;
-// class UIPasswordLineEdit;
-// class UIUserNamePasswordEditor;
-// class UIMediumSizeEditor;
-
-/* Other VBox includes: */
-// #include "COMEnums.h"
-// #include "CMediumFormat.h"
 
 /** MAC address policies. */
 enum MACAddressClonePolicy
@@ -81,6 +68,8 @@ public:
     void setFirstColumnWidth(int iWidth);
     int firstColumnWidth() const;
 
+    void setLayoutContentsMargins(int iLeft, int iTop, int iRight, int iBottom);
+
     QString cloneName() const;
     void setCloneName(const QString &strName);
 
@@ -88,7 +77,6 @@ public:
     void setClonePath(const QString &strPath);
 
     bool isComplete();
-
 
 private:
 
@@ -121,6 +109,8 @@ public:
     UICloneVMAdditionalOptionsEditor(QWidget *pParent = 0);
 
     bool isComplete();
+
+    void setLayoutContentsMargins(int iLeft, int iTop, int iRight, int iBottom);
 
     MACAddressClonePolicy macAddressClonePolicy() const;
     void setMACAddressClonePolicy(MACAddressClonePolicy enmMACAddressClonePolicy);

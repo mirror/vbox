@@ -106,6 +106,7 @@ void UIWizardCloneVMPageBasic1::prepare(const QString &strDefaultClonePath)
     if (m_pNamePathEditor)
     {
         m_pNamePathEditor->setFlat(true);
+        m_pNamePathEditor->setLayoutContentsMargins(0, 0, 0, 0);
         pMainLayout->addWidget(m_pNamePathEditor);
         connect(m_pNamePathEditor, &UICloneVMNamePathEditor::sigCloneNameChanged,
                 this, &UIWizardCloneVMPageBasic1::sltCloneNameChanged);

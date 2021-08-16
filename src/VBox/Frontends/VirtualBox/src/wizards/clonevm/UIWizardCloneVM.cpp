@@ -58,6 +58,7 @@ void UIWizardCloneVM::setCloneModePageVisible(bool fIsFullClone)
 
 bool UIWizardCloneVM::isCloneModePageVisible() const
 {
+    /* If we did not create the clone mode page return false: */
     if (m_iCloneModePageIndex == -1)
         return false;
     return isPageVisible(m_iCloneModePageIndex);
@@ -251,7 +252,6 @@ void UIWizardCloneVM::populatePages()
     switch (mode())
     {
         case WizardMode_Basic:
-        case WizardMode_Expert:
         {
             addPage(new UIWizardCloneVMPageBasic1(m_strCloneName, strDefaultMachineFolder, m_strGroup));
             addPage(new UIWizardCloneVMPageBasic2(m_snapshot.isNull()));
@@ -259,13 +259,13 @@ void UIWizardCloneVM::populatePages()
                 m_iCloneModePageIndex = addPage(new UIWizardCloneVMPageBasic3(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
             break;
         }
-
+        case WizardMode_Expert:
         {
-    //         setPage(PageExpert, new UIWizardCloneVMPageExpert(m_machine.GetName(),
-    //                                                           strDefaultMachineFolder,
-    //                                                           m_snapshot.isNull(),
-    //                                                           m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0,
-    //                                                           m_strGroup));
+            addPage(new UIWizardCloneVMPageExpert(m_machine.GetName(),
+                                                  strDefaultMachineFolder,
+                                                  m_snapshot.isNull(),
+                                                  m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0,
+                                                  m_strGroup));
             break;
         }
         default:

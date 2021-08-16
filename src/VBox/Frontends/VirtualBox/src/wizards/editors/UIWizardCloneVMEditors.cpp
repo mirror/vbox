@@ -107,10 +107,16 @@ int UICloneVMNamePathEditor::firstColumnWidth() const
     return iMaxWidth;
 }
 
+void UICloneVMNamePathEditor::setLayoutContentsMargins(int iLeft, int iTop, int iRight, int iBottom)
+{
+    if (m_pContainerLayout)
+        m_pContainerLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
+}
+
 void UICloneVMNamePathEditor::prepare()
 {
     m_pContainerLayout = new QGridLayout(this);
-    m_pContainerLayout->setContentsMargins(0, 0, 0, 0);
+
 
     m_pNameLabel = new QLabel;
     if (m_pNameLabel)
@@ -176,6 +182,12 @@ UICloneVMAdditionalOptionsEditor::UICloneVMAdditionalOptionsEditor(QWidget *pPar
     prepare();
 }
 
+void UICloneVMAdditionalOptionsEditor::setLayoutContentsMargins(int iLeft, int iTop, int iRight, int iBottom)
+{
+    if (m_pContainerLayout)
+        m_pContainerLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
+}
+
 void UICloneVMAdditionalOptionsEditor::setFirstColumnWidth(int iWidth)
 {
     if (m_pContainerLayout)
@@ -221,7 +233,6 @@ bool UICloneVMAdditionalOptionsEditor::keepDiskNames() const
 void UICloneVMAdditionalOptionsEditor::prepare()
 {
     m_pContainerLayout = new QGridLayout(this);
-    m_pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pMACComboBoxLabel = new QLabel;
     if (m_pMACComboBoxLabel)
