@@ -568,7 +568,8 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
             if (RT_SUCCESS(rc))
                 rc = rc2;
 
-            if (RT_SUCCESS(rc))
+            if (   !g_fTerminate
+                && RT_SUCCESS(rc))
             {
                 /*
                  * Download guest + Validation Kit audio driver test sets to our output directory.
