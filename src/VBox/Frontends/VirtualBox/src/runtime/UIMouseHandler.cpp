@@ -652,7 +652,10 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                                                          kEventQueueOptionsNone) != NULL)
                         return true;
 #endif /* VBOX_WS_MAC */
+
+                    /* This event should be also processed using next 'case': */
                 }
+                RT_FALL_THRU();
                 case QEvent::MouseButtonRelease:
                 {
                     /* Get mouse-event: */
@@ -732,7 +735,12 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     if (pEvent->type() == QEvent::MouseButtonPress)
                         machineLogic()->keyboardHandler()->finaliseCaptureKeyboard();
 #endif /* VBOX_WS_X11 */
-                    m_iLastMouseWheelDelta = 0;
+
+                    /* For various mouse click related events
+                     * we also reset last mouse wheel delta: */
+                    if (pEvent->type() != QEvent::MouseMove)
+                        m_iLastMouseWheelDelta = 0;
+
                     if (mouseEvent(pMouseEvent->type(), uScreenId,
                                    pMouseEvent->pos(), pMouseEvent->globalPos(),
                                    pMouseEvent->buttons(), 0, Qt::Horizontal))
@@ -758,7 +766,9 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     m_iLastMouseWheelDelta += pWheelEvent->delta();
                     if (qAbs(m_iLastMouseWheelDelta) >= 120)
                     {
-                        iDelta = m_iLastMouseWheelDelta;
+                        /* Rounding iDelta to the nearest multiple of 120: */
+                        iDelta = m_iLastMouseWheelDelta / 120;
+                        iDelta *= 120;
                         m_iLastMouseWheelDelta = m_iLastMouseWheelDelta % 120;
                     }
                     if (mouseEvent(pWheelEvent->type(), uScreenId,
