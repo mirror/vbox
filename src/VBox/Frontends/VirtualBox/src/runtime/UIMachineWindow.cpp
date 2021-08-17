@@ -570,38 +570,40 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
     /* Update window title: */
     if (iElement & UIVisualElement_WindowTitle)
     {
-        /* Get machine state: */
-        KMachineState state = uisession()->machineState();
+        /* Make sure machine state is one of valid: */
+        const KMachineState enmState = uisession()->machineState();
+        if (enmState == KMachineState_Null)
+            return;
+
         /* Prepare full name: */
-        QString strSnapshotName;
+        QString strMachineName = machineName();
+
+        /* Append snapshot name: */
         if (machine().GetSnapshotCount() > 0)
         {
-            CSnapshot snapshot = machine().GetCurrentSnapshot();
-            strSnapshotName = " (" + snapshot.GetName() + ")";
+            const CSnapshot comSnapshot = machine().GetCurrentSnapshot();
+            strMachineName += " (" + comSnapshot.GetName() + ")";
         }
-        QString strMachineName = machineName() + strSnapshotName;
-        if (state != KMachineState_Null)
-            strMachineName += " [" + gpConverter->toString(state) + "]";
-        /* Unusual on the Mac. */
+
+        /* Append state name: */
+        strMachineName += " [" + gpConverter->toString(enmState) + "]";
+
 #ifndef VBOX_WS_MAC
+        /* Append user product name (besides macOS): */
         const QString strUserProductName = uisession()->machineWindowNamePostfix();
         strMachineName += " - " + (strUserProductName.isEmpty() ? defaultWindowTitle() : strUserProductName);
 #endif /* !VBOX_WS_MAC */
+
         /* Check if we can get graphics adapter: */
         CGraphicsAdapter comAdapter = machine().GetGraphicsAdapter();
-        if (!machine().isOk())
-        {
-            // What can I say, we really want to notify user about this
-            // one, but if that happens on VM shutdown/poweroff there
-            // will no be a chance to do it, cause application got exited.
-            msgCenter().cannotAcquireMachineParameter(machine());
-        }
-        else
+        if (machine().isOk() && comAdapter.isNotNull())
         {
             /* Append screen number only if there are more than one present: */
             if (comAdapter.GetMonitorCount() > 1)
                 strMachineName += QString(" : %1").arg(m_uScreenId + 1);
         }
+
+        /* Assign title finally: */
         setWindowTitle(strMachineName);
     }
 }
