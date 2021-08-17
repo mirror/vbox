@@ -313,12 +313,7 @@ int VGSvcLogCreate(const char *pszLogFile)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
-    int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags, "all",
-#ifdef DEBUG
-                           "VBOXSERVICE_LOG",
-#else
-                           "VBOXSERVICE_RELEASE_LOG",
-#endif
+    int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags, "all", "VBOXSERVICE_RELEASE_LOG",
                            RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/,
                            RTLOGDEST_STDOUT | RTLOGDEST_USER,
                            vgsvcLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
