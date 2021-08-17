@@ -76,7 +76,7 @@ public:
     QString clonePath() const;
     void setClonePath(const QString &strPath);
 
-    bool isComplete();
+    bool isComplete(const QString &strMachineGroup);
 
 private:
 

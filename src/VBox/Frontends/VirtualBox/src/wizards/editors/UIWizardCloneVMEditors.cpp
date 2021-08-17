@@ -19,31 +19,19 @@
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
-// #include <QDir>
-// #include <QFileInfo>
+#include <QDir>
 #include <QLabel>
 #include <QRadioButton>
 #include <QGridLayout>
 
 /* GUI includes: */
 #include "QILineEdit.h"
-// #include "QIToolButton.h"
-// #include "QIRichTextLabel.h"
 #include "UICommon.h"
-// #include "UIConverter.h"
 #include "UIFilePathSelector.h"
-// #include "UIHostnameDomainNameEditor.h"
-// #include "UIIconPool.h"
-// #include "UIMediumSizeEditor.h"
-// #include "UIUserNamePasswordEditor.h"
-// #include "UIWizardDiskEditors.h"
-// #include "UIWizardNewVM.h"
-// #include "UIWizardNewVMDiskPageBasic.h"
 #include "UIWizardCloneVMEditors.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
-// #include "iprt/fs.h"
 #include "COMEnums.h"
 #include "CSystemProperties.h"
 
@@ -63,6 +51,32 @@ UICloneVMNamePathEditor::UICloneVMNamePathEditor(const QString &strOriginalName,
     , m_strDefaultPath(strDefaultPath)
 {
     prepare();
+}
+
+bool UICloneVMNamePathEditor::isComplete(const QString &strMachineGroup)
+{
+    AssertReturn(m_pNameLineEdit && m_pPathSelector, false);
+
+    bool fInvalidName = m_pNameLineEdit->text().isEmpty();
+    m_pNameLineEdit->mark(fInvalidName, tr("Clone name cannot be empty"));
+
+    const QString &strPath = m_pPathSelector->path();
+    QDir dir(strPath);
+    bool fInvalidPath = strPath.isEmpty() || !dir.exists() || !dir.isReadable();
+    m_pPathSelector->mark(fInvalidPath, tr("Path is invalid"));
+
+    /* Check if there is already a machine folder for this name and path: */
+    bool fExists = false;
+    if (!fInvalidName)
+    {
+        CVirtualBox vbox = uiCommon().virtualBox();
+        QString strCloneFilePath =
+            vbox.ComposeMachineFilename(m_pNameLineEdit->text(), strMachineGroup, QString(), m_pPathSelector->path());
+        fExists = QDir(QDir::toNativeSeparators(QFileInfo(strCloneFilePath).absolutePath())).exists();
+        m_pNameLineEdit->mark(fExists, tr("The clone name is not unique"));
+    }
+
+    return !fInvalidName && !fInvalidPath && !fExists;
 }
 
 QString UICloneVMNamePathEditor::cloneName() const

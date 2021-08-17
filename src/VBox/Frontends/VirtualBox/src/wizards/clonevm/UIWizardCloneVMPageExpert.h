@@ -23,6 +23,7 @@
 
 /* Local includes: */
 #include "UINativeWizardPage.h"
+#include "UIWizardCloneVMEditors.h"
 
 /* Forward declarations: */
 class QGroupBox;
@@ -53,10 +54,11 @@ public:
 
 private slots:
 
-    /* Button toggle handler: */
-    // void sltButtonToggled(QAbstractButton *pButton, bool fChecked);
-    // void sltNameChanged();
-    // void sltPathChanged();
+    void sltCloneNameChanged(const QString &strCloneName);
+    void sltClonePathChanged(const QString &strClonePath);
+    void sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy);
+    void sltKeepDiskNamesToggled(bool fKeepDiskNames);
+    void sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs);
 
 private:
 
@@ -75,7 +77,8 @@ private:
     UICloneVMNamePathEditor *m_pNamePathGroupBox;
     UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;
     UICloneVMCloneModeGroupBox *m_pCloneModeGroupBox;
-    UICloneVMAdditionalOptionsEditor *m_pAdditionalOptionsroupBox;
+    UICloneVMAdditionalOptionsEditor *m_pAdditionalOptionsGroupBox;
+    QString m_strGroup;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageExpert_h */

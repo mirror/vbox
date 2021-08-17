@@ -28,15 +28,12 @@
 /* COM includes: */
 #include "CVirtualBox.h"
 
-
-
 QString UIWizardCloneVMNamePage::composeCloneFilePath(const QString &strCloneName, const QString &strGroup, const QString &strFolderPath)
 {
     CVirtualBox vbox = uiCommon().virtualBox();
     QString strCloneFilePath = vbox.ComposeMachineFilename(strCloneName, strGroup, QString(), strFolderPath);
-    return QDir::toNativeSeparators(QFileInfo(strCloneFilePath).absolutePath());
+    return QDir::toNativeSeparators(strCloneFilePath);
 }
-
 
 UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName, const QString &strDefaultPath, const QString &strGroup)
     : m_pNamePathEditor(0)
@@ -72,9 +69,8 @@ void UIWizardCloneVMPageBasic1::initializePage()
 {
     retranslateUi();
     if (m_pNamePathEditor)
-        m_pNamePathEditor->setFocus();
-    if (m_pNamePathEditor)
     {
+        m_pNamePathEditor->setFocus();
         if (!m_userModifiedParameters.contains("CloneName"))
             cloneVMWizardPropertySet(CloneName, m_pNamePathEditor->cloneName());
             if (!m_userModifiedParameters.contains("CloneFilePath"))
@@ -134,16 +130,7 @@ void UIWizardCloneVMPageBasic1::prepare(const QString &strDefaultClonePath)
 
 bool UIWizardCloneVMPageBasic1::isComplete() const
 {
-    // if (!m_pPathSelector)
-    //     return false;
-
-    // QString path = m_pPathSelector->path();
-    // if (path.isEmpty())
-    //     return false;
-    // /* Make sure VM name feat the rules: */
-    // QString strName = m_pNameLineEdit->text().trimmed();
-    // return !strName.isEmpty() && strName != m_strOriginalName;
-    return true;
+    return m_pNamePathEditor && m_pNamePathEditor->isComplete(m_strGroup);
 }
 
 void UIWizardCloneVMPageBasic1::sltCloneNameChanged(const QString &strCloneName)
@@ -154,6 +141,7 @@ void UIWizardCloneVMPageBasic1::sltCloneNameChanged(const QString &strCloneName)
     cloneVMWizardPropertySet(CloneName, strCloneName);
     cloneVMWizardPropertySet(CloneFilePath,
                              UIWizardCloneVMNamePage::composeCloneFilePath(strCloneName, m_strGroup, m_pNamePathEditor->clonePath()));
+    emit completeChanged();
 }
 
 void UIWizardCloneVMPageBasic1::sltClonePathChanged(const QString &strClonePath)
@@ -162,22 +150,26 @@ void UIWizardCloneVMPageBasic1::sltClonePathChanged(const QString &strClonePath)
     m_userModifiedParameters << "CloneFilePath";
     cloneVMWizardPropertySet(CloneFilePath,
                              UIWizardCloneVMNamePage::composeCloneFilePath(m_pNamePathEditor->cloneName(), m_strGroup, strClonePath));
+    emit completeChanged();
 }
 
 void UIWizardCloneVMPageBasic1::sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy)
 {
     m_userModifiedParameters << "MacAddressPolicy";
     cloneVMWizardPropertySet(MacAddressPolicy, enmMACAddressClonePolicy);
+    emit completeChanged();
 }
 
 void UIWizardCloneVMPageBasic1::sltKeepDiskNamesToggled(bool fKeepDiskNames)
 {
     m_userModifiedParameters << "KeepDiskNames";
     cloneVMWizardPropertySet(KeepDiskNames, fKeepDiskNames);
+    emit completeChanged();
 }
 
 void UIWizardCloneVMPageBasic1::sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs)
 {
     m_userModifiedParameters << "KeepHardwareUUIDs";
     cloneVMWizardPropertySet(KeepHardwareUUIDs, fKeepHardwareUUIDs);
+    emit completeChanged();
 }
