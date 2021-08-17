@@ -1784,7 +1784,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return rc;
     char szMode[64];
-    rc = CFGMR3QueryStringDef(pCfg, "Mode", szMode, sizeof(szMode), "extended");
+    rc = CFGMR3QueryStringDef(pCfg, "Mode", szMode, sizeof(szMode), "basic");
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query settings"));
     if (!RTStrCmp(szMode, "basic"))
