@@ -147,6 +147,11 @@ UIMachineView* UIMachineView::create(UIMachineWindow *pMachineWindow, ulong uScr
     /* Prepare common things: */
     pMachineView->prepareCommon();
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    /* Prepare DnD: */
+    pMachineView->prepareDnd();
+#endif
+
     /* Prepare event-filters: */
     pMachineView->prepareFilters();
 
@@ -179,16 +184,13 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
     if (!pMachineView)
         return;
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    /* Cleanup DnD: */
+    pMachineView->cleanupDnd();
+#endif
+
     /* Cleanup frame-buffer: */
     pMachineView->cleanupFrameBuffer();
-
-#ifdef VBOX_WITH_DRAG_AND_DROP
-    if (pMachineView->m_pDnDHandler)
-    {
-        delete pMachineView->m_pDnDHandler;
-        pMachineView->m_pDnDHandler = NULL;
-    }
-#endif
 
     /* Cleanup native filters: */
     pMachineView->cleanupNativeFilters();
@@ -789,6 +791,14 @@ void UIMachineView::sltMousePointerShapeChange()
     emit sigMousePointerShapeChange();
 }
 
+void UIMachineView::sltDetachCOM()
+{
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    /* Cleanup DnD: */
+    cleanupDnd();
+#endif
+}
+
 UIMachineView::UIMachineView(UIMachineWindow *pMachineWindow, ulong uScreenId)
     : QAbstractScrollArea(pMachineWindow->centralWidget())
     , m_pMachineWindow(pMachineWindow)
@@ -948,15 +958,18 @@ void UIMachineView::prepareCommon()
 
     /* Setup focus policy: */
     setFocusPolicy(Qt::WheelFocus);
+}
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
+void UIMachineView::prepareDnd()
+{
     /* Enable drag & drop: */
     setAcceptDrops(true);
 
     /* Create the drag and drop handler instance: */
     m_pDnDHandler = new UIDnDHandler(uisession(), this /* pParent */);
-#endif /* VBOX_WITH_DRAG_AND_DROP */
 }
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 void UIMachineView::prepareFilters()
 {
@@ -976,6 +989,8 @@ void UIMachineView::prepareFilters()
 
 void UIMachineView::prepareConnections()
 {
+    /* UICommon connections: */
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIMachineView::sltDetachCOM);
     /* Desktop resolution change (e.g. monitor hotplug): */
     connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenResized,
             this, &UIMachineView::sltDesktopResized);
@@ -1003,6 +1018,14 @@ void UIMachineView::prepareConsoleConnections()
     /* Mouse pointer shape updater: */
     connect(uisession(), &UISession::sigMousePointerShapeChange, this, &UIMachineView::sltMousePointerShapeChange);
 }
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+void UIMachineView::cleanupDnd()
+{
+    delete m_pDnDHandler;
+    m_pDnDHandler = 0;
+}
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 void UIMachineView::cleanupFrameBuffer()
 {

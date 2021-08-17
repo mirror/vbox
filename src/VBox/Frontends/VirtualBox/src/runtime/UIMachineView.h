@@ -152,6 +152,9 @@ protected slots:
     /** Handles guest request to change the mouse pointer shape. */
     void sltMousePointerShapeChange();
 
+    /** Detaches COM. */
+    void sltDetachCOM();
+
 protected:
 
     /* Machine-view constructor: */
@@ -165,6 +168,9 @@ protected:
     virtual void prepareViewport();
     virtual void prepareFrameBuffer();
     virtual void prepareCommon();
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    virtual void prepareDnd();
+#endif
     virtual void prepareFilters();
     virtual void prepareConnections();
     virtual void prepareConsoleConnections();
@@ -173,6 +179,9 @@ protected:
     //virtual void cleanupConsoleConnections() {}
     //virtual void cleanupConnections() {}
     //virtual void cleanupFilters() {}
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    virtual void cleanupDnd();
+#endif
     //virtual void cleanupCommon() {}
     virtual void cleanupFrameBuffer();
     //virtual void cleanupViewport();
