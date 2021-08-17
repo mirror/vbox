@@ -579,10 +579,11 @@ static int vboxTrayLogCreate(void)
     int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags,
 #ifdef DEBUG
                            "all.e.l.f",
+                           "VBOXTRAY_LOG",
 #else
                            "all",
-#endif
                            "VBOXTRAY_RELEASE_LOG",
+#endif
                            RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX, RTLOGDEST_STDOUT,
                            vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            RTErrInfoInitStatic(&ErrInfo), NULL /*pszFilenameFmt*/);
