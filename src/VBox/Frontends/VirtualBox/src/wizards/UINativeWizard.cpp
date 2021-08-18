@@ -457,11 +457,11 @@ void UINativeWizard::prepare()
                 // So we are hardcoding order, same on all platforms, which is the case.
                 for (int i = WizardButtonType_Invalid + 1; i < WizardButtonType_Max; ++i)
                 {
-                    /* Create the help button only if the help hash tag is set: */
-                    if (m_strHelpHashtag.isEmpty() && i == WizardButtonType_Help)
-                        continue;
                     const WizardButtonType enmType = (WizardButtonType)i;
-                    m_buttons[enmType] = new QPushButton(pWidgetBottom);
+                    /* Create Help button only if help hash tag is set.
+                     * Create other buttons in any case: */
+                    if (enmType != WizardButtonType_Help || !m_strHelpHashtag.isEmpty())
+                        m_buttons[enmType] = new QPushButton(pWidgetBottom);
                     QPushButton *pButton = wizardButton(enmType);
                     if (pButton)
                         pLayoutBottom->addWidget(pButton);
