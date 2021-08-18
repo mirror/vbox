@@ -975,7 +975,7 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
     {
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, m_pWidget->fullGroupName());
+        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, m_pWidget->fullGroupName(), WizardMode_Auto, "gui-createvm");
         windowManager().registerNewParent(pWizard, pWizardParent);
 
         CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();

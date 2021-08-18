@@ -31,8 +31,7 @@
 QString UIWizardCloneVMNamePage::composeCloneFilePath(const QString &strCloneName, const QString &strGroup, const QString &strFolderPath)
 {
     CVirtualBox vbox = uiCommon().virtualBox();
-    QString strCloneFilePath = vbox.ComposeMachineFilename(strCloneName, strGroup, QString(), strFolderPath);
-    return QDir::toNativeSeparators(strCloneFilePath);
+    return QDir::toNativeSeparators(vbox.ComposeMachineFilename(strCloneName, strGroup, QString(), strFolderPath));
 }
 
 UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName, const QString &strDefaultPath, const QString &strGroup)
