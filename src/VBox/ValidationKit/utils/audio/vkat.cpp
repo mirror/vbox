@@ -295,12 +295,14 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
         /*
          * 1. Arm the (host) ValKit ATS with the recording parameters.
          */
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling ValKit audio driver on host to record new tone ...\n");
         rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClValKit, pToneParms);
         if (RT_SUCCESS(rc))
         {
             /*
              * 2. Tell the guest ATS to start playback.
              */
+            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling guest VKAT to play tone ...\n");
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientTonePlay() failed with %Rrc\n",
@@ -312,6 +314,8 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
         if (RT_SUCCESS(rc))
         {
+            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing tone done\n");
+
             /* Give the audio stack a random amount of time for draining data before the next iteration. */
             if (pTstParms->cIterations > 1)
                 RTThreadSleep(RTRandU32Ex(2000, 5000)); /** @todo Implement some dedicated ATS command for this? */
@@ -542,7 +546,15 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
 
         rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClValKit, pTstEnv->szTag);
         if (RT_SUCCESS(rc))
+        {
             rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
+            if (RT_FAILURE(rc))
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                             "Beginning test set on guest failed with %Rrc\n", rc);
+        }
+        else
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                         "Beginning test set on host (Validation Kit audio driver) failed with %Rrc\n", rc);
 
         if (RT_SUCCESS(rc))
         {
@@ -561,12 +573,21 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
             }
 
             int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
+            if (RT_FAILURE(rc2))
+            {
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Ending test set on guest failed with %Rrc\n", rc2);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
 
             rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClValKit, pTstEnv->szTag);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
+            if (RT_FAILURE(rc2))
+            {
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                             "Ending test set on host (Validation Kit audio driver) failed with %Rrc\n", rc2);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
 
             if (   !g_fTerminate
                 && RT_SUCCESS(rc))
