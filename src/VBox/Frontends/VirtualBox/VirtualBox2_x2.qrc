@@ -320,6 +320,7 @@
         <file alias="snapshot_take_disabled_32px_x2.png">images/x2/snapshot_take_disabled_32px_x2.png</file>
         <file alias="soft_keyboard_16px_x2.png">images/x2/soft_keyboard_16px_x2.png</file>
         <file alias="soft_keyboard_32px_x2.png">images/x2/soft_keyboard_32px_x2.png</file>
+        <file alias="soft_keyboard_help_16px_x2.png">images/x2/soft_keyboard_help_16px_x2.png</file>
         <file alias="soft_keyboard_layout_copy_16px_x2.png">images/x2/soft_keyboard_layout_copy_16px_x2.png</file>
         <file alias="soft_keyboard_layout_copy_disabled_16px_x2.png">images/x2/soft_keyboard_layout_copy_disabled_16px_x2.png</file>
         <file alias="soft_keyboard_layout_edit_16px_x2.png">images/x2/soft_keyboard_layout_edit_16px_x2.png</file>
