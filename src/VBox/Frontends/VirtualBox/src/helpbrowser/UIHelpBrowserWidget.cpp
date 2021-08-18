@@ -732,7 +732,8 @@ void UIHelpBrowserTab::prepareToolBarAndAddressBar()
         new QAction(UIIconPool::iconSetFull(":/help_browser_add_bookmark_32px.png", ":/help_browser_add_bookmark_16px.png",
                                             ":/help_browser_add_bookmark_disabled_32px.png", ":/help_browser_add_bookmark_disabled_16px.png"), QString(), this);
     m_pFindInPageAction =
-        new QAction(UIIconPool::iconSet(":/help_browser_search.png"), QString(), this);
+        new QAction(UIIconPool::iconSetFull(":/help_browser_search_32px.png", ":/help_browser_search_16px.png",
+                                            ":/help_browser_search_disabled_32px.png", ":/help_browser_search_disabled_16px.png"), QString(), this);
     m_pReloadPageAction =
         new QAction(UIIconPool::iconSetFull(":/help_browser_reload_32px.png", ":/help_browser_reload_16px.png",
                                             ":/help_browser_reload_disabled_32px.png", ":/help_browser_reload_disabled_16px.png"), QString(), this);

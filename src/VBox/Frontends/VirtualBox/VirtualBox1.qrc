@@ -410,7 +410,10 @@
         <file alias="help_browser_reload_disabled_16px.png">images/help_browser_reload_disabled_16px.png</file>
         <file alias="help_browser_reload_disabled_32px.png">images/help_browser_reload_disabled_32px.png</file>
         <file alias="help_browser_reset_32px.png">images/help_browser_reset_32px.png</file>
-        <file alias="help_browser_search.png">images/help_browser_search.png</file>
+        <file alias="help_browser_search_16px.png">images/help_browser_search_16px.png</file>
+        <file alias="help_browser_search_32px.png">images/help_browser_search_32px.png</file>
+        <file alias="help_browser_search_disabled_16px.png">images/help_browser_search_disabled_16px.png</file>
+        <file alias="help_browser_search_disabled_32px.png">images/help_browser_search_disabled_32px.png</file>
         <file alias="help_browser_star_16px.png">images/help_browser_star_16px.png</file>
         <file alias="help_button_normal_mac_24px.png">images/help_button_normal_mac_24px.png</file>
         <file alias="help_button_pressed_mac_24px.png">images/help_button_pressed_mac_24px.png</file>
@@ -479,7 +482,5 @@
         <file alias="log_viewer_filter_32px.png">images/log_viewer_filter_32px.png</file>
         <file alias="log_viewer_filter_add_16px.png">images/log_viewer_filter_add_16px.png</file>
         <file alias="log_viewer_filter_disabled_16px.png">images/log_viewer_filter_disabled_16px.png</file>
-        <file alias="log_viewer_filter_disabled_32px.png">images/log_viewer_filter_disabled_32px.png</file>
-        <file alias="log_viewer_find_16px.png">images/log_viewer_find_16px.png</file>
     </qresource>
 </RCC>

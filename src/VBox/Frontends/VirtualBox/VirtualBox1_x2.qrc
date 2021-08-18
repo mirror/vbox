@@ -407,6 +407,10 @@
         <file alias="help_browser_reload_32px_x2.png">images/x2/help_browser_reload_32px_x2.png</file>
         <file alias="help_browser_reload_disabled_16px_x2.png">images/x2/help_browser_reload_disabled_16px_x2.png</file>
         <file alias="help_browser_reload_disabled_32px_x2.png">images/x2/help_browser_reload_disabled_32px_x2.png</file>
+        <file alias="help_browser_search_16px_x2.png">images/x2/help_browser_search_16px_x2.png</file>
+        <file alias="help_browser_search_32px_x2.png">images/x2/help_browser_search_32px_x2.png</file>
+        <file alias="help_browser_search_disabled_16px_x2.png">images/x2/help_browser_search_disabled_16px_x2.png</file>
+        <file alias="help_browser_search_disabled_32px_x2.png">images/x2/help_browser_search_disabled_32px_x2.png</file>
         <file alias="help_button_normal_mac_24px_x2.png">images/x2/help_button_normal_mac_24px_x2.png</file>
         <file alias="help_button_pressed_mac_24px_x2.png">images/x2/help_button_pressed_mac_24px_x2.png</file>
         <file alias="host_iface_add_16px_x2.png">images/x2/host_iface_add_16px_x2.png</file>
@@ -471,7 +475,5 @@
         <file alias="log_viewer_delete_current_bookmark_16px_x2.png">images/x2/log_viewer_delete_current_bookmark_16px_x2.png</file>
         <file alias="log_viewer_delete_filter_16px_x2.png">images/x2/log_viewer_delete_filter_16px_x2.png</file>
         <file alias="log_viewer_filter_16px_x2.png">images/x2/log_viewer_filter_16px_x2.png</file>
-        <file alias="log_viewer_filter_32px_x2.png">images/x2/log_viewer_filter_32px_x2.png</file>
-        <file alias="log_viewer_filter_add_16px_x2.png">images/x2/log_viewer_filter_add_16px_x2.png</file>
     </qresource>
 </RCC>
