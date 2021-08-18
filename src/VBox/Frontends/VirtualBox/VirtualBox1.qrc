@@ -403,13 +403,22 @@
         <file alias="help_browser_home_32px.png">images/help_browser_home_32px.png</file>
         <file alias="help_browser_home_disabled_16px.png">images/help_browser_home_disabled_16px.png</file>
         <file alias="help_browser_home_disabled_32px.png">images/help_browser_home_disabled_32px.png</file>
+        <file alias="help_browser_minus_16px.png">images/help_browser_minus_16px.png</file>
         <file alias="help_browser_minus_32px.png">images/help_browser_minus_32px.png</file>
+        <file alias="help_browser_minus_disabled_16px.png">images/help_browser_minus_disabled_16px.png</file>
+        <file alias="help_browser_minus_disabled_32px.png">images/help_browser_minus_disabled_32px.png</file>
+        <file alias="help_browser_plus_16px.png">images/help_browser_plus_16px.png</file>
         <file alias="help_browser_plus_32px.png">images/help_browser_plus_32px.png</file>
+        <file alias="help_browser_plus_disabled_16px.png">images/help_browser_plus_disabled_16px.png</file>
+        <file alias="help_browser_plus_disabled_32px.png">images/help_browser_plus_disabled_32px.png</file>
         <file alias="help_browser_reload_16px.png">images/help_browser_reload_16px.png</file>
         <file alias="help_browser_reload_32px.png">images/help_browser_reload_32px.png</file>
         <file alias="help_browser_reload_disabled_16px.png">images/help_browser_reload_disabled_16px.png</file>
         <file alias="help_browser_reload_disabled_32px.png">images/help_browser_reload_disabled_32px.png</file>
+        <file alias="help_browser_reset_16px.png">images/help_browser_reset_16px.png</file>
         <file alias="help_browser_reset_32px.png">images/help_browser_reset_32px.png</file>
+        <file alias="help_browser_reset_disabled_16px.png">images/help_browser_reset_disabled_16px.png</file>
+        <file alias="help_browser_reset_disabled_32px.png">images/help_browser_reset_disabled_32px.png</file>
         <file alias="help_browser_search_16px.png">images/help_browser_search_16px.png</file>
         <file alias="help_browser_search_32px.png">images/help_browser_search_32px.png</file>
         <file alias="help_browser_search_disabled_16px.png">images/help_browser_search_disabled_16px.png</file>
@@ -478,9 +487,5 @@
         <file alias="log_viewer_delete_all_filters_16px.png">images/log_viewer_delete_all_filters_16px.png</file>
         <file alias="log_viewer_delete_current_bookmark_16px.png">images/log_viewer_delete_current_bookmark_16px.png</file>
         <file alias="log_viewer_delete_filter_16px.png">images/log_viewer_delete_filter_16px.png</file>
-        <file alias="log_viewer_filter_16px.png">images/log_viewer_filter_16px.png</file>
-        <file alias="log_viewer_filter_32px.png">images/log_viewer_filter_32px.png</file>
-        <file alias="log_viewer_filter_add_16px.png">images/log_viewer_filter_add_16px.png</file>
-        <file alias="log_viewer_filter_disabled_16px.png">images/log_viewer_filter_disabled_16px.png</file>
     </qresource>
 </RCC>

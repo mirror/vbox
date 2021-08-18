@@ -394,9 +394,9 @@ void UIZoomMenuAction::prepare()
                      m_pPlusButton &&
                      m_pValueLabel);
 
-    m_pMinusButton->setIcon(UIIconPool::iconSet(":/help_browser_minus_32px.png"));
-    m_pResetButton->setIcon(UIIconPool::iconSet(":/help_browser_reset_32px.png"));
-    m_pPlusButton->setIcon(UIIconPool::iconSet(":/help_browser_plus_32px.png"));
+    m_pMinusButton->setIcon(UIIconPool::iconSet(":/help_browser_minus_16px.png", ":/help_browser_minus_disabled_16px.png"));
+    m_pResetButton->setIcon(UIIconPool::iconSet(":/help_browser_reset_16px.png", ":/help_browser_reset_disabled_16px.png"));
+    m_pPlusButton->setIcon(UIIconPool::iconSet(":/help_browser_plus_16px.png", ":/help_browser_plus_disabled_16px.png"));
 
     connect(m_pPlusButton, &QIToolButton::pressed, this, &UIZoomMenuAction::sltZoomOperation);
     connect(m_pMinusButton, &QIToolButton::pressed, this, &UIZoomMenuAction::sltZoomOperation);
