@@ -403,6 +403,10 @@
         <file alias="help_browser_home_32px_x4.png">images/x4/help_browser_home_32px_x4.png</file>
         <file alias="help_browser_home_disabled_16px_x4.png">images/x4/help_browser_home_disabled_16px_x4.png</file>
         <file alias="help_browser_home_disabled_32px_x4.png">images/x4/help_browser_home_disabled_32px_x4.png</file>
+        <file alias="help_browser_reload_16px_x4.png">images/x4/help_browser_reload_16px_x4.png</file>
+        <file alias="help_browser_reload_32px_x4.png">images/x4/help_browser_reload_32px_x4.png</file>
+        <file alias="help_browser_reload_disabled_16px_x4.png">images/x4/help_browser_reload_disabled_16px_x4.png</file>
+        <file alias="help_browser_reload_disabled_32px_x4.png">images/x4/help_browser_reload_disabled_32px_x4.png</file>
         <file alias="help_button_normal_mac_24px_x4.png">images/x4/help_button_normal_mac_24px_x4.png</file>
         <file alias="help_button_pressed_mac_24px_x4.png">images/x4/help_button_pressed_mac_24px_x4.png</file>
         <file alias="host_iface_add_16px_x4.png">images/x4/host_iface_add_16px_x4.png</file>
@@ -469,7 +473,5 @@
         <file alias="log_viewer_filter_16px_x4.png">images/x4/log_viewer_filter_16px_x4.png</file>
         <file alias="log_viewer_filter_32px_x4.png">images/x4/log_viewer_filter_32px_x4.png</file>
         <file alias="log_viewer_filter_add_16px_x4.png">images/x4/log_viewer_filter_add_16px_x4.png</file>
-        <file alias="log_viewer_filter_disabled_16px_x4.png">images/x4/log_viewer_filter_disabled_16px_x4.png</file>
-        <file alias="log_viewer_filter_disabled_32px_x4.png">images/x4/log_viewer_filter_disabled_32px_x4.png</file>
     </qresource>
 </RCC>
