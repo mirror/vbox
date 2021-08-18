@@ -70,6 +70,13 @@ UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
                                             : 0;
             if (iDefaultSectionHeight > 0)
                 m_pFormEditor->setMinimumHeight(8 * iDefaultSectionHeight);
+            /* Setup connections: */
+            connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
+                    this, &UIWizardNewCloudVMPageBasic2::sigProgressStarted);
+            connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
+                    this, &UIWizardNewCloudVMPageBasic2::sigProgressChange);
+            connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
+                    this, &UIWizardNewCloudVMPageBasic2::sigProgressFinished);
 
             /* Add into layout: */
             pLayoutMain->addWidget(m_pFormEditor);
