@@ -177,7 +177,7 @@ void UIContextMenuNavigationAction::prepare()
     m_pHomeButton->setIcon(UIIconPool::iconSet(":/help_browser_home_32px.png"));
     m_pReloadPageButton->setIcon(UIIconPool::iconSet(":/help_browser_reload_32px.png"));
     m_pForwardButton->setIcon(UIIconPool::iconSet(":/help_browser_forward_32px.png", ":/help_browser_forward_disabled_32px.png"));
-    m_pBackwardButton->setIcon(UIIconPool::iconSet(":/help_browser_backward_32px.png", ":/help_browser_backward_disabled_32px.png"));
+    m_pBackwardButton->setIcon(UIIconPool::iconSet(":/help_browser_backward_16px.png", ":/help_browser_backward_disabled_16px.png"));
     m_pAddBookmarkButton->setIcon(UIIconPool::iconSet(":/help_browser_add_bookmark_16px.png", ":/help_browser_add_bookmark_disabled_16px.png"));
 
     pMainLayout->addWidget(m_pBackwardButton);

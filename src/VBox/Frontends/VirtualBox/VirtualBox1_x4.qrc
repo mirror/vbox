@@ -387,6 +387,14 @@
         <file alias="hd_warning_16px_x4.png">images/x4/hd_warning_16px_x4.png</file>
         <file alias="hd_write_16px_x4.png">images/x4/hd_write_16px_x4.png</file>
         <file alias="help_16px_x4.png">images/x4/help_16px_x4.png</file>
+        <file alias="help_browser_add_bookmark_16px_x4.png">images/x4/help_browser_add_bookmark_16px_x4.png</file>
+        <file alias="help_browser_add_bookmark_32px_x4.png">images/x4/help_browser_add_bookmark_32px_x4.png</file>
+        <file alias="help_browser_add_bookmark_disabled_16px_x4.png">images/x4/help_browser_add_bookmark_disabled_16px_x4.png</file>
+        <file alias="help_browser_add_bookmark_disabled_32px_x4.png">images/x4/help_browser_add_bookmark_disabled_32px_x4.png</file>
+        <file alias="help_browser_backward_16px_x4.png">images/x4/help_browser_backward_16px_x4.png</file>
+        <file alias="help_browser_backward_32px_x4.png">images/x4/help_browser_backward_32px_x4.png</file>
+        <file alias="help_browser_backward_disabled_16px_x4.png">images/x4/help_browser_backward_disabled_16px_x4.png</file>
+        <file alias="help_browser_backward_disabled_32px_x4.png">images/x4/help_browser_backward_disabled_32px_x4.png</file>
         <file alias="help_button_normal_mac_24px_x4.png">images/x4/help_button_normal_mac_24px_x4.png</file>
         <file alias="help_button_pressed_mac_24px_x4.png">images/x4/help_button_pressed_mac_24px_x4.png</file>
         <file alias="host_iface_add_16px_x4.png">images/x4/host_iface_add_16px_x4.png</file>
@@ -459,9 +467,5 @@
         <file alias="log_viewer_find_32px_x4.png">images/x4/log_viewer_find_32px_x4.png</file>
         <file alias="log_viewer_find_disabled_16px_x4.png">images/x4/log_viewer_find_disabled_16px_x4.png</file>
         <file alias="log_viewer_find_disabled_32px_x4.png">images/x4/log_viewer_find_disabled_32px_x4.png</file>
-        <file alias="log_viewer_goto_next_bookmark_16px_x4.png">images/x4/log_viewer_goto_next_bookmark_16px_x4.png</file>
-        <file alias="log_viewer_goto_previous_bookmark_16px_x4.png">images/x4/log_viewer_goto_previous_bookmark_16px_x4.png</file>
-        <file alias="log_viewer_goto_selected_bookmark_16px_x4.png">images/x4/log_viewer_goto_selected_bookmark_16px_x4.png</file>
-        <file alias="log_viewer_options_16px_x4.png">images/x4/log_viewer_options_16px_x4.png</file>
     </qresource>
 </RCC>
