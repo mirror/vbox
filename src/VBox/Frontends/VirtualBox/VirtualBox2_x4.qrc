@@ -1,5 +1,9 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="log_viewer_options_32px_x4.png">images/x4/log_viewer_options_32px_x4.png</file>
+        <file alias="log_viewer_options_disabled_16px_x4.png">images/x4/log_viewer_options_disabled_16px_x4.png</file>
+        <file alias="log_viewer_options_disabled_32px_x4.png">images/x4/log_viewer_options_disabled_32px_x4.png</file>
+        <file alias="log_viewer_refresh_16px_x4.png">images/x4/log_viewer_refresh_16px_x4.png</file>
         <file alias="log_viewer_refresh_32px_x4.png">images/x4/log_viewer_refresh_32px_x4.png</file>
         <file alias="log_viewer_refresh_disabled_16px_x4.png">images/x4/log_viewer_refresh_disabled_16px_x4.png</file>
         <file alias="log_viewer_refresh_disabled_32px_x4.png">images/x4/log_viewer_refresh_disabled_32px_x4.png</file>
@@ -86,11 +90,11 @@
         <file alias="os_opensuse_64_x4.png">images/x4/os_opensuse_64_x4.png</file>
         <file alias="os_opensuse_x4.png">images/x4/os_opensuse_x4.png</file>
         <file alias="os_oracle_64_x4.png">images/x4/os_oracle_64_x4.png</file>
-        <file alias="os_oracle_x4.png">images/x4/os_oracle_x4.png</file>
         <file alias="os_oraclesolaris_64_x4.png">images/x4/os_oraclesolaris_64_x4.png</file>
         <file alias="os_oraclesolaris_x4.png">images/x4/os_oraclesolaris_x4.png</file>
-        <file alias="os_os2_other_x4.png">images/x4/os_os2_other_x4.png</file>
+        <file alias="os_oracle_x4.png">images/x4/os_oracle_x4.png</file>
         <file alias="os_os2ecs_x4.png">images/x4/os_os2ecs_x4.png</file>
+        <file alias="os_os2_other_x4.png">images/x4/os_os2_other_x4.png</file>
         <file alias="os_os2warp3_x4.png">images/x4/os_os2warp3_x4.png</file>
         <file alias="os_os2warp45_x4.png">images/x4/os_os2warp45_x4.png</file>
         <file alias="os_os2warp4_x4.png">images/x4/os_os2warp4_x4.png</file>
@@ -124,10 +128,10 @@
         <file alias="os_win8_x4.png">images/x4/os_win8_x4.png</file>
         <file alias="os_win95_x4.png">images/x4/os_win95_x4.png</file>
         <file alias="os_win98_x4.png">images/x4/os_win98_x4.png</file>
-        <file alias="os_win_other_64_x4.png">images/x4/os_win_other_64_x4.png</file>
-        <file alias="os_win_other_x4.png">images/x4/os_win_other_x4.png</file>
         <file alias="os_winme_x4.png">images/x4/os_winme_x4.png</file>
         <file alias="os_winnt4_x4.png">images/x4/os_winnt4_x4.png</file>
+        <file alias="os_win_other_64_x4.png">images/x4/os_win_other_64_x4.png</file>
+        <file alias="os_win_other_x4.png">images/x4/os_win_other_x4.png</file>
         <file alias="os_winvista_64_x4.png">images/x4/os_winvista_64_x4.png</file>
         <file alias="os_winvista_x4.png">images/x4/os_winvista_x4.png</file>
         <file alias="os_winxp_64_x4.png">images/x4/os_winxp_64_x4.png</file>
@@ -325,14 +329,14 @@
         <file alias="state_saved_16px_x4.png">images/x4/state_saved_16px_x4.png</file>
         <file alias="state_saving_16px_x4.png">images/x4/state_saving_16px_x4.png</file>
         <file alias="state_stuck_16px_x4.png">images/x4/state_stuck_16px_x4.png</file>
-        <file alias="status_check_16px_x4.png">images/x4/status_check_16px_x4.png</file>
-        <file alias="status_error_16px_x4.png">images/x4/status_error_16px_x4.png</file>
         <file alias="statusbar_16px_x4.png">images/x4/statusbar_16px_x4.png</file>
         <file alias="statusbar_disabled_16px_x4.png">images/x4/statusbar_disabled_16px_x4.png</file>
         <file alias="statusbar_on_16px_x4.png">images/x4/statusbar_on_16px_x4.png</file>
         <file alias="statusbar_on_disabled_16px_x4.png">images/x4/statusbar_on_disabled_16px_x4.png</file>
         <file alias="statusbar_settings_16px_x4.png">images/x4/statusbar_settings_16px_x4.png</file>
         <file alias="statusbar_settings_disabled_16px_x4.png">images/x4/statusbar_settings_disabled_16px_x4.png</file>
+        <file alias="status_check_16px_x4.png">images/x4/status_check_16px_x4.png</file>
+        <file alias="status_error_16px_x4.png">images/x4/status_error_16px_x4.png</file>
         <file alias="subnet_16px_x4.png">images/x4/subnet_16px_x4.png</file>
         <file alias="system_type_16px_x4.png">images/x4/system_type_16px_x4.png</file>
         <file alias="system_version_16px_x4.png">images/x4/system_version_16px_x4.png</file>
