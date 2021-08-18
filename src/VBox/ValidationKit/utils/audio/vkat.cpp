@@ -668,18 +668,30 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
         case 'd':                          return "Go via DrvAudio instead of directly interfacing with the backend";
         case 'e':                          return "Exclude the given test id from the list";
         case 'i':                          return "Include the given test id in the list";
-        case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to";
-        case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to [6042]";
-        case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to";
-        case VKAT_TEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to [6052]";
+        case VKAT_TEST_OPT_COUNT:          return "Number of test iterations to perform for selected tests\n"
+                                                  "    Default: random number";
+        case VKAT_TEST_OPT_DEV:            return "Name of the input/output device to use\n"
+                                                  "    Default: default device";
+        case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to\n"
+                                                  "    Default: " ATS_TCP_DEF_CONNECT_GUEST_STR;
+        case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to (needs NAT port forwarding)\n"
+                                                  "    Default: 6042"; /* ATS_TCP_DEF_CONNECT_PORT_GUEST */
+        case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to\n"
+                                                  "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
+        case VKAT_TEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to\n"
+                                                  "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
         case VKAT_TEST_OPT_MODE:           return "Specifies the test mode to use when running the tests";
         case VKAT_TEST_OPT_NO_VERIFY:      return "Skips the verification step";
         case VKAT_TEST_OPT_OUTDIR:         return "Specifies the output directory to use";
         case VKAT_TEST_OPT_PAUSE:          return "Not yet implemented";
-        case VKAT_TEST_OPT_PCM_HZ:         return "Specifies the PCM Hetz (Hz) rate to use [44100]";
-        case VKAT_TEST_OPT_PCM_BIT:        return "Specifies the PCM sample bits (i.e. 16) to use [16]";
-        case VKAT_TEST_OPT_PCM_CHAN:       return "Specifies the number of PCM channels to use [2]";
-        case VKAT_TEST_OPT_PCM_SIGNED:     return "Specifies whether to use signed (true) or unsigned (false) samples [true]";
+        case VKAT_TEST_OPT_PCM_HZ:         return "Specifies the PCM Hetz (Hz) rate to use\n"
+                                                  "    Default: 44100";
+        case VKAT_TEST_OPT_PCM_BIT:        return "Specifies the PCM sample bits (i.e. 16) to use\n"
+                                                  "    Default: 16";
+        case VKAT_TEST_OPT_PCM_CHAN:       return "Specifies the number of PCM channels to use\n"
+                                                  "    Default: 2";
+        case VKAT_TEST_OPT_PCM_SIGNED:     return "Specifies whether to use signed (true) or unsigned (false) samples\n"
+                                                  "    Default: true";
         case VKAT_TEST_OPT_TAG:            return "Specifies the test set tag to use";
         case VKAT_TEST_OPT_TEMPDIR:        return "Specifies the temporary directory to use";
         case VKAT_TEST_OPT_VOL:            return "Specifies the audio volume (in percent, 0-100) to use";
@@ -1154,8 +1166,6 @@ RTEXITCODE audioTestUsage(PRTSTREAM pStrm)
                 g_apTransports[iTx]->pfnUsage(pStrm);
         }
     }
-
-    RTStrmPrintf(pStrm, "\nDefault values for an option are displayed in [] if available.\n");
 
     return RTEXITCODE_SUCCESS;
 }

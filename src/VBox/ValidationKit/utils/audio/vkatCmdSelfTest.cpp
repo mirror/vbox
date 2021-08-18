@@ -101,12 +101,12 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
     /*
      * The self-test does the following:
      * - 1. a) Creates an ATS instance to emulate the guest mode ("--mode guest")
-     *         at port 6042 (ATS_TCP_GUEST_DEFAULT_PORT).
+     *         at port 6042 (ATS_TCP_DEF_BIND_PORT_GUEST).
      *      or
      *      b) Connect to an already existing guest ATS instance if "--guest-ats-address" is specified.
      *      This makes it more flexible in terms of testing / debugging.
      * - 2. Uses the Validation Kit audio backend, which in turn creates an ATS instance
-     *      at port 6052 (ATS_TCP_HOST_DEFAULT_PORT).
+     *      at port 6052 (ATS_TCP_DEF_BIND_PORT_HOST).
      * - 3. Executes a complete test run locally (e.g. without any guest (VM) involved).
      */
 
@@ -236,10 +236,14 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
         case 'd':                              return "Go via DrvAudio instead of directly interfacing with the backend";
         case 'e':                              return "Exclude the given test id from the list";
         case 'i':                              return "Include the given test id in the list";
-        case VKAT_SELFTEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to";
-        case VKAT_SELFTEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to [6042]";
-        case VKAT_SELFTEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to";
-        case VKAT_SELFTEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to [6052]";
+        case VKAT_SELFTEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to\n"
+                                                      "    Default: 127.0.0.1; will start own guest ATS";
+        case VKAT_SELFTEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to\n"
+                                                      "    Default: 6042"; /* ATS_TCP_DEF_CONNECT_PORT_GUEST */
+        case VKAT_SELFTEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to\n"
+                                                      "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
+        case VKAT_SELFTEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to\n"
+                                                      "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
         default:  return NULL;
     }
 }
