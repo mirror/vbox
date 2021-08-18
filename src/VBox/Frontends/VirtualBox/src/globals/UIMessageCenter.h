@@ -447,11 +447,7 @@ public:
     void cannotAcquireCloudMachineParameter(const QString &strErrorDetails, QWidget *pParent = 0) const;
     bool confirmCloudProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
     bool confirmCloudProfilesImport(QWidget *pParent = 0) const;
-    void cannotAssignFormValue(const CBooleanFormValue &comValue, QWidget *pParent = 0) const;
-    void cannotAssignFormValue(const CStringFormValue &comValue, QWidget *pParent = 0) const;
-    void cannotAssignFormValue(const CChoiceFormValue &comValue, QWidget *pParent = 0) const;
-    void cannotAssignFormValue(const CRangedIntegerFormValue &comValue, QWidget *pParent = 0) const;
-    void cannotAssignFormValue(const CProgress &comProgress, QWidget *pParent = 0) const;
+    void cannotAssignFormValue(const QString &strError, QWidget *pParent = 0) const;
     int confirmCloudProfileManagerClosing(QWidget *pParent = 0) const;
 
     /* API: Cloud Console Manager warnings: */

@@ -36,6 +36,7 @@
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIProgressObject.h"
 
 /* COM includes: */
 #include "CBooleanFormValue.h"
@@ -317,6 +318,18 @@ class UIFormEditorRow : public QITableViewRow
 {
     Q_OBJECT;
 
+signals:
+
+    /** Starts @a comProgress execution. */
+    void sigStartProgress(const CProgress &comProgress);
+    /** Notifies listeners about progress has started. */
+    void sigProgressStarted();
+    /** Notifies listeners about progress has changed.
+      * @param  uPercent  Brings the progress percentage. */
+    void sigProgressChange(ulong uPercent);
+    /** Notifies listeners about progress has finished. */
+    void sigProgressFinished();
+
 public:
 
     /** Constructs table row on the basis of certain @a comValue, passing @a pParent to the base-class. */
@@ -376,6 +389,15 @@ protected:
     /** Returns the child item with @a iIndex. */
     virtual QITableViewCell *childItem(int iIndex) const /* override */;
 
+private slots:
+
+    /** Handles request to start progress.
+      * @param  comProgress  Brings the progress just started. */
+    void sltHandleProgressStarted(CProgress comProgress);
+    /** Handles progress failure.
+      * @param  strError  Brings error information. */
+    void sltHandleProgressFailed(const QString &strError);
+
 private:
 
     /** Prepares all. */
@@ -414,6 +436,16 @@ private:
 class UIFormEditorModel : public QAbstractTableModel
 {
     Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about progress has started. */
+    void sigProgressStarted();
+    /** Notifies listeners about progress has changed.
+      * @param  uPercent  Brings the progress percentage. */
+    void sigProgressChange(ulong uPercent);
+    /** Notifies listeners about progress has finished. */
+    void sigProgressFinished();
 
 public:
 
@@ -720,23 +752,7 @@ void UIFormEditorRow::setBool(bool fBool)
     AssertReturnVoid(valueType() == KFormValueType_Boolean);
     CBooleanFormValue comValue(m_comValue);
     CProgress comProgress = comValue.SetSelected(fBool);
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    emit sigStartProgress(comProgress);
 }
 
 bool UIFormEditorRow::isMultilineString() const
@@ -756,23 +772,7 @@ void UIFormEditorRow::setText(const TextData &text)
     AssertReturnVoid(valueType() == KFormValueType_String);
     CStringFormValue comValue(m_comValue);
     CProgress comProgress = comValue.SetString(text.text());
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    emit sigStartProgress(comProgress);
 }
 
 QString UIFormEditorRow::toString() const
@@ -786,23 +786,7 @@ void UIFormEditorRow::setString(const QString &strString)
     AssertReturnVoid(valueType() == KFormValueType_String);
     CStringFormValue comValue(m_comValue);
     CProgress comProgress = comValue.SetString(strString);
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    emit sigStartProgress(comProgress);
 }
 
 ChoiceData UIFormEditorRow::toChoice() const
@@ -820,23 +804,7 @@ void UIFormEditorRow::setChoice(const ChoiceData &choice)
     AssertReturnVoid(valueType() == KFormValueType_Choice);
     CChoiceFormValue comValue(m_comValue);
     CProgress comProgress = comValue.SetSelectedIndex(choice.selectedIndex());
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    emit sigStartProgress(comProgress);
 }
 
 RangedIntegerData UIFormEditorRow::toRangedInteger() const
@@ -850,23 +818,7 @@ void UIFormEditorRow::setRangedInteger(const RangedIntegerData &rangedInteger)
     AssertReturnVoid(valueType() == KFormValueType_RangedInteger);
     CRangedIntegerFormValue comValue(m_comValue);
     CProgress comProgress = comValue.SetInteger(rangedInteger.integer());
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    emit sigStartProgress(comProgress);
 }
 
 void UIFormEditorRow::updateValueCells()
@@ -948,6 +900,44 @@ QITableViewCell *UIFormEditorRow::childItem(int iIndex) const
     return m_cells.at(iIndex);
 }
 
+void UIFormEditorRow::sltHandleProgressStarted(CProgress comProgress)
+{
+    /* Make sure progress valid: */
+    if (!comProgress.isNull() && !comProgress.GetCompleted())
+    {
+        /* Create set value progress object: */
+        QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
+        if (pObject)
+        {
+            connect(pObject.data(), &UIProgressObject::sigProgressError,
+                    this, &UIFormEditorRow::sltHandleProgressFailed);
+            connect(pObject.data(), &UIProgressObject::sigProgressChange,
+                    this, &UIFormEditorRow::sigProgressChange);
+            connect(pObject.data(), &UIProgressObject::sigProgressComplete,
+                    this, &UIFormEditorRow::sigProgressFinished);
+            emit sigProgressStarted();
+            pObject->exec();
+            if (pObject)
+                delete pObject;
+            else
+            {
+                // Premature application shutdown,
+                // exit immediately:
+                return;
+            }
+        }
+    }
+
+    /* Update values finally: */
+    updateValueCells();
+}
+
+void UIFormEditorRow::sltHandleProgressFailed(const QString &strError)
+{
+    msgCenter().cannotAssignFormValue(strError, table()->window());
+    emit sigProgressFinished();
+}
+
 void UIFormEditorRow::prepare()
 {
     /* Cache value type: */
@@ -961,6 +951,10 @@ void UIFormEditorRow::prepare()
     m_cells[UIFormEditorDataType_Name] = new UIFormEditorCell(this, strName);
     m_cells[UIFormEditorDataType_Value] = new UIFormEditorCell(this);
     updateValueCells();
+
+    /* Configure connections: */
+    connect(this, &UIFormEditorRow::sigStartProgress,
+            this, &UIFormEditorRow::sltHandleProgressStarted);
 }
 
 void UIFormEditorRow::cleanup()
@@ -999,7 +993,19 @@ void UIFormEditorModel::setFormValues(const CFormValueVector &values)
     /* Add new lines: */
     beginInsertRows(QModelIndex(), 0, values.size() - 1);
     foreach (const CFormValue &comValue, values)
-        m_dataList << new UIFormEditorRow(parentTable(), comValue);
+    {
+        UIFormEditorRow *pRow = new UIFormEditorRow(parentTable(), comValue);
+        if (pRow)
+        {
+            connect(pRow, &UIFormEditorRow::sigProgressStarted,
+                    this, &UIFormEditorModel::sigProgressStarted);
+            connect(pRow, &UIFormEditorRow::sigProgressChange,
+                    this, &UIFormEditorModel::sigProgressChange);
+            connect(pRow, &UIFormEditorRow::sigProgressFinished,
+                    this, &UIFormEditorModel::sigProgressFinished);
+            m_dataList << pRow;
+        }
+    }
     endInsertRows();
 }
 
@@ -1518,6 +1524,12 @@ void UIFormEditorWidget::prepare()
                 {
                     pProxyModel->setSourceModel(m_pTableModel);
                     m_pTableView->setModel(pProxyModel);
+                    connect(m_pTableModel, &UIFormEditorModel::sigProgressStarted,
+                            this, &UIFormEditorWidget::sigProgressStarted);
+                    connect(m_pTableModel, &UIFormEditorModel::sigProgressChange,
+                            this, &UIFormEditorWidget::sigProgressChange);
+                    connect(m_pTableModel, &UIFormEditorModel::sigProgressFinished,
+                            this, &UIFormEditorWidget::sigProgressFinished);
                 }
             }
 
