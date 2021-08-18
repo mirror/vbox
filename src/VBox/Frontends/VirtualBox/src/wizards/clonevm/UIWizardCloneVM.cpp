@@ -19,6 +19,7 @@
 #include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
+#include "UIProgressObject.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMPageBasic1.h"
 #include "UIWizardCloneVMPageBasic2.h"
@@ -137,9 +138,6 @@ void UIWizardCloneVM::setCloneMode(KCloneMode enmCloneMode)
 
 bool UIWizardCloneVM::cloneVM()
 {
-    /* Get VBox object: */
-    CVirtualBox vbox = uiCommon().virtualBox();
-
     /* Prepare machine for cloning: */
     CMachine srcMachine = m_machine;
 
@@ -149,55 +147,87 @@ bool UIWizardCloneVM::cloneVM()
      * we could use the new snapshot machine for cloning. */
     if (m_fLinkedClone && m_snapshot.isNull())
     {
+        /* Acquire machine name beforehand: */
+        const QString strMachineName = m_machine.GetName();
+        if (!m_machine.isOk())
+        {
+            msgCenter().cannotAcquireMachineParameter(m_machine);
+            return false;
+        }
 
         /* Open session: */
-        CSession session = uiCommon().openSession(m_machine.GetId());
-        if (session.isNull())
+        CSession comSession = uiCommon().openSession(m_machine.GetId());
+        if (comSession.isNull())
             return false;
 
-        /* Prepare machine: */
-        CMachine machine = session.GetMachine();
+        /* Acquire session machine: */
+        CMachine comSessionMachine = comSession.GetMachine();
 
         /* Take the snapshot: */
-        QString strSnapshotName = tr("Linked Base for %1 and %2").arg(m_machine.GetName()).arg(m_strCloneName);
+        const QString strSnapshotName = tr("Linked Base for %1 and %2").arg(strMachineName).arg(m_strCloneName);
         QUuid uSnapshotId;
-        CProgress progress = machine.TakeSnapshot(strSnapshotName, "", true, uSnapshotId);
-
-        if (machine.isOk())
+        CProgress comProgress = comSessionMachine.TakeSnapshot(strSnapshotName, "", true, uSnapshotId);
+        if (comSessionMachine.isOk())
         {
-            /* Show the "Taking Snapshot" progress dialog: */
-            msgCenter().showModalProgressDialog(progress, m_machine.GetName(), ":/progress_snapshot_create_90px.png", this);
-
-            if (!progress.isOk() || progress.GetResultCode() != 0)
+            /* Make sure progress valid: */
+            if (!comProgress.isNull() && !comProgress.GetCompleted())
             {
-                msgCenter().cannotTakeSnapshot(progress, m_machine.GetName(), this);
+                /* Create take snapshot progress object: */
+                QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
+                if (pObject)
+                {
+                    connect(pObject.data(), &UIProgressObject::sigProgressChange,
+                            this, &UIWizardCloneVM::sltHandleProgressChange);
+                    connect(pObject.data(), &UIProgressObject::sigProgressComplete,
+                            this, &UIWizardCloneVM::sltHandleProgressFinished);
+                    sltHandleProgressStarted();
+                    pObject->exec();
+                    if (pObject)
+                        delete pObject;
+                    else
+                    {
+                        // Premature application shutdown,
+                        // exit immediately:
+                        return false;
+                    }
+                }
+            }
+
+            /* Check progress for errors: */
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotTakeSnapshot(comProgress, strMachineName, this);
                 return false;
             }
         }
         else
         {
-            msgCenter().cannotTakeSnapshot(machine, m_machine.GetName(), this);
+            msgCenter().cannotTakeSnapshot(comSessionMachine, strMachineName, this);
             return false;
         }
 
         /* Unlock machine finally: */
-        session.UnlockMachine();
+        comSession.UnlockMachine();
 
-        /* Get the new snapshot and the snapshot machine. */
-        const CSnapshot &newSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
-        if (newSnapshot.isNull())
+        /* Look for created snapshot: */
+        const CSnapshot comCreatedSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
+        if (comCreatedSnapshot.isNull())
         {
             msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
             return false;
         }
-        srcMachine = newSnapshot.GetMachine();
+
+        /* Update machine for cloning finally: */
+        srcMachine = comCreatedSnapshot.GetMachine();
     }
 
-    /* Create a new machine object. */
-    CMachine cloneMachine = vbox.CreateMachine(m_strCloneFilePath, m_strCloneName, QVector<QString>(), QString(), QString());
-    if (!vbox.isOk())
+    /* Get VBox object: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    /* Create a new machine object: */
+    CMachine cloneMachine = comVBox.CreateMachine(m_strCloneFilePath, m_strCloneName, QVector<QString>(), QString(), QString());
+    if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateMachine(vbox, this);
+        msgCenter().cannotCreateMachine(comVBox, this);
         return false;
     }
 
@@ -215,12 +245,10 @@ bool UIWizardCloneVM::cloneVM()
         default:
             break;
     }
-
     if (m_fKeepDiskNames)
         options.append(KCloneOptions_KeepDiskNames);
     if (m_fKeepHardwareUUIDs)
         options.append(KCloneOptions_KeepHwUUIDs);
-
     /* Linked clones requested? */
     if (m_fLinkedClone)
         options.append(KCloneOptions_Link);
