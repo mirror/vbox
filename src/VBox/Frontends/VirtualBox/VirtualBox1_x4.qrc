@@ -423,6 +423,7 @@
         <file alias="help_browser_search_32px_x4.png">images/x4/help_browser_search_32px_x4.png</file>
         <file alias="help_browser_search_disabled_16px_x4.png">images/x4/help_browser_search_disabled_16px_x4.png</file>
         <file alias="help_browser_search_disabled_32px_x4.png">images/x4/help_browser_search_disabled_32px_x4.png</file>
+        <file alias="help_browser_star_16px_x4.png">images/x4/help_browser_star_16px_x4.png</file>
         <file alias="help_button_normal_mac_24px_x4.png">images/x4/help_button_normal_mac_24px_x4.png</file>
         <file alias="help_button_pressed_mac_24px_x4.png">images/x4/help_button_pressed_mac_24px_x4.png</file>
         <file alias="host_iface_add_16px_x4.png">images/x4/host_iface_add_16px_x4.png</file>
