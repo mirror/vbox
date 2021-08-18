@@ -223,6 +223,23 @@ void UINativeWizard::retranslateUi()
     pButtonCancel->setToolTip(tr("Cancel wizard execution."));
 }
 
+void UINativeWizard::sltHandleProgressStarted()
+{
+    m_pProgressStack->setCurrentIndex(1);
+}
+
+void UINativeWizard::sltHandleProgressChange(ulong uPercent)
+{
+    m_pProgressBar->setMinimum(0);
+    m_pProgressBar->setValue(uPercent);
+    m_pProgressBar->setMaximum(100);
+}
+
+void UINativeWizard::sltHandleProgressFinished()
+{
+    m_pProgressStack->setCurrentIndex(0);
+}
+
 void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
 {
     /* Update translation: */
@@ -280,23 +297,6 @@ void UINativeWizard::sltCompleteChanged()
     QPushButton *pButtonNext = wizardButton(WizardButtonType_Next);
     AssertMsgReturnVoid(pButtonNext, ("No Next wizard button found!\n"));
     pButtonNext->setEnabled(pPage->isComplete());
-}
-
-void UINativeWizard::sltHandleProgressStarted()
-{
-    m_pProgressStack->setCurrentIndex(1);
-}
-
-void UINativeWizard::sltHandleProgressChange(ulong uPercent)
-{
-    m_pProgressBar->setMinimum(0);
-    m_pProgressBar->setValue(uPercent);
-    m_pProgressBar->setMaximum(100);
-}
-
-void UINativeWizard::sltHandleProgressFinished()
-{
-    m_pProgressStack->setCurrentIndex(0);
 }
 
 void UINativeWizard::sltExpert()
