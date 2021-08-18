@@ -71,8 +71,7 @@ class UIWizardNewVM : public UINativeWizard
 
 public:
 
-    UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup = QString(),
-                  WizardMode enmMode = WizardMode_Auto, const QString &strHelpHashtag = QString());
+    UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup = QString(), const QString &strHelpHashtag = QString());
     bool isUnattendedEnabled() const;
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;

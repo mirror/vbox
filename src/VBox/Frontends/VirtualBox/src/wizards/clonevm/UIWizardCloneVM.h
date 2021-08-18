@@ -48,7 +48,7 @@ class UIWizardCloneVM : public UINativeWizard
 public:
 
     UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
-                    const QString &strGroup, CSnapshot snapshot = CSnapshot());
+                    const QString &strGroup, CSnapshot snapshot = CSnapshot(), const QString &strHelpHashtag = QString());
     void setCloneModePageVisible(bool fIsFullClone);
     bool isCloneModePageVisible() const;
     /** Clone VM stuff. */

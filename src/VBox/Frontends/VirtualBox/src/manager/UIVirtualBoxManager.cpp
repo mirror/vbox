@@ -975,7 +975,7 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
     {
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, m_pWidget->fullGroupName(), WizardMode_Auto, "gui-createvm");
+        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, m_pWidget->fullGroupName(), "gui-createvm");
         windowManager().registerNewParent(pWizard, pWizardParent);
 
         CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
@@ -1137,7 +1137,7 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
     QWidget *pWizardParent = windowManager().realParentWindow(this);
     const QStringList &machineGroupNames = pItemLocal->groups();
     const QString strGroup = !machineGroupNames.isEmpty() ? machineGroupNames.at(0) : QString();
-    QPointer<UINativeWizard> pWizard = new UIWizardCloneVM(pWizardParent, pItemLocal->machine(), strGroup);
+    QPointer<UINativeWizard> pWizard = new UIWizardCloneVM(pWizardParent, pItemLocal->machine(), strGroup, CSnapshot(), "clone");
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->exec();
     delete pWizard;
