@@ -262,6 +262,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
 
     /** @todo Use .WAV here? */
     AUDIOTESTOBJ Obj;
+    RT_ZERO(Obj); /* Shut up MSVC. */
     if (pTstEnv)
     {
         rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-play.pcm", &Obj);
