@@ -38,6 +38,14 @@ signals:
     /** Notifies about page validity changes. */
     void completeChanged();
 
+    /** Notifies listeners about progress has started. */
+    void sigProgressStarted();
+    /** Notifies listeners about progress has changed.
+      * @param  uPercent  Brings the progress percentage. */
+    void sigProgressChange(ulong uPercent);
+    /** Notifies listeners about progress has finished. */
+    void sigProgressFinished();
+
 public:
 
     /** Constructs wizard page. */

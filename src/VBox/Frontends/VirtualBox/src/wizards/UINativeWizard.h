@@ -32,6 +32,7 @@
 
 /* Forward declarations: */
 class QLabel;
+class QProgressBar;
 class QPushButton;
 class QStackedWidget;
 class QVBoxLayout;
@@ -127,6 +128,14 @@ private slots:
     /** Handles page validity changes. */
     void sltCompleteChanged();
 
+    /** Handles signal about progress has started. */
+    void sltHandleProgressStarted();
+    /** Handles signal about progress changed.
+      * @param  uPercent  Brings the progress percentage. */
+    void sltHandleProgressChange(ulong uPercent);
+    /** Handles signal about progress has finished. */
+    void sltHandleProgressFinished();
+
     /** Toggles between basic and expert modes. */
     void sltExpert();
     /** Switches to previous page. */
@@ -177,6 +186,10 @@ private:
     QLabel                               *m_pLabelPageTitle;
     /** Holds the widget-stack instance. */
     QStackedWidget                       *m_pWidgetStack;
+    /** Holds the progress-stack instance. */
+    QStackedWidget                       *m_pProgressStack;
+    /** Holds the progress-bar instance. */
+    QProgressBar                         *m_pProgressBar;
     /** Holds button instance map. */
     QMap<WizardButtonType, QPushButton*>  m_buttons;
 };
