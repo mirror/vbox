@@ -395,6 +395,14 @@
         <file alias="help_browser_backward_32px_x3.png">images/x3/help_browser_backward_32px_x3.png</file>
         <file alias="help_browser_backward_disabled_16px_x3.png">images/x3/help_browser_backward_disabled_16px_x3.png</file>
         <file alias="help_browser_backward_disabled_32px_x3.png">images/x3/help_browser_backward_disabled_32px_x3.png</file>
+        <file alias="help_browser_forward_16px_x3.png">images/x3/help_browser_forward_16px_x3.png</file>
+        <file alias="help_browser_forward_32px_x3.png">images/x3/help_browser_forward_32px_x3.png</file>
+        <file alias="help_browser_forward_disabled_16px_x3.png">images/x3/help_browser_forward_disabled_16px_x3.png</file>
+        <file alias="help_browser_forward_disabled_32px_x3.png">images/x3/help_browser_forward_disabled_32px_x3.png</file>
+        <file alias="help_browser_home_16px_x3.png">images/x3/help_browser_home_16px_x3.png</file>
+        <file alias="help_browser_home_32px_x3.png">images/x3/help_browser_home_32px_x3.png</file>
+        <file alias="help_browser_home_disabled_16px_x3.png">images/x3/help_browser_home_disabled_16px_x3.png</file>
+        <file alias="help_browser_home_disabled_32px_x3.png">images/x3/help_browser_home_disabled_32px_x3.png</file>
         <file alias="help_button_normal_mac_24px_x3.png">images/x3/help_button_normal_mac_24px_x3.png</file>
         <file alias="help_button_pressed_mac_24px_x3.png">images/x3/help_button_pressed_mac_24px_x3.png</file>
         <file alias="host_iface_add_16px_x3.png">images/x3/host_iface_add_16px_x3.png</file>
@@ -463,9 +471,5 @@
         <file alias="log_viewer_filter_add_16px_x3.png">images/x3/log_viewer_filter_add_16px_x3.png</file>
         <file alias="log_viewer_filter_disabled_16px_x3.png">images/x3/log_viewer_filter_disabled_16px_x3.png</file>
         <file alias="log_viewer_filter_disabled_32px_x3.png">images/x3/log_viewer_filter_disabled_32px_x3.png</file>
-        <file alias="log_viewer_find_16px_x3.png">images/x3/log_viewer_find_16px_x3.png</file>
-        <file alias="log_viewer_find_32px_x3.png">images/x3/log_viewer_find_32px_x3.png</file>
-        <file alias="log_viewer_find_disabled_16px_x3.png">images/x3/log_viewer_find_disabled_16px_x3.png</file>
-        <file alias="log_viewer_find_disabled_32px_x3.png">images/x3/log_viewer_find_disabled_32px_x3.png</file>
     </qresource>
 </RCC>

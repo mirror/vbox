@@ -720,15 +720,17 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
 void UIHelpBrowserTab::prepareToolBarAndAddressBar()
 {
     m_pHomeAction =
-        new QAction(UIIconPool::iconSet(":/help_browser_home_32px.png"), QString(), this);
+        new QAction(UIIconPool::iconSetFull(":/help_browser_home_32px.png", ":/help_browser_home_16px.png",
+                                            ":/help_browser_home_disabled_32px.png", ":/help_browser_home_disabled_16px.png"), QString(), this);
     m_pForwardAction =
-        new QAction(UIIconPool::iconSet(":/help_browser_forward_32px.png", ":/help_browser_forward_disabled_32px.png"), QString(), this);
+        new QAction(UIIconPool::iconSetFull(":/help_browser_forward_32px.png", ":/help_browser_forward_16px.png",
+                                            ":/help_browser_forward_disabled_32px.png", ":/help_browser_forward_disabled_16px.png"), QString(), this);
     m_pBackwardAction =
         new QAction(UIIconPool::iconSetFull(":/help_browser_backward_32px.png", ":/help_browser_backward_16px.png",
                                             ":/help_browser_backward_disabled_32px.png", ":/help_browser_backward_disabled_16px.png"), QString(), this);
     m_pAddBookmarkAction =
         new QAction(UIIconPool::iconSetFull(":/help_browser_add_bookmark_32px.png", ":/help_browser_add_bookmark_16px.png",
-                                        ":/help_browser_add_bookmark_disabled_32px.png", ":/help_browser_add_bookmark_disabled_16px.png"), QString(), this);
+                                            ":/help_browser_add_bookmark_disabled_32px.png", ":/help_browser_add_bookmark_disabled_16px.png"), QString(), this);
     m_pFindInPageAction =
         new QAction(UIIconPool::iconSet(":/help_browser_search.png"), QString(), this);
     m_pReloadPageAction =

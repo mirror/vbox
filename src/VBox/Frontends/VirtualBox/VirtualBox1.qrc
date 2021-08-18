@@ -395,9 +395,14 @@
         <file alias="help_browser_backward_32px.png">images/help_browser_backward_32px.png</file>
         <file alias="help_browser_backward_disabled_16px.png">images/help_browser_backward_disabled_16px.png</file>
         <file alias="help_browser_backward_disabled_32px.png">images/help_browser_backward_disabled_32px.png</file>
+        <file alias="help_browser_forward_16px.png">images/help_browser_forward_16px.png</file>
         <file alias="help_browser_forward_32px.png">images/help_browser_forward_32px.png</file>
+        <file alias="help_browser_forward_disabled_16px.png">images/help_browser_forward_disabled_16px.png</file>
         <file alias="help_browser_forward_disabled_32px.png">images/help_browser_forward_disabled_32px.png</file>
+        <file alias="help_browser_home_16px.png">images/help_browser_home_16px.png</file>
         <file alias="help_browser_home_32px.png">images/help_browser_home_32px.png</file>
+        <file alias="help_browser_home_disabled_16px.png">images/help_browser_home_disabled_16px.png</file>
+        <file alias="help_browser_home_disabled_32px.png">images/help_browser_home_disabled_32px.png</file>
         <file alias="help_browser_minus_32px.png">images/help_browser_minus_32px.png</file>
         <file alias="help_browser_plus_32px.png">images/help_browser_plus_32px.png</file>
         <file alias="help_browser_reload_32px.png">images/help_browser_reload_32px.png</file>
@@ -474,8 +479,5 @@
         <file alias="log_viewer_filter_disabled_32px.png">images/log_viewer_filter_disabled_32px.png</file>
         <file alias="log_viewer_find_16px.png">images/log_viewer_find_16px.png</file>
         <file alias="log_viewer_find_32px.png">images/log_viewer_find_32px.png</file>
-        <file alias="log_viewer_find_disabled_16px.png">images/log_viewer_find_disabled_16px.png</file>
-        <file alias="log_viewer_find_disabled_32px.png">images/log_viewer_find_disabled_32px.png</file>
-        <file alias="log_viewer_goto_next_bookmark_16px.png">images/log_viewer_goto_next_bookmark_16px.png</file>
     </qresource>
 </RCC>
