@@ -238,26 +238,35 @@ DECLINLINE(uint32_t) audioTestEnvGetRandomSchedulingHint(void)
  *
  * @returns VBox status code.
  * @param   pTstEnv             Test environment to use for running the test.
+ *                              Optional and can be NULL (for simple playback only).
  * @param   pStream             Stream to use for playing the tone.
  * @param   pParms              Tone parameters to use.
  *
  * @note    Blocking function.
  */
-static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
     AUDIOTESTTONE TstTone;
     AudioTestToneInit(&TstTone, &pStream->Cfg.Props, pParms->dbFreqHz);
 
-    const char *pcszPathOut = pTstEnv->Set.szPathAbs;
+    char const *pcszPathOut = NULL;
+    if (pTstEnv)
+        pcszPathOut = pTstEnv->Set.szPathAbs;
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (tone frequency is %RU16Hz, %RU32ms)\n", (uint16_t)pParms->dbFreqHz, pParms->msDuration);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using %RU32ms stream scheduling hint\n", pStream->Cfg.Device.cMsSchedulingHint);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Writing to '%s'\n", pcszPathOut);
+    if (pcszPathOut)
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Writing to '%s'\n", pcszPathOut);
+
+    int rc;
 
     /** @todo Use .WAV here? */
     AUDIOTESTOBJ Obj;
-    int rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-play.pcm", &Obj);
-    AssertRCReturn(rc, rc);
+    if (pTstEnv)
+    {
+        rc = AudioTestSetObjCreateAndRegister(&pTstEnv->Set, "guest-tone-play.pcm", &Obj);
+        AssertRCReturn(rc, rc);
+    }
 
     rc = AudioTestMixStreamEnable(&pStream->Mix);
     if (   RT_SUCCESS(rc)
@@ -270,13 +279,16 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
 
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes total\n", cbToPlayTotal);
 
-        AudioTestObjAddMetadataStr(Obj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
-        AudioTestObjAddMetadataStr(Obj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
-        AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
-        AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
-        /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
-         *       has nothing to do with the device emulation scheduling hint. */
-        AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
+        if (pTstEnv)
+        {
+            AudioTestObjAddMetadataStr(Obj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
+            AudioTestObjAddMetadataStr(Obj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
+            AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
+            AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
+            /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
+             *       has nothing to do with the device emulation scheduling hint. */
+            AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
+        }
 
         PAUDIOTESTDRVMIXSTREAM pMix = &pStream->Mix;
 
@@ -308,8 +320,11 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
                 rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbToPlay);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Write stuff to disk before trying to play it. Help analysis later. */
-                    rc = AudioTestObjWrite(Obj, abBuf, cbToPlay);
+                    if (pTstEnv)
+                    {
+                        /* Write stuff to disk before trying to play it. Help analysis later. */
+                        rc = AudioTestObjWrite(Obj, abBuf, cbToPlay);
+                    }
                     if (RT_SUCCESS(rc))
                     {
                         rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
@@ -341,9 +356,12 @@ static int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PA
     else
         rc = VERR_AUDIO_STREAM_NOT_READY;
 
-    int rc2 = AudioTestObjClose(Obj);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    if (pTstEnv)
+    {
+        int rc2 = AudioTestObjClose(Obj);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     if (RT_FAILURE(rc))
         RTTestFailed(g_hTest, "Playing tone failed with %Rrc\n", rc);

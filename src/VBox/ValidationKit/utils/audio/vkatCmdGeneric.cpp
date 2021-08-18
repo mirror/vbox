@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/errcore.h>
 #include <iprt/message.h>
+#include <iprt/rand.h>
 #include <iprt/test.h>
 
 #include "vkatInternal.h"
@@ -365,6 +366,104 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
     return rcExit;
 }
 
+/**
+ * Worker for audioTestCmdPlayHandler that plays one test tone.
+ */
+static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
+                                           PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
+                                           uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
+                                           uint8_t cChannels, uint8_t cbSample, uint32_t uHz,
+                                           bool fWithDrvAudio, bool fWithMixer)
+{
+    char szTmp[128];
+
+    AUDIOTESTSTREAM TstStream;
+    RT_ZERO(TstStream);
+
+    /*
+     * Construct the driver stack.
+     */
+    RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
+    AUDIOTESTDRVSTACK   DrvStack;
+    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, fWithDrvAudio);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Set the output device if one is specified.
+         */
+        rc = audioTestDriverStackSetDevice(&DrvStack, PDMAUDIODIR_OUT, pszDevId);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Open a stream for the output.
+             */
+            PDMAUDIOPCMPROPS ReqProps = pToneParms->Props;
+            if (cChannels != 0 && PDMAudioPropsChannels(&ReqProps) != cChannels)
+                PDMAudioPropsSetChannels(&ReqProps, cChannels);
+            if (cbSample != 0)
+                PDMAudioPropsSetSampleSize(&ReqProps, cbSample);
+            if (uHz != 0)
+                ReqProps.uHz = uHz;
+
+            rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &ReqProps, cMsBufferSize,
+                                                        cMsPreBuffer, cMsSchedulingHint, &TstStream.pStream, &TstStream.Cfg);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Automatically enable the mixer if the wave file and the
+                 * output parameters doesn't match.
+                 */
+                if (   !fWithMixer
+                    && !PDMAudioPropsAreEqual(&pToneParms->Props, &TstStream.pStream->Cfg.Props))
+                {
+                    RTMsgInfo("Enabling the mixer buffer.\n");
+                    fWithMixer = true;
+                }
+
+                /*
+                 * Create a mixer wrapper.  This is just a thin wrapper if fWithMixer
+                 * is false, otherwise it's doing mixing, resampling and recoding.
+                 */
+                rc = AudioTestMixStreamInit(&TstStream.Mix, &DrvStack, TstStream.pStream, fWithMixer ? &pToneParms->Props : NULL, 100 /*ms*/);
+                if (RT_SUCCESS(rc))
+                {
+                    if (g_uVerbosity > 0)
+                        RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n",
+                                  PDMAudioPropsToString(&TstStream.pStream->Cfg.Props, szTmp, sizeof(szTmp)),
+                                  TstStream.pStream->cbBackend, fWithMixer ? " mixed" : "");
+
+                    /*
+                     * Enable the stream and start playing.
+                     */
+                    rc = AudioTestMixStreamEnable(&TstStream.Mix);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = audioTestPlayTone(NULL /* pTstEnv */, &TstStream, pToneParms);
+                        if (RT_SUCCESS(rc))
+                            rcExit = RTEXITCODE_SUCCESS;
+                    }
+                    else
+                        rcExit = RTMsgErrorExitFailure("Enabling the output stream failed: %Rrc", rc);
+
+                    /*
+                     * Clean up.
+                     */
+                    AudioTestMixStreamTerm(&TstStream.Mix);
+                }
+                audioTestDriverStackStreamDestroy(&DrvStack, TstStream.pStream);
+            }
+            else
+                rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("Failed to set output device to '%s': %Rrc", pszDevId, rc);
+        audioTestDriverStackDelete(&DrvStack);
+    }
+    else
+        rcExit = RTMsgErrorExitFailure("Driver stack construction failed: %Rrc", rc);
+    return rcExit;
+}
+
 
 /**
  * Options for 'play'.
@@ -376,6 +475,7 @@ static const RTGETOPTDEF g_aCmdPlayOptions[] =
     { "--hz",               'f',                          RTGETOPT_REQ_UINT32 },
     { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
     { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
+    { "--test-tone",        't',                          RTGETOPT_REQ_NOTHING },
     { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
     { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
@@ -387,13 +487,14 @@ static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
     {
-        case 'b': return "The audio backend to use.";
+        case 'b': return "The audio backend to use";
         case 'c': return "Number of backend output channels";
-        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend.";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend";
         case 'f': return "Output frequency (Hz)";
         case 'z': return "Output sample size (bits)";
-        case 'm': return "Go via the mixer.";
-        case 'o': return "The ID of the output device to use.";
+        case 't': return "Plays a test tone. Can be specified multiple times";
+        case 'm': return "Go via the mixer";
+        case 'o': return "The ID of the output device to use";
         default:  return NULL;
     }
 }
@@ -415,6 +516,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
     const char *pszDevId            = NULL;
     bool        fWithDrvAudio       = false;
     bool        fWithMixer          = false;
+    uint32_t    cTestTones          = 0;
     uint8_t     cbSample            = 0;
     uint8_t     cChannels           = 0;
     uint32_t    uHz                 = 0;
@@ -452,12 +554,19 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 pszDevId = ValueUnion.psz;
                 break;
 
+            case 't':
+                cTestTones++;
+                break;
+
             case 'z':
                 cbSample = ValueUnion.u8 / 8;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
             {
+                if (cTestTones)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Playing test tones (-t) cannot be combined with playing files");
+
                 RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
                                                      cMsSchedulingHint, cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer);
                 if (rcExit != RTEXITCODE_SUCCESS)
@@ -471,6 +580,32 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
+
+    while (cTestTones--)
+    {
+        AUDIOTESTTONEPARMS ToneParms;
+        RT_ZERO(ToneParms);
+
+        /* Use some sane defaults if no PCM props are set by the user. */
+        PDMAudioPropsInit(&ToneParms.Props,
+                          cbSample ? cbSample : 4, true /* fSigned */, cChannels ? cChannels : 2, uHz ? uHz : 44100);
+
+        ToneParms.dbFreqHz       = AudioTestToneGetRandomFreq();
+        ToneParms.msPrequel      = 0; /** @todo Implement analyzing this first! */
+#ifdef DEBUG_andy
+        ToneParms.msDuration     = RTRandU32Ex(50, 2500);
+#else
+        ToneParms.msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
+#endif
+        ToneParms.msSequel       = 0;   /** @todo Implement analyzing this first! */
+        ToneParms.uVolumePercent = 100; /** @todo Implement analyzing this first! */
+
+        RTEXITCODE rcExit = audioTestPlayTestToneOne(&ToneParms, pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer,
+                                                     cMsSchedulingHint, cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer);
+        if (rcExit != RTEXITCODE_SUCCESS)
+            return rcExit;
+    }
+
     return RTEXITCODE_SUCCESS;
 }
 

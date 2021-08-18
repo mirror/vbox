@@ -462,6 +462,10 @@ void        audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms);
 
 int         audioTestWorker(PAUDIOTESTENV pTstEnv);
 
+/** @todo Test tone handling */
+int         audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
+/** @}  */
+
 /** @name Command handlers
  * @{ */
 RTEXITCODE   audioTestDoSelftest(PSELFTESTCTX pCtx);
