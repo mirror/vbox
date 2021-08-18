@@ -736,7 +736,11 @@ void UINativeWizard::assignWatermark()
     /* Convert processed image to pixmap: */
     QPixmap pixmapNew = QPixmap::fromImage(imageNew);
     /* For HiDPI support parent-widget's device pixel ratio is to be taken into account: */
-    const double dRatio = parentWidget()->windowHandle()->devicePixelRatio();
+    double dRatio = 1.0;
+    if (   parentWidget()
+        && parentWidget()->window()
+        && parentWidget()->window()->windowHandle())
+        dRatio = parentWidget()->window()->windowHandle()->devicePixelRatio();
     pixmapNew.setDevicePixelRatio(dRatio);
     /* Assign watermark finally: */
     m_pLabelPixmap->setPixmap(pixmapNew);
