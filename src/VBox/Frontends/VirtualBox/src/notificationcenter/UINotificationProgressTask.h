@@ -47,8 +47,8 @@ public:
 protected:
 
     /** Creates and returns started progress-wrapper required to init UIProgressObject.
-      * @note  You don't need to reload it, it uses createProgressEx()
-      *        which should be reloaded in your sub-class. */
+      * @note  You don't need to reload it, it uses pParent's createProgress()
+      *        which should be reloaded in your pParent sub-class. */
     virtual CProgress createProgress() /* override final */;
     /** Handles finished @a comProgress wrapper.
       * @note  You don't need to reload it. */
