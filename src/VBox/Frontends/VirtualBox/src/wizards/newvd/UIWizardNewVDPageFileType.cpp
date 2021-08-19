@@ -38,7 +38,7 @@ void UIWizardNewVDPageFileType::prepare()
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pLabel = new QIRichTextLabel(this);
     pMainLayout->addWidget(m_pLabel);
-    m_pFormatButtonGroup = new UIDiskFormatsGroupBox(false, 0);
+    m_pFormatButtonGroup = new UIDiskFormatsGroupBox(false, KDeviceType_HardDisk, 0);
     pMainLayout->addWidget(m_pFormatButtonGroup, false);
 
     pMainLayout->addStretch();

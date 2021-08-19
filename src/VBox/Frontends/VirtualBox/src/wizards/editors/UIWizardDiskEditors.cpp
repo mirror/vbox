@@ -92,24 +92,6 @@ QString UIDiskEditorGroupBox::constructMediumFilePath(const QString &strFileName
 }
 
 /* static */
-QString UIDiskEditorGroupBox::defaultExtensionForMediumFormat(const CMediumFormat &mediumFormatRef)
-{
-    if (!mediumFormatRef.isNull())
-    {
-        /* Load extension / device list: */
-        QVector<QString> fileExtensions;
-        QVector<KDeviceType> deviceTypes;
-        CMediumFormat mediumFormat(mediumFormatRef);
-        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-        for (int i = 0; i < fileExtensions.size(); ++i)
-            if (deviceTypes[i] == KDeviceType_HardDisk)
-                return fileExtensions[i].toLower();
-    }
-    AssertMsgFailed(("Extension can't be NULL!\n"));
-    return QString();
-}
-
-/* static */
 bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
 {
     /* If the hard disk is split into 2GB parts then no need to make further checks: */
@@ -136,11 +118,11 @@ bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, con
 *   UIDiskFormatsGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
+UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
     : UIDiskEditorGroupBox(fExpertMode, pParent)
     , m_pFormatButtonGroup(0)
 {
-    prepare();
+    prepare(enmDeviceType);
 }
 
 CMediumFormat UIDiskFormatsGroupBox::mediumFormat() const
@@ -163,7 +145,7 @@ const CMediumFormat &UIDiskFormatsGroupBox::VDIMediumFormat() const
     return m_comVDIMediumFormat;
 }
 
-void UIDiskFormatsGroupBox::prepare()
+void UIDiskFormatsGroupBox::prepare(KDeviceType enmDeviceType)
 {
     QVBoxLayout *pContainerLayout = new QVBoxLayout(this);
 
@@ -192,14 +174,14 @@ void UIDiskFormatsGroupBox::prepare()
 
     /* Create buttons for VDI, preferred and others: */
     foreach (const QString &strId, vdi.keys())
-        addFormatButton(pContainerLayout, vdi.value(strId), true);
+        addFormatButton(pContainerLayout, vdi.value(strId), enmDeviceType, true);
     foreach (const QString &strId, preferred.keys())
-        addFormatButton(pContainerLayout, preferred.value(strId), true);
+        addFormatButton(pContainerLayout, preferred.value(strId), enmDeviceType, true);
 
-    if (m_fExpertMode)
+    if (m_fExpertMode || enmDeviceType == KDeviceType_DVD || enmDeviceType == KDeviceType_Floppy)
     {
         foreach (const QString &strId, others.keys())
-            addFormatButton(pContainerLayout, others.value(strId));
+            addFormatButton(pContainerLayout, others.value(strId), enmDeviceType);
     }
 
     /* Select VDI: */
@@ -229,7 +211,8 @@ void UIDiskFormatsGroupBox::retranslateUi()
     }
 }
 
-void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred /* = false */)
+void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumFormat medFormat,
+                                            KDeviceType enmDeviceType, bool fPreferred /* = false */)
 {
     /* Check that medium format supports creation: */
     ULONG uFormatCapabilities = 0;
@@ -246,7 +229,7 @@ void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumF
     QVector<QString> fileExtensions;
     QVector<KDeviceType> deviceTypes;
     medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    if (!deviceTypes.contains(KDeviceType_HardDisk))
+    if (!deviceTypes.contains(enmDeviceType))
         return;
 
     /* Create/add corresponding radio-button: */
@@ -264,7 +247,7 @@ void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumF
         m_formats << medFormat;
         m_formatNames << medFormat.GetName();
         m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-        m_formatExtensions << defaultExtension(medFormat);
+        m_formatExtensions << defaultExtension(medFormat, enmDeviceType);
     }
 }
 
@@ -274,7 +257,7 @@ const QStringList UIDiskFormatsGroupBox::formatExtensions() const
 }
 
 /* static */
-QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef)
+QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType)
 {
     if (!mediumFormatRef.isNull())
     {
@@ -284,7 +267,7 @@ QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumForma
         CMediumFormat mediumFormat(mediumFormatRef);
         mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
         for (int i = 0; i < fileExtensions.size(); ++i)
-            if (deviceTypes[i] == KDeviceType_HardDisk)
+            if (deviceTypes[i] == enmDeviceType)
                 return fileExtensions[i].toLower();
     }
     AssertMsgFailed(("Extension can't be NULL!\n"));
@@ -543,10 +526,11 @@ void UIMediumSizeAndPathGroupBox::setMediumPath(const QString &strMediumPath)
     m_pLocationEditor->setText(strMediumPath);
 }
 
-void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions)
+void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions,
+                                                   KDeviceType enmDeviceType)
 {
     /* Compose virtual-disk extension: */
-    QString strDefaultExtension = UIDiskFormatsGroupBox::defaultExtension(mediumFormat);
+    QString strDefaultExtension = UIDiskFormatsGroupBox::defaultExtension(mediumFormat, enmDeviceType);
     /* Update m_pLocationEditor's text if necessary: */
     if (!m_pLocationEditor->text().isEmpty() && !strDefaultExtension.isEmpty())
     {

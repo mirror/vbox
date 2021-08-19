@@ -454,7 +454,7 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
 
     m_pSizeAndLocationGroup = new UIMediumSizeAndPathGroupBox(true, 0);
     pDiskContainerLayout->addWidget(m_pSizeAndLocationGroup, 0, 0, 2, 2);
-    m_pFormatButtonGroup = new UIDiskFormatsGroupBox(true, 0);
+    m_pFormatButtonGroup = new UIDiskFormatsGroupBox(true, KDeviceType_HardDisk, 0);
     pDiskContainerLayout->addWidget(m_pFormatButtonGroup, 2, 0, 4, 1);
     m_pDiskVariantGroupBox  = new UIDiskVariantGroupBox(true, 0);
     pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 1, 2, 1);
@@ -696,7 +696,7 @@ void UIWizardNewVMPageExpert::sltMediumLocationButtonClicked()
         return;
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strSelectedPath,
-                                              UIDiskEditorGroupBox::defaultExtensionForMediumFormat(pWizard->mediumFormat()));
+                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
     m_pSizeAndLocationGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
@@ -800,7 +800,7 @@ void UIWizardNewVMPageExpert::updateVirtualMediumPathFromMachinePathName()
         else
             strMediumPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     }
-    QString strExtension = UIDiskEditorGroupBox::defaultExtensionForMediumFormat(pWizard->mediumFormat());
+    QString strExtension = UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
     if (m_pSizeAndLocationGroup)
     {
         QString strMediumFilePath =
@@ -826,7 +826,7 @@ void UIWizardNewVMPageExpert::updateDiskWidgetsAfterMediumFormatChange()
     m_pDiskVariantGroupBox->blockSignals(false);
 
     m_pSizeAndLocationGroup->blockSignals(true);
-    m_pSizeAndLocationGroup->updateMediumPath(comMediumFormat, m_pFormatButtonGroup->formatExtensions());
+    m_pSizeAndLocationGroup->updateMediumPath(comMediumFormat, m_pFormatButtonGroup->formatExtensions(), KDeviceType_HardDisk);
     m_pSizeAndLocationGroup->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
     newVMWizardPropertySet(MediumPath, m_pSizeAndLocationGroup->mediumPath());

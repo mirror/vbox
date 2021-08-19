@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -34,35 +34,33 @@ class QCheckBox;
 class QIRichTextLabel;
 
 
-/** 3rd page of the Clone Virtual Disk Image wizard (base part): */
-class UIWizardCloneVDPage2 : public UIWizardPageBase
-{
-protected:
+// /** 3rd page of the Clone Virtual Disk Image wizard (base part): */
+// class UIWizardCloneVDPage2 : public UIWizardPageBase
+// {
+// protected:
 
-    /** Constructs page basis. */
-    UIWizardCloneVDPage2();
+//     /** Constructs page basis. */
+//     UIWizardCloneVDPage2();
 
-    /** Returns 'mediumVariant' field value. */
-    qulonglong mediumVariant() const;
-    /** Defines 'mediumVariant' field value. */
-    void setMediumVariant(qulonglong uMediumVariant);
+//     /** Returns 'mediumVariant' field value. */
+//     qulonglong mediumVariant() const;
+//     /** Defines 'mediumVariant' field value. */
+//     void setMediumVariant(qulonglong uMediumVariant);
 
-    /** Holds the variant button-group instance. */
-    QButtonGroup *m_pVariantButtonGroup;
-    /** Holds the 'Dynamical' button instance. */
-    QRadioButton *m_pDynamicalButton;
-    /** Holds the 'Fixed' button instance. */
-    QRadioButton *m_pFixedButton;
-    /** Holds the 'Split to 2GB files' check-box instance. */
-    QCheckBox    *m_pSplitBox;
-};
+//     /** Holds the variant button-group instance. */
+//     QButtonGroup *m_pVariantButtonGroup;
+//     /** Holds the 'Dynamical' button instance. */
+//     QRadioButton *m_pDynamicalButton;
+//     /** Holds the 'Fixed' button instance. */
+//     QRadioButton *m_pFixedButton;
+//     /** Holds the 'Split to 2GB files' check-box instance. */
+//     QCheckBox    *m_pSplitBox;
+// };
 
 
-/** 3rd page of the Clone Virtual Disk Image wizard (basic extension): */
-class UIWizardCloneVDPageBasic2 : public UIWizardPage, public UIWizardCloneVDPage2
+class UIWizardCloneVDPageBasic2 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
 
 public:
 
@@ -73,6 +71,7 @@ private:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
+    void prepare();
 
     /** Prepares the page. */
     virtual void initializePage() /* override */;

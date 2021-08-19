@@ -22,8 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardCloneVDPageBasic1.h"
-#include "UIWizardCloneVDPageBasic2.h"
+#include "UINativeWizardPage.h"
 #include "UIWizardCloneVDPageBasic3.h"
 
 /* Forward declarations: */
@@ -31,16 +30,9 @@ class QGroupBox;
 
 
 /** Expert page of the Clone Virtual Disk Image wizard: */
-class UIWizardCloneVDPageExpert : public UIWizardPage,
-                                  public UIWizardCloneVDPage1,
-                                  public UIWizardCloneVDPage2,
-                                  public UIWizardCloneVDPage3
+class UIWizardCloneVDPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
-    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
-    Q_PROPERTY(QString mediumPath READ mediumPath);
-    Q_PROPERTY(qulonglong mediumSize READ mediumSize);
 
 public:
 
@@ -48,15 +40,6 @@ public:
       * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from.
       * @param  enmDeviceType         Brings the device type to limit format to. */
     UIWizardCloneVDPageExpert(KDeviceType enmDeviceType);
-
-protected:
-
-    /** Allows to access 'wizard()' from base part. */
-    UIWizard *wizardImp() const { return wizard(); }
-    /** Allows to access 'this' from base part. */
-    UIWizardPage* thisImp() { return this; }
-    /** Allows to access 'field()' from base part. */
-    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 

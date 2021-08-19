@@ -59,7 +59,6 @@ public:
 
     static QString appendExtension(const QString &strName, const QString &strExtension);
     static QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
-    static QString defaultExtensionForMediumFormat(const CMediumFormat &mediumFormatRef);
     static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
 
 protected:
@@ -77,17 +76,17 @@ signals:
 
 public:
 
-    UIDiskFormatsGroupBox(bool fExpertMode, QWidget *pParent = 0);
+    UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent = 0);
     CMediumFormat mediumFormat() const;
     void setMediumFormat(const CMediumFormat &mediumFormat);
     const CMediumFormat &VDIMediumFormat() const;
     const QStringList formatExtensions() const;
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
+    static QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
 
 private:
 
-    void prepare();
-    void addFormatButton(QVBoxLayout *pFormatLayout, CMediumFormat medFormat, bool fPreferred = false);
+    void prepare(KDeviceType enmDeviceType);
+    void addFormatButton(QVBoxLayout *pFormatLayout, CMediumFormat medFormat, KDeviceType enmDeviceType, bool fPreferred = false);
 
     virtual void retranslateUi() /* override final */;
 
@@ -151,7 +150,8 @@ public:
     UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent = 0);
     QString mediumPath() const;
     void setMediumPath(const QString &strMediumPath);
-    void updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions);
+    /** Checks if the file extension is correct. Fixs it if necessary. */
+    void updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions, KDeviceType enmDeviceType);
     qulonglong mediumSize() const;
     void setMediumSize(qulonglong uSize);
 

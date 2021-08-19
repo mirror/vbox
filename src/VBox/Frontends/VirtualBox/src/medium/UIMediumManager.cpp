@@ -474,8 +474,7 @@ void UIMediumManagerWidget::sltCopyMedium()
 
     /* Show Clone VD wizard: */
     UIMedium medium = pMediumItem->medium();
-    UISafePointerWizard pWizard = new UIWizardCloneVD(currentTreeWidget(), medium.medium());
-    pWizard->prepare();
+    QPointer<UINativeWizard> pWizard = new UIWizardCloneVD(currentTreeWidget(), medium.medium());
     pWizard->exec();
 
     /* Delete if still exists: */

@@ -22,58 +22,55 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMediumFormat.h"
 
 /* Forward declarations: */
-class QVBoxLayout;
-class QButtonGroup;
-class QRadioButton;
 class QIRichTextLabel;
+class UIDiskFormatsGroupBox;
 
 
-/** 1st page of the Clone Virtual Disk Image wizard (base part): */
-class UIWizardCloneVDPage1 : public UIWizardPageBase
-{
-protected:
+// /** 1st page of the Clone Virtual Disk Image wizard (base part): */
+// class UIWizardCloneVDPage1 : public UIWizardPageBase
+// {
+// protected:
 
-    /** Constructs page basis. */
-    UIWizardCloneVDPage1();
+//     /** Constructs page basis. */
+//     UIWizardCloneVDPage1();
 
-    /** Adds format button.
-      * @param  pParent          Brings the parent to add button to.
-      * @param  pFormatsLayout   Brings the layout to insert button to.
-      * @param  enmDeviceType    Brings the device type all buttons should be restricted to.
-      * @param  comMediumFormat  Brings the medium format object to acquire format from.
-      * @param  fPreferred       Brings whether curretn format is preferred or not. */
-    void addFormatButton(QWidget *pParent,
-                         QVBoxLayout *pFormatsLayout,
-                         KDeviceType enmDeviceType,
-                         CMediumFormat comMediumFormat,
-                         bool fPreferred = false);
+//     /** Adds format button.
+//       * @param  pParent          Brings the parent to add button to.
+//       * @param  pFormatsLayout   Brings the layout to insert button to.
+//       * @param  enmDeviceType    Brings the device type all buttons should be restricted to.
+//       * @param  comMediumFormat  Brings the medium format object to acquire format from.
+//       * @param  fPreferred       Brings whether curretn format is preferred or not. */
+//     void addFormatButton(QWidget *pParent,
+//                          QVBoxLayout *pFormatsLayout,
+//                          KDeviceType enmDeviceType,
+//                          CMediumFormat comMediumFormat,
+//                          bool fPreferred = false);
 
-    /** Returns 'mediumFormat' field value. */
-    CMediumFormat mediumFormat() const;
-    /** Defines 'mediumFormat' field value. */
-    void setMediumFormat(const CMediumFormat &comMediumFormat);
+//     /** Returns 'mediumFormat' field value. */
+//     CMediumFormat mediumFormat() const;
+//     /** Defines 'mediumFormat' field value. */
+//     void setMediumFormat(const CMediumFormat &comMediumFormat);
 
-    /** Holds the format button-group instance. */
-    QButtonGroup         *m_pFormatButtonGroup;
-    /** Holds the format description list. */
-    QList<CMediumFormat>  m_formats;
-    /** Holds the format name list. */
-    QStringList           m_formatNames;
-};
+//     /** Holds the format button-group instance. */
+//     QButtonGroup         *m_pFormatButtonGroup;
+//     /** Holds the format description list. */
+//     QList<CMediumFormat>  m_formats;
+//     /** Holds the format name list. */
+//     QStringList           m_formatNames;
+// };
 
 
 /** 2nd page of the Clone Virtual Disk Image wizard (basic extension): */
-class UIWizardCloneVDPageBasic1 : public UIWizardPage, public UIWizardCloneVDPage1
+class UIWizardCloneVDPageBasic1 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
 
 public:
 
@@ -85,6 +82,7 @@ private:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
+    void prepare(KDeviceType enmDeviceType);
 
     /** Prepares the page. */
     virtual void initializePage() /* override */;
@@ -92,11 +90,9 @@ private:
     /** Returns whether the page is complete. */
     virtual bool isComplete() const /* override */;
 
-    /** Returns the ID of the next page to traverse to. */
-    virtual int nextId() const /* override */;
-
     /** Holds the description label instance. */
     QIRichTextLabel *m_pLabel;
+    UIDiskFormatsGroupBox *m_pFormatGroupBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic1_h */

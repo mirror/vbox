@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizard.h"
+#include "UINativeWizard.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -30,25 +30,11 @@
 
 
 /** UIWizard subclass to clone virtual disk image files. */
-class UIWizardCloneVD : public UIWizard
+class UIWizardCloneVD : public UINativeWizard
 {
     Q_OBJECT;
 
 public:
-
-    /** Basic Page IDs. */
-    enum
-    {
-        Page1,
-        Page2,
-        Page3
-    };
-
-    /** Expert Page IDs. */
-    enum
-    {
-        PageExpert
-    };
 
     /** Constructs wizard to clone @a comSourceVirtualDisk passing @a pParent to the base-class. */
     UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtualDisk);
@@ -62,13 +48,14 @@ public:
     /** Makes a copy of source virtual-disk. */
     bool copyVirtualDisk();
 
+protected:
+
+    virtual void populatePages() /* final override */;
+
 private:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
-
-    /** Prepares all. */
-    virtual void prepare() /* override */;
 
     /** Holds the source virtual disk wrapper. */
     CMedium m_comSourceVirtualDisk;
