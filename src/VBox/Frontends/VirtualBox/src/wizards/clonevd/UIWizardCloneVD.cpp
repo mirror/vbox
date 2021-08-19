@@ -34,6 +34,7 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtu
     : UINativeWizard(pParent, WizardType_CloneVD)
     , m_comSourceVirtualDisk(comSourceVirtualDisk)
     , m_enmSourceVirtualDiskDeviceType(m_comSourceVirtualDisk.GetDeviceType())
+    , m_iMediumVariantPageIndex(-1)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -103,7 +104,7 @@ void UIWizardCloneVD::populatePages()
         case WizardMode_Expert:
         {
             addPage(new UIWizardCloneVDPageBasic1(m_enmSourceVirtualDiskDeviceType));
-            addPage(new UIWizardCloneVDPageBasic2(m_enmSourceVirtualDiskDeviceType));
+            m_iMediumVariantPageIndex = addPage(new UIWizardCloneVDPageBasic2(m_enmSourceVirtualDiskDeviceType));
             addPage(new UIWizardCloneVDPageBasic3);
             break;
         }
@@ -118,4 +119,45 @@ void UIWizardCloneVD::populatePages()
             break;
         }
     }
+}
+
+const CMediumFormat &UIWizardCloneVD::mediumFormat() const
+{
+    return m_comMediumFormat;
+}
+
+void UIWizardCloneVD::setMediumFormat(const CMediumFormat &comMediumFormat)
+{
+    m_comMediumFormat = comMediumFormat;
+    if (mode() == WizardMode_Basic)
+        setMediumVariantPageVisibility();
+}
+
+qulonglong UIWizardCloneVD::mediumVariant() const
+{
+    return m_uMediumVariant;
+}
+
+void UIWizardCloneVD::setMediumVariant(qulonglong uMediumVariant)
+{
+    m_uMediumVariant = uMediumVariant;
+}
+
+void UIWizardCloneVD::setMediumVariantPageVisibility()
+{
+    AssertReturnVoid(!m_comMediumFormat.isNull());
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = m_comMediumFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
+    int cTest = 0;
+    if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
+        ++cTest;
+    if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
+        ++cTest;
+    if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
+        ++cTest;
+    setPageVisible(m_iMediumVariantPageIndex, cTest > 1);
 }

@@ -32,7 +32,9 @@ class QButtonGroup;
 class QRadioButton;
 class QCheckBox;
 class QIRichTextLabel;
-
+class UIWizardCloneVD;
+class CMediumFormat;
+class UIDiskVariantGroupBox;
 
 // /** 3rd page of the Clone Virtual Disk Image wizard (base part): */
 // class UIWizardCloneVDPage2 : public UIWizardPageBase
@@ -72,12 +74,14 @@ private:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
     void prepare();
+    UIWizardCloneVD *cloneWizard() const;
 
     /** Prepares the page. */
     virtual void initializePage() /* override */;
 
     /** Returns whether the page is complete. */
     virtual bool isComplete() const /* override */;
+    void setWidgetVisibility(const CMediumFormat &mediumFormat);
 
     /** Holds the description label instance. */
     QIRichTextLabel *m_pDescriptionLabel;
@@ -87,6 +91,8 @@ private:
     QIRichTextLabel *m_pFixedLabel;
     /** Holds the 'Split to 2GB files' description label instance. */
     QIRichTextLabel *m_pSplitLabel;
+
+    UIDiskVariantGroupBox *m_pVariantGroupBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic2_h */

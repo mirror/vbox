@@ -27,6 +27,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMedium.h"
+#include "CMediumFormat.h"
 
 
 /** UIWizard subclass to clone virtual disk image files. */
@@ -48,6 +49,12 @@ public:
     /** Makes a copy of source virtual-disk. */
     bool copyVirtualDisk();
 
+    const CMediumFormat &mediumFormat() const;
+    void setMediumFormat(const CMediumFormat &comMediumFormat);
+
+    qulonglong mediumVariant() const;
+    void setMediumVariant(qulonglong uMediumVariant);
+
 protected:
 
     virtual void populatePages() /* final override */;
@@ -56,12 +63,16 @@ private:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
+    void setMediumVariantPageVisibility();
 
+    CMediumFormat m_comMediumFormat;
+    qulonglong m_uMediumVariant;
     /** Holds the source virtual disk wrapper. */
     CMedium m_comSourceVirtualDisk;
 
     /** Holds the source virtual-disk device type. */
     KDeviceType m_enmSourceVirtualDiskDeviceType;
+    int m_iMediumVariantPageIndex;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVD_h */

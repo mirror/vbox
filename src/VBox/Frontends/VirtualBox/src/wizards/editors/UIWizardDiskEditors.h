@@ -49,6 +49,7 @@ class UIMediumSizeEditor;
 #include "COMEnums.h"
 #include "CMediumFormat.h"
 
+/** Base class for disk related group boxes. */
 class SHARED_LIBRARY_STUFF UIDiskEditorGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;

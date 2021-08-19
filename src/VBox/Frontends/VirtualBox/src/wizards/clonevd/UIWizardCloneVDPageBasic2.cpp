@@ -22,6 +22,7 @@
 #include <QCheckBox>
 
 /* GUI includes: */
+#include "UIWizardDiskEditors.h"
 #include "UIWizardCloneVDPageBasic2.h"
 #include "UIWizardCloneVD.h"
 #include "QIRichTextLabel.h"
@@ -72,15 +73,16 @@
 // }
 
 UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType /*enmDeviceType*/)
+    : m_pDescriptionLabel(0)
+    , m_pDynamicLabel(0)
+    , m_pFixedLabel(0)
+    , m_pSplitLabel(0)
+    , m_pVariantGroupBox(0)
 {
     prepare();
     /* Create widgets: */
     // QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     // {
-    //     m_pDescriptionLabel = new QIRichTextLabel(this);
-    //     m_pDynamicLabel = new QIRichTextLabel(this);
-    //     m_pFixedLabel = new QIRichTextLabel(this);
-    //     m_pSplitLabel = new QIRichTextLabel(this);
     //     QVBoxLayout *pVariantLayout = new QVBoxLayout;
     //     {
     //         m_pVariantButtonGroup = new QButtonGroup(this);
@@ -124,7 +126,22 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType /*enmDeviceType
 void UIWizardCloneVDPageBasic2::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    Q_UNUSED(pMainLayout);
+    m_pDescriptionLabel = new QIRichTextLabel(this);
+    if (m_pDescriptionLabel)
+        pMainLayout->addWidget(m_pDescriptionLabel);
+    m_pDynamicLabel = new QIRichTextLabel(this);
+    if (m_pDynamicLabel)
+        pMainLayout->addWidget(m_pDynamicLabel);
+    m_pFixedLabel = new QIRichTextLabel(this);
+    if (m_pFixedLabel)
+        pMainLayout->addWidget(m_pFixedLabel);
+    m_pSplitLabel = new QIRichTextLabel(this);
+    if (m_pSplitLabel)
+        pMainLayout->addWidget(m_pSplitLabel);
+    m_pVariantGroupBox = new UIDiskVariantGroupBox(false /* expert mode */, 0);
+    if (m_pVariantGroupBox)
+        pMainLayout->addWidget(m_pVariantGroupBox);
+    retranslateUi();
 }
 
 
@@ -133,28 +150,29 @@ void UIWizardCloneVDPageBasic2::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Storage on physical hard disk"));
 
-//     /* Translate widgets: */
-//     m_pDescriptionLabel->setText(UIWizardCloneVD::tr("Please choose whether the new virtual disk image file should grow as it is used "
-//                                                      "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
-//     m_pDynamicLabel->setText(UIWizardCloneVD::tr("<p>A <b>dynamically allocated</b> disk image file will only use space "
-//                                                  "on your physical hard disk as it fills up (up to a maximum <b>fixed size</b>), "
-//                                                  "although it will not shrink again automatically when space on it is freed.</p>"));
-//     m_pFixedLabel->setText(UIWizardCloneVD::tr("<p>A <b>fixed size</b> disk image file may take longer to create on some "
-//                                                "systems but is often faster to use.</p>"));
-//     m_pSplitLabel->setText(UIWizardCloneVD::tr("<p>You can also choose to <b>split</b> the disk image file into several files "
-//                                                "of up to two gigabytes each. This is mainly useful if you wish to store the "
-//                                                "virtual machine on removable USB devices or old systems, some of which cannot "
-//                                                "handle very large files."));
-//     m_pDynamicalButton->setText(UIWizardCloneVD::tr("&Dynamically allocated"));
-//     m_pFixedButton->setText(UIWizardCloneVD::tr("&Fixed size"));
-//     m_pSplitBox->setText(UIWizardCloneVD::tr("&Split into files of less than 2GB"));
+    /* Translate widgets: */
+    m_pDescriptionLabel->setText(UIWizardCloneVD::tr("Please choose whether the new virtual disk image file should grow as it is used "
+                                                     "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
+    m_pDynamicLabel->setText(UIWizardCloneVD::tr("<p>A <b>dynamically allocated</b> disk image file will only use space "
+                                                 "on your physical hard disk as it fills up (up to a maximum <b>fixed size</b>), "
+                                                 "although it will not shrink again automatically when space on it is freed.</p>"));
+    m_pFixedLabel->setText(UIWizardCloneVD::tr("<p>A <b>fixed size</b> disk image file may take longer to create on some "
+                                               "systems but is often faster to use.</p>"));
+    m_pSplitLabel->setText(UIWizardCloneVD::tr("<p>You can also choose to <b>split</b> the disk image file into several files "
+                                               "of up to two gigabytes each. This is mainly useful if you wish to store the "
+                                               "virtual machine on removable USB devices or old systems, some of which cannot "
+                                               "handle very large files."));
 }
 
 void UIWizardCloneVDPageBasic2::initializePage()
 {
+    AssertReturnVoid(cloneWizard());
     /* Translate page: */
     retranslateUi();
 
+    setWidgetVisibility(cloneWizard()->mediumFormat());
+    if (m_pVariantGroupBox)
+        cloneWizard()->setMediumVariant(m_pVariantGroupBox->mediumVariant());
     // /* Setup visibility: */
     // CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
     // ULONG uCapabilities = 0;
@@ -179,4 +197,23 @@ bool UIWizardCloneVDPageBasic2::isComplete() const
     return true;
     // /* Make sure medium variant is correct: */
     // return mediumVariant() != (qulonglong)KMediumVariant_Max;
+}
+
+UIWizardCloneVD *UIWizardCloneVDPageBasic2::cloneWizard() const
+{
+    return qobject_cast<UIWizardCloneVD*>(wizard());
+}
+
+void UIWizardCloneVDPageBasic2::setWidgetVisibility(const CMediumFormat &mediumFormat)
+{
+    AssertReturnVoid(m_pVariantGroupBox);
+
+    m_pVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(mediumFormat, true /* hide disabled widgets*/);
+
+    if (m_pDynamicLabel)
+        m_pDynamicLabel->setHidden(!m_pVariantGroupBox->isCreateDynamicPossible());
+    if (m_pFixedLabel)
+        m_pFixedLabel->setHidden(!m_pVariantGroupBox->isCreateFixedPossible());
+    if (m_pSplitLabel)
+        m_pSplitLabel->setHidden(!m_pVariantGroupBox->isCreateSplitPossible());
 }

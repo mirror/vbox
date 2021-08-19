@@ -409,6 +409,9 @@ void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CM
         m_pFixedCheckBox->setHidden(!m_pFixedCheckBox->isEnabled());
         m_pSplitBox->setHidden(!m_pSplitBox->isEnabled());
     }
+    /* Deselect split box if it is disabled: */
+    if (!m_pSplitBox->isEnabled())
+        m_pSplitBox->setChecked(false);
     emit sigMediumVariantChanged(mediumVariant());
 }
 

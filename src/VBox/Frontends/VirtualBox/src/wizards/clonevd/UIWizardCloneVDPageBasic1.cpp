@@ -159,8 +159,8 @@ void UIWizardCloneVDPageBasic1::prepare(KDeviceType enmDeviceType)
     if (m_pFormatGroupBox)
     {
         pMainLayout->addWidget(m_pFormatGroupBox);
-        // connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
-        //         this, &UIWizardCloneVDPageBasic1::sltMediumFormatChanged);
+        connect(m_pFormatGroupBox, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
+                this, &UIWizardCloneVDPageBasic1::sltMediumFormatChanged);
     }
     pMainLayout->addStretch();
     retranslateUi();
@@ -188,6 +188,11 @@ void UIWizardCloneVDPageBasic1::initializePage()
 {
     /* Translate page: */
     retranslateUi();
+    if (!m_userModifiedParameters.contains("MediumFormat"))
+    {
+        if (cloneWizard() && m_pFormatGroupBox)
+            cloneWizard()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+    }
 }
 
 bool UIWizardCloneVDPageBasic1::isComplete() const
@@ -195,6 +200,14 @@ bool UIWizardCloneVDPageBasic1::isComplete() const
     /* Make sure medium format is correct: */
     //return !mediumFormat().isNull();
     return true;
+}
+
+void UIWizardCloneVDPageBasic1::sltMediumFormatChanged()
+{
+    if (cloneWizard() && m_pFormatGroupBox)
+        cloneWizard()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+    m_userModifiedParameters << "MediumFormat";
+    emit completeChanged();
 }
 
 // int UIWizardCloneVDPageBasic1::nextId() const
@@ -226,3 +239,8 @@ bool UIWizardCloneVDPageBasic1::isComplete() const
 //     /* Skip otherwise: */
 //     return UIWizardCloneVD::Page3;
 // }
+
+UIWizardCloneVD *UIWizardCloneVDPageBasic1::cloneWizard() const
+{
+    return qobject_cast<UIWizardCloneVD*>(wizard());
+}
