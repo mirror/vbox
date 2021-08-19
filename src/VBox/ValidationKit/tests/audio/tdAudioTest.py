@@ -33,6 +33,7 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Standard Python imports.
+import asyncio
 import os
 import sys
 import signal
@@ -65,9 +66,18 @@ class tdAudioTest(vbox.TestDriver):
             # Debugging stuff (SCP'd over to the guest).
             '/tmp/vkat',
             '/tmp/VBoxAudioTest',
+            'C:\\Temp\\vkat',
+            'C:\\Temp\\VBoxAudioTest',
             # Validation Kit .ISO.
             '${CDROM}/vboxvalidationkit/${OS/ARCH}/vkat${EXESUFF}',
             '${CDROM}/${OS/ARCH}/vkat${EXESUFF}',
+            # Test VMs.
+            '/opt/apps/vkat',
+            '/opt/apps/VBoxAudioTest',
+            '/apps/vkat',
+            '/apps/VBoxAudioTest',
+            'C:\\Apps\\vkat${EXESUFF}',
+            'C:\\Apps\\VBoxAudioTest${EXESUFF}',
             ## @odo VBoxAudioTest on Guest Additions?
         ];
         self.asTestsDef       = [
@@ -177,7 +187,7 @@ class tdAudioTest(vbox.TestDriver):
             oSession = self.openSession(oVM);
             if oSession:
                 # Tweak this to your likings.
-                oTestVm = vboxtestvms.TestVm('runningvm', sKind = 'Ubuntu_64');
+                oTestVm = vboxtestvms.TestVm('runningvm', sKind = 'WindowsXP'); #sKind = 'WindowsXP' # sKind = 'Ubuntu_64'
                 (fRc, oTxsSession) = self.txsDoConnectViaTcp(oSession, 30 * 1000);
                 if fRc:
                     self.doTest(oTestVm, oSession, oTxsSession);
@@ -193,7 +203,7 @@ class tdAudioTest(vbox.TestDriver):
         """
         Returns the log file path of VKAT running on the guest (daemonized).
         """
-        return oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'vkat-guest-daemonized.log');
+        return oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'vkat-guest.log');
 
     def locateGstVkat(self, oSession, oTxsSession):
         """
@@ -206,36 +216,69 @@ class tdAudioTest(vbox.TestDriver):
         reporter.error('Unable to find guest VKAT in any of these places:\n%s' % ('\n'.join(self.asGstVkatPaths),));
         return (False, "");
 
-    def executeHstBinaryAsAdmin(self, sWhat, asArgs):
+    def executeHstLoop(self, sWhat, asArgs, fAsAdmin = False):
+
+        fRc = False;
+
+        if  fAsAdmin \
+        and utils.getHostOs() != 'win':
+            oProcess = utils.sudoProcessPopen(asArgs,
+                                              stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False,
+                                              close_fds = False);
+        else:
+            oProcess = utils.processPopenSafe(asArgs,
+                                              stdout = subprocess.PIPE, stderr = subprocess.PIPE);
+        if oProcess:
+            for line in iter(oProcess.stdout.readline, b''):
+                reporter.log('[' + sWhat + '] ' + line.decode(sys.stdin.encoding));
+            iExitCode = oProcess.poll();
+            if iExitCode:
+                if iExitCode == 0:
+                    reporter.error('Executing \"%s\" was successful' % (sWhat));
+                    fRc = True;
+                else:
+                    reporter.error('Executing \"%s\" on host returned exit code error %d' % (sWhat, iExitCode));
+
+        if not fRc:
+            reporter.error('Executing \"%s\" on host failed' % (sWhat,));
+
+        return fRc;
+
+    # Only Python 3.x and up.
+    async def execHstAsyncCallback(self, *aPositionalArgs):
+        sWhat  = aPositionalArgs[0];
+        asArgs = aPositionalArgs[1:];
+        fRc = self.executeHstLoop(sWhat, asArgs);
+        if not fRc:
+            reporter.error('Asynchronous execution of \"%s\" on host failed' % (sWhat,));
+
+    def executeHst(self, sWhat, asArgs, fAsync = False, fAsAdmin = False):
         """
-        Runs a binary (image) with admin (root) rights on the host.
+        Runs a binary (image) with optional admin (root) rights on the host and
+        waits until it terminates.
+
+        Windows currently is not supported yet running stuff as Administrator.
 
         Returns success status (exit code is 0).
         """
-        fRc      = False;
-        oProcess = utils.sudoProcessPopen(asArgs, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                          stderr=subprocess.PIPE, shell = False, close_fds = False);
-        if oProcess:
-            sOut, sErr = oProcess.communicate();
+        reporter.log('Executing \"%s\" on host (as admin = %s, async = %s)' % (sWhat, fAsAdmin, fAsync));
 
-            sOut = sOut.decode(sys.stdin.encoding);
-            for sLine in sOut.split('\n'):
-                reporter.log(sLine);
+        reporter.testStart(sWhat);
 
-            sErr = sErr.decode(sys.stdin.encoding);
-            for sLine in sErr.split('\n'):
-                reporter.log(sLine);
+        fRc = False;
 
-            iExitCode = oProcess.poll();
-            if iExitCode == 0:
-                fRc = True;
-            else:
-                reporter.error('%s on host returned exit code error %d' % (sWhat, iExitCode));
+        if fAsync: # Only Python 3.x and up.
+            asyncio.run(self.execHstAsyncCallback(sWhat, *asArgs));
+            fRc = True;
         else:
-            fRc = False;
+            fRc = self.executeHstLoop(sWhat, asArgs);
 
-        if not fRc:
-            reporter.error('%s on host failed' % (sWhat,));
+        if fRc:
+            reporter.error('Executing \"%s\" on host done' % (sWhat,));
+        else:
+            reporter.error('Executing \"%s\" on host failed' % (sWhat,));
+
+        reporter.testDone();
 
         return fRc;
 
@@ -247,7 +290,7 @@ class tdAudioTest(vbox.TestDriver):
         if sys.platform == 'win32':
             sArgProcName = '\"%s.exe\"' % sProcName;
             asArgs       = [ 'taskkill', '/IM', sArgProcName, '/F' ];
-            self.executeHstBinaryAsAdmin('Killing process', asArgs);
+            self.executeHst('Killing process', asArgs);
         else: # Note: killall is not available on older Debians (requires psmisc).
             # Using the BSD syntax here; MacOS also should understand this.
             procPs = subprocess.Popen(['ps', 'ax'], stdout=subprocess.PIPE);
@@ -255,7 +298,7 @@ class tdAudioTest(vbox.TestDriver):
             for sLine in out.decode("utf-8").splitlines():
                 if sProcName in sLine:
                     pid = int(sLine.split(None, 1)[0]);
-                    reporter.log2('Killing PID %d' % (pid,));
+                    reporter.log('Killing PID %d' % (pid,));
                     os.kill(pid, signal.SIGKILL); # pylint: disable=no-member
 
     def killHstVkat(self):
@@ -317,6 +360,27 @@ class tdAudioTest(vbox.TestDriver):
 
         return fRc;
 
+    def setGstAudioBackend(self, oTestVm, asArgs):
+        """
+        Guesses guest OS, uses an alternative (non-default) audio backends if necessary
+        and appends it to the given arguments sequence.
+
+        Returns the altered arguments sequence.
+        """
+        asArgsRet = asArgs;
+
+        # Note: Also works with the 64-bit variants (if any).
+        sOsType = oTestVm.getNonCanonicalGuestOsType();
+        if "Windows2000" in sOsType \
+        or "WindowsXP"   in sOsType \
+        or "Windows2003" in sOsType \
+        or "Windows7"    in sOsType:
+            ## @todo Some more here?
+            asArgsRet.extend( [ '--backend', 'directsound' ]);
+
+        ## @todo Tweak old(er) Linux'es as well to use OSS instead of PulseAudio?
+        return asArgsRet;
+
     def disableHstFirewall(self):
         """
         Disables the firewall on the host (if any).
@@ -337,7 +401,7 @@ class tdAudioTest(vbox.TestDriver):
             #        Windows hosts than Vista.
             asArgs = self.getWinFirewallArgsDisable('vista');
             if asArgs:
-                fRc = self.executeHstBinaryAsAdmin('Disabling firewall', asArgs);
+                fRc = self.executeHst('Disabling host firewall', asArgs, fAsAdmin = True);
         else:
             reporter.log('Firewall not available on host, skipping');
             fRc = True; # Not available, just skip.
@@ -370,28 +434,28 @@ class tdAudioTest(vbox.TestDriver):
         if fRc:
             reporter.log('Using VKAT on guest at \"%s\"' % (sVkatExe));
 
-            aArgs     = [ sVkatExe, 'test', '-vvvv', '--mode', 'guest', \
-                                    '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
-            #
-            # Start VKAT in the background (daemonized) on the guest side, so that we
-            # can continue starting VKAT on the host.
-            #
-            aArgs.extend(['--daemonize']);
+            asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'guest', \
+                                 '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
+
+            # Guess the guest backend and apply the new arguments (if any).
+            asArgs = self.setGstAudioBackend(oTestVm, asArgs);
 
             #
             # Add own environment stuff.
             #
-            aEnv = [];
+            asEnv = [];
 
             # Write the log file to some deterministic place so TxS can retrieve it later.
             sVkatLogFile = 'VKAT_RELEASE_LOG_DEST=file=' + self.getGstVkatLogFilePath(oTestVm);
-            aEnv.extend([ sVkatLogFile ]);
+            asEnv.extend([ sVkatLogFile ]);
 
             #
-            # Execute.
+            # Execute asynchronously on the guest.
             #
-            fRc = self.txsRunTest(oTxsSession, 'Starting VKAT on guest', 15 * 60 * 1000,
-                                  sVkatExe, aArgs, aEnv);
+            fRc = oTxsSession.asyncExec(sVkatExe, asArgs, asEnv, cMsTimeout = 15 * 60 * 1000);
+            if fRc:
+                self.addTask(oTxsSession);
+
             if not fRc:
                 reporter.error('VKAT on guest returned exit code error %d' % (self.getLastRcFromTxs(oTxsSession)));
         else:
@@ -399,7 +463,7 @@ class tdAudioTest(vbox.TestDriver):
 
         return fRc;
 
-    def runTests(self, oTestVm, oSession, oTxsSession, sDesc, sTests):
+    def runTests(self, oTestVm, oSession, oTxsSession, sDesc, asTests):
         """
         Runs one or more tests using VKAT on the host, which in turn will
         communicate with VKAT running on the guest and the Validation Kit
@@ -421,44 +485,15 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
 
         # Build the base command line, exclude all tests by default.
-        sArgs = '%s test -vvvv --mode host --tempdir %s --outdir %s -a' \
-                % (sVkatExe, sPathAudioTemp, sPathAudioOut);
+        asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
 
         # ... and extend it with wanted tests.
-        sArgs += " " + sTests;
-
-        fRc = True;
-
-        reporter.testStart(sDesc);
+        asArgs.extend(asTests);
 
         #
         # Let VKAT on the host run synchronously.
         #
-        procVkat = subprocess.Popen(sArgs, \
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True);
-        if procVkat:
-            reporter.log('VKAT on host started');
-
-            out, err = procVkat.communicate();
-            rc = procVkat.poll();
-
-            out = out.decode(sys.stdin.encoding);
-            for line in out.split('\n'):
-                reporter.log(line);
-
-            err = err.decode(sys.stdin.encoding);
-            for line in err.split('\n'):
-                reporter.log(line);
-
-            reporter.log('VKAT on host ended with exit code %d' % rc);
-            if rc != 0:
-                reporter.testFailure('VKAT on the host failed');
-                fRc = False;
-        else:
-            reporter.testFailure('VKAT on the host failed to start');
-            fRc = False;
-
-        reporter.testDone();
+        fRc = self.executeHst("VKAT Host", asArgs, fAsync = False);
 
         return fRc;
 
@@ -486,16 +521,16 @@ class tdAudioTest(vbox.TestDriver):
             # Execute the tests using VKAT on the guest side (in guest mode).
             #
             if "guest_tone_playback" in self.asTests:
-                fRc = self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio playback', '-i0');
+                fRc = self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio playback', asTests = [ '-i0' ]);
             if "guest_tone_recording" in self.asTests:
-                fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio recording', '-i1');
+                fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio recording', asTests = [ '-i1' ]);
 
         #
         # Retrieve log files for diagnosis.
         #
         self.txsDownloadFiles(oSession, oTxsSession,
                               [ ( self.getGstVkatLogFilePath(oTestVm),
-                                  'vkat-guest-daemonized-%s.log' % (oTestVm.sVmName,),),
+                                  'vkat-guest-%s.log' % (oTestVm.sVmName,),),
                               ],
                               fIgnoreErrors = True);
 
