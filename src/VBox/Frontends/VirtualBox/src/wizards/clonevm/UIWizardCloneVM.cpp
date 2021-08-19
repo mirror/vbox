@@ -167,9 +167,14 @@ bool UIWizardCloneVM::cloneVM()
         const QString strSnapshotName = tr("Linked Base for %1 and %2").arg(strMachineName).arg(m_strCloneName);
         QUuid uSnapshotId;
         CProgress comProgress = comSessionMachine.TakeSnapshot(strSnapshotName, "", true, uSnapshotId);
-        if (comSessionMachine.isOk())
+        if (!comSessionMachine.isOk())
         {
-            /* Make sure progress valid: */
+            msgCenter().cannotTakeSnapshot(comSessionMachine, strMachineName, this);
+            return false;
+        }
+        else
+        {
+            /* Make sure progress initially valid: */
             if (!comProgress.isNull() && !comProgress.GetCompleted())
             {
                 /* Create take snapshot progress object: */
@@ -199,26 +204,23 @@ bool UIWizardCloneVM::cloneVM()
                 msgCenter().cannotTakeSnapshot(comProgress, strMachineName, this);
                 return false;
             }
-        }
-        else
-        {
-            msgCenter().cannotTakeSnapshot(comSessionMachine, strMachineName, this);
-            return false;
+            else
+            {
+                /* Look for created snapshot: */
+                const CSnapshot comCreatedSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
+                if (comCreatedSnapshot.isNull())
+                {
+                    msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
+                    return false;
+                }
+
+                /* Update machine for cloning finally: */
+                srcMachine = comCreatedSnapshot.GetMachine();
+            }
         }
 
         /* Unlock machine finally: */
         comSession.UnlockMachine();
-
-        /* Look for created snapshot: */
-        const CSnapshot comCreatedSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
-        if (comCreatedSnapshot.isNull())
-        {
-            msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
-            return false;
-        }
-
-        /* Update machine for cloning finally: */
-        srcMachine = comCreatedSnapshot.GetMachine();
     }
 
     /* Get VBox object: */
