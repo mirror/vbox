@@ -71,7 +71,7 @@ public:
 protected:
 
     /** Returns wizard this page belongs to. */
-    virtual UINativeWizard *wizard() const;
+    UINativeWizard *wizard() const;
 
     /** Holds the page title. */
     QString  m_strTitle;
