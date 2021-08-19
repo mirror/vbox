@@ -28,6 +28,18 @@ Please do further ordering as seems appropriate by importance and visibility for
 users, e.g. audio before serial ports and generally Windows before Linux.  Please
 also try to describe the user impact, not the technical details, and only use
 technical terms if no non-technical ones are clear enough.
+
+Rules for adding a changelog entry to make them look more uniform:
+
+    1. Begin the entry with an UPPERCASE letter, e.g. "Foo: Fixed" vs. "Foo: fixed"
+    2. Use the past form of something, e.g. "Fixed ..." vs. "Fix ..."
+    3. No dot (.) after the entry, e.g. "<para>Foo: Bar</para>" vs. "<para>Foo: Bar.</para>"
+
+    Full example:
+
+        <listitem>
+          <para>Foo: Fixed something really important</para>
+        </listitem>
 -->
 <chapter>
 
