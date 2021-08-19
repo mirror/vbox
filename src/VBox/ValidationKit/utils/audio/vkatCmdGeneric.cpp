@@ -588,7 +588,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
 
         /* Use some sane defaults if no PCM props are set by the user. */
         PDMAudioPropsInit(&ToneParms.Props,
-                          cbSample ? cbSample : 4, true /* fSigned */, cChannels ? cChannels : 2, uHz ? uHz : 44100);
+                          cbSample  ? cbSample  : 2 /* 16-bit */, true /* fSigned */,
+                          cChannels ? cChannels : 2 /* Stereo */, uHz ? uHz : 44100);
 
         ToneParms.dbFreqHz       = AudioTestToneGetRandomFreq();
         ToneParms.msPrequel      = 0; /** @todo Implement analyzing this first! */
