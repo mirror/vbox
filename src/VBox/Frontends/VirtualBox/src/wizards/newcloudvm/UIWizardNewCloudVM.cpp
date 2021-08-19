@@ -22,6 +22,7 @@
 #include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
+#include "UIProgressObject.h"
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageBasic1.h"
 #include "UIWizardNewCloudVMPageBasic2.h"
@@ -71,26 +72,43 @@ bool UIWizardNewCloudVM::createVSDForm()
         msgCenter().cannotAcquireCloudClientParameter(comClient);
     else
     {
-        /* Show "Acquire launch form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, QString(),
-                                            ":/progress_refresh_90px.png", this, 0);
-        /* Check for canceled progress: */
-        if (!comProgress.GetCanceled())
+        /* Make sure progress initially valid: */
+        if (!comProgress.isNull() && !comProgress.GetCompleted())
         {
-            /* Check for progress errors: */
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotAcquireCloudClientParameter(comProgress);
-            else
+            /* Create take snapshot progress object: */
+            QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
+            if (pObject)
             {
-                /* Check whether form really read: */
-                if (comForm.isNotNull())
+                connect(pObject.data(), &UIProgressObject::sigProgressChange,
+                        this, &UIWizardNewCloudVM::sltHandleProgressChange);
+                connect(pObject.data(), &UIProgressObject::sigProgressComplete,
+                        this, &UIWizardNewCloudVM::sltHandleProgressFinished);
+                sltHandleProgressStarted();
+                pObject->exec();
+                if (pObject)
+                    delete pObject;
+                else
                 {
-                    /* Remember Virtual System Description Form: */
-                    setVSDForm(comForm);
-
-                    /* Finally, success: */
-                    fResult = true;
+                    // Premature application shutdown,
+                    // exit immediately:
+                    return fResult;
                 }
+            }
+        }
+
+        /* Check for progress errors: */
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress);
+        else
+        {
+            /* Check whether form really read: */
+            if (comForm.isNotNull())
+            {
+                /* Remember Virtual System Description Form: */
+                setVSDForm(comForm);
+
+                /* Finally, success: */
+                fResult = true;
             }
         }
     }
