@@ -425,21 +425,44 @@ int AddressCommand::execute(CmdList& list)
     if (argv == NULL)
         return EXIT_FAILURE;
 
-    int rc = EXIT_SUCCESS;
+    int rc = EXIT_FAILURE; /* o/~ hope for the best, expect the worst */
     pid_t childPid = fork();
     switch (childPid)
     {
         case -1: /* Something went wrong. */
-            perror("fork() failed");
-            rc = EXIT_FAILURE;
+            perror("fork");
             break;
+
         case 0: /* Child process. */
             if (execve(argv[0], argv, pEnv) == -1)
-                rc = EXIT_FAILURE;
+            {
+                perror("execve");
+                exit(EXIT_FAILURE);
+                /* NOTREACHED */
+            }
             break;
+
         default: /* Parent process. */
-            waitpid(childPid, &rc, 0);
+        {
+            int status;
+            pid_t waited = waitpid(childPid, &status, 0);
+            if (waited == childPid) /* likely*/
+            {
+                if (WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS)
+                    rc = EXIT_SUCCESS;
+            }
+            else if (waited == (pid_t)-1)
+            {
+                perror("waitpid");
+            }
+            else
+            {
+                /* should never happen */
+                fprintf(stderr, "waitpid: unexpected pid %lld\n",
+                        (long long int)waited);
+            }
             break;
+        }
     }
 
     free((void*)argv);
