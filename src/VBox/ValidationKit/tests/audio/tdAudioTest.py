@@ -464,6 +464,8 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Host audio test output path is \"%s\"' % (sPathAudioTemp));
         reporter.log('Host audio test tag is \"%s\"' % (sTag));
 
+        reporter.testStart(sDesc);
+
         sVkatExe = self.getBinTool('vkat');
 
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
@@ -478,6 +480,8 @@ class tdAudioTest(vbox.TestDriver):
         # Let VKAT on the host run synchronously.
         #
         fRc = self.executeHst("VKAT Host", asArgs);
+
+        reporter.testDone();
 
         return fRc;
 
