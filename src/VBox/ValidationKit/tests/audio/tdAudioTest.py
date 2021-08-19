@@ -33,7 +33,6 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Standard Python imports.
-import asyncio
 import os
 import sys
 import signal
@@ -244,14 +243,6 @@ class tdAudioTest(vbox.TestDriver):
 
         return fRc;
 
-    # Only Python 3.x and up.
-    async def execHstAsyncCallback(self, *aPositionalArgs):
-        sWhat  = aPositionalArgs[0];
-        asArgs = aPositionalArgs[1:];
-        fRc = self.executeHstLoop(sWhat, asArgs);
-        if not fRc:
-            reporter.error('Asynchronous execution of \"%s\" on host failed' % (sWhat,));
-
     def executeHst(self, sWhat, asArgs, fAsync = False, fAsAdmin = False):
         """
         Runs a binary (image) with optional admin (root) rights on the host and
@@ -265,14 +256,7 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.testStart(sWhat);
 
-        fRc = False;
-
-        if fAsync: # Only Python 3.x and up.
-            asyncio.run(self.execHstAsyncCallback(sWhat, *asArgs));
-            fRc = True;
-        else:
-            fRc = self.executeHstLoop(sWhat, asArgs);
-
+        fRc = self.executeHstLoop(sWhat, asArgs);
         if fRc:
             reporter.error('Executing \"%s\" on host done' % (sWhat,));
         else:
@@ -493,7 +477,7 @@ class tdAudioTest(vbox.TestDriver):
         #
         # Let VKAT on the host run synchronously.
         #
-        fRc = self.executeHst("VKAT Host", asArgs, fAsync = False);
+        fRc = self.executeHst("VKAT Host", asArgs);
 
         return fRc;
 
