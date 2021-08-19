@@ -471,6 +471,8 @@ static int atsDoBye(PATSSERVER pThis, PATSSERVERINST pInst, PATSPKTHDR pPktHdr)
     if (pPktHdr->cb == sizeof(ATSPKTHDR))
     {
         rc = atsReplyAck(pThis, pInst, pPktHdr);
+        if (RT_SUCCESS(rc))
+            pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pInst->pTransportClient);
     }
     else
         rc = atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTHDR));
