@@ -278,8 +278,13 @@ class tdAudioTest(vbox.TestDriver):
         else: # Note: killall is not available on older Debians (requires psmisc).
             # Using the BSD syntax here; MacOS also should understand this.
             procPs = subprocess.Popen(['ps', 'ax'], stdout=subprocess.PIPE);
-            out, _ = procPs.communicate();
+            out, err = procPs.communicate();
+            reporter.log2('PS stderr:');
+            for sLine in err.decode("utf-8").splitlines():
+                reporter.log2(sLine);
+            reporter.log2('PS stdout:');
             for sLine in out.decode("utf-8").splitlines():
+                reporter.log2(sLine);
                 if sProcName in sLine:
                     pid = int(sLine.split(None, 1)[0]);
                     reporter.log('Killing PID %d' % (pid,));
