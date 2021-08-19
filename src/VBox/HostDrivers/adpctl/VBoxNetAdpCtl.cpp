@@ -237,8 +237,14 @@ public:
     virtual int set(const char *pcszAdapter, const char *pcszAddress, const char *pcszNetmask = 0)
         {
             const char *pcszFamily = isAddrV6(pcszAddress) ? "inet6" : "inet";
-            if (execute(CmdList(pcszAdapter) << pcszFamily))
-                execute(CmdList(pcszAdapter) << pcszFamily << "plumb" << "up");
+            int status;
+
+            status = execute(CmdList(pcszAdapter) << pcszFamily);
+            if (status != EXIT_SUCCESS)
+                status = execute(CmdList(pcszAdapter) << pcszFamily << "plumb" << "up");
+            if (status != EXIT_SUCCESS)
+                return status;
+
             return CmdIfconfig::set(pcszAdapter, pcszAddress, pcszNetmask);
         };
 protected:
@@ -246,6 +252,8 @@ protected:
     virtual int removeV4(const char *pcszAdapter, const char *pcszAddress)
         {
             int rc = CmdIfconfig::removeV4(pcszAdapter, pcszAddress);
+
+            /** @todo Do we really need to unplumb inet here? */
             execute(CmdList(pcszAdapter) << "inet" << "unplumb");
             return rc;
         };
