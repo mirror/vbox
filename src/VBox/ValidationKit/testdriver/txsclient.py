@@ -71,7 +71,12 @@ def getSZ(abData, off, sDefault = None):
     if cchStr >= 0:
         abStr = abData[off:(off + cchStr)];
         try:
-            return abStr.tostring().decode('utf_8');
+            if sys.version_info < (3, 9, 0):
+                # Removed since Python 3.9.
+                sStr = abStr.tostring(); # pylint: disable=no-member
+            else:
+                sStr = abStr.tobytes();
+            return sStr.decode('utf_8');
         except:
             reporter.errorXcpt('getSZ(,%u)' % (off));
     return sDefault;
