@@ -354,8 +354,9 @@ private:
 
     /** @name Cloud update stuff.
       * @{ */
-        /** Stops all cloud updates. */
-        void stopCloudUpdates();
+        /** Stops all cloud updates.
+          * @param  fForced  Brings whether cloud updates should be killed. */
+        void stopCloudUpdates(bool fForced = false);
     /** @} */
 
     /** @name General stuff.
