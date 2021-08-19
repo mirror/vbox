@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVMPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardCloneVMTypePageBasic class implementation.
  */
 
 /*
@@ -19,7 +19,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIWizardCloneVMPageBasic2.h"
+#include "UIWizardCloneVMTypePageBasic.h"
 #include "UIWizardCloneVM.h"
 #include "QIRichTextLabel.h"
 #include "UIWizardCloneVMEditors.h"
@@ -28,7 +28,7 @@
 #include "CSystemProperties.h"
 
 
-UIWizardCloneVMPageBasic2::UIWizardCloneVMPageBasic2(bool fAdditionalInfo)
+UIWizardCloneVMTypePageBasic::UIWizardCloneVMTypePageBasic(bool fAdditionalInfo)
     : m_pLabel(0)
     , m_fAdditionalInfo(fAdditionalInfo)
     , m_pCloneTypeGroupBox(0)
@@ -36,7 +36,7 @@ UIWizardCloneVMPageBasic2::UIWizardCloneVMPageBasic2(bool fAdditionalInfo)
     prepare();
 }
 
-void UIWizardCloneVMPageBasic2::prepare()
+void UIWizardCloneVMTypePageBasic::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
@@ -50,13 +50,13 @@ void UIWizardCloneVMPageBasic2::prepare()
         m_pCloneTypeGroupBox->setFlat(true);
         pMainLayout->addWidget(m_pCloneTypeGroupBox);
         connect(m_pCloneTypeGroupBox, &UICloneVMCloneTypeGroupBox::sigFullCloneSelected,
-                this, &UIWizardCloneVMPageBasic2::sltCloneTypeChanged);
+                this, &UIWizardCloneVMTypePageBasic::sltCloneTypeChanged);
     }
 
     pMainLayout->addStretch();
 }
 
-void UIWizardCloneVMPageBasic2::sltCloneTypeChanged(bool fIsFullClone)
+void UIWizardCloneVMTypePageBasic::sltCloneTypeChanged(bool fIsFullClone)
 {
     UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard());
     m_userModifiedParameters << "LinkedClone";
@@ -66,7 +66,7 @@ void UIWizardCloneVMPageBasic2::sltCloneTypeChanged(bool fIsFullClone)
     pWizard->setCloneModePageVisible(fIsFullClone);
 }
 
-void UIWizardCloneVMPageBasic2::retranslateUi()
+void UIWizardCloneVMTypePageBasic::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVM::tr("Clone type"));
@@ -88,14 +88,14 @@ void UIWizardCloneVMPageBasic2::retranslateUi()
         m_pLabel->setText(strLabel);
 }
 
-void UIWizardCloneVMPageBasic2::initializePage()
+void UIWizardCloneVMTypePageBasic::initializePage()
 {
     retranslateUi();
     if (m_pCloneTypeGroupBox && !m_userModifiedParameters.contains("LinkedClone"))
         cloneVMWizardPropertySet(LinkedClone, !m_pCloneTypeGroupBox->isFullClone());
 }
 
-bool UIWizardCloneVMPageBasic2::validatePage()
+bool UIWizardCloneVMTypePageBasic::validatePage()
 {
     UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard());
     AssertReturn(pWizard, false);

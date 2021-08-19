@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVMPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardCloneVMTypePageBasic class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMTypePageBasic_h
+#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMTypePageBasic_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -31,13 +31,13 @@
 class QIRichTextLabel;
 class UICloneVMCloneTypeGroupBox;
 
-class UIWizardCloneVMPageBasic2 : public UINativeWizardPage
+class UIWizardCloneVMTypePageBasic : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardCloneVMPageBasic2(bool fAdditionalInfo);
+    UIWizardCloneVMTypePageBasic(bool fAdditionalInfo);
 
 private slots:
 
@@ -56,4 +56,4 @@ private:
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMTypePageBasic_h */

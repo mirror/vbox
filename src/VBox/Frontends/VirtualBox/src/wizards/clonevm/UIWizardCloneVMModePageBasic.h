@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVMPageBasic3 class declaration.
+ * VBox Qt GUI - UIWizardCloneVMModePageBasic class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic3_h
-#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic3_h
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMModePageBasic_h
+#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMModePageBasic_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -55,14 +55,14 @@ class UICloneVMCloneModeGroupBox;
 // };
 
 /* 3rd page of the Clone Virtual Machine wizard (basic extension): */
-class UIWizardCloneVMPageBasic3 : public UINativeWizardPage
+class UIWizardCloneVMModePageBasic : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIWizardCloneVMPageBasic3(bool fShowChildsOption);
+    UIWizardCloneVMModePageBasic(bool fShowChildsOption);
 
 private slots:
 
@@ -88,4 +88,4 @@ private:
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageBasic3_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMModePageBasic_h */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVMPageBasic3 class implementation.
+ * VBox Qt GUI - UIWizardCloneVMModePageBasic class implementation.
  */
 
 /*
@@ -22,11 +22,11 @@
 /* Local includes: */
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMEditors.h"
-#include "UIWizardCloneVMPageBasic3.h"
+#include "UIWizardCloneVMModePageBasic.h"
 #include "QIRichTextLabel.h"
 
 
-UIWizardCloneVMPageBasic3::UIWizardCloneVMPageBasic3(bool fShowChildsOption)
+UIWizardCloneVMModePageBasic::UIWizardCloneVMModePageBasic(bool fShowChildsOption)
     : m_pLabel(0)
     , m_pCloneModeGroupBox(0)
     , m_fShowChildsOption(fShowChildsOption)
@@ -34,7 +34,7 @@ UIWizardCloneVMPageBasic3::UIWizardCloneVMPageBasic3(bool fShowChildsOption)
     prepare();
 }
 
-void UIWizardCloneVMPageBasic3::prepare()
+void UIWizardCloneVMModePageBasic::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
@@ -49,14 +49,14 @@ void UIWizardCloneVMPageBasic3::prepare()
         pMainLayout->addWidget(m_pCloneModeGroupBox);
         m_pCloneModeGroupBox->setFlat(true);
         connect(m_pCloneModeGroupBox, &UICloneVMCloneModeGroupBox::sigCloneModeChanged,
-                this, &UIWizardCloneVMPageBasic3::sltCloneModeChanged);
+                this, &UIWizardCloneVMModePageBasic::sltCloneModeChanged);
     }
     pMainLayout->addStretch();
 
     retranslateUi();
 }
 
-void UIWizardCloneVMPageBasic3::retranslateUi()
+void UIWizardCloneVMModePageBasic::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVM::tr("Snapshots"));
@@ -89,7 +89,7 @@ void UIWizardCloneVMPageBasic3::retranslateUi()
                           .arg(strOpt3));
 }
 
-void UIWizardCloneVMPageBasic3::initializePage()
+void UIWizardCloneVMModePageBasic::initializePage()
 {
     if (m_pCloneModeGroupBox && !m_userModifiedParameters.contains("CloneMode"))
         cloneVMWizardPropertySet(CloneMode, m_pCloneModeGroupBox->cloneMode());
@@ -97,7 +97,7 @@ void UIWizardCloneVMPageBasic3::initializePage()
     retranslateUi();
 }
 
-bool UIWizardCloneVMPageBasic3::validatePage()
+bool UIWizardCloneVMModePageBasic::validatePage()
 {
     bool fResult = true;
 
@@ -109,7 +109,7 @@ bool UIWizardCloneVMPageBasic3::validatePage()
     return fResult;
 }
 
-void UIWizardCloneVMPageBasic3::sltCloneModeChanged(KCloneMode enmCloneMode)
+void UIWizardCloneVMModePageBasic::sltCloneModeChanged(KCloneMode enmCloneMode)
 {
     m_userModifiedParameters << "CloneMode";
     cloneVMWizardPropertySet(CloneMode, enmCloneMode);

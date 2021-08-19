@@ -29,7 +29,7 @@
 #include "UIFilePathSelector.h"
 #include "UIWizardCloneVMPageExpert.h"
 #include "UIWizardCloneVM.h"
-#include "UIWizardCloneVMPageBasic1.h"
+#include "UIWizardCloneVMNamePathPageBasic.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -104,7 +104,7 @@ void UIWizardCloneVMPageExpert::initializePage()
         m_pNamePathGroupBox->setFocus();
         cloneVMWizardPropertySet(CloneName, m_pNamePathGroupBox->cloneName());
         cloneVMWizardPropertySet(CloneFilePath,
-                                 UIWizardCloneVMNamePage::composeCloneFilePath(m_pNamePathGroupBox->cloneName(), m_strGroup, m_pNamePathGroupBox->clonePath()));
+                                 UIWizardCloneVMNamePathPage::composeCloneFilePath(m_pNamePathGroupBox->cloneName(), m_strGroup, m_pNamePathGroupBox->clonePath()));
     }
     if (m_pAdditionalOptionsGroupBox)
     {
@@ -135,7 +135,7 @@ void UIWizardCloneVMPageExpert::sltCloneNameChanged(const QString &strCloneName)
     AssertReturnVoid(m_pNamePathGroupBox);
     cloneVMWizardPropertySet(CloneName, strCloneName);
     cloneVMWizardPropertySet(CloneFilePath,
-                             UIWizardCloneVMNamePage::composeCloneFilePath(strCloneName, m_strGroup, m_pNamePathGroupBox->clonePath()));
+                             UIWizardCloneVMNamePathPage::composeCloneFilePath(strCloneName, m_strGroup, m_pNamePathGroupBox->clonePath()));
     emit completeChanged();
 }
 
@@ -143,7 +143,7 @@ void UIWizardCloneVMPageExpert::sltClonePathChanged(const QString &strClonePath)
 {
     AssertReturnVoid(m_pNamePathGroupBox);
     cloneVMWizardPropertySet(CloneFilePath,
-                             UIWizardCloneVMNamePage::composeCloneFilePath(m_pNamePathGroupBox->cloneName(), m_strGroup, strClonePath));
+                             UIWizardCloneVMNamePathPage::composeCloneFilePath(m_pNamePathGroupBox->cloneName(), m_strGroup, strClonePath));
     emit completeChanged();
 }
 
