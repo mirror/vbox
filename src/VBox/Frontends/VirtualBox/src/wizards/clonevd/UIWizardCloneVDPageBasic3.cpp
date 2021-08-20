@@ -16,13 +16,11 @@
  */
 
 /* Qt includes: */
-#include <QDir>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLineEdit>
 
 /* GUI includes: */
 #include "UIWizardCloneVDPageBasic3.h"
+#include "UIWizardDiskEditors.h"
 #include "UIWizardCloneVD.h"
 #include "UICommon.h"
 #include "UIMessageCenter.h"
@@ -166,37 +164,25 @@
 // }
 
 UIWizardCloneVDPageBasic3::UIWizardCloneVDPageBasic3()
+    : m_pMediumSizePathGroupBox(0)
 {
     prepare();
-    // /* Create widgets: */
-    // QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    // {
-    //     m_pLabel = new QIRichTextLabel(this);
-    //     QHBoxLayout *pLocationLayout = new QHBoxLayout;
-    //     {
-    //         m_pDestinationDiskEditor = new QLineEdit(this);
-    //         m_pDestinationDiskOpenButton = new QIToolButton(this);
-    //         {
-    //             m_pDestinationDiskOpenButton->setAutoRaise(true);
-    //             m_pDestinationDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
-    //         }
-    //         pLocationLayout->addWidget(m_pDestinationDiskEditor);
-    //         pLocationLayout->addWidget(m_pDestinationDiskOpenButton);
-    //     }
-    //     pMainLayout->addWidget(m_pLabel);
-    //     pMainLayout->addLayout(pLocationLayout);
-    //     pMainLayout->addStretch();
-    // }
-
-    // /* Setup page connections: */
-    // connect(m_pDestinationDiskEditor, &QLineEdit::textChanged,    this, &UIWizardCloneVDPageBasic3::completeChanged);
-    // connect(m_pDestinationDiskOpenButton, &QIToolButton::clicked, this, &UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked);
 }
 
 void UIWizardCloneVDPageBasic3::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    Q_UNUSED(pMainLayout);
+
+    m_pMediumSizePathGroupBox = new UIMediumSizeAndPathGroupBox(false /* expert mode */, 0);
+    if (m_pMediumSizePathGroupBox)
+        pMainLayout->addWidget(m_pMediumSizePathGroupBox);
+
+    pMainLayout->addStretch();
+
+    // connect(m_pDestinationDiskEditor, &QLineEdit::textChanged,    this, &UIWizardCloneVDPageBasic3::completeChanged);
+    // connect(m_pDestinationDiskOpenButton, &QIToolButton::clicked, this, &UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked);
+
+    retranslateUi();
 }
 
 void UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked()
@@ -208,12 +194,7 @@ void UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked()
 void UIWizardCloneVDPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("New disk image to create"));
-
-    // /* Translate widgets: */
-    // m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual disk image file into the box below or "
-    //                                       "click on the folder icon to select a different folder to create the file in."));
-    // m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual disk image file..."));
+    setTitle(UIWizardCloneVD::tr("Location and size of the disk image"));
 }
 
 void UIWizardCloneVDPageBasic3::initializePage()

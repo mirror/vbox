@@ -31,11 +31,8 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
-class CMediumFormat;
-class QLineEdit;
-class QIToolButton;
 class QIRichTextLabel;
-
+class UIMediumSizeAndPathGroupBox;
 
 // /** 4th page of the Clone Virtual Disk Image wizard (base part): */
 // class UIWizardCloneVDPage3 : public UIWizardPageBase
@@ -107,8 +104,7 @@ private:
     /** Returns whether the page is valid. */
     virtual bool validatePage() /* override */;
 
-    /** Holds the description label instance. */
-    QIRichTextLabel *m_pLabel;
+    UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic3_h */
