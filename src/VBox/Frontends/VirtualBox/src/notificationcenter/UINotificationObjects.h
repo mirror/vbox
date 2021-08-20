@@ -748,6 +748,34 @@ private:
     QString        m_strProfileName;
 };
 
+/** UINotificationProgress extension for cloud machine power-up functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachinePowerUp : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs cloud machine power-up notification-progress.
+      * @param  comMachine  Brings the machine being powered-up. */
+    UINotificationProgressCloudMachinePowerUp(const CCloudMachine &comMachine);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the machine being powered-up. */
+    CCloudMachine  m_comMachine;
+    /** Holds the machine name. */
+    QString        m_strName;
+};
+
 /** UINotificationProgress extension for cloud machine power-down functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachinePowerDown : public UINotificationProgress
 {

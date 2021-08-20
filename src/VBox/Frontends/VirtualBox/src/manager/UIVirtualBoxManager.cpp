@@ -2477,6 +2477,14 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
     comVBox.RegisterMachine(comMachineNew);
 }
 
+void UIVirtualBoxManager::launchMachine(CCloudMachine &comMachine)
+{
+    /* Powering cloud VM up: */
+    UINotificationProgressCloudMachinePowerUp *pNotification =
+        new UINotificationProgressCloudMachinePowerUp(comMachine);
+    gpNotificationCenter->append(pNotification);
+}
+
 void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInstaller, const UIUnattendedInstallData &unattendedData)
 {
     CVirtualBox comVBox = uiCommon().virtualBox();
@@ -2573,9 +2581,7 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
                 /* Acquire cloud machine: */
                 CCloudMachine comCloudMachine = pItem->toCloud()->machine();
                 /* Launch current VM: */
-                uiCommon().launchMachine(comCloudMachine);
-                /* Update info in any case: */
-                pItem->toCloud()->updateInfoAsync(false /* delayed? */);
+                launchMachine(comCloudMachine);
             }
         }
     }

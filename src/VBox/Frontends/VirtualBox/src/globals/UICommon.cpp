@@ -2509,36 +2509,6 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     return true;
 }
 
-bool UICommon::launchMachine(CCloudMachine &comMachine)
-{
-    /* Acquire machine name: */
-    const QString strName = comMachine.GetName();
-    if (!comMachine.isOk())
-    {
-        msgCenter().cannotAcquireCloudMachineParameter(comMachine);
-        return false;
-    }
-
-    /* Prepare machine power up: */
-    CProgress comProgress = comMachine.PowerUp();
-    if (!comMachine.isOk())
-    {
-        msgCenter().cannotPowerUpCloudMachine(comMachine);
-        return false;
-    }
-
-    /* Show machine power up progress: */
-    msgCenter().showModalProgressDialog(comProgress, strName, ":/progress_start_90px.png", 0, 0);
-    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-    {
-        msgCenter().cannotPowerUpCloudMachine(comProgress, strName);
-        return false;
-    }
-
-    /* Success by default: */
-    return true;
-}
-
 CSession UICommon::openSession(const QUuid &uId, KLockType lockType /* = KLockType_Shared */)
 {
     /* Prepare session: */
