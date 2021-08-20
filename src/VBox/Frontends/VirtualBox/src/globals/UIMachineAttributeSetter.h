@@ -31,7 +31,6 @@ enum MachineAttribute
     MachineAttribute_Invalid,
     MachineAttribute_Name,
     MachineAttribute_OSType,
-    MachineAttribute_Location,
     MachineAttribute_BaseMemory,
     MachineAttribute_BootOrder,
     MachineAttribute_VideoMemory,
@@ -72,6 +71,10 @@ namespace UIMachineAttributeSetter
     SHARED_LIBRARY_STUFF void setMachineAttribute(const CMachine &comMachine,
                                                   const MachineAttribute &enmType,
                                                   const QVariant &guiAttribute);
+
+    /** Assigns @a comMachine @a strLocation. */
+    SHARED_LIBRARY_STUFF void setMachineLocation(const QUuid &uMachineId,
+                                                 const QString &strLocation);
 }
 using namespace UIMachineAttributeSetter /* if header included */;
 

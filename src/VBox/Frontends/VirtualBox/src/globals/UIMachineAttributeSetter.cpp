@@ -23,6 +23,7 @@
 #include "UICommon.h"
 #include "UIMachineAttributeSetter.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CAudioAdapter.h"
@@ -98,28 +99,6 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 {
                     msgCenter().cannotChangeMachineAttribute(comMachine);
                     fErrorHappened = true;
-                }
-                break;
-            }
-            case MachineAttribute_Location:
-            {
-                /* Do not save machine settings: */
-                fSaveSettings = false;
-                /* Prepare machine move progress: */
-                CProgress comProgress = comMachine.MoveTo(guiAttribute.toString(), "basic");
-                if (!comMachine.isOk())
-                {
-                    msgCenter().cannotMoveMachine(comMachine);
-                    fErrorHappened = true;
-                    break;
-                }
-                /* Show machine move progress: */
-                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_dnd_hg_90px.png");
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                {
-                    msgCenter().cannotMoveMachine(comProgress, comMachine.GetName());
-                    fErrorHappened = true;
-                    break;
                 }
                 break;
             }
@@ -319,4 +298,14 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
     /* Close session to editable comMachine if necessary: */
     if (!comSession.isNull())
         comSession.UnlockMachine();
+}
+
+void UIMachineAttributeSetter::setMachineLocation(const QUuid &uMachineId,
+                                                  const QString &strLocation)
+{
+    /* Move machine: */
+    UINotificationProgressMachineMove *pNotification = new UINotificationProgressMachineMove(uMachineId,
+                                                                                             strLocation,
+                                                                                             "basic");
+    gpNotificationCenter->append(pNotification);
 }
