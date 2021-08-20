@@ -229,6 +229,23 @@ static int audioTestSvcClientDoGreet(PATSCLIENT pClient)
 }
 
 /**
+ * Tells the ATS server that we want disconnect.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to disconnect.
+ */
+static int audioTestSvcClientDoBye(PATSCLIENT pClient)
+{
+    ATSPKTREQHOWDY Req;
+    Req.uVersion = ATS_PROTOCOL_VS;
+    audioTestSvcClientReqHdrInit(&Req.Hdr, sizeof(Req), ATSPKT_OPCODE_BYE, 0);
+    int rc = audioTestSvcClientSendMsg(pClient, &Req, sizeof(Req));
+    if (RT_SUCCESS(rc))
+        rc = audioTestSvcClientRecvAck(pClient);
+    return rc;
+}
+
+/**
  * Creates an ATS client.
  *
  * @returns VBox status code.
@@ -254,6 +271,8 @@ int AudioTestSvcClientCreate(PATSCLIENT pClient)
  */
 void AudioTestSvcClientDestroy(PATSCLIENT pClient)
 {
+    /* ignore rc */ audioTestSvcClientDoBye(pClient);
+
     if (pClient->pTransport)
         pClient->pTransport->pfnTerm(pClient->pTransportInst);
 }
