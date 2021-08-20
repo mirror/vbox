@@ -29,11 +29,6 @@ class CMediumFormat;
 class UIMediumSizeAndPathGroupBox;
 class UIWizardNewVD;
 
-namespace UIWizardNewVDSizeLocation
-{
-    QString selectNewMediumLocation(UIWizardNewVD *pWizard);
-}
-
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageSizeLocation : public UINativeWizardPage
 {
     Q_OBJECT;

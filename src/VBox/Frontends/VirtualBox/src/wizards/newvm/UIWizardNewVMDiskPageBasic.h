@@ -58,7 +58,6 @@ namespace UIWizardNewVMDiskPage
                                 const QString &strMachineFolder,
                                 const QString &strMachineBaseName,
                                 QWidget *pCaller);
-    QString selectNewMediumLocation(UIWizardNewVM *pWizard);
 }
 
 
