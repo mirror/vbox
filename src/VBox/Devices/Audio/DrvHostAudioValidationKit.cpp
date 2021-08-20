@@ -1105,45 +1105,50 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     LogRel(("ValKit: Starting Audio Test Service (ATS) at %s:%RU32...\n",
             pszTcpAddr, uTcpPort));
 
-    rc = AudioTestSvcCreate(&pThis->Srv);
-    if (RT_SUCCESS(rc))
+    /* Dont' use rc here, as this will be reported back to PDM and will prevent VBox
+     * from starting -- not critical but warn the user though. */
+    int rc2 = AudioTestSvcCreate(&pThis->Srv);
+    if (RT_SUCCESS(rc2))
     {
         RTGETOPTUNION Val;
         RT_ZERO(Val);
 
         Val.psz = "server"; /** @ŧodo No client connection mode needed here (yet). Make this configurable via CFGM. */
-        rc = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_MODE, &Val);
-        AssertRC(rc);
+        rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_MODE, &Val);
+        AssertRC(rc2);
 
         Val.psz = pszTcpAddr;
-        rc = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_ADDRESS, &Val);
-        AssertRC(rc);
+        rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_ADDRESS, &Val);
+        AssertRC(rc2);
 
         Val.u16 = uTcpPort;
-        rc = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_PORT, &Val);
-        AssertRC(rc);
+        rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_PORT, &Val);
+        AssertRC(rc2);
 
-        rc = AudioTestSvcInit(&pThis->Srv, &Callbacks);
-        if (RT_SUCCESS(rc))
-            rc = AudioTestSvcStart(&pThis->Srv);
+        rc2 = AudioTestSvcInit(&pThis->Srv, &Callbacks);
+        if (RT_SUCCESS(rc2))
+            rc2 = AudioTestSvcStart(&pThis->Srv);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc2))
     {
         LogRel(("ValKit: Audio Test Service (ATS) running\n"));
 
         /** @todo Let the following be customizable by CFGM later. */
-        rc = AudioTestPathCreateTemp(pThis->szPathTemp, sizeof(pThis->szPathTemp), "ValKitAudio");
-        if (RT_SUCCESS(rc))
+        rc2 = AudioTestPathCreateTemp(pThis->szPathTemp, sizeof(pThis->szPathTemp), "ValKitAudio");
+        if (RT_SUCCESS(rc2))
         {
             LogRel(("ValKit: Using temp dir '%s'\n", pThis->szPathTemp));
-            rc = AudioTestPathGetTemp(pThis->szPathOut, sizeof(pThis->szPathOut));
-            if (RT_SUCCESS(rc))
+            rc2 = AudioTestPathGetTemp(pThis->szPathOut, sizeof(pThis->szPathOut));
+            if (RT_SUCCESS(rc2))
                 LogRel(("ValKit: Using output dir '%s'\n", pThis->szPathOut));
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc2))
+        LogRel(("ValKit: Error starting Audio Test Service (ATS), rc=%Rrc -- tests *will* fail!\n", rc2));
+
+    if (RT_FAILURE(rc)) /* This one *is* critical though. */
         LogRel(("ValKit: Initialization failed, rc=%Rrc\n", rc));
 
     return rc;
