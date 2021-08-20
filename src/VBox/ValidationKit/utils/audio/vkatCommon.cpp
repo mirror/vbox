@@ -789,9 +789,9 @@ int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCall
 /**
  * Initializes an audio test environment.
  *
+ * @returns VBox status code.
  * @param   pTstEnv             Audio test environment to initialize.
- * @param   pDrvReg             Audio driver to use.
- * @param   fWithDrvAudio       Whether to include DrvAudio in the stack or not.
+ * @param   pDrvStack           Driver stack to use.
  */
 int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
 {
