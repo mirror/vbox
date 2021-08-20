@@ -61,7 +61,8 @@ public:
     static QString appendExtension(const QString &strName, const QString &strExtension);
     static QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
     static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
-    static QString openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat, QWidget *pParent);
+    static QString openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat,
+                                             KDeviceType enmDeviceType, QWidget *pParent);
 
 protected:
 

@@ -113,7 +113,8 @@ bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, con
 }
 
 /* static */
-QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat, QWidget *pParent)
+QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat,
+                                                        KDeviceType enmDeviceType, QWidget *pParent)
 {
     QString strChosenFilePath;
     QFileInfo initialPath(strInitialPath);
@@ -135,7 +136,7 @@ QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitia
     comMediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     QStringList validExtensionList;
     for (int i = 0; i < fileExtensions.size(); ++i)
-        if (deviceTypes[i] == KDeviceType_HardDisk)
+        if (deviceTypes[i] == enmDeviceType)
             validExtensionList << QString("*.%1").arg(fileExtensions[i]);
     /* Compose full filter list: */
     QString strBackendsList = QString("%1 (%2)").arg(comMediumFormat.GetName()).arg(validExtensionList.join(" "));
