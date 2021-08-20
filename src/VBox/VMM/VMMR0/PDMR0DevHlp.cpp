@@ -840,8 +840,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
      */
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertPtrReturn(pCritSect, VERR_INVALID_POINTER);
-    LogFlow(("pdmR0DevHlp_SetDeviceCritSect: caller='%s'/%d: pCritSect=%p (%s)\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pCritSect, pCritSect->s.pszName));
+    LogFlow(("pdmR0DevHlp_SetDeviceCritSect: caller='%s'/%d: pCritSect=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pCritSect));
     AssertReturn(PDMCritSectIsInitialized(pCritSect), VERR_INVALID_PARAMETER);
     PGVM pGVM = pDevIns->Internal.s.pGVM;
 
