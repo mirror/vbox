@@ -112,6 +112,39 @@ bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, con
     return true;
 }
 
+/* static */
+QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat, QWidget *pParent)
+{
+    QString strChosenFilePath;
+    QFileInfo initialPath(strInitialPath);
+    QDir folder = initialPath.path();
+    QString strFileName = initialPath.fileName();
+
+    // /* Set the first parent folder that exists as the current: */
+    while (!folder.exists() && !folder.isRoot())
+    {
+        QFileInfo folderInfo(folder.absolutePath());
+        if (folder == QDir(folderInfo.absolutePath()))
+            break;
+        folder = folderInfo.absolutePath();
+    }
+    AssertReturn(folder.exists() && !folder.isRoot(), strChosenFilePath);
+
+    QVector<QString> fileExtensions;
+    QVector<KDeviceType> deviceTypes;
+    comMediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+    QStringList validExtensionList;
+    for (int i = 0; i < fileExtensions.size(); ++i)
+        if (deviceTypes[i] == KDeviceType_HardDisk)
+            validExtensionList << QString("*.%1").arg(fileExtensions[i]);
+    /* Compose full filter list: */
+    QString strBackendsList = QString("%1 (%2)").arg(comMediumFormat.GetName()).arg(validExtensionList.join(" "));
+
+    strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
+                                                              strBackendsList, pParent,
+                                                              UICommon::tr("Please choose a location for new virtual hard disk file"));
+    return strChosenFilePath;
+}
 
 
 /*********************************************************************************************************************************
@@ -446,7 +479,7 @@ void UIDiskVariantGroupBox::sltVariantChanged()
 *   UIMediumSizeAndPathGroupBox implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
+UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent, qulonglong uMinimumMediumSize)
     : UIDiskEditorGroupBox(fExpertMode, pParent)
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
@@ -454,10 +487,10 @@ UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidg
     , m_pLocationLabel(0)
     , m_pSizeLabel(0)
 {
-    prepare();
+    prepare(uMinimumMediumSize);
 }
 
-void UIMediumSizeAndPathGroupBox::prepare()
+void UIMediumSizeAndPathGroupBox::prepare(qulonglong uMinimumMediumSize)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     /* Location widgets: */
@@ -477,7 +510,7 @@ void UIMediumSizeAndPathGroupBox::prepare()
     /* Size widgets: */
     if (!m_fExpertMode)
         m_pSizeLabel = new QIRichTextLabel;
-    m_pMediumSizeEditor = new UIMediumSizeEditor;
+    m_pMediumSizeEditor = new UIMediumSizeEditor(0 /* parent */, uMinimumMediumSize);
 
     /* Add widgets to main layout: */
     if (m_pLocationLabel)

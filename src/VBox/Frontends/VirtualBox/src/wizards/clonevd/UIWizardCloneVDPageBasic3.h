@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QVariant>
+#include <QSet>
 
 /* GUI includes: */
 #include "UINativeWizardPage.h"
@@ -33,6 +34,7 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class UIMediumSizeAndPathGroupBox;
+class UIWizardCloneVD;
 
 // /** 4th page of the Clone Virtual Disk Image wizard (base part): */
 // class UIWizardCloneVDPage3 : public UIWizardPageBase
@@ -82,18 +84,19 @@ class UIWizardCloneVDPageBasic3 : public UINativeWizardPage
 public:
 
     /** Constructs basic page. */
-    UIWizardCloneVDPageBasic3();
+    UIWizardCloneVDPageBasic3(qulonglong uSourceDiskLogicaSize);
 
 private slots:
 
     /** Handles command to open target disk. */
     void sltSelectLocationButtonClicked();
+    void sltMediumPathChanged(const QString &strPath);
 
 private:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
-    void prepare();
+    void prepare(qulonglong uSourceDiskLogicaSize);
 
     /** Prepares the page. */
     virtual void initializePage() /* override */;
@@ -103,8 +106,12 @@ private:
 
     /** Returns whether the page is valid. */
     virtual bool validatePage() /* override */;
+    UIWizardCloneVD *cloneWizard() const;
+
 
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
+
+    QSet<QString> m_userModifiedParameters;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic3_h */

@@ -63,7 +63,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
 void UIWizardNewVDPageExpert::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout(this);
-    m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0);
+    m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
     m_pFormatGroup = new UIDiskFormatsGroupBox(true /* fExpertMode */, KDeviceType_HardDisk, 0);
     m_pVariantGroup = new UIDiskVariantGroupBox(true /* fExpertMode */, 0);
 

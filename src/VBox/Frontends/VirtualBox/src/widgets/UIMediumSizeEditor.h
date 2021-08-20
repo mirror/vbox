@@ -50,7 +50,7 @@ signals:
 public:
 
     /** Constructs medium size editor passing @a pParent to the base-class. */
-    UIMediumSizeEditor(QWidget *pParent = 0);
+    UIMediumSizeEditor(QWidget *pParent = 0, qulonglong uMinimumSize = _4M);
 
     /** Returns the medium size. */
     qulonglong mediumSize() const { return m_uSize; }

@@ -163,32 +163,28 @@
 //     return 0;
 // }
 
-UIWizardCloneVDPageBasic3::UIWizardCloneVDPageBasic3()
+UIWizardCloneVDPageBasic3::UIWizardCloneVDPageBasic3(qulonglong uSourceDiskLogicaSize)
     : m_pMediumSizePathGroupBox(0)
 {
-    prepare();
+    prepare(uSourceDiskLogicaSize);
 }
 
-void UIWizardCloneVDPageBasic3::prepare()
+void UIWizardCloneVDPageBasic3::prepare(qulonglong uSourceDiskLogicaSize)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
-    m_pMediumSizePathGroupBox = new UIMediumSizeAndPathGroupBox(false /* expert mode */, 0);
+    m_pMediumSizePathGroupBox = new UIMediumSizeAndPathGroupBox(false /* expert mode */, 0 /* parent */, uSourceDiskLogicaSize);
     if (m_pMediumSizePathGroupBox)
         pMainLayout->addWidget(m_pMediumSizePathGroupBox);
 
     pMainLayout->addStretch();
 
-    // connect(m_pDestinationDiskEditor, &QLineEdit::textChanged,    this, &UIWizardCloneVDPageBasic3::completeChanged);
-    // connect(m_pDestinationDiskOpenButton, &QIToolButton::clicked, this, &UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked);
+    connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
+            this, &UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked);
+    connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
+            this, &UIWizardCloneVDPageBasic3::sltMediumPathChanged);
 
     retranslateUi();
-}
-
-void UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked()
-{
-    /* Call to base-class: */
-    //onSelectLocationButtonClicked();
 }
 
 void UIWizardCloneVDPageBasic3::retranslateUi()
@@ -199,26 +195,35 @@ void UIWizardCloneVDPageBasic3::retranslateUi()
 
 void UIWizardCloneVDPageBasic3::initializePage()
 {
-    // /* Translate page: */
-    // retranslateUi();
+    AssertReturnVoid(cloneWizard() && m_pMediumSizePathGroupBox);
+    /* Translate page: */
+    retranslateUi();
+    UIWizardCloneVD *pWizard = cloneWizard();
+    m_pMediumSizePathGroupBox->blockSignals(true);
 
-    // UIWizardCloneVD *pWizard = qobject_cast<UIWizardCloneVD*>(wizardImp());
-    // if (!pWizard)
-    //     return;
-    // const CMedium &comMedium = pWizard->sourceVirtualDisk();
+    /* Initialize medium size widget and wizard's medium size parameter: */
+    if (!m_userModifiedParameters.contains("MediumSize"))
+    {
+        m_pMediumSizePathGroupBox->setMediumSize(pWizard->sourceDiskLogicalSize());
+        pWizard->setMediumSize(m_pMediumSizePathGroupBox->mediumSize());
+    }
 
-    // /* Get source virtual-disk file-information: */
-    // QFileInfo sourceFileInfo(comMedium.GetLocation());
-    // /* Get default path for virtual-disk copy: */
-    // m_strDefaultPath = sourceFileInfo.absolutePath();
-    // /* Get default extension for virtual-disk copy: */
-    // acquireExtensions(field("mediumFormat").value<CMediumFormat>(),
-    //                   static_cast<UIWizardCloneVD*>(wizardImp())->sourceVirtualDiskDeviceType(),
-    //                   m_aAllowedExtensions, m_strDefaultExtension);
-    // /* Compose default-name for virtual-disk copy: */
-    // QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual disk image name").arg(sourceFileInfo.completeBaseName());
-    // /* Set default-name as text for location editor: */
-    // m_pDestinationDiskEditor->setText(strMediumName);
+    if (!m_userModifiedParameters.contains("MediumPath"))
+    {
+        const CMediumFormat comMediumFormat = pWizard->mediumFormat();
+        AssertReturnVoid(!comMediumFormat.isNull());
+        QString strExtension = UIDiskFormatsGroupBox::defaultExtension(comMediumFormat, KDeviceType_HardDisk);
+        QString strSourceDiskPath = QDir::toNativeSeparators(QFileInfo(pWizard->sourceDiskFilePath()).absolutePath());
+        /* Disk name without the format extension: */
+        QString strDiskName = QString("%1_%2").arg(QFileInfo(pWizard->sourceDiskName()).completeBaseName()).arg(tr("copy"));
+
+        QString strMediumFilePath =
+            UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(strDiskName,
+                                                                                                 strExtension), strSourceDiskPath);
+        m_pMediumSizePathGroupBox->setMediumPath(strMediumFilePath);
+        pWizard->setMediumPath(strMediumFilePath);
+    }
+    m_pMediumSizePathGroupBox->blockSignals(false);
 }
 
 bool UIWizardCloneVDPageBasic3::isComplete() const
@@ -253,4 +258,38 @@ bool UIWizardCloneVDPageBasic3::validatePage()
 
     /* Return result: */
     return fResult;
+}
+
+UIWizardCloneVD *UIWizardCloneVDPageBasic3::cloneWizard() const
+{
+    return qobject_cast<UIWizardCloneVD*>(wizard());
+}
+
+void UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked()
+{
+    UIWizardCloneVD *pWizard = cloneWizard();
+    AssertReturnVoid(pWizard);
+    CMediumFormat comMediumFormat(pWizard->mediumFormat());
+    QString strSelectedPath =
+        UIDiskEditorGroupBox::openFileDialogForDiskFile(pWizard->mediumPath(), comMediumFormat, pWizard);
+
+    if (strSelectedPath.isEmpty())
+        return;
+    QString strMediumPath =
+        UIDiskEditorGroupBox::appendExtension(strSelectedPath,
+                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+    QFileInfo mediumPath(strMediumPath);
+    m_pMediumSizePathGroupBox->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
+}
+
+void UIWizardCloneVDPageBasic3::sltMediumPathChanged(const QString &strPath)
+{
+    UIWizardCloneVD *pWizard = cloneWizard();
+    AssertReturnVoid(pWizard);
+    m_userModifiedParameters << "MediumPath";
+    QString strMediumPath =
+        UIDiskEditorGroupBox::appendExtension(strPath,
+                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
+    pWizard->setMediumPath(strMediumPath);
+    emit completeChanged();
 }

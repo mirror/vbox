@@ -452,7 +452,7 @@ QWidget *UIWizardNewVMPageExpert::createNewDiskWidgets()
     QWidget *pNewDiskContainerWidget = new QWidget;
     QGridLayout *pDiskContainerLayout = new QGridLayout(pNewDiskContainerWidget);
 
-    m_pSizeAndLocationGroup = new UIMediumSizeAndPathGroupBox(true, 0);
+    m_pSizeAndLocationGroup = new UIMediumSizeAndPathGroupBox(true, 0 /* parent */, _4M /* minimum size */);
     pDiskContainerLayout->addWidget(m_pSizeAndLocationGroup, 0, 0, 2, 2);
     m_pFormatButtonGroup = new UIDiskFormatsGroupBox(true, KDeviceType_HardDisk, 0);
     pDiskContainerLayout->addWidget(m_pFormatButtonGroup, 2, 0, 4, 1);

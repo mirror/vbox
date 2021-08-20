@@ -30,7 +30,6 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-
 QString UIWizardNewVDSizeLocation::selectNewMediumLocation(UIWizardNewVD *pWizard)
 {
     AssertReturn(pWizard, QString());
@@ -84,7 +83,7 @@ void UIWizardNewVDPageSizeLocation::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
-    m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false /* fExpertMode */, 0);
+    m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
     connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
             this, &UIWizardNewVDPageSizeLocation::sltMediumSizeChanged);
     connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,

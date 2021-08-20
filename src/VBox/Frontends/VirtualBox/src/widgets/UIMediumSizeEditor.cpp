@@ -33,9 +33,9 @@
 
 const qulonglong UIMediumSizeEditor::m_uSectorSize = 512;
 
-UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent /* = 0 */)
+UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent, qulonglong uMinimumSize /* = _4M */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_uSizeMin(_4M)
+    , m_uSizeMin(uMinimumSize)
     , m_uSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_iSliderScale(calculateSliderScale(m_uSizeMax))
     , m_uSize(0)

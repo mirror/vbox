@@ -44,7 +44,7 @@ public:
     const CMedium &sourceVirtualDisk() const { return m_comSourceVirtualDisk; }
 
     /** Returns the source virtual-disk device type. */
-    KDeviceType sourceVirtualDiskDeviceType() const { return m_enmSourceVirtualDiskDeviceType; }
+    KDeviceType deviceType() const;
 
     /** Makes a copy of source virtual-disk. */
     bool copyVirtualDisk();
@@ -54,6 +54,16 @@ public:
 
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
+
+    qulonglong mediumSize() const;
+    void setMediumSize(qulonglong uMediumSize);
+
+    const QString &mediumPath() const;
+    void setMediumPath(const QString &strPath);
+
+    qulonglong sourceDiskLogicalSize() const;
+    QString sourceDiskFilePath() const;
+    QString sourceDiskName() const;
 
 protected:
 
@@ -71,8 +81,10 @@ private:
     CMedium m_comSourceVirtualDisk;
 
     /** Holds the source virtual-disk device type. */
-    KDeviceType m_enmSourceVirtualDiskDeviceType;
+    KDeviceType m_enmDeviceType;
     int m_iMediumVariantPageIndex;
+    qulonglong m_uMediumSize;
+    QString m_strMediumPath;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVD_h */

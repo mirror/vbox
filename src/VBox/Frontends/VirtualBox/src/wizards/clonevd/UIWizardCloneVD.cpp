@@ -33,7 +33,7 @@
 UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtualDisk)
     : UINativeWizard(pParent, WizardType_CloneVD)
     , m_comSourceVirtualDisk(comSourceVirtualDisk)
-    , m_enmSourceVirtualDiskDeviceType(m_comSourceVirtualDisk.GetDeviceType())
+    , m_enmDeviceType(m_comSourceVirtualDisk.GetDeviceType())
     , m_iMediumVariantPageIndex(-1)
 {
 #ifndef VBOX_WS_MAC
@@ -43,6 +43,11 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtu
     /* Assign background image: */
     setPixmapName(":/wizard_new_harddisk_bg.png");
 #endif /* VBOX_WS_MAC */
+}
+
+KDeviceType UIWizardCloneVD::deviceType() const
+{
+    return m_enmDeviceType;
 }
 
 bool UIWizardCloneVD::copyVirtualDisk()
@@ -60,7 +65,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
     // CVirtualBox comVBox = uiCommon().virtualBox();
 
     // /* Create new virtual disk image: */
-    // CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, m_enmSourceVirtualDiskDeviceType);
+    // CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, m_enmDeviceType);
     // if (!comVBox.isOk())
     // {
     //     msgCenter().cannotCreateMediumStorage(comVBox, strMediumPath, this);
@@ -103,14 +108,14 @@ void UIWizardCloneVD::populatePages()
         case WizardMode_Basic:
         case WizardMode_Expert:
         {
-            addPage(new UIWizardCloneVDPageBasic1(m_enmSourceVirtualDiskDeviceType));
-            m_iMediumVariantPageIndex = addPage(new UIWizardCloneVDPageBasic2(m_enmSourceVirtualDiskDeviceType));
-            addPage(new UIWizardCloneVDPageBasic3);
+            addPage(new UIWizardCloneVDPageBasic1(m_enmDeviceType));
+            m_iMediumVariantPageIndex = addPage(new UIWizardCloneVDPageBasic2(m_enmDeviceType));
+            addPage(new UIWizardCloneVDPageBasic3(sourceDiskLogicalSize()));
             break;
         }
         // case WizardMode_Expert:
         // {
-        //     setPage(PageExpert, new UIWizardCloneVDPageExpert(m_enmSourceVirtualDiskDeviceType));
+        //     setPage(PageExpert, new UIWizardCloneVDPageExpert(m_enmDeviceType));
         //     break;
         // }
         default:
@@ -141,6 +146,47 @@ qulonglong UIWizardCloneVD::mediumVariant() const
 void UIWizardCloneVD::setMediumVariant(qulonglong uMediumVariant)
 {
     m_uMediumVariant = uMediumVariant;
+}
+
+qulonglong UIWizardCloneVD::mediumSize() const
+{
+    return m_uMediumSize;
+}
+
+void UIWizardCloneVD::setMediumSize(qulonglong uMediumSize)
+{
+    m_uMediumSize = uMediumSize;
+}
+
+const QString &UIWizardCloneVD::mediumPath() const
+{
+    return m_strMediumPath;
+}
+
+void UIWizardCloneVD::setMediumPath(const QString &strPath)
+{
+    m_strMediumPath = strPath;
+}
+
+qulonglong UIWizardCloneVD::sourceDiskLogicalSize() const
+{
+    if (m_comSourceVirtualDisk.isNull())
+        return 0;
+    return m_comSourceVirtualDisk.GetLogicalSize();
+}
+
+QString UIWizardCloneVD::sourceDiskFilePath() const
+{
+    if (m_comSourceVirtualDisk.isNull())
+        return QString();
+    return m_comSourceVirtualDisk.GetLocation();
+}
+
+QString UIWizardCloneVD::sourceDiskName() const
+{
+    if (m_comSourceVirtualDisk.isNull())
+        return QString();
+    return m_comSourceVirtualDisk.GetName();
 }
 
 void UIWizardCloneVD::setMediumVariantPageVisibility()

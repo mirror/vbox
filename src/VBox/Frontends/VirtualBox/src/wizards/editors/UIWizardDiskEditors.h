@@ -61,6 +61,7 @@ public:
     static QString appendExtension(const QString &strName, const QString &strExtension);
     static QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
     static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
+    static QString openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat, QWidget *pParent);
 
 protected:
 
@@ -148,7 +149,7 @@ signals:
 
 public:
 
-    UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent = 0);
+    UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent, qulonglong uMinimumMediumSize);
     QString mediumPath() const;
     void setMediumPath(const QString &strMediumPath);
     /** Checks if the file extension is correct. Fixs it if necessary. */
@@ -158,7 +159,7 @@ public:
 
 private:
 
-    void prepare();
+    void prepare(qulonglong uMinimumMediumSize);
     virtual void retranslateUi() /* override final */;
     static QString stripFormatExtension(const QString &strFileName,
                                         const QStringList &formatExtensions);
