@@ -29,22 +29,22 @@ extern const PCATSTRANSPORT g_apTransports[];
 extern const size_t         g_cTransports;
 
 /** Default TCP/IP bind port the guest ATS (Audio Test Service) is listening on. */
-#define ATS_TCP_DEF_BIND_PORT_GUEST       6052
+#define ATS_TCP_DEF_BIND_PORT_GUEST                6042
 /** Default TCP/IP bind port the host ATS is listening on. */
-#define ATS_TCP_DEF_BIND_PORT_HOST        6042
+#define ATS_TCP_DEF_BIND_PORT_HOST                 6052
 /** Default TCP/IP ATS bind port the ValidationKit Audio Driver ATS is listening on. */
-#define ATS_TCP_DEF_BIND_PORT_VALKIT      6052
+#define ATS_TCP_DEF_BIND_PORT_VALKIT               6062
 /** Default TCP/IP port the guest ATS is connecting to. */
-#define ATS_TCP_DEF_CONNECT_PORT_GUEST    ATS_TCP_DEF_BIND_PORT_HOST
+#define ATS_TCP_DEF_CONNECT_PORT_GUEST              ATS_TCP_DEF_BIND_PORT_HOST
 /** Default TCP/IP port the host ATS is connecting to the guest (needs NAT port forwarding). */
-#define ATS_TCP_DEF_CONNECT_PORT_HOST_PORT_FWD     6062
+#define ATS_TCP_DEF_CONNECT_PORT_HOST_PORT_FWD     6072
 /** Default TCP/IP port the host ATS is connecting to. */
-#define ATS_TCP_DEF_CONNECT_PORT_VALKIT   ATS_TCP_DEF_BIND_PORT_VALKIT
+#define ATS_TCP_DEF_CONNECT_PORT_VALKIT            ATS_TCP_DEF_BIND_PORT_VALKIT
 /** Default TCP/IP address the host is connecting to. */
-#define ATS_TCP_DEF_CONNECT_HOST_ADDR_STR "127.0.0.1"
+#define ATS_TCP_DEF_CONNECT_HOST_ADDR_STR          "127.0.0.1"
 /** Default TCP/IP address the guest ATS connects to when
  *  running in client mode (reversed mode, needed for NATed VMs). */
-#define ATS_TCP_DEF_CONNECT_GUEST_STR     "10.0.2.2"
+#define ATS_TCP_DEF_CONNECT_GUEST_STR              "10.0.2.2"
 
 /**
  * Structure for keeping an Audio Test Service (ATS) callback table.
