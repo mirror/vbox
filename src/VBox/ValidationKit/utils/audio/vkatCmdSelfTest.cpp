@@ -1,6 +1,22 @@
 /* $Id$ */
 /** @file
- * Validation Kit Audio Test (VKAT) - Self test code.
+ * Validation Kit Audio Test (VKAT) - Self test.
+ *
+ * Self-test which does a complete audio testing framework run without the need
+ * of a VM or other infrastructure, i.e. all required parts are running locally
+ * on the same machine.
+ *
+ * This self-test does the following:
+ * - 1. a) Creates an ATS instance to emulate the guest mode ("--mode guest")
+ *         at port 6042 (ATS_TCP_DEF_BIND_PORT_GUEST).
+ *      or
+ *      b) Connect to an already existing guest ATS instance if "--guest-ats-address" is specified.
+ *      This makes it more flexible in terms of testing / debugging.
+ * - 2. Uses the Validation Kit audio backend, which in turn creates an ATS instance
+ *      listening at port 6062 (ATS_TCP_DEF_BIND_PORT_VALKIT).
+ * - 3. Uses the host test environment which creates an ATS instance
+ *      listening at port 6052 (ATS_TCP_DEF_BIND_PORT_HOST).
+ * - 4. Executes a complete test run locally (e.g. without any guest (VM) involved).
  */
 
 /*
@@ -55,34 +71,42 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     RT_NOREF(hThread);
     PSELFTESTCTX pCtx = (PSELFTESTCTX)pvUser;
 
-    PAUDIOTESTENV pTstEnvGst = &pCtx->Guest.TstEnv;
+    PAUDIOTESTENV pTstEnv = &pCtx->Guest.TstEnv;
 
     /* Flag the environment for self test mode. */
-    pTstEnvGst->fSelftest = true;
+    pTstEnv->fSelftest = true;
+
+    /* Tweak the address the guest ATS is trying to connect to the host if anything else is specified.
+     * Note: The host also runs on the same host (this self-test is completely self-contained and does not need a VM). */
+    if (!pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr[0])
+        RTStrCopy(pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr, sizeof(pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr), "127.0.0.1");
+
+    int rc = AudioTestSvcCreate(&pTstEnv->u.Guest.Srv);
+    AssertRCReturn(rc, rc);
 
     /* Generate tag for guest side. */
-    int rc = RTStrCopy(pTstEnvGst->szTag, sizeof(pTstEnvGst->szTag), pCtx->szTag);
+    rc = RTStrCopy(pTstEnv->szTag, sizeof(pTstEnv->szTag), pCtx->szTag);
     AssertRCReturn(rc, rc);
 
-    rc = AudioTestPathCreateTemp(pTstEnvGst->szPathTemp, sizeof(pTstEnvGst->szPathTemp), "selftest-guest");
+    rc = AudioTestPathCreateTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp), "selftest-guest");
     AssertRCReturn(rc, rc);
 
-    rc = AudioTestPathCreateTemp(pTstEnvGst->szPathOut, sizeof(pTstEnvGst->szPathOut), "selftest-out");
+    rc = AudioTestPathCreateTemp(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), "selftest-out");
     AssertRCReturn(rc, rc);
 
-    pTstEnvGst->enmMode = AUDIOTESTMODE_GUEST;
+    pTstEnv->enmMode = AUDIOTESTMODE_GUEST;
 
     /** @todo Make this customizable. */
-    PDMAudioPropsInit(&pTstEnvGst->Props,
+    PDMAudioPropsInit(&pTstEnv->Props,
                       2 /* 16-bit */, true  /* fSigned */, 2 /* cChannels */, 44100 /* uHz */);
 
-    rc = audioTestEnvInit(pTstEnvGst, &pCtx->DrvStack);
+    rc = audioTestEnvInit(pTstEnv, &pCtx->DrvStack);
     if (RT_SUCCESS(rc))
     {
         RTThreadUserSignal(hThread);
 
-        audioTestWorker(pTstEnvGst);
-        audioTestEnvDestroy(pTstEnvGst);
+        audioTestWorker(pTstEnv);
+        audioTestEnvDestroy(pTstEnv);
     }
 
     return rc;
@@ -97,18 +121,6 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
 RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 {
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,  "Running self test ...\n");
-
-    /*
-     * The self-test does the following:
-     * - 1. a) Creates an ATS instance to emulate the guest mode ("--mode guest")
-     *         at port 6042 (ATS_TCP_DEF_BIND_PORT_GUEST).
-     *      or
-     *      b) Connect to an already existing guest ATS instance if "--guest-ats-address" is specified.
-     *      This makes it more flexible in terms of testing / debugging.
-     * - 2. Uses the Validation Kit audio backend, which in turn creates an ATS instance
-     *      at port 6052 (ATS_TCP_DEF_BIND_PORT_HOST).
-     * - 3. Executes a complete test run locally (e.g. without any guest (VM) involved).
-     */
 
     /* Generate a common tag for guest and host side. */
     int rc = AudioTestGenTag(pCtx->szTag, sizeof(pCtx->szTag));
@@ -161,6 +173,9 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
         rc = audioTestEnvInit(pTstEnvHst, &pCtx->DrvStack);
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Step 4.
+             */
             rc = audioTestWorker(pTstEnvHst);
             if (RT_SUCCESS(rc))
             {
