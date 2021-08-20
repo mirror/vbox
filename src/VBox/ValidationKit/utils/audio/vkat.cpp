@@ -245,7 +245,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
 
     if (strlen(pTstEnv->szDev))
     {
-        rc = audioTestDriverStackSetDevice(&pTstEnv->DrvStack, PDMAUDIODIR_OUT, pTstEnv->szDev);
+        rc = audioTestDriverStackSetDevice(pTstEnv->pDrvStack, PDMAUDIODIR_OUT, pTstEnv->szDev);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -349,7 +349,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
 
     if (strlen(pTstEnv->szDev))
     {
-        rc = audioTestDriverStackSetDevice(&pTstEnv->DrvStack, PDMAUDIODIR_IN, pTstEnv->szDev);
+        rc = audioTestDriverStackSetDevice(pTstEnv->pDrvStack, PDMAUDIODIR_IN, pTstEnv->szDev);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -856,12 +856,24 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     if (TstEnv.enmMode == AUDIOTESTMODE_UNKNOWN)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No test mode (--mode) specified!\n");
 
-    /* For now all tests have the same test environment. */
-    rc = audioTestEnvInit(&TstEnv, pDrvReg, fWithDrvAudio);
+    AUDIOTESTDRVSTACK DrvStack;
+    rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,
+                                    true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio); /** @todo Make in/out configurable, too. */
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
+
+    PPDMAUDIOHOSTDEV pDev;
+    rc = audioTestDevicesEnumerateAndCheck(&DrvStack, TstEnv.szDev, &pDev);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Enumerating device(s) failed: %Rrc\n", rc);
+
+    /* For now all tests have the same test environment and driver stack. */
+    rc = audioTestEnvInit(&TstEnv, &DrvStack);
     if (RT_SUCCESS(rc))
         rc = audioTestWorker(&TstEnv);
 
     audioTestEnvDestroy(&TstEnv);
+    audioTestDriverStackDelete(&DrvStack);
 
     if (RT_FAILURE(rc)) /* Let us know that something went wrong in case we forgot to mention it. */
         RTTestFailed(g_hTest, "Testing failed with %Rrc\n", rc);

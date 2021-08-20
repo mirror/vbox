@@ -69,7 +69,6 @@ typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
 *********************************************************************************************************************************/
 static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream, PDMAUDIODIR enmDir, PCPDMAUDIOPCMPROPS pProps, bool fWithMixer, uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
-static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev);
 
 
 /*********************************************************************************************************************************
@@ -80,16 +79,16 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
  * Enumerates audio devices and optionally searches for a specific device.
  *
  * @returns VBox status code.
- * @param   pTstEnv             Test env to use for enumeration.
+ * @param   pDrvStack           Driver stack to use for enumeration.
  * @param   pszDev              Device name to search for. Can be NULL if the default device shall be used.
  * @param   ppDev               Where to return the pointer of the device enumeration of \a pTstEnv when a
  *                              specific device was found.
  */
-static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev)
+int audioTestDevicesEnumerateAndCheck(PAUDIOTESTDRVSTACK pDrvStack, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev)
 {
     RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev && *pszDev ? pszDev : "<Default>");
 
-    if (!pTstEnv->DrvStack.pIHostAudio->pfnGetDevices)
+    if (!pDrvStack->pIHostAudio->pfnGetDevices)
     {
         RTTestSkipped(g_hTest, "Backend does not support device enumeration, skipping");
         return VINF_NOT_SUPPORTED;
@@ -100,11 +99,11 @@ static int audioTestDevicesEnumerateAndCheck(PAUDIOTESTENV pTstEnv, const char *
     if (ppDev)
         *ppDev = NULL;
 
-    int rc = pTstEnv->DrvStack.pIHostAudio->pfnGetDevices(pTstEnv->DrvStack.pIHostAudio, &pTstEnv->DevEnum);
+    int rc = pDrvStack->pIHostAudio->pfnGetDevices(pDrvStack->pIHostAudio, &pDrvStack->DevEnum);
     if (RT_SUCCESS(rc))
     {
         PPDMAUDIOHOSTDEV pDev;
-        RTListForEach(&pTstEnv->DevEnum.LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
+        RTListForEach(&pDrvStack->DevEnum.LstDevices, pDev, PDMAUDIOHOSTDEV, ListEntry)
         {
             char szFlags[PDMAUDIOHOSTDEV_MAX_FLAGS_STRING_LEN];
             if (pDev->pszId)
@@ -198,7 +197,7 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
     {
         /** @todo Anything else to do here, e.g. test if there are left over samples or some such? */
 
-        audioTestDriverStackStreamDestroy(&pTstEnv->DrvStack, pStream->pStream);
+        audioTestDriverStackStreamDestroy(pTstEnv->pDrvStack, pStream->pStream);
         pStream->pStream  = NULL;
         pStream->pBackend = NULL;
     }
@@ -503,7 +502,7 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestStreamInit(&pTstEnv->DrvStack, pTstStream, PDMAUDIODIR_OUT, &pTstEnv->Props, false /* fWithMixer */,
+    int rc = audioTestStreamInit(pTstEnv->pDrvStack, pTstStream, PDMAUDIODIR_OUT, &pTstEnv->Props, false /* fWithMixer */,
                                  pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer, pTstEnv->cMsSchedulingHint);
     if (RT_SUCCESS(rc))
     {
@@ -544,7 +543,7 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestStreamInit(&pTstEnv->DrvStack, pTstStream, PDMAUDIODIR_IN, &pTstEnv->Props, false /* fWithMixer */,
+    int rc = audioTestStreamInit(pTstEnv->pDrvStack, pTstStream, PDMAUDIODIR_IN, &pTstEnv->Props, false /* fWithMixer */,
                                  pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer, pTstEnv->cMsSchedulingHint);
     if (RT_SUCCESS(rc))
     {
@@ -794,10 +793,11 @@ int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCall
  * @param   pDrvReg             Audio driver to use.
  * @param   fWithDrvAudio       Whether to include DrvAudio in the stack or not.
  */
-int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
-                     PCPDMDRVREG pDrvReg, bool fWithDrvAudio)
+int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
 {
     int rc = VINF_SUCCESS;
+
+    pTstEnv->pDrvStack = pDrvStack;
 
     /*
      * Set sane defaults if not already set.
@@ -820,12 +820,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         AssertRCReturn(rc, rc);
     }
 
-    /* Go with the platform's default backend if nothing else is set. */
-    if (!pDrvReg)
-        pDrvReg = AudioTestGetDefaultBackend();
-
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Initializing environment for mode '%s'\n", pTstEnv->enmMode == AUDIOTESTMODE_HOST ? "host" : "guest");
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using backend '%s'\n", pDrvReg->szName);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pTstEnv->szTag);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", pTstEnv->szPathOut);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
@@ -836,32 +831,6 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         pTstEnv->cMsPreBuffer      = UINT32_MAX;
     if (!pTstEnv->cMsSchedulingHint)
         pTstEnv->cMsSchedulingHint = UINT32_MAX;
-
-    PDMAudioHostEnumInit(&pTstEnv->DevEnum);
-
-    bool fUseDriverStack = false; /* Whether to init + use the audio driver stack or not. */
-
-    /* In regular testing mode only the guest mode needs initializing the driver stack. */
-    if (pTstEnv->enmMode == AUDIOTESTMODE_GUEST)
-        fUseDriverStack = true;
-
-    /* When running in self-test mode, the host mode also needs to initialize the stack in order to
-     * to run the Valdation Kit audio driver ATS (no "real" VBox involved). */
-    if (pTstEnv->enmMode == AUDIOTESTMODE_HOST && pTstEnv->fSelftest)
-        fUseDriverStack = true;
-
-    if (fUseDriverStack)
-    {
-        rc = audioTestDriverStackInitEx(&pTstEnv->DrvStack, pDrvReg,
-                                        true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        PPDMAUDIOHOSTDEV pDev;
-        rc = audioTestDevicesEnumerateAndCheck(pTstEnv, pTstEnv->szDev, &pDev);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
     char szPathTemp[RTPATH_MAX];
     if (   !strlen(pTstEnv->szPathTemp)
@@ -982,10 +951,6 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv,
         }
     }
 
-    if (   RT_FAILURE(rc)
-        && fUseDriverStack)
-        audioTestDriverStackDelete(&pTstEnv->DrvStack);
-
     return rc;
 }
 
@@ -999,8 +964,6 @@ void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
     if (!pTstEnv)
         return;
 
-    PDMAudioHostEnumDelete(&pTstEnv->DevEnum);
-
     for (unsigned i = 0; i < RT_ELEMENTS(pTstEnv->aStreams); i++)
     {
         int rc2 = audioTestStreamDestroy(pTstEnv, &pTstEnv->aStreams[i]);
@@ -1012,7 +975,7 @@ void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
     RTDirRemove(pTstEnv->szPathTemp);
     RTDirRemove(pTstEnv->szPathOut);
 
-    audioTestDriverStackDelete(&pTstEnv->DrvStack);
+    pTstEnv->pDrvStack = NULL;
 }
 
 /**

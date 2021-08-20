@@ -485,6 +485,8 @@ void audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack)
     audioTestDrvDestruct(pDrvStack->pDrvAudioIns);
     pDrvStack->pDrvAudioIns     = NULL;
     pDrvStack->pIAudioConnector = NULL;
+
+    PDMAudioHostEnumDelete(&pDrvStack->DevEnum);
 }
 
 
@@ -504,6 +506,8 @@ int audioTestDriverStackInitEx(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg
 
     RT_ZERO(*pDrvStack);
     pDrvStack->pDrvReg = pDrvReg;
+
+    PDMAudioHostEnumInit(&pDrvStack->DevEnum);
 
     if (!fWithDrvAudio)
         rc = audioTestDrvConstruct(pDrvStack, pDrvReg, NULL /*pParentDrvIns*/, &pDrvStack->pDrvBackendIns);

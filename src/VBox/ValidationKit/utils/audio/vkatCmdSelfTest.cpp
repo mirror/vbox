@@ -76,7 +76,7 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     PDMAudioPropsInit(&pTstEnvGst->Props,
                       2 /* 16-bit */, true  /* fSigned */, 2 /* cChannels */, 44100 /* uHz */);
 
-    rc = audioTestEnvInit(pTstEnvGst, pTstEnvGst->DrvStack.pDrvReg, pCtx->fWithDrvAudio);
+    rc = audioTestEnvInit(pTstEnvGst, &pCtx->DrvStack);
     if (RT_SUCCESS(rc))
     {
         RTThreadUserSignal(hThread);
@@ -149,6 +149,8 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
     }
     /* else Step 1a later. */
 
+    RTThreadSleep(5000); /* Fudge: Wait until guest ATS is up. */
+
     if (RT_SUCCESS(rc))
     {
         /*
@@ -156,7 +158,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
          */
         pTstEnvHst->enmMode = AUDIOTESTMODE_HOST;
 
-        rc = audioTestEnvInit(pTstEnvHst, &g_DrvHostValidationKitAudio, true /* fWithDrvAudio */);
+        rc = audioTestEnvInit(pTstEnvHst, &pCtx->DrvStack);
         if (RT_SUCCESS(rc))
         {
             rc = audioTestWorker(pTstEnvHst);
@@ -259,9 +261,6 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
     SELFTESTCTX Ctx;
     RT_ZERO(Ctx);
 
-    /* Go with the platform's default backend if nothing else is specified. */
-    Ctx.Guest.pDrvReg = AudioTestGetDefaultBackend();
-
     /* Argument processing loop: */
     int           rc;
     RTGETOPTUNION ValueUnion;
@@ -291,8 +290,8 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'b':
-                Ctx.Guest.pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
-                if (Ctx.Guest.pDrvReg == NULL)
+                Ctx.pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
+                if (Ctx.pDrvReg == NULL)
                     return RTEXITCODE_SYNTAX;
                 break;
 
@@ -319,6 +318,24 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
         }
     }
 
+    /* Go with the Validation Kit audio backend if nothing else is specified. */
+    if (Ctx.pDrvReg == NULL)
+        Ctx.pDrvReg = AudioTestFindBackendOpt("valkit");
+
+    /*
+     * In self-test mode the guest and the host side have to share the same driver stack,
+     * as we don't have any device emulation between the two sides.
+     *
+     * This is necessary to actually get the played/recorded audio to from/to the guest
+     * and host respectively.
+     *
+     * Choosing any other backend than the Validation Kit above *will* break this self-test!
+     */
+    rc = audioTestDriverStackInitEx(&Ctx.DrvStack, Ctx.pDrvReg,
+                                    true /* fEnabledIn */, true /* fEnabledOut */, Ctx.fWithDrvAudio);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
+
     /*
      * Start testing.
      */
@@ -327,6 +344,8 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
     int rc2 = audioTestDoSelftest(&Ctx);
     if (RT_FAILURE(rc2))
         RTTestFailed(g_hTest, "Self test failed with rc=%Rrc", rc2);
+
+    audioTestDriverStackDelete(&Ctx.DrvStack);
 
     /*
      * Print summary and exit.

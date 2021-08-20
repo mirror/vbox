@@ -71,6 +71,9 @@ typedef struct AUDIOTESTDRVSTACK
     PPDMDRVINS              pDrvAudioIns;
     /** This is NULL if we don't use DrvAudio. */
     PPDMIAUDIOCONNECTOR     pIAudioConnector;
+
+    /** The current (last) audio device enumeration to use. */
+    PDMAUDIOHOSTENUM        DevEnum;
 } AUDIOTESTDRVSTACK;
 /** Pointer to an audio driver stack. */
 typedef AUDIOTESTDRVSTACK *PAUDIOTESTDRVSTACK;
@@ -221,10 +224,8 @@ typedef struct AUDIOTESTENV
     RTMSINTERVAL            cMsPreBuffer;
     /** Scheduling hint (in ms). */
     RTMSINTERVAL            cMsSchedulingHint;
-    /** The audio test driver stack. */
-    AUDIOTESTDRVSTACK       DrvStack;
-    /** The current (last) audio device enumeration to use. */
-    PDMAUDIOHOSTENUM        DevEnum;
+    /** Pointer to audio test driver stack to use. */
+    PAUDIOTESTDRVSTACK      pDrvStack;
     /** Audio stream. */
     AUDIOTESTSTREAM         aStreams[AUDIOTESTENV_MAX_STREAMS];
     /** The audio test set to use. */
@@ -281,12 +282,13 @@ typedef struct SELFTESTCTX
     char             szTag[AUDIOTEST_TAG_MAX];
     /** Whether to use DrvAudio in the driver stack or not. */
     bool             fWithDrvAudio;
+    AUDIOTESTDRVSTACK DrvStack;
+    /** Audio driver to use.
+     *  Defaults to the platform's default driver. */
+    PCPDMDRVREG      pDrvReg;
     struct
     {
         AUDIOTESTENV TstEnv;
-        /** Audio driver to use.
-         *  Defaults to the platform's default driver. */
-        PCPDMDRVREG  pDrvReg;
         /** Where to bind the address of the guest ATS instance to.
          *  Defaults to localhost (127.0.0.1) if empty. */
         char         szAtsAddr[64];
@@ -442,6 +444,8 @@ int         AudioTestMixStreamCapture(PAUDIOTESTDRVMIXSTREAM pMix, void *pvBuf, 
  * @{ */
 int         audioTestDeviceOpen(PPDMAUDIOHOSTDEV pDev);
 int         audioTestDeviceClose(PPDMAUDIOHOSTDEV pDev);
+
+int         audioTestDevicesEnumerateAndCheck(PAUDIOTESTDRVSTACK pDrvStack, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev);
 /** @}  */
 
 /** @name ATS routines
@@ -452,7 +456,7 @@ int         audioTestEnvConnectToValKitAts(PAUDIOTESTENV pTstEnv,
 
 /** @name Test environment handling
  * @{ */
-int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PCPDMDRVREG pDrvReg, bool fWithDrvAudio);
+int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack);
 void        audioTestEnvDestroy(PAUDIOTESTENV pTstEnv);
 int         audioTestEnvPrologue(PAUDIOTESTENV pTstEnv, bool fPack, char *pszPackFile, size_t cbPackFile);
 
