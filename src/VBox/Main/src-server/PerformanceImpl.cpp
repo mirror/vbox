@@ -220,6 +220,11 @@ void PerformanceCollector::uninit()
         return;
     }
 
+    /* Destroy resource usage sampler first, as the callback will access the metrics. */
+    int vrc = RTTimerLRDestroy(m.sampler);
+    AssertMsgRC(vrc, ("Failed to destroy resource usage sampling timer (%Rra)\n", vrc));
+    m.sampler = NULL;
+
     /* Destroy unregistered metrics */
     BaseMetricList::iterator it;
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
@@ -237,11 +242,6 @@ void PerformanceCollector::uninit()
      * it is safe to destroy them as well.
      */
     m.gm->destroyUnregistered();
-
-    /* Destroy resource usage sampler */
-    int vrc = RTTimerLRDestroy(m.sampler);
-    AssertMsgRC(vrc, ("Failed to destroy resource usage sampling timer (%Rra)\n", vrc));
-    m.sampler = NULL;
 
     /* Invalidate the magic now. */
     mMagic = 0;
