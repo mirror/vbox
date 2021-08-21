@@ -229,7 +229,7 @@ class tdAudioTest(vbox.TestDriver):
                                               stdout = subprocess.PIPE, stderr = subprocess.PIPE);
         if oProcess:
             for line in iter(oProcess.stdout.readline, b''):
-                reporter.log('[' + sWhat + '] ' + line.decode(sys.stdin.encoding));
+                reporter.log('[' + sWhat + '] ' + line.decode('utf-8'));
             iExitCode = oProcess.poll();
             if iExitCode:
                 if iExitCode == 0:
@@ -281,11 +281,11 @@ class tdAudioTest(vbox.TestDriver):
             out, err = procPs.communicate();
             if err:
                 reporter.log2('PS stderr:');
-                for sLine in err.decode("utf-8").splitlines():
+                for sLine in err.decode('utf-8').splitlines():
                     reporter.log2(sLine);
             if out:
                 reporter.log2('PS stdout:');
-                for sLine in out.decode("utf-8").splitlines():
+                for sLine in out.decode('utf-8').splitlines():
                     reporter.log2(sLine);
                     if sProcName in sLine:
                         pid = int(sLine.split(None, 1)[0]);
