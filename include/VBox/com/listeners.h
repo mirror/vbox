@@ -167,7 +167,8 @@ public:
     STDMETHOD(HandleEvent)(IEvent * aEvent)
     {
         VBoxEventType_T aType = VBoxEventType_Invalid;
-        aEvent->COMGETTER(Type)(&aType);
+        HRESULT hrc = aEvent->COMGETTER(Type)(&aType);
+        AssertMsg(SUCCEEDED(hrc), ("hrc=%Rhrc\n", hrc)); RT_NOREF(hrc);
         return mListener->HandleEvent(aType, aEvent);
     }
 };
