@@ -22,6 +22,7 @@
 *********************************************************************************************************************************/
 #include <list>
 #include <errno.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -72,12 +73,16 @@ typedef VBOXNETADPREQ *PVBOXNETADPREQ;
 #define VBOXADPCTL_IFCONFIG_PATH1 "/sbin/ifconfig"
 #define VBOXADPCTL_IFCONFIG_PATH2 "/bin/ifconfig"
 
+bool verbose;
+bool dry_run;
 
-static void showUsage(void)
+
+static int usage(void)
 {
     fprintf(stderr, "Usage: VBoxNetAdpCtl <adapter> <address> ([netmask <address>] | remove)\n");
     fprintf(stderr, "     | VBoxNetAdpCtl [<adapter>] add\n");
     fprintf(stderr, "     | VBoxNetAdpCtl <adapter> remove\n");
+    return EXIT_FAILURE;
 }
 
 
@@ -433,6 +438,19 @@ int AddressCommand::execute(CmdList& list)
     if (argv == NULL)
         return EXIT_FAILURE;
 
+    if (verbose)
+    {
+        const char *sep = "";
+        for (const char * const *pArg = argv; *pArg != NULL; ++pArg)
+        {
+            printf("%s%s", sep, *pArg);
+            sep = " ";
+        }
+        printf("\n");
+    }
+    if (dry_run)
+        return EXIT_SUCCESS;
+
     int rc = EXIT_FAILURE; /* o/~ hope for the best, expect the worst */
     pid_t childPid = fork();
     switch (childPid)
@@ -737,102 +755,180 @@ static AddressCommand& chooseAddressCommand()
 int main(int argc, char *argv[])
 {
     char szAdapterName[VBOXNETADP_MAX_NAME_LEN];
-    int rc = EXIT_SUCCESS;
+    int rc;
 
     AddressCommand& cmd = chooseAddressCommand();
 
-    if (argc < 2)
+
+    static const struct option options[] = {
+        { "dry-run", no_argument, NULL, 'n' },
+        { "verbose", no_argument, NULL, 'v' },
+        { NULL, 0, NULL, 0 }
+    };
+
+    int ch;
+    while ((ch = getopt_long(argc, argv, "nv", options, NULL)) != -1)
     {
-        fprintf(stderr, "Insufficient number of arguments\n\n");
-        showUsage();
-        return 1;
+        switch (ch)
+        {
+            case 'n':
+                dry_run = true;
+                verbose = true;
+                break;
+
+            case 'v':
+                verbose = true;
+                break;
+
+            case '?':
+            default:
+                return usage();
+        }
     }
-    else if (argc == 2 && !strcmp("add", argv[1]))
+    argc -= optind;
+    argv += optind;
+
+    if (argc == 0)
+        return usage();
+
+
+    /*
+     * VBoxNetAdpCtl add
+     */
+    if (strcmp(argv[0], "add") == 0)
     {
-        /* Create a new interface */
+        if (argc > 1)           /* extraneous args */
+            return usage();
+
+        /* Create a new interface, print its name. */
         *szAdapterName = '\0';
         rc = g_adapter.add(szAdapterName);
-        if (rc == 0)
+        if (rc == EXIT_SUCCESS)
             puts(szAdapterName);
+
         return rc;
     }
+
+
+    /*
+     * All other variants are of the form:
+     *   VBoxNetAdpCtl if0 ...action...
+     */
+    const char * const ifname = argv[0];
+    const char * const action = argv[1];
+    if (argc < 2)
+        return usage();
+
+
 #ifdef RT_OS_LINUX
-    else if (argc == 3 && !strcmp("speed", argv[2]))
+    /*
+     * VBoxNetAdpCtl iface42 speed
+     *
+     * This ugly hack is needed for retrieving the link speed on
+     * pre-2.6.33 kernels (see @bugref{6345}).
+     *
+     * This variant is used with any interface, not just host-only.
+     */
+    if (strcmp(action, "speed") == 0)
     {
-        /*
-         * This ugly hack is needed for retrieving the link speed on
-         * pre-2.6.33 kernels (see @bugref{6345}).
-         */
-        if (strlen(argv[1]) >= IFNAMSIZ)
+        if (argc > 2)           /* extraneous args */
+            return usage();
+
+        if (strlen(ifname) >= IFNAMSIZ)
         {
-            showUsage();
-            return -1;
+            fprintf(stderr, "Interface name too long\n");
+            return EXIT_FAILURE;
         }
+
         unsigned uSpeed = 0;
-        rc = g_adapter.getSpeed(argv[1], &uSpeed);
-        if (!rc)
+        rc = g_adapter.getSpeed(ifname, &uSpeed);
+        if (rc == EXIT_SUCCESS)
             printf("%u", uSpeed);
+
         return rc;
     }
-#endif
+#endif  /* RT_OS_LINUX */
 
-    rc = g_adapter.checkName(argv[1], szAdapterName, sizeof(szAdapterName));
-    if (rc)
+
+    /*
+     * The rest of the actions only operate on host-only interfaces.
+     */
+    /** @todo Why the code below uses both ifname and szAdapterName? */
+    rc = g_adapter.checkName(ifname, szAdapterName, sizeof(szAdapterName));
+    if (rc != EXIT_SUCCESS)
         return rc;
 
-    switch (argc)
+
+    /*
+     * VBoxNetAdpCtl vboxnetN remove
+     */
+    if (strcmp(action, "remove") == 0)
     {
-        case 5:
-        {
-            /* Add a netmask to existing interface */
-            if (strcmp("netmask", argv[3]))
-            {
-                fprintf(stderr, "Invalid argument: %s\n\n", argv[3]);
-                showUsage();
-                return 1;
-            }
-            rc = cmd.set(argv[1], argv[2], argv[4]);
-            break;
-        }
+        if (argc > 2)           /* extraneous args */
+            return usage();
 
-        case 4:
-        {
-            /* Remove a single address from existing interface */
-            if (strcmp("remove", argv[3]))
-            {
-                fprintf(stderr, "Invalid argument: %s\n\n", argv[3]);
-                showUsage();
-                return 1;
-            }
-            rc = cmd.remove(argv[1], argv[2]);
-            break;
-        }
-
-        case 3:
-        {
-            if (strcmp("remove", argv[2]) == 0)
-            {
-                /* Remove an existing interface */
-                rc = g_adapter.remove(argv[1]);
-            }
-            else if (strcmp("add", argv[2]) == 0)
-            {
-                /* Create an interface with given name */
-                rc = g_adapter.add(szAdapterName);
-                if (rc == 0)
-                    puts(szAdapterName);
-            }
-            else
-                rc = cmd.set(argv[1], argv[2]);
-            break;
-        }
-
-        default:
-            fprintf(stderr, "Invalid number of arguments.\n\n");
-            showUsage();
-            return 1;
+        /* Remove an existing interface */
+        return g_adapter.remove(ifname);
     }
 
-    return rc;
-}
+    /*
+     * VBoxNetAdpCtl vboxnetN add
+     */
+    if (strcmp(action, "add") == 0)
+    {
+        if (argc > 2)           /* extraneous args */
+            return usage();
 
+        /* Create an interface with the given name, print its name. */
+        rc = g_adapter.add(szAdapterName);
+        if (rc == EXIT_SUCCESS)
+            puts(szAdapterName);
+
+        return rc;
+    }
+
+
+    /*
+     * The rest of the actions are of the form
+     *     VBoxNetAdpCtl vboxnetN $addr [...]
+     *
+     * Use the argument after the address to select the action.
+     */
+    /** @todo Do early verification of addr format here? */
+    const char * const addr = argv[1];
+    const char * const keyword = argv[2];
+
+
+    /*
+     * VBoxNetAdpCtl vboxnetN 1.2.3.4
+     */
+    if (keyword == NULL)
+    {
+        return cmd.set(ifname, addr);
+    }
+
+    /*
+     * VBoxNetAdpCtl vboxnetN 1.2.3.4 netmask 255.255.255.0
+     */
+    if (strcmp(keyword, "netmask") == 0)
+    {
+        if (argc != 4)          /* too few or too many args */
+            return usage();
+
+        const char * const mask = argv[3];
+        return cmd.set(ifname, addr, mask);
+    }
+
+    /*
+     * VBoxNetAdpCtl vboxnetN 1.2.3.4 remove
+     */
+    if (strcmp(keyword, "remove") == 0)
+    {
+        if (argc > 3)           /* extraneous args */
+            return usage();
+
+        return cmd.remove(ifname, addr);
+    }
+
+    return usage();
+}
