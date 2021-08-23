@@ -2588,6 +2588,25 @@ RT_C_DECLS_END
  */
 #define AssertPtrReturnVoid(pv)         AssertMsgReturnVoid(RT_VALID_PTR(pv), ("%p\n", (pv)))
 
+/** @def AssertPtrReturnStmt
+ * Asserts that a pointer is valid.
+ *
+ * @param   pv      The pointer.
+ * @param   stmt    Statement to execute before returninig in case of a failed
+ *                  assertion.
+ * @param   rcRet   What is to be presented to return.
+ */
+#define AssertPtrReturnStmt(pv, stmt, rcRet) AssertMsgReturnStmt(RT_VALID_PTR(pv), ("%p\n", (pv)), stmt, rcRet)
+
+/** @def AssertPtrReturnVoidStmt
+ * Asserts that a pointer is valid.
+ *
+ * @param   pv      The pointer.
+ * @param   stmt    Statement to execute before returninig in case of a failed
+ *                  assertion.
+ */
+#define AssertPtrReturnVoidStmt(pv, stmt) AssertMsgReturnVoid(RT_VALID_PTR(pv), ("%p\n", (pv)), stmt)
+
 /** @def AssertPtrBreak
  * Asserts that a pointer is valid.
  *
