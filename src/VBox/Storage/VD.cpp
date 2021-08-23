@@ -8511,34 +8511,27 @@ VBOXDDU_DECL(uint32_t) VDGetSectorSize(PVDISK pDisk, unsigned nImage)
 
 VBOXDDU_DECL(uint64_t) VDGetSize(PVDISK pDisk, unsigned nImage)
 {
-    uint64_t cbSize;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u\n", pDisk, nImage));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, cbSize = 0);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, cbSize = 0);
-
+    uint64_t cbSize;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
         cbSize = vdImageGetSize(pImage);
-    } while (0);
+    else
+        cbSize = 0;
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
-    LogFlowFunc(("returns %llu\n", cbSize));
+    LogFlowFunc(("returns %llu (%#RX64)\n", cbSize, cbSize));
     return cbSize;
 }
 
@@ -8547,7 +8540,6 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVDISK pDisk, unsigned nImage)
 {
     uint64_t cbSize;
     int rc2;
-    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u\n", pDisk, nImage));
     do
@@ -8558,18 +8550,14 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVDISK pDisk, unsigned nImage)
 
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
-        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, cbSize = 0);
         cbSize = pImage->Backend->pfnGetFileSize(pImage->pBackendData);
     } while (0);
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %llu\n", cbSize));
     return cbSize;
@@ -8581,7 +8569,6 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVDISK pDisk, unsigned nImage,
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pPCHSGeometry=%#p\n",
                  pDisk, nImage, pPCHSGeometry));
@@ -8596,7 +8583,6 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVDISK pDisk, unsigned nImage,
     {
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
-        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -8614,11 +8600,8 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVDISK pDisk, unsigned nImage,
                                                      pPCHSGeometry);
     } while (0);
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("%Rrc (PCHS=%u/%u/%u)\n", rc,
                  pDisk->PCHSGeometry.cCylinders, pDisk->PCHSGeometry.cHeads,
@@ -8724,7 +8707,6 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVDISK pDisk, unsigned nImage,
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pLCHSGeometry=%#p\n",
                  pDisk, nImage, pLCHSGeometry));
@@ -8737,10 +8719,8 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVDISK pDisk, unsigned nImage,
 
     do
     {
-
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
-        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -8758,11 +8738,8 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVDISK pDisk, unsigned nImage,
                                                      pLCHSGeometry);
     } while (0);
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc((": %Rrc (LCHS=%u/%u/%u)\n", rc,
                  pDisk->LCHSGeometry.cCylinders, pDisk->LCHSGeometry.cHeads,
@@ -8869,7 +8846,6 @@ VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u fFlags=%#x ppRegionList=%#p\n",
                  pDisk, nImage, fFlags, ppRegionList));
@@ -8884,7 +8860,6 @@ VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
     {
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
-        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -8900,11 +8875,8 @@ VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
         }
     } while (0);
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc((": %Rrc\n", rc));
     return rc;
@@ -8922,7 +8894,6 @@ VBOXDDU_DECL(int) VDGetVersion(PVDISK pDisk, unsigned nImage,
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u puVersion=%#p\n",
                  pDisk, nImage, puVersion));
@@ -8937,7 +8908,6 @@ VBOXDDU_DECL(int) VDGetVersion(PVDISK pDisk, unsigned nImage,
     {
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
-        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -8945,11 +8915,8 @@ VBOXDDU_DECL(int) VDGetVersion(PVDISK pDisk, unsigned nImage,
         *puVersion = pImage->Backend->pfnGetVersion(pImage->pBackendData);
     } while (0);
 
-    if (RT_UNLIKELY(fLockRead)) /** @todo r=bird: This prediction is utter rubbish! Good example why avoid them... */
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc uVersion=%#x\n", rc, *puVersion));
     return rc;
@@ -9729,12 +9696,10 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
 
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     /* Check arguments. */
-    AssertMsgReturn(VALID_PTR(pszFilename) && *pszFilename,
-                    ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
-    AssertMsgReturn((fFlags & ~VD_REPAIR_FLAGS_MASK) == 0,
-                    ("fFlags=%#x\n", fFlags),
+    AssertMsgReturn((fFlags & ~VD_REPAIR_FLAGS_MASK) == 0, ("fFlags=%#x\n", fFlags),
                     VERR_INVALID_PARAMETER);
 
     pInterfaceIo = VDIfIoGet(pVDIfsImage);
