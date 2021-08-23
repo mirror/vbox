@@ -1003,7 +1003,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 
         pCurr->pNext = NULL;
 
-        AssertMsg(VALID_PTR(pCurr->pEndpoint) && (pCurr->pEndpoint == pEndpoint),
+        AssertMsg(RT_VALID_PTR(pCurr->pEndpoint) && pCurr->pEndpoint == pEndpoint,
                   ("Endpoints do not match\n"));
 
         switch (pCurr->enmTransferType)
@@ -1197,7 +1197,7 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
         case PDMACEPFILEAIOMGRBLOCKINGEVENT_ADD_ENDPOINT:
         {
             PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointNew = ASMAtomicReadPtrT(&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, PPDMASYNCCOMPLETIONENDPOINTFILE);
-            AssertMsg(VALID_PTR(pEndpointNew), ("Adding endpoint event without a endpoint to add\n"));
+            AssertMsg(RT_VALID_PTR(pEndpointNew), ("Adding endpoint event without a endpoint to add\n"));
 
             pEndpointNew->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
 
@@ -1216,7 +1216,7 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
         case PDMACEPFILEAIOMGRBLOCKINGEVENT_REMOVE_ENDPOINT:
         {
             PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointRemove = ASMAtomicReadPtrT(&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, PPDMASYNCCOMPLETIONENDPOINTFILE);
-            AssertMsg(VALID_PTR(pEndpointRemove), ("Removing endpoint event without a endpoint to remove\n"));
+            AssertMsg(RT_VALID_PTR(pEndpointRemove), ("Removing endpoint event without a endpoint to remove\n"));
 
             pEndpointRemove->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_REMOVING;
             fNotifyWaiter = !pdmacFileAioMgrNormalRemoveEndpoint(pEndpointRemove);
@@ -1225,7 +1225,7 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
         case PDMACEPFILEAIOMGRBLOCKINGEVENT_CLOSE_ENDPOINT:
         {
             PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointClose = ASMAtomicReadPtrT(&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, PPDMASYNCCOMPLETIONENDPOINTFILE);
-            AssertMsg(VALID_PTR(pEndpointClose), ("Close endpoint event without a endpoint to close\n"));
+            AssertMsg(RT_VALID_PTR(pEndpointClose), ("Close endpoint event without a endpoint to close\n"));
 
             if (pEndpointClose->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE)
             {

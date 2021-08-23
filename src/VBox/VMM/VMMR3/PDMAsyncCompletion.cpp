@@ -1509,7 +1509,7 @@ VMMR3DECL(void) PDMR3AsyncCompletionEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoin
     LogFlowFunc((": pEndpoint=%p\n", pEndpoint));
 
     /* Sanity checks. */
-    AssertReturnVoid(VALID_PTR(pEndpoint));
+    AssertReturnVoid(RT_VALID_PTR(pEndpoint));
 
     PPDMASYNCCOMPLETIONEPCLASS pEndpointClass = pEndpoint->pEpClass;
     pEndpointClass->pEndpointOps->pfnEpClose(pEndpoint);

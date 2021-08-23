@@ -39,7 +39,7 @@
 VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter, size_t cbTransfer)
 {
     AssertPtrReturn(pFilter, true);
-    if (!VALID_PTR(pFilter->CTX_SUFF(pBwGroup)))
+    if (!RT_VALID_PTR(pFilter->CTX_SUFF(pBwGroup)))
         return true;
 
     PPDMNSBWGROUP pBwGroup = ASMAtomicReadPtrT(&pFilter->CTX_SUFF(pBwGroup), PPDMNSBWGROUP);

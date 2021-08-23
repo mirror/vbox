@@ -60,7 +60,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS p
     RTGCUINTPTR cbRange = *pcbRange;
     if (!DBGFR3AddrIsValid(pUVM, pAddress))
         return VERR_INVALID_POINTER;
-    if (!VALID_PTR(pHitAddress))
+    if (!RT_VALID_PTR(pHitAddress))
         return VERR_INVALID_POINTER;
 
     /*
@@ -154,7 +154,7 @@ static DECLCALLBACK(int) dbgfR3MemRead(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS p
      */
     if (!DBGFR3AddrIsValid(pUVM, pAddress))
         return VERR_INVALID_POINTER;
-    if (!VALID_PTR(pvBuf))
+    if (!RT_VALID_PTR(pvBuf))
         return VERR_INVALID_POINTER;
 
     /*
@@ -226,7 +226,7 @@ static DECLCALLBACK(int) dbgfR3MemReadString(PUVM pUVM, VMCPUID idCpu, PCDBGFADD
      */
     if (!DBGFR3AddrIsValid(pUVM, pAddress))
         return VERR_INVALID_POINTER;
-    if (!VALID_PTR(pszBuf))
+    if (!RT_VALID_PTR(pszBuf))
         return VERR_INVALID_POINTER;
 
     /*
@@ -272,7 +272,7 @@ VMMR3DECL(int) DBGFR3MemReadString(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS pAddr
     /*
      * Validate and zero output.
      */
-    if (!VALID_PTR(pszBuf))
+    if (!RT_VALID_PTR(pszBuf))
         return VERR_INVALID_POINTER;
     if (cchBuf <= 0)
         return VERR_INVALID_PARAMETER;
@@ -305,7 +305,7 @@ static DECLCALLBACK(int) dbgfR3MemWrite(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS 
      */
     if (!DBGFR3AddrIsValid(pUVM, pAddress))
         return VERR_INVALID_POINTER;
-    if (!VALID_PTR(pvBuf))
+    if (!RT_VALID_PTR(pvBuf))
         return VERR_INVALID_POINTER;
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);

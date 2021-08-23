@@ -285,7 +285,7 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
                          && RTStrEnd(pReg->szRCMod, sizeof(pReg->szRCMod))),
                     ("%s: %.*s\n", pReg->szName, sizeof(pReg->szRCMod), pReg->szRCMod),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(VALID_PTR(pReg->pszDescription),
+    AssertMsgReturn(RT_VALID_PTR(pReg->pszDescription),
                     ("%s: %p\n", pReg->szName, pReg->pszDescription),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(!(pReg->fFlags & ~(PDM_DRVREG_FLAGS_HOST_BITS_MASK | PDM_DRVREG_FLAGS_R0 | PDM_DRVREG_FLAGS_RC)),
@@ -300,10 +300,10 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
     AssertMsgReturn(pReg->cbInstance <= _1M,
                     ("%s: %#x\n", pReg->szName, pReg->cbInstance),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(VALID_PTR(pReg->pfnConstruct),
+    AssertMsgReturn(RT_VALID_PTR(pReg->pfnConstruct),
                     ("%s: %p\n", pReg->szName, pReg->pfnConstruct),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(VALID_PTR(pReg->pfnRelocate) || !(pReg->fFlags & PDM_DRVREG_FLAGS_RC),
+    AssertMsgReturn(RT_VALID_PTR(pReg->pfnRelocate) || !(pReg->fFlags & PDM_DRVREG_FLAGS_RC),
                     ("%s: %#x\n", pReg->szName, pReg->cbInstance),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(pReg->pfnSoftReset == NULL,

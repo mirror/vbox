@@ -209,7 +209,7 @@ VMMR3_INT_DECL(PDBGFADDRESS) DBGFR3AddrFromHostR0(PDBGFADDRESS pAddress, RTR0UIN
 VMMR3DECL(bool) DBGFR3AddrIsValid(PUVM pUVM, PCDBGFADDRESS pAddress)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
-    if (!VALID_PTR(pAddress))
+    if (!RT_VALID_PTR(pAddress))
         return false;
     if (!DBGFADDRESS_IS_VALID(pAddress))
         return false;

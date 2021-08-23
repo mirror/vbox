@@ -74,7 +74,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
     int     rc;
     RT_NOREF_PV(hThreadSelf);
 
-    AssertReleaseMsg(VALID_PTR(pUVM) && pUVM->u32Magic == UVM_MAGIC,
+    AssertReleaseMsg(RT_VALID_PTR(pUVM) && pUVM->u32Magic == UVM_MAGIC,
                      ("Invalid arguments to the emulation thread!\n"));
 
     rc = RTTlsSet(pUVM->vm.s.idxTLS, pUVCpu);

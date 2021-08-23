@@ -1335,13 +1335,12 @@ static int dbgfR3FlowBbProcess(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis, PDB
  * @param   cbDisasmMax         The maximum amount to disassemble.
  * @param   fFlags              Combination of DBGF_DISAS_FLAGS_*.
  */
-static int dbgfR3FlowPopulate(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis,
-                             uint32_t cbDisasmMax, uint32_t fFlags)
+static int dbgfR3FlowPopulate(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis, uint32_t cbDisasmMax, uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
     PDBGFFLOWBBINT pFlowBb = dbgfR3FlowGetUnpopulatedBb(pThis);
 
-    while (VALID_PTR(pFlowBb))
+    while (pFlowBb != NULL)
     {
         rc = dbgfR3FlowBbProcess(pUVM, idCpu, pThis, pFlowBb, cbDisasmMax, fFlags);
         if (RT_FAILURE(rc))

@@ -44,7 +44,7 @@
  */
 VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
 {
-    Assert(VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
+    Assert(RT_VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
     PPDMQUEUEITEMCORE pNew;
     uint32_t iNext;
     uint32_t i;
@@ -91,8 +91,8 @@ static void pdmQueueSetFF(PPDMQUEUE pQueue)
  */
 VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 {
-    Assert(VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
-    Assert(VALID_PTR(pItem));
+    Assert(RT_VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
+    AssertPtr(pItem);
 
 #if 0 /* the paranoid android version: */
     void *pvNext;
@@ -158,7 +158,7 @@ VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
  */
 VMMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
 {
-    Assert(VALID_PTR(pQueue));
+    AssertPtr(pQueue);
     Assert(pQueue->pVMR3 && pQueue->pVMRC);
 #ifdef IN_RC
     return pQueue;
@@ -177,7 +177,7 @@ VMMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
  */
 VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
 {
-    Assert(VALID_PTR(pQueue));
+    AssertPtr(pQueue);
     Assert(pQueue->pVMR3 && pQueue->pVMR0);
 #ifdef IN_RING0
     return pQueue;

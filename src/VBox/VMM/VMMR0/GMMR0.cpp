@@ -932,7 +932,7 @@ GMMR0DECL(void) GMMR0Term(void)
      * Take care / be paranoid...
      */
     PGMM pGMM = g_pGMM;
-    if (!VALID_PTR(pGMM))
+    if (!RT_VALID_PTR(pGMM))
         return;
     if (pGMM->u32Magic != GMM_MAGIC)
     {

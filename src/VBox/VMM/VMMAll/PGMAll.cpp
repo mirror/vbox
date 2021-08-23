@@ -3643,7 +3643,7 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerRamRange(PFNRTSTROUTPUT pfnOutpu
 {
     size_t              cch;
     PGMRAMRANGE const  *pRam = (PGMRAMRANGE const *)pvValue;
-    if (VALID_PTR(pRam))
+    if (RT_VALID_PTR(pRam))
     {
         char szTmp[80];
         cch = RTStrPrintf(szTmp, sizeof(szTmp), "%RGp-%RGp", pRam->GCPhys, pRam->GCPhysLast);
