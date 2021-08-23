@@ -9136,42 +9136,30 @@ VBOXDDU_DECL(int) VDGetFilename(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDGetComment(PVDISK pDisk, unsigned nImage,
                                char *pszComment, unsigned cbComment)
 {
-    int rc;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pszComment=%#p cbComment=%u\n",
                  pDisk, nImage, pszComment, cbComment));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszComment),
-                           ("pszComment=%#p \"%s\"\n", pszComment, pszComment),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cbComment,
-                           ("cbComment=%u\n", cbComment),
-                           rc = VERR_INVALID_PARAMETER);
+    /* Check arguments. */
+    AssertPtrReturn(pszComment, VERR_INVALID_POINTER);
+    AssertReturn(cbComment > 0, VERR_INVALID_PARAMETER);
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
+        rc = pImage->Backend->pfnGetComment(pImage->pBackendData, pszComment, cbComment);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
-        rc = pImage->Backend->pfnGetComment(pImage->pBackendData, pszComment,
-                                            cbComment);
-    } while (0);
-
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc, pszComment=\"%s\"\n", rc, pszComment));
     return rc;
@@ -9181,38 +9169,29 @@ VBOXDDU_DECL(int) VDGetComment(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDSetComment(PVDISK pDisk, unsigned nImage,
                                const char *pszComment)
 {
-    int rc;
-    int rc2;
-    bool fLockWrite = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pszComment=%#p \"%s\"\n",
                  pDisk, nImage, pszComment, pszComment));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszComment) || pszComment == NULL,
-                           ("pszComment=%#p \"%s\"\n", pszComment, pszComment),
-                           rc = VERR_INVALID_PARAMETER);
+    /* Check arguments. */
+    AssertPtrNullReturn(pszComment, VERR_INVALID_POINTER);
 
-        rc2 = vdThreadStartWrite(pDisk);
-        AssertRC(rc2);
-        fLockWrite = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartWrite(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
         rc = pImage->Backend->pfnSetComment(pImage->pBackendData, pszComment);
-    } while (0);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -9221,37 +9200,28 @@ VBOXDDU_DECL(int) VDSetComment(PVDISK pDisk, unsigned nImage,
 
 VBOXDDU_DECL(int) VDGetUuid(PVDISK pDisk, unsigned nImage, PRTUUID pUuid)
 {
-    int rc;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p\n", pDisk, nImage, pUuid));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pUuid),
-                           ("pUuid=%#p\n", pUuid),
-                           rc = VERR_INVALID_PARAMETER);
+    /* Check arguments. */
+    AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
         rc = pImage->Backend->pfnGetUuid(pImage->pBackendData, pUuid);
-    } while (0);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
@@ -9260,43 +9230,37 @@ VBOXDDU_DECL(int) VDGetUuid(PVDISK pDisk, unsigned nImage, PRTUUID pUuid)
 
 VBOXDDU_DECL(int) VDSetUuid(PVDISK pDisk, unsigned nImage, PCRTUUID pUuid)
 {
-    int rc;
-    int rc2;
-    bool fLockWrite = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
-    do
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    RTUUID Uuid;
+    if (pUuid)
+        AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
+    else
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        AssertMsgBreakStmt(VALID_PTR(pUuid) || pUuid == NULL,
-                           ("pUuid=%#p\n", pUuid),
-                           rc = VERR_INVALID_PARAMETER);
-
-        rc2 = vdThreadStartWrite(pDisk);
-        AssertRC(rc2);
-        fLockWrite = true;
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
-        RTUUID Uuid;
-        if (!pUuid)
-        {
-            RTUuidCreate(&Uuid);
-            pUuid = &Uuid;
-        }
-        rc = pImage->Backend->pfnSetUuid(pImage->pBackendData, pUuid);
-    } while (0);
-
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
+        int rc = RTUuidCreate(&Uuid);
+        AssertRCReturn(rc, rc);
+        pUuid = &Uuid;
     }
+
+    /* Do the job. */
+    int rc2 = vdThreadStartWrite(pDisk);
+    AssertRC(rc2);
+
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
+        rc = pImage->Backend->pfnSetUuid(pImage->pBackendData, pUuid);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
+
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -9305,38 +9269,28 @@ VBOXDDU_DECL(int) VDSetUuid(PVDISK pDisk, unsigned nImage, PCRTUUID pUuid)
 
 VBOXDDU_DECL(int) VDGetModificationUuid(PVDISK pDisk, unsigned nImage, PRTUUID pUuid)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p\n", pDisk, nImage, pUuid));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pUuid),
-                           ("pUuid=%#p\n", pUuid),
-                           rc = VERR_INVALID_PARAMETER);
+    /* Check arguments. */
+    AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
+        rc = pImage->Backend->pfnGetModificationUuid(pImage->pBackendData, pUuid);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
-        rc = pImage->Backend->pfnGetModificationUuid(pImage->pBackendData,
-                                                     pUuid);
-    } while (0);
-
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
@@ -9345,45 +9299,36 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVDISK pDisk, unsigned nImage, PRTUUID p
 
 VBOXDDU_DECL(int) VDSetModificationUuid(PVDISK pDisk, unsigned nImage, PCRTUUID pUuid)
 {
-    int rc;
-    int rc2;
-    bool fLockWrite = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
-    do
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    RTUUID Uuid;
+    if (pUuid)
+        AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
+    else
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pUuid) || pUuid == NULL,
-                           ("pUuid=%#p\n", pUuid),
-                           rc = VERR_INVALID_PARAMETER);
-
-        rc2 = vdThreadStartWrite(pDisk);
-        AssertRC(rc2);
-        fLockWrite = true;
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
-        RTUUID Uuid;
-        if (!pUuid)
-        {
-            RTUuidCreate(&Uuid);
-            pUuid = &Uuid;
-        }
-        rc = pImage->Backend->pfnSetModificationUuid(pImage->pBackendData,
-                                                     pUuid);
-    } while (0);
-
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
+        int rc = RTUuidCreate(&Uuid);
+        AssertRCReturn(rc, rc);
+        pUuid = &Uuid;
     }
+
+    /* Do the job. */
+    int rc2 = vdThreadStartWrite(pDisk);
+    AssertRC(rc2);
+
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    if (pImage)
+        rc = pImage->Backend->pfnSetModificationUuid(pImage->pBackendData, pUuid);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
+
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
