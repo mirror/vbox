@@ -9104,52 +9104,29 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDGetFilename(PVDISK pDisk, unsigned nImage,
                                 char *pszFilename, unsigned cbFilename)
 {
-    int rc;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pszFilename=%#p cbFilename=%u\n",
                  pDisk, nImage, pszFilename, cbFilename));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cbFilename,
-                           ("cbFilename=%u\n", cbFilename),
-                           rc = VERR_INVALID_PARAMETER);
+    /* Check arguments. */
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(cbFilename > 0, VERR_INVALID_PARAMETER);
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    int rc;
+    if (pImage)
+        rc = RTStrCopy(pszFilename, cbFilename, pImage->pszFilename);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
-        size_t cb = strlen(pImage->pszFilename);
-        if (cb <= cbFilename)
-        {
-            strcpy(pszFilename, pImage->pszFilename);
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            strncpy(pszFilename, pImage->pszFilename, cbFilename - 1);
-            pszFilename[cbFilename - 1] = '\0';
-            rc = VERR_BUFFER_OVERFLOW;
-        }
-    } while (0);
-
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc, pszFilename=\"%s\"\n", rc, pszFilename));
     return rc;
