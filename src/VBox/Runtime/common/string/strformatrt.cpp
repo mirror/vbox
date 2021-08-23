@@ -355,7 +355,6 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     { STRMEM("X8"),      sizeof(uint8_t),        16, RTSF_INT,   0 },
 #undef STRMEM
                 };
-                static const char s_szNull[] = "<NULL>";
 
                 const char *pszType = *ppszFormat - 1;
                 int         iStart  = 0;
@@ -571,15 +570,13 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                            u.Ipv4Addr.au8[3]);
 
                     case RTSF_IPV6:
-                    {
-                        if (VALID_PTR(u.pIpv6Addr))
+                        if (RT_VALID_PTR(u.pIpv6Addr))
                             return rtstrFormatIPv6(pfnOutput, pvArgOutput, u.pIpv6Addr);
-                        return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
-                    }
+                        return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, u.pIpv6Addr,
+                                                     szBuf, RT_STR_TUPLE("!BadIPv6"));
 
                     case RTSF_MAC:
-                    {
-                        if (VALID_PTR(u.pMac))
+                        if (RT_VALID_PTR(u.pMac))
                             return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                "%02x:%02x:%02x:%02x:%02x:%02x",
                                                u.pMac->au8[0],
@@ -588,12 +585,11 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                                u.pMac->au8[3],
                                                u.pMac->au8[4],
                                                u.pMac->au8[5]);
-                        return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
-                    }
+                        return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, u.pMac,
+                                                     szBuf, RT_STR_TUPLE("!BadMac"));
 
                     case RTSF_NETADDR:
-                    {
-                        if (VALID_PTR(u.pNetAddr))
+                        if (RT_VALID_PTR(u.pNetAddr))
                         {
                             switch (u.pNetAddr->enmType)
                             {
@@ -638,13 +634,11 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
 
                             }
                         }
-                        return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
-                    }
+                        return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, u.pNetAddr,
+                                                     szBuf, RT_STR_TUPLE("!BadNetAddr"));
 
                     case RTSF_UUID:
-                    {
-                        if (VALID_PTR(u.pUuid))
-                        {
+                        if (RT_VALID_PTR(u.pUuid))
                             /* cannot call RTUuidToStr because of GC/R0. */
                             return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
@@ -659,14 +653,12 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                                u.pUuid->Gen.au8Node[3],
                                                u.pUuid->Gen.au8Node[4],
                                                u.pUuid->Gen.au8Node[5]);
-                        }
-                        return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
-                    }
+                        return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, u.pUuid,
+                                                     szBuf, RT_STR_TUPLE("!BadUuid"));
 
                     case RTSF_ERRINFO:
                     case RTSF_ERRINFO_MSG_ONLY:
-                    {
-                        if (VALID_PTR(u.pErrInfo) && RTErrInfoIsSet(u.pErrInfo))
+                        if (RT_VALID_PTR(u.pErrInfo) && RTErrInfoIsSet(u.pErrInfo))
                         {
                             cch = 0;
                             if (s_aTypes[i].enmFormat == RTSF_ERRINFO)
@@ -689,7 +681,6 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             return cch;
                         }
                         return 0;
-                    }
 
                     default:
                         AssertMsgFailed(("Internal error %d\n", s_aTypes[i].enmFormat));
@@ -716,8 +707,9 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     {
                         const char *pszLastSep;
                         const char *psz = pszLastSep = va_arg(*pArgs, const char *);
-                        if (!VALID_PTR(psz))
-                            return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
+                        if (!RT_VALID_PTR(psz))
+                            return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, psz,
+                                                         szBuf, RT_STR_TUPLE("!BadBaseName"));
 
                         while ((ch = *psz) != '\0')
                         {
@@ -812,8 +804,9 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         const char *psz = pszStart = va_arg(*pArgs, const char *);
                         int cAngle = 0;
 
-                        if (!VALID_PTR(psz))
-                            return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
+                        if (!RT_VALID_PTR(psz))
+                            return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, psz,
+                                                         szBuf, RT_STR_TUPLE("!BadFnNm"));
 
                         while ((ch = *psz) != '\0' && ch != '(')
                         {
@@ -1342,8 +1335,9 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                 /*
                  * If it's a pointer, we'll check if it's valid before going on.
                  */
-                if ((s_aTypes[i].fFlags & RTST_FLAGS_POINTER) && !VALID_PTR(u.pv))
-                    return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
+                if ((s_aTypes[i].fFlags & RTST_FLAGS_POINTER) && !RT_VALID_PTR(u.pv))
+                    return rtStrFormatBadPointer(0, pfnOutput, pvArgOutput, cchWidth, fFlags, u.pv,
+                                                 szBuf, RT_STR_TUPLE("!BadRD"));
 
                 /*
                  * Format the output.
@@ -1388,7 +1382,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             ssize_t     offCur;
                             ssize_t     offLast;
 
-                            if (!VALID_PTR(pszStr))
+                            if (!RT_VALID_PTR(pszStr))
                                 pszStr = "<NULL>";
                             cchStr = RTStrNLen(pszStr, (unsigned)cchPrecision);
 
@@ -1450,7 +1444,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             ssize_t     offCur;
                             ssize_t     offLast;
 
-                            if (!VALID_PTR(pszStr))
+                            if (!RT_VALID_PTR(pszStr))
                                 pszStr = "<NULL>";
                             cchStr = RTStrNLen(pszStr, (unsigned)cchPrecision);
 
@@ -1532,7 +1526,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     AssertMsgBreak(chVariant == 'a' || chVariant == 'p' || chVariant == 'q' || chVariant == 'f',
                                    ("Invalid IPRT format type '%.10s'!\n", pszFormatOrg));
 
-                    if (!VALID_PTR(pszStr))
+                    if (!RT_VALID_PTR(pszStr))
                         pszStr = "<NULL>";
                     cchStr = RTStrNLen(pszStr, (unsigned)cchPrecision);
 

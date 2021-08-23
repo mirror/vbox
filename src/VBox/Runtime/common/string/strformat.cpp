@@ -48,8 +48,8 @@
 /**
  * Deals with bad pointers.
  */
-static size_t rtStrFormatBadPointer(size_t cch, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, int cchWidth,
-                                    unsigned fFlags, void const *pvStr, char szTmp[64], const char *pszTag, int cchTag)
+DECLHIDDEN(size_t) rtStrFormatBadPointer(size_t cch, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, int cchWidth,
+                                         unsigned fFlags, void const *pvStr, char szTmp[64], const char *pszTag, int cchTag)
 {
     static char const s_szNull[] = "<NULL>";
     int               cchStr     = !pvStr ? sizeof(s_szNull) - 1 : 1 + sizeof(void *) * 2 + cchTag + 1;

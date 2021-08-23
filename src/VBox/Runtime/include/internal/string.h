@@ -50,6 +50,8 @@ RT_C_DECLS_BEGIN
 # define RTStrAssertMsgReturn(expr, msg, rc)    do { if (!(expr)) return rc; } while (0)
 #endif
 
+DECLHIDDEN(size_t) rtStrFormatBadPointer(size_t cch, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, int cchWidth,
+                                         unsigned fFlags, void const *pvStr, char szTmp[64], const char *pszTag, int cchTag);
 DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs,
                                  int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize);
 DECLHIDDEN(size_t) rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **ppszFormat, va_list *pArgs,
