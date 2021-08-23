@@ -4393,7 +4393,7 @@
  */
 #define RT_VALID_ALIGNED_PTR(ptr, align)   \
     (   !((uintptr_t)(ptr) & (uintptr_t)((align) - 1)) \
-     && VALID_PTR(ptr) )
+     && RT_VALID_PTR(ptr) )
 
 
 /** @def VALID_PHYS32

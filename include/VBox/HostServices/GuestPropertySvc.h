@@ -124,7 +124,7 @@ DECLINLINE(int) GuestPropValidateFlags(const char *pcszFlags, uint32_t *pfFlags)
     const char *pcszNext = pcszFlags;
     int rc = VINF_SUCCESS;
     uint32_t fFlags = 0;
-    AssertLogRelReturn(VALID_PTR(pfFlags), VERR_INVALID_POINTER);
+    AssertLogRelReturn(RT_VALID_PTR(pfFlags), VERR_INVALID_POINTER);
 
     if (pcszFlags)
     {
@@ -181,7 +181,7 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
     };
     int rc = VINF_SUCCESS;
 
-    AssertLogRelReturn(VALID_PTR(pszFlags), VERR_INVALID_POINTER);
+    AssertLogRelReturn(RT_VALID_PTR(pszFlags), VERR_INVALID_POINTER);
     if ((fFlags & ~GUEST_PROP_F_ALLFLAGS) == GUEST_PROP_F_NILFLAG)
     {
         char *pszNext;

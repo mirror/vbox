@@ -313,7 +313,7 @@ DECLINLINE(int) HGCMSvcGetBuf(VBOXHGCMSVCPARM *pParm, void **ppv, uint32_t *pcb)
     AssertPtrReturn(ppv, VERR_INVALID_POINTER);
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
     if (   pParm->type == VBOX_HGCM_SVC_PARM_PTR
-        && VALID_PTR(pParm->u.pointer.addr)
+        && RT_VALID_PTR(pParm->u.pointer.addr)
         && pParm->u.pointer.size > 0)
     {
         *ppv = pParm->u.pointer.addr;
@@ -332,7 +332,7 @@ DECLINLINE(int) HGCMSvcGetCBuf(VBOXHGCMSVCPARM *pParm, const void **ppv, uint32_
     AssertPtrReturn(ppv, VERR_INVALID_POINTER);
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
     if (   pParm->type == VBOX_HGCM_SVC_PARM_PTR
-        && VALID_PTR(pParm->u.pointer.addr)
+        && RT_VALID_PTR(pParm->u.pointer.addr)
         && pParm->u.pointer.size > 0)
     {
         *ppv = (const void *)pParm->u.pointer.addr;
@@ -350,7 +350,7 @@ DECLINLINE(int) HGCMSvcGetStr(VBOXHGCMSVCPARM *pParm, char **ppch, uint32_t *pcb
     AssertPtrReturn(ppch, VERR_INVALID_POINTER);
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
     if (   pParm->type == VBOX_HGCM_SVC_PARM_PTR
-        && VALID_PTR(pParm->u.pointer.addr)
+        && RT_VALID_PTR(pParm->u.pointer.addr)
         && pParm->u.pointer.size > 0)
     {
         int rc = RTStrValidateEncodingEx((char *)pParm->u.pointer.addr,
@@ -373,7 +373,7 @@ DECLINLINE(int) HGCMSvcGetCStr(VBOXHGCMSVCPARM *pParm, const char **ppch, uint32
     AssertPtrReturn(ppch, VERR_INVALID_POINTER);
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
     if (   pParm->type == VBOX_HGCM_SVC_PARM_PTR
-        && VALID_PTR(pParm->u.pointer.addr)
+        && RT_VALID_PTR(pParm->u.pointer.addr)
         && pParm->u.pointer.size > 0)
     {
         int rc = RTStrValidateEncodingEx((char *)pParm->u.pointer.addr,
@@ -396,7 +396,7 @@ DECLINLINE(int) HGCMSvcGetPsz(VBOXHGCMSVCPARM *pParm, const char **ppch, uint32_
     AssertPtrReturn(ppch, VERR_INVALID_POINTER);
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
     if (   pParm->type == VBOX_HGCM_SVC_PARM_PTR
-        && VALID_PTR(pParm->u.pointer.addr)
+        && RT_VALID_PTR(pParm->u.pointer.addr)
         && pParm->u.pointer.size > 0)
     {
         int rc = RTStrValidateEncodingEx((const char *)pParm->u.pointer.addr,

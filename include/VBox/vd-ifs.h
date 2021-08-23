@@ -159,9 +159,7 @@ DECLINLINE(int) VDInterfaceAdd(PVDINTERFACE pInterface, const char *pszName, VDI
                     && enmInterface < VDINTERFACETYPE_INVALID,
                     ("enmInterface=%u", enmInterface), VERR_INVALID_PARAMETER);
 
-    AssertMsgReturn(VALID_PTR(ppVDIfs),
-                    ("pInterfaceList=%#p", ppVDIfs),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppVDIfs, VERR_INVALID_PARAMETER);
 
     /* Fill out interface descriptor. */
     pInterface->u32Magic         = VDINTERFACE_MAGIC;
@@ -189,13 +187,8 @@ DECLINLINE(int) VDInterfaceRemove(PVDINTERFACE pInterface, PVDINTERFACE *ppVDIfs
     int rc = VERR_NOT_FOUND;
 
     /* Argument checks. */
-    AssertMsgReturn(VALID_PTR(pInterface),
-                    ("pInterface=%#p", pInterface),
-                    VERR_INVALID_PARAMETER);
-
-    AssertMsgReturn(VALID_PTR(ppVDIfs),
-                    ("pInterfaceList=%#p", ppVDIfs),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pInterface, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppVDIfs, VERR_INVALID_PARAMETER);
 
     if (*ppVDIfs)
     {

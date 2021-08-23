@@ -114,7 +114,7 @@ void QIDialogButtonBox::retranslateUi()
 QBoxLayout *QIDialogButtonBox::boxLayout() const
 {
     QBoxLayout *pLayout = qobject_cast<QBoxLayout*>(layout());
-    AssertMsg(VALID_PTR(pLayout), ("Layout of the QDialogButtonBox isn't a box layout."));
+    AssertMsg(RT_VALID_PTR(pLayout), ("Layout of the QDialogButtonBox isn't a box layout."));
     return pLayout;
 }
 

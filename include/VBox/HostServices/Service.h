@@ -160,7 +160,7 @@ public:
         LogFlowFunc(("ptable = %p\n", pTable));
         int rc = VINF_SUCCESS;
 
-        if (!VALID_PTR(pTable))
+        if (!RT_VALID_PTR(pTable))
             rc = VERR_INVALID_PARAMETER;
         else
         {
@@ -241,7 +241,7 @@ protected:
      */
     static DECLCALLBACK(int) svcUnload(void *pvService)
     {
-        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         int rc = pSelf->uninit();
         AssertRC(rc);
@@ -261,7 +261,7 @@ protected:
                                         bool fRestoring)
     {
         RT_NOREF(fRequestor, fRestoring);
-        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         LogFlowFunc(("pvService=%p, idClient=%u, pvClient=%p\n", pvService, idClient, pvClient));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         int rc = pSelf->clientConnect(idClient, pvClient);
@@ -277,7 +277,7 @@ protected:
                                            uint32_t idClient,
                                            void *pvClient)
     {
-        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         LogFlowFunc(("pvService=%p, idClient=%u, pvClient=%p\n", pvService, idClient, pvClient));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         int rc = pSelf->clientDisconnect(idClient, pvClient);
@@ -298,7 +298,7 @@ protected:
                                       VBOXHGCMSVCPARM paParms[],
                                       uint64_t tsArrival)
     {
-        AssertLogRelReturnVoid(VALID_PTR(pvService));
+        AssertLogRelReturnVoid(RT_VALID_PTR(pvService));
         LogFlowFunc(("pvService=%p, callHandle=%p, idClient=%u, pvClient=%p, u32Function=%u, cParms=%u, paParms=%p\n",
                      pvService, callHandle, idClient, pvClient, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
@@ -316,7 +316,7 @@ protected:
                                          uint32_t cParms,
                                          VBOXHGCMSVCPARM paParms[])
     {
-        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         LogFlowFunc(("pvService=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         int rc = pSelf->hostCall(u32Function, cParms, paParms);
@@ -332,7 +332,7 @@ protected:
                                                   PFNHGCMSVCEXT pfnExtension,
                                                   void *pvExtension)
     {
-        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         LogFlowFunc(("pvService=%p, pfnExtension=%p, pvExtention=%p\n", pvService, pfnExtension, pvExtension));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         pSelf->m_SvcCtx.pfnHostCallback = pfnExtension;
