@@ -454,7 +454,7 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
 
         # Build the base command line, exclude all tests by default.
-        asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--probe-backends' \
+        asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--probe-backends', \
                              '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
 
         # ... and extend it with wanted tests.
