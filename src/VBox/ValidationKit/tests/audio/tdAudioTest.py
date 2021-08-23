@@ -497,15 +497,17 @@ class tdAudioTest(vbox.TestDriver):
             if "guest_tone_recording" in self.asTests:
                 fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio recording', asTests = [ '-i1' ]);
 
-        #
-        # Retrieve log files for diagnosis.
-        #
-        self.txsDownloadFiles(oSession, oTxsSession,
-                              [ ( self.getGstVkatLogFilePath(oTestVm),
-                                  'vkat-guest-%s.log' % (oTestVm.sVmName,),),
-                              ],
-                              fIgnoreErrors = True);
+            # Cancel guest VKAT execution task summoned by startVkatOnGuest().
+            oTxsSession.cancelTask();
 
+            #
+            # Retrieve log files for diagnosis.
+            #
+            self.txsDownloadFiles(oSession, oTxsSession,
+                                  [ ( self.getGstVkatLogFilePath(oTestVm),
+                                      'vkat-guest-%s.log' % (oTestVm.sVmName,),),
+                                  ],
+                                  fIgnoreErrors = True);
         return fRc;
 
     def testOneVmConfig(self, oVM, oTestVm):
