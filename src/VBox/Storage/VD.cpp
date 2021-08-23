@@ -9436,27 +9436,21 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigned cRa
 {
     int rc;
     int rc2;
-    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p paRanges=%#p cRanges=%u\n",
                  pDisk, paRanges, cRanges));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertReturn(cRanges > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(paRanges, VERR_INVALID_POINTER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(cRanges,
-                           ("cRanges=%u\n", cRanges),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(paRanges),
-                           ("paRanges=%#p\n", paRanges),
-                           rc = VERR_INVALID_PARAMETER);
-
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         AssertPtrBreakStmt(pDisk->pLast, rc = VERR_VD_NOT_OPENED);
 
@@ -9479,11 +9473,8 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigned cRa
         RTSemEventDestroy(hEventComplete);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -9497,29 +9488,23 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
 {
     int rc = VERR_VD_BLOCK_FREE;
     int rc2;
-    bool fLockRead = false;
     PVDIOCTX pIoCtx = NULL;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pcSgBuf=%#p cbRead=%zu pvUser1=%#p pvUser2=%#p\n",
                  pDisk, uOffset, pcSgBuf, cbRead, pvUser1, pvUser2));
 
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcSgBuf, VERR_INVALID_POINTER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(cbRead,
-                           ("cbRead=%zu\n", cbRead),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pcSgBuf),
-                           ("pcSgBuf=%#p\n", pcSgBuf),
-                           rc = VERR_INVALID_PARAMETER);
-
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
-        fLockRead = true;
 
         AssertMsgBreakStmt(   uOffset < pDisk->cbSize
                            && cbRead <= pDisk->cbSize - uOffset,
@@ -9552,7 +9537,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
 
     } while (0);
 
-    if (RT_UNLIKELY(fLockRead) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+    if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
     {
         rc2 = vdThreadFinishRead(pDisk);
         AssertRC(rc2);
