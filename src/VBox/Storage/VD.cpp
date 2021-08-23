@@ -8539,9 +8539,6 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVDISK pDisk, unsigned nImage)
 VBOXDDU_DECL(int) VDGetPCHSGeometry(PVDISK pDisk, unsigned nImage,
                                     PVDGEOMETRY pPCHSGeometry)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pPCHSGeometry=%#p\n",
                  pDisk, nImage, pPCHSGeometry));
     /* sanity check */
@@ -8551,26 +8548,30 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVDISK pDisk, unsigned nImage,
     /* Check arguments. */
     AssertPtrReturn(pPCHSGeometry, VERR_INVALID_POINTER);
 
-    do
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
+
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
     {
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
         if (pImage == pDisk->pLast)
         {
             /* Use cached information if possible. */
             if (pDisk->PCHSGeometry.cCylinders != 0)
+            {
                 *pPCHSGeometry = pDisk->PCHSGeometry;
+                rc = VINF_SUCCESS;
+            }
             else
                 rc = VERR_VD_GEOMETRY_NOT_SET;
         }
         else
-            rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pBackendData,
-                                                     pPCHSGeometry);
-    } while (0);
+            rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pBackendData, pPCHSGeometry);
+    }
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
     rc2 = vdThreadFinishRead(pDisk);
     AssertRC(rc2);
@@ -8587,7 +8588,6 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVDISK pDisk, unsigned nImage,
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pPCHSGeometry=%#p PCHS=%u/%u/%u\n",
                  pDisk, nImage, pPCHSGeometry, pPCHSGeometry->cCylinders,
@@ -8606,7 +8606,6 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVDISK pDisk, unsigned nImage,
     {
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -8663,11 +8662,8 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVDISK pDisk, unsigned nImage,
         }
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -8677,9 +8673,6 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDGetLCHSGeometry(PVDISK pDisk, unsigned nImage,
                                     PVDGEOMETRY pLCHSGeometry)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-
     LogFlowFunc(("pDisk=%#p nImage=%u pLCHSGeometry=%#p\n",
                  pDisk, nImage, pLCHSGeometry));
     /* sanity check */
@@ -8689,14 +8682,14 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVDISK pDisk, unsigned nImage,
     /* Check arguments. */
     AssertPtrReturn(pLCHSGeometry, VERR_INVALID_POINTER);
 
-    do
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
+
+    int rc = VINF_SUCCESS;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
     {
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
         if (pImage == pDisk->pLast)
         {
             /* Use cached information if possible. */
@@ -8706,9 +8699,10 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVDISK pDisk, unsigned nImage,
                 rc = VERR_VD_GEOMETRY_NOT_SET;
         }
         else
-            rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pBackendData,
-                                                     pLCHSGeometry);
-    } while (0);
+            rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pBackendData, pLCHSGeometry);
+    }
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
     rc2 = vdThreadFinishRead(pDisk);
     AssertRC(rc2);
@@ -8725,7 +8719,6 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVDISK pDisk, unsigned nImage,
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pLCHSGeometry=%#p LCHS=%u/%u/%u\n",
                  pDisk, nImage, pLCHSGeometry, pLCHSGeometry->cCylinders,
@@ -8745,7 +8738,6 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVDISK pDisk, unsigned nImage,
     {
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -8802,11 +8794,8 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVDISK pDisk, unsigned nImage,
         }
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -8816,9 +8805,6 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
                                  PPVDREGIONLIST ppRegionList)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-
     LogFlowFunc(("pDisk=%#p nImage=%u fFlags=%#x ppRegionList=%#p\n",
                  pDisk, nImage, fFlags, ppRegionList));
     /* sanity check */
@@ -8828,14 +8814,14 @@ VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
     /* Check arguments. */
     AssertPtrReturn(ppRegionList, VERR_INVALID_POINTER);
 
-    do
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
+
+    int rc;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
     {
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
         PCVDREGIONLIST pRegionList = NULL;
         rc = pImage->Backend->pfnQueryRegions(pImage->pBackendData, &pRegionList);
         if (RT_SUCCESS(rc))
@@ -8845,7 +8831,9 @@ VBOXDDU_DECL(int) VDQueryRegions(PVDISK pDisk, unsigned nImage, uint32_t fFlags,
             AssertPtr(pImage->Backend->pfnRegionListRelease);
             pImage->Backend->pfnRegionListRelease(pImage->pBackendData, pRegionList);
         }
-    } while (0);
+    }
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
     rc2 = vdThreadFinishRead(pDisk);
     AssertRC(rc2);
@@ -8864,9 +8852,6 @@ VBOXDDU_DECL(void) VDRegionListFree(PVDREGIONLIST pRegionList)
 VBOXDDU_DECL(int) VDGetVersion(PVDISK pDisk, unsigned nImage,
                                unsigned *puVersion)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-
     LogFlowFunc(("pDisk=%#p nImage=%u puVersion=%#p\n",
                  pDisk, nImage, puVersion));
     /* sanity check */
@@ -8876,16 +8861,16 @@ VBOXDDU_DECL(int) VDGetVersion(PVDISK pDisk, unsigned nImage,
     /* Check arguments. */
     AssertPtrReturn(puVersion, VERR_INVALID_POINTER);
 
-    do
-    {
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
+    int rc = VINF_SUCCESS;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
         *puVersion = pImage->Backend->pfnGetVersion(pImage->pBackendData);
-    } while (0);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
     rc2 = vdThreadFinishRead(pDisk);
     AssertRC(rc2);
