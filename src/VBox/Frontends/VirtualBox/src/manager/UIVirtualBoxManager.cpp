@@ -92,9 +92,6 @@
 /* Other VBox stuff: */
 #include <iprt/buildconfig.h>
 #include <VBox/version.h>
-#ifdef VBOX_WS_X11
-# include <iprt/env.h>
-#endif /* VBOX_WS_X11 */
 
 #define checkUnattendedInstallError(comUnattendedInstaller) \
     do { \

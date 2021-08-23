@@ -39,6 +39,11 @@
 #include "CNetworkAdapter.h"
 #include "CVRDEServer.h"
 
+/* Other VBox stuff: */
+#ifdef VBOX_WS_X11
+# include <iprt/env.h>
+#endif
+
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
 
