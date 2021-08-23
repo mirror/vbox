@@ -1521,7 +1521,7 @@ static int drvHostWasEnumAddDev(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pIDevice, 
                 if (SUCCEEDED(hrc))
                 {
                     WAVEFORMATEX const * const pFormat = (WAVEFORMATEX const *)VarFormat.blob.pBlobData;
-                    AssertPtr(pFormat);
+                    AssertPtr(pFormat); /* Observed sometimes being NULL on windows 7 sp1. */
 
                     /*
                      * Create a enumeration entry for it.
@@ -1539,9 +1539,9 @@ static int drvHostWasEnumAddDev(PPDMAUDIOHOSTENUM pDevEnm, IMMDevice *pIDevice, 
                         if (fDefault)
                             pDev->Core.fFlags = enmType == eRender ? PDMAUDIOHOSTDEV_F_DEFAULT_OUT : PDMAUDIOHOSTDEV_F_DEFAULT_IN;
                         if (enmType == eRender)
-                            pDev->Core.cMaxOutputChannels = pFormat->nChannels;
+                            pDev->Core.cMaxOutputChannels = RT_VALID_PTR(pFormat) ? pFormat->nChannels : 2;
                         else
-                            pDev->Core.cMaxInputChannels  = pFormat->nChannels;
+                            pDev->Core.cMaxInputChannels  = RT_VALID_PTR(pFormat) ? pFormat->nChannels : 1;
 
                         memcpy(pDev->wszDevId, pwszDevId, cwcDevId * sizeof(RTUTF16));
                         pDev->wszDevId[cwcDevId] = '\0';
