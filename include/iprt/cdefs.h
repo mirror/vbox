@@ -4302,7 +4302,7 @@
 /** @} */
 
 
-/** @def VALID_PTR
+/** @def RT_VALID_PTR
  * Pointer validation macro.
  * @param   ptr         The pointer.
  */
@@ -4382,9 +4382,6 @@
 #else
 # error "Architecture identifier missing / not implemented."
 #endif
-
-/** Old name for RT_VALID_PTR.  */
-#define VALID_PTR(ptr)          RT_VALID_PTR(ptr)
 
 /** @def RT_VALID_ALIGNED_PTR
  * Pointer validation macro that also checks the alignment.

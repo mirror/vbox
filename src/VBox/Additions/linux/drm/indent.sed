@@ -111,7 +111,6 @@ s/\bRT_BOOL\b(\([^)]*\))/(!!(\1))/g
 s/\bUINT16_MAX\b/U16_MAX/g
 s/\bUINT32_MAX\b/U32_MAX/g
 s/\bUINT32_C\b(\(.*\))/\1u/g
-s/!VALID_PTR(/WARN_ON(!/g
 s/!RT_VALID_PTR(/WARN_ON(!/g
 s/\bRT_UNTRUSTED_VOLATILE_HOST\b//g
 s/\bRT_UNTRUSTED_VOLATILE_GUEST\b//g
