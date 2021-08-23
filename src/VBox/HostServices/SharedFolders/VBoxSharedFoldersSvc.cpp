@@ -1827,7 +1827,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
     Log(("SharedFolders host service: VBoxHGCMSvcLoad: ptable = %p\n", ptable));
 
-    if (!VALID_PTR(ptable))
+    if (!RT_VALID_PTR(ptable))
     {
         LogRelFunc(("SharedFolders host service: Bad value of ptable (%p)\n", ptable));
         rc = VERR_INVALID_PARAMETER;

@@ -945,7 +945,7 @@ static uint64_t const g_fGstCtrlHostFeatures0 = VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_
 /*static*/ DECLCALLBACK(int)
 GstCtrlService::svcUnload(void *pvService)
 {
-    AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+    AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -966,7 +966,7 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
     LogFlowFunc(("[Client %RU32] Connected\n", idClient));
 
     RT_NOREF(fRestoring, pvClient);
-    AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+    AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -2382,7 +2382,7 @@ int GstCtrlService::hostProcessMessage(uint32_t idMsg, uint32_t cParms, VBOXHGCM
 /*static*/ DECLCALLBACK(int)
 GstCtrlService::svcHostCall(void *pvService, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+    AssertLogRelReturn(RT_VALID_PTR(pvService), VERR_INVALID_PARAMETER);
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -2495,10 +2495,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
 
     LogFlowFunc(("pTable=%p\n", pTable));
 
-    if (!VALID_PTR(pTable))
-    {
+    if (!RT_VALID_PTR(pTable))
         rc = VERR_INVALID_PARAMETER;
-    }
     else
     {
         LogFlowFunc(("pTable->cbSize=%d, pTable->u32Version=0x%08X\n", pTable->cbSize, pTable->u32Version));

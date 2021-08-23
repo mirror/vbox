@@ -2702,7 +2702,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
 
     LogFlowFunc(("pTable=%p\n", pTable));
 
-    if (!VALID_PTR(pTable))
+    if (!RT_VALID_PTR(pTable))
     {
         rc = VERR_INVALID_PARAMETER;
     }
