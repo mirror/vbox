@@ -446,8 +446,8 @@ RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(pszString));
-    Assert(VALID_PTR(ppaCps));
+    AssertPtr(pszString);
+    AssertPtr(ppaCps);
     *ppaCps = NULL;
 
     /*
@@ -487,9 +487,9 @@ RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppa
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(pszString));
-    Assert(VALID_PTR(ppaCps));
-    Assert(!pcCps || VALID_PTR(pcCps));
+    AssertPtr(pszString);
+    AssertPtr(ppaCps);
+    AssertPtrNull(pcCps);
 
     /*
      * Validate the UTF-8 input and count the code points.
@@ -1006,8 +1006,8 @@ RTDECL(int) RTStrToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, const 
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(ppwszString));
-    Assert(VALID_PTR(pszString));
+    AssertPtr(ppwszString);
+    AssertPtr(pszString);
     *ppwszString = NULL;
 
     /*
@@ -1047,8 +1047,8 @@ RTDECL(int) RTStrToUtf16BigTag(const char *pszString, PRTUTF16 *ppwszString, con
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(ppwszString));
-    Assert(VALID_PTR(pszString));
+    AssertPtr(ppwszString);
+    AssertPtr(pszString);
     *ppwszString = NULL;
 
     /*
@@ -1089,9 +1089,9 @@ RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString,
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(pszString));
-    Assert(VALID_PTR(ppwsz));
-    Assert(!pcwc || VALID_PTR(pcwc));
+    AssertPtr(pszString);
+    AssertPtr(ppwsz);
+    AssertPtrNull(pcwc);
 
     /*
      * Validate the UTF-8 input and calculate the length of the UTF-16 string.
@@ -1154,9 +1154,9 @@ RTDECL(int)  RTStrToUtf16BigExTag(const char *pszString, size_t cchString,
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(pszString));
-    Assert(VALID_PTR(ppwsz));
-    Assert(!pcwc || VALID_PTR(pcwc));
+    AssertPtr(pszString);
+    AssertPtr(ppwsz);
+    AssertPtrNull(pcwc);
 
     /*
      * Validate the UTF-8 input and calculate the length of the UTF-16 string.
@@ -1310,8 +1310,8 @@ RTDECL(int)  RTLatin1ToUtf8Tag(const char *pszString, char **ppszString, const c
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(ppszString));
-    Assert(VALID_PTR(pszString));
+    AssertPtr(ppszString);
+    AssertPtr(pszString);
     *ppszString = NULL;
 
     /*
@@ -1349,9 +1349,9 @@ RTDECL(int)  RTLatin1ToUtf8ExTag(const char *pszString, size_t cchString, char *
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(pszString));
-    Assert(VALID_PTR(ppsz));
-    Assert(!pcch || VALID_PTR(pcch));
+    AssertPtr(pszString);
+    AssertPtr(ppsz);
+    AssertPtrNull(pcch);
 
     /*
      * Calculate the length of the UTF-8 encoding of the Latin-1 string.
@@ -1503,8 +1503,8 @@ RTDECL(int) RTStrToLatin1Tag(const char *pszString, char **ppszString, const cha
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(ppszString));
-    Assert(VALID_PTR(pszString));
+    AssertPtr(ppszString);
+    AssertPtr(pszString);
     *ppszString = NULL;
 
     /*
@@ -1545,9 +1545,9 @@ RTDECL(int)  RTStrToLatin1ExTag(const char *pszString, size_t cchString,
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(pszString));
-    Assert(VALID_PTR(ppsz));
-    Assert(!pcch || VALID_PTR(pcch));
+    AssertPtr(pszString);
+    AssertPtr(ppsz);
+    AssertPtrNull(pcch);
 
     /*
      * Validate the UTF-8 input and calculate the length of the UTF-16 string.

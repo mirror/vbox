@@ -960,7 +960,7 @@ static int pgmR0DynMapAddSeg(PPGMRZDYNMAP pThis, uint32_t cPages)
     if (RT_SUCCESS(rc))
     {
         uint8_t            *pbPage = (uint8_t *)RTR0MemObjAddress(pSeg->hMemObj);
-        AssertMsg(VALID_PTR(pbPage) && !((uintptr_t)pbPage & PAGE_OFFSET_MASK), ("%p\n", pbPage));
+        AssertMsg(RT_VALID_PTR(pbPage) && !((uintptr_t)pbPage & PAGE_OFFSET_MASK), ("%p\n", pbPage));
         memset(pbPage, 0xfe, cPages << PAGE_SHIFT);
 
         /*

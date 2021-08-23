@@ -87,13 +87,13 @@ VBGLR3DECL(int)     VbglR3GuestPropRead(HGCMCLIENTID idClient,
              idClient, pszName);
     static char szValue[] = "Value";
     static char szFlags[] = "TRANSIENT";
-    if (VALID_PTR(ppszValue))
+    if (ppszValue)
         *ppszValue = szValue;
-    if (VALID_PTR(pu64Timestamp))
+    if (pu64Timestamp)
         *pu64Timestamp = 12345;
-    if (VALID_PTR(ppszFlags))
+    if (ppszFlags)
         *ppszFlags = szFlags;
-    if (VALID_PTR(pcbBufActual))
+    if (pcbBufActual)
         *pcbBufActual = 256;
     return VINF_SUCCESS;
 }
@@ -128,13 +128,13 @@ VBGLR3DECL(int)     VbglR3GuestPropEnum(HGCMCLIENTID idClient,
     static char szValue[] = "Value";
     static char szFlags[] = "TRANSIENT";
     *ppHandle = &Handle;
-    if (VALID_PTR(ppszName))
+    if (ppszName)
         *ppszName = szName;
-    if (VALID_PTR(ppszValue))
+    if (ppszValue)
         *ppszValue = szValue;
-    if (VALID_PTR(pu64Timestamp))
+    if (pu64Timestamp)
         *pu64Timestamp = 12345;
-    if (VALID_PTR(ppszFlags))
+    if (ppszFlags)
         *ppszFlags = szFlags;
     return VINF_SUCCESS;
 }
@@ -147,15 +147,15 @@ VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
 {
     RT_NOREF1(pHandle);
     RTPrintf("Called enumerate next...\n");
-    AssertReturn(VALID_PTR(ppszName) || VALID_PTR(ppszValue) || VALID_PTR(ppszFlags),
+    AssertReturn(RT_VALID_PTR(ppszName) || RT_VALID_PTR(ppszValue) || RT_VALID_PTR(ppszFlags),
                  VERR_INVALID_POINTER);
-    if (VALID_PTR(ppszName))
+    if (ppszName)
         *ppszName = NULL;
-    if (VALID_PTR(ppszValue))
+    if (ppszValue)
         *ppszValue = NULL;
-    if (VALID_PTR(pu64Timestamp))
+    if (pu64Timestamp)
         *pu64Timestamp = 0;
-    if (VALID_PTR(ppszFlags))
+    if (ppszFlags)
         *ppszFlags = NULL;
     return VINF_SUCCESS;
 }
@@ -190,15 +190,15 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(HGCMCLIENTID idClient,
     static char szName[] = "Name";
     static char szValue[] = "Value";
     static char szFlags[] = "TRANSIENT";
-    if (VALID_PTR(ppszName))
+    if (ppszName)
         *ppszName = szName;
-    if (VALID_PTR(ppszValue))
+    if (ppszValue)
         *ppszValue = szValue;
-    if (VALID_PTR(pu64Timestamp))
+    if (pu64Timestamp)
         *pu64Timestamp = 12345;
-    if (VALID_PTR(ppszFlags))
+    if (ppszFlags)
         *ppszFlags = szFlags;
-    if (VALID_PTR(pcbBufActual))
+    if (pcbBufActual)
         *pcbBufActual = 256;
     return VINF_SUCCESS;
 }

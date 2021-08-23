@@ -288,7 +288,7 @@ static int vgdrvFreeBSDClose(struct cdev *pDev, int fFile, int DevType, struct t
     /*
      * Close the session if it's still hanging on to the device...
      */
-    if (VALID_PTR(pSession))
+    if (RT_VALID_PTR(pSession))
     {
         VGDrvCommonCloseSession(&g_DevExt, pSession);
         if (!ASMAtomicCmpXchgPtr(&pDev->si_drv1, NULL, pSession))
@@ -517,7 +517,7 @@ static int vgdrvFreeBSDPoll(struct cdev *pDev, int fEvents, struct thread *td)
     LogFlow(("vgdrvFreeBSDPoll: fEvents=%d\n", fEvents));
 
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pDev->si_drv1;
-    if (RT_UNLIKELY(!VALID_PTR(pSession))) {
+    if (RT_UNLIKELY(!RT_VALID_PTR(pSession))) {
         Log(("vgdrvFreeBSDPoll: no state data for %s\n", devtoname(pDev)));
         return (fEvents & (POLLHUP|POLLIN|POLLRDNORM|POLLOUT|POLLWRNORM));
     }

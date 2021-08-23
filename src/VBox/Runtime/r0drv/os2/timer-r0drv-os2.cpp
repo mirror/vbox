@@ -195,7 +195,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
  */
 DECLINLINE(bool) rtTimerIsValid(PRTTIMER pTimer)
 {
-    AssertReturn(VALID_PTR(pTimer), false);
+    AssertPtrReturn(pTimer, false);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, false);
     return true;
 }

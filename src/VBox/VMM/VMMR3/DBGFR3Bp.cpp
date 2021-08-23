@@ -1166,7 +1166,7 @@ static int dbgfR3BpInt3L2BstNodeAdd(PUVM pUVM, uint32_t idxL1, DBGFBP hBp, RTGCU
         /* Create a new search tree, gather the necessary information first. */
         DBGFBP hBp2 = DBGF_BP_INT3_L1_ENTRY_GET_BP_HND(u32Entry);
         PDBGFBPINT pBp2 = dbgfR3BpGetByHnd(pUVM, hBp2);
-        AssertStmt(VALID_PTR(pBp2), rc = VERR_DBGF_BP_IPE_7);
+        AssertStmt(RT_VALID_PTR(pBp2), rc = VERR_DBGF_BP_IPE_7);
         if (RT_SUCCESS(rc))
             rc = dbgfR3BpInt3L2BstCreate(pUVM, idxL1, u32Entry, hBp, GCPtr, hBp2, pBp2->Pub.u.Int3.GCPtr);
     }

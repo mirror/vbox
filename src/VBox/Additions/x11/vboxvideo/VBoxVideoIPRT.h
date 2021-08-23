@@ -130,7 +130,8 @@ RT_C_DECLS_END
 #define RT_OFFSETOF(type, member) offsetof(type, member)
 #define RT_UOFFSETOF(type, member) offsetof(type, member)
 #define RT_ZERO(Obj)        RT_BZERO(&(Obj), sizeof(Obj))
-#define VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+#define RT_VALID_PTR(ptr)  (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+#define VALID_PTR(ptr)     RT_VALID_PTR(ptr)
 #ifndef INT16_C
 # define INT16_C(Value) (Value)
 #endif

@@ -87,8 +87,8 @@ DECLASM(void) VBoxSFR0Init(void)
      * Start by initializing IPRT.
      */
     if (    g_VBoxGuestIDC.u32Version == VBGL_IOC_VERSION
-        &&  VALID_PTR(g_VBoxGuestIDC.u32Session)
-        &&  VALID_PTR(g_VBoxGuestIDC.pfnServiceEP))
+        &&  RT_VALID_PTR(g_VBoxGuestIDC.u32Session)
+        &&  RT_VALID_PTR(g_VBoxGuestIDC.pfnServiceEP))
     {
         int rc = RTR0Init(0);
         if (RT_SUCCESS(rc))

@@ -161,7 +161,7 @@ static status_t vgdrvHaikuFree(void *cookie)
     /*
      * Close the session if it's still hanging on to the device...
      */
-    if (VALID_PTR(pSession))
+    if (RT_VALID_PTR(pSession))
     {
         VGDrvCommonCloseSession(&g_DevExt, pSession);
         ASMAtomicDecU32(&cUsers);
@@ -190,7 +190,7 @@ static status_t vgdrvHaikuIOCtl(void *cookie, uint32 op, void *data, size_t len)
     /*
      * Validate the input.
      */
-    if (RT_UNLIKELY(!VALID_PTR(pSession)))
+    if (RT_UNLIKELY(!RT_VALID_PTR(pSession)))
         return EINVAL;
 
     /*
@@ -232,7 +232,7 @@ static status_t vgdrvHaikuIOCtl(void *cookie, uint32 op, void *data, size_t len)
             LogRel((DRIVER_NAME ":vgdrvHaikuIOCtl: user_memcpy failed; pvBuf=%p data=%p op=%d. rc=%d\n", pvBuf, data, op, rc));
             return EFAULT;
         }
-        if (RT_UNLIKELY(!VALID_PTR(pvBuf)))
+        if (RT_UNLIKELY(!RT_VALID_PTR(pvBuf)))
         {
             RTMemTmpFree(pvBuf);
             LogRel((DRIVER_NAME ":vgdrvHaikuIOCtl: pvBuf invalid pointer %p\n", pvBuf));

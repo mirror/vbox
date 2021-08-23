@@ -494,7 +494,7 @@ SHCL_X11_DECL(SHCLX11FMTIDX) clipGetTextFormatFromTargets(PSHCLX11CTX pCtx,
                                                           size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(RT_VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
     SHCLX11FMTIDX idxFmtText = NIL_CLIPX11FORMAT;
     SHCLX11FMT    fmtTextX11 = SHCLX11FMT_INVALID;
@@ -529,7 +529,7 @@ static SHCLX11FMTIDX clipGetBitmapFormatFromTargets(PSHCLX11CTX pCtx,
                                                     size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(RT_VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
     SHCLX11FMTIDX idxFmtBmp = NIL_CLIPX11FORMAT;
     SHCLX11FMT    fmtBmpX11 = SHCLX11FMT_INVALID;
@@ -563,7 +563,7 @@ static SHCLX11FMTIDX clipGetHtmlFormatFromTargets(PSHCLX11CTX pCtx,
                                                   size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(RT_VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
     SHCLX11FMTIDX idxFmtHTML = NIL_CLIPX11FORMAT;
     SHCLX11FMT    fmxHTMLX11 = SHCLX11FMT_INVALID;
@@ -598,7 +598,7 @@ static SHCLX11FMTIDX clipGetURIListFormatFromTargets(PSHCLX11CTX pCtx,
                                                      size_t cTargets)
 {
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertReturn(VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
+    AssertReturn(RT_VALID_PTR(paIdxFmtTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
 
     SHCLX11FMTIDX idxFmtURI = NIL_CLIPX11FORMAT;
     SHCLX11FMT    fmtURIX11 = SHCLX11FMT_INVALID;

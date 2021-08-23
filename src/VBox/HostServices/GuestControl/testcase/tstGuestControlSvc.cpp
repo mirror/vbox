@@ -101,7 +101,7 @@ typedef struct CMDCLIENT
 static int testHostCmd(const VBOXHGCMSVCFNTABLE *pTable, const PCMDHOST pCmd, uint32_t uNumTests)
 {
     int rc = VINF_SUCCESS;
-    if (!VALID_PTR(pTable->pfnHostCall))
+    if (!RT_VALID_PTR(pTable->pfnHostCall))
     {
         RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "Invalid pfnHostCall() pointer\n");
         rc = VERR_INVALID_POINTER;
