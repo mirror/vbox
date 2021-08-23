@@ -303,9 +303,9 @@ RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *psz
     int      rc;
     RTTHREAD Thread;
 
-    AssertReturn(!(fFlags & RTTHREADFLAGS_WAITABLE), VERR_INVALID_PARAMETER);
-    AssertReturn(!pszName || VALID_PTR(pszName), VERR_INVALID_POINTER);
-    AssertReturn(!pThread || VALID_PTR(pThread), VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & RTTHREADFLAGS_WAITABLE), VERR_INVALID_FLAGS);
+    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pThread, VERR_INVALID_POINTER);
 
     rc = VINF_SUCCESS;
     Thread = RTThreadSelf();
@@ -551,8 +551,8 @@ DECLHIDDEN(PRTTHREADINT) rtThreadGetByNative(RTNATIVETHREAD NativeThread)
  */
 DECLHIDDEN(PRTTHREADINT) rtThreadGet(RTTHREAD Thread)
 {
-    if (    Thread != NIL_RTTHREAD
-        &&  VALID_PTR(Thread))
+    if (   Thread != NIL_RTTHREAD
+        && RT_VALID_PTR(Thread))
     {
         PRTTHREADINT pThread = (PRTTHREADINT)Thread;
         if (    pThread->u32Magic == RTTHREADINT_MAGIC

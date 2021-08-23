@@ -331,7 +331,7 @@ static void rtDbgAsDestroy(PRTDBGASINT pDbgAs)
     {
         PRTDBGASMOD pMod = pDbgAs->papModules[i];
         AssertPtr(pMod);
-        if (VALID_PTR(pMod))
+        if (RT_VALID_PTR(pMod))
         {
             Assert(pMod->iOrdinal == i);
             RTDbgModRelease((RTDBGMOD)pMod->Core.Key);

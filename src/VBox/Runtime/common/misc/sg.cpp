@@ -83,7 +83,7 @@ static void *rtSgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
 RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pSgBuf);
-    Assert(   (cSegs > 0 && VALID_PTR(paSegs))
+    Assert(   (cSegs > 0 && RT_VALID_PTR(paSegs))
            || (!cSegs && !paSegs));
     Assert(cSegs < (~(unsigned)0 >> 1));
 

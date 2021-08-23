@@ -53,7 +53,7 @@ static DECLCALLBACK(int) testApvCompare(void const *pvElement1, void const *pvEl
     TSTRTSORTAPV   *pData        = (TSTRTSORTAPV *)pvUser;
     uint32_t const *pu32Element1 = (uint32_t const *)pvElement1;
     uint32_t const *pu32Element2 = (uint32_t const *)pvElement2;
-    RTTESTI_CHECK(VALID_PTR(pData) && pData->cElements <= RT_ELEMENTS(pData->aValues));
+    RTTESTI_CHECK(RT_VALID_PTR(pData) && pData->cElements <= RT_ELEMENTS(pData->aValues));
     RTTESTI_CHECK((uintptr_t)(pu32Element1 - &pData->aValues[0]) < pData->cElements);
     RTTESTI_CHECK((uintptr_t)(pu32Element2 - &pData->aValues[0]) < pData->cElements);
 

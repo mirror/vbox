@@ -378,7 +378,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD hThreadSelf, void *pvArg)
             {
                 PRTTIMER pTimer = (PRTTIMER)SigInfo.si_value.sival_ptr;
                 AssertPtr(pTimer);
-                if (RT_UNLIKELY(    !VALID_PTR(pTimer)
+                if (RT_UNLIKELY(    !RT_VALID_PTR(pTimer)
                                 ||  ASMAtomicUoReadU8(&pTimer->fSuspended)
                                 ||  ASMAtomicUoReadU8(&pTimer->fDestroyed)
                                 ||  pTimer->u32Magic != RTTIMER_MAGIC))

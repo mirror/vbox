@@ -294,8 +294,8 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
     const uint16_t *paiDayOfYear;
     int             iMonth;
 
-    AssertMsg(VALID_PTR(pTime), ("%p\n", pTime));
-    AssertMsg(VALID_PTR(pTimeSpec), ("%p\n", pTime));
+    AssertPtr(pTime);
+    AssertPtr(pTimeSpec);
 
     /*
      * The simple stuff first.
@@ -413,8 +413,8 @@ RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime)
     /*
      * Validate input.
      */
-    AssertReturn(VALID_PTR(pTimeSpec), NULL);
-    AssertReturn(VALID_PTR(pTime), NULL);
+    AssertPtrReturn(pTimeSpec, NULL);
+    AssertPtrReturn(pTime, NULL);
     AssertReturn(pTime->u32Nanosecond < 1000000000, NULL);
     AssertReturn(pTime->u8Second < 60, NULL);
     AssertReturn(pTime->u8Minute < 60, NULL);
@@ -695,7 +695,7 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
     /*
      * Validate that we've got the minimum of stuff handy.
      */
-    AssertReturn(VALID_PTR(pTime), NULL);
+    AssertPtrReturn(pTime, NULL);
     AssertMsgReturn(!(pTime->fFlags & ~RTTIME_FLAGS_MASK), ("%#x\n", pTime->fFlags), NULL);
     AssertMsgReturn((pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_LOCAL, ("Use RTTimeLocalNormalize!\n"), NULL);
     AssertMsgReturn(pTime->offUTC == 0, ("%d; Use RTTimeLocalNormalize!\n", pTime->offUTC), NULL);
@@ -735,7 +735,7 @@ RTDECL(PRTTIME) RTTimeLocalNormalize(PRTTIME pTime)
     /*
      * Validate that we've got the minimum of stuff handy.
      */
-    AssertReturn(VALID_PTR(pTime), NULL);
+    AssertPtrReturn(pTime, NULL);
     AssertMsgReturn(!(pTime->fFlags & ~RTTIME_FLAGS_MASK), ("%#x\n", pTime->fFlags), NULL);
     AssertMsgReturn((pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_UTC, ("Use RTTimeNormalize!\n"), NULL);
 
@@ -1553,7 +1553,7 @@ RTDECL(PRTTIME) RTTimeConvertToZulu(PRTTIME pTime)
     /*
      * Validate that we've got the minimum of stuff handy.
      */
-    AssertReturn(VALID_PTR(pTime), NULL);
+    AssertPtrReturn(pTime, NULL);
     AssertMsgReturn(!(pTime->fFlags & ~RTTIME_FLAGS_MASK), ("%#x\n", pTime->fFlags), NULL);
 
     return rtTimeConvertToZulu(rtTimeNormalizeInternal(pTime));

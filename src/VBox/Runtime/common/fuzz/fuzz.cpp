@@ -2136,7 +2136,7 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
 
         rc = pMutator->pfnPrep(pThis, offStart, pMutationParent, &pMutation);
         if (   RT_SUCCESS(rc)
-            && VALID_PTR(pMutation))
+            && RT_VALID_PTR(pMutation))
         {
             pMutation->pMutator = pMutator;
 

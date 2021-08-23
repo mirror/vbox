@@ -58,7 +58,7 @@ DECLEXPORT(int) TSTRTR0SemMutexSrvReqHandler(PSUPDRVSESSION pSession, uint32_t u
                                              uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
 {
     NOREF(pSession);
-    if (!VALID_PTR(pReqHdr))
+    if (!RT_VALID_PTR(pReqHdr))
         return VERR_INVALID_PARAMETER;
     char   *pszErr = (char *)(pReqHdr + 1);
     size_t  cchErr = pReqHdr->cbReq - sizeof(*pReqHdr);

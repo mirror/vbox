@@ -142,7 +142,7 @@ RT_EXPORT_SYMBOL(RTTimerCreateEx);
  */
 DECLINLINE(bool) rtTimerIsValid(PRTTIMER pTimer)
 {
-    AssertReturn(VALID_PTR(pTimer), false);
+    AssertPtrReturn(pTimer, false);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, false);
     AssertReturn(!pTimer->fDestroyed, false);
     return true;

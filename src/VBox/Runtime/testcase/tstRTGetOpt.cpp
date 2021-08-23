@@ -72,7 +72,7 @@ int main()
         const int rcGetOpt = (expr); \
         CHECK2(rcGetOpt == (chRet), ("got %d, expected %d\n", rcGetOpt, (chRet))); \
         CHECK2(GetState.iNext == (iInc) + iPrev, ("iNext=%d expected %d\n", GetState.iNext, (iInc) + iPrev)); \
-        CHECK2(VALID_PTR(Val.psz) && !strcmp(Val.psz, (str)), ("got %s, expected %s\n", Val.psz, (str))); \
+        CHECK2(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, (str)), ("got %s, expected %s\n", Val.psz, (str))); \
         GetState.iNext = (iInc) + iPrev; \
     } while (0)
 
@@ -206,37 +206,37 @@ int main()
     CHECK(RT_SUCCESS(RTGetOptInit(&GetState, argc2, (char **)argv2, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), 0, 0 /* fFlags */)));
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string1"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string1"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string2"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string2"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string3"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string3"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string4"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string4"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string5"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string5"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string6"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string6"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string7"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string7"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
     CHECK(GetState.uIndex == UINT32_MAX);
 
     /* -i */
@@ -269,13 +269,13 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 385, 1);
     CHECK_pDef(s_aOpts2, 5);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 386, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "myvm"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "myvm"));
 
     /* no-dash options */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 387, 1);
     CHECK_pDef(s_aOpts2, 7);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 388, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string9"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string9"));
 
     /* non-option, option, non-option  */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1);
@@ -318,35 +318,35 @@ int main()
     /* string with indexed argument */
     RTTestSub(hTest, "RTGetOpt - Option w/ Index");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string10"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string10"));
     CHECK(GetState.uIndex == 786);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string11"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string11"));
     CHECK(GetState.uIndex == 786);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string12"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string12"));
     CHECK(GetState.uIndex == 786);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string13"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string13"));
     CHECK(GetState.uIndex == 687);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string14"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string14"));
     CHECK(GetState.uIndex == 687);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string15"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "string15"));
     CHECK(GetState.uIndex == 687);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
     CHECK(GetState.uIndex == 688);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
     CHECK(GetState.uIndex == 689);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 401, 2);
@@ -371,17 +371,17 @@ int main()
     /* RTGetOptFetchValue tests */
     RTTestSub(hTest, "RTGetOptFetchValue");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 405, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
     CHECK(GetState.uIndex == UINT32_MAX);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 405, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "secondvalue"));
     CHECK(GetState.uIndex == UINT32_MAX);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 406, 2);
@@ -405,7 +405,7 @@ int main()
     CHECK(Val.u32 == 12);
     CHECK(GetState.uIndex == UINT32_MAX);
     CHECK_GETOPT(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "thirdvalue"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "thirdvalue"));
     CHECK(GetState.uIndex == UINT32_MAX);
 
     /* bool on/off tests */
@@ -415,7 +415,7 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 408, 2);
     CHECK(!Val.f);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VERR_GETOPT_UNKNOWN_OPTION, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
 
     /* bool on/off with indexed argument */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 409, 2);
@@ -425,7 +425,7 @@ int main()
     CHECK(!Val.f);
     CHECK(GetState.uIndex == 7);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VERR_GETOPT_UNKNOWN_OPTION, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
+    CHECK(RT_VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
 
     /* standard options. */
     RTTestSub(hTest, "Standard options");

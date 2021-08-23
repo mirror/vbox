@@ -484,8 +484,7 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
         /*
          * Notify the waiting thread that the request was canceled.
          */
-        AssertMsg(VALID_PTR(pCtxInt),
-                  ("Invalid state. Request was canceled but wasn't submitted\n"));
+        AssertMsg(RT_VALID_PTR(pCtxInt), ("Invalid state. Request was canceled but wasn't submitted\n"));
 
         Assert(!pCtxInt->pReqToCancel);
         ASMAtomicWritePtr(&pCtxInt->pReqToCancel, pReqInt);

@@ -223,10 +223,10 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
                 "\n!!Assertion Failed!!\n"
                 "Expression: %s\n"
                 "Location  : %s(%d) %s\n",
-                VALID_PTR(pszExpr) ? pszExpr : "<none>",
-                VALID_PTR(pszFile) ? pszFile : "<none>",
+                RT_VALID_PTR(pszExpr) ? pszExpr : "<none>",
+                RT_VALID_PTR(pszFile) ? pszFile : "<none>",
                 uLine,
-                VALID_PTR(pszFunction) ? pszFunction : "");
+                RT_VALID_PTR(pszFunction) ? pszFunction : "");
 # ifdef IPRT_WITH_ASSERT_STACK
         fprintf(stderr, "Stack     :\n%s\n", szStack);
 # endif
