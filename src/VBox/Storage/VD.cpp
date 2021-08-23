@@ -9412,7 +9412,8 @@ VBOXDDU_DECL(void) VDDumpImages(PVDISK pDisk)
     AssertPtrReturnVoid(pDisk);
     AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-    if (!pDisk->pInterfaceError || !RT_VALID_PTR(pDisk->pInterfaceError->pfnMessage)) /** @todo r=bird: first test is boinkers. */
+    AssertPtrReturnVoid(pDisk->pInterfaceError);
+    if (!RT_VALID_PTR(pDisk->pInterfaceError->pfnMessage))
         pDisk->pInterfaceError->pfnMessage = vdLogMessage;
 
     int rc2 = vdThreadStartRead(pDisk);
