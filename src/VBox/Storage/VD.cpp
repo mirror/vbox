@@ -8138,7 +8138,6 @@ VBOXDDU_DECL(int) VDCloseAll(PVDISK pDisk)
     /* Lock the entire operation. */
     int rc2 = vdThreadStartWrite(pDisk);
     AssertRC(rc2);
-    bool fLockWrite = true;
 
     PVDCACHE pCache = pDisk->pCache;
     if (pCache)
@@ -8169,11 +8168,8 @@ VBOXDDU_DECL(int) VDCloseAll(PVDISK pDisk)
     }
     Assert(!RT_VALID_PTR(pDisk->pLast));
 
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -8182,46 +8178,35 @@ VBOXDDU_DECL(int) VDCloseAll(PVDISK pDisk)
 
 VBOXDDU_DECL(int) VDFilterRemoveAll(PVDISK pDisk)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-    bool fLockWrite = false;
-
     LogFlowFunc(("pDisk=%#p\n", pDisk));
-    do
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Lock the entire operation. */
+    int rc2 = vdThreadStartWrite(pDisk);
+    AssertRC(rc2);
+
+    PVDFILTER pFilter, pFilterNext;
+    RTListForEachSafe(&pDisk->ListFilterChainWrite, pFilter, pFilterNext, VDFILTER, ListNodeChainWrite)
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Lock the entire operation. */
-        rc2 = vdThreadStartWrite(pDisk);
-        AssertRC(rc2);
-        fLockWrite = true;
-
-        PVDFILTER pFilter, pFilterNext;
-        RTListForEachSafe(&pDisk->ListFilterChainWrite, pFilter, pFilterNext, VDFILTER, ListNodeChainWrite)
-        {
-            RTListNodeRemove(&pFilter->ListNodeChainWrite);
-            vdFilterRelease(pFilter);
-        }
-
-        RTListForEachSafe(&pDisk->ListFilterChainRead, pFilter, pFilterNext, VDFILTER, ListNodeChainRead)
-        {
-            RTListNodeRemove(&pFilter->ListNodeChainRead);
-            vdFilterRelease(pFilter);
-        }
-        Assert(RTListIsEmpty(&pDisk->ListFilterChainRead));
-        Assert(RTListIsEmpty(&pDisk->ListFilterChainWrite));
-    } while (0);
-
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
+        RTListNodeRemove(&pFilter->ListNodeChainWrite);
+        vdFilterRelease(pFilter);
     }
 
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
+    RTListForEachSafe(&pDisk->ListFilterChainRead, pFilter, pFilterNext, VDFILTER, ListNodeChainRead)
+    {
+        RTListNodeRemove(&pFilter->ListNodeChainRead);
+        vdFilterRelease(pFilter);
+    }
+    Assert(RTListIsEmpty(&pDisk->ListFilterChainRead));
+    Assert(RTListIsEmpty(&pDisk->ListFilterChainWrite));
+
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
+
+    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
 }
 
 
@@ -8291,7 +8276,6 @@ VBOXDDU_DECL(int) VDWrite(PVDISK pDisk, uint64_t uOffset, const void *pvBuf,
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pvBuf=%p cbWrite=%zu\n",
                  pDisk, uOffset, pvBuf, cbWrite));
@@ -8307,7 +8291,6 @@ VBOXDDU_DECL(int) VDWrite(PVDISK pDisk, uint64_t uOffset, const void *pvBuf,
     {
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         AssertMsgBreakStmt(   uOffset < pDisk->cbSize
                            && cbWrite <= pDisk->cbSize - uOffset,
@@ -8337,11 +8320,8 @@ VBOXDDU_DECL(int) VDWrite(PVDISK pDisk, uint64_t uOffset, const void *pvBuf,
                                pvBuf, cbWrite, VDIOCTX_FLAGS_DEFAULT);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -8352,18 +8332,16 @@ VBOXDDU_DECL(int) VDFlush(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
     int rc2;
-    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
@@ -8386,11 +8364,8 @@ VBOXDDU_DECL(int) VDFlush(PVDISK pDisk)
         RTSemEventDestroy(hEventComplete);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
