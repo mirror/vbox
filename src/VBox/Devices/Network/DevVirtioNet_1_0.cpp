@@ -2779,7 +2779,7 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
             PVIRTIONETWORKER pWorker = &pThis->aWorkers[uVirtqNbr];
 
             Assert(pWorker->uIdx == uVirtqNbr);
-	    RT_NOREF(pWorker);
+            RT_NOREF(pWorker);
 
             Assert(pVirtq->uIdx == pWorker->uIdx);
 
