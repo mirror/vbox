@@ -2713,7 +2713,7 @@ static DECLCALLBACK(int) vdWriteHelperAsync(PVDIOCTX pIoCtx)
                                                            (pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME)
                                                          ? vdWriteHelperStandardAsync
                                                          : vdWriteHelperOptimizedAsync);
-                if (!VALID_PTR(pIoCtxWrite))
+                if (!pIoCtxWrite)
                 {
                     RTMemTmpFree(pTmp);
                     rc = VERR_NO_MEMORY;
@@ -4252,7 +4252,7 @@ static DECLCALLBACK(int) vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, 
                 rc = VERR_VD_NOT_ENOUGH_METADATA;
         }
 
-        Assert(VALID_PTR(pMetaXfer) || RT_FAILURE(rc));
+        Assert(RT_VALID_PTR(pMetaXfer) || RT_FAILURE(rc));
 
         if (RT_SUCCESS(rc) || rc == VERR_VD_NOT_ENOUGH_METADATA || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
@@ -5100,15 +5100,9 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
 
     LogFlowFunc(("cEntriesAlloc=%u pEntries=%#p pcEntriesUsed=%#p\n", cEntriesAlloc, pEntries, pcEntriesUsed));
     /* Check arguments. */
-    AssertMsgReturn(cEntriesAlloc,
-                    ("cEntriesAlloc=%u\n", cEntriesAlloc),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pEntries),
-                    ("pEntries=%#p\n", pEntries),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pcEntriesUsed),
-                    ("pcEntriesUsed=%#p\n", pcEntriesUsed),
-                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cEntriesAlloc, ("cEntriesAlloc=%u\n", cEntriesAlloc), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pEntries, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcEntriesUsed, VERR_INVALID_POINTER);
     if (!vdPluginIsInitialized())
         VDInit();
 
@@ -5143,12 +5137,8 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
 {
     LogFlowFunc(("pszBackend=%#p pEntry=%#p\n", pszBackend, pEntry));
     /* Check arguments. */
-    AssertMsgReturn(VALID_PTR(pszBackend),
-                    ("pszBackend=%#p\n", pszBackend),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pEntry),
-                    ("pEntry=%#p\n", pEntry),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEntry, VERR_INVALID_POINTER);
     if (!vdPluginIsInitialized())
         VDInit();
 
@@ -5176,12 +5166,8 @@ VBOXDDU_DECL(int) VDFilterInfo(unsigned cEntriesAlloc, PVDFILTERINFO pEntries,
     AssertMsgReturn(cEntriesAlloc,
                     ("cEntriesAlloc=%u\n", cEntriesAlloc),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pEntries),
-                    ("pEntries=%#p\n", pEntries),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pcEntriesUsed),
-                    ("pcEntriesUsed=%#p\n", pcEntriesUsed),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pEntries, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcEntriesUsed, VERR_INVALID_POINTER);
     if (!vdPluginIsInitialized())
         VDInit();
 
@@ -5210,12 +5196,8 @@ VBOXDDU_DECL(int) VDFilterInfoOne(const char *pszFilter, PVDFILTERINFO pEntry)
 {
     LogFlowFunc(("pszFilter=%#p pEntry=%#p\n", pszFilter, pEntry));
     /* Check arguments. */
-    AssertMsgReturn(VALID_PTR(pszFilter),
-                    ("pszFilter=%#p\n", pszFilter),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pEntry),
-                    ("pEntry=%#p\n", pEntry),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilter, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEntry, VERR_INVALID_POINTER);
     if (!vdPluginIsInitialized())
         VDInit();
 
@@ -5237,13 +5219,11 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVDISK *ppDi
     PVDISK pDisk = NULL;
 
     LogFlowFunc(("pVDIfsDisk=%#p\n", pVDIfsDisk));
+    /* Check arguments. */
+    AssertPtrReturn(ppDisk, VERR_INVALID_POINTER);
+
     do
     {
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(ppDisk),
-                           ("ppDisk=%#p\n", ppDisk),
-                           rc = VERR_INVALID_PARAMETER);
-
         pDisk = (PVDISK)RTMemAllocZ(sizeof(VDISK));
         if (pDisk)
         {
@@ -5344,15 +5324,10 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
 
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     /* Check arguments. */
-    AssertMsgReturn(VALID_PTR(pszFilename) && *pszFilename,
-                    ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(ppszFormat),
-                    ("ppszFormat=%#p\n", ppszFormat),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(penmType),
-                    ("penmType=%#p\n", penmType),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppszFormat, VERR_INVALID_POINTER);
+    AssertPtrReturn(penmType, VERR_INVALID_POINTER);
     AssertReturn(enmDesiredType >= VDTYPE_INVALID && enmDesiredType <= VDTYPE_FLOPPY, VERR_INVALID_PARAMETER);
 
     if (!vdPluginIsInitialized())
@@ -5499,28 +5474,25 @@ VBOXDDU_DECL(int) VDOpen(PVDISK pDisk, const char *pszBackend,
 
     LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x, pVDIfsImage=%#p\n",
                  pDisk, pszBackend, pszFilename, uOpenFlags, pVDIfsImage));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_PARAMETER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
+    AssertReturn(*pszBackend != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertMsgReturn((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
+                    ("uOpenFlags=%#x\n", uOpenFlags),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(   !(uOpenFlags & VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)
+                    ||  (uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                    ("uOpenFlags=%#x\n", uOpenFlags),
+                    VERR_INVALID_PARAMETER);
 
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
-                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                           ("uOpenFlags=%#x\n", uOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(   !(uOpenFlags & VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)
-                           ||  (uOpenFlags & VD_OPEN_FLAGS_READONLY),
-                           ("uOpenFlags=%#x\n", uOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
-
         /*
          * Destroy the current discard state first which might still have pending blocks
          * for the currently opened image which will be switched to readonly mode.
@@ -9982,9 +9954,7 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
     AssertMsgReturn(VALID_PTR(pszFilename) && *pszFilename,
                     ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pszBackend),
-                    ("pszBackend=%#p\n", pszBackend),
-                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
     AssertMsgReturn((fFlags & ~VD_REPAIR_FLAGS_MASK) == 0,
                     ("fFlags=%#x\n", fFlags),
                     VERR_INVALID_PARAMETER);

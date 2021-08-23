@@ -1450,7 +1450,9 @@ static DECLCALLBACK(int) cueProbe(const char *pszFilename, PVDINTERFACE pVDIfsDi
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     int rc = VINF_SUCCESS;
 
-    AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+
 
     PCUEIMAGE pThis = (PCUEIMAGE)RTMemAllocZ(sizeof(CUEIMAGE));
     if (RT_LIKELY(pThis))
@@ -1488,7 +1490,9 @@ static DECLCALLBACK(int) cueOpen(const char *pszFilename, unsigned uOpenFlags,
 
     /* Check open flags. All valid flags are supported. */
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+
     AssertReturn(enmType == VDTYPE_OPTICAL_DISC, VERR_NOT_SUPPORTED);
 
     pThis = (PCUEIMAGE)RTMemAllocZ(sizeof(CUEIMAGE));

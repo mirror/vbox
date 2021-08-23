@@ -6307,7 +6307,9 @@ static DECLCALLBACK(int) vmdkProbe(const char *pszFilename, PVDINTERFACE pVDIfsD
     RT_NOREF(enmDesiredType);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p penmType=%#p\n",
                  pszFilename, pVDIfsDisk, pVDIfsImage, penmType));
-    AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+
     int rc = VINF_SUCCESS;
     PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(RT_UOFFSETOF(VMDKIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
@@ -6344,7 +6346,9 @@ static DECLCALLBACK(int) vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
     int rc;
     /* Check open flags. All valid flags are supported. */
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+
     PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(RT_UOFFSETOF(VMDKIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
     {
@@ -6395,12 +6399,12 @@ static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
         return VERR_INVALID_PARAMETER;
     /* Check open flags. All valid flags are supported. */
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn(   VALID_PTR(pszFilename)
-                 && *pszFilename
-                 && VALID_PTR(pPCHSGeometry)
-                 && VALID_PTR(pLCHSGeometry)
-                 && !(   uImageFlags & VD_VMDK_IMAGE_FLAGS_ESX
-                      && !(uImageFlags & VD_IMAGE_FLAGS_FIXED)),
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pPCHSGeometry, VERR_INVALID_POINTER);
+    AssertPtrReturn(pLCHSGeometry, VERR_INVALID_POINTER);
+    AssertReturn(!(   uImageFlags & VD_VMDK_IMAGE_FLAGS_ESX
+                   && !(uImageFlags & VD_IMAGE_FLAGS_FIXED)),
                  VERR_INVALID_PARAMETER);
     PVMDKIMAGE pImage = (PVMDKIMAGE)RTMemAllocZ(RT_UOFFSETOF(VMDKIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))
@@ -6729,10 +6733,10 @@ static DECLCALLBACK(int) vmdkRename(void *pBackendData, const char *pszFilename)
     VMDKRENAMESTATE RenameState;
     memset(&RenameState, 0, sizeof(RenameState));
     /* Check arguments. */
-    AssertReturn((   pImage
-                  && VALID_PTR(pszFilename)
-                  && *pszFilename
-                  && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pImage, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertReturn(!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK), VERR_INVALID_PARAMETER);
     int rc = vmdkRenameStatePrepare(pImage, &RenameState, pszFilename);
     if (RT_SUCCESS(rc))
     {
@@ -6769,7 +6773,8 @@ static DECLCALLBACK(int) vmdkRead(void *pBackendData, uint64_t uOffset, size_t c
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbToRead % 512 == 0);
-    AssertReturn((VALID_PTR(pIoCtx) && cbToRead), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pIoCtx, VERR_INVALID_POINTER);
+    AssertReturn(cbToRead, VERR_INVALID_PARAMETER);
     AssertReturn(uOffset + cbToRead <= pImage->cbSize, VERR_INVALID_PARAMETER);
     /* Find the extent and check access permissions as defined in the extent descriptor. */
     PVMDKEXTENT pExtent;
@@ -6875,7 +6880,8 @@ static DECLCALLBACK(int) vmdkWrite(void *pBackendData, uint64_t uOffset, size_t 
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbToWrite % 512 == 0);
-    AssertReturn((VALID_PTR(pIoCtx) && cbToWrite), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pIoCtx, VERR_INVALID_POINTER);
+    AssertReturn(cbToWrite, VERR_INVALID_PARAMETER);
     if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
     {
         PVMDKEXTENT pExtent;

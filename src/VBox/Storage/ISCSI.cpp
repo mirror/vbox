@@ -775,13 +775,13 @@ static PISCSICMD iscsiCmdRemove(PISCSIIMAGE pImage, uint32_t Itt)
     {
         if (pIScsiCmdPrev)
         {
-            Assert(!pIScsiCmd->pNext || VALID_PTR(pIScsiCmd->pNext));
+            AssertPtrNull(pIScsiCmd->pNext);
             pIScsiCmdPrev->pNext = pIScsiCmd->pNext;
         }
         else
         {
             pImage->aCmdsWaiting[idx] = pIScsiCmd->pNext;
-            Assert(!pImage->aCmdsWaiting[idx] || VALID_PTR(pImage->aCmdsWaiting[idx]));
+            AssertPtrNull(pImage->aCmdsWaiting[idx]);
         }
         pImage->cCmdsWaiting--;
     }
@@ -4792,7 +4792,8 @@ static DECLCALLBACK(int) iscsiOpen(const char *pszFilename, unsigned uOpenFlags,
 
     /* Check open flags. All valid flags are supported. */
     AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn((VALID_PTR(pszFilename) && *pszFilename), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
 
     PISCSIIMAGE pImage = (PISCSIIMAGE)RTMemAllocZ(RT_UOFFSETOF(ISCSIIMAGE, RegionList.aRegions[1]));
     if (RT_LIKELY(pImage))

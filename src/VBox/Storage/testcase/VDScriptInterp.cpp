@@ -637,7 +637,7 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
                 vdScriptStackPop(&pThis->StackCtrl);
                 pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
             }
-            AssertMsg(VALID_PTR(pCtrl), ("Incorrect program, return outside of function\n"));
+            AssertMsg(RT_VALID_PTR(pCtrl), ("Incorrect program, return outside of function\n"));
             break;
         }
         case VDSCRIPTSTMTTYPE_FOR:
@@ -661,7 +661,7 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
                 vdScriptStackPop(&pThis->StackCtrl);
                 pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
             }
-            AssertMsg(VALID_PTR(pCtrl), ("Incorrect program, continue outside of loop\n"));
+            AssertMsg(RT_VALID_PTR(pCtrl), ("Incorrect program, continue outside of loop\n"));
 
             /* Put the conditionals for while and for loops onto the control stack again. */
             PVDSCRIPTASTSTMT pLoopStmt = (PVDSCRIPTASTSTMT)pCtrl->Ctrl.pAstNode;
@@ -692,7 +692,7 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
                 vdScriptStackPop(&pThis->StackCtrl);
                 pCtrl = (PVDSCRIPTINTERPCTRL)vdScriptStackGetUsed(&pThis->StackCtrl);
             }
-            AssertMsg(VALID_PTR(pCtrl), ("Incorrect program, break outside of loop\n"));
+            AssertMsg(RT_VALID_PTR(pCtrl), ("Incorrect program, break outside of loop\n"));
             vdScriptStackPop(&pThis->StackCtrl); /* Remove loop control statement. */
             break;
         }
