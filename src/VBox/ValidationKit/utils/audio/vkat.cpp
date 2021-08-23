@@ -126,6 +126,7 @@ enum
     VKAT_TEST_OPT_PCM_BIT,
     VKAT_TEST_OPT_PCM_CHAN,
     VKAT_TEST_OPT_PCM_SIGNED,
+    VKAT_TEST_OPT_PROBE_BACKENDS,
     VKAT_TEST_OPT_TAG,
     VKAT_TEST_OPT_TEMPDIR,
     VKAT_TEST_OPT_VOL
@@ -174,6 +175,7 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--pcm-chan",          VKAT_TEST_OPT_PCM_CHAN,       RTGETOPT_REQ_UINT8   },
     { "--pcm-hz",            VKAT_TEST_OPT_PCM_HZ,         RTGETOPT_REQ_UINT16  },
     { "--pcm-signed",        VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
+    { "--probe-backends",    VKAT_TEST_OPT_PROBE_BACKENDS, RTGETOPT_REQ_NOTHING },
     { "--mode",              VKAT_TEST_OPT_MODE,           RTGETOPT_REQ_STRING  },
     { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,      RTGETOPT_REQ_NOTHING },
     { "--tag",               VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
@@ -692,6 +694,8 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
                                                   "    Default: 2";
         case VKAT_TEST_OPT_PCM_SIGNED:     return "Specifies whether to use signed (true) or unsigned (false) samples\n"
                                                   "    Default: true";
+        case VKAT_TEST_OPT_PROBE_BACKENDS:  return "Specifies whether to probe all (available) backends until a working one is found\n"
+                                                  "    Default: false";
         case VKAT_TEST_OPT_TAG:            return "Specifies the test set tag to use";
         case VKAT_TEST_OPT_TEMPDIR:        return "Specifies the temporary directory to use";
         case VKAT_TEST_OPT_VOL:            return "Specifies the audio volume (in percent, 0-100) to use";
@@ -721,6 +725,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     uint8_t     cPcmChannels  = 0;
     uint32_t    uPcmHz        = 0;
     bool        fPcmSigned    = true;
+    bool        fProbeBackends = false;
 
     const char *pszGuestTcpAddr  = NULL;
     uint16_t    uGuestTcpPort    = ATS_TCP_DEF_BIND_PORT_GUEST;
@@ -820,6 +825,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 fPcmSigned = ValueUnion.f;
                 break;
 
+            case VKAT_TEST_OPT_PROBE_BACKENDS:
+                fProbeBackends = ValueUnion.f;
+                break;
+
             case VKAT_TEST_OPT_TAG:
                 pszTag = ValueUnion.psz;
                 break;
@@ -857,10 +866,32 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No test mode (--mode) specified!\n");
 
     AUDIOTESTDRVSTACK DrvStack;
-    rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,
-                                    true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio); /** @todo Make in/out configurable, too. */
-    if (RT_FAILURE(rc))
+    for (size_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
+    {
+        if (fProbeBackends)
+        {
+            pDrvReg = g_aBackends[i].pDrvReg;
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing for backend '%s' ...\n", g_aBackends[i].pszName);
+        }
+        rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,
+                                        true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio); /** @todo Make in/out configurable, too. */
+        if (RT_SUCCESS(rc))
+        {
+            if (fProbeBackends)
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' successful\n", g_aBackends[i].pszName);
+            break;
+        }
+        if (fProbeBackends)
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' failed with %Rrc, trying next one\n",
+                         g_aBackends[i].pszName, rc);
+            continue;
+        }
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
+    }
+
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Probing all backends failed, unable to continue\n");
 
     PPDMAUDIOHOSTDEV pDev;
     rc = audioTestDevicesEnumerateAndCheck(&DrvStack, TstEnv.szDev, &pDev);

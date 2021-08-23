@@ -417,7 +417,6 @@ int audioTestDrvConstruct(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, PPD
         return VINF_SUCCESS;
     }
 
-    RTTestFailed(g_hTest, "Failed to construct audio driver '%s': %Rrc", pDrvReg->szName, rc);
     if (pDrvReg->pfnDestruct)
         pDrvReg->pfnDestruct(pDrvIns);
     RTMemFree(pDrvIns);
