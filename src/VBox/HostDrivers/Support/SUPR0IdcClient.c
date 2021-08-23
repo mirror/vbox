@@ -121,7 +121,7 @@ SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint
          * We don't really trust anyone, make sure the returned
          * session and version values actually makes sense.
          */
-        if (    VALID_PTR(Req.u.Out.pSession)
+        if (    RT_VALID_PTR(Req.u.Out.pSession)
             &&  Req.u.Out.uSessionVersion >= uMinVersion
             &&  (Req.u.Out.uSessionVersion & UINT32_C(0xffff0000)) == (SUPDRV_IDC_VERSION & UINT32_C(0xffff0000)))
         {
@@ -204,8 +204,8 @@ SUPR0DECL(PSUPDRVSESSION) SUPR0IdcGetSession(PSUPDRVIDCHANDLE pHandle)
 PSUPDRVIDCHANDLE supR0IdcGetHandleFromSession(PSUPDRVSESSION pSession)
 {
     PSUPDRVIDCHANDLE pHandle = ASMAtomicUoReadPtrT(&g_pMainHandle, PSUPDRVIDCHANDLE);
-    if (    VALID_PTR(pHandle)
-        &&  pHandle->s.pSession == pSession)
+    if (   RT_VALID_PTR(pHandle)
+        && pHandle->s.pSession == pSession)
         return pHandle;
     return NULL;
 }

@@ -1050,7 +1050,7 @@ static int supR3HardenedSetErrorN(int rc, PRTERRINFO pErrInfo, unsigned cMsgs, .
         while (cMsgs-- > 0 && cbErr > 0)
         {
             const char *pszMsg = va_arg(va,  const char *);
-            size_t cchMsg = VALID_PTR(pszMsg) ? suplibHardenedStrLen(pszMsg) : 0;
+            size_t cchMsg = RT_VALID_PTR(pszMsg) ? suplibHardenedStrLen(pszMsg) : 0;
             if (cchMsg >= cbErr)
                 cchMsg = cbErr - 1;
             suplibHardenedMemCopy(pszErr, pszMsg, cchMsg);

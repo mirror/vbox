@@ -1474,7 +1474,7 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
     {
         /* Verify the pDevExt in the session. */
         if (  pStack->Parameters.DeviceIoControl.IoControlCode != SUPDRV_IDC_REQ_CONNECT
-            ? VALID_PTR(pSession) && pSession->pDevExt == pDevExt
+            ? RT_VALID_PTR(pSession) && pSession->pDevExt == pDevExt
             : !pSession
            )
         {

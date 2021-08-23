@@ -2026,7 +2026,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             PSUPSETVMFORFAST pReq = (PSUPSETVMFORFAST)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_SET_VM_FOR_FAST);
             REQ_CHECK_EXPR_FMT(     !pReq->u.In.pVMR0
-                               ||   (   VALID_PTR(pReq->u.In.pVMR0)
+                               ||   (   RT_VALID_PTR(pReq->u.In.pVMR0)
                                      && !((uintptr_t)pReq->u.In.pVMR0 & (PAGE_SIZE - 1))),
                                ("SUP_IOCTL_SET_VM_FOR_FAST: pVMR0=%p!\n", pReq->u.In.pVMR0));
 
@@ -3043,7 +3043,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
      * Validate the input.
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pObj)&& pObj->u32Magic == SUPDRVOBJ_MAGIC,
+    AssertMsgReturn(RT_VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
                     ("Invalid pvObj=%p magic=%#x (expected %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
                     VERR_INVALID_PARAMETER);
 
@@ -3151,7 +3151,7 @@ SUPR0DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const 
      * Validate the input.
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
+    AssertMsgReturn(RT_VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
                     ("Invalid pvObj=%p magic=%#x (exepcted %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
                     VERR_INVALID_PARAMETER);
 
@@ -5222,7 +5222,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         Log(("supdrvIOCtl_LdrOpen(%s): failed - %Rrc\n", pReq->u.In.szName, rc));
         return rc;
     }
-    Assert(VALID_PTR(pImage->pvImage) || RT_FAILURE(rc));
+    Assert(RT_VALID_PTR(pImage->pvImage) || RT_FAILURE(rc));
 
     /*
      * Link it.

@@ -335,7 +335,7 @@
  * @param   pSession    The session.
  */
 #define SUP_IS_SESSION_VALID(pSession)  \
-    (   VALID_PTR(pSession) \
+    (   RT_VALID_PTR(pSession) \
      && pSession->u32Cookie == BIRD_INV)
 
 /**
@@ -345,7 +345,7 @@
  * @param   pDevExt     The device extension.
  */
 #define SUP_IS_DEVEXT_VALID(pDevExt) \
-    (   VALID_PTR(pDevExt)\
+    (   RT_VALID_PTR(pDevExt) \
      && pDevExt->u32Cookie == BIRD)
 
 

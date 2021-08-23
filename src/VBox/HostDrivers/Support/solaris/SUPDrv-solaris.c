@@ -861,13 +861,13 @@ int VBOXCALL SUPDrvSolarisIDC(uint32_t uReq, PSUPDRVIDCREQHDR pReq)
     /*
      * Some quick validations.
      */
-    if (RT_UNLIKELY(!VALID_PTR(pReq)))
+    if (RT_UNLIKELY(!RT_VALID_PTR(pReq)))
         return VERR_INVALID_POINTER;
 
     pSession = pReq->pSession;
     if (pSession)
     {
-        if (RT_UNLIKELY(!VALID_PTR(pSession)))
+        if (RT_UNLIKELY(!RT_VALID_PTR(pSession)))
             return VERR_INVALID_PARAMETER;
         if (RT_UNLIKELY(pSession->pDevExt != &g_DevExt))
             return VERR_INVALID_PARAMETER;
