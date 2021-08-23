@@ -721,8 +721,8 @@ LOCAL void vboxNetFltSolarisLinkNotify(void *pvArg, mac_notify_type_t Type)
     LogRel((DEVICE_NAME ":vboxNetFltSolarisLinkNotify pvArg=%p Type=%d\n", pvArg, Type));
 
     PVBOXNETFLTINS pThis = pvArg;
-    AssertReturnVoid(VALID_PTR(pThis));
-    AssertReturnVoid(pThis->u.s.hInterface);
+    AssertPtrReturnVoid(pThis);
+    AssertPtrReturnVoid(pThis->u.s.hInterface);
 
     switch (Type)
     {
@@ -1474,11 +1474,11 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
      * Validate parameters.
      */
     PVBOXNETFLTVNIC pVNIC = pvIfData;
-    AssertMsgReturnVoid(VALID_PTR(pVNIC) && pVNIC->u32Magic == VBOXNETFLTVNIC_MAGIC,
-                    ("Invalid pVNIC=%p magic=%#x (expected %#x)\n", pvIfData,
-                     VALID_PTR(pVNIC) ? pVNIC->u32Magic : 0, VBOXNETFLTVNIC_MAGIC));
+    AssertPtrReturnVoid(pVNIC);
+    AssertMsgReturnVoid(pVNIC->u32Magic == VBOXNETFLTVNIC_MAGIC,
+                        ("Invalid pVNIC=%p magic=%#x (expected %#x)\n", pvIfData, pVNIC->u32Magic, VBOXNETFLTVNIC_MAGIC));
     AssertMsgReturnVoid(pVNIC->hLinkId != DATALINK_INVALID_LINKID,
-                    ("Invalid hLinkId pVNIC=%p magic=%#x\n", pVNIC, pVNIC->u32Magic));
+                        ("Invalid hLinkId pVNIC=%p magic=%#x\n", pVNIC, pVNIC->u32Magic));
 
     /*
      * Set the MAC address of the VNIC to the one used by the VM interface.

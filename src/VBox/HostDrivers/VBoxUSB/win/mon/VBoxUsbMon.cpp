@@ -295,10 +295,8 @@ NTSTATUS VBoxUsbMonQueryBusRelations(PDEVICE_OBJECT pDevObj, PFILE_OBJECT pFileO
     {
         PDEVICE_RELATIONS pRel = (PDEVICE_RELATIONS)IoStatus.Information;
         LOG(("pRel = %p", pRel));
-        if (VALID_PTR(pRel))
-        {
+        if (RT_VALID_PTR(pRel))
             *pDevRelations = pRel;
-        }
         else
         {
             WARN(("Invalid pointer %p", pRel));
@@ -369,7 +367,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
             if (pIoStatus->Status == STATUS_SUCCESS)
             {
                 WCHAR *pId = (WCHAR *)pIoStatus->Information;
-                if (VALID_PTR(pId))
+                if (RT_VALID_PTR(pId))
                 {
                     KIRQL Iqrl = KeGetCurrentIrql();
                     /* IRQL should be always passive here */
@@ -420,7 +418,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
 #ifdef VBOX_USB_WITH_VERBOSE_LOGGING
                 WCHAR *pTmp;
 #endif
-                if (VALID_PTR(pId))
+                if (RT_VALID_PTR(pId))
                 {
                     KIRQL Iqrl = KeGetCurrentIrql();
                     /* IRQL should be always passive here */
@@ -581,7 +579,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
                     {
                         PDEVICE_RELATIONS pRel = (PDEVICE_RELATIONS)pIoStatus->Information;
                         LOG(("pRel = %p", pRel));
-                        if (VALID_PTR(pRel))
+                        if (RT_VALID_PTR(pRel))
                         {
                             for (unsigned i=0;i<pRel->Count;i++)
                             {
@@ -614,7 +612,7 @@ static NTSTATUS vboxUsbMonHandlePnPIoctl(PDEVICE_OBJECT pDevObj, PIO_STACK_LOCAT
             if (pIoStatus->Status == STATUS_SUCCESS)
             {
                 PDEVICE_CAPABILITIES pCaps = pSl->Parameters.DeviceCapabilities.Capabilities;
-                if (VALID_PTR(pCaps))
+                if (RT_VALID_PTR(pCaps))
                 {
                     LOG(("Caps.SilentInstall  = %d", pCaps->SilentInstall));
                     LOG(("Caps.UniqueID       = %d", pCaps->UniqueID ));

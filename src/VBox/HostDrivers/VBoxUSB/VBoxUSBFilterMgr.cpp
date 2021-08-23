@@ -235,7 +235,7 @@ int VBoxUSBFilterAdd(PCUSBFILTER pFilter, VBOXUSBFILTER_CONTEXT Owner, uintptr_t
         return rc;
     if (!Owner || Owner == VBOXUSBFILTER_CONTEXT_NIL)
         return VERR_INVALID_PARAMETER;
-    if (!VALID_PTR(puId))
+    if (!RT_VALID_PTR(puId))
         return VERR_INVALID_POINTER;
 
     /*

@@ -402,11 +402,11 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
      *       to be production quality code, we would have to be much more
      *       careful here and avoid the race.
      */
-    if (   !VALID_PTR(pOverride)
+    if (   !RT_VALID_PTR(pOverride)
         || pOverride->u32Magic != VBOXNETDEVICEOPSOVERRIDE_MAGIC
 # if RTLNX_VER_MIN(2,6,29)
-        || !VALID_PTR(pOverride->pOrgOps)
-# endif /* RTLNX_VER_MIN(2,6,29) */
+        || !RT_VALID_PTR(pOverride->pOrgOps)
+# endif
         )
     {
         printk("vboxNetFltLinuxStartXmitFilter: bad override %p\n", pOverride);
@@ -426,9 +426,9 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
     cbHdrs = RT_MIN(cbHdrs, sizeof(abHdrBuf));
     pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, cbHdrs, &abHdrBuf[0]);
     if (   pEtherHdr
-        && VALID_PTR(pOverride->pVBoxNetFlt)
+        && RT_VALID_PTR(pOverride->pVBoxNetFlt)
         && (pSwitchPort = pOverride->pVBoxNetFlt->pSwitchPort) != NULL
-        && VALID_PTR(pSwitchPort)
+        && RT_VALID_PTR(pSwitchPort)
         && cbHdrs >= 6)
     {
         INTNETSWDECISION enmDecision;
@@ -457,7 +457,7 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
     PVBOXNETDEVICEOPSOVERRIDE   pOverride;
 
     /* Cancel override if ethtool_ops is missing (host-only case, @bugref{5712}) */
-    if (!VALID_PTR(pDev->OVR_OPS))
+    if (!RT_VALID_PTR(pDev->OVR_OPS))
         return;
     pOverride = RTMemAlloc(sizeof(*pOverride));
     if (!pOverride)
@@ -496,12 +496,12 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
     RTSpinlockAcquire(pThis->hSpinlock);
     if (!pDev)
         pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
-    if (VALID_PTR(pDev))
+    if (RT_VALID_PTR(pDev))
     {
         pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->OVR_OPS;
-        if (    VALID_PTR(pOverride)
-            &&  pOverride->u32Magic == VBOXNETDEVICEOPSOVERRIDE_MAGIC
-            &&  VALID_PTR(pOverride->pOrgOps)
+        if (   RT_VALID_PTR(pOverride)
+            && pOverride->u32Magic == VBOXNETDEVICEOPSOVERRIDE_MAGIC
+            && RT_VALID_PTR(pOverride->pOrgOps)
            )
         {
 # if RTLNX_VER_MAX(2,6,29)

@@ -307,7 +307,7 @@ static int usbfilterValidateStringPattern(const char *psz)
  */
 USBLIB_DECL(int) USBFilterValidate(PCUSBFILTER pFilter)
 {
-    if (!VALID_PTR(pFilter))
+    if (!RT_VALID_PTR(pFilter))
         return VERR_INVALID_POINTER;
 
     if (pFilter->u32Magic != USBFILTER_MAGIC)

@@ -751,7 +751,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvThis;
     uint64_t NanoTS = RTTimeSystemNanoTS();
     LogFlow(("vboxNetFltDarwinIffDetached: pThis=%p NanoTS=%RU64 (%d)\n",
-             pThis, NanoTS, VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) :  -1));
+             pThis, NanoTS, RT_VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) :  -1));
 
     Assert(!pThis->fDisconnectedFromHost);
     Assert(!pThis->fRediscoveryPending);
@@ -770,7 +770,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
     RTSpinlockAcquire(pThis->hSpinlock);
 
     pIfNet = ASMAtomicUoReadPtrT(&pThis->u.s.pIfNet, ifnet_t);
-    int cPromisc = VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : - 1;
+    int cPromisc = RT_VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : - 1;
 
     ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfNet);
     ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfFilter);
@@ -835,11 +835,11 @@ static void vboxNetFltDarwinIffEvent(void *pvThis, ifnet_t pIfNet, protocol_fami
     /*
      * Watch out for the interface going online / offline.
      */
-    if (    VALID_PTR(pThis)
-        &&  VALID_PTR(pEvMsg)
-        &&  pEvMsg->vendor_code  == KEV_VENDOR_APPLE
-        &&  pEvMsg->kev_class    == KEV_NETWORK_CLASS
-        &&  pEvMsg->kev_subclass == KEV_DL_SUBCLASS)
+    if (   RT_VALID_PTR(pThis)
+        && RT_VALID_PTR(pEvMsg)
+        && pEvMsg->vendor_code  == KEV_VENDOR_APPLE
+        && pEvMsg->kev_class    == KEV_NETWORK_CLASS
+        && pEvMsg->kev_subclass == KEV_DL_SUBCLASS)
     {
         if (pThis->u.s.pIfNet    == pIfNet)
         {
@@ -880,9 +880,9 @@ static void vboxNetFltDarwinIffEvent(void *pvThis, ifnet_t pIfNet, protocol_fami
 /** @todo KEV_DL_SIFFLAGS              -> pfnReportPromiscuousMode */
         }
         else
-            Log(("vboxNetFltDarwinIffEvent: pThis->u.s.pIfNet=%p pIfNet=%p (%d)\n", pThis->u.s.pIfNet, pIfNet, VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : -1));
+            Log(("vboxNetFltDarwinIffEvent: pThis->u.s.pIfNet=%p pIfNet=%p (%d)\n", pThis->u.s.pIfNet, pIfNet, RT_VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : -1));
     }
-    else if (VALID_PTR(pEvMsg))
+    else if (RT_VALID_PTR(pEvMsg))
         Log(("vboxNetFltDarwinIffEvent: vendor_code=%#x kev_class=%#x kev_subclass=%#x event_code=%#x\n",
              pEvMsg->vendor_code, pEvMsg->kev_class, pEvMsg->kev_subclass, pEvMsg->event_code));
 }

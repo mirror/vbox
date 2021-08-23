@@ -98,7 +98,7 @@ int main(int argc, char **argv)
             if (RT_SUCCESS(rc))
             {
                 PVM pVM = CreateVMReq.pVMR3;
-                AssertRelease(VALID_PTR(pVM));
+                AssertRelease(RT_VALID_PTR(pVM));
                 AssertRelease(pVM->pVMR0ForCall == CreateVMReq.pVMR0);
                 AssertRelease(pVM->pSession == pSession);
                 AssertRelease(pVM->cCpus == 1);

@@ -1357,13 +1357,13 @@ LOCAL int vboxUsbSolarisProcessIOCtl(int iFunction, void *pvState, int Mode, PVB
 
 #define CHECKRET_MIN_SIZE(mnemonic, cbMin) \
     do { \
-        if (cbData < (cbMin)) \
+        if (RT_UNLIKELY(cbData < (cbMin))) \
         { \
             LogRel((DEVICE_NAME ": vboxUsbSolarisProcessIOCtl: " mnemonic ": cbData=%#zx (%zu) min is %#zx (%zu)\n", \
                  cbData, cbData, (size_t)(cbMin), (size_t)(cbMin))); \
             return VERR_BUFFER_OVERFLOW; \
         } \
-        if ((cbMin) != 0 && !VALID_PTR(pvBuf)) \
+        if (RT_UNLIKELY((cbMin) != 0 && !RT_VALID_PTR(pvBuf))) \
         { \
             LogRel((DEVICE_NAME ": vboxUsbSolarisProcessIOCtl: " mnemonic ": Invalid pointer %p\n", pvBuf)); \
             return VERR_INVALID_PARAMETER; \
