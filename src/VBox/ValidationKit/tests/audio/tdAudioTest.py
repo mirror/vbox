@@ -351,27 +351,6 @@ class tdAudioTest(vbox.TestDriver):
 
         return fRc;
 
-    def setGstAudioBackend(self, oTestVm, asArgs):
-        """
-        Guesses guest OS, uses an alternative (non-default) audio backends if necessary
-        and appends it to the given arguments sequence.
-
-        Returns the altered arguments sequence.
-        """
-        asArgsRet = asArgs;
-
-        # Note: Also works with the 64-bit variants (if any).
-        sOsType = oTestVm.getNonCanonicalGuestOsType();
-        if "Windows2000" in sOsType \
-        or "WindowsXP"   in sOsType \
-        or "Windows2003" in sOsType \
-        or "Windows7"    in sOsType:
-            ## @todo Some more here?
-            asArgsRet.extend( [ '--backend', 'directsound' ]);
-
-        ## @todo Tweak old(er) Linux'es as well to use OSS instead of PulseAudio?
-        return asArgsRet;
-
     def disableHstFirewall(self):
         """
         Disables the firewall on the host (if any).
@@ -425,11 +404,8 @@ class tdAudioTest(vbox.TestDriver):
         if fRc:
             reporter.log('Using VKAT on guest at \"%s\"' % (sVkatExe));
 
-            asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'guest', \
+            asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'guest', '--probe-backends', \
                                  '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
-
-            # Guess the guest backend and apply the new arguments (if any).
-            asArgs = self.setGstAudioBackend(oTestVm, asArgs);
 
             #
             # Add own environment stuff.
@@ -478,7 +454,8 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
 
         # Build the base command line, exclude all tests by default.
-        asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
+        asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--probe-backends' \
+                             '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
 
         # ... and extend it with wanted tests.
         asArgs.extend(asTests);
