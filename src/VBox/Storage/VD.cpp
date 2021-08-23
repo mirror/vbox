@@ -8430,34 +8430,25 @@ VBOXDDU_DECL(unsigned) VDGetCount(PVDISK pDisk)
 
 VBOXDDU_DECL(bool) VDIsReadOnly(PVDISK pDisk)
 {
-    bool fReadOnly;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p\n", pDisk));
-    do
+    /* sanity check */
+    AssertPtrReturn(pDisk, true);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
+
+    bool fReadOnly = true;
+    PVDIMAGE pImage = pDisk->pLast;
+    AssertPtr(pImage);
+    if (pImage)
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, fReadOnly = false);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
-
-        PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, fReadOnly = true);
-
-        unsigned uOpenFlags;
-        uOpenFlags = pDisk->pLast->Backend->pfnGetOpenFlags(pDisk->pLast->pBackendData);
+        unsigned uOpenFlags = pDisk->pLast->Backend->pfnGetOpenFlags(pDisk->pLast->pBackendData);
         fReadOnly = !!(uOpenFlags & VD_OPEN_FLAGS_READONLY);
-    } while (0);
-
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
     }
+
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %d\n", fReadOnly));
     return fReadOnly;
@@ -8466,43 +8457,37 @@ VBOXDDU_DECL(bool) VDIsReadOnly(PVDISK pDisk)
 
 VBOXDDU_DECL(uint32_t) VDGetSectorSize(PVDISK pDisk, unsigned nImage)
 {
-    uint64_t cbSector;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u\n", pDisk, nImage));
-    do
+    /* sanity check */
+    AssertPtrReturn(pDisk, 0);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
+
+    uint64_t cbSector = 0;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, cbSector = 0);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, cbSector = 0);
-
         PCVDREGIONLIST pRegionList = NULL;
         int rc = pImage->Backend->pfnQueryRegions(pImage->pBackendData, &pRegionList);
         if (RT_SUCCESS(rc))
         {
-            AssertBreakStmt(pRegionList->cRegions == 1, cbSector = 0);
-            cbSector = pRegionList->aRegions[0].cbBlock;
+            AssertMsg(pRegionList->cRegions == 1, ("%u\n", pRegionList->cRegions));
+            if (pRegionList->cRegions == 1)
+            {
+                cbSector = pRegionList->aRegions[0].cbBlock;
 
-            AssertPtr(pImage->Backend->pfnRegionListRelease);
-            pImage->Backend->pfnRegionListRelease(pImage->pBackendData, pRegionList);
+                AssertPtr(pImage->Backend->pfnRegionListRelease);
+                pImage->Backend->pfnRegionListRelease(pImage->pBackendData, pRegionList);
+            }
         }
-        else
-            cbSector = 0;
-    } while (0);
-
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
     }
+
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %u\n", cbSector));
     return cbSector;
@@ -8513,7 +8498,7 @@ VBOXDDU_DECL(uint64_t) VDGetSize(PVDISK pDisk, unsigned nImage)
 {
     LogFlowFunc(("pDisk=%#p nImage=%u\n", pDisk, nImage));
     /* sanity check */
-    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDisk, 0);
     AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     /* Do the job. */
