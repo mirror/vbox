@@ -1122,7 +1122,7 @@ static DECLCALLBACK(int) virtioNetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
                    (VIRTIONET_MAC_FILTER_LEN - pThis->cMulticastFilterMacs) * sizeof(RTMAC));
 
         pHlp->pfnSSMGetU32(     pSSM, &pThis->cUnicastFilterMacs);
-        AssertReturn(pThis->cWorkers <= VIRTIONET_MAC_FILTER_LEN, VERR_OUT_OF_RANGE);
+        AssertReturn(pThis->cUnicastFilterMacs <= VIRTIONET_MAC_FILTER_LEN, VERR_OUT_OF_RANGE);
         pHlp->pfnSSMGetMem(     pSSM, pThis->aMacUnicastFilter, pThis->cUnicastFilterMacs * sizeof(RTMAC));
 
         if (pThis->cUnicastFilterMacs < VIRTIONET_MAC_FILTER_LEN)
