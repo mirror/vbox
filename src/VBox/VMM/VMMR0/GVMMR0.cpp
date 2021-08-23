@@ -955,7 +955,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                      * Initialize all the VM pointers.
                                      */
                                     PVMR3 pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
-                                    AssertPtr((void *)pVMR3);
+                                    AssertMsg(RTR0MemUserIsValidAddr(pVMR3) && pVMR3 != NIL_RTR3PTR, ("%p\n", pVMR3));
 
                                     for (VMCPUID i = 0; i < cCpus; i++)
                                     {
@@ -964,11 +964,13 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                         pGVM->apCpusR3[i] = RTR0MemObjAddressR3(pGVM->aCpus[i].gvmm.s.VMCpuMapObj);
                                         pGVM->aCpus[i].pVCpuR3 = pGVM->apCpusR3[i];
                                         pGVM->apCpusR0[i] = &pGVM->aCpus[i];
-                                        AssertPtr((void *)pGVM->apCpusR3[i]);
+                                        AssertMsg(RTR0MemUserIsValidAddr(pGVM->apCpusR3[i]) && pGVM->apCpusR3[i] != NIL_RTR3PTR,
+                                                  ("apCpusR3[%u]=%p\n", i, pGVM->apCpusR3[i]));
                                     }
 
                                     pGVM->paVMPagesR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMPagesMapObj);
-                                    AssertPtr((void *)pGVM->paVMPagesR3);
+                                    AssertMsg(RTR0MemUserIsValidAddr(pGVM->paVMPagesR3) && pGVM->paVMPagesR3 != NIL_RTR3PTR,
+                                              ("%p\n", pGVM->paVMPagesR3));
 
                                     /*
                                      * Complete the handle - take the UsedLock sem just to be careful.
