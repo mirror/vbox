@@ -651,7 +651,7 @@ int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 DECLINLINE(void) virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pGcSgBuf);
-    Assert((cSegs > 0 && VALID_PTR(paSegs)) || (!cSegs && !paSegs));
+    Assert((cSegs > 0 && RT_VALID_PTR(paSegs)) || (!cSegs && !paSegs));
     Assert(cSegs < (~(unsigned)0 >> 1));
 
     pGcSgBuf->paSegs = paSegs;

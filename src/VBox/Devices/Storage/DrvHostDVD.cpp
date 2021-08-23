@@ -407,7 +407,7 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
      * it is CHECK CONDITION.
      */
     if (   *pu8ScsiSts == SCSI_STATUS_CHECK_CONDITION
-        && VALID_PTR(pabSense)
+        && RT_VALID_PTR(pabSense)
         && cbSense > 0)
     {
         size_t cbSenseCpy = RT_MIN(cbSense, sizeof(pThis->abATAPISense));

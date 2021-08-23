@@ -5177,13 +5177,13 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPORT pAhciPort, PAHCIPORT
 {
     /* Query the media interface. */
     pAhciPortR3->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pAhciPortR3->pDrvBase, PDMIMEDIA);
-    AssertMsgReturn(VALID_PTR(pAhciPortR3->pDrvMedia),
+    AssertMsgReturn(RT_VALID_PTR(pAhciPortR3->pDrvMedia),
                     ("AHCI configuration error: LUN#%d misses the basic media interface!\n", pAhciPort->iLUN),
                     VERR_PDM_MISSING_INTERFACE);
 
     /* Get the extended media interface. */
     pAhciPortR3->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pAhciPortR3->pDrvBase, PDMIMEDIAEX);
-    AssertMsgReturn(VALID_PTR(pAhciPortR3->pDrvMediaEx),
+    AssertMsgReturn(RT_VALID_PTR(pAhciPortR3->pDrvMediaEx),
                     ("AHCI configuration error: LUN#%d misses the extended media interface!\n", pAhciPort->iLUN),
                     VERR_PDM_MISSING_INTERFACE);
 

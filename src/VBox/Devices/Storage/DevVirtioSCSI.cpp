@@ -2150,18 +2150,18 @@ static DECLCALLBACK(int) virtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned uTarget
     {
         pTarget->fPresent = true;
         pTarget->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIA);
-        AssertMsgReturn(VALID_PTR(pTarget->pDrvMedia),
+        AssertMsgReturn(RT_VALID_PTR(pTarget->pDrvMedia),
                         ("virtio-scsi configuration error: LUN#%d missing basic media interface!\n", uTarget),
                         VERR_PDM_MISSING_INTERFACE);
 
         /* Get the extended media interface. */
         pTarget->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIAEX);
-        AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
+        AssertMsgReturn(RT_VALID_PTR(pTarget->pDrvMediaEx),
                         ("virtio-scsi configuration error: LUN#%d missing extended media interface!\n", uTarget),
                         VERR_PDM_MISSING_INTERFACE);
 
         rc = pTarget->pDrvMediaEx->pfnIoReqAllocSizeSet(pTarget->pDrvMediaEx, sizeof(VIRTIOSCSIREQ));
-        AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
+        AssertMsgReturn(RT_VALID_PTR(pTarget->pDrvMediaEx),
                         ("virtio-scsi configuration error: LUN#%u: Failed to set I/O request size!\n", uTarget),
                         rc);
     }
@@ -2550,17 +2550,17 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
             pTarget->fPresent = true;
 
             pTarget->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIA);
-            AssertMsgReturn(VALID_PTR(pTarget->pDrvMedia),
+            AssertMsgReturn(RT_VALID_PTR(pTarget->pDrvMedia),
                             ("virtio-scsi configuration error: LUN#%d missing basic media interface!\n", uTarget),
                             VERR_PDM_MISSING_INTERFACE);
             /* Get the extended media interface. */
             pTarget->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIAEX);
-            AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
+            AssertMsgReturn(RT_VALID_PTR(pTarget->pDrvMediaEx),
                             ("virtio-scsi configuration error: LUN#%d missing extended media interface!\n", uTarget),
                             VERR_PDM_MISSING_INTERFACE);
 
             rc = pTarget->pDrvMediaEx->pfnIoReqAllocSizeSet(pTarget->pDrvMediaEx, sizeof(VIRTIOSCSIREQ));
-            AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
+            AssertMsgReturn(RT_VALID_PTR(pTarget->pDrvMediaEx),
                             ("virtio-scsi configuration error: LUN#%u: Failed to set I/O request size!\n", uTarget),
                             rc);
         }

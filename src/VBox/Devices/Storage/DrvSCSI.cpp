@@ -1228,12 +1228,12 @@ static DECLCALLBACK(int) drvscsiAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
      * Query the media interface.
      */
     pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIA);
-    AssertMsgReturn(VALID_PTR(pThis->pDrvMedia), ("VSCSI configuration error: No media interface!\n"),
+    AssertMsgReturn(RT_VALID_PTR(pThis->pDrvMedia), ("VSCSI configuration error: No media interface!\n"),
                     VERR_PDM_MISSING_INTERFACE);
 
     /* Query the extended media interface. */
     pThis->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIAEX);
-    AssertMsgReturn(VALID_PTR(pThis->pDrvMediaEx), ("VSCSI configuration error: No extended media interface!\n"),
+    AssertMsgReturn(RT_VALID_PTR(pThis->pDrvMediaEx), ("VSCSI configuration error: No extended media interface!\n"),
                     VERR_PDM_MISSING_INTERFACE);
 
     pThis->pDrvMount = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMOUNT);
@@ -1430,12 +1430,12 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Query the media interface.
      */
     pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIA);
-    AssertMsgReturn(VALID_PTR(pThis->pDrvMedia), ("VSCSI configuration error: No media interface!\n"),
+    AssertMsgReturn(RT_VALID_PTR(pThis->pDrvMedia), ("VSCSI configuration error: No media interface!\n"),
                     VERR_PDM_MISSING_INTERFACE);
 
     /* Query the extended media interface. */
     pThis->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIAEX);
-    AssertMsgReturn(VALID_PTR(pThis->pDrvMediaEx), ("VSCSI configuration error: No extended media interface!\n"),
+    AssertMsgReturn(RT_VALID_PTR(pThis->pDrvMediaEx), ("VSCSI configuration error: No extended media interface!\n"),
                     VERR_PDM_MISSING_INTERFACE);
 
     pThis->pDrvMount = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMOUNT);

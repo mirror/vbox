@@ -1783,7 +1783,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
-    AssertRelease(VALID_PTR(GetBufferPtrsReq.pRing3Buf));
+    AssertRelease(RT_VALID_PTR(GetBufferPtrsReq.pRing3Buf));
     pThis->pBufR3 = GetBufferPtrsReq.pRing3Buf;
     pThis->pBufR0 = GetBufferPtrsReq.pRing0Buf;
 

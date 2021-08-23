@@ -1258,7 +1258,7 @@ static bool usbMsdAllAsyncIOIsFinished(PPDMUSBINS pUsbIns)
 {
     PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
 
-    if (   VALID_PTR(pThis->pReq)
+    if (   RT_VALID_PTR(pThis->pReq)
         && pThis->pReq->enmState == USBMSDREQSTATE_EXECUTING)
         return false;
 

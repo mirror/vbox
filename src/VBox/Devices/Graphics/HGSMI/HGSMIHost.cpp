@@ -1553,7 +1553,7 @@ int HGSMICreate(PHGSMIINSTANCE *ppIns,
         if (RT_SUCCESS (rc))
         {
             pIns->pVM            = pVM;
-            pIns->pszName        = VALID_PTR(pszName) ? pszName : "";
+            pIns->pszName        = RT_VALID_PTR(pszName) ? pszName : "";
 
             hgsmiHostHeapSetupUninitialized(&pIns->hostHeap);
 

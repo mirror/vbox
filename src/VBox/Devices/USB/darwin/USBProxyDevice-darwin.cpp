@@ -449,7 +449,7 @@ static int usbProxyDarwinUrbAllocIsocBuf(PUSBPROXYURBOSX pUrbOsX, PUSBPROXYIFOSX
     AssertReturn(pNew, VERR_NO_MEMORY);
 
     IOReturn irc = (*pIf->ppIfI)->LowLatencyCreateBuffer(pIf->ppIfI, &pNew->pvBuffer, 8192 * RT_ELEMENTS(pNew->aBuffers), enmLLType);
-    if (irc == kIOReturnSuccess != VALID_PTR(pNew->pvBuffer))
+    if ((irc == kIOReturnSuccess) != RT_VALID_PTR(pNew->pvBuffer))
     {
         AssertPtr(pNew->pvBuffer);
         irc = kIOReturnNoMemory;
@@ -457,7 +457,7 @@ static int usbProxyDarwinUrbAllocIsocBuf(PUSBPROXYURBOSX pUrbOsX, PUSBPROXYIFOSX
     if (irc == kIOReturnSuccess)
     {
         irc = (*pIf->ppIfI)->LowLatencyCreateBuffer(pIf->ppIfI, &pNew->pvFrames, PAGE_SIZE, kUSBLowLatencyFrameListBuffer);
-        if (irc == kIOReturnSuccess != VALID_PTR(pNew->pvFrames))
+        if ((irc == kIOReturnSuccess) != RT_VALID_PTR(pNew->pvFrames))
         {
             AssertPtr(pNew->pvFrames);
             irc = kIOReturnNoMemory;

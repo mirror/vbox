@@ -616,7 +616,7 @@ DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
  */
 #ifdef VBOX_STRICT
 # define vusbUrbAssert(pUrb) do { \
-    AssertMsg(VALID_PTR((pUrb)),  ("%p\n", (pUrb))); \
+    AssertPtr((pUrb)); \
     AssertMsg((pUrb)->u32Magic == VUSBURB_MAGIC, ("%#x", (pUrb)->u32Magic)); \
     AssertMsg((pUrb)->enmState > VUSBURBSTATE_INVALID && (pUrb)->enmState < VUSBURBSTATE_END, \
               ("%d\n", (pUrb)->enmState)); \

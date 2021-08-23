@@ -4885,13 +4885,13 @@ static DECLCALLBACK(int)  lsilogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
     {
         /* Query the media interface. */
         pDevice->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIA);
-        AssertMsgReturn(VALID_PTR(pDevice->pDrvMedia),
+        AssertMsgReturn(RT_VALID_PTR(pDevice->pDrvMedia),
                         ("LsiLogic configuration error: LUN#%d misses the basic media interface!\n", pDevice->iLUN),
                         VERR_PDM_MISSING_INTERFACE);
 
         /* Get the extended media interface. */
         pDevice->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIAEX);
-        AssertMsgReturn(VALID_PTR(pDevice->pDrvMediaEx),
+        AssertMsgReturn(RT_VALID_PTR(pDevice->pDrvMediaEx),
                         ("LsiLogic configuration error: LUN#%d misses the extended media interface!\n", pDevice->iLUN),
                         VERR_PDM_MISSING_INTERFACE);
 
@@ -5279,13 +5279,13 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         {
             /* Query the media interface. */
             pDevice->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIA);
-            AssertMsgReturn(VALID_PTR(pDevice->pDrvMedia),
+            AssertMsgReturn(RT_VALID_PTR(pDevice->pDrvMedia),
                             ("LsiLogic configuration error: LUN#%d misses the basic media interface!\n", pDevice->iLUN),
                             VERR_PDM_MISSING_INTERFACE);
 
             /* Get the extended media interface. */
             pDevice->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIAEX);
-            AssertMsgReturn(VALID_PTR(pDevice->pDrvMediaEx),
+            AssertMsgReturn(RT_VALID_PTR(pDevice->pDrvMediaEx),
                             ("LsiLogic configuration error: LUN#%d misses the extended media interface!\n", pDevice->iLUN),
                             VERR_PDM_MISSING_INTERFACE);
 
