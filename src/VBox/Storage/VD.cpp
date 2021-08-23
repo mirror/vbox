@@ -5791,23 +5791,20 @@ VBOXDDU_DECL(int) VDCacheOpen(PVDISK pDisk, const char *pszBackend,
     LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x, pVDIfsCache=%#p\n",
                  pDisk, pszBackend, pszFilename, uOpenFlags, pVDIfsCache));
 
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_PARAMETER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
+    AssertReturn(*pszBackend != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertMsgReturn((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0, ("uOpenFlags=%#x\n", uOpenFlags),
+                    VERR_INVALID_PARAMETER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
-                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                           ("uOpenFlags=%#x\n", uOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
-
         /* Set up image descriptor. */
         pCache = (PVDCACHE)RTMemAllocZ(sizeof(VDCACHE));
         if (!pCache)
@@ -5963,21 +5960,18 @@ VBOXDDU_DECL(int) VDFilterAdd(PVDISK pDisk, const char *pszFilter, uint32_t fFla
     LogFlowFunc(("pDisk=%#p pszFilter=\"%s\" pVDIfsFilter=%#p\n",
                  pDisk, pszFilter, pVDIfsFilter));
 
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_PARAMETER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pszFilter, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilter != '\0', VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fFlags & ~VD_FILTER_FLAGS_MASK), ("Invalid flags set (fFlags=%#x)\n", fFlags),
+                    VERR_INVALID_PARAMETER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszFilter) && *pszFilter,
-                           ("pszFilter=%#p \"%s\"\n", pszFilter, pszFilter),
-                           rc = VERR_INVALID_PARAMETER);
-
-        AssertMsgBreakStmt(!(fFlags & ~VD_FILTER_FLAGS_MASK),
-                           ("Invalid flags set (fFlags=%#x)\n", fFlags),
-                           rc = VERR_INVALID_PARAMETER);
-
         /* Set up image descriptor. */
         pFilter = (PVDFILTER)RTMemAllocZ(sizeof(VDFILTER));
         if (!pFilter)
@@ -6069,64 +6063,55 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
                  pLCHSGeometry->cHeads, pLCHSGeometry->cSectors, pUuid,
                  uOpenFlags, pVDIfsImage, pVDIfsOperation));
 
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsgReturn(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature),
+                    VERR_INVALID_MAGIC);
+
+    /* Check arguments. */
+    AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
+    AssertReturn(*pszBackend != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cbSize || (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK), ("cbSize=%llu\n", cbSize),
+                    VERR_INVALID_PARAMETER);
+    if (cbSize % 512 && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK))
+    {
+        rc = vdError(pDisk, VERR_VD_INVALID_SIZE, RT_SRC_POS,
+                     N_("VD: The given disk size %llu is not aligned on a sector boundary (512 bytes)"), cbSize);
+        LogFlowFunc(("returns %Rrc\n", rc));
+        return rc;
+    }
+    AssertMsgReturn(   ((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0)
+                    || ((uImageFlags & (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF)) != VD_IMAGE_FLAGS_FIXED),
+                    ("uImageFlags=%#x\n", uImageFlags),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(   !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
+                    || !(uImageFlags & ~(VD_VMDK_IMAGE_FLAGS_RAWDISK | VD_IMAGE_FLAGS_FIXED)),
+                    ("uImageFlags=%#x\n", uImageFlags),
+                    VERR_INVALID_PARAMETER);
+    /* The PCHS geometry fields may be 0 to leave it for later. */
+    AssertPtrReturn(pPCHSGeometry, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(   pPCHSGeometry->cHeads <= 16
+                    && pPCHSGeometry->cSectors <= 63,
+                    ("PCHS=%u/%u/%u\n", pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors),
+                    VERR_INVALID_PARAMETER);
+    /* The LCHS geometry fields may be 0 to leave it to later autodetection. */
+    AssertPtrReturn(pLCHSGeometry, VERR_INVALID_POINTER);
+    AssertMsgReturn(   pLCHSGeometry->cHeads <= 255
+                    && pLCHSGeometry->cSectors <= 63,
+                    ("LCHS=%u/%u/%u\n", pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors),
+                    VERR_INVALID_PARAMETER);
+    /* The UUID may be NULL. */
+    AssertPtrNullReturn(pUuid, VERR_INVALID_POINTER);
+    AssertMsgReturn((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0, ("uOpenFlags=%#x\n", uOpenFlags),
+                    VERR_INVALID_PARAMETER);
+
     AssertPtrNullReturn(pVDIfsOperation, VERR_INVALID_PARAMETER);
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     do
     {
-        /** @todo r=bird: there is no particular reason why this validation has to be
-         *        done inside the do-break-while-goto-is-false loop.  (pIfProgress is
-         *        only called on success.)  Could just AssertMsgReturn, rather than
-         *        complicated AssertMsgBreakStmt. */
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature),
-                           rc = VERR_INVALID_MAGIC);
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
-                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cbSize || (uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK),
-                           ("cbSize=%llu\n", cbSize),
-                           rc = VERR_INVALID_PARAMETER);
-        if (cbSize % 512 && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK))
-        {
-            rc = vdError(pDisk, VERR_VD_INVALID_SIZE, RT_SRC_POS,
-                         N_("VD: The given disk size %llu is not aligned on a sector boundary (512 bytes)"), cbSize);
-            break;
-        }
-        AssertMsgBreakStmt(   ((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0)
-                           || ((uImageFlags & (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF)) != VD_IMAGE_FLAGS_FIXED),
-                           ("uImageFlags=%#x\n", uImageFlags),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(   !(uImageFlags & VD_VMDK_IMAGE_FLAGS_RAWDISK)
-                           || !(uImageFlags & ~(VD_VMDK_IMAGE_FLAGS_RAWDISK | VD_IMAGE_FLAGS_FIXED)),
-                           ("uImageFlags=%#x\n", uImageFlags),
-                           rc = VERR_INVALID_PARAMETER);
-        /* The PCHS geometry fields may be 0 to leave it for later. */
-        AssertPtrBreakStmt(pPCHSGeometry, rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(   pPCHSGeometry->cHeads <= 16
-                           && pPCHSGeometry->cSectors <= 63,
-                           ("PCHS=%u/%u/%u\n", pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors),
-                           rc = VERR_INVALID_PARAMETER);
-        /* The LCHS geometry fields may be 0 to leave it to later autodetection. */
-        AssertPtrBreakStmt(pLCHSGeometry, rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(   pLCHSGeometry->cHeads <= 255
-                           && pLCHSGeometry->cSectors <= 63,
-                           ("LCHS=%u/%u/%u\n", pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors),
-                           rc = VERR_INVALID_PARAMETER);
-        /* The UUID may be NULL. */
-        AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
-                           ("pUuid=%#p UUID=%RTuuid\n", pUuid, pUuid),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                           ("uOpenFlags=%#x\n", uOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
-
         /* Check state. Needs a temporary read lock. Holding the write lock
          * all the time would be blocking other activities for too long. */
         rc2 = vdThreadStartRead(pDisk);
@@ -6353,36 +6338,27 @@ VBOXDDU_DECL(int) VDCreateDiff(PVDISK pDisk, const char *pszBackend,
     LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
                  pDisk, pszBackend, pszFilename, uImageFlags, pszComment, pUuid, uOpenFlags, pVDIfsImage, pVDIfsOperation));
 
-    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_PARAMETER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
+    /* Check arguments. */
+    AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
+    AssertReturn(*pszBackend != '\0', VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertMsgReturn((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0, ("uImageFlags=%#x\n", uImageFlags),
+                    VERR_INVALID_PARAMETER);
+    /* The UUID may be NULL. */
+    AssertPtrNullReturn(pUuid, VERR_INVALID_POINTER);
+    /* The parent UUID may be NULL. */
+    AssertPtrNullReturn(pParentUuid, VERR_INVALID_POINTER);
+    AssertMsgReturn((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0, ("uOpenFlags=%#x\n", uOpenFlags),
+                    VERR_INVALID_PARAMETER);
+
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
-                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
-                           ("uImageFlags=%#x\n", uImageFlags),
-                           rc = VERR_INVALID_PARAMETER);
-        /* The UUID may be NULL. */
-        AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
-                           ("pUuid=%#p UUID=%RTuuid\n", pUuid, pUuid),
-                           rc = VERR_INVALID_PARAMETER);
-        /* The parent UUID may be NULL. */
-        AssertMsgBreakStmt(pParentUuid == NULL || VALID_PTR(pParentUuid),
-                           ("pParentUuid=%#p ParentUUID=%RTuuid\n", pParentUuid, pParentUuid),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                           ("uOpenFlags=%#x\n", uOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
-
         /* Check state. Needs a temporary read lock. Holding the write lock
          * all the time would be blocking other activities for too long. */
         rc2 = vdThreadStartRead(pDisk);
@@ -6614,35 +6590,27 @@ VBOXDDU_DECL(int) VDCreateCache(PVDISK pDisk, const char *pszBackend,
     LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
                  pDisk, pszBackend, pszFilename, cbSize, uImageFlags, pszComment, pUuid, uOpenFlags, pVDIfsCache, pVDIfsOperation));
 
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pszBackend, VERR_INVALID_POINTER);
+    AssertReturn(*pszBackend, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename != '\0', VERR_INVALID_PARAMETER);
+    AssertReturn(cbSize > 0, VERR_INVALID_PARAMETER);
+    AssertMsgReturn((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0, ("uImageFlags=%#x\n", uImageFlags),
+                    VERR_INVALID_PARAMETER);
+    /* The UUID may be NULL. */
+    AssertPtrNullReturn(pUuid, VERR_INVALID_POINTER);
+    AssertMsgReturn((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0, ("uOpenFlags=%#x\n", uOpenFlags),
+                    VERR_INVALID_PARAMETER);
+
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszBackend) && *pszBackend,
-                           ("pszBackend=%#p \"%s\"\n", pszBackend, pszBackend),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cbSize,
-                           ("cbSize=%llu\n", cbSize),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0,
-                           ("uImageFlags=%#x\n", uImageFlags),
-                           rc = VERR_INVALID_PARAMETER);
-        /* The UUID may be NULL. */
-        AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
-                           ("pUuid=%#p UUID=%RTuuid\n", pUuid, pUuid),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                           ("uOpenFlags=%#x\n", uOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
-
         /* Check state. Needs a temporary read lock. Holding the write lock
          * all the time would be blocking other activities for too long. */
         rc2 = vdThreadStartRead(pDisk);
