@@ -282,8 +282,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
      * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
     if (   !isFullscreenOrSeamless()
         && uisession()->isGuestSupportsGraphics()
-        && (   (int)m_pFrameBuffer->width() != size.width()
-            || (int)m_pFrameBuffer->height() != size.height()
+        && (   (int)frameBuffer()->width() != size.width()
+            || (int)frameBuffer()->height() != size.height()
             || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
         storeGuestSizeHint(size);
 
@@ -294,7 +294,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
         if (uisession()->isScreenVisible(screenId()) == uisession()->isScreenVisibleHostDesires(screenId()))
         {
             /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
-            if ((int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height())
+            if ((int)frameBuffer()->width() != size.width() || (int)frameBuffer()->height() != size.height())
             {
                 LogRel(("GUI: UIMachineView::sltPerformGuestResize: Auto-pilot resizing screen %d as %dx%d\n",
                         (int)screenId(), size.width(), size.height()));
@@ -347,7 +347,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     else
     {
         /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
-        if ((int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height())
+        if ((int)frameBuffer()->width() != size.width() || (int)frameBuffer()->height() != size.height())
         {
             LogRel(("GUI: UIMachineView::sltPerformGuestResize: Sending guest size-hint to screen %d as %dx%d\n",
                     (int)screenId(), size.width(), size.height()));
@@ -401,8 +401,8 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
          * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
         if (   !isFullscreenOrSeamless()
             && uisession()->isGuestSupportsGraphics()
-            && (   m_pFrameBuffer->width() != uWidth
-                || m_pFrameBuffer->height() != uHeight
+            && (   frameBuffer()->width() != uWidth
+                || frameBuffer()->height() != uHeight
                 || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
             storeGuestSizeHint(QSize(uWidth, uHeight));
 
@@ -452,8 +452,8 @@ void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QS
      * Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
     if (   !isFullscreenOrSeamless()
         && uisession()->isGuestSupportsGraphics()
-        && (   (int)m_pFrameBuffer->width() != size.width()
-            || (int)m_pFrameBuffer->height() != size.height()
+        && (   (int)frameBuffer()->width() != size.width()
+            || (int)frameBuffer()->height() != size.height()
             || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
         storeGuestSizeHint(size);
 
@@ -472,6 +472,10 @@ void UIMachineView::sltHandleActionTriggerViewScreenResize(int iScreen, const QS
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 {
+    /* Sanity check: */
+    if (!frameBuffer())
+        return;
+
     LogRel2(("GUI: UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d\n",
              (unsigned long)m_uScreenId, iWidth, iHeight));
 
@@ -569,6 +573,10 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 
 void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight)
 {
+    /* Sanity check: */
+    if (!frameBuffer())
+        return;
+
     /* Prepare corresponding viewport part: */
     QRect rect(iX, iY, iWidth, iHeight);
 
@@ -704,7 +712,7 @@ void UIMachineView::sltMachineStateChanged()
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
         {
-            if (   m_pFrameBuffer
+            if (   frameBuffer()
                 && (   state           != KMachineState_TeleportingPausedVM
                     || m_previousState != KMachineState_Teleporting))
             {
@@ -740,7 +748,7 @@ void UIMachineView::sltMachineStateChanged()
                 m_previousState == KMachineState_TeleportingPausedVM ||
                 m_previousState == KMachineState_Restoring)
             {
-                if (m_pFrameBuffer)
+                if (frameBuffer())
                 {
                     /* Reset pause-pixmap: */
                     resetPausePixmap();
@@ -860,10 +868,10 @@ void UIMachineView::prepareFrameBuffer()
     {
         /* Create new frame-buffer: */
         m_pFrameBuffer = new UIFrameBuffer;
-        m_pFrameBuffer->init(this);
+        frameBuffer()->init(this);
 
         /* Take scaling optimization type into account: */
-        m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(uiCommon().managedVMUuid()));
+        frameBuffer()->setScalingOptimizationType(gEDataManager->scalingOptimizationType(uiCommon().managedVMUuid()));
 
         /* Acquire selected scale-factor: */
         double dScaleFactor = gEDataManager->scaleFactor(uiCommon().managedVMUuid(), m_uScreenId);
@@ -875,10 +883,10 @@ void UIMachineView::prepareFrameBuffer()
         dScaleFactor = fUseUnscaledHiDPIOutput ? dScaleFactor : 1.0;
 
         /* Assign frame-buffer with new values: */
-        m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatioFormal);
-        m_pFrameBuffer->setDevicePixelRatioActual(dDevicePixelRatioActual);
-        m_pFrameBuffer->setScaleFactor(dScaleFactor);
-        m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+        frameBuffer()->setDevicePixelRatio(dDevicePixelRatioFormal);
+        frameBuffer()->setDevicePixelRatioActual(dDevicePixelRatioActual);
+        frameBuffer()->setScaleFactor(dScaleFactor);
+        frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
         /* Propagate the scale-factor related attributes to 3D service if necessary: */
         if (machine().GetGraphicsAdapter().GetAccelerate3DEnabled())
@@ -898,18 +906,18 @@ void UIMachineView::prepareFrameBuffer()
         }
 
         /* Perform frame-buffer rescaling: */
-        m_pFrameBuffer->performRescale();
+        frameBuffer()->performRescale();
 
         /* Associate uisession with frame-buffer finally: */
-        uisession()->setFrameBuffer(screenId(), m_pFrameBuffer);
+        uisession()->setFrameBuffer(screenId(), frameBuffer());
     }
 
     /* Make sure frame-buffer was prepared: */
-    AssertReturnVoid(m_pFrameBuffer);
+    AssertReturnVoid(frameBuffer());
 
     /* Reattach to IDisplay: */
-    m_pFrameBuffer->detach();
-    m_pFrameBuffer->attach();
+    frameBuffer()->detach();
+    frameBuffer()->attach();
 
     /* Calculate frame-buffer size: */
     QSize size;
@@ -1030,15 +1038,15 @@ void UIMachineView::cleanupDnd()
 void UIMachineView::cleanupFrameBuffer()
 {
     /* Make sure framebuffer assigned at all: */
-    if (!m_pFrameBuffer)
+    if (!frameBuffer())
         return;
 
     /* Make sure proper framebuffer assigned: */
-    AssertReturnVoid(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
+    AssertReturnVoid(frameBuffer() == uisession()->frameBuffer(screenId()));
 
     /* Mark framebuffer as unused: */
     LogRelFlow(("GUI: UIMachineView::cleanupFrameBuffer: Stop EMT callbacks accepting for screen: %d\n", screenId()));
-    m_pFrameBuffer->setMarkAsUnused(true);
+    frameBuffer()->setMarkAsUnused(true);
 
     /* Process pending framebuffer events: */
     QApplication::sendPostedEvents(this, QEvent::MetaCall);
@@ -1048,10 +1056,10 @@ void UIMachineView::cleanupFrameBuffer()
      * Note: VBOX_WITH_CROGL additionally requires us to call DetachFramebuffer
      * to ensure 3D gets notified of view being destroyed... */
     if (console().isOk() && !display().isNull())
-        m_pFrameBuffer->detach();
+        frameBuffer()->detach();
 
     /* Detach framebuffer from view: */
-    m_pFrameBuffer->setView(NULL);
+    frameBuffer()->setView(NULL);
 }
 
 void UIMachineView::cleanupNativeFilters()
@@ -1122,7 +1130,7 @@ QSize UIMachineView::sizeHint() const
         return m_sizeHintOverride;
 
     /* Get frame-buffer size-hint: */
-    QSize size(m_pFrameBuffer->width(), m_pFrameBuffer->height());
+    QSize size(frameBuffer()->width(), frameBuffer()->height());
 
     /* Take the scale-factor(s) into account: */
     size = scaledForward(size);
@@ -1151,12 +1159,12 @@ int UIMachineView::contentsY() const
 
 int UIMachineView::contentsWidth() const
 {
-    return m_pFrameBuffer->width();
+    return frameBuffer()->width();
 }
 
 int UIMachineView::contentsHeight() const
 {
-    return m_pFrameBuffer->height();
+    return frameBuffer()->height();
 }
 
 int UIMachineView::visibleWidth() const
@@ -1287,7 +1295,7 @@ void UIMachineView::resetPausePixmap()
 void UIMachineView::takePausePixmapLive()
 {
     /* Prepare a screen-shot: */
-    QImage screenShot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+    QImage screenShot = QImage(frameBuffer()->width(), frameBuffer()->height(), QImage::Format_RGB32);
     /* Which will be a 'black image' by default. */
     screenShot.fill(0);
 
@@ -1510,7 +1518,7 @@ CGImageRef UIMachineView::vmContentImage()
         return darwinToCGImageRef(&pausePixmap());
 
     /* Create the image ref out of the frame-buffer: */
-    return frameBuffertoCGImageRef(m_pFrameBuffer);
+    return frameBuffertoCGImageRef(frameBuffer());
 }
 
 CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
@@ -1581,8 +1589,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 /* Notify framebuffer about viewport resize: */
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                if (m_pFrameBuffer)
-                    m_pFrameBuffer->viewportResized(pResizeEvent);
+                if (frameBuffer())
+                    frameBuffer()->viewportResized(pResizeEvent);
                 /* Update console's display viewport and 3D overlay: */
                 updateViewport();
                 break;
@@ -1695,8 +1703,8 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     }
 
     /* Delegate the paint function to the UIFrameBuffer interface: */
-    if (m_pFrameBuffer)
-        m_pFrameBuffer->handlePaintEvent(pPaintEvent);
+    if (frameBuffer())
+        frameBuffer()->handlePaintEvent(pPaintEvent);
 #ifdef VBOX_WS_MAC
     /* Update the dock icon if we are in the running state: */
     if (uisession()->isRunning())
