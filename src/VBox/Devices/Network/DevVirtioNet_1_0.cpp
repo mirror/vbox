@@ -130,6 +130,7 @@
 #   define VIRTIONET_MAX_QPAIRS         VIRTIONET_CTRL_MQ_VQ_PAIRS_MIN
 #endif
 
+#define VIRTIONET_MAX_WORKERS           VIRTIONET_MAX_QPAIRS
 #define VIRTIONET_MAX_VIRTQS            (VIRTIONET_MAX_QPAIRS * 2 + 1)
 #define VIRTIONET_MAX_FRAME_SIZE        65535 + 18  /**< Max IP pkt size + Eth. header w/VLAN tag  */
 #define VIRTIONET_MAC_FILTER_LEN        32
@@ -479,7 +480,7 @@ typedef struct VIRTIONETR3
     VIRTIONETWORKERR3               aWorkers[VIRTIONET_MAX_VIRTQS];
 
     /** The device instance.
-     * @note This is _only_ for use when dealing with interface callbacks. */
+     * @note This is _only_ for use whxen dealing with interface callbacks. */
     PPDMDEVINSR3                    pDevIns;
 
     /** Status LUN: Base interface. */
@@ -1074,7 +1075,11 @@ static DECLCALLBACK(int) virtioNetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
     pHlp->pfnSSMGetU64(     pSSM, &pThis->fNegotiatedFeatures);
 
     pHlp->pfnSSMGetU16(     pSSM, &pThis->cVirtVirtqs);
+    AssertReturn(pThis->cVirtVirtqs <= (VIRTIONET_MAX_QPAIRS * 2), VERR_OUT_OF_RANGE);
+
     pHlp->pfnSSMGetU16(     pSSM, &pThis->cWorkers);
+    AssertReturn(pThis->cWorkers <= VIRTIONET_MAX_WORKERS, VERR_OUT_OF_RANGE);
+
 
     for (int uVirtqNbr = 0; uVirtqNbr < pThis->cVirtVirtqs; uVirtqNbr++)
         pHlp->pfnSSMGetBool(pSSM, &pThis->aVirtqs[uVirtqNbr].fAttachedToVirtioCore);
@@ -1109,6 +1114,7 @@ static DECLCALLBACK(int) virtioNetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
         pHlp->pfnSSMGetU8(      pSSM, &pThis->fNoBroadcast);
 
         pHlp->pfnSSMGetU32(     pSSM, &pThis->cMulticastFilterMacs);
+        AssertReturn(pThis->cMulticastFilterMacs <= VIRTIONET_MAC_FILTER_LEN, VERR_OUT_OF_RANGE);
         pHlp->pfnSSMGetMem(     pSSM, pThis->aMacMulticastFilter, pThis->cMulticastFilterMacs * sizeof(RTMAC));
 
         if (pThis->cMulticastFilterMacs < VIRTIONET_MAC_FILTER_LEN)
@@ -1116,6 +1122,7 @@ static DECLCALLBACK(int) virtioNetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
                    (VIRTIONET_MAC_FILTER_LEN - pThis->cMulticastFilterMacs) * sizeof(RTMAC));
 
         pHlp->pfnSSMGetU32(     pSSM, &pThis->cUnicastFilterMacs);
+        AssertReturn(pThis->cWorkers <= VIRTIONET_MAC_FILTER_LEN, VERR_OUT_OF_RANGE);
         pHlp->pfnSSMGetMem(     pSSM, pThis->aMacUnicastFilter, pThis->cUnicastFilterMacs * sizeof(RTMAC));
 
         if (pThis->cUnicastFilterMacs < VIRTIONET_MAC_FILTER_LEN)
@@ -2279,6 +2286,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
     if (!ASMAtomicCmpXchgU32(&pThis->uIsTransmitting, 1, 0))
         return;
 
+
     if (!pThis->fVirtioReady)
     {
         LogFunc(("%s Ignoring Tx requests. VirtIO not ready (status=0x%x).\n",
@@ -2291,6 +2299,7 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
         Log(("%s Ignoring transmit requests while cable is disconnected.\n", pThis->szInst));
         return;
     }
+
 
     PPDMINETWORKUP pDrv = pThisCC->pDrv;
     if (pDrv)
@@ -2770,6 +2779,8 @@ static DECLCALLBACK(void) virtioNetR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOC
             PVIRTIONETWORKER pWorker = &pThis->aWorkers[uVirtqNbr];
 
             Assert(pWorker->uIdx == uVirtqNbr);
+	    RT_NOREF(pWorker);
+
             Assert(pVirtq->uIdx == pWorker->uIdx);
 
             (void) virtioCoreR3VirtqAttach(&pThis->Virtio, pVirtq->uIdx, pVirtq->szName);
