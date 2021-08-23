@@ -1312,13 +1312,13 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigned cRa
  * @param   pDisk           Pointer to the HDD container.
  * @param   off             The offset of the virtual disk to read from.
  * @param   cbRead          How many bytes to read.
- * @param   pcSgBuf         Pointer to the S/G buffer to read into.
+ * @param   pSgBuf          Pointer to the S/G buffer to read into.
  * @param   pfnComplete     Completion callback.
  * @param   pvUser1         User data which is passed on completion.
  * @param   pvUser2         User data which is passed on completion.
  */
 VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t off, size_t cbRead,
-                              PCRTSGBUF pcSgBuf,
+                              PCRTSGBUF pSgBuf,
                               PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                               void *pvUser1, void *pvUser2);
 
@@ -1330,13 +1330,13 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t off, size_t cbRead,
  * @param   pDisk           Pointer to the HDD container.
  * @param   off             The offset of the virtual disk to write to.
  * @param   cbWrite         How many bytes to write.
- * @param   pcSgBuf         Pointer to the S/G buffer to write from.
+ * @param   pSgBuf          Pointer to the S/G buffer to write from.
  * @param   pfnComplete     Completion callback.
  * @param   pvUser1         User data which is passed on completion.
  * @param   pvUser2         User data which is passed on completion.
  */
 VBOXDDU_DECL(int) VDAsyncWrite(PVDISK pDisk, uint64_t off, size_t cbWrite,
-                               PCRTSGBUF pcSgBuf,
+                               PCRTSGBUF pSgBuf,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2);
 
