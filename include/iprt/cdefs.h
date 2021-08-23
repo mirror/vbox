@@ -4324,9 +4324,13 @@
 #  endif
 # else /* !IN_RING3 */
 #  if defined(RT_OS_LINUX) /* May use 5-level paging (see Documentation/x86/x86_64/mm.rst). */
-#   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x200000 >= 0x201000U /* one invalid page at the bottom and 2MB at the top */ \
+#   if 1 /* User address are no longer considered valid in kernel mode (SMAP, etc). */
+#    define RT_VALID_PTR(ptr)   ((uintptr_t)(ptr) - 0xff00000000000000ULL < 0x00ffffffffe00000ULL) /* 2MB invalid space at the top */
+#   else
+#    define RT_VALID_PTR(ptr)   (   (uintptr_t)(ptr) + 0x200000 >= 0x201000U /* one invalid page at the bottom and 2MB at the top */ \
                                  && (   ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0xff00000000000000ULL \
                                      || ((uintptr_t)(ptr) & 0xff00000000000000ULL) == 0) )
+#   endif
 #  else
 #   define RT_VALID_PTR(ptr)    (   (uintptr_t)(ptr) + 0x1000U >= 0x2000U \
                                  && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
