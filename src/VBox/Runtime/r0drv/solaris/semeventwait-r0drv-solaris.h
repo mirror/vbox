@@ -200,7 +200,7 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
     PRTR0SEMSOLWAIT pWait   = (PRTR0SEMSOLWAIT)pvUser;
     kthread_t      *pThread = pWait->pThread;
     kmutex_t       *pMtx    = (kmutex_t *)ASMAtomicReadPtr(&pWait->pvMtx);
-    if (VALID_PTR(pMtx))
+    if (RT_VALID_PTR(pMtx))
     {
         /* Enter the mutex here to make sure the thread has gone to sleep
            before we wake it up.
@@ -233,7 +233,7 @@ static void rtR0SemSolWaitTimeout(void *pvUser)
     PRTR0SEMSOLWAIT pWait   = (PRTR0SEMSOLWAIT)pvUser;
     kthread_t      *pThread = pWait->pThread;
     kmutex_t       *pMtx    = (kmutex_t *)ASMAtomicReadPtr((void * volatile *)&pWait->pvMtx);
-    if (VALID_PTR(pMtx))
+    if (RT_VALID_PTR(pMtx))
     {
         /* Enter the mutex here to make sure the thread has gone to sleep
            before we wake it up. */

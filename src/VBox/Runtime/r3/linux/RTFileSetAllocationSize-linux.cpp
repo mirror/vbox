@@ -55,19 +55,18 @@ RTDECL(int) RTFileSetAllocationSize(RTFILE hFile, uint64_t cbSize, uint32_t fFla
                     ("64-bit filesize not supported! cbSize=%lld\n", cbSize),
                     VERR_NOT_SUPPORTED);
 
-    int rc = VINF_SUCCESS;
+    int rc;
     PFNLNXFALLOCATE pfnLnxFAllocate = (PFNLNXFALLOCATE)(uintptr_t)dlsym(RTLD_DEFAULT, "fallocate64");
-    if (VALID_PTR(pfnLnxFAllocate))
+    if (RT_VALID_PTR(pfnLnxFAllocate))
     {
         int fLnxFlags = (fFlags & RTFILE_ALLOC_SIZE_F_KEEP_SIZE) ? LNX_FALLOC_FL_KEEP_SIZE : 0;
         int rcLnx = pfnLnxFAllocate(RTFileToNative(hFile), fLnxFlags, 0, cbSize);
-        if (rcLnx != 0)
-        {
-            if (errno == EOPNOTSUPP)
-                rc = VERR_NOT_SUPPORTED;
-            else
-                rc = RTErrConvertFromErrno(errno);
-        }
+        if (rcLnx == 0)
+            rc = VINF_SUCCESS;
+        else if (errno == EOPNOTSUPP)
+            rc = VERR_NOT_SUPPORTED;
+        else
+            rc = RTErrConvertFromErrno(errno);
     }
     else
         rc = VERR_NOT_SUPPORTED;

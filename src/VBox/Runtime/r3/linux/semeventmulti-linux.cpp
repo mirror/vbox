@@ -201,8 +201,8 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
      * Validate input.
      */
     struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
-    AssertReturn(VALID_PTR(pThis) && pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                 VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
 
 #ifdef RTSEMEVENTMULTI_STRICT
     if (pThis->fEverHadSignallers)
@@ -235,8 +235,8 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
      * Validate input.
      */
     struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
-    AssertReturn(VALID_PTR(pThis) && pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                 VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
 #ifdef RT_STRICT
     int32_t i = pThis->iState;
     Assert(i == 0 || i == -1 || i == 1);

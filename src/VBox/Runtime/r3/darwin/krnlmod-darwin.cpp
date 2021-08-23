@@ -228,7 +228,8 @@ RTDECL(uint32_t) RTKrnlModLoadedGetCount(void)
 RTDECL(int) RTKrnlModLoadedQueryInfoAll(PRTKRNLMODINFO pahKrnlModInfo, uint32_t cEntriesMax,
                                         uint32_t *pcEntries)
 {
-    AssertReturn(VALID_PTR(pahKrnlModInfo) || cEntriesMax == 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pahKrnlModInfo, VERR_INVALID_POINTER);
+    AssertReturn(cEntriesMax == 0, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
     RTOnce(&g_GetIoKitApisOnce, rtKrnlModDarwinResolveIoKitApis, NULL);

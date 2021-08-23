@@ -575,7 +575,7 @@ typedef struct RTLDRMODINTERNAL
  */
 DECLINLINE(bool) rtldrIsValid(RTLDRMOD hLdrMod)
 {
-    return VALID_PTR(hLdrMod)
+    return RT_VALID_PTR(hLdrMod)
         && ((PRTLDRMODINTERNAL)hLdrMod)->u32Magic == RTLDRMOD_MAGIC;
 }
 

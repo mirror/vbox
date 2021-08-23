@@ -44,7 +44,7 @@ RTDECL(int) RTFileCopyByHandlesEx(RTFILE hFileSrc, RTFILE hFileDst, PFNRTPROGRES
      */
     AssertMsgReturn(RTFileIsValid(hFileSrc), ("hFileSrc=%RTfile\n", hFileSrc), VERR_INVALID_PARAMETER);
     AssertMsgReturn(RTFileIsValid(hFileDst), ("hFileDst=%RTfile\n", hFileDst), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(!pfnProgress || VALID_PTR(pfnProgress), ("pfnProgress=%p\n", pfnProgress), VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
 
     /*
      * Save file offset.

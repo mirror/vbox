@@ -161,7 +161,7 @@ typedef struct RTDIRINTERNAL
  */
 DECLINLINE(bool) rtDirValidHandle(PRTDIRINTERNAL pDir)
 {
-    AssertMsgReturn(VALID_PTR(pDir), ("%p\n", pDir), false);
+    AssertPtrReturn(pDir, false);
     AssertMsgReturn(pDir->u32Magic == RTDIR_MAGIC, ("%#RX32\n", pDir->u32Magic), false);
     return true;
 }
