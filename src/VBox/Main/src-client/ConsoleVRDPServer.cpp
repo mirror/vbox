@@ -2988,8 +2988,8 @@ void ConsoleVRDPServer::MousePointerHide(void)
 
 void ConsoleVRDPServer::Stop(void)
 {
-    Assert(VALID_PTR(this)); /** @todo r=bird: there are(/was) some odd cases where this buster was invalid on
-                              * linux. Just remove this when it's 100% sure that problem has been fixed. */
+    AssertPtr(this); /** @todo r=bird: there are(/was) some odd cases where this buster was invalid on
+                      * linux. Just remove this when it's 100% sure that problem has been fixed. */
 
 #ifdef VBOX_WITH_USB
     remoteUSBThreadStop();

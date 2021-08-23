@@ -4509,7 +4509,7 @@ int Console::i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
 
     /* First check if the LUN already exists. */
     PCFGMNODE pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
-    AssertReturn(!VALID_PTR(pLunL0) || fAttachDetach, VERR_INTERNAL_ERROR);
+    AssertReturn(!RT_VALID_PTR(pLunL0) || fAttachDetach, VERR_INTERNAL_ERROR);
 
     if (pLunL0)
     {

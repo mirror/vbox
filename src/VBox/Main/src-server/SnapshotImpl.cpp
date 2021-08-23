@@ -3627,7 +3627,7 @@ HRESULT SessionMachine::i_prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &a
                                                       ComPtr<IToken> &aHDLockToken)
 {
     Assert(!mParent->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
-    Assert(!fOnlineMergePossible || VALID_PTR(aVMMALockList));
+    Assert(!fOnlineMergePossible || RT_VALID_PTR(aVMMALockList));
 
     AutoWriteLock alock(aHD COMMA_LOCKVAL_SRC_POS);
 
