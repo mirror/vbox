@@ -707,7 +707,7 @@ DECLINLINE(void) vdIoCtxRootComplete(PVDISK pDisk, PVDIOCTX pIoCtx)
  */
 DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                              uint64_t uOffset, size_t cbTransfer, PVDIMAGE pImageStart,
-                             PCRTSGBUF pcSgBuf, void *pvAllocation,
+                             PCRTSGBUF pSgBuf, void *pvAllocation,
                              PFNVDIOCTXTRANSFER pfnIoCtxTransfer, uint32_t fFlags)
 {
     pIoCtx->pDisk                 = pDisk;
@@ -734,7 +734,7 @@ DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVDISK pDisk, VDIOCTXTXDIR enmTxDi
     /* There is no S/G list for a flush request. */
     if (   enmTxDir != VDIOCTXTXDIR_FLUSH
         && enmTxDir != VDIOCTXTXDIR_DISCARD)
-        RTSgBufClone(&pIoCtx->Req.Io.SgBuf, pcSgBuf);
+        RTSgBufClone(&pIoCtx->Req.Io.SgBuf, pSgBuf);
     else
         memset(&pIoCtx->Req.Io.SgBuf, 0, sizeof(RTSGBUF));
 }
@@ -1008,7 +1008,7 @@ static int vdDiscardSetRangeAllocated(PVDISK pDisk, uint64_t uOffset, size_t cbR
 
 DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                                   uint64_t uOffset, size_t cbTransfer,
-                                  PVDIMAGE pImageStart,PCRTSGBUF pcSgBuf,
+                                  PVDIMAGE pImageStart,PCRTSGBUF pSgBuf,
                                   void *pvAllocation, PFNVDIOCTXTRANSFER pfnIoCtxTransfer,
                                   uint32_t fFlags)
 {
@@ -1018,7 +1018,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
     if (RT_LIKELY(pIoCtx))
     {
         vdIoCtxInit(pIoCtx, pDisk, enmTxDir, uOffset, cbTransfer, pImageStart,
-                    pcSgBuf, pvAllocation, pfnIoCtxTransfer, fFlags);
+                    pSgBuf, pvAllocation, pfnIoCtxTransfer, fFlags);
     }
 
     return pIoCtx;
@@ -1026,7 +1026,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
 
 DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                                       uint64_t uOffset, size_t cbTransfer,
-                                      PVDIMAGE pImageStart, PCRTSGBUF pcSgBuf,
+                                      PVDIMAGE pImageStart, PCRTSGBUF pSgBuf,
                                       PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                       void *pvUser1, void *pvUser2,
                                       void *pvAllocation,
@@ -1034,7 +1034,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                                       uint32_t fFlags)
 {
     PVDIOCTX pIoCtx = vdIoCtxAlloc(pDisk, enmTxDir, uOffset, cbTransfer, pImageStart,
-                                   pcSgBuf, pvAllocation, pfnIoCtxTransfer, fFlags);
+                                   pSgBuf, pvAllocation, pfnIoCtxTransfer, fFlags);
 
     if (RT_LIKELY(pIoCtx))
     {
@@ -1100,13 +1100,13 @@ DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVDISK pDisk, PCRTRANGE paRanges,
 
 DECLINLINE(PVDIOCTX) vdIoCtxChildAlloc(PVDISK pDisk, VDIOCTXTXDIR enmTxDir,
                                        uint64_t uOffset, size_t cbTransfer,
-                                       PVDIMAGE pImageStart, PCRTSGBUF pcSgBuf,
+                                       PVDIMAGE pImageStart, PCRTSGBUF pSgBuf,
                                        PVDIOCTX pIoCtxParent, size_t cbTransferParent,
                                        size_t cbWriteParent, void *pvAllocation,
                                        PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
 {
     PVDIOCTX pIoCtx = vdIoCtxAlloc(pDisk, enmTxDir, uOffset, cbTransfer, pImageStart,
-                                   pcSgBuf, pvAllocation, pfnIoCtxTransfer, pIoCtxParent->fFlags & ~VDIOCTX_FLAGS_DONT_FREE);
+                                   pSgBuf, pvAllocation, pfnIoCtxTransfer, pIoCtxParent->fFlags & ~VDIOCTX_FLAGS_DONT_FREE);
 
     AssertPtr(pIoCtxParent);
     Assert(!pIoCtxParent->pIoCtxParent);
@@ -9482,7 +9482,7 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigned cRa
 
 
 VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
-                              PCRTSGBUF pcSgBuf,
+                              PCRTSGBUF pSgBuf,
                               PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                               void *pvUser1, void *pvUser2)
 {
@@ -9490,8 +9490,8 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
     int rc2;
     PVDIOCTX pIoCtx = NULL;
 
-    LogFlowFunc(("pDisk=%#p uOffset=%llu pcSgBuf=%#p cbRead=%zu pvUser1=%#p pvUser2=%#p\n",
-                 pDisk, uOffset, pcSgBuf, cbRead, pvUser1, pvUser2));
+    LogFlowFunc(("pDisk=%#p uOffset=%llu pSgBuf=%#p cbRead=%zu pvUser1=%#p pvUser2=%#p\n",
+                 pDisk, uOffset, pSgBuf, cbRead, pvUser1, pvUser2));
 
     /* sanity check */
     AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
@@ -9499,7 +9499,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
 
     /* Check arguments. */
     AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcSgBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSgBuf, VERR_INVALID_POINTER);
 
     do
     {
@@ -9514,7 +9514,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
         AssertPtrBreakStmt(pDisk->pLast, rc = VERR_VD_NOT_OPENED);
 
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_READ, uOffset,
-                                  cbRead, pDisk->pLast, pcSgBuf,
+                                  cbRead, pDisk->pLast, pSgBuf,
                                   pfnComplete, pvUser1, pvUser2,
                                   NULL, vdReadHelperAsync,
                                   VDIOCTX_FLAGS_ZERO_FREE_BLOCKS);
@@ -9549,34 +9549,28 @@ VBOXDDU_DECL(int) VDAsyncRead(PVDISK pDisk, uint64_t uOffset, size_t cbRead,
 
 
 VBOXDDU_DECL(int) VDAsyncWrite(PVDISK pDisk, uint64_t uOffset, size_t cbWrite,
-                               PCRTSGBUF pcSgBuf,
+                               PCRTSGBUF pSgBuf,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2)
 {
     int rc;
     int rc2;
-    bool fLockWrite = false;
     PVDIOCTX pIoCtx = NULL;
 
-    LogFlowFunc(("pDisk=%#p uOffset=%llu cSgBuf=%#p cbWrite=%zu pvUser1=%#p pvUser2=%#p\n",
-                 pDisk, uOffset, pcSgBuf, cbWrite, pvUser1, pvUser2));
+    LogFlowFunc(("pDisk=%#p uOffset=%llu pSgBuf=%#p cbWrite=%zu pvUser1=%#p pvUser2=%#p\n",
+                 pDisk, uOffset, pSgBuf, cbWrite, pvUser1, pvUser2));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertReturn(cbWrite > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pSgBuf, VERR_INVALID_POINTER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(cbWrite,
-                           ("cbWrite=%zu\n", cbWrite),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pcSgBuf),
-                           ("pcSgBuf=%#p\n", pcSgBuf),
-                           rc = VERR_INVALID_PARAMETER);
-
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         AssertMsgBreakStmt(   uOffset < pDisk->cbSize
                            && cbWrite <= pDisk->cbSize - uOffset,
@@ -9586,7 +9580,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVDISK pDisk, uint64_t uOffset, size_t cbWrite,
         AssertPtrBreakStmt(pDisk->pLast, rc = VERR_VD_NOT_OPENED);
 
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_WRITE, uOffset,
-                                  cbWrite, pDisk->pLast, pcSgBuf,
+                                  cbWrite, pDisk->pLast, pSgBuf,
                                   pfnComplete, pvUser1, pvUser2,
                                   NULL, vdWriteHelperAsync,
                                   VDIOCTX_FLAGS_DEFAULT);
@@ -9608,7 +9602,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVDISK pDisk, uint64_t uOffset, size_t cbWrite,
             vdIoCtxFree(pDisk, pIoCtx);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+    if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
     {
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
@@ -9624,20 +9618,17 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVDISK pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCompl
 {
     int rc;
     int rc2;
-    bool fLockWrite = false;
     PVDIOCTX pIoCtx = NULL;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         AssertPtrBreakStmt(pDisk->pLast, rc = VERR_VD_NOT_OPENED);
 
@@ -9664,7 +9655,7 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVDISK pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCompl
             vdIoCtxFree(pDisk, pIoCtx);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+    if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
     {
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
@@ -9680,20 +9671,17 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigne
 {
     int rc;
     int rc2;
-    bool fLockWrite = false;
     PVDIOCTX pIoCtx = NULL;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
-        fLockWrite = true;
 
         AssertPtrBreakStmt(pDisk->pLast, rc = VERR_VD_NOT_OPENED);
 
@@ -9719,7 +9707,7 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVDISK pDisk, PCRTRANGE paRanges, unsigne
             vdIoCtxFree(pDisk, pIoCtx);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+    if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
     {
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
