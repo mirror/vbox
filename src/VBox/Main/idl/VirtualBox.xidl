@@ -18322,7 +18322,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <method name="describeFileExtensions">
+    <method name="describeFileExtensions" const="yes">
       <desc>
         Returns two arrays describing the supported file extensions.
 
