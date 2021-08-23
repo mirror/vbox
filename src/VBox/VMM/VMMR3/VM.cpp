@@ -1750,7 +1750,7 @@ VMMR3DECL(int) VMR3Save(PUVM pUVM, const char *pszFilename, bool fContinueAfterw
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_OTHER_THREAD(pVM);
-    AssertReturn(VALID_PTR(pszFilename), VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
 

@@ -293,7 +293,7 @@ DECLCALLBACK(int) vboximgVdCryptoConfigQuerySize(void *pvUser, const char *pszNa
 {
     VDISKCRYPTOSETTINGS *pSettings = (VDISKCRYPTOSETTINGS *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
-    AssertReturn(VALID_PTR(pcbValue), VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbValue, VERR_INVALID_POINTER);
 
     size_t cbValue = 0;
     if (!strcmp(pszName, "Algorithm"))
@@ -321,7 +321,7 @@ DECLCALLBACK(int) vboximgVdCryptoConfigQuery(void *pvUser, const char *pszName,
 {
     VDISKCRYPTOSETTINGS *pSettings = (VDISKCRYPTOSETTINGS *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
-    AssertReturn(VALID_PTR(pszValue), VERR_INVALID_POINTER);
+    AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
 
     const char *psz = NULL;
     if (!strcmp(pszName, "Algorithm"))
