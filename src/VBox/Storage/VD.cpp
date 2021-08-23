@@ -7227,23 +7227,21 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
     LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu nImageFromSame=%u nImageToSame=%u uImageFlags=%#x pDstUuid=%#p uOpenFlags=%#x pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
                  pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, nImageFromSame, nImageToSame, uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
 
+    /* Check arguments. */
+    AssertReturn(pDiskFrom, VERR_INVALID_POINTER);
+    AssertMsg(pDiskFrom->u32Signature == VDISK_SIGNATURE,
+              ("u32Signature=%08x\n", pDiskFrom->u32Signature));
+
     PVDINTERFACEPROGRESS pIfProgress    = VDIfProgressGet(pVDIfsOperation);
     PVDINTERFACEPROGRESS pDstIfProgress = VDIfProgressGet(pDstVDIfsOperation);
 
     do {
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pDiskFrom), ("pDiskFrom=%#p\n", pDiskFrom),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDiskFrom->u32Signature == VDISK_SIGNATURE,
-                  ("u32Signature=%08x\n", pDiskFrom->u32Signature));
-
         rc2 = vdThreadStartRead(pDiskFrom);
         AssertRC(rc2);
         fLockReadFrom = true;
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImage);
         AssertPtrBreakStmt(pImageFrom, rc = VERR_VD_IMAGE_NOT_FOUND);
-        AssertMsgBreakStmt(VALID_PTR(pDiskTo), ("pDiskTo=%#p\n", pDiskTo),
-                           rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pDiskTo, rc = VERR_INVALID_POINTER);
         AssertMsg(pDiskTo->u32Signature == VDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDiskTo->u32Signature));
         AssertMsgBreakStmt(   (nImageFromSame < nImage || nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN)
@@ -7281,9 +7279,11 @@ VBOXDDU_DECL(int) VDCopyEx(PVDISK pDiskFrom, unsigned nImage, PVDISK pDiskTo,
         }
 
         /* pszFilename is allowed to be NULL, as this indicates copy to the existing image. */
-        AssertMsgBreakStmt(pszFilename == NULL || (VALID_PTR(pszFilename) && *pszFilename),
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
+        if (pszFilename)
+        {
+            AssertPtrBreakStmt(pszFilename, rc = VERR_INVALID_POINTER);
+            AssertBreakStmt(*pszFilename != '\0', rc = VERR_INVALID_PARAMETER);
+        }
 
         uint64_t cbSizeFrom;
         cbSizeFrom = vdImageGetSize(pImageFrom);
@@ -7537,16 +7537,14 @@ VBOXDDU_DECL(int) VDCompact(PVDISK pDisk, unsigned nImage,
 
     LogFlowFunc(("pDisk=%#p nImage=%u pVDIfsOperation=%#p\n",
                  pDisk, nImage, pVDIfsOperation));
+    /* Check arguments. */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE,
+              ("u32Signature=%08x\n", pDisk->u32Signature));
 
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     do {
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pDisk), ("pDisk=%#p\n", pDisk),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE,
-                  ("u32Signature=%08x\n", pDisk->u32Signature));
-
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
         fLockRead = true;
@@ -7634,16 +7632,14 @@ VBOXDDU_DECL(int) VDResize(PVDISK pDisk, uint64_t cbSize,
 
     LogFlowFunc(("pDisk=%#p cbSize=%llu pVDIfsOperation=%#p\n",
                  pDisk, cbSize, pVDIfsOperation));
+    /* Check arguments. */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE,
+              ("u32Signature=%08x\n", pDisk->u32Signature));
 
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     do {
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pDisk), ("pDisk=%#p\n", pDisk),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE,
-                  ("u32Signature=%08x\n", pDisk->u32Signature));
-
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
         fLockRead = true;
@@ -7751,16 +7747,14 @@ VBOXDDU_DECL(int) VDPrepareWithFilters(PVDISK pDisk, PVDINTERFACE pVDIfsOperatio
     bool fLockRead = false, fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p pVDIfsOperation=%#p\n", pDisk, pVDIfsOperation));
+    /* Check arguments. */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE,
+              ("u32Signature=%08x\n", pDisk->u32Signature));
 
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     do {
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pDisk), ("pDisk=%#p\n", pDisk),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE,
-                  ("u32Signature=%08x\n", pDisk->u32Signature));
-
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
         fLockRead = true;
@@ -8135,50 +8129,45 @@ VBOXDDU_DECL(int) VDFilterRemove(PVDISK pDisk, uint32_t fFlags)
 VBOXDDU_DECL(int) VDCloseAll(PVDISK pDisk)
 {
     int rc = VINF_SUCCESS;
-    int rc2;
-    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
-    do
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Lock the entire operation. */
+    int rc2 = vdThreadStartWrite(pDisk);
+    AssertRC(rc2);
+    bool fLockWrite = true;
+
+    PVDCACHE pCache = pDisk->pCache;
+    if (pCache)
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+        rc2 = pCache->Backend->pfnClose(pCache->pBackendData, false);
+        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            rc = rc2;
 
-        /* Lock the entire operation. */
-        rc2 = vdThreadStartWrite(pDisk);
-        AssertRC(rc2);
-        fLockWrite = true;
+        if (pCache->pszFilename)
+            RTStrFree(pCache->pszFilename);
+        RTMemFree(pCache);
+    }
 
-        PVDCACHE pCache = pDisk->pCache;
-        if (pCache)
-        {
-            rc2 = pCache->Backend->pfnClose(pCache->pBackendData, false);
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-                rc = rc2;
-
-            if (pCache->pszFilename)
-                RTStrFree(pCache->pszFilename);
-            RTMemFree(pCache);
-        }
-
-        PVDIMAGE pImage = pDisk->pLast;
-        while (VALID_PTR(pImage))
-        {
-            PVDIMAGE pPrev = pImage->pPrev;
-            /* Remove image from list of opened images. */
-            vdRemoveImageFromList(pDisk, pImage);
-            /* Close image. */
-            rc2 = pImage->Backend->pfnClose(pImage->pBackendData, false);
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-                rc = rc2;
-            /* Free remaining resources related to the image. */
-            RTStrFree(pImage->pszFilename);
-            RTMemFree(pImage);
-            pImage = pPrev;
-        }
-        Assert(!VALID_PTR(pDisk->pLast));
-    } while (0);
+    PVDIMAGE pImage = pDisk->pLast;
+    while (RT_VALID_PTR(pImage))
+    {
+        PVDIMAGE pPrev = pImage->pPrev;
+        /* Remove image from list of opened images. */
+        vdRemoveImageFromList(pDisk, pImage);
+        /* Close image. */
+        rc2 = pImage->Backend->pfnClose(pImage->pBackendData, false);
+        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            rc = rc2;
+        /* Free remaining resources related to the image. */
+        RTStrFree(pImage->pszFilename);
+        RTMemFree(pImage);
+        pImage = pPrev;
+    }
+    Assert(!RT_VALID_PTR(pDisk->pLast));
 
     if (RT_UNLIKELY(fLockWrite))
     {
@@ -8245,20 +8234,16 @@ VBOXDDU_DECL(int) VDRead(PVDISK pDisk, uint64_t uOffset, void *pvBuf,
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pvBuf=%p cbRead=%zu\n",
                  pDisk, uOffset, pvBuf, cbRead));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pvBuf),
-                           ("pvBuf=%#p\n", pvBuf),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cbRead,
-                           ("cbRead=%zu\n", cbRead),
-                           rc = VERR_INVALID_PARAMETER);
-
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
         fLockRead = true;
@@ -8310,20 +8295,16 @@ VBOXDDU_DECL(int) VDWrite(PVDISK pDisk, uint64_t uOffset, const void *pvBuf,
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pvBuf=%p cbWrite=%zu\n",
                  pDisk, uOffset, pvBuf, cbWrite));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbWrite > 0, VERR_INVALID_PARAMETER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pvBuf),
-                           ("pvBuf=%#p\n", pvBuf),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cbWrite,
-                           ("cbWrite=%zu\n", cbWrite),
-                           rc = VERR_INVALID_PARAMETER);
-
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
         fLockWrite = true;
@@ -8604,17 +8585,15 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVDISK pDisk, unsigned nImage,
 
     LogFlowFunc(("pDisk=%#p nImage=%u pPCHSGeometry=%#p\n",
                  pDisk, nImage, pPCHSGeometry));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pPCHSGeometry, VERR_INVALID_POINTER);
+
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pPCHSGeometry),
-                           ("pPCHSGeometry=%#p\n", pPCHSGeometry),
-                           rc = VERR_INVALID_PARAMETER);
-
         rc2 = vdThreadStartRead(pDisk);
         AssertRC(rc2);
         fLockRead = true;
@@ -8658,21 +8637,18 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVDISK pDisk, unsigned nImage,
     LogFlowFunc(("pDisk=%#p nImage=%u pPCHSGeometry=%#p PCHS=%u/%u/%u\n",
                  pDisk, nImage, pPCHSGeometry, pPCHSGeometry->cCylinders,
                  pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertPtrReturn(pPCHSGeometry, VERR_INVALID_POINTER);
+    AssertMsgReturn(   pPCHSGeometry->cHeads <= 16
+                    && pPCHSGeometry->cSectors <= 63,
+                    ("PCHS=%u/%u/%u\n", pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors),
+                    VERR_INVALID_PARAMETER);
     do
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(   VALID_PTR(pPCHSGeometry)
-                           && pPCHSGeometry->cHeads <= 16
-                           && pPCHSGeometry->cSectors <= 63,
-                           ("pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pPCHSGeometry,
-                            pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
-                            pPCHSGeometry->cSectors),
-                           rc = VERR_INVALID_PARAMETER);
-
         rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
         fLockWrite = true;
