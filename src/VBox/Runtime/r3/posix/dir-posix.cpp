@@ -521,12 +521,12 @@ RTDECL(int) RTDirRead(RTDIR hDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
      */
     if (!rtDirValidHandle(pDir))
         return VERR_INVALID_PARAMETER;
-    AssertMsgReturn(VALID_PTR(pDirEntry), ("%p\n", pDirEntry), VERR_INVALID_POINTER);
+    AssertPtrReturn(pDirEntry, VERR_INVALID_POINTER);
 
     size_t cbDirEntry = sizeof(*pDirEntry);
     if (pcbDirEntry)
     {
-        AssertMsgReturn(VALID_PTR(pcbDirEntry), ("%p\n", pcbDirEntry), VERR_INVALID_POINTER);
+        AssertPtrReturn(pcbDirEntry, VERR_INVALID_POINTER);
         cbDirEntry = *pcbDirEntry;
         AssertMsgReturn(cbDirEntry >= RT_UOFFSETOF(RTDIRENTRY, szName[2]),
                         ("Invalid *pcbDirEntry=%d (min %zu)\n", *pcbDirEntry, RT_UOFFSETOF(RTDIRENTRYEX, szName[2])),
@@ -621,7 +621,7 @@ RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry
      */
     if (!rtDirValidHandle(pDir))
         return VERR_INVALID_PARAMETER;
-    AssertMsgReturn(VALID_PTR(pDirEntry), ("%p\n", pDirEntry), VERR_INVALID_POINTER);
+    AssertPtrReturn(pDirEntry, VERR_INVALID_POINTER);
     AssertMsgReturn(    enmAdditionalAttribs >= RTFSOBJATTRADD_NOTHING
                     &&  enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,
                     ("Invalid enmAdditionalAttribs=%p\n", enmAdditionalAttribs),
@@ -630,7 +630,7 @@ RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry
     size_t cbDirEntry = sizeof(*pDirEntry);
     if (pcbDirEntry)
     {
-        AssertMsgReturn(VALID_PTR(pcbDirEntry), ("%p\n", pcbDirEntry), VERR_INVALID_POINTER);
+        AssertPtrReturn(pcbDirEntry, VERR_INVALID_POINTER);
         cbDirEntry = *pcbDirEntry;
         AssertMsgReturn(cbDirEntry >= RT_UOFFSETOF(RTDIRENTRYEX, szName[2]),
                         ("Invalid *pcbDirEntry=%zu (min %zu)\n", *pcbDirEntry, RT_UOFFSETOF(RTDIRENTRYEX, szName[2])),
@@ -722,8 +722,8 @@ RTDECL(int) RTDirRename(const char *pszSrc, const char *pszDst, unsigned fRename
     /*
      * Validate input.
      */
-    AssertMsgReturn(VALID_PTR(pszSrc), ("%p\n", pszSrc), VERR_INVALID_POINTER);
-    AssertMsgReturn(VALID_PTR(pszDst), ("%p\n", pszDst), VERR_INVALID_POINTER);
+    AssertPtrReturn(pszSrc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszDst, VERR_INVALID_POINTER);
     AssertMsgReturn(*pszSrc, ("%p\n", pszSrc), VERR_INVALID_PARAMETER);
     AssertMsgReturn(*pszDst, ("%p\n", pszDst), VERR_INVALID_PARAMETER);
     AssertMsgReturn(!(fRename & ~RTPATHRENAME_FLAGS_REPLACE), ("%#x\n", fRename), VERR_INVALID_PARAMETER);
