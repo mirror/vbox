@@ -8399,29 +8399,19 @@ VBOXDDU_DECL(int) VDFlush(PVDISK pDisk)
 
 VBOXDDU_DECL(unsigned) VDGetCount(PVDISK pDisk)
 {
-    unsigned cImages;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p\n", pDisk));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, cImages = 0);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* sanity check */
+    AssertPtrReturn(pDisk, 0);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        cImages = pDisk->cImages;
-    } while (0);
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    unsigned cImages = pDisk->cImages;
+
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %u\n", cImages));
     return cImages;
@@ -8523,28 +8513,25 @@ VBOXDDU_DECL(uint64_t) VDGetSize(PVDISK pDisk, unsigned nImage)
 
 VBOXDDU_DECL(uint64_t) VDGetFileSize(PVDISK pDisk, unsigned nImage)
 {
-    uint64_t cbSize;
-    int rc2;
-
     LogFlowFunc(("pDisk=%#p nImage=%u\n", pDisk, nImage));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, cbSize = 0);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
+    /* sanity check */
+    AssertPtrReturn(pDisk, 0);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, cbSize = 0);
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
+
+    uint64_t cbSize = 0;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
         cbSize = pImage->Backend->pfnGetFileSize(pImage->pBackendData);
-    } while (0);
 
     rc2 = vdThreadFinishRead(pDisk);
     AssertRC(rc2);
 
-    LogFlowFunc(("returns %llu\n", cbSize));
+    LogFlowFunc(("returns %llu (%#RX64)\n", cbSize, cbSize));
     return cbSize;
 }
 
