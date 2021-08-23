@@ -63,9 +63,8 @@ void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
 {
     UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
     AssertReturnVoid(pWizard);
-    CMediumFormat comMediumFormat(pWizard->mediumFormat());
     QString strSelectedPath =
-        UIDiskEditorGroupBox::openFileDialogForDiskFile(pWizard->mediumPath(), comMediumFormat,
+        UIDiskEditorGroupBox::openFileDialogForDiskFile(pWizard->mediumPath(), pWizard->mediumFormat(),
                                                                 KDeviceType_HardDisk, pWizard);
 
     if (strSelectedPath.isEmpty())
@@ -108,9 +107,7 @@ void UIWizardNewVDPageSizeLocation::initializePage()
 
     if (!m_userModifiedParameters.contains("MediumPath"))
     {
-        const CMediumFormat comMediumFormat = pWizard->mediumFormat();
-        AssertReturnVoid(!comMediumFormat.isNull());
-        QString strExtension = UIDiskFormatsGroupBox::defaultExtension(comMediumFormat, KDeviceType_HardDisk);
+        QString strExtension = UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
         QString strMediumFilePath =
             UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_strDefaultName,
                                                                                                     strExtension), m_strDefaultPath);

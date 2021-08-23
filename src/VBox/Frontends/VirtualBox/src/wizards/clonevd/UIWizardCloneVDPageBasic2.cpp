@@ -31,47 +31,6 @@
 #include "CMediumFormat.h"
 
 
-// UIWizardCloneVDPage2::UIWizardCloneVDPage2()
-// {
-// }
-
-// qulonglong UIWizardCloneVDPage2::mediumVariant() const
-// {
-//     /* Initial value: */
-//     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
-
-//     /* Exclusive options: */
-//     if (m_pDynamicalButton->isChecked())
-//         uMediumVariant = (qulonglong)KMediumVariant_Standard;
-//     else if (m_pFixedButton->isChecked())
-//         uMediumVariant = (qulonglong)KMediumVariant_Fixed;
-
-//     /* Additional options: */
-//     if (m_pSplitBox->isChecked())
-//         uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
-
-//     /* Return options: */
-//     return uMediumVariant;
-// }
-
-// void UIWizardCloneVDPage2::setMediumVariant(qulonglong uMediumVariant)
-// {
-//     /* Exclusive options: */
-//     if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
-//     {
-//         m_pFixedButton->click();
-//         m_pFixedButton->setFocus();
-//     }
-//     else
-//     {
-//         m_pDynamicalButton->click();
-//         m_pDynamicalButton->setFocus();
-//     }
-
-//     /* Additional options: */
-//     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
-// }
-
 UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType /*enmDeviceType*/)
     : m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
@@ -80,47 +39,6 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType /*enmDeviceType
     , m_pVariantGroupBox(0)
 {
     prepare();
-    /* Create widgets: */
-    // QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    // {
-    //     QVBoxLayout *pVariantLayout = new QVBoxLayout;
-    //     {
-    //         m_pVariantButtonGroup = new QButtonGroup(this);
-    //         {
-    //             m_pDynamicalButton = new QRadioButton(this);
-    //             if (enmDeviceType == KDeviceType_HardDisk)
-    //             {
-    //                 m_pDynamicalButton->click();
-    //                 m_pDynamicalButton->setFocus();
-    //             }
-    //             m_pFixedButton = new QRadioButton(this);
-    //             if (   enmDeviceType == KDeviceType_DVD
-    //                 || enmDeviceType == KDeviceType_Floppy)
-    //             {
-    //                 m_pFixedButton->click();
-    //                 m_pFixedButton->setFocus();
-    //             }
-    //             m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
-    //             m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
-    //         }
-    //         m_pSplitBox = new QCheckBox(this);
-    //         pVariantLayout->addWidget(m_pDynamicalButton);
-    //         pVariantLayout->addWidget(m_pFixedButton);
-    //         pVariantLayout->addWidget(m_pSplitBox);
-    //     }
-    //     pMainLayout->addWidget(m_pDescriptionLabel);
-    //     pMainLayout->addWidget(m_pDynamicLabel);
-    //     pMainLayout->addWidget(m_pFixedLabel);
-    //     pMainLayout->addWidget(m_pSplitLabel);
-    //     pMainLayout->addLayout(pVariantLayout);
-    //     pMainLayout->addStretch();
-    // }
-
-    // /* Setup connections: */
-    // connect(m_pVariantButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
-    //         this, &UIWizardCloneVDPageBasic2::completeChanged);
-    // connect(m_pSplitBox, &QCheckBox::stateChanged,
-    //         this, &UIWizardCloneVDPageBasic2::completeChanged);
 }
 
 void UIWizardCloneVDPageBasic2::prepare()
@@ -173,30 +91,12 @@ void UIWizardCloneVDPageBasic2::initializePage()
     setWidgetVisibility(cloneWizard()->mediumFormat());
     if (m_pVariantGroupBox)
         cloneWizard()->setMediumVariant(m_pVariantGroupBox->mediumVariant());
-    // /* Setup visibility: */
-    // CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
-    // ULONG uCapabilities = 0;
-    // QVector<KMediumFormatCapabilities> capabilities;
-    // capabilities = mediumFormat.GetCapabilities();
-    // for (int i = 0; i < capabilities.size(); i++)
-    //     uCapabilities |= capabilities[i];
-
-    // bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
-    // bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-    // bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-    // m_pDynamicLabel->setHidden(!fIsCreateDynamicPossible);
-    // m_pDynamicalButton->setHidden(!fIsCreateDynamicPossible);
-    // m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
-    // m_pFixedButton->setHidden(!fIsCreateFixedPossible);
-    // m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
-    // m_pSplitBox->setHidden(!fIsCreateSplitPossible);
 }
 
 bool UIWizardCloneVDPageBasic2::isComplete() const
 {
-    return true;
-    // /* Make sure medium variant is correct: */
-    // return mediumVariant() != (qulonglong)KMediumVariant_Max;
+    AssertReturn(m_pVariantGroupBox, false);
+    return m_pVariantGroupBox->isComplete();
 }
 
 UIWizardCloneVD *UIWizardCloneVDPageBasic2::cloneWizard() const

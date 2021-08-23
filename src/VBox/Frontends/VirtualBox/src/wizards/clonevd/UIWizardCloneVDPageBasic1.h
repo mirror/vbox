@@ -36,39 +36,6 @@ class QIRichTextLabel;
 class UIDiskFormatsGroupBox;
 class UIWizardCloneVD;
 
-// /** 1st page of the Clone Virtual Disk Image wizard (base part): */
-// class UIWizardCloneVDPage1 : public UIWizardPageBase
-// {
-// protected:
-
-//     /** Constructs page basis. */
-//     UIWizardCloneVDPage1();
-
-//     /** Adds format button.
-//       * @param  pParent          Brings the parent to add button to.
-//       * @param  pFormatsLayout   Brings the layout to insert button to.
-//       * @param  enmDeviceType    Brings the device type all buttons should be restricted to.
-//       * @param  comMediumFormat  Brings the medium format object to acquire format from.
-//       * @param  fPreferred       Brings whether curretn format is preferred or not. */
-//     void addFormatButton(QWidget *pParent,
-//                          QVBoxLayout *pFormatsLayout,
-//                          KDeviceType enmDeviceType,
-//                          CMediumFormat comMediumFormat,
-//                          bool fPreferred = false);
-
-//     /** Returns 'mediumFormat' field value. */
-//     CMediumFormat mediumFormat() const;
-//     /** Defines 'mediumFormat' field value. */
-//     void setMediumFormat(const CMediumFormat &comMediumFormat);
-
-//     /** Holds the format button-group instance. */
-//     QButtonGroup         *m_pFormatButtonGroup;
-//     /** Holds the format description list. */
-//     QList<CMediumFormat>  m_formats;
-//     /** Holds the format name list. */
-//     QStringList           m_formatNames;
-// };
-
 
 /** 2nd page of the Clone Virtual Disk Image wizard (basic extension): */
 class UIWizardCloneVDPageBasic1 : public UINativeWizardPage

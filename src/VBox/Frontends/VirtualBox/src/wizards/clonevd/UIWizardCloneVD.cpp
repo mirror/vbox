@@ -52,42 +52,37 @@ KDeviceType UIWizardCloneVD::deviceType() const
 
 bool UIWizardCloneVD::copyVirtualDisk()
 {
-    /* Gather attributes: */
-    // const CMediumFormat comMediumFormat = field("mediumFormat").value<CMediumFormat>();
-    // const qulonglong uVariant = field("mediumVariant").toULongLong();
-    // const QString strMediumPath = field("mediumPath").toString();
-    // const qulonglong uSize = field("mediumSize").toULongLong();
-    // /* Check attributes: */
-    // AssertReturn(!strMediumPath.isNull(), false);
-    // AssertReturn(uSize > 0, false);
+    /* Check attributes: */
+    AssertReturn(!m_strMediumPath.isNull(), false);
+    AssertReturn(m_uMediumSize > 0, false);
 
-    // /* Get VBox object: */
-    // CVirtualBox comVBox = uiCommon().virtualBox();
+    /* Get VBox object: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
 
-    // /* Create new virtual disk image: */
-    // CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, m_enmDeviceType);
-    // if (!comVBox.isOk())
-    // {
-    //     msgCenter().cannotCreateMediumStorage(comVBox, strMediumPath, this);
-    //     return false;
-    // }
+    /* Create new virtual disk image: */
+    CMedium comVirtualDisk = comVBox.CreateMedium(m_comMediumFormat.GetName(), m_strMediumPath, KAccessMode_ReadWrite, m_enmDeviceType);
+    if (!comVBox.isOk())
+    {
+        msgCenter().cannotCreateMediumStorage(comVBox, m_strMediumPath, this);
+        return false;
+    }
 
-    // /* Compose medium-variant: */
-    // QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
-    // for (int i = 0; i < variants.size(); ++i)
-    // {
-    //     qulonglong temp = uVariant;
-    //     temp &= Q_UINT64_C(1) << i;
-    //     variants[i] = (KMediumVariant)temp;
-    // }
+    /* Compose medium-variant: */
+    QVector<KMediumVariant> variants(sizeof(qulonglong) * 8);
+    for (int i = 0; i < variants.size(); ++i)
+    {
+        qulonglong temp = m_uMediumVariant;
+        temp &= Q_UINT64_C(1) << i;
+        variants[i] = (KMediumVariant)temp;
+    }
 
-    // /* Copy medium: */
-    // UINotificationProgressMediumCopy *pNotification = new UINotificationProgressMediumCopy(m_comSourceVirtualDisk,
-    //                                                                                        comVirtualDisk,
-    //                                                                                        variants);
-    // connect(pNotification, &UINotificationProgressMediumCopy::sigMediumCopied,
-    //         &uiCommon(), &UICommon::sltHandleMediumCreated);
-    // gpNotificationCenter->append(pNotification);
+    /* Copy medium: */
+    UINotificationProgressMediumCopy *pNotification = new UINotificationProgressMediumCopy(m_comSourceVirtualDisk,
+                                                                                           comVirtualDisk,
+                                                                                           variants);
+    connect(pNotification, &UINotificationProgressMediumCopy::sigMediumCopied,
+            &uiCommon(), &UICommon::sltHandleMediumCreated);
+    gpNotificationCenter->append(pNotification);
 
     /* Positive: */
     return true;
@@ -106,18 +101,18 @@ void UIWizardCloneVD::populatePages()
     switch (mode())
     {
         case WizardMode_Basic:
-        case WizardMode_Expert:
-        {
+
+            {
             addPage(new UIWizardCloneVDPageBasic1(m_enmDeviceType));
             m_iMediumVariantPageIndex = addPage(new UIWizardCloneVDPageBasic2(m_enmDeviceType));
             addPage(new UIWizardCloneVDPageBasic3(sourceDiskLogicalSize()));
             break;
         }
-        // case WizardMode_Expert:
-        // {
-        //     setPage(PageExpert, new UIWizardCloneVDPageExpert(m_enmDeviceType));
-        //     break;
-        // }
+        case WizardMode_Expert:
+        {
+            addPage(new UIWizardCloneVDPageExpert(m_enmDeviceType, sourceDiskLogicalSize()));
+            break;
+        }
         default:
         {
             AssertMsgFailed(("Invalid mode: %d", mode()));

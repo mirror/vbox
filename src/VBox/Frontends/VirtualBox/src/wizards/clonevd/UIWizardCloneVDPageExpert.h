@@ -26,7 +26,9 @@
 #include "UIWizardCloneVDPageBasic3.h"
 
 /* Forward declarations: */
-class QGroupBox;
+class UIDiskFormatsGroupBox;
+class UIDiskVariantGroupBox;
+class UIMediumSizeAndPathGroupBox;
 
 
 /** Expert page of the Clone Virtual Disk Image wizard: */
@@ -39,7 +41,7 @@ public:
     /** Constructs basic page.
       * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from.
       * @param  enmDeviceType         Brings the device type to limit format to. */
-    UIWizardCloneVDPageExpert(KDeviceType enmDeviceType);
+    UIWizardCloneVDPageExpert(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize);
 
 private slots:
 
@@ -63,15 +65,19 @@ private:
     /** Returns whether the page is valid. */
     virtual bool validatePage() /* override */;
 
+    void prepare(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize);
+
     /** Sets the target disk name and location. */
     void setTargetLocation();
+    UIWizardCloneVD *cloneWizard();
 
-    /** Holds the format container instance. */
-    QGroupBox *m_pFormatCnt;
-    /** Holds the variant container instance. */
-    QGroupBox *m_pVariantCnt;
-    /** Holds the target disk container instance. */
-    QGroupBox *m_pDestinationCnt;
+
+
+    UIDiskFormatsGroupBox *m_pFormatGroupBox;
+    UIDiskVariantGroupBox *m_pVariantGroupBox;
+    UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
+
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageExpert_h */

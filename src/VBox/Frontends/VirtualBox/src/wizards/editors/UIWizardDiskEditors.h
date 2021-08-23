@@ -61,7 +61,7 @@ public:
     static QString appendExtension(const QString &strName, const QString &strExtension);
     static QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
     static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
-    static QString openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat,
+    static QString openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
                                              KDeviceType enmDeviceType, QWidget *pParent);
 
 protected:
@@ -114,7 +114,7 @@ public:
     void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat, bool fHideDisabled = false);
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
-    void setWidgetVisibility(CMediumFormat &mediumFormat);
+    void setWidgetVisibility(const CMediumFormat &mediumFormat);
     bool isComplete() const;
 
     bool isCreateDynamicPossible() const;
@@ -157,6 +157,8 @@ public:
     void updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions, KDeviceType enmDeviceType);
     qulonglong mediumSize() const;
     void setMediumSize(qulonglong uSize);
+
+    bool isComplete() const;
 
 private:
 

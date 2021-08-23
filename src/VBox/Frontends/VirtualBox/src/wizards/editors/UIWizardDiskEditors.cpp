@@ -113,7 +113,7 @@ bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, con
 }
 
 /* static */
-QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitialPath, CMediumFormat &comMediumFormat,
+QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
                                                         KDeviceType enmDeviceType, QWidget *pParent)
 {
     QString strChosenFilePath;
@@ -385,7 +385,7 @@ void UIDiskVariantGroupBox::setMediumVariant(qulonglong uMediumVariant)
     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
 }
 
-void UIDiskVariantGroupBox::setWidgetVisibility(CMediumFormat &mediumFormat)
+void UIDiskVariantGroupBox::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
     ULONG uCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
@@ -412,7 +412,11 @@ void UIDiskVariantGroupBox::setWidgetVisibility(CMediumFormat &mediumFormat)
     if (m_pFixedCheckBox)
         m_pFixedCheckBox->setHidden(!m_fIsCreateFixedPossible);
     if (m_pSplitBox)
+    {
         m_pSplitBox->setHidden(!m_fIsCreateSplitPossible);
+        if (!m_fIsCreateSplitPossible)
+            m_pSplitBox->setChecked(false);
+    }
 }
 
 void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat,
@@ -489,6 +493,17 @@ UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidg
     , m_pSizeLabel(0)
 {
     prepare(uMinimumMediumSize);
+}
+
+bool UIMediumSizeAndPathGroupBox::isComplete() const
+{
+    if (QFileInfo(mediumPath()).exists())
+    {
+        m_pLocationEditor->mark(true, tr("Disk file name is not unique"));
+        return false;
+    }
+    m_pLocationEditor->mark(false);
+    return true;
 }
 
 void UIMediumSizeAndPathGroupBox::prepare(qulonglong uMinimumMediumSize)
