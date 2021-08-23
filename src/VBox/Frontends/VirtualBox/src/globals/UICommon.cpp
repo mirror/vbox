@@ -2355,17 +2355,16 @@ bool UICommon::isDOSType(const QString &strOSTypeId)
 bool UICommon::switchToMachine(CMachine &comMachine)
 {
 #ifdef VBOX_WS_MAC
-    ULONG64 id = comMachine.ShowConsoleWindow();
+    const ULONG64 id = comMachine.ShowConsoleWindow();
 #else
-    WId id = (WId)comMachine.ShowConsoleWindow();
+    const WId id = (WId)comMachine.ShowConsoleWindow();
 #endif
-
     AssertWrapperOk(comMachine);
     if (!comMachine.isOk())
         return false;
 
     // WORKAROUND:
-    // winId = 0 it means the console window has already done everything
+    // id == 0 means the console window has already done everything
     // necessary to implement the "show window" semantics.
     if (id == 0)
         return true;
@@ -2428,10 +2427,11 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
         }
     }
 
+    /* Not for separate UI (which can connect to machine in any state): */
     if (enmLaunchMode != LaunchMode_Separate)
     {
         /* Make sure machine-state is one of required: */
-        KMachineState enmState = comMachine.GetState(); NOREF(enmState);
+        const KMachineState enmState = comMachine.GetState(); NOREF(enmState);
         AssertMsg(   enmState == KMachineState_PoweredOff
                   || enmState == KMachineState_Saved
                   || enmState == KMachineState_Teleported
@@ -2450,12 +2450,13 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
 
     /* Configure environment: */
     QVector<QString> astrEnv;
-#ifdef Q_OS_WIN
+#ifdef VBOX_WS_WIN
     /* Allow started VM process to be foreground window: */
     AllowSetForegroundWindow(ASFW_ANY);
 #endif
 #ifdef VBOX_WS_X11
-    /* Make sure VM process will start on the same display as the VM selector: */
+    /* Make sure VM process will start on the same
+     * display as window this wrapper is called from: */
     const char *pDisplay = RTEnvGet("DISPLAY");
     if (pDisplay)
         astrEnv.append(QString("DISPLAY=%1").arg(pDisplay));
@@ -2479,11 +2480,11 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
         /* If the VM is started separately and the VM process is already running, then it is OK. */
         if (enmLaunchMode == LaunchMode_Separate)
         {
-            KMachineState enmState = comMachine.GetState();
+            const KMachineState enmState = comMachine.GetState();
             if (   enmState >= KMachineState_FirstOnline
                 && enmState <= KMachineState_LastOnline)
             {
-                /* Already running. */
+                /* Already running: */
                 return true;
             }
         }
@@ -2492,13 +2493,9 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
         return false;
     }
 
-    /* Postpone showing "VM spawning" progress.
-     * Hope 1 minute will be enough to spawn any running VM silently,
-     * otherwise we better show the progress...
-     * If starting separately, then show the progress now. */
-    int iSpawningDuration = enmLaunchMode == LaunchMode_Separate ? 0 : 60000;
+    /* Show "VM spawning" progress: */
     msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(),
-                                        ":/progress_start_90px.png", 0, iSpawningDuration);
+                                        ":/progress_start_90px.png", 0, 0);
     if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
         msgCenter().cannotOpenSession(comProgress, comMachine.GetName());
 

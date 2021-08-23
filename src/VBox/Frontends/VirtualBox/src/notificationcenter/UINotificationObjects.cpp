@@ -20,7 +20,6 @@
 #include <QFileInfo>
 
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
@@ -39,6 +38,9 @@
 #include "CEmulatedUSB.h"
 #include "CNetworkAdapter.h"
 #include "CVRDEServer.h"
+
+/* VirtualBox interface declarations: */
+#include <VBox/com/VirtualBox.h>
 
 
 /*********************************************************************************************************************************
@@ -685,6 +687,97 @@ void UINotificationProgressMachineCopy::sltHandleProgressFinished()
 {
     if (m_comTarget.isNotNull() && !m_comTarget.GetId().isNull())
         emit sigMachineCopied(m_comTarget);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressMachinePowerUp implementation.                                                                   *
+*********************************************************************************************************************************/
+
+UINotificationProgressMachinePowerUp::UINotificationProgressMachinePowerUp(const CMachine &comMachine, UICommon::LaunchMode enmLaunchMode)
+    : m_comMachine(comMachine)
+    , m_enmLaunchMode(enmLaunchMode)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressMachinePowerUp::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressMachinePowerUp::name() const
+{
+    return UINotificationProgress::tr("Powering VM up ...");
+}
+
+QString UINotificationProgressMachinePowerUp::details() const
+{
+    return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
+}
+
+CProgress UINotificationProgressMachinePowerUp::createProgress(COMResult &comResult)
+{
+    /* Acquire VM name: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        comResult = m_comMachine;
+        return CProgress();
+    }
+
+    /* Open a session thru which we will modify the machine: */
+    m_comSession.createInstance(CLSID_Session);
+    if (m_comSession.isNull())
+    {
+        comResult = m_comSession;
+        return CProgress();
+    }
+
+    /* Configure environment: */
+    QVector<QString> astrEnv;
+#ifdef VBOX_WS_WIN
+    /* Allow started VM process to be foreground window: */
+    AllowSetForegroundWindow(ASFW_ANY);
+#endif
+#ifdef VBOX_WS_X11
+    /* Make sure VM process will start on the same
+     * display as the VirtualBox Manager: */
+    const char *pDisplay = RTEnvGet("DISPLAY");
+    if (pDisplay)
+        astrEnv.append(QString("DISPLAY=%1").arg(pDisplay));
+    const char *pXauth = RTEnvGet("XAUTHORITY");
+    if (pXauth)
+        astrEnv.append(QString("XAUTHORITY=%1").arg(pXauth));
+#endif
+    QString strType;
+    switch (m_enmLaunchMode)
+    {
+        case UICommon::LaunchMode_Default:  strType = ""; break;
+        case UICommon::LaunchMode_Separate: strType = "separate"; break;
+        case UICommon::LaunchMode_Headless: strType = "headless"; break;
+        default: AssertFailedReturn(CProgress());
+    }
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMachine.LaunchVMProcess(m_comSession, strType, astrEnv);
+//    /* If the VM is started separately and the VM process is already running, then it is OK. */
+//    if (m_enmLaunchMode == UICommon::LaunchMode_Separate)
+//    {
+//        const KMachineState enmState = comMachine.GetState();
+//        if (   enmState >= KMachineState_FirstOnline
+//            && enmState <= KMachineState_LastOnline)
+//        {
+//            /* Already running: */
+//            return;
+//        }
+//    }
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressMachinePowerUp::sltHandleProgressFinished()
+{
+    /* Unlock session finally: */
+    m_comSession.UnlockMachine();
 }
 
 

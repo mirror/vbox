@@ -25,6 +25,7 @@
 #include <QUuid>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UINotificationObject.h"
 
 /* COM includes: */
@@ -477,6 +478,43 @@ private:
     QString   m_strDestination;
     /** Holds the moving type. */
     QString   m_strType;
+};
+
+/** UINotificationProgress extension for machine power-up functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMachinePowerUp : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs machine power-up notification-progress.
+      * @param  comMachine  Brings the machine being powered-up. */
+    UINotificationProgressMachinePowerUp(const CMachine &comMachine, UICommon::LaunchMode enmLaunchMode);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine being powered-up. */
+    CMachine              m_comMachine;
+    /** Holds the launch mode. */
+    UICommon::LaunchMode  m_enmLaunchMode;
+    /** Holds the session being opened. */
+    CSession              m_comSession;
+    /** Holds the machine name. */
+    QString               m_strName;
 };
 
 /** UINotificationProgress extension for machine save-state functionality. */

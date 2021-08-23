@@ -675,7 +675,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
                 CVirtualBox comVBox = uiCommon().virtualBox();
                 CMachine comMachine = comVBox.FindMachine(strFile);
                 if (comVBox.isOk() && comMachine.isNotNull())
-                    uiCommon().launchMachine(comMachine);
+                    launchMachine(comMachine);
                 else
                     openAddMachineDialog(strFile);
             }
@@ -2477,6 +2477,37 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
     comVBox.RegisterMachine(comMachineNew);
 }
 
+/* static */
+void UIVirtualBoxManager::launchMachine(CMachine &comMachine,
+                                        UICommon::LaunchMode enmLaunchMode /* = UICommon::LaunchMode_Default */)
+{
+    /* Switch to machine window(s) if possible: */
+    if (   comMachine.GetSessionState() == KSessionState_Locked // precondition for CanShowConsoleWindow()
+        && comMachine.CanShowConsoleWindow())
+    {
+        uiCommon().switchToMachine(comMachine);
+        return;
+    }
+
+    /* Not for separate UI (which can connect to machine in any state): */
+    if (enmLaunchMode != UICommon::LaunchMode_Separate)
+    {
+        /* Make sure machine-state is one of required: */
+        const KMachineState enmState = comMachine.GetState(); Q_UNUSED(enmState);
+        AssertMsg(   enmState == KMachineState_PoweredOff
+                  || enmState == KMachineState_Saved
+                  || enmState == KMachineState_Teleported
+                  || enmState == KMachineState_Aborted
+                  , ("Machine must be PoweredOff/Saved/Teleported/Aborted (%d)", enmState));
+    }
+
+    /* Powering VM up: */
+    UINotificationProgressMachinePowerUp *pNotification =
+        new UINotificationProgressMachinePowerUp(comMachine, enmLaunchMode);
+    gpNotificationCenter->append(pNotification);
+}
+
+/* static */
 void UIVirtualBoxManager::launchMachine(CCloudMachine &comMachine)
 {
     /* Powering cloud VM up: */
@@ -2524,7 +2555,7 @@ void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInsta
     UICommon::LaunchMode enmLaunchMode = UICommon::LaunchMode_Default;
     if (unattendedData.m_fStartHeadless)
         enmLaunchMode = UICommon::LaunchMode_Headless;
-    uiCommon().launchMachine(comMachine, enmLaunchMode);
+    launchMachine(comMachine, enmLaunchMode);
 }
 
 void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode)
@@ -2570,10 +2601,10 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
                                       : qApp->keyboardModifiers() == Qt::ShiftModifier
                                       ? UICommon::LaunchMode_Headless
                                       : UICommon::LaunchMode_Default;
-
-                /* Launch current VM: */
+                /* Acquire local machine: */
                 CMachine machine = pItem->toLocal()->machine();
-                uiCommon().launchMachine(machine, enmItemLaunchMode);
+                /* Launch current VM: */
+                launchMachine(machine, enmItemLaunchMode);
             }
             /* For real cloud machine: */
             else if (pItem->itemType() == UIVirtualMachineItemType_CloudReal)
