@@ -694,7 +694,7 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
                                                   "    Default: 2";
         case VKAT_TEST_OPT_PCM_SIGNED:     return "Specifies whether to use signed (true) or unsigned (false) samples\n"
                                                   "    Default: true";
-        case VKAT_TEST_OPT_PROBE_BACKENDS:  return "Specifies whether to probe all (available) backends until a working one is found\n"
+        case VKAT_TEST_OPT_PROBE_BACKENDS: return "Specifies whether to probe all (available) backends until a working one is found\n"
                                                   "    Default: false";
         case VKAT_TEST_OPT_TAG:            return "Specifies the test set tag to use";
         case VKAT_TEST_OPT_TEMPDIR:        return "Specifies the temporary directory to use";
