@@ -8970,6 +8970,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVDISK pDisk, unsigned nImage,
     /* Check arguments. */
     AssertPtrReturn(pBackendInfo, VERR_INVALID_POINTER);
 
+    /* Do the job. */
     int rc2 = vdThreadStartRead(pDisk);
     AssertRC(rc2);
 
@@ -8996,38 +8997,29 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDGetImageFlags(PVDISK pDisk, unsigned nImage,
                                   unsigned *puImageFlags)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u puImageFlags=%#p\n",
                  pDisk, nImage, puImageFlags));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(puImageFlags),
-                           ("puImageFlags=%#p\n", puImageFlags),
-                           rc = VERR_INVALID_PARAMETER);
+    /* Check arguments. */
+    AssertPtrReturn(puImageFlags, VERR_INVALID_POINTER);
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
+    int rc = VINF_SUCCESS;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
         *puImageFlags = pImage->uImageFlags;
-    } while (0);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc uImageFlags=%#x\n", rc, *puImageFlags));
     return rc;
@@ -9037,38 +9029,29 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDGetOpenFlags(PVDISK pDisk, unsigned nImage,
                                  unsigned *puOpenFlags)
 {
-    int rc = VINF_SUCCESS;
-    int rc2;
-    bool fLockRead = false;
-
     LogFlowFunc(("pDisk=%#p nImage=%u puOpenFlags=%#p\n",
                  pDisk, nImage, puOpenFlags));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(puOpenFlags),
-                           ("puOpenFlags=%#p\n", puOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
+    /* Check arguments. */
+    AssertPtrReturn(puOpenFlags, VERR_INVALID_POINTER);
 
-        rc2 = vdThreadStartRead(pDisk);
-        AssertRC(rc2);
-        fLockRead = true;
+    /* Do the job. */
+    int rc2 = vdThreadStartRead(pDisk);
+    AssertRC(rc2);
 
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
+    int rc = VINF_SUCCESS;
+    PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+    AssertPtr(pImage);
+    if (pImage)
         *puOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pBackendData);
-    } while (0);
+    else
+        rc = VERR_VD_IMAGE_NOT_FOUND;
 
-    if (RT_UNLIKELY(fLockRead))
-    {
-        rc2 = vdThreadFinishRead(pDisk);
-        AssertRC(rc2);
-    }
+    rc2 = vdThreadFinishRead(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc uOpenFlags=%#x\n", rc, *puOpenFlags));
     return rc;
@@ -9078,45 +9061,40 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVDISK pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDSetOpenFlags(PVDISK pDisk, unsigned nImage,
                                  unsigned uOpenFlags)
 {
-    int rc;
-    int rc2;
-    bool fLockWrite = false;
-
     LogFlowFunc(("pDisk=%#p uOpenFlags=%#u\n", pDisk, uOpenFlags));
-    do
+    /* sanity check */
+    AssertPtrReturn(pDisk, VERR_INVALID_POINTER);
+    AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+    /* Check arguments. */
+    AssertMsgReturn((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0, ("uOpenFlags=%#x\n", uOpenFlags),
+                    VERR_INVALID_PARAMETER);
+
+    /* Do the job. */
+    int rc2 = vdThreadStartWrite(pDisk);
+    AssertRC(rc2);
+
+    /* Destroy any discard state because the image might be changed to readonly mode. */
+    int rc = vdDiscardStateDestroy(pDisk);
+    if (RT_SUCCESS(rc))
     {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
-                           ("uOpenFlags=%#x\n", uOpenFlags),
-                           rc = VERR_INVALID_PARAMETER);
-
-        rc2 = vdThreadStartWrite(pDisk);
-        AssertRC(rc2);
-        fLockWrite = true;
-
-        /* Destroy any discard state because the image might be changed to readonly mode. */
-        rc = vdDiscardStateDestroy(pDisk);
-        if (RT_FAILURE(rc))
-            break;
-
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
-        rc = pImage->Backend->pfnSetOpenFlags(pImage->pBackendData,
-                                              uOpenFlags & ~(VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_IGNORE_FLUSH | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS));
-        if (RT_SUCCESS(rc))
-            pImage->uOpenFlags = uOpenFlags & (VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS);
-    } while (0);
-
-    if (RT_UNLIKELY(fLockWrite))
-    {
-        rc2 = vdThreadFinishWrite(pDisk);
-        AssertRC(rc2);
+        AssertPtr(pImage);
+        if (pImage)
+        {
+            rc = pImage->Backend->pfnSetOpenFlags(pImage->pBackendData,
+                                                  uOpenFlags & ~(VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_IGNORE_FLUSH
+                                                                 | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS));
+            if (RT_SUCCESS(rc))
+                pImage->uOpenFlags = uOpenFlags & (VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH
+                                                   | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS);
+        }
+        else
+            rc = VERR_VD_IMAGE_NOT_FOUND;
     }
+
+    rc2 = vdThreadFinishWrite(pDisk);
+    AssertRC(rc2);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
