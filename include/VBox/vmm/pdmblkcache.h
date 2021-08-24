@@ -144,7 +144,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEDISCARDDEV *PFNPDMBLKCACHEXFERENQUEUEDISCARDDEV;
 /**
  * Completion callback for drivers.
  *
- * @param   pDrvIns         The driver instance.
+ * @param   pvUserInt       User argument given to PDMR3BlkCacheRetainInt.
  * @param   pvUser          User argument given during request initiation.
  * @param   rc              The status code of the completed request.
  */
