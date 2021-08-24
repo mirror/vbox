@@ -55,7 +55,7 @@ typedef FNRTSORTCMP *PFNRTSORTCMP;
 /**
  * Sorter function for an array of variable sized elementes.
  *
- * @param   papvArray       The array to sort.
+ * @param   pvArray         The array to sort.
  * @param   cElements       The number of elements in the array.
  * @param   cbElement       The size of an array element.
  * @param   pfnCmp          Callback function comparing two elements.

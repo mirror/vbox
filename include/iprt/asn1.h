@@ -315,7 +315,7 @@ typedef FNRTASN1ENUMCALLBACK *PFNRTASN1ENUMCALLBACK;
  * ASN.1 object encoding writer callback.
  *
  * @returns IPRT status code.
- * @param   pbBuf               Pointer to the bytes to output.
+ * @param   pvBuf               Pointer to the bytes to output.
  * @param   cbToWrite           The number of bytes to write.
  * @param   pvUser              Callback user parameter.
  * @param   pErrInfo            Where to store extended error info. Optional.

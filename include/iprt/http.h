@@ -487,10 +487,10 @@ RTR3DECL(bool) RTHttpGetVerifyPeer(RTHTTP hHttp);
  *
  * @param   hHttp           The HTTP client handle.
  * @param   pvUser          The user parameter specified when registering the callback.
- * @param   cbDowloadTotal  The content-length value, if available.
+ * @param   cbDownloadTotal The content-length value, if available.
  *                          Warning! Not entirely clear what it will be if
  *                                   unavailable, probably 0.
- * @param   cbDowloaded     How much was downloaded thus far.
+ * @param   cbDownloaded    How much was downloaded thus far.
  */
 typedef DECLCALLBACKTYPE(void, FNRTHTTPDOWNLDPROGRCALLBACK,(RTHTTP hHttp, void *pvUser, uint64_t cbDownloadTotal,
                                                             uint64_t cbDownloaded));
