@@ -2103,6 +2103,19 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger);
 RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCallback, void *pvUser);
 
 /**
+ * Sets the custom flush callback.
+ *
+ * This can be handy for special loggers like the per-EMT ones in ring-0,
+ * but also for implementing a log viewer in the debugger GUI.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger         The logger instance.
+ * @param   pfnFlush        The flush callback.
+ * @param   ppfnOldFlush    Where to return the old flush callback. Optional.
+ */
+RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush, PFNRTLOGFLUSH *ppfnOldFlush);
+
+/**
  * Set the thread name for a thread specific ring-0 logger.
  *
  * @returns IPRT status code.
