@@ -577,7 +577,7 @@ typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
  * @param pvExtension The extension pointer.
  * @param u32Function What the callback is supposed to do.
  * @param pvParm      The function parameters.
- * @param cbParm      The size of the function parameters.
+ * @param cbParms     The size of the function parameters.
  */
 typedef DECLCALLBACKTYPE(int, FNHGCMSVCEXT,(void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms));
 typedef FNHGCMSVCEXT *PFNHGCMSVCEXT;

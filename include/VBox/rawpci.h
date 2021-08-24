@@ -80,7 +80,7 @@ struct RAWPCIPERVM;
  *
  * @returns VBox status code.
  *
- * @param   pVM             The cross context VM structure.
+ * @param   pVmData         The per VM data.
  * @param   HCPhysStart     Physical address of region start on the host.
  * @param   GCPhysStart     Physical address of region start on the guest.
  * @param   cbMem           Region size in bytes.
