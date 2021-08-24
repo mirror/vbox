@@ -103,7 +103,8 @@ typedef struct DXBCBlobIOSGN
 typedef struct VGPUOperandIndex
 {
     uint32_t indexRepresentation;       /* VGPU10_OPERAND_INDEX_REPRESENTATION */
-    uint64_t aOperandIndex[2];          /* Needs up to 2 qwords. */
+    uint64_t iOperandImmediate;         /* Needs up to a qword. */
+    struct VGPUOperand *pOperandRelative; /* For VGPU10_OPERAND_INDEX_*RELATIVE */
 } VGPUOperandIndex;
 
 /* Parsed info about an operand. */
@@ -124,8 +125,14 @@ typedef struct VGPUOpcode
     uint32_t cOpcodeToken;              /* Number of tokens for this operation. */
     uint32_t opcodeType;                /* VGPU10_OPCODE_* */
     uint32_t semanticName;              /* SVGA3dDXSignatureSemanticName for system value declarations. */
-    uint32_t cOperand;                  /* Nunber of operands. */
-    VGPUOperand aOperand[8];            /* 8 should be enough for everyone. */
+    uint32_t cOperand;                  /* Number of operands for this instruction. */
+    uint32_t aIdxOperand[8];            /* Indices of the instruction operands in the aValOperand array. */
+                                        /* 8 should be enough for everyone. */
+    VGPUOperand aValOperand[16];        /* Operands including VGPU10_OPERAND_INDEX_*RELATIVE if they are used: */
+                                        /* Operand1, VGPU10_OPERAND_INDEX_*RELATIVE for Operand1, ... */
+                                        /* ... */
+                                        /* OperandN, VGPU10_OPERAND_INDEX_*RELATIVE for OperandN, ... */
+                                        /* 16 probably should be enough for everyone. */
 } VGPUOpcode;
 
 typedef struct VGPUOpcodeInfo
@@ -1208,9 +1215,9 @@ DECLINLINE(void) dxbcByteWriterFetchData(DXBCByteWriter *w, void **ppv, uint32_t
  */
 
 /* Parse an instruction operand. */
-static int dxbcParseOperand(DXBCTokenReader *r, VGPUOperand *pOperand)
+static int dxbcParseOperand(DXBCTokenReader *r, VGPUOperand *paOperand, uint32_t *pcOperandRemain)
 {
-    RT_ZERO(*pOperand);
+    ASSERT_GUEST_RETURN(*pcOperandRemain > 0, VERR_NOT_SUPPORTED);
 
     ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
 
@@ -1275,67 +1282,79 @@ static int dxbcParseOperand(DXBCTokenReader *r, VGPUOperand *pOperand)
         for (uint32_t i = 0; i < cComponent; ++i)
         {
             ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
-            pOperand->aImm[i] = dxbcTokenReaderRead32(r);
+            paOperand->aImm[i] = dxbcTokenReaderRead32(r);
         }
     }
 
-    pOperand->numComponents  = operand0.numComponents;
-    pOperand->selectionMode  = operand0.selectionMode;
-    pOperand->mask           = operand0.mask;
-    pOperand->operandType    = operand0.operandType;
-    pOperand->indexDimension = operand0.indexDimension;
+    paOperand->numComponents  = operand0.numComponents;
+    paOperand->selectionMode  = operand0.selectionMode;
+    paOperand->mask           = operand0.mask;
+    paOperand->operandType    = operand0.operandType;
+    paOperand->indexDimension = operand0.indexDimension;
 
+    int rc = VINF_SUCCESS;
     /* 'indexDimension' tells the number of indices. 'i' is the array index, i.e. i = 0 for 1D, etc. */
     for (uint32_t i = 0; i < operand0.indexDimension; ++i)
     {
         if (i == 0)                                          /* VGPU10_OPERAND_INDEX_1D */
-            pOperand->aOperandIndex[i].indexRepresentation = operand0.index0Representation;
+            paOperand->aOperandIndex[i].indexRepresentation = operand0.index0Representation;
         else if (i == 1)                                     /* VGPU10_OPERAND_INDEX_2D */
-            pOperand->aOperandIndex[i].indexRepresentation = operand0.index1Representation;
+            paOperand->aOperandIndex[i].indexRepresentation = operand0.index1Representation;
         else                                                 /* VGPU10_OPERAND_INDEX_3D */
             continue; /* Skip because it is "rarely if ever used" and is not supported by VGPU10. */
 
-        uint32_t const indexRepresentation = pOperand->aOperandIndex[i].indexRepresentation;
+        uint32_t const indexRepresentation = paOperand->aOperandIndex[i].indexRepresentation;
         switch (indexRepresentation)
         {
             case VGPU10_OPERAND_INDEX_IMMEDIATE32:
             {
                 ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
-                pOperand->aOperandIndex[i].aOperandIndex[0] = dxbcTokenReaderRead32(r);
+                paOperand->aOperandIndex[i].iOperandImmediate = dxbcTokenReaderRead32(r);
                 break;
             }
             case VGPU10_OPERAND_INDEX_IMMEDIATE64:
             {
                 ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 2), VERR_INVALID_PARAMETER);
-                pOperand->aOperandIndex[i].aOperandIndex[0] = dxbcTokenReaderRead64(r);
+                paOperand->aOperandIndex[i].iOperandImmediate = dxbcTokenReaderRead64(r);
                 break;
             }
             case VGPU10_OPERAND_INDEX_RELATIVE:
             {
                 ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
-                pOperand->aOperandIndex[i].aOperandIndex[0] = dxbcTokenReaderRead32(r);
+                paOperand->aOperandIndex[i].pOperandRelative = &paOperand[1];
+                Log6(("    [operand index %d] parsing relative\n", i));
+                rc = dxbcParseOperand(r, &paOperand[1], pcOperandRemain);
                 break;
             }
             case VGPU10_OPERAND_INDEX_IMMEDIATE32_PLUS_RELATIVE:
             {
                 ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 2), VERR_INVALID_PARAMETER);
-                pOperand->aOperandIndex[i].aOperandIndex[0] = dxbcTokenReaderRead32(r);
-                pOperand->aOperandIndex[i].aOperandIndex[1] = dxbcTokenReaderRead32(r);
+                paOperand->aOperandIndex[i].iOperandImmediate = dxbcTokenReaderRead32(r);
+                paOperand->aOperandIndex[i].pOperandRelative = &paOperand[1];
+                Log6(("    [operand index %d] parsing relative\n", i));
+                rc = dxbcParseOperand(r, &paOperand[1], pcOperandRemain);
                 break;
             }
             case VGPU10_OPERAND_INDEX_IMMEDIATE64_PLUS_RELATIVE:
             {
                 ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 3), VERR_INVALID_PARAMETER);
-                pOperand->aOperandIndex[i].aOperandIndex[0] = dxbcTokenReaderRead64(r);
-                pOperand->aOperandIndex[i].aOperandIndex[1] = dxbcTokenReaderRead32(r);
+                paOperand->aOperandIndex[i].iOperandImmediate = dxbcTokenReaderRead64(r);
+                paOperand->aOperandIndex[i].pOperandRelative = &paOperand[1];
+                Log6(("    [operand index %d] parsing relative\n", i));
+                rc = dxbcParseOperand(r, &paOperand[1], pcOperandRemain);
                 break;
             }
             default:
                 ASSERT_GUEST_FAILED_RETURN(VERR_INVALID_PARAMETER);
         }
-        Log6(("    [operand index %d] %s(%d): %#llx, %#llx\n",
-              i, dxbcOperandIndexRepresentationToString(indexRepresentation), indexRepresentation, pOperand->aOperandIndex[i].aOperandIndex[0], pOperand->aOperandIndex[i].aOperandIndex[1]));
+        Log6(("    [operand index %d] %s(%d): %#llx%s\n",
+              i, dxbcOperandIndexRepresentationToString(indexRepresentation), indexRepresentation,
+              paOperand->aOperandIndex[i].iOperandImmediate, paOperand->aOperandIndex[i].pOperandRelative ? " + relative" : ""));
+        if (RT_FAILURE(rc))
+            break;
     }
+
+    *pcOperandRemain -= 1;
     return VINF_SUCCESS;
 }
 
@@ -1356,9 +1375,9 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
     if (cOperand != UINT32_MAX)
     {
         Log6(("[%#x] %s length %d %s\n",
-              dxbcTokenReaderByteOffset(r), dxbcOpcodeToString(pOpcode->opcodeType), opcode.instructionLength, dxbcInterpolationModeToString(opcode.interpolationMode)));
+              dxbcTokenReaderByteOffset(r) - 4, dxbcOpcodeToString(pOpcode->opcodeType), opcode.instructionLength, dxbcInterpolationModeToString(opcode.interpolationMode)));
 
-        ASSERT_GUEST_RETURN(cOperand < RT_ELEMENTS(pOpcode->aOperand), VERR_INVALID_PARAMETER);
+        ASSERT_GUEST_RETURN(cOperand < RT_ELEMENTS(pOpcode->aIdxOperand), VERR_INVALID_PARAMETER);
 
         pOpcode->cOpcodeToken = opcode.instructionLength;
         if (opcode.extended)
@@ -1393,10 +1412,13 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
         }
 
         /* Operands. */
-        for (uint32_t iOperand = 0; iOperand < cOperand; ++iOperand)
+        uint32_t cOperandRemain = RT_ELEMENTS(pOpcode->aValOperand);
+        for (uint32_t i = 0; i < cOperand; ++i)
         {
-            Log6(("  [operand %d]\n", iOperand));
-            int rc = dxbcParseOperand(r, &pOpcode->aOperand[iOperand]);
+            Log6(("  [operand %d]\n", i));
+            uint32_t const idxOperand = RT_ELEMENTS(pOpcode->aValOperand) - cOperandRemain;
+            pOpcode->aIdxOperand[i] = idxOperand;
+            int rc = dxbcParseOperand(r, &pOpcode->aValOperand[idxOperand], &cOperandRemain);
             ASSERT_GUEST_RETURN(RT_SUCCESS(rc), VERR_INVALID_PARAMETER);
         }
 
@@ -1603,9 +1625,12 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
 
             if (pSignatureEntry)
             {
-                pSignatureEntry->registerIndex = opcode.aOperand[0].aOperandIndex[0].aOperandIndex[0];
+                ASSERT_GUEST_RETURN(   opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE32
+                                    || opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE64,
+                                    VERR_NOT_SUPPORTED);
+                pSignatureEntry->registerIndex = opcode.aValOperand[0].aOperandIndex[0].iOperandImmediate;
                 pSignatureEntry->semanticName  = opcode.semanticName;
-                pSignatureEntry->mask          = opcode.aOperand[0].mask;
+                pSignatureEntry->mask          = opcode.aValOperand[0].mask;
                 pSignatureEntry->componentType = SVGADX_SIGNATURE_REGISTER_COMPONENT_UNKNOWN; /// @todo Proper value? Seems that it is not important.
                 pSignatureEntry->minPrecision  = SVGADX_SIGNATURE_MIN_PRECISION_DEFAULT;
             }
