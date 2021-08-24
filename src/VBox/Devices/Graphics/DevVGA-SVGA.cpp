@@ -1845,6 +1845,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
                     pThis->svga.uWidth  = pThisCC->pDrv->cx;
                     pThis->svga.uHeight = pThisCC->pDrv->cy;
                     pThis->svga.uBpp    = (pThisCC->pDrv->cBits + 7) & ~7;
+                    vmsvgaHCUpdatePitch(pThis, pThisCC);
                 }
 
                 if (    pThis->svga.uWidth  != VMSVGA_VAL_UNINITIALIZED
