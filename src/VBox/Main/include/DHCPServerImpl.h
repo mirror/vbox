@@ -56,7 +56,7 @@ class ATL_NO_VTABLE DHCPServer
 public:
     /** @name Constructors and destructors
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(DHCPServer)
+    DECLARE_COMMON_CLASS_METHODS(DHCPServer)
     HRESULT FinalConstruct();
     void    FinalRelease();
 

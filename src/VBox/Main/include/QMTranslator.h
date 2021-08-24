@@ -29,27 +29,33 @@ public:
     QMTranslator();
     virtual ~QMTranslator();
 
-    /* Gets translation from loaded QM file
+    /**
+     * Gets translation from loaded QM file
      *
-     * @param   context   QM context to look for translation
-     * @param   source    Source string in one-byte encoding
-     * @param   disamb    Disambiguationg comment, empty by default
+     * @param   pszContext  QM context to look for translation
+     * @param   pszSource   Source string in one-byte encoding
+     * @param   pszDisamb   Disambiguationg comment, empty by default
+     * @param   iNum        Plural form indicator.
      *
-     * @returns Pointer to a translation in UTF-8 encoding, empty string on failure */
+     * @returns Pointer to a translation (UTF-8 encoding), source string on failure.
+     */
+    const char *translate(const char *pszContext, const char *pszSource,
+                          const char *pszDisamb = NULL, const int iNum = -1) const RT_NOEXCEPT;
 
-    const char *translate(const char *pszContext, const char *pszSource, const char *pszDisamb = "") const throw();
-
-    /* Loads and parses QM file
+    /**
+     * Loads and parses QM file
      *
-     * @param       filename    The name of the file to load
+     * @param   pszFilename The name of the file to load
+     * @param   hStrCache   The string cache to use for storing strings.
      *
-     * @returns VINF_SUCCESS if successful */
-    int load(const char *pszFilename) throw();
+     * @returns VBox status code.
+     */
+    int load(const char *pszFilename, RTSTRCACHE hStrCache) RT_NOEXCEPT;
 
 private:
-        /* QMTranslator implementation.
-         * To separate all the code from the interface */
-    QMTranslator_Impl *_impl;
+    /** QMTranslator implementation.
+     * To separate all the code from the interface */
+    QMTranslator_Impl *m_impl;
 
     /* If copying is required, please define the following operators */
     void operator=(QMTranslator &);

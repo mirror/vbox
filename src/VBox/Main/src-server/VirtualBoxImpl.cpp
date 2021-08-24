@@ -296,6 +296,9 @@ struct VirtualBox::Data
         , pAsyncEventQ(NULL)
         , pAutostartDb(NULL)
         , fSettingsCipherKeySet(false)
+#ifdef VBOX_WITH_MAIN_NLS
+        , pVBoxTranslator(NULL)
+#endif
 #if defined(RT_OS_WINDOWS) && defined(VBOXSVC_WITH_CLIENT_WATCHER)
         , fWatcherIsReliable(RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
 #endif
@@ -404,7 +407,9 @@ struct VirtualBox::Data
     /** Settings secret */
     bool                                fSettingsCipherKeySet;
     uint8_t                             SettingsCipherKey[RTSHA512_HASH_SIZE];
-
+#ifdef VBOX_WITH_MAIN_NLS
+    VirtualBoxTranslator               *pVBoxTranslator;
+#endif
 #if defined(RT_OS_WINDOWS) && defined(VBOXSVC_WITH_CLIENT_WATCHER)
     /** Critical section protecting WatchedProcesses. */
     RTCRITSECTRW                        WatcherCritSect;
@@ -595,7 +600,33 @@ HRESULT VirtualBox::init()
 
         rc = m->pSystemProperties->i_loadSettings(m->pMainConfigFile->systemProperties);
         if (FAILED(rc)) throw rc;
-
+#ifdef VBOX_WITH_MAIN_NLS
+        m->pVBoxTranslator = VirtualBoxTranslator::instance();
+        /* Do not throw an exception on language errors.
+         * Just do not use translation. */
+        if (m->pVBoxTranslator)
+        {
+            com::Utf8Str strLocale;
+            HRESULT hrc = m->pSystemProperties->getLanguageId(strLocale);
+            if (SUCCEEDED(hrc))
+            {
+                int vrc = m->pVBoxTranslator->i_loadLanguage(strLocale.c_str());
+                if (RT_FAILURE(vrc))
+                {
+                    hrc = Global::vboxStatusCodeToCOM(vrc);
+                    LogRel(("Load language failed (%Rhrc).\n", hrc));
+                }
+            }
+            else
+            {
+                LogRel(("Getting language settings failed (%Rhrc).\n", hrc));
+                m->pVBoxTranslator->release();
+                m->pVBoxTranslator = NULL;
+            }
+        }
+        else
+            LogRel(("Translator creation failed.\n"));
+#endif
         /* guest OS type objects, needed by machines */
         for (size_t i = 0; i < Global::cOSTypes; ++i)
         {
@@ -1092,7 +1123,10 @@ void VirtualBox::uninit()
     }
 
     delete m->pAutostartDb;
-
+#ifdef VBOX_WITH_MAIN_NLS
+    if (m->pVBoxTranslator)
+        m->pVBoxTranslator->release();
+#endif
     // clean up our instance data
     delete m;
     m = NULL;
@@ -3515,6 +3549,13 @@ void VirtualBox::i_onCloudProviderUninstall(const Utf8Str &aProviderId)
         return;
 }
 
+void VirtualBox::i_onLanguageChanged(const Utf8Str &aLanguageId)
+{
+    ComPtr<IEvent> ptrEvent;
+    HRESULT hrc = ::CreateLanguageChangedEvent(ptrEvent.asOutParam(), m->pEventSource, aLanguageId);
+    AssertComRCReturnVoid(hrc);
+    i_postEvent(new AsyncEvent(this, ptrEvent));
+}
 
 void VirtualBox::i_onProgressCreated(const Guid &aId, BOOL aCreated)
 {
@@ -5279,13 +5320,13 @@ HRESULT VirtualBox::i_ensureFilePathExists(const Utf8Str &strFileName, bool fCre
             int vrc = RTDirCreateFullPath(strDir.c_str(), 0700);
             if (RT_FAILURE(vrc))
                 return i_setErrorStaticBoth(VBOX_E_IPRT_ERROR, vrc,
-                                            Utf8StrFmt(tr("Could not create the directory '%s' (%Rrc)"),
-                                                       strDir.c_str(),
-                                                       vrc));
+                                            tr("Could not create the directory '%s' (%Rrc)"),
+                                            strDir.c_str(),
+                                            vrc);
         }
         else
             return i_setErrorStaticBoth(VBOX_E_IPRT_ERROR, VERR_FILE_NOT_FOUND,
-                                        Utf8StrFmt(tr("Directory '%s' does not exist"), strDir.c_str()));
+                                        tr("Directory '%s' does not exist"), strDir.c_str());
     }
 
     return S_OK;

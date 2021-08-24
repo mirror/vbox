@@ -1117,6 +1117,9 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            logginglevel <log setting>\n"
                      "                            proxymode system|noproxy|manual\n"
                      "                            proxyurl <url>\n"
+#ifdef VBOX_WITH_MAIN_NLS
+                     "                            language <language id>\n"
+#endif
                      "\n", SEP);
 
     if (enmCommand == USAGE_USBFILTER || enmCommand == USAGE_S_ALL)

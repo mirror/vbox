@@ -172,6 +172,9 @@ endif
 ifdef VBOX_WITH_EFI_IN_DD2
  VBOX_MAIN_DEFS += VBOX_WITH_EFI_IN_DD2
 endif
+ifdef VBOX_WITH_MAIN_NLS
+ VBOX_MAIN_DEFS += VBOX_WITH_MAIN_NLS
+endif
 # Unconditionally enable the new semaphore key generation code
 VBOX_MAIN_DEFS += VBOX_WITH_NEW_SYS_V_KEYGEN
 
@@ -549,7 +552,6 @@ VBoxSVC_SOURCES = \
 	src-all/Logging.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
-	src-all/QMTranslatorImpl.cpp \
 	src-all/SecretKeyStore.cpp \
 	src-all/SharedFolderImpl.cpp \
 	src-all/AutoCaller.cpp \
@@ -626,6 +628,12 @@ VBoxSVC_SOURCES = \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(if $(VBOX_WITH_XPCOM),src-server/xpcom/server.cpp,)
+
+ifdef VBOX_WITH_MAIN_NLS
+VBoxSVC_SOURCES += \
+	src-all/VirtualBoxTranslator.cpp \
+	src-all/QMTranslatorImpl.cpp
+endif
 
 ifn1of ($(KBUILD_TARGET), win darwin)
 VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/Devices/Network/slirp/resolv_conf_parser.c
@@ -1032,6 +1040,12 @@ VBoxC_SOURCES += \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 
+ifdef VBOX_WITH_MAIN_NLS
+VBoxC_SOURCES += \
+	src-all/VirtualBoxTranslator.cpp \
+	src-all/QMTranslatorImpl.cpp
+endif
+
 # Experimental cloud support
 ifdef VBOX_WITH_CLOUD_NET
  VBoxC_DEFS += VBOX_WITH_CLOUD_NET
@@ -1150,6 +1164,11 @@ endif
  	src-client/VirtualBoxClientImpl.cpp \
  	$(VBOX_AUTOGEN_EVENT_CPP) \
  	$(VBOX_XML_SCHEMADEFS_CPP)
+ ifdef VBOX_WITH_MAIN_NLS
+ VBoxClient-x86_SOURCES += \
+	src-all/VirtualBoxTranslator.cpp \
+	src-all/QMTranslatorImpl.cpp
+ endif
  VBoxClient-x86_SOURCES.win = \
  	src-client/win/dllmain.cpp \
  	src-client/win/VBoxClient-x86.def \
@@ -1388,6 +1407,112 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  endif
 endif
 
+
+ifdef VBOX_WITH_MAIN_NLS
+#
+# NLS stuff.
+#
+PROGRAMS += VirtualBoxAPI
+VirtualBoxAPI_TEMPLATE = VBOXQTGUIEXE
+VirtualBoxAPI_INSTTYPE = none
+VirtualBoxAPI_LRCFLAGS = -silent
+VirtualBoxAPI_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
+VirtualBoxAPI_APPROVED_LANGUAGES = \
+	bg \
+	ca \
+	ca_VA \
+	cs \
+	da \
+	de \
+	el \
+	en \
+	es \
+	eu \
+	fa \
+	fi \
+	fr \
+	gl \
+	he \
+	hr_HR \
+	hu \
+	id \
+	it \
+	ja \
+	km_KH \
+	ko \
+	lt \
+	nl \
+	pl \
+	pt \
+	pt_BR \
+	ro \
+	ru \
+	sk \
+	sl \
+	sr \
+	sv \
+	th \
+	tr \
+	uk \
+	zh_CN \
+	zh_TW
+
+VirtualBoxAPI_QT_TRANSLATIONS = \
+	$(filter \
+		$(addsuffix .ts, $(addprefix $(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_, \
+			$(VirtualBoxAPI_APPROVED_LANGUAGES))), \
+		$(wildcard $(VBOX_PATH_MAIN_SRC)/nls/*.ts))
+
+VirtualBoxAPI_SOURCES = \
+	nls/dummy.c
+VirtualBoxAPI_VBOX_ALL_NLS_SOURCES = $(wildcard \
+	$(VBOX_PATH_MAIN_SRC)/include/*.h\
+	$(VBOX_PATH_MAIN_SRC)/src-all/*.cpp \
+	$(VBOX_PATH_MAIN_SRC)/src-all/*.h \
+	$(VBOX_PATH_MAIN_SRC)/src-server/*.cpp \
+	$(VBOX_PATH_MAIN_SRC)/src-server/*.h \
+	$(VBOX_PATH_MAIN_SRC)/src-client/*.cpp \
+	$(VBOX_PATH_MAIN_SRC)/src-client/*.h )
+
+updatenls:: makeallnls $(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_en.ts
+
+makeallnls:: $(VirtualBoxAPI_VBOX_ALL_NLS_SOURCES)
+	$(call MSG_L1,lupdate all languages (nls/*.ts))
+	$(QUIET)$(TOOL_QT5_LUPDATE) \
+		$^ \
+		-ts \
+		$(filter-out nls/VirtualBoxAPI_en.ts, $(VirtualBoxAPI_QT_TRANSLATIONS)) \
+		$(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_xx_YY.ts
+
+fake-main-nls:
+	$(foreach file, $(VirtualBoxAPI_QT_TRANSLATIONS) \
+	,$(NLTAB)$(SED) -i \
+       	-e '/<source>.*<\/source>/h' \
+       	-e '/<source>.*<\/source>/p' \
+       	-e '/<translation type="unfinished"><\/translation>/{' \
+       		-e 'x' \
+       		-e 's/<source>\(.*\)<\/source>/<translation type="unfinished">$(notdir $(file)): \1<\/translation>/' \
+       	-e '}' \
+		$(file) )
+
+
+# Create the English translation file. This is something special cause it will
+# contain the plural forms only.
+$(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_en.ts: $(VirtualBoxAPI_VBOX_ALL_NLS_SOURCES)
+	$(call MSG_L1,lupdate $@)
+	$(QUIET)$(TOOL_QT5_LUPDATE) \
+		$^ \
+		-ts \
+		"$@"
+	$(QUIET)$(SED) -n -i \
+		-e '/<context>/,/<\/context>/!p' \
+		-e '/<context>/h'  \
+		-e '/<name>/H' \
+		-e '/<message numerus="yes">/,/<\/message>/H' \
+		-e '/<\/context>/{H;x;/<message/p}' \
+		"$@"
+
+endif # VBOX_WITH_MAIN_NLS
 
 
 # generate rules
@@ -1736,10 +1861,3 @@ testapiwrappers:: \
 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-odd \
 	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers-sources-even
 
-
-#
-# NLS stuff.
-#
-updatenls::
-	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
-	$(VBOX_LUPDATE) $(VBoxC_SOURCES) $(VBoxC_VBOX_HEADERS) -ts $(VBoxC_VBOX_TRANSLATIONS)

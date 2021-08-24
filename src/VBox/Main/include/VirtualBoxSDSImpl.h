@@ -82,7 +82,7 @@ public:
         COM_INTERFACE_ENTRY(IVirtualBoxSDS)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR(VirtualBoxSDS)
+    DECLARE_COMMON_CLASS_METHODS(VirtualBoxSDS)
 
     HRESULT FinalConstruct();
     void    FinalRelease();

@@ -43,7 +43,7 @@ class ATL_NO_VTABLE USBProxyBackend
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackend)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackend)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -147,7 +147,7 @@ protected:
 class USBProxyBackendDarwin : public USBProxyBackend
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendDarwin)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackendDarwin)
 
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
              const com::Utf8Str &strAddress, bool fLoadingSettings);
@@ -189,7 +189,7 @@ private:
 class USBProxyBackendLinux: public USBProxyBackend
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendLinux)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackendLinux)
 
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
              const com::Utf8Str &strAddress, bool fLoadingSettings);
@@ -242,7 +242,7 @@ private:
 class USBProxyBackendOs2 : public USBProxyBackend
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendOs2)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackendOs2)
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
@@ -281,7 +281,7 @@ private:
 class USBProxyBackendSolaris : public USBProxyBackend
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendSolaris)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackendSolaris)
 
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
              const com::Utf8Str &strAddress, bool fLoadingSettings);
@@ -317,7 +317,7 @@ private:
 class USBProxyBackendWindows : public USBProxyBackend
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendWindows)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackendWindows)
 
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
              const com::Utf8Str &strAddress, bool fLoadingSettings);
@@ -349,7 +349,7 @@ private:
 class USBProxyBackendFreeBSD : public USBProxyBackend
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendFreeBSD)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackendFreeBSD)
 
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
              const com::Utf8Str &strAddress, bool fLoadingSettings);
@@ -401,7 +401,7 @@ struct UsbIpExportedDevice;
 class USBProxyBackendUsbIp: public USBProxyBackend
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendUsbIp)
+    DECLARE_COMMON_CLASS_METHODS(USBProxyBackendUsbIp)
 
     int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
              const com::Utf8Str &strAddress, bool fLoadingSettings);

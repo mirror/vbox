@@ -43,7 +43,7 @@ class ATL_NO_VTABLE Host :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(Host)
+    DECLARE_COMMON_CLASS_METHODS(Host)
 
     HRESULT FinalConstruct();
     void FinalRelease();

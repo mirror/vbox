@@ -1720,7 +1720,7 @@ HRESULT Host::findHostDVDDrive(const com::Utf8Str &aName,
     if (SUCCEEDED(rc))
         rc = medium.queryInterfaceTo(aDrive.asOutParam());
     else
-        rc = setError(rc, Medium::tr("The host DVD drive named '%s' could not be found"), aName.c_str());
+        rc = setError(rc, tr("The host DVD drive named '%s' could not be found"), aName.c_str());
     return rc;
 }
 
@@ -1734,7 +1734,7 @@ HRESULT Host::findHostFloppyDrive(const com::Utf8Str &aName, ComPtr<IMedium> &aD
     if (SUCCEEDED(rc))
         return medium.queryInterfaceTo(aDrive.asOutParam());
     else
-        return setError(rc, Medium::tr("The host floppy drive named '%s' could not be found"), aName.c_str());
+        return setError(rc, tr("The host floppy drive named '%s' could not be found"), aName.c_str());
 }
 
 HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
@@ -1774,7 +1774,7 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
 
     if (!found)
         return setError(E_INVALIDARG,
-                        HostNetworkInterface::tr("The host network interface named '%s' could not be found"), aName.c_str());
+                        tr("The host network interface named '%s' could not be found"), aName.c_str());
 
     return found.queryInterfaceTo(aNetworkInterface.asOutParam());
 #endif
@@ -1817,7 +1817,7 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
 
     if (!found)
         return setError(E_INVALIDARG,
-                        HostNetworkInterface::tr("The host network interface with the given GUID could not be found"));
+                        tr("The host network interface with the given GUID could not be found"));
     return found.queryInterfaceTo(aNetworkInterface.asOutParam());
 
 #endif

@@ -33,7 +33,7 @@ class ATL_NO_VTABLE CloudNetwork :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(CloudNetwork)
+    DECLARE_COMMON_CLASS_METHODS(CloudNetwork)
 
     HRESULT FinalConstruct();
     void FinalRelease();

@@ -37,7 +37,7 @@ class ATL_NO_VTABLE SerialPort :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(SerialPort)
+    DECLARE_COMMON_CLASS_METHODS(SerialPort)
 
     HRESULT FinalConstruct();
     void FinalRelease();

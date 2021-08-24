@@ -48,7 +48,7 @@ class ATL_NO_VTABLE Keyboard :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(Keyboard)
+    DECLARE_COMMON_CLASS_METHODS(Keyboard)
 
     HRESULT FinalConstruct();
     void FinalRelease();

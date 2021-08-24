@@ -127,7 +127,7 @@ class ATL_NO_VTABLE Console :
 
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(Console)
+    DECLARE_COMMON_CLASS_METHODS(Console)
 
     HRESULT FinalConstruct();
     void FinalRelease();

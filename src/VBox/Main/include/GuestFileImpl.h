@@ -38,7 +38,7 @@ class ATL_NO_VTABLE GuestFile :
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(GuestFile)
+    DECLARE_COMMON_CLASS_METHODS(GuestFile)
 
     int     init(Console *pConsole, GuestSession *pSession, ULONG uFileID, const GuestFileOpenInfo &openInfo);
     void    uninit(void);

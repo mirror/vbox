@@ -153,9 +153,12 @@ typedef std::vector<FsList *> FsLists;
  * Abstract base class for a lenghtly per-session operation which
  * runs in a Main worker thread.
  */
-class GuestSessionTask : public ThreadTask
+class GuestSessionTask
+    : public ThreadTask
+    , public VirtualBoxTranslatable
 {
 public:
+    DECLARE_TRANSLATE_METHODS(GuestSessionTask)
 
     GuestSessionTask(GuestSession *pSession);
 
@@ -269,6 +272,7 @@ protected:
 class GuestSessionCopyTask : public GuestSessionTask
 {
 public:
+    DECLARE_TRANSLATE_METHODS(GuestSessionCopyTask)
 
     GuestSessionCopyTask(GuestSession *pSession);
     virtual ~GuestSessionCopyTask();
@@ -290,6 +294,7 @@ protected:
 class GuestSessionTaskCopyFrom : public GuestSessionCopyTask
 {
 public:
+    DECLARE_TRANSLATE_METHODS(GuestSessionTaskCopyFrom)
 
     GuestSessionTaskCopyFrom(GuestSession *pSession, GuestSessionFsSourceSet const &vecSrc, const Utf8Str &strDest);
     virtual ~GuestSessionTaskCopyFrom(void);
@@ -304,6 +309,7 @@ public:
 class GuestSessionTaskCopyTo : public GuestSessionCopyTask
 {
 public:
+    DECLARE_TRANSLATE_METHODS(GuestSessionTaskCopyTo)
 
     GuestSessionTaskCopyTo(GuestSession *pSession, GuestSessionFsSourceSet const &vecSrc, const Utf8Str &strDest);
     virtual ~GuestSessionTaskCopyTo(void);
@@ -318,6 +324,7 @@ public:
 class GuestSessionTaskUpdateAdditions : public GuestSessionTask
 {
 public:
+    DECLARE_TRANSLATE_METHODS(GuestSessionTaskUpdateAdditions)
 
     GuestSessionTaskUpdateAdditions(GuestSession *pSession, const Utf8Str &strSource,
                                     const ProcessArguments &aArguments, uint32_t fFlags);

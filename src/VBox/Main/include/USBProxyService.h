@@ -43,8 +43,11 @@ namespace settings
  */
 class USBProxyService
     : public VirtualBoxTranslatable
+    , public Lockable
 {
 public:
+    DECLARE_TRANSLATE_METHODS(USBProxyService)
+
     USBProxyService(Host *aHost);
     virtual HRESULT init(void);
     virtual ~USBProxyService();

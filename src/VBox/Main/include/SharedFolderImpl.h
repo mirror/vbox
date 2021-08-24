@@ -31,7 +31,7 @@ class ATL_NO_VTABLE SharedFolder :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR (SharedFolder)
+    DECLARE_COMMON_CLASS_METHODS (SharedFolder)
 
     HRESULT FinalConstruct();
     void FinalRelease();

@@ -67,7 +67,7 @@ public:
         settings::USBDeviceFilter mData;
     };
 
-    DECLARE_EMPTY_CTOR_DTOR(USBDeviceFilter)
+    DECLARE_COMMON_CLASS_METHODS(USBDeviceFilter)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -160,7 +160,7 @@ public:
         BackupableUSBDeviceFilterData() {}
     };
 
-    DECLARE_EMPTY_CTOR_DTOR (HostUSBDeviceFilter)
+    DECLARE_COMMON_CLASS_METHODS (HostUSBDeviceFilter)
 
     HRESULT FinalConstruct();
     void FinalRelease();

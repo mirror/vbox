@@ -36,7 +36,7 @@ class ATL_NO_VTABLE Mouse :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR (Mouse)
+    DECLARE_COMMON_CLASS_METHODS (Mouse)
 
     HRESULT FinalConstruct();
     void FinalRelease();

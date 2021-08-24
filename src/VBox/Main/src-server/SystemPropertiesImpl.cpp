@@ -27,12 +27,14 @@
 #include "Global.h"
 #include "LoggingNew.h"
 #include "AutostartDb.h"
+#include "VirtualBoxTranslator.h"
 
 // generated header
 #include "SchemaDefs.h"
 
 #include <iprt/dir.h>
 #include <iprt/ldr.h>
+#include <iprt/locale.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uri.h>
@@ -1873,6 +1875,8 @@ HRESULT SystemProperties::i_loadSettings(const settings::SystemProperties &data)
     m->uProxyMode        = data.uProxyMode;
     m->strProxyUrl       = data.strProxyUrl;
 
+    m->strLanguageId     = data.strLanguageId;
+
     m->fVBoxUpdateEnabled               = data.fVBoxUpdateEnabled;
     m->uVBoxUpdateFrequency             = data.uVBoxUpdateFrequency;
     m->strVBoxUpdateLastCheckDate       = data.strVBoxUpdateLastCheckDate;
@@ -2268,6 +2272,65 @@ HRESULT SystemProperties::setVBoxUpdateCount(ULONG VBoxUpdateCount)
     HRESULT rc = mParent->i_saveSettings();
 
     return rc;
+}
+
+HRESULT SystemProperties::getLanguageId(com::Utf8Str &aLanguageId)
+{
+#ifdef VBOX_WITH_MAIN_NLS
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aLanguageId = m->strLanguageId;
+    alock.release();
+
+    HRESULT hrc = S_OK;
+    if (aLanguageId.isEmpty())
+    {
+        char szLocale[256];
+        memset(szLocale, 0, sizeof(szLocale));
+        int vrc = RTLocaleQueryNormalizedBaseLocaleName(szLocale, sizeof(szLocale));
+        if (RT_SUCCESS(vrc))
+            aLanguageId = szLocale;
+        else
+            hrc = Global::vboxStatusCodeToCOM(vrc);
+    }
+    return hrc;
+#else
+    aLanguageId = "C";
+    return S_OK;
+#endif
+}
+
+HRESULT SystemProperties::setLanguageId(const com::Utf8Str &aLanguageId)
+{
+#ifdef VBOX_WITH_MAIN_NLS
+    VirtualBoxTranslator *pTranslator = VirtualBoxTranslator::instance();
+    if (!pTranslator)
+        return E_FAIL;
+
+    HRESULT hrc = S_OK;
+    int vrc = pTranslator->i_loadLanguage(aLanguageId.c_str());
+    if (RT_SUCCESS(vrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        m->strLanguageId = aLanguageId;
+        alock.release();
+
+        // VirtualBox::i_saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        hrc = mParent->i_saveSettings();
+    }
+    else
+        hrc = Global::vboxStatusCodeToCOM(vrc);
+
+    pTranslator->release();
+
+    if (SUCCEEDED(hrc))
+        mParent->i_onLanguageChanged(aLanguageId);
+
+    return hrc;
+#else
+    NOREF(aLanguageId);
+    return E_NOTIMPL;
+#endif
 }
 
 HRESULT SystemProperties::getVBoxUpdateFrequency(ULONG *aVBoxUpdateFrequency)

@@ -34,7 +34,7 @@ class ATL_NO_VTABLE AudioAdapter :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR (AudioAdapter)
+    DECLARE_COMMON_CLASS_METHODS (AudioAdapter)
 
     HRESULT FinalConstruct();
     void FinalRelease();

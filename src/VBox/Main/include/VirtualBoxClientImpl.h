@@ -23,6 +23,7 @@
 
 #include "VirtualBoxClientWrap.h"
 #include "EventImpl.h"
+#include "VirtualBoxTranslator.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"
@@ -100,6 +101,9 @@ private:
 
         RTTHREAD m_ThreadWatcher;
         RTSEMEVENT m_SemEvWatcher;
+#ifdef VBOX_WITH_MAIN_NLS
+        VirtualBoxTranslator *m_pVBoxTranslator;
+#endif
     };
 
     Data mData;
@@ -109,6 +113,11 @@ public:
      * DllCanUnloadNow().  This is incremented to 1 when init() initialized
      * m_pEventSource and is decremented by the Data destructor (above). */
     static LONG s_cUnnecessaryAtlModuleLocks;
+
+#ifdef VBOX_WITH_MAIN_NLS
+    HRESULT i_reloadApiLanguage();
+    HRESULT i_registerEventListener();
+#endif
 };
 
 #endif /* !MAIN_INCLUDED_VirtualBoxClientImpl_h */

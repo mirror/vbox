@@ -40,7 +40,7 @@ class ATL_NO_VTABLE Unattended
     : public UnattendedWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(Unattended)
+    DECLARE_COMMON_CLASS_METHODS(Unattended)
 
     HRESULT FinalConstruct();
     void FinalRelease();

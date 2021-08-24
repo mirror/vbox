@@ -2610,54 +2610,54 @@ Utf8Str GuestProcessTool::guestErrorToString(const char *pszTool, const GuestErr
     switch (guestErrorInfo.getRc())
     {
         case VERR_ACCESS_DENIED:
-            strErr = Utf8StrFmt(Guest::tr("Access to \"%s\" denied"), guestErrorInfo.getWhat().c_str());
+            strErr = Utf8StrFmt(tr("Access to \"%s\" denied"), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_FILE_NOT_FOUND: /* This is the most likely error. */
             RT_FALL_THROUGH();
         case VERR_PATH_NOT_FOUND:
-            strErr = Utf8StrFmt(Guest::tr("No such file or directory \"%s\""), guestErrorInfo.getWhat().c_str());
+            strErr = Utf8StrFmt(tr("No such file or directory \"%s\""), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_INVALID_VM_HANDLE:
-            strErr = Utf8StrFmt(Guest::tr("VMM device is not available (is the VM running?)"));
+            strErr = Utf8StrFmt(tr("VMM device is not available (is the VM running?)"));
             break;
 
         case VERR_HGCM_SERVICE_NOT_FOUND:
-            strErr = Utf8StrFmt(Guest::tr("The guest execution service is not available"));
+            strErr = Utf8StrFmt(tr("The guest execution service is not available"));
             break;
 
         case VERR_BAD_EXE_FORMAT:
-            strErr = Utf8StrFmt(Guest::tr("The file \"%s\" is not an executable format"),
+            strErr = Utf8StrFmt(tr("The file \"%s\" is not an executable format"),
                                 guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_AUTHENTICATION_FAILURE:
-            strErr = Utf8StrFmt(Guest::tr("The user \"%s\" was not able to logon"), guestErrorInfo.getWhat().c_str());
+            strErr = Utf8StrFmt(tr("The user \"%s\" was not able to logon"), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_INVALID_NAME:
-            strErr = Utf8StrFmt(Guest::tr("The file \"%s\" is an invalid name"), guestErrorInfo.getWhat().c_str());
+            strErr = Utf8StrFmt(tr("The file \"%s\" is an invalid name"), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_TIMEOUT:
-            strErr = Utf8StrFmt(Guest::tr("The guest did not respond within time"));
+            strErr = Utf8StrFmt(tr("The guest did not respond within time"));
             break;
 
         case VERR_CANCELLED:
-            strErr = Utf8StrFmt(Guest::tr("The execution operation was canceled"));
+            strErr = Utf8StrFmt(tr("The execution operation was canceled"));
             break;
 
         case VERR_GSTCTL_MAX_CID_OBJECTS_REACHED:
-            strErr = Utf8StrFmt(Guest::tr("Maximum number of concurrent guest processes has been reached"));
+            strErr = Utf8StrFmt(tr("Maximum number of concurrent guest processes has been reached"));
             break;
 
         case VERR_NOT_FOUND:
-            strErr = Utf8StrFmt(Guest::tr("The guest execution service is not ready (yet)"));
+            strErr = Utf8StrFmt(tr("The guest execution service is not ready (yet)"));
             break;
 
         default:
-            strErr = Utf8StrFmt(Guest::tr("Unhandled error %Rrc for \"%s\" occurred for tool \"%s\" on guest -- please file a bug report"),
+            strErr = Utf8StrFmt(tr("Unhandled error %Rrc for \"%s\" occurred for tool \"%s\" on guest -- please file a bug report"),
                                 guestErrorInfo.getRc(), guestErrorInfo.getWhat().c_str(), pszTool);
             break;
     }

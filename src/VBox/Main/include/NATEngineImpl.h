@@ -36,7 +36,7 @@ class ATL_NO_VTABLE NATEngine :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(NATEngine)
+    DECLARE_COMMON_CLASS_METHODS(NATEngine)
 
     HRESULT FinalConstruct();
     void FinalRelease();

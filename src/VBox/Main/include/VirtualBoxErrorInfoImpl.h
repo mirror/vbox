@@ -30,6 +30,7 @@ class ATL_NO_VTABLE VirtualBoxErrorInfo
     , VBOX_SCRIPTABLE_IMPL(IVirtualBoxErrorInfo)
 #ifndef VBOX_WITH_XPCOM /* IErrorInfo doesn't inherit from IDispatch, ugly 3am hack: */
     , public IDispatch
+    , public VirtualBoxTranslatable
 #endif
 {
 public:
@@ -44,6 +45,8 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
         COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler)
     END_COM_MAP()
+
+    DECLARE_TRANSLATE_METHODS(VirtualBoxErrorInfo)
 
     HRESULT FinalConstruct()
     {
@@ -138,10 +141,9 @@ public:
     STDMETHOD(COMGETTER(Text))(BSTR *aText);
     STDMETHOD(COMGETTER(Next))(IVirtualBoxErrorInfo **aNext);
 
+    const char* getComponentName() const { return "VirtualBoxErrorInfo"; }
+
 private:
-    // FIXME: declare these here until VBoxSupportsTranslation base
-    //        is available in this class.
-    static const char *tr(const char *a) { return a; }
     static HRESULT setError(HRESULT rc,
                             const char * /* a */,
                             const char * /* b */,

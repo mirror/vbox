@@ -34,7 +34,7 @@ class ATL_NO_VTABLE AdditionsFacility :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(AdditionsFacility)
+    DECLARE_COMMON_CLASS_METHODS(AdditionsFacility)
 
     /** @name Initializer & uninitializer methods
      * @{ */

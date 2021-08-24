@@ -29,7 +29,7 @@ class ATL_NO_VTABLE HostDrivePartition
     : public HostDrivePartitionWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(HostDrivePartition)
+    DECLARE_COMMON_CLASS_METHODS(HostDrivePartition)
 
     HRESULT FinalConstruct();
     void FinalRelease();

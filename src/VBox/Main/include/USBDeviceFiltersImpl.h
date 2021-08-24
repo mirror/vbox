@@ -36,7 +36,7 @@ class ATL_NO_VTABLE USBDeviceFilters :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(USBDeviceFilters)
+    DECLARE_COMMON_CLASS_METHODS(USBDeviceFilters)
 
     HRESULT FinalConstruct();
     void FinalRelease();

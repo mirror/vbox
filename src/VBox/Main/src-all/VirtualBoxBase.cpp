@@ -33,6 +33,7 @@
 #include "VirtualBoxBase.h"
 #include "AutoCaller.h"
 #include "VirtualBoxErrorInfoImpl.h"
+#include "VirtualBoxTranslator.h"
 #include "Global.h"
 #include "LoggingNew.h"
 
@@ -225,29 +226,30 @@ HRESULT VirtualBoxBase::handleUnexpectedExceptions(VirtualBoxBase *const aThis, 
     }
     catch (const RTCError &err)      // includes all XML exceptions
     {
-        return setErrorInternal(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
-                                Utf8StrFmt(tr("%s.\n%s[%d] (%s)"),
-                                           err.what(),
-                                           pszFile, iLine, pszFunction).c_str(),
-                                false /* aWarning */,
-                                true /* aLogIt */);
+        return setErrorInternalF(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
+                                 false /* aWarning */,
+                                 true /* aLogIt */,
+                                 0 /* aResultDetail */,
+                                 tr("%s.\n%s[%d] (%s)"),
+                                 err.what(), pszFile, iLine, pszFunction);
     }
     catch (const std::exception &err)
     {
-        return setErrorInternal(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
-                                Utf8StrFmt(tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
-                                           err.what(), typeid(err).name(),
-                                           pszFile, iLine, pszFunction).c_str(),
-                                false /* aWarning */,
-                                true /* aLogIt */);
+        return setErrorInternalF(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
+                                 false /* aWarning */,
+                                 true /* aLogIt */,
+                                 0 /* aResultDetail */,
+                                 tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
+                                 err.what(), typeid(err).name(), pszFile, iLine, pszFunction);
     }
     catch (...)
     {
-        return setErrorInternal(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
-                                Utf8StrFmt(tr("Unknown exception\n%s[%d] (%s)"),
-                                           pszFile, iLine, pszFunction).c_str(),
-                                false /* aWarning */,
-                                true /* aLogIt */);
+        return setErrorInternalF(E_FAIL, aThis->getClassIID(), aThis->getComponentName(),
+                                 false /* aWarning */,
+                                 true /* aLogIt */,
+                                 0 /* aResultDetail */,
+                                 tr("Unknown exception\n%s[%d] (%s)"),
+                                 pszFile, iLine, pszFunction);
     }
 
 #ifndef _MSC_VER /* (unreachable) */
@@ -255,6 +257,40 @@ HRESULT VirtualBoxBase::handleUnexpectedExceptions(VirtualBoxBase *const aThis, 
     AssertFailed();
     return E_FAIL;
 #endif
+}
+
+
+/**
+ *  Sets error info for the current thread. This is an internal function that
+ *  gets eventually called by all public variants.  If @a aWarning is
+ *  @c true, then the highest (31) bit in the @a aResultCode value which
+ *  indicates the error severity is reset to zero to make sure the receiver will
+ *  recognize that the created error info object represents a warning rather
+ *  than an error.
+ *
+ *  @param aResultCode
+ *  @param aIID
+ *  @param aComponent
+ *  @param aWarning
+ *  @param aLogIt
+ *  @param aResultDetail
+ *  @param aText
+ */
+/* static */
+HRESULT VirtualBoxBase::setErrorInternalF(HRESULT aResultCode,
+                                          const GUID &aIID,
+                                          const char *aComponent,
+                                          bool aWarning,
+                                          bool aLogIt,
+                                          LONG aResultDetail,
+                                          const char *aText, ...)
+{
+    va_list va;
+    va_start(va, aText);
+    HRESULT hres = setErrorInternalV(aResultCode, aIID, aComponent, aText, va,
+                                     aWarning, aLogIt, aResultDetail);
+    va_end(va);
+    return hres;
 }
 
 /**
@@ -269,32 +305,42 @@ HRESULT VirtualBoxBase::handleUnexpectedExceptions(VirtualBoxBase *const aThis, 
  *  @param  aIID
  *  @param  pcszComponent
  *  @param  aText
+ *  @param  va
  *  @param  aWarning
  *  @param  aLogIt
  *  @param  aResultDetail
  */
 /* static */
-HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
-                                         const GUID &aIID,
-                                         const char *pcszComponent,
-                                         Utf8Str aText,
-                                         bool aWarning,
-                                         bool aLogIt,
-                                         LONG aResultDetail /* = 0*/)
+HRESULT VirtualBoxBase::setErrorInternalV(HRESULT aResultCode,
+                                          const GUID &aIID,
+                                          const char *aComponent,
+                                          const char *aText,
+                                          va_list aArgs,
+                                          bool aWarning,
+                                          bool aLogIt,
+                                          LONG aResultDetail /* = 0*/)
 {
     /* whether multi-error mode is turned on */
     bool preserve = MultiResult::isMultiEnabled();
 
+    com::Utf8Str strText;
     if (aLogIt)
-        LogRel(("%s [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%s} aText={%s}, preserve=%RTbool aResultDetail=%d\n",
+    {
+        strText = trSource(aText);
+        va_list va2;
+        va_copy(va2, aArgs);
+        LogRel(("%s [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%s} aText={%N}, preserve=%RTbool aResultDetail=%d\n",
                 aWarning ? "WARNING" : "ERROR",
                 aResultCode,
                 aResultCode,
                 &aIID,
-                pcszComponent,
-                aText.c_str(),
+                aComponent,
+                strText.c_str(),
+                &va2,
                 preserve,
                 aResultDetail));
+        va_end(va2);
+    }
 
     /* these are mandatory, others -- not */
     AssertReturn((!aWarning && FAILED(aResultCode)) ||
@@ -307,35 +353,42 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
 
     HRESULT rc = S_OK;
 
-    if (aText.isEmpty())
+    if (aText == NULL || aText[0] == '\0')
     {
         /* Some default info */
         switch (aResultCode)
         {
-            case E_INVALIDARG:                 aText = "A parameter has an invalid value"; break;
-            case E_POINTER:                    aText = "A parameter is an invalid pointer"; break;
-            case E_UNEXPECTED:                 aText = "The result of the operation is unexpected"; break;
-            case E_ACCESSDENIED:               aText = "The access to an object is not allowed"; break;
-            case E_OUTOFMEMORY:                aText = "The allocation of new memory failed"; break;
-            case E_NOTIMPL:                    aText = "The requested operation is not implemented"; break;
-            case E_NOINTERFACE:                aText = "The requested interface is not implemented"; break;
-            case E_FAIL:                       aText = "A general error occurred"; break;
-            case E_ABORT:                      aText = "The operation was canceled"; break;
-            case VBOX_E_OBJECT_NOT_FOUND:      aText = "Object corresponding to the supplied arguments does not exist"; break;
-            case VBOX_E_INVALID_VM_STATE:      aText = "Current virtual machine state prevents the operation"; break;
-            case VBOX_E_VM_ERROR:              aText = "Virtual machine error occurred attempting the operation"; break;
-            case VBOX_E_FILE_ERROR:            aText = "File not accessible or erroneous file contents"; break;
-            case VBOX_E_IPRT_ERROR:            aText = "Runtime subsystem error"; break;
-            case VBOX_E_PDM_ERROR:             aText = "Pluggable Device Manager error"; break;
-            case VBOX_E_INVALID_OBJECT_STATE:  aText = "Current object state prohibits operation"; break;
-            case VBOX_E_HOST_ERROR:            aText = "Host operating system related error"; break;
-            case VBOX_E_NOT_SUPPORTED:         aText = "Requested operation is not supported"; break;
-            case VBOX_E_XML_ERROR:             aText = "Invalid XML found"; break;
-            case VBOX_E_INVALID_SESSION_STATE: aText = "Current session state prohibits operation"; break;
-            case VBOX_E_OBJECT_IN_USE:         aText = "Object being in use prohibits operation"; break;
-            case VBOX_E_PASSWORD_INCORRECT:    aText = "Incorrect password provided"; break;
-            default:                           aText = "Unknown error"; break;
+            case E_INVALIDARG:                 strText = "A parameter has an invalid value"; break;
+            case E_POINTER:                    strText = "A parameter is an invalid pointer"; break;
+            case E_UNEXPECTED:                 strText = "The result of the operation is unexpected"; break;
+            case E_ACCESSDENIED:               strText = "The access to an object is not allowed"; break;
+            case E_OUTOFMEMORY:                strText = "The allocation of new memory failed"; break;
+            case E_NOTIMPL:                    strText = "The requested operation is not implemented"; break;
+            case E_NOINTERFACE:                strText = "The requested interface is not implemented"; break;
+            case E_FAIL:                       strText = "A general error occurred"; break;
+            case E_ABORT:                      strText = "The operation was canceled"; break;
+            case VBOX_E_OBJECT_NOT_FOUND:      strText = "Object corresponding to the supplied arguments does not exist"; break;
+            case VBOX_E_INVALID_VM_STATE:      strText = "Current virtual machine state prevents the operation"; break;
+            case VBOX_E_VM_ERROR:              strText = "Virtual machine error occurred attempting the operation"; break;
+            case VBOX_E_FILE_ERROR:            strText = "File not accessible or erroneous file contents"; break;
+            case VBOX_E_IPRT_ERROR:            strText = "Runtime subsystem error"; break;
+            case VBOX_E_PDM_ERROR:             strText = "Pluggable Device Manager error"; break;
+            case VBOX_E_INVALID_OBJECT_STATE:  strText = "Current object state prohibits operation"; break;
+            case VBOX_E_HOST_ERROR:            strText = "Host operating system related error"; break;
+            case VBOX_E_NOT_SUPPORTED:         strText = "Requested operation is not supported"; break;
+            case VBOX_E_XML_ERROR:             strText = "Invalid XML found"; break;
+            case VBOX_E_INVALID_SESSION_STATE: strText = "Current session state prohibits operation"; break;
+            case VBOX_E_OBJECT_IN_USE:         strText = "Object being in use prohibits operation"; break;
+            case VBOX_E_PASSWORD_INCORRECT:    strText = "Incorrect password provided"; break;
+            default:                           strText = "Unknown error"; break;
         }
+    }
+    else
+    {
+        va_list va2;
+        va_copy(va2, aArgs);
+        strText = com::Utf8StrFmt("%N", aText, &va2);
+        va_end(va2);
     }
 
     do
@@ -372,7 +425,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
         Assert(SUCCEEDED(rc) || curInfo.isNull());
 
         /* set the current error info and preserve the previous one if any */
-        rc = info->initEx(aResultCode, aResultDetail, aIID, pcszComponent, aText, curInfo);
+        rc = info->initEx(aResultCode, aResultDetail, aIID, aComponent, strText, curInfo);
         if (FAILED(rc)) break;
 
         ComPtr<IErrorInfo> err;
@@ -416,7 +469,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
             Assert(SUCCEEDED(rc) || curInfo.isNull());
 
             /* set the current error info and preserve the previous one if any */
-            rc = info->initEx(aResultCode, aResultDetail, aIID, pcszComponent, Bstr(aText), curInfo);
+            rc = info->initEx(aResultCode, aResultDetail, aIID, aComponent, Bstr(strText), curInfo);
             if (FAILED(rc)) break;
 
             ComPtr<nsIException> ex;
@@ -458,12 +511,13 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
  */
 HRESULT VirtualBoxBase::setError(HRESULT aResultCode)
 {
-    return setErrorInternal(aResultCode,
-                            this->getClassIID(),
-                            this->getComponentName(),
-                            "",
-                            false /* aWarning */,
-                            true /* aLogIt */);
+    return setErrorInternalF(aResultCode,
+                             this->getClassIID(),
+                             this->getComponentName(),
+                             false /* aWarning */,
+                             true /* aLogIt */,
+                             0 /* aResultDetail */,
+                             NULL);
 }
 
 /**
@@ -479,12 +533,12 @@ HRESULT VirtualBoxBase::setError(HRESULT aResultCode, const char *pcsz, ...)
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternal(aResultCode,
-                                  this->getClassIID(),
-                                  this->getComponentName(),
-                                  Utf8Str(pcsz, args),
-                                  false /* aWarning */,
-                                  true /* aLogIt */);
+    HRESULT rc = setErrorInternalV(aResultCode,
+                                   this->getClassIID(),
+                                   this->getComponentName(),
+                                   pcsz, args,
+                                   false /* aWarning */,
+                                   true /* aLogIt */);
     va_end(args);
     return rc;
 }
@@ -627,13 +681,13 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
  */
 HRESULT VirtualBoxBase::setErrorVrc(int vrc)
 {
-    return setErrorInternal(Global::vboxStatusCodeToCOM(vrc),
-                            this->getClassIID(),
-                            this->getComponentName(),
-                            Utf8StrFmt("%Rrc", vrc),
-                            false /* aWarning */,
-                            true /* aLogIt */,
-                            vrc /* aResultDetail */);
+    return setErrorInternalF(Global::vboxStatusCodeToCOM(vrc),
+                             this->getClassIID(),
+                             this->getComponentName(),
+                             false /* aWarning */,
+                             true /* aLogIt */,
+                             vrc /* aResultDetail */,
+                             Utf8StrFmt("%Rrc", vrc).c_str());
 }
 
 /**
@@ -650,13 +704,13 @@ HRESULT VirtualBoxBase::setErrorVrc(int vrc, const char *pcszMsgFmt, ...)
 {
     va_list va;
     va_start(va, pcszMsgFmt);
-    HRESULT hrc = setErrorInternal(Global::vboxStatusCodeToCOM(vrc),
-                                   this->getClassIID(),
-                                   this->getComponentName(),
-                                   Utf8Str(pcszMsgFmt, va),
-                                   false /* aWarning */,
-                                   true /* aLogIt */,
-                                   vrc /* aResultDetail */);
+    HRESULT hrc = setErrorInternalV(Global::vboxStatusCodeToCOM(vrc),
+                                    this->getClassIID(),
+                                    this->getComponentName(),
+                                    pcszMsgFmt, va,
+                                    false /* aWarning */,
+                                    true /* aLogIt */,
+                                    vrc /* aResultDetail */);
     va_end(va);
     return hrc;
 }
@@ -675,13 +729,13 @@ HRESULT VirtualBoxBase::setErrorVrc(int vrc, const char *pcszMsgFmt, ...)
  */
 HRESULT VirtualBoxBase::setErrorBoth(HRESULT hrc, int vrc)
 {
-    return setErrorInternal(hrc,
-                            this->getClassIID(),
-                            this->getComponentName(),
-                            Utf8StrFmt("%Rrc", vrc),
-                            false /* aWarning */,
-                            true /* aLogIt */,
-                            vrc /* aResultDetail */);
+    return setErrorInternalF(hrc,
+                             this->getClassIID(),
+                             this->getComponentName(),
+                             false /* aWarning */,
+                             true /* aLogIt */,
+                             vrc /* aResultDetail */,
+                             Utf8StrFmt("%Rrc", vrc).c_str());
 }
 
 /**
@@ -702,13 +756,13 @@ HRESULT VirtualBoxBase::setErrorBoth(HRESULT hrc, int vrc, const char *pcszMsgFm
 {
     va_list va;
     va_start(va, pcszMsgFmt);
-    hrc = setErrorInternal(hrc,
-                           this->getClassIID(),
-                           this->getComponentName(),
-                           Utf8Str(pcszMsgFmt, va),
-                           false /* aWarning */,
-                           true /* aLogIt */,
-                           vrc /* aResultDetail */);
+    hrc = setErrorInternalV(hrc,
+                            this->getClassIID(),
+                            this->getComponentName(),
+                            pcszMsgFmt, va,
+                            false /* aWarning */,
+                            true /* aLogIt */,
+                            vrc /* aResultDetail */);
     va_end(va);
     return hrc;
 }
@@ -723,12 +777,12 @@ HRESULT VirtualBoxBase::setWarning(HRESULT aResultCode, const char *pcsz, ...)
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternal(aResultCode,
-                                  this->getClassIID(),
-                                  this->getComponentName(),
-                                  Utf8Str(pcsz, args),
-                                  true /* aWarning */,
-                                  true /* aLogIt */);
+    HRESULT rc = setErrorInternalV(aResultCode,
+                                   this->getClassIID(),
+                                   this->getComponentName(),
+                                   pcsz, args,
+                                   true /* aWarning */,
+                                   true /* aLogIt */);
     va_end(args);
     return rc;
 }
@@ -743,12 +797,12 @@ HRESULT VirtualBoxBase::setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternal(aResultCode,
-                                  this->getClassIID(),
-                                  this->getComponentName(),
-                                  Utf8Str(pcsz, args),
-                                  false /* aWarning */,
-                                  false /* aLogIt */);
+    HRESULT rc = setErrorInternalV(aResultCode,
+                                   this->getClassIID(),
+                                   this->getComponentName(),
+                                   pcsz, args,
+                                   false /* aWarning */,
+                                   false /* aLogIt */);
     va_end(args);
     return rc;
 }

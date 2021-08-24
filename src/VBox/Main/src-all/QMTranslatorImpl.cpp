@@ -22,6 +22,8 @@
 #include <iprt/errcore.h>
 #include <iprt/file.h>
 #include <iprt/asm.h>
+#include <iprt/string.h>
+#include <iprt/strcache.h>
 #include <VBox/com/string.h>
 #include <VBox/log.h>
 #include <QMTranslator.h>
@@ -46,16 +48,10 @@ public:
 /* Bytes stream. Used by the parser to iterate through the data */
 class QMBytesStream
 {
-    size_t m_cbSize;
+    size_t         m_cbSize;
     const uint8_t * const m_dataStart;
     const uint8_t *m_iter;
     const uint8_t *m_end;
-
-    /* Function stub for transform method */
-    static uint16_t func_BE2H_U16(uint16_t value)
-    {
-        return RT_BE2H_U16(value);
-    }
 
 public:
 
@@ -93,30 +89,55 @@ public:
     {
         uint32_t size = read32();
         checkSize(size);
-        if (size & 1) throw QMException("Incorrect string size");
-        std::vector<uint16_t> wstr;
-        wstr.reserve(size / 2);
+        if (size & 1)
+            throw QMException("Incorrect string size");
 
-        /* We cannot convert to host endianess without copying the data
-         * since the file might be mapped to the memory and any memory
-         * change will lead to the change of the file. */
-        std::transform(reinterpret_cast<const uint16_t *>(m_iter),
-                       reinterpret_cast<const uint16_t *>(m_iter + size),
-                       std::back_inserter(wstr),
-                       func_BE2H_U16);
+        /* UTF-16 can encode up to codepoint U+10ffff, which UTF-8 needs 4 bytes
+           to encode, so reserve twice the size plus a terminator for the result. */
+        com::Utf8Str result;
+        result.reserve(size * 2 + 1);
+        char *pszStr = result.mutableRaw();
+        int rc = RTUtf16BigToUtf8Ex((PCRTUTF16)m_iter, size >> 1, &pszStr, result.capacity(), NULL);
+        if (RT_SUCCESS(rc))
+            result.jolt();
+        else
+            throw QMException("Translation from UTF-16 to UTF-8 failed");
+
         m_iter += size;
-        return com::Utf8Str((CBSTR) &wstr.front(), wstr.size());
+        return result;
     }
 
-    /** Reads string in one-byte encoding.
-     * The string is assumed to be in ISO-8859-1 encoding */
+    /**
+     *  Reads a string, forcing UTF-8 encoding.
+     */
     inline com::Utf8Str readString()
     {
         uint32_t size = read32();
         checkSize(size);
+
         com::Utf8Str result(reinterpret_cast<const char *>(m_iter), size);
+        if (size > 0)
+        {
+            RTStrPurgeEncoding(result.mutableRaw());
+            result.jolt();
+        }
+
         m_iter += size;
         return result;
+    }
+
+    /**
+     *  Reads memory block
+     *  Returns number of bytes read
+     */
+    inline uint32_t read(char *bBuf, uint32_t cbSize)
+    {
+        if (!bBuf || !cbSize)
+            return 0;
+        cbSize = RT_MIN(cbSize, (uint32_t)(m_end - m_iter));
+        memcpy(bBuf, m_iter, cbSize);
+        m_iter += cbSize;
+        return cbSize;
     }
 
     /** Checks the magic number.
@@ -147,7 +168,7 @@ public:
     inline void seek(uint32_t offSkip)
     {
         size_t cbLeft = (size_t)(m_end - m_iter);
-        if (cbLeft <= offSkip)
+        if (cbLeft >= offSkip)
             m_iter += offSkip;
         else
             m_iter = m_end; /** @todo r=bird: Or throw exception via checkSize? */
@@ -165,15 +186,52 @@ public:
 /* Internal QMTranslator implementation */
 class QMTranslator_Impl
 {
-    struct QMMessage
+    /** Used while parsing */
+    struct QMMessageParse
     {
         /* Everything is in UTF-8 */
+        std::vector<com::Utf8Str> astrTranslations;
         com::Utf8Str strContext;
-        com::Utf8Str strTranslation;
         com::Utf8Str strComment;
         com::Utf8Str strSource;
-        uint32_t     hash;
-        QMMessage() : hash(0) {}
+
+        QMMessageParse() {}
+    };
+
+    struct QMMessage
+    {
+        const char *pszContext;
+        const char *pszSource;
+        const char *pszComment;
+        std::vector<const char *> vecTranslations;
+        uint32_t    hash;
+
+        QMMessage() : pszContext(NULL), pszSource(NULL), pszComment(NULL), hash(0)
+        {}
+
+        QMMessage(RTSTRCACHE hStrCache, const QMMessageParse &rSrc)
+            : pszContext(addStr(hStrCache, rSrc.strContext))
+            , pszSource(addStr(hStrCache, rSrc.strSource))
+            , pszComment(addStr(hStrCache, rSrc.strComment))
+            , hash(RTStrHash1(pszSource))
+        {
+            for (size_t i = 0; i < rSrc.astrTranslations.size(); i++)
+                vecTranslations.push_back(addStr(hStrCache, rSrc.astrTranslations[i]));
+        }
+
+        /** Helper. */
+        static const char *addStr(RTSTRCACHE hStrCache, const com::Utf8Str &rSrc)
+        {
+            if (rSrc.isNotEmpty())
+            {
+                const char *psz = RTStrCacheEnterN(hStrCache, rSrc.c_str(), rSrc.length());
+                if (RT_LIKELY(psz))
+                    return psz;
+                throw std::bad_alloc();
+            }
+            return NULL;
+        }
+
     };
 
     struct HashOffset
@@ -181,7 +239,7 @@ class QMTranslator_Impl
         uint32_t hash;
         uint32_t offset;
 
-        HashOffset(uint32_t _hash = 0, uint32_t _offs = 0) : hash(_hash), offset(_offs) {}
+        HashOffset(uint32_t a_hash = 0, uint32_t a_offs = 0) : hash(a_hash), offset(a_offs) {}
 
         bool operator<(const HashOffset &obj) const
         {
@@ -193,53 +251,214 @@ class QMTranslator_Impl
     typedef std::set<HashOffset> QMHashSet;
     typedef QMHashSet::const_iterator QMHashSetConstIter;
     typedef std::vector<QMMessage> QMMessageArray;
+    typedef std::vector<uint8_t> QMByteArray;
 
-    QMHashSet m_hashSet;
+    QMHashSet      m_hashSet;
     QMMessageArray m_messageArray;
+    QMByteArray    m_pluralRules;
 
 public:
 
     QMTranslator_Impl() {}
 
+    enum PluralOpCodes
+    {
+        Pl_Eq          = 0x01,
+        Pl_Lt          = 0x02,
+        Pl_Leq         = 0x03,
+        Pl_Between     = 0x04,
+
+        Pl_OpMask      = 0x07,
+
+        Pl_Not         = 0x08,
+        Pl_Mod10       = 0x10,
+        Pl_Mod100      = 0x20,
+        Pl_Lead1000    = 0x40,
+
+        Pl_And         = 0xFD,
+        Pl_Or          = 0xFE,
+        Pl_NewRule     = 0xFF,
+
+        Pl_LMask       = 0x80,
+    };
+
+    /*
+     * Rules format:
+     * <O><2>[<3>][<&&><O><2>[<3>]]...[<||><O><2>[<3>][<&&><O><2>[<3>]]...]...[<New><O>...]...
+     * where:
+     *    <O> - OpCode
+     *    <2> - Second operand
+     *    <3> - Third operand
+     *    <&&> - 'And' operation
+     *    <||> - 'Or' operation
+     *    <New> - Start of rule for next plural form
+     * Rules are ordered by plural forms, i.e:
+     *   <rule for first form (i.e. single)><New><rule for next form>...
+     */
+    bool checkPlural(const QMByteArray &aRules) const
+    {
+        if (aRules.empty())
+            return true;
+
+        uint32_t iPos = 0;
+        do {
+            uint8_t bOpCode = aRules[iPos];
+
+            /* Invalid place of And/Or/NewRule */
+            if (bOpCode & Pl_LMask)
+                return false;
+
+            /* 2nd operand */
+            iPos++;
+
+            /* 2nd operand missing */
+            if (iPos == aRules.size())
+                return false;
+
+            /* Invalid OpCode */
+            if ((bOpCode & Pl_OpMask) == 0)
+                return false;
+
+            if ((bOpCode & Pl_OpMask) == Pl_Between)
+            {
+                /* 3rd operand */
+                iPos++;
+
+                /* 3rd operand missing */
+                if (iPos == aRules.size())
+                    return false;
+            }
+
+            /* And/Or/NewRule */
+            iPos++;
+
+            /* All rules checked */
+            if (iPos == aRules.size())
+                return true;
+
+        } while (   (   (aRules[iPos] == Pl_And)
+                     || (aRules[iPos] == Pl_Or)
+                     || (aRules[iPos] == Pl_NewRule))
+                 && ++iPos != aRules.size());
+
+        return false;
+    }
+
+    int plural(int aNum) const
+    {
+        if (aNum < 1 || m_pluralRules.empty())
+            return 0;
+
+        int  iPluralNumber = 0;
+        uint32_t iPos = 0;
+
+        /* Rules loop */
+        for (;;)
+        {
+            bool fOr = false;
+            /* 'Or' loop */
+            for (;;)
+            {
+                bool fAnd = true;
+                /* 'And' loop */
+                for (;;)
+                {
+                    int iOpCode = m_pluralRules[iPos++];
+                    int iOpLeft = aNum;
+                    if (iOpCode & Pl_Mod10)
+                        iOpLeft %= 10;
+                    else if (iOpCode & Pl_Mod100)
+                        iOpLeft %= 100;
+                    else if (iOpLeft & Pl_Lead1000)
+                    {
+                        while (iOpLeft >= 1000)
+                            iOpLeft /= 1000;
+                    }
+                    int iOpRight = m_pluralRules[iPos++];
+                    int iOp = iOpCode & Pl_OpMask;
+                    int iOpRight1 = 0;
+                    if (iOp == Pl_Between)
+                        iOpRight1 = m_pluralRules[iPos++];
+
+                    bool fResult =    (iOp == Pl_Eq      && iOpLeft == iOpRight)
+                            || (iOp == Pl_Lt      && iOpLeft <  iOpRight)
+                            || (iOp == Pl_Leq     && iOpLeft <= iOpRight)
+                            || (iOp == Pl_Between && iOpLeft >= iOpRight && iOpLeft <= iOpRight1);
+                    if (iOpCode & Pl_Not)
+                        fResult = !fResult;
+
+                    fAnd = fAnd && fResult;
+                    if (iPos == m_pluralRules.size() || m_pluralRules[iPos] != Pl_And)
+                        break;
+                    iPos++;
+                }
+                fOr = fOr || fAnd;
+                if (iPos == m_pluralRules.size() || m_pluralRules[iPos] != Pl_Or)
+                    break;
+                iPos++;
+            }
+            if (fOr)
+                return iPluralNumber;
+
+            /* Qt returns last plural number if none of rules are match. */
+            iPluralNumber++;
+
+            if (iPos >= m_pluralRules.size())
+                return iPluralNumber;
+
+            iPos++; // Skip Pl_NewRule
+        }
+    }
+
     const char *translate(const char *pszContext,
                           const char *pszSource,
-                          const char *pszDisamb) const
+                          const char *pszDisamb,
+                          const int   aNum) const
     {
         QMHashSetConstIter iter;
         QMHashSetConstIter lowerIter, upperIter;
 
-        do {
-            uint32_t hash = calculateHash(pszSource, pszDisamb);
-            lowerIter = m_hashSet.lower_bound(HashOffset(hash, 0));
-            upperIter = m_hashSet.upper_bound(HashOffset(hash, UINT32_MAX));
+        /* As turned out, comments (pszDisamb) are not kept always in result qm file
+         * Therefore, exclude them from the hash */
+        uint32_t hash = RTStrHash1(pszSource);
+        lowerIter = m_hashSet.lower_bound(HashOffset(hash, 0));
+        upperIter = m_hashSet.upper_bound(HashOffset(hash, UINT32_MAX));
 
+        /*
+         * Check different combinations with and without context and
+         * disambiguation. This can help us to find the translation even
+         * if context or disambiguation are not know or properly defined.
+         */
+        const char *apszCtx[]    = {pszContext, pszContext, NULL,      NULL};
+        const char *apszDisabm[] = {pszDisamb,  NULL,       pszDisamb, NULL};
+        AssertCompile(RT_ELEMENTS(apszCtx) == RT_ELEMENTS(apszDisabm));
+
+        for (size_t i = 0; i < RT_ELEMENTS(apszCtx); ++i)
+        {
             for (iter = lowerIter; iter != upperIter; ++iter)
             {
                 const QMMessage &message = m_messageArray[iter->offset];
-                if ((!pszContext || !*pszContext || message.strContext == pszContext) &&
-                    message.strSource == pszSource &&
-                    ((pszDisamb && !*pszDisamb) || message.strComment == pszDisamb))
-                    break;
+                if (   RTStrCmp(message.pszSource, pszSource) == 0
+                    && (!apszCtx[i]     || !*apszCtx[i]     || RTStrCmp(message.pszContext, apszCtx[i]) == 0)
+                    && (!apszDisabm[i]  || !*apszDisabm[i]  || RTStrCmp(message.pszComment, apszDisabm[i]) == 0 ))
+                {
+                    const std::vector<const char *> &vecTranslations = m_messageArray[iter->offset].vecTranslations;
+                    size_t idxPlural = plural(aNum);
+                    return vecTranslations[RT_MIN(idxPlural, vecTranslations.size() - 1)];
+                }
             }
+        }
 
-            /* Try without disambiguating comment if it isn't empty */
-            if (pszDisamb)
-            {
-                if (!*pszDisamb) pszDisamb = 0;
-                else pszDisamb = "";
-            }
-
-        } while (iter == upperIter && pszDisamb);
-
-        return (iter != upperIter ? m_messageArray[iter->offset].strTranslation.c_str() : "");
+        return pszSource;
     }
 
-    void load(QMBytesStream &stream)
+    void load(QMBytesStream &stream, RTSTRCACHE hStrCache)
     {
         /* Load into local variables. If we failed during the load,
          * it would allow us to keep the object in a valid (previous) state. */
         QMHashSet hashSet;
         QMMessageArray messageArray;
+        QMByteArray pluralRules;
 
         stream.checkMagic();
 
@@ -254,24 +473,40 @@ public:
             switch (sectionCode)
             {
                 case Messages:
-                    parseMessages(stream, &hashSet, &messageArray, sLen);
+                    parseMessages(stream, hStrCache, &hashSet, &messageArray, sLen);
                     break;
                 case Hashes:
                     /* Only get size information to speed-up vector filling
                      * if Hashes section goes in the file before Message section */
-                    m_messageArray.reserve(sLen >> 3);
-                    RT_FALL_THRU();
-                case Context:
+                    if (messageArray.empty())
+                        messageArray.reserve(sLen >> 3);
+                    stream.seek(sLen);
+                    break;
+                case NumerusRules:
+                {
+                    pluralRules.resize(sLen);
+                    uint32_t cbSize = stream.read((char *)&pluralRules[0], sLen);
+                    if (cbSize < sLen)
+                        throw QMException("Incorrect section size");
+                    if (!checkPlural(pluralRules))
+                        pluralRules.erase(pluralRules.begin(), pluralRules.end());
+                    break;
+                }
+                case Contexts:
+                case Dependencies:
+                case Language:
                     stream.seek(sLen);
                     break;
                 default:
                     throw QMException("Unkown section");
             }
         }
+
         /* Store the data into member variables.
          * The following functions never generate exceptions */
         m_hashSet.swap(hashSet);
         m_messageArray.swap(messageArray);
+        m_pluralRules.swap(pluralRules);
     }
 
 private:
@@ -279,9 +514,12 @@ private:
     /* Some QM stuff */
     enum SectionType
     {
-        Hashes   = 0x42,
-        Messages = 0x69,
-        Contexts = 0x2f
+        Contexts     = 0x2f,
+        Hashes       = 0x42,
+        Messages     = 0x69,
+        NumerusRules = 0x88,
+        Dependencies = 0x96,
+        Language     = 0xa7
     };
 
     enum MessageType
@@ -290,37 +528,43 @@ private:
         SourceText16 = 2,
         Translation  = 3,
         Context16    = 4,
-        Hash         = 5,
+        Obsolete1    = 5,  /**< was Hash */
         SourceText   = 6,
         Context      = 7,
         Comment      = 8
     };
 
     /* Read messages from the stream. */
-    static void parseMessages(QMBytesStream &stream, QMHashSet * const hashSet, QMMessageArray * const messageArray, size_t cbSize)
+    static void parseMessages(QMBytesStream &stream, RTSTRCACHE hStrCache, QMHashSet * const hashSet,
+                              QMMessageArray * const messageArray, size_t cbSize)
     {
         stream.setEnd(stream.tellPos() + cbSize);
         uint32_t cMessage = 0;
         while (!stream.hasFinished())
         {
-            QMMessage message;
-            HashOffset hashOffs;
+            /* Process the record. Skip anything that doesn't have a source
+               string or any valid translations.  Using C++ strings for temporary
+               storage here, as we don't want to pollute the cache we bogus strings
+               in case of duplicate sub-records or invalid records. */
+            QMMessageParse ParsedMsg;
+            parseMessageRecord(stream, &ParsedMsg);
+            if (   ParsedMsg.astrTranslations.size() > 0
+                && ParsedMsg.strSource.isNotEmpty())
+            {
+                /* Copy the strings over into the string cache and a hashed QMMessage,
+                   before adding it to the result. */
+                QMMessage HashedMsg(hStrCache, ParsedMsg);
+                hashSet->insert(HashOffset(HashedMsg.hash, cMessage++));
+                messageArray->push_back(HashedMsg);
 
-            parseMessageRecord(stream, &message);
-            if (!message.hash)
-                message.hash = calculateHash(message.strSource.c_str(), message.strComment.c_str());
-
-            hashOffs.hash = message.hash;
-            hashOffs.offset = cMessage++;
-
-            hashSet->insert(hashOffs);
-            messageArray->push_back(message);
+            }
+            /*else: wtf? */
         }
         stream.setEnd();
     }
 
     /* Parse one message from the stream */
-    static void parseMessageRecord(QMBytesStream &stream, QMMessage * const message)
+    static void parseMessageRecord(QMBytesStream &stream, QMMessageParse * const message)
     {
         while (!stream.hasFinished())
         {
@@ -335,81 +579,42 @@ private:
                     stream.seek(stream.read32());
                     break;
                 case Translation:
-                {
-                    com::Utf8Str str = stream.readUtf16String();
-                    message->strTranslation.swap(str);
-                    break;
-                }
-                case Hash:
-                    message->hash = stream.read32();
+                    message->astrTranslations.push_back(stream.readUtf16String());
                     break;
 
                 case SourceText:
-                {
-                    com::Utf8Str str = stream.readString();
-                    message->strSource.swap(str);
+                    message->strSource = stream.readString();
                     break;
-                }
 
                 case Context:
-                {
-                    com::Utf8Str str = stream.readString();
-                    message->strContext.swap(str);
+                    message->strContext = stream.readString();
                     break;
-                }
 
                 case Comment:
-                {
-                    com::Utf8Str str = stream.readString();
-                    message->strComment.swap(str);
+                    message->strComment = stream.readString();
                     break;
-                }
 
                 default:
-                    /* Ignore unknown block */
-                    LogRel(("QMTranslator::parseMessageRecord(): Unkown message block %x\n", type));
+                    /* Ignore unknown/obsolete block */
+                    LogRel(("QMTranslator::parseMessageRecord(): Unknown/obsolete message block %x\n", type));
                     break;
             }
         }
     }
-
-    /* Defines the so called `hashpjw' function by P.J. Weinberger
-       [see Aho/Sethi/Ullman, COMPILERS: Principles, Techniques and Tools,
-       1986, 1987 Bell Telephone Laboratories, Inc.]   */
-    static uint32_t calculateHash(const char *pszStr1, const char *pszStr2 = 0)
-    {
-        uint32_t hash = 0, g;
-
-        for (const char *pszStr = pszStr1; pszStr != pszStr2; pszStr = pszStr2)
-            for (; pszStr && *pszStr; pszStr++)
-            {
-                hash = (hash << 4) + static_cast<uint8_t>(*pszStr);
-
-                if ((g = hash & 0xf0000000ul) != 0)
-                {
-                    hash ^= g >> 24;
-                    hash ^= g;
-                }
-            }
-
-        return (hash != 0 ? hash : 1);
-    }
 };
 
 /* Inteface functions implementation */
-QMTranslator::QMTranslator() : _impl(new QMTranslator_Impl) {}
+QMTranslator::QMTranslator() : m_impl(new QMTranslator_Impl) {}
 
-QMTranslator::~QMTranslator() { delete _impl; }
+QMTranslator::~QMTranslator() { delete m_impl; }
 
-const char *QMTranslator::translate(const char *pszContext, const char *pszSource, const char *pszDisamb) const throw()
+const char *QMTranslator::translate(const char *pszContext, const char *pszSource,
+                                    const char *pszDisamb, const int aNum) const throw()
 {
-    return _impl->translate(pszContext, pszSource, pszDisamb);
+    return m_impl->translate(pszContext, pszSource, pszDisamb, aNum);
 }
 
-/* The function is noexcept for now but it may be changed
- * to throw exceptions if required to catch them in another
- * place. */
-int QMTranslator::load(const char *pszFilename) throw()
+int QMTranslator::load(const char *pszFilename, RTSTRCACHE hStrCache) RT_NOEXCEPT
 {
     /* To free safely the file in case of exception */
     struct FileLoader
@@ -436,7 +641,7 @@ int QMTranslator::load(const char *pszFilename) throw()
         if (loader.isSuccess())
         {
             QMBytesStream stream(loader.data, loader.cbSize);
-            _impl->load(stream);
+            m_impl->load(stream, hStrCache);
         }
         return loader.rc;
     }

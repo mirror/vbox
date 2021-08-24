@@ -29,7 +29,7 @@ class ATL_NO_VTABLE StorageController :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(StorageController)
+    DECLARE_COMMON_CLASS_METHODS(StorageController)
 
     HRESULT FinalConstruct();
     void FinalRelease();

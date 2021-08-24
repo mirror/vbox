@@ -62,7 +62,7 @@ typedef struct
 // The private class
 /////////////////////////////////////////////////////////////////////////////
 
-struct MachineCloneVMPrivate
+struct MachineCloneVMPrivate : public VirtualBoxTranslatable
 {
     MachineCloneVMPrivate(MachineCloneVM *a_q, ComObjPtr<Machine> &a_pSrcMachine, ComObjPtr<Machine> &a_pTrgMachine,
                           CloneMode_T a_mode, const RTCList<CloneOptions_T> &opts)
@@ -73,6 +73,8 @@ struct MachineCloneVMPrivate
       , mode(a_mode)
       , options(opts)
     {}
+
+    DECLARE_TRANSLATE_METHODS(MachineCloneVMPrivate)
 
     /* Thread management */
     int startWorker()
@@ -226,7 +228,7 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, b
         uint64_t cbSize;
         int vrc = RTFileQuerySizeByPath(fct.strFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
-            return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, p->tr("Could not query file size of '%s' (%Rrc)"),
+            return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not query file size of '%s' (%Rrc)"),
                                    fct.strFile.c_str(), vrc);
         /* same rule as above: count both the data which needs to
          * be read and written */
@@ -263,7 +265,7 @@ HRESULT MachineCloneVMPrivate::addNVRAM(const ComObjPtr<Machine> &machine, bool 
         uint64_t cbSize;
         int vrc = RTFileQuerySizeByPath(fct.strFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
-            return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, p->tr("Could not query file size of '%s' (%Rrc)"),
+            return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not query file size of '%s' (%Rrc)"),
                                    fct.strFile.c_str(), vrc);
         /* same rule as above: count both the data which needs to
          * be read and written */
@@ -1034,11 +1036,11 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         if (FAILED(rc)) throw rc;
         rc = d->pProgress->init(p->i_getVirtualBox(),
                                 static_cast<IMachine*>(d->pSrcMachine) /* aInitiator */,
-                                Bstr(p->tr("Cloning Machine")).raw(),
+                                Bstr(tr("Cloning Machine")).raw(),
                                 true /* fCancellable */,
                                 uCount,
                                 uTotalWeight,
-                                Bstr(p->tr("Initialize Cloning")).raw(),
+                                Bstr(tr("Initialize Cloning")).raw(),
                                 1);
         if (FAILED(rc)) throw rc;
 
@@ -1115,7 +1117,7 @@ HRESULT MachineCloneVM::run()
         if (d->snapshotId.isValid() && !d->snapshotId.isZero())
             if (!d->findSnapshot(trgMCF.llFirstSnapshot, d->snapshotId, sn))
                 throw p->setError(E_FAIL,
-                                  p->tr("Could not find data to snapshots '%s'"), d->snapshotId.toString().c_str());
+                                  tr("Could not find data to snapshots '%s'"), d->snapshotId.toString().c_str());
 
         if (d->mode == CloneMode_MachineState)
         {
@@ -1193,7 +1195,7 @@ HRESULT MachineCloneVM::run()
                 rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(),
+                rc = d->pProgress->SetNextOperation(BstrFmt(tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(),
                                                     mt.uWeight);
                 if (FAILED(rc)) throw rc;
 
@@ -1487,7 +1489,7 @@ HRESULT MachineCloneVM::run()
             int vrc = RTDirCreateFullPath(strTrgSnapshotFolder.c_str(), 0700);
             if (RT_FAILURE(vrc))
                 throw p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                      p->tr("Could not create snapshots folder '%s' (%Rrc)"),
+                                      tr("Could not create snapshots folder '%s' (%Rrc)"),
                                             strTrgSnapshotFolder.c_str(), vrc);
         }
         /* Clone all save state files. */
@@ -1498,7 +1500,7 @@ HRESULT MachineCloneVM::run()
                                                         RTPathFilename(fct.strFile.c_str()));
 
             /* Move to next sub-operation. */
-            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."),
+            rc = d->pProgress->SetNextOperation(BstrFmt(tr("Copy save state file '%s' ..."),
                                                         RTPathFilename(fct.strFile.c_str())).raw(), fct.uWeight);
             if (FAILED(rc)) throw rc;
             /* Copy the file only if it was not copied already. */
@@ -1508,7 +1510,7 @@ HRESULT MachineCloneVM::run()
                                        MachineCloneVMPrivate::copyFileProgress, &d->pProgress);
                 if (RT_FAILURE(vrc))
                     throw p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                          p->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
+                                          tr("Could not copy state file '%s' to '%s' (%Rrc)"),
                                           fct.strFile.c_str(), strTrgSaveState.c_str(), vrc);
                 newFiles.append(strTrgSaveState);
             }
@@ -1533,7 +1535,7 @@ HRESULT MachineCloneVM::run()
                                          RTPathFilename(fct.strFile.c_str()));
 
             /* Move to next sub-operation. */
-            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy NVRAM file '%s' ..."),
+            rc = d->pProgress->SetNextOperation(BstrFmt(tr("Copy NVRAM file '%s' ..."),
                                                         RTPathFilename(fct.strFile.c_str())).raw(), fct.uWeight);
             if (FAILED(rc)) throw rc;
             /* Copy the file only if it was not copied already. */
@@ -1545,7 +1547,7 @@ HRESULT MachineCloneVM::run()
                                        MachineCloneVMPrivate::copyFileProgress, &d->pProgress);
                 if (RT_FAILURE(vrc))
                     throw p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                          p->tr("Could not copy NVRAM file '%s' to '%s' (%Rrc)"),
+                                          tr("Could not copy NVRAM file '%s' to '%s' (%Rrc)"),
                                           fct.strFile.c_str(), strTrgNVRAM.c_str(), vrc);
                 newFiles.append(strTrgNVRAM);
             }
@@ -1558,7 +1560,7 @@ HRESULT MachineCloneVM::run()
         }
 
         {
-            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Create Machine Clone '%s' ..."),
+            rc = d->pProgress->SetNextOperation(BstrFmt(tr("Create Machine Clone '%s' ..."),
                                                 trgMCF.machineUserData.strName.c_str()).raw(), 1);
             if (FAILED(rc)) throw rc;
             /* After modifying the new machine config, we can copy the stuff
@@ -1638,7 +1640,7 @@ HRESULT MachineCloneVM::run()
             vrc = RTFileDelete(newFiles.at(i).c_str());
             if (RT_FAILURE(vrc))
                 mrc = p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                      p->tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
+                                      tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
         }
         /* Delete all already created medias. (Reverse, cause there could be
          * parent->child relations.) */

@@ -31,7 +31,7 @@ class ATL_NO_VTABLE MediumIO :
 public:
     /** @name Dummy/standard constructors and destructors.
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(MediumIO)
+    DECLARE_COMMON_CLASS_METHODS(MediumIO)
     HRESULT FinalConstruct();
     void    FinalRelease();
     /** @} */

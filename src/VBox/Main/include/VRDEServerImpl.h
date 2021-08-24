@@ -35,7 +35,7 @@ class ATL_NO_VTABLE VRDEServer :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(VRDEServer)
+    DECLARE_COMMON_CLASS_METHODS(VRDEServer)
 
     HRESULT FinalConstruct();
     void FinalRelease();

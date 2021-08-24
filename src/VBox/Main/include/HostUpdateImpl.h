@@ -29,7 +29,7 @@ class ATL_NO_VTABLE HostUpdate
     : public HostUpdateWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(HostUpdate)
+    DECLARE_COMMON_CLASS_METHODS(HostUpdate)
 
     HRESULT FinalConstruct();
     void FinalRelease();

@@ -36,7 +36,7 @@ class ATL_NO_VTABLE MousePointerShape:
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(MousePointerShape)
+    DECLARE_COMMON_CLASS_METHODS(MousePointerShape)
 
     HRESULT FinalConstruct();
     void FinalRelease();

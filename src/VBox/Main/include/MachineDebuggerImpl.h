@@ -34,7 +34,7 @@ class ATL_NO_VTABLE MachineDebugger :
 
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR (MachineDebugger)
+    DECLARE_COMMON_CLASS_METHODS (MachineDebugger)
 
     HRESULT FinalConstruct();
     void FinalRelease();

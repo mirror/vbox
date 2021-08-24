@@ -62,7 +62,7 @@ class ATL_NO_VTABLE Guest :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR (Guest)
+    DECLARE_COMMON_CLASS_METHODS (Guest)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -100,9 +100,13 @@ public:
     HRESULT i_setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
     BOOL i_isPageFusionEnabled();
     void i_setCpuCount(uint32_t aCpus) { mCpus = aCpus; }
-    static HRESULT i_setErrorStatic(HRESULT aResultCode, const Utf8Str &aText)
+    static HRESULT i_setErrorStatic(HRESULT aResultCode, const char *aText, ...)
     {
-        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+        va_list va;
+        va_start(va, aText);
+        HRESULT hrc = setErrorInternalV(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, va, false, true);
+        va_end(va);
+        return hrc;
     }
     uint32_t    i_getAdditionsRevision(void) { return mData.mAdditionsRevision; }
     uint32_t    i_getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }

@@ -171,7 +171,7 @@ class ATL_NO_VTABLE HostUSBDevice :
     public HostUSBDeviceWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(HostUSBDevice)
+    DECLARE_COMMON_CLASS_METHODS(HostUSBDevice)
 
     HRESULT FinalConstruct();
     void FinalRelease();

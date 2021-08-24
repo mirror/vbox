@@ -27,9 +27,11 @@
 /* Forward declaration of the d-pointer. */
 struct MachineCloneVMPrivate;
 
-class MachineCloneVM
+class MachineCloneVM : public VirtualBoxTranslatable
 {
 public:
+    DECLARE_TRANSLATE_METHODS(MachineCloneVM)
+
     MachineCloneVM(ComObjPtr<Machine> pSrcMachine, ComObjPtr<Machine> pTrgMachine, CloneMode_T mode, const RTCList<CloneOptions_T> &opts);
     ~MachineCloneVM();
 

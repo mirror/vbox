@@ -29,7 +29,7 @@ class ATL_NO_VTABLE MediumAttachment :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(MediumAttachment)
+    DECLARE_COMMON_CLASS_METHODS(MediumAttachment)
 
     HRESULT FinalConstruct();
     void FinalRelease();

@@ -52,7 +52,7 @@ HRESULT BaseTextScript::read(const Utf8Str &rStrFilename)
         RTVfsFileRelease(hVfsFile);
     }
     else
-        hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("Failed to open '%s' (%Rrc)"), rStrFilename.c_str(), vrc);
+        hrc = mpSetError->setErrorVrc(vrc, tr("Failed to open '%s' (%Rrc)"), rStrFilename.c_str(), vrc);
     return hrc;
 }
 
@@ -93,21 +93,20 @@ HRESULT BaseTextScript::readFromHandle(RTVFSFILE hVfsFile, const char *pszFilena
                     return S_OK;
                 }
 
-                hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("'%s' isn't valid UTF-8: %Rrc"), pszFilename, vrc);
+                hrc = mpSetError->setErrorVrc(vrc, tr("'%s' isn't valid UTF-8: %Rrc"), pszFilename, vrc);
             }
             else
-                hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("Error reading '%s': %Rrc"), pszFilename, vrc);
+                hrc = mpSetError->setErrorVrc(vrc, tr("Error reading '%s': %Rrc"), pszFilename, vrc);
             mStrScriptFullContent.setNull();
         }
         else
-            hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("Failed to allocate memory (%'RU64 bytes) for '%s'"),
+            hrc = mpSetError->setErrorVrc(vrc, tr("Failed to allocate memory (%'RU64 bytes) for '%s'"),
                                           cbFile, pszFilename);
     }
     else if (RT_SUCCESS(vrc))
-        hrc = mpSetError->setErrorVrc(VERR_FILE_TOO_BIG,
-                                      mpSetError->tr("'%s' is too big (max 16MB): %'RU64"), pszFilename, cbFile);
+        hrc = mpSetError->setErrorVrc(VERR_FILE_TOO_BIG, tr("'%s' is too big (max 16MB): %'RU64"), pszFilename, cbFile);
     else
-        hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("RTVfsFileQuerySize failed (%Rrc)"), vrc);
+        hrc = mpSetError->setErrorVrc(vrc, tr("RTVfsFileQuerySize failed (%Rrc)"), vrc);
     return hrc;
 }
 
@@ -178,10 +177,10 @@ HRESULT BaseTextScript::save(const Utf8Str &rStrFilename, bool fOverwrite)
             }
             RTFileClose(hFile);
             RTFileDelete(pszFilename);
-            hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("Error writing to '%s' (%Rrc)"), pszFilename, vrc);
+            hrc = mpSetError->setErrorVrc(vrc, tr("Error writing to '%s' (%Rrc)"), pszFilename, vrc);
         }
         else
-            hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("Error creating/replacing '%s' (%Rrc)"), pszFilename, vrc);
+            hrc = mpSetError->setErrorVrc(vrc, tr("Error creating/replacing '%s' (%Rrc)"), pszFilename, vrc);
     }
     return hrc;
 }

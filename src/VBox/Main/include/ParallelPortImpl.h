@@ -34,7 +34,7 @@ class ATL_NO_VTABLE ParallelPort :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(ParallelPort)
+    DECLARE_COMMON_CLASS_METHODS(ParallelPort)
 
     HRESULT FinalConstruct();
     void FinalRelease();

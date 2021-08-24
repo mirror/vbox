@@ -2261,6 +2261,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         pelmGlobalChild->getAttributeValue("VBoxUpdateTarget", systemProperties.uVBoxUpdateTarget);
                         pelmGlobalChild->getAttributeValue("VBoxUpdateLastCheckDate",
                             systemProperties.strVBoxUpdateLastCheckDate);
+                        pelmGlobalChild->getAttributeValue("LanguageId", systemProperties.strLanguageId);
                     }
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
                         readExtraData(*pelmGlobalChild, mapExtraDataItems);
@@ -2479,6 +2480,8 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     pelmSysProps->setAttribute("VBoxUpdateTarget", systemProperties.uVBoxUpdateTarget);
     if (systemProperties.strVBoxUpdateLastCheckDate.length())
         pelmSysProps->setAttribute("VBoxUpdateLastCheckDate", systemProperties.strVBoxUpdateLastCheckDate);
+    if (systemProperties.strLanguageId.isNotEmpty())
+        pelmSysProps->setAttribute("LanguageId", systemProperties.strLanguageId);
 
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
                           host.llUSBDeviceFilters,

@@ -35,7 +35,7 @@ class ATL_NO_VTABLE GraphicsAdapter :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(GraphicsAdapter)
+    DECLARE_COMMON_CLASS_METHODS(GraphicsAdapter)
 
     HRESULT FinalConstruct();
     void FinalRelease();

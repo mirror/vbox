@@ -37,7 +37,7 @@ class ATL_NO_VTABLE BIOSSettings :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(BIOSSettings)
+    DECLARE_COMMON_CLASS_METHODS(BIOSSettings)
 
     HRESULT FinalConstruct();
     void FinalRelease();

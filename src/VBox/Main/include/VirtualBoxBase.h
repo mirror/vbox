@@ -35,6 +35,8 @@
 
 #include "VBox/com/VirtualBox.h"
 
+#include "VirtualBoxTranslator.h"
+
 // avoid including VBox/settings.h and VBox/xml.h; only declare the classes
 namespace xml
 {
@@ -569,46 +571,43 @@ public:
  * implemented as a COM object, which VirtualBoxBase implies.
  */
 class ATL_NO_VTABLE VirtualBoxTranslatable
-    : public Lockable
 {
 public:
-
     /**
-     * Placeholder method with which translations can one day be implemented
-     * in Main. This gets called by the tr() function.
-     * @param context
-     * @param pcszSourceText
-     * @param comment
-     * @return
+     * Returns translated text.
+     *
+     * @param aContext      Translation context e.g. class name
+     * @param aSourceText   String to translate.
+     * @param aComment      Comment to the string to resolve possible ambiguities
+     *                      (NULL means no comment). Used by translation tool only.
+     * @param aNum          Number used to define plural form of the translation.
+     *
+     * @return Translated text.
      */
-    static const char *translate(const char *context,
-                                 const char *pcszSourceText,
-                                 const char *comment = 0)
+    static const char *translate(const char *aComponent,
+                                 const char *aSourceText,
+                                 const char *aComment = NULL,
+                                 const int   aNum = -1)
     {
-        NOREF(context);
-        NOREF(comment);
-        return pcszSourceText;
+#ifdef VBOX_WITH_MAIN_NLS
+        return VirtualBoxTranslator::translate(aComponent, aSourceText, aComment, aNum);
+#else
+        RT_NOREF(aComponent, aComment, aNum);
+        return aSourceText;
+#endif
     }
 
     /**
-     * Translates the given text string by calling translate() and passing
-     * the name of the C class as the first argument ("context of
-     * translation"). See VirtualBoxBase::translate() for more info.
-     *
-     * @param pcszSourceText String to translate.
-     * @param aComment      Comment to the string to resolve possible
-     *                      ambiguities (NULL means no comment).
-     *
-     * @return Translated version of the source string in UTF-8 encoding, or
-     *      the source string itself if the translation is not found in the
-     *      specified context.
+     * Returns source text stored in the cache if exists.
+     * Otherwise, the @a aTranslation itself returned.
      */
-    inline static const char *tr(const char *pcszSourceText,
-                                 const char *aComment = NULL)
+    static const char *trSource(const char *aTranslation)
     {
-        return VirtualBoxTranslatable::translate(NULL, // getComponentName(), eventually
-                                                 pcszSourceText,
-                                                 aComment);
+#ifdef VBOX_WITH_MAIN_NLS
+        return VirtualBoxTranslator::trSource(aTranslation);
+#else
+        return aTranslation;
+#endif
     }
 };
 
@@ -617,6 +616,29 @@ public:
 // VirtualBoxBase
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_WITH_MAIN_NLS
+# define DECLARE_TRANSLATE_METHODS(cls) \
+    static inline const char *tr(const char *aSourceText, \
+                                 const char *aComment = NULL, \
+                                 const int   aNum = -1) \
+    { \
+        return VirtualBoxTranslatable::translate(#cls, aSourceText, aComment, aNum); \
+    }
+#else
+# define DECLARE_TRANSLATE_METHODS(cls) \
+    static inline const char *tr(const char *aSourceText, \
+                                 const char *aComment = NULL, \
+                                 const int   aNum = -1) \
+    { \
+        RT_NOREF(aComment, aNum); \
+        return aSourceText; \
+    }
+#endif
+
+#define DECLARE_COMMON_CLASS_METHODS(cls) \
+    DECLARE_EMPTY_CTOR_DTOR(cls) \
+    DECLARE_TRANSLATE_METHODS(cls)
 
 #define VIRTUALBOXBASE_ADD_VIRTUAL_COMPONENT_METHODS(cls, iface) \
     virtual const IID& getClassIID() const \
@@ -695,8 +717,9 @@ public:
  * The object state logic is documented in ObjectState.h.
  */
 class ATL_NO_VTABLE VirtualBoxBase
-    : public VirtualBoxTranslatable,
-      public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>
+    : public VirtualBoxTranslatable
+    , public Lockable
+    , public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>
 #if !defined (VBOX_WITH_XPCOM)
     , public ISupportErrorInfo
 #endif
@@ -710,8 +733,7 @@ protected:
      void BaseFinalRelease();
 
 public:
-    VirtualBoxBase();
-    virtual ~VirtualBoxBase();
+    DECLARE_COMMON_CLASS_METHODS(VirtualBoxBase)
 
     /**
      * Uninitialization method.
@@ -766,13 +788,21 @@ public:
 
     static HRESULT handleUnexpectedExceptions(VirtualBoxBase *const aThis, RT_SRC_POS_DECL);
 
-    static HRESULT setErrorInternal(HRESULT aResultCode,
-                                    const GUID &aIID,
-                                    const char *aComponent,
-                                    Utf8Str aText,
-                                    bool aWarning,
-                                    bool aLogIt,
-                                    LONG aResultDetail = 0);
+    static HRESULT setErrorInternalF(HRESULT aResultCode,
+                                     const GUID &aIID,
+                                     const char *aComponent,
+                                     bool aWarning,
+                                     bool aLogIt,
+                                     LONG aResultDetail,
+                                     const char *aText, ...);
+    static HRESULT setErrorInternalV(HRESULT aResultCode,
+                                     const GUID &aIID,
+                                     const char *aComponent,
+                                     const char *aText,
+                                     va_list aArgs,
+                                     bool aWarning,
+                                     bool aLogIt,
+                                     LONG aResultDetail = 0);
     static void clearError(void);
 
     HRESULT setError(HRESULT aResultCode);

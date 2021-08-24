@@ -38,7 +38,7 @@ class ATL_NO_VTABLE NetworkAdapter :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(NetworkAdapter)
+    DECLARE_COMMON_CLASS_METHODS(NetworkAdapter)
 
     HRESULT FinalConstruct();
     void FinalRelease();

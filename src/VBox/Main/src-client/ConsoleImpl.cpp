@@ -3221,12 +3221,12 @@ HRESULT Console::i_setErrorStatic(HRESULT aResultCode, const char *pcsz, ...)
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternal(aResultCode,
-                                  getStaticClassIID(),
-                                  getStaticComponentName(),
-                                  Utf8Str(pcsz, args),
-                                  false /* aWarning */,
-                                  true /* aLogIt */);
+    HRESULT rc = setErrorInternalV(aResultCode,
+                                   getStaticClassIID(),
+                                   getStaticComponentName(),
+                                   pcsz, args,
+                                   false /* aWarning */,
+                                   true /* aLogIt */);
     va_end(args);
     return rc;
 }
@@ -3236,13 +3236,13 @@ HRESULT Console::i_setErrorStaticBoth(HRESULT aResultCode, int vrc, const char *
 {
     va_list args;
     va_start(args, pcsz);
-    HRESULT rc = setErrorInternal(aResultCode,
-                                  getStaticClassIID(),
-                                  getStaticComponentName(),
-                                  Utf8Str(pcsz, args),
-                                  false /* aWarning */,
-                                  true /* aLogIt */,
-                                  vrc);
+    HRESULT rc = setErrorInternalV(aResultCode,
+                                   getStaticClassIID(),
+                                   getStaticComponentName(),
+                                   pcsz, args,
+                                   false /* aWarning */,
+                                   true /* aLogIt */,
+                                   vrc);
     va_end(args);
     return rc;
 }
@@ -3353,26 +3353,27 @@ HRESULT Console::i_suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, b
                 pAlock->acquire();
             mVMStateChangeCallbackDisabled = false;
             if (RT_FAILURE(vrc))
-                return setErrorInternal(VBOX_E_INVALID_VM_STATE,
-                                        COM_IIDOF(IConsole),
-                                        getStaticComponentName(),
-                                        Utf8StrFmt("Could suspend VM for medium change (%Rrc)", vrc),
-                                        false /*aWarning*/,
-                                        true /*aLogIt*/,
-                                        vrc);
+                return setErrorInternalF(VBOX_E_INVALID_VM_STATE,
+                                         COM_IIDOF(IConsole),
+                                         getStaticComponentName(),
+                                         false /*aWarning*/,
+                                         true /*aLogIt*/,
+                                         vrc,
+                                         tr("Could suspend VM for medium change (%Rrc)"), vrc);
             *pfResume = true;
             break;
         }
         case VMSTATE_SUSPENDED:
             break;
         default:
-            return setErrorInternal(VBOX_E_INVALID_VM_STATE,
-                                    COM_IIDOF(IConsole),
-                                    getStaticComponentName(),
-                                    Utf8StrFmt("Invalid state '%s' for changing medium",
-                                               VMR3GetStateName(enmVMState)),
-                                    false /*aWarning*/,
-                                    true /*aLogIt*/);
+            return setErrorInternalF(VBOX_E_INVALID_VM_STATE,
+                                     COM_IIDOF(IConsole),
+                                     getStaticComponentName(),
+                                     false /*aWarning*/,
+                                     true /*aLogIt*/,
+                                     0 /* aResultDetail */,
+                                     "Invalid state '%s' for changing medium",
+                                     VMR3GetStateName(enmVMState));
     }
 
     return S_OK;

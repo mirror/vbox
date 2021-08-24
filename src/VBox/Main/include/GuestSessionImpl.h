@@ -47,7 +47,7 @@ class ATL_NO_VTABLE GuestSession
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(GuestSession)
+    DECLARE_COMMON_CLASS_METHODS(GuestSession)
 
     int     init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds);
     void    uninit(void);

@@ -37,7 +37,7 @@ class ATL_NO_VTABLE GuestDirectory :
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(GuestDirectory)
+    DECLARE_COMMON_CLASS_METHODS(GuestDirectory)
 
     int     init(Console *pConsole, GuestSession *pSession, ULONG aObjectID, const GuestDirectoryOpenInfo &openInfo);
     void    uninit(void);

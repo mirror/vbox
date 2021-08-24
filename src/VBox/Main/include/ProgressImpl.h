@@ -157,7 +157,7 @@ public:
     static DECLCALLBACK(int) i_vdProgressCallback(void *pvUser, unsigned uPercentage);
 
 protected:
-    DECLARE_EMPTY_CTOR_DTOR(Progress)
+    DECLARE_COMMON_CLASS_METHODS(Progress)
 
 #if !defined(VBOX_COM_INPROC)
     /** Weak parent. */

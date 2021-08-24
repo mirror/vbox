@@ -63,7 +63,7 @@ class ATL_NO_VTABLE NATNetwork :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(NATNetwork)
+    DECLARE_COMMON_CLASS_METHODS(NATNetwork)
 
     HRESULT FinalConstruct();
     void FinalRelease();

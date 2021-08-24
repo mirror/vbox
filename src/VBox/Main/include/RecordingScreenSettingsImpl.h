@@ -37,7 +37,7 @@ class ATL_NO_VTABLE RecordingScreenSettings :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(RecordingScreenSettings)
+    DECLARE_COMMON_CLASS_METHODS(RecordingScreenSettings)
 
     HRESULT FinalConstruct();
     void FinalRelease();

@@ -46,7 +46,7 @@ public:
 
     DECLARE_NOT_AGGREGATABLE(Session)
 
-    DECLARE_EMPTY_CTOR_DTOR(Session)
+    DECLARE_COMMON_CLASS_METHODS(Session)
 
     HRESULT FinalConstruct();
     void FinalRelease();

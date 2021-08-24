@@ -34,7 +34,7 @@ class ATL_NO_VTABLE RemoteUSBDevice :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(RemoteUSBDevice)
+    DECLARE_COMMON_CLASS_METHODS(RemoteUSBDevice)
 
     HRESULT FinalConstruct();
     void FinalRelease();

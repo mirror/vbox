@@ -130,7 +130,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
                 || (   strncmp(pszPlaceholder, s_szPrefixInsert, sizeof(s_szPrefixInsert) - 1) != 0
                     && strncmp(pszPlaceholder, s_szPrefixCond,   sizeof(s_szPrefixCond)   - 1) != 0 ) )
             {
-                hrc = mpSetError->setError(E_FAIL, mpSetError->tr("Malformed template placeholder '%.*s'"),
+                hrc = mpSetError->setError(E_FAIL, tr("Malformed template placeholder '%.*s'"),
                                            cchPlaceholder, pszPlaceholder);
                 break;
             }
@@ -178,7 +178,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
                 else
                 {
                     hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
-                                                   mpSetError->tr("%s without @@VBOX_COND_XXX@@ at offset %zu (%#zx)"),
+                                                   tr("%s without @@VBOX_COND_XXX@@ at offset %zu (%#zx)"),
                                                    s_szPrefixCondEnd, offPlaceholder, offPlaceholder);
                     break;
                 }
@@ -204,7 +204,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
                 else
                 {
                     hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
-                                                   mpSetError->tr("Too deep conditional nesting at offset %zu (%#zx)"),
+                                                   tr("Too deep conditional nesting at offset %zu (%#zx)"),
                                                    offPlaceholder, offPlaceholder);
                     break;
                 }
@@ -219,9 +219,9 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
             if (cConds == 0)
                 return S_OK;
             if (cConds == 1)
-                hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR, mpSetError->tr("Missing @@VBOX_COND_END@@"));
+                hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR, tr("Missing @@VBOX_COND_END@@"));
             else
-                hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR, mpSetError->tr("Missing %u @@VBOX_COND_END@@"), cConds);
+                hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR, tr("Missing %u @@VBOX_COND_END@@"), cConds);
             break;
         }
     }
@@ -391,7 +391,7 @@ HRESULT UnattendedScriptTemplate::getUnescapedReplacement(const char *pachPlaceh
         if (partList.size() < 1)
         {
             rValue.setNull();
-            return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, mpSetError->tr("Unknown guest OS major version '%s'"),
+            return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Unknown guest OS major version '%s'"),
                                             partList.at(0).c_str());
         }
         rValue = partList.at(0);
@@ -440,7 +440,7 @@ HRESULT UnattendedScriptTemplate::getUnescapedReplacement(const char *pachPlaceh
     else
     {
         rValue.setNull();
-        return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, mpSetError->tr("Unknown template placeholder '%.*s'"),
+        return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Unknown template placeholder '%.*s'"),
                                         cchFullPlaceholder, pachPlaceholder);
     }
     return S_OK;
@@ -525,7 +525,7 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
             *pfOutputting = false;//initially is set to "false"
     }
     else
-        return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, mpSetError->tr("Unknown conditional placeholder '%.*s'"),
+        return mpSetError->setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("Unknown conditional placeholder '%.*s'"),
                                         cchPlaceholder, pachPlaceholder);
     return S_OK;
 #undef IS_PLACEHOLDER_MATCH
@@ -565,10 +565,10 @@ HRESULT UnattendedSUSEXMLScript::parse()
             }
         }
         else if (pelmRoot)
-            hrc = mpSetError->setError(E_FAIL, mpSetError->tr("XML document root element is '%s' instead of 'profile'"),
+            hrc = mpSetError->setError(E_FAIL, tr("XML document root element is '%s' instead of 'profile'"),
                                        pelmRoot->getName());
         else
-            hrc = mpSetError->setError(E_FAIL, mpSetError->tr("Missing XML root element"));
+            hrc = mpSetError->setError(E_FAIL, tr("Missing XML root element"));
     }
     return hrc;
 }

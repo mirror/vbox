@@ -23,6 +23,7 @@
 #include "AutoCaller.h"
 #include "VBoxEvents.h"
 #include "VBox/com/ErrorInfo.h"
+#include "VBox/com/listeners.h"
 
 #include <iprt/asm.h>
 #include <iprt/thread.h>
@@ -46,6 +47,57 @@
 uint32_t VirtualBoxClient::g_cInstances = 0;
 
 LONG VirtualBoxClient::s_cUnnecessaryAtlModuleLocks = 0;
+
+#ifdef VBOX_WITH_MAIN_NLS
+
+/* listener class for language updates */
+class VBoxEventListener
+{
+public:
+    VBoxEventListener()
+    {}
+
+
+    HRESULT init(VirtualBoxClient *aClient)
+    {
+        mClient = aClient;
+        return S_OK;
+    }
+
+    void uninit()
+    {
+    }
+
+    virtual ~VBoxEventListener()
+    {
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        NOREF(aEvent);
+        switch(aType)
+        {
+            case VBoxEventType_OnLanguageChanged:
+            {
+                mClient->i_reloadApiLanguage();
+                break;
+            }
+
+            default:
+              AssertFailed();
+        }
+
+        return S_OK;
+    }
+private:
+    ComObjPtr<VirtualBoxClient>    mClient;
+};
+
+typedef ListenerImpl<VBoxEventListener, VirtualBoxClient*> VBoxEventListenerImpl;
+
+VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
+
+#endif /* VBOX_WITH_MAIN_NLS */
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -120,6 +172,17 @@ HRESULT VirtualBoxClient::init()
         s_cUnnecessaryAtlModuleLocks++;
         AssertMsg(s_cUnnecessaryAtlModuleLocks == 1, ("%d\n", s_cUnnecessaryAtlModuleLocks));
 
+#ifdef VBOX_WITH_MAIN_NLS
+        /* Create the translator singelton (must work) and try load translations (non-fatal). */
+        mData.m_pVBoxTranslator = VirtualBoxTranslator::instance();
+        if (mData.m_pVBoxTranslator == NULL)
+            throw setError(VBOX_E_IPRT_ERROR, tr("Failed to create translator instance"));
+        rc = i_reloadApiLanguage();
+        if (SUCCEEDED(rc))
+            i_registerEventListener(); /* for updates */
+        else
+            LogRelFunc(("i_reloadApiLanguage failed: %Rhrc\n", rc));
+#endif
         /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it
          * is not considered important enough to cause any sort of visible
          * failure. The monitoring will not be done, but that's all. */
@@ -474,7 +537,13 @@ void VirtualBoxClient::uninit()
         RTSemEventDestroy(mData.m_SemEvWatcher);
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
     }
-
+#ifdef VBOX_WITH_MAIN_NLS
+    if (mData.m_pVBoxTranslator != NULL)
+    {
+        mData.m_pVBoxTranslator->release();
+        mData.m_pVBoxTranslator = NULL;
+    }
+#endif
     mData.m_pToken.setNull();
     mData.m_pVirtualBox.setNull();
 
@@ -622,6 +691,11 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                          * VBoxSVC again from now on. */
                         pThis->mData.m_pVirtualBox = pVirtualBox;
                         pThis->mData.m_pToken = pToken;
+#ifdef VBOX_WITH_MAIN_NLS
+                        /* update language using new instance of IVirtualBox in case the language settings was changed */
+                        pThis->i_reloadApiLanguage();
+                        pThis->i_registerEventListener();
+#endif
                     }
                     ::FireVBoxSVCAvailabilityChangedEvent(pThis->mData.m_pEventSource, TRUE);
                     cMillies = VBOXCLIENT_DEFAULT_INTERVAL;
@@ -632,5 +706,41 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
     }
     return 0;
 }
+
+#ifdef VBOX_WITH_MAIN_NLS
+
+HRESULT VirtualBoxClient::i_reloadApiLanguage()
+{
+    if (mData.m_pVBoxTranslator == NULL)
+        return S_OK;
+
+    HRESULT rc = mData.m_pVBoxTranslator->loadLanguage(mData.m_pVirtualBox);
+    if (FAILED(rc))
+        setError(rc, tr("Failed to load user language instance"));
+    return rc;
+}
+
+HRESULT VirtualBoxClient::i_registerEventListener()
+{
+    ComPtr<IEventSource> pES;
+    HRESULT rc = mData.m_pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
+    if (SUCCEEDED(rc))
+    {
+        ComObjPtr<VBoxEventListenerImpl> aVBoxListener;
+        aVBoxListener.createObject();
+        aVBoxListener->init(new VBoxEventListener(), this);
+//        mData.m_pVBoxListener = aVBoxListener;
+        com::SafeArray<VBoxEventType_T> eventTypes;
+        eventTypes.push_back(VBoxEventType_OnLanguageChanged);
+        rc = pES->RegisterListener(aVBoxListener, ComSafeArrayAsInParam(eventTypes), true);
+        if (FAILED(rc))
+            rc = setError(rc, tr("Failed to register listener"));
+    }
+    else
+        rc = setError(rc, tr("Failed to get event source from VirtualBox"));
+    return rc;
+}
+
+#endif /* VBOX_WITH_MAIN_NLS */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

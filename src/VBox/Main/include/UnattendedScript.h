@@ -42,6 +42,8 @@ protected:
     Unattended *mpUnattended;
 
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedScriptTemplate)
+
     UnattendedScriptTemplate(Unattended *pUnattended, const char *pszDefaultTemplateFilename, const char *pszDefaultFilename);
     virtual ~UnattendedScriptTemplate()             {}
 
@@ -104,6 +106,8 @@ protected:
 class UnattendedSUSEXMLScript : public UnattendedXMLScript
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedSUSEXMLScript)
+
     UnattendedSUSEXMLScript(VirtualBoxBase *pSetError, const char *pszDefaultFilename = "autoinst.xml")
         : UnattendedXMLScript(pSetError, pszDefaultFilename) {}
     ~UnattendedSUSEXMLScript() {}

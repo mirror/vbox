@@ -54,7 +54,7 @@ class ATL_NO_VTABLE PerformanceMetric :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(PerformanceMetric)
+    DECLARE_COMMON_CLASS_METHODS(PerformanceMetric)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -103,7 +103,7 @@ class ATL_NO_VTABLE PerformanceCollector :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(PerformanceCollector)
+    DECLARE_COMMON_CLASS_METHODS(PerformanceCollector)
 
     HRESULT FinalConstruct();
     void FinalRelease();

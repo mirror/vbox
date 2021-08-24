@@ -50,7 +50,7 @@ class ATL_NO_VTABLE Certificate
 
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(Certificate)
+    DECLARE_COMMON_CLASS_METHODS(Certificate)
 
     HRESULT initCertificate(PCRTCRX509CERTIFICATE a_pCert, bool a_fTrusted, bool a_fExpired);
     void uninit();

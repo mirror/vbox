@@ -30,7 +30,7 @@ class ATL_NO_VTABLE VBoxEvent
     : public EventWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(VBoxEvent)
+    DECLARE_COMMON_CLASS_METHODS(VBoxEvent)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -58,7 +58,7 @@ class ATL_NO_VTABLE VBoxVetoEvent
     : public VetoEventWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(VBoxVetoEvent)
+    DECLARE_COMMON_CLASS_METHODS(VBoxVetoEvent)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -93,7 +93,7 @@ class ATL_NO_VTABLE EventSource :
     public EventSourceWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(EventSource)
+    DECLARE_COMMON_CLASS_METHODS(EventSource)
 
     HRESULT FinalConstruct();
     void FinalRelease();

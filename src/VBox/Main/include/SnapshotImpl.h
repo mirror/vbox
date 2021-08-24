@@ -34,7 +34,7 @@ class ATL_NO_VTABLE Snapshot :
     public SnapshotWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(Snapshot)
+    DECLARE_COMMON_CLASS_METHODS(Snapshot)
 
     HRESULT FinalConstruct();
     void FinalRelease();

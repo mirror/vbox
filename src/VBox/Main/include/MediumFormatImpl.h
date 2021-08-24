@@ -52,7 +52,7 @@ public:
     typedef std::vector<Property> PropertyArray;
     typedef std::vector<com::Utf8Str> StrArray;
 
-    DECLARE_EMPTY_CTOR_DTOR(MediumFormat)
+    DECLARE_COMMON_CLASS_METHODS(MediumFormat)
 
     HRESULT FinalConstruct();
     void FinalRelease();

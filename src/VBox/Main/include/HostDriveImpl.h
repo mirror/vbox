@@ -27,7 +27,7 @@ class ATL_NO_VTABLE HostDrive
     : public HostDriveWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(HostDrive)
+    DECLARE_COMMON_CLASS_METHODS(HostDrive)
 
     HRESULT FinalConstruct();
     void FinalRelease();

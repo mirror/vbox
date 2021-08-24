@@ -30,7 +30,7 @@ class ATL_NO_VTABLE DataStream
     : public DataStreamWrap
 {
 public:
-    DECLARE_EMPTY_CTOR_DTOR(DataStream)
+    DECLARE_COMMON_CLASS_METHODS(DataStream)
 
     HRESULT FinalConstruct();
     void FinalRelease();

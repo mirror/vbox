@@ -274,6 +274,7 @@ VBOX_PRODUCT      = Oracle VM VirtualBox
 #	src/VBox/Installer/linux/{debian,rpm}
 #	src/VBox/Installer/linux/virtualbox.desktop
 #	src/VBox/Additions/WINNT/Installer/ISO/ReadmeDrivers.txt
+#	src/VBox/Main/nls/*.ts
 #	*/*.inf, */*.rc
 
 # Maybe we want set this manually.
@@ -667,6 +668,8 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.amd64 win.amd64)
 endif
 # Whether to generate a database of USB vendor IDs and device IDs into VBoxSVC.
 VBOX_WITH_MAIN_USB_ID_DATABASE = 1
+# Whether to enable error message translation in Main.
+#VBOX_WITH_MAIN_NLS = 1
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
 if1of ($(KBUILD_TARGET), linux solaris)

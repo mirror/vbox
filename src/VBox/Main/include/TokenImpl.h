@@ -33,7 +33,7 @@ class ATL_NO_VTABLE MachineToken :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(MachineToken)
+    DECLARE_COMMON_CLASS_METHODS(MachineToken)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -72,7 +72,7 @@ class ATL_NO_VTABLE MediumLockToken :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(MediumLockToken)
+    DECLARE_COMMON_CLASS_METHODS(MediumLockToken)
 
     HRESULT FinalConstruct();
     void FinalRelease();

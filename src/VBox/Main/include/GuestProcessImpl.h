@@ -40,7 +40,7 @@ class ATL_NO_VTABLE GuestProcess :
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(GuestProcess)
+    DECLARE_COMMON_CLASS_METHODS(GuestProcess)
 
     int     init(Console *aConsole, GuestSession *aSession, ULONG aObjectID,
                  const GuestProcessStartupInfo &aProcInfo, const GuestEnvironment *pBaseEnv);
@@ -213,9 +213,10 @@ struct GuestProcessToolErrorInfo
  * This class essentially helps to wrap all the gory details like process creation,
  * information extraction and maintaining the overall status.
  */
-class GuestProcessTool
+class GuestProcessTool : public VirtualBoxTranslatable
 {
 public:
+    DECLARE_TRANSLATE_METHODS(GuestProcessTool)
 
     GuestProcessTool(void);
 

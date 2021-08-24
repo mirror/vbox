@@ -264,7 +264,7 @@ public:
         VBOX_TWEAK_INTERFACE_ENTRY(IUSBDeviceFilter)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR(USBDeviceFilter)
+    DECLARE_COMMON_CLASS_METHODS(USBDeviceFilter)
 
     // IUSBDeviceFilter properties
     STDMETHOD(COMGETTER(Name))(BSTR *aName);

@@ -329,6 +329,7 @@ struct SystemProperties
     uint32_t                uVBoxUpdateFrequency;
     uint32_t                uVBoxUpdateTarget; /**< VBoxUpdateTarget_T */
     com::Utf8Str            strVBoxUpdateLastCheckDate;
+    com::Utf8Str            strLanguageId;
 };
 
 struct MachineRegistryEntry

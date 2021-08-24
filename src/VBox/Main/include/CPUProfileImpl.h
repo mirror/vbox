@@ -34,7 +34,7 @@ class ATL_NO_VTABLE CPUProfile
 public:
     /** @name COM and internal init/term/mapping cruft
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(CPUProfile)
+    DECLARE_COMMON_CLASS_METHODS(CPUProfile)
     HRESULT FinalConstruct();
     void    FinalRelease();
     HRESULT initFromDbEntry(struct CPUMDBENTRY const *a_pDbEntry) RT_NOEXCEPT;

@@ -858,7 +858,10 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Update check target:             %s\n", psz);
     systemProperties->COMGETTER(VBoxUpdateLastCheckDate)(str.asOutParam());
     RTPrintf("Last check date:                 %ls\n", str.raw());
-
+#ifdef VBOX_WITH_MAIN_NLS
+    systemProperties->COMGETTER(LanguageId)(str.asOutParam());
+    RTPrintf("User language:                   %ls\n", str.raw());
+#endif
     return S_OK;
 }
 

@@ -35,7 +35,7 @@ class ATL_NO_VTABLE PCIDeviceAttachment :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(PCIDeviceAttachment)
+    DECLARE_COMMON_CLASS_METHODS(PCIDeviceAttachment)
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(IMachine *    aParent,

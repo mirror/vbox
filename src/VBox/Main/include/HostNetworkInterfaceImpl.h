@@ -36,7 +36,7 @@ class ATL_NO_VTABLE HostNetworkInterface :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(HostNetworkInterface)
+    DECLARE_COMMON_CLASS_METHODS(HostNetworkInterface)
 
     HRESULT FinalConstruct();
     void FinalRelease();

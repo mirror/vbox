@@ -32,7 +32,7 @@ class ATL_NO_VTABLE OUSBDevice :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(OUSBDevice)
+    DECLARE_COMMON_CLASS_METHODS(OUSBDevice)
 
     HRESULT FinalConstruct();
     void FinalRelease();

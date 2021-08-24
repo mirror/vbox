@@ -37,7 +37,7 @@ class ATL_NO_VTABLE GuestDnDTarget :
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(GuestDnDTarget)
+    DECLARE_COMMON_CLASS_METHODS(GuestDnDTarget)
 
     HRESULT init(const ComObjPtr<Guest>& pGuest);
     void    uninit(void);

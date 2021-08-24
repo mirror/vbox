@@ -30,7 +30,7 @@ class ATL_NO_VTABLE GuestFsObjInfo
 public:
     /** @name COM and internal init/term/mapping cruft.
      * @{ */
-    DECLARE_EMPTY_CTOR_DTOR(GuestFsObjInfo)
+    DECLARE_COMMON_CLASS_METHODS(GuestFsObjInfo)
 
     int     init(const GuestFsObjData &objData);
     void    uninit(void);

@@ -28,7 +28,7 @@ class ATL_NO_VTABLE VFSExplorer :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(VFSExplorer)
+    DECLARE_COMMON_CLASS_METHODS(VFSExplorer)
 
     // public initializer/uninitializer for internal purposes only
     HRESULT FinalConstruct() { return BaseFinalConstruct(); }
@@ -38,10 +38,13 @@ public:
     void uninit();
 
     /* public methods only for internal purposes */
-    static HRESULT setErrorStatic(HRESULT aResultCode,
-                                  const Utf8Str &aText)
+    static HRESULT setErrorStatic(HRESULT aResultCode, const char *aText, ...)
     {
-        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+        va_list va;
+        va_start(va, aText);
+        HRESULT hrc = setErrorInternalV(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, va, false, true);
+        va_end(va);
+        return hrc;
     }
 
 private:

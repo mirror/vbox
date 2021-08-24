@@ -30,7 +30,7 @@ class ATL_NO_VTABLE GuestOSType :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(GuestOSType)
+    DECLARE_COMMON_CLASS_METHODS(GuestOSType)
 
     HRESULT FinalConstruct();
     void FinalRelease();

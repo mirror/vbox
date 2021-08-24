@@ -87,7 +87,8 @@ enum VBoxLockingClass
     LOCKCLASS_OTHEROBJECT = 10,             // any regular object member variable lock
     LOCKCLASS_PROGRESSLIST = 11,            // list of progress objects in VirtualBox; no other object lock
                                             // may be held after this!
-    LOCKCLASS_OBJECTSTATE = 12              // object state lock (handled by AutoCaller classes)
+    LOCKCLASS_OBJECTSTATE = 12,             // object state lock (handled by AutoCaller classes)
+    LOCKCLASS_TRANSLATOR = 13               // translator internal lock
 };
 
 void InitAutoLockSystem();

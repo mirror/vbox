@@ -345,7 +345,7 @@ HRESULT GuestDnDState::resetProgress(const ComObjPtr<Guest>& pParent)
     if (SUCCEEDED(hr))
     {
         hr = m_pProgress->init(static_cast<IGuest *>(pParent),
-                               Bstr(pParent->tr("Dropping data")).raw(),
+                               Bstr(tr("Dropping data")).raw(),
                                TRUE /* aCancelable */);
     }
 

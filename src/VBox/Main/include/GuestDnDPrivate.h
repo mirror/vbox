@@ -799,10 +799,11 @@ typedef std::map<uint32_t, GuestDnDCallback> GuestDnDCallbackMap;
 /**
  * Class for keeping a DnD guest state around.
  */
-class GuestDnDState
+class GuestDnDState : public VirtualBoxTranslatable
 {
 
 public:
+    DECLARE_TRANSLATE_METHODS(GuestDnDState)
 
     GuestDnDState(const ComObjPtr<Guest>& pGuest);
     virtual ~GuestDnDState(void);

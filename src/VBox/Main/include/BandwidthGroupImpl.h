@@ -32,7 +32,7 @@ class ATL_NO_VTABLE BandwidthGroup :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(BandwidthGroup)
+    DECLARE_COMMON_CLASS_METHODS(BandwidthGroup)
 
     HRESULT FinalConstruct();
     void FinalRelease();

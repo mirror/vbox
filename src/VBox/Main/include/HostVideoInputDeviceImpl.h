@@ -34,7 +34,7 @@ class ATL_NO_VTABLE HostVideoInputDevice :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(HostVideoInputDevice)
+    DECLARE_COMMON_CLASS_METHODS(HostVideoInputDevice)
 
     HRESULT FinalConstruct();
     void FinalRelease();

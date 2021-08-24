@@ -1062,6 +1062,13 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
         Bstr bstrProxyUrl(a->argv[1]);
         CHECK_ERROR(systemProperties, COMSETTER(ProxyURL)(bstrProxyUrl.raw()));
     }
+#ifdef VBOX_WITH_MAIN_NLS
+    else if (!strcmp(a->argv[0], "language"))
+    {
+        Bstr bstrLanguage(a->argv[1]);
+        CHECK_ERROR(systemProperties, COMSETTER(LanguageId)(bstrLanguage.raw()));
+    }
+#endif
     else
         return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", a->argv[0]);
 
@@ -2387,4 +2394,3 @@ RTEXITCODE handleCloudProfile(HandlerArg *a)
 
     return errorNoSubcommand();
 }
-

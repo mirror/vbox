@@ -40,7 +40,7 @@ public:
     typedef std::list<ComObjPtr<MediumFormat> > MediumFormatList;
     typedef std::list<ComObjPtr<CPUProfile> > CPUProfileList_T;
 
-    DECLARE_EMPTY_CTOR_DTOR(SystemProperties)
+    DECLARE_COMMON_CLASS_METHODS(SystemProperties)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -153,6 +153,8 @@ private:
     HRESULT setVBoxUpdateTarget(VBoxUpdateTarget_T aVBoxUpdateTarget) RT_OVERRIDE;
     HRESULT getVBoxUpdateCount(ULONG *aVBoxUpdateCount) RT_OVERRIDE;
     HRESULT setVBoxUpdateCount(ULONG aVBoxUpdateCount) RT_OVERRIDE;
+    HRESULT getLanguageId(com::Utf8Str &aLanguageId) RT_OVERRIDE;
+    HRESULT setLanguageId(const com::Utf8Str &aLanguageId) RT_OVERRIDE;
 
     // wrapped ISystemProperties methods
     HRESULT getMaxNetworkAdapters(ChipsetType_T aChipset,

@@ -11780,6 +11780,12 @@
       </desc>
     </attribute>
 
+    <attribute name="languageId" type="wstring">
+      <desc>
+        The API language ID used to translate messages to client.
+      </desc>
+    </attribute>
+
     <method name="getMaxNetworkAdapters">
       <desc>
         Maximum total number of network adapters associated with every
@@ -24941,9 +24947,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IProgressCreatedEvent"/>.
       </desc>
     </const>
+    <const name="OnLanguageChanged" value="111">
+      <desc>
+        See <link to="ILanguageChangedEvent"/>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="111">
+    <const name="Last" value="112">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -28453,6 +28464,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="name" type="wstring" readonly="yes"/>
   </interface>
 
+  <interface name="ILanguageChangedEvent" extends="IEvent"
+    uuid="28935887-782b-4c94-8410-ce557b9cfe44"
+    wsmap="managed" autogen="VBoxEvent"
+    id="OnLanguageChanged"
+    >
+    <attribute name="languageId" type="wstring" readonly="yes"/>
+  </interface>
 
   <module name="VBoxSVC" context="LocalServer">
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"

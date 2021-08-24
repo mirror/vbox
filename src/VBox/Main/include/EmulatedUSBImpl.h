@@ -33,7 +33,7 @@ class ATL_NO_VTABLE EmulatedUSB :
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(EmulatedUSB)
+    DECLARE_COMMON_CLASS_METHODS(EmulatedUSB)
 
     HRESULT FinalConstruct();
     void FinalRelease();

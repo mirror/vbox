@@ -35,7 +35,7 @@ class BaseTextScript;
  * The class is intended to service a new VM that this VM will be able to
  * execute an unattended installation
  */
-class UnattendedInstaller : public RTCNonCopyable
+class UnattendedInstaller : public RTCNonCopyable, public VirtualBoxTranslatable
 {
 /*data*/
 protected:
@@ -69,6 +69,8 @@ private:
     UnattendedInstaller(); /* no default constructors */
 
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedInstaller)
+
     /**
      * Regular constructor.
      *
@@ -368,6 +370,8 @@ protected:
 class UnattendedWindowsSifInstaller : public UnattendedInstaller
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedWindowsSifInstaller)
+
     UnattendedWindowsSifInstaller(Unattended *pParent)
         : UnattendedInstaller(pParent,
                               "win_nt5_unattended.sif", "win_postinstall.cmd",
@@ -386,6 +390,8 @@ public:
 class UnattendedWindowsXmlInstaller : public UnattendedInstaller
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedWindowsXmlInstaller)
+
     UnattendedWindowsXmlInstaller(Unattended *pParent)
         : UnattendedInstaller(pParent,
                               "win_nt6_unattended.xml", "win_postinstall.cmd",
@@ -409,6 +415,8 @@ protected:
     RTCList<RTCString, RTCString *> mArrStrRemoveInstallKernelParameters;
 
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedLinuxInstaller)
+
     UnattendedLinuxInstaller(Unattended *pParent,
                              const char *pszMainScriptTemplateName, const char *pszPostScriptTemplateName,
                              const char *pszMainScriptFilename,     const char *pszPostScriptFilename = "vboxpostinstall.sh")
@@ -438,6 +446,8 @@ protected:
 class UnattendedDebianInstaller : public UnattendedLinuxInstaller
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedDebianInstaller)
+
     UnattendedDebianInstaller(Unattended *pParent,
                               const char *pszMainScriptTemplateName = "debian_preseed.cfg",
                               const char *pszPostScriptTemplateName = "debian_postinstall.sh",
@@ -481,6 +491,8 @@ protected:
 class UnattendedUbuntuInstaller : public UnattendedDebianInstaller
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedUbuntuInstaller)
+
     UnattendedUbuntuInstaller(Unattended *pParent)
         : UnattendedDebianInstaller(pParent, "ubuntu_preseed.cfg")
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
@@ -496,6 +508,8 @@ public:
 class UnattendedRhel6Installer : public UnattendedLinuxInstaller
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedRhel6Installer)
+
     UnattendedRhel6Installer(Unattended *pParent,
                              const char *pszMainScriptTemplateName = "redhat67_ks.cfg",
                              const char *pszPostScriptTemplateName = "redhat_postinstall.sh",
@@ -524,6 +538,8 @@ protected:
 class UnattendedRhel7Installer : public UnattendedRhel6Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedRhel7Installer)
+
     UnattendedRhel7Installer(Unattended *pParent)
         : UnattendedRhel6Installer(pParent)
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
@@ -545,6 +561,8 @@ public:
 class UnattendedRhel8Installer : public UnattendedRhel7Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedRhel8Installer)
+
     UnattendedRhel8Installer(Unattended *pParent)
         : UnattendedRhel7Installer(pParent)
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
@@ -565,6 +583,8 @@ public:
 class UnattendedRhel5Installer : public UnattendedRhel6Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedRhel5Installer)
+
     UnattendedRhel5Installer(Unattended *pParent) : UnattendedRhel6Installer(pParent, "rhel5_ks.cfg") {}
     ~UnattendedRhel5Installer() {}
 };
@@ -576,6 +596,8 @@ public:
 class UnattendedRhel4Installer : public UnattendedRhel6Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedRhel4Installer)
+
     UnattendedRhel4Installer(Unattended *pParent) : UnattendedRhel6Installer(pParent, "rhel4_ks.cfg") {}
     ~UnattendedRhel4Installer() {}
 };
@@ -587,6 +609,8 @@ public:
 class UnattendedRhel3Installer : public UnattendedRhel6Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedRhel3Installer)
+
     UnattendedRhel3Installer(Unattended *pParent) : UnattendedRhel6Installer(pParent, "rhel3_ks.cfg") {}
     ~UnattendedRhel3Installer() {}
 };
@@ -598,6 +622,8 @@ public:
 class UnattendedFedoraInstaller : public UnattendedRhel6Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedFedoraInstaller)
+
     UnattendedFedoraInstaller(Unattended *pParent)
         : UnattendedRhel6Installer(pParent, "fedora_ks.cfg")
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
@@ -612,6 +638,8 @@ public:
 class UnattendedOracleLinux6Installer : public UnattendedRhel6Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedOracleLinux6Installer)
+
     UnattendedOracleLinux6Installer(Unattended *pParent,
                                     const char *pszMainScriptTemplateName = "ol_ks.cfg",
                                     const char *pszPostScriptTemplateName = "ol_postinstall.sh",
@@ -629,6 +657,8 @@ public:
 class UnattendedOracleLinux7Installer : public UnattendedOracleLinux6Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedOracleLinux7Installer)
+
     UnattendedOracleLinux7Installer(Unattended *pParent)
         : UnattendedOracleLinux6Installer(pParent)
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
@@ -650,6 +680,8 @@ public:
 class UnattendedOracleLinux8Installer : public UnattendedOracleLinux7Installer
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedOracleLinux8Installer)
+
     UnattendedOracleLinux8Installer(Unattended *pParent)
         : UnattendedOracleLinux7Installer(pParent)
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
@@ -672,6 +704,8 @@ public:
 class UnattendedSuseInstaller : public UnattendedLinuxInstaller
 {
 public:
+    DECLARE_TRANSLATE_METHODS(UnattendedSuseInstaller)
+
     UnattendedSuseInstaller(BaseTextScript *pAlg, Unattended *pParent)
         : UnattendedLinuxInstaller(pAlg, pParent, "suse_autoinstall.xml")
     { Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(!isAuxiliaryIsoIsVISO()); }
