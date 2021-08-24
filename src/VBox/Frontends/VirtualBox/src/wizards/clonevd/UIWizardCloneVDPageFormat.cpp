@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageBasic1 class implementation.
+ * VBox Qt GUI - UIWizardCloneVDPageFormat class implementation.
  */
 
 /*
@@ -17,12 +17,9 @@
 
 /* Qt includes: */
 #include <QVBoxLayout>
-#include <QButtonGroup>
-#include <QRadioButton>
 
 /* GUI includes: */
-#include "UIConverter.h"
-#include "UIWizardCloneVDPageBasic1.h"
+#include "UIWizardCloneVDPageFormat.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardDiskEditors.h"
 #include "UICommon.h"
@@ -31,14 +28,14 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(KDeviceType enmDeviceType)
+UIWizardCloneVDPageFormat::UIWizardCloneVDPageFormat(KDeviceType enmDeviceType)
     : m_pLabel(0)
     , m_pFormatGroupBox(0)
 {
     prepare(enmDeviceType);
 }
 
-void UIWizardCloneVDPageBasic1::prepare(KDeviceType enmDeviceType)
+void UIWizardCloneVDPageFormat::prepare(KDeviceType enmDeviceType)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pLabel = new QIRichTextLabel(this);
@@ -49,13 +46,13 @@ void UIWizardCloneVDPageBasic1::prepare(KDeviceType enmDeviceType)
     {
         pMainLayout->addWidget(m_pFormatGroupBox);
         connect(m_pFormatGroupBox, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
-                this, &UIWizardCloneVDPageBasic1::sltMediumFormatChanged);
+                this, &UIWizardCloneVDPageFormat::sltMediumFormatChanged);
     }
     pMainLayout->addStretch();
     retranslateUi();
 }
 
-void UIWizardCloneVDPageBasic1::retranslateUi()
+void UIWizardCloneVDPageFormat::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Disk image file type"));
@@ -66,7 +63,7 @@ void UIWizardCloneVDPageBasic1::retranslateUi()
                                           "with other virtualization software you can leave this setting unchanged."));
 }
 
-void UIWizardCloneVDPageBasic1::initializePage()
+void UIWizardCloneVDPageFormat::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -77,7 +74,7 @@ void UIWizardCloneVDPageBasic1::initializePage()
     }
 }
 
-bool UIWizardCloneVDPageBasic1::isComplete() const
+bool UIWizardCloneVDPageFormat::isComplete() const
 {
     if (m_pFormatGroupBox)
     {
@@ -87,7 +84,7 @@ bool UIWizardCloneVDPageBasic1::isComplete() const
     return true;
 }
 
-void UIWizardCloneVDPageBasic1::sltMediumFormatChanged()
+void UIWizardCloneVDPageFormat::sltMediumFormatChanged()
 {
     if (cloneWizard() && m_pFormatGroupBox)
         cloneWizard()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
@@ -95,7 +92,7 @@ void UIWizardCloneVDPageBasic1::sltMediumFormatChanged()
     emit completeChanged();
 }
 
-UIWizardCloneVD *UIWizardCloneVDPageBasic1::cloneWizard() const
+UIWizardCloneVD *UIWizardCloneVDPageFormat::cloneWizard() const
 {
     return qobject_cast<UIWizardCloneVD*>(wizard());
 }

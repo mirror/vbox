@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardCloneVDPageVariant class implementation.
  */
 
 /*
@@ -17,21 +17,17 @@
 
 /* Qt includes: */
 #include <QVBoxLayout>
-#include <QButtonGroup>
-#include <QRadioButton>
-#include <QCheckBox>
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
-#include "UIWizardCloneVDPageBasic2.h"
+#include "UIWizardCloneVDPageVariant.h"
 #include "UIWizardCloneVD.h"
 #include "QIRichTextLabel.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
 
-
-UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType /*enmDeviceType*/)
+UIWizardCloneVDPageVariant::UIWizardCloneVDPageVariant(KDeviceType /*enmDeviceType*/)
     : m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
@@ -41,7 +37,7 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType /*enmDeviceType
     prepare();
 }
 
-void UIWizardCloneVDPageBasic2::prepare()
+void UIWizardCloneVDPageVariant::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -66,7 +62,7 @@ void UIWizardCloneVDPageBasic2::prepare()
     {
         pMainLayout->addWidget(m_pVariantGroupBox);
         connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
-                this, &UIWizardCloneVDPageBasic2::sltMediumVariantChanged);
+                this, &UIWizardCloneVDPageVariant::sltMediumVariantChanged);
 
     }
 
@@ -74,7 +70,7 @@ void UIWizardCloneVDPageBasic2::prepare()
 }
 
 
-void UIWizardCloneVDPageBasic2::retranslateUi()
+void UIWizardCloneVDPageVariant::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Storage on physical hard disk"));
@@ -93,7 +89,7 @@ void UIWizardCloneVDPageBasic2::retranslateUi()
                                                "handle very large files."));
 }
 
-void UIWizardCloneVDPageBasic2::initializePage()
+void UIWizardCloneVDPageVariant::initializePage()
 {
     AssertReturnVoid(cloneWizard());
     /* Translate page: */
@@ -104,18 +100,18 @@ void UIWizardCloneVDPageBasic2::initializePage()
         cloneWizard()->setMediumVariant(m_pVariantGroupBox->mediumVariant());
 }
 
-bool UIWizardCloneVDPageBasic2::isComplete() const
+bool UIWizardCloneVDPageVariant::isComplete() const
 {
     AssertReturn(m_pVariantGroupBox, false);
     return m_pVariantGroupBox->isComplete();
 }
 
-UIWizardCloneVD *UIWizardCloneVDPageBasic2::cloneWizard() const
+UIWizardCloneVD *UIWizardCloneVDPageVariant::cloneWizard() const
 {
     return qobject_cast<UIWizardCloneVD*>(wizard());
 }
 
-void UIWizardCloneVDPageBasic2::setWidgetVisibility(const CMediumFormat &mediumFormat)
+void UIWizardCloneVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
     AssertReturnVoid(m_pVariantGroupBox);
 
@@ -129,7 +125,7 @@ void UIWizardCloneVDPageBasic2::setWidgetVisibility(const CMediumFormat &mediumF
         m_pSplitLabel->setHidden(!m_pVariantGroupBox->isCreateSplitPossible());
 }
 
-void UIWizardCloneVDPageBasic2::sltMediumVariantChanged(qulonglong uVariant)
+void UIWizardCloneVDPageVariant::sltMediumVariantChanged(qulonglong uVariant)
 {
     if (cloneWizard())
         cloneWizard()->setMediumVariant(uVariant);

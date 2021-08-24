@@ -670,9 +670,9 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/clonevm/UIWizardCloneVMModePageBasic.h \
 	src/wizards/clonevm/UIWizardCloneVMPageExpert.h \
 	src/wizards/clonevd/UIWizardCloneVD.h \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic1.h \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic2.h \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic3.h \
+	src/wizards/clonevd/UIWizardCloneVDPageFormat.h \
+	src/wizards/clonevd/UIWizardCloneVDPageVariant.h \
+	src/wizards/clonevd/UIWizardCloneVDPagePathSize.h \
 	src/wizards/clonevd/UIWizardCloneVDPageExpert.h \
 	src/wizards/exportappliance/UIWizardExportApp.h \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic1.h \
@@ -1177,9 +1177,9 @@ VirtualBox_SOURCES = \
 	src/wizards/clonevm/UIWizardCloneVMModePageBasic.cpp \
 	src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp \
 	src/wizards/clonevd/UIWizardCloneVD.cpp \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageFormat.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageVariant.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPagePathSize.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp \
 	src/wizards/exportappliance/UIWizardExportApp.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic1.cpp \

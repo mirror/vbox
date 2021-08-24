@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageBasic3 class declaration.
+ * VBox Qt GUI - UIWizardCloneVDPagePathSize class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic3_h
-#define FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic3_h
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPagePathSize_h
+#define FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPagePathSize_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -37,14 +37,14 @@ class UIMediumSizeAndPathGroupBox;
 class UIWizardCloneVD;
 
 /** 4th page of the Clone Virtual Disk Image wizard (basic extension): */
-class UIWizardCloneVDPageBasic3 : public UINativeWizardPage
+class UIWizardCloneVDPagePathSize : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs basic page. */
-    UIWizardCloneVDPageBasic3(qulonglong uSourceDiskLogicaSize);
+    UIWizardCloneVDPagePathSize(qulonglong uSourceDiskLogicaSize);
 
 private slots:
 
@@ -69,10 +69,8 @@ private:
     virtual bool validatePage() /* override */;
     UIWizardCloneVD *cloneWizard() const;
 
-
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
-
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic3_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPagePathSize_h */

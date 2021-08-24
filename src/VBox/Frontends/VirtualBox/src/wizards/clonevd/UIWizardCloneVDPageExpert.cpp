@@ -20,10 +20,7 @@
 #include <QGridLayout>
 
 /* GUI includes: */
-#include "QIToolButton.h"
 #include "UICommon.h"
-#include "UIConverter.h"
-#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDPageExpert.h"
@@ -31,7 +28,6 @@
 
 /* COM includes: */
 #include "CSystemProperties.h"
-
 
 UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize)
     :m_pFormatGroupBox(0)
@@ -127,7 +123,6 @@ void UIWizardCloneVDPageExpert::sltMediumPathChanged(const QString &strPath)
 
 void UIWizardCloneVDPageExpert::retranslateUi()
 {
-
 }
 
 void UIWizardCloneVDPageExpert::initializePage()

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageBasic3 class implementation.
+ * VBox Qt GUI - UIWizardCloneVDPagePathSize class implementation.
  */
 
 /*
@@ -16,29 +16,22 @@
  */
 
 /* Qt includes: */
+#include <QDir>
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIWizardCloneVDPageBasic3.h"
+#include "UIWizardCloneVDPagePathSize.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardCloneVD.h"
-#include "UICommon.h"
 #include "UIMessageCenter.h"
-#include "UIIconPool.h"
-#include "QIFileDialog.h"
-#include "QIRichTextLabel.h"
-#include "QIToolButton.h"
 
-/* COM includes: */
-#include "CMediumFormat.h"
-
-UIWizardCloneVDPageBasic3::UIWizardCloneVDPageBasic3(qulonglong uSourceDiskLogicaSize)
+UIWizardCloneVDPagePathSize::UIWizardCloneVDPagePathSize(qulonglong uSourceDiskLogicaSize)
     : m_pMediumSizePathGroupBox(0)
 {
     prepare(uSourceDiskLogicaSize);
 }
 
-void UIWizardCloneVDPageBasic3::prepare(qulonglong uSourceDiskLogicaSize)
+void UIWizardCloneVDPagePathSize::prepare(qulonglong uSourceDiskLogicaSize)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -47,24 +40,24 @@ void UIWizardCloneVDPageBasic3::prepare(qulonglong uSourceDiskLogicaSize)
     {
         pMainLayout->addWidget(m_pMediumSizePathGroupBox);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
-                this, &UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked);
+                this, &UIWizardCloneVDPagePathSize::sltSelectLocationButtonClicked);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
-                this, &UIWizardCloneVDPageBasic3::sltMediumPathChanged);
+                this, &UIWizardCloneVDPagePathSize::sltMediumPathChanged);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
-                this, &UIWizardCloneVDPageBasic3::sltMediumSizeChanged);
+                this, &UIWizardCloneVDPagePathSize::sltMediumSizeChanged);
     }
 
     pMainLayout->addStretch();
     retranslateUi();
 }
 
-void UIWizardCloneVDPageBasic3::retranslateUi()
+void UIWizardCloneVDPagePathSize::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Location and size of the disk image"));
 }
 
-void UIWizardCloneVDPageBasic3::initializePage()
+void UIWizardCloneVDPagePathSize::initializePage()
 {
     AssertReturnVoid(cloneWizard() && m_pMediumSizePathGroupBox);
     /* Translate page: */
@@ -95,14 +88,13 @@ void UIWizardCloneVDPageBasic3::initializePage()
     m_pMediumSizePathGroupBox->blockSignals(false);
 }
 
-bool UIWizardCloneVDPageBasic3::isComplete() const
+bool UIWizardCloneVDPagePathSize::isComplete() const
 {
     AssertReturn(m_pMediumSizePathGroupBox, false);
-
     return m_pMediumSizePathGroupBox->isComplete();
 }
 
-bool UIWizardCloneVDPageBasic3::validatePage()
+bool UIWizardCloneVDPagePathSize::validatePage()
 {
     UIWizardCloneVD *pWizard = cloneWizard();
     AssertReturn(pWizard, false);
@@ -116,12 +108,12 @@ bool UIWizardCloneVDPageBasic3::validatePage()
     return pWizard->copyVirtualDisk();
 }
 
-UIWizardCloneVD *UIWizardCloneVDPageBasic3::cloneWizard() const
+UIWizardCloneVD *UIWizardCloneVDPagePathSize::cloneWizard() const
 {
     return qobject_cast<UIWizardCloneVD*>(wizard());
 }
 
-void UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked()
+void UIWizardCloneVDPagePathSize::sltSelectLocationButtonClicked()
 {
     UIWizardCloneVD *pWizard = cloneWizard();
     AssertReturnVoid(pWizard);
@@ -138,7 +130,7 @@ void UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked()
     m_pMediumSizePathGroupBox->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
 
-void UIWizardCloneVDPageBasic3::sltMediumPathChanged(const QString &strPath)
+void UIWizardCloneVDPagePathSize::sltMediumPathChanged(const QString &strPath)
 {
     UIWizardCloneVD *pWizard = cloneWizard();
     AssertReturnVoid(pWizard);
@@ -150,7 +142,7 @@ void UIWizardCloneVDPageBasic3::sltMediumPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardCloneVDPageBasic3::sltMediumSizeChanged(qulonglong uSize)
+void UIWizardCloneVDPagePathSize::sltMediumSizeChanged(qulonglong uSize)
 {
     UIWizardCloneVD *pWizard = cloneWizard();
     AssertReturnVoid(pWizard);

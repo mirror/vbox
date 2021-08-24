@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardCloneVDPageFormat class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageFormat_h
+#define FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageFormat_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -29,7 +29,6 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMediumFormat.h"
 
 /* Forward declarations: */
 class QIRichTextLabel;
@@ -38,7 +37,7 @@ class UIWizardCloneVD;
 
 
 /** 2nd page of the Clone Virtual Disk Image wizard (basic extension): */
-class UIWizardCloneVDPageBasic1 : public UINativeWizardPage
+class UIWizardCloneVDPageFormat : public UINativeWizardPage
 {
     Q_OBJECT;
 
@@ -46,7 +45,7 @@ public:
 
     /** Constructs basic page.
       * @param  enmDeviceType  Brings the device type to limit format to. */
-    UIWizardCloneVDPageBasic1(KDeviceType enmDeviceType);
+    UIWizardCloneVDPageFormat(KDeviceType enmDeviceType);
 
 private slots:
 
@@ -73,4 +72,4 @@ private:
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageFormat_h */
