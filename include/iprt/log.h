@@ -2040,7 +2040,7 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint64_t fFlags, const char *pszGro
  * @param   pfnFlush            Custom flush callback. Optional.
  * @param   cBufDescs           Number of buffer descriptors that @a paBufDescs
  *                              points to. Zero for defaults.
- * @param   paBufDesc           Buffer descriptors, optional.
+ * @param   paBufDescs          Buffer descriptors, optional.
  * @param   fDestFlags          The destination flags.  RTLOGDEST_FILE is ORed
  *                              if pszFilenameFmt specified.
  * @param   pfnPhase            Callback function for starting logging and for
@@ -2083,7 +2083,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64
  * @param   pfnFlush            Custom flush callback. Optional.
  * @param   cBufDescs           Number of buffer descriptors that @a paBufDescs
  *                              points to. Zero for defaults.
- * @param   paBufDesc           Buffer descriptors, optional.
+ * @param   paBufDescs          Buffer descriptors, optional.
  * @param   fDestFlags          The destination flags.  RTLOGDEST_FILE is ORed
  *                              if pszFilenameFmt specified.
  * @param   pfnPhase            Callback function for starting logging and for

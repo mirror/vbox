@@ -750,7 +750,7 @@ static int vmmR3UpdateLoggersWorker(PVM pVM, PVMCPU pVCpu, PRTLOGGER pSrcLogger,
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
- * @param   EMT
+ * @thread  EMT
  */
 VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 {
