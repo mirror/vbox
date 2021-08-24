@@ -2226,6 +2226,9 @@ SUPR0DECL(int)  SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2
  */
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 
+/** @copydoc RTLogDefaultInstanceEx
+ * @remarks To allow overriding RTLogDefaultInstanceEx locally. */
+SUPR0DECL(struct RTLOGGER *) SUPR0DefaultLogInstanceEx(uint32_t fFlagsAndGroup);
 /** @copydoc RTLogGetDefaultInstanceEx
  * @remarks To allow overriding RTLogGetDefaultInstanceEx locally. */
 SUPR0DECL(struct RTLOGGER *) SUPR0GetDefaultLogInstanceEx(uint32_t fFlagsAndGroup);

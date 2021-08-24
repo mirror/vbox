@@ -3051,9 +3051,9 @@ VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPUCC pVCpu)
 #endif /* LOG_ENABLED */
 
 /*
- * Override RTLogGetDefaultInstanceEx so we can do logging from EMTs in ring-0.
+ * Override RTLogDefaultInstanceEx so we can do logging from EMTs in ring-0.
  */
-DECLEXPORT(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
+DECLEXPORT(PRTLOGGER) RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
 #ifdef LOG_ENABLED
     PGVMCPU pGVCpu = GVMMR0GetGVCpuByEMT(NIL_RTNATIVETHREAD);
@@ -3072,7 +3072,7 @@ DECLEXPORT(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
         }
     }
 #endif
-    return SUPR0GetDefaultLogInstanceEx(fFlagsAndGroup);
+    return SUPR0DefaultLogInstanceEx(fFlagsAndGroup);
 }
 
 

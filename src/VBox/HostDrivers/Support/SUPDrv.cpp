@@ -289,6 +289,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTLogDestroy",                           (void *)(uintptr_t)RTLogDestroy },
     { "RTLogDefaultInstance",                   (void *)(uintptr_t)RTLogDefaultInstance },
     { "RTLogDefaultInstanceEx",                 (void *)(uintptr_t)RTLogDefaultInstanceEx },
+    { "SUPR0DefaultLogInstanceEx",              (void *)(uintptr_t)SUPR0DefaultLogInstanceEx },
     { "RTLogGetDefaultInstance",                (void *)(uintptr_t)RTLogGetDefaultInstance },
     { "RTLogGetDefaultInstanceEx",              (void *)(uintptr_t)RTLogGetDefaultInstanceEx },
     { "SUPR0GetDefaultLogInstanceEx",           (void *)(uintptr_t)SUPR0GetDefaultLogInstanceEx },
@@ -298,6 +299,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTLogRelGetDefaultInstanceEx",           (void *)(uintptr_t)RTLogRelGetDefaultInstanceEx },
     { "SUPR0GetDefaultLogRelInstanceEx",        (void *)(uintptr_t)SUPR0GetDefaultLogRelInstanceEx },
     { "RTLogSetDefaultInstanceThread",          (void *)(uintptr_t)RTLogSetDefaultInstanceThread },
+    { "RTLogSetFlushCallback",                  (void *)(uintptr_t)RTLogSetFlushCallback },
     { "RTLogSetR0ThreadNameF",                  (void *)(uintptr_t)RTLogSetR0ThreadNameF },
     { "RTMemAllocExTag",                        (void *)(uintptr_t)RTMemAllocExTag },
     { "RTMemAllocTag",                          (void *)(uintptr_t)RTMemAllocTag },
@@ -3256,6 +3258,15 @@ SUPR0DECL(int) SUPR0SetSessionVM(PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
     return VINF_SUCCESS;
 }
 SUPR0_EXPORT_SYMBOL(SUPR0SetSessionVM);
+
+
+/** @copydoc RTLogDefaultInstanceEx
+ * @remarks To allow overriding RTLogDefaultInstanceEx locally. */
+SUPR0DECL(struct RTLOGGER *) SUPR0DefaultLogInstanceEx(uint32_t fFlagsAndGroup)
+{
+    return RTLogDefaultInstanceEx(fFlagsAndGroup);
+}
+SUPR0_EXPORT_SYMBOL(SUPR0DefaultLogInstanceEx);
 
 
 /** @copydoc RTLogGetDefaultInstanceEx
