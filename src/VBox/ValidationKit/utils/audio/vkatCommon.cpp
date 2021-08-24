@@ -88,7 +88,7 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
  */
 int audioTestDevicesEnumerateAndCheck(PAUDIOTESTDRVSTACK pDrvStack, const char *pszDev, PPDMAUDIOHOSTDEV *ppDev)
 {
-    RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev && *pszDev ? pszDev : "<Default>");
+    RTTestSubF(g_hTest, "Enumerating audio devices and checking for device '%s'", pszDev && *pszDev ? pszDev : "[Default]");
 
     if (!pDrvStack->pIHostAudio->pfnGetDevices)
     {
