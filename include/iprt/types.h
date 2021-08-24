@@ -2811,7 +2811,7 @@ typedef RTSTRTUPLE const RT_FAR *PCRTSTRTUPLE;
  * @param   uPercentage     The percentage of the operation which has been completed.
  * @param   pvUser          The user specified argument.
  */
-typedef DECLCALLBACKTYPE(int, FNRTPROGRESS,(unsigned uPrecentage, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNRTPROGRESS,(unsigned uPercentage, void *pvUser));
 /** Pointer to a generic progress callback function, FNRTPROCESS(). */
 typedef FNRTPROGRESS *PFNRTPROGRESS;
 
