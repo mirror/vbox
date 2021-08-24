@@ -504,17 +504,3 @@ SEH64_END_PROLOGUE
     ret
 ENDPROC vmmR0CallRing3LongJmp
 
-
-;;
-; Internal R0 logger worker: Logger wrapper.
-;
-; @cproto VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...)
-;
-BEGINPROC_EXPORTED vmmR0LoggerWrapper
-SEH64_END_PROLOGUE
-    int3
-    int3
-    int3
-    ret
-ENDPROC vmmR0LoggerWrapper
-

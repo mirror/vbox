@@ -72,6 +72,7 @@ VBOXMOD_OBJS += \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
 	r0drv/generic/semspinmutex-r0drv-generic.o \
 	common/alloc/alloc.o \
+	common/checksum/crc32.o \
 	common/err/RTErrConvertFromErrno.o \
 	common/err/RTErrConvertToErrno.o \
 	common/err/errinfo.o \
@@ -106,6 +107,7 @@ VBOXMOD_OBJS += \
 	common/string/strformatrt.o \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
+	common/string/strprintf2.o \
 	common/string/strtonum.o \
 	common/string/utf-8.o \
 	common/table/avlpv.o \

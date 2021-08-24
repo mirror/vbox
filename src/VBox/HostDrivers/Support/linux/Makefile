@@ -107,6 +107,7 @@ VBOXMOD_OBJS += \
 	common/string/strformatnum.o \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
+	common/string/strprintf2.o \
 	common/string/strtonum.o \
 	common/table/avlpv.o \
 	common/time/time.o \

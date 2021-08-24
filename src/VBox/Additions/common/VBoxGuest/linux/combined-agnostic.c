@@ -53,6 +53,8 @@
 #undef LOG_GROUP
 #include "common/alloc/alloc.c"
 #undef LOG_GROUP
+#include "common/checksum/crc32.c"
+#undef LOG_GROUP
 #include "common/err/errinfo.c"
 #undef LOG_GROUP
 #include "common/log/log.c"
@@ -114,6 +116,8 @@
 #include "common/string/strformattype.c"
 #undef LOG_GROUP
 #include "common/string/strprintf.c"
+#undef LOG_GROUP
+#include "common/string/strprintf2.c"
 #undef LOG_GROUP
 #include "common/string/strtonum.c"
 #undef LOG_GROUP

@@ -1429,7 +1429,12 @@
 # define RTLockValidatorWriteLockInc                    RT_MANGLER(RTLockValidatorWriteLockInc)
 # define RTLogBackdoorPrintf                            RT_MANGLER(RTLogBackdoorPrintf) /* r0drv-guest */
 # define RTLogBackdoorPrintfV                           RT_MANGLER(RTLogBackdoorPrintfV) /* r0drv-guest */
+# define RTLogBulkUpdate                                RT_MANGLER(RTLogBulkUpdate)
+# define RTLogBulkWrite                                 RT_MANGLER(RTLogBulkWrite)
 # define RTLogCalcSizeForR0                             RT_MANGLER(RTLogCalcSizeForR0)
+# define RTLogChangeDestinations                        RT_MANGLER(RTLogChangeDestinations)
+# define RTLogChangeFlags                               RT_MANGLER(RTLogChangeFlags)
+# define RTLogCheckGroupFlags                           RT_MANGLER(RTLogCheckGroupFlags)
 # define RTLogClearFileDelayFlag                        RT_MANGLER(RTLogClearFileDelayFlag)
 # define RTLogCloneRC                                   RT_MANGLER(RTLogCloneRC)
 # define RTLogComPrintf                                 RT_MANGLER(RTLogComPrintf)
@@ -1452,6 +1457,7 @@
 # define RTLogFormatV                                   RT_MANGLER(RTLogFormatV)
 # define RTLogGetDefaultInstance                        RT_MANGLER(RTLogGetDefaultInstance)
 # define RTLogGetDefaultInstanceEx                      RT_MANGLER(RTLogGetDefaultInstanceEx)
+# define RTLogGetDestinations                           RT_MANGLER(RTLogGetDestinations)
 # define RTLogGetFlags                                  RT_MANGLER(RTLogGetFlags)
 # define RTLogGroupSettings                             RT_MANGLER(RTLogGroupSettings)
 # define RTLogLogger                                    RT_MANGLER(RTLogLogger)
@@ -1461,6 +1467,7 @@
 # define RTLogPrintf                                    RT_MANGLER(RTLogPrintf)
 # define RTLogPrintfV                                   RT_MANGLER(RTLogPrintfV)
 # define RTLogDumpPrintfV                               RT_MANGLER(RTLogDumpPrintfV)
+# define RTLogQueryBulk                                 RT_MANGLER(RTLogQueryBulk)
 # define RTLogQueryDestinations                         RT_MANGLER(RTLogQueryDestinations)
 # define RTLogQueryFlags                                RT_MANGLER(RTLogQueryFlags)
 # define RTLogQueryGroupSettings                        RT_MANGLER(RTLogQueryGroupSettings)
@@ -1477,7 +1484,7 @@
 # define RTLogSetDefaultInstance                        RT_MANGLER(RTLogSetDefaultInstance)
 # define RTLogSetDefaultInstanceThread                  RT_MANGLER(RTLogSetDefaultInstanceThread) /* r0drv */
 # define RTLogSetGroupLimit                             RT_MANGLER(RTLogSetGroupLimit)
-# define RTLogWriteCom                                  RT_MANGLER(RTLogWriteCom)
+# define RTLogSetR0ThreadNameF                          RT_MANGLER(RTLogSetR0ThreadNameF)
 # define RTLogWriteCom                                  RT_MANGLER(RTLogWriteCom)
 # define RTLogWriteDebugger                             RT_MANGLER(RTLogWriteDebugger)
 # define RTLogWriteStdErr                               RT_MANGLER(RTLogWriteStdErr)

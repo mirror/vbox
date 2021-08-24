@@ -31,9 +31,6 @@
 %define STACK_PADDING   0eeeeeeeeh
 
 
-; For vmmR0LoggerWrapper. (The other architecture(s) use(s) C99 variadic macros.)
-extern NAME(RTLogLogger)
-
 
 BEGINCODE
 
@@ -385,17 +382,4 @@ BEGINPROC vmmR0CallRing3LongJmp
     leave
     ret
 ENDPROC vmmR0CallRing3LongJmp
-
-
-;;
-; Internal R0 logger worker: Logger wrapper.
-;
-; @cproto VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...)
-;
-EXPORTEDNAME vmmR0LoggerWrapper
-    push    0                           ; assumes we're the wrapper for a default instance.
-    call    NAME(RTLogLogger)
-    add     esp, byte 4
-    ret
-ENDPROC vmmR0LoggerWrapper
 

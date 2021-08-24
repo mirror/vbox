@@ -296,6 +296,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_VMMR0_INIT_EMT,
     /** Call VMMR0 Per VM Termination. */
     VMMR0_DO_VMMR0_TERM,
+    /** Copy logger settings from userland, VMMR0UpdateLoggersReq(). */
+    VMMR0_DO_VMMR0_UPDATE_LOGGERS,
 
     /** Setup hardware-assisted VM session. */
     VMMR0_DO_HM_SETUP_VM = 128,
@@ -471,6 +473,30 @@ typedef struct GCFGMVALUEREQ
  */
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
+
+/**
+ * Request package for VMMR0_DO_VMMR0_UPDATE_LOGGERS.
+ *
+ * In addition the u64Arg selects the logger sets: @c false for debug, @c true
+ * for release.
+ */
+typedef struct VMMR0UPDATELOGGERSREQ
+{
+    /** The request header. */
+    SUPVMMR0REQHDR      Hdr;
+    /** The current logger flags (RTLOGFLAGS). */
+    uint64_t            fFlags;
+    /** Groups, assuming same group layout as ring-3. */
+    uint32_t            cGroups;
+    /** CRC32 of the group names. */
+    uint32_t            uGroupCrc32;
+    /** Per-group settings, variable size. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    uint32_t            afGroups[RT_FLEXIBLE_ARRAY];
+} VMMR0UPDATELOGGERSREQ;
+/** Pointer to a VMMR0_DO_VMMR0_UPDATE_LOGGERS request. */
+typedef VMMR0UPDATELOGGERSREQ *PVMMR0UPDATELOGGERSREQ;
+
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 
 /**
@@ -496,6 +522,7 @@ VMMR0DECL(int)       VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPER
                                   PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
 VMMR0_INT_DECL(void) VMMR0InitPerVMData(PGVM pGVM);
 VMMR0_INT_DECL(int)  VMMR0TermVM(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(void) VMMR0CleanupVM(PGVM pGVM);
 VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(int)  VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu);

@@ -54,6 +54,8 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/crc.h>
+#include <iprt/mem.h>
+#include <iprt/memobj.h>
 #include <iprt/mp.h>
 #include <iprt/once.h>
 #include <iprt/stdarg.h>
@@ -140,6 +142,9 @@ extern uint64_t __udivdi3(uint64_t, uint64_t);
 extern uint64_t __umoddi3(uint64_t, uint64_t);
 #endif
 RT_C_DECLS_END
+static int vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ pReq, bool fRelease);
+static FNRTLOGFLUSH vmmR0LogFlush;
+static FNRTLOGFLUSH vmmR0LogRelFlush;
 
 
 /*********************************************************************************************************************************
@@ -364,6 +369,12 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  */
 VMMR0_INT_DECL(void) VMMR0InitPerVMData(PGVM pGVM)
 {
+    pGVM->vmmr0.s.hMemObjLogger         = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.hMapObjLogger         = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.hMemObjReleaseLogger  = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.hMapObjReleaseLogger  = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.fCalledInitVm         = false;
+
     for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
     {
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
@@ -373,6 +384,104 @@ VMMR0_INT_DECL(void) VMMR0InitPerVMData(PGVM pGVM)
         pGVCpu->vmmr0.s.pPreemptState   = NULL;
         pGVCpu->vmmr0.s.hCtxHook        = NIL_RTTHREADCTXHOOK;
     }
+}
+
+
+/**
+ * Helper for vmmR0InitLoggers
+ */
+static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER pR0Log, PVMMR3CPULOGGER pShared,
+                              uint32_t cbBuf, char *pchBuf, RTR3PTR pchBufR3)
+{
+    pR0Log->BufDesc.u32Magic    = RTLOGBUFFERDESC_MAGIC;
+    pR0Log->BufDesc.uReserved   = 0;
+    pR0Log->BufDesc.cbBuf       = cbBuf;
+    pR0Log->BufDesc.offBuf      = 0;
+    pR0Log->BufDesc.pchBuf      = pchBuf;
+    pR0Log->BufDesc.pAux        = &pShared->AuxDesc;
+
+    pShared->AuxDesc.fFlushedIndicator   = false;
+    pShared->AuxDesc.afPadding[0]        = 0;
+    pShared->AuxDesc.afPadding[1]        = 0;
+    pShared->AuxDesc.afPadding[2]        = 0;
+    pShared->AuxDesc.offBuf              = 0;
+    pShared->pchBufR3                    = pchBufR3;
+    pShared->cbBuf                       = cbBuf;
+
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    int rc = RTLogCreateEx(&pR0Log->pLogger, fRelease ? "VBOX_RELEASE_LOG" : "VBOX_LOG", RTLOG_F_NO_LOCKING | RTLOGFLAGS_BUFFERED,
+                           "all", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
+                           fRelease ? vmmR0LogRelFlush : vmmR0LogFlush, 1 /*cBufDescs*/, &pR0Log->BufDesc,
+                           RTLOGDEST_DUMMY,
+                           NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+                           NULL /*pErrInfo*/, NULL /*pszFilenameFmt*/);
+    if (RT_SUCCESS(rc))
+    {
+        PRTLOGGER pLogger = pR0Log->pLogger;
+        pLogger->u32UserValue1 = VMMR0_LOGGER_FLAGS_MAGIC_VALUE;
+        pLogger->u64UserValue2 = (uintptr_t)pGVCpu;
+        pLogger->u64UserValue3 = (uintptr_t)pGVCpu;
+
+        RTLogSetR0ThreadNameF(pLogger, "EMT-%u-R0", pGVCpu->idCpu);
+    }
+    else
+        pR0Log->pLogger = NULL;
+    return rc;
+}
+
+
+/**
+ * Initializes one type of loggers for each EMT.
+ */
+static int vmmR0InitLoggers(PGVM pGVM, bool fRelease, uint32_t cbBuf, PRTR0MEMOBJ phMemObj, PRTR0MEMOBJ phMapObj)
+{
+    /* Allocate buffers first. */
+    int rc = RTR0MemObjAllocPage(phMemObj, cbBuf * pGVM->cCpus, false /*fExecutable*/);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTR0MemObjMapUser(phMapObj, *phMemObj, (RTR3PTR)-1, 0 /*uAlignment*/, RTMEM_PROT_READ, NIL_RTR0PROCESS);
+        if (RT_SUCCESS(rc))
+        {
+            char  * const pchBuf   = (char *)RTR0MemObjAddress(*phMemObj);
+            AssertPtrReturn(pchBuf, VERR_INTERNAL_ERROR_2);
+
+            RTR3PTR const pchBufR3 = RTR0MemObjAddressR3(*phMapObj);
+            AssertReturn(pchBufR3 != NIL_RTR3PTR, VERR_INTERNAL_ERROR_3);
+
+            /* Initialize the per-CPU loggers. */
+            for (uint32_t i = 0; i < pGVM->cCpus; i++)
+            {
+                PGVMCPU             pGVCpu  = &pGVM->aCpus[i];
+                PVMMR0PERVCPULOGGER pR0Log  = fRelease ? &pGVCpu->vmmr0.s.RelLogger : &pGVCpu->vmmr0.s.Logger;
+                PVMMR3CPULOGGER     pShared = fRelease ? &pGVCpu->vmm.s.RelLogger   : &pGVCpu->vmm.s.Logger;
+                rc = vmmR0InitLoggerOne(pGVCpu, fRelease, pR0Log, pShared, cbBuf, pchBuf + i * cbBuf, pchBufR3 + i * cbBuf);
+                if (RT_FAILURE(rc))
+                {
+                    pR0Log->pLogger   = NULL;
+                    pShared->pchBufR3 = NIL_RTR3PTR;
+                    while (i-- > 0)
+                    {
+                        pGVCpu  = &pGVM->aCpus[i];
+                        pR0Log  = fRelease ? &pGVCpu->vmmr0.s.RelLogger : &pGVCpu->vmmr0.s.Logger;
+                        pShared = fRelease ? &pGVCpu->vmm.s.RelLogger   : &pGVCpu->vmm.s.Logger;
+                        RTLogDestroy(pR0Log->pLogger);
+                        pR0Log->pLogger   = NULL;
+                        pShared->pchBufR3 = NIL_RTR3PTR;
+                    }
+                    break;
+                }
+            }
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+
+            /* Bail out. */
+            RTR0MemObjFree(*phMapObj, false /*fFreeMappings*/);
+            *phMapObj = NIL_RTR0MEMOBJ;
+        }
+        RTR0MemObjFree(*phMemObj, true /*fFreeMappings*/);
+        *phMemObj = NIL_RTR0MEMOBJ;
+    }
+    return rc;
 }
 
 
@@ -411,14 +520,32 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
     if (RT_FAILURE(rc))
         return rc;
 
+    /* Don't allow this to be called more than once. */
+    if (!pGVM->vmmr0.s.fCalledInitVm)
+        pGVM->vmmr0.s.fCalledInitVm = true;
+    else
+        return VERR_ALREADY_INITIALIZED;
+
+    /*
+     * Create the ring-0 release loggers.
+     */
+    rc = vmmR0InitLoggers(pGVM, true /*fRelease*/, _8K, &pGVM->vmmr0.s.hMemObjReleaseLogger, &pGVM->vmmr0.s.hMapObjReleaseLogger);
+    if (RT_FAILURE(rc))
+        return rc;
+
 #ifdef LOG_ENABLED
+    /*
+     * Create debug loggers.
+     */
+    rc = vmmR0InitLoggers(pGVM, false /*fRelease*/, _64K, &pGVM->vmmr0.s.hMemObjLogger, &pGVM->vmmr0.s.hMapObjLogger);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /*
      * Register the EMT R0 logger instance for VCPU 0.
      */
     PVMCPUCC pVCpu = VMCC_GET_CPU_0(pGVM);
-
-    PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
-    if (pR0Logger)
+    if (pVCpu->vmmr0.s.Logger.pLogger)
     {
 # if 0 /* testing of the logger. */
         LogCom(("vmmR0InitVM: before %p\n", RTLogDefaultInstance()));
@@ -450,9 +577,11 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
         RTLogPrintf("hello ring-0 logger (RTLogPrintf)\n");
         LogCom(("vmmR0InitVM: RTLogPrintf returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
 # endif
-        Log(("Switching to per-thread logging instance %p (key=%p)\n", &pR0Logger->Logger, pGVM->pSession));
-        RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pGVM->pSession);
-        pR0Logger->fRegistered = true;
+# ifdef VBOX_WITH_R0_LOGGING
+        Log(("Switching to per-thread logging instance %p (key=%p)\n", pVCpu->vmmr0.s.Logger.pLogger, pGVM->pSession));
+        RTLogSetDefaultInstanceThread(pVCpu->vmmr0.s.Logger.pLogger, (uintptr_t)pGVM->pSession);
+        pVCpu->vmmr0.s.Logger.fRegistered = true;
+# endif
     }
 #endif /* LOG_ENABLED */
 
@@ -547,17 +676,16 @@ static int vmmR0InitVMEmt(PGVM pGVM, VMCPUID idCpu)
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_INVALID_CPU_ID);
 
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && defined(VBOX_WITH_R0_LOGGING)
     /*
      * Registration of ring 0 loggers.
      */
-    PVMCPUCC       pVCpu     = &pGVM->aCpus[idCpu];
-    PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
-    if (   pR0Logger
-        && !pR0Logger->fRegistered)
+    PVMCPUCC pVCpu = &pGVM->aCpus[idCpu];
+    if (   pVCpu->vmmr0.s.Logger.pLogger
+        && !pVCpu->vmmr0.s.Logger.fRegistered)
     {
-        RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pGVM->pSession);
-        pR0Logger->fRegistered = true;
+        RTLogSetDefaultInstanceThread(pVCpu->vmmr0.s.Logger.pLogger, (uintptr_t)pGVM->pSession);
+        pVCpu->vmmr0.s.Logger.fRegistered = true;
     }
 #endif
 
@@ -613,10 +741,54 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, VMCPUID idCpu)
     }
 
     /*
-     * Deregister the logger.
+     * Deregister the logger for this EMT.
      */
     RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pGVM->pSession);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * This is called at the end of gvmmR0CleanupVM().
+ *
+ * @param   pGVM        The global (ring-0) VM structure.
+ */
+VMMR0_INT_DECL(void) VMMR0CleanupVM(PGVM pGVM)
+{
+    AssertCompile(NIL_RTTHREADCTXHOOK == (RTTHREADCTXHOOK)0); /* Depends on zero initialized memory working for NIL at the moment. */
+    for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
+    {
+        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+
+        /** @todo Can we busy wait here for all thread-context hooks to be
+         *        deregistered before releasing (destroying) it? Only until we find a
+         *        solution for not deregistering hooks everytime we're leaving HMR0
+         *        context. */
+        VMMR0ThreadCtxHookDestroyForEmt(pGVCpu);
+
+        /* Destroy the release logger. */
+        RTLogDestroy(pGVCpu->vmmr0.s.RelLogger.pLogger);
+        pGVCpu->vmmr0.s.RelLogger.pLogger = NULL;
+        pGVCpu->vmm.s.RelLogger.pchBufR3  = NIL_RTR3PTR;
+
+        /* Destroy the regular logger. */
+        RTLogDestroy(pGVCpu->vmmr0.s.Logger.pLogger);
+        pGVCpu->vmmr0.s.Logger.pLogger = NULL;
+        pGVCpu->vmm.s.Logger.pchBufR3  = NIL_RTR3PTR;
+    }
+
+    /*
+     * Free logger buffer memory.
+     */
+    RTR0MemObjFree(pGVM->vmmr0.s.hMapObjReleaseLogger, false /*fFreeMappings*/);
+    pGVM->vmmr0.s.hMapObjReleaseLogger = NIL_RTR0MEMOBJ;
+    RTR0MemObjFree(pGVM->vmmr0.s.hMemObjReleaseLogger, true /*fFreeMappings*/);
+    pGVM->vmmr0.s.hMemObjReleaseLogger = NIL_RTR0MEMOBJ;
+
+    RTR0MemObjFree(pGVM->vmmr0.s.hMapObjLogger, false /*fFreeMappings*/);
+    pGVM->vmmr0.s.hMapObjLogger = NIL_RTR0MEMOBJ;
+    RTR0MemObjFree(pGVM->vmmr0.s.hMemObjLogger, true /*fFreeMappings*/);
+    pGVM->vmmr0.s.hMemObjLogger = NIL_RTR0MEMOBJ;
 }
 
 
@@ -1170,10 +1342,7 @@ VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu)
  */
 VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu)
 {
-    PVMMR0LOGGER pLogger = pVCpu->vmm.s.pR0RelLoggerR0;
-    if (pLogger)
-        return &pLogger->Logger;
-    return NULL;
+    return pVCpu->vmmr0.s.RelLogger.pLogger;
 }
 
 
@@ -1875,6 +2044,19 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
          */
         case VMMR0_DO_VMMR0_TERM:
             rc = VMMR0TermVM(pGVM, 0 /*idCpu*/);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+
+        /*
+         * Update release or debug logger instances.
+         */
+        case VMMR0_DO_VMMR0_UPDATE_LOGGERS:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
+            if (u64Arg <= 1 && pReqHdr != NULL)
+                rc = vmmR0UpdateLoggers(pGVM, idCpu /*idCpu*/, (PVMMR0UPDATELOGGERSREQ)pReqHdr, u64Arg != 0);
+            else
+                return VERR_INVALID_PARAMETER;
             VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
             break;
 
@@ -2687,69 +2869,141 @@ VMMR0_INT_DECL(void) VMMR0EmtResumeAfterBlocking(PVMCPUCC pVCpu, PVMMR0EMTBLOCKC
 
 
 /**
- * Internal R0 logger worker: Flush logger.
+ * Updates the EMT loggers for the VM.
  *
- * @param   pLogger     The logger instance to flush.
- * @remark  This function must be exported!
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   idCpu           The ID of the calling EMT.
+ * @param   pReq            The request data.
+ * @param   fRelease        Which logger set to update.
+ * @thread  EMT(idCpu)
  */
-VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
+static int vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ pReq, bool fRelease)
 {
-#ifdef LOG_ENABLED
     /*
-     * Convert the pLogger into a VM handle and 'call' back to Ring-3.
+     * Check sanity.  First we require EMT to be calling us.
+     */
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_INVALID_CPU_ID);
+
+    AssertReturn(pReq->Hdr.cbReq >= RT_UOFFSETOF_DYN(VMMR0UPDATELOGGERSREQ, afGroups[0]), VERR_INVALID_PARAMETER);
+    AssertReturn(pReq->cGroups < _8K, VERR_INVALID_PARAMETER);
+    AssertReturn(pReq->Hdr.cbReq == RT_UOFFSETOF_DYN(VMMR0UPDATELOGGERSREQ, afGroups[pReq->cGroups]), VERR_INVALID_PARAMETER);
+
+    /*
+     * Adjust flags.
+     */
+    /* Always buffered: */
+    pReq->fFlags |= RTLOGFLAGS_BUFFERED;
+    /* These doesn't make sense at present: */
+    pReq->fFlags &= ~(RTLOGFLAGS_FLUSH | RTLOGFLAGS_WRITE_THROUGH);
+    /* We've traditionally skipped the group restrictions. */
+    pReq->fFlags &= ~RTLOGFLAGS_RESTRICT_GROUPS;
+
+    /*
+     * Do the updating.
+     */
+    int rc = VINF_SUCCESS;
+    for (idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
+    {
+        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+        PRTLOGGER pLogger = fRelease ? pGVCpu->vmmr0.s.RelLogger.pLogger : pGVCpu->vmmr0.s.Logger.pLogger;
+        if (pLogger)
+            rc = RTLogBulkUpdate(pLogger, pReq->fFlags, pReq->uGroupCrc32, pReq->cGroups, pReq->afGroups);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Common worker for vmmR0LogFlush and vmmR0LogRelFlush.
+ */
+static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc, bool fRelease)
+{
+    RT_NOREF(pBufDesc, fRelease);
+
+    /*
+     * Convert the pLogger into a GVMCPU handle and 'call' back to Ring-3.
      * (This is a bit paranoid code.)
      */
-    PVMMR0LOGGER pR0Logger = (PVMMR0LOGGER)((uintptr_t)pLogger - RT_UOFFSETOF(VMMR0LOGGER, Logger));
-    if (    !RT_VALID_PTR(pR0Logger)
-        ||  !RT_VALID_PTR(pR0Logger + 1)
-        ||  pLogger->u32Magic != RTLOGGER_MAGIC)
+    if (RT_VALID_PTR(pLogger))
     {
-# ifdef DEBUG
-        SUPR0Printf("vmmR0LoggerFlush: pLogger=%p!\n", pLogger);
-# endif
-        return;
-    }
-    if (pR0Logger->fFlushingDisabled)
-        return; /* quietly */
-
-    PVMCC pVM = pR0Logger->pVM;
-    if (   !RT_VALID_PTR(pVM)
-        || pVM->pSelf != pVM)
-    {
-# ifdef DEBUG
-        SUPR0Printf("vmmR0LoggerFlush: pVM=%p! pSelf=%p! pLogger=%p\n", pVM, pVM->pSelf, pLogger);
-# endif
-        return;
-    }
-
-    PVMCPUCC pVCpu = VMMGetCpu(pVM);
-    if (pVCpu)
-    {
-        /*
-         * Check that the jump buffer is armed.
-         */
-# ifdef RT_ARCH_X86
-        if (    !pVCpu->vmm.s.CallRing3JmpBufR0.eip
-            ||  pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
-# else
-        if (    !pVCpu->vmm.s.CallRing3JmpBufR0.rip
-            ||  pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
-# endif
+        if (   pLogger->u32Magic == RTLOGGER_MAGIC
+            && (pLogger->u32UserValue1 & VMMR0_LOGGER_FLAGS_MAGIC_MASK) == VMMR0_LOGGER_FLAGS_MAGIC_VALUE
+            && pLogger->u64UserValue2 == pLogger->u64UserValue3)
         {
-# ifdef DEBUG
-            SUPR0Printf("vmmR0LoggerFlush: Jump buffer isn't armed!\n");
-# endif
-            return;
-        }
-        VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VMM_LOGGER_FLUSH, 0);
-    }
-# ifdef DEBUG
-    else
-        SUPR0Printf("vmmR0LoggerFlush: invalid VCPU context!\n");
-# endif
+            if (!(pLogger->u32UserValue1 & VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED))
+            {
+                PGVMCPU const pGVCpu = (PGVMCPU)(uintptr_t)pLogger->u64UserValue2;
+                if (   RT_VALID_PTR(pGVCpu)
+                    && ((uintptr_t)pGVCpu & PAGE_OFFSET_MASK) == 0)
+                {
+                    RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
+                    if (   hNativeSelf == pGVCpu->hEMT
+                        && RT_VALID_PTR(pGVCpu->pGVM))
+                    {
+                        /*
+                         * Check that the jump buffer is armed.
+                         */
+#ifdef RT_ARCH_X86
+                        if (   pGVCpu->vmm.s.CallRing3JmpBufR0.eip != 0
+                            && !pGVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
 #else
-    NOREF(pLogger);
-#endif  /* LOG_ENABLED */
+                        if (   pGVCpu->vmm.s.CallRing3JmpBufR0.rip != 0
+                            && !pGVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
+#endif
+                        {
+                            VMMRZCallRing3(pGVCpu->pGVM, pGVCpu, VMMCALLRING3_VMM_LOGGER_FLUSH, fRelease);
+                        }
+#ifdef DEBUG
+                        else SUPR0Printf("vmmR0LoggerFlush: Jump buffer isn't armed!\n");
+#endif
+                    }
+#ifdef DEBUG
+                    else SUPR0Printf("vmmR0LoggerFlush: pLogger=%p pGVCpu=%p hEMT=%p hNativeSelf=%p!\n",
+                                     pLogger, pGVCpu, pGVCpu->hEMT, hNativeSelf);
+#endif
+
+                }
+#ifdef DEBUG
+                else SUPR0Printf("vmmR0LoggerFlush: pLogger=%p pGVCpu=%p!\n", pLogger, pGVCpu);
+#endif
+            }
+            /* else: quiet */
+        }
+#ifdef DEBUG
+        else SUPR0Printf("vmmR0LoggerFlush: pLogger=%p u32Magic=%#x u32UserValue1=%#x u64UserValue2=%#RX64 u64UserValue3=%#RX64!\n",
+                        pLogger, pLogger->u32Magic, pLogger->u32UserValue1, pLogger->u64UserValue2, pLogger->u64UserValue3);
+#endif
+    }
+#ifdef DEBUG
+    else SUPR0Printf("vmmR0LoggerFlush: pLogger=%p!\n", pLogger);
+#endif
+    return true;
+}
+
+
+/**
+ * @callback_method_impl{FNRTLOGFLUSH, Release logger buffer flush callback.}
+ */
+static DECLCALLBACK(bool) vmmR0LogRelFlush(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc)
+{
+    return vmmR0LoggerFlushCommon(pLogger, pBufDesc, true /*fRelease*/);
+}
+
+
+/**
+ * @callback_method_impl{FNRTLOGFLUSH, Logger (debug) buffer flush callback.}
+ */
+static DECLCALLBACK(bool) vmmR0LogFlush(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc)
+{
+#ifdef LOG_ENABLED
+    return vmmR0LoggerFlushCommon(pLogger, pBufDesc, false /*fRelease*/);
+#else
+    RT_NOREF(pLogger, pBufDesc);
+    return true;
+#endif
 }
 
 #ifdef LOG_ENABLED
@@ -2761,10 +3015,11 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
  */
 VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPUCC pVCpu)
 {
-    if (pVCpu->vmm.s.pR0LoggerR0)
-        pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
-    if (pVCpu->vmm.s.pR0RelLoggerR0)
-        pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled = true;
+    pVCpu->vmmr0.s.fLogFlushingDisabled = true;
+    if (pVCpu->vmmr0.s.Logger.pLogger)
+        pVCpu->vmmr0.s.Logger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
+    if (pVCpu->vmmr0.s.RelLogger.pLogger)
+        pVCpu->vmmr0.s.RelLogger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
 }
 
 
@@ -2775,10 +3030,11 @@ VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPUCC pVCpu)
  */
 VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPUCC pVCpu)
 {
-    if (pVCpu->vmm.s.pR0LoggerR0)
-        pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
-    if (pVCpu->vmm.s.pR0RelLoggerR0)
-        pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled = false;
+    pVCpu->vmmr0.s.fLogFlushingDisabled = false;
+    if (pVCpu->vmmr0.s.Logger.pLogger)
+        pVCpu->vmmr0.s.Logger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
+    if (pVCpu->vmmr0.s.RelLogger.pLogger)
+        pVCpu->vmmr0.s.RelLogger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
 }
 
 
@@ -2789,14 +3045,36 @@ VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPUCC pVCpu)
  */
 VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPUCC pVCpu)
 {
-    if (pVCpu->vmm.s.pR0LoggerR0)
-        return pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled;
-    if (pVCpu->vmm.s.pR0RelLoggerR0)
-        return pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled;
-    return true;
+    return pVCpu->vmmr0.s.fLogFlushingDisabled;
 }
 
 #endif /* LOG_ENABLED */
+
+/*
+ * Override RTLogGetDefaultInstanceEx so we can do logging from EMTs in ring-0.
+ */
+DECLEXPORT(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
+{
+#ifdef LOG_ENABLED
+    PGVMCPU pGVCpu = GVMMR0GetGVCpuByEMT(NIL_RTNATIVETHREAD);
+    if (pGVCpu)
+    {
+        PRTLOGGER pLogger = pGVCpu->vmmr0.s.Logger.pLogger;
+        if (RT_VALID_PTR(pLogger))
+        {
+            if (   pLogger->u64UserValue2 == (uintptr_t)pGVCpu
+                && pLogger->u64UserValue3 == (uintptr_t)pGVCpu)
+            {
+                if (!(pGVCpu->vmmr0.s.fLogFlushingDisabled))
+                    return RTLogCheckGroupFlags(pLogger, fFlagsAndGroup);
+                return NULL;
+            }
+        }
+    }
+#endif
+    return SUPR0GetDefaultLogInstanceEx(fFlagsAndGroup);
+}
+
 
 /*
  * Override RTLogRelGetDefaultInstanceEx so we can do LogRel to VBox.log from EMTs in ring-0.
@@ -2806,26 +3084,15 @@ DECLEXPORT(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
     PGVMCPU pGVCpu = GVMMR0GetGVCpuByEMT(NIL_RTNATIVETHREAD);
     if (pGVCpu)
     {
-        PVMCPUCC pVCpu = pGVCpu;
-        if (RT_VALID_PTR(pVCpu))
+        PRTLOGGER pLogger = pGVCpu->vmmr0.s.RelLogger.pLogger;
+        if (RT_VALID_PTR(pLogger))
         {
-            PVMMR0LOGGER pVmmLogger = pVCpu->vmm.s.pR0RelLoggerR0;
-            if (RT_VALID_PTR(pVmmLogger))
+            if (   pLogger->u64UserValue2 == (uintptr_t)pGVCpu
+                && pLogger->u64UserValue3 == (uintptr_t)pGVCpu)
             {
-                if (   pVmmLogger->fCreated
-                    && pVmmLogger->pVM == pGVCpu->pGVM)
-                {
-                    if (pVmmLogger->Logger.fFlags & RTLOGFLAGS_DISABLED)
-                        return NULL;
-                    uint16_t const fFlags = RT_LO_U16(fFlagsAndGroup);
-                    uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
-                    if (   iGroup != UINT16_MAX
-                        && (   (  pVmmLogger->Logger.afGroups[iGroup < pVmmLogger->Logger.cGroups ? iGroup : 0]
-                                & (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED))
-                            != (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED)))
-                        return NULL;
-                    return &pVmmLogger->Logger;
-                }
+                if (!(pGVCpu->vmmr0.s.fLogFlushingDisabled))
+                    return RTLogCheckGroupFlags(pLogger, fFlagsAndGroup);
+                return NULL;
             }
         }
     }

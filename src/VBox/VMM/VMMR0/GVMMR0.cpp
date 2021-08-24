@@ -1324,16 +1324,7 @@ static void gvmmR0CleanupVM(PGVM pGVM)
     DBGFR0CleanupVM(pGVM);
     PGMR0CleanupVM(pGVM);
     TMR0CleanupVM(pGVM);
-
-    AssertCompile(NIL_RTTHREADCTXHOOK == (RTTHREADCTXHOOK)0); /* Depends on zero initialized memory working for NIL at the moment. */
-    for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
-    {
-        /** @todo Can we busy wait here for all thread-context hooks to be
-         *        deregistered before releasing (destroying) it? Only until we find a
-         *        solution for not deregistering hooks everytime we're leaving HMR0
-         *        context. */
-        VMMR0ThreadCtxHookDestroyForEmt(&pGVM->aCpus[idCpu]);
-    }
+    VMMR0CleanupVM(pGVM);
 }
 
 

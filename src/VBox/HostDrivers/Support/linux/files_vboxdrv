@@ -146,6 +146,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformatrt.cpp=>common/string/strformatrt.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformattype.cpp=>common/string/strformattype.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strprintf.cpp=>common/string/strprintf.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/strprintf2.cpp=>common/string/strprintf2.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strtonum.cpp=>common/string/strtonum.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/table/avlpv.cpp=>common/table/avlpv.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/table/avl_Base.cpp.h=>common/table/avl_Base.cpp.h \

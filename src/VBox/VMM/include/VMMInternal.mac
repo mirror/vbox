@@ -115,11 +115,6 @@ struc VMMCPU
         alignb 8
         .pbEMTStackR3           RTR3PTR_RES 1
 
-        .pR0LoggerR3            RTR3PTR_RES 1
-        .pR0LoggerR0            RTR0PTR_RES 1
-        .pR0RelLoggerR3         RTR3PTR_RES 1
-        .pR0RelLoggerR0         RTR0PTR_RES 1
-
         .fInRendezvous          resb 1
         .afPadding1             resb 2
         .fMayHaltInRing0        resb 1

@@ -136,6 +136,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformatrt.cpp=>common/string/strformatrt.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformattype.cpp=>common/string/strformattype.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strprintf.cpp=>common/string/strprintf.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/strprintf2.cpp=>common/string/strprintf2.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strtonum.cpp=>common/string/strtonum.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/memchr.cpp=>common/string/memchr.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/utf-8.cpp=>common/string/utf-8.c \

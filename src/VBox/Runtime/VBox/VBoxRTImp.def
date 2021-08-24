@@ -1256,14 +1256,12 @@ EXPORTS
     RTLockValidatorWriteLockDec
     RTLockValidatorWriteLockGetCount
     RTLockValidatorWriteLockInc
-    RTLogCloneRC
     RTLogComPrintf
     RTLogComPrintfV
-    RTLogCopyGroupsAndFlagsForR0
+    ;RTLogCopyGroupsAndFlagsForR0
     RTLogCreate
     RTLogCreateEx
     RTLogCreateExV
-    RTLogCreateForR0
     RTLogDefaultInit
     RTLogDefaultInstance
     RTLogDefaultInstanceEx
@@ -1271,8 +1269,7 @@ EXPORTS
     RTLogDestroy
     RTLogFlags
     RTLogFlush
-    RTLogFlushRC
-    RTLogFlushToLogger
+    ;RTLogFlushToLogger
     RTLogFormatV
     RTLogGetDefaultInstance
     RTLogGetDefaultInstanceEx

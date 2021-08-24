@@ -127,6 +127,8 @@
 #define VERR_NO_PAGE_MEMORY                 (-27)
 /** Already initialized. */
 #define VINF_ALREADY_INITIALIZED            28
+/** Already initialized. */
+#define VERR_ALREADY_INITIALIZED            (-28)
 /** The specified thread is dead. */
 #define VERR_THREAD_IS_DEAD                 (-29)
 /** The specified thread is not waitable. */

@@ -66,34 +66,41 @@
 
 
 /**
- * The ring-0 logger instance wrapper.
- *
- * We need to be able to find the VM handle from the logger instance, so we wrap
- * it in this structure.
+ * R0 logger data (ring-0 only data).
  */
-typedef struct VMMR0LOGGER
+typedef struct VMMR0PERVCPULOGGER
 {
-    /** Pointer to Pointer to the VM. */
-    R0PTRTYPE(PVMCC)            pVM;
-    /** Size of the allocated logger instance (Logger). */
-    uint32_t                    cbLogger;
-    /** Flag indicating whether we've create the logger Ring-0 instance yet. */
-    bool                        fCreated;
-    /** Flag indicating whether we've disabled flushing (world switch) or not. */
-    bool                        fFlushingDisabled;
+    /** Pointer to the logger instance.
+     * The RTLOGGER::u32UserValue1 member is used for flags and magic, while the
+     * RTLOGGER::u64UserValue2 member is the corresponding PGVMCPU value.
+     * RTLOGGER::u64UserValue3 is currently and set to the PGVMCPU value too. */
+    R0PTRTYPE(PRTLOGGER)    pLogger;
+    /** Log buffer descriptor.
+     * The buffer is allocated in a common block for all VCpus, see VMMR0PERVM.  */
+    RTLOGBUFFERDESC         BufDesc;
     /** Flag indicating whether we've registered the instance already. */
-    bool                        fRegistered;
-    bool                        a8Alignment;
-    /** The CPU ID. */
-    VMCPUID                     idCpu;
-#if HC_ARCH_BITS == 64
-    uint32_t                    u32Alignment;
-#endif
-    /** The ring-0 logger instance. This extends beyond the size.  */
-    RTLOGGER                    Logger;
-} VMMR0LOGGER;
-/** Pointer to a ring-0 logger instance wrapper. */
-typedef VMMR0LOGGER *PVMMR0LOGGER;
+    bool                    fRegistered;
+    bool                    afPadding[7];
+} VMMR0PERVCPULOGGER;
+/** Pointer to the R0 logger data (ring-0 only). */
+typedef VMMR0PERVCPULOGGER *PVMMR0PERVCPULOGGER;
+
+
+/**
+ * R0 logger data shared with ring-3 (per CPU).
+ */
+typedef struct VMMR3CPULOGGER
+{
+    /** Auxiliary buffer descriptor. */
+    RTLOGBUFFERAUXDESC      AuxDesc;
+    /** Ring-3 mapping of the logging buffer. */
+    R3PTRTYPE(char *)       pchBufR3;
+    /** The buffer size. */
+    uint32_t                cbBuf;
+    uint32_t                uReserved;
+} VMMR3CPULOGGER;
+/** Pointer to r0 logger data shared with ring-3. */
+typedef VMMR3CPULOGGER *PVMMR3CPULOGGER;
 
 
 /**
@@ -366,20 +373,6 @@ typedef struct VMMCPU
      * and always writable in RC. */
     R3PTRTYPE(uint8_t *)        pbEMTStackR3;
 
-    /** Pointer to the R0 logger instance - R3 Ptr.
-     * This is NULL if logging is disabled. */
-    R3PTRTYPE(PVMMR0LOGGER)     pR0LoggerR3;
-    /** Pointer to the R0 logger instance - R0 Ptr.
-     * This is NULL if logging is disabled. */
-    R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
-
-    /** Pointer to the R0 release logger instance - R3 Ptr.
-     * This is NULL if logging is disabled. */
-    R3PTRTYPE(PVMMR0LOGGER)     pR0RelLoggerR3;
-    /** Pointer to the R0 release instance - R0 Ptr.
-     * This is NULL if logging is disabled. */
-    R0PTRTYPE(PVMMR0LOGGER)     pR0RelLoggerR0;
-
     /** @name Rendezvous
      * @{ */
     /** Whether the EMT is executing a rendezvous right now. For detecting
@@ -435,6 +428,14 @@ typedef struct VMMCPU
     VMMR0JMPBUF                 CallRing3JmpBufR0;
     /** @} */
 
+    /** @name Logging
+     * @{ */
+    /** The R0 logger data shared with ring-3. */
+    VMMR3CPULOGGER              Logger;
+    /** The R0 release logger data shared with ring-3. */
+    VMMR3CPULOGGER              RelLogger;
+    /** @}  */
+
     STAMPROFILE                 StatR0HaltBlock;
     STAMPROFILE                 StatR0HaltBlockOnTime;
     STAMPROFILE                 StatR0HaltBlockOverslept;
@@ -461,8 +462,8 @@ typedef struct VMMR0PERVCPU
 {
     /** Set if we've entered HM context. */
     bool volatile                       fInHmContext;
-
-    bool                                afPadding[5];
+    /** Flag indicating whether we've disabled flushing (world switch) or not. */
+    bool                                fLogFlushingDisabled;
     /** The EMT hash table index. */
     uint16_t                            idxEmtHash;
     /** Pointer to the VMMR0EntryFast preemption state structure.
@@ -482,10 +483,49 @@ typedef struct VMMR0PERVCPU
     uint64_t                            u64Arg;
     PSUPDRVSESSION                      pSession;
     /** @} */
+
+    /** @name Loggers
+     * @{ */
+    /** The R0 logger data. */
+    VMMR0PERVCPULOGGER                  Logger;
+    /** The R0 release logger data. */
+    VMMR0PERVCPULOGGER                  RelLogger;
+    /** @} */
 } VMMR0PERVCPU;
 /** Pointer to VMM ring-0 VMCPU instance data. */
 typedef VMMR0PERVCPU *PVMMR0PERVCPU;
 
+/** @name RTLOGGER::u32UserValue1 Flags
+ * @{ */
+/** The magic value. */
+#define VMMR0_LOGGER_FLAGS_MAGIC_VALUE          UINT32_C(0x7d297f05)
+/** Part of the flags value used for the magic. */
+#define VMMR0_LOGGER_FLAGS_MAGIC_MASK           UINT32_C(0xffffff0f)
+/** Set if flushing is disabled (copy of fLogFlushingDisabled). */
+#define VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED    UINT32_C(0x00000010)
+/** @} */
+
+
+/**
+ * VMM data kept in the ring-0 GVM.
+ */
+typedef struct VMMR0PERVM
+{
+    /** Logger (debug) buffer allocation.
+     * This covers all CPUs.  */
+    RTR0MEMOBJ          hMemObjLogger;
+    /** The ring-3 mapping object for hMemObjLogger. */
+    RTR0MEMOBJ          hMapObjLogger;
+
+    /** Release logger buffer allocation.
+     * This covers all CPUs.  */
+    RTR0MEMOBJ          hMemObjReleaseLogger;
+    /** The ring-3 mapping object for hMemObjReleaseLogger. */
+    RTR0MEMOBJ          hMapObjReleaseLogger;
+
+    /** Set if vmmR0InitVM has been called. */
+    bool                fCalledInitVm;
+} VMMR0PERVM;
 
 RT_C_DECLS_BEGIN
 
@@ -591,31 +631,6 @@ DECLASM(int)    vmmR0CallRing3SetJmpEx(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMPEX pf
  * @param   rc          The return code.
  */
 DECLASM(int)    vmmR0CallRing3LongJmp(PVMMR0JMPBUF pJmpBuf, int rc);
-
-/**
- * Internal R0 logger worker: Logger wrapper.
- */
-VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...);
-
-/**
- * Internal R0 logger worker: Flush logger.
- *
- * @param   pLogger     The logger instance to flush.
- * @remark  This function must be exported!
- */
-VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger);
-
-/**
- * Internal R0 logger worker: Custom prefix.
- *
- * @returns Number of chars written.
- *
- * @param   pLogger     The logger instance.
- * @param   pchBuf      The output buffer.
- * @param   cchBuf      The size of the buffer.
- * @param   pvUser      User argument (ignored).
- */
-VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
 
 # ifdef VBOX_WITH_TRIPLE_FAULT_HACK
 int  vmmR0TripleFaultHackInit(void);

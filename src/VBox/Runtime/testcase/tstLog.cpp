@@ -68,7 +68,7 @@ int main()
     if (rcExit == RTEXITCODE_SUCCESS)
     {
 #if 0   /* Old tests: */
-        printf("tstLog: Requires manual inspection of the log output!\n");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Requires manual inspection of the log output!\n");
         RTLogPrintf("%%Rrc %d: %Rrc\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);
         RTLogPrintf("%%Rrs %d: %Rrs\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);
         RTLogPrintf("%%Rrf %d: %Rrf\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);

@@ -53,6 +53,8 @@
 #undef LOG_GROUP
 #include "common/string/strprintf.c"
 #undef LOG_GROUP
+#include "common/string/strprintf2.c"
+#undef LOG_GROUP
 #include "common/string/strtonum.c"
 #undef LOG_GROUP
 #include "common/table/avlpv.c"

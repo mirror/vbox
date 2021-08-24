@@ -217,27 +217,25 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
 
     if (pHlp->pRelLogger)
     {
-        pHlp->fRelLoggerFlags = pHlp->pRelLogger->fFlags;
-        pHlp->pRelLogger->fFlags &= ~RTLOGFLAGS_DISABLED;
-        pHlp->pRelLogger->fFlags |= RTLOGFLAGS_BUFFERED;
+        pHlp->fRelLoggerFlags = RTLogGetFlags(pHlp->pRelLogger);
+        RTLogChangeFlags(pHlp->pRelLogger, RTLOGFLAGS_BUFFERED, RTLOGFLAGS_DISABLED);
     }
 
     if (pHlp->pLogger)
     {
-        pHlp->fLoggerFlags     = pHlp->pLogger->fFlags;
-        pHlp->fLoggerDestFlags = pHlp->pLogger->fDestFlags;
-        pHlp->pLogger->fFlags     &= ~RTLOGFLAGS_DISABLED;
-        pHlp->pLogger->fFlags     |= RTLOGFLAGS_BUFFERED;
+        pHlp->fLoggerFlags     = RTLogGetFlags(pHlp->pLogger);
+        pHlp->fLoggerDestFlags = RTLogGetDestinations(pHlp->pLogger);
+        RTLogChangeFlags(pHlp->pLogger, RTLOGFLAGS_BUFFERED, RTLOGFLAGS_DISABLED);
 #ifndef DEBUG_sandervl
-        pHlp->pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+        RTLogChangeDestinations(pHlp->pLogger, RTLOGDEST_DEBUGGER, 0);
 #endif
     }
 
     /*
      * Check if we need write to stderr.
      */
-    pHlp->fStdErr = (!pHlp->pRelLogger || !(pHlp->pRelLogger->fDestFlags & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)))
-                 && (!pHlp->pLogger    || !(pHlp->pLogger->fDestFlags    & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)));
+    pHlp->fStdErr = (!pHlp->pRelLogger || !(RTLogGetDestinations(pHlp->pRelLogger) & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)))
+                 && (!pHlp->pLogger    || !(RTLogGetDestinations(pHlp->pLogger)    & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)));
 #ifdef DEBUG_sandervl
     pHlp->fStdErr = false; /* takes too long to display here */
 #endif
@@ -262,14 +260,18 @@ static void vmmR3FatalDumpInfoHlpDelete(PVMMR3FATALDUMPINFOHLP pHlp)
     if (pHlp->pRelLogger)
     {
         RTLogFlush(pHlp->pRelLogger);
-        pHlp->pRelLogger->fFlags = pHlp->fRelLoggerFlags;
+        RTLogChangeFlags(pHlp->pRelLogger,
+                         pHlp->fRelLoggerFlags & RTLOGFLAGS_DISABLED,
+                         pHlp->fRelLoggerFlags & RTLOGFLAGS_BUFFERED);
     }
 
     if (pHlp->pLogger)
     {
         RTLogFlush(pHlp->pLogger);
-        pHlp->pLogger->fFlags     = pHlp->fLoggerFlags;
-        pHlp->pLogger->fDestFlags = pHlp->fLoggerDestFlags;
+        RTLogChangeFlags(pHlp->pLogger,
+                         pHlp->fLoggerFlags & RTLOGFLAGS_DISABLED,
+                         pHlp->fLoggerFlags & RTLOGFLAGS_BUFFERED);
+        RTLogChangeDestinations(pHlp->pLogger, 0, pHlp->fLoggerDestFlags & RTLOGDEST_DEBUGGER);
     }
 
     if (pHlp->fStdErr)

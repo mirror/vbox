@@ -168,8 +168,8 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
     g_pszLogEntity = pcszEntity;
-    int vrc = RTLogCreateEx(&pReleaseLogger, fFlags, pcszGroupSettings, pcszEnvVarBase,
-                            RT_ELEMENTS(s_apszGroups), s_apszGroups, cMaxEntriesPerGroup, fDestFlags,
+    int vrc = RTLogCreateEx(&pReleaseLogger, pcszEnvVarBase, fFlags, pcszGroupSettings, RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                            cMaxEntriesPerGroup,  NULL /*pfnFlush*/, 0 /*cBufDescs*/, NULL /*paBufDescs*/, fDestFlags,
                             vboxHeaderFooter, cHistory, uHistoryFileSize, uHistoryFileTime,
                             pErrInfo, pcszLogFile ? "%s" : NULL, pcszLogFile);
     if (RT_SUCCESS(vrc))

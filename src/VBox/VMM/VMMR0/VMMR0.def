@@ -36,6 +36,7 @@ EXPORTS
     IOMMmioMapMmio2Page
     RTLogDefaultInstance
     RTLogDefaultInstanceEx
+    RTLogGetDefaultInstanceEx
     RTLogRelGetDefaultInstance
     RTLogRelGetDefaultInstanceEx
     RTLogLogger
@@ -62,8 +63,6 @@ EXPORTS
     TMTimerStop
     TMTimerUnlock
     VMMGetSvnRev
-    vmmR0LoggerFlush
-    vmmR0LoggerWrapper
     VMSetError
     VMSetErrorV
 

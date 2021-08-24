@@ -566,16 +566,18 @@ static int vboxTrayLogCreate(void)
 {
     /* Create release (or debug) logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    RTERRINFOSTATIC ErrInfo;
-    int rc = RTLogCreateEx(&g_pLoggerRelease, RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_USECRLF,
 #ifdef DEBUG /* See below, debug logger not release. */
-                           "all.e.l.f",
-                           "VBOXTRAY_LOG",
+    static const char s_szEnvVarPfx[] = "VBOXTRAY_LOG";
+    static const char s_szGroupSettings[] = "all.e.l.f";
 #else
-                           "all",
-                           "VBOXTRAY_RELEASE_LOG",
+    static const char s_szEnvVarPfx[] = "VBOXTRAY_RELEASE_LOG";
+    static const char s_szGroupSettings[] = "all";
 #endif
-                           RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX, RTLOGDEST_STDOUT,
+    RTERRINFOSTATIC ErrInfo;
+    int rc = RTLogCreateEx(&g_pLoggerRelease, s_szEnvVarPfx,
+                           RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_USECRLF,
+                           s_szGroupSettings, RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
+                           NULL /*pfnFlush*/, 0 /*cBufDescs*/, NULL /*paBufDescs*/, RTLOGDEST_STDOUT,
                            vboxTrayLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            RTErrInfoInitStatic(&ErrInfo), NULL /*pszFilenameFmt*/);
     if (RT_SUCCESS(rc))

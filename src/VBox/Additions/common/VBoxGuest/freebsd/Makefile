@@ -100,6 +100,7 @@ SRCS += \
 	strformatrt.c \
 	strformattype.c \
 	strprintf.c \
+	strprintf2.c \
 	strtonum.c \
 	memchr.c \
 	utf-8.c

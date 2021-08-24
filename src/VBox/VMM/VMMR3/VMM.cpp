@@ -150,13 +150,15 @@
 #define VMM_SAVED_STATE_VERSION_3_0 3
 
 /** Macro for flushing the ring-0 logging. */
-#define VMM_FLUSH_R0_LOG(a_pR0Logger, a_pR3Logger) \
+#define VMM_FLUSH_R0_LOG(a_pLogger, a_pR3Logger) \
     do { \
-        PVMMR0LOGGER pVmmLogger = (a_pR0Logger); \
-        if (!pVmmLogger || pVmmLogger->Logger.offScratch == 0) \
+        if ((a_pLogger)->AuxDesc.offBuf == 0 || (a_pLogger)->AuxDesc.fFlushedIndicator) \
         { /* likely? */ } \
         else \
-            RTLogFlushR0(a_pR3Logger, &pVmmLogger->Logger); \
+        { \
+            RTLogBulkWrite(a_pR3Logger, (a_pLogger)->pchBufR3, (a_pLogger)->AuxDesc.offBuf); \
+            (a_pLogger)->AuxDesc.fFlushedIndicator = true; \
+        } \
     } while (0)
 
 
@@ -164,7 +166,6 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int                  vmmR3InitStacks(PVM pVM);
-static int                  vmmR3InitLoggers(PVM pVM);
 static void                 vmmR3InitRegisterStats(PVM pVM);
 static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
@@ -280,17 +281,12 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     rc = vmmR3InitStacks(pVM);
     if (RT_SUCCESS(rc))
     {
-        rc = vmmR3InitLoggers(pVM);
-
 #ifdef VBOX_WITH_NMI
         /*
          * Allocate mapping for the host APIC.
          */
-        if (RT_SUCCESS(rc))
-        {
-            rc = MMR3HyperReserve(pVM, PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
-            AssertRC(rc);
-        }
+        rc = MMR3HyperReserve(pVM, PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
+        AssertRC(rc);
 #endif
         if (RT_SUCCESS(rc))
         {
@@ -351,96 +347,6 @@ static int vmmR3InitStacks(PVM pVM)
     }
 
     return rc;
-}
-
-
-/**
- * Initialize the loggers.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-static int vmmR3InitLoggers(PVM pVM)
-{
-    int rc;
-#define RTLogCalcSizeForR0(cGroups, fFlags) (RT_UOFFSETOF_DYN(VMMR0LOGGER, Logger.afGroups[cGroups]) + PAGE_SIZE)
-
-    /*
-     * Allocate R0 Logger instance (finalized in the relocator).
-     */
-#if defined(LOG_ENABLED) && defined(VBOX_WITH_R0_LOGGING)
-    PRTLOGGER pLogger = RTLogDefaultInstance();
-    if (pLogger)
-    {
-        size_t const cbLogger = RTLogCalcSizeForR0(pLogger->cGroups, 0);
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        {
-            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-            rc = MMR3HyperAllocOnceNoRelEx(pVM, cbLogger, PAGE_SIZE, MM_TAG_VMM, MMHYPER_AONR_FLAGS_KERNEL_MAPPING,
-                                           (void **)&pVCpu->vmm.s.pR0LoggerR3);
-            if (RT_FAILURE(rc))
-                return rc;
-            pVCpu->vmm.s.pR0LoggerR3->pVM        = VMCC_GET_VMR0_FOR_CALL(pVM);
-            //pVCpu->vmm.s.pR0LoggerR3->fCreated = false;
-            pVCpu->vmm.s.pR0LoggerR3->cbLogger   = (uint32_t)cbLogger;
-            pVCpu->vmm.s.pR0LoggerR0 = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pR0LoggerR3);
-        }
-    }
-#endif /* LOG_ENABLED && VBOX_WITH_R0_LOGGING */
-
-    /*
-     * Release logging.
-     */
-    PRTLOGGER pRelLogger = RTLogRelGetDefaultInstance();
-    if (pRelLogger)
-    {
-        /*
-         * Ring-0 release logger.
-         */
-        RTR0PTR pfnLoggerWrapper = NIL_RTR0PTR;
-        rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerWrapper", &pfnLoggerWrapper);
-        AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerWrapper not found! rc=%Rra\n", rc), rc);
-
-        RTR0PTR pfnLoggerFlush = NIL_RTR0PTR;
-        rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
-        AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerFlush not found! rc=%Rra\n", rc), rc);
-
-        size_t const cbLogger = RTLogCalcSizeForR0(pRelLogger->cGroups, 0);
-
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        {
-            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-            rc = MMR3HyperAllocOnceNoRelEx(pVM, cbLogger, PAGE_SIZE, MM_TAG_VMM, MMHYPER_AONR_FLAGS_KERNEL_MAPPING,
-                                           (void **)&pVCpu->vmm.s.pR0RelLoggerR3);
-            if (RT_FAILURE(rc))
-                return rc;
-            PVMMR0LOGGER pVmmLogger = pVCpu->vmm.s.pR0RelLoggerR3;
-            RTR0PTR      R0PtrVmmLogger = MMHyperR3ToR0(pVM, pVmmLogger);
-            pVCpu->vmm.s.pR0RelLoggerR0     = R0PtrVmmLogger;
-            pVmmLogger->pVM                 = VMCC_GET_VMR0_FOR_CALL(pVM);
-            pVmmLogger->cbLogger            = (uint32_t)cbLogger;
-            pVmmLogger->fCreated            = false;
-            pVmmLogger->fFlushingDisabled   = false;
-            pVmmLogger->fRegistered         = false;
-            pVmmLogger->idCpu               = idCpu;
-
-            char szR0ThreadName[16];
-            RTStrPrintf(szR0ThreadName, sizeof(szR0ThreadName), "EMT-%u-R0", idCpu);
-            rc = RTLogCreateForR0(&pVmmLogger->Logger, pVmmLogger->cbLogger, R0PtrVmmLogger + RT_UOFFSETOF(VMMR0LOGGER, Logger),
-                                  pfnLoggerWrapper, pfnLoggerFlush,
-                                  RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY, szR0ThreadName);
-            AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Rra\n", rc), rc);
-
-            /* We only update the release log instance here. */
-            rc = RTLogCopyGroupsAndFlagsForR0(&pVmmLogger->Logger, R0PtrVmmLogger + RT_UOFFSETOF(VMMR0LOGGER, Logger),
-                                              pRelLogger, RTLOGFLAGS_BUFFERED, UINT32_MAX);
-            AssertReleaseMsgRCReturn(rc, ("RTLogCopyGroupsAndFlagsForR0 failed! rc=%Rra\n", rc), rc);
-
-            pVmmLogger->fCreated = true;
-        }
-    }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -581,18 +487,12 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     Assert(pVCpu && pVCpu->idCpu == 0);
 
-#ifdef LOG_ENABLED
     /*
-     * Initialize the ring-0 logger if we haven't done so yet.
+     * Make sure the ring-0 loggers are up to date.
      */
-    if (    pVCpu->vmm.s.pR0LoggerR3
-        &&  !pVCpu->vmm.s.pR0LoggerR3->fCreated)
-    {
-        rc = VMMR3UpdateLoggers(pVM);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-#endif
+    rc = VMMR3UpdateLoggers(pVM);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Call Ring-0 entry with init code.
@@ -609,9 +509,9 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0LoggerR3, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0RelLoggerR3, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -742,9 +642,9 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0LoggerR3, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0RelLoggerR3, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -809,60 +709,75 @@ VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
 
 /**
+ * Worker for VMMR3UpdateLoggers.
+ */
+static int vmmR3UpdateLoggersWorker(PVM pVM, PVMCPU pVCpu, PRTLOGGER pSrcLogger, bool fReleaseLogger)
+{
+    /*
+     * Get the group count.
+     */
+    uint32_t uGroupsCrc32 = 0;
+    uint32_t cGroups      = 0;
+    uint64_t fFlags       = 0;
+    int rc = RTLogQueryBulk(pSrcLogger, &fFlags, &uGroupsCrc32, &cGroups, NULL);
+    Assert(rc == VERR_BUFFER_OVERFLOW);
+
+    /*
+     * Allocate the request of the right size.
+     */
+    uint32_t const         cbReq = RT_UOFFSETOF_DYN(VMMR0UPDATELOGGERSREQ, afGroups[cGroups]);
+    PVMMR0UPDATELOGGERSREQ pReq  = (PVMMR0UPDATELOGGERSREQ)RTMemAllocZVar(cbReq);
+    if (pReq)
+    {
+        pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        pReq->Hdr.cbReq    = cbReq;
+        pReq->cGroups      = cGroups;
+        rc = RTLogQueryBulk(pSrcLogger, &pReq->fFlags, &pReq->uGroupCrc32, &pReq->cGroups, pReq->afGroups);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_VMMR0_UPDATE_LOGGERS, fReleaseLogger, &pReq->Hdr);
+
+        RTMemFree(pReq);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+
+/**
  * Updates the settings for the RC and R0 loggers.
  *
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
+ * @param   EMT
  */
 VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
+    VM_ASSERT_EMT(pVM);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
 
-#ifdef LOG_ENABLED
     /*
-     * For the ring-0 EMT logger, we use a per-thread logger instance
-     * in ring-0. Only initialize it once.
+     * Each EMT has each own logger instance.
      */
+    /* Debug logging.*/
+    int rcDebug = VINF_SUCCESS;
+#ifdef LOG_ENABLED
     PRTLOGGER const pDefault = RTLogDefaultInstance();
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU       pVCpu = pVM->apCpusR3[i];
-        PVMMR0LOGGER pR0LoggerR3 = pVCpu->vmm.s.pR0LoggerR3;
-        if (pR0LoggerR3)
-        {
-            if (!pR0LoggerR3->fCreated)
-            {
-                RTR0PTR pfnLoggerWrapper = NIL_RTR0PTR;
-                rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerWrapper", &pfnLoggerWrapper);
-                AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerWrapper not found! rc=%Rra\n", rc), rc);
-
-                RTR0PTR pfnLoggerFlush = NIL_RTR0PTR;
-                rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
-                AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerFlush not found! rc=%Rra\n", rc), rc);
-
-                char szR0ThreadName[16];
-                RTStrPrintf(szR0ThreadName, sizeof(szR0ThreadName), "EMT-%u-R0", i);
-                rc = RTLogCreateForR0(&pR0LoggerR3->Logger, pR0LoggerR3->cbLogger,
-                                      pVCpu->vmm.s.pR0LoggerR0 + RT_UOFFSETOF(VMMR0LOGGER, Logger),
-                                      pfnLoggerWrapper, pfnLoggerFlush,
-                                      RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY, szR0ThreadName);
-                AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Rra\n", rc), rc);
-
-                pR0LoggerR3->idCpu = i;
-                pR0LoggerR3->fCreated = true;
-                pR0LoggerR3->fFlushingDisabled = false;
-            }
-
-            rc = RTLogCopyGroupsAndFlagsForR0(&pR0LoggerR3->Logger, pVCpu->vmm.s.pR0LoggerR0 + RT_UOFFSETOF(VMMR0LOGGER, Logger),
-                                              pDefault, RTLOGFLAGS_BUFFERED, UINT32_MAX);
-            AssertRC(rc);
-        }
-    }
+    if (pDefault)
+        rcDebug = vmmR3UpdateLoggersWorker(pVM, pVCpu, pDefault, false /*fReleaseLogger*/);
 #else
     RT_NOREF(pVM);
 #endif
 
-    return rc;
+    /* Release logging. */
+    int rcRelease = VINF_SUCCESS;
+    PRTLOGGER const pRelease = RTLogRelGetDefaultInstance();
+    if (pRelease)
+        rcRelease = vmmR3UpdateLoggersWorker(pVM, pVCpu, pRelease, true /*fReleaseLogger*/);
+
+    return RT_SUCCESS(rcDebug) ? rcRelease : rcDebug;
 }
 
 
@@ -1138,9 +1053,9 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
          * Flush the logs
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0LoggerR3, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0RelLoggerR3, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
         {
             Log2(("VMMR3HmRunGC: returns %Rrc (cs:rip=%04x:%RX64)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
@@ -1182,9 +1097,9 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
          * Flush the logs
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0LoggerR3, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0RelLoggerR3, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rcStrict != VINF_VMM_CALL_HOST)
             return rcStrict;
         int rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -2339,9 +2254,9 @@ VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOper
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0LoggerR3, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(pVCpu->vmm.s.pR0RelLoggerR3, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);

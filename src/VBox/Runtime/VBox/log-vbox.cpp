@@ -667,9 +667,8 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 # if defined(DEBUG_bird)
         /*RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");*/
         RTLogFlags(pLogger, "enabled unbuffered pid tid");
-#  ifndef IN_GUEST
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
-#  else
+        RTLogDestinations(pLogger, "debugger stdout");
+#  ifdef IN_GUEST
         /*RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");*/
         RTLogGroupSettings(pLogger, "all=~0");
 #  endif
@@ -677,36 +676,36 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 # if defined(DEBUG_sandervl) && !defined(IN_GUEST)
         RTLogGroupSettings(pLogger, "+all");
         RTLogFlags(pLogger, "enabled unbuffered");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+        RTLogDestinations(pLogger, "debugger");
 # endif
 # if defined(DEBUG_ramshankar)  /* Guest ring-0 as well */
         RTLogGroupSettings(pLogger, "+all.e.l.f");
         RTLogFlags(pLogger, "enabled unbuffered");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+        RTLogDestinations(pLogger, "debugger");
 # endif
 # if defined(DEBUG_aleksey)  /* Guest ring-0 as well */
         RTLogGroupSettings(pLogger, "net_flt_drv.e.l.f.l3.l4.l5.l6 +net_adp_drv.e.l.f.l3.l4.l5.l6");
         RTLogFlags(pLogger, "enabled unbuffered");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
+        RTLogDestinations(pLogger, "debugger stdout");
 # endif
 # if defined(DEBUG_andy)  /* Guest ring-0 as well */
         RTLogGroupSettings(pLogger, "+all.e.l.f");
         RTLogFlags(pLogger, "enabled unbuffered pid tid");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
+        RTLogDestinations(pLogger, "debugger stdout");
 # endif
 # if defined(DEBUG_misha) /* Guest ring-0 as well */
         RTLogFlags(pLogger, "enabled unbuffered");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
+        RTLogDestinations(pLogger, "debugger");
 # endif
 # if defined(DEBUG_michael) && defined(IN_GUEST)
         RTLogGroupSettings(pLogger, "+vga.e.l.f");
         RTLogFlags(pLogger, "enabled unbuffered");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
+        RTLogDestinations(pLogger, "debugger stdout");
 # endif
 # if 0 /* vboxdrv logging - ATTENTION: this is what we're referring to guys! Change to '# if 1'. */
         RTLogGroupSettings(pLogger, "all=~0 -default.l6.l5.l4.l3");
         RTLogFlags(pLogger, "enabled unbuffered tid");
-        pLogger->fDestFlags |= RTLOGDEST_DEBUGGER | RTLOGDEST_STDOUT;
+        RTLogDestinations(pLogger, "debugger stdout");
 # endif
     }
 #endif /* IN_RING0 */
