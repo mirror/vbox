@@ -49,25 +49,80 @@ void UIWizardCloneVDPageExpert::prepare(KDeviceType enmDeviceType, qulonglong uS
     m_pMediumSizePathGroupBox = new UIMediumSizeAndPathGroupBox(true /* expert mode */, 0 /* parent */, uSourceDiskLogicaSize);
 
     if (m_pMediumSizePathGroupBox)
+    {
         pMainLayout->addWidget(m_pMediumSizePathGroupBox, 0, 0, 2, 2);
+        connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
+                this, &UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked);
+        connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
+                this, &UIWizardCloneVDPageExpert::sltMediumPathChanged);
+        connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
+                this, &UIWizardCloneVDPageExpert::sltMediumSizeChanged);
+    }
 
     m_pFormatGroupBox = new UIDiskFormatsGroupBox(true /* expert mode */, enmDeviceType, 0);
     if (m_pFormatGroupBox)
+    {
         pMainLayout-> addWidget(m_pFormatGroupBox, 2, 0, 6, 1);
+        connect(m_pFormatGroupBox, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
+                this, &UIWizardCloneVDPageExpert::sltMediumFormatChanged);
+    }
 
     m_pVariantGroupBox = new UIDiskVariantGroupBox(true /* expert mode */, 0);
     if (m_pVariantGroupBox)
+    {
         pMainLayout-> addWidget(m_pVariantGroupBox, 2, 1, 6, 1);
+        connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
+                this, &UIWizardCloneVDPageExpert::sltMediumVariantChanged);
+    }
 }
-
 
 void UIWizardCloneVDPageExpert::sltMediumFormatChanged()
 {
+    if (cloneWizard() && m_pFormatGroupBox)
+        cloneWizard()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+    emit completeChanged();
 }
 
 void UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked()
 {
+    UIWizardCloneVD *pWizard = cloneWizard();
+    AssertReturnVoid(pWizard);
+    CMediumFormat comMediumFormat(pWizard->mediumFormat());
+    QString strSelectedPath =
+        UIDiskEditorGroupBox::openFileDialogForDiskFile(pWizard->mediumPath(), comMediumFormat, pWizard->deviceType(), pWizard);
 
+    if (strSelectedPath.isEmpty())
+        return;
+    QString strMediumPath =
+        UIDiskEditorGroupBox::appendExtension(strSelectedPath,
+                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+    QFileInfo mediumPath(strMediumPath);
+    m_pMediumSizePathGroupBox->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
+}
+
+void UIWizardCloneVDPageExpert::sltMediumVariantChanged(qulonglong uVariant)
+{
+    if (cloneWizard())
+        cloneWizard()->setMediumVariant(uVariant);
+}
+
+void UIWizardCloneVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
+{
+    UIWizardCloneVD *pWizard = cloneWizard();
+    AssertReturnVoid(pWizard);
+    pWizard->setMediumSize(uSize);
+    emit completeChanged();
+}
+
+void UIWizardCloneVDPageExpert::sltMediumPathChanged(const QString &strPath)
+{
+    UIWizardCloneVD *pWizard = cloneWizard();
+    AssertReturnVoid(pWizard);
+    QString strMediumPath =
+        UIDiskEditorGroupBox::appendExtension(strPath,
+                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
+    pWizard->setMediumPath(strMediumPath);
+    emit completeChanged();
 }
 
 void UIWizardCloneVDPageExpert::retranslateUi()

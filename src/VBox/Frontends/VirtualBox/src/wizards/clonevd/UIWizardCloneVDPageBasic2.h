@@ -45,6 +45,10 @@ public:
     /** Constructs basic page. */
     UIWizardCloneVDPageBasic2(KDeviceType enmDeviceType);
 
+private slots:
+
+    void sltMediumVariantChanged(qulonglong uVariant);
+
 private:
 
     /** Handles translation event. */

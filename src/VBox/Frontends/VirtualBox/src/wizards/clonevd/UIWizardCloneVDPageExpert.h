@@ -50,6 +50,9 @@ private slots:
 
     /** Handles target disk change. */
     void sltSelectLocationButtonClicked();
+    void sltMediumPathChanged(const QString &strPath);
+    void sltMediumVariantChanged(qulonglong uVariant);
+    void sltMediumSizeChanged(qulonglong uSize);
 
 private:
 

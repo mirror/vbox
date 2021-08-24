@@ -44,15 +44,17 @@ void UIWizardCloneVDPageBasic3::prepare(qulonglong uSourceDiskLogicaSize)
 
     m_pMediumSizePathGroupBox = new UIMediumSizeAndPathGroupBox(false /* expert mode */, 0 /* parent */, uSourceDiskLogicaSize);
     if (m_pMediumSizePathGroupBox)
+    {
         pMainLayout->addWidget(m_pMediumSizePathGroupBox);
+        connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
+                this, &UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked);
+        connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
+                this, &UIWizardCloneVDPageBasic3::sltMediumPathChanged);
+        connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
+                this, &UIWizardCloneVDPageBasic3::sltMediumSizeChanged);
+    }
 
     pMainLayout->addStretch();
-
-    connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
-            this, &UIWizardCloneVDPageBasic3::sltSelectLocationButtonClicked);
-    connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
-            this, &UIWizardCloneVDPageBasic3::sltMediumPathChanged);
-
     retranslateUi();
 }
 
@@ -145,5 +147,14 @@ void UIWizardCloneVDPageBasic3::sltMediumPathChanged(const QString &strPath)
         UIDiskEditorGroupBox::appendExtension(strPath,
                                               UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     pWizard->setMediumPath(strMediumPath);
+    emit completeChanged();
+}
+
+void UIWizardCloneVDPageBasic3::sltMediumSizeChanged(qulonglong uSize)
+{
+    UIWizardCloneVD *pWizard = cloneWizard();
+    AssertReturnVoid(pWizard);
+    m_userModifiedParameters << "MediumSize";
+    pWizard->setMediumSize(uSize);
     emit completeChanged();
 }

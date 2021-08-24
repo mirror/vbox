@@ -44,21 +44,32 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType /*enmDeviceType
 void UIWizardCloneVDPageBasic2::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+
     m_pDescriptionLabel = new QIRichTextLabel(this);
     if (m_pDescriptionLabel)
         pMainLayout->addWidget(m_pDescriptionLabel);
+
     m_pDynamicLabel = new QIRichTextLabel(this);
     if (m_pDynamicLabel)
         pMainLayout->addWidget(m_pDynamicLabel);
+
     m_pFixedLabel = new QIRichTextLabel(this);
     if (m_pFixedLabel)
         pMainLayout->addWidget(m_pFixedLabel);
+
     m_pSplitLabel = new QIRichTextLabel(this);
     if (m_pSplitLabel)
         pMainLayout->addWidget(m_pSplitLabel);
+
     m_pVariantGroupBox = new UIDiskVariantGroupBox(false /* expert mode */, 0);
     if (m_pVariantGroupBox)
+    {
         pMainLayout->addWidget(m_pVariantGroupBox);
+        connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
+                this, &UIWizardCloneVDPageBasic2::sltMediumVariantChanged);
+
+    }
+
     retranslateUi();
 }
 
@@ -116,4 +127,10 @@ void UIWizardCloneVDPageBasic2::setWidgetVisibility(const CMediumFormat &mediumF
         m_pFixedLabel->setHidden(!m_pVariantGroupBox->isCreateFixedPossible());
     if (m_pSplitLabel)
         m_pSplitLabel->setHidden(!m_pVariantGroupBox->isCreateSplitPossible());
+}
+
+void UIWizardCloneVDPageBasic2::sltMediumVariantChanged(qulonglong uVariant)
+{
+    if (cloneWizard())
+        cloneWizard()->setMediumVariant(uVariant);
 }
