@@ -582,7 +582,8 @@ DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, P
  * Callback function for vmmR0CallRing3SetJmp2.
  *
  * @returns VBox status code.
- * @param   pvUser      The user argument.
+ * @param   pGVM        The ring-0 VM structure.
+ * @param   idCpu       The ID of the calling EMT.
  */
 typedef DECLCALLBACKTYPE(int, FNVMMR0SETJMP2,(PGVM pGVM, VMCPUID idCpu));
 /** Pointer to FNVMMR0SETJMP2(). */
