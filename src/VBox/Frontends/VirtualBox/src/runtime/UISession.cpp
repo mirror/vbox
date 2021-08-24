@@ -327,31 +327,6 @@ bool UISession::detach()
     return true;
 }
 
-bool UISession::saveState()
-{
-    /* Prepare the saving progress: */
-    CProgress progress = machine().SaveState();
-    if (machine().isOk())
-    {
-        /* Show the saving progress: */
-        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_state_save_90px.png");
-        if (!progress.isOk() || progress.GetResultCode() != 0)
-        {
-            /* Failed in progress: */
-            msgCenter().cannotSaveMachineState(progress, machineName());
-            return false;
-        }
-    }
-    else
-    {
-        /* Failed in console: */
-        msgCenter().cannotSaveMachineState(machine());
-        return false;
-    }
-    /* Passed: */
-    return true;
-}
-
 bool UISession::shutdown()
 {
     /* Send ACPI shutdown signal if possible: */

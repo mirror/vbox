@@ -522,6 +522,12 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMachineSaveState : public UINot
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about machine state saved.
+      * @param  fSuccess  Brings whether state was saved successfully. */
+    void sigMachineStateSaved(bool fSuccess);
+
 public:
 
     /** Constructs machine save-state notification-progress.

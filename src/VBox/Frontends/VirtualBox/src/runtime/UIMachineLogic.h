@@ -293,6 +293,8 @@ private slots:
     void sltPause(bool fOn);
     void sltDetach();
     void sltSaveState();
+    /** Handles machine state saved. */
+    void sltHandleMachineStateSaved(bool fSuccess);
     void sltShutdown();
     void sltPowerOff();
     void sltClose();

@@ -965,6 +965,9 @@ void UINotificationProgressMachineSaveState::sltHandleProgressFinished()
     /* Unlock session finally: */
     if (m_comSession.isNotNull())
         m_comSession.UnlockMachine();
+
+    /* Notifies listeners: */
+    emit sigMachineStateSaved(error().isEmpty());
 }
 
 

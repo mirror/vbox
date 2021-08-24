@@ -403,29 +403,27 @@ void UIMachineLogic::detach()
 
 void UIMachineLogic::saveState()
 {
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
+    /* Do we save state? */
+    bool fSaveState = true;
 
-    /* Was the step successful? */
-    bool fSuccess = true;
-    /* If VM is not paused, we should pause it: */
-    bool fWasPaused = uisession()->isPaused();
-    if (fSuccess && !fWasPaused)
-        fSuccess = uisession()->pause();
-    /* Save-state: */
-    if (fSuccess)
+    /* If VM is not paused, we should pause it first: */
+    if (!uisession()->isPaused())
+        fSaveState = uisession()->pause();
+
+    /* Saving state: */
+    if (fSaveState)
     {
+        /* Enable 'manual-override',
+         * preventing automatic Runtime UI closing: */
+        setManualOverrideMode(true);
+
+        /* Saving VM state: */
         LogRel(("GUI: Passing request to save VM state from machine-logic to UI session.\n"));
-        fSuccess = uisession()->saveState();
+        UINotificationProgressMachineSaveState *pNotification = new UINotificationProgressMachineSaveState(machine());
+        connect(pNotification, &UINotificationProgressMachineSaveState::sigMachineStateSaved,
+                this, &UIMachineLogic::sltHandleMachineStateSaved);
+        gpNotificationCenter->append(pNotification);
     }
-
-    /* Disable 'manual-override' finally: */
-    setManualOverrideMode(false);
-
-    /* Manually close Runtime UI: */
-    if (fSuccess)
-        closeRuntimeUI();
 }
 
 void UIMachineLogic::shutdown()
@@ -1940,6 +1938,16 @@ void UIMachineLogic::sltSaveState()
 
     LogRel(("GUI: User requested to save VM state.\n"));
     saveState();
+}
+
+void UIMachineLogic::sltHandleMachineStateSaved(bool fSuccess)
+{
+    /* Disable 'manual-override' finally: */
+    setManualOverrideMode(false);
+
+    /* Close Runtime UI if state was saved: */
+    if (fSuccess)
+        closeRuntimeUI();
 }
 
 void UIMachineLogic::sltShutdown()
