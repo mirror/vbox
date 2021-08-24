@@ -1307,7 +1307,7 @@ VMMR3DECL(int)  STAMR3Print(PUVM pUVM, const char *pszPat);
  * @param   pvUser          The pvUser argument given to STAMR3Enum().
  */
 typedef DECLCALLBACKTYPE(int, FNSTAMR3ENUM,(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                            STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser));
+                                            STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser));
 /** Pointer to a FNSTAMR3ENUM(). */
 typedef FNSTAMR3ENUM *PFNSTAMR3ENUM;
 

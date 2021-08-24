@@ -67,7 +67,8 @@ RT_C_DECLS_BEGIN
  * @param   pszFormat       Error message format string.
  * @param   args            Error message arguments.
  */
-typedef DECLCALLBACKTYPE(void, FNVMATERROR,(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszError, va_list args));
+typedef DECLCALLBACKTYPE(void, FNVMATERROR,(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL,
+                                            const char *pszFormat, va_list args));
 /** Pointer to a VM error callback. */
 typedef FNVMATERROR *PFNVMATERROR;
 

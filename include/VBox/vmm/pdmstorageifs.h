@@ -141,7 +141,7 @@ typedef struct PDMIMOUNT
  *
  * @return  VBox status code.
  * @param   pvUser          Opaque user data.
- * @param   uPercent        Completion percentage.
+ * @param   uPercentage     Completion percentage.
  */
 typedef DECLCALLBACKTYPE(int, FNSIMPLEPROGRESS,(void *pvUser, unsigned uPercentage));
 /** Pointer to FNSIMPLEPROGRESS() */

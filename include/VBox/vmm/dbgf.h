@@ -1078,7 +1078,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PUVM pUVM, DBGFBP hBp);
  * @param   pUVM        The user mode VM handle.
  * @param   pvUser      The user argument.
  * @param   hBp         The breakpoint handle.
- * @param   pBp         Pointer to the public breakpoint information. (readonly)
+ * @param   pBpPub      Pointer to the public breakpoint information. (readonly)
  */
 typedef DECLCALLBACKTYPE(int, FNDBGFBPENUM,(PUVM pUVM, void *pvUser, DBGFBP hBp, PCDBGFBPPUB pBpPub));
 /** Pointer to a breakpoint enumeration callback function. */
@@ -1360,6 +1360,7 @@ VMMR3_INT_DECL(int) DBGFR3InfoMulti(PVM pVM, const char *pszIncludePat, const ch
  * @param   pUVM        The user mode VM handle.
  * @param   pszName     Info identifier name.
  * @param   pszDesc     The description.
+ * @param   pvUser      User parameter.
  */
 typedef DECLCALLBACKTYPE(int, FNDBGFINFOENUM,(PUVM pUVM, const char *pszName, const char *pszDesc, void *pvUser));
 /** Pointer to a FNDBGFINFOENUM function. */
