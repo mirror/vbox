@@ -4586,7 +4586,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 pBufDesc->offBuf = offBuf = (uint32_t)(psz - pchBuf);
                 cb = cbBuf - offBuf - 1;
             }
-            else if (cb <= 0)
+            else if (cb <= 2) /* 2  - Make sure we can write a \r\n and not loop forever. */
             {
                 rtlogFlush(pLoggerInt, true /*fNeedSpace*/);
                 continue;
@@ -4606,14 +4606,14 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     memcpy(&pchBuf[offBuf], pachChars, cb);
                     pLoggerInt->fPendingPrefix = true;
                 }
-                else if (cbBuf - offBuf < (uintptr_t)(pszNewLine - pachChars + 2))
+                else if ((uintptr_t)(pszNewLine - pachChars) + 2U < cbBuf - offBuf)
                 {
                     cb = pszNewLine - pachChars;
                     memcpy(&pchBuf[offBuf], pachChars, cb);
                     pchBuf[offBuf + cb++] = '\r';
                     pchBuf[offBuf + cb++] = '\n';
-                    pachChars--;    /* Discount the extra '\r'. */
                     cbChars++;      /* Discount the extra '\r'. */
+                    pachChars--;    /* Ditto. */
                     cbRet--;        /* Ditto. */
                     pLoggerInt->fPendingPrefix = true;
                 }
