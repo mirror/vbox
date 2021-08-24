@@ -111,10 +111,9 @@ signals:
 public:
 
     UIDiskVariantGroupBox(bool fExpertMode, QWidget *pParent = 0);
-    void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat, bool fHideDisabled = false);
+    void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
-    void setWidgetVisibility(const CMediumFormat &mediumFormat);
     bool isComplete() const;
 
     bool isCreateDynamicPossible() const;

@@ -115,7 +115,7 @@ void UIWizardCloneVDPageVariant::setWidgetVisibility(const CMediumFormat &medium
 {
     AssertReturnVoid(m_pVariantGroupBox);
 
-    m_pVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(mediumFormat, true /* hide disabled widgets*/);
+    m_pVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(mediumFormat);
 
     if (m_pDynamicLabel)
         m_pDynamicLabel->setHidden(!m_pVariantGroupBox->isCreateDynamicPossible());

@@ -33,7 +33,7 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(KDeviceType enmDeviceType, 
     :m_pFormatGroupBox(0)
     , m_pVariantGroupBox(0)
     , m_pMediumSizePathGroupBox(0)
-
+    , m_enmDeviceType(enmDeviceType)
 {
     prepare(enmDeviceType, uSourceDiskLogicaSize);
 }
@@ -76,6 +76,7 @@ void UIWizardCloneVDPageExpert::sltMediumFormatChanged()
 {
     if (cloneWizard() && m_pFormatGroupBox)
         cloneWizard()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+    updateDiskWidgetsAfterMediumFormatChange();
     emit completeChanged();
 }
 
@@ -133,7 +134,7 @@ void UIWizardCloneVDPageExpert::initializePage()
     pWizard->setMediumFormat(m_pFormatGroupBox->mediumFormat());
 
     pWizard->setMediumVariant(m_pVariantGroupBox->mediumVariant());
-    m_pVariantGroupBox->setWidgetVisibility(pWizard->mediumFormat());
+    m_pVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(pWizard->mediumFormat());
 
     /* Initialize medium size widget and wizard's medium size parameter: */
     m_pMediumSizePathGroupBox->blockSignals(true);
@@ -186,4 +187,23 @@ bool UIWizardCloneVDPageExpert::validatePage()
 UIWizardCloneVD *UIWizardCloneVDPageExpert::cloneWizard()
 {
     return qobject_cast<UIWizardCloneVD*>(wizard());
+}
+
+void UIWizardCloneVDPageExpert::updateDiskWidgetsAfterMediumFormatChange()
+{
+    UIWizardCloneVD *pWizard = qobject_cast<UIWizardCloneVD*>(wizard());
+    AssertReturnVoid(pWizard && m_pVariantGroupBox && m_pMediumSizePathGroupBox && m_pFormatGroupBox);
+    const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
+    AssertReturnVoid(!comMediumFormat.isNull());
+
+    m_pVariantGroupBox->blockSignals(true);
+    m_pVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
+    m_pVariantGroupBox->blockSignals(false);
+
+    m_pMediumSizePathGroupBox->blockSignals(true);
+    m_pMediumSizePathGroupBox->updateMediumPath(comMediumFormat, m_pFormatGroupBox->formatExtensions(), m_enmDeviceType);
+    m_pMediumSizePathGroupBox->blockSignals(false);
+    /* Update the wizard parameters explicitly since we blocked th signals: */
+    pWizard->setMediumPath(m_pMediumSizePathGroupBox->mediumPath());
+    pWizard->setMediumVariant(m_pVariantGroupBox->mediumVariant());
 }

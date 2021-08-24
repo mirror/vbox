@@ -349,7 +349,8 @@ void UIDiskVariantGroupBox::retranslateUi()
     if (m_pSplitBox)
     {
         m_pSplitBox->setText(tr("&Split into files of less than 2GB"));
-        m_pSplitBox->setToolTip(tr("&When checked the virtual disk file will be splitted into 2GB parts in the host storage."));
+        m_pSplitBox->setToolTip(tr("<p>Possible only for some hard disk file types. When checked the virtual disk file will "
+                                   "be splitted into 2GB parts in the host storage.</p>"));
     }
 }
 
@@ -385,43 +386,9 @@ void UIDiskVariantGroupBox::setMediumVariant(qulonglong uMediumVariant)
     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
 }
 
-void UIDiskVariantGroupBox::setWidgetVisibility(const CMediumFormat &mediumFormat)
+void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
 {
-    ULONG uCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = mediumFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uCapabilities |= capabilities[i];
-
-    bool m_fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
-    bool m_fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
-    bool m_fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-    if (m_pFixedCheckBox)
-    {
-        if (!m_fIsCreateDynamicPossible)
-        {
-            m_pFixedCheckBox->setChecked(true);
-            m_pFixedCheckBox->setEnabled(false);
-        }
-        if (!m_fIsCreateFixedPossible)
-        {
-            m_pFixedCheckBox->setChecked(false);
-            m_pFixedCheckBox->setEnabled(false);
-        }
-    }
-    if (m_pFixedCheckBox)
-        m_pFixedCheckBox->setHidden(!m_fIsCreateFixedPossible);
-    if (m_pSplitBox)
-    {
-        m_pSplitBox->setHidden(!m_fIsCreateSplitPossible);
-        if (!m_fIsCreateSplitPossible)
-            m_pSplitBox->setChecked(false);
-    }
-}
-
-void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat,
-                                                                        bool fHideDisabled /* = false */)
-{
+    AssertReturnVoid(m_pFixedCheckBox && m_pSplitBox);
     ULONG uCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;
     capabilities = mediumFormat.GetCapabilities();
@@ -432,23 +399,20 @@ void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CM
     m_fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
     m_fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
 
-    if (m_pFixedCheckBox)
+    m_pFixedCheckBox->setEnabled(true);
+    if (!m_fIsCreateDynamicPossible)
     {
-        m_pFixedCheckBox->setEnabled(m_fIsCreateDynamicPossible || m_fIsCreateFixedPossible);
-        if (!m_fIsCreateDynamicPossible)
-            m_pFixedCheckBox->setChecked(true);
-        if (!m_fIsCreateFixedPossible)
-            m_pFixedCheckBox->setChecked(false);
+        m_pFixedCheckBox->setChecked(true);
+        m_pFixedCheckBox->setEnabled(false);
     }
-    m_pSplitBox->setEnabled(m_fIsCreateSplitPossible);
+    if (!m_fIsCreateFixedPossible)
+    {
+        m_pFixedCheckBox->setChecked(false);
+        m_pFixedCheckBox->setEnabled(false);
+    }
 
-    if (fHideDisabled)
-    {
-        m_pFixedCheckBox->setHidden(!m_pFixedCheckBox->isEnabled());
-        m_pSplitBox->setHidden(!m_pSplitBox->isEnabled());
-    }
-    /* Deselect split box if it is disabled: */
-    if (!m_pSplitBox->isEnabled())
+    m_pSplitBox->setEnabled(m_fIsCreateSplitPossible);
+    if (!m_fIsCreateSplitPossible)
         m_pSplitBox->setChecked(false);
     emit sigMediumVariantChanged(mediumVariant());
 }

@@ -75,10 +75,12 @@ private:
     /** Sets the target disk name and location. */
     void setTargetLocation();
     UIWizardCloneVD *cloneWizard();
+    void updateDiskWidgetsAfterMediumFormatChange();
 
     UIDiskFormatsGroupBox *m_pFormatGroupBox;
     UIDiskVariantGroupBox *m_pVariantGroupBox;
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
+    KDeviceType m_enmDeviceType;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageExpert_h */
