@@ -858,8 +858,8 @@ void UINotificationProgressMachineMove::sltHandleProgressFinished()
 *   Class UINotificationProgressMachineSaveState implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UINotificationProgressMachineSaveState::UINotificationProgressMachineSaveState(const QUuid &uId)
-    : m_uId(uId)
+UINotificationProgressMachineSaveState::UINotificationProgressMachineSaveState(const CMachine &comMachine)
+    : m_comMachine(comMachine)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressMachineSaveState::sltHandleProgressFinished);
@@ -877,58 +877,79 @@ QString UINotificationProgressMachineSaveState::details() const
 
 CProgress UINotificationProgressMachineSaveState::createProgress(COMResult &comResult)
 {
-    /* Open a session thru which we will modify the machine: */
-    m_comSession = uiCommon().openExistingSession(m_uId);
-    if (m_comSession.isNull())
-        return CProgress();
-
-    /* Get session machine: */
-    CMachine comMachine = m_comSession.GetMachine();
-    if (!m_comSession.isOk())
+    /* Acquire VM id: */
+    const QUuid uId = m_comMachine.GetId();
+    if (!m_comMachine.isOk())
     {
-        comResult = m_comSession;
-        m_comSession.UnlockMachine();
+        comResult = m_comMachine;
         return CProgress();
     }
 
     /* Acquire VM name: */
-    m_strName = comMachine.GetName();
-    if (!comMachine.isOk())
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
     {
-        comResult = comMachine;
-        m_comSession.UnlockMachine();
+        comResult = m_comMachine;
         return CProgress();
     }
 
-    /* Get machine state: */
-    const KMachineState enmState = comMachine.GetState();
-    if (!comMachine.isOk())
-    {
-        comResult = comMachine;
-        m_comSession.UnlockMachine();
-        return CProgress();
-    }
+    /* Prepare machine to save: */
+    CMachine comMachine = m_comMachine;
 
-    /* If VM isn't yet paused: */
-    if (enmState != KMachineState_Paused)
+    /* For Manager UI: */
+    switch (uiCommon().uiType())
     {
-        /* Get session console: */
-        CConsole comConsole = m_comSession.GetConsole();
-        if (!m_comSession.isOk())
+        case UICommon::UIType_SelectorUI:
         {
-            comResult = m_comSession;
-            m_comSession.UnlockMachine();
-            return CProgress();
-        }
+            /* Open a session thru which we will modify the machine: */
+            m_comSession = uiCommon().openExistingSession(uId);
+            if (m_comSession.isNull())
+                return CProgress();
 
-        /* Pause VM first: */
-        comConsole.Pause();
-        if (!comConsole.isOk())
-        {
-            comResult = comConsole;
-            m_comSession.UnlockMachine();
-            return CProgress();
+            /* Get session machine: */
+            comMachine = m_comSession.GetMachine();
+            if (!m_comSession.isOk())
+            {
+                comResult = m_comSession;
+                m_comSession.UnlockMachine();
+                return CProgress();
+            }
+
+            /* Get machine state: */
+            const KMachineState enmState = comMachine.GetState();
+            if (!comMachine.isOk())
+            {
+                comResult = comMachine;
+                m_comSession.UnlockMachine();
+                return CProgress();
+            }
+
+            /* If VM isn't yet paused: */
+            if (enmState != KMachineState_Paused)
+            {
+                /* Get session console: */
+                CConsole comConsole = m_comSession.GetConsole();
+                if (!m_comSession.isOk())
+                {
+                    comResult = m_comSession;
+                    m_comSession.UnlockMachine();
+                    return CProgress();
+                }
+
+                /* Pause VM first: */
+                comConsole.Pause();
+                if (!comConsole.isOk())
+                {
+                    comResult = comConsole;
+                    m_comSession.UnlockMachine();
+                    return CProgress();
+                }
+            }
+
+            break;
         }
+        default:
+            break;
     }
 
     /* Initialize progress-wrapper: */
@@ -942,7 +963,8 @@ CProgress UINotificationProgressMachineSaveState::createProgress(COMResult &comR
 void UINotificationProgressMachineSaveState::sltHandleProgressFinished()
 {
     /* Unlock session finally: */
-    m_comSession.UnlockMachine();
+    if (m_comSession.isNotNull())
+        m_comSession.UnlockMachine();
 }
 
 

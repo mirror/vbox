@@ -525,8 +525,8 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMachineSaveState : public UINot
 public:
 
     /** Constructs machine save-state notification-progress.
-      * @param  uId  Brings the machine id. */
-    UINotificationProgressMachineSaveState(const QUuid &uId);
+      * @param  comMachine  Brings the machine being saved. */
+    UINotificationProgressMachineSaveState(const CMachine &comMachine);
 
 protected:
 
@@ -544,8 +544,8 @@ private slots:
 
 private:
 
-    /** Holds the machine id. */
-    QUuid     m_uId;
+    /** Holds the machine being saved. */
+    CMachine  m_comMachine;
     /** Holds the session being opened. */
     CSession  m_comSession;
     /** Holds the machine name. */
