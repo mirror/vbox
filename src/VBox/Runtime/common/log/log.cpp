@@ -90,7 +90,11 @@ AssertCompile(sizeof(RTLOG_RINGBUF_EYE_CATCHER) == 16);
 AssertCompile(sizeof(RTLOG_RINGBUF_EYE_CATCHER_END) == 16);
 
 /** The default buffer size. */
-#define RTLOG_BUFFER_DEFAULT_SIZE       _64K
+#ifdef IN_RING0
+# define RTLOG_BUFFER_DEFAULT_SIZE      _64K
+#else
+# define RTLOG_BUFFER_DEFAULT_SIZE      _128K
+#endif
 /** Buffer alignment used RTLogCreateExV.   */
 #define RTLOG_BUFFER_ALIGN              64
 
@@ -4586,7 +4590,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 pBufDesc->offBuf = offBuf = (uint32_t)(psz - pchBuf);
                 cb = cbBuf - offBuf - 1;
             }
-            else if (cb <= 2) /* 2  - Make sure we can write a \r\n and not loop forever. */
+            else if (cb <= 2) /* 2 - Make sure we can write a \r\n and not loop forever. */
             {
                 rtlogFlush(pLoggerInt, true /*fNeedSpace*/);
                 continue;
@@ -4600,15 +4604,15 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             pszNewLine = (const char *)memchr(pachChars, '\n', cb);
             if (pszNewLine)
             {
+                cb = pszNewLine - pachChars;
                 if (!(pLoggerInt->fFlags & RTLOGFLAGS_USECRLF))
                 {
-                    cb = pszNewLine - pachChars + 1;
+                    cb += 1;
                     memcpy(&pchBuf[offBuf], pachChars, cb);
                     pLoggerInt->fPendingPrefix = true;
                 }
-                else if ((uintptr_t)(pszNewLine - pachChars) + 2U < cbBuf - offBuf)
+                else if (cb + 2U < cbBuf - offBuf)
                 {
-                    cb = pszNewLine - pachChars;
                     memcpy(&pchBuf[offBuf], pachChars, cb);
                     pchBuf[offBuf + cb++] = '\r';
                     pchBuf[offBuf + cb++] = '\n';
@@ -4620,7 +4624,6 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 else
                 {
                     /* Insufficient buffer space, leave the '\n' for the next iteration. */
-                    cb = pszNewLine - pachChars;
                     memcpy(&pchBuf[offBuf], pachChars, cb);
                 }
             }

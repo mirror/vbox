@@ -67,7 +67,7 @@ int main()
     RTEXITCODE rcExit = RTTestInitAndCreate("tstLog", &hTest);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-#if 0   /* Old tests: */
+#if 0 /* Old tests: */
         RTTestIPrintf(RTTESTLVL_ALWAYS, "Requires manual inspection of the log output!\n");
         RTLogPrintf("%%Rrc %d: %Rrc\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);
         RTLogPrintf("%%Rrs %d: %Rrs\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);
@@ -110,6 +110,19 @@ int main()
         RTLogPrintf("%%RX64: %RX64 %#RX64\n", _2E, _2E);
 
         RTLogFlush(NULL);
+
+        /* Flush tests (assumes _4K log buffer). */
+        uint32_t const cbLogBuf = _4K;
+        static char    s_szBuf[cbLogBuf * 4];
+        RTLogChangeFlags(NULL, RTLOGFLAGS_USECRLF, 0);
+        for (uint32_t i = cbLogBuf - 512; i < cbLogBuf + 512; i++)
+        {
+            memset(s_szBuf, '0' + (i % 10), i);
+            s_szBuf[i] = '\n';
+            s_szBuf[i + 1] = '\0';
+            RTLogPrintf("i=%#08x: %s", i, s_szBuf);
+            RTLogFlush(NULL);
+        }
 #endif
 
         /*
