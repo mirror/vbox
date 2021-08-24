@@ -1235,16 +1235,22 @@ RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCa
 }
 RT_EXPORT_SYMBOL(RTLogSetCustomPrefixCallback);
 
+
 /**
- * Sets the custom prefix callback.
+ * Sets the custom flush callback.
+ *
+ * This can be handy for special loggers like the per-EMT ones in ring-0,
+ * but also for implementing a log viewer in the debugger GUI.
  *
  * @returns IPRT status code.
- * @param   pLogger     The logger instance.
- * @param   pfnCallback The callback.
- * @param   pvUser      The user argument for the callback.
- *  */
-RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush, PFNRTLOGFLUSH *ppfnOldFlush)
+ * @retval  VWRN_ALREADY_EXISTS if it was set to a different flusher.
+ * @param   pLogger         The logger instance.
+ * @param   pfnFlush        The flush callback.
+ */
+RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush)
 {
+    int rc;
+
     /*
      * Resolve defaults.
      */
@@ -1260,13 +1266,16 @@ RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush, PFN
     /*
      * Do the work.
      */
-    rtlogLock(pLoggerInt);
-    if (ppfnOldFlush)
-        *ppfnOldFlush = pLoggerInt->pfnFlush;
-    pLoggerInt->pfnFlush = pfnFlush;
-    rtlogUnlock(pLoggerInt);
+    rc = rtlogLock(pLoggerInt);
+    if (RT_SUCCESS(rc))
+    {
+        if (pLoggerInt->pfnFlush && pLoggerInt->pfnFlush != pfnFlush)
+            rc = VWRN_ALREADY_EXISTS;
+        pLoggerInt->pfnFlush = pfnFlush;
+        rtlogUnlock(pLoggerInt);
+    }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTLogSetFlushCallback);
 

@@ -2109,11 +2109,11 @@ RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCa
  * but also for implementing a log viewer in the debugger GUI.
  *
  * @returns IPRT status code.
+ * @retval  VWRN_ALREADY_EXISTS if it was set to a different flusher.
  * @param   pLogger         The logger instance.
  * @param   pfnFlush        The flush callback.
- * @param   ppfnOldFlush    Where to return the old flush callback. Optional.
  */
-RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush, PFNRTLOGFLUSH *ppfnOldFlush);
+RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush);
 
 /**
  * Set the thread name for a thread specific ring-0 logger.
