@@ -86,7 +86,7 @@ typedef FNPDMQUEUEDEV *PFNPDMQUEUEDEV;
  *
  * @returns Success indicator.
  *          If false the item will not be removed and the flushing will stop.
- * @param   pDevIns     The USB device instance.
+ * @param   pUsbIns     The USB device instance.
  * @param   pItem       The item to consume. Upon return this item will be freed.
  * @remarks No locks will be held, but for now it's safe to assume that only one
  *          EMT will do queue callbacks at any one time.

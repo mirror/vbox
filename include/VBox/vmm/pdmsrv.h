@@ -122,6 +122,8 @@ typedef FNPDMSRVPOWEROFF *PFNPDMSRVPOWEROFF;
  * This is called when a driver or device is detached from the service
  *
  * @param   pSrvIns     The service instance data.
+ * @param   pDevIns     The device instance to detach.
+ * @param   pDrvIns     The driver instance to detach.
  */
 typedef DECLCALLBACKTYPE(void, FNPDMSRVDETACH,(PPDMSRVINS pSrvIns, PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns));
 /** Pointer to a FNPDMSRVDETACH() function. */
