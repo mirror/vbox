@@ -52,6 +52,20 @@ extern const size_t         g_cTransports;
 typedef struct ATSCALLBACKS
 {
     /**
+     * Tells the implementation that a new client connected. Optional.
+     *
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnHowdy, (void const *pvUser));
+
+    /**
+     * Tells the implementation that a client disconnected. Optional.
+     *
+     * @param   pvUser          User-supplied pointer to context data. Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnBye, (void const *pvUser));
+
+    /**
      * Begins a test set. Optional.
      *
      * @returns VBox status code.

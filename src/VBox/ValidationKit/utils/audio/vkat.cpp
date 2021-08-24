@@ -256,7 +256,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
 #ifdef DEBUG
-    pTstParmsAcq->cIterations = 4;
+    pTstParmsAcq->cIterations = 1;
 #else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
 #endif
@@ -360,7 +360,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
 #ifdef DEBUG
-    pTstParmsAcq->cIterations = 4;
+    pTstParmsAcq->cIterations = 1;
 #else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
 #endif

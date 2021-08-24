@@ -38,16 +38,35 @@ typedef struct ATSCLIENT
 /** Pointer to an ATS client. */
 typedef ATSCLIENT *PATSCLIENT;
 
+/** @name Creation / destruction.
+ * @{ */
 int AudioTestSvcClientCreate(PATSCLIENT pClient);
 void AudioTestSvcClientDestroy(PATSCLIENT pClient);
+/** @} */
+
+/** @name Connection handling.
+ * @{ */
 int AudioTestSvcClientConnect(PATSCLIENT pClient);
+int AudioTestSvcClientClose(PATSCLIENT pClient);
+/** @} */
+
+/** @name Option handling.
+ * @{ */
 int AudioTestSvcClientHandleOption(PATSCLIENT pClient, int ch, PCRTGETOPTUNION pVal);
+/** @} */
+
+/** @name Test set handling.
+ * @{ */
 int AudioTestSvcClientTestSetBegin(PATSCLIENT pClient, const char *pszTag);
 int AudioTestSvcClientTestSetEnd(PATSCLIENT pClient, const char *pszTag);
+int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, const char *pszPathOutAbs);
+/** @} */
+
+/** @name Tone handling.
+ * @{ */
 int AudioTestSvcClientTonePlay(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pToneParms);
 int AudioTestSvcClientToneRecord(PATSCLIENT pClient, PAUDIOTESTTONEPARMS pToneParms);
-int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, const char *pszPathOutAbs);
-int AudioTestSvcClientClose(PATSCLIENT pClient);
+/** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Audio_AudioTestServiceClient_h */
 

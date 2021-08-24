@@ -161,7 +161,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
     }
     /* else Step 1a later. */
 
-    RTThreadSleep(5000); /* Fudge: Wait until guest ATS is up. */
+    RTThreadSleep(2000); /* Fudge: Wait until guest ATS is up. 2 seconds should be enough (tm). */
 
     if (RT_SUCCESS(rc))
     {
@@ -191,8 +191,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
      */
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,  "Shutting down self test\n");
 
-    ASMAtomicWriteBool(&g_fTerminate, true);
-
+    /* If we started the guest ATS ourselves, wait for it to terminate properly. */
     if (fStartGuestAts)
     {
         int rcThread;

@@ -425,7 +425,6 @@ static DECLCALLBACK(void) atsTcpNotifyBye(PATSTRANSPORTINST pThis, PATSTRANSPORT
 {
     LogFunc(("atsTcpDisconnectClient %RTsock\n", pClient->hTcpClient));
     atsTcpDisconnectClient(pThis, pClient);
-    RTMemFree(pClient);
 }
 
 /**
@@ -445,7 +444,7 @@ static DECLCALLBACK(void) atsTcpBabble(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
     /*
      * Try send the babble reply.
      */
-    NOREF(cMsSendTimeout); /** @todo implement the timeout here; non-blocking write + select-on-write. */
+    RT_NOREF(cMsSendTimeout); /** @todo implement the timeout here; non-blocking write + select-on-write. */
     int     rc;
     size_t  cbToSend = RT_ALIGN_Z(pPktHdr->cb, ATSPKT_ALIGNMENT);
     do  rc = RTTcpWrite(pClient->hTcpClient, pPktHdr, cbToSend);

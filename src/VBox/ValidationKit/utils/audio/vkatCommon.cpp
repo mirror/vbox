@@ -60,6 +60,8 @@ typedef struct ATSCALLBACKCTX
     char          szTestSetArchive[RTPATH_MAX];
     /** File handle to the (opened) test set archive for reading. */
     RTFILE        hTestSetArchive;
+    /** Number of currently connected clients. */
+    uint8_t       cClients;
 } ATSCALLBACKCTX;
 typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
 
@@ -461,6 +463,45 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
 /*********************************************************************************************************************************
 *   ATS Callback Implementations                                                                                                 *
 *********************************************************************************************************************************/
+
+/** @copydoc ATSCALLBACKS::pfnHowdy
+ *
+ *  @note Runs as part of the guest ATS.
+ */
+static DECLCALLBACK(int) audioTestGstAtsHowdyCallback(void const *pvUser)
+{
+    PATSCALLBACKCTX pCtx = (PATSCALLBACKCTX)pvUser;
+
+    AssertReturn(pCtx->cClients <= UINT8_MAX, VERR_BUFFER_OVERFLOW);
+
+    pCtx->cClients++;
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "New client connected, now %RU8 total\n", pCtx->cClients);
+
+    return VINF_SUCCESS;
+}
+
+/** @copydoc ATSCALLBACKS::pfnBye
+ *
+ *  @note Runs as part of the guest ATS.
+ */
+static DECLCALLBACK(int) audioTestGstAtsByeCallback(void const *pvUser)
+{
+    PATSCALLBACKCTX pCtx = (PATSCALLBACKCTX)pvUser;
+
+    AssertReturn(pCtx->cClients, VERR_WRONG_ORDER);
+    pCtx->cClients--;
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Clients wants to disconnect, %RU8 remaining\n", pCtx->cClients);
+
+    if (0 == pCtx->cClients) /* All clients disconnected? Tear things down. */
+    {
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Last client disconnected, terminating server ...\n");
+        ASMAtomicWriteBool(&g_fTerminate, true);
+    }
+
+    return VINF_SUCCESS;
+}
 
 /** @copydoc ATSCALLBACKS::pfnTestSetBegin
  *
@@ -869,6 +910,8 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
 
         ATSCALLBACKS Callbacks;
         RT_ZERO(Callbacks);
+        Callbacks.pfnHowdy            = audioTestGstAtsHowdyCallback;
+        Callbacks.pfnBye              = audioTestGstAtsByeCallback;
         Callbacks.pfnTestSetBegin     = audioTestGstAtsTestSetBeginCallback;
         Callbacks.pfnTestSetEnd       = audioTestGstAtsTestSetEndCallback;
         Callbacks.pfnTonePlay         = audioTestGstAtsTonePlayCallback;
@@ -963,6 +1006,14 @@ void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
 {
     if (!pTstEnv)
         return;
+
+    /* When in host mode, we need to destroy our ATS clients in order to also let
+     * the ATS server(s) know we're going to quit. */
+    if (pTstEnv->enmMode == AUDIOTESTMODE_HOST)
+    {
+        AudioTestSvcClientDestroy(&pTstEnv->u.Host.AtsClValKit);
+        AudioTestSvcClientDestroy(&pTstEnv->u.Host.AtsClGuest);
+    }
 
     for (unsigned i = 0; i < RT_ELEMENTS(pTstEnv->aStreams); i++)
     {
