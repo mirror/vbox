@@ -576,7 +576,7 @@ public:
     /**
      * Returns translated text.
      *
-     * @param aContext      Translation context e.g. class name
+     * @param aComponent    Translation context e.g. class name
      * @param aSourceText   String to translate.
      * @param aComment      Comment to the string to resolve possible ambiguities
      *                      (NULL means no comment). Used by translation tool only.
