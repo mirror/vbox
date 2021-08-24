@@ -101,6 +101,8 @@ VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
+
+/** @relates VirtualBoxClient::FinalConstruct() */
 HRESULT VirtualBoxClient::FinalConstruct()
 {
     HRESULT rc = init();
