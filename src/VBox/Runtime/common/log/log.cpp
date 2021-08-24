@@ -31,14 +31,12 @@
 #include <iprt/log.h>
 #include "internal/iprt.h"
 
-#ifndef IN_RC
-# include <iprt/alloc.h>
-# include <iprt/crc.h>
-# include <iprt/process.h>
-# include <iprt/semaphore.h>
-# include <iprt/thread.h>
-# include <iprt/mp.h>
-#endif
+#include <iprt/alloc.h>
+#include <iprt/crc.h>
+#include <iprt/process.h>
+#include <iprt/semaphore.h>
+#include <iprt/thread.h>
+#include <iprt/mp.h>
 #ifdef IN_RING3
 # include <iprt/env.h>
 # include <iprt/file.h>
@@ -192,7 +190,7 @@ typedef struct RTLOGGERINTERNAL
     /** Thread name for use in ring-0 with RTLOGFLAGS_PREFIX_THREAD. */
     char                    szR0ThreadName[16];
 
-#ifdef IN_RING3 /* Note! Must be at the end! */ /** @todo r=bird: figure out why it must be at the end... */
+#ifdef IN_RING3
     /** @name File logging bits for the logger.
      * @{ */
     /** Pointer to the function called when starting logging, and when
@@ -232,8 +230,6 @@ typedef struct RTLOGGERINTERNAL
 
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbRingBufUnflushed, sizeof(uint64_t));
 #ifdef IN_RING3
-/** The size of the RTLOGGERINTERNAL structure in ring-0.  */
-# define RTLOGGERINTERNAL_R0_SIZE       RT_UOFFSETOF(RTLOGGERINTERNAL, pfnPhase)
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, hFile, sizeof(void *));
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbHistoryFileMax, sizeof(uint64_t));
 #endif
@@ -258,9 +254,7 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifndef IN_RC
 static unsigned rtlogGroupFlags(const char *psz);
-#endif
 #ifdef IN_RING0
 static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, PRTLOGGERINTERNAL pInt,
                                     const char *pszFormat, va_list va);
@@ -268,41 +262,21 @@ static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, PRTLOG
 #ifdef IN_RING3
 static int  rtR3LogOpenFileDestination(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO pErrInfo);
 #endif
-#ifndef IN_RC
 static void rtLogRingBufFlush(PRTLOGGERINTERNAL pLoggerInt);
-#endif
 static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace);
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars);
 static void rtlogLoggerExVLocked(PRTLOGGERINTERNAL pLoggerInt, unsigned fFlags, unsigned iGroup,
                                  const char *pszFormat, va_list args);
-#ifndef IN_RC
 static void rtlogLoggerExFLocked(PRTLOGGERINTERNAL pLoggerInt, unsigned fFlags, unsigned iGroup, const char *pszFormat, ...);
-#endif
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifndef IN_RC
 /** Default logger instance. */
 static PRTLOGGER                    g_pLogger;
 /** Default release logger instance. */
 static PRTLOGGER                    g_pRelLogger;
-#else
-/** Default logger instance. Make it weak because our RC module loader does not
- *  necessarily resolve this symbol and the compiler _must_ check if this is
- *  the case or not. That doesn't work for Darwin (``incompatible feature used:
- *  .weak_reference (must specify "-dynamic" to be used'') */
-# ifdef RT_OS_DARWIN
-extern "C" DECLIMPORT(RTLOGGERRC)   g_Logger;
-/** Default release logger instance. */
-extern "C" DECLIMPORT(RTLOGGERRC)   g_RelLogger;
-# else
-extern "C" DECLWEAK(DECLIMPORT(RTLOGGERRC)) g_Logger;
-/** Default release logger instance. */
-extern "C" DECLWEAK(DECLIMPORT(RTLOGGERRC)) g_RelLogger;
-# endif
-#endif /* IN_RC */
 #ifdef IN_RING3
 /** The RTThreadGetWriteLockCount() change caused by the logger mutex semaphore. */
 static uint32_t volatile            g_cLoggerLockCount;
@@ -424,7 +398,6 @@ static const uint32_t g_acMsLogBackoff[] =
  */
 DECLINLINE(int) rtlogLock(PRTLOGGERINTERNAL pLoggerInt)
 {
-#ifndef IN_RC
     AssertMsgReturn(pLoggerInt->Core.u32Magic == RTLOGGER_MAGIC, ("%#x != %#x\n", pLoggerInt->Core.u32Magic, RTLOGGER_MAGIC),
                     VERR_INVALID_MAGIC);
     AssertMsgReturn(pLoggerInt->uRevision == RTLOGGERINTERNAL_REV, ("%#x != %#x\n", pLoggerInt->uRevision, RTLOGGERINTERNAL_REV),
@@ -437,9 +410,6 @@ DECLINLINE(int) rtlogLock(PRTLOGGERINTERNAL pLoggerInt)
         if (RT_FAILURE(rc))
             return rc;
     }
-#else
-    NOREF(pLoggerInt);
-#endif
     return VINF_SUCCESS;
 }
 
@@ -450,63 +420,12 @@ DECLINLINE(int) rtlogLock(PRTLOGGERINTERNAL pLoggerInt)
  */
 DECLINLINE(void) rtlogUnlock(PRTLOGGERINTERNAL pLoggerInt)
 {
-#ifndef IN_RC
     if (pLoggerInt->hSpinMtx != NIL_RTSEMSPINMUTEX)
         RTSemSpinMutexRelease(pLoggerInt->hSpinMtx);
-#else
-    NOREF(pLoggerInt);
-#endif
     return;
 }
 
-#ifndef IN_RC
-# ifdef IN_RING3
-
-#  ifdef SOME_UNUSED_FUNCTION
-/**
- * Logging to file, output callback.
- *
- * @param  pvArg        User argument.
- * @param  pachChars    Pointer to an array of utf-8 characters.
- * @param  cbChars      Number of bytes in the character array pointed to by pachChars.
- */
-static DECLCALLBACK(size_t) rtlogPhaseWrite(void *pvArg, const char *pachChars, size_t cbChars)
-{
-    PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pvArg;
-    RTFileWrite(pLoggerInt->hFile, pachChars, cbChars, NULL);
-    return cbChars;
-}
-
-
-/**
- * Callback to format VBox formatting extentions.
- * See @ref pg_rt_str_format for a reference on the format types.
- *
- * @returns The number of bytes formatted.
- * @param   pvArg           Formatter argument.
- * @param   pfnOutput       Pointer to output function.
- * @param   pvArgOutput     Argument for the output function.
- * @param   ppszFormat      Pointer to the format string pointer. Advance this till the char
- *                          after the format specifier.
- * @param   pArgs           Pointer to the argument list. Use this to fetch the arguments.
- * @param   cchWidth        Format Width. -1 if not specified.
- * @param   cchPrecision    Format Precision. -1 if not specified.
- * @param   fFlags          Flags (RTSTR_NTFS_*).
- * @param   chArgSize       The argument size specifier, 'l' or 'L'.
- */
-static DECLCALLBACK(size_t) rtlogPhaseFormatStr(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                                                const char **ppszFormat, va_list *pArgs, int cchWidth,
-                                                int cchPrecision, unsigned fFlags, char chArgSize)
-{
-    char ch = *(*ppszFormat)++;
-
-    AssertMsgFailed(("Invalid logger phase format type '%%%c%.10s'!\n", ch, *ppszFormat)); NOREF(ch);
-
-    return 0;
-}
-
-#  endif /* SOME_UNUSED_FUNCTION */
-
+#ifdef IN_RING3
 
 /**
  * Log phase callback function, assumes the lock is already held
@@ -547,7 +466,7 @@ static DECLCALLBACK(void) rtlogPhaseMsgNormal(PRTLOGGER pLogger, const char *psz
     va_end(args);
 }
 
-# endif /* IN_RING3 */
+#endif /* IN_RING3 */
 
 /**
  * Adjusts the ring buffer.
@@ -2000,14 +1919,15 @@ static unsigned rtlogGroupFlags(const char *psz)
     return fFlags;
 }
 
+
 /**
  * Helper for RTLogGetGroupSettings.
  */
 static int rtLogGetGroupSettingsAddOne(const char *pszName, uint32_t fGroup, char **ppszBuf, size_t *pcchBuf, bool *pfNotFirst)
 {
-# define APPEND_PSZ(psz,cch) do { memcpy(*ppszBuf, (psz), (cch)); *ppszBuf += (cch); *pcchBuf -= (cch); } while (0)
-# define APPEND_SZ(sz)       APPEND_PSZ(sz, sizeof(sz) - 1)
-# define APPEND_CH(ch)       do { **ppszBuf = (ch); *ppszBuf += 1; *pcchBuf -= 1; } while (0)
+#define APPEND_PSZ(psz,cch) do { memcpy(*ppszBuf, (psz), (cch)); *ppszBuf += (cch); *pcchBuf -= (cch); } while (0)
+#define APPEND_SZ(sz)       APPEND_PSZ(sz, sizeof(sz) - 1)
+#define APPEND_CH(ch)       do { **ppszBuf = (ch); *ppszBuf += 1; *pcchBuf -= 1; } while (0)
 
     /*
      * Add the name.
@@ -2043,9 +1963,9 @@ static int rtLogGetGroupSettingsAddOne(const char *pszName, uint32_t fGroup, cha
     else
         return VERR_BUFFER_OVERFLOW;
 
-# undef APPEND_PSZ
-# undef APPEND_SZ
-# undef APPEND_CH
+#undef APPEND_PSZ
+#undef APPEND_SZ
+#undef APPEND_CH
     return VINF_SUCCESS;
 }
 
@@ -2122,7 +2042,6 @@ RTDECL(int) RTLogQueryGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchB
 }
 RT_EXPORT_SYMBOL(RTLogQueryGroupSettings);
 
-#endif /* !IN_RC */
 
 /**
  * Updates the flags for the logger instance using the specified
@@ -2257,7 +2176,6 @@ RTDECL(bool) RTLogSetBuffering(PRTLOGGER pLogger, bool fBuffered)
 RT_EXPORT_SYMBOL(RTLogSetBuffering);
 
 
-#ifdef IN_RING3
 RTDECL(uint32_t) RTLogSetGroupLimit(PRTLOGGER pLogger, uint32_t cMaxEntriesPerGroup)
 {
     PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pLogger;
@@ -2279,7 +2197,7 @@ RTDECL(uint32_t) RTLogSetGroupLimit(PRTLOGGER pLogger, uint32_t cMaxEntriesPerGr
 
     return cOld;
 }
-#endif
+RT_EXPORT_SYMBOL(RTLogSetGroupLimit);
 
 
 #ifdef IN_RING0
@@ -2307,9 +2225,8 @@ RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, .
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLogSetR0ThreadNameF);
-#endif
+#endif /* IN_RING0 */
 
-#ifndef IN_RC
 
 /**
  * Gets the current flag settings for the given logger.
@@ -3100,7 +3017,6 @@ RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pch, size_t cch)
 }
 RT_EXPORT_SYMBOL(RTLogBulkWrite);
 
-#endif /* !IN_RC */
 
 /**
  * Flushes the specified logger.
@@ -3163,13 +3079,30 @@ RT_EXPORT_SYMBOL(RTLogFlush);
 /**
  * Common worker for RTLogDefaultInstance and RTLogDefaultInstanceEx.
  */
+DECL_NO_INLINE(static, PRTLOGGER) rtLogDefaultInstanceCreateNew(void)
+{
+    PRTLOGGER pRet = RTLogDefaultInit();
+    if (pRet)
+    {
+        bool fRc = ASMAtomicCmpXchgPtr(&g_pLogger, pRet, NULL);
+        if (!fRc)
+        {
+            RTLogDestroy(pRet);
+            pRet = g_pLogger;
+        }
+    }
+    return pRet;
+}
+
+
+/**
+ * Common worker for RTLogDefaultInstance and RTLogDefaultInstanceEx.
+ */
 DECL_FORCE_INLINE(PRTLOGGER) rtLogDefaultInstanceCommon(void)
 {
-#ifdef IN_RC
-    return &g_Logger;
+    PRTLOGGER pRet;
 
-#else /* !IN_RC */
-# ifdef IN_RING0
+#ifdef IN_RING0
     /*
      * Check per thread loggers first.
      */
@@ -3181,15 +3114,17 @@ DECL_FORCE_INLINE(PRTLOGGER) rtLogDefaultInstanceCommon(void)
             if (g_aPerThreadLoggers[i].NativeThread == Self)
                 return g_aPerThreadLoggers[i].pLogger;
     }
-# endif /* IN_RING0 */
+#endif /* IN_RING0 */
 
     /*
      * If no per thread logger, use the default one.
      */
-    if (!g_pLogger)
-        g_pLogger = RTLogDefaultInit();
-    return g_pLogger;
-#endif /* !IN_RC */
+    pRet = g_pLogger;
+    if (RT_LIKELY(pRet))
+    { /* likely */ }
+    else
+        pRet = rtLogDefaultInstanceCreateNew();
+    return pRet;
 }
 
 
@@ -3237,10 +3172,7 @@ RT_EXPORT_SYMBOL(RTLogDefaultInstanceEx);
  */
 DECL_FORCE_INLINE(PRTLOGGER) rtLogGetDefaultInstanceCommon(void)
 {
-#ifdef IN_RC
-    return &g_Logger;
-#else
-# ifdef IN_RING0
+#ifdef IN_RING0
     /*
      * Check per thread loggers first.
      */
@@ -3252,10 +3184,9 @@ DECL_FORCE_INLINE(PRTLOGGER) rtLogGetDefaultInstanceCommon(void)
             if (g_aPerThreadLoggers[i].NativeThread == Self)
                 return g_aPerThreadLoggers[i].pLogger;
     }
-# endif /* IN_RING0 */
+#endif /* IN_RING0 */
 
     return g_pLogger;
-#endif
 }
 
 
@@ -3277,7 +3208,6 @@ RTDECL(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
 RT_EXPORT_SYMBOL(RTLogGetDefaultInstanceEx);
 
 
-#ifndef IN_RC
 /**
  * Sets the default logger instance.
  *
@@ -3289,7 +3219,6 @@ RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
     return ASMAtomicXchgPtrT(&g_pLogger, pLogger, PRTLOGGER);
 }
 RT_EXPORT_SYMBOL(RTLogSetDefaultInstance);
-#endif /* !IN_RC */
 
 
 #ifdef IN_RING0
@@ -3303,7 +3232,7 @@ RT_EXPORT_SYMBOL(RTLogSetDefaultInstance);
  *                      order to only deregister the instance associated with the
  *                      current thread use 0.
  */
-RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
+RTR0DECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
 {
     int             rc;
     RTNATIVETHREAD  Self = RTThreadNativeSelf();
@@ -3381,22 +3310,14 @@ RT_EXPORT_SYMBOL(RTLogSetDefaultInstanceThread);
 
 RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstance(void)
 {
-#ifdef IN_RC
-    return &g_RelLogger;
-#else /* !IN_RC */
     return g_pRelLogger;
-#endif /* !IN_RC */
 }
 RT_EXPORT_SYMBOL(RTLogRelGetDefaultInstance);
 
 
 RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
-#ifdef IN_RC
-    PRTLOGGERINTERNAL pLoggerInt = &g_RelLogger;
-#else
     PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)g_pRelLogger;
-#endif
     if (pLoggerInt)
         pLoggerInt = rtLogCheckGroupFlagsWorker(pLoggerInt, fFlagsAndGroup);
     return (PRTLOGGER)pLoggerInt;
@@ -3404,7 +3325,6 @@ RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
 RT_EXPORT_SYMBOL(RTLogRelGetDefaultInstanceEx);
 
 
-#ifndef IN_RC
 /**
  * Sets the default logger instance.
  *
@@ -3416,7 +3336,6 @@ RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger)
     return ASMAtomicXchgPtrT(&g_pRelLogger, pLogger, PRTLOGGER);
 }
 RT_EXPORT_SYMBOL(RTLogRelSetDefaultInstance);
-#endif /* !IN_RC */
 
 
 /**
@@ -3493,9 +3412,7 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
      * If no output, then just skip it.
      */
     if (    (pLoggerInt->fFlags & RTLOGFLAGS_DISABLED)
-#ifndef IN_RC
         || !pLoggerInt->fDestFlags
-#endif
         || !pszFormat || !*pszFormat)
         return;
     if (    iGroup != ~0U
@@ -3518,7 +3435,6 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
     /*
      * Check restrictions and call worker.
      */
-#ifndef IN_RC
     if (RT_UNLIKELY(   (pLoggerInt->fFlags & RTLOGFLAGS_RESTRICT_GROUPS)
                     && iGroup < pLoggerInt->cGroups
                     && (pLoggerInt->afGroups[iGroup] & RTLOGGRPFLAGS_RESTRICT)
@@ -3539,7 +3455,6 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
         }
     }
     else
-#endif
         rtlogLoggerExVLocked(pLoggerInt, fFlags, iGroup, pszFormat, args);
 
     /*
@@ -3549,8 +3464,8 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
 }
 RT_EXPORT_SYMBOL(RTLogLoggerExV);
 
-
 #ifdef IN_RING0
+
 /**
  * For rtR0LogLoggerExFallbackOutput and rtR0LogLoggerExFallbackFlush.
  */
@@ -3705,8 +3620,8 @@ static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, PRTLOG
 
     RTLogFormatV(rtR0LogLoggerExFallbackOutput, &This, pszFormat, va);
 }
-#endif /* IN_RING0 */
 
+#endif /* IN_RING0 */
 
 /**
  * vprintf like function for writing to the default log.
@@ -3736,7 +3651,6 @@ RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va)
     RTLogLoggerV((PRTLOGGER)pvUser, pszFormat, va);
 }
 RT_EXPORT_SYMBOL(RTLogDumpPrintfV);
-
 
 #ifdef IN_RING3
 
@@ -3957,7 +3871,6 @@ static int rtR3LogOpenFileDestination(PRTLOGGERINTERNAL pLoggerInt, PRTERRINFO p
 }
 
 #endif /* IN_RING3 */
-
 
 /**
  * Writes the buffer to the given log device without checking for buffered
@@ -4362,7 +4275,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
                 if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_MS_PROG)
                 {
-#if defined(IN_RING3) || defined(IN_RC)
+#ifndef IN_RING0
                     uint64_t u64 = RTTimeProgramMilliTS();
 #else
                     uint64_t u64 = (RTTimeNanoTS() - pLoggerInt->nsR0ProgramStart) / RT_NS_1MS;
@@ -4397,7 +4310,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_TIME_PROG)
                 {
 
-#if defined(IN_RING3) || defined(IN_RC)
+#ifndef IN_RING0
                     uint64_t u64 = RTTimeProgramMicroTS();
 #else
                     uint64_t u64 = (RTTimeNanoTS() - pLoggerInt->nsR0ProgramStart) / RT_NS_1US;
@@ -4435,11 +4348,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
                 if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_PID)
                 {
-#ifndef IN_RC
                     RTPROCESS Process = RTProcSelf();
-#else
-                    RTPROCESS Process = NIL_RTPROCESS;
-#endif
                     psz += RTStrFormatNumber(psz, Process, 16, sizeof(RTPROCESS) * 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = ' ';
                 }
@@ -4447,11 +4356,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
                 if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_TID)
                 {
-#ifndef IN_RC
                     RTNATIVETHREAD Thread = RTThreadNativeSelf();
-#else
-                    RTNATIVETHREAD Thread = NIL_RTNATIVETHREAD;
-#endif
                     psz += RTStrFormatNumber(psz, Thread, 16, sizeof(RTNATIVETHREAD) * 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = ' ';
                 }
@@ -4482,14 +4387,12 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
 #define CCH_PREFIX_10   CCH_PREFIX_09 + 17
 
-#ifndef IN_RC
                 if (    (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_CUSTOM)
                     &&  pLoggerInt->pfnPrefix)
                 {
                     psz += pLoggerInt->pfnPrefix(&pLoggerInt->Core, psz, 31, pLoggerInt->pvPrefixUserArg);
                     *psz++ = ' ';                                                               /* +32 */
                 }
-#endif
 #define CCH_PREFIX_11   CCH_PREFIX_10 + 32
 
                 if (pLoggerInt->fFlags & RTLOGFLAGS_PREFIX_LOCK_COUNTS)
@@ -4595,6 +4498,10 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 rtlogFlush(pLoggerInt, true /*fNeedSpace*/);
                 continue;
             }
+
+            /*
+             * Done with the prefixing. Copy message text past the next newline.
+             */
 
             /* how much */
             if (cb > cbChars)
@@ -4716,7 +4623,6 @@ static void rtlogLoggerExVLocked(PRTLOGGERINTERNAL pLoggerInt, unsigned fFlags, 
 }
 
 
-#ifndef IN_RC
 /**
  * For calling rtlogLoggerExVLocked.
  *
@@ -4735,5 +4641,4 @@ static void rtlogLoggerExFLocked(PRTLOGGERINTERNAL pLoggerInt, unsigned fFlags, 
     rtlogLoggerExVLocked(pLoggerInt, fFlags, iGroup, pszFormat, va);
     va_end(va);
 }
-#endif /* !IN_RC */
 

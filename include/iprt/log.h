@@ -152,23 +152,11 @@ typedef enum RTLOGGROUP
 #endif
 
 /** Logger structure. */
-#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-typedef struct RTLOGGERRC RTLOGGER;
-#else
 typedef struct RTLOGGER RTLOGGER;
-#endif
 /** Pointer to logger structure. */
 typedef RTLOGGER *PRTLOGGER;
 /** Pointer to const logger structure. */
 typedef const RTLOGGER *PCRTLOGGER;
-
-
-/** Guest context logger structure. */
-typedef struct RTLOGGERRC RTLOGGERRC;
-/** Pointer to guest context logger structure. */
-typedef RTLOGGERRC *PRTLOGGERRC;
-/** Pointer to const guest context logger structure. */
-typedef const RTLOGGERRC *PCRTLOGGERRC;
 
 
 /** Pointer to a log buffer descriptor. */
@@ -476,10 +464,6 @@ typedef enum RTLOGDEST
 #define RTLOG_DST_VALID_MASK    UINT32_C(0x6303003f)
 /** Log destinations that can be changed via RTLogChangeDestinations. */
 #define RTLOG_DST_CHANGE_MASK   UINT32_C(0x4000001e)
-
-
-RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
-                           const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 
 
 #ifdef DOXYGEN_RUNNING
@@ -1710,7 +1694,6 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 /** @} */
 
 
-#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 /**
  * Sets the default release logger instance.
  *
@@ -1718,7 +1701,6 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  * @param   pLogger     The new default release logger instance.
  */
 RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger);
-#endif
 
 /**
  * Gets the default release logger instance.
@@ -1929,14 +1911,14 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void);
 RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup);
 
 /**
- * Gets the default logger instance.
+ * Gets the default logger instance (does not create one).
  *
  * @returns Pointer to default logger instance if availble, otherwise NULL.
  */
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
 
 /**
- * Gets the default logger instance if enabled.
+ * Gets the default logger instance if enabled (does not create one).
  *
  * @returns Pointer to default logger instance, if group has the specified
  *          flags enabled.  Otherwise NULL is returned.
@@ -1945,7 +1927,6 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
  */
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup);
 
-#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 /**
  * Sets the default logger instance.
  *
@@ -1953,7 +1934,6 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup);
  * @param   pLogger     The new default logger instance.
  */
 RTDECL(PRTLOGGER)   RTLogSetDefaultInstance(PRTLOGGER pLogger);
-#endif
 
 #ifdef IN_RING0
 /**
@@ -1966,24 +1946,20 @@ RTDECL(PRTLOGGER)   RTLogSetDefaultInstance(PRTLOGGER pLogger);
  *                      order to only deregister the instance associated with the
  *                      current thread use 0.
  */
-RTDECL(int)         RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey);
+RTR0DECL(int)       RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey);
 #endif /* IN_RING0 */
 
-
-#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 /**
- * Creates the default logger instance for a iprt users.
+ * Creates the default logger instance for IPRT users.
  *
  * Any user of the logging features will need to implement
  * this or use the generic dummy.
  *
  * @returns Pointer to the logger instance.
  */
-RTDECL(PRTLOGGER) RTLogDefaultInit(void);
-#endif
+RTDECL(PRTLOGGER)   RTLogDefaultInit(void);
 
 /**
- *
  * This is the 2nd half of what RTLogGetDefaultInstanceEx() and
  * RTLogRelGetDefaultInstanceEx() does.
  *
@@ -1994,8 +1970,6 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void);
  *                          the high 16 bits.
  */
 RTDECL(PRTLOGGER)   RTLogCheckGroupFlags(PRTLOGGER pLogger, uint32_t fFlagsAndGroup);
-
-#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 
 /**
  * Create a logger instance.
@@ -2109,90 +2083,14 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
                            PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list va) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(17, 0);
 
 /**
- * Create a logger instance for singled threaded ring-0 usage.
- *
- * @returns iprt status code.
- *
- * @param   pLogger             Where to create the logger instance.
- * @param   cbLogger            The amount of memory available for the logger instance.
- * @param   pLoggerR0Ptr        The ring-0 address corresponding to @a pLogger.
- * @param   pfnLoggerR0Ptr      Pointer to logger wrapper function.
- * @param   pfnFlushR0Ptr       Pointer to flush function.
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
- * @param   fDestFlags          The destination flags.
- * @param   pszThreadName       The thread name to report in ring-0 when
- *                              RTLOGFLAGS_PREFIX_THREAD is set.
- */
-RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
-                             RTR0PTR pLoggerR0Ptr, RTR0PTR pfnLoggerR0Ptr, RTR0PTR pfnFlushR0Ptr,
-                             uint32_t fFlags, uint32_t fDestFlags, char const *pszThreadName);
-
-/**
- * Calculates the minimum size of a ring-0 logger instance.
- *
- * @returns The minimum size.
- * @param   cGroups             The number of groups.
- * @param   fFlags              Relevant flags.
- */
-RTDECL(size_t) RTLogCalcSizeForR0(uint32_t cGroups, uint32_t fFlags);
-
-/**
  * Destroys a logger instance.
  *
  * The instance is flushed and all output destinations closed (where applicable).
  *
  * @returns iprt status code.
- * @param   pLogger             The logger instance which close destroyed. NULL is fine.
+ * @param   pLogger     The logger instance which close destroyed. NULL is fine.
  */
 RTDECL(int) RTLogDestroy(PRTLOGGER pLogger);
-
-/**
- * Create a logger instance clone for RC usage.
- *
- * @returns iprt status code.
- *
- * @param   pLogger             The logger instance to be cloned.
- * @param   pLoggerRC           Where to create the RC logger instance.
- * @param   cbLoggerRC          Amount of memory allocated to for the RC logger
- *                              instance clone.
- * @param   pfnLoggerRCPtr      Pointer to logger wrapper function for this
- *                              instance (RC Ptr).
- * @param   pfnFlushRCPtr       Pointer to flush function (RC Ptr).
- * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
- */
-RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC, size_t cbLoggerRC,
-                         RTRCPTR pfnLoggerRCPtr, RTRCPTR pfnFlushRCPtr, uint32_t fFlags);
-
-/**
- * Flushes a RC logger instance to a R3 logger.
- *
- * @returns iprt status code.
- * @param   pLogger     The R3 logger instance to flush pLoggerRC to. If NULL
- *                      the default logger is used.
- * @param   pLoggerRC   The RC logger instance to flush.
- */
-RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC);
-
-/**
- * Flushes the buffer in one logger instance onto another logger.
- *
- * @returns iprt status code.
- *
- * @param   pSrcLogger   The logger instance to flush.
- * @param   pDstLogger   The logger instance to flush onto.
- *                       If NULL the default logger will be used.
- */
-RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger);
-
-/**
- * Flushes a R0 logger instance to a R3 logger.
- *
- * @returns iprt status code.
- * @param   pLogger      The R3 logger instance to flush pLoggerR0 to. If NULL
- *                       the default logger is used.
- * @param   pLoggerR0    The R0 logger instance to flush.
- */
-RTDECL(void) RTLogFlushR0(PRTLOGGER pLogger, PRTLOGGER pLoggerR0);
 
 /**
  * Sets the custom prefix callback.
@@ -2205,38 +2103,12 @@ RTDECL(void) RTLogFlushR0(PRTLOGGER pLogger, PRTLOGGER pLoggerR0);
 RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCallback, void *pvUser);
 
 /**
- * Same as RTLogSetCustomPrefixCallback for loggers created by
- * RTLogCreateForR0.
- *
- * @returns IPRT status code.
- * @param   pLogger             The logger instance.
- * @param   pLoggerR0Ptr        The ring-0 address corresponding to @a pLogger.
- * @param   pfnCallbackR0Ptr    The callback.
- * @param   pvUserR0Ptr         The user argument for the callback.
- *  */
-RTDECL(int) RTLogSetCustomPrefixCallbackForR0(PRTLOGGER pLogger, RTR0PTR pLoggerR0Ptr,
-                                              RTR0PTR pfnCallbackR0Ptr, RTR0PTR pvUserR0Ptr);
-
-/**
- * Copies the group settings and flags from logger instance to another.
- *
- * @returns IPRT status code.
- * @param   pDstLogger      The destination logger instance.
- * @param   pDstLoggerR0Ptr The ring-0 address corresponding to @a pDstLogger.
- * @param   pSrcLogger      The source logger instance. If NULL the default one is used.
- * @param   fFlagsOr        OR mask for the flags.
- * @param   fFlagsAnd       AND mask for the flags.
- */
-RTDECL(int) RTLogCopyGroupsAndFlagsForR0(PRTLOGGER pDstLogger, RTR0PTR pDstLoggerR0Ptr,
-                                         PCRTLOGGER pSrcLogger, uint32_t fFlagsOr, uint32_t fFlagsAnd);
-
-/**
  * Set the thread name for a thread specific ring-0 logger.
  *
  * @returns IPRT status code.
- * @param   pLogger         The logger. NULL is not allowed.
- * @param   pszNameFmt      The format string for the thread name.
- * @param   ...             Format arguments.
+ * @param   pLogger     The logger. NULL is not allowed.
+ * @param   pszNameFmt  The format string for the thread name.
+ * @param   ...         Format arguments.
  */
 RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
@@ -2244,10 +2116,10 @@ RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, .
  * Get the current log group settings as a string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
- * @param   pLogger             Logger instance (NULL for default logger).
- * @param   pszBuf              The output buffer.
- * @param   cchBuf              The size of the output buffer. Must be greater
- *                              than zero.
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   pszBuf      The output buffer.
+ * @param   cchBuf      The size of the output buffer. Must be greater than
+ *                      zero.
  */
 RTDECL(int) RTLogQueryGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
 
@@ -2261,8 +2133,6 @@ RTDECL(int) RTLogQueryGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchB
  * @param   pszValue    Value to parse.
  */
 RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszValue);
-
-#endif /* !IN_RC || DOXYGEN_RUNNING */
 
 /**
  * Sets the max number of entries per group.
@@ -2278,13 +2148,11 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszValue);
  */
 RTDECL(uint32_t) RTLogSetGroupLimit(PRTLOGGER pLogger, uint32_t cMaxEntriesPerGroup);
 
-#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
-
 /**
  * Gets the current flag settings for the given logger.
  *
  * @returns Logger flags, UINT64_MAX if no logger.
- * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pLogger     Logger instance (NULL for default logger).
  */
 RTDECL(uint64_t) RTLogGetFlags(PRTLOGGER pLogger);
 
@@ -2293,14 +2161,12 @@ RTDECL(uint64_t) RTLogGetFlags(PRTLOGGER pLogger);
  *
  * @returns IPRT status code.  Returns VINF_SUCCESS if no default logger and @a
  *          pLogger is NULL.
- * @param   pLogger             Logger instance (NULL for default logger).
- * @param   fSet                Mask of flags to set (OR).
- * @param   fClear              Mask of flags to clear (NAND).  This is allowed to
- *                              include invalid flags - e.g. UINT64_MAX is okay.
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   fSet        Mask of flags to set (OR).
+ * @param   fClear      Mask of flags to clear (NAND).  This is allowed to
+ *                      include invalid flags - e.g. UINT64_MAX is okay.
  */
 RTDECL(int) RTLogChangeFlags(PRTLOGGER pLogger, uint64_t fSet, uint64_t fClear);
-
-#endif
 
 /**
  * Updates the flags for the logger instance using the specified
@@ -2319,22 +2185,20 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszValue);
  * This can be used for optimizing longish logging sequences.
  *
  * @returns The old state.
- * @param   pLogger         The logger instance (NULL is an alias for the
- *                          default logger).
- * @param   fBuffered       The new state.
+ * @param   pLogger     The logger instance (NULL is an alias for the default
+ *                      logger).
+ * @param   fBuffered   The new state.
  */
 RTDECL(bool) RTLogSetBuffering(PRTLOGGER pLogger, bool fBuffered);
-
-#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 
 /**
  * Get the current log flags as a string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
- * @param   pLogger             Logger instance (NULL for default logger).
- * @param   pszBuf              The output buffer.
- * @param   cchBuf              The size of the output buffer. Must be greater
- *                              than zero.
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   pszBuf      The output buffer.
+ * @param   cchBuf      The size of the output buffer. Must be greater than
+ *                      zero.
  */
 RTDECL(int) RTLogQueryFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
 
@@ -2342,7 +2206,7 @@ RTDECL(int) RTLogQueryFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
  * Gets the current destinations flags for the given logger.
  *
  * @returns Logger destination flags, UINT32_MAX if no logger.
- * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pLogger     Logger instance (NULL for default logger).
  */
 RTDECL(uint32_t) RTLogGetDestinations(PRTLOGGER pLogger);
 
@@ -2354,9 +2218,9 @@ RTDECL(uint32_t) RTLogGetDestinations(PRTLOGGER pLogger);
  *
  * @returns IPRT status code.  Returns VINF_SUCCESS if no default logger and @a
  *          pLogger is NULL.
- * @param   pLogger            Logger instance (NULL for default logger).
- * @param   fSet               Mask of destinations to set (OR).
- * @param   fClear             Mask of destinations to clear (NAND).
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   fSet        Mask of destinations to set (OR).
+ * @param   fClear      Mask of destinations to clear (NAND).
  */
 RTDECL(int) RTLogChangeDestinations(PRTLOGGER pLogger, uint32_t fSet, uint32_t fClear);
 
@@ -2364,8 +2228,8 @@ RTDECL(int) RTLogChangeDestinations(PRTLOGGER pLogger, uint32_t fSet, uint32_t f
  * Updates the logger destination using the specified string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
- * @param   pLogger             Logger instance (NULL for default logger).
- * @param   pszValue            The value to parse.
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   pszValue    The value to parse.
  */
 RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue);
 
@@ -2373,8 +2237,8 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue);
  * Clear the file delay flag if set, opening the destination and flushing.
  *
  * @returns IPRT status code.
- * @param   pLogger             Logger instance (NULL for default logger).
- * @param   pErrInfo            Where to return extended error info.  Optional.
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   pErrInfo    Where to return extended error info.  Optional.
  */
 RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
 
@@ -2382,10 +2246,9 @@ RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
  * Get the current log destinations as a string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
- * @param   pLogger             Logger instance (NULL for default logger).
- * @param   pszBuf              The output buffer.
- * @param   cchBuf              The size of the output buffer. Must be greater
- *                              than 0.
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   pszBuf      The output buffer.
+ * @param   cchBuf      The size of the output buffer. Must be greater than 0.
  */
 RTDECL(int) RTLogQueryDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
 
@@ -2432,13 +2295,11 @@ RTDECL(int) RTLogQueryBulk(PRTLOGGER pLogger, uint64_t *pfFlags, uint32_t *puGro
  * newline fun).
  *
  * @returns IRPT status code.
- * @param   pLogger             The logger instance (NULL for default logger).
- * @param   pch                 Pointer to the block of bulk log text to write.
- * @param   cch                 Size of the block of bulk log text to write.
+ * @param   pLogger     The logger instance (NULL for default logger).
+ * @param   pch         Pointer to the block of bulk log text to write.
+ * @param   cch         Size of the block of bulk log text to write.
  */
 RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pch, size_t cch);
-
-#endif /* !IN_RC || DOXYGEN_RUNNING */
 
 /**
  * Flushes the specified logger.
@@ -2526,10 +2387,10 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list va)  RT_IPRT_FORMAT_ATT
 /**
  * Dumper vprintf-like function outputting to a logger.
  *
- * @param   pvUser          Pointer to the logger instance to use, NULL for
- *                          default instance.
- * @param   pszFormat       Format string.
- * @param   va              Format arguments.
+ * @param   pvUser      Pointer to the logger instance to use, NULL for default
+ *                      instance.
+ * @param   pszFormat   Format string.
+ * @param   va          Format arguments.
  */
 RTDECL(void) RTLogDumpPrintfV(void *pvUser, const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
@@ -2587,69 +2448,6 @@ RTDECL(size_t) RTLogComPrintf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1,
  * @param   args        Optional arguments specified in the format string.
  */
 RTDECL(size_t)  RTLogComPrintfV(const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(1, 0);
-
-
-#if 0 /* not implemented yet */
-
-/** Indicates that the semaphores shall be used to notify the other
- * part about buffer changes. */
-#define LOGHOOKBUFFER_FLAGS_SEMAPHORED      1
-
-/**
- * Log Hook Buffer.
- * Use to communicate between the logger and a log consumer.
- */
-typedef struct RTLOGHOOKBUFFER
-{
-    /** Write pointer. */
-    volatile void          *pvWrite;
-    /** Read pointer. */
-    volatile void          *pvRead;
-    /** Buffer start. */
-    void                   *pvStart;
-    /** Buffer end (exclusive). */
-    void                   *pvEnd;
-    /** Signaling semaphore used by the writer to wait on a full buffer.
-     * Only used when indicated in flags. */
-    void                   *pvSemWriter;
-    /** Signaling semaphore used by the read to wait on an empty buffer.
-     * Only used when indicated in flags. */
-    void                   *pvSemReader;
-    /** Buffer flags. Current reserved and set to zero. */
-    volatile unsigned       fFlags;
-} RTLOGHOOKBUFFER;
-/** Pointer to a log hook buffer. */
-typedef RTLOGHOOKBUFFER *PRTLOGHOOKBUFFER;
-
-
-/**
- * Register a logging hook.
- *
- * This type of logging hooks are expecting different threads acting
- * producer and consumer. They share a circular buffer which have two
- * pointers one for each end. When the buffer is full there are two
- * alternatives (indicated by a buffer flag), either wait for the
- * consumer to get it's job done, or to write a generic message saying
- * buffer overflow.
- *
- * Since the waiting would need a signal semaphore, we'll skip that for now.
- *
- * @returns iprt status code.
- * @param   pBuffer     Pointer to a logger hook buffer.
- */
-RTDECL(int)     RTLogRegisterHook(PRTLOGGER pLogger, PRTLOGHOOKBUFFER pBuffer);
-
-/**
- * Deregister a logging hook registered with RTLogRegisterHook().
- *
- * @returns iprt status code.
- * @param   pBuffer     Pointer to a logger hook buffer.
- */
-RTDECL(int)     RTLogDeregisterHook(PRTLOGGER pLogger, PRTLOGHOOKBUFFER pBuffer);
-
-#endif /* not implemented yet */
-
-
 
 /**
  * Write log buffer to a debugger (RTLOGDEST_DEBUGGER).
