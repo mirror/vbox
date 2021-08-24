@@ -105,7 +105,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEDISCARDDRV *PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV;
 /**
  * Completion callback for devices.
  *
- * @param   pDrvIns         The device instance.
+ * @param   pDevIns         The device instance.
  * @param   pvUser          User argument given during request initiation.
  * @param   rc              The status code of the completed request.
  */
@@ -131,7 +131,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEDEV *PFNPDMBLKCACHEXFERENQUEUEDEV;
 /**
  * Discard enqueue callback for devices.
  *
- * @param   pDrvIns         The driver instance.
+ * @param   pDevIns         The device instance.
  * @param   paRanges        Ranges to discard.
  * @param   cRanges         Number of range entries.
  * @param   hIoXfer         I/O handle to return on completion.
@@ -153,9 +153,9 @@ typedef DECLCALLBACKTYPE(void, FNPDMBLKCACHEXFERCOMPLETEINT,(void *pvUserInt, vo
 typedef FNPDMBLKCACHEXFERCOMPLETEINT *PFNPDMBLKCACHEXFERCOMPLETEINT;
 
 /**
- * I/O enqueue callback for drivers.
+ * I/O enqueue callback for internal users.
  *
- * @param   pDrvIns         The driver instance.
+ * @param   pvUser          User data.
  * @param   enmXferDir      Transfer direction.
  * @param   off             Transfer offset.
  * @param   cbXfer          Transfer size.
@@ -170,7 +170,7 @@ typedef FNPDMBLKCACHEXFERENQUEUEINT *PFNPDMBLKCACHEXFERENQUEUEINT;
 /**
  * Discard enqueue callback for VMM internal users.
  *
- * @param   pDrvIns         The driver instance.
+ * @param   pvUser          User data.
  * @param   paRanges        Ranges to discard.
  * @param   cRanges         Number of range entries.
  * @param   hIoXfer         I/O handle to return on completion.
@@ -181,9 +181,9 @@ typedef DECLCALLBACKTYPE(int, FNPDMBLKCACHEXFERENQUEUEDISCARDINT,(void *pvUser, 
 typedef FNPDMBLKCACHEXFERENQUEUEDISCARDINT *PFNPDMBLKCACHEXFERENQUEUEDISCARDINT;
 
 /**
- * Completion callback for USB.
+ * Completion callback for USB devices.
  *
- * @param   pDrvIns         The driver instance.
+ * @param   pUsbIns         The USB device instance.
  * @param   pvUser          User argument given during request initiation.
  * @param   rc              The status code of the completed request.
  */
@@ -192,9 +192,9 @@ typedef DECLCALLBACKTYPE(void, FNPDMBLKCACHEXFERCOMPLETEUSB,(PPDMUSBINS pUsbIns,
 typedef FNPDMBLKCACHEXFERCOMPLETEUSB *PFNPDMBLKCACHEXFERCOMPLETEUSB;
 
 /**
- * I/O enqueue callback for drivers.
+ * I/O enqueue callback for USB devices.
  *
- * @param   pDrvIns         The driver instance.
+ * @param   pUsbIns         The USB device instance.
  * @param   enmXferDir      Transfer direction.
  * @param   off             Transfer offset.
  * @param   cbXfer          Transfer size.

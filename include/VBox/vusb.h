@@ -930,9 +930,9 @@ DECLINLINE(uint32_t) VUSBIRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR pInterfa
  * VUSB device reset completion callback function.
  * This is called by the reset thread when the reset has been completed.
  *
- * @param   pDev        Pointer to the virtual USB device core.
+ * @param   pDevice Pointer to the virtual USB device core.
  * @param   rc      The VBox status code of the reset operation.
- * @param   pvUser      User specific argument.
+ * @param   pvUser  User specific argument.
  *
  * @thread  The reset thread or EMT.
  */

@@ -1064,7 +1064,7 @@ typedef struct DBGCCMD
  * for executing the command itself.
  *
  * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pFunc       Pointer to the function descriptor (as registered).
  * @param   pCmdHlp     Pointer to command helper functions.
  * @param   pUVM        The user mode VM handle, can in theory be NULL.
  * @param   paArgs      Pointer to (readonly) array of arguments.
