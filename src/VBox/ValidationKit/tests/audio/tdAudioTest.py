@@ -284,9 +284,9 @@ class tdAudioTest(vbox.TestDriver):
                 for sLine in err.decode('utf-8').splitlines():
                     reporter.log(sLine);
             if out:
-                reporter.log3('PS stdout:');
+                reporter.log4('PS stdout:');
                 for sLine in out.decode('utf-8').splitlines():
-                    reporter.log3(sLine);
+                    reporter.log4(sLine);
                     if sProcName in sLine:
                         pid = int(sLine.split(None, 1)[0]);
                         reporter.log('Killing PID %d' % (pid,));
