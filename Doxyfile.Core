@@ -714,7 +714,9 @@ PREDEFINED            += \
     DECLARE_CLASSFACTORY()= \
     DECLARE_CLASSFACTORY_SINGLETON(a)= \
     "VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(a,b)=" \
-    "DECLARE_EMPTY_CTOR_DTOR(a)=a(); virtual ~a();"
+    "DECLARE_TRANSLATE_METHODS(a)=static const char *tr(const char *aSourceText, const char *aComment = NULL, const int aNum = -1);" \
+    "DECLARE_EMPTY_CTOR_DTOR(a)=a(); virtual ~a();" \
+    "DECLARE_COMMON_CLASS_METHODS(a)=a(); virtual ~a(); static const char *tr(const char *aSourceText, const char *aComment = NULL, const int aNum = -1);"
 
 # COM hacks from From http://www.stack.nl/~dimitri/doxygen/preprocessing.html
 PREDEFINED          += \
