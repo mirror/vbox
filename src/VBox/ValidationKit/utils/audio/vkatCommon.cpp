@@ -472,7 +472,7 @@ static DECLCALLBACK(int) audioTestGstAtsHowdyCallback(void const *pvUser)
 {
     PATSCALLBACKCTX pCtx = (PATSCALLBACKCTX)pvUser;
 
-    AssertReturn(pCtx->cClients <= UINT8_MAX, VERR_BUFFER_OVERFLOW);
+    AssertReturn(pCtx->cClients <= UINT8_MAX - 1, VERR_BUFFER_OVERFLOW);
 
     pCtx->cClients++;
 
