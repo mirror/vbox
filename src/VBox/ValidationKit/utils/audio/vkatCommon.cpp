@@ -299,6 +299,8 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         uint64_t        nsDonePreBuffering = 0;
 
         uint64_t        offStream          = 0;
+        uint64_t        tsStartMs          = RTTimeMilliTS();
+        RTMSINTERVAL    uTimeoutMs         = pParms->msDuration * 4; /* Four times the time playback should roughly take */
 
         while (cbToPlayTotal)
         {
@@ -347,13 +349,24 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
 
             Assert(cbToPlayTotal >= cbPlayed);
             cbToPlayTotal -= cbPlayed;
-        }
 
-        if (RT_SUCCESS(rc))
-            rc = AudioTestMixStreamDrain(&pStream->Mix, true /*fSync*/);
+            /* Fail-safe in case something screwed up while playing back. */
+            if (RTTimeMilliTS() - tsStartMs > uTimeoutMs)
+            {
+                RTTestFailed(g_hTest, "Playback took too long (%RU32ms exceeded), aborting\n", uTimeoutMs);
+                rc = VERR_TIMEOUT;
+                break;
+            }
+        }
 
         if (cbToPlayTotal != 0)
             RTTestFailed(g_hTest, "Playback ended unexpectedly (%RU32 bytes left)\n", cbToPlayTotal);
+
+        if (RT_SUCCESS(rc))
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Draining stream ...\n");
+            rc = AudioTestMixStreamDrain(&pStream->Mix, true /*fSync*/);
+        }
     }
     else
         rc = VERR_AUDIO_STREAM_NOT_READY;
