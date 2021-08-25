@@ -194,6 +194,23 @@ typedef struct AUDIOTESTENVTCPOPTS
 typedef AUDIOTESTENVTCPOPTS *PAUDIOTESTENVTCPOPTS;
 
 /**
+ * Structure for keeping a user context for the test service callbacks.
+ */
+typedef struct ATSCALLBACKCTX
+{
+    /** The test environment bound to this context. */
+    PAUDIOTESTENV pTstEnv;
+    /** Absolute path to the packed up test set archive.
+     *  Keep it simple for now and only support one (open) archive at a time. */
+    char          szTestSetArchive[RTPATH_MAX];
+    /** File handle to the (opened) test set archive for reading. */
+    RTFILE        hTestSetArchive;
+    /** Number of currently connected clients. */
+    uint8_t       cClients;
+} ATSCALLBACKCTX;
+typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
+
+/**
  * Audio test environment parameters.
  * Not necessarily bound to a specific test (can be reused).
  */
@@ -235,6 +252,8 @@ typedef struct AUDIOTESTENV
     AUDIOTESTENVTCPOPTS     TcpOpts;
     /** ATS server instance to use. */
     ATSSERVER               Srv;
+    /** ATS callback context to use. */
+    ATSCALLBACKCTX          CallbackCtx;
     union
     {
         struct

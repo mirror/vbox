@@ -50,22 +50,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/**
- * Structure for keeping a user context for the test service callbacks.
- */
-typedef struct ATSCALLBACKCTX
-{
-    /** The test environment bound to this context. */
-    PAUDIOTESTENV pTstEnv;
-    /** Absolute path to the packed up test set archive.
-     *  Keep it simple for now and only support one (open) archive at a time. */
-    char          szTestSetArchive[RTPATH_MAX];
-    /** File handle to the (opened) test set archive for reading. */
-    RTFILE        hTestSetArchive;
-    /** Number of currently connected clients. */
-    uint8_t       cClients;
-} ATSCALLBACKCTX;
-typedef ATSCALLBACKCTX *PATSCALLBACKCTX;
 
 
 /*********************************************************************************************************************************
@@ -910,13 +894,15 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
         && !pTstEnv->TcpOpts.szBindAddr[0])
             RTStrCopy(pTstEnv->TcpOpts.szBindAddr, sizeof(pTstEnv->TcpOpts.szBindAddr), "0.0.0.0");
 
+    /* Set a back reference to the test environment for the callback context. */
+    pTstEnv->CallbackCtx.pTstEnv = pTstEnv;
+
+    ATSCALLBACKS Callbacks;
+    RT_ZERO(Callbacks);
+    Callbacks.pvUser = &pTstEnv->CallbackCtx;
+
     if (pTstEnv->enmMode == AUDIOTESTMODE_GUEST)
     {
-        ATSCALLBACKCTX Ctx;
-        Ctx.pTstEnv = pTstEnv;
-
-        ATSCALLBACKS Callbacks;
-        RT_ZERO(Callbacks);
         Callbacks.pfnHowdy            = audioTestGstAtsHowdyCallback;
         Callbacks.pfnBye              = audioTestGstAtsByeCallback;
         Callbacks.pfnTestSetBegin     = audioTestGstAtsTestSetBeginCallback;
@@ -926,7 +912,6 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
         Callbacks.pfnTestSetSendBegin = audioTestGstAtsTestSetSendBeginCallback;
         Callbacks.pfnTestSetSendRead  = audioTestGstAtsTestSetSendReadCallback;
         Callbacks.pfnTestSetSendEnd   = audioTestGstAtsTestSetSendEndCallback;
-        Callbacks.pvUser              = &Ctx;
 
         if (!pTstEnv->TcpOpts.uBindPort)
             pTstEnv->TcpOpts.uBindPort = ATS_TCP_DEF_BIND_PORT_GUEST;
@@ -950,14 +935,6 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
     }
     else /* Host mode */
     {
-
-        ATSCALLBACKCTX Ctx;
-        Ctx.pTstEnv = pTstEnv;
-
-        ATSCALLBACKS Callbacks;
-        RT_ZERO(Callbacks);
-        Callbacks.pvUser = &Ctx;
-
         if (!pTstEnv->TcpOpts.uBindPort)
             pTstEnv->TcpOpts.uBindPort = ATS_TCP_DEF_BIND_PORT_HOST;
 
