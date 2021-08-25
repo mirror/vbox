@@ -2447,9 +2447,8 @@ RT_EXPORT_SYMBOL(RTLogDestinations);
  * Clear the file delay flag if set, opening the destination and flushing.
  *
  * @returns IPRT status code.
- * @param   pLogger             Logger instance (NULL for default logger).
- * @param   pszValue            The value to parse.
- * @param   pErrInfo            Where to return extended error info.  Optional.
+ * @param   pLogger     Logger instance (NULL for default logger).
+ * @param   pErrInfo    Where to return extended error info.  Optional.
  */
 RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
 {
