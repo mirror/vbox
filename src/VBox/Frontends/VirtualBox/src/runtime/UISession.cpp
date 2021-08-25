@@ -319,10 +319,15 @@ bool UISession::powerUp()
     return true;
 }
 
-bool UISession::detach()
+void UISession::detachUi()
 {
-    /* Nothing here for now: */
-    return true;
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing: */
+    setManualOverrideMode(true);
+
+    /* Manually close Runtime UI: */
+    LogRel(("GUI: Detaching UI..\n"));
+    closeRuntimeUI();
 }
 
 void UISession::saveState()

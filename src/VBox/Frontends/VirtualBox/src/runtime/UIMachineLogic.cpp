@@ -385,22 +385,6 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 }
 #endif /* VBOX_WS_MAC */
 
-void UIMachineLogic::detach()
-{
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    uisession()->setManualOverrideMode(true);
-
-    /* Was the step successful? */
-    bool fSuccess = true;
-    LogRel(("GUI: Passing request to detach UI from machine-logic to UI session.\n"));
-    fSuccess = uisession()->detach();
-
-    /* Manually close Runtime UI: */
-    if (fSuccess)
-        uisession()->closeRuntimeUI();
-}
-
 void UIMachineLogic::shutdown()
 {
     /* Warn the user about ACPI is not available if so: */
@@ -1870,7 +1854,7 @@ void UIMachineLogic::sltDetach()
     }
 
     LogRel(("GUI: User requested to detach GUI.\n"));
-    detach();
+    uisession()->detachUi();
 }
 
 void UIMachineLogic::sltSaveState()

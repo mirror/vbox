@@ -77,7 +77,7 @@ public:
     /** Powers VM up. */
     bool powerUp();
     /** Detaches and closes Runtime UI. */
-    bool detach();
+    void detachUi();
     /** Saves VM state, then closes Runtime UI. */
     void saveState();
     /** Calls for guest shutdown to close Runtime UI. */

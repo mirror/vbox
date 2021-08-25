@@ -142,8 +142,6 @@ public:
     virtual void updateDock();
 #endif /* VBOX_WS_MAC */
 
-    /** Detach and close Runtime UI. */
-    void detach();
     /** Call for guest shutdown to close Runtime UI. */
     void shutdown();
     /** Power off VM, then close Runtime UI. */
