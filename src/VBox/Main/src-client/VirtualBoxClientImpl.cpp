@@ -83,7 +83,7 @@ public:
         {
             case VBoxEventType_OnLanguageChanged:
             {
-                VirtualBoxTranslator *pTranslator = VirtualBoxTranslator::instance();
+                VirtualBoxTranslator *pTranslator = VirtualBoxTranslator::tryInstance();
                 if (pTranslator)
                 {
                     ComPtr<ILanguageChangedEvent> pEvent = aEvent;

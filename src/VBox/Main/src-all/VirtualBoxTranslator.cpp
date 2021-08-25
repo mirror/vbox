@@ -142,7 +142,7 @@ VirtualBoxTranslator *VirtualBoxTranslator::instance()
 
 
 /* static */
-VirtualBoxTranslator *VirtualBoxTranslator::i_instance()
+VirtualBoxTranslator *VirtualBoxTranslator::tryInstance()
 {
     int rc = RTOnce(&g_Once, initLock, NULL);
     if (RT_SUCCESS(rc))
@@ -321,7 +321,7 @@ const char *VirtualBoxTranslator::translate(const char *aContext,
                                             const char *aComment,
                                             const int   aNum)
 {
-    VirtualBoxTranslator *pCurrInstance = VirtualBoxTranslator::i_instance();
+    VirtualBoxTranslator *pCurrInstance = VirtualBoxTranslator::tryInstance();
     const char *pszTranslation = aSourceText;
     if (pCurrInstance != NULL)
     {
@@ -383,7 +383,7 @@ const char *VirtualBoxTranslator::i_translate(const char *aContext,
 const char *VirtualBoxTranslator::trSource(const char *aTranslation)
 {
     const char *pszSource = aTranslation;
-    VirtualBoxTranslator *pCurInstance = VirtualBoxTranslator::i_instance(); /* paranoia */
+    VirtualBoxTranslator *pCurInstance = VirtualBoxTranslator::tryInstance(); /* paranoia */
     if (pCurInstance != NULL)
     {
         LastTranslation *pEntry = getTlsEntry();

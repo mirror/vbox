@@ -37,6 +37,8 @@ public:
     virtual ~VirtualBoxTranslator();
 
     static VirtualBoxTranslator *instance();
+    /* Returns instance if exists, returns NULL otherwise. */
+    static VirtualBoxTranslator *tryInstance();
     void release();
 
     /* Load language based on settings in the VirtualBox config */
@@ -89,8 +91,6 @@ private:
                             const char *aComment = NULL,
                             const int   aNum = -1);
 
-    /* Returns instance if exists, returns NULL otherwise. */
-    static VirtualBoxTranslator *i_instance();
 };
 
 #endif /* !MAIN_INCLUDED_VirtualBoxTranslator_h */
