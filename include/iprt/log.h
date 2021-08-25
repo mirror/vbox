@@ -2035,7 +2035,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64
                           unsigned cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
                           uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                           PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
-                          PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(17, 18);
+                          PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(16, 17);
 
 /**
  * Create a logger instance.
@@ -2078,7 +2078,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
                            uint32_t cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
                            uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                            PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
-                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list va) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(17, 0);
+                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list va) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(16, 0);
 
 /**
  * Destroys a logger instance.
