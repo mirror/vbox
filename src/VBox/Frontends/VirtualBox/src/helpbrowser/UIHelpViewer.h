@@ -50,7 +50,6 @@ signals:
     void sigGoHome();
     void sigAddBookmark();
     void sigZoomPercentageChanged(int iPercentage);
-    void sigOverlayModeChanged(bool fEnabled);
     void sigMouseOverImage(const QString &strImageName);
 
 public:

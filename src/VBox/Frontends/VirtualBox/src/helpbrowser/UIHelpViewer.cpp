@@ -1007,7 +1007,6 @@ void UIHelpViewer::clearOverlay()
     m_fOverlayMode = false;
     if (m_pOverlayBlurEffect)
         m_pOverlayBlurEffect->setEnabled(false);
-    emit sigOverlayModeChanged(false);
 }
 
 void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
@@ -1045,7 +1044,6 @@ void UIHelpViewer::loadImageAtPosition(const QPoint &globalPosition)
                 m_pOverlayBlurEffect->setEnabled(true);
             viewport()->setCursor(m_defaultCursor);
             m_fCursorChanged = false;
-            emit sigOverlayModeChanged(true);
             toggleFindInPageWidget(false);
         }
     }
