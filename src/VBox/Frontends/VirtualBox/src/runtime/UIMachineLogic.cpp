@@ -401,31 +401,6 @@ void UIMachineLogic::detach()
         uisession()->closeRuntimeUI();
 }
 
-void UIMachineLogic::saveState()
-{
-    /* Do we save state? */
-    bool fSaveState = true;
-
-    /* If VM is not paused, we should pause it first: */
-    if (!uisession()->isPaused())
-        fSaveState = uisession()->pause();
-
-    /* Saving state: */
-    if (fSaveState)
-    {
-        /* Enable 'manual-override',
-         * preventing automatic Runtime UI closing: */
-        uisession()->setManualOverrideMode(true);
-
-        /* Saving VM state: */
-        LogRel(("GUI: Passing request to save VM state from machine-logic to UI session.\n"));
-        UINotificationProgressMachineSaveState *pNotification = new UINotificationProgressMachineSaveState(machine());
-        connect(pNotification, &UINotificationProgressMachineSaveState::sigMachineStateSaved,
-                this, &UIMachineLogic::sltHandleMachineStateSaved);
-        gpNotificationCenter->append(pNotification);
-    }
-}
-
 void UIMachineLogic::shutdown()
 {
     /* Warn the user about ACPI is not available if so: */
@@ -1908,17 +1883,7 @@ void UIMachineLogic::sltSaveState()
     }
 
     LogRel(("GUI: User requested to save VM state.\n"));
-    saveState();
-}
-
-void UIMachineLogic::sltHandleMachineStateSaved(bool fSuccess)
-{
-    /* Disable 'manual-override' finally: */
-    uisession()->setManualOverrideMode(false);
-
-    /* Close Runtime UI if state was saved: */
-    if (fSuccess)
-        uisession()->closeRuntimeUI();
+    uisession()->saveState();
 }
 
 void UIMachineLogic::sltShutdown()

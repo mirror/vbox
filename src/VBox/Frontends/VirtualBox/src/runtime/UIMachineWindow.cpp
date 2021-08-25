@@ -454,7 +454,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         {
             /* Save VM state: */
             LogRel(("GUI: Request for close-action to save VM state.\n"));
-            machineLogic()->saveState();
+            uisession()->saveState();
             break;
         }
         case MachineCloseAction_Shutdown:

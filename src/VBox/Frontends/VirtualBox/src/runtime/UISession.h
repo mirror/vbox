@@ -74,9 +74,15 @@ public:
 
     /* API: Runtime UI stuff: */
     bool initialize();
+    /** Powers VM up. */
     bool powerUp();
+    /** Detaches and closes Runtime UI. */
     bool detach();
+    /** Saves VM state, then closes Runtime UI. */
+    void saveState();
+    /** Calls for guest shutdown to close Runtime UI. */
     bool shutdown();
+    /** Powers VM down, then closes Runtime UI. */
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
 
     /** Returns the session instance. */
@@ -392,6 +398,10 @@ private slots:
     void sltHandleHostScreenGeometryChange();
     /** Handles host-screen available-area change. */
     void sltHandleHostScreenAvailableAreaChange();
+
+    /** Handles signal about machine state saved.
+      * @param  fSuccess  Brings whether state was saved successfully. */
+    void sltHandleMachineStateSaved(bool fSuccess);
 
 private:
 
