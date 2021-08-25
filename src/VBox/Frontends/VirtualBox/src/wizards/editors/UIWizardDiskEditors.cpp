@@ -183,7 +183,7 @@ void UIDiskFormatsGroupBox::prepare(KDeviceType enmDeviceType)
 {
     QVBoxLayout *pContainerLayout = new QVBoxLayout(this);
 
-    m_pFormatButtonGroup = new QButtonGroup;
+    m_pFormatButtonGroup = new QButtonGroup(this);
     AssertReturnVoid(m_pFormatButtonGroup);
     /* Enumerate medium formats in special order: */
     CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
