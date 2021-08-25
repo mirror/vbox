@@ -1445,6 +1445,10 @@
  * @{ */
 /** The internal logger revision did not match. */
 #define VERR_LOG_REVISION_MISMATCH                  (-22300)
+/** Logging is disabled or logger instance could not be created. */
+#define VINF_LOG_DISABLED                           (22301)
+/** No logger instance. */
+#define VINF_LOG_NO_LOGGER                          (22302)
 /** @} */
 
 /* see above, 22400..22499 is used for misc codes! */

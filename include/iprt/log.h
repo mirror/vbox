@@ -2172,8 +2172,8 @@ RTDECL(uint64_t) RTLogGetFlags(PRTLOGGER pLogger);
 /**
  * Modifies the flag settings for the given logger.
  *
- * @returns IPRT status code.  Returns VINF_SUCCESS if no default logger and @a
- *          pLogger is NULL.
+ * @returns IPRT status code.  Returns VINF_LOG_NO_LOGGER if no default logger
+ *          and @a pLogger is NULL.
  * @param   pLogger     Logger instance (NULL for default logger).
  * @param   fSet        Mask of flags to set (OR).
  * @param   fClear      Mask of flags to clear (NAND).  This is allowed to
@@ -2229,8 +2229,8 @@ RTDECL(uint32_t) RTLogGetDestinations(PRTLOGGER pLogger);
  * This is only suitable for simple destination settings that doesn't take
  * additional arguments, like RTLOGDEST_FILE.
  *
- * @returns IPRT status code.  Returns VINF_SUCCESS if no default logger and @a
- *          pLogger is NULL.
+ * @returns IPRT status code.  Returns VINF_LOG_NO_LOGGER if no default logger
+ *          and @a pLogger is NULL.
  * @param   pLogger     Logger instance (NULL for default logger).
  * @param   fSet        Mask of destinations to set (OR).
  * @param   fClear      Mask of destinations to clear (NAND).
@@ -2317,11 +2317,12 @@ RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pch, size_t cch);
 /**
  * Flushes the specified logger.
  *
+ * @returns IRPT status code.
  * @param   pLogger     The logger instance to flush.
  *                      If NULL the default instance is used. The default instance
  *                      will not be initialized by this call.
  */
-RTDECL(void) RTLogFlush(PRTLOGGER pLogger);
+RTDECL(int) RTLogFlush(PRTLOGGER pLogger);
 
 /**
  * Write to a logger instance.
@@ -2366,6 +2367,8 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
  * This function will check whether the instance, group and flags makes up a
  * logging kind which is currently enabled before writing anything to the log.
  *
+ * @returns VINF_SUCCESS, VINF_LOG_NO_LOGGER, VINF_LOG_DISABLED, or IPRT error
+ *          status.
  * @param   pLogger     Pointer to logger instance. If NULL the default logger instance will be attempted.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
@@ -2374,8 +2377,8 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
  * @param   pszFormat   Format string.
  * @param   args        Format arguments.
  */
-RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
-                            const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(4, 0);
+RTDECL(int) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
+                           const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(4, 0);
 
 /**
  * printf like function for writing to the default log.
