@@ -287,8 +287,7 @@ bool UISession::powerUp()
     /* Enable 'manual-override',
      * preventing automatic Runtime UI closing
      * and visual representation mode changes: */
-    if (machineLogic())
-        machineLogic()->setManualOverrideMode(true);
+    setManualOverrideMode(true);
 
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
@@ -314,8 +313,7 @@ bool UISession::powerUp()
     }
 
     /* Disable 'manual-override' finally: */
-    if (machineLogic())
-        machineLogic()->setManualOverrideMode(false);
+    setManualOverrideMode(false);
 
     /* True by default: */
     return true;
@@ -837,6 +835,7 @@ UISession::UISession(UIMachine *pMachine)
     , m_fIsFirstTimeStarted(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsAutoCaptureDisabled(false)
+    , m_fIsManualOverride(false)
     /* Guest additions flags: */
     , m_ulGuestAdditionsRunLevel(0)
     , m_fIsGuestSupportsGraphics(false)
@@ -1896,8 +1895,7 @@ bool UISession::postprocessInitialization()
         {
             /* Enable 'manual-override',
              * preventing automatic Runtime UI closing: */
-            if (machineLogic())
-                machineLogic()->setManualOverrideMode(true);
+            setManualOverrideMode(true);
             /* Power off VM: */
             bool fServerCrashed = false;
             LogRel(("GUI: Aborting startup due to postprocess initialization issue detected...\n"));

@@ -173,6 +173,13 @@ public:
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
+    /** Returns whether VM is in 'manual-override' mode.
+      * @note S.a. #m_fIsManualOverride description for more information. */
+    bool isManualOverrideMode() const { return m_fIsManualOverride; }
+    /** Defines whether VM is in 'manual-override' mode.
+      * @note S.a. #m_fIsManualOverride description for more information. */
+    void setManualOverrideMode(bool fIsManualOverride) { m_fIsManualOverride = fIsManualOverride; }
+
     /* Guest additions state getters: */
     bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > KAdditionsRunLevelType_None); }
     bool isGuestSupportsGraphics() const { return m_fIsGuestSupportsGraphics; }
@@ -537,6 +544,10 @@ private:
     bool m_fIsFirstTimeStarted : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsAutoCaptureDisabled : 1;
+    /** Holds whether VM is in 'manual-override' mode
+      * which means there will be no automatic UI shutdowns,
+      * visual representation mode changes and other stuff. */
+    bool m_fIsManualOverride : 1;
 
     /* Guest additions flags: */
     ULONG m_ulGuestAdditionsRunLevel;

@@ -68,7 +68,7 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
         return;
 
     /* Do not try to change visual-state type in 'manual override' mode: */
-    if (isManualOverrideMode())
+    if (uisession()->isManualOverrideMode())
         return;
 
     /* Check requested visual-state types: */

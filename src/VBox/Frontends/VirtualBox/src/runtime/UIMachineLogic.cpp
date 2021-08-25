@@ -389,7 +389,7 @@ void UIMachineLogic::detach()
 {
     /* Enable 'manual-override',
      * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
+    uisession()->setManualOverrideMode(true);
 
     /* Was the step successful? */
     bool fSuccess = true;
@@ -415,7 +415,7 @@ void UIMachineLogic::saveState()
     {
         /* Enable 'manual-override',
          * preventing automatic Runtime UI closing: */
-        setManualOverrideMode(true);
+        uisession()->setManualOverrideMode(true);
 
         /* Saving VM state: */
         LogRel(("GUI: Passing request to save VM state from machine-logic to UI session.\n"));
@@ -440,7 +440,7 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
 {
     /* Enable 'manual-override',
      * preventing automatic Runtime UI closing: */
-    setManualOverrideMode(true);
+    uisession()->setManualOverrideMode(true);
 
     /* Was the step successful? */
     bool fSuccess = true;
@@ -450,7 +450,7 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
     fSuccess = uisession()->powerOff(fDiscardingState, fServerCrashed) || fServerCrashed;
 
     /* Disable 'manual-override' finally: */
-    setManualOverrideMode(false);
+    uisession()->setManualOverrideMode(false);
 
     /* Manually close Runtime UI: */
     if (fSuccess)
@@ -618,7 +618,7 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Aborted:
         {
             /* If not in 'manual-override' mode: */
-            if (!isManualOverrideMode())
+            if (!uisession()->isManualOverrideMode())
             {
                 /* VM has been powered off, saved, teleported or aborted.
                  * We must close Runtime UI: */
@@ -855,7 +855,6 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pSharedClipboardActions(0)
     , m_pDragAndDropActions(0)
     , m_fIsWindowsCreated(false)
-    , m_fIsManualOverride(false)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , m_pDbgGui(0)
     , m_pDbgGuiVT(0)
@@ -1943,7 +1942,7 @@ void UIMachineLogic::sltSaveState()
 void UIMachineLogic::sltHandleMachineStateSaved(bool fSuccess)
 {
     /* Disable 'manual-override' finally: */
-    setManualOverrideMode(false);
+    uisession()->setManualOverrideMode(false);
 
     /* Close Runtime UI if state was saved: */
     if (fSuccess)
@@ -1984,7 +1983,7 @@ void UIMachineLogic::sltClose()
         return;
 
     /* Do not close machine-window in 'manual-override' mode: */
-    if (isManualOverrideMode())
+    if (uisession()->isManualOverrideMode())
         return;
 
     /* First, we have to close/hide any opened modal & popup application widgets.
