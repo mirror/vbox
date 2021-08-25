@@ -617,8 +617,7 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
     {
         case DDI_ATTACH:
         {
-            int instance = ddi_get_instance(pDip);
-            int rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, CLONE_DEV);
+            int rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, 0 /* instance */, DDI_PSEUDO, CLONE_DEV);
             if (rc == DDI_SUCCESS)
             {
                 g_pVBoxNetFltSolarisDip = pDip;
@@ -727,13 +726,13 @@ static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, voi
         case DDI_INFO_DEVT2DEVINFO:
         {
             *ppvResult = g_pVBoxNetFltSolarisDip;
-            return DDI_SUCCESS;
+            return *ppvResult ? DDI_SUCCESS : DDI_FAILURE;
         }
 
         case DDI_INFO_DEVT2INSTANCE:
         {
-            int instance = getminor((dev_t)pvArg);
-            *ppvResult = (void *)(uintptr_t)instance;
+            /* There can only be a single-instance of this driver and thus its instance number is 0. */
+            *ppvResult = (void *)0;
             return DDI_SUCCESS;
         }
     }
