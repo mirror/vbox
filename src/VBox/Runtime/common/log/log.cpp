@@ -1008,7 +1008,7 @@ static void rtLogRingBufFlush(PRTLOGGERINTERNAL pLoggerInt)
 
 RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64_t fFlags, const char *pszGroupSettings,
                            uint32_t cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
-                           PFNRTLOGFLUSH pfnFlush, uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
+                           uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                            PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                            PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list args)
 {
@@ -1094,7 +1094,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
         pLoggerInt->uRevision                   = RTLOGGERINTERNAL_REV;
         pLoggerInt->cbSelf                      = sizeof(RTLOGGERINTERNAL);
         pLoggerInt->hSpinMtx                    = NIL_RTSEMSPINMUTEX;
-        pLoggerInt->pfnFlush                    = pfnFlush;
+        pLoggerInt->pfnFlush                    = NULL;
         pLoggerInt->pfnPrefix                   = NULL;
         pLoggerInt->pvPrefixUserArg             = NULL;
         pLoggerInt->fPendingPrefix              = true;
@@ -1344,7 +1344,7 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint64_t fFlags, const char *pszGro
     va_start(va, pszFilenameFmt);
     rc = RTLogCreateExV(ppLogger, pszEnvVarBase, fFlags, pszGroupSettings, cGroups, papszGroups,
                         UINT32_MAX /*cMaxEntriesPerGroup*/,
-                        NULL /*pfnFlush*/, 0 /*cBufDescs*/, NULL /*paBufDescs*/, fDestFlags,
+                        0 /*cBufDescs*/, NULL /*paBufDescs*/, fDestFlags,
                         NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
                         NULL /*pErrInfo*/, pszFilenameFmt, va);
     va_end(va);
@@ -1355,7 +1355,7 @@ RT_EXPORT_SYMBOL(RTLogCreate);
 
 RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64_t fFlags, const char *pszGroupSettings,
                           unsigned cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
-                          PFNRTLOGFLUSH pfnFlush, uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
+                          uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                           PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...)
 {
@@ -1364,7 +1364,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64
 
     va_start(va, pszFilenameFmt);
     rc = RTLogCreateExV(ppLogger, pszEnvVarBase, fFlags, pszGroupSettings, cGroups, papszGroups, cMaxEntriesPerGroup,
-                        pfnFlush, cBufDescs, paBufDescs, fDestFlags,
+                        cBufDescs, paBufDescs, fDestFlags,
                         pfnPhase, cHistory, cbHistoryFileMax, cSecsHistoryTimeSlot,
                         pErrInfo, pszFilenameFmt, va);
     va_end(va);
@@ -2053,6 +2053,7 @@ RT_EXPORT_SYMBOL(RTLogSetGroupLimit);
 
 
 #ifdef IN_RING0
+
 RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, ...)
 {
     PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pLogger;
@@ -2077,8 +2078,28 @@ RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, .
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLogSetR0ThreadNameF);
-#endif /* IN_RING0 */
 
+
+RTR0DECL(int) RTLogSetR0ProgramStart(PRTLOGGER pLogger, uint64_t nsStart)
+{
+    PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pLogger;
+    int               rc;
+    if (pLoggerInt)
+    {
+        rc = rtlogLock(pLoggerInt);
+        if (RT_SUCCESS(rc))
+        {
+            pLoggerInt->nsR0ProgramStart = nsStart;
+            rtlogUnlock(pLoggerInt);
+        }
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLogSetR0ProgramStart);
+
+#endif /* IN_RING0 */
 
 /**
  * Gets the current flag settings for the given logger.

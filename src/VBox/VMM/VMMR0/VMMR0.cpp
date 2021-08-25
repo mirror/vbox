@@ -391,7 +391,7 @@ VMMR0_INT_DECL(void) VMMR0InitPerVMData(PGVM pGVM)
  * Helper for vmmR0InitLoggers
  */
 static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER pR0Log, PVMMR3CPULOGGER pShared,
-                              uint32_t cbBuf, char *pchBuf, RTR3PTR pchBufR3)
+                              uint32_t cbBuf, char *pchBuf, RTR3PTR pchBufR3, uint64_t nsProgramStart)
 {
     pR0Log->BufDesc.u32Magic    = RTLOGBUFFERDESC_MAGIC;
     pR0Log->BufDesc.uReserved   = 0;
@@ -411,8 +411,7 @@ static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     int rc = RTLogCreateEx(&pR0Log->pLogger, fRelease ? "VBOX_RELEASE_LOG" : "VBOX_LOG", RTLOG_F_NO_LOCKING | RTLOGFLAGS_BUFFERED,
                            "all", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
-                           fRelease ? vmmR0LogRelFlush : vmmR0LogFlush, 1 /*cBufDescs*/, &pR0Log->BufDesc,
-                           RTLOGDEST_DUMMY,
+                           1 /*cBufDescs*/, &pR0Log->BufDesc, RTLOGDEST_DUMMY,
                            NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
                            NULL /*pErrInfo*/, NULL /*pszFilenameFmt*/);
     if (RT_SUCCESS(rc))
@@ -422,10 +421,17 @@ static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER
         pLogger->u64UserValue2 = (uintptr_t)pGVCpu;
         pLogger->u64UserValue3 = (uintptr_t)pGVCpu;
 
-        RTLogSetR0ThreadNameF(pLogger, "EMT-%u-R0", pGVCpu->idCpu);
+        rc = RTLogSetFlushCallback(pLogger, fRelease ? vmmR0LogRelFlush : vmmR0LogFlush);
+        if (RT_SUCCESS(rc))
+        {
+            RTLogSetR0ThreadNameF(pLogger, "EMT-%u-R0", pGVCpu->idCpu);
+            RTLogSetR0ProgramStart(pLogger, nsProgramStart);
+            return VINF_SUCCESS;
+        }
+
+        RTLogDestroy(pLogger);
     }
-    else
-        pR0Log->pLogger = NULL;
+    pR0Log->pLogger = NULL;
     return rc;
 }
 
@@ -454,7 +460,8 @@ static int vmmR0InitLoggers(PGVM pGVM, bool fRelease, uint32_t cbBuf, PRTR0MEMOB
                 PGVMCPU             pGVCpu  = &pGVM->aCpus[i];
                 PVMMR0PERVCPULOGGER pR0Log  = fRelease ? &pGVCpu->vmmr0.s.RelLogger : &pGVCpu->vmmr0.s.Logger;
                 PVMMR3CPULOGGER     pShared = fRelease ? &pGVCpu->vmm.s.RelLogger   : &pGVCpu->vmm.s.Logger;
-                rc = vmmR0InitLoggerOne(pGVCpu, fRelease, pR0Log, pShared, cbBuf, pchBuf + i * cbBuf, pchBufR3 + i * cbBuf);
+                rc = vmmR0InitLoggerOne(pGVCpu, fRelease, pR0Log, pShared, cbBuf, pchBuf + i * cbBuf, pchBufR3 + i * cbBuf,
+                                        pGVM->vmm.s.nsProgramStart);
                 if (RT_FAILURE(rc))
                 {
                     pR0Log->pLogger   = NULL;

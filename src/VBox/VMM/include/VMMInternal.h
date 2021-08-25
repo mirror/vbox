@@ -285,6 +285,9 @@ typedef struct VMM
     /** Buffer for storing the custom message for a ring-0 assertion. */
     char                        szRing0AssertMsg2[256];
 
+    /** Used when setting up ring-0 logger. */
+    uint64_t                    nsProgramStart;
+
     /** Number of VMMR0_DO_HM_RUN or VMMR0_DO_NEM_RUN calls. */
     STAMCOUNTER                 StatRunGC;
 

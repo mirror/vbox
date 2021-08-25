@@ -206,6 +206,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     pVM->vmm.s.hEvtMulRendezvousRecursionPop    = NIL_RTSEMEVENTMULTI;
     pVM->vmm.s.hEvtRendezvousRecursionPushCaller = NIL_RTSEMEVENT;
     pVM->vmm.s.hEvtRendezvousRecursionPopCaller = NIL_RTSEMEVENT;
+    pVM->vmm.s.nsProgramStart                   = RTTimeProgramStartNanoTS();
 
 #if 0 /* pointless when timers doesn't run on EMT */
     /** @cfgm{/YieldEMTInterval, uint32_t, 1, UINT32_MAX, 23, ms}

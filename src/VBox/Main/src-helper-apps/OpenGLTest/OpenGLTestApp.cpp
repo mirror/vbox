@@ -297,7 +297,7 @@ static int vboxInitLogging(const char *pszFilename, bool bGenNameSuffix)
 
 
     int vrc = RTLogCreateEx(&loggerRelease, "VBOX_RELEASE_LOG", fFlags, "all", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
-                            NULL /*pfnFlush*/, 0 /*cBufDescs*/, NULL /*paBufDescs*/, enmLogDest,
+                            0 /*cBufDescs*/, NULL /*paBufDescs*/, enmLogDest,
                             NULL /*pfnBeginEnd*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*uHistoryTimeMax*/,
                             NULL /*pErrInfo*/, pszFilenameFmt, pszFilename, RTTimeMilliTS());
     if (RT_SUCCESS(vrc))

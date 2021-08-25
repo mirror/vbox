@@ -2011,7 +2011,6 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint64_t fFlags, const char *pszGro
  *                              around for the life of the logger instance.
  * @param   cMaxEntriesPerGroup The max number of entries per group.  UINT32_MAX
  *                              or zero for unlimited.
- * @param   pfnFlush            Custom flush callback. Optional.
  * @param   cBufDescs           Number of buffer descriptors that @a paBufDescs
  *                              points to. Zero for defaults.
  * @param   paBufDescs          Buffer descriptors, optional.
@@ -2034,7 +2033,7 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint64_t fFlags, const char *pszGro
  */
 RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64_t fFlags, const char *pszGroupSettings,
                           unsigned cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
-                          PFNRTLOGFLUSH pfnFlush, uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
+                          uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                           PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(17, 18);
 
@@ -2054,7 +2053,6 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64
  *                              around for the life of the logger instance.
  * @param   cMaxEntriesPerGroup The max number of entries per group.  UINT32_MAX
  *                              or zero for unlimited.
- * @param   pfnFlush            Custom flush callback. Optional.
  * @param   cBufDescs           Number of buffer descriptors that @a paBufDescs
  *                              points to. Zero for defaults.
  * @param   paBufDescs          Buffer descriptors, optional.
@@ -2078,7 +2076,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64
  */
 RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64_t fFlags, const char *pszGroupSettings,
                            uint32_t cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
-                           PFNRTLOGFLUSH pfnFlush, uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
+                           uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
                            PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                            PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list va) RT_IPRT_FORMAT_ATTR_MAYBE_NULL(17, 0);
 
@@ -2116,7 +2114,7 @@ RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCa
 RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush);
 
 /**
- * Set the thread name for a thread specific ring-0 logger.
+ * Sets the thread name for a thread specific ring-0 logger.
  *
  * @returns IPRT status code.
  * @param   pLogger     The logger. NULL is not allowed.
@@ -2124,6 +2122,15 @@ RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush);
  * @param   ...         Format arguments.
  */
 RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+
+/**
+ * Sets the program start time for a thread specific ring-0 logger.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger     The logger. NULL is not allowed.
+ * @param   nsStart     The RTTimeNanoTS() value at program start.
+ */
+RTR0DECL(int) RTLogSetR0ProgramStart(PRTLOGGER pLogger, uint64_t nsStart);
 
 /**
  * Get the current log group settings as a string.

@@ -1479,7 +1479,8 @@
 # define RTLogSetDefaultInstance                        RT_MANGLER(RTLogSetDefaultInstance)
 # define RTLogSetDefaultInstanceThread                  RT_MANGLER(RTLogSetDefaultInstanceThread) /* r0drv */
 # define RTLogSetGroupLimit                             RT_MANGLER(RTLogSetGroupLimit)
-# define RTLogSetR0ThreadNameF                          RT_MANGLER(RTLogSetR0ThreadNameF)
+# define RTLogSetR0ProgramStart                         RT_MANGLER(RTLogSetR0ProgramStart) /* r0drv */
+# define RTLogSetR0ThreadNameF                          RT_MANGLER(RTLogSetR0ThreadNameF) /* r0drv */
 # define RTLogWriteCom                                  RT_MANGLER(RTLogWriteCom)
 # define RTLogWriteDebugger                             RT_MANGLER(RTLogWriteDebugger)
 # define RTLogWriteStdErr                               RT_MANGLER(RTLogWriteStdErr)

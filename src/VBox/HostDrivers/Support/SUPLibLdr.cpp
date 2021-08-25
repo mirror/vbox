@@ -634,14 +634,13 @@ static int supLoadModuleInner(RTLDRMOD hLdrMod, PSUPLDRLOAD pLoadReq, uint32_t c
     if (fIsVMMR0)
     {
         pLoadReq->u.In.eEPType                = SUPLDRLOADEP_VMMR0;
-        pLoadReq->u.In.EP.VMMR0.pvVMMR0       = uImageBase;
-        pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryFast= (RTR0PTR)VMMR0EntryFast;
-        pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryEx  = (RTR0PTR)VMMR0EntryEx;
+        pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryFast = (RTR0PTR)VMMR0EntryFast;
+        pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryEx   = (RTR0PTR)VMMR0EntryEx;
     }
     else if (pszSrvReqHandler)
     {
         pLoadReq->u.In.eEPType                = SUPLDRLOADEP_SERVICE;
-        pLoadReq->u.In.EP.Service.pfnServiceReq = (RTR0PTR)SrvReqHandler;
+        pLoadReq->u.In.EP.Service.pfnServiceReq  = (RTR0PTR)SrvReqHandler;
         pLoadReq->u.In.EP.Service.apvReserved[0] = NIL_RTR0PTR;
         pLoadReq->u.In.EP.Service.apvReserved[1] = NIL_RTR0PTR;
         pLoadReq->u.In.EP.Service.apvReserved[2] = NIL_RTR0PTR;
