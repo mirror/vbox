@@ -77,7 +77,9 @@ public:
     /** Returns requested visual-state to be entered when possible. */
     UIVisualStateType requestedVisualState() const;
 
-    /** Close Runtime UI. */
+public slots:
+
+    /** Closes Runtime UI. */
     void closeRuntimeUI();
 
 private slots:

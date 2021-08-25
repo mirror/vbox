@@ -454,6 +454,35 @@ void UISession::sltMountDVDAdHoc(const QString &strSource)
     mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, strSource);
 }
 
+void UISession::closeRuntimeUI()
+{
+    /* First, we have to hide any opened modal/popup widgets.
+     * They then should unlock their event-loops asynchronously.
+     * If all such loops are unlocked, we can close Runtime UI. */
+    QWidget *pWidget = QApplication::activeModalWidget()
+                     ? QApplication::activeModalWidget()
+                     : QApplication::activePopupWidget()
+                     ? QApplication::activePopupWidget()
+                     : 0;
+    if (pWidget)
+    {
+        /* First we should try to close this widget: */
+        pWidget->close();
+        /* If widget rejected the 'close-event' we can
+         * still hide it and hope it will behave correctly
+         * and unlock his event-loop if any: */
+        if (!pWidget->isHidden())
+            pWidget->hide();
+        /* Asynchronously restart this slot: */
+        QMetaObject::invokeMethod(this, "closeRuntimeUI", Qt::QueuedConnection);
+        return;
+    }
+
+    /* Asynchronously ask UIMachine to close Runtime UI: */
+    LogRel(("GUI: Passing request to close Runtime UI from UI session to UI machine.\n"));
+    QMetaObject::invokeMethod(uimachine(), "closeRuntimeUI", Qt::QueuedConnection);
+}
+
 void UISession::sltDetachCOM()
 {
     /* Cleanup everything COM related: */
@@ -461,12 +490,6 @@ void UISession::sltDetachCOM()
     cleanupConsoleEventHandlers();
     cleanupNotificationCenter();
     cleanupSession();
-}
-
-void UISession::sltCloseRuntimeUI()
-{
-    /* Ask UIMachine to close Runtime UI: */
-    uimachine()->closeRuntimeUI();
 }
 
 #ifdef RT_OS_DARWIN

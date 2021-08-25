@@ -398,7 +398,7 @@ void UIMachineLogic::detach()
 
     /* Manually close Runtime UI: */
     if (fSuccess)
-        closeRuntimeUI();
+        uisession()->closeRuntimeUI();
 }
 
 void UIMachineLogic::saveState()
@@ -454,35 +454,7 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
 
     /* Manually close Runtime UI: */
     if (fSuccess)
-        closeRuntimeUI();
-}
-
-void UIMachineLogic::closeRuntimeUI()
-{
-    /* First, we have to hide any opened modal/popup widgets.
-     * They then should unlock their event-loops asynchronously.
-     * If all such loops are unlocked, we can close Runtime UI: */
-    QWidget *pWidget = QApplication::activeModalWidget() ?
-                       QApplication::activeModalWidget() :
-                       QApplication::activePopupWidget() ?
-                       QApplication::activePopupWidget() : 0;
-    if (pWidget)
-    {
-        /* First we should try to close this widget: */
-        pWidget->close();
-        /* If widget rejected the 'close-event' we can
-         * still hide it and hope it will behave correctly
-         * and unlock his event-loop if any: */
-        if (!pWidget->isHidden())
-            pWidget->hide();
-        /* Asynchronously restart this slot: */
-        QMetaObject::invokeMethod(this, "sltCloseRuntimeUI", Qt::QueuedConnection);
-        return;
-    }
-
-    /* Asynchronously ask UISession to close Runtime UI: */
-    LogRel(("GUI: Passing request to close Runtime UI from machine-logic to UI session.\n"));
-    QMetaObject::invokeMethod(uisession(), "sltCloseRuntimeUI", Qt::QueuedConnection);
+        uisession()->closeRuntimeUI();
 }
 
 void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
@@ -642,7 +614,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 }
 
                 LogRel(("GUI: Request to close Runtime UI because VM is powered off already.\n"));
-                closeRuntimeUI();
+                uisession()->closeRuntimeUI();
                 return;
             }
             break;
@@ -1946,7 +1918,7 @@ void UIMachineLogic::sltHandleMachineStateSaved(bool fSuccess)
 
     /* Close Runtime UI if state was saved: */
     if (fSuccess)
-        closeRuntimeUI();
+        uisession()->closeRuntimeUI();
 }
 
 void UIMachineLogic::sltShutdown()

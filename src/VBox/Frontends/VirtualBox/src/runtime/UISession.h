@@ -344,12 +344,13 @@ public slots:
     /** Defines @a iMouseState. */
     void setMouseState(int iMouseState) { m_iMouseState = iMouseState; emit sigMouseStateChange(m_iMouseState); }
 
+    /** Closes Runtime UI. */
+    void closeRuntimeUI();
+
 private slots:
 
     /** Detaches COM. */
     void sltDetachCOM();
-    /** Close Runtime UI. */
-    void sltCloseRuntimeUI();
 
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Handles menu-bar configuration-change. */
