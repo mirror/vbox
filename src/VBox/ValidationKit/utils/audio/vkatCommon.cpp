@@ -707,13 +707,11 @@ int audioTestEnvConnectViaTcp(PAUDIOTESTENV pTstEnv, PATSCLIENT pClient, const c
 
     if (   !RTStrCmp(Val.psz, "client")
         || !RTStrCmp(Val.psz, "both"))
-           RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to %s:%RU32\n",
-                        pTcpOpts->szConnectAddr, pTcpOpts->uConnectPort);
+           RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Connecting to %s:%RU32\n", pTcpOpts->szConnectAddr, pTcpOpts->uConnectPort);
 
     if (   !RTStrCmp(Val.psz, "server")
         || !RTStrCmp(Val.psz, "both"))
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Listening at %s:%RU32\n",
-                     pTcpOpts->szBindAddr ? pTcpOpts->szBindAddr : "<None>", pTcpOpts->uBindPort);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Listening at %s:%RU32\n", pTcpOpts->szBindAddr, pTcpOpts->uBindPort);
 
     if (pTcpOpts->szBindAddr[0])
     {
