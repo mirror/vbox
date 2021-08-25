@@ -288,49 +288,6 @@ typedef struct AUDIOTESTDESC
 } AUDIOTESTDESC;
 
 /**
- * Structure for keeping a VKAT self test context.
- */
-typedef struct SELFTESTCTX
-{
-    /** Common tag for guest and host side. */
-    char             szTag[AUDIOTEST_TAG_MAX];
-    /** Whether to use DrvAudio in the driver stack or not. */
-    bool             fWithDrvAudio;
-    AUDIOTESTDRVSTACK DrvStack;
-    /** Audio driver to use.
-     *  Defaults to the platform's default driver. */
-    PCPDMDRVREG      pDrvReg;
-    struct
-    {
-        AUDIOTESTENV TstEnv;
-        /** Where to bind the address of the guest ATS instance to.
-         *  Defaults to localhost (127.0.0.1) if empty. */
-        char         szAtsAddr[64];
-        /** Port of the guest ATS instance.
-         *  Defaults to ATS_ALT_PORT if not set. */
-        uint32_t     uAtsPort;
-    } Guest;
-    struct
-    {
-        AUDIOTESTENV TstEnv;
-        /** Address of the guest ATS instance.
-         *  Defaults to localhost (127.0.0.1) if not set. */
-        char         szGuestAtsAddr[64];
-        /** Port of the guest ATS instance.
-         *  Defaults to ATS_DEFAULT_PORT if not set. */
-        uint32_t     uGuestAtsPort;
-        /** Address of the Validation Kit audio driver ATS instance.
-         *  Defaults to localhost (127.0.0.1) if not set. */
-        char         szValKitAtsAddr[64];
-        /** Port of the Validation Kit audio driver ATS instance.
-         *  Defaults to ATS_ALT_PORT if not set. */
-        uint32_t     uValKitAtsPort;
-    } Host;
-} SELFTESTCTX;
-/** Pointer to a VKAT self test context. */
-typedef SELFTESTCTX *PSELFTESTCTX;
-
-/**
  * VKAT command table entry.
  */
 typedef struct VKATCMD
@@ -482,11 +439,6 @@ int         audioTestWorker(PAUDIOTESTENV pTstEnv);
 
 /** @todo Test tone handling */
 int         audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
-/** @}  */
-
-/** @name Command handlers
- * @{ */
-RTEXITCODE   audioTestDoSelftest(PSELFTESTCTX pCtx);
 /** @}  */
 
 

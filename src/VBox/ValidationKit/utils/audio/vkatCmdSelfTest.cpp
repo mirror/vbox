@@ -59,6 +59,66 @@
 #include "vkatInternal.h"
 
 
+/*********************************************************************************************************************************
+*   Internal structures                                                                                                          *
+*********************************************************************************************************************************/
+
+/**
+ * Structure for keeping a VKAT self test context.
+ */
+typedef struct SELFTESTCTX
+{
+    /** Common tag for guest and host side. */
+    char             szTag[AUDIOTEST_TAG_MAX];
+    /** Whether to use DrvAudio in the driver stack or not. */
+    bool             fWithDrvAudio;
+    AUDIOTESTDRVSTACK DrvStack;
+    /** Audio driver to use.
+     *  Defaults to the platform's default driver. */
+    PCPDMDRVREG      pDrvReg;
+    struct
+    {
+        AUDIOTESTENV TstEnv;
+        /** Where to bind the address of the guest ATS instance to.
+         *  Defaults to localhost (127.0.0.1) if empty. */
+        char         szAtsAddr[64];
+        /** Port of the guest ATS instance.
+         *  Defaults to ATS_ALT_PORT if not set. */
+        uint32_t     uAtsPort;
+    } Guest;
+    struct
+    {
+        AUDIOTESTENV TstEnv;
+        /** Address of the guest ATS instance.
+         *  Defaults to localhost (127.0.0.1) if not set. */
+        char         szGuestAtsAddr[64];
+        /** Port of the guest ATS instance.
+         *  Defaults to ATS_DEFAULT_PORT if not set. */
+        uint32_t     uGuestAtsPort;
+        /** Address of the Validation Kit audio driver ATS instance.
+         *  Defaults to localhost (127.0.0.1) if not set. */
+        char         szValKitAtsAddr[64];
+        /** Port of the Validation Kit audio driver ATS instance.
+         *  Defaults to ATS_ALT_PORT if not set. */
+        uint32_t     uValKitAtsPort;
+    } Host;
+} SELFTESTCTX;
+/** Pointer to a VKAT self test context. */
+typedef SELFTESTCTX *PSELFTESTCTX;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+
+/** The global self-text context. */
+static SELFTESTCTX g_Ctx = { 0 };
+
+
+/*********************************************************************************************************************************
+*   Self-test implementation                                                                                                     *
+*********************************************************************************************************************************/
+
 /**
  * Thread callback for mocking the guest (VM) side of things.
  *
@@ -272,9 +332,6 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
  */
 DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
 {
-    SELFTESTCTX Ctx;
-    RT_ZERO(Ctx);
-
     /* Argument processing loop: */
     int           rc;
     RTGETOPTUNION ValueUnion;
@@ -283,19 +340,19 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
         switch (rc)
         {
             case VKAT_SELFTEST_OPT_GUEST_ATS_ADDR:
-                rc = RTStrCopy(Ctx.Host.szGuestAtsAddr, sizeof(Ctx.Host.szGuestAtsAddr), ValueUnion.psz);
+                rc = RTStrCopy(g_Ctx.Host.szGuestAtsAddr, sizeof(g_Ctx.Host.szGuestAtsAddr), ValueUnion.psz);
                 break;
 
             case VKAT_SELFTEST_OPT_GUEST_ATS_PORT:
-                Ctx.Host.uGuestAtsPort = ValueUnion.u32;
+                g_Ctx.Host.uGuestAtsPort = ValueUnion.u32;
                 break;
 
             case VKAT_SELFTEST_OPT_HOST_ATS_ADDR:
-                rc = RTStrCopy(Ctx.Host.szValKitAtsAddr, sizeof(Ctx.Host.szValKitAtsAddr), ValueUnion.psz);
+                rc = RTStrCopy(g_Ctx.Host.szValKitAtsAddr, sizeof(g_Ctx.Host.szValKitAtsAddr), ValueUnion.psz);
                 break;
 
             case VKAT_SELFTEST_OPT_HOST_ATS_PORT:
-                Ctx.Host.uValKitAtsPort = ValueUnion.u32;
+                g_Ctx.Host.uValKitAtsPort = ValueUnion.u32;
                 break;
 
             case 'a':
@@ -304,13 +361,13 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'b':
-                Ctx.pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
-                if (Ctx.pDrvReg == NULL)
+                g_Ctx.pDrvReg = AudioTestFindBackendOpt(ValueUnion.psz);
+                if (g_Ctx.pDrvReg == NULL)
                     return RTEXITCODE_SYNTAX;
                 break;
 
             case 'd':
-                Ctx.fWithDrvAudio = true;
+                g_Ctx.fWithDrvAudio = true;
                 break;
 
             case 'e':
@@ -333,8 +390,8 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
     }
 
     /* Go with the Validation Kit audio backend if nothing else is specified. */
-    if (Ctx.pDrvReg == NULL)
-        Ctx.pDrvReg = AudioTestFindBackendOpt("valkit");
+    if (g_Ctx.pDrvReg == NULL)
+        g_Ctx.pDrvReg = AudioTestFindBackendOpt("valkit");
 
     /*
      * In self-test mode the guest and the host side have to share the same driver stack,
@@ -345,8 +402,8 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
      *
      * Choosing any other backend than the Validation Kit above *will* break this self-test!
      */
-    rc = audioTestDriverStackInitEx(&Ctx.DrvStack, Ctx.pDrvReg,
-                                    true /* fEnabledIn */, true /* fEnabledOut */, Ctx.fWithDrvAudio);
+    rc = audioTestDriverStackInitEx(&g_Ctx.DrvStack, g_Ctx.pDrvReg,
+                                    true /* fEnabledIn */, true /* fEnabledOut */, g_Ctx.fWithDrvAudio);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
 
@@ -355,11 +412,11 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
      */
     RTTestBanner(g_hTest);
 
-    int rc2 = audioTestDoSelftest(&Ctx);
+    int rc2 = audioTestDoSelftest(&g_Ctx);
     if (RT_FAILURE(rc2))
         RTTestFailed(g_hTest, "Self test failed with rc=%Rrc", rc2);
 
-    audioTestDriverStackDelete(&Ctx.DrvStack);
+    audioTestDriverStackDelete(&g_Ctx.DrvStack);
 
     /*
      * Print summary and exit.
