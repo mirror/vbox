@@ -128,6 +128,7 @@ private:
     /** If there is image at @p globalPosition then its data is loaded to m_overlayPixmap. */
     void loadImageAtPosition(const QPoint &globalPosition);
     void clearOverlay();
+    void enableOverlay();
     void setImageOverCursor(QPoint globalPosition);
 
     const QHelpEngine* m_pHelpEngine;
