@@ -129,7 +129,11 @@ enum
     VKAT_TEST_OPT_PROBE_BACKENDS,
     VKAT_TEST_OPT_TAG,
     VKAT_TEST_OPT_TEMPDIR,
-    VKAT_TEST_OPT_VOL
+    VKAT_TEST_OPT_VOL,
+    VKAT_TEST_OPT_TCP_BIND_ADDRESS,
+    VKAT_TEST_OPT_TCP_BIND_PORT,
+    VKAT_TEST_OPT_TCP_CONNECT_ADDRESS,
+    VKAT_TEST_OPT_TCP_CONNECT_PORT
 };
 
 /**
@@ -158,29 +162,33 @@ static const RTGETOPTDEF g_aCmdCommonOptions[] =
  */
 static const RTGETOPTDEF g_aCmdTestOptions[] =
 {
-    { "--backend",           'b',                          RTGETOPT_REQ_STRING  },
-    { "--drvaudio",          'd',                          RTGETOPT_REQ_NOTHING },
-    { "--exclude",           'e',                          RTGETOPT_REQ_UINT32  },
-    { "--exclude-all",       'a',                          RTGETOPT_REQ_NOTHING },
-    { "--guest-ats-addr",    VKAT_TEST_OPT_GUEST_ATS_ADDR, RTGETOPT_REQ_STRING  },
-    { "--guest-ats-port",    VKAT_TEST_OPT_GUEST_ATS_PORT, RTGETOPT_REQ_UINT32  },
-    { "--host-ats-address",  VKAT_TEST_OPT_HOST_ATS_ADDR,  RTGETOPT_REQ_STRING  },
-    { "--host-ats-port",     VKAT_TEST_OPT_HOST_ATS_PORT,  RTGETOPT_REQ_UINT32  },
-    { "--include",           'i',                          RTGETOPT_REQ_UINT32  },
-    { "--outdir",            VKAT_TEST_OPT_OUTDIR,         RTGETOPT_REQ_STRING  },
-    { "--count",             VKAT_TEST_OPT_COUNT,          RTGETOPT_REQ_UINT32  },
-    { "--device",            VKAT_TEST_OPT_DEV,            RTGETOPT_REQ_STRING  },
-    { "--pause",             VKAT_TEST_OPT_PAUSE,          RTGETOPT_REQ_UINT32  },
-    { "--pcm-bit",           VKAT_TEST_OPT_PCM_BIT,        RTGETOPT_REQ_UINT8   },
-    { "--pcm-chan",          VKAT_TEST_OPT_PCM_CHAN,       RTGETOPT_REQ_UINT8   },
-    { "--pcm-hz",            VKAT_TEST_OPT_PCM_HZ,         RTGETOPT_REQ_UINT16  },
-    { "--pcm-signed",        VKAT_TEST_OPT_PCM_SIGNED,     RTGETOPT_REQ_BOOL    },
-    { "--probe-backends",    VKAT_TEST_OPT_PROBE_BACKENDS, RTGETOPT_REQ_NOTHING },
-    { "--mode",              VKAT_TEST_OPT_MODE,           RTGETOPT_REQ_STRING  },
-    { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,      RTGETOPT_REQ_NOTHING },
-    { "--tag",               VKAT_TEST_OPT_TAG,            RTGETOPT_REQ_STRING  },
-    { "--tempdir",           VKAT_TEST_OPT_TEMPDIR,        RTGETOPT_REQ_STRING  },
-    { "--volume",            VKAT_TEST_OPT_VOL,            RTGETOPT_REQ_UINT8   }
+    { "--backend",           'b',                               RTGETOPT_REQ_STRING  },
+    { "--drvaudio",          'd',                               RTGETOPT_REQ_NOTHING },
+    { "--exclude",           'e',                               RTGETOPT_REQ_UINT32  },
+    { "--exclude-all",       'a',                               RTGETOPT_REQ_NOTHING },
+    { "--guest-ats-addr",    VKAT_TEST_OPT_GUEST_ATS_ADDR,      RTGETOPT_REQ_STRING  },
+    { "--guest-ats-port",    VKAT_TEST_OPT_GUEST_ATS_PORT,      RTGETOPT_REQ_UINT32  },
+    { "--host-ats-address",  VKAT_TEST_OPT_HOST_ATS_ADDR,       RTGETOPT_REQ_STRING  },
+    { "--host-ats-port",     VKAT_TEST_OPT_HOST_ATS_PORT,       RTGETOPT_REQ_UINT32  },
+    { "--include",           'i',                               RTGETOPT_REQ_UINT32  },
+    { "--outdir",            VKAT_TEST_OPT_OUTDIR,              RTGETOPT_REQ_STRING  },
+    { "--count",             VKAT_TEST_OPT_COUNT,               RTGETOPT_REQ_UINT32  },
+    { "--device",            VKAT_TEST_OPT_DEV,                 RTGETOPT_REQ_STRING  },
+    { "--pause",             VKAT_TEST_OPT_PAUSE,               RTGETOPT_REQ_UINT32  },
+    { "--pcm-bit",           VKAT_TEST_OPT_PCM_BIT,             RTGETOPT_REQ_UINT8   },
+    { "--pcm-chan",          VKAT_TEST_OPT_PCM_CHAN,            RTGETOPT_REQ_UINT8   },
+    { "--pcm-hz",            VKAT_TEST_OPT_PCM_HZ,              RTGETOPT_REQ_UINT16  },
+    { "--pcm-signed",        VKAT_TEST_OPT_PCM_SIGNED,          RTGETOPT_REQ_BOOL    },
+    { "--probe-backends",    VKAT_TEST_OPT_PROBE_BACKENDS,      RTGETOPT_REQ_NOTHING },
+    { "--mode",              VKAT_TEST_OPT_MODE,                RTGETOPT_REQ_STRING  },
+    { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,           RTGETOPT_REQ_NOTHING },
+    { "--tag",               VKAT_TEST_OPT_TAG,                 RTGETOPT_REQ_STRING  },
+    { "--tempdir",           VKAT_TEST_OPT_TEMPDIR,             RTGETOPT_REQ_STRING  },
+    { "--volume",            VKAT_TEST_OPT_VOL,                 RTGETOPT_REQ_UINT8   },
+    { "--tcp-bind-addr",     VKAT_TEST_OPT_TCP_BIND_ADDRESS,    RTGETOPT_REQ_STRING  },
+    { "--tcp-bind-port",     VKAT_TEST_OPT_TCP_BIND_PORT,       RTGETOPT_REQ_UINT16  },
+    { "--tcp-connect-addr",  VKAT_TEST_OPT_TCP_CONNECT_ADDRESS, RTGETOPT_REQ_STRING  },
+    { "--tcp-connect-port",  VKAT_TEST_OPT_TCP_CONNECT_PORT,    RTGETOPT_REQ_UINT16  }
 };
 
 /**
@@ -536,7 +544,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
 
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Shutting down guest ATS ...\n");
 
-        int rc2 = AudioTestSvcShutdown(&pTstEnv->u.Guest.Srv);
+        int rc2 = AudioTestSvcShutdown(&pTstEnv->Srv);
         if (RT_SUCCESS(rc))
             rc = rc2;
 
@@ -667,40 +675,44 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
     {
-        case 'a':                          return "Exclude all tests from the list (useful to enable single tests later with --include)";
-        case 'b':                          return "The audio backend to use";
-        case 'd':                          return "Go via DrvAudio instead of directly interfacing with the backend";
-        case 'e':                          return "Exclude the given test id from the list";
-        case 'i':                          return "Include the given test id in the list";
-        case VKAT_TEST_OPT_COUNT:          return "Number of test iterations to perform for selected tests\n"
-                                                  "    Default: random number";
-        case VKAT_TEST_OPT_DEV:            return "Name of the input/output device to use\n"
-                                                  "    Default: default device";
-        case VKAT_TEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to\n"
-                                                  "    Default: " ATS_TCP_DEF_CONNECT_GUEST_STR;
-        case VKAT_TEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to (needs NAT port forwarding)\n"
-                                                  "    Default: 6042"; /* ATS_TCP_DEF_CONNECT_PORT_GUEST */
-        case VKAT_TEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to\n"
-                                                  "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
-        case VKAT_TEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to\n"
-                                                  "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
-        case VKAT_TEST_OPT_MODE:           return "Specifies the test mode to use when running the tests";
-        case VKAT_TEST_OPT_NO_VERIFY:      return "Skips the verification step";
-        case VKAT_TEST_OPT_OUTDIR:         return "Specifies the output directory to use";
-        case VKAT_TEST_OPT_PAUSE:          return "Not yet implemented";
-        case VKAT_TEST_OPT_PCM_HZ:         return "Specifies the PCM Hetz (Hz) rate to use\n"
-                                                  "    Default: 44100";
-        case VKAT_TEST_OPT_PCM_BIT:        return "Specifies the PCM sample bits (i.e. 16) to use\n"
-                                                  "    Default: 16";
-        case VKAT_TEST_OPT_PCM_CHAN:       return "Specifies the number of PCM channels to use\n"
-                                                  "    Default: 2";
-        case VKAT_TEST_OPT_PCM_SIGNED:     return "Specifies whether to use signed (true) or unsigned (false) samples\n"
-                                                  "    Default: true";
-        case VKAT_TEST_OPT_PROBE_BACKENDS: return "Specifies whether to probe all (available) backends until a working one is found\n"
-                                                  "    Default: false";
-        case VKAT_TEST_OPT_TAG:            return "Specifies the test set tag to use";
-        case VKAT_TEST_OPT_TEMPDIR:        return "Specifies the temporary directory to use";
-        case VKAT_TEST_OPT_VOL:            return "Specifies the audio volume (in percent, 0-100) to use";
+        case 'a':                               return "Exclude all tests from the list (useful to enable single tests later with --include)";
+        case 'b':                               return "The audio backend to use";
+        case 'd':                               return "Go via DrvAudio instead of directly interfacing with the backend";
+        case 'e':                               return "Exclude the given test id from the list";
+        case 'i':                               return "Include the given test id in the list";
+        case VKAT_TEST_OPT_COUNT:               return "Number of test iterations to perform for selected tests\n"
+                                                       "    Default: random number";
+        case VKAT_TEST_OPT_DEV:                 return "Name of the input/output device to use\n"
+                                                       "    Default: default device";
+        case VKAT_TEST_OPT_GUEST_ATS_ADDR:      return "Address of guest ATS to connect to\n"
+                                                       "    Default: " ATS_TCP_DEF_CONNECT_GUEST_STR;
+        case VKAT_TEST_OPT_GUEST_ATS_PORT:      return "Port of guest ATS to connect to (needs NAT port forwarding)\n"
+                                                       "    Default: 6042"; /* ATS_TCP_DEF_CONNECT_PORT_GUEST */
+        case VKAT_TEST_OPT_HOST_ATS_ADDR:       return "Address of host ATS to connect to\n"
+                                                       "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
+        case VKAT_TEST_OPT_HOST_ATS_PORT:       return "Port of host ATS to connect to\n"
+                                                       "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
+        case VKAT_TEST_OPT_MODE:                return "Specifies the test mode to use when running the tests";
+        case VKAT_TEST_OPT_NO_VERIFY:           return "Skips the verification step";
+        case VKAT_TEST_OPT_OUTDIR:              return "Specifies the output directory to use";
+        case VKAT_TEST_OPT_PAUSE:               return "Not yet implemented";
+        case VKAT_TEST_OPT_PCM_HZ:              return "Specifies the PCM Hetz (Hz) rate to use\n"
+                                                       "    Default: 44100";
+        case VKAT_TEST_OPT_PCM_BIT:             return "Specifies the PCM sample bits (i.e. 16) to use\n"
+                                                       "    Default: 16";
+        case VKAT_TEST_OPT_PCM_CHAN:            return "Specifies the number of PCM channels to use\n"
+                                                       "    Default: 2";
+        case VKAT_TEST_OPT_PCM_SIGNED:          return "Specifies whether to use signed (true) or unsigned (false) samples\n"
+                                                       "    Default: true";
+        case VKAT_TEST_OPT_PROBE_BACKENDS:      return "Specifies whether to probe all (available) backends until a working one is found\n"
+                                                       "    Default: false";
+        case VKAT_TEST_OPT_TAG:                 return "Specifies the test set tag to use";
+        case VKAT_TEST_OPT_TEMPDIR:             return "Specifies the temporary directory to use";
+        case VKAT_TEST_OPT_VOL:                 return "Specifies the audio volume (in percent, 0-100) to use";
+        case VKAT_TEST_OPT_TCP_BIND_ADDRESS:    return "Specifies the TCP address listening to (server mode)";
+        case VKAT_TEST_OPT_TCP_BIND_PORT:       return "Specifies the TCP port listening to (server mode)";
+        case VKAT_TEST_OPT_TCP_CONNECT_ADDRESS: return "Specifies the TCP address to connect to (client mode)";
+        case VKAT_TEST_OPT_TCP_CONNECT_PORT:    return "Specifies the TCP port to connect to (client mode)";
         default:
             break;
     }
@@ -718,7 +730,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     AUDIOTESTENV TstEnv;
     RT_ZERO(TstEnv);
 
-    int rc = AudioTestSvcCreate(&TstEnv.u.Guest.Srv);
+    int rc = AudioTestSvcCreate(&TstEnv.Srv);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Creating ATS service instance failed with %Rrc\n", rc);
 
     const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
     PCPDMDRVREG pDrvReg       = AudioTestGetDefaultBackend();
@@ -845,12 +859,30 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 TstEnv.uVolumePercent = ValueUnion.u8;
                 break;
 
+            case VKAT_TEST_OPT_TCP_BIND_ADDRESS:
+                rc = RTStrCopy(TstEnv.TcpOpts.szBindAddr, sizeof(TstEnv.TcpOpts.szBindAddr), ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Bind address invalid, rc=%Rrc", rc);
+                break;
+
+            case VKAT_TEST_OPT_TCP_BIND_PORT:
+                TstEnv.TcpOpts.uBindPort = ValueUnion.u16;
+                break;
+
+            case VKAT_TEST_OPT_TCP_CONNECT_ADDRESS:
+                rc = RTStrCopy(TstEnv.TcpOpts.szConnectAddr, sizeof(TstEnv.TcpOpts.szConnectAddr), ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Connect address invalid, rc=%Rrc", rc);
+                break;
+
+            case VKAT_TEST_OPT_TCP_CONNECT_PORT:
+                TstEnv.TcpOpts.uConnectPort = ValueUnion.u16;
+                break;
+
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
-                rc = AudioTestSvcHandleOption(&TstEnv.u.Guest.Srv, ch, &ValueUnion);
-                if (RT_FAILURE(rc))
-                    return RTGetOptPrintError(ch, &ValueUnion);
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 
@@ -866,6 +898,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 
     if (TstEnv.enmMode == AUDIOTESTMODE_UNKNOWN)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No test mode (--mode) specified!\n");
+
+    /* Validate TCP options. */
+    if (   TstEnv.TcpOpts.szBindAddr[0]
+        && TstEnv.TcpOpts.szConnectAddr[0])
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Only one TCP connection mode (connect as client *or* bind as server) can be specified) at a time!\n");
 
     AUDIOTESTDRVSTACK DrvStack;
     for (size_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)

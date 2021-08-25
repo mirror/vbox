@@ -78,10 +78,10 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
 
     /* Tweak the address the guest ATS is trying to connect to the host if anything else is specified.
      * Note: The host also runs on the same host (this self-test is completely self-contained and does not need a VM). */
-    if (!pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr[0])
-        RTStrCopy(pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr, sizeof(pTstEnv->u.Guest.TcpOpts.szTcpConnectAddr), "127.0.0.1");
+    if (!pTstEnv->TcpOpts.szConnectAddr[0])
+        RTStrCopy(pTstEnv->TcpOpts.szConnectAddr, sizeof(pTstEnv->TcpOpts.szConnectAddr), "127.0.0.1");
 
-    int rc = AudioTestSvcCreate(&pTstEnv->u.Guest.Srv);
+    int rc = AudioTestSvcCreate(&pTstEnv->Srv);
     AssertRCReturn(rc, rc);
 
     /* Generate tag for guest side. */

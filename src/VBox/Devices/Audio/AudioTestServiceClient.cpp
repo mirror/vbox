@@ -512,6 +512,9 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
  */
 static int audioTestSvcClientCloseInternal(PATSCLIENT pClient)
 {
+    if (!pClient->pTransportClient) /* Not connected (yet)? Bail out early. */
+        return VINF_SUCCESS;
+
     int rc = audioTestSvcClientDoBye(pClient);
     if (RT_SUCCESS(rc))
     {
