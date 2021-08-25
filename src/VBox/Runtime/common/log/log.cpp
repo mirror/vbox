@@ -1104,7 +1104,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
         pLoggerInt->cMaxGroups                  = cGroups;
         pLoggerInt->papszGroups                 = papszGroups;
         if (fFlags & RTLOGFLAGS_RESTRICT_GROUPS)
-            pLoggerInt->pacEntriesPerGroup      = (uint32_t *)(pLoggerInt + 1);
+            pLoggerInt->pacEntriesPerGroup      = &pLoggerInt->afGroups[cGroups];
         else
             pLoggerInt->pacEntriesPerGroup      = NULL;
         pLoggerInt->cMaxEntriesPerGroup         = cMaxEntriesPerGroup ? cMaxEntriesPerGroup : UINT32_MAX;
