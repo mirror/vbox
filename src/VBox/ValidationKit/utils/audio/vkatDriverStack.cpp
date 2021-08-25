@@ -28,6 +28,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_AUDIO_TEST
+#include <iprt/log.h>
+
 #include <iprt/errcore.h>
 #include <iprt/message.h>
 #include <iprt/stream.h>
@@ -853,12 +856,14 @@ void audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOST
     {
         if (pDrvStack->pIAudioConnector)
         {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' (IAudioConnector) ...\n", pStream->Cfg.szName);
             int rc = pDrvStack->pIAudioConnector->pfnStreamDestroy(pDrvStack->pIAudioConnector, pStream, true /*fImmediate*/);
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "pfnStreamDestroy failed: %Rrc", rc);
         }
         else
         {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' (IHostAudio) ...\n", pStream->Cfg.szName);
             PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
             int rc = pDrvStack->pIHostAudio->pfnStreamDestroy(pDrvStack->pIHostAudio, &pStreamAt->Backend, true /*fImmediate*/);
             if (RT_SUCCESS(rc))
@@ -870,6 +875,8 @@ void audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOST
             else
                 RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamDestroy failed: %Rrc", rc);
         }
+
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' done\n", pStream->Cfg.szName);
     }
 }
 
@@ -1514,4 +1521,3 @@ int AudioTestMixStreamCapture(PAUDIOTESTDRVMIXSTREAM pMix, void *pvBuf, uint32_t
 
     return VINF_SUCCESS;
 }
-

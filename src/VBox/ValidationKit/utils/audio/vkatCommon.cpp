@@ -28,6 +28,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_AUDIO_TEST
+#include <iprt/log.h>
 
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
@@ -525,7 +527,7 @@ static DECLCALLBACK(int) audioTestGstAtsTestSetBeginCallback(void const *pvUser,
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Beginning test set '%s' in '%s'\n", pszTag, pTstEnv->szPathTemp);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Beginning test set '%s' in '%s'\n", pszTag, pTstEnv->szPathTemp);
 
     return AudioTestSetCreate(&pTstEnv->Set, pTstEnv->szPathTemp, pszTag);
 }
@@ -539,7 +541,7 @@ static DECLCALLBACK(int) audioTestGstAtsTestSetEndCallback(void const *pvUser, c
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Ending test set '%s'\n", pszTag);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Ending test set '%s'\n", pszTag);
 
     /* Pack up everything to be ready for transmission. */
     return audioTestEnvPrologue(pTstEnv, true /* fPack */, pCtx->szTestSetArchive, sizeof(pCtx->szTestSetArchive));

@@ -20,11 +20,12 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_AUDIO_TEST
+#include <iprt/log.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/err.h>
-#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/poll.h>
@@ -312,6 +313,8 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRAN
 
     int rc;
 
+    LogFunc(("enmMode=%#x\n", pThis->enmMode));
+
     if (pThis->enmMode == ATSTCPMODE_SERVER)
     {
         pClient->fFromServer = true;
@@ -413,7 +416,7 @@ static DECLCALLBACK(void) atsTcpNotifyReboot(PATSTRANSPORTINST pThis)
     {
         int rc = RTTcpServerDestroy(pThis->pTcpServer);
         if (RT_FAILURE(rc))
-            RTMsgInfo("RTTcpServerDestroy failed in atsTcpNotifyReboot: %Rrc", rc);
+            LogRel(("RTTcpServerDestroy failed in atsTcpNotifyReboot: %Rrc", rc));
         pThis->pTcpServer = NULL;
     }
 }
@@ -679,7 +682,7 @@ static DECLCALLBACK(void) atsTcpTerm(PATSTRANSPORTINST pThis)
         LogFunc(("Destroying server...\n"));
         int rc = RTTcpServerDestroy(pThis->pTcpServer);
         if (RT_FAILURE(rc))
-            RTMsgInfo("RTTcpServerDestroy failed in atsTcpTerm: %Rrc", rc);
+            LogRel(("RTTcpServerDestroy failed in atsTcpTerm: %Rrc", rc));
         pThis->pTcpServer        = NULL;
     }
 
@@ -734,8 +737,8 @@ static DECLCALLBACK(int) atsTcpStart(PATSTRANSPORTINST pThis)
         {
             if (rc == VERR_NET_DOWN)
             {
-                RTMsgInfo("RTTcpServerCreateEx(%s, %u,) failed: %Rrc, retrying for 20 seconds...\n",
-                          pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc);
+                LogRel2(("RTTcpServerCreateEx(%s, %u,) failed: %Rrc, retrying for 20 seconds...\n",
+                         pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc));
                 uint64_t StartMs = RTTimeMilliTS();
                 do
                 {
@@ -744,13 +747,13 @@ static DECLCALLBACK(int) atsTcpStart(PATSTRANSPORTINST pThis)
                 } while (   rc == VERR_NET_DOWN
                          && RTTimeMilliTS() - StartMs < 20000);
                 if (RT_SUCCESS(rc))
-                    RTMsgInfo("RTTcpServerCreateEx succceeded.\n");
+                    LogRel2(("RTTcpServerCreateEx succceeded\n"));
             }
 
             if (RT_FAILURE(rc))
             {
-                RTMsgError("RTTcpServerCreateEx(%s, %u,) failed: %Rrc\n",
-                           pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc);
+                LogRel(("RTTcpServerCreateEx(%s, %u,) failed: %Rrc\n",
+                        pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc));
             }
         }
     }

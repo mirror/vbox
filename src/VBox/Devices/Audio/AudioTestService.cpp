@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_AUDIO_TEST
+#include <iprt/log.h>
 
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
@@ -36,7 +37,6 @@
 #include <iprt/initterm.h>
 #include <iprt/json.h>
 #include <iprt/list.h>
-#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/param.h>
@@ -996,11 +996,11 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
             size_t cbWritten = 0;
             rc = RTPipeWrite(pThis->hPipeW, "", 1, &cbWritten);
             if (RT_FAILURE(rc))
-                RTMsgError("Failed to inform worker thread of a new client");
+                LogRel(("Failed to inform worker thread of a new client, rc=%Rrc\n", rc));
         }
         else
         {
-            RTMsgError("Creating new client structure failed with out of memory error\n");
+            LogRel(("Creating new client structure failed with out of memory error\n"));
             pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pTransportClient);
         }
     }
@@ -1061,23 +1061,23 @@ int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
                 if (RT_SUCCESS(rc))
                     return VINF_SUCCESS;
                 else
-                    RTMsgError("Creating the client worker thread failed with %Rrc\n", rc);
+                    LogRel(("Creating the client worker thread failed with %Rrc\n", rc));
 
                 RTPipeClose(pThis->hPipeR);
                 RTPipeClose(pThis->hPipeW);
             }
             else
-                RTMsgError("Creating communications pipe failed with %Rrc\n", rc);
+                LogRel(("Creating communications pipe failed with %Rrc\n", rc));
 
             RTPollSetDestroy(pThis->hPollSet);
         }
         else
-            RTMsgError("Creating pollset failed with %Rrc\n", rc);
+            LogRel(("Creating pollset failed with %Rrc\n", rc));
 
         RTCritSectDelete(&pThis->CritSectClients);
     }
     else
-        RTMsgError("Creating global critical section failed with %Rrc\n", rc);
+        LogRel(("Creating global critical section failed with %Rrc\n", rc));
 
     return rc;
 }
