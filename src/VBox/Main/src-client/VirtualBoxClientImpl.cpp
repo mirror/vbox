@@ -78,7 +78,6 @@ public:
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
     {
-        NOREF(aEvent);
         switch(aType)
         {
             case VBoxEventType_OnLanguageChanged:
