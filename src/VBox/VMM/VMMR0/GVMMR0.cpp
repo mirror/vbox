@@ -909,12 +909,12 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                         pGVM->gvmm.s.VMMemObj  = hVMMemObj;
                         rc = GMMR0InitPerVMData(pGVM);
                         int rc2 = PGMR0InitPerVMData(pGVM);
-                        VMMR0InitPerVMData(pGVM);
+                        int rc3 = VMMR0InitPerVMData(pGVM);
                         DBGFR0InitPerVMData(pGVM);
                         PDMR0InitPerVMData(pGVM);
                         IOMR0InitPerVMData(pGVM);
                         TMR0InitPerVMData(pGVM);
-                        if (RT_SUCCESS(rc) && RT_SUCCESS(rc2))
+                        if (RT_SUCCESS(rc) && RT_SUCCESS(rc2) && RT_SUCCESS(rc3))
                         {
                             /*
                              * Allocate page array.
@@ -1038,8 +1038,13 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                 }
                             }
                         }
-                        else if (RT_SUCCESS(rc))
-                            rc = rc2;
+                        else
+                        {
+                            if (RT_SUCCESS_NP(rc))
+                                rc = rc2;
+                            if (RT_SUCCESS_NP(rc))
+                                rc = rc3;
+                        }
                     }
                 }
                 /* else: The user wasn't permitted to create this VM. */

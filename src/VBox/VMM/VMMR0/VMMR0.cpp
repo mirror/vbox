@@ -363,35 +363,10 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
 
 
 /**
- * Initializes VMM specific members when the GVM structure is created.
- *
- * @param   pGVM        The global (ring-0) VM structure.
- */
-VMMR0_INT_DECL(void) VMMR0InitPerVMData(PGVM pGVM)
-{
-    pGVM->vmmr0.s.hMemObjLogger         = NIL_RTR0MEMOBJ;
-    pGVM->vmmr0.s.hMapObjLogger         = NIL_RTR0MEMOBJ;
-    pGVM->vmmr0.s.hMemObjReleaseLogger  = NIL_RTR0MEMOBJ;
-    pGVM->vmmr0.s.hMapObjReleaseLogger  = NIL_RTR0MEMOBJ;
-    pGVM->vmmr0.s.fCalledInitVm         = false;
-
-    for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
-    {
-        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        Assert(pGVCpu->idHostCpu == NIL_RTCPUID);
-        Assert(pGVCpu->iHostCpuSet == UINT32_MAX);
-        pGVCpu->vmmr0.s.fInHmContext    = false;
-        pGVCpu->vmmr0.s.pPreemptState   = NULL;
-        pGVCpu->vmmr0.s.hCtxHook        = NIL_RTTHREADCTXHOOK;
-    }
-}
-
-
-/**
  * Helper for vmmR0InitLoggers
  */
 static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER pR0Log, PVMMR3CPULOGGER pShared,
-                              uint32_t cbBuf, char *pchBuf, RTR3PTR pchBufR3, uint64_t nsProgramStart)
+                              uint32_t cbBuf, char *pchBuf, RTR3PTR pchBufR3)
 {
     pR0Log->BufDesc.u32Magic    = RTLOGBUFFERDESC_MAGIC;
     pR0Log->BufDesc.uReserved   = 0;
@@ -425,7 +400,6 @@ static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER
         if (RT_SUCCESS(rc))
         {
             RTLogSetR0ThreadNameF(pLogger, "EMT-%u-R0", pGVCpu->idCpu);
-            RTLogSetR0ProgramStart(pLogger, nsProgramStart);
             return VINF_SUCCESS;
         }
 
@@ -460,8 +434,7 @@ static int vmmR0InitLoggers(PGVM pGVM, bool fRelease, uint32_t cbBuf, PRTR0MEMOB
                 PGVMCPU             pGVCpu  = &pGVM->aCpus[i];
                 PVMMR0PERVCPULOGGER pR0Log  = fRelease ? &pGVCpu->vmmr0.s.RelLogger : &pGVCpu->vmmr0.s.Logger;
                 PVMMR3CPULOGGER     pShared = fRelease ? &pGVCpu->vmm.s.RelLogger   : &pGVCpu->vmm.s.Logger;
-                rc = vmmR0InitLoggerOne(pGVCpu, fRelease, pR0Log, pShared, cbBuf, pchBuf + i * cbBuf, pchBufR3 + i * cbBuf,
-                                        pGVM->vmm.s.nsProgramStart);
+                rc = vmmR0InitLoggerOne(pGVCpu, fRelease, pR0Log, pShared, cbBuf, pchBuf + i * cbBuf, pchBufR3 + i * cbBuf);
                 if (RT_FAILURE(rc))
                 {
                     pR0Log->pLogger   = NULL;
@@ -488,6 +461,55 @@ static int vmmR0InitLoggers(PGVM pGVM, bool fRelease, uint32_t cbBuf, PRTR0MEMOB
         RTR0MemObjFree(*phMemObj, true /*fFreeMappings*/);
         *phMemObj = NIL_RTR0MEMOBJ;
     }
+    return rc;
+}
+
+
+/**
+ * Initializes VMM specific members when the GVM structure is created,
+ * allocating loggers and stuff.
+ *
+ * The loggers are allocated here so that we can update their settings before
+ * doing VMMR0_DO_VMMR0_INIT and have correct logging at that time.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
+ */
+VMMR0_INT_DECL(int) VMMR0InitPerVMData(PGVM pGVM)
+{
+    /*
+     * Initialize all members first.
+     */
+    pGVM->vmmr0.s.hMemObjLogger         = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.hMapObjLogger         = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.hMemObjReleaseLogger  = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.hMapObjReleaseLogger  = NIL_RTR0MEMOBJ;
+    pGVM->vmmr0.s.fCalledInitVm         = false;
+
+    for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
+    {
+        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+        Assert(pGVCpu->idHostCpu == NIL_RTCPUID);
+        Assert(pGVCpu->iHostCpuSet == UINT32_MAX);
+        pGVCpu->vmmr0.s.fInHmContext    = false;
+        pGVCpu->vmmr0.s.pPreemptState   = NULL;
+        pGVCpu->vmmr0.s.hCtxHook        = NIL_RTTHREADCTXHOOK;
+    }
+
+    /*
+     * Create the ring-0 release loggers.
+     */
+    int rc = vmmR0InitLoggers(pGVM, true /*fRelease*/, _8K,
+                              &pGVM->vmmr0.s.hMemObjReleaseLogger, &pGVM->vmmr0.s.hMapObjReleaseLogger);
+
+#ifdef LOG_ENABLED
+    /*
+     * Create debug loggers.
+     */
+    if (RT_SUCCESS(rc))
+        rc = vmmR0InitLoggers(pGVM, false /*fRelease*/, _64K, &pGVM->vmmr0.s.hMemObjLogger, &pGVM->vmmr0.s.hMapObjLogger);
+#endif
+
     return rc;
 }
 
@@ -533,20 +555,7 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
     else
         return VERR_ALREADY_INITIALIZED;
 
-    /*
-     * Create the ring-0 release loggers.
-     */
-    rc = vmmR0InitLoggers(pGVM, true /*fRelease*/, _8K, &pGVM->vmmr0.s.hMemObjReleaseLogger, &pGVM->vmmr0.s.hMapObjReleaseLogger);
-    if (RT_FAILURE(rc))
-        return rc;
-
 #ifdef LOG_ENABLED
-    /*
-     * Create debug loggers.
-     */
-    rc = vmmR0InitLoggers(pGVM, false /*fRelease*/, _64K, &pGVM->vmmr0.s.hMemObjLogger, &pGVM->vmmr0.s.hMapObjLogger);
-    if (RT_FAILURE(rc))
-        return rc;
 
     /*
      * Register the EMT R0 logger instance for VCPU 0.
@@ -2916,7 +2925,10 @@ static int vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ p
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         PRTLOGGER pLogger = fRelease ? pGVCpu->vmmr0.s.RelLogger.pLogger : pGVCpu->vmmr0.s.Logger.pLogger;
         if (pLogger)
+        {
+            RTLogSetR0ProgramStart(pLogger, pGVM->vmm.s.nsProgramStart);
             rc = RTLogBulkUpdate(pLogger, pReq->fFlags, pReq->uGroupCrc32, pReq->cGroups, pReq->afGroups);
+        }
     }
 
     return rc;
