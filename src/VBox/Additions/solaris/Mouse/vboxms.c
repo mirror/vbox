@@ -328,11 +328,10 @@ int vbmsSolAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
         case DDI_ATTACH:
         {
             int rc;
-            int instance = ddi_get_instance(pDip);
             /* Only one instance supported. */
             if (!ASMAtomicCmpXchgPtr(&g_OpenNodeState.pDip, pDip, NULL))
                 return DDI_FAILURE;
-            rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0);
+            rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, 0 /* instance */, DDI_PSEUDO, 0 /* flags */);
             if (rc == DDI_SUCCESS)
                 return DDI_SUCCESS;
             ASMAtomicWritePtr(&g_OpenNodeState.pDip, NULL);
@@ -402,12 +401,19 @@ int vbmsSolGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg,
     switch (enmCmd)
     {
         case DDI_INFO_DEVT2DEVINFO:
+        {
             *ppvResult = (void *)g_OpenNodeState.pDip;
+            if (!*ppvResult)
+                rc = DDI_FAILURE;
             break;
+        }
 
         case DDI_INFO_DEVT2INSTANCE:
-            *ppvResult = (void *)(uintptr_t)ddi_get_instance(g_OpenNodeState.pDip);
+        {
+            /* There can only be a single-instance of this driver and thus its instance number is 0. */
+            *ppvResult = (void *)0;
             break;
+        }
 
         default:
             rc = DDI_FAILURE;
