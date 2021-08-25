@@ -67,9 +67,9 @@ void UIWizardNewVDPageExpert::prepare()
     m_pFormatGroup = new UIDiskFormatsGroupBox(true /* fExpertMode */, KDeviceType_HardDisk, 0);
     m_pVariantGroup = new UIDiskVariantGroupBox(true /* fExpertMode */, 0);
 
-    pMainLayout->addWidget(m_pSizeAndPathGroup, 0, 0, 2, 2);
-    pMainLayout->addWidget(m_pFormatGroup, 2, 0, 6, 1);
-    pMainLayout->addWidget(m_pVariantGroup, 2, 1, 6, 1);
+    pMainLayout->addWidget(m_pSizeAndPathGroup, 0, 0, 4, 2);
+    pMainLayout->addWidget(m_pFormatGroup, 4, 0, 7, 1);
+    pMainLayout->addWidget(m_pVariantGroup, 4, 1, 3, 1);
 
     connect(m_pFormatGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
             this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);

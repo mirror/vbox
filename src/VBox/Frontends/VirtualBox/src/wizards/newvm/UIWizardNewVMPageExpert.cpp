@@ -397,6 +397,7 @@ void UIWizardNewVMPageExpert::initializePage()
     }
 
     setOSTypeDependedValues();
+    setSkipCheckBoxEnable();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateDiskWidgetsAfterMediumFormatChange();
     // setSkipCheckBoxEnable();
@@ -867,13 +868,14 @@ QWidget *UIWizardNewVMPageExpert::createNameOSTypeWidgets()
 
 void UIWizardNewVMPageExpert::setSkipCheckBoxEnable()
 {
-    if (!m_pSkipUnattendedCheckBox)
-        return;
-    if (m_pNameAndSystemEditor)
+    AssertReturnVoid(m_pSkipUnattendedCheckBox && m_pNameAndSystemEditor);
+    const QString &strPath = m_pNameAndSystemEditor->image();
+    if (strPath.isNull() || strPath.isEmpty())
     {
-        const QString &strPath = m_pNameAndSystemEditor->image();
-        m_pSkipUnattendedCheckBox->setEnabled(!strPath.isNull() && !strPath.isEmpty());
+        m_pSkipUnattendedCheckBox->setEnabled(false);
+        return;
     }
+    m_pSkipUnattendedCheckBox->setEnabled(UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor));
 }
 
 void UIWizardNewVMPageExpert::updateHostnameDomainNameFromMachineName()
