@@ -975,8 +975,15 @@ void UINotificationProgressMachineSaveState::sltHandleProgressFinished()
 *   Class UINotificationProgressMachinePowerDown implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UINotificationProgressMachinePowerDown::UINotificationProgressMachinePowerDown(const QUuid &uId)
-    : m_uId(uId)
+UINotificationProgressMachinePowerDown::UINotificationProgressMachinePowerDown(const CMachine &comMachine)
+    : m_comMachine(comMachine)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressMachinePowerDown::sltHandleProgressFinished);
+}
+
+UINotificationProgressMachinePowerDown::UINotificationProgressMachinePowerDown(const CConsole &comConsole)
+    : m_comConsole(comConsole)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressMachinePowerDown::sltHandleProgressFinished);
@@ -994,17 +1001,34 @@ QString UINotificationProgressMachinePowerDown::details() const
 
 CProgress UINotificationProgressMachinePowerDown::createProgress(COMResult &comResult)
 {
-    /* Open a session thru which we will modify the machine: */
-    m_comSession = uiCommon().openExistingSession(m_uId);
-    if (m_comSession.isNull())
-        return CProgress();
+    /* Prepare machine to power off: */
+    CMachine comMachine = m_comMachine;
 
-    /* Get session machine: */
-    CMachine comMachine = m_comSession.GetMachine();
-    if (!m_comSession.isOk())
+    /* For Runtime UI: */
+    switch (uiCommon().uiType())
     {
-        comResult = m_comSession;
-        m_comSession.UnlockMachine();
+        case UICommon::UIType_RuntimeUI:
+        {
+            /* Acquire VM: */
+            AssertReturn(m_comConsole.isNotNull(), CProgress());
+            comMachine = m_comConsole.GetMachine();
+            if (!m_comConsole.isOk())
+            {
+                comResult = m_comConsole;
+                return CProgress();
+            }
+
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Acquire VM id: */
+    const QUuid uId = comMachine.GetId();
+    if (!comMachine.isOk())
+    {
+        comResult = comMachine;
         return CProgress();
     }
 
@@ -1013,17 +1037,44 @@ CProgress UINotificationProgressMachinePowerDown::createProgress(COMResult &comR
     if (!comMachine.isOk())
     {
         comResult = comMachine;
-        m_comSession.UnlockMachine();
         return CProgress();
     }
 
-    /* Get session console: */
-    CConsole comConsole = m_comSession.GetConsole();
-    if (!m_comSession.isOk())
+    /* Prepare console to power off: */
+    CConsole comConsole = m_comConsole;
+
+    /* For Manager UI: */
+    switch (uiCommon().uiType())
     {
-        comResult = m_comSession;
-        m_comSession.UnlockMachine();
-        return CProgress();
+        case UICommon::UIType_SelectorUI:
+        {
+            /* Open a session thru which we will modify the machine: */
+            m_comSession = uiCommon().openExistingSession(uId);
+            if (m_comSession.isNull())
+                return CProgress();
+
+            /* Get session machine: */
+            comMachine = m_comSession.GetMachine();
+            if (!m_comSession.isOk())
+            {
+                comResult = m_comSession;
+                m_comSession.UnlockMachine();
+                return CProgress();
+            }
+
+            /* Get session console: */
+            comConsole = m_comSession.GetConsole();
+            if (!m_comSession.isOk())
+            {
+                comResult = m_comSession;
+                m_comSession.UnlockMachine();
+                return CProgress();
+            }
+
+            break;
+        }
+        default:
+            break;
     }
 
     /* Initialize progress-wrapper: */
@@ -1037,7 +1088,8 @@ CProgress UINotificationProgressMachinePowerDown::createProgress(COMResult &comR
 void UINotificationProgressMachinePowerDown::sltHandleProgressFinished()
 {
     /* Unlock session finally: */
-    m_comSession.UnlockMachine();
+    if (m_comSession.isNotNull())
+        m_comSession.UnlockMachine();
 }
 
 

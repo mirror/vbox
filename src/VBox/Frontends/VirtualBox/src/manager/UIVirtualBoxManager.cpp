@@ -1820,7 +1820,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
         {
             /* Powering VM down: */
             UINotificationProgressMachinePowerDown *pNotification =
-                new UINotificationProgressMachinePowerDown(pItem->id());
+                new UINotificationProgressMachinePowerDown(pItem->toLocal()->machine());
             gpNotificationCenter->append(pNotification);
         }
         /* For real cloud machine: */
