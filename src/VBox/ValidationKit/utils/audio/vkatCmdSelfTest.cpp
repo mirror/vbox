@@ -112,7 +112,7 @@ typedef SELFTESTCTX *PSELFTESTCTX;
 *********************************************************************************************************************************/
 
 /** The global self-text context. */
-static SELFTESTCTX g_Ctx = { 0 };
+static SELFTESTCTX g_Ctx;
 
 
 /*********************************************************************************************************************************
@@ -332,6 +332,8 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
  */
 DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
 {
+    RT_ZERO(g_Ctx);
+
     /* Argument processing loop: */
     int           rc;
     RTGETOPTUNION ValueUnion;
