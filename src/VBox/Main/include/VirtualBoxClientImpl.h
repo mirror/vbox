@@ -98,6 +98,8 @@ private:
         ComPtr<IVirtualBox> m_pVirtualBox;
         ComPtr<IToken> m_pToken;
         const ComObjPtr<EventSource> m_pEventSource;
+        ComPtr<IEventSource> m_pVBoxEventSource;
+        ComPtr<IEventListener> m_pVBoxEventListener;
 
         RTTHREAD m_ThreadWatcher;
         RTSEMEVENT m_SemEvWatcher;
@@ -117,6 +119,7 @@ public:
 #ifdef VBOX_WITH_MAIN_NLS
     HRESULT i_reloadApiLanguage();
     HRESULT i_registerEventListener();
+    void    i_unregisterEventListener();
 #endif
 };
 

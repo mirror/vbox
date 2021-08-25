@@ -58,9 +58,13 @@ public:
     {}
 
 
-    HRESULT init(VirtualBoxClient *aClient)
+    HRESULT init(void *)
     {
-        mClient = aClient;
+        return S_OK;
+    }
+
+    HRESULT init()
+    {
         return S_OK;
     }
 
@@ -79,7 +83,21 @@ public:
         {
             case VBoxEventType_OnLanguageChanged:
             {
-                mClient->i_reloadApiLanguage();
+                VirtualBoxTranslator *pTranslator = VirtualBoxTranslator::instance();
+                if (pTranslator)
+                {
+                    ComPtr<ILanguageChangedEvent> pEvent = aEvent;
+                    HRESULT rc = E_FAIL;
+                    Assert(pEvent);
+
+                    com::Bstr bstrLanguageId;
+                    rc = pEvent->COMGETTER(LanguageId)(bstrLanguageId.asOutParam());
+                    AssertComRC(rc);
+
+                    com::Utf8Str strLanguageId(bstrLanguageId);
+                    pTranslator->i_loadLanguage(strLanguageId.c_str());
+                    pTranslator->release();
+                }
                 break;
             }
 
@@ -89,13 +107,11 @@ public:
 
         return S_OK;
     }
-private:
-    ComObjPtr<VirtualBoxClient>    mClient;
 };
 
-typedef ListenerImpl<VBoxEventListener, VirtualBoxClient*> VBoxEventListenerImpl;
+typedef ListenerImpl<VBoxEventListener> VBoxEventListenerImpl;
 
-VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
+VBOX_LISTENER_DECLARE(VBoxTrEventListenerImpl)
 
 #endif /* VBOX_WITH_MAIN_NLS */
 
@@ -527,6 +543,10 @@ void VirtualBoxClient::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
+#ifdef VBOX_WITH_MAIN_NLS
+    i_unregisterEventListener();
+#endif
+
     if (mData.m_ThreadWatcher != NIL_RTTHREAD)
     {
         /* Signal the event semaphore and wait for the thread to terminate.
@@ -723,23 +743,37 @@ HRESULT VirtualBoxClient::i_reloadApiLanguage()
 
 HRESULT VirtualBoxClient::i_registerEventListener()
 {
-    ComPtr<IEventSource> pES;
-    HRESULT rc = mData.m_pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
+    HRESULT rc = mData.m_pVirtualBox->COMGETTER(EventSource)(mData.m_pVBoxEventSource.asOutParam());
     if (SUCCEEDED(rc))
     {
-        ComObjPtr<VBoxEventListenerImpl> aVBoxListener;
-        aVBoxListener.createObject();
-        aVBoxListener->init(new VBoxEventListener(), this);
-//        mData.m_pVBoxListener = aVBoxListener;
+        ComObjPtr<VBoxEventListenerImpl> pVBoxListener;
+        pVBoxListener.createObject();
+        pVBoxListener->init(new VBoxEventListener());
+        mData.m_pVBoxEventListener = pVBoxListener;
         com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnLanguageChanged);
-        rc = pES->RegisterListener(aVBoxListener, ComSafeArrayAsInParam(eventTypes), true);
+        rc = mData.m_pVBoxEventSource->RegisterListener(pVBoxListener, ComSafeArrayAsInParam(eventTypes), true);
         if (FAILED(rc))
+        {
             rc = setError(rc, tr("Failed to register listener"));
+            mData.m_pVBoxEventListener.setNull();
+            mData.m_pVBoxEventSource.setNull();
+        }
     }
     else
         rc = setError(rc, tr("Failed to get event source from VirtualBox"));
     return rc;
+}
+
+void VirtualBoxClient::i_unregisterEventListener()
+{
+    if (mData.m_pVBoxEventListener.isNotNull())
+    {
+        if (mData.m_pVBoxEventSource.isNotNull())
+            mData.m_pVBoxEventSource->UnregisterListener(mData.m_pVBoxEventListener);
+        mData.m_pVBoxEventListener.setNull();
+    }
+    mData.m_pVBoxEventSource.setNull();
 }
 
 #endif /* VBOX_WITH_MAIN_NLS */
