@@ -407,6 +407,9 @@ class tdAudioTest(vbox.TestDriver):
             asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'guest', '--probe-backends', \
                                  '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
 
+            # Needed for NATed VMs.
+            asArgs.extend(['--tcp-connect-addr', '10.0.2.2' ]);
+
             #
             # Add own environment stuff.
             #
