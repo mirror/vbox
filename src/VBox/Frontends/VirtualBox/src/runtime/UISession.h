@@ -81,7 +81,7 @@ public:
     /** Saves VM state, then closes Runtime UI. */
     void saveState();
     /** Calls for guest shutdown to close Runtime UI. */
-    bool shutdown();
+    void shutdown();
     /** Powers VM down, then closes Runtime UI. */
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
 

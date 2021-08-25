@@ -355,18 +355,17 @@ void UISession::saveState()
     }
 }
 
-bool UISession::shutdown()
+void UISession::shutdown()
 {
+    /* Warn the user about ACPI is not available if so: */
+    if (!console().GetGuestEnteredACPIMode())
+        return UINotificationMessage::cannotSendACPIToMachine();
+
     /* Send ACPI shutdown signal if possible: */
+    LogRel(("GUI: Sending ACPI shutdown signal..\n"));
     console().PowerButton();
     if (!console().isOk())
-    {
-        /* Failed in console: */
         msgCenter().cannotACPIShutdownMachine(console());
-        return false;
-    }
-    /* Passed: */
-    return true;
 }
 
 bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)

@@ -461,7 +461,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         {
             /* Shutdown VM: */
             LogRel(("GUI: Request for close-action to shutdown VM.\n"));
-            machineLogic()->shutdown();
+            uisession()->shutdown();
             break;
         }
         case MachineCloseAction_PowerOff:

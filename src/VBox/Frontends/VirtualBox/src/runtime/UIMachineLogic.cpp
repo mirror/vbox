@@ -385,16 +385,6 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 }
 #endif /* VBOX_WS_MAC */
 
-void UIMachineLogic::shutdown()
-{
-    /* Warn the user about ACPI is not available if so: */
-    if (!console().GetGuestEnteredACPIMode())
-        return UINotificationMessage::cannotSendACPIToMachine();
-
-    /* Shutdown: */
-    uisession()->shutdown();
-}
-
 void UIMachineLogic::powerOff(bool fDiscardingState)
 {
     /* Enable 'manual-override',
@@ -1880,7 +1870,7 @@ void UIMachineLogic::sltShutdown()
     }
 
     LogRel(("GUI: User requested to shutdown VM.\n"));
-    shutdown();
+    uisession()->shutdown();
 }
 
 void UIMachineLogic::sltPowerOff()
