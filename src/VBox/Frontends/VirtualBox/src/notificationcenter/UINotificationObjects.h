@@ -558,19 +558,19 @@ private:
     QString   m_strName;
 };
 
-/** UINotificationProgress extension for machine power-down functionality. */
-class SHARED_LIBRARY_STUFF UINotificationProgressMachinePowerDown : public UINotificationProgress
+/** UINotificationProgress extension for machine power-off functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressMachinePowerOff : public UINotificationProgress
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs machine power-down notification-progress.
+    /** Constructs machine power-off notification-progress.
       * @param  comMachine  Brings the machine being powered off. */
-    UINotificationProgressMachinePowerDown(const CMachine &comMachine);
-    /** Constructs machine power-down notification-progress.
+    UINotificationProgressMachinePowerOff(const CMachine &comMachine);
+    /** Constructs machine power-off notification-progress.
       * @param  comConsole  Brings the console of machine being powered off. */
-    UINotificationProgressMachinePowerDown(const CConsole &comConsole);
+    UINotificationProgressMachinePowerOff(const CConsole &comConsole);
 
 protected:
 
@@ -825,16 +825,16 @@ private:
     QString        m_strName;
 };
 
-/** UINotificationProgress extension for cloud machine power-down functionality. */
-class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachinePowerDown : public UINotificationProgress
+/** UINotificationProgress extension for cloud machine power-off functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachinePowerOff : public UINotificationProgress
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs cloud machine power-down notification-progress.
-      * @param  comMachine  Brings the machine being powered-down. */
-    UINotificationProgressCloudMachinePowerDown(const CCloudMachine &comMachine);
+    /** Constructs cloud machine power-off notification-progress.
+      * @param  comMachine  Brings the machine being powered-off. */
+    UINotificationProgressCloudMachinePowerOff(const CCloudMachine &comMachine);
 
 protected:
 
@@ -847,7 +847,7 @@ protected:
 
 private:
 
-    /** Holds the machine being powered-down. */
+    /** Holds the machine being powered-off. */
     CCloudMachine  m_comMachine;
     /** Holds the machine name. */
     QString        m_strName;

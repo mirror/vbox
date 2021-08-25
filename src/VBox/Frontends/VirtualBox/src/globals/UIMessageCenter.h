@@ -309,8 +309,8 @@ public:
     void cannotACPIShutdownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
     void cannotPowerUpCloudMachine(const CCloudMachine &comMachine) const;
     void cannotPowerUpCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
-    void cannotPowerDownMachine(const CConsole &comConsole) const;
-    void cannotPowerDownMachine(const CProgress &comProgress, const QString &strMachineName) const;
+    void cannotPowerOffMachine(const CConsole &comConsole) const;
+    void cannotPowerOffMachine(const CProgress &comProgress, const QString &strMachineName) const;
     void cannotPowerDownCloudMachine(const CCloudMachine &comMachine) const;
     void cannotPowerDownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
     bool confirmStartMultipleMachines(const QString &strNames) const;

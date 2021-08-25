@@ -1026,7 +1026,7 @@ void UIMessageCenter::cannotPowerUpCloudMachine(const CProgress &comProgress, co
           UIErrorString::formatErrorInfo(comProgress));
 }
 
-void UIMessageCenter::cannotPowerDownMachine(const CConsole &comConsole) const
+void UIMessageCenter::cannotPowerOffMachine(const CConsole &comConsole) const
 {
     error(0, MessageType_Error,
           tr("Failed to stop the virtual machine <b>%1</b>.")
@@ -1034,7 +1034,7 @@ void UIMessageCenter::cannotPowerDownMachine(const CConsole &comConsole) const
           UIErrorString::formatErrorInfo(comConsole));
 }
 
-void UIMessageCenter::cannotPowerDownMachine(const CProgress &comProgress, const QString &strMachineName) const
+void UIMessageCenter::cannotPowerOffMachine(const CProgress &comProgress, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
           tr("Failed to stop the virtual machine <b>%1</b>.")
@@ -2624,8 +2624,8 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     /* Postprocessing: */
     if (fFatal)
     {
-        /* Power down after a fFatal error: */
-        LogRel(("GUI: Powering VM down after a fatal runtime error...\n"));
+        /* Power off after a fFatal error: */
+        LogRel(("GUI: Powering VM off after a fatal runtime error...\n"));
         console1.PowerDown();
     }
 }

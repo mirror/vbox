@@ -2593,11 +2593,8 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
     return comSession;
 }
 
-bool UICommon::restoreCurrentSnapshot(const QUuid &uMachineId)
+void UICommon::restoreCurrentSnapshot(const QUuid &uMachineId)
 {
-    /* Prepare result: */
-    bool fResult = false;
-
     /* Open a session to modify VM: */
     const bool fDirectSessionAvailable = (m_enmType == UIType_RuntimeUI) && isSeparateProcess();
     CSession comSession = openSession(uMachineId, fDirectSessionAvailable ? KLockType_Write : KLockType_Shared);
@@ -2653,18 +2650,12 @@ bool UICommon::restoreCurrentSnapshot(const QUuid &uMachineId)
                 msgCenter().cannotRestoreSnapshot(comProgress, strSnapshotName, strMachineName);
                 break;
             }
-
-            /* Success: */
-            fResult = true;
         }
         while (0);
 
         /* Unlock machine finally: */
         comSession.UnlockMachine();
     }
-
-    /* Return result: */
-    return fResult;
 }
 
 void UICommon::notifyCloudMachineUnregistered(const QString &strProviderShortName,

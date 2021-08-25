@@ -385,27 +385,6 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 }
 #endif /* VBOX_WS_MAC */
 
-void UIMachineLogic::powerOff(bool fDiscardingState)
-{
-    /* Enable 'manual-override',
-     * preventing automatic Runtime UI closing: */
-    uisession()->setManualOverrideMode(true);
-
-    /* Was the step successful? */
-    bool fSuccess = true;
-    /* Power-off: */
-    bool fServerCrashed = false;
-    LogRel(("GUI: Passing request to power VM off from machine-logic to UI session.\n"));
-    fSuccess = uisession()->powerOff(fDiscardingState, fServerCrashed) || fServerCrashed;
-
-    /* Disable 'manual-override' finally: */
-    uisession()->setManualOverrideMode(false);
-
-    /* Manually close Runtime UI: */
-    if (fSuccess)
-        uisession()->closeRuntimeUI();
-}
-
 void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
 {
     /* If active machine-window is defined now: */
@@ -432,7 +411,7 @@ void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 
     /* Power VM off: */
     LogRel(("GUI: Request to power VM off due to VBoxSVC is unavailable.\n"));
-    powerOff(false /* do NOT restore current snapshot */);
+    uisession()->powerOff(false /* do NOT restore current snapshot */);
 }
 
 void UIMachineLogic::sltChangeVisualStateToNormal()
@@ -487,8 +466,8 @@ void UIMachineLogic::sltMachineStateChanged()
                 {
                     if (msgCenter().remindAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
                     {
-                        LogRel(("GUI: User request to power VM off on Guru Meditation.\n"));
-                        powerOff(false /* do NOT restore current snapshot */);
+                        LogRel(("GUI: User requested to power VM off on Guru Meditation.\n"));
+                        uisession()->powerOff(false /* do NOT restore current snapshot */);
                     }
                     break;
                 }
@@ -496,7 +475,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 case GuruMeditationHandlerType_PowerOff:
                 {
                     LogRel(("GUI: Automatic request to power VM off on Guru Meditation.\n"));
-                    powerOff(false /* do NOT restore current snapshot */);
+                    uisession()->powerOff(false /* do NOT restore current snapshot */);
                     break;
                 }
                 /* Just ignore it: */
@@ -1884,7 +1863,7 @@ void UIMachineLogic::sltPowerOff()
 
     LogRel(("GUI: User requested to power VM off.\n"));
     const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
-    powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
+    uisession()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
 }
 
 void UIMachineLogic::sltClose()

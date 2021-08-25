@@ -972,34 +972,34 @@ void UINotificationProgressMachineSaveState::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
-*   Class UINotificationProgressMachinePowerDown implementation.                                                                 *
+*   Class UINotificationProgressMachinePowerOff implementation.                                                                  *
 *********************************************************************************************************************************/
 
-UINotificationProgressMachinePowerDown::UINotificationProgressMachinePowerDown(const CMachine &comMachine)
+UINotificationProgressMachinePowerOff::UINotificationProgressMachinePowerOff(const CMachine &comMachine)
     : m_comMachine(comMachine)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
-            this, &UINotificationProgressMachinePowerDown::sltHandleProgressFinished);
+            this, &UINotificationProgressMachinePowerOff::sltHandleProgressFinished);
 }
 
-UINotificationProgressMachinePowerDown::UINotificationProgressMachinePowerDown(const CConsole &comConsole)
+UINotificationProgressMachinePowerOff::UINotificationProgressMachinePowerOff(const CConsole &comConsole)
     : m_comConsole(comConsole)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
-            this, &UINotificationProgressMachinePowerDown::sltHandleProgressFinished);
+            this, &UINotificationProgressMachinePowerOff::sltHandleProgressFinished);
 }
 
-QString UINotificationProgressMachinePowerDown::name() const
+QString UINotificationProgressMachinePowerOff::name() const
 {
-    return UINotificationProgress::tr("Powering VM down ...");
+    return UINotificationProgress::tr("Powering VM off ...");
 }
 
-QString UINotificationProgressMachinePowerDown::details() const
+QString UINotificationProgressMachinePowerOff::details() const
 {
     return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
 }
 
-CProgress UINotificationProgressMachinePowerDown::createProgress(COMResult &comResult)
+CProgress UINotificationProgressMachinePowerOff::createProgress(COMResult &comResult)
 {
     /* Prepare machine to power off: */
     CMachine comMachine = m_comMachine;
@@ -1085,7 +1085,7 @@ CProgress UINotificationProgressMachinePowerDown::createProgress(COMResult &comR
     return comProgress;
 }
 
-void UINotificationProgressMachinePowerDown::sltHandleProgressFinished()
+void UINotificationProgressMachinePowerOff::sltHandleProgressFinished()
 {
     /* Unlock session finally: */
     if (m_comSession.isNotNull())
@@ -1336,25 +1336,25 @@ CProgress UINotificationProgressCloudMachinePowerUp::createProgress(COMResult &c
 
 
 /*********************************************************************************************************************************
-*   Class UINotificationProgressCloudMachinePowerDown implementation.                                                            *
+*   Class UINotificationProgressCloudMachinePowerOff implementation.                                                             *
 *********************************************************************************************************************************/
 
-UINotificationProgressCloudMachinePowerDown::UINotificationProgressCloudMachinePowerDown(const CCloudMachine &comMachine)
+UINotificationProgressCloudMachinePowerOff::UINotificationProgressCloudMachinePowerOff(const CCloudMachine &comMachine)
     : m_comMachine(comMachine)
 {
 }
 
-QString UINotificationProgressCloudMachinePowerDown::name() const
+QString UINotificationProgressCloudMachinePowerOff::name() const
 {
-    return   UINotificationProgress::tr("Powering cloud VM down ...");
+    return   UINotificationProgress::tr("Powering cloud VM off ...");
 }
 
-QString UINotificationProgressCloudMachinePowerDown::details() const
+QString UINotificationProgressCloudMachinePowerOff::details() const
 {
     return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
 }
 
-CProgress UINotificationProgressCloudMachinePowerDown::createProgress(COMResult &comResult)
+CProgress UINotificationProgressCloudMachinePowerOff::createProgress(COMResult &comResult)
 {
     /* Acquire cloud VM name: */
     m_strName = m_comMachine.GetName();

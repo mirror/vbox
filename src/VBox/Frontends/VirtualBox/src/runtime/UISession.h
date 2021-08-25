@@ -82,8 +82,8 @@ public:
     void saveState();
     /** Calls for guest shutdown to close Runtime UI. */
     void shutdown();
-    /** Powers VM down, then closes Runtime UI. */
-    bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
+    /** Powers VM off, then closes Runtime UI. */
+    void powerOff(bool fIncludingDiscard);
 
     /** Returns the session instance. */
     CSession& session() { return m_session; }

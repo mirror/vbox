@@ -142,9 +142,6 @@ public:
     virtual void updateDock();
 #endif /* VBOX_WS_MAC */
 
-    /** Power off VM, then close Runtime UI. */
-    void powerOff(bool fDiscardingState);
-
     /* API: 3D overlay visibility stuff: */
     virtual void notifyAbout3DOverlayVisibilityChange(bool fVisible);
 

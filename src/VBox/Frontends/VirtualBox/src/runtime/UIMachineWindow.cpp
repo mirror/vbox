@@ -469,7 +469,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
             /* Power VM off: */
             LogRel(("GUI: Request for close-action to power VM off.\n"));
             const bool fDiscardStateOnPowerOff = gEDataManager->discardStateOnPowerOff(uiCommon().managedVMUuid());
-            machineLogic()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
+            uisession()->powerOff(machine().GetSnapshotCount() > 0 && fDiscardStateOnPowerOff);
             break;
         }
         default:

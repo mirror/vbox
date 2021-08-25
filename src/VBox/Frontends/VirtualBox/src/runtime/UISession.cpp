@@ -368,45 +368,54 @@ void UISession::shutdown()
         msgCenter().cannotACPIShutdownMachine(console());
 }
 
-bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
+void UISession::powerOff(bool fIncludingDiscard)
 {
+    /* Prepare result: */
+    bool fSuccess = false;
+
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing: */
+    setManualOverrideMode(true);
+
     /* Prepare the power-off progress: */
-    LogRel(("GUI: Powering VM down on UI session power off request...\n"));
-    CProgress progress = console().PowerDown();
-    if (console().isOk())
+    LogRel(("GUI: Powering VM off..\n"));
+    CProgress comProgress = console().PowerDown();
+    if (!console().isOk())
     {
-        /* Show the power-off progress: */
-        msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_poweroff_90px.png");
-        if (progress.isOk() && progress.GetResultCode() == 0)
+        /* Check the console state, it might be already gone: */
+        if (!console().isNull())
         {
-            /* Discard the current state if requested: */
-            if (fIncludingDiscard)
-                return uiCommon().restoreCurrentSnapshot(uiCommon().managedVMUuid());
+            /* This can happen if VBoxSVC is not running: */
+            COMResult res(console());
+            if (FAILED_DEAD_INTERFACE(res.rc()))
+               fSuccess = true;
         }
-        else
-        {
-            /* Failed in progress: */
-            msgCenter().cannotPowerDownMachine(progress, machineName());
-            return false;
-        }
+
+        if (!fSuccess)
+            msgCenter().cannotPowerOffMachine(console());
     }
     else
     {
-        /* Check the machine state, it might be already gone: */
-        if (!console().isNull())
+        /* Show the power-off progress: */
+        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_poweroff_90px.png");
+        if (comProgress.isOk() && comProgress.GetResultCode() == 0)
         {
-           /* Failed in console: */
-           COMResult res(console());
-           /* This can happen if VBoxSVC is not running: */
-           if (FAILED_DEAD_INTERFACE(res.rc()))
-               fServerCrashed = true;
-           else
-               msgCenter().cannotPowerDownMachine(console());
-           return false;
+            fSuccess = true;
+
+            /* Discard the current state if requested: */
+            if (fIncludingDiscard)
+                uiCommon().restoreCurrentSnapshot(uiCommon().managedVMUuid());
         }
+        else
+            msgCenter().cannotPowerOffMachine(comProgress, machineName());
     }
-    /* Passed: */
-    return true;
+
+    /* Disable 'manual-override' finally: */
+    setManualOverrideMode(false);
+
+    /* Manually close Runtime UI: */
+    if (fSuccess)
+        closeRuntimeUI();
 }
 
 UIMachineLogic* UISession::machineLogic() const
@@ -1959,9 +1968,8 @@ bool UISession::postprocessInitialization()
              * preventing automatic Runtime UI closing: */
             setManualOverrideMode(true);
             /* Power off VM: */
-            bool fServerCrashed = false;
             LogRel(("GUI: Aborting startup due to postprocess initialization issue detected...\n"));
-            powerOff(false /* do NOT restore current snapshot */, fServerCrashed);
+            powerOff(false /* do NOT restore current snapshot */);
             return false;
         }
 

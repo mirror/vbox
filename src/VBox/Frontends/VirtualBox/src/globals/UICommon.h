@@ -519,7 +519,7 @@ public:
         CSession tryToOpenSessionFor(CMachine &comMachine);
 
         /** Restores current snapshot for machine with certain @a uMachineId. */
-        bool restoreCurrentSnapshot(const QUuid &uMachineId);
+        void restoreCurrentSnapshot(const QUuid &uMachineId);
     /** @} */
 
     /** @name Cloud Virtual Machine stuff.
