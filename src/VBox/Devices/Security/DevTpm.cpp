@@ -63,12 +63,12 @@
 /** Ownership management for a particular locality. */
 #define TPM_FIFO_LOCALITY_REG_ACCESS                         0x00
 /** Indicates whether a dynamic OS has been established on this platform before.. */
-# define TPM_FIFO_LOCALITY_REG_ESTABLISHMENT                 RT_BIT(0)
+# define TPM_FIFO_LOCALITY_REG_ACCESS_ESTABLISHMENT          RT_BIT(0)
 /** On reads indicates whether the locality requests use of the TPM (1) or not or is already active locality (0),
  * writing a 1 requests the locality to be granted getting the active locality.. */
-# define TPM_FIFO_LOCALITY_REG_REQUEST_USE                   RT_BIT(1)
+# define TPM_FIFO_LOCALITY_REG_ACCESS_REQUEST_USE            RT_BIT(1)
 /** Indicates whether another locality is requesting usage of the TPM. */
-# define TPM_FIFO_LOCALITY_REG_PENDING_REQUEST               RT_BIT(2)
+# define TPM_FIFO_LOCALITY_REG_ACCESS_PENDING_REQUEST        RT_BIT(2)
 /** Writing a 1 forces the TPM to give control to the locality if it has a higher priority. */
 # define TPM_FIFO_LOCALITY_REG_ACCESS_SEIZE                  RT_BIT(3)
 /** On reads indicates whether this locality has been seized by a higher locality (1) or not (0), writing a 1 clears this bit. */
@@ -182,9 +182,21 @@
 # define TPM_FIFO_LOCALITY_REG_STS_CMD_RDY                   RT_BIT_32(6)
 /** Indicates whether the Expect and data available bits are valid. */
 # define TPM_FIFO_LOCALITY_REG_STS_VALID                     RT_BIT_32(7)
+/** Sets the burst count. */
 # define TPM_FIFO_LOCALITY_REG_STS_BURST_CNT_MASK            UINT32_C(0xffff00)
-# define TPM_FIFO_LOCALITY_REG_STS_BURST_CNT_SHIFT           8
+# define TPM_FIFO_LOCALITY_REG_STS_BURST_CNT_SHIFT           UINT32_C(8)
 # define TPM_FIFO_LOCALITY_REG_STS_BURST_CNT_SET(a)          ((a) << TPM_FIFO_LOCALITY_REG_STS_BURST_CNT_SHIFT)
+/** Cancels the active command. */
+# define TPM_FIFO_LOCALITY_REG_STS_CMD_CANCEL                RT_BIT_32(24)
+/** Reset establishment bit. */
+# define TPM_FIFO_LOCALITY_REG_STS_RST_ESTABLISHMENT         RT_BIT_32(25)
+/** Sets the TPM family. */
+# define TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_MASK           UINT32_C(0x0c000000)
+# define TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_SHIFT          UINT32_C(26)
+# define TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_SET(a)         ((a) << TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_SHIFT)
+#  define TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_1_2           UINT32_C(0)
+#  define TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_2_0           UINT32_C(1)
+
 
 /** TPM end of HASH operation signal register for locality 4. */
 #define TPM_FIFO_LOCALITY_REG_HASH_END                       0x20
@@ -437,7 +449,11 @@ typedef struct DEVTPM
     uint32_t                        bmLocSeizedAcc;
     /** The current state of the TPM. */
     DEVTPMSTATE                     enmState;
+    /** The TPM version being emulated. */
+    TPMVERSION                      enmTpmVers;
 
+    /** Offset into the Command/Response buffer. */
+    uint32_t                        offCmdResp;
     /** Command/Response buffer. */
     uint8_t                         abCmdResp[TPM_CRB_LOCALITY_REG_DATA_BUFFER_SIZE];
 } DEVTPM;
@@ -521,7 +537,7 @@ DECLINLINE(void) tpmIrqReq(PPDMDEVINS pDevIns, PDEVTPM pThis, int iLvl)
  */
 PDMBOTHCBDECL(void) tpmLocIrqUpdate(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc)
 {
-    if (   (pLoc->uRegIntEn & TPM_CRB_LOCALITY_REG_INT_GLOBAL_ENABLE)
+    if (   (pLoc->uRegIntEn & TPM_CRB_LOCALITY_REG_INT_GLOBAL_ENABLE) /* Aliases with TPM_FIFO_LOCALITY_REG_INT_ENABLE_GLOBAL */
         && (pLoc->uRegIntEn & pLoc->uRegIntSts))
         tpmIrqReq(pDevIns, pThis, 1);
     else
@@ -596,19 +612,47 @@ DECLINLINE(uint32_t) tpmGetRegisterFromOffset(RTGCPHYS off)
  * @param   bLoc                The locality index.
  * @param   uReg                The register offset being accessed.
  * @param   pu64                Where to store the read data.
+ * @param   cb                  Number of bytes to read.
  */
 static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
-                                    uint8_t bLoc, uint32_t uReg, uint64_t *pu64)
+                                    uint8_t bLoc, uint32_t uReg, uint64_t *pu64, size_t cb)
 {
-    RT_NOREF(pDevIns, pThis, pLoc, bLoc, uReg, pu64);
+    RT_NOREF(pDevIns);
     VBOXSTRICTRC rc = VINF_SUCCESS;
 
-#if 0
+    /* Special path for the data buffer. */
+    if (   (   (   uReg >= TPM_FIFO_LOCALITY_REG_DATA_FIFO
+               && uReg < TPM_FIFO_LOCALITY_REG_DATA_FIFO + sizeof(uint32_t))
+            || (   uReg >= TPM_FIFO_LOCALITY_REG_XDATA_FIFO
+                && uReg < TPM_FIFO_LOCALITY_REG_XDATA_FIFO + sizeof(uint32_t)))
+        && bLoc == pThis->bLoc
+        && pThis->enmState == DEVTPMSTATE_CMD_COMPLETION)
+    {
+        if (pThis->offCmdResp <= sizeof(pThis->abCmdResp) - cb)
+        {
+            memcpy(pu64, &pThis->abCmdResp[pThis->offCmdResp], cb);
+            pThis->offCmdResp += cb;
+        }
+        else
+            memset(pu64, 0xff, cb);
+        return VINF_SUCCESS;
+    }
+
     uint64_t u64;
     switch (uReg)
     {
         case TPM_FIFO_LOCALITY_REG_ACCESS:
-            u64 = 0;
+            u64 = TPM_FIFO_LOCALITY_REG_ACCESS_VALID;
+            if (pThis->bLoc == bLoc)
+                u64 |= TPM_FIFO_LOCALITY_REG_ACCESS_ACTIVE;
+            if (pThis->bmLocSeizedAcc & RT_BIT_32(bLoc))
+                u64 |= TPM_FIFO_LOCALITY_REG_ACCESS_BEEN_SEIZED;
+            if (pThis->bmLocReqAcc & ~RT_BIT_32(bLoc))
+                u64 |= TPM_FIFO_LOCALITY_REG_ACCESS_PENDING_REQUEST;
+            if (   pThis->bLoc != bLoc
+                && pThis->bmLocReqAcc & RT_BIT_32(bLoc))
+                u64 |= TPM_FIFO_LOCALITY_REG_ACCESS_REQUEST_USE;
+            /** @todo Establishment bit. */
             break;
         case TPM_FIFO_LOCALITY_REG_INT_ENABLE:
             u64 = pLoc->uRegIntEn;
@@ -634,11 +678,25 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
                 u64 = UINT64_MAX;
                 break;
             }
-            /** @todo */
-            break;
-        case TPM_FIFO_LOCALITY_REG_DATA_FIFO:
-        //case TPM_FIFO_LOCALITY_REG_DATA_XFIFO:
-            /** @todo */
+
+            u64 =   TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_SET(  pThis->enmTpmVers == TPMVERSION_1_2
+                                                             ? TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_1_2
+                                                             : TPM_FIFO_LOCALITY_REG_STS_TPM_FAMILY_2_0)
+                  | TPM_FIFO_LOCALITY_REG_STS_BURST_CNT_SET(_1K)
+                  | TPM_FIFO_LOCALITY_REG_STS_VALID;
+            if (pThis->enmState == DEVTPMSTATE_READY)
+                u64 |= TPM_FIFO_LOCALITY_REG_STS_CMD_RDY;
+            else if (pThis->enmState == DEVTPMSTATE_CMD_RECEPTION) /* When in the command reception state check whether all of the command data has been received. */
+            {
+                if (   pThis->offCmdResp < sizeof(TPMREQHDR)
+                    || pThis->offCmdResp < RTTpmReqGetSz((PCTPMREQHDR)&pThis->abCmdResp[0]))
+                    u64 |= TPM_FIFO_LOCALITY_REG_STS_EXPECT;
+            }
+            else if (pThis->enmState == DEVTPMSTATE_CMD_COMPLETION) /* Check whether there is more response data available. */
+            {
+                if (pThis->offCmdResp < RTTpmRespGetSz((PCTPMRESPHDR)&pThis->abCmdResp[0]))
+                    u64 |= TPM_FIFO_LOCALITY_REG_STS_DATA_AVAIL;
+            }
             break;
         case TPM_FIFO_LOCALITY_REG_DID_VID:
             u64 = RT_H2BE_U32(RT_MAKE_U32(pThis->uVenId, pThis->uDevId));
@@ -652,7 +710,6 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
     }
 
     *pu64 = u64;
-#endif
 
     return rc;
 }
@@ -668,14 +725,32 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
  * @param   bLoc                The locality index.
  * @param   uReg                The register offset being accessed.
  * @param   u64                 The value to write.
+ * @param   cb                  Number of bytes to write.
  */
 static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
-                                     uint8_t bLoc, uint32_t uReg, uint64_t u64)
+                                     uint8_t bLoc, uint32_t uReg, uint64_t u64, size_t cb)
 {
-    RT_NOREF(pDevIns, pThis, pLoc, bLoc, uReg, u64);
+    RT_NOREF(pDevIns);
+
+    /* Special path for the data buffer. */
+    if (   (   (   uReg >= TPM_FIFO_LOCALITY_REG_DATA_FIFO
+               && uReg < TPM_FIFO_LOCALITY_REG_DATA_FIFO + sizeof(uint32_t))
+            || (   uReg >= TPM_FIFO_LOCALITY_REG_XDATA_FIFO
+                && uReg < TPM_FIFO_LOCALITY_REG_XDATA_FIFO + sizeof(uint32_t)))
+        && bLoc == pThis->bLoc
+        && (   pThis->enmState == DEVTPMSTATE_READY
+            || pThis->enmState == DEVTPMSTATE_CMD_RECEPTION))
+    {
+        pThis->enmState = DEVTPMSTATE_CMD_RECEPTION;
+        if (pThis->offCmdResp <= sizeof(pThis->abCmdResp) - cb)
+        {
+            memcpy(&pThis->abCmdResp[pThis->offCmdResp], &u64, cb);
+            pThis->offCmdResp += cb;
+        }
+        return VINF_SUCCESS;
+    }
 
     VBOXSTRICTRC rc = VINF_SUCCESS;
-#if 0
     uint32_t u32 = (uint32_t)u64;
 
     switch (uReg)
@@ -689,7 +764,39 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
               */
             if (!RT_IS_POWER_OF_TWO(u32))
                 break;
-            /** @todo */
+
+            /* Seize access only if this locality has a higher priority than the currently selected one. */
+            if (   (u32 & TPM_FIFO_LOCALITY_REG_ACCESS_SEIZE)
+                && pThis->bLoc != TPM_NO_LOCALITY_SELECTED
+                && bLoc > pThis->bLoc)
+            {
+                pThis->bmLocSeizedAcc |= RT_BIT_32(pThis->bLoc);
+                /** @todo Abort command. */
+                pThis->bLoc = bLoc;
+            }
+
+            if (   (u64 & TPM_FIFO_LOCALITY_REG_ACCESS_REQUEST_USE)
+                && !(pThis->bmLocReqAcc & RT_BIT_32(bLoc)))
+            {
+                pThis->bmLocReqAcc |= RT_BIT_32(bLoc);
+                if (pThis->bLoc == TPM_NO_LOCALITY_SELECTED)
+                {
+                    pThis->bLoc = bLoc; /* Doesn't fire an interrupt. */
+                    pThis->bmLocSeizedAcc &= ~RT_BIT_32(bLoc);
+                }
+            }
+
+            if (   (u64 & TPM_FIFO_LOCALITY_REG_ACCESS_ACTIVE)
+                && (pThis->bmLocReqAcc & RT_BIT_32(bLoc)))
+            {
+                pThis->bmLocReqAcc &= ~RT_BIT_32(bLoc);
+                if (pThis->bLoc == bLoc)
+                {
+                    pThis->bLoc = TPM_NO_LOCALITY_SELECTED;
+                    if (pThis->bmLocReqAcc)
+                        tpmLocSelectNext(pDevIns, pThis); /* Select the next locality. */
+                }
+            }
             break;
         case TPM_FIFO_LOCALITY_REG_INT_ENABLE:
             if (bLoc != pThis->bLoc)
@@ -699,7 +806,7 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
         case TPM_FIFO_LOCALITY_REG_INT_STS:
             if (bLoc != pThis->bLoc)
                 break;
-            pLoc->uRegSts &= ~(u32 & TPM_FIFO_LOCALITY_REG_INT_STS_WR_MASK);
+            pLoc->uRegIntSts &= ~(u32 & TPM_FIFO_LOCALITY_REG_INT_STS_WR_MASK);
             tpmLocIrqUpdate(pDevIns, pThis, pLoc);
             break;
         case TPM_FIFO_LOCALITY_REG_STS:
@@ -711,13 +818,23 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
             if (   bLoc != pThis->bLoc
                 || !RT_IS_POWER_OF_TWO(u64))
                 break;
-            /** @todo */
-            break;
-        case TPM_FIFO_LOCALITY_REG_DATA_FIFO:
-        case TPM_FIFO_LOCALITY_REG_DATA_XFIFO:
-            if (bLoc != pThis->bLoc)
-                break;
-            /** @todo */
+
+            if (   (u64 & TPM_FIFO_LOCALITY_REG_STS_CMD_RDY)
+                && (   pThis->enmState == DEVTPMSTATE_IDLE
+                    || pThis->enmState == DEVTPMSTATE_CMD_COMPLETION))
+            {
+                pThis->enmState   = DEVTPMSTATE_READY;
+                pThis->offCmdResp = 0;
+                tpmLocSetIntSts(pDevIns, pThis, pLoc, TPM_FIFO_LOCALITY_REG_INT_STS_CMD_RDY);
+            }
+
+            if (   (u64 & TPM_FIFO_LOCALITY_REG_STS_TPM_GO)
+                && pThis->enmState == DEVTPMSTATE_CMD_RECEPTION)
+            {
+                pThis->enmState = DEVTPMSTATE_CMD_EXEC;
+                rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hTpmCmdTask);
+            }
+            /** @todo Cancel and reset establishment. */
             break;
         case TPM_FIFO_LOCALITY_REG_INT_VEC:
         case TPM_FIFO_LOCALITY_REG_IF_CAP:
@@ -726,7 +843,7 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
         default: /* Ignore. */
             break;
     }
-#endif
+
     return rc;
 }
 
@@ -950,7 +1067,8 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
             {
                 /* Invalidate the command/response buffer. */
                 RT_ZERO(pThis->abCmdResp);
-                pThis->enmState = DEVTPMSTATE_IDLE;
+                pThis->offCmdResp = 0;
+                pThis->enmState   = DEVTPMSTATE_IDLE;
             }
             break;
         case TPM_CRB_LOCALITY_REG_CTRL_CANCEL:
@@ -959,9 +1077,9 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
             if (   pThis->enmState == DEVTPMSTATE_CMD_EXEC
                 && u32 == 0x1)
             {
-                pThis->enmState == DEVTPMSTATE_CMD_CANCEL;
+                pThis->enmState = DEVTPMSTATE_CMD_CANCEL;
                 /** @todo Cancel. */
-                pThis->enmState == DEVTPMSTATE_CMD_COMPLETION;
+                pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
                 tpmLocSetIntSts(pDevIns, pThis, pLoc, TPM_CRB_LOCALITY_REG_INT_STS_START);
             }
             break;
@@ -1021,7 +1139,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tpmMmioRead(PPDMDEVINS pDevIns, void *pvUser, 
     if (pThis->fCrb)
         rc = tpmMmioCrbRead(pDevIns, pThis, pLoc, bLoc, uReg, &u64, cb);
     else
-        rc = tpmMmioFifoRead(pDevIns, pThis, pLoc, bLoc, uReg, &u64);
+        rc = tpmMmioFifoRead(pDevIns, pThis, pLoc, bLoc, uReg, &u64, cb);
 
     LogFlowFunc((": %RGp %#x %#llx\n", off, cb, u64));
 
@@ -1071,7 +1189,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tpmMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
     if (pThis->fCrb)
         rc = tpmMmioCrbWrite(pDevIns, pThis, pLoc, bLoc, uReg, u64, cb);
     else
-        rc = tpmMmioFifoWrite(pDevIns, pThis, pLoc, bLoc, uReg, u64);
+        rc = tpmMmioFifoWrite(pDevIns, pThis, pLoc, bLoc, uReg, u64, cb);
 
     return rc;
 }
@@ -1099,8 +1217,12 @@ static DECLCALLBACK(void) tpmR3CmdExecWorker(PPDMDEVINS pDevIns, void *pvUser)
                                               &pThis->abCmdResp[0], sizeof(pThis->abCmdResp));
         if (RT_SUCCESS(rc))
         {
-            pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
-            tpmLocSetIntSts(pThisCC->pDevIns, pThis, &pThis->aLoc[pThis->bLoc], TPM_CRB_LOCALITY_REG_INT_STS_START);
+            pThis->enmState   = DEVTPMSTATE_CMD_COMPLETION;
+            pThis->offCmdResp = 0;
+            if (pThis->fCrb)
+                tpmLocSetIntSts(pThisCC->pDevIns, pThis, &pThis->aLoc[pThis->bLoc], TPM_CRB_LOCALITY_REG_INT_STS_START);
+            else
+                tpmLocSetIntSts(pThisCC->pDevIns, pThis, &pThis->aLoc[pThis->bLoc], TPM_FIFO_LOCALITY_REG_INT_STS_DATA_AVAIL | TPM_FIFO_LOCALITY_REG_INT_STS_STS_VALID);
         }
         else
         {
@@ -1214,8 +1336,9 @@ static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
 {
     PDEVTPM pThis = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
 
-    pThis->enmState = DEVTPMSTATE_IDLE;
-    pThis->bLoc     = TPM_NO_LOCALITY_SELECTED;
+    pThis->enmState   = DEVTPMSTATE_IDLE;
+    pThis->bLoc       = TPM_NO_LOCALITY_SELECTED;
+    pThis->offCmdResp = 0;
     RT_ZERO(pThis->abCmdResp);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aLoc); i++)
@@ -1319,6 +1442,10 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         rc = pThisCC->pDrvTpm->pfnStartup(pThisCC->pDrvTpm, sizeof(pThis->abCmdResp));
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to startup the TPM"));
+
+        pThis->enmTpmVers = pThisCC->pDrvTpm->pfnGetVersion(pThisCC->pDrvTpm);
+        if (pThis->enmTpmVers == TPMVERSION_UNKNOWN)
+            return PDMDEV_SET_ERROR(pDevIns, VERR_NOT_SUPPORTED, N_("The emulated TPM version is not supported"));
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
@@ -1354,7 +1481,6 @@ static DECLCALLBACK(int) tpmRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PDEVTPM   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
-    PDEVTPMCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMCC);
 
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, tpmMmioWrite, tpmMmioRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
