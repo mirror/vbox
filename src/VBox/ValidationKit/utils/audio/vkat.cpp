@@ -275,7 +275,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     pToneParms->Props          = pTstParmsAcq->Props;
     pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
     pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
-#ifdef DEBUG_andy
+#ifdef DEBUG
     pToneParms->msDuration     = RTRandU32Ex(50, 2500);
 #else
     pToneParms->msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
@@ -380,7 +380,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
     pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
     pToneParms->Props          = pTstParmsAcq->Props;
-#ifdef DEBUG_andy
+#ifdef DEBUG
     pToneParms->msDuration     = RTRandU32Ex(50 /* ms */, 2500);
 #else
     pToneParms->msDuration     = RTRandU32Ex(50 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
@@ -410,12 +410,14 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
         /*
          * 1. Arm the (host) ValKit ATS with the playback parameters.
          */
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling ValKit audio driver on host to inject recording data ...\n");
         rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClValKit, &pTstParms->TestTone);
         if (RT_SUCCESS(rc))
         {
             /*
              * 2. Tell the guest ATS to start recording.
              */
+            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling guest VKAT to record audio ...\n");
             rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientToneRecord() failed with %Rrc\n",
