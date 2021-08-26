@@ -616,7 +616,7 @@ static DECLCALLBACK(bool) drvTpmEmuGetEstablishedFlag(PPDMITPMCONNECTOR pInterfa
 }
 
 
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnGetEstablishedFlag} */
+/** @interface_method_impl{PDMITPMCONNECTOR,pfnResetEstablishedFlag} */
 static DECLCALLBACK(int) drvTpmEmuResetEstablishedFlag(PPDMITPMCONNECTOR pInterface, uint8_t bLoc)
 {
     PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
