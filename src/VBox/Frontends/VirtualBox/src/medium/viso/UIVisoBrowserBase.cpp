@@ -192,7 +192,6 @@ void UIVisoBrowserBase::prepareObjects()
     {
         m_pTreeView->hide();
         m_pTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
-        //m_pTreeView->setAlternatingRowColors(true);
         m_pTreeView->header()->hide();
         m_pTreeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
         m_pTreeView->setFrameStyle(QFrame::Panel | QFrame::Plain);
