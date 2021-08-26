@@ -1638,8 +1638,17 @@ void UINotificationProgressSnapshotTake::sltHandleProgressFinished()
 *   Class UINotificationProgressSnapshotRestore implementation.                                                                  *
 *********************************************************************************************************************************/
 
+UINotificationProgressSnapshotRestore::UINotificationProgressSnapshotRestore(const QUuid &uMachineId,
+                                                                             const CSnapshot &comSnapshot /* = CSnapshot() */)
+    : m_uMachineId(uMachineId)
+    , m_comSnapshot(comSnapshot)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressSnapshotRestore::sltHandleProgressFinished);
+}
+
 UINotificationProgressSnapshotRestore::UINotificationProgressSnapshotRestore(const CMachine &comMachine,
-                                                                             const CSnapshot &comSnapshot)
+                                                                             const CSnapshot &comSnapshot /* = CSnapshot() */)
     : m_comMachine(comMachine)
     , m_comSnapshot(comSnapshot)
 {
@@ -1659,21 +1668,36 @@ QString UINotificationProgressSnapshotRestore::details() const
 
 CProgress UINotificationProgressSnapshotRestore::createProgress(COMResult &comResult)
 {
-    /* Acquire VM id: */
-    const QUuid uId = m_comMachine.GetId();
-    if (!m_comMachine.isOk())
+    /* Make sure machine ID defined: */
+    if (m_uMachineId.isNull())
     {
-        comResult = m_comMachine;
-        return CProgress();
+        /* Acquire VM id: */
+        AssertReturn(m_comMachine.isNotNull(), CProgress());
+        m_uMachineId = m_comMachine.GetId();
+        if (!m_comMachine.isOk())
+        {
+            comResult = m_comMachine;
+            return CProgress();
+        }
     }
 
-    /* Acquire VM name: */
-    m_strMachineName = m_comMachine.GetName();
-    if (!m_comMachine.isOk())
+    /* Make sure machine defined: */
+    if (m_comMachine.isNull())
     {
-        comResult = m_comMachine;
-        return CProgress();
+        /* Acquire VM: */
+        AssertReturn(!m_uMachineId.isNull(), CProgress());
+        CVirtualBox comVBox = uiCommon().virtualBox();
+        m_comMachine = comVBox.FindMachine(m_uMachineId.toString());
+        if (!comVBox.isOk())
+        {
+            comResult = comVBox;
+            return CProgress();
+        }
     }
+
+    /* Make sure snapshot is defined: */
+    if (m_comSnapshot.isNull())
+        m_comSnapshot = m_comMachine.GetCurrentSnapshot();
 
     /* Acquire snapshot name: */
     m_strSnapshotName = m_comSnapshot.GetName();
@@ -1693,9 +1717,9 @@ CProgress UINotificationProgressSnapshotRestore::createProgress(COMResult &comRe
 
     /* Open a session thru which we will modify the machine: */
     if (enmSessionState != KSessionState_Unlocked)
-        m_comSession = uiCommon().openExistingSession(uId);
+        m_comSession = uiCommon().openExistingSession(m_uMachineId);
     else
-        m_comSession = uiCommon().openSession(uId);
+        m_comSession = uiCommon().openSession(m_uMachineId);
     if (m_comSession.isNull())
         return CProgress();
 
@@ -1708,16 +1732,26 @@ CProgress UINotificationProgressSnapshotRestore::createProgress(COMResult &comRe
         return CProgress();
     }
 
+    /* Acquire VM name: */
+    m_strMachineName = comMachine.GetName();
+    if (!comMachine.isOk())
+    {
+        comResult = comMachine;
+        m_comSession.UnlockMachine();
+        return CProgress();
+    }
+
     /* Initialize progress-wrapper: */
     CProgress comProgress = comMachine.RestoreSnapshot(m_comSnapshot);
     /* Store COM result: */
-    comResult = m_comMachine;
+    comResult = comMachine;
     /* Return progress-wrapper: */
     return comProgress;
 }
 
 void UINotificationProgressSnapshotRestore::sltHandleProgressFinished()
 {
+    /* Unlock session finally: */
     m_comSession.UnlockMachine();
 }
 

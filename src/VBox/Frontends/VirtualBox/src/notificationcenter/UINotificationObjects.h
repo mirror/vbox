@@ -1030,10 +1030,15 @@ class SHARED_LIBRARY_STUFF UINotificationProgressSnapshotRestore : public UINoti
 public:
 
     /** Constructs snapshot restore notification-progress.
+      * @param  uMachineId   Brings the ID of machine we are restoring snapshot for.
+      * @param  comSnapshot  Brings the snapshot being restored. */
+    UINotificationProgressSnapshotRestore(const QUuid &uMachineId,
+                                          const CSnapshot &comSnapshot = CSnapshot());
+    /** Constructs snapshot restore notification-progress.
       * @param  comMachine   Brings the machine we are restoring snapshot for.
       * @param  comSnapshot  Brings the snapshot being restored. */
     UINotificationProgressSnapshotRestore(const CMachine &comMachine,
-                                          const CSnapshot &comSnapshot);
+                                          const CSnapshot &comSnapshot = CSnapshot());
 
 protected:
 
@@ -1051,6 +1056,8 @@ private slots:
 
 private:
 
+    /** Holds the ID of machine we are restoring snapshot for. */
+    QUuid      m_uMachineId;
     /** Holds the machine we are restoring snapshot for. */
     CMachine   m_comMachine;
     /** Holds the snapshot being restored. */
