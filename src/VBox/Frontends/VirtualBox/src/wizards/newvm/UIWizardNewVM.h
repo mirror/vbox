@@ -87,74 +87,77 @@ public:
 
     const QString &machineGroup() const;
 
-    const QString &machineFilePath() const;
-    void setMachineFilePath(const QString &strMachineFilePath);
+    /** @name Setter/getters for vm parameters
+     * @{ */
+       const QString &machineFilePath() const;
+       void setMachineFilePath(const QString &strMachineFilePath);
 
-    const QString &machineFolder() const;
-    void setMachineFolder(const QString &strMachineFolder);
+       const QString &machineFolder() const;
+       void setMachineFolder(const QString &strMachineFolder);
 
-    const QString &machineBaseName() const;
-    void setMachineBaseName(const QString &strMachineBaseName);
+       const QString &machineBaseName() const;
+       void setMachineBaseName(const QString &strMachineBaseName);
 
-    const QString &createdMachineFolder() const;
-    void setCreatedMachineFolder(const QString &strCreatedMachineFolder);
+      const QString &createdMachineFolder() const;
+      void setCreatedMachineFolder(const QString &strCreatedMachineFolder);
 
-    const QString &detectedOSTypeId() const;
-    void setDetectedOSTypeId(const QString &strDetectedOSTypeId);
+      const QString &detectedOSTypeId() const;
+      void setDetectedOSTypeId(const QString &strDetectedOSTypeId);
 
-    const QString &guestOSFamilyId() const;
-    void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
+      const QString &guestOSFamilyId() const;
+      void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
 
-    const CGuestOSType &guestOSType() const;
-    void setGuestOSType(const CGuestOSType &guestOSType);
+      const CGuestOSType &guestOSType() const;
+      void setGuestOSType(const CGuestOSType &guestOSType);
 
-    bool installGuestAdditions() const;
-    void setInstallGuestAdditions(bool fInstallGA);
+      bool installGuestAdditions() const;
+      void setInstallGuestAdditions(bool fInstallGA);
 
-    bool startHeadless() const;
-    void setStartHeadless(bool fStartHeadless);
+      bool startHeadless() const;
+      void setStartHeadless(bool fStartHeadless);
 
-    bool skipUnattendedInstall() const;
-    void setSkipUnattendedInstall(bool fSkipUnattendedInstall);
+      bool skipUnattendedInstall() const;
+      void setSkipUnattendedInstall(bool fSkipUnattendedInstall);
 
-    bool EFIEnabled() const;
-    void setEFIEnabled(bool fEnabled);
+      bool EFIEnabled() const;
+      void setEFIEnabled(bool fEnabled);
 
-    const QString &ISOFilePath() const;
-    void setISOFilePath(const QString &strISOFilePath);
+      const QString &ISOFilePath() const;
+      void setISOFilePath(const QString &strISOFilePath);
 
-    const QString &userName() const;
-    void setUserName(const QString &strUserName);
+      const QString &userName() const;
+      void setUserName(const QString &strUserName);
 
-    const QString &password() const;
-    void setPassword(const QString &strPassword);
+      const QString &password() const;
+      void setPassword(const QString &strPassword);
 
-    const QString &guestAdditionsISOPath() const;
-    void setGuestAdditionsISOPath(const QString &strGAISOPath);
+      const QString &guestAdditionsISOPath() const;
+      void setGuestAdditionsISOPath(const QString &strGAISOPath);
 
-    const QString &hostnameDomainName() const;
-    void setHostnameDomainName(const QString &strHostnameDomainName);
+      const QString &hostnameDomainName() const;
+      void setHostnameDomainName(const QString &strHostnameDomainName);
 
-    const QString &productKey() const;
-    void setProductKey(const QString &productKey);
+      const QString &productKey() const;
+      void setProductKey(const QString &productKey);
 
-    int CPUCount() const;
-    void setCPUCount(int iCPUCount);
+      int CPUCount() const;
+      void setCPUCount(int iCPUCount);
 
-    int memorySize() const;
-    void setMemorySize(int iMemory);
+      int memorySize() const;
+      void setMemorySize(int iMemory);
 
-    qulonglong mediumVariant() const;
-    void setMediumVariant(qulonglong uMediumVariant);
+      qulonglong mediumVariant() const;
+      void setMediumVariant(qulonglong uMediumVariant);
 
-    const CMediumFormat &mediumFormat();
-    void setMediumFormat(const CMediumFormat &mediumFormat);
+      const CMediumFormat &mediumFormat();
+      void setMediumFormat(const CMediumFormat &mediumFormat);
 
-    const QString &mediumPath() const;
-    void setMediumPath(const QString &strMediumPath);
+      const QString &mediumPath() const;
+      void setMediumPath(const QString &strMediumPath);
 
-    qulonglong mediumSize() const;
-    void setMediumSize(qulonglong mediumSize);
+      qulonglong mediumSize() const;
+      void setMediumSize(qulonglong mediumSize);
+    /** @} */
 
 protected:
 
@@ -187,43 +190,43 @@ private:
        int m_iSASCount;
        int m_iUSBCount;
        mutable UIUnattendedInstallData m_unattendedInstallData;
+
+      /** Path of the ISO file attached to the new vm. Possibly used for the unattended install. */
+      QString m_strISOFilePath;
+
+      /** Path of the folder created by this wizard page. Used to remove previously created
+        *  folder. see cleanupMachineFolder();*/
+      QString m_strCreatedFolder;
+
+      /** Full path (including the file name) of the machine's configuration file. */
+      QString m_strMachineFilePath;
+      /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
+      QString m_strMachineFolder;
+      /** Base name of the machine is generated from the m_strMachineFilePath. */
+      QString m_strMachineBaseName;
+
+      /** Type Id od the OS detected from the ISO file by IUnattended. */
+      QString m_strDetectedOSTypeId;
+
+      /** Holds the VM OS family ID. */
+      QString  m_strGuestOSFamilyId;
+      /** Holds the VM OS type. */
+      CGuestOSType m_comGuestOSType;
+
+      /** True if guest additions are to be installed during unattended install. */
+      bool m_fInstallGuestAdditions;
+      bool m_fSkipUnattendedInstall;
+      bool m_fEFIEnabled;
+
+      int m_iCPUCount;
+      int m_iMemorySize;
+      int m_iUnattendedInstallPageIndex;
+
+      qulonglong m_uMediumVariant;
+      CMediumFormat m_comMediumFormat;
+      QString m_strMediumPath;
+      qulonglong m_uMediumSize;
     /** @} */
-
-    /** Path of the ISO file attached to the new vm. Possibly used for the unattended install. */
-    QString m_strISOFilePath;
-
-    /** Path of the folder created by this wizard page. Used to remove previously created
-     *  folder. see cleanupMachineFolder();*/
-    QString m_strCreatedFolder;
-
-    /** Full path (including the file name) of the machine's configuration file. */
-    QString m_strMachineFilePath;
-    /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
-    QString m_strMachineFolder;
-    /** Base name of the machine is generated from the m_strMachineFilePath. */
-    QString m_strMachineBaseName;
-
-    /** Type Id od the OS detected from the ISO file by IUnattended. */
-    QString m_strDetectedOSTypeId;
-
-    /** Holds the VM OS family ID. */
-    QString  m_strGuestOSFamilyId;
-    /** Holds the VM OS type. */
-    CGuestOSType m_comGuestOSType;
-
-    /** True if guest additions are to be installed during unattended install. */
-    bool m_fInstallGuestAdditions;
-    bool m_fSkipUnattendedInstall;
-    bool m_fEFIEnabled;
-
-    int m_iCPUCount;
-    int m_iMemorySize;
-    int m_iUnattendedInstallPageIndex;
-
-    qulonglong m_uMediumVariant;
-    CMediumFormat m_comMediumFormat;
-    QString m_strMediumPath;
-    qulonglong m_uMediumSize;
 };
 
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;

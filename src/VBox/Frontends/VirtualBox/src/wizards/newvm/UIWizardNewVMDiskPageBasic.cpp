@@ -331,11 +331,6 @@ void UIWizardNewVMDiskPageBasic::initializePage()
     }
 }
 
-void UIWizardNewVMDiskPageBasic::cleanupPage()
-{
-    //UIWizardPage::cleanupPage();
-}
-
 bool UIWizardNewVMDiskPageBasic::isComplete() const
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
@@ -387,8 +382,6 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
             return fResult;
         }
     }
-
-    // startProcessing();
     if (pWizard)
     {
             if (m_enmSelectedDiskSource == SelectedDiskSource_New)

@@ -111,6 +111,7 @@ signals:
 public:
 
     UIDiskVariantGroupBox(bool fExpertMode, QWidget *pParent = 0);
+    /** Enable/disable medium variant radio button depending on the capabilities of the medium format. */
     void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
     qulonglong mediumVariant() const;
     void setMediumVariant(qulonglong uMediumVariant);
