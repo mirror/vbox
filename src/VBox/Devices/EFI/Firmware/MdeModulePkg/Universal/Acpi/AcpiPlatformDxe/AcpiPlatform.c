@@ -149,6 +149,9 @@ AcpiPlatformChecksum (
 
 #ifdef VBOX
 
+/* Disables the old code only copying a selection of tables, missing out a bunch of things available in the XSDT/RSDT. */
+# define ACPI_NO_STATIC_TABLES_SELECTION 1
+
 # define ACPI_RSD_PTR       SIGNATURE_64('R', 'S', 'D', ' ', 'P', 'T', 'R', ' ')
 # define EBDA_BASE          (0x9FC0 << 4)
 
@@ -179,6 +182,7 @@ FindAcpiRsdPtr(VOID)
   return NULL;
 }
 
+#ifndef ACPI_NO_STATIC_TABLES_SELECTION
 VOID *FindSignature(VOID* Start, UINT32 Signature, BOOLEAN NoChecksum)
 {
   UINT8 *Ptr = (UINT8*)Start;
@@ -197,13 +201,25 @@ VOID *FindSignature(VOID* Start, UINT32 Signature, BOOLEAN NoChecksum)
   }
   return NULL;
 }
+#endif
 
 VOID
 FillSysTablesInfo(VOID **Tables, UINT32 TablesSize)
 {
     UINT32 Table = 0;
     EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER *RsdPtr;
+#ifndef ACPI_NO_STATIC_TABLES_SELECTION
     VOID *TablesPage;
+#else
+    EFI_ACPI_DESCRIPTION_HEADER *RsdtTbl;
+#endif
+    UINT64 *PtrTbl;
+    UINT32 Index;
+
+    RsdPtr = (EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER*)FindAcpiRsdPtr();
+    ASSERT(RsdPtr != NULL);
+
+#ifndef ACPI_NO_STATIC_TABLES_SELECTION
 #define FLAG_OPTIONAL    1<<0
 #define FLAG_NO_CHECKSUM 1<<1
     static struct {
@@ -226,11 +242,8 @@ FillSysTablesInfo(VOID **Tables, UINT32 TablesSize)
         // MCFG
         { SIGNATURE_32('M', 'C', 'F', 'G'), FLAG_OPTIONAL, "MCFG"}
     };
-    UINT32 Index;
 
-    RsdPtr = (EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER*)FindAcpiRsdPtr();
-    ASSERT(RsdPtr != NULL);
-    TablesPage = (VOID*)(UINTN)((RsdPtr->RsdtAddress) & ~0xfff);
+    TablesPage = (VOID *)(UINTN)((RsdPtr->RsdtAddress) & ~0xfff);
     DEBUG((DEBUG_INFO, "TablesPage:%p\n", TablesPage));
 
     for (Index = 0; Index < sizeof TableInfo / sizeof TableInfo[0]; Index++)
@@ -252,6 +265,28 @@ FillSysTablesInfo(VOID **Tables, UINT32 TablesSize)
         if (Ptr)
            Tables[Table++] = Ptr;
     }
+#else
+    RsdtTbl = (EFI_ACPI_DESCRIPTION_HEADER*)(UINTN)RsdPtr->XsdtAddress;
+    DEBUG((DEBUG_INFO, "RsdtTbl:%p\n", RsdtTbl));
+
+    PtrTbl = (UINT64 *)(RsdtTbl + 1);
+    for (Index = 0; Index < (RsdtTbl->Length - sizeof(*RsdtTbl)) / sizeof(UINT64); Index++)
+    {
+        EFI_ACPI_DESCRIPTION_HEADER *Header = (EFI_ACPI_DESCRIPTION_HEADER *)(UINTN)*PtrTbl++;
+        DEBUG ((DEBUG_VERBOSE, "Table %p found \"%-4.4a\" size 0x%x\n", Header, (CONST CHAR8 *)&Header->Signature, Header->Length));
+
+        if (Header->Signature == SIGNATURE_32('F', 'A', 'C', 'P'))
+        {
+            /* Add the DSDT pointer from there. */
+            EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *Fadt = (EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *)Header;
+            DEBUG((DEBUG_INFO, "Found FACP: DSDT 0x%x FACS 0x%x XDsdt %p XFacs %p\n", Fadt->Dsdt, Fadt->FirmwareCtrl, Fadt->XDsdt, Fadt->XFirmwareCtrl));
+            Tables[Table++] = (VOID *)(UINTN)Fadt->FirmwareCtrl;
+            Tables[Table++] = (VOID *)(UINTN)Fadt->Dsdt;
+        }
+
+        Tables[Table++] = Header;
+    }
+#endif
 
 #if 0
     // RSDT
@@ -269,7 +304,7 @@ FillSysTablesInfo(VOID **Tables, UINT32 TablesSize)
     Table++;
 #endif
 
-    DEBUG((DEBUG_INFO, "We found %d tables from %d\n", Table, TablesSize));
+    DEBUG((DEBUG_INFO, "We found %d tables (max allowed %d)\n", Table, TablesSize));
     Tables[Table] = NULL;
 }
 
@@ -297,7 +332,11 @@ AcpiPlatformEntryPoint (
   EFI_STATUS                     Status;
   EFI_ACPI_TABLE_PROTOCOL        *AcpiTable;
 #ifdef VBOX
+# ifndef ACPI_NO_STATIC_TABLES_SELECTION
   VOID                           *VBoxTables[10];
+# else
+  VOID                           *VBoxTables[128];
+# endif
 #else
   EFI_FIRMWARE_VOLUME2_PROTOCOL  *FwVol;
 #endif
