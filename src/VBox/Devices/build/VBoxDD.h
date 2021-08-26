@@ -213,6 +213,11 @@ int acpiCleanupDsdt(PPDMDEVINS pDevIns, void *pvPtr);
 int acpiPrepareSsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbSsdt);
 int acpiCleanupSsdt(PPDMDEVINS pDevIns, void *pvPtr);
 
+#ifdef VBOX_WITH_TPM
+int acpiPrepareTpmSsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbSsdt);
+int acpiCleanupTpmSsdt(PPDMDEVINS pDevIns, void *pvPtr);
+#endif
+
 RT_C_DECLS_END
 
 #endif /* !VBOX_INCLUDED_SRC_build_VBoxDD_h */

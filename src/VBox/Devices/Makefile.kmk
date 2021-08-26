@@ -906,11 +906,15 @@ endif
  	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex \
  	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.aml \
  	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.aml.tmp \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.aml.pre
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.aml.pre \
+ 	$(if $(VBOX_WITH_TPM),$(VBoxDD_0_OUTDIR)/vboxssdt_tpm.hex,) \
+ 	$(if $(VBOX_WITH_TPM),$(VBoxDD_0_OUTDIR)/vboxssdt_tpm.aml,) \
+ 	$(if $(VBOX_WITH_TPM),$(VBoxDD_0_OUTDIR)/vboxssdt_tpm.aml.tmp,)
   PC/ACPI/VBoxAcpi.cpp_DEPS = \
  	$(VBoxDD_0_OUTDIR)/vboxaml.hex \
  	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.hex \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex \
+ 	$(if $(VBOX_WITH_TPM),$(VBoxDD_0_OUTDIR)/vboxssdt_tpm.hex,)
 
   $$(VBoxDD_0_OUTDIR)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,VBoxDD,$<,$@)
@@ -948,6 +952,19 @@ endif
 
 
   vboxssdt_cpuhotplug.hex:: $$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex
+
+  if defined(VBOX_WITH_TPM)
+   $$(VBoxDD_0_OUTDIR)/vboxssdt_tpm.hex: $(PATH_SUB_CURRENT)/PC/vbox-tpm.dsl | $$(dir $$@)
+	$(call MSG_TOOL,iasl,VBoxDD,$<,$@)
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
+	$(QUIET)$(MV) -f $@ $@.tmp
+	$(QUIET)$(SED) -e "s/AmlCode\|vboxssdt_tpm_aml_code/AmlCodeSsdtTpm/g" \
+		--output $@ $@.tmp
+	$(QUIET)$(RM) -f $@.tmp
+
+   vboxssdt_tpm.hex:: $$(VBoxDD_0_OUTDIR)/vboxssdt_tpm.hex
+  endif # !VBOX_WITH_TPM
 
  endif # !VBOX_WITH_DYNAMIC_DSDT
  PC/ACPI/VBoxAcpi.cpp_INCS = $(VBoxDD_0_OUTDIR)
@@ -1335,6 +1352,12 @@ endif
   VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO_SCSI
   VBoxDDR0_SOURCES      += \
   	Storage/DevVirtioSCSI.cpp
+ endif
+
+ if defined(VBOX_WITH_TPM)
+  VBoxDDR0_DEFS         += VBOX_WITH_TPM
+  VBoxDDR0_SOURCES      += \
+  	Security/DevTpm.cpp
  endif
 
  ifdef VBOX_WITH_HGSMI

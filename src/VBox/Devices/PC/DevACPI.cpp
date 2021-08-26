@@ -296,6 +296,20 @@ enum
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
+ * The TPM mode configured.
+ */
+typedef enum ACPITPMMODE
+{
+    ACPITPMMODE_INVALID = 0,
+    ACPITPMMODE_DISABLED,
+    ACPITPMMODE_TIS_1_2,
+    ACPITPMMODE_CRB_2_0,
+    ACPITPMMODE_FIFO_2_0,
+    ACPITPMMODE_32BIT_HACK = 0x7fffffff
+} ACPITPMMODE;
+
+
+/**
  * The shared ACPI device state.
  */
 typedef struct ACPISTATE
@@ -438,6 +452,16 @@ typedef struct ACPISTATE
     /** Parallel 1 IRQ number */
     uint8_t             uParallel1Irq;
     /** @} */
+
+#ifdef VBOX_WITH_TPM
+    /** @name TPM config bits
+     * @{ */
+    /** The ACPI TPM mode configured. */
+    ACPITPMMODE         enmTpmMode;
+    /** The MMIO register area base address. */
+    RTGCPHYS            GCPhysTpmMmio;
+    /** @} */
+#endif
 
     /** Number of custom ACPI tables */
     uint8_t             cCustTbls;
@@ -897,6 +921,53 @@ struct ACPITBLCUST
     uint8_t             au8Data[476];
 };
 AssertCompileSize(ACPITBLCUST, 512);
+
+
+#ifdef VBOX_WITH_TPM
+/**
+ * TPM: The ACPI table for a TPM 2.0 device
+  * (from: https://trustedcomputinggroup.org/wp-content/uploads/TCG_ACPIGeneralSpec_v1p3_r8_pub.pdf).
+ */
+typedef struct ACPITBLTPM20
+{
+    /** The common ACPI table header. */
+    ACPITBLHEADER       Hdr;
+    /** The platform class. */
+    uint16_t            u16PlatCls;
+    /** Reserved. */
+    uint16_t            u16Rsvd0;
+    /** Address of the CRB control area or FIFO base address. */
+    uint64_t            u64BaseAddrCrbOrFifo;
+    /** The start method selector. */
+    uint32_t            u32StartMethod;
+    /** Following are start method specific parameters and optional LAML and LASA fields we don't implement right now. */
+    /** @todo */
+} ACPITBLTPM20;
+AssertCompileSize(ACPITBLTPM20, 52);
+
+/** Revision of the TPM2.0 ACPI table. */
+#define ACPI_TPM20_REVISION                 4
+/** The default MMIO base address of the TPM. */
+#define ACPI_TPM_MMIO_BASE_DEFAULT          0xfed40000
+
+
+/** @name Possible values for the ACPITBLTPM20::u16PlatCls member.
+ * @{ */
+/** Client platform. */
+#define ACPITBL_TPM20_PLAT_CLS_CLIENT       UINT16_C(0)
+/** Server platform. */
+#define ACPITBL_TPM20_PLAT_CLS_SERVER       UINT16_C(1)
+/** @} */
+
+
+/** @name Possible values for the ACPITBLTPM20::u32StartMethod member.
+ * @{ */
+/** MMIO interface (TIS1.2+Cancel). */
+#define ACPITBL_TPM20_START_METHOD_TIS12    UINT16_C(6)
+/** CRB interface. */
+#define ACPITBL_TPM20_START_METHOD_CRB      UINT16_C(7)
+/** @} */
+#endif
 
 
 #pragma pack()
@@ -2812,6 +2883,16 @@ static void acpiR3SetupSsdt(PPDMDEVINS pDevIns, RTGCPHYS32 addr, void const *pvS
     acpiR3PhysCopy(pDevIns, addr, pvSrc, uSsdtLen);
 }
 
+#ifdef VBOX_WITH_TPM
+/**
+ * Plant the Secondary System Description Table (SSDT).
+ */
+static void acpiR3SetupTpmSsdt(PPDMDEVINS pDevIns, RTGCPHYS32 addr, void const *pvSrc, size_t uSsdtLen)
+{
+    acpiR3PhysCopy(pDevIns, addr, pvSrc, uSsdtLen);
+}
+#endif
+
 /**
  * Plant the Firmware ACPI Control Structure (FACS).
  */
@@ -3414,6 +3495,43 @@ static void acpiR3SetupIommuIntel(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS
 #endif  /* VBOX_WITH_IOMMU_INTEL */
 
 
+#ifdef VBOX_WITH_TPM
+/**
+ * Plant the TPM 2.0 ACPI descriptor.
+ */
+static void acpiR3SetupTpm(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32 addr)
+{
+    ACPITBLTPM20 Tpm2Tbl;
+    RT_ZERO(Tpm2Tbl);
+
+    acpiR3PrepareHeader(pThis, &Tpm2Tbl.Hdr, "TPM2", sizeof(ACPITBLTPM20), ACPI_TPM20_REVISION);
+
+    switch (pThis->enmTpmMode)
+    {
+        case ACPITPMMODE_CRB_2_0:
+            Tpm2Tbl.u32StartMethod       = ACPITBL_TPM20_START_METHOD_CRB;
+            Tpm2Tbl.u64BaseAddrCrbOrFifo = pThis->GCPhysTpmMmio;
+            break;
+        case ACPITPMMODE_TIS_1_2:
+        case ACPITPMMODE_FIFO_2_0:
+            Tpm2Tbl.u32StartMethod = ACPITBL_TPM20_START_METHOD_TIS12;
+            break;
+        case ACPITPMMODE_DISABLED: /* Should never be called with the TPM disabled. */
+        default:
+            AssertFailed();
+    }
+
+    Tpm2Tbl.u16PlatCls = ACPITBL_TPM20_PLAT_CLS_CLIENT;
+
+    /* Finally, compute checksum. */
+    Tpm2Tbl.Hdr.u8Checksum = acpiR3Checksum(&Tpm2Tbl, sizeof(Tpm2Tbl));
+
+    /* Plant the ACPI table. */
+    acpiR3PhysCopy(pDevIns, addr, (const uint8_t *)&Tpm2Tbl, sizeof(Tpm2Tbl));
+}
+#endif
+
+
 /**
  * Used by acpiR3PlantTables to plant a MMCONFIG PCI config space access (MCFG)
  * descriptor.
@@ -3516,23 +3634,41 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     RTGCPHYS32 GCPhysIommu = 0;
 #endif
+#ifdef VBOX_WITH_TPM
+    RTGCPHYS32 GCPhysTpm  = 0;
+    RTGCPHYS32 GCPhysSsdtTpm  = 0;
+#endif
     RTGCPHYS32 GCPhysApic = 0;
     RTGCPHYS32 GCPhysSsdt = 0;
     RTGCPHYS32 GCPhysMcfg = 0;
     RTGCPHYS32 aGCPhysCust[MAX_CUST_TABLES] = {0};
     uint32_t   addend = 0;
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
+# ifdef VBOX_WITH_TPM
+    RTGCPHYS32 aGCPhysRsdt[10 + MAX_CUST_TABLES];
+    RTGCPHYS32 aGCPhysXsdt[10 + MAX_CUST_TABLES];
+# else
     RTGCPHYS32 aGCPhysRsdt[8 + MAX_CUST_TABLES];
     RTGCPHYS32 aGCPhysXsdt[8 + MAX_CUST_TABLES];
+# endif
 #else
+# ifdef VBOX_WITH_TPM
+    RTGCPHYS32 aGCPhysRsdt[9 + MAX_CUST_TABLES];
+    RTGCPHYS32 aGCPhysXsdt[9 + MAX_CUST_TABLES];
+# else
     RTGCPHYS32 aGCPhysRsdt[7 + MAX_CUST_TABLES];
     RTGCPHYS32 aGCPhysXsdt[7 + MAX_CUST_TABLES];
+# endif
 #endif
     uint32_t   cAddr;
     uint32_t   iMadt  = 0;
     uint32_t   iHpet  = 0;
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     uint32_t   iIommu = 0;
+#endif
+#ifdef VBOX_WITH_TPM
+    uint32_t   iTpm   = 0;
+    uint32_t   iSsdtTpm   = 0;
 #endif
     uint32_t   iSsdt  = 0;
     uint32_t   iMcfg  = 0;
@@ -3555,6 +3691,14 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
 #ifdef VBOX_WITH_IOMMU_INTEL
     if (pThis->fUseIommuIntel)
         iIommu = cAddr++;      /* IOMMU (Intel) */
+#endif
+
+#ifdef VBOX_WITH_TPM
+    if (pThis->enmTpmMode != ACPITPMMODE_DISABLED)
+    {
+        iTpm     = cAddr++;   /* TPM device */
+        iSsdtTpm = cAddr++;
+    }
 #endif
 
     if (pThis->fUseMcfg)
@@ -3643,6 +3787,23 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
     {
         GCPhysIommu = GCPhysCur;
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLVTD), 16);
+    }
+#endif
+#ifdef VBOX_WITH_TPM
+    void  *pvSsdtTpmCode = NULL;
+    size_t cbSsdtTpm = 0;
+
+    if (pThis->enmTpmMode != ACPITPMMODE_DISABLED)
+    {
+        GCPhysTpm = GCPhysCur;
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLTPM20), 16); /** @todo TPM1.2 */
+
+        rc = acpiPrepareTpmSsdt(pDevIns, &pvSsdtTpmCode, &cbSsdtTpm);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        GCPhysSsdtTpm = GCPhysCur;
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + cbSsdtTpm, 16);
     }
 #endif
 
@@ -3734,6 +3895,20 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
         aGCPhysXsdt[iIommu] = GCPhysIommu + addend;
     }
 #endif
+#ifdef VBOX_WITH_TPM
+    if (pThis->enmTpmMode != ACPITPMMODE_DISABLED)
+    {
+        acpiR3SetupTpm(pDevIns, pThis, GCPhysTpm + addend);
+        aGCPhysRsdt[iTpm] = GCPhysTpm + addend;
+        aGCPhysXsdt[iTpm] = GCPhysTpm + addend;
+
+        acpiR3SetupTpmSsdt(pDevIns, GCPhysSsdtTpm + addend, pvSsdtTpmCode, cbSsdtTpm);
+        acpiCleanupTpmSsdt(pDevIns, pvSsdtTpmCode);
+        aGCPhysRsdt[iSsdtTpm] = GCPhysSsdtTpm + addend;
+        aGCPhysXsdt[iSsdtTpm] = GCPhysSsdtTpm + addend;
+    }
+#endif
+
     if (pThis->fUseMcfg)
     {
         acpiR3SetupMcfg(pDevIns, pThis, GCPhysMcfg + addend);
@@ -4094,6 +4269,9 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "|IommuAmdEnabled"
                                   "|IommuPciAddress"
                                   "|SbIoApicPciAddress"
+                                  "|TpmMode"
+                                  "|TpmMmioAddress"
+                                  "|SsdtTpmFilePath"
                                   , "");
 
     /* query whether we are supposed to present an IOAPIC */
@@ -4316,6 +4494,29 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (   pThis->fUseIommuAmd
         && pThis->fUseIommuIntel)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Cannot enable Intel and AMD IOMMU simultaneously!"));
+
+#ifdef VBOX_WITH_TPM
+    char szTpmMode[64]; RT_ZERO(szTpmMode);
+
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "TpmMode", &szTpmMode[0], RT_ELEMENTS(szTpmMode) - 1, "disabled");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"TpmMode\""));
+
+    if (!RTStrICmp(szTpmMode, "disabled"))
+        pThis->enmTpmMode = ACPITPMMODE_DISABLED;
+    else if (!RTStrICmp(szTpmMode, "tis1.2"))
+        pThis->enmTpmMode = ACPITPMMODE_TIS_1_2;
+    else if (!RTStrICmp(szTpmMode, "crb2.0"))
+        pThis->enmTpmMode = ACPITPMMODE_CRB_2_0;
+    else if (!RTStrICmp(szTpmMode, "fifo2.0"))
+        pThis->enmTpmMode = ACPITPMMODE_FIFO_2_0;
+    else
+        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER, N_("Configuration error: Value of \"TpmMode\" is not known"));
+
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "TpmMmioAddress", (uint64_t *)&pThis->GCPhysTpmMmio, ACPI_TPM_MMIO_BASE_DEFAULT);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"TpmMmioAddress\""));
+#endif
 
     /* Try to attach the other CPUs */
     for (unsigned i = 1; i < pThis->cCpus; i++)
