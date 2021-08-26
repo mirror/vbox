@@ -976,9 +976,11 @@ void UINotificationProgressMachineSaveState::sltHandleProgressFinished()
 *********************************************************************************************************************************/
 
 UINotificationProgressMachinePowerOff::UINotificationProgressMachinePowerOff(const CMachine &comMachine,
-                                                                             const CConsole &comConsole /* = CConsole() */)
+                                                                             const CConsole &comConsole /* = CConsole() */,
+                                                                             bool fIncludingDiscard /* = false */)
     : m_comMachine(comMachine)
     , m_comConsole(comConsole)
+    , m_fIncludingDiscard(fIncludingDiscard)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressMachinePowerOff::sltHandleProgressFinished);
@@ -1081,6 +1083,9 @@ void UINotificationProgressMachinePowerOff::sltHandleProgressFinished()
     /* Unlock session finally: */
     if (m_comSession.isNotNull())
         m_comSession.UnlockMachine();
+
+    /* Notifies listeners: */
+    emit sigMachinePoweredOff(error().isEmpty(), m_fIncludingDiscard);
 }
 
 

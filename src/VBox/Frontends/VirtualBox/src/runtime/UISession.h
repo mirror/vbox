@@ -402,6 +402,10 @@ private slots:
     /** Handles signal about machine state saved.
       * @param  fSuccess  Brings whether state was saved successfully. */
     void sltHandleMachineStateSaved(bool fSuccess);
+    /** Handles signal about machine powered off.
+      * @param  fSuccess           Brings whether machine was powered off successfully.
+      * @param  fIncludingDiscard  Brings whether machine state should be discarded. */
+    void sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard);
 
 private:
 

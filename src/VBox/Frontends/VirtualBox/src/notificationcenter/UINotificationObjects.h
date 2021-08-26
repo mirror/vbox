@@ -563,6 +563,13 @@ class SHARED_LIBRARY_STUFF UINotificationProgressMachinePowerOff : public UINoti
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about machine powered off.
+      * @param  fSuccess           Brings whether power off sequence successfully.
+      * @param  fIncludingDiscard  Brings whether machine state should be discarded. */
+    void sigMachinePoweredOff(bool fSuccess, bool fIncludingDiscard);
+
 public:
 
     /** Constructs machine power-off notification-progress.
@@ -570,7 +577,8 @@ public:
       * @param  comConsole         Brings the console of machine being powered off.
       * @param  fIncludingDiscard  Brings whether machine state should be discarded. */
     UINotificationProgressMachinePowerOff(const CMachine &comMachine,
-                                          const CConsole &comConsole = CConsole());
+                                          const CConsole &comConsole = CConsole(),
+                                          bool fIncludingDiscard = false);
 
 protected:
 
@@ -592,6 +600,8 @@ private:
     CMachine  m_comMachine;
     /** Holds the console of machine being powered off. */
     CConsole  m_comConsole;
+    /** Holds whether machine state should be discarded. */
+    bool      m_fIncludingDiscard;
     /** Holds the session being opened. */
     CSession  m_comSession;
     /** Holds the machine name. */

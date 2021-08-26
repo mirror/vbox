@@ -370,52 +370,17 @@ void UISession::shutdown()
 
 void UISession::powerOff(bool fIncludingDiscard)
 {
-    /* Prepare result: */
-    bool fSuccess = false;
-
     /* Enable 'manual-override',
      * preventing automatic Runtime UI closing: */
     setManualOverrideMode(true);
 
-    /* Prepare the power-off progress: */
+    /* Now, do the magic: */
     LogRel(("GUI: Powering VM off..\n"));
-    CProgress comProgress = console().PowerDown();
-    if (!console().isOk())
-    {
-        /* Check the console state, it might be already gone: */
-        if (!console().isNull())
-        {
-            /* This can happen if VBoxSVC is not running: */
-            COMResult res(console());
-            if (FAILED_DEAD_INTERFACE(res.rc()))
-               fSuccess = true;
-        }
-
-        if (!fSuccess)
-            msgCenter().cannotPowerOffMachine(console());
-    }
-    else
-    {
-        /* Show the power-off progress: */
-        msgCenter().showModalProgressDialog(comProgress, machineName(), ":/progress_poweroff_90px.png");
-        if (comProgress.isOk() && comProgress.GetResultCode() == 0)
-        {
-            fSuccess = true;
-
-            /* Discard the current state if requested: */
-            if (fIncludingDiscard)
-                uiCommon().restoreCurrentSnapshot(uiCommon().managedVMUuid());
-        }
-        else
-            msgCenter().cannotPowerOffMachine(comProgress, machineName());
-    }
-
-    /* Disable 'manual-override' finally: */
-    setManualOverrideMode(false);
-
-    /* Manually close Runtime UI: */
-    if (fSuccess)
-        closeRuntimeUI();
+    UINotificationProgressMachinePowerOff *pNotification =
+        new UINotificationProgressMachinePowerOff(machine(), console(), fIncludingDiscard);
+    connect(pNotification, &UINotificationProgressMachinePowerOff::sigMachinePoweredOff,
+            this, &UISession::sltHandleMachinePoweredOff);
+    gpNotificationCenter->append(pNotification);
 }
 
 UIMachineLogic* UISession::machineLogic() const
@@ -849,6 +814,20 @@ void UISession::sltHandleMachineStateSaved(bool fSuccess)
     /* Close Runtime UI if state was saved: */
     if (fSuccess)
         closeRuntimeUI();
+}
+
+void UISession::sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard)
+{
+    /* Disable 'manual-override' finally: */
+    setManualOverrideMode(false);
+
+    /* Do we have other tasks? */
+    if (fSuccess)
+    {
+        if (fIncludingDiscard)
+            uiCommon().restoreCurrentSnapshot(uiCommon().managedVMUuid());
+        closeRuntimeUI();
+    }
 }
 
 void UISession::sltAdditionsChange()
