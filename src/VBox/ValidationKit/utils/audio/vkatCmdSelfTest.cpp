@@ -128,42 +128,42 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     RT_NOREF(hThread);
     PSELFTESTCTX pCtx = (PSELFTESTCTX)pvUser;
 
-    PAUDIOTESTENV pTstEnv = &pCtx->Guest.TstEnv;
+    PAUDIOTESTENV pTstEnvGst = &pCtx->Guest.TstEnv;
 
     /* Flag the environment for self test mode. */
-    pTstEnv->fSelftest = true;
+    pTstEnvGst->fSelftest = true;
 
     /* Tweak the address the guest ATS is trying to connect to the host if anything else is specified.
      * Note: The host also runs on the same host (this self-test is completely self-contained and does not need a VM). */
-    if (!pTstEnv->TcpOpts.szConnectAddr[0])
-        RTStrCopy(pTstEnv->TcpOpts.szConnectAddr, sizeof(pTstEnv->TcpOpts.szConnectAddr), "127.0.0.1");
+    if (!pTstEnvGst->TcpOpts.szConnectAddr[0])
+        RTStrCopy(pTstEnvGst->TcpOpts.szConnectAddr, sizeof(pTstEnvGst->TcpOpts.szConnectAddr), "127.0.0.1");
 
-    int rc = AudioTestSvcCreate(&pTstEnv->Srv);
+    int rc = AudioTestSvcCreate(&pTstEnvGst->Srv);
     AssertRCReturn(rc, rc);
 
     /* Generate tag for guest side. */
-    rc = RTStrCopy(pTstEnv->szTag, sizeof(pTstEnv->szTag), pCtx->szTag);
+    rc = RTStrCopy(pTstEnvGst->szTag, sizeof(pTstEnvGst->szTag), pCtx->szTag);
     AssertRCReturn(rc, rc);
 
-    rc = AudioTestPathCreateTemp(pTstEnv->szPathTemp, sizeof(pTstEnv->szPathTemp), "selftest-guest");
+    rc = AudioTestPathCreateTemp(pTstEnvGst->szPathTemp, sizeof(pTstEnvGst->szPathTemp), "selftest-guest");
     AssertRCReturn(rc, rc);
 
-    rc = AudioTestPathCreateTemp(pTstEnv->szPathOut, sizeof(pTstEnv->szPathOut), "selftest-out");
+    rc = AudioTestPathCreateTemp(pTstEnvGst->szPathOut, sizeof(pTstEnvGst->szPathOut), "selftest-out");
     AssertRCReturn(rc, rc);
 
-    pTstEnv->enmMode = AUDIOTESTMODE_GUEST;
+    pTstEnvGst->enmMode = AUDIOTESTMODE_GUEST;
 
     /** @todo Make this customizable. */
-    PDMAudioPropsInit(&pTstEnv->Props,
+    PDMAudioPropsInit(&pTstEnvGst->Props,
                       2 /* 16-bit */, true  /* fSigned */, 2 /* cChannels */, 44100 /* uHz */);
 
-    rc = audioTestEnvInit(pTstEnv, &pCtx->DrvStack);
+    rc = audioTestEnvInit(pTstEnvGst, &pCtx->DrvStack);
     if (RT_SUCCESS(rc))
     {
         RTThreadUserSignal(hThread);
 
-        audioTestWorker(pTstEnv);
-        audioTestEnvDestroy(pTstEnv);
+        audioTestWorker(pTstEnvGst);
+        audioTestEnvDestroy(pTstEnvGst);
     }
 
     return rc;
