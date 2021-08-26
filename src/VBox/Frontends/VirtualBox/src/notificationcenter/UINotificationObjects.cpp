@@ -975,15 +975,10 @@ void UINotificationProgressMachineSaveState::sltHandleProgressFinished()
 *   Class UINotificationProgressMachinePowerOff implementation.                                                                  *
 *********************************************************************************************************************************/
 
-UINotificationProgressMachinePowerOff::UINotificationProgressMachinePowerOff(const CMachine &comMachine)
+UINotificationProgressMachinePowerOff::UINotificationProgressMachinePowerOff(const CMachine &comMachine,
+                                                                             const CConsole &comConsole /* = CConsole() */)
     : m_comMachine(comMachine)
-{
-    connect(this, &UINotificationProgress::sigProgressFinished,
-            this, &UINotificationProgressMachinePowerOff::sltHandleProgressFinished);
-}
-
-UINotificationProgressMachinePowerOff::UINotificationProgressMachinePowerOff(const CConsole &comConsole)
-    : m_comConsole(comConsole)
+    , m_comConsole(comConsole)
 {
     connect(this, &UINotificationProgress::sigProgressFinished,
             this, &UINotificationProgressMachinePowerOff::sltHandleProgressFinished);
@@ -1003,43 +998,6 @@ CProgress UINotificationProgressMachinePowerOff::createProgress(COMResult &comRe
 {
     /* Prepare machine to power off: */
     CMachine comMachine = m_comMachine;
-
-    /* For Runtime UI: */
-    switch (uiCommon().uiType())
-    {
-        case UICommon::UIType_RuntimeUI:
-        {
-            /* Acquire VM: */
-            AssertReturn(m_comConsole.isNotNull(), CProgress());
-            comMachine = m_comConsole.GetMachine();
-            if (!m_comConsole.isOk())
-            {
-                comResult = m_comConsole;
-                return CProgress();
-            }
-
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Acquire VM id: */
-    const QUuid uId = comMachine.GetId();
-    if (!comMachine.isOk())
-    {
-        comResult = comMachine;
-        return CProgress();
-    }
-
-    /* Acquire VM name: */
-    m_strName = comMachine.GetName();
-    if (!comMachine.isOk())
-    {
-        comResult = comMachine;
-        return CProgress();
-    }
-
     /* Prepare console to power off: */
     CConsole comConsole = m_comConsole;
 
@@ -1048,6 +1006,14 @@ CProgress UINotificationProgressMachinePowerOff::createProgress(COMResult &comRe
     {
         case UICommon::UIType_SelectorUI:
         {
+            /* Acquire VM id: */
+            const QUuid uId = comMachine.GetId();
+            if (!comMachine.isOk())
+            {
+                comResult = comMachine;
+                return CProgress();
+            }
+
             /* Open a session thru which we will modify the machine: */
             m_comSession = uiCommon().openExistingSession(uId);
             if (m_comSession.isNull())
@@ -1079,8 +1045,33 @@ CProgress UINotificationProgressMachinePowerOff::createProgress(COMResult &comRe
 
     /* Initialize progress-wrapper: */
     CProgress comProgress = comConsole.PowerDown();
+
+    /* For Runtime UI: */
+    switch (uiCommon().uiType())
+    {
+        case UICommon::UIType_RuntimeUI:
+        {
+            /* Check the console state, it might be already gone: */
+            if (!comConsole.isNull())
+            {
+                /* This can happen if VBoxSVC is not running: */
+                COMResult res(comConsole);
+                if (FAILED_DEAD_INTERFACE(res.rc()))
+                    return CProgress();
+            }
+
+            break;
+        }
+        default:
+            break;
+    }
+
     /* Store COM result: */
     comResult = comConsole;
+
+    /* Acquire VM name, no error checks, too late: */
+    m_strName = comMachine.GetName();
+
     /* Return progress-wrapper: */
     return comProgress;
 }
