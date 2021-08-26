@@ -3040,8 +3040,9 @@ QUuid UICommon::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strD
 
     if (pDialog->exec())
     {
+        QUuid uMediumID = pDialog->mediumID();
         delete pDialog;
-        return pDialog->mediumID();
+        return uMediumID;
     }
     delete pDialog;
     return QUuid();
