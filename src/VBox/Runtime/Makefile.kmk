@@ -1051,6 +1051,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/sysfs.cpp \
 	r3/linux/time-linux.cpp \
 	r3/linux/thread-affinity-linux.cpp \
+	r3/linux/tpm-linux.cpp \
 	r3/linux/RTFileCopyPartEx-linux.cpp \
 	r3/linux/RTFileQuerySectorSize-linux.cpp \
 	r3/linux/RTFileSetAllocationSize-linux.cpp \
