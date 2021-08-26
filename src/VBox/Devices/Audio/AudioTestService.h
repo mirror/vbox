@@ -170,12 +170,11 @@ typedef struct ATSSERVER
 /** Pointer to an Audio Test Service (ATS) instance. */
 typedef ATSSERVER *PATSSERVER;
 
-int AudioTestSvcCreate(PATSSERVER pThis);
 int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks);
 int AudioTestSvcDestroy(PATSSERVER pThis);
 int AudioTestSvcHandleOption(PATSSERVER pThis, int ch, PCRTGETOPTUNION pVal);
 int AudioTestSvcStart(PATSSERVER pThis);
-int AudioTestSvcShutdown(PATSSERVER pThis);
+int AudioTestSvcStop(PATSSERVER pThis);
 
 /**
  * Enumeration for the server connection mode.

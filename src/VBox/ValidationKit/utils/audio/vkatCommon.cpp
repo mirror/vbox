@@ -491,7 +491,7 @@ static DECLCALLBACK(int) audioTestGstAtsByeCallback(void const *pvUser)
     AssertReturn(pCtx->cClients, VERR_WRONG_ORDER);
     pCtx->cClients--;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Clients wants to disconnect, %RU8 remaining\n", pCtx->cClients);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Client wants to disconnect, %RU8 remaining\n", pCtx->cClients);
 
     if (0 == pCtx->cClients) /* All clients disconnected? Tear things down. */
     {
@@ -771,20 +771,27 @@ int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCall
     RTGETOPTUNION Val;
     RT_ZERO(Val);
 
+    int rc = AudioTestSvcInit(pSrv, pCallbacks);
+    if (RT_FAILURE(rc))
+        return rc;
+
     Val.u32 = pTcpOpts->enmConnMode;
-    AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONN_MODE, &Val);
+    rc = AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONN_MODE, &Val);
+    AssertRCReturn(rc, rc);
 
     if (   pTcpOpts->enmConnMode == ATSCONNMODE_BOTH
         || pTcpOpts->enmConnMode == ATSCONNMODE_SERVER)
     {
         Assert(pTcpOpts->uBindPort); /* Always set by the caller. */
         Val.u16 = pTcpOpts->uBindPort;
-        AudioTestSvcHandleOption(pSrv, ATSTCPOPT_BIND_PORT, &Val);
+        rc = AudioTestSvcHandleOption(pSrv, ATSTCPOPT_BIND_PORT, &Val);
+        AssertRCReturn(rc, rc);
 
         if (pTcpOpts->szBindAddr[0])
         {
             Val.psz = pTcpOpts->szBindAddr;
-            AudioTestSvcHandleOption(pSrv, ATSTCPOPT_BIND_ADDRESS, &Val);
+            rc = AudioTestSvcHandleOption(pSrv, ATSTCPOPT_BIND_ADDRESS, &Val);
+            AssertRCReturn(rc, rc);
         }
         else
         {
@@ -802,12 +809,14 @@ int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCall
     {
         Assert(pTcpOpts->uConnectPort); /* Always set by the caller. */
         Val.u16 = pTcpOpts->uConnectPort;
-        AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONNECT_PORT, &Val);
+        rc = AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONNECT_PORT, &Val);
+        AssertRCReturn(rc, rc);
 
         if (pTcpOpts->szConnectAddr[0])
         {
             Val.psz = pTcpOpts->szConnectAddr;
-            AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONNECT_ADDRESS, &Val);
+            rc = AudioTestSvcHandleOption(pSrv, ATSTCPOPT_CONNECT_ADDRESS, &Val);
+            AssertRCReturn(rc, rc);
         }
         else
         {
@@ -819,12 +828,12 @@ int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCall
                      pszDesc, pTcpOpts->szConnectAddr, pTcpOpts->uConnectPort);
     }
 
-    int rc = AudioTestSvcInit(pSrv, pCallbacks);
     if (RT_SUCCESS(rc))
+    {
         rc = AudioTestSvcStart(pSrv);
-
-    if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Starting server for %s failed with %Rrc\n", pszDesc, rc);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "Starting server for %s failed with %Rrc\n", pszDesc, rc);
+    }
 
     return rc;
 }
@@ -952,6 +961,9 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
         if (!pTstEnv->TcpOpts.uConnectPort)
             pTstEnv->TcpOpts.uConnectPort = ATS_TCP_DEF_CONNECT_PORT_GUEST;
 
+        pTstEnv->pSrv = (PATSSERVER)RTMemAlloc(sizeof(ATSSERVER));
+        AssertPtrReturn(pTstEnv->pSrv, VERR_NO_MEMORY);
+
         /*
          * Start the ATS (Audio Test Service) on the guest side.
          * That service then will perform playback and recording operations on the guest, triggered from the host.
@@ -959,7 +971,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
          * When running this in self-test mode, that service also can be run on the host if nothing else is specified.
          * Note that we have to bind to "0.0.0.0" by default so that the host can connect to it.
          */
-        rc = audioTestEnvConfigureAndStartTcpServer(&pTstEnv->Srv, &Callbacks, "guest", &pTstEnv->TcpOpts);
+        rc = audioTestEnvConfigureAndStartTcpServer(pTstEnv->pSrv, &Callbacks, "guest", &pTstEnv->TcpOpts);
     }
     else /* Host mode */
     {
@@ -1018,6 +1030,15 @@ void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
     {
         AudioTestSvcClientDestroy(&pTstEnv->u.Host.AtsClValKit);
         AudioTestSvcClientDestroy(&pTstEnv->u.Host.AtsClGuest);
+    }
+
+    if (pTstEnv->pSrv)
+    {
+        int rc2 = AudioTestSvcDestroy(pTstEnv->pSrv);
+        AssertRC(rc2);
+
+        RTMemFree(pTstEnv->pSrv);
+        pTstEnv->pSrv = NULL;
     }
 
     for (unsigned i = 0; i < RT_ELEMENTS(pTstEnv->aStreams); i++)

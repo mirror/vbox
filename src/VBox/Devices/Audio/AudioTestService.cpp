@@ -1036,23 +1036,9 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
 }
 
 /**
- * Creates an ATS instance.
- *
- * @returns VBox status code.
- * @param   pThis               The ATS instance to create.
- */
-int AudioTestSvcCreate(PATSSERVER pThis)
-{
-    /*
-     * The default transporter is the first one.
-     */
-    pThis->pTransport = g_apTransports[0]; /** @todo Make this dynamic. */
-
-    return pThis->pTransport->pfnCreate(&pThis->pTransportInst);
-}
-
-/**
  * Initializes an ATS instance.
+ *
+ * @note This does *not* start the server!
  *
  * @returns VBox status code.
  * @param   pThis               The ATS instance.
@@ -1060,19 +1046,16 @@ int AudioTestSvcCreate(PATSSERVER pThis)
  */
 int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
 {
-    memcpy(&pThis->Callbacks, pCallbacks, sizeof(ATSCALLBACKS));
+    RT_BZERO(pThis, sizeof(ATSSERVER));
 
-    pThis->fStarted   = false;
-    pThis->fTerminate = false;
-
-    pThis->hPipeR     = NIL_RTPIPE;
-    pThis->hPipeW     = NIL_RTPIPE;
+    pThis->hPipeR = NIL_RTPIPE;
+    pThis->hPipeW = NIL_RTPIPE;
 
     RTListInit(&pThis->LstClientsNew);
 
-    /*
-     * Initialize the transport layer.
-     */
+    /* Copy callback table. */
+    memcpy(&pThis->Callbacks, pCallbacks, sizeof(ATSCALLBACKS));
+
     int rc = RTCritSectInit(&pThis->CritSectClients);
     if (RT_SUCCESS(rc))
     {
@@ -1082,13 +1065,14 @@ int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
             rc = RTPipeCreate(&pThis->hPipeR, &pThis->hPipeW, 0);
             if (RT_SUCCESS(rc))
             {
-                /* Spin off the thread serving connections. */
-                rc = RTThreadCreate(&pThis->hThreadServing, atsClientWorker, pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
-                                    "AUDTSTSRVC");
+                /*
+                 * The default transporter is the first one.
+                 */
+                pThis->pTransport = g_apTransports[0]; /** @todo Make this dynamic. */
+
+                rc =  pThis->pTransport->pfnCreate(&pThis->pTransportInst);
                 if (RT_SUCCESS(rc))
                     return VINF_SUCCESS;
-                else
-                    LogRel(("Creating the client worker thread failed with %Rrc\n", rc));
 
                 RTPipeClose(pThis->hPipeR);
                 RTPipeClose(pThis->hPipeW);
@@ -1104,7 +1088,10 @@ int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
         RTCritSectDelete(&pThis->CritSectClients);
     }
     else
-        LogRel(("Creating global critical section failed with %Rrc\n", rc));
+        LogRel(("Creating critical section failed with %Rrc\n", rc));
+
+    if (RT_FAILURE(rc))
+        LogRel(("Creating server failed with %Rrc\n", rc));
 
     return rc;
 }
@@ -1133,12 +1120,21 @@ int AudioTestSvcHandleOption(PATSSERVER pThis, int ch, PCRTGETOPTUNION pVal)
  */
 int AudioTestSvcStart(PATSSERVER pThis)
 {
-    int rc = pThis->pTransport->pfnStart(pThis->pTransportInst);
+    /* Spin off the thread serving connections. */
+    int rc = RTThreadCreate(&pThis->hThreadServing, atsClientWorker, pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
+                            "ATSCLWORK");
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("Creating the client worker thread failed with %Rrc\n", rc));
+        return rc;
+    }
+
+    rc = pThis->pTransport->pfnStart(pThis->pTransportInst);
     if (RT_SUCCESS(rc))
     {
         /* Spin off the connection thread. */
         rc = RTThreadCreate(&pThis->hThreadMain, atsMainThread, pThis, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "AUDTSTSRVM");
+                            "ATSMAIN");
         if (RT_SUCCESS(rc))
         {
             rc = RTThreadUserWait(pThis->hThreadMain, RT_MS_30SEC);
@@ -1151,12 +1147,12 @@ int AudioTestSvcStart(PATSSERVER pThis)
 }
 
 /**
- * Shuts down a formerly started ATS instance.
+ * Stops (shuts down) a formerly started ATS instance.
  *
  * @returns VBox status code.
  * @param   pThis               The ATS instance.
  */
-int AudioTestSvcShutdown(PATSSERVER pThis)
+int AudioTestSvcStop(PATSSERVER pThis)
 {
     if (!pThis->fStarted)
         return VINF_SUCCESS;

@@ -138,11 +138,8 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     if (!pTstEnvGst->TcpOpts.szConnectAddr[0])
         RTStrCopy(pTstEnvGst->TcpOpts.szConnectAddr, sizeof(pTstEnvGst->TcpOpts.szConnectAddr), "127.0.0.1");
 
-    int rc = AudioTestSvcCreate(&pTstEnvGst->Srv);
-    AssertRCReturn(rc, rc);
-
     /* Generate tag for guest side. */
-    rc = RTStrCopy(pTstEnvGst->szTag, sizeof(pTstEnvGst->szTag), pCtx->szTag);
+    int rc = RTStrCopy(pTstEnvGst->szTag, sizeof(pTstEnvGst->szTag), pCtx->szTag);
     AssertRCReturn(rc, rc);
 
     rc = AudioTestPathCreateTemp(pTstEnvGst->szPathTemp, sizeof(pTstEnvGst->szPathTemp), "selftest-guest");

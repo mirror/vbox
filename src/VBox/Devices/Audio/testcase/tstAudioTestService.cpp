@@ -157,7 +157,10 @@ int main(int argc, char **argv)
     rc = AudioTestSvcClientClose(&Client);
     RTTEST_CHECK_RC_OK(hTest, rc);
 
-    rc = AudioTestSvcShutdown(&Srv);
+    rc = AudioTestSvcStop(&Srv);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+
+    rc = AudioTestSvcDestroy(&Srv);
     RTTEST_CHECK_RC_OK(hTest, rc);
 
     /*

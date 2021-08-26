@@ -310,9 +310,9 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
         if (RT_SUCCESS(rc))
         {
             /*
-             * 2. Tell the guest ATS to start playback.
+             * 2. Tell VKAT on guest  to start playback.
              */
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling guest VKAT to play tone ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling VKAT on guest to play tone ...\n");
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientTonePlay() failed with %Rrc\n",
@@ -417,7 +417,7 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
             /*
              * 2. Tell the guest ATS to start recording.
              */
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling guest VKAT to record audio ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling VKAT on guest to record audio ...\n");
             rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientToneRecord() failed with %Rrc\n",
@@ -546,7 +546,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
 
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Shutting down guest ATS ...\n");
 
-        int rc2 = AudioTestSvcShutdown(&pTstEnv->Srv);
+        int rc2 = AudioTestSvcStop(pTstEnv->pSrv);
         if (RT_SUCCESS(rc))
             rc = rc2;
 
@@ -556,9 +556,11 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
     {
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Using tag '%s'\n", pTstEnv->szTag);
 
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling ValKit audio driver on host to begin a new test set ...\n");
         rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClValKit, pTstEnv->szTag);
         if (RT_SUCCESS(rc))
         {
+            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling VKAT on guest to begin a new test set ...\n");
             rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
             if (RT_FAILURE(rc))
                 RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
@@ -732,9 +734,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     AUDIOTESTENV TstEnv;
     RT_ZERO(TstEnv);
 
-    int rc = AudioTestSvcCreate(&TstEnv.Srv);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Creating ATS service instance failed with %Rrc\n", rc);
+    int         rc;
 
     const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
     PCPDMDRVREG pDrvReg       = AudioTestGetDefaultBackend();

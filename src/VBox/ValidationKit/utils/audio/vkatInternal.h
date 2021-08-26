@@ -252,8 +252,9 @@ typedef struct AUDIOTESTENV
     AUDIOTESTSET            Set;
     /** TCP options to use for ATS. */
     AUDIOTESTENVTCPOPTS     TcpOpts;
-    /** ATS server instance to use. */
-    ATSSERVER               Srv;
+    /** ATS server instance to use.
+     *  NULL if not in use. */
+    PATSSERVER              pSrv;
     /** ATS callback context to use. */
     ATSCALLBACKCTX          CallbackCtx;
     union
