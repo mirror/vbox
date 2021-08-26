@@ -344,12 +344,12 @@ public:
         return false;
     }
 
-    int plural(int aNum) const
+    size_t plural(int aNum) const
     {
         if (aNum < 1 || m_pluralRules.empty())
             return 0;
 
-        int  iPluralNumber = 0;
+        size_t   uPluralNumber = 0;
         uint32_t iPos = 0;
 
         /* Rules loop */
@@ -398,13 +398,13 @@ public:
                 iPos++;
             }
             if (fOr)
-                return iPluralNumber;
+                return uPluralNumber;
 
             /* Qt returns last plural number if none of rules are match. */
-            iPluralNumber++;
+            uPluralNumber++;
 
             if (iPos >= m_pluralRules.size())
-                return iPluralNumber;
+                return uPluralNumber;
 
             iPos++; // Skip Pl_NewRule
         }
@@ -415,7 +415,6 @@ public:
                           const char *pszDisamb,
                           const int   aNum) const
     {
-        QMHashSetConstIter iter;
         QMHashSetConstIter lowerIter, upperIter;
 
         /* As turned out, comments (pszDisamb) are not kept always in result qm file
@@ -435,7 +434,7 @@ public:
 
         for (size_t i = 0; i < RT_ELEMENTS(apszCtx); ++i)
         {
-            for (iter = lowerIter; iter != upperIter; ++iter)
+            for (QMHashSetConstIter iter = lowerIter; iter != upperIter; ++iter)
             {
                 const QMMessage &message = m_messageArray[iter->offset];
                 if (   RTStrCmp(message.pszSource, pszSource) == 0
@@ -443,7 +442,7 @@ public:
                     && (!apszDisabm[i]  || !*apszDisabm[i]  || RTStrCmp(message.pszComment, apszDisabm[i]) == 0 ))
                 {
                     const std::vector<const char *> &vecTranslations = m_messageArray[iter->offset].vecTranslations;
-                    size_t idxPlural = (size_t)plural(aNum);
+                    size_t const idxPlural = plural(aNum);
                     return vecTranslations[RT_MIN(idxPlural, vecTranslations.size() - 1)];
                 }
             }
