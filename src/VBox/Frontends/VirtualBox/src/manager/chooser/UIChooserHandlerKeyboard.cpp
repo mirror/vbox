@@ -304,9 +304,9 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         }
         default:
         {
-            /* Start lookup: */
+            /* Start lookup only for non-empty and alphanumerical strings: */
             const QString strText = pEvent->text();
-            if (!strText.isEmpty())
+            if (!strText.isEmpty() && !strText.contains(QRegExp("[^A-Za-z0-9]", Qt::CaseInsensitive)))
                 model()->lookFor(strText);
             break;
         }
