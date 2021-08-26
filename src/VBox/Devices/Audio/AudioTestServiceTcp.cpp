@@ -319,6 +319,12 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRAN
             if (RT_SUCCESS(rc) || atsTcpIsFatalClientConnectStatus(rc))
                 break;
 
+            if (pThis->fStopConnecting)
+            {
+                rc = VINF_SUCCESS;
+                break;
+            }
+
             /* Delay a wee bit before retrying. */
             RTThreadSleep(1536);
         }
