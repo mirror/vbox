@@ -205,7 +205,8 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
 #  endif
 # else /* IN_RING0 */
     uint64_t const          tsStart     = RTTimeNanoTS();
-    uint64_t                cNsMaxTotal = RT_NS_5MIN;
+    uint64_t const          cNsMaxTotalDef = RT_NS_5MIN;
+    uint64_t                cNsMaxTotal = cNsMaxTotalDef;
     uint64_t const          cNsMaxRetry = RT_NS_15SEC;
     uint32_t                cMsMaxOne   = RT_MS_5SEC;
     bool                    fNonInterruptible = false;
@@ -282,7 +283,7 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
             int const      rcTerm     = RTThreadQueryTerminationStatus(NIL_RTTHREAD);
             AssertMsg(rcTerm == VINF_SUCCESS || rcTerm == VERR_NOT_SUPPORTED || rcTerm == VINF_THREAD_IS_TERMINATING,
                       ("rcTerm=%Rrc\n", rcTerm));
-            if (rcTerm == VERR_NOT_SUPPORTED)
+            if (rcTerm == VERR_NOT_SUPPORTED && cNsMaxTotal == cNsMaxTotalDef)
                 cNsMaxTotal = RT_NS_1MIN;
 
             if (rc == VERR_TIMEOUT)

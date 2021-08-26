@@ -389,7 +389,8 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
     SUPSEMEVENTMULTI const  hEventMulti       = (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead;
 # ifdef IN_RING0
     uint64_t const          tsStart           = RTTimeNanoTS();
-    uint64_t                cNsMaxTotal       = RT_NS_5MIN;
+    uint64_t const          cNsMaxTotalDef    = RT_NS_5MIN;
+    uint64_t                cNsMaxTotal       = cNsMaxTotalDef;
     uint32_t                cMsMaxOne         = RT_MS_5SEC;
     bool                    fNonInterruptible = false;
 # endif
@@ -454,7 +455,7 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
                 int const      rcTerm     = RTThreadQueryTerminationStatus(NIL_RTTHREAD);
                 AssertMsg(rcTerm == VINF_SUCCESS || rcTerm == VERR_NOT_SUPPORTED || rcTerm == VINF_THREAD_IS_TERMINATING,
                           ("rcTerm=%Rrc\n", rcTerm));
-                if (rcTerm == VERR_NOT_SUPPORTED)
+                if (rcTerm == VERR_NOT_SUPPORTED && cNsMaxTotal == cNsMaxTotalDef)
                     cNsMaxTotal = RT_NS_1MIN;
 
                 if (rc == VERR_TIMEOUT)
@@ -1147,7 +1148,8 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
     SUPSEMEVENT const       hEvent            = (SUPSEMEVENT)pThis->s.Core.hEvtWrite;
 # ifdef IN_RING0
     uint64_t const          tsStart           = RTTimeNanoTS();
-    uint64_t                cNsMaxTotal       = RT_NS_5MIN;
+    uint64_t const          cNsMaxTotalDef    = RT_NS_5MIN;
+    uint64_t                cNsMaxTotal       = cNsMaxTotalDef;
     uint32_t                cMsMaxOne         = RT_MS_5SEC;
     bool                    fNonInterruptible = false;
 # endif
@@ -1214,7 +1216,7 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
                 int const      rcTerm     = RTThreadQueryTerminationStatus(NIL_RTTHREAD);
                 AssertMsg(rcTerm == VINF_SUCCESS || rcTerm == VERR_NOT_SUPPORTED || rcTerm == VINF_THREAD_IS_TERMINATING,
                           ("rcTerm=%Rrc\n", rcTerm));
-                if (rcTerm == VERR_NOT_SUPPORTED)
+                if (rcTerm == VERR_NOT_SUPPORTED && cNsMaxTotal == cNsMaxTotalDef)
                     cNsMaxTotal = RT_NS_1MIN;
 
                 if (rc == VERR_TIMEOUT)
