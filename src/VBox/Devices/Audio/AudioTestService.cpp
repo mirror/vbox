@@ -118,6 +118,14 @@ typedef struct ATSCLIENTINST
 /** Pointer to a ATS client instance. */
 typedef ATSCLIENTINST *PATSCLIENTINST;
 
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static int atsClientDisconnect(PATSSERVER pThis, PATSCLIENTINST pInst);
+
+
+
 /**
  * Returns the string represenation of the given state.
  */
@@ -482,10 +490,7 @@ static int atsDoBye(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR pPktHdr)
             rc = atsReplyAck(pThis, pInst, pPktHdr);
         }
         else
-            rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Shutting down server failed");
-
-        if (RT_SUCCESS(rc))
-            pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pInst->pTransportClient);
+            rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Disconnecting client failed");
     }
     else
         rc = atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTHDR));
@@ -785,9 +790,10 @@ static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR pP
  *
  * @returns IPRT status code.
  * @param   pThis               The ATS instance.
- * @param   pInst             The ATS client structure sending the request.
+ * @param   pInst               The ATS client structure sending the request.
+ * @param   pfDisconnect        Where to return whether to disconnect the client on success or not.
  */
-static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pInst)
+static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pInst, bool *pfDisconnect)
 {
     /*
      * Read client command packet and process it.
@@ -804,7 +810,11 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pInst)
     if (     atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_HOWDY))
         rc = atsDoHowdy(pThis, pInst, pPktHdr);
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_BYE))
+    {
         rc = atsDoBye(pThis, pInst, pPktHdr);
+        if (RT_SUCCESS(rc))
+            *pfDisconnect = true;
+    }
     /* Test set handling: */
     else if (atsIsSameOpcode(pPktHdr, ATSPKT_OPCODE_TESTSET_BEGIN))
         rc = atsDoTestSetBegin(pThis, pInst, pPktHdr);
@@ -826,13 +836,23 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pInst)
     return rc;
 }
 
+static int atsClientDisconnect(PATSSERVER pThis, PATSCLIENTINST pInst)
+{
+    AssertReturn(pInst->enmState != ATSCLIENTSTATE_DESTROYING, VERR_WRONG_ORDER);
+
+    pInst->enmState = ATSCLIENTSTATE_DESTROYING;
+    pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pInst->pTransportClient);
+
+    return VINF_SUCCESS;
+}
+
 /**
- * Destroys a client instance.
+ * Free's (destroys) a client instance.
  *
  * @returns nothing.
  * @param   pInst               The opaque ATS instance structure.
  */
-static void atsClientDestroy(PATSCLIENTINST pInst)
+static void atsClientFree(PATSCLIENTINST pInst)
 {
     if (pInst->pszHostname)
         RTStrFree(pInst->pszHostname);
@@ -910,38 +930,45 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                             }
                             else
                             {
-                                pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pIt->pTransportClient);
-                                atsClientDestroy(pIt);
+                                atsClientDisconnect(pThis, pIt);
+                                atsClientFree(pIt);
+                                pIt = NULL;
                             }
                         }
                         else
                         {
-                            pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pIt->pTransportClient);
-                            atsClientDestroy(pIt);
+                            atsClientDisconnect(pThis, pIt);
+                            atsClientFree(pIt);
+                            pIt = NULL;
                         }
                     }
                     RTCritSectLeave(&pThis->CritSectClients);
                 }
                 else
                 {
+                    bool fDisconnect = false;
+
                     /* Client sends a request, pick the right client and process it. */
                     PATSCLIENTINST pInst = papInsts[uId - 1];
                     AssertPtr(pInst);
                     if (fEvts & RTPOLL_EVT_READ)
-                        rc = atsClientReqProcess(pThis, pInst);
+                        rc = atsClientReqProcess(pThis, pInst, &fDisconnect);
 
                     if (   (fEvts & RTPOLL_EVT_ERROR)
-                        || RT_FAILURE(rc))
+                        || RT_FAILURE(rc)
+                        || fDisconnect)
                     {
                         /* Close connection and remove client from array. */
-                        rc = pThis->pTransport->pfnPollSetRemove(pThis->pTransportInst, pThis->hPollSet, pInst->pTransportClient, uId);
-                        AssertRC(rc);
+                        int rc2 = pThis->pTransport->pfnPollSetRemove(pThis->pTransportInst, pThis->hPollSet, pInst->pTransportClient, uId);
+                        AssertRC(rc2);
 
-                        pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pInst->pTransportClient);
-                        pInst->pTransportClient = NULL;
+                        atsClientDisconnect(pThis, pInst);
+                        atsClientFree(pInst);
+                        pInst = NULL;
+
                         papInsts[uId - 1] = NULL;
+                        Assert(cClientsCur);
                         cClientsCur--;
-                        atsClientDestroy(pInst);
                     }
                 }
             }
