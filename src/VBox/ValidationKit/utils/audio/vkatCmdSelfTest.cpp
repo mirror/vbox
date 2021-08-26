@@ -7,11 +7,8 @@
  * on the same machine.
  *
  * This self-test does the following:
- * - 1. a) Creates an ATS instance to emulate the guest mode ("--mode guest")
- *         at port 6042 (ATS_TCP_DEF_BIND_PORT_GUEST).
- *      or
- *      b) Connect to an already existing guest ATS instance if "--guest-ats-address" is specified.
- *      This makes it more flexible in terms of testing / debugging.
+ * - 1. Creates a separate thread for the guest side VKAT and connects to the ATS instance on
+ *      the host side at port 6052 (ATS_TCP_DEF_BIND_PORT_HOST).
  * - 2. Uses the Validation Kit audio backend, which in turn creates an ATS instance
  *      listening at port 6062 (ATS_TCP_DEF_BIND_PORT_VALKIT).
  * - 3. Uses the host test environment which creates an ATS instance
@@ -219,7 +216,6 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
         if (RT_SUCCESS(rc))
             rc = RTThreadUserWait(hThreadGstAts, RT_MS_30SEC);
     }
-    /* else Step 1a later. */
 
     RTThreadSleep(2000); /* Fudge: Wait until guest ATS is up. 2 seconds should be enough (tm). */
 
@@ -276,25 +272,10 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 *********************************************************************************************************************************/
 
 /**
- * Long option values for the 'selftest' command.
- */
-enum
-{
-    VKAT_SELFTEST_OPT_GUEST_ATS_ADDR = 900,
-    VKAT_SELFTEST_OPT_GUEST_ATS_PORT,
-    VKAT_SELFTEST_OPT_HOST_ATS_ADDR,
-    VKAT_SELFTEST_OPT_HOST_ATS_PORT
-};
-
-/**
  * Command line parameters for self-test mode.
  */
 static const RTGETOPTDEF s_aCmdSelftestOptions[] =
 {
-    { "--guest-ats-addr",   VKAT_SELFTEST_OPT_GUEST_ATS_ADDR,   RTGETOPT_REQ_STRING  },
-    { "--guest-ats-port",   VKAT_SELFTEST_OPT_GUEST_ATS_PORT,   RTGETOPT_REQ_UINT32  },
-    { "--host-ats-addr",    VKAT_SELFTEST_OPT_HOST_ATS_ADDR,    RTGETOPT_REQ_STRING  },
-    { "--host-ats-port",    VKAT_SELFTEST_OPT_HOST_ATS_PORT,    RTGETOPT_REQ_UINT32  },
     { "--exclude-all",      'a',                                RTGETOPT_REQ_NOTHING },
     { "--backend",          'b',                                RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                                RTGETOPT_REQ_NOTHING },
@@ -307,19 +288,11 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
     {
-        case 'a':                              return "Exclude all tests from the list (useful to enable single tests later with --include)";
-        case 'b':                              return "The audio backend to use";
-        case 'd':                              return "Go via DrvAudio instead of directly interfacing with the backend";
-        case 'e':                              return "Exclude the given test id from the list";
-        case 'i':                              return "Include the given test id in the list";
-        case VKAT_SELFTEST_OPT_GUEST_ATS_ADDR: return "Address of guest ATS to connect to\n"
-                                                      "    Default: 127.0.0.1; will start own guest ATS";
-        case VKAT_SELFTEST_OPT_GUEST_ATS_PORT: return "Port of guest ATS to connect to\n"
-                                                      "    Default: 6042"; /* ATS_TCP_DEF_CONNECT_PORT_GUEST */
-        case VKAT_SELFTEST_OPT_HOST_ATS_ADDR:  return "Address of host ATS to connect to\n"
-                                                      "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
-        case VKAT_SELFTEST_OPT_HOST_ATS_PORT:  return "Port of host ATS to connect to\n"
-                                                      "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
+        case 'a': return "Exclude all tests from the list (useful to enable single tests later with --include)";
+        case 'b': return "The audio backend to use";
+        case 'd': return "Go via DrvAudio instead of directly interfacing with the backend";
+        case 'e': return "Exclude the given test id from the list";
+        case 'i': return "Include the given test id in the list";
         default:  return NULL;
     }
 }
@@ -341,22 +314,6 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
     {
         switch (rc)
         {
-            case VKAT_SELFTEST_OPT_GUEST_ATS_ADDR:
-                rc = RTStrCopy(g_Ctx.Host.szGuestAtsAddr, sizeof(g_Ctx.Host.szGuestAtsAddr), ValueUnion.psz);
-                break;
-
-            case VKAT_SELFTEST_OPT_GUEST_ATS_PORT:
-                g_Ctx.Host.uGuestAtsPort = ValueUnion.u32;
-                break;
-
-            case VKAT_SELFTEST_OPT_HOST_ATS_ADDR:
-                rc = RTStrCopy(g_Ctx.Host.szValKitAtsAddr, sizeof(g_Ctx.Host.szValKitAtsAddr), ValueUnion.psz);
-                break;
-
-            case VKAT_SELFTEST_OPT_HOST_ATS_PORT:
-                g_Ctx.Host.uValKitAtsPort = ValueUnion.u32;
-                break;
-
             case 'a':
                 for (unsigned i = 0; i < g_cTests; i++)
                     g_aTests[i].fExcluded = true;
