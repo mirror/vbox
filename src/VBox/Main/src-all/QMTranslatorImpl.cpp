@@ -443,7 +443,7 @@ public:
                     && (!apszDisabm[i]  || !*apszDisabm[i]  || RTStrCmp(message.pszComment, apszDisabm[i]) == 0 ))
                 {
                     const std::vector<const char *> &vecTranslations = m_messageArray[iter->offset].vecTranslations;
-                    size_t idxPlural = plural(aNum);
+                    size_t idxPlural = (size_t)plural(aNum);
                     return vecTranslations[RT_MIN(idxPlural, vecTranslations.size() - 1)];
                 }
             }
