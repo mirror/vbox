@@ -1753,6 +1753,9 @@ void UINotificationProgressSnapshotRestore::sltHandleProgressFinished()
 {
     /* Unlock session finally: */
     m_comSession.UnlockMachine();
+
+    /* Notifies listeners: */
+    emit sigSnapshotRestored(error().isEmpty());
 }
 
 

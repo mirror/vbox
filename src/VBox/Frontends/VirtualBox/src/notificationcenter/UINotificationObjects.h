@@ -1027,6 +1027,12 @@ class SHARED_LIBRARY_STUFF UINotificationProgressSnapshotRestore : public UINoti
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about snapshot restored.
+      * @param  fSuccess  Brings whether snapshot restored successfully. */
+    void sigSnapshotRestored(bool fSuccess);
+
 public:
 
     /** Constructs snapshot restore notification-progress.

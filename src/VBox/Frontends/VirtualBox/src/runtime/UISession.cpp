@@ -824,10 +824,24 @@ void UISession::sltHandleMachinePoweredOff(bool fSuccess, bool fIncludingDiscard
     /* Do we have other tasks? */
     if (fSuccess)
     {
-        if (fIncludingDiscard)
-            uiCommon().restoreCurrentSnapshot(uiCommon().managedVMUuid());
-        closeRuntimeUI();
+        if (!fIncludingDiscard)
+            closeRuntimeUI();
+        else
+        {
+            /* Now, do more magic! */
+            UINotificationProgressSnapshotRestore *pNotification =
+                new UINotificationProgressSnapshotRestore(uiCommon().managedVMUuid());
+            connect(pNotification, &UINotificationProgressSnapshotRestore::sigSnapshotRestored,
+                    this, &UISession::sltHandleSnapshotRestored);
+            gpNotificationCenter->append(pNotification);
+        }
     }
+}
+
+void UISession::sltHandleSnapshotRestored(bool)
+{
+    /* Close Runtime UI independent of snapshot restoring state: */
+    closeRuntimeUI();
 }
 
 void UISession::sltAdditionsChange()
