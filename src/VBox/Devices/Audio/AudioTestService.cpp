@@ -887,7 +887,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
                         if (cClientsCur == cClientsMax)
                         {
                             /* Realloc to accommodate for the new clients. */
-                            PATSCLIENTINST *papInstsNew = (PATSCLIENTINST *)RTMemRealloc(papInsts, (cClientsMax + 10) * sizeof(PATSCLIENTINST));
+                            PATSCLIENTINST *papInstsNew = (PATSCLIENTINST *)RTMemReallocZ(papInsts, cClientsMax * sizeof(PATSCLIENTINST), (cClientsMax + 10) * sizeof(PATSCLIENTINST));
                             if (RT_LIKELY(papInstsNew))
                             {
                                 cClientsMax += 10;
