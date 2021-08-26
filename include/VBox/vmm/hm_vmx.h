@@ -1796,7 +1796,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS16_GUEST_DS_SEL                                 0x0806
 #define VMX_VMCS16_GUEST_FS_SEL                                 0x0808
 #define VMX_VMCS16_GUEST_GS_SEL                                 0x080a
-#define VMX_VMCS16_GUEST_SEG_SEL(a_iSegReg)                     (VMX_VMCS16_GUEST_ES_SEL + (a_iSegReg) * 2)
 #define VMX_VMCS16_GUEST_LDTR_SEL                               0x080c
 #define VMX_VMCS16_GUEST_TR_SEL                                 0x080e
 #define VMX_VMCS16_GUEST_INTR_STATUS                            0x0810
@@ -1860,8 +1859,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH                 0x202d
 #define VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_FULL               0x202e
 #define VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_HIGH               0x202f
+#define VMX_VMCS64_CTRL_SPPTP_FULL                              0x2030
+#define VMX_VMCS64_CTRL_SPPTP_HIGH                              0x2031
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL                     0x2032
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH                     0x2033
+#define VMX_VMCS64_CTRL_PROC_EXEC3_FULL                         0x2034
+#define VMX_VMCS64_CTRL_PROC_EXEC3_HIGH                         0x2035
+#define VMX_VMCS64_CTRL_ENCLV_EXITING_BITMAP_FULL               0x2036
+#define VMX_VMCS64_CTRL_ENCLV_EXITING_BITMAP_HIGH               0x2037
 
 /** 64-bit read-only data fields.  */
 #define VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL                      0x2400
@@ -1888,6 +1893,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS64_GUEST_PDPTE3_HIGH                            0x2811
 #define VMX_VMCS64_GUEST_BNDCFGS_FULL                           0x2812
 #define VMX_VMCS64_GUEST_BNDCFGS_HIGH                           0x2813
+#define VMX_VMCS64_GUEST_RTIT_CTL_FULL                          0x2814
+#define VMX_VMCS64_GUEST_RTIT_CTL_HIGH                          0x2815
+#define VMX_VMCS64_GUEST_PKRS_FULL                              0x2818
+#define VMX_VMCS64_GUEST_PKRS_HIGH                              0x2819
 
 /** 64-bit host-state fields.  */
 #define VMX_VMCS64_HOST_PAT_FULL                                0x2c00
@@ -1896,6 +1905,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS64_HOST_EFER_HIGH                               0x2c03
 #define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2c04
 #define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2c05
+#define VMX_VMCS64_HOST_PKRS_FULL                               0x2c06
+#define VMX_VMCS64_HOST_PKRS_HIGH                               0x2c07
 
 /** 32-bit control fields.  */
 #define VMX_VMCS32_CTRL_PIN_EXEC                                0x4000
@@ -1934,7 +1945,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS32_GUEST_DS_LIMIT                               0x4806
 #define VMX_VMCS32_GUEST_FS_LIMIT                               0x4808
 #define VMX_VMCS32_GUEST_GS_LIMIT                               0x480a
-#define VMX_VMCS32_GUEST_SEG_LIMIT(a_iSegReg)                   (VMX_VMCS32_GUEST_ES_LIMIT + (a_iSegReg) * 2)
 #define VMX_VMCS32_GUEST_LDTR_LIMIT                             0x480c
 #define VMX_VMCS32_GUEST_TR_LIMIT                               0x480e
 #define VMX_VMCS32_GUEST_GDTR_LIMIT                             0x4810
@@ -1945,7 +1955,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                       0x481a
 #define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                       0x481c
 #define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                       0x481e
-#define VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(a_iSegReg)           (VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS + (a_iSegReg) * 2)
 #define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                     0x4820
 #define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                       0x4822
 #define VMX_VMCS32_GUEST_INT_STATE                              0x4824
@@ -1985,7 +1994,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS_GUEST_DS_BASE                                  0x680c
 #define VMX_VMCS_GUEST_FS_BASE                                  0x680e
 #define VMX_VMCS_GUEST_GS_BASE                                  0x6810
-#define VMX_VMCS_GUEST_SEG_BASE(a_iSegReg)                      (VMX_VMCS_GUEST_ES_BASE + (a_iSegReg) * 2)
 #define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
 #define VMX_VMCS_GUEST_TR_BASE                                  0x6814
 #define VMX_VMCS_GUEST_GDTR_BASE                                0x6816
@@ -1997,6 +2005,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS                      0x6822
 #define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824
 #define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826
+#define VMX_VMCS_GUEST_S_CET                                    0x6828
+#define VMX_VMCS_GUEST_SSP                                      0x682a
+#define VMX_VMCS_GUEST_INTR_SSP_TABLE_ADDR                      0x682c
 
 /** Natural-width host-state fields. */
 #define VMX_VMCS_HOST_CR0                                       0x6c00
@@ -2011,6 +2022,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS_HOST_SYSENTER_EIP                              0x6c12
 #define VMX_VMCS_HOST_RSP                                       0x6c14
 #define VMX_VMCS_HOST_RIP                                       0x6c16
+#define VMX_VMCS_HOST_S_CET                                     0x6c18
+#define VMX_VMCS_HOST_SSP                                       0x6c1a
+#define VMX_VMCS_HOST_INTR_SSP_TABLE_ADDR                       0x6c1c
+
+#define VMX_VMCS16_GUEST_SEG_SEL(a_iSegReg)                     (VMX_VMCS16_GUEST_ES_SEL           + (a_iSegReg) * 2)
+#define VMX_VMCS_GUEST_SEG_BASE(a_iSegReg)                      (VMX_VMCS_GUEST_ES_BASE            + (a_iSegReg) * 2)
+#define VMX_VMCS32_GUEST_SEG_LIMIT(a_iSegReg)                   (VMX_VMCS32_GUEST_ES_LIMIT         + (a_iSegReg) * 2)
+#define VMX_VMCS32_GUEST_SEG_ACCESS_RIGHTS(a_iSegReg)           (VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS + (a_iSegReg) * 2)
 
 /**
  * VMCS field.
