@@ -669,9 +669,7 @@ endif
 # Whether to generate a database of USB vendor IDs and device IDs into VBoxSVC.
 VBOX_WITH_MAIN_USB_ID_DATABASE = 1
 # Whether to enable error message translation in Main.
-ifndef VBOX_ONLY_SDK
-	VBOX_WITH_MAIN_NLS = 1
-endif
+VBOX_WITH_MAIN_NLS = 1
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
 if1of ($(KBUILD_TARGET), linux solaris)
@@ -1246,6 +1244,14 @@ endif
 ifdef VBOX_BRANDING_CFG
  include $(VBOX_BRANDING_CFG)
 endif
+
+#
+# Disable NLS support for only SDK builds
+#
+ifdef VBOX_ONLY_SDK
+ VBOX_WITH_MAIN_NLS =
+endif
+
 
 #
 # Bitch about old settings.
