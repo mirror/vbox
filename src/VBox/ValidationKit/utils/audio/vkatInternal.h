@@ -181,6 +181,8 @@ typedef AUDIOTESTSTREAM *PAUDIOTESTSTREAM;
  */
 typedef struct AUDIOTESTENVTCPOPTS
 {
+    /** Connection mode(s) to use. */
+    ATSCONNMODE     enmConnMode;
     /** Bind address (server mode). When empty, "0.0.0.0" (any host) will be used. */
     char            szBindAddr[128];
     /** Bind port (server mode). */

@@ -67,19 +67,6 @@ typedef struct ATSTRANSPORTCLIENT
 } ATSTRANSPORTCLIENT;
 
 /**
- * Enumeration for the TCP/IP connection mode.
- */
-typedef enum ATSTCPMODE
-{
-    /** Both: Uses parallel client and server connection methods (via threads). */
-    ATSTCPMODE_BOTH = 0,
-    /** Client only: Connects to a server. */
-    ATSTCPMODE_CLIENT,
-    /** Server only: Listens for new incoming client connections. */
-    ATSTCPMODE_SERVER
-} ATSTCPMODE;
-
-/**
  * Structure for keeping Audio Test Service (ATS) transport instance-specific data.
  */
 typedef struct ATSTRANSPORTINST
@@ -87,7 +74,7 @@ typedef struct ATSTRANSPORTINST
     /** Critical section for serializing access. */
     RTCRITSECT                         CritSect;
     /** Connection mode to use. */
-    ATSTCPMODE                         enmMode;
+    ATSCONNMODE                        enmConnMode;
     /** The addresses to bind to.  Empty string means any. */
     char                               szBindAddr[256];
     /** The TCP port to listen to. */
@@ -313,15 +300,15 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRAN
 
     int rc;
 
-    LogFunc(("enmMode=%#x\n", pThis->enmMode));
+    LogFunc(("enmConnMode=%#x\n", pThis->enmConnMode));
 
-    if (pThis->enmMode == ATSTCPMODE_SERVER)
+    if (pThis->enmConnMode == ATSCONNMODE_SERVER)
     {
         pClient->fFromServer = true;
         rc = RTTcpServerListen2(pThis->pTcpServer, &pClient->hTcpClient);
         LogFunc(("RTTcpServerListen2 -> %Rrc\n", rc));
     }
-    else if (pThis->enmMode == ATSTCPMODE_CLIENT)
+    else if (pThis->enmConnMode == ATSCONNMODE_CLIENT)
     {
         pClient->fFromServer = false;
         for (;;)
@@ -338,7 +325,7 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRAN
     }
     else
     {
-        Assert(pThis->enmMode == ATSTCPMODE_BOTH);
+        Assert(pThis->enmConnMode == ATSCONNMODE_BOTH);
 
         /*
          * Create client threads.
@@ -730,7 +717,7 @@ static DECLCALLBACK(int) atsTcpStart(PATSTRANSPORTINST pThis)
 {
     int rc = VINF_SUCCESS;
 
-    if (pThis->enmMode != ATSTCPMODE_CLIENT)
+    if (pThis->enmConnMode != ATSCONNMODE_CLIENT)
     {
         rc = RTTcpServerCreateEx(pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, &pThis->pTcpServer);
         if (RT_FAILURE(rc))
@@ -770,15 +757,8 @@ static DECLCALLBACK(int) atsTcpOption(PATSTRANSPORTINST pThis, int ch, PCRTGETOP
 
     switch (ch)
     {
-        case ATSTCPOPT_MODE:
-            if (!strcmp(pVal->psz, "both"))
-                pThis->enmMode = ATSTCPMODE_BOTH;
-            else if (!strcmp(pVal->psz, "client"))
-                pThis->enmMode = ATSTCPMODE_CLIENT;
-            else if (!strcmp(pVal->psz, "server"))
-                pThis->enmMode = ATSTCPMODE_SERVER;
-            else
-                return RTMsgErrorRc(VERR_INVALID_PARAMETER, "Invalid TCP mode: '%s'\n", pVal->psz);
+        case ATSTCPOPT_CONN_MODE:
+            pThis->enmConnMode = (ATSCONNMODE)pVal->u32;
             return VINF_SUCCESS;
 
         case ATSTCPOPT_BIND_ADDRESS:
@@ -817,16 +797,16 @@ static DECLCALLBACK(int) atsTcpOption(PATSTRANSPORTINST pThis, int ch, PCRTGETOP
 DECLCALLBACK(void) atsTcpUsage(PRTSTREAM pStream)
 {
     RTStrmPrintf(pStream,
-                 "  --tcp-mode <both|client|server>\n"
-                 "       Selects the mode of operation.\n"
-                 "       Default: both\n"
-                 "  --tcp-bind-address <address>\n"
+                 "  --tcp-conn-mode <0=both|1=client|2=server>\n"
+                 "       Selects the connection mode.\n"
+                 "       Default: 0 (both)\n"
+                 "  --tcp-bind-addr[ess] <address>\n"
                  "       The address(es) to listen to TCP connection on.  Empty string\n"
                  "       means any address, this is the default.\n"
                  "  --tcp-bind-port <port>\n"
                  "       The port to listen to TCP connections on.\n"
                  "       Default: %u\n"
-                 "  --tcp-connect-address <address>\n"
+                 "  --tcp-connect-addr[ess] <address>\n"
                  "       The address of the server to try connect to in client mode.\n"
                  "       Default: " ATS_TCP_DEF_CONNECT_GUEST_STR "\n"
                  "  --tcp-connect-port <port>\n"
@@ -838,9 +818,11 @@ DECLCALLBACK(void) atsTcpUsage(PRTSTREAM pStream)
 /** Command line options for the TCP/IP transport layer. */
 static const RTGETOPTDEF  g_TcpOpts[] =
 {
-    { "--tcp-mode",             ATSTCPOPT_MODE,             RTGETOPT_REQ_STRING },
+    { "--tcp-conn-mode",        ATSTCPOPT_CONN_MODE,        RTGETOPT_REQ_STRING },
+    { "--tcp-bind-addr",        ATSTCPOPT_BIND_ADDRESS,     RTGETOPT_REQ_STRING },
     { "--tcp-bind-address",     ATSTCPOPT_BIND_ADDRESS,     RTGETOPT_REQ_STRING },
     { "--tcp-bind-port",        ATSTCPOPT_BIND_PORT,        RTGETOPT_REQ_UINT16 },
+    { "--tcp-connect-addr",     ATSTCPOPT_CONNECT_ADDRESS,  RTGETOPT_REQ_STRING },
     { "--tcp-connect-address",  ATSTCPOPT_CONNECT_ADDRESS,  RTGETOPT_REQ_STRING },
     { "--tcp-connect-port",     ATSTCPOPT_CONNECT_PORT,     RTGETOPT_REQ_UINT16 }
 };

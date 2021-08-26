@@ -1113,8 +1113,8 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
         RTGETOPTUNION Val;
         RT_ZERO(Val);
 
-        Val.psz = "server"; /** @ŧodo No client connection mode needed here (yet). Make this configurable via CFGM. */
-        rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_MODE, &Val);
+        Val.u32 = ATSCONNMODE_SERVER; /** @todo No client connection mode needed here (yet). Make this configurable via CFGM. */
+        rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_CONN_MODE, &Val);
         AssertRC(rc2);
 
         Val.psz = pszTcpAddr;

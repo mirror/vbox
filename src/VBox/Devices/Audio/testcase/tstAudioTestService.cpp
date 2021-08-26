@@ -83,7 +83,7 @@ int main(int argc, char **argv)
         RT_ZERO(Val);
 
         Val.psz = "server";
-        rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_MODE, &Val);
+        rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_CONN_MODE, &Val);
         RTTEST_CHECK_RC_OK(hTest, rc);
 
         rc = AudioTestSvcInit(&Srv, &Callbacks);
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
                 RTTEST_CHECK_RC_OK(hTest, rc);
 
                 Val.psz = "client";
-                rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_MODE, &Val);
+                rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_CONN_MODE, &Val);
                 RTTEST_CHECK_RC_OK(hTest, rc);
 
                 Val.psz = ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
