@@ -609,7 +609,7 @@ QMTranslator::QMTranslator() : m_impl(new QMTranslator_Impl) {}
 QMTranslator::~QMTranslator() { delete m_impl; }
 
 const char *QMTranslator::translate(const char *pszContext, const char *pszSource,
-                                    const char *pszDisamb, const int aNum) const throw()
+                                    const char *pszDisamb, const int aNum) const RT_NOEXCEPT
 {
     return m_impl->translate(pszContext, pszSource, pszDisamb, aNum);
 }
