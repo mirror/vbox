@@ -406,14 +406,7 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
     return fRc;
 }
 
-void UIMessageCenter::warnAboutUnknownOptionType(const QString &strOption)
-{
-    alert(0, MessageType_Error,
-          tr("Unknown option <b>%1</b>.")
-             .arg(strOption));
-}
-
-void UIMessageCenter::warnAboutUnrelatedOptionType(const QString &strOption)
+void UIMessageCenter::warnAboutUnrelatedOptionType(const QString &strOption) const
 {
     alert(0, MessageType_Error,
           tr("<b>%1</b> is an option for the VirtualBox VM runner (VirtualBoxVM) application, not the VirtualBox Manager.")
@@ -456,20 +449,6 @@ void UIMessageCenter::cannotStartRuntime() const
 
     /* Show error: */
     alert(0, MessageType_Error, strError.arg(strTable.arg(strUsage)));
-}
-
-void UIMessageCenter::showBetaBuildWarning() const
-{
-    alert(0, MessageType_Warning,
-          tr("You are running a prerelease version of VirtualBox. "
-             "This version is not suitable for production use."));
-}
-
-void UIMessageCenter::showExperimentalBuildWarning() const
-{
-    alert(0, MessageType_Warning,
-          tr("You are running an EXPERIMENTAL build of VirtualBox. "
-             "This version is not suitable for production use."));
 }
 
 void UIMessageCenter::cannotInitUserHome(const QString &strUserHome) const

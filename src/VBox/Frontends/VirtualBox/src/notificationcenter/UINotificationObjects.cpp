@@ -100,6 +100,24 @@ void UINotificationMessage::remindAboutAutoCapture()
 }
 
 /* static */
+void UINotificationMessage::remindAboutBetaBuild()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "BETA build warning!"),
+        QApplication::translate("UIMessageCenter", "You are running a prerelease version of VirtualBox. "
+                                                   "This version is not suitable for production use."));
+}
+
+/* static */
+void UINotificationMessage::remindAboutExperimentalBuild()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Experimental build warning!"),
+        QApplication::translate("UIMessageCenter", "You are running an EXPERIMENTAL build of VirtualBox. "
+                                                   "This version is not suitable for production use."));
+}
+
+/* static */
 void UINotificationMessage::remindAboutMouseIntegration(bool fSupportsAbsolute)
 {
     if (fSupportsAbsolute)

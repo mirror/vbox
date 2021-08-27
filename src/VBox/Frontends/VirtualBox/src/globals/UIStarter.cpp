@@ -22,6 +22,7 @@
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIStarter.h"
 #ifndef VBOX_RUNTIME_UI
 # include "UIVirtualBoxManager.h"
@@ -106,14 +107,14 @@ void UIStarter::sltStartUI()
 
 # ifdef VBOX_BLEEDING_EDGE
     /* Show EXPERIMENTAL BUILD warning: */
-    msgCenter().showExperimentalBuildWarning();
+    UINotificationMessage::remindAboutExperimentalBuild();
 # else /* !VBOX_BLEEDING_EDGE */
 #  ifndef DEBUG
     /* Show BETA warning if necessary: */
     const QString vboxVersion(uiCommon().virtualBox().GetVersion());
     if (   vboxVersion.contains("BETA")
         && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
-        msgCenter().showBetaBuildWarning();
+        UINotificationMessage::remindAboutBetaBuild();
 #  endif /* !DEBUG */
 # endif /* !VBOX_BLEEDING_EDGE */
 

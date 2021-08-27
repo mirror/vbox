@@ -69,6 +69,10 @@ public:
 
     /** Reminds about keyboard auto capturing. */
     static void remindAboutAutoCapture();
+    /** Reminds about BETA build. */
+    static void remindAboutBetaBuild();
+    /** Reminds about BETA build. */
+    static void remindAboutExperimentalBuild();
     /** Reminds about mouse integration.
       * @param  fSupportsAbsolute  Brings whether mouse supports absolute pointing. */
     static void remindAboutMouseIntegration(bool fSupportsAbsolute);
