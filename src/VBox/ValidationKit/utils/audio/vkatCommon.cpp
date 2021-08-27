@@ -1006,8 +1006,19 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
 
             rc = AudioTestSvcClientCreate(&pTstEnv->u.Host.AtsClValKit);
             if (RT_SUCCESS(rc))
+            {
                 rc = audioTestEnvConnectViaTcp(pTstEnv, &pTstEnv->u.Host.AtsClValKit,
                                                "host -> valkit", &ValKitTcpOpts);
+                if (RT_FAILURE(rc))
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Unable to connect to the Validation Kit audio driver!\n"
+                                                            "There could be mulitple reasons:\n\n"
+                                                            "    - Wrong host being used\n"
+                                                            "    - VirtualBox host version is too old\n"
+                                                            "    - Audio debug mode is not enabled\n"
+                                                            "    - Support for Validation Kit audio driver is not included\n"
+                                                            "    - Firewall / network configuration problem\n",
+                                 pTstEnv->szPathTemp);
+            }
         }
     }
 
