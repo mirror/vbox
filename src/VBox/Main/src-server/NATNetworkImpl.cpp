@@ -188,7 +188,7 @@ HRESULT NATNetwork::i_saveSettings(settings::NATNetwork &data)
                                           m->s.fAdvertiseDefaultIPv6Route,
                                           m->s.fNeedDhcpServer);
 
-    /* Notify listerners listening on this network only */
+    /* Notify listeners listening on this network only */
     ::FireNATNetworkSettingEvent(m->pEventSource,
                                  m->s.strNetworkName,
                                  m->s.fEnabled,
@@ -759,7 +759,7 @@ HRESULT NATNetwork::addPortForwardRule(BOOL aIsIpv6,
                                               aHostIp, aHostPort,
                                               aGuestIp, aGuestPort);
 
-    /* Notify listerners listening on this network only */
+    /* Notify listeners listening on this network only */
     ::FireNATNetworkPortForwardEvent(m->pEventSource, m->s.strNetworkName, TRUE,
                                      aIsIpv6, aPortForwardRuleName, aProto,
                                      aHostIp, aHostPort,
@@ -802,7 +802,7 @@ HRESULT NATNetwork::removePortForwardRule(BOOL aIsIpv6, const com::Utf8Str &aPor
     m->pVirtualBox->i_onNATNetworkPortForward(m->s.strNetworkName, FALSE, aIsIpv6, aPortForwardRuleName, proto,
                                               strHostIP, u16HostPort, strGuestIP, u16GuestPort);
 
-    /* Notify listerners listening on this network only */
+    /* Notify listeners listening on this network only */
     ::FireNATNetworkPortForwardEvent(m->pEventSource, m->s.strNetworkName, FALSE, aIsIpv6, aPortForwardRuleName, proto,
                                      strHostIP, u16HostPort, strGuestIP, u16GuestPort);
     return S_OK;
