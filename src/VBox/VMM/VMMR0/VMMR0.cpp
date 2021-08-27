@@ -3555,7 +3555,7 @@ static int vmmR0InitLoggers(PGVM pGVM)
             /*
              * Create the ring-0 release loggers.
              */
-            rc = vmmR0InitLoggerSet(pGVM, VMMLOGGER_IDX_RELEASE, _8K,
+            rc = vmmR0InitLoggerSet(pGVM, VMMLOGGER_IDX_RELEASE, _4K,
                                     &pGVM->vmmr0.s.hMemObjReleaseLogger, &pGVM->vmmr0.s.hMapObjReleaseLogger);
 #ifdef LOG_ENABLED
             if (RT_SUCCESS(rc))
