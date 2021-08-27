@@ -2621,8 +2621,8 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64VmcsField
         case VMX_VMCS64_CTRL_VMREAD_BITMAP_HIGH:
         case VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL:
         case VMX_VMCS64_CTRL_VMWRITE_BITMAP_HIGH:         return pFeat->fVmxVmcsShadowing;
-        case VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_FULL:
-        case VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH:     return pFeat->fVmxEptXcptVe;
+        case VMX_VMCS64_CTRL_VE_XCPT_INFO_ADDR_FULL:
+        case VMX_VMCS64_CTRL_VE_XCPT_INFO_ADDR_HIGH:      return pFeat->fVmxEptXcptVe;
         case VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL:
         case VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH:     return pFeat->fVmxXsavesXrstors;
         case VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_FULL:
