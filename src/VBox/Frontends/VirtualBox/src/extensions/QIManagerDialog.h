@@ -94,8 +94,8 @@ signals:
 
     /** Notifies listeners about dialog should be closed. */
     void sigClose();
-    /** Emitted when help botton is pressed. Listerners use @param strHelpKeyword to find related
-      * section in the manual and show it. */
+    /** Notifies listeners about help requested.
+      * @param  strHelpKeyword  Brings the tag to find related section in the manual. */
     void sigHelpRequested(const QString &strHelpKeyword);
 
 protected:
@@ -159,8 +159,7 @@ protected:
 
 private slots:
 
-    /** Possbily connected to QDialogBox::helpRequested signal and is used to emit sigHelpRequired
-      * with a proper help tag. */
+    /** Handles help request. */
     void sltHandleHelpRequested();
 
 private:
