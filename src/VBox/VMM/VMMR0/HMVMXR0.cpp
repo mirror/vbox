@@ -8735,7 +8735,6 @@ VMMR0DECL(int) VMXR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
 
     VMMRZCallRing3Disable(pVCpu);
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     Log4Func(("-> hmR0VmxLongJmpToRing3 enmOperation=%d\n", enmOperation));
 
@@ -9666,7 +9665,6 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
 {
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
 #ifdef HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
@@ -11015,7 +11013,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
 static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!pVCpu->hm.s.Event.fPending);
 
@@ -13251,7 +13248,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT p
         HMVMX_ASSERT_PREEMPT_CPUID_VAR(); \
         Log4Func(("vcpu[%RU32]\n", (a_pVCpu)->idCpu)); \
         HMVMX_ASSERT_PREEMPT_SAFE(a_pVCpu); \
-        if (VMMR0IsLogFlushDisabled((a_pVCpu))) \
+        if (!VMMRZCallRing3IsEnabled((a_pVCpu))) \
             HMVMX_ASSERT_PREEMPT_CPUID(); \
         HMVMX_STOP_EXIT_DISPATCH_PROF(); \
     } while (0)

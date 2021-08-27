@@ -2964,7 +2964,6 @@ static void hmR0SvmLeave(PVMCPUCC pVCpu, bool fImportState)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     /*
      * !!! IMPORTANT !!!
@@ -3106,7 +3105,6 @@ VMMR0DECL(int) SVMR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
     HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
 
     VMMRZCallRing3Disable(pVCpu);
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     Log4Func(("Calling hmR0SvmLongJmpToRing3\n"));
     int rc = hmR0SvmLongJmpToRing3(pVCpu);
@@ -4223,7 +4221,6 @@ static VBOXSTRICTRC hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransie
 static void hmR0SvmPreRunGuestCommitted(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
@@ -5494,7 +5491,7 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
         HMSVM_ASSERT_PREEMPT_CPUID_VAR(); \
         Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (a_pVCpu)->idCpu)); \
         HMSVM_ASSERT_PREEMPT_SAFE((a_pVCpu)); \
-        if (VMMR0IsLogFlushDisabled((a_pVCpu))) \
+        if (!VMMRZCallRing3IsEnabled((a_pVCpu))) \
             HMSVM_ASSERT_PREEMPT_CPUID(); \
     } while (0)
 #else
