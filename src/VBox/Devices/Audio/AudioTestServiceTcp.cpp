@@ -593,7 +593,10 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
             }
         }
         else
+        {
+            LogRelFunc(("Received invalid packet size (%zu)\n", cbData));
             rc = VERR_NET_PROTOCOL_ERROR;
+        }
     }
     if (RT_SUCCESS(rc))
         *ppPktHdr = (PATSPKTHDR)pbData;

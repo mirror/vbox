@@ -108,7 +108,9 @@ static int audioTestSvcClientRecvReply(PATSCLIENT pClient, PATSSRVREPLY pReply, 
     int rc = pClient->pTransport->pfnRecvPkt(pClient->pTransportInst, pClient->pTransportClient, &pPktHdr);
     if (RT_SUCCESS(rc))
     {
-        AssertReturn(pPktHdr->cb >= sizeof(ATSPKTHDR), VERR_NET_PROTOCOL_ERROR);
+        AssertReleaseMsgReturn(pPktHdr->cb >= sizeof(ATSPKTHDR),
+                               ("audioTestSvcClientRecvReply: Received invalid packet size (%RU32)\n", pPktHdr->cb),
+                               VERR_NET_PROTOCOL_ERROR);
         pReply->cbPayload = pPktHdr->cb - sizeof(ATSPKTHDR);
         Log3Func(("szOp=%.8s, cb=%RU32\n", pPktHdr->achOpcode, pPktHdr->cb));
         if (pReply->cbPayload)
@@ -121,6 +123,7 @@ static int audioTestSvcClientRecvReply(PATSCLIENT pClient, PATSSRVREPLY pReply, 
         if (   !pReply->cbPayload
             && !fNoDataOk)
         {
+            LogRelFunc(("Payload is empty (%zu), but caller expected data\n", pReply->cbPayload));
             rc = VERR_NET_PROTOCOL_ERROR;
         }
         else
@@ -152,7 +155,10 @@ static int audioTestSvcClientRecvAck(PATSCLIENT pClient)
     if (RT_SUCCESS(rc))
     {
         if (RTStrNCmp(Reply.szOp, "ACK     ", ATSPKT_OPCODE_MAX_LEN) != 0)
+        {
+            LogRelFunc(("Received invalid ACK opcode ('%.8s')\n", Reply.szOp));
             rc = VERR_NET_PROTOCOL_ERROR;
+        }
 
         audioTestSvcClientReplyDestroy(&Reply);
     }
