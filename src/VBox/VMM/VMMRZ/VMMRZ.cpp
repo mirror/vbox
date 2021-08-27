@@ -138,16 +138,10 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPUCC pVCpu)
     Assert(pVCpu->vmm.s.cCallRing3Disabled < 16);
     if (ASMAtomicUoIncU32(&pVCpu->vmm.s.cCallRing3Disabled) == 1)
     {
-        /** @todo it might make more sense to just disable logging here, then we
-         * won't flush away important bits... but that goes both ways really. */
 #ifdef IN_RC
         pVCpu->pVMRC->vmm.s.fRCLoggerFlushingDisabled = true;
 #else
         pVCpu->vmmr0.s.fLogFlushingDisabled = true;
-        if (pVCpu->vmmr0.s.u.s.Logger.pLogger)
-            pVCpu->vmmr0.s.u.s.Logger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
-        if (pVCpu->vmmr0.s.u.s.RelLogger.pLogger)
-            pVCpu->vmmr0.s.u.s.RelLogger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
 #endif
     }
 
@@ -177,10 +171,6 @@ VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPUCC pVCpu)
         pVCpu->pVMRC->vmm.s.fRCLoggerFlushingDisabled = false;
 #else
         pVCpu->vmmr0.s.fLogFlushingDisabled = false;
-        if (pVCpu->vmmr0.s.u.s.Logger.pLogger)
-            pVCpu->vmmr0.s.u.s.Logger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
-        if (pVCpu->vmmr0.s.u.s.RelLogger.pLogger)
-            pVCpu->vmmr0.s.u.s.RelLogger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
 #endif
     }
 

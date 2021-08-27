@@ -573,8 +573,6 @@ typedef VMMR0PERVCPU *PVMMR0PERVCPU;
 #define VMMR0_LOGGER_FLAGS_MAGIC_VALUE          UINT32_C(0x7d297f05)
 /** Part of the flags value used for the magic. */
 #define VMMR0_LOGGER_FLAGS_MAGIC_MASK           UINT32_C(0xffffff0f)
-/** Set if flushing is disabled (copy of fLogFlushingDisabled). */
-#define VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED    UINT32_C(0x00000010)
 /** @} */
 
 
