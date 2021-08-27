@@ -140,8 +140,10 @@ static int  VBoxDrvResume(struct platform_device *pDev);
 # endif
 static void VBoxDevRelease(struct device *pDev);
 #endif
+#if RTLNX_VER_MIN(5,0,0)
 static int  supdrvLinuxLdrModuleNotifyCallback(struct notifier_block *pBlock,
                                                unsigned long uModuleState, void *pvModule);
+#endif
 
 
 /*********************************************************************************************************************************
