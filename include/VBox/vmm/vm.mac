@@ -68,7 +68,7 @@ struc VMCPU
     alignb 64
     .tm                     resb 5760
     alignb 64
-    .vmm                    resb 960
+    .vmm                    resb 1152
     alignb 64
     .pdm                    resb 256
     alignb 64
