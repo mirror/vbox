@@ -1265,152 +1265,143 @@ typedef const LBRMSRS *PCLBRMSRS;
 
 
 /** @name VMX Basic Exit Reasons.
+ * In accordance with the VT-x spec.
+ * Update g_aVMExitHandlers if new VM-exit reasons are added.
  * @{
  */
-/** -1 Invalid exit code */
-#define VMX_EXIT_INVALID                                      (-1)
-/** 0 Exception or non-maskable interrupt (NMI). */
+/** Invalid exit code */
+#define VMX_EXIT_INVALID                                        (-1)
+/** Exception or non-maskable interrupt (NMI). */
 #define VMX_EXIT_XCPT_OR_NMI                                    0
-/** 1 External interrupt. */
+/** External interrupt. */
 #define VMX_EXIT_EXT_INT                                        1
-/** 2 Triple fault. */
+/** Triple fault. */
 #define VMX_EXIT_TRIPLE_FAULT                                   2
-/** 3 INIT signal. */
+/** INIT signal. */
 #define VMX_EXIT_INIT_SIGNAL                                    3
-/** 4 Start-up IPI (SIPI). */
+/** Start-up IPI (SIPI). */
 #define VMX_EXIT_SIPI                                           4
-/** 5 I/O system-management interrupt (SMI). */
+/** I/O system-management interrupt (SMI). */
 #define VMX_EXIT_IO_SMI                                         5
-/** 6 Other SMI. */
+/** Other SMI. */
 #define VMX_EXIT_SMI                                            6
-/** 7 Interrupt window exiting. */
+/** Interrupt window exiting. */
 #define VMX_EXIT_INT_WINDOW                                     7
-/** 8 NMI window exiting. */
+/** NMI window exiting. */
 #define VMX_EXIT_NMI_WINDOW                                     8
-/** 9 Task switch. */
+/** Task switch. */
 #define VMX_EXIT_TASK_SWITCH                                    9
-/** 10 Guest software attempted to execute CPUID. */
+/** CPUID. */
 #define VMX_EXIT_CPUID                                          10
-/** 11 Guest software attempted to execute GETSEC. */
+/** GETSEC. */
 #define VMX_EXIT_GETSEC                                         11
-/** 12 Guest software attempted to execute HLT. */
+/** HLT. */
 #define VMX_EXIT_HLT                                            12
-/** 13 Guest software attempted to execute INVD. */
+/** INVD. */
 #define VMX_EXIT_INVD                                           13
-/** 14 Guest software attempted to execute INVLPG. */
+/** INVLPG. */
 #define VMX_EXIT_INVLPG                                         14
-/** 15 Guest software attempted to execute RDPMC. */
+/** RDPMC. */
 #define VMX_EXIT_RDPMC                                          15
-/** 16 Guest software attempted to execute RDTSC. */
+/** RDTSC. */
 #define VMX_EXIT_RDTSC                                          16
-/** 17 Guest software attempted to execute RSM in SMM. */
+/** RSM in SMM. */
 #define VMX_EXIT_RSM                                            17
-/** 18 Guest software executed VMCALL. */
+/** VMCALL. */
 #define VMX_EXIT_VMCALL                                         18
-/** 19 Guest software executed VMCLEAR. */
+/** VMCLEAR. */
 #define VMX_EXIT_VMCLEAR                                        19
-/** 20 Guest software executed VMLAUNCH. */
+/** VMLAUNCH. */
 #define VMX_EXIT_VMLAUNCH                                       20
-/** 21 Guest software executed VMPTRLD. */
+/** VMPTRLD. */
 #define VMX_EXIT_VMPTRLD                                        21
-/** 22 Guest software executed VMPTRST. */
+/** VMPTRST. */
 #define VMX_EXIT_VMPTRST                                        22
-/** 23 Guest software executed VMREAD. */
+/** VMREAD. */
 #define VMX_EXIT_VMREAD                                         23
-/** 24 Guest software executed VMRESUME. */
+/** VMRESUME. */
 #define VMX_EXIT_VMRESUME                                       24
-/** 25 Guest software executed VMWRITE. */
+/** VMWRITE. */
 #define VMX_EXIT_VMWRITE                                        25
-/** 26 Guest software executed VMXOFF. */
+/** VMXOFF. */
 #define VMX_EXIT_VMXOFF                                         26
-/** 27 Guest software executed VMXON. */
+/** VMXON. */
 #define VMX_EXIT_VMXON                                          27
-/** 28 Control-register accesses. */
+/** Control-register accesses. */
 #define VMX_EXIT_MOV_CRX                                        28
-/** 29 Debug-register accesses. */
+/** Debug-register accesses. */
 #define VMX_EXIT_MOV_DRX                                        29
-/** 30 I/O instruction. */
+/** I/O instruction. */
 #define VMX_EXIT_IO_INSTR                                       30
-/** 31 RDMSR. Guest software attempted to execute RDMSR. */
+/** RDMSR. */
 #define VMX_EXIT_RDMSR                                          31
-/** 32 WRMSR. Guest software attempted to execute WRMSR. */
+/** WRMSR. */
 #define VMX_EXIT_WRMSR                                          32
-/** 33 VM-entry failure due to invalid guest state. */
+/** VM-entry failure due to invalid guest state. */
 #define VMX_EXIT_ERR_INVALID_GUEST_STATE                        33
-/** 34 VM-entry failure due to MSR loading. */
+/** VM-entry failure due to MSR loading. */
 #define VMX_EXIT_ERR_MSR_LOAD                                   34
-/** 36 Guest software executed MWAIT. */
+/** MWAIT. */
 #define VMX_EXIT_MWAIT                                          36
-/** 37 VM-exit due to monitor trap flag. */
+/** VM-exit due to monitor trap flag. */
 #define VMX_EXIT_MTF                                            37
-/** 39 Guest software attempted to execute MONITOR. */
+/** MONITOR. */
 #define VMX_EXIT_MONITOR                                        39
-/** 40 Guest software attempted to execute PAUSE. */
+/** PAUSE. */
 #define VMX_EXIT_PAUSE                                          40
-/** 41 VM-entry failure due to machine-check. */
+/** VM-entry failure due to machine-check. */
 #define VMX_EXIT_ERR_MACHINE_CHECK                              41
-/** 43 TPR below threshold. Guest software executed MOV to CR8. */
+/** TPR below threshold. Guest software executed MOV to CR8. */
 #define VMX_EXIT_TPR_BELOW_THRESHOLD                            43
-/** 44 APIC access. Guest software attempted to access memory at a physical
- *  address on the APIC-access page. */
+/** VM-exit due to guest accessing physical address in the APIC-access page. */
 #define VMX_EXIT_APIC_ACCESS                                    44
-/** 45 Virtualized EOI. EOI virtualization was performed for a virtual
- *  interrupt whose vector indexed a bit set in the EOI-exit bitmap. */
+/** VM-exit due to EOI virtualization. */
 #define VMX_EXIT_VIRTUALIZED_EOI                                45
-/** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT,
- *  SGDT, or SIDT. */
+/** Access to GDTR/IDTR using LGDT, LIDT, SGDT or SIDT. */
 #define VMX_EXIT_GDTR_IDTR_ACCESS                               46
-/** 47 Access to LDTR or TR. Guest software attempted to execute LLDT, LTR,
- *  SLDT, or STR. */
+/** Access to LDTR/TR due to LLDT, LTR, SLDT, or STR. */
 #define VMX_EXIT_LDTR_TR_ACCESS                                 47
-/** 48 EPT violation. An attempt to access memory with a guest-physical address
- *  was disallowed by the configuration of the EPT paging structures. */
+/** EPT violation. */
 #define VMX_EXIT_EPT_VIOLATION                                  48
-/** 49 EPT misconfiguration. An attempt to access memory with a guest-physical
- *  address encountered a misconfigured EPT paging-structure entry. */
+/** EPT misconfiguration. */
 #define VMX_EXIT_EPT_MISCONFIG                                  49
-/** 50 INVEPT. Guest software attempted to execute INVEPT. */
+/** INVEPT. */
 #define VMX_EXIT_INVEPT                                         50
-/** 51 RDTSCP. Guest software attempted to execute RDTSCP. */
+/** RDTSCP. */
 #define VMX_EXIT_RDTSCP                                         51
-/** 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
+/** VMX-preemption timer expired. */
 #define VMX_EXIT_PREEMPT_TIMER                                  52
-/** 53 INVVPID. Guest software attempted to execute INVVPID. */
+/** INVVPID. */
 #define VMX_EXIT_INVVPID                                        53
-/** 54 WBINVD. Guest software attempted to execute WBINVD. */
+/** WBINVD. */
 #define VMX_EXIT_WBINVD                                         54
-/** 55 XSETBV. Guest software attempted to execute XSETBV. */
+/** XSETBV. */
 #define VMX_EXIT_XSETBV                                         55
-/** 56 APIC write. Guest completed write to virtual-APIC. */
+/** Guest completed write to virtual-APIC. */
 #define VMX_EXIT_APIC_WRITE                                     56
-/** 57 RDRAND. Guest software attempted to execute RDRAND. */
+/** RDRAND. */
 #define VMX_EXIT_RDRAND                                         57
-/** 58 INVPCID. Guest software attempted to execute INVPCID. */
+/** INVPCID. */
 #define VMX_EXIT_INVPCID                                        58
-/** 59 VMFUNC. Guest software attempted to execute VMFUNC. */
+/** VMFUNC. */
 #define VMX_EXIT_VMFUNC                                         59
-/** 60 ENCLS. Guest software attempted to execute ENCLS. */
+/** ENCLS. */
 #define VMX_EXIT_ENCLS                                          60
-/** 61 - RDSEED - Guest software attempted to executed RDSEED and exiting was
- * enabled. */
+/** RDSEED. */
 #define VMX_EXIT_RDSEED                                         61
-/** 62 - Page-modification log full. */
+/** Page-modification log full. */
 #define VMX_EXIT_PML_FULL                                       62
-/** 63 - XSAVES. Guest software attempted to execute XSAVES and exiting was
- * enabled (XSAVES/XRSTORS was enabled too, of course). */
+/** XSAVES. */
 #define VMX_EXIT_XSAVES                                         63
-/** 64 - XRSTORS. Guest software attempted to execute XRSTORS and exiting
- * was enabled (XSAVES/XRSTORS was enabled too, of course). */
+/** XRSTORS. */
 #define VMX_EXIT_XRSTORS                                        64
-/** 66 - SPP-related event. Attempt to determine an access' sub-page write
- *  permission encountered an SPP miss or misconfiguration. */
+/** SPP-related event (SPP miss or misconfiguration). */
 #define VMX_EXIT_SPP_EVENT                                      66
-/* 67 - UMWAIT. Guest software attempted to execute UMWAIT and exiting was enabled. */
+/* UMWAIT. */
 #define VMX_EXIT_UMWAIT                                         67
-/** 68 - TPAUSE. Guest software attempted to execute TPAUSE and exiting was
- *  enabled. */
+/** TPAUSE. */
 #define VMX_EXIT_TPAUSE                                         68
-/** The maximum exit value (inclusive). */
+/** The maximum VM-exit value (inclusive). */
 #define VMX_EXIT_MAX                                            (VMX_EXIT_TPAUSE)
 /** @} */
 
@@ -2190,22 +2181,22 @@ AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
  *  controls field in the VMCS. */
 #define VMX_BF_PIN_CTLS_EXT_INT_EXIT_SHIFT                      0
 #define VMX_BF_PIN_CTLS_EXT_INT_EXIT_MASK                       UINT32_C(0x00000001)
-#define VMX_BF_PIN_CTLS_UNDEF_1_2_SHIFT                         1
-#define VMX_BF_PIN_CTLS_UNDEF_1_2_MASK                          UINT32_C(0x00000006)
+#define VMX_BF_PIN_CTLS_RSVD_1_2_SHIFT                          1
+#define VMX_BF_PIN_CTLS_RSVD_1_2_MASK                           UINT32_C(0x00000006)
 #define VMX_BF_PIN_CTLS_NMI_EXIT_SHIFT                          3
 #define VMX_BF_PIN_CTLS_NMI_EXIT_MASK                           UINT32_C(0x00000008)
-#define VMX_BF_PIN_CTLS_UNDEF_4_SHIFT                           4
-#define VMX_BF_PIN_CTLS_UNDEF_4_MASK                            UINT32_C(0x00000010)
+#define VMX_BF_PIN_CTLS_RSVD_4_SHIFT                            4
+#define VMX_BF_PIN_CTLS_RSVD_4_MASK                             UINT32_C(0x00000010)
 #define VMX_BF_PIN_CTLS_VIRT_NMI_SHIFT                          5
 #define VMX_BF_PIN_CTLS_VIRT_NMI_MASK                           UINT32_C(0x00000020)
 #define VMX_BF_PIN_CTLS_PREEMPT_TIMER_SHIFT                     6
 #define VMX_BF_PIN_CTLS_PREEMPT_TIMER_MASK                      UINT32_C(0x00000040)
 #define VMX_BF_PIN_CTLS_POSTED_INT_SHIFT                        7
 #define VMX_BF_PIN_CTLS_POSTED_INT_MASK                         UINT32_C(0x00000080)
-#define VMX_BF_PIN_CTLS_UNDEF_8_31_SHIFT                        8
-#define VMX_BF_PIN_CTLS_UNDEF_8_31_MASK                         UINT32_C(0xffffff00)
+#define VMX_BF_PIN_CTLS_RSVD_8_31_SHIFT                         8
+#define VMX_BF_PIN_CTLS_RSVD_8_31_MASK                          UINT32_C(0xffffff00)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
-                            (EXT_INT_EXIT, UNDEF_1_2, NMI_EXIT, UNDEF_4, VIRT_NMI, PREEMPT_TIMER, POSTED_INT, UNDEF_8_31));
+                            (EXT_INT_EXIT, RSVD_1_2, NMI_EXIT, RSVD_4, VIRT_NMI, PREEMPT_TIMER, POSTED_INT, RSVD_8_31));
 /** @} */
 
 
@@ -2261,18 +2252,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 
 /** Bit fields for MSR_IA32_VMX_PROCBASED_CTLS and Processor-based VM-execution
  *  controls field in the VMCS. */
-#define VMX_BF_PROC_CTLS_UNDEF_0_1_SHIFT                        0
-#define VMX_BF_PROC_CTLS_UNDEF_0_1_MASK                         UINT32_C(0x00000003)
+#define VMX_BF_PROC_CTLS_RSVD_0_1_SHIFT                         0
+#define VMX_BF_PROC_CTLS_RSVD_0_1_MASK                          UINT32_C(0x00000003)
 #define VMX_BF_PROC_CTLS_INT_WINDOW_EXIT_SHIFT                  2
 #define VMX_BF_PROC_CTLS_INT_WINDOW_EXIT_MASK                   UINT32_C(0x00000004)
 #define VMX_BF_PROC_CTLS_USE_TSC_OFFSETTING_SHIFT               3
 #define VMX_BF_PROC_CTLS_USE_TSC_OFFSETTING_MASK                UINT32_C(0x00000008)
-#define VMX_BF_PROC_CTLS_UNDEF_4_6_SHIFT                        4
-#define VMX_BF_PROC_CTLS_UNDEF_4_6_MASK                         UINT32_C(0x00000070)
+#define VMX_BF_PROC_CTLS_RSVD_4_6_SHIFT                         4
+#define VMX_BF_PROC_CTLS_RSVD_4_6_MASK                          UINT32_C(0x00000070)
 #define VMX_BF_PROC_CTLS_HLT_EXIT_SHIFT                         7
 #define VMX_BF_PROC_CTLS_HLT_EXIT_MASK                          UINT32_C(0x00000080)
-#define VMX_BF_PROC_CTLS_UNDEF_8_SHIFT                          8
-#define VMX_BF_PROC_CTLS_UNDEF_8_MASK                           UINT32_C(0x00000100)
+#define VMX_BF_PROC_CTLS_RSVD_8_SHIFT                           8
+#define VMX_BF_PROC_CTLS_RSVD_8_MASK                            UINT32_C(0x00000100)
 #define VMX_BF_PROC_CTLS_INVLPG_EXIT_SHIFT                      9
 #define VMX_BF_PROC_CTLS_INVLPG_EXIT_MASK                       UINT32_C(0x00000200)
 #define VMX_BF_PROC_CTLS_MWAIT_EXIT_SHIFT                       10
@@ -2281,14 +2272,14 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS_RDPMC_EXIT_MASK                        UINT32_C(0x00000800)
 #define VMX_BF_PROC_CTLS_RDTSC_EXIT_SHIFT                       12
 #define VMX_BF_PROC_CTLS_RDTSC_EXIT_MASK                        UINT32_C(0x00001000)
-#define VMX_BF_PROC_CTLS_UNDEF_13_14_SHIFT                      13
-#define VMX_BF_PROC_CTLS_UNDEF_13_14_MASK                       UINT32_C(0x00006000)
+#define VMX_BF_PROC_CTLS_RSVD_13_14_SHIFT                       13
+#define VMX_BF_PROC_CTLS_RSVD_13_14_MASK                        UINT32_C(0x00006000)
 #define VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_SHIFT                    15
 #define VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_MASK                     UINT32_C(0x00008000)
 #define VMX_BF_PROC_CTLS_CR3_STORE_EXIT_SHIFT                   16
 #define VMX_BF_PROC_CTLS_CR3_STORE_EXIT_MASK                    UINT32_C(0x00010000)
-#define VMX_BF_PROC_CTLS_UNDEF_17_18_SHIFT                      17
-#define VMX_BF_PROC_CTLS_UNDEF_17_18_MASK                       UINT32_C(0x00060000)
+#define VMX_BF_PROC_CTLS_RSVD_17_18_SHIFT                       17
+#define VMX_BF_PROC_CTLS_RSVD_17_18_MASK                        UINT32_C(0x00060000)
 #define VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_SHIFT                    19
 #define VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_MASK                     UINT32_C(0x00080000)
 #define VMX_BF_PROC_CTLS_CR8_STORE_EXIT_SHIFT                   20
@@ -2303,8 +2294,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS_UNCOND_IO_EXIT_MASK                    UINT32_C(0x01000000)
 #define VMX_BF_PROC_CTLS_USE_IO_BITMAPS_SHIFT                   25
 #define VMX_BF_PROC_CTLS_USE_IO_BITMAPS_MASK                    UINT32_C(0x02000000)
-#define VMX_BF_PROC_CTLS_UNDEF_26_SHIFT                         26
-#define VMX_BF_PROC_CTLS_UNDEF_26_MASK                          UINT32_C(0x4000000)
+#define VMX_BF_PROC_CTLS_RSVD_26_SHIFT                          26
+#define VMX_BF_PROC_CTLS_RSVD_26_MASK                           UINT32_C(0x4000000)
 #define VMX_BF_PROC_CTLS_MONITOR_TRAP_FLAG_SHIFT                27
 #define VMX_BF_PROC_CTLS_MONITOR_TRAP_FLAG_MASK                 UINT32_C(0x08000000)
 #define VMX_BF_PROC_CTLS_USE_MSR_BITMAPS_SHIFT                  28
@@ -2316,10 +2307,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_SHIFT               31
 #define VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_MASK                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
-                            (UNDEF_0_1, INT_WINDOW_EXIT, USE_TSC_OFFSETTING, UNDEF_4_6, HLT_EXIT, UNDEF_8, INVLPG_EXIT,
-                             MWAIT_EXIT, RDPMC_EXIT, RDTSC_EXIT, UNDEF_13_14, CR3_LOAD_EXIT, CR3_STORE_EXIT, UNDEF_17_18,
+                            (RSVD_0_1, INT_WINDOW_EXIT, USE_TSC_OFFSETTING, RSVD_4_6, HLT_EXIT, RSVD_8, INVLPG_EXIT,
+                             MWAIT_EXIT, RDPMC_EXIT, RDTSC_EXIT, RSVD_13_14, CR3_LOAD_EXIT, CR3_STORE_EXIT, RSVD_17_18,
                              CR8_LOAD_EXIT, CR8_STORE_EXIT, USE_TPR_SHADOW, NMI_WINDOW_EXIT, MOV_DR_EXIT, UNCOND_IO_EXIT,
-                             USE_IO_BITMAPS, UNDEF_26, MONITOR_TRAP_FLAG, USE_MSR_BITMAPS, MONITOR_EXIT, PAUSE_EXIT,
+                             USE_IO_BITMAPS, RSVD_26, MONITOR_TRAP_FLAG, USE_MSR_BITMAPS, MONITOR_EXIT, PAUSE_EXIT,
                              USE_SECONDARY_CTLS));
 /** @} */
 
@@ -2428,8 +2419,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_CONCEAL_VMX_FROM_PT_MASK              UINT32_C(0x00080000)
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT                  20
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_MASK                   UINT32_C(0x00100000)
-#define VMX_BF_PROC_CTLS2_UNDEF_21_SHIFT                        21
-#define VMX_BF_PROC_CTLS2_UNDEF_21_MASK                         UINT32_C(0x00200000)
+#define VMX_BF_PROC_CTLS2_RSVD_21_SHIFT                         21
+#define VMX_BF_PROC_CTLS2_RSVD_21_MASK                          UINT32_C(0x00200000)
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_SHIFT             22
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_MASK              UINT32_C(0x00400000)
 #define VMX_BF_PROC_CTLS2_SPPTP_EPT_SHIFT                       23
@@ -2440,19 +2431,36 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_TSC_SCALING_MASK                      UINT32_C(0x02000000)
 #define VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_SHIFT                 26
 #define VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_MASK                  UINT32_C(0x04000000)
-#define VMX_BF_PROC_CTLS2_UNDEF_27_SHIFT                        27
-#define VMX_BF_PROC_CTLS2_UNDEF_27_MASK                         UINT32_C(0x08000000)
+#define VMX_BF_PROC_CTLS2_RSVD_27_SHIFT                         27
+#define VMX_BF_PROC_CTLS2_RSVD_27_MASK                          UINT32_C(0x08000000)
 #define VMX_BF_PROC_CTLS2_ENCLV_EXIT_SHIFT                      28
 #define VMX_BF_PROC_CTLS2_ENCLV_EXIT_MASK                       UINT32_C(0x10000000)
-#define VMX_BF_PROC_CTLS2_UNDEF_29_31_SHIFT                     29
-#define VMX_BF_PROC_CTLS2_UNDEF_29_31_MASK                      UINT32_C(0xe0000000)
+#define VMX_BF_PROC_CTLS2_RSVD_29_31_SHIFT                      29
+#define VMX_BF_PROC_CTLS2_RSVD_29_31_MASK                       UINT32_C(0xe0000000)
 
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
                             (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_MODE, VPID, WBINVD_EXIT,
                              UNRESTRICTED_GUEST, APIC_REG_VIRT, VIRT_INT_DELIVERY, PAUSE_LOOP_EXIT, RDRAND_EXIT, INVPCID, VMFUNC,
-                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_VMX_FROM_PT, XSAVES_XRSTORS, UNDEF_21,
-                             MODE_BASED_EPT_PERM, SPPTP_EPT, PT_EPT, TSC_SCALING, USER_WAIT_PAUSE, UNDEF_27, ENCLV_EXIT,
-                             UNDEF_29_31));
+                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_VMX_FROM_PT, XSAVES_XRSTORS, RSVD_21,
+                             MODE_BASED_EPT_PERM, SPPTP_EPT, PT_EPT, TSC_SCALING, USER_WAIT_PAUSE, RSVD_27, ENCLV_EXIT,
+                             RSVD_29_31));
+/** @} */
+
+
+/** @name Tertiary Processor-based VM-execution controls.
+ * @{
+ */
+/** VM-exit when executing LOADIWKEY. */
+#define VMX_PROC_CTLS3_LOADIWKEY_EXIT                           RT_BIT_64(0)
+
+/** Bit fields for Tertiary processor-based VM-execution controls field in the VMCS. */
+#define VMX_BF_PROC_CTLS3_LOADIWKEY_EXIT_SHIFT                  0
+#define VMX_BF_PROC_CTLS3_LOADIWKEY_EXIT_MASK                   UINT64_C(0x0000000000000001)
+#define VMX_BF_PROC_CTLS3_RSVD_1_63_SHIFT                       1
+#define VMX_BF_PROC_CTLS3_RSVD_1_63_MASK                        UINT64_C(0xfffffffffffffffe)
+
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS3_, UINT64_C(0), UINT64_MAX,
+                            (LOADIWKEY_EXIT, RSVD_1_63));
 /** @} */
 
 
@@ -2487,20 +2495,20 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 
 /** Bit fields for MSR_IA32_VMX_ENTRY_CTLS and VM-entry controls field in the
  *  VMCS. */
-#define VMX_BF_ENTRY_CTLS_UNDEF_0_1_SHIFT                       0
-#define VMX_BF_ENTRY_CTLS_UNDEF_0_1_MASK                        UINT32_C(0x00000003)
+#define VMX_BF_ENTRY_CTLS_RSVD_0_1_SHIFT                        0
+#define VMX_BF_ENTRY_CTLS_RSVD_0_1_MASK                         UINT32_C(0x00000003)
 #define VMX_BF_ENTRY_CTLS_LOAD_DEBUG_SHIFT                      2
 #define VMX_BF_ENTRY_CTLS_LOAD_DEBUG_MASK                       UINT32_C(0x00000004)
-#define VMX_BF_ENTRY_CTLS_UNDEF_3_8_SHIFT                       3
-#define VMX_BF_ENTRY_CTLS_UNDEF_3_8_MASK                        UINT32_C(0x000001f8)
+#define VMX_BF_ENTRY_CTLS_RSVD_3_8_SHIFT                        3
+#define VMX_BF_ENTRY_CTLS_RSVD_3_8_MASK                         UINT32_C(0x000001f8)
 #define VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_SHIFT                9
 #define VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_MASK                 UINT32_C(0x00000200)
 #define VMX_BF_ENTRY_CTLS_ENTRY_SMM_SHIFT                       10
 #define VMX_BF_ENTRY_CTLS_ENTRY_SMM_MASK                        UINT32_C(0x00000400)
 #define VMX_BF_ENTRY_CTLS_DEACTIVATE_DUAL_MON_SHIFT             11
 #define VMX_BF_ENTRY_CTLS_DEACTIVATE_DUAL_MON_MASK              UINT32_C(0x00000800)
-#define VMX_BF_ENTRY_CTLS_UNDEF_12_SHIFT                        12
-#define VMX_BF_ENTRY_CTLS_UNDEF_12_MASK                         UINT32_C(0x00001000)
+#define VMX_BF_ENTRY_CTLS_RSVD_12_SHIFT                         12
+#define VMX_BF_ENTRY_CTLS_RSVD_12_MASK                          UINT32_C(0x00001000)
 #define VMX_BF_ENTRY_CTLS_LOAD_PERF_MSR_SHIFT                   13
 #define VMX_BF_ENTRY_CTLS_LOAD_PERF_MSR_MASK                    UINT32_C(0x00002000)
 #define VMX_BF_ENTRY_CTLS_LOAD_PAT_MSR_SHIFT                    14
@@ -2513,12 +2521,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_FROM_PT_MASK              UINT32_C(0x00020000)
 #define VMX_BF_ENTRY_CTLS_LOAD_RTIT_CTL_MSR_SHIFT               18
 #define VMX_BF_ENTRY_CTLS_LOAD_RTIT_CTL_MSR_MASK                UINT32_C(0x00040000)
-#define VMX_BF_ENTRY_CTLS_UNDEF_19_31_SHIFT                     19
-#define VMX_BF_ENTRY_CTLS_UNDEF_19_31_MASK                      UINT32_C(0xfff80000)
+#define VMX_BF_ENTRY_CTLS_RSVD_19_31_SHIFT                      19
+#define VMX_BF_ENTRY_CTLS_RSVD_19_31_MASK                       UINT32_C(0xfff80000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
-                            (UNDEF_0_1, LOAD_DEBUG, UNDEF_3_8, IA32E_MODE_GUEST, ENTRY_SMM, DEACTIVATE_DUAL_MON, UNDEF_12,
+                            (RSVD_0_1, LOAD_DEBUG, RSVD_3_8, IA32E_MODE_GUEST, ENTRY_SMM, DEACTIVATE_DUAL_MON, RSVD_12,
                              LOAD_PERF_MSR, LOAD_PAT_MSR, LOAD_EFER_MSR, LOAD_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT,
-                             LOAD_RTIT_CTL_MSR, UNDEF_19_31));
+                             LOAD_RTIT_CTL_MSR, RSVD_19_31));
 /** @} */
 
 
@@ -2557,24 +2565,24 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 
 /** Bit fields for MSR_IA32_VMX_EXIT_CTLS and VM-exit controls field in the
  *  VMCS. */
-#define VMX_BF_EXIT_CTLS_UNDEF_0_1_SHIFT                        0
-#define VMX_BF_EXIT_CTLS_UNDEF_0_1_MASK                         UINT32_C(0x00000003)
+#define VMX_BF_EXIT_CTLS_RSVD_0_1_SHIFT                         0
+#define VMX_BF_EXIT_CTLS_RSVD_0_1_MASK                          UINT32_C(0x00000003)
 #define VMX_BF_EXIT_CTLS_SAVE_DEBUG_SHIFT                       2
 #define VMX_BF_EXIT_CTLS_SAVE_DEBUG_MASK                        UINT32_C(0x00000004)
-#define VMX_BF_EXIT_CTLS_UNDEF_3_8_SHIFT                        3
-#define VMX_BF_EXIT_CTLS_UNDEF_3_8_MASK                         UINT32_C(0x000001f8)
+#define VMX_BF_EXIT_CTLS_RSVD_3_8_SHIFT                         3
+#define VMX_BF_EXIT_CTLS_RSVD_3_8_MASK                          UINT32_C(0x000001f8)
 #define VMX_BF_EXIT_CTLS_HOST_ADDR_SPACE_SIZE_SHIFT             9
 #define VMX_BF_EXIT_CTLS_HOST_ADDR_SPACE_SIZE_MASK              UINT32_C(0x00000200)
-#define VMX_BF_EXIT_CTLS_UNDEF_10_11_SHIFT                      10
-#define VMX_BF_EXIT_CTLS_UNDEF_10_11_MASK                       UINT32_C(0x00000c00)
+#define VMX_BF_EXIT_CTLS_RSVD_10_11_SHIFT                       10
+#define VMX_BF_EXIT_CTLS_RSVD_10_11_MASK                        UINT32_C(0x00000c00)
 #define VMX_BF_EXIT_CTLS_LOAD_PERF_MSR_SHIFT                    12
 #define VMX_BF_EXIT_CTLS_LOAD_PERF_MSR_MASK                     UINT32_C(0x00001000)
-#define VMX_BF_EXIT_CTLS_UNDEF_13_14_SHIFT                      13
-#define VMX_BF_EXIT_CTLS_UNDEF_13_14_MASK                       UINT32_C(0x00006000)
+#define VMX_BF_EXIT_CTLS_RSVD_13_14_SHIFT                       13
+#define VMX_BF_EXIT_CTLS_RSVD_13_14_MASK                        UINT32_C(0x00006000)
 #define VMX_BF_EXIT_CTLS_ACK_EXT_INT_SHIFT                      15
 #define VMX_BF_EXIT_CTLS_ACK_EXT_INT_MASK                       UINT32_C(0x00008000)
-#define VMX_BF_EXIT_CTLS_UNDEF_16_17_SHIFT                      16
-#define VMX_BF_EXIT_CTLS_UNDEF_16_17_MASK                       UINT32_C(0x00030000)
+#define VMX_BF_EXIT_CTLS_RSVD_16_17_SHIFT                       16
+#define VMX_BF_EXIT_CTLS_RSVD_16_17_MASK                        UINT32_C(0x00030000)
 #define VMX_BF_EXIT_CTLS_SAVE_PAT_MSR_SHIFT                     18
 #define VMX_BF_EXIT_CTLS_SAVE_PAT_MSR_MASK                      UINT32_C(0x00040000)
 #define VMX_BF_EXIT_CTLS_LOAD_PAT_MSR_SHIFT                     19
@@ -2591,12 +2599,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_EXIT_CTLS_CONCEAL_VMX_FROM_PT_MASK               UINT32_C(0x01000000)
 #define VMX_BF_EXIT_CTLS_CLEAR_RTIT_CTL_MSR_SHIFT               25
 #define VMX_BF_EXIT_CTLS_CLEAR_RTIT_CTL_MSR_MASK                UINT32_C(0x02000000)
-#define VMX_BF_EXIT_CTLS_UNDEF_26_31_SHIFT                      26
-#define VMX_BF_EXIT_CTLS_UNDEF_26_31_MASK                       UINT32_C(0xfc000000)
+#define VMX_BF_EXIT_CTLS_RSVD_26_31_SHIFT                       26
+#define VMX_BF_EXIT_CTLS_RSVD_26_31_MASK                        UINT32_C(0xfc000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
-                            (UNDEF_0_1, SAVE_DEBUG, UNDEF_3_8, HOST_ADDR_SPACE_SIZE, UNDEF_10_11, LOAD_PERF_MSR, UNDEF_13_14,
-                             ACK_EXT_INT, UNDEF_16_17, SAVE_PAT_MSR, LOAD_PAT_MSR, SAVE_EFER_MSR, LOAD_EFER_MSR,
-                             SAVE_PREEMPT_TIMER, CLEAR_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT, CLEAR_RTIT_CTL_MSR, UNDEF_26_31));
+                            (RSVD_0_1, SAVE_DEBUG, RSVD_3_8, HOST_ADDR_SPACE_SIZE, RSVD_10_11, LOAD_PERF_MSR, RSVD_13_14,
+                             ACK_EXT_INT, RSVD_16_17, SAVE_PAT_MSR, LOAD_PAT_MSR, SAVE_EFER_MSR, LOAD_EFER_MSR,
+                             SAVE_PREEMPT_TIMER, CLEAR_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT, CLEAR_RTIT_CTL_MSR, RSVD_26_31));
 /** @} */
 
 
