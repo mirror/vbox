@@ -4813,10 +4813,12 @@ TEMPLATE_VBoxR0_DTRACE_OBJ_FLAGS   += --pic
 TEMPLATE_VBoxR0_CFLAGS.amd64       += -mcmodel=kernel
 TEMPLATE_VBoxR0_CXXFLAGS.amd64     += -mcmodel=kernel
  endif
- ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS
+ ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS # For BTF/pahold issue we use -g1
 TEMPLATE_VBoxR0_DEFS               += VBOX_WITH_KMOD_WRAPPED_R0_MODS
 TEMPLATE_VBoxR0_LDFLAGS.linux      += $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
 TEMPLATE_VBoxR0_LNK_DEPS.linux     += $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
+TEMPLATE_VBoxR0_CFLAGS.linux       += -g1
+TEMPLATE_VBoxR0_CXXFLAGS.linux     += -g1
  endif
  ifn1of ($(KBUILD_TARGET),solaris freebsd)
  TEMPLATE_VBoxR0_LIBS               = \
