@@ -1016,8 +1016,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
                                                             "    - VirtualBox host version is too old\n"
                                                             "    - Audio debug mode is not enabled\n"
                                                             "    - Support for Validation Kit audio driver is not included\n"
-                                                            "    - Firewall / network configuration problem\n",
-                                 pTstEnv->szPathTemp);
+                                                            "    - Firewall / network configuration problem\n");
             }
         }
     }
