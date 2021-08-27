@@ -384,6 +384,8 @@
 /** Returned by RTThreadQueryTerminationStatus to indicate that the thread is
  * (or should be) terminating. */
 #define VINF_THREAD_IS_TERMINATING          (22424)
+/** The thread is terminating. */
+#define VERR_THREAD_IS_TERMINATING          (-22424)
 /** @} */
 
 

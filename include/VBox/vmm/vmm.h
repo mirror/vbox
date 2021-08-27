@@ -74,8 +74,6 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE,
     /** Acquire the MM hypervisor heap lock. */
     VMMCALLRING3_MMHYPER_LOCK,
-    /** Flush the GC/R0 logger. */
-    VMMCALLRING3_VMM_LOGGER_FLUSH,
     /** Set the VM error message. */
     VMMCALLRING3_VM_SET_ERROR,
     /** Set the VM runtime error message. */
@@ -298,6 +296,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_VMMR0_TERM,
     /** Copy logger settings from userland, VMMR0UpdateLoggersReq(). */
     VMMR0_DO_VMMR0_UPDATE_LOGGERS,
+    /** Used by the log flusher, VMMR0LogFlusher.  */
+    VMMR0_DO_VMMR0_LOG_FLUSHER,
 
     /** Setup hardware-assisted VM session. */
     VMMR0_DO_HM_SETUP_VM = 128,

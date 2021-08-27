@@ -25,6 +25,7 @@
 #include <VBox/sup.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vmm.h>
+#include <VBox/param.h>
 #include <VBox/log.h>
 #include <iprt/critsect.h>
 
@@ -80,7 +81,13 @@ typedef struct VMMR0PERVCPULOGGER
     RTLOGBUFFERDESC         BufDesc;
     /** Flag indicating whether we've registered the instance already. */
     bool                    fRegistered;
-    bool                    afPadding[7];
+    /** Set by the logger thread to indicate that buffer has been flushed.  */
+    bool volatile           fFlushDone;
+    /** Set while we're inside vmmR0LoggerFlushCommon to prevent recursion. */
+    bool                    fFlushing;
+    bool                    afPadding[5];
+    /** The event semaphore the EMT waits on while the buffer is being flushed. */
+    RTSEMEVENT              hEventFlushWait;
 } VMMR0PERVCPULOGGER;
 /** Pointer to the R0 logger data (ring-0 only). */
 typedef VMMR0PERVCPULOGGER *PVMMR0PERVCPULOGGER;
@@ -97,7 +104,8 @@ typedef struct VMMR3CPULOGGER
     R3PTRTYPE(char *)       pchBufR3;
     /** The buffer size. */
     uint32_t                cbBuf;
-    uint32_t                uReserved;
+    /** Number of bytes dropped because the flush context didn't allow waiting.  */
+    uint32_t                cbDropped;
 } VMMR3CPULOGGER;
 /** Pointer to r0 logger data shared with ring-3. */
 typedef VMMR3CPULOGGER *PVMMR3CPULOGGER;
@@ -197,6 +205,30 @@ typedef VMMR0JMPBUF *PVMMR0JMPBUF;
 
 
 /**
+ * Log flusher job.
+ *
+ * There is a ring buffer of these in ring-0 (VMMR0PERVM::aLogFlushRing) and a
+ * copy of the current one in the shared VM structure (VMM::LogFlusherItem).
+ */
+typedef union VMMLOGFLUSHERENTRY
+{
+    struct
+    {
+        /** The virtual CPU ID. */
+        uint32_t            idCpu : 16;
+        /** The logger: 0 for release, 1 for debug. */
+        uint32_t            idxLogger : 8;
+        /** The buffer to be flushed. */
+        uint32_t            idxBuffer : 7;
+        /** Set by the flusher thread once it fetched the entry and started
+         *  processing it. */
+        uint32_t            fProcessing : 1;
+    } s;
+    uint32_t                u32;
+} VMMLOGFLUSHERENTRY;
+
+
+/**
  * VMM Data (part of VM)
  */
 typedef struct VMM
@@ -285,8 +317,15 @@ typedef struct VMM
     /** Buffer for storing the custom message for a ring-0 assertion. */
     char                        szRing0AssertMsg2[256];
 
+    /** @name Logging
+     * @{ */
     /** Used when setting up ring-0 logger. */
     uint64_t                    nsProgramStart;
+    /** Log flusher thread. */
+    RTTHREAD                    hLogFlusherThread;
+    /** Copy of the current work log flusher work item. */
+    VMMLOGFLUSHERENTRY volatile LogFlusherItem;
+    /** @} */
 
     /** Number of VMMR0_DO_HM_RUN or VMMR0_DO_NEM_RUN calls. */
     STAMCOUNTER                 StatRunGC;
@@ -348,7 +387,6 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPatchTPR;
     STAMCOUNTER                 StatRZCallPDMCritSectEnter;
     STAMCOUNTER                 StatRZCallPDMLock;
-    STAMCOUNTER                 StatRZCallLogFlush;
     STAMCOUNTER                 StatRZCallPGMPoolGrow;
     STAMCOUNTER                 StatRZCallPGMMapChunk;
     STAMCOUNTER                 StatRZCallPGMAllocHandy;
@@ -463,12 +501,11 @@ typedef VMMCPU *PVMMCPU;
  */
 typedef struct VMMR0PERVCPU
 {
-    /** Set if we've entered HM context. */
-    bool volatile                       fInHmContext;
-    /** Flag indicating whether we've disabled flushing (world switch) or not. */
-    bool                                fLogFlushingDisabled;
     /** The EMT hash table index. */
     uint16_t                            idxEmtHash;
+    /** Flag indicating whether we've disabled flushing (world switch) or not. */
+    bool                                fLogFlushingDisabled;
+    bool                                afPadding1[5];
     /** Pointer to the VMMR0EntryFast preemption state structure.
      * This is used to temporarily restore preemption before blocking.  */
     R0PTRTYPE(PRTTHREADPREEMPTSTATE)    pPreemptState;
@@ -514,20 +551,48 @@ typedef VMMR0PERVCPU *PVMMR0PERVCPU;
  */
 typedef struct VMMR0PERVM
 {
+    /** Set if vmmR0InitVM has been called. */
+    bool                    fCalledInitVm;
+    bool                    afPadding1[7];
+
+    /** @name Logging
+     *  @{ */
     /** Logger (debug) buffer allocation.
      * This covers all CPUs.  */
-    RTR0MEMOBJ          hMemObjLogger;
+    RTR0MEMOBJ              hMemObjLogger;
     /** The ring-3 mapping object for hMemObjLogger. */
-    RTR0MEMOBJ          hMapObjLogger;
+    RTR0MEMOBJ              hMapObjLogger;
 
     /** Release logger buffer allocation.
      * This covers all CPUs.  */
-    RTR0MEMOBJ          hMemObjReleaseLogger;
+    RTR0MEMOBJ              hMemObjReleaseLogger;
     /** The ring-3 mapping object for hMemObjReleaseLogger. */
-    RTR0MEMOBJ          hMapObjReleaseLogger;
+    RTR0MEMOBJ              hMapObjReleaseLogger;
 
-    /** Set if vmmR0InitVM has been called. */
-    bool                fCalledInitVm;
+    struct
+    {
+        /** Spinlock protecting the logger ring buffer and associated variables. */
+        R0PTRTYPE(RTSPINLOCK)   hSpinlock;
+        /** The log flusher thread handle to make sure there is only one. */
+        RTNATIVETHREAD          hThread;
+        /** The handle to the event semaphore the log flusher waits on. */
+        RTSEMEVENT              hEvent;
+        /** The index of the log flusher queue head (flusher thread side). */
+        uint32_t volatile       idxRingHead;
+        /** The index of the log flusher queue tail (EMT side). */
+        uint32_t volatile       idxRingTail;
+        /** Set if the log flusher thread is waiting for work and needs poking. */
+        bool volatile           fThreadWaiting;
+        /** Set when the log flusher thread should shut down. */
+        bool volatile           fThreadShutdown;
+        /** Indicates that the log flusher thread is running. */
+        bool volatile           fThreadRunning;
+        bool                    afPadding2[5];
+        /** Logger ring buffer.
+         * This is for communicating with the log flusher thread.  */
+        VMMLOGFLUSHERENTRY      aRing[VMM_MAX_CPU_COUNT * 2 /*loggers*/ * 1 /*buffer*/ + 16 /*fudge*/];
+    } LogFlusher;
+    /** @} */
 } VMMR0PERVM;
 
 RT_C_DECLS_BEGIN

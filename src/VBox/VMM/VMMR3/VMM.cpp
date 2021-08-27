@@ -175,6 +175,7 @@ static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, TMTIMERHANDLE hTimer, void *p
 static VBOXSTRICTRC         vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
                                                      uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
 static int                  vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu);
+static FNRTTHREAD           vmmR3LogFlusher;
 static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
@@ -292,13 +293,22 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
         if (RT_SUCCESS(rc))
         {
             /*
-             * Debug info and statistics.
+             * Start the log flusher thread.
              */
-            DBGFR3InfoRegisterInternal(pVM, "fflags", "Displays the current Forced actions Flags.", vmmR3InfoFF);
-            vmmR3InitRegisterStats(pVM);
-            vmmInitFormatTypes();
+            rc = RTThreadCreate(&pVM->vmm.s.hLogFlusherThread, vmmR3LogFlusher, pVM, 0 /*cbStack*/,
+                                RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "R0LogWrk");
+            if (RT_SUCCESS(rc))
+            {
 
-            return VINF_SUCCESS;
+                /*
+                 * Debug info and statistics.
+                 */
+                DBGFR3InfoRegisterInternal(pVM, "fflags", "Displays the current Forced actions Flags.", vmmR3InfoFF);
+                vmmR3InitRegisterStats(pVM);
+                vmmInitFormatTypes();
+
+                return VINF_SUCCESS;
+            }
         }
     }
     /** @todo Need failure cleanup? */
@@ -423,7 +433,6 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMPoolGrow,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMPoolGrow",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_POOL_GROW calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMMapChunk,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMMapChunk",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_MAP_CHUNK calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMAllocHandy,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMAllocHandy",    STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallLogFlush,           STAMTYPE_COUNTER, "/VMM/RZCallR3/VMMLogFlush",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VMM_LOGGER_FLUSH calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetError,         STAMTYPE_COUNTER, "/VMM/RZCallR3/VMSetError",       STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_ERROR calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_RUNTIME_ERROR calls.");
 
@@ -683,6 +692,18 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
     pVM->vmm.s.hEvtRendezvousRecursionPopCaller = NIL_RTSEMEVENT;
 
     vmmTermFormatTypes();
+
+    /*
+     * Wait for the log flusher thread to complete.
+     */
+    if (pVM->vmm.s.hLogFlusherThread != NIL_RTTHREAD)
+    {
+        int rc2 = RTThreadWait(pVM->vmm.s.hLogFlusherThread, RT_MS_30SEC, NULL);
+        AssertLogRelRC(rc2);
+        if (RT_SUCCESS(rc2))
+            pVM->vmm.s.hLogFlusherThread = NIL_RTTHREAD;
+    }
+
     return rc;
 }
 
@@ -779,6 +800,116 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
         rcRelease = vmmR3UpdateLoggersWorker(pVM, pVCpu, pRelease, true /*fReleaseLogger*/);
 
     return RT_SUCCESS(rcDebug) ? rcRelease : rcDebug;
+}
+
+
+/**
+ * @callback_method_impl{FNRTTHREAD, Ring-0 log flusher thread.}
+ */
+static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
+{
+    PVM const pVM = (PVM)pvUser;
+    RT_NOREF(hThreadSelf);
+
+    /* Reset the flusher state before we start: */
+    pVM->vmm.s.LogFlusherItem.u32 = UINT32_MAX;
+
+    /* The loggers. */
+    PRTLOGGER const apLoggers[2] = { RTLogRelGetDefaultInstance(), RTLogGetDefaultInstance() };
+
+    /*
+     * The work loop.
+     */
+    for (;;)
+    {
+        /*
+         * Wait for work.
+         */
+        int rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_VMMR0_LOG_FLUSHER, 0, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /* Paranoia: Make another copy of the request, to make sure the validated data can't be changed. */
+            VMMLOGFLUSHERENTRY Item;
+            Item.u32 = pVM->vmm.s.LogFlusherItem.u32;
+            if (   Item.s.idCpu     <  pVM->cCpus
+                && Item.s.idxLogger <= RT_ELEMENTS(apLoggers)
+                && Item.s.idxBuffer <= 1)
+            {
+                /*
+                 * Verify the request.
+                 */
+                PVMCPU const          pVCpu     = pVM->apCpusR3[Item.s.idCpu];
+                PVMMR3CPULOGGER const pShared   = Item.s.idxLogger == 1 ? &pVCpu->vmm.s.Logger : &pVCpu->vmm.s.RelLogger;
+                uint32_t const        cbToFlush = pShared->AuxDesc.offBuf;
+                if (cbToFlush > 0)
+                {
+                    if (cbToFlush <= pShared->cbBuf)
+                    {
+                        char * const pchBufR3 = pShared->pchBufR3;
+                        if (pchBufR3)
+                        {
+                            /*
+                             * Do the flushing.
+                             */
+                            LogAlways(("*FLUSH* idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x fFlushed=%RTbool cbDropped=%#x\n",
+                                       Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush,
+                                       pShared->AuxDesc.fFlushedIndicator, pShared->cbDropped));
+                            PRTLOGGER const pLogger = apLoggers[Item.s.idxLogger];
+                            if (pLogger)
+                                RTLogBulkWrite(pLogger, pchBufR3, cbToFlush);
+                            LogAlways(("*FLUSH DONE*\n"));
+                        }
+                        else
+                            Log(("vmmR3LogFlusher: idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x: Warning! No ring-3 buffer pointer!\n",
+                                 Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush));
+                    }
+                    else
+                        Log(("vmmR3LogFlusher: idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x: Warning! Exceeds %#x bytes buffer size!\n",
+                             Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush, pShared->cbBuf));
+                }
+                else
+                    Log(("vmmR3LogFlusher: idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x: Warning! Zero bytes to flush!\n",
+                         Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush));
+
+                /*
+                 * Mark the descriptor as flushed and set the request flag for same.
+                 */
+                pShared->AuxDesc.fFlushedIndicator = true;
+            }
+            else
+            {
+                Assert(Item.s.idCpu     == UINT16_MAX);
+                Assert(Item.s.idxLogger == UINT8_MAX);
+                Assert(Item.s.idxBuffer == UINT8_MAX);
+            }
+        }
+        /*
+         * Interrupted can happen, just ignore it.
+         */
+        else if (rc == VERR_INTERRUPTED)
+        { /* ignore*/ }
+        /*
+         * The ring-0 termination code will set the shutdown flag and wake us
+         * up, and we should return with object destroyed.  In case there is
+         * some kind of race, we might also get sempahore destroyed.
+         */
+        else if (   rc == VERR_OBJECT_DESTROYED
+                 || rc == VERR_SEM_DESTROYED
+                 || rc == VERR_INVALID_HANDLE)
+        {
+            LogRel(("vmmR3LogFlusher: Terminating (%Rrc)\n", rc));
+            return VINF_SUCCESS;
+        }
+        /*
+         * There shouldn't be any other errors...
+         */
+        else
+        {
+            LogRelMax(64, ("vmmR3LogFlusher: VMMR0_DO_VMMR0_LOG_FLUSHER -> %Rrc\n", rc));
+            AssertRC(rc);
+            RTThreadSleep(1);
+        }
+    }
 }
 
 
@@ -2384,15 +2515,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
             pVCpu->vmm.s.rcCallRing3 = MMR3LockCall(pVM);
             break;
         }
-
-        /*
-         * This is a noop. We just take this route to avoid unnecessary
-         * tests in the loops.
-         */
-        case VMMCALLRING3_VMM_LOGGER_FLUSH:
-            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
-            LogAlways(("*FLUSH*\n"));
-            break;
 
         /*
          * Set the VM error message.
