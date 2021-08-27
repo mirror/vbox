@@ -25,6 +25,9 @@
 /* GUI includes: */
 #include "UIMessageCenter.h"
 #include "UITranslator.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
