@@ -160,7 +160,18 @@ public:
     /** Destroys UICommon instance. */
     static void destroy();
 
-    /** @name Common stuff.
+    /** @name General stuff.
+     * @{ */
+        /** Returns the UI type. */
+        UIType uiType() const { return m_enmType; }
+
+        /** Returns whether UICommon instance is properly initialized. */
+        bool isValid() const { return m_fValid; }
+        /** Returns whether UICommon instance cleanup is in progress. */
+        bool isCleaningUp() const { return m_fCleaningUp; }
+    /** @} */
+
+    /** @name Versioning stuff.
      * @{ */
         /** Returns Qt runtime version string. */
         static QString qtRTVersionString();
@@ -178,14 +189,6 @@ public:
         /** Returns Qt compiled version. */
         static uint qtCTVersion();
 
-        /** Returns whether UICommon instance is properly initialized. */
-        bool isValid() const { return m_fValid; }
-        /** Returns whether UICommon instance cleanup is in progress. */
-        bool isCleaningUp() const { return m_fCleaningUp; }
-
-        /** Returns the UI type. */
-        UIType uiType() const { return m_enmType; }
-
         /** Returns VBox version string. */
         QString vboxVersionString() const;
         /** Returns normalized VBox version string. */
@@ -193,6 +196,14 @@ public:
         /** Returns whether VBox version string contains BETA word. */
         bool isBeta() const;
 
+        /** Returns whether branding is active. */
+        bool brandingIsActive(bool fForce = false);
+        /** Returns value for certain branding @a strKey from custom.ini file. */
+        QString brandingGetKey(QString strKey) const;
+    /** @} */
+
+    /** @name Host OS stuff.
+     * @{ */
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Returns #MacOSXRelease determined by <i>uname</i> call. */
         static MacOSXRelease determineOsRelease();
@@ -206,11 +217,6 @@ public:
         /** X11: Returns the type of the Window Manager we are running under. */
         X11WMType typeOfWindowManager() const { return m_enmWindowManagerType; }
 #endif
-
-        /** Returns whether branding is active. */
-        bool brandingIsActive(bool fForce = false);
-        /** Returns value for certain branding @a strKey from custom.ini file. */
-        QString brandingGetKey(QString strKey);
     /** @} */
 
     /** @name Process arguments stuff.
@@ -825,7 +831,7 @@ private:
     /** Holds the singleton UICommon instance. */
     static UICommon *s_pInstance;
 
-    /** @name Common stuff.
+    /** @name General stuff.
      * @{ */
         /** Holds the tr("User Defined") port name. */
         static QString  s_strUserDefinedPortName;
@@ -837,12 +843,20 @@ private:
         bool  m_fValid;
         /** Holds whether UICommon instance cleanup is in progress. */
         bool  m_fCleaningUp;
-
 #ifdef VBOX_WS_WIN
         /** Holds whether overall GUI data is committed. */
         bool  m_fDataCommitted;
 #endif
+    /** @} */
 
+    /** @name Versioning stuff.
+     * @{ */
+        /** Holds the VBox branding config file path. */
+        QString  m_strBrandingConfigFilePath;
+    /** @} */
+
+    /** @name Host OS stuff.
+     * @{ */
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Holds the #MacOSXRelease determined using <i>uname</i> call. */
         MacOSXRelease  m_enmMacOSVersion;
@@ -854,9 +868,6 @@ private:
         /** X11: Holds whether the Window Manager we are running at is composition one. */
         bool       m_fCompositingManagerRunning;
 #endif
-
-        /** Holds the VBox branding config file path. */
-        QString  m_strBrandingConfigFilePath;
     /** @} */
 
     /** @name Process arguments stuff.
