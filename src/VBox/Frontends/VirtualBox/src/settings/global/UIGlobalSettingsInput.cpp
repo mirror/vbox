@@ -23,11 +23,12 @@
 /* GUI includes: */
 #include "UIAutoCaptureKeyboardEditor.h"
 #include "UICommon.h"
+#include "UIExtraDataManager.h"
 #include "UIGlobalSettingsInput.h"
 #include "UIHostComboEditor.h"
 #include "UIShortcutConfigurationEditor.h"
 #include "UIShortcutPool.h"
-#include "UIExtraDataManager.h"
+#include "UITranslator.h"
 
 
 /** Global settings: Input page data structure. */
@@ -100,7 +101,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
         const UIShortcut &shortcut = shortcuts.value(strShortcutKey);
         list << UIShortcutConfigurationItem(strShortcutKey,
                                             shortcut.scope(),
-                                            UICommon::removeAccelMark(shortcut.description()),
+                                            UITranslator::removeAccelMark(shortcut.description()),
                                             shortcut.primaryToNativeText(),
                                             shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
@@ -155,7 +156,7 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     if (!m_pEditorShortcutConfiguration->isShortcutsUniqueManager())
     {
         UIValidationMessage message;
-        message.first = UICommon::removeAccelMark(m_pEditorShortcutConfiguration->tabNameManager());
+        message.first = UITranslator::removeAccelMark(m_pEditorShortcutConfiguration->tabNameManager());
         message.second << tr("Some items have the same shortcuts assigned.");
         messages << message;
         fPass = false;
@@ -165,7 +166,7 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     if (!m_pEditorShortcutConfiguration->isShortcutsUniqueRuntime())
     {
         UIValidationMessage message;
-        message.first = UICommon::removeAccelMark(m_pEditorShortcutConfiguration->tabNameRuntime());
+        message.first = UITranslator::removeAccelMark(m_pEditorShortcutConfiguration->tabNameRuntime());
         message.second << tr("Some items have the same shortcuts assigned.");
         messages << message;
         fPass = false;

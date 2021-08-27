@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "QIMessageBox.h"
+#include "QIToolBar.h"
 #include "QITreeWidget.h"
 #include "UIActionPoolManager.h"
 #include "UIConverter.h"
@@ -42,7 +43,7 @@
 #include "UISnapshotDetailsWidget.h"
 #include "UISnapshotPane.h"
 #include "UITakeSnapshotDialog.h"
-#include "QIToolBar.h"
+#include "UITranslator.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIWizardCloneVM.h"
 
@@ -356,25 +357,25 @@ SnapshotAgeFormat UISnapshotItem::updateAge()
     else if (then.secsTo(now) > 60 * 60 * 24)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UICommon::daysToString(then.secsTo(now) / 60 / 60 / 24));
+                    .arg(then.toString(Qt::LocalDate), UITranslator::daysToString(then.secsTo(now) / 60 / 60 / 24));
         enmAgeFormat = SnapshotAgeFormat_InDays;
     }
     else if (then.secsTo(now) > 60 * 60)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UICommon::hoursToString(then.secsTo(now) / 60 / 60));
+                    .arg(then.toString(Qt::LocalDate), UITranslator::hoursToString(then.secsTo(now) / 60 / 60));
         enmAgeFormat = SnapshotAgeFormat_InHours;
     }
     else if (then.secsTo(now) > 60)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UICommon::minutesToString(then.secsTo(now) / 60));
+                    .arg(then.toString(Qt::LocalDate), UITranslator::minutesToString(then.secsTo(now) / 60));
         enmAgeFormat = SnapshotAgeFormat_InMinutes;
     }
     else
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UICommon::secondsToString(then.secsTo(now)));
+                    .arg(then.toString(Qt::LocalDate), UITranslator::secondsToString(then.secsTo(now)));
         enmAgeFormat = SnapshotAgeFormat_InSeconds;
     }
 

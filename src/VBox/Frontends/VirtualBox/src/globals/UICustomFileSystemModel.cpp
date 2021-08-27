@@ -21,10 +21,11 @@
 #include <QHeaderView>
 
 /* GUI includes: */
-#include "UIErrorString.h"
-#include "UICustomFileSystemModel.h"
-#include "UIPathOperations.h"
 #include "UICommon.h"
+#include "UICustomFileSystemModel.h"
+#include "UIErrorString.h"
+#include "UIPathOperations.h"
+#include "UITranslator.h"
 
 const char *UICustomFileSystemModel::strUpDirectoryString = "..";
 
@@ -439,7 +440,7 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
             if (m_fShowHumanReadableSizes)
             {
                 qulonglong size = item->data(index.column()).toULongLong();
-                return uiCommon().formatSize(size);
+                return UITranslator::formatSize(size);
             }
             else
                 return item->data(index.column());

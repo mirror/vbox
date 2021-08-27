@@ -31,17 +31,18 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "QIToolBar.h"
 #include "UIActionPoolManager.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UIMessageCenter.h"
+#include "UITranslator.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVMActivityOverviewWidget.h"
-#include "UIMessageCenter.h"
-#include "QIToolBar.h"
-#include "UIVirtualBoxEventHandler.h"
 
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
@@ -633,38 +634,38 @@ void UIVMActivityOverviewHostStatsWidget::updateLabels()
         m_pRAMTitleLabel->setText(QString("<b>%1</b>").arg(UIVMActivityOverviewWidget::tr("Host RAM Usage")));
     if (m_pRAMFreeLabel)
     {
-        QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMFree);
+        QString strRAM = UITranslator::formatSize(m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
         m_pRAMFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Free")).arg(strRAM));
     }
     if (m_pRAMUsedLabel)
     {
-        QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal - m_hostStats.m_iRAMFree);
+        QString strRAM = UITranslator::formatSize(m_hostStats.m_iRAMTotal - m_hostStats.m_iRAMFree);
         QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
         m_pRAMUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Used")).arg(strRAM));
     }
     if (m_pRAMTotalLabel)
     {
-        QString strRAM = uiCommon().formatSize(m_hostStats.m_iRAMTotal);
+        QString strRAM = UITranslator::formatSize(m_hostStats.m_iRAMTotal);
         m_pRAMTotalLabel->setText(QString("%1: %2").arg(UIVMActivityOverviewWidget::tr("Total")).arg(strRAM));
     }
     if (m_pFSTitleLabel)
         m_pFSTitleLabel->setText(QString("<b>%1</b>").arg(UIVMActivityOverviewWidget::tr("Host File System")));
     if (m_pFSFreeLabel)
     {
-        QString strFS = uiCommon().formatSize(m_hostStats.m_iFSFree);
+        QString strFS = UITranslator::formatSize(m_hostStats.m_iFSFree);
         QString strColor = QColor(m_RAMFreeColor).name(QColor::HexRgb);
         m_pFSFreeLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Free")).arg(strFS));
     }
     if (m_pFSUsedLabel)
     {
-        QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal - m_hostStats.m_iFSFree);
+        QString strFS = UITranslator::formatSize(m_hostStats.m_iFSTotal - m_hostStats.m_iFSFree);
         QString strColor = QColor(m_RAMUsedColor).name(QColor::HexRgb);
         m_pFSUsedLabel->setText(QString("<font color=\"%1\">%2: %3</font>").arg(strColor).arg(UIVMActivityOverviewWidget::tr("Used")).arg(strFS));
     }
     if (m_pFSTotalLabel)
     {
-        QString strFS = uiCommon().formatSize(m_hostStats.m_iFSTotal);
+        QString strFS = UITranslator::formatSize(m_hostStats.m_iFSTotal);
         m_pFSTotalLabel->setText(QString("%1: %2").arg(UIVMActivityOverviewWidget::tr("Total")).arg(strFS));
     }
 }
@@ -1177,8 +1178,8 @@ void UIActivityOverviewModel::sltTimeout()
 
         if (m_itemList[i].isWithGuestAdditions())
             m_itemList[i].m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] =
-                QString("%1/%2").arg(uiCommon().formatSize(_1K * m_itemList[i].m_uUsedRAM, iDecimalCount)).
-                arg(uiCommon().formatSize(_1K * m_itemList[i].m_uTotalRAM, iDecimalCount));
+                QString("%1/%2").arg(UITranslator::formatSize(_1K * m_itemList[i].m_uUsedRAM, iDecimalCount)).
+                arg(UITranslator::formatSize(_1K * m_itemList[i].m_uTotalRAM, iDecimalCount));
         else
             m_itemList[i].m_columnData[VMActivityOverviewColumn_RAMUsedAndTotal] = UIVMActivityOverviewWidget::tr("N/A");
 
@@ -1189,32 +1190,32 @@ void UIActivityOverviewModel::sltTimeout()
             m_itemList[i].m_columnData[VMActivityOverviewColumn_RAMUsedPercentage] = UIVMActivityOverviewWidget::tr("N/A");
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkUpRate] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkUpRate, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uNetworkUpRate, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkDownRate] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkDownRate, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uNetworkDownRate, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkUpTotal] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkUpTotal, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uNetworkUpTotal, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_NetworkDownTotal] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uNetworkDownTotal, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uNetworkDownTotal, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOReadRate] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskReadRate, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uDiskReadRate, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOWriteRate] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskWriteRate, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uDiskWriteRate, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOReadTotal] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskReadTotal, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uDiskReadTotal, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_DiskIOWriteTotal] =
-            QString("%1").arg(uiCommon().formatSize(m_itemList[i].m_uDiskWriteTotal, iDecimalCount));
+            QString("%1").arg(UITranslator::formatSize(m_itemList[i].m_uDiskWriteTotal, iDecimalCount));
 
         m_itemList[i].m_columnData[VMActivityOverviewColumn_VMExits] =
-            QString("%1/%2").arg(UICommon::addMetricSuffixToNumber(m_itemList[i].m_uVMExitRate)).
-            arg(UICommon::addMetricSuffixToNumber(m_itemList[i].m_uVMExitTotal));
+            QString("%1/%2").arg(UITranslator::addMetricSuffixToNumber(m_itemList[i].m_uVMExitRate)).
+            arg(UITranslator::addMetricSuffixToNumber(m_itemList[i].m_uVMExitTotal));
     }
 
     for (int i = 0; i < (int)VMActivityOverviewColumn_Max; ++i)

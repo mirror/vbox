@@ -21,10 +21,11 @@
 
 /* GUI includes: */
 #include "UIBootOrderEditor.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
-#include "UICommon.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -815,7 +816,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
 
         /* Gather port information: */
         const KPortMode enmMode = comPort.GetHostMode();
-        const QString strModeTemplate = uiCommon().toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase()) + ", ";
+        const QString strModeTemplate = UITranslator::toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase()) + ", ";
         QString strModeType;
         switch (enmMode)
         {

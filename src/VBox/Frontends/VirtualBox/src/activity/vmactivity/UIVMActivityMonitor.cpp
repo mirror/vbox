@@ -31,6 +31,7 @@
 #include "QIFileDialog.h"
 #include "UICommon.h"
 #include "UIIconPool.h"
+#include "UITranslator.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVirtualBoxEventHandler.h"
 
@@ -520,12 +521,12 @@ QString UIChart::YAxisValueLabel(quint64 iValue) const
     if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
         return QString::number(iValue);
     else if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-        return uiCommon().formatSize(_1K * (quint64)iValue, g_iDecimalCount);
+        return UITranslator::formatSize(_1K * (quint64)iValue, g_iDecimalCount);
     else if (m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
              m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
-        return uiCommon().formatSize(iValue, g_iDecimalCount);
+        return UITranslator::formatSize(iValue, g_iDecimalCount);
     else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
-        return UICommon::addMetricSuffixToNumber(iValue);
+        return UITranslator::addMetricSuffixToNumber(iValue);
     return QString();
 }
 
@@ -1333,9 +1334,9 @@ void UIVMActivityMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iF
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
     {
         QString strInfo;
-        strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM, g_iDecimalCount))
-            .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM), g_iDecimalCount))
-            .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount));
+        strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(UITranslator::formatSize(_1K * iTotalRAM, g_iDecimalCount))
+            .arg(m_strRAMInfoLabelFree).arg(UITranslator::formatSize(_1K * (iFreeRAM), g_iDecimalCount))
+            .arg(m_strRAMInfoLabelUsed).arg(UITranslator::formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount));
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strRAMMetricName))
@@ -1366,10 +1367,10 @@ void UIVMActivityMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, qu
         QString strInfo;
         strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
             .arg(m_strNetworkInfoLabelTitle)
-            .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, g_iDecimalCount))
-            .arg(m_strNetworkInfoLabelReceivedTotal).arg(uiCommon().formatSize((quint64)iReceiveTotal, g_iDecimalCount))
-            .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, g_iDecimalCount))
-            .arg(m_strNetworkInfoLabelTransmittedTotal).arg(uiCommon().formatSize((quint64)iTransmitTotal, g_iDecimalCount));
+            .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize((quint64)iReceiveRate, g_iDecimalCount))
+            .arg(m_strNetworkInfoLabelReceivedTotal).arg(UITranslator::formatSize((quint64)iReceiveTotal, g_iDecimalCount))
+            .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(UITranslator::formatSize((quint64)iTransmitRate, g_iDecimalCount))
+            .arg(m_strNetworkInfoLabelTransmittedTotal).arg(UITranslator::formatSize((quint64)iTransmitTotal, g_iDecimalCount));
         m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strNetworkMetricName))
@@ -1464,10 +1465,10 @@ void UIVMActivityMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritte
     {
         QString strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
             .arg(m_strDiskIOInfoLabelTitle)
-            .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(uiCommon().formatSize((quint64)iWriteRate, g_iDecimalCount))
-            .arg(m_strDiskIOInfoLabelWrittenTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
-            .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(uiCommon().formatSize((quint64)iReadRate, g_iDecimalCount))
-            .arg(m_strDiskIOInfoLabelReadTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
+            .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(UITranslator::formatSize((quint64)iWriteRate, g_iDecimalCount))
+            .arg(m_strDiskIOInfoLabelWrittenTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount))
+            .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(UITranslator::formatSize((quint64)iReadRate, g_iDecimalCount))
+            .arg(m_strDiskIOInfoLabelReadTotal).arg(UITranslator::formatSize((quint64)uDiskIOTotalRead, g_iDecimalCount));
         m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strDiskIOMetricName))
@@ -1494,8 +1495,8 @@ void UIVMActivityMonitor::updateVMExitMetric(quint64 uTotalVMExits)
         QString strInfo;
         strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
             .arg(m_strVMExitInfoLabelTitle)
-            .arg(m_strVMExitLabelCurrent).arg(UICommon::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
-            .arg(m_strVMExitLabelTotal).arg(UICommon::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
+            .arg(m_strVMExitLabelCurrent).arg(UITranslator::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
+            .arg(m_strVMExitLabelTotal).arg(UITranslator::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
          m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strVMExitMetricName))

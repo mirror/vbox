@@ -32,10 +32,11 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
+#include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsNetwork.h"
-#include "UIExtraDataManager.h"
 #include "UINetworkAttachmentEditor.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CNATEngine.h"
@@ -420,7 +421,7 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 
     /* Prepare message: */
     UIValidationMessage message;
-    message.first = uiCommon().removeAccelMark(tabTitle());
+    message.first = UITranslator::removeAccelMark(tabTitle());
 
     /* Validate alternatives: */
     switch (attachmentType())

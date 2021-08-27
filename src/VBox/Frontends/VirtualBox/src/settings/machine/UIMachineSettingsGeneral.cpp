@@ -35,6 +35,7 @@
 #include "UIModalWindowManager.h"
 #include "UINameAndSystemEditor.h"
 #include "UIProgressObject.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -382,7 +383,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     UIValidationMessage message;
 
     /* 'Basic' tab validations: */
-    message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(0));
+    message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(0));
     message.second.clear();
 
     /* VM name validation: */
@@ -406,7 +407,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
         messages << message;
 
     /* 'Encryption' tab validations: */
-    message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(3));
+    message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(3));
     message.second.clear();
 
     /* Encryption validation: */

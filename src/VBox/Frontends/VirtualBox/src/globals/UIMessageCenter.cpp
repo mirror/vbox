@@ -2558,7 +2558,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     /* Format error-details: */
     QString formatted("<!--EOM-->");
     if (!strErrorMsg.isEmpty())
-        formatted.prepend(QString("<p>%1.</p>").arg(uiCommon().emphasize(strErrorMsg)));
+        formatted.prepend(QString("<p>%1.</p>").arg(UITranslator::emphasize(strErrorMsg)));
     if (!strErrorId.isEmpty())
         formatted += QString("<table bgcolor=%1 border=0 cellspacing=5 "
                              "cellpadding=0 width=100%>"
@@ -2787,7 +2787,7 @@ bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHe
                           tr("<p>Could not switch the guest display to full-screen mode due to insufficient guest video memory.</p>"
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch to full-screen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
-                             .arg(UICommon::formatSize(uMinVRAM)),
+                             .arg(UITranslator::formatSize(uMinVRAM)),
                           0 /* auto-confirm id */,
                           tr("Ignore"));
 }
@@ -2799,7 +2799,7 @@ void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeig
              "video memory.</p>"
              "<p>You should configure the virtual machine to have at "
              "least <b>%1</b> of video memory.</p>")
-             .arg(UICommon::formatSize(uMinVRAM)));
+             .arg(UITranslator::formatSize(uMinVRAM)));
 }
 
 bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
@@ -2808,7 +2808,7 @@ bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
                           tr("<p>Could not change the guest screen to this host screen due to insufficient guest video memory.</p>"
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
-                             .arg(UICommon::formatSize(uMinVRAM)),
+                             .arg(UITranslator::formatSize(uMinVRAM)),
                           0 /* auto-confirm id */,
                           tr("Ignore"));
 }
@@ -2820,7 +2820,7 @@ void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
              "due to insufficient guest video memory.</p>"
              "<p>You should configure the virtual machine to have at "
              "least <b>%1</b> of video memory.</p>")
-             .arg(UICommon::formatSize(uMinVRAM)));
+             .arg(UITranslator::formatSize(uMinVRAM)));
 }
 
 void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)

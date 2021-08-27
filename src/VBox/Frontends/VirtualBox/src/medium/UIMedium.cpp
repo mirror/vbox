@@ -20,12 +20,13 @@
 #include <QDir>
 
 /* GUI includes: */
-#include "UIMedium.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UIMedium.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -225,11 +226,11 @@ void UIMedium::refresh()
             if (m_state != KMediumState_Inaccessible && m_state != KMediumState_NotCreated)
             {
                 m_uSize = m_medium.GetSize();
-                m_strSize = uiCommon().formatSize(m_uSize);
+                m_strSize = UITranslator::formatSize(m_uSize);
                 if (m_type == UIMediumDeviceType_HardDisk)
                 {
                     m_uLogicalSize = m_medium.GetLogicalSize();
-                    m_strLogicalSize = uiCommon().formatSize(m_uLogicalSize);
+                    m_strLogicalSize = UITranslator::formatSize(m_uLogicalSize);
                 }
                 else
                 {
@@ -408,7 +409,7 @@ void UIMedium::refresh()
                 if (m_result.isOk())
                 {
                     /* Not Accessible: */
-                    m_strToolTip += m_sstrRow.arg("<hr>") + m_sstrRow.arg(UICommon::highlight(m_strLastAccessError, true /* aToolTip */));
+                    m_strToolTip += m_sstrRow.arg("<hr>") + m_sstrRow.arg(UITranslator::highlight(m_strLastAccessError, true /* aToolTip */));
                 }
                 else
                 {

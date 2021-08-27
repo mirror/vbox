@@ -25,6 +25,7 @@
 #include "UIHostComboEditor.h"
 #include "UINotificationCenter.h"
 #include "UINotificationObjects.h"
+#include "UITranslator.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UIDownloaderExtensionPack.h"
 # include "UIDownloaderGuestAdditions.h"
@@ -427,7 +428,7 @@ QString UINotificationProgressMediumCreate::name() const
 
 QString UINotificationProgressMediumCreate::details() const
 {
-    return UINotificationProgress::tr("<b>Location:</b> %1<br><b>Size:</b> %2").arg(m_strLocation, uiCommon().formatSize(m_uSize));
+    return UINotificationProgress::tr("<b>Location:</b> %1<br><b>Size:</b> %2").arg(m_strLocation, UITranslator::formatSize(m_uSize));
 }
 
 CProgress UINotificationProgressMediumCreate::createProgress(COMResult &comResult)
@@ -578,8 +579,8 @@ QString UINotificationProgressMediumResize::name() const
 QString UINotificationProgressMediumResize::details() const
 {
     return UINotificationProgress::tr("<b>From:</b> %1<br><b>To:</b> %2")
-                                      .arg(uiCommon().formatSize(m_uFrom),
-                                           uiCommon().formatSize(m_uTo));
+                                      .arg(UITranslator::formatSize(m_uFrom),
+                                           UITranslator::formatSize(m_uTo));
 }
 
 CProgress UINotificationProgressMediumResize::createProgress(COMResult &comResult)

@@ -302,66 +302,6 @@ public:
 #endif
     /** @} */
 
-    /** @name Localization stuff.
-     * @{ */
-        /** Returns tr("%n year(s)"). */
-        static QString yearsToString(uint32_t cVal);
-        /** Returns tr("%n month(s)"). */
-        static QString monthsToString(uint32_t cVal);
-        /** Returns tr("%n day(s)"). */
-        static QString daysToString(uint32_t cVal);
-        /** Returns tr("%n hour(s)"). */
-        static QString hoursToString(uint32_t cVal);
-        /** Returns tr("%n minute(s)"). */
-        static QString minutesToString(uint32_t cVal);
-        /** Returns tr("%n second(s)"). */
-        static QString secondsToString(uint32_t cVal);
-
-        /** Returns the decimal separator for the current locale. */
-        static QChar decimalSep();
-        /** Returns the regexp string that defines the format of the human-readable size representation. */
-        static QString sizeRegexp();
-        /** Parses the given size strText and returns the size value in bytes. */
-        static quint64 parseSize(const QString &strText);
-        /** Parses the given size strText and returns the size suffix. */
-        static SizeSuffix parseSizeSuffix(const QString &strText);
-        /** Parses the given string @a strText and returns true if it includes a size suffix. */
-        static bool hasSizeSuffix(const QString &strText);
-        /** Formats the given @a uSize value in bytes to a human readable string.
-          * @param  uSize     Brings the size value in bytes.
-          * @param  enmMode   Brings the conversion mode.
-          * @param  cDecimal  Brings the number of decimal digits in result. */
-        static QString formatSize(quint64 uSize, uint cDecimal = 2, FormatSize enmMode = FormatSize_Round);
-        /** Formats the given @a uNumber to that 'k' is added for thousand, 'M' for million and so on. */
-        static QString addMetricSuffixToNumber(quint64 uNumber);
-
-        /** Returns the list of the standard COM port names (i.e. "COMx"). */
-        static QStringList COMPortNames();
-        /** Returns the name of the standard COM port corresponding to the given parameters,
-          * or "User-defined" (which is also returned when both @a uIRQ and @a uIOBase are 0). */
-        static QString toCOMPortName(ulong uIRQ, ulong uIOBase);
-        /** Returns port parameters corresponding to the given standard COM name.
-          * Returns @c true on success, or @c false if the given port name is not one of the standard names (i.e. "COMx"). */
-        static bool toCOMPortNumbers(const QString &strName, ulong &uIRQ, ulong &uIOBase);
-        /** Returns the list of the standard LPT port names (i.e. "LPTx"). */
-        static QStringList LPTPortNames();
-        /** Returns the name of the standard LPT port corresponding to the given parameters,
-          * or "User-defined" (which is also returned when both @a uIRQ and @a uIOBase are 0). */
-        static QString toLPTPortName(ulong uIRQ, ulong uIOBase);
-        /** Returns port parameters corresponding to the given standard LPT name.
-          * Returns @c true on success, or @c false if the given port name is not one of the standard names (i.e. "LPTx"). */
-        static bool toLPTPortNumbers(const QString &strName, ulong &uIRQ, ulong &uIOBase);
-
-        /** Reformats the input @a strText to highlight it. */
-        static QString highlight(QString strText, bool fToolTip = false);
-        /** Reformats the input @a strText to emphasize it. */
-        static QString emphasize(QString strText);
-        /** Removes the first occurrence of the accelerator mark (the ampersand symbol) from the given @a strText. */
-        static QString removeAccelMark(QString strText);
-        /** Inserts a passed @a strKey into action @a strText. */
-        static QString insertKeyToActionText (const QString &strText, const QString &strKey);
-    /** @} */
-
     /** @name File-system stuff.
      * @{ */
         /** Returns full help file name. */
@@ -833,9 +773,6 @@ private:
 
     /** @name General stuff.
      * @{ */
-        /** Holds the tr("User Defined") port name. */
-        static QString  s_strUserDefinedPortName;
-
         /** Holds the UI type. */
         UIType  m_enmType;
 

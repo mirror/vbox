@@ -29,11 +29,12 @@
 #include "QIWidgetValidator.h"
 #include "UIBaseMemoryEditor.h"
 #include "UIBootOrderEditor.h"
+#include "UICommon.h"
 #include "UIConverter.h"
+#include "UIErrorString.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsSystem.h"
-#include "UIErrorString.h"
-#include "UICommon.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CBIOSSettings.h"
@@ -411,7 +412,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(0));
+        message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(0));
 
         /* RAM amount test: */
         const ulong uFullSize = uiCommon().host().GetMemorySize();
@@ -421,7 +422,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
                 "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
                 "Not enough memory is left for the host operating system. Please select a smaller amount.")
                 .arg((unsigned)qRound((double)m_pEditorBaseMemory->maxRAMAlw() / uFullSize * 100.0))
-                .arg(uiCommon().formatSize((uint64_t)uFullSize * _1M));
+                .arg(UITranslator::formatSize((uint64_t)uFullSize * _1M));
             fPass = false;
         }
         else if (m_pEditorBaseMemory->value() > (int)m_pEditorBaseMemory->maxRAMOpt())
@@ -430,7 +431,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
                 "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
                 "There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.")
                 .arg((unsigned)qRound((double)m_pEditorBaseMemory->maxRAMOpt() / uFullSize * 100.0))
-                .arg(uiCommon().formatSize((uint64_t)uFullSize * _1M));
+                .arg(UITranslator::formatSize((uint64_t)uFullSize * _1M));
         }
 
         /* Chipset type vs IO-APIC test: */
@@ -460,7 +461,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(1));
+        message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(1));
 
         /* VCPU amount test: */
         const int cTotalCPUs = uiCommon().host().GetProcessorOnlineCoreCount();
@@ -553,7 +554,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(2));
+        message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(2));
 
         /* HW Virt Ex test: */
         if (!isHWVirtExSupported() && isHWVirtExEnabled())

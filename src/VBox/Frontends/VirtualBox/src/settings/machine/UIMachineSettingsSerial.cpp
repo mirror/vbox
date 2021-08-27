@@ -26,10 +26,11 @@
 /* GUI includes: */
 #include "QITabWidget.h"
 #include "QIWidgetValidator.h"
-#include "UIConverter.h"
-#include "UIMachineSettingsSerial.h"
-#include "UIErrorString.h"
 #include "UICommon.h"
+#include "UIConverter.h"
+#include "UIErrorString.h"
+#include "UIMachineSettingsSerial.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CSerialPort.h"
@@ -212,7 +213,7 @@ void UIMachineSettingsSerial::polishTab()
 {
     /* Polish port page: */
     ulong uIRQ, uIOBase;
-    const bool fStd = uiCommon().toCOMPortNumbers(m_pComboNumber->currentText(), uIRQ, uIOBase);
+    const bool fStd = UITranslator::toCOMPortNumbers(m_pComboNumber->currentText(), uIRQ, uIOBase);
     const KPortMode enmMode = m_pComboMode->currentData().value<KPortMode>();
     m_pCheckBoxPort->setEnabled(m_pParent->isMachineOffline());
     m_pLabelNumber->setEnabled(m_pParent->isMachineOffline());
@@ -238,7 +239,7 @@ void UIMachineSettingsSerial::loadPortData(const UIDataSettingsMachineSerialPort
 
     /* Load port data: */
     m_pCheckBoxPort->setChecked(portData.m_fPortEnabled);
-    m_pComboNumber->setCurrentIndex(m_pComboNumber->findText(uiCommon().toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
+    m_pComboNumber->setCurrentIndex(m_pComboNumber->findText(UITranslator::toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
     m_pLineEditIRQ->setText(QString::number(portData.m_uIRQ));
     m_pLineEditIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
     m_enmPortMode = portData.m_hostMode;
@@ -282,7 +283,7 @@ QString UIMachineSettingsSerial::pageTitle() const
 bool UIMachineSettingsSerial::isUserDefined()
 {
     ulong a, b;
-    return !uiCommon().toCOMPortNumbers(m_pComboNumber->currentText(), a, b);
+    return !UITranslator::toCOMPortNumbers(m_pComboNumber->currentText(), a, b);
 }
 
 void UIMachineSettingsSerial::retranslateUi()
@@ -314,7 +315,7 @@ void UIMachineSettingsSerial::retranslateUi()
                                      "on the host system, where the serial output will be dumped.</p><p>In <b>TCP</b> mode: Holds "
                                      "the TCP \"port\" when in server mode, or \"hostname:port\" when in client mode."));
 
-    m_pComboNumber->setItemText(m_pComboNumber->count() - 1, uiCommon().toCOMPortName(0, 0));
+    m_pComboNumber->setItemText(m_pComboNumber->count() - 1, UITranslator::toCOMPortName(0, 0));
 
     /* Translate combo-boxes content: */
     populateComboboxes();
@@ -338,7 +339,7 @@ void UIMachineSettingsSerial::sltGbSerialToggled(bool fOn)
 void UIMachineSettingsSerial::sltCbNumberActivated(const QString &strText)
 {
     ulong uIRQ, uIOBase;
-    bool fStd = uiCommon().toCOMPortNumbers(strText, uIRQ, uIOBase);
+    bool fStd = UITranslator::toCOMPortNumbers(strText, uIRQ, uIOBase);
 
     m_pLineEditIRQ->setEnabled(!fStd);
     m_pLineEditIOPort->setEnabled(!fStd);
@@ -415,8 +416,8 @@ void UIMachineSettingsSerial::prepareWidgets()
                 {
                     if (m_pLabelNumber)
                         m_pLabelNumber->setBuddy(m_pComboNumber);
-                    m_pComboNumber->insertItem(0, uiCommon().toCOMPortName(0, 0));
-                    m_pComboNumber->insertItems(0, uiCommon().COMPortNames());
+                    m_pComboNumber->insertItem(0, UITranslator::toCOMPortName(0, 0));
+                    m_pComboNumber->insertItems(0, UITranslator::COMPortNames());
                     pLayoutPortSettings->addWidget(m_pComboNumber, 0, 1);
                 }
                 /* Prepare IRQ label: */
@@ -687,7 +688,7 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
 
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = uiCommon().removeAccelMark(m_pTabWidget->tabText(m_pTabWidget->indexOf(pTab)));
+        message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(m_pTabWidget->indexOf(pTab)));
 
         /* Check the port attribute emptiness & uniqueness: */
         const QString strIRQ(pPage->m_pLineEditIRQ->text());
