@@ -764,10 +764,8 @@ protected:
 
 protected slots:
 
-    /** Prepares all. */
-    void prepare();
-    /** Cleanups all. */
-    void cleanup();
+    /** Calls for cleanup() functionality. */
+    void sltCleanup() { cleanup(); }
 
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
     /** @name Common stuff.
@@ -787,10 +785,13 @@ private:
 
     /** Construcs global VirtualBox object of passed @a enmType. */
     UICommon(UIType enmType);
-
     /** Destrucs global VirtualBox object. */
-    virtual ~UICommon() /* override */;
+    virtual ~UICommon() /* override final */;
 
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
 
     /** @name COM: Virtual Media create functions.
      * @{ */

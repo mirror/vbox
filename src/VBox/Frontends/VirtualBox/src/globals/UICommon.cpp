@@ -232,19 +232,15 @@ static const PortConfig kLptKnownPorts[] =
 
 /* static */
 UICommon *UICommon::s_pInstance = 0;
-bool        UICommon::s_fCleaningUp = false;
-QString     UICommon::s_strLoadedLanguageId = vboxBuiltInLanguageName();
-QString     UICommon::s_strUserDefinedPortName = QString();
+bool      UICommon::s_fCleaningUp = false;
+QString   UICommon::s_strLoadedLanguageId = vboxBuiltInLanguageName();
+QString   UICommon::s_strUserDefinedPortName = QString();
 
 /* static */
 void UICommon::create(UIType enmType)
 {
     /* Make sure instance is NOT created yet: */
-    if (s_pInstance)
-    {
-        AssertMsgFailed(("UICommon instance is already created!"));
-        return;
-    }
+    AssertReturnVoid(!s_pInstance);
 
     /* Create instance: */
     new UICommon(enmType);
@@ -256,11 +252,7 @@ void UICommon::create(UIType enmType)
 void UICommon::destroy()
 {
     /* Make sure instance is NOT destroyed yet: */
-    if (!s_pInstance)
-    {
-        AssertMsgFailed(("UICommon instance is already destroyed!"));
-        return;
-    }
+    AssertPtrReturnVoid(s_pInstance);
 
     /* Cleanup instance:
      * 1. By default, automatically on QApplication::aboutToQuit() signal.
@@ -323,6 +315,646 @@ UICommon::~UICommon()
 {
     /* Unassign instance: */
     s_pInstance = 0;
+}
+
+void UICommon::prepare()
+{
+    /* Make sure QApplication cleanup us on exit: */
+    qApp->setFallbackSessionManagementEnabled(false);
+    connect(qApp, &QGuiApplication::aboutToQuit,
+            this, &UICommon::sltCleanup);
+#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
+    /* Make sure we handle host OS session shutdown as well: */
+    connect(qApp, &QGuiApplication::commitDataRequest,
+            this, &UICommon::sltHandleCommitDataRequest);
+#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+
+#ifdef VBOX_WS_MAC
+    /* Determine OS release early: */
+    m_enmMacOSVersion = determineOsRelease();
+#endif /* VBOX_WS_MAC */
+
+    /* Create converter: */
+    UIConverter::create();
+
+    /* Create desktop-widget watchdog: */
+    UIDesktopWidgetWatchdog::create();
+
+    /* Create message-center: */
+    UIMessageCenter::create();
+    /* Create popup-center: */
+    UIPopupCenter::create();
+
+    /* Prepare general icon-pool: */
+    m_pIconPool = new UIIconPoolGeneral;
+
+    /* Load translation based on the current locale: */
+    loadLanguage();
+
+    HRESULT rc = COMBase::InitializeCOM(true);
+    if (FAILED(rc))
+    {
+#ifdef VBOX_WITH_XPCOM
+        if (rc == NS_ERROR_FILE_ACCESS_DENIED)
+        {
+            char szHome[RTPATH_MAX] = "";
+            com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
+            msgCenter().cannotInitUserHome(QString(szHome));
+        }
+        else
+#endif
+            msgCenter().cannotInitCOM(rc);
+        return;
+    }
+
+    /* Make sure VirtualBoxClient instance created: */
+    m_comVBoxClient.createInstance(CLSID_VirtualBoxClient);
+    if (!m_comVBoxClient.isOk())
+    {
+        msgCenter().cannotCreateVirtualBoxClient(m_comVBoxClient);
+        return;
+    }
+    /* Make sure VirtualBox instance acquired: */
+    m_comVBox = m_comVBoxClient.GetVirtualBox();
+    if (!m_comVBoxClient.isOk())
+    {
+        msgCenter().cannotAcquireVirtualBox(m_comVBoxClient);
+        return;
+    }
+    /* Init wrappers: */
+    comWrappersReinit();
+
+    /* Watch for the VBoxSVC availability changes: */
+    connect(gVBoxClientEvents, &UIVirtualBoxClientEventHandler::sigVBoxSVCAvailabilityChange,
+            this, &UICommon::sltHandleVBoxSVCAvailabilityChange);
+
+    /* Prepare thread-pool instances: */
+    m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
+    m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
+
+#ifdef VBOX_WS_WIN
+    /* Load color theme: */
+    loadColorTheme();
+#endif
+
+    /* Load translation based on the user settings: */
+    QString sLanguageId = gEDataManager->languageId();
+    if (!sLanguageId.isNull())
+        loadLanguage(sLanguageId);
+
+    retranslateUi();
+
+    connect(gEDataManager, &UIExtraDataManager::sigLanguageChange,
+            this, &UICommon::sltGUILanguageChange);
+
+    qApp->installEventFilter(this);
+
+    /* process command line */
+
+    UIVisualStateType visualStateType = UIVisualStateType_Invalid;
+
+#ifdef VBOX_WS_X11
+    /* Check whether we have compositing manager running: */
+    m_fCompositingManagerRunning = X11IsCompositingManagerRunning();
+
+    /* Acquire current Window Manager type: */
+    m_enmWindowManagerType = X11WindowManagerType();
+#endif /* VBOX_WS_X11 */
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+# ifdef VBOX_WITH_DEBUGGER_GUI_MENU
+    initDebuggerVar(&m_fDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, true);
+# else
+    initDebuggerVar(&m_fDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, false);
+# endif
+    initDebuggerVar(&m_fDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_Dbg_AutoShow, false);
+    m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = m_fDbgAutoShow;
+#endif
+
+    /*
+     * Parse the command line options.
+     *
+     * This is a little sloppy but we're trying to tighten it up.  Unfortuately,
+     * both on X11 and darwin (IIRC) there might be additional arguments aimed
+     * for client libraries with GUI processes.  So, using RTGetOpt or similar
+     * is a bit hard since we have to cope with unknown options.
+     */
+    m_fShowStartVMErrors = true;
+    bool startVM = false;
+    bool fSeparateProcess = false;
+    QString vmNameOrUuid;
+
+    const QStringList &arguments = QCoreApplication::arguments();
+    const int argc = arguments.size();
+    int i = 1;
+    while (i < argc)
+    {
+        const QByteArray &argBytes = arguments.at(i).toUtf8();
+        const char *arg = argBytes.constData();
+        enum { OptType_Unknown, OptType_VMRunner, OptType_VMSelector, OptType_MaybeBoth } enmOptType = OptType_Unknown;
+        /* NOTE: the check here must match the corresponding check for the
+         * options to start a VM in main.cpp and hardenedmain.cpp exactly,
+         * otherwise there will be weird error messages. */
+        if (   !::strcmp(arg, "--startvm")
+            || !::strcmp(arg, "-startvm"))
+        {
+            enmOptType = OptType_VMRunner;
+            if (++i < argc)
+            {
+                vmNameOrUuid = arguments.at(i);
+                startVM = true;
+            }
+        }
+        else if (!::strcmp(arg, "-separate") || !::strcmp(arg, "--separate"))
+        {
+            enmOptType = OptType_VMRunner;
+            fSeparateProcess = true;
+        }
+#ifdef VBOX_GUI_WITH_PIDFILE
+        else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            if (++i < argc)
+                m_strPidFile = arguments.at(i);
+        }
+#endif /* VBOX_GUI_WITH_PIDFILE */
+        /* Visual state type options: */
+        else if (!::strcmp(arg, "-normal") || !::strcmp(arg, "--normal"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            visualStateType = UIVisualStateType_Normal;
+        }
+        else if (!::strcmp(arg, "-fullscreen") || !::strcmp(arg, "--fullscreen"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            visualStateType = UIVisualStateType_Fullscreen;
+        }
+        else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            visualStateType = UIVisualStateType_Seamless;
+        }
+        else if (!::strcmp(arg, "-scale") || !::strcmp(arg, "--scale"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            visualStateType = UIVisualStateType_Scale;
+        }
+        /* Passwords: */
+        else if (!::strcmp(arg, "--settingspw"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            if (++i < argc)
+            {
+                RTStrCopy(m_astrSettingsPw, sizeof(m_astrSettingsPw), arguments.at(i).toLocal8Bit().constData());
+                m_fSettingsPwSet = true;
+            }
+        }
+        else if (!::strcmp(arg, "--settingspwfile"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            if (++i < argc)
+            {
+                const QByteArray &argFileBytes = arguments.at(i).toLocal8Bit();
+                const char *pszFile = argFileBytes.constData();
+                bool fStdIn = !::strcmp(pszFile, "stdin");
+                int vrc = VINF_SUCCESS;
+                PRTSTREAM pStrm;
+                if (!fStdIn)
+                    vrc = RTStrmOpen(pszFile, "r", &pStrm);
+                else
+                    pStrm = g_pStdIn;
+                if (RT_SUCCESS(vrc))
+                {
+                    size_t cbFile;
+                    vrc = RTStrmReadEx(pStrm, m_astrSettingsPw, sizeof(m_astrSettingsPw) - 1, &cbFile);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        if (cbFile >= sizeof(m_astrSettingsPw) - 1)
+                            cbFile = sizeof(m_astrSettingsPw) - 1;
+                        unsigned i;
+                        for (i = 0; i < cbFile && !RT_C_IS_CNTRL(m_astrSettingsPw[i]); i++)
+                            ;
+                        m_astrSettingsPw[i] = '\0';
+                        m_fSettingsPwSet = true;
+                    }
+                    if (!fStdIn)
+                        RTStrmClose(pStrm);
+                }
+            }
+        }
+        /* Misc options: */
+        else if (!::strcmp(arg, "-comment") || !::strcmp(arg, "--comment"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            ++i;
+        }
+        else if (!::strcmp(arg, "--no-startvm-errormsgbox"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fShowStartVMErrors = false;
+        }
+        else if (!::strcmp(arg, "--aggressive-caching"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            m_fAgressiveCaching = true;
+        }
+        else if (!::strcmp(arg, "--no-aggressive-caching"))
+        {
+            enmOptType = OptType_MaybeBoth;
+            m_fAgressiveCaching = false;
+        }
+        else if (!::strcmp(arg, "--restore-current"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fRestoreCurrentSnapshot = true;
+        }
+        /* Ad hoc VM reconfig options: */
+        else if (!::strcmp(arg, "--fda"))
+        {
+            enmOptType = OptType_VMRunner;
+            if (++i < argc)
+                m_strFloppyImage = arguments.at(i);
+        }
+        else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
+        {
+            enmOptType = OptType_VMRunner;
+            if (++i < argc)
+                m_strDvdImage = arguments.at(i);
+        }
+        /* VMM Options: */
+        else if (!::strcmp(arg, "--disable-patm"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fDisablePatm = true;
+        }
+        else if (!::strcmp(arg, "--disable-csam"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fDisableCsam = true;
+        }
+        else if (!::strcmp(arg, "--recompile-supervisor"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fRecompileSupervisor = true;
+        }
+        else if (!::strcmp(arg, "--recompile-user"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fRecompileUser = true;
+        }
+        else if (!::strcmp(arg, "--recompile-all"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fDisablePatm = m_fDisableCsam = m_fRecompileSupervisor = m_fRecompileUser = true;
+        }
+        else if (!::strcmp(arg, "--execute-all-in-iem"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_fDisablePatm = m_fDisableCsam = m_fExecuteAllInIem = true;
+        }
+        else if (!::strcmp(arg, "--warp-pct"))
+        {
+            enmOptType = OptType_VMRunner;
+            if (++i < argc)
+                m_uWarpPct = RTStrToUInt32(arguments.at(i).toLocal8Bit().constData());
+        }
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        /* Debugger/Debugging options: */
+        else if (!::strcmp(arg, "-dbg") || !::strcmp(arg, "--dbg"))
+        {
+            enmOptType = OptType_VMRunner;
+            setDebuggerVar(&m_fDbgEnabled, true);
+        }
+        else if (!::strcmp( arg, "-debug") || !::strcmp(arg, "--debug"))
+        {
+            enmOptType = OptType_VMRunner;
+            setDebuggerVar(&m_fDbgEnabled, true);
+            setDebuggerVar(&m_fDbgAutoShow, true);
+            setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
+            setDebuggerVar(&m_fDbgAutoShowStatistics, true);
+        }
+        else if (!::strcmp(arg, "--debug-command-line"))
+        {
+            enmOptType = OptType_VMRunner;
+            setDebuggerVar(&m_fDbgEnabled, true);
+            setDebuggerVar(&m_fDbgAutoShow, true);
+            setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
+        }
+        else if (!::strcmp(arg, "--debug-statistics"))
+        {
+            enmOptType = OptType_VMRunner;
+            setDebuggerVar(&m_fDbgEnabled, true);
+            setDebuggerVar(&m_fDbgAutoShow, true);
+            setDebuggerVar(&m_fDbgAutoShowStatistics, true);
+        }
+        else if (!::strcmp(arg, "--statistics-expand") || !::strcmp(arg, "--stats-expand"))
+        {
+            enmOptType = OptType_VMRunner;
+            if (++i < argc)
+            {
+                if (!m_strDbgStatisticsExpand.isEmpty())
+                    m_strDbgStatisticsExpand.append('|');
+                m_strDbgStatisticsExpand.append(arguments.at(i));
+            }
+        }
+        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-expand=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-expand=")))
+        {
+            enmOptType = OptType_VMRunner;
+            if (!m_strDbgStatisticsExpand.isEmpty())
+                m_strDbgStatisticsExpand.append('|');
+            m_strDbgStatisticsExpand.append(arguments.at(i).section('=', 1));
+        }
+        else if (!::strcmp(arg, "--statistics-filter") || !::strcmp(arg, "--stats-filter"))
+        {
+            enmOptType = OptType_VMRunner;
+            if (++i < argc)
+                m_strDbgStatisticsFilter = arguments.at(i);
+        }
+        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-filter=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-filter=")))
+        {
+            enmOptType = OptType_VMRunner;
+            m_strDbgStatisticsFilter = arguments.at(i).section('=', 1);
+        }
+        else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
+        {
+            enmOptType = OptType_VMRunner;
+            setDebuggerVar(&m_fDbgEnabled, false);
+            setDebuggerVar(&m_fDbgAutoShow, false);
+            setDebuggerVar(&m_fDbgAutoShowCommandLine, false);
+            setDebuggerVar(&m_fDbgAutoShowStatistics, false);
+        }
+        /* Not quite debug options, but they're only useful with the debugger bits. */
+        else if (!::strcmp(arg, "--start-paused"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_enmLaunchRunning = LaunchRunning_No;
+        }
+        else if (!::strcmp(arg, "--start-running"))
+        {
+            enmOptType = OptType_VMRunner;
+            m_enmLaunchRunning = LaunchRunning_Yes;
+        }
+#endif
+        if (enmOptType == OptType_VMRunner && m_enmType != UIType_RuntimeUI)
+            msgCenter().warnAboutUnrelatedOptionType(arg);
+
+        i++;
+    }
+
+    if (m_enmType == UIType_RuntimeUI && startVM)
+    {
+        /* m_fSeparateProcess makes sense only if a VM is started. */
+        m_fSeparateProcess = fSeparateProcess;
+
+        /* Search for corresponding VM: */
+        QUuid uuid = QUuid(vmNameOrUuid);
+        const CMachine machine = m_comVBox.FindMachine(vmNameOrUuid);
+        if (!uuid.isNull())
+        {
+            if (machine.isNull() && showStartVMErrors())
+                return msgCenter().cannotFindMachineById(m_comVBox, vmNameOrUuid);
+        }
+        else
+        {
+            if (machine.isNull() && showStartVMErrors())
+                return msgCenter().cannotFindMachineByName(m_comVBox, vmNameOrUuid);
+        }
+        m_strManagedVMId = machine.GetId();
+
+        if (m_fSeparateProcess)
+        {
+            /* Create a log file for VirtualBoxVM process. */
+            QString str = machine.GetLogFolder();
+            com::Utf8Str logDir(str.toUtf8().constData());
+
+            /* make sure the Logs folder exists */
+            if (!RTDirExists(logDir.c_str()))
+                RTDirCreateFullPath(logDir.c_str(), 0700);
+
+            com::Utf8Str logFile = com::Utf8StrFmt("%s%cVBoxUI.log",
+                                                   logDir.c_str(), RTPATH_DELIMITER);
+
+            com::VBoxLogRelCreate("GUI (separate)", logFile.c_str(),
+                                  RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS,
+                                  "all all.restrict -default.restrict",
+                                  "VBOX_RELEASE_LOG", RTLOGDEST_FILE,
+                                  32768 /* cMaxEntriesPerGroup */,
+                                  0 /* cHistory */, 0 /* uHistoryFileTime */,
+                                  0 /* uHistoryFileSize */, NULL);
+        }
+    }
+
+    /* For Selector UI: */
+    if (uiType() == UIType_SelectorUI)
+    {
+        /* We should create separate logging file for VM selector: */
+        char szLogFile[RTPATH_MAX];
+        const char *pszLogFile = NULL;
+        com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+        RTPathAppend(szLogFile, sizeof(szLogFile), "selectorwindow.log");
+        pszLogFile = szLogFile;
+        /* Create release logger, to file: */
+        com::VBoxLogRelCreate("GUI VM Selector Window",
+                              pszLogFile,
+                              RTLOGFLAGS_PREFIX_TIME_PROG,
+                              "all",
+                              "VBOX_GUI_SELECTORWINDOW_RELEASE_LOG",
+                              RTLOGDEST_FILE | RTLOGDEST_F_NO_DENY,
+                              UINT32_MAX,
+                              10,
+                              60 * 60,
+                              _1M,
+                              NULL /*pErrInfo*/);
+
+        LogRel(("Qt version: %s\n", qtRTVersionString().toUtf8().constData()));
+    }
+
+    if (m_fSettingsPwSet)
+        m_comVBox.SetSettingsSecret(m_astrSettingsPw);
+
+    if (visualStateType != UIVisualStateType_Invalid && !m_strManagedVMId.isNull())
+        gEDataManager->setRequestedVisualState(visualStateType, m_strManagedVMId);
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* For Runtime UI: */
+    if (uiType() == UIType_RuntimeUI)
+    {
+        /* Setup the debugger GUI: */
+        if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
+            m_fDbgEnabled = m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
+        if (m_fDbgEnabled)
+        {
+            RTERRINFOSTATIC ErrInfo;
+            RTErrInfoInitStatic(&ErrInfo);
+            int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &m_hVBoxDbg, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
+            if (RT_FAILURE(vrc))
+            {
+                m_hVBoxDbg = NIL_RTLDRMOD;
+                m_fDbgAutoShow = m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
+                LogRel(("Failed to load VBoxDbg, rc=%Rrc - %s\n", vrc, ErrInfo.Core.pszMsg));
+            }
+        }
+    }
+#endif
+
+    m_fValid = true;
+
+    /* Create medium-enumerator but don't do any immediate caching: */
+    m_pMediumEnumerator = new UIMediumEnumerator;
+    {
+        /* Prepare medium-enumerator: */
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
+                this, &UICommon::sigMediumCreated);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
+                this, &UICommon::sigMediumDeleted);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
+                this, &UICommon::sigMediumEnumerationStarted);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
+                this, &UICommon::sigMediumEnumerated);
+        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
+                this, &UICommon::sigMediumEnumerationFinished);
+    }
+
+    /* Create shortcut pool: */
+    UIShortcutPool::create();
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* Create network manager: */
+    UINetworkRequestManager::create();
+
+    /* Schedule update manager: */
+    UIUpdateManager::schedule();
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+#ifdef RT_OS_LINUX
+    /* Make sure no wrong USB mounted: */
+    checkForWrongUSBMounted();
+#endif /* RT_OS_LINUX */
+
+    /* Populate the list of medium names to be excluded from the
+       recently used media extra data: */
+#if 0 /* bird: This is counter productive as it is _frequently_ necessary to re-insert the
+               viso to refresh the files (like after you rebuilt them on the host).
+               The guest caches ISOs aggressively and files sizes may change. */
+    m_recentMediaExcludeList << "ad-hoc.viso";
+#endif
+}
+
+void UICommon::cleanup()
+{
+    LogRel(("GUI: UICommon: Handling aboutToQuit request..\n"));
+
+    /// @todo Shouldn't that be protected with a mutex or something?
+    /* Remember that the cleanup is in progress preventing any unwanted
+     * stuff which could be called from the other threads: */
+    s_fCleaningUp = true;
+
+#ifdef VBOX_WS_WIN
+    /* Ask listeners to commit data if haven't yet: */
+    if (!m_fDataCommitted)
+    {
+        emit sigAskToCommitData();
+        m_fDataCommitted = true;
+    }
+#else
+    /* Ask listeners to commit data: */
+    emit sigAskToCommitData();
+#endif
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* For Runtime UI: */
+    if (   uiType() == UIType_RuntimeUI
+        && m_hVBoxDbg != NIL_RTLDRMOD)
+    {
+        RTLdrClose(m_hVBoxDbg);
+        m_hVBoxDbg = NIL_RTLDRMOD;
+    }
+#endif
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* Shutdown update manager: */
+    UIUpdateManager::shutdown();
+
+    /* Destroy network manager: */
+    UINetworkRequestManager::destroy();
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+    /* Destroy shortcut pool: */
+    UIShortcutPool::destroy();
+
+#ifdef VBOX_GUI_WITH_PIDFILE
+    deletePidfile();
+#endif /* VBOX_GUI_WITH_PIDFILE */
+
+    /* Starting medium-enumerator cleanup: */
+    m_meCleanupProtectionToken.lockForWrite();
+    {
+        /* Destroy medium-enumerator: */
+        delete m_pMediumEnumerator;
+        m_pMediumEnumerator = 0;
+    }
+    /* Finishing medium-enumerator cleanup: */
+    m_meCleanupProtectionToken.unlock();
+
+    /* Destroy the global (VirtualBox and VirtualBoxClient) Main event
+     * handlers which are used in both Manager and Runtime UIs. */
+    UIVirtualBoxEventHandler::destroy();
+    UIVirtualBoxClientEventHandler::destroy();
+
+    /* Destroy the extra-data manager finally after everything
+     * above which could use it already destroyed: */
+    UIExtraDataManager::destroy();
+
+    /* Destroy converter: */
+    UIConverter::destroy();
+
+    /* Cleanup thread-pools: */
+    delete m_pThreadPool;
+    m_pThreadPool = 0;
+    delete m_pThreadPoolCloud;
+    m_pThreadPoolCloud = 0;
+    /* Cleanup general icon-pool: */
+    delete m_pIconPool;
+    m_pIconPool = 0;
+
+    /* Ensure CGuestOSType objects are no longer used: */
+    m_guestOSFamilyIDs.clear();
+    m_guestOSTypes.clear();
+
+    /* Starting COM cleanup: */
+    m_comCleanupProtectionToken.lockForWrite();
+    {
+        /* First, make sure we don't use COM any more: */
+        emit sigAskToDetachCOM();
+        m_comHost.detach();
+        m_comVBox.detach();
+        m_comVBoxClient.detach();
+
+        /* There may be UIMedium(s)EnumeratedEvent instances still in the message
+         * queue which reference COM objects. Remove them to release those objects
+         * before uninitializing the COM subsystem. */
+        QApplication::removePostedEvents(this);
+
+        /* Finally cleanup COM itself: */
+        COMBase::CleanupCOM();
+    }
+    /* Finishing COM cleanup: */
+    m_comCleanupProtectionToken.unlock();
+
+    /* Notify listener it can close UI now: */
+    emit sigAskToCloseUI();
+
+    /* Destroy popup-center: */
+    UIPopupCenter::destroy();
+    /* Destroy message-center: */
+    UIMessageCenter::destroy();
+
+    /* Destroy desktop-widget watchdog: */
+    UIDesktopWidgetWatchdog::destroy();
+
+    m_fValid = false;
+
+    LogRel(("GUI: UICommon: aboutToQuit request handled!\n"));
 }
 
 /* static */
@@ -4111,646 +4743,6 @@ void UICommon::retranslateUi()
     // we keep a table of them, which must be updated when the language is changed.
     UINativeHotKey::retranslateKeyNames();
 #endif
-}
-
-void UICommon::prepare()
-{
-    /* Make sure QApplication cleanup us on exit: */
-    qApp->setFallbackSessionManagementEnabled(false);
-    connect(qApp, &QGuiApplication::aboutToQuit,
-            this, &UICommon::cleanup);
-#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
-    /* Make sure we handle host OS session shutdown as well: */
-    connect(qApp, &QGuiApplication::commitDataRequest,
-            this, &UICommon::sltHandleCommitDataRequest);
-#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
-
-#ifdef VBOX_WS_MAC
-    /* Determine OS release early: */
-    m_enmMacOSVersion = determineOsRelease();
-#endif /* VBOX_WS_MAC */
-
-    /* Create converter: */
-    UIConverter::create();
-
-    /* Create desktop-widget watchdog: */
-    UIDesktopWidgetWatchdog::create();
-
-    /* Create message-center: */
-    UIMessageCenter::create();
-    /* Create popup-center: */
-    UIPopupCenter::create();
-
-    /* Prepare general icon-pool: */
-    m_pIconPool = new UIIconPoolGeneral;
-
-    /* Load translation based on the current locale: */
-    loadLanguage();
-
-    HRESULT rc = COMBase::InitializeCOM(true);
-    if (FAILED(rc))
-    {
-#ifdef VBOX_WITH_XPCOM
-        if (rc == NS_ERROR_FILE_ACCESS_DENIED)
-        {
-            char szHome[RTPATH_MAX] = "";
-            com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
-            msgCenter().cannotInitUserHome(QString(szHome));
-        }
-        else
-#endif
-            msgCenter().cannotInitCOM(rc);
-        return;
-    }
-
-    /* Make sure VirtualBoxClient instance created: */
-    m_comVBoxClient.createInstance(CLSID_VirtualBoxClient);
-    if (!m_comVBoxClient.isOk())
-    {
-        msgCenter().cannotCreateVirtualBoxClient(m_comVBoxClient);
-        return;
-    }
-    /* Make sure VirtualBox instance acquired: */
-    m_comVBox = m_comVBoxClient.GetVirtualBox();
-    if (!m_comVBoxClient.isOk())
-    {
-        msgCenter().cannotAcquireVirtualBox(m_comVBoxClient);
-        return;
-    }
-    /* Init wrappers: */
-    comWrappersReinit();
-
-    /* Watch for the VBoxSVC availability changes: */
-    connect(gVBoxClientEvents, &UIVirtualBoxClientEventHandler::sigVBoxSVCAvailabilityChange,
-            this, &UICommon::sltHandleVBoxSVCAvailabilityChange);
-
-    /* Prepare thread-pool instances: */
-    m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
-    m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
-
-#ifdef VBOX_WS_WIN
-    /* Load color theme: */
-    loadColorTheme();
-#endif
-
-    /* Load translation based on the user settings: */
-    QString sLanguageId = gEDataManager->languageId();
-    if (!sLanguageId.isNull())
-        loadLanguage(sLanguageId);
-
-    retranslateUi();
-
-    connect(gEDataManager, &UIExtraDataManager::sigLanguageChange,
-            this, &UICommon::sltGUILanguageChange);
-
-    qApp->installEventFilter(this);
-
-    /* process command line */
-
-    UIVisualStateType visualStateType = UIVisualStateType_Invalid;
-
-#ifdef VBOX_WS_X11
-    /* Check whether we have compositing manager running: */
-    m_fCompositingManagerRunning = X11IsCompositingManagerRunning();
-
-    /* Acquire current Window Manager type: */
-    m_enmWindowManagerType = X11WindowManagerType();
-#endif /* VBOX_WS_X11 */
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-# ifdef VBOX_WITH_DEBUGGER_GUI_MENU
-    initDebuggerVar(&m_fDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, true);
-# else
-    initDebuggerVar(&m_fDbgEnabled, "VBOX_GUI_DBG_ENABLED", GUI_Dbg_Enabled, false);
-# endif
-    initDebuggerVar(&m_fDbgAutoShow, "VBOX_GUI_DBG_AUTO_SHOW", GUI_Dbg_AutoShow, false);
-    m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = m_fDbgAutoShow;
-#endif
-
-    /*
-     * Parse the command line options.
-     *
-     * This is a little sloppy but we're trying to tighten it up.  Unfortuately,
-     * both on X11 and darwin (IIRC) there might be additional arguments aimed
-     * for client libraries with GUI processes.  So, using RTGetOpt or similar
-     * is a bit hard since we have to cope with unknown options.
-     */
-    m_fShowStartVMErrors = true;
-    bool startVM = false;
-    bool fSeparateProcess = false;
-    QString vmNameOrUuid;
-
-    const QStringList &arguments = QCoreApplication::arguments();
-    const int argc = arguments.size();
-    int i = 1;
-    while (i < argc)
-    {
-        const QByteArray &argBytes = arguments.at(i).toUtf8();
-        const char *arg = argBytes.constData();
-        enum { OptType_Unknown, OptType_VMRunner, OptType_VMSelector, OptType_MaybeBoth } enmOptType = OptType_Unknown;
-        /* NOTE: the check here must match the corresponding check for the
-         * options to start a VM in main.cpp and hardenedmain.cpp exactly,
-         * otherwise there will be weird error messages. */
-        if (   !::strcmp(arg, "--startvm")
-            || !::strcmp(arg, "-startvm"))
-        {
-            enmOptType = OptType_VMRunner;
-            if (++i < argc)
-            {
-                vmNameOrUuid = arguments.at(i);
-                startVM = true;
-            }
-        }
-        else if (!::strcmp(arg, "-separate") || !::strcmp(arg, "--separate"))
-        {
-            enmOptType = OptType_VMRunner;
-            fSeparateProcess = true;
-        }
-#ifdef VBOX_GUI_WITH_PIDFILE
-        else if (!::strcmp(arg, "-pidfile") || !::strcmp(arg, "--pidfile"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            if (++i < argc)
-                m_strPidFile = arguments.at(i);
-        }
-#endif /* VBOX_GUI_WITH_PIDFILE */
-        /* Visual state type options: */
-        else if (!::strcmp(arg, "-normal") || !::strcmp(arg, "--normal"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            visualStateType = UIVisualStateType_Normal;
-        }
-        else if (!::strcmp(arg, "-fullscreen") || !::strcmp(arg, "--fullscreen"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            visualStateType = UIVisualStateType_Fullscreen;
-        }
-        else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            visualStateType = UIVisualStateType_Seamless;
-        }
-        else if (!::strcmp(arg, "-scale") || !::strcmp(arg, "--scale"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            visualStateType = UIVisualStateType_Scale;
-        }
-        /* Passwords: */
-        else if (!::strcmp(arg, "--settingspw"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            if (++i < argc)
-            {
-                RTStrCopy(m_astrSettingsPw, sizeof(m_astrSettingsPw), arguments.at(i).toLocal8Bit().constData());
-                m_fSettingsPwSet = true;
-            }
-        }
-        else if (!::strcmp(arg, "--settingspwfile"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            if (++i < argc)
-            {
-                const QByteArray &argFileBytes = arguments.at(i).toLocal8Bit();
-                const char *pszFile = argFileBytes.constData();
-                bool fStdIn = !::strcmp(pszFile, "stdin");
-                int vrc = VINF_SUCCESS;
-                PRTSTREAM pStrm;
-                if (!fStdIn)
-                    vrc = RTStrmOpen(pszFile, "r", &pStrm);
-                else
-                    pStrm = g_pStdIn;
-                if (RT_SUCCESS(vrc))
-                {
-                    size_t cbFile;
-                    vrc = RTStrmReadEx(pStrm, m_astrSettingsPw, sizeof(m_astrSettingsPw) - 1, &cbFile);
-                    if (RT_SUCCESS(vrc))
-                    {
-                        if (cbFile >= sizeof(m_astrSettingsPw) - 1)
-                            cbFile = sizeof(m_astrSettingsPw) - 1;
-                        unsigned i;
-                        for (i = 0; i < cbFile && !RT_C_IS_CNTRL(m_astrSettingsPw[i]); i++)
-                            ;
-                        m_astrSettingsPw[i] = '\0';
-                        m_fSettingsPwSet = true;
-                    }
-                    if (!fStdIn)
-                        RTStrmClose(pStrm);
-                }
-            }
-        }
-        /* Misc options: */
-        else if (!::strcmp(arg, "-comment") || !::strcmp(arg, "--comment"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            ++i;
-        }
-        else if (!::strcmp(arg, "--no-startvm-errormsgbox"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fShowStartVMErrors = false;
-        }
-        else if (!::strcmp(arg, "--aggressive-caching"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            m_fAgressiveCaching = true;
-        }
-        else if (!::strcmp(arg, "--no-aggressive-caching"))
-        {
-            enmOptType = OptType_MaybeBoth;
-            m_fAgressiveCaching = false;
-        }
-        else if (!::strcmp(arg, "--restore-current"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fRestoreCurrentSnapshot = true;
-        }
-        /* Ad hoc VM reconfig options: */
-        else if (!::strcmp(arg, "--fda"))
-        {
-            enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_strFloppyImage = arguments.at(i);
-        }
-        else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
-        {
-            enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_strDvdImage = arguments.at(i);
-        }
-        /* VMM Options: */
-        else if (!::strcmp(arg, "--disable-patm"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fDisablePatm = true;
-        }
-        else if (!::strcmp(arg, "--disable-csam"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fDisableCsam = true;
-        }
-        else if (!::strcmp(arg, "--recompile-supervisor"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fRecompileSupervisor = true;
-        }
-        else if (!::strcmp(arg, "--recompile-user"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fRecompileUser = true;
-        }
-        else if (!::strcmp(arg, "--recompile-all"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fDisablePatm = m_fDisableCsam = m_fRecompileSupervisor = m_fRecompileUser = true;
-        }
-        else if (!::strcmp(arg, "--execute-all-in-iem"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fDisablePatm = m_fDisableCsam = m_fExecuteAllInIem = true;
-        }
-        else if (!::strcmp(arg, "--warp-pct"))
-        {
-            enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_uWarpPct = RTStrToUInt32(arguments.at(i).toLocal8Bit().constData());
-        }
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        /* Debugger/Debugging options: */
-        else if (!::strcmp(arg, "-dbg") || !::strcmp(arg, "--dbg"))
-        {
-            enmOptType = OptType_VMRunner;
-            setDebuggerVar(&m_fDbgEnabled, true);
-        }
-        else if (!::strcmp( arg, "-debug") || !::strcmp(arg, "--debug"))
-        {
-            enmOptType = OptType_VMRunner;
-            setDebuggerVar(&m_fDbgEnabled, true);
-            setDebuggerVar(&m_fDbgAutoShow, true);
-            setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
-            setDebuggerVar(&m_fDbgAutoShowStatistics, true);
-        }
-        else if (!::strcmp(arg, "--debug-command-line"))
-        {
-            enmOptType = OptType_VMRunner;
-            setDebuggerVar(&m_fDbgEnabled, true);
-            setDebuggerVar(&m_fDbgAutoShow, true);
-            setDebuggerVar(&m_fDbgAutoShowCommandLine, true);
-        }
-        else if (!::strcmp(arg, "--debug-statistics"))
-        {
-            enmOptType = OptType_VMRunner;
-            setDebuggerVar(&m_fDbgEnabled, true);
-            setDebuggerVar(&m_fDbgAutoShow, true);
-            setDebuggerVar(&m_fDbgAutoShowStatistics, true);
-        }
-        else if (!::strcmp(arg, "--statistics-expand") || !::strcmp(arg, "--stats-expand"))
-        {
-            enmOptType = OptType_VMRunner;
-            if (++i < argc)
-            {
-                if (!m_strDbgStatisticsExpand.isEmpty())
-                    m_strDbgStatisticsExpand.append('|');
-                m_strDbgStatisticsExpand.append(arguments.at(i));
-            }
-        }
-        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-expand=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-expand=")))
-        {
-            enmOptType = OptType_VMRunner;
-            if (!m_strDbgStatisticsExpand.isEmpty())
-                m_strDbgStatisticsExpand.append('|');
-            m_strDbgStatisticsExpand.append(arguments.at(i).section('=', 1));
-        }
-        else if (!::strcmp(arg, "--statistics-filter") || !::strcmp(arg, "--stats-filter"))
-        {
-            enmOptType = OptType_VMRunner;
-            if (++i < argc)
-                m_strDbgStatisticsFilter = arguments.at(i);
-        }
-        else if (!::strncmp(arg, RT_STR_TUPLE("--statistics-filter=")) || !::strncmp(arg, RT_STR_TUPLE("--stats-filter=")))
-        {
-            enmOptType = OptType_VMRunner;
-            m_strDbgStatisticsFilter = arguments.at(i).section('=', 1);
-        }
-        else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
-        {
-            enmOptType = OptType_VMRunner;
-            setDebuggerVar(&m_fDbgEnabled, false);
-            setDebuggerVar(&m_fDbgAutoShow, false);
-            setDebuggerVar(&m_fDbgAutoShowCommandLine, false);
-            setDebuggerVar(&m_fDbgAutoShowStatistics, false);
-        }
-        /* Not quite debug options, but they're only useful with the debugger bits. */
-        else if (!::strcmp(arg, "--start-paused"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_enmLaunchRunning = LaunchRunning_No;
-        }
-        else if (!::strcmp(arg, "--start-running"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_enmLaunchRunning = LaunchRunning_Yes;
-        }
-#endif
-        if (enmOptType == OptType_VMRunner && m_enmType != UIType_RuntimeUI)
-            msgCenter().warnAboutUnrelatedOptionType(arg);
-
-        i++;
-    }
-
-    if (m_enmType == UIType_RuntimeUI && startVM)
-    {
-        /* m_fSeparateProcess makes sense only if a VM is started. */
-        m_fSeparateProcess = fSeparateProcess;
-
-        /* Search for corresponding VM: */
-        QUuid uuid = QUuid(vmNameOrUuid);
-        const CMachine machine = m_comVBox.FindMachine(vmNameOrUuid);
-        if (!uuid.isNull())
-        {
-            if (machine.isNull() && showStartVMErrors())
-                return msgCenter().cannotFindMachineById(m_comVBox, vmNameOrUuid);
-        }
-        else
-        {
-            if (machine.isNull() && showStartVMErrors())
-                return msgCenter().cannotFindMachineByName(m_comVBox, vmNameOrUuid);
-        }
-        m_strManagedVMId = machine.GetId();
-
-        if (m_fSeparateProcess)
-        {
-            /* Create a log file for VirtualBoxVM process. */
-            QString str = machine.GetLogFolder();
-            com::Utf8Str logDir(str.toUtf8().constData());
-
-            /* make sure the Logs folder exists */
-            if (!RTDirExists(logDir.c_str()))
-                RTDirCreateFullPath(logDir.c_str(), 0700);
-
-            com::Utf8Str logFile = com::Utf8StrFmt("%s%cVBoxUI.log",
-                                                   logDir.c_str(), RTPATH_DELIMITER);
-
-            com::VBoxLogRelCreate("GUI (separate)", logFile.c_str(),
-                                  RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS,
-                                  "all all.restrict -default.restrict",
-                                  "VBOX_RELEASE_LOG", RTLOGDEST_FILE,
-                                  32768 /* cMaxEntriesPerGroup */,
-                                  0 /* cHistory */, 0 /* uHistoryFileTime */,
-                                  0 /* uHistoryFileSize */, NULL);
-        }
-    }
-
-    /* For Selector UI: */
-    if (uiType() == UIType_SelectorUI)
-    {
-        /* We should create separate logging file for VM selector: */
-        char szLogFile[RTPATH_MAX];
-        const char *pszLogFile = NULL;
-        com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
-        RTPathAppend(szLogFile, sizeof(szLogFile), "selectorwindow.log");
-        pszLogFile = szLogFile;
-        /* Create release logger, to file: */
-        com::VBoxLogRelCreate("GUI VM Selector Window",
-                              pszLogFile,
-                              RTLOGFLAGS_PREFIX_TIME_PROG,
-                              "all",
-                              "VBOX_GUI_SELECTORWINDOW_RELEASE_LOG",
-                              RTLOGDEST_FILE | RTLOGDEST_F_NO_DENY,
-                              UINT32_MAX,
-                              10,
-                              60 * 60,
-                              _1M,
-                              NULL /*pErrInfo*/);
-
-        LogRel(("Qt version: %s\n", qtRTVersionString().toUtf8().constData()));
-    }
-
-    if (m_fSettingsPwSet)
-        m_comVBox.SetSettingsSecret(m_astrSettingsPw);
-
-    if (visualStateType != UIVisualStateType_Invalid && !m_strManagedVMId.isNull())
-        gEDataManager->setRequestedVisualState(visualStateType, m_strManagedVMId);
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* For Runtime UI: */
-    if (uiType() == UIType_RuntimeUI)
-    {
-        /* Setup the debugger GUI: */
-        if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
-            m_fDbgEnabled = m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
-        if (m_fDbgEnabled)
-        {
-            RTERRINFOSTATIC ErrInfo;
-            RTErrInfoInitStatic(&ErrInfo);
-            int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &m_hVBoxDbg, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
-            if (RT_FAILURE(vrc))
-            {
-                m_hVBoxDbg = NIL_RTLDRMOD;
-                m_fDbgAutoShow = m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
-                LogRel(("Failed to load VBoxDbg, rc=%Rrc - %s\n", vrc, ErrInfo.Core.pszMsg));
-            }
-        }
-    }
-#endif
-
-    m_fValid = true;
-
-    /* Create medium-enumerator but don't do any immediate caching: */
-    m_pMediumEnumerator = new UIMediumEnumerator;
-    {
-        /* Prepare medium-enumerator: */
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumCreated,
-                this, &UICommon::sigMediumCreated);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumDeleted,
-                this, &UICommon::sigMediumDeleted);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationStarted,
-                this, &UICommon::sigMediumEnumerationStarted);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerated,
-                this, &UICommon::sigMediumEnumerated);
-        connect(m_pMediumEnumerator, &UIMediumEnumerator::sigMediumEnumerationFinished,
-                this, &UICommon::sigMediumEnumerationFinished);
-    }
-
-    /* Create shortcut pool: */
-    UIShortcutPool::create();
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* Create network manager: */
-    UINetworkRequestManager::create();
-
-    /* Schedule update manager: */
-    UIUpdateManager::schedule();
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
-#ifdef RT_OS_LINUX
-    /* Make sure no wrong USB mounted: */
-    checkForWrongUSBMounted();
-#endif /* RT_OS_LINUX */
-
-    /* Populate the list of medium names to be excluded from the
-       recently used media extra data: */
-#if 0 /* bird: This is counter productive as it is _frequently_ necessary to re-insert the
-               viso to refresh the files (like after you rebuilt them on the host).
-               The guest caches ISOs aggressively and files sizes may change. */
-    m_recentMediaExcludeList << "ad-hoc.viso";
-#endif
-}
-
-void UICommon::cleanup()
-{
-    LogRel(("GUI: UICommon: Handling aboutToQuit request..\n"));
-
-    /// @todo Shouldn't that be protected with a mutex or something?
-    /* Remember that the cleanup is in progress preventing any unwanted
-     * stuff which could be called from the other threads: */
-    s_fCleaningUp = true;
-
-#ifdef VBOX_WS_WIN
-    /* Ask listeners to commit data if haven't yet: */
-    if (!m_fDataCommitted)
-    {
-        emit sigAskToCommitData();
-        m_fDataCommitted = true;
-    }
-#else
-    /* Ask listeners to commit data: */
-    emit sigAskToCommitData();
-#endif
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* For Runtime UI: */
-    if (   uiType() == UIType_RuntimeUI
-        && m_hVBoxDbg != NIL_RTLDRMOD)
-    {
-        RTLdrClose(m_hVBoxDbg);
-        m_hVBoxDbg = NIL_RTLDRMOD;
-    }
-#endif
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* Shutdown update manager: */
-    UIUpdateManager::shutdown();
-
-    /* Destroy network manager: */
-    UINetworkRequestManager::destroy();
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
-    /* Destroy shortcut pool: */
-    UIShortcutPool::destroy();
-
-#ifdef VBOX_GUI_WITH_PIDFILE
-    deletePidfile();
-#endif /* VBOX_GUI_WITH_PIDFILE */
-
-    /* Starting medium-enumerator cleanup: */
-    m_meCleanupProtectionToken.lockForWrite();
-    {
-        /* Destroy medium-enumerator: */
-        delete m_pMediumEnumerator;
-        m_pMediumEnumerator = 0;
-    }
-    /* Finishing medium-enumerator cleanup: */
-    m_meCleanupProtectionToken.unlock();
-
-    /* Destroy the global (VirtualBox and VirtualBoxClient) Main event
-     * handlers which are used in both Manager and Runtime UIs. */
-    UIVirtualBoxEventHandler::destroy();
-    UIVirtualBoxClientEventHandler::destroy();
-
-    /* Destroy the extra-data manager finally after everything
-     * above which could use it already destroyed: */
-    UIExtraDataManager::destroy();
-
-    /* Destroy converter: */
-    UIConverter::destroy();
-
-    /* Cleanup thread-pools: */
-    delete m_pThreadPool;
-    m_pThreadPool = 0;
-    delete m_pThreadPoolCloud;
-    m_pThreadPoolCloud = 0;
-    /* Cleanup general icon-pool: */
-    delete m_pIconPool;
-    m_pIconPool = 0;
-
-    /* Ensure CGuestOSType objects are no longer used: */
-    m_guestOSFamilyIDs.clear();
-    m_guestOSTypes.clear();
-
-    /* Starting COM cleanup: */
-    m_comCleanupProtectionToken.lockForWrite();
-    {
-        /* First, make sure we don't use COM any more: */
-        emit sigAskToDetachCOM();
-        m_comHost.detach();
-        m_comVBox.detach();
-        m_comVBoxClient.detach();
-
-        /* There may be UIMedium(s)EnumeratedEvent instances still in the message
-         * queue which reference COM objects. Remove them to release those objects
-         * before uninitializing the COM subsystem. */
-        QApplication::removePostedEvents(this);
-
-        /* Finally cleanup COM itself: */
-        COMBase::CleanupCOM();
-    }
-    /* Finishing COM cleanup: */
-    m_comCleanupProtectionToken.unlock();
-
-    /* Notify listener it can close UI now: */
-    emit sigAskToCloseUI();
-
-    /* Destroy popup-center: */
-    UIPopupCenter::destroy();
-    /* Destroy message-center: */
-    UIMessageCenter::destroy();
-
-    /* Destroy desktop-widget watchdog: */
-    UIDesktopWidgetWatchdog::destroy();
-
-    m_fValid = false;
-
-    LogRel(("GUI: UICommon: aboutToQuit request handled!\n"));
 }
 
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
