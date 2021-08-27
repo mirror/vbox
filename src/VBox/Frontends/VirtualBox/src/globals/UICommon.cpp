@@ -436,37 +436,6 @@ QString UICommon::brandingGetKey(QString strKey)
     return settings.value(QString("%1").arg(strKey)).toString();
 }
 
-/*static */
-QString UICommon::findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName)
-{
-    QDir folder(strFullFolderPath);
-    if (!folder.exists())
-        return strBaseFileName;
-    QFileInfoList folderContent = folder.entryInfoList();
-    QSet<QString> fileNameSet;
-    foreach (const QFileInfo &fileInfo, folderContent)
-    {
-        /* Remove the extension : */
-        fileNameSet.insert(fileInfo.completeBaseName());
-    }
-    int iSuffix = 0;
-    QString strNewName(strBaseFileName);
-    while (fileNameSet.contains(strNewName))
-    {
-        strNewName = strBaseFileName + QString("_") + QString::number(++iSuffix);
-    }
-    return strNewName;
-}
-
-/* static */
-bool UICommon::hasAllowedExtension(const QString &strExt, const QStringList &extList)
-{
-    for (int i = 0; i < extList.size(); ++i)
-        if (strExt.endsWith(extList.at(i), Qt::CaseInsensitive))
-            return true;
-    return false;
-}
-
 bool UICommon::processArgs()
 {
     /* Among those arguments: */
@@ -1471,6 +1440,37 @@ QString UICommon::documentsPath()
         else
             return QDir::homePath();
     }
+}
+
+/* static */
+bool UICommon::hasAllowedExtension(const QString &strFileName, const QStringList &extensions)
+{
+    foreach (const QString &strExtension, extensions)
+        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
+            return true;
+    return false;
+}
+
+/* static */
+QString UICommon::findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName)
+{
+    QDir folder(strFullFolderPath);
+    if (!folder.exists())
+        return strBaseFileName;
+    QFileInfoList folderContent = folder.entryInfoList();
+    QSet<QString> fileNameSet;
+    foreach (const QFileInfo &fileInfo, folderContent)
+    {
+        /* Remove the extension : */
+        fileNameSet.insert(fileInfo.completeBaseName());
+    }
+    int iSuffix = 0;
+    QString strNewName(strBaseFileName);
+    while (fileNameSet.contains(strNewName))
+    {
+        strNewName = strBaseFileName + QString("_") + QString::number(++iSuffix);
+    }
+    return strNewName;
 }
 
 /* static */
