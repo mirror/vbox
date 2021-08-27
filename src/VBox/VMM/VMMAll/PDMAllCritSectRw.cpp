@@ -1251,7 +1251,6 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
                     }
                     else
                         return pdmCritSectRwEnterExclBailOut(pThis, rcBusy != VINF_SUCCESS ? rcBusy : rc);
-
                 }
 # else  /* IN_RING3 */
                 RT_NOREF(pVM, pVCpu, rcBusy);
