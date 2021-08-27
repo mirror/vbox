@@ -196,10 +196,12 @@ typedef FNRTLOGGER *PFNRTLOGGER;
 /**
  * Custom buffer flushing function.
  *
- * @retval  true if flushed.
- * @retval  false if flushing pending on other thread and the logger should
- *          switch to the next buffer.  The other thread will call
- *          RTLogFlushDone when finished.
+ * @retval  true if flushed and the buffer can be reused.
+ * @retval  false for switching to the next buffer because an async flush of
+ *          @a pBufDesc is still pending.  The implementation is responsible for
+ *          only returning when the next buffer is ready for reuse, the generic
+ *          logger code has no facility to make sure of this.
+ *
  * @param   pLogger     Pointer to the logger instance which is to be flushed.
  * @param   pBufDesc    The descriptor of the buffer to be flushed.
  */
@@ -287,7 +289,7 @@ typedef struct RTLOGBUFFERDESC
 } RTLOGBUFFERDESC;
 
 /** RTLOGBUFFERDESC::u32Magic value. (Avram Noam Chomsky) */
-# define RTLOGBUFFERDESC_MAGIC   UINT32_C(0x19281207)
+#define RTLOGBUFFERDESC_MAGIC   UINT32_C(0x19281207)
 
 /**
  * The public logger instance part.
@@ -320,7 +322,7 @@ struct RTLOGGER
 };
 
 /** RTLOGGER::u32Magic value. (John Rogers Searle) */
-#define RTLOGGER_MAGIC      UINT32_C(0x19320731)
+#define RTLOGGER_MAGIC          UINT32_C(0x19320731)
 
 /**
  * Logger flags.

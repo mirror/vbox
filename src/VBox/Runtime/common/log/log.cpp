@@ -3106,10 +3106,10 @@ RT_EXPORT_SYMBOL(RTLogFlush);
  */
 static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace)
 {
-    PRTLOGBUFFERDESC const pBufDesc   = pLoggerInt->pBufDesc;
-    uint32_t               cchToFlush = pBufDesc->offBuf;
-    char * const           pchToFlush = pBufDesc->pchBuf;
-    uint32_t const         cbBuf      = pBufDesc->cbBuf;
+    PRTLOGBUFFERDESC    pBufDesc   = pLoggerInt->pBufDesc;
+    uint32_t            cchToFlush = pBufDesc->offBuf;
+    char * const        pchToFlush = pBufDesc->pchBuf;
+    uint32_t const      cbBuf      = pBufDesc->cbBuf;
     Assert(pBufDesc->u32Magic == RTLOGBUFFERDESC_MAGIC);
 
     NOREF(fNeedSpace);
@@ -3179,15 +3179,29 @@ static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace)
 
         if (pLoggerInt->pfnFlush)
         {
-            /** @todo implement asynchronous buffer switching protocol. */
-            bool fDone;
+            /*
+             * We have a custom flush callback.  Before calling it we must make
+             * sure the aux descriptor is up to date.  When we get back, we may
+             * need to switch to the next buffer if the current is being flushed
+             * asynchronously.  This of course requires there to be more than one
+             * buffer.  (The custom flush callback is responsible for making sure
+             * the next buffer isn't being flushed before returning.)
+             */
             if (pBufDesc->pAux)
                 pBufDesc->pAux->offBuf = cchToFlush;
-            fDone = pLoggerInt->pfnFlush(&pLoggerInt->Core, pBufDesc);
-            Assert(fDone == true); RT_NOREF(fDone);
+            if (!pLoggerInt->pfnFlush(&pLoggerInt->Core, pBufDesc))
+            {
+                /* advance to the next buffer */
+                Assert(pLoggerInt->cBufDescs > 1);
+                size_t idxBufDesc = pBufDesc - pLoggerInt->paBufDescs;
+                Assert(idxBufDesc < pLoggerInt->cBufDescs);
+                idxBufDesc = (idxBufDesc + 1) % pLoggerInt->cBufDescs;
+                pLoggerInt->idxBufDesc = (uint8_t)idxBufDesc;
+                pLoggerInt->pBufDesc   = pBufDesc = &pLoggerInt->paBufDescs[idxBufDesc];
+            }
         }
 
-        /* empty the buffer. */
+        /* Empty the buffer. */
         pBufDesc->offBuf = 0;
         if (pBufDesc->pAux)
             pBufDesc->pAux->offBuf = 0;
