@@ -293,42 +293,10 @@ public:
 
     /** @name Localization stuff.
      * @{ */
-        /** Native language name of the currently installed translation. */
-        static QString languageName();
-        /** Native language country name of the currently installed translation. */
-        static QString languageCountry();
-        /** Language name of the currently installed translation, in English. */
-        static QString languageNameEnglish();
-        /** Language country name of the currently installed translation, in English. */
-        static QString languageCountryEnglish();
-        /** Comma-separated list of authors of the currently installed translation. */
-        static QString languageTranslators();
-
-        /** Returns VBox language sub-directory. */
-        static QString vboxLanguageSubDirectory();
-        /** Returns VBox language file-base. */
-        static QString vboxLanguageFileBase();
-        /** Returns VBox language file-extension. */
-        static QString vboxLanguageFileExtension();
-        /** Returns VBox language ID reg-exp. */
-        static QString vboxLanguageIdRegExp();
-        /** Returns built in language name. */
-        static QString vboxBuiltInLanguageName();
-
-        /** Returns the loaded (active) language ID. */
-        static QString languageId();
-        /** Returns the system language ID. */
-        static QString systemLanguageId();
-
 #ifdef VBOX_WS_WIN
         /** Loads the color theme. */
         static void loadColorTheme();
 #endif
-
-        /** Loads the language by language ID.
-          * @param  strLangId  Brings the language ID in in form of xx_YY.
-          *                    QString() means the system default language. */
-        static void loadLanguage(const QString &strLangId = QString());
 
         /** Returns tr("%n year(s)"). */
         static QString yearsToString(uint32_t cVal);
@@ -859,9 +827,6 @@ private:
 
     /** @name Common stuff.
      * @{ */
-        /** Holds the currently loaded language ID. */
-        static QString  s_strLoadedLanguageId;
-
         /** Holds the tr("User Defined") port name. */
         static QString  s_strUserDefinedPortName;
 

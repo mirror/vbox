@@ -26,10 +26,12 @@
 #include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
 #include "QITreeWidget.h"
-#include "UICommon.h"
 #include "UILanguageSettingsEditor.h"
+#include "UITranslator.h"
 
 /* Other VBox includes: */
+#include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/path.h>
 
 
@@ -85,7 +87,7 @@ UILanguageItem::UILanguageItem(QITreeWidget *pParent, const QTranslator &transla
 {
     Assert(!strId.isEmpty());
 
-    /* Note: context/source/comment arguments below must match strings used in UICommon::languageName() and friends
+    /* Note: context/source/comment arguments below must match strings used in UITranslator::languageName() and friends
      *       (the latter are the source of information for the lupdate tool that generates translation files). */
 
     const QString strNativeLanguage = tratra(translator, "@@@", "English", "Native language name");
@@ -124,7 +126,7 @@ UILanguageItem::UILanguageItem(QITreeWidget *pParent, const QTranslator &transla
     setText(3, strTranslatorsName);
 
     /* Current language appears in bold: */
-    if (text(1) == UICommon::languageId())
+    if (text(1) == UITranslator::languageId())
     {
         QFont fnt = font(0);
         fnt.setBold(true);
@@ -382,22 +384,22 @@ void UILanguageSettingsEditor::reloadLanguageTree(const QString &strLanguageId)
     char szNlsPath[RTPATH_MAX];
     const int rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
     AssertRC(rc);
-    const QString strNlsPath = QString(szNlsPath) + UICommon::vboxLanguageSubDirectory();
+    const QString strNlsPath = QString(szNlsPath) + UITranslator::vboxLanguageSubDirectory();
     QDir nlsDir(strNlsPath);
-    QStringList files = nlsDir.entryList(QStringList(QString("%1*%2").arg(UICommon::vboxLanguageFileBase(),
-                                                                          UICommon::vboxLanguageFileExtension())),
+    QStringList files = nlsDir.entryList(QStringList(QString("%1*%2").arg(UITranslator::vboxLanguageFileBase(),
+                                                                          UITranslator::vboxLanguageFileExtension())),
                                          QDir::Files);
 
     QTranslator translator;
     /* Add the default language: */
     new UILanguageItem(m_pTreeWidget);
     /* Add the built-in language: */
-    new UILanguageItem(m_pTreeWidget, translator, UICommon::vboxBuiltInLanguageName(), true /* built-in */);
+    new UILanguageItem(m_pTreeWidget, translator, UITranslator::vboxBuiltInLanguageName(), true /* built-in */);
     /* Add all existing languages */
     for (QStringList::Iterator it = files.begin(); it != files.end(); ++it)
     {
         QString strFileName = *it;
-        QRegExp regExp(UICommon::vboxLanguageFileBase() + UICommon::vboxLanguageIdRegExp());
+        QRegExp regExp(UITranslator::vboxLanguageFileBase() + UITranslator::vboxLanguageIdRegExp());
         int iPos = regExp.indexIn(strFileName);
         if (iPos == -1)
             continue;

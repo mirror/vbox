@@ -39,6 +39,7 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIProgressDialog.h"
+#include "UITranslator.h"
 #include "VBoxAboutDlg.h"
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
@@ -2881,7 +2882,7 @@ bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulon
     return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> disk image file "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
-                             .arg(strUrl, QLocale(UICommon::languageId()).toString(uSize)),
+                             .arg(strUrl, QLocale(UITranslator::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2942,7 +2943,7 @@ bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglon
     return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
-                             .arg(strURL, QLocale(UICommon::languageId()).toString(uSize)),
+                             .arg(strURL, QLocale(UITranslator::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2981,7 +2982,7 @@ bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName
     return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
                              "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
-                             .arg(strExtPackName, strURL, QLocale(UICommon::languageId()).toString(uSize)),
+                             .arg(strExtPackName, strURL, QLocale(UITranslator::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
