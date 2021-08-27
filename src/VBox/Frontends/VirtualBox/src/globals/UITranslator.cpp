@@ -18,6 +18,9 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QDir>
+#ifdef Q_OS_UNIX
+# include <QLibraryInfo>
+#endif
 
 /* GUI includes: */
 #include "UIMessageCenter.h"
@@ -26,6 +29,9 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 #include <iprt/path.h>
+#ifdef Q_OS_UNIX
+# include <iprt/env.h>
+#endif
 
 /* static */
 UITranslator *UITranslator::s_pTranslator = 0;
