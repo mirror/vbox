@@ -38,6 +38,9 @@
 # include <iprt/env.h>
 #endif
 
+/* External includes: */
+#include <math.h>
+
 
 /** Port config cache. */
 struct PortConfig
