@@ -152,13 +152,12 @@
 /** Macro for flushing the ring-0 logging. */
 #define VMM_FLUSH_R0_LOG(a_pLogger, a_pR3Logger) \
     do { \
-        if ((a_pLogger)->AuxDesc.offBuf == 0 || (a_pLogger)->AuxDesc.fFlushedIndicator) \
+        size_t const idxBuf = (a_pLogger)->idxBuf % VMMLOGGER_BUFFER_COUNT; \
+        if (   (a_pLogger)->aBufs[idxBuf].AuxDesc.offBuf == 0 \
+            || (a_pLogger)->aBufs[idxBuf].AuxDesc.fFlushedIndicator) \
         { /* likely? */ } \
         else \
-        { \
-            RTLogBulkWrite(a_pR3Logger, (a_pLogger)->pchBufR3, (a_pLogger)->AuxDesc.offBuf); \
-            (a_pLogger)->AuxDesc.fFlushedIndicator = true; \
-        } \
+            vmmR3LogReturnFlush(a_pLogger, idxBuf, a_pR3Logger); \
     } while (0)
 
 
@@ -176,7 +175,9 @@ static VBOXSTRICTRC         vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool
                                                      uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
 static int                  vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu);
 static FNRTTHREAD           vmmR3LogFlusher;
+static void                 vmmR3LogReturnFlush(PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGER pDstLogger);
 static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+
 
 
 /**
@@ -828,21 +829,21 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
             /* Paranoia: Make another copy of the request, to make sure the validated data can't be changed. */
             VMMLOGFLUSHERENTRY Item;
             Item.u32 = pVM->vmm.s.LogFlusherItem.u32;
-            if (   Item.s.idCpu     <  pVM->cCpus
-                && Item.s.idxLogger <  VMMLOGGER_IDX_MAX
-                && Item.s.idxBuffer <= 1)
+            if (   Item.s.idCpu     < pVM->cCpus
+                && Item.s.idxLogger < VMMLOGGER_IDX_MAX
+                && Item.s.idxBuffer < VMMLOGGER_BUFFER_COUNT)
             {
                 /*
                  * Verify the request.
                  */
                 PVMCPU const          pVCpu     = pVM->apCpusR3[Item.s.idCpu];
                 PVMMR3CPULOGGER const pShared   = &pVCpu->vmm.s.u.aLoggers[Item.s.idxLogger];
-                uint32_t const        cbToFlush = pShared->AuxDesc.offBuf;
+                uint32_t const        cbToFlush = pShared->aBufs[Item.s.idxBuffer].AuxDesc.offBuf;
                 if (cbToFlush > 0)
                 {
                     if (cbToFlush <= pShared->cbBuf)
                     {
-                        char * const pchBufR3 = pShared->pchBufR3;
+                        char * const pchBufR3 = pShared->aBufs[Item.s.idxBuffer].pchBufR3;
                         if (pchBufR3)
                         {
                             /*
@@ -850,7 +851,7 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
                              */
                             LogAlways(("*FLUSH* idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x fFlushed=%RTbool cbDropped=%#x\n",
                                        Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush,
-                                       pShared->AuxDesc.fFlushedIndicator, pShared->cbDropped));
+                                       pShared->aBufs[Item.s.idxBuffer].AuxDesc.fFlushedIndicator, pShared->cbDropped));
                             PRTLOGGER const pLogger = Item.s.idxLogger == VMMLOGGER_IDX_REGULAR
                                                     ? RTLogGetDefaultInstance() : RTLogRelGetDefaultInstance();
                             if (pLogger)
@@ -872,7 +873,7 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
                 /*
                  * Mark the descriptor as flushed and set the request flag for same.
                  */
-                pShared->AuxDesc.fFlushedIndicator = true;
+                pShared->aBufs[Item.s.idxBuffer].AuxDesc.fFlushedIndicator = true;
             }
             else
             {
@@ -908,6 +909,26 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
             RTThreadSleep(1);
         }
     }
+}
+
+
+/**
+ * Helper for VMM_FLUSH_R0_LOG that does the flushing.
+ *
+ * @param   pShared     The shared logger data.
+ * @param   idxBuf      The buffer to flush.
+ * @param   pDstLogger  The destination IPRT logger.
+ */
+static void vmmR3LogReturnFlush(PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGER pDstLogger)
+{
+#if VMMLOGGER_BUFFER_COUNT > 1
+    /* Yield if other log buffers are being flushed already, so we try
+       avoid totally mixing things up... */
+    if (pShared->cFlushing > 0)
+        RTThreadYield();
+#endif
+    RTLogBulkWrite(pDstLogger, pShared->aBufs[idxBuf].pchBufR3, pShared->aBufs[idxBuf].AuxDesc.offBuf);
+    pShared->aBufs[idxBuf].AuxDesc.fFlushedIndicator = true;
 }
 
 

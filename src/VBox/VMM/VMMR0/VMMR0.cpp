@@ -2987,14 +2987,24 @@ static int vmmR0LogFlusher(PGVM pGVM)
         pGVM->vmmr0.s.LogFlusher.aRing[idxHead].u32 = UINT32_MAX >> 1; /* invalidate the entry */
         pGVM->vmmr0.s.LogFlusher.idxRingHead = (idxHead + 1) % RT_ELEMENTS(pGVM->vmmr0.s.LogFlusher.aRing);
 
-        /* Do the waking up. */
-        if (   idCpu < pGVM->cCpus
+        /* Do the accounting and waking up. */
+        if (   idCpu     < pGVM->cCpus
             && idxLogger < VMMLOGGER_IDX_MAX
-            && idxBuffer < 1)
+            && idxBuffer < VMMLOGGER_BUFFER_COUNT)
         {
-            PGVMCPU             pGVCpu = &pGVM->aCpus[idCpu];
-            PVMMR0PERVCPULOGGER pR0Log = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
+            PGVMCPU             pGVCpu  = &pGVM->aCpus[idCpu];
+            PVMMR0PERVCPULOGGER pR0Log  = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
+            PVMMR3CPULOGGER     pShared = &pGVCpu->vmm.s.u.aLoggers[idxLogger];
+
             pR0Log->fFlushDone = true;
+
+            uint32_t cFlushing = pR0Log->cFlushing - 1;
+            if (RT_LIKELY(cFlushing < VMMLOGGER_BUFFER_COUNT))
+            { /*likely*/ }
+            else
+                cFlushing = 0;
+            pR0Log->cFlushing = cFlushing;
+            ASMAtomicWriteU32(&pShared->cFlushing, cFlushing);
 
             RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
 
@@ -3104,92 +3114,100 @@ static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc,
                 if (   hNativeSelf == pGVCpu->hEMT
                     && RT_VALID_PTR(pGVM))
                 {
-                    PVMMR0PERVCPULOGGER const pR0Log  = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
-                    PVMMR3CPULOGGER const     pShared = &pGVCpu->vmm.s.u.aLoggers[idxLogger];
-
-                    /*
-                     * Can we wait on the log flusher to do the work?
-                     */
-                    if (VMMRZCallRing3IsEnabled(pGVCpu))
+                    PVMMR0PERVCPULOGGER const pR0Log    = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
+                    PVMMR3CPULOGGER const     pShared   = &pGVCpu->vmm.s.u.aLoggers[idxLogger];
+                    size_t const              idxBuffer = pBufDesc - &pR0Log->aBufDescs[0];
+                    if (idxBuffer < RT_ELEMENTS(pR0Log->aBufDescs))
                     {
                         /*
-                         * Make sure we don't recurse forever here should something in the
-                         * following code trigger logging or an assertion.
+                         * Can we wait on the log flusher to do the work?
                          */
-                        if (!pR0Log->fFlushing)
+                        if (VMMRZCallRing3IsEnabled(pGVCpu))
                         {
-                            pR0Log->fFlushing = true;
-
                             /*
-                             * Prepare to block waiting for the flusher thread.
+                             * Make sure we don't recurse forever here should something in the
+                             * following code trigger logging or an assertion.
                              */
-                            VMMR0EMTBLOCKCTX Ctx;
-                            int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "vmmR0LoggerFlushCommon",
-                                                            pR0Log->hEventFlushWait, &Ctx);
-                            if (RT_SUCCESS(rc))
+                            if (!pR0Log->fFlushing)
                             {
-                                /*
-                                 * Queue the flush job.
-                                 */
-                                RTSpinlockAcquire(pGVM->vmmr0.s.LogFlusher.hSpinlock);
-                                if (pGVM->vmmr0.s.LogFlusher.fThreadRunning)
-                                {
-                                    uint32_t const idxHead    = pGVM->vmmr0.s.LogFlusher.idxRingHead
-                                                              % RT_ELEMENTS(pGVM->vmmr0.s.LogFlusher.aRing);
-                                    uint32_t const idxTail    = pGVM->vmmr0.s.LogFlusher.idxRingTail
-                                                              % RT_ELEMENTS(pGVM->vmmr0.s.LogFlusher.aRing);
-                                    uint32_t const idxNewTail = (idxTail + 1)
-                                                              % RT_ELEMENTS(pGVM->vmmr0.s.LogFlusher.aRing);
-                                    if (idxNewTail != idxHead)
-                                    {
-                                        pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.idCpu       = pGVCpu->idCpu;
-                                        pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.idxLogger   = idxLogger;
-                                        pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.idxBuffer   = 0;
-                                        pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.fProcessing = 0;
-                                        pGVM->vmmr0.s.LogFlusher.idxRingTail = idxNewTail;
+                                pR0Log->fFlushing = true;
 
-                                        if (pGVM->vmmr0.s.LogFlusher.fThreadWaiting)
+                                /*
+                                 * Prepare to block waiting for the flusher thread.
+                                 */
+                                VMMR0EMTBLOCKCTX Ctx;
+                                int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "vmmR0LoggerFlushCommon",
+                                                                pR0Log->hEventFlushWait, &Ctx);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                     * Queue the flush job.
+                                     */
+                                    RTSpinlockAcquire(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+                                    if (pGVM->vmmr0.s.LogFlusher.fThreadRunning)
+                                    {
+                                        uint32_t const idxHead    = pGVM->vmmr0.s.LogFlusher.idxRingHead
+                                                                  % RT_ELEMENTS(pGVM->vmmr0.s.LogFlusher.aRing);
+                                        uint32_t const idxTail    = pGVM->vmmr0.s.LogFlusher.idxRingTail
+                                                                  % RT_ELEMENTS(pGVM->vmmr0.s.LogFlusher.aRing);
+                                        uint32_t const idxNewTail = (idxTail + 1)
+                                                                  % RT_ELEMENTS(pGVM->vmmr0.s.LogFlusher.aRing);
+                                        if (idxNewTail != idxHead)
                                         {
-                                            RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
-                                            RTSemEventSignal(pGVM->vmmr0.s.LogFlusher.hEvent);
+                                            pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.idCpu       = pGVCpu->idCpu;
+                                            pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.idxLogger   = idxLogger;
+                                            pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.idxBuffer   = (uint32_t)idxBuffer;
+                                            pGVM->vmmr0.s.LogFlusher.aRing[idxTail].s.fProcessing = 0;
+                                            pGVM->vmmr0.s.LogFlusher.idxRingTail = idxNewTail;
+
+                                            pShared->cFlushing = pR0Log->cFlushing = RT_MIN(pR0Log->cFlushing + 1,
+                                                                                            VMMLOGGER_BUFFER_COUNT);
+
+                                            if (pGVM->vmmr0.s.LogFlusher.fThreadWaiting)
+                                            {
+                                                RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+                                                RTSemEventSignal(pGVM->vmmr0.s.LogFlusher.hEvent);
+                                            }
+                                            else
+                                                RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+
+                                            /*
+                                             * Wait for it to complete.
+                                             */
+                                            VMMR0EmtWaitEventInner(pGVCpu, VMMR0EMTWAIT_F_TRY_SUPPRESS_INTERRUPTED,
+                                                                   pR0Log->hEventFlushWait, RT_INDEFINITE_WAIT);
                                         }
                                         else
+                                        {
                                             RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
-
-                                        /*
-                                         * Wait for it to complete.
-                                         */
-                                        VMMR0EmtWaitEventInner(pGVCpu, VMMR0EMTWAIT_F_TRY_SUPPRESS_INTERRUPTED,
-                                                               pR0Log->hEventFlushWait, RT_INDEFINITE_WAIT);
+                                            SUP_DPRINTF(("vmmR0LoggerFlush: ring buffer is full!\n"));
+                                        }
                                     }
                                     else
                                     {
                                         RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
-                                        SUP_DPRINTF(("vmmR0LoggerFlush: ring buffer is full!\n"));
+                                        SUP_DPRINTF(("vmmR0LoggerFlush: flusher not active - dropping %u bytes\n",
+                                                     pBufDesc->offBuf));
                                     }
+                                    VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
                                 }
                                 else
-                                {
-                                    RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
-                                    SUP_DPRINTF(("vmmR0LoggerFlush: flusher not active - dropping %u bytes\n",
-                                                 pBufDesc->offBuf));
-                                }
-                                VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
+                                    SUP_DPRINTF(("vmmR0LoggerFlush: VMMR0EmtPrepareToBlock failed! rc=%d\n", rc));
+                                pR0Log->fFlushing = false;
                             }
                             else
-                                SUP_DPRINTF(("vmmR0LoggerFlush: VMMR0EmtPrepareToBlock failed! rc=%d\n", rc));
-                            pR0Log->fFlushing = false;
+                                SUP_DPRINTF(("vmmR0LoggerFlush: Recursive flushing!\n"));
                         }
                         else
-                            SUP_DPRINTF(("vmmR0LoggerFlush: Recursive flushing!\n"));
+                        {
+#if defined(RT_OS_LINUX)
+                            SUP_DPRINTF(("vmmR0LoggerFlush: EMT blocking disabled! (%u bytes)\n", pBufDesc->offBuf));
+#endif
+                            pShared->cbDropped += pBufDesc->offBuf;
+                        }
                     }
                     else
-                    {
-#if defined(RT_OS_LINUX)
-                        SUP_DPRINTF(("vmmR0LoggerFlush: EMT blocking disabled! (%u bytes)\n", pBufDesc->offBuf));
-#endif
-                        pShared->cbDropped += pBufDesc->offBuf;
-                    }
+                        SUP_DPRINTF(("vmmR0LoggerFlush: pLogger=%p pGVCpu=%p: idxBuffer=%#zx\n", pLogger, pGVCpu, idxBuffer));
                 }
                 else
                     SUP_DPRINTF(("vmmR0LoggerFlush: pLogger=%p pGVCpu=%p hEMT=%p hNativeSelf=%p!\n",
@@ -3306,25 +3324,28 @@ static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER
     /*
      * Create and configure the logger.
      */
-    pR0Log->BufDesc.u32Magic    = RTLOGBUFFERDESC_MAGIC;
-    pR0Log->BufDesc.uReserved   = 0;
-    pR0Log->BufDesc.cbBuf       = cbBuf;
-    pR0Log->BufDesc.offBuf      = 0;
-    pR0Log->BufDesc.pchBuf      = pchBuf;
-    pR0Log->BufDesc.pAux        = &pShared->AuxDesc;
+    for (size_t i = 0; i < VMMLOGGER_BUFFER_COUNT; i++)
+    {
+        pR0Log->aBufDescs[i].u32Magic    = RTLOGBUFFERDESC_MAGIC;
+        pR0Log->aBufDescs[i].uReserved   = 0;
+        pR0Log->aBufDescs[i].cbBuf       = cbBuf;
+        pR0Log->aBufDescs[i].offBuf      = 0;
+        pR0Log->aBufDescs[i].pchBuf      = pchBuf + i * cbBuf;
+        pR0Log->aBufDescs[i].pAux        = &pShared->aBufs[i].AuxDesc;
 
-    pShared->AuxDesc.fFlushedIndicator   = false;
-    pShared->AuxDesc.afPadding[0]        = 0;
-    pShared->AuxDesc.afPadding[1]        = 0;
-    pShared->AuxDesc.afPadding[2]        = 0;
-    pShared->AuxDesc.offBuf              = 0;
-    pShared->pchBufR3                    = pchBufR3;
-    pShared->cbBuf                       = cbBuf;
+        pShared->aBufs[i].AuxDesc.fFlushedIndicator   = false;
+        pShared->aBufs[i].AuxDesc.afPadding[0]        = 0;
+        pShared->aBufs[i].AuxDesc.afPadding[1]        = 0;
+        pShared->aBufs[i].AuxDesc.afPadding[2]        = 0;
+        pShared->aBufs[i].AuxDesc.offBuf              = 0;
+        pShared->aBufs[i].pchBufR3                    = pchBufR3 + i * cbBuf;
+    }
+    pShared->cbBuf = cbBuf;
 
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     int rc = RTLogCreateEx(&pR0Log->pLogger, fRelease ? "VBOX_RELEASE_LOG" : "VBOX_LOG", RTLOG_F_NO_LOCKING | RTLOGFLAGS_BUFFERED,
                            "all", RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX,
-                           1 /*cBufDescs*/, &pR0Log->BufDesc, RTLOGDEST_DUMMY,
+                           VMMLOGGER_BUFFER_COUNT, pR0Log->aBufDescs, RTLOGDEST_DUMMY,
                            NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
                            NULL /*pErrInfo*/, NULL /*pszFilenameFmt*/);
     if (RT_SUCCESS(rc))
@@ -3360,8 +3381,10 @@ static int vmmR0InitLoggerOne(PGVMCPU pGVCpu, bool fRelease, PVMMR0PERVCPULOGGER
 static void vmmR0TermLoggerOne(PVMMR0PERVCPULOGGER pR0Log, PVMMR3CPULOGGER pShared)
 {
     RTLogDestroy(pR0Log->pLogger);
-    pR0Log->pLogger   = NULL;
-    pShared->pchBufR3 = NIL_RTR3PTR;
+    pR0Log->pLogger = NULL;
+
+    for (size_t i = 0; i < VMMLOGGER_BUFFER_COUNT; i++)
+        pShared->aBufs[i].pchBufR3 = NIL_RTR3PTR;
 
     RTSemEventDestroy(pR0Log->hEventFlushWait);
     pR0Log->hEventFlushWait = NIL_RTSEMEVENT;
@@ -3374,7 +3397,7 @@ static void vmmR0TermLoggerOne(PVMMR0PERVCPULOGGER pR0Log, PVMMR3CPULOGGER pShar
 static int vmmR0InitLoggerSet(PGVM pGVM, uint8_t idxLogger, uint32_t cbBuf, PRTR0MEMOBJ phMemObj, PRTR0MEMOBJ phMapObj)
 {
     /* Allocate buffers first. */
-    int rc = RTR0MemObjAllocPage(phMemObj, cbBuf * pGVM->cCpus, false /*fExecutable*/);
+    int rc = RTR0MemObjAllocPage(phMemObj, cbBuf * pGVM->cCpus * VMMLOGGER_BUFFER_COUNT, false /*fExecutable*/);
     if (RT_SUCCESS(rc))
     {
         rc = RTR0MemObjMapUser(phMapObj, *phMemObj, (RTR3PTR)-1, 0 /*uAlignment*/, RTMEM_PROT_READ, NIL_RTR0PROCESS);
@@ -3393,11 +3416,11 @@ static int vmmR0InitLoggerSet(PGVM pGVM, uint8_t idxLogger, uint32_t cbBuf, PRTR
                 PVMMR0PERVCPULOGGER pR0Log  = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
                 PVMMR3CPULOGGER     pShared = &pGVCpu->vmm.s.u.aLoggers[idxLogger];
                 rc = vmmR0InitLoggerOne(pGVCpu, idxLogger == VMMLOGGER_IDX_RELEASE, pR0Log, pShared, cbBuf,
-                                        pchBuf + i * cbBuf, pchBufR3 + i * cbBuf);
+                                        pchBuf   + i * cbBuf * VMMLOGGER_BUFFER_COUNT,
+                                        pchBufR3 + i * cbBuf * VMMLOGGER_BUFFER_COUNT);
                 if (RT_FAILURE(rc))
                 {
-                    pR0Log->pLogger   = NULL;
-                    pShared->pchBufR3 = NIL_RTR3PTR;
+                    vmmR0TermLoggerOne(pR0Log, pShared);
                     while (i-- > 0)
                     {
                         pGVCpu = &pGVM->aCpus[i];

@@ -66,6 +66,9 @@
 #endif
 
 
+/** Number of buffers per logger. */
+#define VMMLOGGER_BUFFER_COUNT  1
+
 /**
  * R0 logger data (ring-0 only data).
  */
@@ -78,14 +81,16 @@ typedef struct VMMR0PERVCPULOGGER
     R0PTRTYPE(PRTLOGGER)    pLogger;
     /** Log buffer descriptor.
      * The buffer is allocated in a common block for all VCpus, see VMMR0PERVM.  */
-    RTLOGBUFFERDESC         BufDesc;
+    RTLOGBUFFERDESC         aBufDescs[VMMLOGGER_BUFFER_COUNT];
     /** Flag indicating whether we've registered the instance already. */
     bool                    fRegistered;
     /** Set by the logger thread to indicate that buffer has been flushed.  */
     bool volatile           fFlushDone;
     /** Set while we're inside vmmR0LoggerFlushCommon to prevent recursion. */
     bool                    fFlushing;
-    bool                    afPadding[5];
+    bool                    afPadding[1];
+    /** Number of buffers currently queued for flushing. */
+    uint32_t                cFlushing;
     /** The event semaphore the EMT waits on while the buffer is being flushed. */
     RTSEMEVENT              hEventFlushWait;
 } VMMR0PERVCPULOGGER;
@@ -98,10 +103,19 @@ typedef VMMR0PERVCPULOGGER *PVMMR0PERVCPULOGGER;
  */
 typedef struct VMMR3CPULOGGER
 {
-    /** Auxiliary buffer descriptor. */
-    RTLOGBUFFERAUXDESC      AuxDesc;
-    /** Ring-3 mapping of the logging buffer. */
-    R3PTRTYPE(char *)       pchBufR3;
+    /** Buffer info. */
+    struct
+    {
+        /** Auxiliary buffer descriptor. */
+        RTLOGBUFFERAUXDESC      AuxDesc;
+        /** Ring-3 mapping of the logging buffer. */
+        R3PTRTYPE(char *)       pchBufR3;
+    } aBufs[VMMLOGGER_BUFFER_COUNT];
+    /** The current buffer. */
+    uint32_t                idxBuf;
+    /** Number of buffers currently queued for flushing (copy of
+     *  VMMR0PERVCPULOGGER::cFlushing). */
+    uint32_t volatile       cFlushing;
     /** The buffer size. */
     uint32_t                cbBuf;
     /** Number of bytes dropped because the flush context didn't allow waiting.  */
