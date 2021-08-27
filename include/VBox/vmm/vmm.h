@@ -533,16 +533,6 @@ VMMR0_INT_DECL(int)  VMMR0EmtPrepareToBlock(PVMCPUCC pVCpu, int rcBusy, const ch
                                             PVMMR0EMTBLOCKCTX pCtx);
 VMMR0_INT_DECL(void) VMMR0EmtResumeAfterBlocking(PVMCPUCC pVCpu, PVMMR0EMTBLOCKCTX pCtx);
 VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu);
-
-# ifdef LOG_ENABLED
-VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPUCC pVCpu);
-VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPUCC pVCpu);
-VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPUCC pVCpu);
-# else
-#  define            VMMR0LogFlushDisable(pVCpu)     do { } while(0)
-#  define            VMMR0LogFlushEnable(pVCpu)      do { } while(0)
-#  define            VMMR0IsLogFlushDisabled(pVCpu)  (true)
-# endif /* LOG_ENABLED */
 #endif /* IN_RING0 */
 
 /** @} */

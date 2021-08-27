@@ -144,10 +144,10 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPUCC pVCpu)
         pVCpu->pVMRC->vmm.s.fRCLoggerFlushingDisabled = true;
 #else
         pVCpu->vmmr0.s.fLogFlushingDisabled = true;
-        if (pVCpu->vmmr0.s.Logger.pLogger)
-            pVCpu->vmmr0.s.Logger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
-        if (pVCpu->vmmr0.s.RelLogger.pLogger)
-            pVCpu->vmmr0.s.RelLogger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
+        if (pVCpu->vmmr0.s.u.s.Logger.pLogger)
+            pVCpu->vmmr0.s.u.s.Logger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
+        if (pVCpu->vmmr0.s.u.s.RelLogger.pLogger)
+            pVCpu->vmmr0.s.u.s.RelLogger.pLogger->u32UserValue1 |= VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
 #endif
     }
 
@@ -177,10 +177,10 @@ VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPUCC pVCpu)
         pVCpu->pVMRC->vmm.s.fRCLoggerFlushingDisabled = false;
 #else
         pVCpu->vmmr0.s.fLogFlushingDisabled = false;
-        if (pVCpu->vmmr0.s.Logger.pLogger)
-            pVCpu->vmmr0.s.Logger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
-        if (pVCpu->vmmr0.s.RelLogger.pLogger)
-            pVCpu->vmmr0.s.RelLogger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
+        if (pVCpu->vmmr0.s.u.s.Logger.pLogger)
+            pVCpu->vmmr0.s.u.s.Logger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
+        if (pVCpu->vmmr0.s.u.s.RelLogger.pLogger)
+            pVCpu->vmmr0.s.u.s.RelLogger.pLogger->u32UserValue1 &= ~VMMR0_LOGGER_FLAGS_FLUSHING_DISABLED;
 #endif
     }
 

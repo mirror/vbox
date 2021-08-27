@@ -519,9 +519,9 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -652,9 +652,9 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -814,8 +814,17 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
     /* Reset the flusher state before we start: */
     pVM->vmm.s.LogFlusherItem.u32 = UINT32_MAX;
 
-    /* The loggers. */
-    PRTLOGGER const apLoggers[2] = { RTLogRelGetDefaultInstance(), RTLogGetDefaultInstance() };
+    /*
+     * Logger getter functions.
+     */
+    typedef DECLCALLBACKPTR(PRTLOGGER, PFNGETLOGGER, ());
+    static const PFNGETLOGGER s_apfnLogGetters[] =
+    {
+        RTLogGetDefaultInstance,
+        RTLogRelGetDefaultInstance,
+    };
+    Assert(RTLogGetDefaultInstance == s_apfnLogGetters[VMMLOGGER_IDX_REGULAR]);
+    Assert(RTLogRelGetDefaultInstance == s_apfnLogGetters[VMMLOGGER_IDX_RELEASE]);
 
     /*
      * The work loop.
@@ -832,14 +841,14 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
             VMMLOGFLUSHERENTRY Item;
             Item.u32 = pVM->vmm.s.LogFlusherItem.u32;
             if (   Item.s.idCpu     <  pVM->cCpus
-                && Item.s.idxLogger <= RT_ELEMENTS(apLoggers)
+                && Item.s.idxLogger <  VMMLOGGER_IDX_MAX
                 && Item.s.idxBuffer <= 1)
             {
                 /*
                  * Verify the request.
                  */
                 PVMCPU const          pVCpu     = pVM->apCpusR3[Item.s.idCpu];
-                PVMMR3CPULOGGER const pShared   = Item.s.idxLogger == 1 ? &pVCpu->vmm.s.Logger : &pVCpu->vmm.s.RelLogger;
+                PVMMR3CPULOGGER const pShared   = &pVCpu->vmm.s.u.aLoggers[Item.s.idxLogger];
                 uint32_t const        cbToFlush = pShared->AuxDesc.offBuf;
                 if (cbToFlush > 0)
                 {
@@ -854,7 +863,7 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
                             LogAlways(("*FLUSH* idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x fFlushed=%RTbool cbDropped=%#x\n",
                                        Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush,
                                        pShared->AuxDesc.fFlushedIndicator, pShared->cbDropped));
-                            PRTLOGGER const pLogger = apLoggers[Item.s.idxLogger];
+                            PRTLOGGER const pLogger = s_apfnLogGetters[Item.s.idxLogger]();
                             if (pLogger)
                                 RTLogBulkWrite(pLogger, pchBufR3, cbToFlush);
                             LogAlways(("*FLUSH DONE*\n"));
@@ -1185,9 +1194,9 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
          * Flush the logs
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
         {
             Log2(("VMMR3HmRunGC: returns %Rrc (cs:rip=%04x:%RX64)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
@@ -1229,9 +1238,9 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
          * Flush the logs
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rcStrict != VINF_VMM_CALL_HOST)
             return rcStrict;
         int rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -2386,9 +2395,9 @@ VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOper
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);

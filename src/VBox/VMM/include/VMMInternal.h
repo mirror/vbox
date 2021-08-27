@@ -110,6 +110,13 @@ typedef struct VMMR3CPULOGGER
 /** Pointer to r0 logger data shared with ring-3. */
 typedef VMMR3CPULOGGER *PVMMR3CPULOGGER;
 
+/** @name Logger indexes for VMMR0PERVCPU::u.aLoggers and VMMCPU::u.aLoggers.
+ * @{ */
+#define VMMLOGGER_IDX_REGULAR   0
+#define VMMLOGGER_IDX_RELEASE   1
+#define VMMLOGGER_IDX_MAX       2
+/** @} */
+
 
 /**
  * Jump buffer for the setjmp/longjmp like constructs used to
@@ -469,13 +476,21 @@ typedef struct VMMCPU
     VMMR0JMPBUF                 CallRing3JmpBufR0;
     /** @} */
 
-    /** @name Logging
-     * @{ */
-    /** The R0 logger data shared with ring-3. */
-    VMMR3CPULOGGER              Logger;
-    /** The R0 release logger data shared with ring-3. */
-    VMMR3CPULOGGER              RelLogger;
-    /** @}  */
+    /**
+     * Loggers.
+     */
+    union
+    {
+        struct
+        {
+            /** The R0 logger data shared with ring-3. */
+            VMMR3CPULOGGER      Logger;
+            /** The R0 release logger data shared with ring-3. */
+            VMMR3CPULOGGER      RelLogger;
+        } s;
+        /** Array view. */
+        VMMR3CPULOGGER          aLoggers[VMMLOGGER_IDX_MAX];
+    } u;
 
     STAMPROFILE                 StatR0HaltBlock;
     STAMPROFILE                 StatR0HaltBlockOnTime;
@@ -493,6 +508,11 @@ typedef struct VMMCPU
     STAMCOUNTER                 StatR0HaltToR3PostPendingFF;
 } VMMCPU;
 AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);
+AssertCompile(   RTASSERT_OFFSET_OF(VMMCPU, u.s.Logger)
+              == RTASSERT_OFFSET_OF(VMMCPU, u.aLoggers) + sizeof(VMMR3CPULOGGER) * VMMLOGGER_IDX_REGULAR);
+AssertCompile(RTASSERT_OFFSET_OF(VMMCPU, u.s.RelLogger)
+              == RTASSERT_OFFSET_OF(VMMCPU, u.aLoggers) + sizeof(VMMR3CPULOGGER) * VMMLOGGER_IDX_RELEASE);
+
 /** Pointer to VMMCPU. */
 typedef VMMCPU *PVMMCPU;
 
@@ -524,14 +544,26 @@ typedef struct VMMR0PERVCPU
     PSUPDRVSESSION                      pSession;
     /** @} */
 
-    /** @name Loggers
-     * @{ */
-    /** The R0 logger data. */
-    VMMR0PERVCPULOGGER                  Logger;
-    /** The R0 release logger data. */
-    VMMR0PERVCPULOGGER                  RelLogger;
-    /** @} */
+    /**
+     * Loggers
+     */
+    union
+    {
+        struct
+        {
+            /** The R0 logger data. */
+            VMMR0PERVCPULOGGER          Logger;
+            /** The R0 release logger data. */
+            VMMR0PERVCPULOGGER          RelLogger;
+        } s;
+        /** Array view. */
+        VMMR0PERVCPULOGGER              aLoggers[VMMLOGGER_IDX_MAX];
+    } u;
 } VMMR0PERVCPU;
+AssertCompile(   RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.s.Logger)
+              == RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.aLoggers) + sizeof(VMMR0PERVCPULOGGER) * VMMLOGGER_IDX_REGULAR);
+AssertCompile(RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.s.RelLogger)
+              == RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.aLoggers) + sizeof(VMMR0PERVCPULOGGER) * VMMLOGGER_IDX_RELEASE);
 /** Pointer to VMM ring-0 VMCPU instance data. */
 typedef VMMR0PERVCPU *PVMMR0PERVCPU;
 
