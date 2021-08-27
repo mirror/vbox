@@ -4133,8 +4133,8 @@ void UICommon::prepare()
     m_enmMacOSVersion = determineOsRelease();
 #endif /* VBOX_WS_MAC */
 
-    /* Prepare converter: */
-    UIConverter::prepare();
+    /* Create converter: */
+    UIConverter::create();
 
     /* Create desktop-widget watchdog: */
     UIDesktopWidgetWatchdog::create();
@@ -4704,8 +4704,8 @@ void UICommon::cleanup()
      * above which could use it already destroyed: */
     UIExtraDataManager::destroy();
 
-    /* Cleanup converter: */
-    UIConverter::cleanup();
+    /* Destroy converter: */
+    UIConverter::destroy();
 
     /* Cleanup thread-pools: */
     delete m_pThreadPool;

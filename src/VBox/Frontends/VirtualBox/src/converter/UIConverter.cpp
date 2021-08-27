@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,25 +23,15 @@
 UIConverter* UIConverter::s_pInstance = 0;
 
 /* static */
-void UIConverter::prepare()
+void UIConverter::create()
 {
-    /* Make sure instance WAS NOT created yet: */
-    if (s_pInstance)
-        return;
-
-    /* Prepare instance: */
-    s_pInstance = new UIConverter;
+    AssertReturnVoid(!s_pInstance);
+    new UIConverter;
 }
 
 /* static */
-void UIConverter::cleanup()
+void UIConverter::destroy()
 {
-    /* Make sure instance WAS NOT destroyed yet: */
-    if (!s_pInstance)
-        return;
-
-    /* Cleanup instance: */
+    AssertPtrReturnVoid(s_pInstance);
     delete s_pInstance;
-    s_pInstance = 0;
 }
-
