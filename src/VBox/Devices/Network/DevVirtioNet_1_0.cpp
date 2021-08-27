@@ -148,7 +148,7 @@
 #define TXQIDX(qPairIdx)                (RXQIDX(qPairIdx) + 1)
 #define CTRLQIDX                        (FEATURE_ENABLED(MQ) ? ((VIRTIONET_MAX_QPAIRS - 1) * 2 + 2) : 2)
 
-#define IS_LINK_UP(pState)              (pState->virtioNetConfig.uStatus & VIRTIONET_F_LINK_UP)
+#define IS_LINK_UP(pState)              !!(pState->virtioNetConfig.uStatus & VIRTIONET_F_LINK_UP)
 #define IS_LINK_DOWN(pState)            !IS_LINK_UP(pState)
 
 #define SET_LINK_UP(pState) \
@@ -2278,14 +2278,6 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
 
     PVIRTIOCORE pVirtio = &pThis->Virtio;
 
-    /*
-     * Only one thread is allowed to transmit at a time, others should skip
-     * transmission as the packets will be picked up by the transmitting
-     * thread.
-     */
-    if (!ASMAtomicCmpXchgU32(&pThis->uIsTransmitting, 1, 0))
-        return;
-
 
     if (!pThis->fVirtioReady)
     {
@@ -2299,6 +2291,15 @@ static void virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pTh
         Log(("%s Ignoring transmit requests while cable is disconnected.\n", pThis->szInst));
         return;
     }
+
+    /*
+     * Only one thread is allowed to transmit at a time, others should skip
+     * transmission as the packets will be picked up by the transmitting
+     * thread.
+     */
+    if (!ASMAtomicCmpXchgU32(&pThis->uIsTransmitting, 1, 0))
+        return;
+
 
 
     PPDMINETWORKUP pDrv = pThisCC->pDrv;
@@ -2485,6 +2486,7 @@ static DECLCALLBACK(void) virtioNetR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHAND
  */
 static void virtioNetR3TempLinkDown(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC pThisCC)
 {
+
     if (IS_LINK_UP(pThis))
     {
         SET_LINK_DOWN(pThis);
@@ -2506,8 +2508,7 @@ static DECLCALLBACK(int) virtioNetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFI
     PPDMDEVINS   pDevIns = pThisCC->pDevIns;
     PVIRTIONET   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
-    bool fCachedLinkIsUp = IS_LINK_UP(pThis);
-    bool fActiveLinkIsUp = (enmState == PDMNETWORKLINKSTATE_UP);
+    bool fRequestedLinkStateIsUp = (enmState == PDMNETWORKLINKSTATE_UP);
 
     if (LogIs7Enabled())
     {
@@ -2530,7 +2531,8 @@ static DECLCALLBACK(int) virtioNetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFI
 
     if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
     {
-        if (fCachedLinkIsUp)
+
+        if (IS_LINK_UP(pThis))
         {
             /*
              * We bother to bring the link down only if it was up previously. The UP link state
@@ -2541,16 +2543,16 @@ static DECLCALLBACK(int) virtioNetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFI
                 pThisCC->pDrv->pfnNotifyLinkChanged(pThisCC->pDrv, enmState);
         }
     }
-    else if (fActiveLinkIsUp != fCachedLinkIsUp)
+    else if (fRequestedLinkStateIsUp != IS_LINK_UP(pThis))
     {
-        if (fCachedLinkIsUp)
+        if (fRequestedLinkStateIsUp)
         {
             Log(("%s Link is up\n", pThis->szInst));
             pThis->fCableConnected = true;
             SET_LINK_UP(pThis);
             virtioCoreNotifyConfigChanged(&pThis->Virtio);
         }
-        else /* cached Link state is down */
+        else /* Link requested to be brought down */
         {
             /* The link was brought down explicitly, make sure it won't come up by timer.  */
             PDMDevHlpTimerStop(pDevIns, pThisCC->hLinkUpTimer);
