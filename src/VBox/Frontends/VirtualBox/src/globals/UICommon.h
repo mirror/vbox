@@ -162,9 +162,6 @@ public:
 
     /** @name Common stuff.
      * @{ */
-        /** Returns whether UICommon cleanup is in progress. */
-        static bool isCleaningUp() { return s_fCleaningUp; }
-
         /** Returns Qt runtime version string. */
         static QString qtRTVersionString();
         /** Returns Qt runtime version. */
@@ -183,6 +180,8 @@ public:
 
         /** Returns whether UICommon instance is properly initialized. */
         bool isValid() const { return m_fValid; }
+        /** Returns whether UICommon instance cleanup is in progress. */
+        bool isCleaningUp() const { return m_fCleaningUp; }
 
         /** Returns the UI type. */
         UIType uiType() const { return m_enmType; }
@@ -860,9 +859,6 @@ private:
 
     /** @name Common stuff.
      * @{ */
-        /** Holds whether UICommon cleanup is in progress. */
-        static bool  s_fCleaningUp;
-
         /** Holds the currently loaded language ID. */
         static QString  s_strLoadedLanguageId;
 
@@ -874,6 +870,8 @@ private:
 
         /** Holds whether UICommon instance is properly initialized. */
         bool  m_fValid;
+        /** Holds whether UICommon instance cleanup is in progress. */
+        bool  m_fCleaningUp;
 
 #ifdef VBOX_WS_WIN
         /** Holds whether overall GUI data is committed. */

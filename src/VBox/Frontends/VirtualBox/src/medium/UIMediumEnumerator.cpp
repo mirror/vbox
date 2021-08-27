@@ -188,7 +188,7 @@ void UIMediumEnumerator::enumerateMedia(const CMediumVector &comMedia /* = CMedi
     }
 
     /* UICommon is cleaning up, abort immediately: */
-    if (UICommon::isCleaningUp())
+    if (uiCommon().isCleaningUp())
         return;
 
     if (comMedia.isEmpty())
@@ -495,7 +495,7 @@ void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMedium
     foreach (const CMedium &comMedium, inputMedia)
     {
         /* If UICommon is cleaning up, abort immediately: */
-        if (UICommon::isCleaningUp())
+        if (uiCommon().isCleaningUp())
             break;
 
         /* Insert UIMedium to the passed media map.
