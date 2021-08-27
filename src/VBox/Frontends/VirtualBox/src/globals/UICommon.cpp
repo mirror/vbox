@@ -52,43 +52,42 @@
 #endif
 
 /* GUI includes: */
+#include "QIDialogButtonBox.h"
+#include "QIFileDialog.h"
+#include "QIMessageBox.h"
 #include "QIWithRestorableGeometry.h"
 #include "UICommon.h"
-#include "VBoxLicenseViewer.h"
-#include "UIMessageCenter.h"
-#include "UIPopupCenter.h"
-#include "QIMessageBox.h"
-#include "QIDialogButtonBox.h"
+#include "UIConverter.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
 #include "UIFDCreationDialog.h"
 #include "UIIconPool.h"
-#include "UINotificationCenter.h"
-#include "UIThreadPool.h"
-#include "UIShortcutPool.h"
-#include "UIExtraDataManager.h"
-#include "QIFileDialog.h"
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-# include "UINetworkRequestManager.h"
-# include "UIUpdateManager.h"
-#endif
-#include "UIConverter.h"
-#include "UIMediumEnumerator.h"
 #include "UIMedium.h"
+#include "UIMediumEnumerator.h"
 #include "UIMediumSelector.h"
+#include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
-#include "UIIconPool.h"
-#include "UIVirtualBoxEventHandler.h"
+#include "UINotificationCenter.h"
+#include "UIPopupCenter.h"
+#include "UIShortcutPool.h"
+#include "UIThreadPool.h"
 #include "UIVirtualBoxClientEventHandler.h"
-#include "UIDesktopWidgetWatchdog.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVisoCreator.h"
 #include "UIWizardNewVD.h"
+#include "VBoxLicenseViewer.h"
 #ifdef VBOX_WS_MAC
-# include "VBoxUtils-darwin.h"
 # include "UIMachineWindowFullscreen.h"
 # include "UIMachineWindowSeamless.h"
+# include "VBoxUtils-darwin.h"
 #endif
 #ifdef VBOX_WS_X11
 # include "UIHostComboEditor.h"
 # include "VBoxX11Helper.h"
+#endif
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkRequestManager.h"
+# include "UIUpdateManager.h"
 #endif
 
 /* COM includes: */
@@ -118,15 +117,15 @@
 /* Other VBox includes: */
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
 #include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/ldr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <iprt/system.h>
 #include <iprt/stream.h>
+#include <iprt/system.h>
 #ifdef VBOX_WS_X11
 # include <iprt/mem.h>
 #endif
@@ -147,7 +146,7 @@
 #endif
 
 /* External includes: */
-# include <math.h>
+#include <math.h>
 #ifdef VBOX_WS_MAC
 # include <sys/utsname.h>
 #endif
@@ -165,8 +164,6 @@
 # include <X11/extensions/Xinerama.h>
 # define BOOL PRBool
 #endif
-
-//#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
