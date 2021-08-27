@@ -1122,7 +1122,7 @@ static DECLCALLBACK(int) utsClientWorker(RTTHREAD hThread, void *pvUser)
                         if (cClientsCur == cClientsMax)
                         {
                             /* Realloc to accommodate for the new clients. */
-                            PUTSCLIENT *papClientsNew = (PUTSCLIENT *)RTMemRealloc(papClients, (cClientsMax + 10) * sizeof(PUTSCLIENT));
+                            PUTSCLIENT *papClientsNew = (PUTSCLIENT *)RTMemReallocZ(papClients, cClientsMax * sizeof(PUTSCLIENT), (cClientsMax + 10) * sizeof(PUTSCLIENT));
                             if (RT_LIKELY(papClientsNew))
                             {
                                 cClientsMax += 10;
