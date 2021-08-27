@@ -525,6 +525,10 @@ class tdAudioTest(vbox.TestDriver):
             reporter.log('Audio testing skipped, not implemented/available for that OS yet.');
             return True;
 
+        if self.fpApiVer < 7.0:
+            reporter.log('Audio testing for non-trunk builds skipped.');
+            return True;
+
         fRc = False;
 
         # Reconfigure the VM.
