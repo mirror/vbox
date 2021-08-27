@@ -211,6 +211,11 @@ public:
         MacOSXRelease osRelease() const { return m_enmMacOSVersion; }
 #endif
 
+#ifdef VBOX_WS_WIN
+        /** Loads the color theme. */
+        static void loadColorTheme();
+#endif
+
 #ifdef VBOX_WS_X11
         /** X11: Returns whether the Window Manager we are running under is composition one. */
         bool isCompositingManagerRunning() const { return m_fCompositingManagerRunning; }
@@ -245,13 +250,13 @@ public:
         void setShouldRestoreCurrentSnapshot(bool fRestore) { m_fRestoreCurrentSnapshot = fRestore; }
 
         /** Returns the --fda option value (whether we have floppy image). */
-        bool hasFloppyImageToMount() const { return !m_strFloppyImage.isNull(); }
+        bool hasFloppyImageToMount() const { return !m_uFloppyImage.isNull(); }
         /** Returns the --dvd | --cdrom option value (whether we have DVD image). */
-        bool hasDvdImageToMount() const { return !m_strDvdImage.isNull(); }
+        bool hasDvdImageToMount() const { return !m_uDvdImage.isNull(); }
         /** Returns floppy image name. */
-        QUuid const &getFloppyImage() const { return m_strFloppyImage; }
+        QUuid getFloppyImage() const { return m_uFloppyImage; }
         /** Returns DVD image name. */
-        QUuid const &getDvdImage() const { return m_strDvdImage; }
+        QUuid getDvdImage() const { return m_uDvdImage; }
 
         /** Returns the --disable-patm option value. */
         bool isPatmDisabled() const { return m_fDisablePatm; }
@@ -299,11 +304,6 @@ public:
 
     /** @name Localization stuff.
      * @{ */
-#ifdef VBOX_WS_WIN
-        /** Loads the color theme. */
-        static void loadColorTheme();
-#endif
-
         /** Returns tr("%n year(s)"). */
         static QString yearsToString(uint32_t cVal);
         /** Returns tr("%n month(s)"). */
@@ -889,9 +889,9 @@ private:
         bool  m_fRestoreCurrentSnapshot;
 
         /** Holds the --fda option value (floppy image). */
-        QUuid  m_strFloppyImage;
+        QUuid  m_uFloppyImage;
         /** Holds the --dvd | --cdrom option value (DVD image). */
-        QUuid  m_strDvdImage;
+        QUuid  m_uDvdImage;
 
         /** Holds the --disable-patm option value. */
         bool      m_fDisablePatm;
@@ -924,7 +924,7 @@ private:
         RTLDRMOD  m_hVBoxDbg;
 
         /** Holds whether --start-running, --start-paused or nothing was given. */
-        enum LaunchRunning  m_enmLaunchRunning;
+        LaunchRunning  m_enmLaunchRunning;
 #endif
 
         /** Holds the --settingspw option value or the content of --settingspwfile. */
