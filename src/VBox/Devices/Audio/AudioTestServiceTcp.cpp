@@ -109,6 +109,9 @@ typedef struct ATSCONNCTX
     PATSTRANSPORTINST                  pInst;
     /** Pointer to transport client to connect. */
     PATSTRANSPORTCLIENT                pClient;
+    /** Connection timeout (in ms).
+     *  Use RT_INDEFINITE_WAIT to wait indefinitely. */
+    uint32_t                           msTimeout;
 } ATSCONNCTX;
 /** Pointer to an Audio Test Service (ATS) TCP/IP connection context. */
 typedef ATSCONNCTX *PATSCONNCTX;
@@ -200,6 +203,8 @@ static DECLCALLBACK(int) atsTcpServerConnectThread(RTTHREAD hSelf, void *pvUser)
     PATSTRANSPORTINST   pThis    = pConnCtx->pInst;
     PATSTRANSPORTCLIENT pClient  = pConnCtx->pClient;
 
+    /** @todo Implement cancellation support for using pConnCtx->msTimeout. */
+
     RTSOCKET hTcpClient;
     int rc = RTTcpServerListen2(pThis->pTcpServer, &hTcpClient);
     if (RT_SUCCESS(rc))
@@ -225,6 +230,8 @@ static DECLCALLBACK(int) atsTcpClientConnectThread(RTTHREAD hSelf, void *pvUser)
     PATSTRANSPORTINST   pThis    = pConnCtx->pInst;
     PATSTRANSPORTCLIENT pClient  = pConnCtx->pClient;
 
+    uint64_t msStartTs = RTTimeMilliTS();
+
     for (;;)
     {
         /* Stop? */
@@ -247,6 +254,12 @@ static DECLCALLBACK(int) atsTcpClientConnectThread(RTTHREAD hSelf, void *pvUser)
 
         if (atsTcpIsFatalClientConnectStatus(rc))
             return rc;
+
+        if (   pConnCtx->msTimeout         != RT_INDEFINITE_WAIT
+            && RTTimeMilliTS() - msStartTs >= pConnCtx->msTimeout)
+        {
+            return VERR_TIMEOUT;
+        }
 
         /* Delay a wee bit before retrying. */
         RTThreadUserWait(hSelf, 1536);
@@ -293,17 +306,21 @@ static int atsTcpConnectWaitOnThreads(PATSTRANSPORTINST pThis, RTMSINTERVAL cMil
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnWaitForConnect}
  */
-static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRANSPORTCLIENT ppClientNew)
+static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTERVAL msTimeout, PPATSTRANSPORTCLIENT ppClientNew)
 {
     PATSTRANSPORTCLIENT pClient = (PATSTRANSPORTCLIENT)RTMemAllocZ(sizeof(ATSTRANSPORTCLIENT));
     AssertPtrReturn(pClient, VERR_NO_MEMORY);
 
     int rc;
 
-    LogFunc(("enmConnMode=%#x\n", pThis->enmConnMode));
+    LogFunc(("msTimeout=%RU32, enmConnMode=%#x\n", msTimeout, pThis->enmConnMode));
+
+    uint64_t msStartTs = RTTimeMilliTS();
 
     if (pThis->enmConnMode == ATSCONNMODE_SERVER)
     {
+        /** @todo Implement cancellation support for using \a msTimeout. */
+
         pClient->fFromServer = true;
         rc = RTTcpServerListen2(pThis->pTcpServer, &pClient->hTcpClient);
         LogFunc(("RTTcpServerListen2 -> %Rrc\n", rc));
@@ -318,6 +335,13 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRAN
             LogFunc(("RTTcpClientConnect -> %Rrc\n", rc));
             if (RT_SUCCESS(rc) || atsTcpIsFatalClientConnectStatus(rc))
                 break;
+
+            if (   msTimeout                   != RT_INDEFINITE_WAIT
+                && RTTimeMilliTS() - msStartTs >= msTimeout)
+            {
+                rc = VERR_TIMEOUT;
+                break;
+            }
 
             if (pThis->fStopConnecting)
             {
@@ -345,8 +369,9 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis, PPATSTRAN
 
         ATSCONNCTX ConnCtx;
         RT_ZERO(ConnCtx);
-        ConnCtx.pInst   = pThis;
-        ConnCtx.pClient = pClient;
+        ConnCtx.pInst     = pThis;
+        ConnCtx.pClient   = pClient;
+        ConnCtx.msTimeout = msTimeout;
 
         rc = VINF_SUCCESS;
         if (pThis->hThreadConnect == NIL_RTTHREAD)

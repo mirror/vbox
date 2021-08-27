@@ -1000,7 +1000,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
          * for every new client.
          */
         PATSTRANSPORTCLIENT pTransportClient;
-        rc = pThis->pTransport->pfnWaitForConnect(pThis->pTransportInst, &pTransportClient);
+        rc = pThis->pTransport->pfnWaitForConnect(pThis->pTransportInst, 1000 /* msTimeout */, &pTransportClient);
         if (RT_FAILURE(rc))
             continue;
 

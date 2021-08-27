@@ -311,17 +311,20 @@ int AudioTestSvcClientHandleOption(PATSCLIENT pClient, int ch, PCRTGETOPTUNION p
 }
 
 /**
- * Connects to an ATS peer.
+ * Connects to an ATS peer, extended version.
  *
  * @returns VBox status code.
  * @param   pClient             Client to connect.
+ * @param   msTimeout           Timeout (in ms) waiting for a connection to be established.
+ *                              Use RT_INDEFINITE_WAIT to wait indefinitely.
  */
-int AudioTestSvcClientConnect(PATSCLIENT pClient)
+int AudioTestSvcClientConnectEx(PATSCLIENT pClient, RTMSINTERVAL msTimeout)
 {
     int rc = pClient->pTransport->pfnStart(pClient->pTransportInst);
     if (RT_SUCCESS(rc))
     {
-        rc = pClient->pTransport->pfnWaitForConnect(pClient->pTransportInst, &pClient->pTransportClient);
+        rc = pClient->pTransport->pfnWaitForConnect(pClient->pTransportInst,
+                                                    msTimeout, &pClient->pTransportClient);
         if (RT_SUCCESS(rc))
         {
             rc = audioTestSvcClientDoGreet(pClient);
@@ -329,6 +332,17 @@ int AudioTestSvcClientConnect(PATSCLIENT pClient)
     }
 
     return rc;
+}
+
+/**
+ * Connects to an ATS peer.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client to connect.
+ */
+int AudioTestSvcClientConnect(PATSCLIENT pClient)
+{
+    return AudioTestSvcClientConnectEx(pClient, 30 * 1000 /* msTimeout */);
 }
 
 /**
