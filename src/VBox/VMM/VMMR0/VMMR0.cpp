@@ -3163,19 +3163,27 @@ static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc,
                                             pShared->cFlushing = pR0Log->cFlushing = RT_MIN(pR0Log->cFlushing + 1,
                                                                                             VMMLOGGER_BUFFER_COUNT);
 
+                                            STAM_REL_COUNTER_INC(&pShared->StatFlushes);
+                                            STAM_REL_COUNTER_INC(&pGVM->vmm.s.StatLogFlusherFlushes);
+
                                             if (pGVM->vmmr0.s.LogFlusher.fThreadWaiting)
                                             {
                                                 RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
                                                 RTSemEventSignal(pGVM->vmmr0.s.LogFlusher.hEvent);
                                             }
                                             else
+                                            {
+                                                STAM_REL_COUNTER_INC(&pGVM->vmm.s.StatLogFlusherNoWakeUp);
                                                 RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+                                            }
 
                                             /*
                                              * Wait for it to complete.
                                              */
+                                            STAM_REL_PROFILE_START(&pShared->StatWait, a);
                                             VMMR0EmtWaitEventInner(pGVCpu, VMMR0EMTWAIT_F_TRY_SUPPRESS_INTERRUPTED,
                                                                    pR0Log->hEventFlushWait, RT_INDEFINITE_WAIT);
+                                            STAM_REL_PROFILE_STOP(&pShared->StatWait, a);
                                         }
                                         else
                                         {
@@ -3192,7 +3200,10 @@ static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc,
                                     VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
                                 }
                                 else
+                                {
+                                    STAM_REL_COUNTER_INC(&pShared->StatCannotBlock);
                                     SUP_DPRINTF(("vmmR0LoggerFlush: VMMR0EmtPrepareToBlock failed! rc=%d\n", rc));
+                                }
                                 pR0Log->fFlushing = false;
                             }
                             else
@@ -3200,6 +3211,7 @@ static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc,
                         }
                         else
                         {
+                            STAM_REL_COUNTER_INC(&pShared->StatCannotBlock);
 #if defined(RT_OS_LINUX)
                             SUP_DPRINTF(("vmmR0LoggerFlush: EMT blocking disabled! (%u bytes)\n", pBufDesc->offBuf));
 #endif

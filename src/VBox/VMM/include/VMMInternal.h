@@ -120,6 +120,9 @@ typedef struct VMMR3CPULOGGER
     uint32_t                cbBuf;
     /** Number of bytes dropped because the flush context didn't allow waiting.  */
     uint32_t                cbDropped;
+    STAMCOUNTER             StatFlushes;
+    STAMCOUNTER             StatCannotBlock;
+    STAMPROFILE             StatWait;
 } VMMR3CPULOGGER;
 /** Pointer to r0 logger data shared with ring-3. */
 typedef VMMR3CPULOGGER *PVMMR3CPULOGGER;
@@ -346,6 +349,8 @@ typedef struct VMM
     RTTHREAD                    hLogFlusherThread;
     /** Copy of the current work log flusher work item. */
     VMMLOGFLUSHERENTRY volatile LogFlusherItem;
+    STAMCOUNTER                 StatLogFlusherFlushes;
+    STAMCOUNTER                 StatLogFlusherNoWakeUp;
     /** @} */
 
     /** Number of VMMR0_DO_HM_RUN or VMMR0_DO_NEM_RUN calls. */
@@ -632,6 +637,8 @@ typedef struct VMMR0PERVM
         /** Indicates that the log flusher thread is running. */
         bool volatile           fThreadRunning;
         bool                    afPadding2[5];
+        STAMCOUNTER             StatFlushes;
+        STAMCOUNTER             StatNoWakeUp;
         /** Logger ring buffer.
          * This is for communicating with the log flusher thread.  */
         VMMLOGFLUSHERENTRY      aRing[VMM_MAX_CPU_COUNT * 2 /*loggers*/ * 1 /*buffer*/ + 16 /*fudge*/];

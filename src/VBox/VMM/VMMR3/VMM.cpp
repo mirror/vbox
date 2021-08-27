@@ -437,6 +437,9 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetError,         STAMTYPE_COUNTER, "/VMM/RZCallR3/VMSetError",       STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_ERROR calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_RUNTIME_ERROR calls.");
 
+    STAMR3Register(pVM, &pVM->vmm.s.StatLogFlusherFlushes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, "/VMM/LogFlush/00-Flushes",  STAMUNIT_OCCURENCES, "Total number of buffer flushes");
+    STAMR3Register(pVM, &pVM->vmm.s.StatLogFlusherNoWakeUp, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, "/VMM/LogFlush/00-NoWakups", STAMUNIT_OCCURENCES, "Times the flusher thread didn't need waking up.");
+
 #ifdef VBOX_WITH_STATISTICS
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -468,6 +471,22 @@ static void vmmR3InitRegisterStats(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->vmm.s.cR0HaltsToRing3,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistoryToRing3", i);
 
         STAMR3RegisterF(pVM, &pVCpu->cEmtHashCollisions,             STAMTYPE_U8,      STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/VMM/EmtHashCollisions/Emt%02u", i);
+
+        PVMMR3CPULOGGER pShared = &pVCpu->vmm.s.u.s.Logger;
+        STAMR3RegisterF(pVM, &pShared->StatFlushes,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg", i);
+        STAMR3RegisterF(pVM, &pShared->StatCannotBlock, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/CannotBlock", i);
+        STAMR3RegisterF(pVM, &pShared->StatWait,        STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Reg/Wait", i);
+        STAMR3RegisterF(pVM, &pShared->cbDropped,       STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/cbDropped", i);
+        STAMR3RegisterF(pVM, &pShared->cbBuf,           STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/cbBuf", i);
+        STAMR3RegisterF(pVM, &pShared->idxBuf,          STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/idxBuf", i);
+
+        pShared = &pVCpu->vmm.s.u.s.RelLogger;
+        STAMR3RegisterF(pVM, &pShared->StatFlushes,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel", i);
+        STAMR3RegisterF(pVM, &pShared->StatCannotBlock, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/CannotBlock", i);
+        STAMR3RegisterF(pVM, &pShared->StatWait,        STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Rel/Wait", i);
+        STAMR3RegisterF(pVM, &pShared->cbDropped,       STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/cbDropped", i);
+        STAMR3RegisterF(pVM, &pShared->cbBuf,           STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/cbBuf", i);
+        STAMR3RegisterF(pVM, &pShared->idxBuf,          STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/idxBuf", i);
     }
 }
 
