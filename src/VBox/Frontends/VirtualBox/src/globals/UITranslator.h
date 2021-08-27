@@ -15,6 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef FEQT_INCLUDED_SRC_globals_UITranslator_h
+#define FEQT_INCLUDED_SRC_globals_UITranslator_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 /* Qt includes: */
 #include <QTranslator>
 
@@ -74,3 +80,6 @@ private:
     /** Holds the loaded data. */
     QByteArray  m_data;
 };
+
+#endif /* !FEQT_INCLUDED_SRC_globals_UITranslator_h */
+
