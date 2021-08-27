@@ -220,9 +220,9 @@ typedef SUPREQHDR *PSUPREQHDR;
  *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
- *          - Remove pvVMMR0 from SUPLDRLOAD.
+ *          - nothing
  */
-#define SUPDRV_IOC_VERSION                              0x00310000
+#define SUPDRV_IOC_VERSION                              0x00310001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
