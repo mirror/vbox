@@ -2219,6 +2219,15 @@ SUPR0DECL(int)  SUPR0IoCtlPerform(PSUPR0IOCTLCTX pCtx, uintptr_t uFunction,
  */
 SUPR0DECL(int)  SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
+#ifdef IN_RING0
+/** Debug printf macro. This also exist in SUPLib, see SUPLibInternal.h. */
+# ifdef DEBUG
+#  define SUP_DPRINTF(a) SUPR0Printf a
+# else
+#  define SUP_DPRINTF(a) do { } while (0)
+# endif
+#endif
+
 /**
  * Returns configuration flags of the host kernel.
  *

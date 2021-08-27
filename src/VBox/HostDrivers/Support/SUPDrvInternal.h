@@ -309,13 +309,6 @@
  */
 #define OSDBGPRINT(a) SUPR0Printf a
 
-/** Debug printf macro shared with the ring-3 part. */
-#ifdef DEBUG_bird
-# define SUP_DPRINTF(a) SUPR0Printf a
-#else
-# define SUP_DPRINTF(a) do { } while (0)
-#endif
-
 
 /** @name Context values for the per-session handle tables.
  * The context value is used to distinguish between the different kinds of
