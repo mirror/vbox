@@ -3222,8 +3222,13 @@ static bool vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger,
             /*
              * We always switch buffer if we have more than one.
              */
+#if VMMLOGGER_BUFFER_COUNT == 1
+            fFlushedBuffer = true;
+#else
             AssertCompile(VMMLOGGER_BUFFER_COUNT >= 1);
-            fFlushedBuffer = VMMLOGGER_BUFFER_COUNT == 1;
+            pShared->idxBuf = (idxBuffer + 1) % VMMLOGGER_BUFFER_COUNT;
+            fFlushedBuffer = false;
+#endif
         }
         else
         {

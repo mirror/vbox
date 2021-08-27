@@ -475,6 +475,8 @@ static void vmmR3InitRegisterStats(PVM pVM)
         PVMMR3CPULOGGER pShared = &pVCpu->vmm.s.u.s.Logger;
         STAMR3RegisterF(pVM, &pShared->StatFlushes,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg", i);
         STAMR3RegisterF(pVM, &pShared->StatCannotBlock, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/CannotBlock", i);
+        STAMR3RegisterF(pVM, &pShared->StatRaces,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/Races", i);
+        STAMR3RegisterF(pVM, &pShared->StatRacesReal,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/RacesReal", i);
         STAMR3RegisterF(pVM, &pShared->StatWait,        STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Reg/Wait", i);
         STAMR3RegisterF(pVM, &pShared->cbDropped,       STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/cbDropped", i);
         STAMR3RegisterF(pVM, &pShared->cbBuf,           STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/cbBuf", i);
@@ -483,6 +485,8 @@ static void vmmR3InitRegisterStats(PVM pVM)
         pShared = &pVCpu->vmm.s.u.s.RelLogger;
         STAMR3RegisterF(pVM, &pShared->StatFlushes,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel", i);
         STAMR3RegisterF(pVM, &pShared->StatCannotBlock, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/CannotBlock", i);
+        STAMR3RegisterF(pVM, &pShared->StatRaces,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/Races", i);
+        STAMR3RegisterF(pVM, &pShared->StatRacesReal,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/RacesReal", i);
         STAMR3RegisterF(pVM, &pShared->StatWait,        STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Rel/Wait", i);
         STAMR3RegisterF(pVM, &pShared->cbDropped,       STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/cbDropped", i);
         STAMR3RegisterF(pVM, &pShared->cbBuf,           STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/cbBuf", i);
@@ -941,10 +945,26 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
 static void vmmR3LogReturnFlush(PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGER pDstLogger)
 {
 #if VMMLOGGER_BUFFER_COUNT > 1
-    /* Yield if other log buffers are being flushed already, so we try
-       avoid totally mixing things up... */
+    /*
+     * To avoid totally mixing up the output, make some effort at delaying if
+     * there are buffers still being worked on by the flusher thread.
+     */
     if (pShared->cFlushing > 0)
-        RTThreadYield();
+    {
+        STAM_REL_COUNTER_INC(&pShared->StatRaces);
+        for (uint32_t iTry = 0; iTry < 32 && pShared->cFlushing != 0; iTry++)
+        {
+            RTLogBulkWrite(pDstLogger, "", 0); /* A no-op, but it takes the lock and the hope is */
+            if (pShared->cFlushing != 0)       /* that we end up waiting on the flusher finish up. */
+                RTThreadYield();
+        }
+        if (pShared->cFlushing != 0)
+        {
+            RTLogLoggerEx(pDstLogger, RTLOGGRPFLAGS_LEVEL_1, UINT32_MAX, "*MAYBE WRONG ORDER*\n");
+            if (pShared->cFlushing != 0)
+                STAM_REL_COUNTER_INC(&pShared->StatRacesReal);
+        }
+    }
 #endif
     RTLogBulkWrite(pDstLogger, pShared->aBufs[idxBuf].pchBufR3, pShared->aBufs[idxBuf].AuxDesc.offBuf);
     pShared->aBufs[idxBuf].AuxDesc.fFlushedIndicator = true;
