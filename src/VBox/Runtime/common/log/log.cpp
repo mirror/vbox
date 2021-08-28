@@ -278,6 +278,7 @@ static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace);
 static FNRTLOGPHASEMSG rtlogPhaseMsgLocked;
 static FNRTLOGPHASEMSG rtlogPhaseMsgNormal;
 #endif
+static void rtlogLoggerExFLocked(PRTLOGGERINTERNAL pLoggerInt, unsigned fFlags, unsigned iGroup, const char *pszFormat, ...);
 
 
 /*********************************************************************************************************************************
@@ -2983,10 +2984,12 @@ RT_EXPORT_SYMBOL(RTLogQueryBulk);
  *
  * @returns IRPT status code.
  * @param   pLogger             The logger instance (NULL for default logger).
+ * @param   pszBefore           Text to log before the bulk text.  Optional.
  * @param   pch                 Pointer to the block of bulk log text to write.
  * @param   cch                 Size of the block of bulk log text to write.
+ * @param   pszAfter            Text to log after the bulk text.  Optional.
  */
-RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pch, size_t cch)
+RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pszBefore, const char *pch, size_t cch, const char *pszAfter)
 {
     PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pLogger;
     RTLOG_RESOLVE_DEFAULT_RET(pLoggerInt, VINF_LOG_NO_LOGGER);
@@ -2997,43 +3000,58 @@ RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pch, size_t cch)
     int rc = rtlogLock(pLoggerInt);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Do the copying.
-         */
-        while (cch > 0)
+        if (cch > 0)
         {
-            PRTLOGBUFFERDESC const  pBufDesc = pLoggerInt->pBufDesc;
-            char * const            pchBuf   = pBufDesc->pchBuf;
-            uint32_t const          cbBuf    = pBufDesc->cbBuf;
-            uint32_t                offBuf   = pBufDesc->offBuf;
-            if (cch + 1 < cbBuf - offBuf)
-            {
-                memcpy(&pchBuf[offBuf], pch, cch);
-                offBuf += (uint32_t)cch;
-                pchBuf[offBuf] = '\0';
-                pBufDesc->offBuf = offBuf;
-                if (pBufDesc->pAux)
-                    pBufDesc->pAux->offBuf = offBuf;
-                if (!(pLoggerInt->fDestFlags & RTLOGFLAGS_BUFFERED))
-                    rtlogFlush(pLoggerInt, false /*fNeedSpace*/);
-                break;
-            }
+            /*
+             * Heading/marker.
+             */
+            if (pszBefore)
+                rtlogLoggerExFLocked(pLoggerInt, RTLOGGRPFLAGS_LEVEL_1, UINT32_MAX, "%s", pszBefore);
 
-            /* Not enough space. */
-            if (offBuf + 1 < cbBuf)
+            /*
+             * Do the copying.
+             */
+            do
             {
-                uint32_t cbToCopy = cbBuf - offBuf - 1;
-                memcpy(&pchBuf[offBuf], pch, cbToCopy);
-                offBuf += cbToCopy;
-                pchBuf[offBuf] = '\0';
-                pBufDesc->offBuf = offBuf;
-                if (pBufDesc->pAux)
-                    pBufDesc->pAux->offBuf = offBuf;
-                pch += cbToCopy;
-                cch -= cbToCopy;
-            }
+                PRTLOGBUFFERDESC const  pBufDesc = pLoggerInt->pBufDesc;
+                char * const            pchBuf   = pBufDesc->pchBuf;
+                uint32_t const          cbBuf    = pBufDesc->cbBuf;
+                uint32_t                offBuf   = pBufDesc->offBuf;
+                if (cch + 1 < cbBuf - offBuf)
+                {
+                    memcpy(&pchBuf[offBuf], pch, cch);
+                    offBuf += (uint32_t)cch;
+                    pchBuf[offBuf] = '\0';
+                    pBufDesc->offBuf = offBuf;
+                    if (pBufDesc->pAux)
+                        pBufDesc->pAux->offBuf = offBuf;
+                    if (!(pLoggerInt->fDestFlags & RTLOGFLAGS_BUFFERED))
+                        rtlogFlush(pLoggerInt, false /*fNeedSpace*/);
+                    break;
+                }
 
-            rtlogFlush(pLoggerInt, false /*fNeedSpace*/);
+                /* Not enough space. */
+                if (offBuf + 1 < cbBuf)
+                {
+                    uint32_t cbToCopy = cbBuf - offBuf - 1;
+                    memcpy(&pchBuf[offBuf], pch, cbToCopy);
+                    offBuf += cbToCopy;
+                    pchBuf[offBuf] = '\0';
+                    pBufDesc->offBuf = offBuf;
+                    if (pBufDesc->pAux)
+                        pBufDesc->pAux->offBuf = offBuf;
+                    pch += cbToCopy;
+                    cch -= cbToCopy;
+                }
+
+                rtlogFlush(pLoggerInt, false /*fNeedSpace*/);
+            } while (cch > 0);
+
+            /*
+             * Footer/marker.
+             */
+            if (pszAfter)
+                rtlogLoggerExFLocked(pLoggerInt, RTLOGGRPFLAGS_LEVEL_1, UINT32_MAX, "%s", pszAfter);
         }
 
         rtlogUnlock(pLoggerInt);
@@ -3108,7 +3126,7 @@ static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace)
 {
     PRTLOGBUFFERDESC    pBufDesc   = pLoggerInt->pBufDesc;
     uint32_t            cchToFlush = pBufDesc->offBuf;
-    char * const        pchToFlush = pBufDesc->pchBuf;
+    char *              pchToFlush = pBufDesc->pchBuf;
     uint32_t const      cbBuf      = pBufDesc->cbBuf;
     Assert(pBufDesc->u32Magic == RTLOGBUFFERDESC_MAGIC);
 
@@ -3198,6 +3216,7 @@ static void rtlogFlush(PRTLOGGERINTERNAL pLoggerInt, bool fNeedSpace)
                 idxBufDesc = (idxBufDesc + 1) % pLoggerInt->cBufDescs;
                 pLoggerInt->idxBufDesc = (uint8_t)idxBufDesc;
                 pLoggerInt->pBufDesc   = pBufDesc = &pLoggerInt->paBufDescs[idxBufDesc];
+                pchToFlush = pBufDesc->pchBuf;
             }
         }
 

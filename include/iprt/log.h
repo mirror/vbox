@@ -2317,11 +2317,13 @@ RTDECL(int) RTLogQueryBulk(PRTLOGGER pLogger, uint64_t *pfFlags, uint32_t *puGro
  * newline fun).
  *
  * @returns IRPT status code.
- * @param   pLogger     The logger instance (NULL for default logger).
- * @param   pch         Pointer to the block of bulk log text to write.
- * @param   cch         Size of the block of bulk log text to write.
+ * @param   pLogger             The logger instance (NULL for default logger).
+ * @param   pszBefore           Text to log before the bulk text.  Optional.
+ * @param   pch                 Pointer to the block of bulk log text to write.
+ * @param   cch                 Size of the block of bulk log text to write.
+ * @param   pszAfter            Text to log after the bulk text.  Optional.
  */
-RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pch, size_t cch);
+RTDECL(int) RTLogBulkWrite(PRTLOGGER pLogger, const char *pszBefore, const char *pch, size_t cch, const char *pszAfter);
 
 /**
  * Flushes the specified logger.

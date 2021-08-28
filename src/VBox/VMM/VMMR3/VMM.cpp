@@ -872,14 +872,17 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
                             /*
                              * Do the flushing.
                              */
-                            LogAlways(("*FLUSH* idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x fFlushed=%RTbool cbDropped=%#x\n",
-                                       Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush,
-                                       pShared->aBufs[Item.s.idxBuffer].AuxDesc.fFlushedIndicator, pShared->cbDropped));
                             PRTLOGGER const pLogger = Item.s.idxLogger == VMMLOGGER_IDX_REGULAR
                                                     ? RTLogGetDefaultInstance() : RTLogRelGetDefaultInstance();
                             if (pLogger)
-                                RTLogBulkWrite(pLogger, pchBufR3, cbToFlush);
-                            LogAlways(("*FLUSH DONE*\n"));
+                            {
+                                char szBefore[128];
+                                RTStrPrintf(szBefore, sizeof(szBefore),
+                                            "*FLUSH* idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x fFlushed=%RTbool cbDropped=%#x\n",
+                                            Item.s.idCpu, Item.s.idxLogger, Item.s.idxBuffer, cbToFlush,
+                                            pShared->aBufs[Item.s.idxBuffer].AuxDesc.fFlushedIndicator, pShared->cbDropped);
+                                RTLogBulkWrite(pLogger, szBefore, pchBufR3, cbToFlush, "*FLUSH DONE*\n");
+                            }
                         }
                         else
                             Log(("vmmR3LogFlusher: idCpu=%u idxLogger=%u idxBuffer=%u cbToFlush=%#x: Warning! No ring-3 buffer pointer!\n",
@@ -944,6 +947,9 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
  */
 static void vmmR3LogReturnFlush(PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGER pDstLogger)
 {
+    uint32_t const cbToFlush = pShared->aBufs[idxBuf].AuxDesc.offBuf;
+    const char    *pszBefore = cbToFlush < 256 ? NULL : "*FLUSH*\n";
+    const char    *pszAfter  = cbToFlush < 256 ? NULL : "*END*\n";
 #if VMMLOGGER_BUFFER_COUNT > 1
     /*
      * To avoid totally mixing up the output, make some effort at delaying if
@@ -954,19 +960,19 @@ static void vmmR3LogReturnFlush(PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGE
         STAM_REL_COUNTER_INC(&pShared->StatRaces);
         for (uint32_t iTry = 0; iTry < 32 && pShared->cFlushing != 0; iTry++)
         {
-            RTLogBulkWrite(pDstLogger, "", 0); /* A no-op, but it takes the lock and the hope is */
-            if (pShared->cFlushing != 0)       /* that we end up waiting on the flusher finish up. */
+            RTLogBulkWrite(pDstLogger, NULL, "", 0, NULL); /* A no-op, but it takes the lock and the hope is */
+            if (pShared->cFlushing != 0)                   /* that we end up waiting on the flusher finish up. */
                 RTThreadYield();
         }
         if (pShared->cFlushing != 0)
         {
-            RTLogLoggerEx(pDstLogger, RTLOGGRPFLAGS_LEVEL_1, UINT32_MAX, "*MAYBE WRONG ORDER*\n");
-            if (pShared->cFlushing != 0)
-                STAM_REL_COUNTER_INC(&pShared->StatRacesReal);
+            pszBefore = "*MAYBE MISPLACED*\n";
+            pszAfter  = "*END MISPLACED*\n";
+            STAM_REL_COUNTER_INC(&pShared->StatRacesReal);
         }
     }
 #endif
-    RTLogBulkWrite(pDstLogger, pShared->aBufs[idxBuf].pchBufR3, pShared->aBufs[idxBuf].AuxDesc.offBuf);
+    RTLogBulkWrite(pDstLogger, pszBefore, pShared->aBufs[idxBuf].pchBufR3, cbToFlush, pszAfter);
     pShared->aBufs[idxBuf].AuxDesc.fFlushedIndicator = true;
 }
 
