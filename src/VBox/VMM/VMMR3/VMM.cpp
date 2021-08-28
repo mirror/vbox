@@ -150,14 +150,14 @@
 #define VMM_SAVED_STATE_VERSION_3_0 3
 
 /** Macro for flushing the ring-0 logging. */
-#define VMM_FLUSH_R0_LOG(a_pLogger, a_pR3Logger) \
+#define VMM_FLUSH_R0_LOG(a_pVM, a_pVCpu, a_pLogger, a_pR3Logger) \
     do { \
         size_t const idxBuf = (a_pLogger)->idxBuf % VMMLOGGER_BUFFER_COUNT; \
         if (   (a_pLogger)->aBufs[idxBuf].AuxDesc.offBuf == 0 \
             || (a_pLogger)->aBufs[idxBuf].AuxDesc.fFlushedIndicator) \
         { /* likely? */ } \
         else \
-            vmmR3LogReturnFlush(a_pLogger, idxBuf, a_pR3Logger); \
+            vmmR3LogReturnFlush(a_pVM, a_pVCpu, a_pLogger, idxBuf, a_pR3Logger); \
     } while (0)
 
 
@@ -175,7 +175,8 @@ static VBOXSTRICTRC         vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool
                                                      uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
 static int                  vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu);
 static FNRTTHREAD           vmmR3LogFlusher;
-static void                 vmmR3LogReturnFlush(PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGER pDstLogger);
+static void                 vmmR3LogReturnFlush(PVM pVM, PVMCPU pVCpu, PVMMR3CPULOGGER pShared, size_t idxBuf,
+                                                PRTLOGGER pDstLogger);
 static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
@@ -475,9 +476,9 @@ static void vmmR3InitRegisterStats(PVM pVM)
         PVMMR3CPULOGGER pShared = &pVCpu->vmm.s.u.s.Logger;
         STAMR3RegisterF(pVM, &pShared->StatFlushes,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg", i);
         STAMR3RegisterF(pVM, &pShared->StatCannotBlock, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/CannotBlock", i);
-        STAMR3RegisterF(pVM, &pShared->StatRaces,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/Races", i);
-        STAMR3RegisterF(pVM, &pShared->StatRacesReal,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/RacesReal", i);
         STAMR3RegisterF(pVM, &pShared->StatWait,        STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Reg/Wait", i);
+        STAMR3RegisterF(pVM, &pShared->StatRaces,       STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Reg/Races", i);
+        STAMR3RegisterF(pVM, &pShared->StatRacesToR0,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Reg/RacesToR0", i);
         STAMR3RegisterF(pVM, &pShared->cbDropped,       STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/cbDropped", i);
         STAMR3RegisterF(pVM, &pShared->cbBuf,           STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/cbBuf", i);
         STAMR3RegisterF(pVM, &pShared->idxBuf,          STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Reg/idxBuf", i);
@@ -485,9 +486,9 @@ static void vmmR3InitRegisterStats(PVM pVM)
         pShared = &pVCpu->vmm.s.u.s.RelLogger;
         STAMR3RegisterF(pVM, &pShared->StatFlushes,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel", i);
         STAMR3RegisterF(pVM, &pShared->StatCannotBlock, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/CannotBlock", i);
-        STAMR3RegisterF(pVM, &pShared->StatRaces,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/Races", i);
-        STAMR3RegisterF(pVM, &pShared->StatRacesReal,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/RacesReal", i);
         STAMR3RegisterF(pVM, &pShared->StatWait,        STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Rel/Wait", i);
+        STAMR3RegisterF(pVM, &pShared->StatRaces,       STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "", "/VMM/LogFlush/CPU%u/Rel/Races", i);
+        STAMR3RegisterF(pVM, &pShared->StatRacesToR0,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     "", "/VMM/LogFlush/CPU%u/Rel/RacesToR0", i);
         STAMR3RegisterF(pVM, &pShared->cbDropped,       STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/cbDropped", i);
         STAMR3RegisterF(pVM, &pShared->cbBuf,           STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/cbBuf", i);
         STAMR3RegisterF(pVM, &pShared->idxBuf,          STAMTYPE_U32,     STAMVISIBILITY_USED, STAMUNIT_BYTES,          "", "/VMM/LogFlush/CPU%u/Rel/idxBuf", i);
@@ -543,9 +544,9 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -676,9 +677,9 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -941,37 +942,54 @@ static DECLCALLBACK(int) vmmR3LogFlusher(RTTHREAD hThreadSelf, void *pvUser)
 /**
  * Helper for VMM_FLUSH_R0_LOG that does the flushing.
  *
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      EMT.
  * @param   pShared     The shared logger data.
  * @param   idxBuf      The buffer to flush.
  * @param   pDstLogger  The destination IPRT logger.
  */
-static void vmmR3LogReturnFlush(PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGER pDstLogger)
+static void vmmR3LogReturnFlush(PVM pVM, PVMCPU pVCpu, PVMMR3CPULOGGER pShared, size_t idxBuf, PRTLOGGER pDstLogger)
 {
     uint32_t const cbToFlush = pShared->aBufs[idxBuf].AuxDesc.offBuf;
     const char    *pszBefore = cbToFlush < 256 ? NULL : "*FLUSH*\n";
     const char    *pszAfter  = cbToFlush < 256 ? NULL : "*END*\n";
+
 #if VMMLOGGER_BUFFER_COUNT > 1
     /*
-     * To avoid totally mixing up the output, make some effort at delaying if
-     * there are buffers still being worked on by the flusher thread.
+     * When we have more than one log buffer, the flusher thread may still be
+     * working on the previous buffer when we get here.
      */
+    char szBefore[64];
     if (pShared->cFlushing > 0)
     {
-        STAM_REL_COUNTER_INC(&pShared->StatRaces);
-        for (uint32_t iTry = 0; iTry < 32 && pShared->cFlushing != 0; iTry++)
-        {
-            RTLogBulkWrite(pDstLogger, NULL, "", 0, NULL); /* A no-op, but it takes the lock and the hope is */
-            if (pShared->cFlushing != 0)                   /* that we end up waiting on the flusher finish up. */
-                RTThreadYield();
-        }
+        STAM_REL_PROFILE_START(&pShared->StatRaces, a);
+        uint64_t const nsStart = RTTimeNanoTS();
+
+        /* A no-op, but it takes the lock and the hope is that we end up waiting
+           on the flusher to finish up. */
+        RTLogBulkWrite(pDstLogger, NULL, "", 0, NULL);
         if (pShared->cFlushing != 0)
         {
-            pszBefore = "*MAYBE MISPLACED*\n";
-            pszAfter  = "*END MISPLACED*\n";
-            STAM_REL_COUNTER_INC(&pShared->StatRacesReal);
+            RTLogBulkWrite(pDstLogger, NULL, "", 0, NULL);
+
+            /* If no luck, go to ring-0 and to proper waiting. */
+            if (pShared->cFlushing != 0)
+            {
+                STAM_REL_COUNTER_INC(&pShared->StatRacesToR0);
+                SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), pVCpu->idCpu, VMMR0_DO_VMMR0_LOG_WAIT_FLUSHED, 0, NULL);
+            }
         }
+
+        RTStrPrintf(szBefore, sizeof(szBefore), "*%sFLUSH* waited %'RU64 ns\n",
+                    pShared->cFlushing == 0 ? "" : " MISORDERED",  RTTimeNanoTS() - nsStart);
+        pszBefore = szBefore;
+        STAM_REL_PROFILE_STOP(&pShared->StatRaces, a);
     }
+#else
+    RT_NOREF(pVM, pVCpu);
 #endif
+
     RTLogBulkWrite(pDstLogger, pszBefore, pShared->aBufs[idxBuf].pchBufR3, cbToFlush, pszAfter);
     pShared->aBufs[idxBuf].AuxDesc.fFlushedIndicator = true;
 }
@@ -1249,9 +1267,9 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
          * Flush the logs
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
         {
             Log2(("VMMR3HmRunGC: returns %Rrc (cs:rip=%04x:%RX64)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
@@ -1293,9 +1311,9 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
          * Flush the logs
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rcStrict != VINF_VMM_CALL_HOST)
             return rcStrict;
         int rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
@@ -2450,9 +2468,9 @@ VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOper
          * Flush the logs.
          */
 #ifdef LOG_ENABLED
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.Logger, NULL);
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.Logger, NULL);
 #endif
-        VMM_FLUSH_R0_LOG(&pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
+        VMM_FLUSH_R0_LOG(pVM, pVCpu, &pVCpu->vmm.s.u.s.RelLogger, RTLogRelGetDefaultInstance());
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);

@@ -122,9 +122,9 @@ typedef struct VMMR3CPULOGGER
     uint32_t                cbDropped;
     STAMCOUNTER             StatFlushes;
     STAMCOUNTER             StatCannotBlock;
-    STAMCOUNTER             StatRaces;
-    STAMCOUNTER             StatRacesReal;
     STAMPROFILE             StatWait;
+    STAMPROFILE             StatRaces;
+    STAMCOUNTER             StatRacesToR0;
 } VMMR3CPULOGGER;
 /** Pointer to r0 logger data shared with ring-3. */
 typedef VMMR3CPULOGGER *PVMMR3CPULOGGER;

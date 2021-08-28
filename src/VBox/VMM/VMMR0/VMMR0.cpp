@@ -146,6 +146,7 @@ extern uint64_t __umoddi3(uint64_t, uint64_t);
 RT_C_DECLS_END
 static int  vmmR0UpdateLoggers(PGVM pGVM, VMCPUID idCpu, PVMMR0UPDATELOGGERSREQ pReq, size_t idxLogger);
 static int  vmmR0LogFlusher(PGVM pGVM);
+static int  vmmR0LogWaitFlushed(PGVM pGVM, VMCPUID idCpu, size_t idxLogger);
 static int  vmmR0InitLoggers(PGVM pGVM);
 static void vmmR0CleanupLoggers(PGVM pGVM);
 
@@ -1983,6 +1984,19 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
             break;
 
         /*
+         * Wait for the flush to finish with all the buffers for the given logger.
+         */
+        case VMMR0_DO_VMMR0_LOG_WAIT_FLUSHED:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
+            if (u64Arg < VMMLOGGER_IDX_MAX  && pReqHdr == NULL)
+                rc = vmmR0LogWaitFlushed(pGVM, idCpu /*idCpu*/, (size_t)u64Arg);
+            else
+                return VERR_INVALID_PARAMETER;
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+
+        /*
          * Attempt to enable hm mode and check the current setting.
          */
         case VMMR0_DO_HM_ENABLE:
@@ -3098,6 +3112,64 @@ static int vmmR0LogFlusher(PGVM pGVM)
 }
 
 
+/**
+ * VMMR0_DO_VMMR0_LOG_WAIT_FLUSHED: Waits for the flusher thread to finish all
+ * buffers for logger @a idxLogger.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   idCpu           The ID of the calling EMT.
+ * @param   idxLogger       Which logger to wait on.
+ * @thread  EMT(idCpu)
+ */
+static int vmmR0LogWaitFlushed(PGVM pGVM, VMCPUID idCpu, size_t idxLogger)
+{
+    /*
+     * Check sanity.  First we require EMT to be calling us.
+     */
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
+    PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+    AssertReturn(pGVCpu->hEMT == RTThreadNativeSelf(), VERR_INVALID_CPU_ID);
+    AssertReturn(idxLogger < VMMLOGGER_IDX_MAX, VERR_OUT_OF_RANGE);
+    PVMMR0PERVCPULOGGER const pR0Log = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
+
+    /*
+     * Do the waiting.
+     */
+    uint64_t const nsStart   = RTTimeNanoTS();
+    int            rc        = VINF_SUCCESS;
+
+    RTSpinlockAcquire(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+    uint32_t       cFlushing = pR0Log->cFlushing;
+    while (cFlushing > 0)
+    {
+        pR0Log->fEmtWaiting = true;
+        RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+
+        rc = RTSemEventWaitNoResume(pR0Log->hEventFlushWait, RT_MS_5MIN);
+
+        RTSpinlockAcquire(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+        pR0Log->fEmtWaiting = false;
+        if (RT_SUCCESS(rc))
+        {
+            /* Read the new count, make sure it decreased before looping.  That
+               way we can guarentee that we will only wait more than 5 min * buffers. */
+            uint32_t const cPrevFlushing = cFlushing;
+            cFlushing = pR0Log->cFlushing;
+            if (cFlushing < cPrevFlushing)
+                continue;
+            rc = VERR_INTERNAL_ERROR_3;
+        }
+        break;
+    }
+    RTSpinlockRelease(pGVM->vmmr0.s.LogFlusher.hSpinlock);
+    return rc;
+}
+
+
+/**
+ * Inner worker for vmmR0LoggerFlushCommon.
+ */
 static bool vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush)
 {
     PVMMR0PERVCPULOGGER const pR0Log    = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
@@ -3146,7 +3218,7 @@ static bool vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger,
     VMMR0EMTBLOCKCTX Ctx;
     if (enmAction != kJustSignal)
     {
-        int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "vmmR0LoggerFlushCommon", pR0Log->hEventFlushWait, &Ctx);
+        int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "vmmR0LoggerFlushInner", pR0Log->hEventFlushWait, &Ctx);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else

@@ -298,6 +298,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_VMMR0_UPDATE_LOGGERS,
     /** Used by the log flusher, VMMR0LogFlusher.  */
     VMMR0_DO_VMMR0_LOG_FLUSHER,
+    /** Used by EMTs to wait for the log flusher to finish, VMMR0LogWaitFlushed.  */
+    VMMR0_DO_VMMR0_LOG_WAIT_FLUSHED,
 
     /** Setup hardware-assisted VM session. */
     VMMR0_DO_HM_SETUP_VM = 128,
