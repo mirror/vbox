@@ -1011,7 +1011,7 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
                                                "host -> valkit", &ValKitTcpOpts);
                 if (RT_FAILURE(rc))
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Unable to connect to the Validation Kit audio driver!\n"
-                                                            "There could be mulitple reasons:\n\n"
+                                                            "There could be multiple reasons:\n\n"
                                                             "    - Wrong host being used\n"
                                                             "    - VirtualBox host version is too old\n"
                                                             "    - Audio debug mode is not enabled\n"
