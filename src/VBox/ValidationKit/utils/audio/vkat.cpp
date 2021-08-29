@@ -554,13 +554,13 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
     }
     else if (pTstEnv->enmMode == AUDIOTESTMODE_HOST)
     {
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Using tag '%s'\n", pTstEnv->szTag);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pTstEnv->szTag);
 
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling ValKit audio driver on host to begin a new test set ...\n");
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling ValKit audio driver on host to begin a new test set ...\n");
         rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClValKit, pTstEnv->szTag);
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling VKAT on guest to begin a new test set ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling VKAT on guest to begin a new test set ...\n");
             rc = AudioTestSvcClientTestSetBegin(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
             if (RT_FAILURE(rc))
                 RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
@@ -586,7 +586,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
                     break;
             }
 
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Ending test set on guest ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Ending test set on guest ...\n");
             int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
             if (RT_FAILURE(rc2))
             {
@@ -595,7 +595,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
                     rc = rc2;
             }
 
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Ending test set on host (Validation Kit audio driver) ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Ending test set on host (Validation Kit audio driver) ...\n");
             rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClValKit, pTstEnv->szTag);
             if (RT_FAILURE(rc2))
             {
@@ -662,7 +662,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
         }
     }
     else
-        AssertFailed();
+        rc = VERR_NOT_IMPLEMENTED;
 
     /* Clean up. */
     RTDirRemove(pTstEnv->szPathTemp);
