@@ -2661,18 +2661,6 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
 
 
 /**
- * Service a VMMCALLRING3_PDM_LOCK call.
- *
- * @returns VBox status code.
- * @param   pVM     The cross context VM structure.
- */
-VMMR3_INT_DECL(int) PDMR3LockCall(PVM pVM)
-{
-    return PDMR3CritSectEnterEx(pVM, &pVM->pdm.s.CritSect, true /* fHostCall */);
-}
-
-
-/**
  * Allocates memory from the VMM device heap.
  *
  * @returns VBox status code.

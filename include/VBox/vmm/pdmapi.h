@@ -169,7 +169,6 @@ VMMR3DECL(int)          PDMR3DriverReattach(PUVM pVM, const char *pszDevice, uns
                                             const char *pszDriver, unsigned iOccurrence, uint32_t fFlags, PCFGMNODE pCfg,
                                             PPPDMIBASE ppBase);
 VMMR3DECL(void)         PDMR3DmaRun(PVM pVM);
-VMMR3_INT_DECL(int)     PDMR3LockCall(PVM pVM);
 
 VMMR3_INT_DECL(int)     PDMR3VmmDevHeapAlloc(PVM pVM, size_t cbSize, PFNPDMVMMDEVHEAPNOTIFY pfnNotify, RTR3PTR *ppv);
 VMMR3_INT_DECL(int)     PDMR3VmmDevHeapFree(PVM pVM, RTR3PTR pv);

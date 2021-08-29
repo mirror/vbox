@@ -54,8 +54,6 @@ typedef enum VMMCALLRING3
 {
     /** Invalid operation.  */
     VMMCALLRING3_INVALID = 0,
-    /** Acquire the PDM lock. */
-    VMMCALLRING3_PDM_LOCK,
     /** Acquire the critical section specified as argument.  */
     VMMCALLRING3_PDM_CRIT_SECT_ENTER,
     /** Acquire the PGM lock. */
