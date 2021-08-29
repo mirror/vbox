@@ -2591,13 +2591,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
             LogRel(("%s", pVM->vmm.s.szRing0AssertMsg2));
             return VERR_VMM_RING0_ASSERTION;
 
-        /*
-         * A forced switch to ring 0 for preemption purposes.
-         */
-        case VMMCALLRING3_VM_R0_PREEMPT:
-            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
-            break;
-
         default:
             AssertMsgFailed(("enmCallRing3Operation=%d\n", pVCpu->vmm.s.enmCallRing3Operation));
             return VERR_VMM_UNKNOWN_RING3_CALL;

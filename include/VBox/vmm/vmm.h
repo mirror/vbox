@@ -54,10 +54,12 @@ typedef enum VMMCALLRING3
 {
     /** Invalid operation.  */
     VMMCALLRING3_INVALID = 0,
-    /** Acquire the critical section specified as argument.  */
-    VMMCALLRING3_PDM_CRIT_SECT_ENTER,
-    /** Acquire the PGM lock. */
-    VMMCALLRING3_PGM_LOCK,
+    /** Signal a ring 0 assertion. */
+    VMMCALLRING3_VM_R0_ASSERTION,
+    /** Set the VM error message. */
+    VMMCALLRING3_VM_SET_ERROR,
+    /** Set the VM runtime error message. */
+    VMMCALLRING3_VM_SET_RUNTIME_ERROR,
     /** Grow the PGM shadow page pool. */
     VMMCALLRING3_PGM_POOL_GROW,
     /** Maps a chunk into ring-3. */
@@ -66,17 +68,10 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES,
     /** Allocates a large (2MB) page. */
     VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE,
+    /** Acquire the PGM lock. */
+    VMMCALLRING3_PGM_LOCK,
     /** Acquire the MM hypervisor heap lock. */
     VMMCALLRING3_MMHYPER_LOCK,
-    /** Set the VM error message. */
-    VMMCALLRING3_VM_SET_ERROR,
-    /** Set the VM runtime error message. */
-    VMMCALLRING3_VM_SET_RUNTIME_ERROR,
-    /** Signal a ring 0 assertion. */
-    VMMCALLRING3_VM_R0_ASSERTION,
-    /** Ring switch to force preemption.  This is also used by PDMCritSect to
-     *  handle VERR_INTERRUPTED in kernel context. */
-    VMMCALLRING3_VM_R0_PREEMPT,
     /** The usual 32-bit hack. */
     VMMCALLRING3_32BIT_HACK = 0x7fffffff
 } VMMCALLRING3;
