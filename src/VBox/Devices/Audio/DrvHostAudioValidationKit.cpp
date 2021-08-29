@@ -271,11 +271,11 @@ static DECLCALLBACK(int) drvHostValKitTestSetBegin(void const *pvUser, const cha
 {
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
+    LogRel(("ValKit: Beginning test set '%s'\n", pszTag));
+
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-
-        LogRel(("ValKit: Beginning test set '%s'\n", pszTag));
         rc = AudioTestSetCreate(&pThis->Set, pThis->szPathTemp, pszTag);
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
@@ -294,6 +294,8 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
 {
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
+    LogRel(("ValKit: Ending test set '%s'\n", pszTag));
+
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
@@ -308,6 +310,8 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
             {
                 LogRel(("ValKit: Waiting for runnig test set '%s' to end ...\n", pszTag));
                 rc = RTSemEventWait(pThis->EventSemEnded, RT_MS_30SEC);
+                if (RT_FAILURE(rc))
+                    LogRel(("ValKit: Waiting for runnig test set '%s' failed with %Rrc\n", pszTag, rc));
 
                 int rc2 = RTCritSectEnter(&pThis->CritSect);
                 if (RT_SUCCESS(rc))
@@ -317,7 +321,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
 
         if (RT_SUCCESS(rc))
         {
-            LogRel(("ValKit: Ending test set '%s'\n", pszTag));
+            LogRel(("ValKit: Closing test set '%s' ...\n", pszTag));
 
             /* Close the test set first. */
             rc = AudioTestSetClose(pSet);
@@ -327,7 +331,11 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
                  * that it's ready for transmission. */
                 rc = AudioTestSetPack(pSet, pThis->szPathOut, pThis->szTestSetArchive, sizeof(pThis->szTestSetArchive));
                 if (RT_SUCCESS(rc))
+                {
                     LogRel(("ValKit: Packed up to '%s'\n", pThis->szTestSetArchive));
+                }
+                else
+                    LogRel(("ValKit: Packing up test set failed with %Rrc\n", rc));
 
                 /* Do some internal housekeeping. */
                 drvHostValKitCleanup(pThis);
@@ -338,8 +346,16 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
                     rc = rc2;
 #endif
             }
+            else
+                LogRel(("ValKit: Closing test set failed with %Rrc\n", rc));
 
-            AudioTestSetDestroy(pSet);
+            int rc2 = AudioTestSetDestroy(pSet);
+            if (RT_FAILURE(rc2))
+            {
+                LogRel(("ValKit: Destroying test set failed with %Rrc\n", rc));
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
         }
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
@@ -377,7 +393,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("ValKit: Registered guest recording test #%RU32 (%RU32ms, %RU64 bytes)\n",
+        LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes)\n",
                 pThis->cTestsTotal, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite));
 
         RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
@@ -415,7 +431,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("ValKit: Registered guest playback test #%RU32 (%RU32ms, %RU64 bytes)\n",
+        LogRel(("ValKit: Registering guest playback test #%RU32 (%RU32ms, %RU64 bytes)\n",
                 pThis->cTestsTotal, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead));
 
         RTListAppend(&pThis->lstTestsPlay, &pTestData->Node);
@@ -434,8 +450,6 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
 /** @copydoc ATSCALLBACKS::pfnTestSetSendBegin */
 static DECLCALLBACK(int) drvHostValKitTestSetSendBeginCallback(void const *pvUser, const char *pszTag)
 {
-    RT_NOREF(pszTag);
-
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -461,7 +475,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetSendBeginCallback(void const *pvUse
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("ValKit: Beginning to send test set failed with %Rrc\n", rc));
+        LogRel(("ValKit: Beginning to send test set '%s' failed with %Rrc\n", pszTag, rc));
 
     return rc;
 }
@@ -470,8 +484,6 @@ static DECLCALLBACK(int) drvHostValKitTestSetSendBeginCallback(void const *pvUse
 static DECLCALLBACK(int) drvHostValKitTestSetSendReadCallback(void const *pvUser,
                                                               const char *pszTag, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
-    RT_NOREF(pszTag);
-
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -479,7 +491,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetSendReadCallback(void const *pvUser
     {
         if (RTFileIsValid(pThis->hTestSetArchive))
         {
-            rc =  RTFileRead(pThis->hTestSetArchive, pvBuf, cbBuf, pcbRead);
+            rc = RTFileRead(pThis->hTestSetArchive, pvBuf, cbBuf, pcbRead);
         }
         else
             rc = VERR_WRONG_ORDER;
@@ -490,7 +502,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetSendReadCallback(void const *pvUser
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("ValKit: Reading from test set failed with %Rrc\n", rc));
+        LogRel(("ValKit: Reading from test set '%s' failed with %Rrc\n", pszTag, rc));
 
     return rc;
 }
@@ -498,8 +510,6 @@ static DECLCALLBACK(int) drvHostValKitTestSetSendReadCallback(void const *pvUser
 /** @copydoc ATSCALLBACKS::pfnTestSetSendEnd */
 static DECLCALLBACK(int) drvHostValKitTestSetSendEndCallback(void const *pvUser, const char *pszTag)
 {
-    RT_NOREF(pszTag);
-
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -518,7 +528,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetSendEndCallback(void const *pvUser,
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("ValKit: Ending to send test set failed with %Rrc\n", rc));
+        LogRel(("ValKit: Ending to send test set '%s' failed with %Rrc\n", pszTag, rc));
 
     return rc;
 }
