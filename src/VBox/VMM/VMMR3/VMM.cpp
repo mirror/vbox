@@ -430,7 +430,6 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchTPR,            STAMTYPE_COUNTER, "/VMM/RZRet/PatchTPR",            STAMUNIT_OCCURENCES, "Number of VINF_EM_HM_PATCH_TPR_INSTR returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetCallRing3,           STAMTYPE_COUNTER, "/VMM/RZCallR3/Misc",             STAMUNIT_OCCURENCES, "Number of Other ring-3 calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_LOCK calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMCritSectEnter,   STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMCritSectEnter", STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PDM_CRITSECT_ENTER calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_LOCK calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMPoolGrow,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMPoolGrow",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_POOL_GROW calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMMapChunk,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMMapChunk",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_MAP_CHUNK calls.");
@@ -2505,36 +2504,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
 
     switch (pVCpu->vmm.s.enmCallRing3Operation)
     {
-        /*
-         * Acquire a critical section.
-         */
-        case VMMCALLRING3_PDM_CRIT_SECT_ENTER:
-        {
-            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectEnterEx(pVM, (PPDMCRITSECT)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
-                                                            true /*fCallRing3*/);
-            break;
-        }
-
-        /*
-         * Enter a r/w critical section exclusively.
-         */
-        case VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL:
-        {
-            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterExclEx(pVM, (PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
-                                                                  true /*fCallRing3*/);
-            break;
-        }
-
-        /*
-         * Enter a r/w critical section shared.
-         */
-        case VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED:
-        {
-            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterSharedEx(pVM, (PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
-                                                                    true /*fCallRing3*/);
-            break;
-        }
-
         /*
          * Acquire the PDM lock.
          */

@@ -58,10 +58,6 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_PDM_LOCK,
     /** Acquire the critical section specified as argument.  */
     VMMCALLRING3_PDM_CRIT_SECT_ENTER,
-    /** Enter the R/W critical section (in argument) exclusively.  */
-    VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL,
-    /** Enter the R/W critical section (in argument) shared.  */
-    VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED,
     /** Acquire the PGM lock. */
     VMMCALLRING3_PGM_LOCK,
     /** Grow the PGM shadow page pool. */
