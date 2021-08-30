@@ -424,7 +424,7 @@ class tdAudioTest(vbox.TestDriver):
             asEnv = [];
 
             # Enable more verbose logging for all groups. Disable later again?
-            asEnv.extend([ 'VKAT_RELEASE_LOG=all.e.l.l2.l3.f' ]);
+            asEnv.extend([ 'VKAT_RELEASE_LOG=all.e.l.l2.l3.f+audio_test.e.l.l2.l3.f' ]);
 
             # Write the log file to some deterministic place so TxS can retrieve it later.
             sVkatLogFile = 'VKAT_RELEASE_LOG_DEST=file=' + self.getGstVkatLogFilePath(oTestVm);
@@ -469,7 +469,7 @@ class tdAudioTest(vbox.TestDriver):
 
         # Enable more verbose logging for all groups. Disable later again?
         asEnv = {};
-        asEnv[ 'VKAT_RELEASE_LOG' ] = 'all.e.l.l2.l3.f';
+        asEnv[ 'VKAT_RELEASE_LOG' ] = 'all.e.l.l2.l3.f+audio_test.e.l.l2.l3.f';
 
         # Build the base command line, exclude all tests by default.
         asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--probe-backends', \
