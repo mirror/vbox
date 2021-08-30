@@ -2365,20 +2365,6 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
 
 
 /**
- * Service a VMMCALLRING3_PGM_LOCK call.
- *
- * @returns VBox status code.
- * @param   pVM     The cross context VM structure.
- */
-VMMR3DECL(int) PGMR3LockCall(PVM pVM)
-{
-    int rc = PDMR3CritSectEnterEx(pVM, &pVM->pgm.s.CritSectX, true /* fHostCall */);
-    AssertRC(rc);
-    return rc;
-}
-
-
-/**
  * Called by pgmPoolFlushAllInt prior to flushing the pool.
  *
  * @returns VBox status code, fully asserted.

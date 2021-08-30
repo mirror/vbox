@@ -2540,15 +2540,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
         }
 
         /*
-         * Acquire the PGM lock.
-         */
-        case VMMCALLRING3_PGM_LOCK:
-        {
-            pVCpu->vmm.s.rcCallRing3 = PGMR3LockCall(pVM);
-            break;
-        }
-
-        /*
          * Set the VM error message.
          */
         case VMMCALLRING3_VM_SET_ERROR:
