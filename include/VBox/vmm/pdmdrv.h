@@ -1304,7 +1304,15 @@ typedef struct PDMDRVHLPR3
 
 
 /**
- * @copydoc PDMDRVHLPR3::pfnVMSetError
+ * Set the VM error message
+ *
+ * @returns rc.
+ * @param   pDrvIns         Driver instance.
+ * @param   rc              VBox status code.
+ * @param   SRC_POS         Use RT_SRC_POS.
+ * @param   pszFormat       Error message format string.
+ * @param   ...             Error message arguments.
+ * @sa      PDMDRV_SET_ERROR, PDMDrvHlpVMSetErrorV, VMSetError
  */
 DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(6, 7) PDMDrvHlpVMSetError(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS_DECL,
                                                                const char *pszFormat, ...)
@@ -1333,7 +1341,16 @@ DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(6, 0) PDMDrvHlpVMSetErrorV(PPDMDRVINS pDrvI
 
 
 /**
- * @copydoc PDMDRVHLPR3::pfnVMSetRuntimeError
+ * Set the VM runtime error message
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         Driver instance.
+ * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
+ * @param   pszErrorId      Error ID string.
+ * @param   pszFormat       Error message format string.
+ * @param   ...             Error message arguments.
+ * @sa      PDMDRV_SET_RUNTIME_ERROR, PDMDrvHlpVMSetRuntimeErrorV,
+ *          VMSetRuntimeError
  */
 DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(4, 5) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
                                                                       const char *pszFormat, ...)

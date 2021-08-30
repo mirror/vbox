@@ -6749,7 +6749,15 @@ DECLINLINE(bool) PDMDevHlpVMTeleportedAndNotFullyResumedYet(PPDMDEVINS pDevIns)
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnVMSetError
+ * Set the VM error message
+ *
+ * @returns rc.
+ * @param   pDevIns             The device instance.
+ * @param   rc                  VBox status code.
+ * @param   SRC_POS             Use RT_SRC_POS.
+ * @param   pszFormat           Error message format string.
+ * @param   ...                 Error message arguments.
+ * @sa      VMSetError
  */
 DECLINLINE(int) RT_IPRT_FORMAT_ATTR(6, 7) PDMDevHlpVMSetError(PPDMDEVINS pDevIns, const int rc, RT_SRC_POS_DECL,
                                                               const char *pszFormat, ...)
@@ -6762,7 +6770,15 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(6, 7) PDMDevHlpVMSetError(PPDMDEVINS pDevIns
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnVMSetRuntimeError
+ * Set the VM runtime error message
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   fFlags              The action flags. See VMSETRTERR_FLAGS_*.
+ * @param   pszErrorId          Error ID string.
+ * @param   pszFormat           Error message format string.
+ * @param   ...                 Error message arguments.
+ * @sa      VMSetRuntimeError
  */
 DECLINLINE(int) RT_IPRT_FORMAT_ATTR(4, 5) PDMDevHlpVMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId,
                                                                      const char *pszFormat, ...)
