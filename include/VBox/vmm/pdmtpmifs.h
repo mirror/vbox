@@ -114,6 +114,14 @@ typedef struct PDMITPMCONNECTOR
     DECLR3CALLBACKMEMBER(TPMVERSION, pfnGetVersion, (PPDMITPMCONNECTOR pInterface));
 
     /**
+     * Returns the maximum supported locality of the driver below.
+     *
+     * @returns The maximum supported locality (0-4).
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetLocalityMax, (PPDMITPMCONNECTOR pInterface));
+
+    /**
      * Returns the status of the established flag.
      *
      * @returns Status of the established flag.

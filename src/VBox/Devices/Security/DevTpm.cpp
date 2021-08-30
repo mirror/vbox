@@ -204,6 +204,58 @@
 #define TPM_FIFO_LOCALITY_REG_DATA_FIFO                      0x24
 /** TPM start of HASH operation signal register for locality 4. */
 #define TPM_FIFO_LOCALITY_REG_HASH_START                     0x28
+
+/** Locality interface ID register. */
+#define TPM_FIFO_LOCALITY_REG_INTF_ID                         0x30
+/** Interface type field. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_MASK           UINT32_C(0xf)
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_SHIFT          0
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_SET(a)         ((a) << TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_SHIFT)
+/** FIFO interface as defined in PTP for TPM 2.0 is active. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_FIFO_TPM20    0x0
+/** CRB interface is active. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_CRB           0x1
+/** FIFO interface as defined in TIS 1.3 is active. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_TIS1_3        0xf
+/** Interface type field. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_MASK           UINT32_C(0xf)
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_SHIFT          4
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_SET(a)         ((a) << TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_SHIFT)
+/** FIFO interface for TPM 2.0 */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_FIFO          0
+/** CRB interface version 0. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_CRB           1
+/** Only locality 0 is supported when clear, set if 5 localities are supported. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_LOCALITY           RT_BIT(8)
+/** Maximum transfer size support. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_MASK   0x1800
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SHIFT  11
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SET(a) ((a) << TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SHIFT)
+/** Only legacy transfers supported. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_LEGACY 0x0
+/** 8B maximum transfer size. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_8B   0x1
+/** 32B maximum transfer size. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_32B  0x2
+/** 64B maximum transfer size. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_64B  0x3
+/** FIFO interface is supported and may be selected. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_FIFO               RT_BIT(13)
+/** CRB interface is supported and may be selected. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_CRB                RT_BIT(14)
+/** Interrupt polarity configuration. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_MASK            0x60000
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_SHIFT           17
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_SET(a)          ((a) << TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_SHIFT)
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_GET(a)          (((a) & TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_MASK) >> TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_SHIFT)
+/** Selects the FIFO interface, takes effect on next _TPM_INIT. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_FIFO           0
+/** Selects the CRB interface, takes effect on next _TPM_INIT. */
+#  define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_CRB            1
+/** Locks the interface selector field and prevents further changes. */
+# define TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_LOCK            RT_BIT(19)
+
+
 /** Extended data FIFO read/write register. */
 #define TPM_FIFO_LOCALITY_REG_XDATA_FIFO                     0x80
 /** TPM device and vendor ID. */
@@ -273,7 +325,7 @@
 /** Maximum transfer size support. */
 # define TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_MASK   0x1800
 # define TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SHIFT  11
-# define TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SET(a) ((a) << TPM_FIFO_LOCALITY_REG_IF_CAP_DATA_XFER_SZ_SHIFT)
+# define TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SET(a) ((a) << TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SHIFT)
 /** Only legacy transfers supported. */
 #  define TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_LEGACY 0x0
 /** 8B maximum transfer size. */
@@ -438,6 +490,8 @@ typedef struct DEVTPM
     uint8_t                         uIrq;
     /** Flag whether CRB access mode is used. */
     bool                            fCrb;
+    /** Flag whether the TPM driver below supportes other localities than 0. */
+    bool                            fLocChangeSup;
 
     /** Currently selected locality. */
     uint8_t                         bLoc;
@@ -698,6 +752,19 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
                     u64 |= TPM_FIFO_LOCALITY_REG_STS_DATA_AVAIL;
             }
             break;
+        case TPM_FIFO_LOCALITY_REG_INTF_ID:
+            u64 =   TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_SET(TPM_FIFO_LOCALITY_REG_INTF_ID_IF_VERS_FIFO)
+                  | TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SET(TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_64B)
+                  | TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_GET(TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_FIFO)
+                  | TPM_FIFO_LOCALITY_REG_INTF_ID_IF_SEL_LOCK;
+            if (pThis->enmTpmVers == TPMVERSION_1_2)
+                u64 |= TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_SET(TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_TIS1_3);
+            else
+                u64 |= TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_SET(TPM_FIFO_LOCALITY_REG_INTF_ID_IF_TYPE_FIFO_TPM20);
+
+            if (pThis->fLocChangeSup) /* Only advertise the locality capability if the driver below supports it. */
+                u64 |= TPM_FIFO_LOCALITY_REG_INTF_ID_CAP_LOCALITY;
+            break;
         case TPM_FIFO_LOCALITY_REG_DID_VID:
             u64 = RT_H2BE_U32(RT_MAKE_U32(pThis->uVenId, pThis->uDevId));
             break;
@@ -896,7 +963,6 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
         case TPM_CRB_LOCALITY_REG_INTF_ID:
             u64 =   TPM_CRB_LOCALITY_REG_INTF_ID_IF_TYPE_SET(TPM_CRB_LOCALITY_REG_INTF_ID_IF_TYPE_CRB)
                   | TPM_CRB_LOCALITY_REG_INTF_ID_IF_VERS_SET(TPM_CRB_LOCALITY_REG_INTF_ID_IF_VERS_CRB)
-                  | TPM_CRB_LOCALITY_REG_INTF_ID_CAP_LOCALITY
                   | TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_SET(TPM_CRB_LOCALITY_REG_INTF_ID_CAP_DATA_XFER_SZ_64B)
                   | TPM_CRB_LOCALITY_REG_INTF_ID_CAP_CRB
                   | TPM_CRB_LOCALITY_REG_INTF_ID_IF_SEL_GET(TPM_CRB_LOCALITY_REG_INTF_ID_IF_SEL_CRB)
@@ -904,6 +970,10 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
                   | TPM_CRB_LOCALITY_REG_INTF_ID_RID_SET(pThis->bRevId)
                   | TPM_CRB_LOCALITY_REG_INTF_ID_VID_SET(pThis->uVenId)
                   | TPM_CRB_LOCALITY_REG_INTF_ID_DID_SET(pThis->uDevId);
+
+            if (pThis->fLocChangeSup) /* Only advertise the locality capability if the driver below supports it. */
+                u64 |= TPM_CRB_LOCALITY_REG_INTF_ID_CAP_LOCALITY;
+
             break;
         case TPM_CRB_LOCALITY_REG_CTRL_REQ:
             if (bLoc != pThis->bLoc)
@@ -1447,9 +1517,13 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThis->enmTpmVers = pThisCC->pDrvTpm->pfnGetVersion(pThisCC->pDrvTpm);
         if (pThis->enmTpmVers == TPMVERSION_UNKNOWN)
             return PDMDEV_SET_ERROR(pDevIns, VERR_NOT_SUPPORTED, N_("The emulated TPM version is not supported"));
+
+        pThis->fLocChangeSup = pThisCC->pDrvTpm->pfnGetLocalityMax(pThisCC->pDrvTpm) > 0;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
+        pThis->fLocChangeSup = false;
+
         pThisCC->pDrvBase = NULL;
         pThisCC->pDrvTpm  = NULL;
         LogRel(("TPM#%d: no unit\n", iInstance));
