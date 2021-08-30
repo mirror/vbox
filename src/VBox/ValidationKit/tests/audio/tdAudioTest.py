@@ -216,7 +216,9 @@ class tdAudioTest(vbox.TestDriver):
         return (False, "");
 
     def executeHstLoop(self, sWhat, asArgs, fAsAdmin = False):
-
+        """
+        Inner loop which handles the execution of a host binary.
+        """
         fRc = False;
 
         if  fAsAdmin \
