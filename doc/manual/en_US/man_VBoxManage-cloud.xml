@@ -35,11 +35,13 @@
   </refnamediv>
 
   <refsynopsisdiv>
-    <!-- Cloud list commands -->
-    <cmdsynopsis id="synopsis-vboxmanage-cloudlist-instances"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+    <!-- Cloud list -->
+    <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+    <cmdsynopsis id="synopsis-vboxmanage-cloudlist-instances">
       <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+        <sbr/>
         <arg choice="plain">list</arg>
         <arg choice="plain">instances</arg>
         <arg>--state=<replaceable>string</replaceable></arg>
@@ -49,6 +51,7 @@
       <command>VBoxManage cloud</command>
       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <sbr/>
       <arg choice="plain">list</arg>
       <arg choice="plain">images</arg>
       <arg choice="req">--compartment-id=<replaceable>string</replaceable></arg>
@@ -60,6 +63,7 @@
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
        <arg choice="plain">instance</arg>
        <arg choice="plain">create</arg>
        <arg choice="req">--domain-name=<replaceable>name</replaceable></arg>
@@ -81,6 +85,7 @@
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
        <arg choice="plain">instance</arg>
        <arg choice="plain">info</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -89,6 +94,7 @@
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
        <arg choice="plain">instance</arg>
        <arg choice="plain">terminate</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -97,6 +103,7 @@
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
        <arg choice="plain">instance</arg>
        <arg choice="plain">start</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -105,6 +112,7 @@
        <command moreinfo="none">VBoxManage cloud</command>
        <arg choice="req">--provider=<replaceable>name</replaceable></arg>
        <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
        <arg choice="plain">instance</arg>
        <arg choice="plain">pause</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -115,6 +123,7 @@
         <command>VBoxManage cloud</command>
           <arg choice="req">--provider=<replaceable>name</replaceable></arg>
           <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+          <sbr/>
           <arg choice="plain">image</arg>
           <arg choice="plain">create</arg>
           <arg choice="req">--display-name=<replaceable>name</replaceable></arg>
@@ -126,6 +135,7 @@
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+        <sbr/>
         <arg choice="plain">image</arg>
         <arg choice="plain">info</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -134,6 +144,7 @@
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+        <sbr/>
         <arg choice="plain">image</arg>
         <arg choice="plain">delete</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -142,6 +153,7 @@
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+        <sbr/>
         <arg choice="plain">image</arg>
         <arg choice="plain">import</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -152,6 +164,7 @@
         <command>VBoxManage cloud</command>
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+        <sbr/>
         <arg choice="plain">image</arg>
         <arg choice="plain">export</arg>
         <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
@@ -165,6 +178,7 @@
       <command>VBoxManage cloud</command>
       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <sbr/>
       <arg choice="plain">network setup</arg>
       <arg choice="req">--local-gateway-iso=<replaceable>path</replaceable></arg>
       <arg>--gateway-os-name=<replaceable>string</replaceable></arg>
@@ -180,6 +194,7 @@
       <command>VBoxManage cloud</command>
       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+      <sbr/>
       <arg choice="plain">network create</arg>
       <arg choice="req">--name=<replaceable>string</replaceable></arg>
       <arg choice="req">--network-id=<replaceable>string</replaceable></arg>
