@@ -130,7 +130,7 @@ static void atsTcpDisconnectClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT 
 
     if (pClient->hTcpClient != NIL_RTSOCKET)
     {
-    	LogRelFlowFunc(("Disconnecting client %RTsock\n", pClient->hTcpClient));
+        LogRelFlowFunc(("Disconnecting client %RTsock\n", pClient->hTcpClient));
 
         int rc;
         if (pClient->fFromServer)
