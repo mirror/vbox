@@ -215,19 +215,25 @@ class tdAudioTest(vbox.TestDriver):
         reporter.error('Unable to find guest VKAT in any of these places:\n%s' % ('\n'.join(self.asGstVkatPaths),));
         return (False, "");
 
-    def executeHstLoop(self, sWhat, asArgs, fAsAdmin = False):
+    def executeHstLoop(self, sWhat, asArgs, asEnv = None, fAsAdmin = False):
         """
         Inner loop which handles the execution of a host binary.
         """
         fRc = False;
 
+        asEnvTmp = os.environ.copy();
+        if asEnv:
+            asEnvTmp = asEnvTmp + asEnv;
+
         if  fAsAdmin \
         and utils.getHostOs() != 'win':
             oProcess = utils.sudoProcessPopen(asArgs,
+                                              env = asEnvTmp,
                                               stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False,
                                               close_fds = False);
         else:
             oProcess = utils.processPopenSafe(asArgs,
+                                              env = asEnvTmp,
                                               stdout = subprocess.PIPE, stderr = subprocess.PIPE);
         if oProcess:
             for line in iter(oProcess.stdout.readline, b''):
@@ -245,7 +251,7 @@ class tdAudioTest(vbox.TestDriver):
 
         return fRc;
 
-    def executeHst(self, sWhat, asArgs, fAsync = False, fAsAdmin = False):
+    def executeHst(self, sWhat, asArgs, asEnv = None, fAsync = False, fAsAdmin = False):
         """
         Runs a binary (image) with optional admin (root) rights on the host and
         waits until it terminates.
@@ -258,7 +264,7 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.testStart(sWhat);
 
-        fRc = self.executeHstLoop(sWhat, asArgs);
+        fRc = self.executeHstLoop(sWhat, asArgs, asEnv);
         if fRc:
             reporter.error('Executing \"%s\" on host done' % (sWhat,));
         else:
@@ -461,6 +467,10 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
 
+        # Enable more verbose logging for all groups. Disable later again?
+        asEnv = {};
+        asEnv[ 'VKAT_RELEASE_LOG' ] = 'all.e.l.l2.l3.f';
+
         # Build the base command line, exclude all tests by default.
         asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--probe-backends', \
                              '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
@@ -471,7 +481,7 @@ class tdAudioTest(vbox.TestDriver):
         #
         # Let VKAT on the host run synchronously.
         #
-        fRc = self.executeHst("VKAT Host", asArgs);
+        fRc = self.executeHst("VKAT Host", asArgs, asEnv);
 
         reporter.testDone();
 
