@@ -116,13 +116,8 @@ protected slots:
     /* Machine state-change handler: */
     virtual void sltMachineStateChanged();
 
-#if QT_VERSION == 0
-    /** Stupid moc does not warn if it cannot find headers! */
-    void QT_VERSION_NOT_DEFINED
-#else
     /** Finalises keyboard capture. */
     void sltFinaliseCaptureKeyboard();
-#endif
 
 protected:
 

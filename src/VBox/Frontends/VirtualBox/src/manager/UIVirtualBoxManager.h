@@ -107,13 +107,10 @@ private slots:
 
     /** @name Common stuff.
       * @{ */
-#if QT_VERSION == 0
-        /** Stupid moc does not warn if it cannot find headers! */
-        void QT_VERSION_NOT_DEFINED
-#elif defined(VBOX_WS_X11)
+#ifdef VBOX_WS_X11
         /** Handles host-screen available-area change. */
         void sltHandleHostScreenAvailableAreaChange();
-#endif /* VBOX_WS_X11 */
+#endif
 
         /** Handles request to update actions. */
         void sltHandleUpdateActionAppearanceRequest() { updateActionsAppearance(); }
