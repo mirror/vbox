@@ -552,19 +552,6 @@ public:
         static QString toolTip(const CHostVideoInputDevice &comWebcam);
     /** @} */
 
-    /** @name COM: Extension Pack stuff.
-     * @{ */
-        /** Initiates the extension pack installation process.
-          * @param  strFilePath      Brings the extension pack file path.
-          * @param  strDigest        Brings the extension pack file digest.
-          * @param  pParent          Brings the parent dialog reference.
-          * @param  pstrExtPackName  Brings the extension pack name. */
-        void doExtPackInstallation(QString const &strFilePath,
-                                   QString const &strDigest,
-                                   QWidget *pParent,
-                                   QString *pstrExtPackName) const;
-    /** @} */
-
     /** @name Display stuff.
      * @{ */
 #ifdef VBOX_WITH_3D_ACCELERATION

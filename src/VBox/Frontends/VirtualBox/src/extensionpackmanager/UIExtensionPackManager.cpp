@@ -28,6 +28,7 @@
 #include "QITreeWidget.h"
 #include "UIActionPoolManager.h"
 #include "UICommon.h"
+#include "UIExtension.h"
 #include "UIExtensionPackManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -228,7 +229,7 @@ void UIExtensionPackManagerWidget::sltInstallExtensionPack()
 
     /* Install the chosen package: */
     if (!strFilePath.isEmpty())
-        uiCommon().doExtPackInstallation(strFilePath, QString(), this, NULL);
+        UIExtension::install(strFilePath, QString(), this, NULL);
 }
 
 void UIExtensionPackManagerWidget::sltUninstallExtensionPack()

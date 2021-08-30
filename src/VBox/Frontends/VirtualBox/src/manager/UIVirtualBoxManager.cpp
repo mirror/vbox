@@ -43,6 +43,7 @@
 #include "UIDesktopServices.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIErrorString.h"
+#include "UIExtension.h"
 #include "UIExtensionPackManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -691,7 +692,7 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
                 gUpdateManager->setEPInstallationRequested(true);
 #endif
                 /* Propose the user to install EP described by the arguments @a list. */
-                uiCommon().doExtPackInstallation(strFile, QString(), this, NULL);
+                UIExtension::install(strFile, QString(), this, NULL);
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Allow update manager to propose us to update EP: */
                 gUpdateManager->setEPInstallationRequested(false);

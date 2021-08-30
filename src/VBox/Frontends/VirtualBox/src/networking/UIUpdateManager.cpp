@@ -22,6 +22,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIExecutionQueue.h"
+#include "UIExtension.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -225,7 +226,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
 {
     /* Warn the user about extension pack was downloaded and saved, propose to install it: */
     if (msgCenter().proposeInstallExtentionPack(GUI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
-        uiCommon().doExtPackInstallation(strTarget, strDigest, windowManager().mainWindowShown(), NULL);
+        UIExtension::install(strTarget, strDigest, windowManager().mainWindowShown(), NULL);
     /* Propose to delete the downloaded extension pack: */
     if (msgCenter().proposeDeleteExtentionPack(QDir::toNativeSeparators(strTarget)))
     {
