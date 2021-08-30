@@ -63,8 +63,6 @@ EXPORTS
     TMTimerStop
     TMTimerUnlock
     VMMGetSvnRev
-    VMSetError
-    VMSetErrorV
 
     ; Internal Networking
     IntNetR0Open

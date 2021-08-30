@@ -56,10 +56,7 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_INVALID = 0,
     /** Signal a ring 0 assertion. */
     VMMCALLRING3_VM_R0_ASSERTION,
-    /** Set the VM error message. */
-    VMMCALLRING3_VM_SET_ERROR,
-    /** Set the VM runtime error message. */
-    VMMCALLRING3_VM_SET_RUNTIME_ERROR,
+
     /** Grow the PGM shadow page pool. */
     VMMCALLRING3_PGM_POOL_GROW,
     /** Maps a chunk into ring-3. */

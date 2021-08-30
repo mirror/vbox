@@ -2422,7 +2422,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 48, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 49, 1)
 
 /**
  * PDM Device API.
@@ -3180,36 +3180,10 @@ typedef struct PDMDEVHLPR3
      * @param   rc                  VBox status code.
      * @param   SRC_POS             Use RT_SRC_POS.
      * @param   pszFormat           Error message format string.
-     * @param   ...                 Error message arguments.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetError,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL,
-                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDevIns             The device instance.
-     * @param   rc                  VBox status code.
-     * @param   SRC_POS             Use RT_SRC_POS.
-     * @param   pszFormat           Error message format string.
      * @param   va                  Error message arguments.
      */
     DECLR3CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL,
                                               const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   fFlags              The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId          Error ID string.
-     * @param   pszFormat           Error message format string.
-     * @param   ...                 Error message arguments.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId,
-                                                    const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5));
 
     /**
      * Set the VM runtime error message
@@ -4801,58 +4775,6 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDEVINS pDevIns));
 
     /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDevIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetError,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL,
-                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDevIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL,
-                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId,
-                                                    const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId,
-                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
-
-    /**
      * Gets the VM handle. Restricted API.
      *
      * @returns VM Handle.
@@ -5073,7 +4995,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 17, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 18, 0)
 
 
 /**
@@ -5261,58 +5183,6 @@ typedef struct PDMDEVHLPR0
      * @thread  Any thread (just keep in mind that it's volatile info).
      */
     DECLR0CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDEVINS pDevIns));
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDevIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetError,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL,
-                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDevIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL,
-                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId,
-                                                    const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDevIns         Device instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId,
-                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
 
     /**
      * Gets the VM handle. Restricted API.
@@ -5615,7 +5485,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 20, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 21, 0)
 
 
 /**
@@ -6869,6 +6739,7 @@ DECLINLINE(VMSTATE) PDMDevHlpVMState(PPDMDEVINS pDevIns)
 }
 
 #ifdef IN_RING3
+
 /**
  * @copydoc PDMDEVHLPR3::pfnVMTeleportedAndNotFullyResumedYet
  */
@@ -6876,7 +6747,6 @@ DECLINLINE(bool) PDMDevHlpVMTeleportedAndNotFullyResumedYet(PPDMDEVINS pDevIns)
 {
     return pDevIns->pHlpR3->pfnVMTeleportedAndNotFullyResumedYet(pDevIns);
 }
-#endif /* IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnVMSetError
@@ -6904,6 +6774,8 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(4, 5) PDMDevHlpVMSetRuntimeError(PPDMDEVINS 
     va_end(va);
     return rc;
 }
+
+#endif /* IN_RING3 */
 
 /**
  * VBOX_STRICT wrapper for pHlp->pfnDBGFStopV.

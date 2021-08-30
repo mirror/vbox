@@ -72,8 +72,10 @@ typedef DECLCALLBACKTYPE(void, FNVMATERROR,(PUVM pUVM, void *pvUser, int rc, RT_
 /** Pointer to a VM error callback. */
 typedef FNVMATERROR *PFNVMATERROR;
 
+#ifdef IN_RING3
 VMMDECL(int)    VMSetError(PVMCC pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7);
 VMMDECL(int)    VMSetErrorV(PVMCC pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(6, 7);
+#endif
 
 /** @def VM_SET_ERROR
  * Macro for setting a simple VM error message.
@@ -123,10 +125,12 @@ typedef DECLCALLBACKTYPE(void, FNVMATRUNTIMEERROR,(PUVM pUVM, void *pvUser, uint
 /** Pointer to a VM runtime error callback. */
 typedef FNVMATRUNTIMEERROR *PFNVMATRUNTIMEERROR;
 
+#ifdef IN_RING3
 VMMDECL(int) VMSetRuntimeError(PVMCC pVM, uint32_t fFlags, const char *pszErrorId,
                                const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5);
 VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszErrorId,
                                 const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(4, 0);
+#endif
 
 /** @name VMSetRuntimeError fFlags
  * When no flags are given the VM will continue running and it's up to the front

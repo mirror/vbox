@@ -3239,8 +3239,13 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
         case PGMMODE_PAE_NX:
         case PGMMODE_PAE:
             if (!pVM->cpum.ro.GuestFeatures.fPae)
+#ifdef IN_RING3 /** @todo r=bird: wrong place, probably hasn't really worked for a while. */
                 return VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_FATAL, "PAEmode",
                                          N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (System/Processor)"));
+#else
+                AssertLogRelMsgFailedReturn(("enmGuestMode=%s - Try enable PAE for the guest!\n", PGMGetModeName(enmGuestMode)), VERR_PGM_MODE_IPE);
+
+#endif
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_PAE_PAGE_MASK;
             break;
 

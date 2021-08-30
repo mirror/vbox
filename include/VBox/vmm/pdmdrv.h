@@ -571,58 +571,6 @@ typedef struct PDMDRVHLPRC
     uint32_t                    u32Version;
 
     /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDrvIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
-                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDrvIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
-                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDrvIns         Driver instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
-                                                    const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(4, 5));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDrvIns         Driver instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLRCCALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
-                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
-
-    /**
      * Assert that the current thread is the emulation thread.
      *
      * @returns True if correct.
@@ -673,7 +621,7 @@ typedef struct PDMDRVHLPRC
     uint32_t                        u32TheEnd;
 } PDMDRVHLPRC;
 /** Current PDMDRVHLPRC version number. */
-#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 5, 0)
+#define PDM_DRVHLPRC_VERSION                    PDM_VERSION_MAKE(0xf0f9, 6, 0)
 
 
 /**
@@ -683,58 +631,6 @@ typedef struct PDMDRVHLPR0
 {
     /** Structure version. PDM_DRVHLPR0_VERSION defines the current version. */
     uint32_t                    u32Version;
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDrvIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
-                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDrvIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
-                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDrvIns         Driver instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
-                                                    const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(4, 5));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDrvIns         Driver instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   va              Error message arguments.
-     */
-    DECLR0CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
-                                                     const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
 
     /**
      * Assert that the current thread is the emulation thread.
@@ -788,7 +684,7 @@ typedef struct PDMDRVHLPR0
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR0;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 5, 0)
+#define PDM_DRVHLPR0_VERSION                    PDM_VERSION_MAKE(0xf0f8, 6, 0)
 
 
 #ifdef IN_RING3
@@ -877,36 +773,10 @@ typedef struct PDMDRVHLPR3
      * @param   rc              VBox status code.
      * @param   SRC_POS         Use RT_SRC_POS.
      * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetError,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
-                                             const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7));
-
-    /**
-     * Set the VM error message
-     *
-     * @returns rc.
-     * @param   pDrvIns         Driver instance.
-     * @param   rc              VBox status code.
-     * @param   SRC_POS         Use RT_SRC_POS.
-     * @param   pszFormat       Error message format string.
      * @param   va              Error message arguments.
      */
     DECLR3CALLBACKMEMBER(int, pfnVMSetErrorV,(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL,
                                               const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(6, 0));
-
-    /**
-     * Set the VM runtime error message
-     *
-     * @returns VBox status code.
-     * @param   pDrvIns         Driver instance.
-     * @param   fFlags          The action flags. See VMSETRTERR_FLAGS_*.
-     * @param   pszErrorId      Error ID string.
-     * @param   pszFormat       Error message format string.
-     * @param   ...             Error message arguments.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeError,(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId,
-                                                    const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(4, 5));
 
     /**
      * Set the VM runtime error message
@@ -1430,9 +1300,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 7, 0)
-
-#endif /* IN_RING3 */
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 8, 0)
 
 
 /**
@@ -1493,7 +1361,7 @@ DECLINLINE(int)  RT_IPRT_FORMAT_ATTR(4, 0) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVIN
     return pDrvIns->CTX_SUFF(pHlp)->pfnVMSetRuntimeErrorV(pDrvIns, fFlags, pszErrorId, pszFormat, va);
 }
 
-
+#endif /* IN_RING3 */
 
 /** @def PDMDRV_ASSERT_EMT
  * Assert that the current thread is the emulation thread.

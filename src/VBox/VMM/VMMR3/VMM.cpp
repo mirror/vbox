@@ -433,8 +433,6 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMPoolGrow,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMPoolGrow",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_POOL_GROW calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMMapChunk,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMMapChunk",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_MAP_CHUNK calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMAllocHandy,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMAllocHandy",    STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetError,         STAMTYPE_COUNTER, "/VMM/RZCallR3/VMSetError",       STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_ERROR calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_RUNTIME_ERROR calls.");
 
     STAMR3Register(pVM, &pVM->vmm.s.StatLogFlusherFlushes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, "/VMM/LogFlush/00-Flushes",  STAMUNIT_OCCURENCES, "Total number of buffer flushes");
     STAMR3Register(pVM, &pVM->vmm.s.StatLogFlusherNoWakeUp, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, "/VMM/LogFlush/00-NoWakups", STAMUNIT_OCCURENCES, "Times the flusher thread didn't need waking up.");
@@ -2538,21 +2536,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
             pVCpu->vmm.s.rcCallRing3 = PGMR3PhysAllocateLargeHandyPage(pVM, pVCpu->vmm.s.u64CallRing3Arg);
             break;
         }
-
-        /*
-         * Set the VM error message.
-         */
-        case VMMCALLRING3_VM_SET_ERROR:
-            VMR3SetErrorWorker(pVM);
-            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
-            break;
-
-        /*
-         * Set the VM runtime error message.
-         */
-        case VMMCALLRING3_VM_SET_RUNTIME_ERROR:
-            pVCpu->vmm.s.rcCallRing3 = VMR3SetRuntimeErrorWorker(pVM);
-            break;
 
         /*
          * Signal a ring 0 hypervisor assertion.

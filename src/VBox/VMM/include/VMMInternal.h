@@ -416,8 +416,6 @@ typedef struct VMM
     STAMCOUNTER                 StatRZCallPGMPoolGrow;
     STAMCOUNTER                 StatRZCallPGMMapChunk;
     STAMCOUNTER                 StatRZCallPGMAllocHandy;
-    STAMCOUNTER                 StatRZCallVMSetError;
-    STAMCOUNTER                 StatRZCallVMSetRuntimeError;
     STAMCOUNTER                 StatRZCallPGMLock;
     /** @} */
 } VMM;

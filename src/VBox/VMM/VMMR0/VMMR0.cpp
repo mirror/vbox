@@ -1405,12 +1405,6 @@ static void vmmR0RecordRC(PVMCC pVM, PVMCPUCC pVCpu, int rc)
                 case VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMAllocHandy);
                     break;
-                case VMMCALLRING3_VM_SET_ERROR:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallVMSetError);
-                    break;
-                case VMMCALLRING3_VM_SET_RUNTIME_ERROR:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallVMSetRuntimeError);
-                    break;
                 case VMMCALLRING3_VM_R0_ASSERTION:
                 default:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetCallRing3);

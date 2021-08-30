@@ -32,6 +32,8 @@
 #include <iprt/thread.h>
 
 
+#ifdef IN_RING3
+
 /**
  * Sets the error message.
  *
@@ -72,7 +74,7 @@ VMMDECL(int) VMSetError(PVMCC pVM, int rc, RT_SRC_POS_DECL, const char *pszForma
  */
 VMMDECL(int) VMSetErrorV(PVMCC pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args)
 {
-#ifdef IN_RING3
+# ifdef IN_RING3
     /*
      * Switch to EMT.
      */
@@ -82,13 +84,13 @@ VMMDECL(int) VMSetErrorV(PVMCC pVM, int rc, RT_SRC_POS_DECL, const char *pszForm
                             pVM->pUVM, rc, RT_SRC_POS_ARGS, pszFormat, &va2);
     va_end(va2);
 
-#else
+# else
     /*
      * We're already on the EMT thread and can safely create a VMERROR chunk.
      */
     vmSetErrorCopy(pVM, rc, RT_SRC_POS_ARGS, pszFormat, args);
     VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_SET_ERROR, 0);
-#endif
+# endif
     return rc;
 }
 
@@ -110,7 +112,7 @@ VMMDECL(int) VMSetErrorV(PVMCC pVM, int rc, RT_SRC_POS_DECL, const char *pszForm
 void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args)
 {
     NOREF(pVM); NOREF(rc); RT_SRC_POS_NOREF(); NOREF(pszFormat); NOREF(args);
-#if 0 /// @todo implement Ring-0 and GC VMSetError
+# if 0 /// @todo implement Ring-0 and GC VMSetError
     /*
      * Create the untranslated message copy.
      */
@@ -168,9 +170,11 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
         /* done. */
         pVM->vm.s.pErrorR3 = MMHyper2HC(pVM, (uintptr_t)pArgs.pErr);
     }
-#endif
+# endif
 }
 
+#endif /* IN_RING3 */
+#ifdef IN_RING3
 
 /**
  * Sets the runtime error message.
@@ -244,7 +248,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszError
     AssertPtr(pszFormat);
     Assert(RTStrEnd(pszFormat, 512) != NULL);
 
-#ifdef IN_RING3
+# ifdef IN_RING3
     /*
      * Switch to EMT.
      *
@@ -273,7 +277,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszError
             MMR3HeapFree(pszMessage);
     }
 
-#else
+# else
     /*
      * We're already on the EMT and can safely create a VMRUNTIMEERROR chunk.
      */
@@ -281,7 +285,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszError
     vmSetRuntimeErrorCopy(pVM, fFlags, pszErrorId, pszFormat, va);
 
     int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_VM_SET_RUNTIME_ERROR, 0);
-#endif
+# endif
 
     Log(("VMSetRuntimeErrorV: returns %Rrc (pszErrorId=%s)\n", rc, pszErrorId));
     return rc;
@@ -306,7 +310,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszError
 void vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
     NOREF(pVM); NOREF(fFlags); NOREF(pszErrorId); NOREF(pszFormat); NOREF(va);
-#if 0 /// @todo implement Ring-0 and GC VMSetError
+# if 0 /// @todo implement Ring-0 and GC VMSetError
     /*
      * Create the untranslated message copy.
      */
@@ -355,9 +359,10 @@ void vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *pszErrorId, con
         /* done. */
         pVM->vm.s.pErrorRuntimeR3 = MMHyper2HC(pVM, (uintptr_t)pArgs.pErr);
     }
-#endif
+# endif
 }
 
+#endif /* IN_RING3 */
 
 /**
  * Gets the name of VM state.

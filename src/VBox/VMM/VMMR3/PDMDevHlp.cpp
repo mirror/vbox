@@ -1129,35 +1129,11 @@ static DECLCALLBACK(bool) pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet(PPDMDEVI
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnVMSetError} */
-static DECLCALLBACK(int) pdmR3DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    va_list args;
-    va_start(args, pszFormat);
-    int rc2 = VMSetErrorV(pDevIns->Internal.s.pVMR3, rc, RT_SRC_POS_ARGS, pszFormat, args); Assert(rc2 == rc); NOREF(rc2);
-    va_end(args);
-    return rc;
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMSetErrorV} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     int rc2 = VMSetErrorV(pDevIns->Internal.s.pVMR3, rc, RT_SRC_POS_ARGS, pszFormat, va); Assert(rc2 == rc); NOREF(rc2);
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnVMSetRuntimeError} */
-static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    va_list args;
-    va_start(args, pszFormat);
-    int rc = VMSetRuntimeErrorV(pDevIns->Internal.s.pVMR3, fFlags, pszErrorId, pszFormat, args);
-    va_end(args);
     return rc;
 }
 
@@ -4504,9 +4480,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MMHeapFree,
     pdmR3DevHlp_VMState,
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
-    pdmR3DevHlp_VMSetError,
     pdmR3DevHlp_VMSetErrorV,
-    pdmR3DevHlp_VMSetRuntimeError,
     pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
@@ -4870,9 +4844,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_MMHeapFree,
     pdmR3DevHlp_VMState,
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
-    pdmR3DevHlp_VMSetError,
     pdmR3DevHlp_VMSetErrorV,
-    pdmR3DevHlp_VMSetRuntimeError,
     pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
@@ -5393,9 +5365,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_MMHeapFree,
     pdmR3DevHlp_VMState,
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
-    pdmR3DevHlp_VMSetError,
     pdmR3DevHlp_VMSetErrorV,
-    pdmR3DevHlp_VMSetRuntimeError,
     pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,

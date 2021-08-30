@@ -1196,35 +1196,11 @@ static DECLCALLBACK(bool) pdmR3DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
 }
 
 
-/** @interface_method_impl{PDMDRVHLPR3,pfnVMSetError} */
-static DECLCALLBACK(int) pdmR3DrvHlp_VMSetError(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
-{
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
-    va_list args;
-    va_start(args, pszFormat);
-    int rc2 = VMSetErrorV(pDrvIns->Internal.s.pVMR3, rc, RT_SRC_POS_ARGS, pszFormat, args); Assert(rc2 == rc); NOREF(rc2);
-    va_end(args);
-    return rc;
-}
-
-
 /** @interface_method_impl{PDMDRVHLPR3,pfnVMSetErrorV} */
 static DECLCALLBACK(int) pdmR3DrvHlp_VMSetErrorV(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     int rc2 = VMSetErrorV(pDrvIns->Internal.s.pVMR3, rc, RT_SRC_POS_ARGS, pszFormat, va); Assert(rc2 == rc); NOREF(rc2);
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMDRVHLPR3,pfnVMSetRuntimeError} */
-static DECLCALLBACK(int) pdmR3DrvHlp_VMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
-{
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
-    va_list args;
-    va_start(args, pszFormat);
-    int rc = VMSetRuntimeErrorV(pDrvIns->Internal.s.pVMR3, fFlags, pszErrorId, pszFormat, args);
-    va_end(args);
     return rc;
 }
 
@@ -2036,9 +2012,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_MountPrepare,
     pdmR3DrvHlp_AssertEMT,
     pdmR3DrvHlp_AssertOther,
-    pdmR3DrvHlp_VMSetError,
     pdmR3DrvHlp_VMSetErrorV,
-    pdmR3DrvHlp_VMSetRuntimeError,
     pdmR3DrvHlp_VMSetRuntimeErrorV,
     pdmR3DrvHlp_VMState,
     pdmR3DrvHlp_VMTeleportedAndNotFullyResumedYet,
