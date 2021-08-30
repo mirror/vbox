@@ -44,6 +44,39 @@
 *********************************************************************************************************************************/
 
 /**
+ * TPM 1.2 buffer size capability response.
+ */
+#pragma pack(1)
+typedef struct TPMRESPGETBUFSZ
+{
+    TPMRESPHDR                  Hdr;
+    uint32_t                    u32Length;
+    uint32_t                    cbBuf;
+} TPMRESPGETBUFSZ;
+#pragma pack()
+typedef TPMRESPGETBUFSZ *PTPMRESPGETBUFSZ;
+typedef const TPMRESPGETBUFSZ *PCTPMRESPGETBUFSZ;
+
+
+/**
+ * TPM 2.0 buffer size capability response.
+ */
+#pragma pack(1)
+typedef struct TPM2RESPGETBUFSZ
+{
+    TPMRESPHDR                  Hdr;
+    uint8_t                     fMore;
+    uint32_t                    u32Cap;
+    uint32_t                    u32Count;
+    uint32_t                    u32Prop;
+    uint32_t                    u32Value;
+} TPM2RESPGETBUFSZ;
+#pragma pack()
+typedef TPM2RESPGETBUFSZ *PTPM2RESPGETBUFSZ;
+typedef const TPM2RESPGETBUFSZ *PCTPM2RESPGETBUFSZ;
+
+
+/**
  * TPM Host driver instance data.
  *
  * @implements PDMITPMCONNECTOR
@@ -57,7 +90,10 @@ typedef struct DRVTPMHOST
 
     /** Handle to the host TPM. */
     RTTPM               hTpm;
-
+    /** Cached TPM version. */
+    TPMVERSION          enmTpmVersion;
+    /** Cached buffer size of the host TPM. */
+    uint32_t            cbBuffer;
 } DRVTPMHOST;
 /** Pointer to the TPM emulator instance data. */
 typedef DRVTPMHOST *PDRVTPMHOST;
@@ -67,10 +103,88 @@ typedef DRVTPMHOST *PDRVTPMHOST;
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnStartup} */
-static DECLCALLBACK(int) drvTpmHostStartup(PPDMITPMCONNECTOR pInterface, size_t cbCmdResp)
+/**
+ * Queries the buffer size of the host TPM.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The host TPM driver instance data.
+ */
+static int drvTpmHostQueryBufferSize(PDRVTPMHOST pThis)
 {
-    RT_NOREF(pInterface, cbCmdResp);
+    uint8_t abResp[_1K];
+    int rc = VINF_SUCCESS;
+
+    switch (pThis->enmTpmVersion)
+    {
+        case TPMVERSION_1_2:
+        {
+            TPMREQGETCAPABILITY Req;
+
+            Req.Hdr.u16Tag     = RT_H2BE_U16(TPM_TAG_RQU_COMMAND);
+            Req.Hdr.cbReq      = RT_H2BE_U32(sizeof(Req));
+            Req.Hdr.u32Ordinal = RT_H2BE_U32(TPM_ORD_GETCAPABILITY);
+            Req.u32Cap         = RT_H2BE_U32(TPM_CAP_PROPERTY);
+            Req.u32Length      = RT_H2BE_U32(sizeof(uint32_t));
+            Req.u32SubCap      = RT_H2BE_U32(TPM_CAP_PROP_INPUT_BUFFER);
+            rc = RTTpmReqExec(pThis->hTpm, 0 /*bLoc*/, &Req, sizeof(Req), &abResp[0], sizeof(abResp), NULL /*pcbResp*/);
+            break;
+        }
+        case TPMVERSION_2_0:
+        {
+            TPM2REQGETCAPABILITY Req;
+
+            Req.Hdr.u16Tag     = RT_H2BE_U16(TPM2_ST_NO_SESSIONS);
+            Req.Hdr.cbReq      = RT_H2BE_U32(sizeof(Req));
+            Req.Hdr.u32Ordinal = RT_H2BE_U32(TPM2_CC_GET_CAPABILITY);
+            Req.u32Cap         = RT_H2BE_U32(TPM2_CAP_TPM_PROPERTIES);
+            Req.u32Property    = RT_H2BE_U32(TPM2_PT_INPUT_BUFFER);
+            Req.u32Count       = RT_H2BE_U32(1);
+            rc = RTTpmReqExec(pThis->hTpm, 0 /*bLoc*/, &Req, sizeof(Req), &abResp[0], sizeof(abResp), NULL /*pcbResp*/);
+            break;
+        }
+        default:
+            AssertFailed();
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        switch (pThis->enmTpmVersion)
+        {
+            case TPMVERSION_1_2:
+            {
+                PCTPMRESPGETBUFSZ pResp = (PCTPMRESPGETBUFSZ)&abResp[0];
+
+                if (   RTTpmRespGetSz(&pResp->Hdr) == sizeof(*pResp)
+                    && RT_BE2H_U32(pResp->u32Length) == sizeof(uint32_t))
+                    pThis->cbBuffer = RT_BE2H_U32(pResp->cbBuf);
+                else
+                    rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+            case TPMVERSION_2_0:
+            {
+                PCTPM2RESPGETBUFSZ pResp = (PCTPM2RESPGETBUFSZ)&abResp[0];
+
+                if (   RTTpmRespGetSz(&pResp->Hdr) == sizeof(*pResp)
+                    && RT_BE2H_U32(pResp->u32Count) == 1)
+                    pThis->cbBuffer = RT_BE2H_U32(pResp->u32Value);
+                else
+                    rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+            default:
+                AssertFailed();
+        }
+    }
+
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMITPMCONNECTOR,pfnStartup} */
+static DECLCALLBACK(int) drvTpmHostStartup(PPDMITPMCONNECTOR pInterface)
+{
+    RT_NOREF(pInterface);
     return VINF_SUCCESS;
 }
 
@@ -95,21 +209,7 @@ static DECLCALLBACK(int) drvTpmHostReset(PPDMITPMCONNECTOR pInterface)
 static DECLCALLBACK(TPMVERSION) drvTpmHostGetVersion(PPDMITPMCONNECTOR pInterface)
 {
     PDRVTPMHOST pThis = RT_FROM_MEMBER(pInterface, DRVTPMHOST, ITpmConnector);
-    RTTPMVERSION enmVersion = RTTpmGetVersion(pThis->hTpm);
-
-    switch (enmVersion)
-    {
-        case RTTPMVERSION_1_2:
-            return TPMVERSION_1_2;
-        case RTTPMVERSION_2_0:
-            return TPMVERSION_2_0;
-        case RTTPMVERSION_UNKNOWN:
-        default:
-            return TPMVERSION_UNKNOWN;
-    }
-
-    AssertFailed(); /* Shouldn't get here. */
-    return TPMVERSION_UNKNOWN;
+    return pThis->enmTpmVersion;
 }
 
 
@@ -118,6 +218,14 @@ static DECLCALLBACK(uint32_t) drvTpmHostGetLocalityMax(PPDMITPMCONNECTOR pInterf
 {
     PDRVTPMHOST pThis = RT_FROM_MEMBER(pInterface, DRVTPMHOST, ITpmConnector);
     return RTTpmGetLocalityMax(pThis->hTpm);
+}
+
+
+/** @interface_method_impl{PDMITPMCONNECTOR,pfnGetBufferSize} */
+static DECLCALLBACK(uint32_t) drvTpmHostGetBufferSize(PPDMITPMCONNECTOR pInterface)
+{
+    PDRVTPMHOST pThis = RT_FROM_MEMBER(pInterface, DRVTPMHOST, ITpmConnector);
+    return pThis->cbBuffer;
 }
 
 
@@ -208,6 +316,7 @@ static DECLCALLBACK(int) drvTpmHostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->ITpmConnector.pfnReset                   = drvTpmHostReset;
     pThis->ITpmConnector.pfnGetVersion              = drvTpmHostGetVersion;
     pThis->ITpmConnector.pfnGetLocalityMax          = drvTpmHostGetLocalityMax;
+    pThis->ITpmConnector.pfnGetBufferSize           = drvTpmHostGetBufferSize;
     pThis->ITpmConnector.pfnGetEstablishedFlag      = drvTpmHostGetEstablishedFlag;
     pThis->ITpmConnector.pfnResetEstablishedFlag    = drvTpmHostResetEstablishedFlag;
     pThis->ITpmConnector.pfnCmdExec                 = drvTpmHostCmdExec;
@@ -227,7 +336,29 @@ static DECLCALLBACK(int) drvTpmHostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     rc = RTTpmOpen(&pThis->hTpm, idTpm);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmHost%d: Opening TPM with id %u failed with %Rrc"), idTpm, rc);
+                                   N_("DrvTpmHost%d: Opening TPM with id %u failed with %Rrc"), pDrvIns->iInstance, idTpm, rc);
+
+    RTTPMVERSION enmVersion = RTTpmGetVersion(pThis->hTpm);
+
+    switch (enmVersion)
+    {
+        case RTTPMVERSION_1_2:
+            pThis->enmTpmVersion = TPMVERSION_1_2;
+            break;
+        case RTTPMVERSION_2_0:
+            pThis->enmTpmVersion = TPMVERSION_2_0;
+            break;
+        case RTTPMVERSION_UNKNOWN:
+        default:
+            return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                       N_("DrvTpmHost%d: TPM version %u of TPM id %u is not supported"),
+                                       pDrvIns->iInstance, enmVersion, idTpm);
+    }
+
+    rc = drvTpmHostQueryBufferSize(pThis);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("DrvTpmHost%d: Querying input buffer size of TPM with id %u failed with %Rrc"), idTpm, rc);
 
     LogRel(("DrvTpmHost#%d: Connected to TPM %u.\n", pDrvIns->iInstance, idTpm));
     return VINF_SUCCESS;

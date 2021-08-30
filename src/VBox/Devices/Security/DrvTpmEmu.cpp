@@ -234,12 +234,44 @@ typedef const SWTPMRESPGETTPMEST *PCSWTPMRESPGETTPMEST;
 typedef struct SWTPMCMDRSTEST
 {
     /** The locality resetting trying to reset the established bit. */
-    uint8_t                    bLoc;
+    uint8_t                     bLoc;
 } SWTPMCMDRSTEST;
 /** Pointer to a response data struct for SWTPMCMD_GET_TPMESTABLISHED. */
 typedef SWTPMCMDRSTEST *PSWTPMCMDRSTEST;
 /** Pointer to a const response data struct for SWTPMCMD_GET_TPMESTABLISHED. */
 typedef const SWTPMCMDRSTEST *PCSWTPMCMDRSTEST;
+
+
+/**
+ * Additional command data for SWTPMCMD_SET_BUFFERSIZE.
+ */
+typedef struct SWTPMCMDSETBUFSZ
+{
+    /** The buffer size to set, 0 to query for the currently used buffer size. */
+    uint32_t                    cbBuffer;
+} SWTPMCMDSETBUFSZ;
+/** Pointer to a command data struct for SWTPMCMD_SET_BUFFERSIZE. */
+typedef SWTPMCMDSETBUFSZ *PSWTPMCMDSETBUFSZ;
+/** Pointer to a const command data struct for SWTPMCMD_SET_BUFFERSIZE. */
+typedef const SWTPMCMDSETBUFSZ *PCSWTPMCMDSETBUFSZ;
+
+
+/**
+ * Response data for a SWTPMCMD_SET_BUFFERSIZE command.
+ */
+typedef struct SWTPMRESPSETBUFSZ
+{
+    /** Buffer size in use. */
+    uint32_t                    cbBuffer;
+    /** Minimum supported buffer size. */
+    uint32_t                    cbBufferMin;
+    /** Maximum supported buffer size. */
+    uint32_t                    cbBufferMax;
+} SWTPMRESPSETBUFSZ;
+/** Pointer to a response data struct for SWTPMCMD_SET_BUFFERSIZE. */
+typedef SWTPMRESPSETBUFSZ *PSWTPMRESPSETBUFSZ;
+/** Pointer to a const response data struct for SWTPMCMD_SET_BUFFERSIZE. */
+typedef const SWTPMRESPSETBUFSZ *PCSWTPMRESPSETBUFSZ;
 
 
 /**
@@ -280,6 +312,8 @@ typedef struct DRVTPMEMU
     TPMVERSION          enmTpmVers;
     /** Capabilities offered by the TPM emulator. */
     uint32_t            fCaps;
+    /** Buffer size for the emulated TPM. */
+    uint32_t            cbBuffer;
 } DRVTPMEMU;
 /** Pointer to the TPM emulator instance data. */
 typedef DRVTPMEMU *PDRVTPMEMU;
@@ -536,6 +570,60 @@ static int drvTpmEmuQueryCaps(PDRVTPMEMU pThis)
 
 
 /**
+ * Queries the maximum supported buffer size by the emulation.
+ *
+ * @returns VBox status code.
+ * @param   pThis               Pointer to the TPM emulator driver instance data.
+ * @param   pcbBufferMax        Where to store the maximum supported buffer size on success.
+ */
+static int drvTpmEmuQueryBufferSzMax(PDRVTPMEMU pThis, uint32_t *pcbBufferMax)
+{
+    SWTPMCMDSETBUFSZ Cmd;
+    SWTPMRESPSETBUFSZ Resp;
+    uint32_t u32Resp = 0;
+
+    RT_ZERO(Cmd); RT_ZERO(Resp);
+    Cmd.cbBuffer = RT_H2BE_U32(0);
+    int rc = drvTpmEmuExecCtrlCmdEx(pThis, SWTPMCMD_SET_BUFFERSIZE, &Cmd, sizeof(Cmd), &u32Resp,
+                                    &Resp, sizeof(Resp), RT_MS_10SEC);
+    if (RT_SUCCESS(rc))
+    {
+        if (u32Resp == 0)
+            *pcbBufferMax = RT_BE2H_U32(Resp.cbBufferMax);
+        else
+            rc = VERR_NET_IO_ERROR;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Queries the maximum supported buffer size by the emulation.
+ *
+ * @returns VBox status code.
+ * @param   pThis               Pointer to the TPM emulator driver instance data.
+ * @param   cbBuffer            The buffer size to set.
+ */
+static int drvTpmEmuSetBufferSz(PDRVTPMEMU pThis, uint32_t cbBuffer)
+{
+    SWTPMCMDSETBUFSZ Cmd;
+    SWTPMRESPSETBUFSZ Resp;
+    uint32_t u32Resp = 0;
+
+    RT_ZERO(Cmd); RT_ZERO(Resp);
+    Cmd.cbBuffer = RT_H2BE_U32(cbBuffer);
+    int rc = drvTpmEmuExecCtrlCmdEx(pThis, SWTPMCMD_SET_BUFFERSIZE, &Cmd, sizeof(Cmd), &u32Resp,
+                                    &Resp, sizeof(Resp), RT_MS_10SEC);
+    if (   RT_SUCCESS(rc)
+        && u32Resp != 0)
+        rc = VERR_NET_IO_ERROR;
+
+    return rc;
+}
+
+
+/**
  * Sets the given locality for the emulated TPM.
  *
  * @returns VBox status code.
@@ -561,9 +649,8 @@ static int drvTpmEmuSetLocality(PDRVTPMEMU pThis, uint8_t bLoc)
 
 
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnStartup} */
-static DECLCALLBACK(int) drvTpmEmuStartup(PPDMITPMCONNECTOR pInterface, size_t cbCmdResp)
+static DECLCALLBACK(int) drvTpmEmuStartup(PPDMITPMCONNECTOR pInterface)
 {
-    RT_NOREF(cbCmdResp);
     PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
 
     SWTPMCMDTPMINIT Cmd;
@@ -606,6 +693,14 @@ static DECLCALLBACK(uint32_t) drvTpmEmuGetLocalityMax(PPDMITPMCONNECTOR pInterfa
 {
     RT_NOREF(pInterface);
     return 4;
+}
+
+
+/** @interface_method_impl{PDMITPMCONNECTOR,pfnGetBufferSize} */
+static DECLCALLBACK(uint32_t) drvTpmEmuGetBufferSize(PPDMITPMCONNECTOR pInterface)
+{
+    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
+    return pThis->cbBuffer;
 }
 
 
@@ -803,6 +898,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     pThis->ITpmConnector.pfnReset                   = drvTpmEmuReset;
     pThis->ITpmConnector.pfnGetVersion              = drvTpmEmuGetVersion;
     pThis->ITpmConnector.pfnGetLocalityMax          = drvTpmEmuGetLocalityMax;
+    pThis->ITpmConnector.pfnGetBufferSize           = drvTpmEmuGetBufferSize;
     pThis->ITpmConnector.pfnGetEstablishedFlag      = drvTpmEmuGetEstablishedFlag;
     pThis->ITpmConnector.pfnResetEstablishedFlag    = drvTpmEmuResetEstablishedFlag;
     pThis->ITpmConnector.pfnCmdExec                 = drvTpmEmuCmdExec;
@@ -811,7 +907,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     /*
      * Validate and read the configuration.
      */
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "Location", "");
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "Location|BufferSize", "");
 
     char szLocation[_1K];
     int rc = CFGMR3QueryString(pCfg, "Location", &szLocation[0], sizeof(szLocation));
@@ -918,6 +1014,26 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
         return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_SUPPORTED, RT_SRC_POS,
                                    N_("DrvTpmEmu#%d Emulated TPM version of %s does not offer required set of capabilities (%#x requested vs. %#x offered)"),
                                    pDrvIns->iInstance, szLocation, fCapsReq, pThis->fCaps);
+
+    uint32_t cbBufferMax = 0;
+    rc = drvTpmEmuQueryBufferSzMax(pThis, &cbBufferMax);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("DrvTpmEmu#%d failed to query maximum buffer size from %s"),
+                                   pDrvIns->iInstance, szLocation);
+
+    /* Configure the buffer size. */
+    rc = CFGMR3QueryU32Def(pCfg, "BufferSize", &pThis->cbBuffer, cbBufferMax);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: querying \"BufferSize\" resulted in %Rrc"), rc);
+
+    /* Set the buffer size. */
+    rc = drvTpmEmuSetBufferSz(pThis, pThis->cbBuffer);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("DrvTpmEmu#%d failed to set buffer size to %u for %s"),
+                                   pDrvIns->iInstance, pThis->cbBuffer, szLocation);
 
     /* Connect the data channel now. */
     /** @todo Allow configuring a different port. */

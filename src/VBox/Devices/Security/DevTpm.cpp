@@ -47,6 +47,8 @@
 #define TPM_DID_DEFAULT                                 0x0001
 /** Default revision ID. */
 #define TPM_RID_DEFAULT                                 0x01
+/** Maximum size of the data buffer in bytes. */
+#define TPM_DATA_BUFFER_SIZE_MAX                        3968
 
 /** The TPM MMIO base default as defined in chapter 5.2. */
 #define TPM_MMIO_BASE_DEFAULT                           0xfed40000
@@ -417,8 +419,6 @@
 #define TPM_CRB_LOCALITY_REG_CTRL_RSP_ADDR                   0x68
 /** Locality data buffer. */
 #define TPM_CRB_LOCALITY_REG_DATA_BUFFER                     0x80
-/** Size of the data buffer. */
-#define TPM_CRB_LOCALITY_REG_DATA_BUFFER_SIZE                3968
 /** @} */
 
 
@@ -506,10 +506,12 @@ typedef struct DEVTPM
     /** The TPM version being emulated. */
     TPMVERSION                      enmTpmVers;
 
+    /** Size of the command/response buffer. */
+    uint32_t                        cbCmdResp;
     /** Offset into the Command/Response buffer. */
     uint32_t                        offCmdResp;
     /** Command/Response buffer. */
-    uint8_t                         abCmdResp[TPM_CRB_LOCALITY_REG_DATA_BUFFER_SIZE];
+    uint8_t                         abCmdResp[TPM_DATA_BUFFER_SIZE_MAX];
 } DEVTPM;
 /** Pointer to the shared TPM device state. */
 typedef DEVTPM *PDEVTPM;
@@ -682,7 +684,7 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
         && bLoc == pThis->bLoc
         && pThis->enmState == DEVTPMSTATE_CMD_COMPLETION)
     {
-        if (pThis->offCmdResp <= sizeof(pThis->abCmdResp) - cb)
+        if (pThis->offCmdResp <= pThis->cbCmdResp - cb)
         {
             memcpy(pu64, &pThis->abCmdResp[pThis->offCmdResp], cb);
             pThis->offCmdResp += cb;
@@ -809,7 +811,7 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
             || pThis->enmState == DEVTPMSTATE_CMD_RECEPTION))
     {
         pThis->enmState = DEVTPMSTATE_CMD_RECEPTION;
-        if (pThis->offCmdResp <= sizeof(pThis->abCmdResp) - cb)
+        if (pThis->offCmdResp <=  pThis->cbCmdResp - cb)
         {
             memcpy(&pThis->abCmdResp[pThis->offCmdResp], &u64, cb);
             pThis->offCmdResp += cb;
@@ -934,7 +936,7 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
 
     /* Special path for the data buffer. */
     if (   uReg >= TPM_CRB_LOCALITY_REG_DATA_BUFFER
-        && uReg < TPM_CRB_LOCALITY_REG_DATA_BUFFER + TPM_CRB_LOCALITY_REG_DATA_BUFFER_SIZE
+        && uReg < TPM_CRB_LOCALITY_REG_DATA_BUFFER + pThis->cbCmdResp
         && bLoc == pThis->bLoc
         && pThis->enmState == DEVTPMSTATE_CMD_COMPLETION)
     {
@@ -1025,7 +1027,7 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
             break;
         case TPM_CRB_LOCALITY_REG_CTRL_CMD_SZ:
         case TPM_CRB_LOCALITY_REG_CTRL_RSP_SZ:
-            u64 = TPM_CRB_LOCALITY_REG_DATA_BUFFER_SIZE;
+            u64 = pThis->cbCmdResp;
             break;
         case TPM_CRB_LOCALITY_REG_CTRL_RSP_ADDR:
             u64 = pThis->GCPhysMmio + (bLoc * TPM_LOCALITY_MMIO_SIZE) + TPM_CRB_LOCALITY_REG_DATA_BUFFER;
@@ -1063,7 +1065,7 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
 
     /* Special path for the data buffer. */
     if (   uReg >= TPM_CRB_LOCALITY_REG_DATA_BUFFER
-        && uReg < TPM_CRB_LOCALITY_REG_DATA_BUFFER + TPM_CRB_LOCALITY_REG_DATA_BUFFER_SIZE
+        && uReg < TPM_CRB_LOCALITY_REG_DATA_BUFFER + pThis->cbCmdResp
         && bLoc == pThis->bLoc
         && (   pThis->enmState == DEVTPMSTATE_READY
             || pThis->enmState == DEVTPMSTATE_CMD_RECEPTION))
@@ -1509,16 +1511,17 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThisCC->pDrvTpm = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMITPMCONNECTOR);
         AssertLogRelMsgReturn(pThisCC->pDrvTpm, ("TPM#%d: Driver is missing the TPM interface.\n", iInstance), VERR_PDM_MISSING_INTERFACE);
 
+        pThis->fLocChangeSup = pThisCC->pDrvTpm->pfnGetLocalityMax(pThisCC->pDrvTpm) > 0;
+        pThis->cbCmdResp     = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
+
         /* Startup the TPM here instead of in the power on callback as we can convey errors here to the upper layer. */
-        rc = pThisCC->pDrvTpm->pfnStartup(pThisCC->pDrvTpm, sizeof(pThis->abCmdResp));
+        rc = pThisCC->pDrvTpm->pfnStartup(pThisCC->pDrvTpm);
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to startup the TPM"));
 
         pThis->enmTpmVers = pThisCC->pDrvTpm->pfnGetVersion(pThisCC->pDrvTpm);
         if (pThis->enmTpmVers == TPMVERSION_UNKNOWN)
             return PDMDEV_SET_ERROR(pDevIns, VERR_NOT_SUPPORTED, N_("The emulated TPM version is not supported"));
-
-        pThis->fLocChangeSup = pThisCC->pDrvTpm->pfnGetLocalityMax(pThisCC->pDrvTpm) > 0;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {

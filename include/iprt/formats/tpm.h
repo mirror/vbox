@@ -36,10 +36,11 @@
 #include <iprt/assertcompile.h>
 #include <iprt/string.h>
 
-#pragma pack(1)
+
 /**
  * TPM request header (everything big endian).
  */
+#pragma pack(1)
 typedef struct TPMREQHDR
 {
     /** The tag for this request. */
@@ -49,6 +50,7 @@ typedef struct TPMREQHDR
     /** The request ordinal to execute. */
     uint32_t            u32Ordinal;
 } TPMREQHDR;
+#pragma pack()
 AssertCompileSize(TPMREQHDR, 2 + 4 + 4);
 /** Pointer to a TPM request header. */
 typedef TPMREQHDR *PTPMREQHDR;
@@ -56,7 +58,27 @@ typedef TPMREQHDR *PTPMREQHDR;
 typedef const TPMREQHDR *PCTPMREQHDR;
 
 
-/** @name TPM request ordinals.
+/** @name TPM 1.2 request tags
+ * @{ */
+/** Command with no authentication. */
+#define TPM_TAG_RQU_COMMAND                 UINT16_C(0x00c1)
+/** An authenticated command with one authentication handle. */
+#define TPM_TAG_RQU_AUTH1_COMMAND           UINT16_C(0x00c2)
+/** An authenticated command with two authentication handles. */
+#define TPM_TAG_RQU_AUTH2_COMMAND           UINT16_C(0x00c3)
+/** @} */
+
+
+/** @name TPM 2.0 request/response tags
+ * @{ */
+/** Command with no associated session. */
+#define TPM2_ST_NO_SESSIONS                 UINT16_C(0x8001)
+/** Command with an associated session. */
+#define TPM2_ST_SESSIONS                    UINT16_C(0x8002)
+/** @} */
+
+
+/** @name TPM 1.2 request ordinals.
  * @{ */
 /** Perform a full self test. */
 #define TPM_ORD_SELFTESTFULL                UINT32_C(80)
@@ -64,12 +86,84 @@ typedef const TPMREQHDR *PCTPMREQHDR;
 #define TPM_ORD_CONTINUESELFTEST            UINT32_C(83)
 /** Return the test result. */
 #define TPM_ORD_GETTESTRESULT               UINT32_C(84)
+/** Get a capability. */
+#define TPM_ORD_GETCAPABILITY               UINT32_C(101)
+/** @} */
+
+
+/** @name TPM 2.0 command codes.
+ * @{ */
+/** Get a capability. */
+#define TPM2_CC_GET_CAPABILITY              UINT32_C(378)
+/** @} */
+
+
+/** @name Defines related to TPM_ORD_GETCAPABILITY.
+ * @{ */
+/** Return a TPM related property. */
+#define TPM_CAP_PROPERTY                    UINT32_C(5)
+
+/** Returns the size of the input buffer. */
+#define TPM_CAP_PROP_INPUT_BUFFER           UINT32_C(0x124)
+
+/**
+ * TPM_ORD_GETCAPABILITY request.
+ */
+#pragma pack(1)
+typedef struct TPMREQGETCAPABILITY
+{
+    /** Request header. */
+    TPMREQHDR                   Hdr;
+    /** The capability group to query. */
+    uint32_t                    u32Cap;
+    /** Length of the capability. */
+    uint32_t                    u32Length;
+    /** The sub capability to query. */
+    uint32_t                    u32SubCap;
+} TPMREQGETCAPABILITY;
+#pragma pack()
+/** Pointer to a TPM_ORD_GETCAPABILITY request. */
+typedef TPMREQGETCAPABILITY *PTPMREQGETCAPABILITY;
+/** Pointer to a const TPM_ORD_GETCAPABILITY request. */
+typedef const TPMREQGETCAPABILITY *PCTPMREQGETCAPABILITY;
+/** @} */
+
+
+/** @name Defines related to TPM2_CC_GET_CAPABILITY.
+ * @{ */
+/** Return a TPM related property. */
+#define TPM2_CAP_TPM_PROPERTIES             UINT32_C(6)
+
+/** Returns the size of the input buffer. */
+#define TPM2_PT_INPUT_BUFFER                UINT32_C(0x10d)
+
+/**
+ * TPM2_CC_GET_CAPABILITY request.
+ */
+#pragma pack(1)
+typedef struct TPM2REQGETCAPABILITY
+{
+    /** Request header. */
+    TPMREQHDR                   Hdr;
+    /** The capability group to query. */
+    uint32_t                    u32Cap;
+    /** Property to query. */
+    uint32_t                    u32Property;
+    /** Number of values to return. */
+    uint32_t                    u32Count;
+} TPM2REQGETCAPABILITY;
+#pragma pack()
+/** Pointer to a TPM2_CC_GET_CAPABILITY request. */
+typedef TPM2REQGETCAPABILITY *PTPM2REQGETCAPABILITY;
+/** Pointer to a const TPM2_CC_GET_CAPABILITY request. */
+typedef const TPM2REQGETCAPABILITY *PCTPM2REQGETCAPABILITY;
 /** @} */
 
 
 /**
  * TPM response header (everything big endian).
  */
+#pragma pack(1)
 typedef struct TPMRESPHDR
 {
     /** The tag for this request. */
@@ -79,11 +173,23 @@ typedef struct TPMRESPHDR
     /** The error code for the response. */
     uint32_t            u32ErrCode;
 } TPMRESPHDR;
+#pragma pack()
 AssertCompileSize(TPMRESPHDR, 2 + 4 + 4);
 /** Pointer to a TPM response header. */
 typedef TPMRESPHDR *PTPMRESPHDR;
 /** Pointer to a const TPM response header. */
 typedef const TPMRESPHDR *PCTPMRESPHDR;
+
+
+/** @name TPM 1.2 response tags
+ * @{ */
+/** A response from a command with no authentication. */
+#define TPM_TAG_RSP_COMMAND                 UINT16_C(0x00c4)
+/** An authenticated response with one authentication handle. */
+#define TPM_TAG_RSP_AUTH1_COMMAND           UINT16_C(0x00c5)
+/** An authenticated response with two authentication handles. */
+#define TPM_TAG_RSP_AUTH2_COMMAND           UINT16_C(0x00c6)
+/** @} */
 
 
 /** @name TPM status codes.
@@ -157,7 +263,7 @@ DECLINLINE(uint16_t) RTTpmRespGetTag(PCTPMRESPHDR pTpmRespHdr)
 
 
 /**
- * Returns the request size of the given TPM request header.
+ * Returns the response size included in the given TPM response header.
  *
  * @returns TPM response size in bytes.
  * @param   pTpmRespHdr         Pointer to the TPM response header.
@@ -171,7 +277,7 @@ DECLINLINE(size_t) RTTpmRespGetSz(PCTPMRESPHDR pTpmRespHdr)
 
 
 /**
- * Returns the request ordinal of the given TPM request header.
+ * Returns the error code of the given TPM response header.
  *
  * @returns TPM response error code.
  * @param   pTpmRespHdr         Pointer to the TPM response header.
@@ -182,8 +288,6 @@ DECLINLINE(uint32_t) RTTpmRespGetErrCode(PCTPMRESPHDR pTpmRespHdr)
     memcpy(&u32ErrCode, &pTpmRespHdr->u32ErrCode, sizeof(pTpmRespHdr->u32ErrCode));
     return RT_BE2H_U32(u32ErrCode);
 }
-
-#pragma pack()
 
 #endif /* !IPRT_INCLUDED_formats_tpm_h */
 
