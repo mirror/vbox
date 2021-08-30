@@ -198,7 +198,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     <xsl:if test="text()"><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>cmdsynopsis with text is not supported.</xsl:message></xsl:if>
     <xsl:if test="position() = 1">
       <xsl:text>
-    {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS, "" }, </xsl:text>
+    {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS, "" },</xsl:text>
     </xsl:if>
     <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | RTMSGREFENTRYSTR_FLAGS_SYNOPSIS,
