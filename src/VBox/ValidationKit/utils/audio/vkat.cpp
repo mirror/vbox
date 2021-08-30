@@ -1288,23 +1288,37 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Daemonize ourselves if asked to.
+     * Handle special command line options which need parsing before
+     * everything else.
      */
     bool fDaemonize  = false;
     bool fDaemonized = false;
 
-    for (int i = 1; i < argc; i++)
+    RTGETOPTSTATE GetState;
+    rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions,
+                      RT_ELEMENTS(g_aCmdCommonOptions), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
+
+    int           ch;
+    RTGETOPTUNION ValueUnion;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
-        const char *psz = argv[i];
-        if (!RTStrICmp(psz, "--daemonize"))
+        switch (ch)
         {
-            fDaemonize = true;
-            continue;
-        }
-        else if (!RTStrICmp(psz, "--daemonized"))
-        {
-            fDaemonized = true;
-            continue;
+            case AUDIO_TEST_OPT_CMN_DAEMONIZE:
+                fDaemonize = true;
+                break;
+
+            case AUDIO_TEST_OPT_CMN_DAEMONIZED:
+                fDaemonized = true;
+                break;
+
+            case 'v':
+                g_uVerbosity++;
+                break;
+
+            default:
+                break;
         }
     }
 
@@ -1349,7 +1363,19 @@ int main(int argc, char **argv)
     rc = RTLogCreate(&g_pRelLogger, fFlags, "all.e.l", "VKAT_RELEASE_LOG",
                      RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDERR, NULL /*"vkat-release.log"*/);
     if (RT_SUCCESS(rc))
+    {
         RTLogRelSetDefaultInstance(g_pRelLogger);
+        if (g_uVerbosity)
+        {
+            RTMsgInfo("Setting verbosity logging to level %u\n", g_uVerbosity);
+            rc = RTLogGroupSettings(g_pRelLogger,
+                                    "drv_audio.e.l.l2.l3.f"
+                                    " audio_mixer.e.l.l2.l3.f"
+                                    " audio_test.e.l.l2.l3.f");
+            if (RT_FAILURE(rc))
+                RTMsgError("Setting debug logging failed, rc=%Rrc\n", rc);
+        }
+    }
     else
         RTMsgWarning("Failed to create release logger: %Rrc", rc);
 
@@ -1368,13 +1394,11 @@ int main(int argc, char **argv)
     /*
      * Process common options.
      */
-    RTGETOPTSTATE GetState;
+    RT_ZERO(GetState);
     rc = RTGetOptInit(&GetState, argc, argv, g_aCmdCommonOptions,
                       RT_ELEMENTS(g_aCmdCommonOptions), 1 /*idxFirst*/, 0 /*fFlags - must not sort! */);
     AssertRCReturn(rc, RTEXITCODE_INIT);
 
-    int           ch;
-    RTGETOPTUNION ValueUnion;
     while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (ch)
