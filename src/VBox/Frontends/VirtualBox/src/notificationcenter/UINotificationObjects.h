@@ -60,6 +60,8 @@ class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
 
 public:
 
+    /** Notifies about inability to open @a strUrl. */
+    static void cannotOpenURL(const QString &strUrl);
     /** Notifies about inability to mount image.
       * @param  strMachineName  Brings the machine name.
       * @param  strMediumName   Brings the medium name. */

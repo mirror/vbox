@@ -452,6 +452,26 @@ void UIMessageCenter::cannotStartRuntime() const
     alert(0, MessageType_Error, strError.arg(strTable.arg(strUsage)));
 }
 
+void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const
+{
+    alert(0, MessageType_Error,
+          tr("<p>Could not find a language file for the language <b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
+             "<p>The language will be temporarily reset to the system default language. "
+             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
+             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
+             .arg(strLangId).arg(strNlsPath));
+}
+
+void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
+{
+    alert(0, MessageType_Error,
+          tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
+             "<p>The language will be temporarily reset to English (built-in). "
+             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
+             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
+             .arg(strLangFile));
+}
+
 void UIMessageCenter::cannotInitUserHome(const QString &strUserHome) const
 {
     error(0, MessageType_Critical,
@@ -493,26 +513,6 @@ void UIMessageCenter::cannotAcquireVirtualBox(const CVirtualBoxClient &client) c
     error(0, MessageType_Critical, err, UIErrorString::formatErrorInfo(client));
 }
 
-void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>Could not find a language file for the language <b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
-             "<p>The language will be temporarily reset to the system default language. "
-             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
-             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
-             .arg(strLangId).arg(strNlsPath));
-}
-
-void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
-             "<p>The language will be temporarily reset to English (built-in). "
-             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
-             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
-             .arg(strLangFile));
-}
-
 void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const
 {
     error(0, MessageType_Error,
@@ -550,22 +550,6 @@ void UIMessageCenter::cannotOpenSession(const CProgress &progress, const QString
           tr("Failed to open a session for the virtual machine <b>%1</b>.")
              .arg(strMachineName),
           UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to access the disk image file <nobr><b>%1</b></nobr>.")
-             .arg(medium.location()),
-          UIErrorString::formatErrorInfo(medium.result()));
-}
-
-void UIMessageCenter::cannotOpenURL(const QString &strUrl) const
-{
-    alert(0, MessageType_Error,
-          tr("Failed to open <tt>%1</tt>. "
-             "Make sure your desktop environment can properly handle URLs of this type.")
-             .arg(strUrl));
 }
 
 void UIMessageCenter::cannotSetExtraData(const CVirtualBox &vbox, const QString &strKey, const QString &strValue)

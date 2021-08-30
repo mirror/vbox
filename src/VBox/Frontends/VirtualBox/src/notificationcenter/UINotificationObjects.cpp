@@ -57,6 +57,16 @@
 QMap<QString, QUuid> UINotificationMessage::m_messages = QMap<QString, QUuid>();
 
 /* static */
+void UINotificationMessage::cannotOpenURL(const QString &strUrl)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open URL ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open <tt>%1</tt>. "
+                                                   "Make sure your desktop environment can properly handle URLs of this type.")
+                                                   .arg(strUrl));
+}
+
+/* static */
 void UINotificationMessage::cannotMountImage(const QString &strMachineName, const QString &strMediumName)
 {
     createMessage(

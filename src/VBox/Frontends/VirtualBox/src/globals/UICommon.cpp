@@ -3723,9 +3723,8 @@ bool UICommon::openURL(const QString &strUrl) const
 
     /* Acquire client result: */
     bool fResult = client.result();
-
     if (!fResult)
-        msgCenter().cannotOpenURL(strUrl);
+        UINotificationMessage::cannotOpenURL(strUrl);
 
     return fResult;
 }

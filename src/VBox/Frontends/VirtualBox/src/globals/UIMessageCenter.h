@@ -249,6 +249,9 @@ public:
 #endif
         void cannotStartSelector() const;
         void cannotStartRuntime() const;
+
+        void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
+        void cannotLoadLanguage(const QString &strLangFile) const;
     /** @} */
 
     /** @name COM (startup) warnings.
@@ -260,15 +263,11 @@ public:
     /** @} */
 
     /* API: Global warnings: */
-    void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
-    void cannotLoadLanguage(const QString &strLangFile) const;
     void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const;
     void cannotFindMachineById(const CVirtualBox &vbox, const QUuid &uId) const;
     void cannotOpenSession(const CSession &session) const;
     void cannotOpenSession(const CMachine &machine) const;
     void cannotOpenSession(const CProgress &progress, const QString &strMachineName) const;
-    void cannotGetMediaAccessibility(const UIMedium &medium) const;
-    void cannotOpenURL(const QString &strUrl) const;
     void cannotSetExtraData(const CVirtualBox &vbox, const QString &strKey, const QString &strValue);
     void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
     void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
