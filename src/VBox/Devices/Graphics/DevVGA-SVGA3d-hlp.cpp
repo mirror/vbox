@@ -38,6 +38,12 @@ typedef struct VMSVGA3DSHADERPARSECONTEXT
 {
     /** Version token. */
     SVGA3dShaderVersion version;
+
+    SVGA3dShaderOpCodeType currentOpcode;
+    union
+    {
+        SVGA3DOpDclArgs *pDclArgs;
+    } u;
 } VMSVGA3DSHADERPARSECONTEXT;
 
 /** Callback which parses a parameter token.
@@ -158,6 +164,15 @@ static int vmsvga3dShaderParseDestToken(VMSVGA3DSHADERPARSECONTEXT* pCtx, uint32
     SVGA3dShaderRegType const regType = (SVGA3dShaderRegType)(dest.type_upper << 3 | dest.type_lower);
     Log3(("Dest: type %d, r0 %d, shfScale %d, dstMod %d, mask 0x%x, r1 %d, relAddr %d, num %d\n",
         regType, dest.reserved0, dest.shfScale, dest.dstMod, dest.mask, dest.reserved1, dest.relAddr, dest.num));
+
+    if (pCtx->currentOpcode == SVGA3DOP_DCL && regType == SVGA3DREG_SAMPLER)
+    {
+        if (pCtx->u.pDclArgs->type == SVGA3DSAMP_UNKNOWN)
+        {
+            Log3(("Replacing SVGA3DSAMP_UNKNOWN with SVGA3DSAMP_2D\n"));
+            pCtx->u.pDclArgs->type = SVGA3DSAMP_2D;
+        }
+    }
 
     return vmsvga3dShaderParseRegOffset(pCtx, false, regType, dest.num);
 }
@@ -299,9 +314,9 @@ static const VMSVGA3DSHADERPARSEOP aOps[] =
 /* Parse the shader code
  * https://docs.microsoft.com/en-us/windows-hardware/drivers/display/shader-code-format
  */
-int vmsvga3dShaderParse(SVGA3dShaderType type, uint32_t cbShaderData, uint32_t const* pShaderData)
+int vmsvga3dShaderParse(SVGA3dShaderType type, uint32_t cbShaderData, uint32_t* pShaderData)
 {
-    uint32_t const* paTokensStart = (uint32_t*)pShaderData;
+    uint32_t *paTokensStart = (uint32_t*)pShaderData;
     uint32_t const cTokens = cbShaderData / sizeof(uint32_t);
 
     ASSERT_GUEST_RETURN(cTokens * sizeof(uint32_t) == cbShaderData, VERR_INVALID_PARAMETER);
@@ -340,8 +355,8 @@ int vmsvga3dShaderParse(SVGA3dShaderType type, uint32_t cbShaderData, uint32_t c
     ASSERT_GUEST_RETURN(ctx.version.major >= 2 && ctx.version.major <= 4, VERR_PARSE_ERROR);
 
     /* Scan the tokens. Immediately return an error code on any unexpected data. */
-    uint32_t const* paTokensEnd = &paTokensStart[cTokens];
-    uint32_t const* pToken = &paTokensStart[1]; /* Skip the version token. */
+    uint32_t *paTokensEnd = &paTokensStart[cTokens];
+    uint32_t *pToken = &paTokensStart[1]; /* Skip the version token. */
     bool  bEndTokenFound = false;
     while (pToken < paTokensEnd)
     {
@@ -365,10 +380,15 @@ int vmsvga3dShaderParse(SVGA3dShaderType type, uint32_t cbShaderData, uint32_t c
             break;
         }
 
+        ctx.currentOpcode = (SVGA3dShaderOpCodeType)token.op;
+
         /* If this instrution is in the aOps table. */
         if (token.op <= SVGA3DOP_BREAKP)
         {
             VMSVGA3DSHADERPARSEOP const* pOp = &aOps[token.op];
+
+            if (ctx.currentOpcode == SVGA3DOP_DCL)
+                ctx.u.pDclArgs = (SVGA3DOpDclArgs *)&pToken[1];
 
             /* cInstLen can be greater than pOp->Length.
              * W10 guest sends a vertex shader MUL instruction with length 4.
