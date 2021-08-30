@@ -130,6 +130,8 @@ static void atsTcpDisconnectClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT 
 
     if (pClient->hTcpClient != NIL_RTSOCKET)
     {
+    	LogRelFlowFunc(("Disconnecting client %RTsock\n", pClient->hTcpClient));
+
         int rc;
         if (pClient->fFromServer)
             rc = RTTcpServerDisconnectClient2(pClient->hTcpClient);
@@ -149,7 +151,7 @@ static void atsTcpDisconnectClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT 
 /**
  * Sets the current client socket in a safe manner.
  *
- * @returns NIL_RTSOCKET if consumed, other wise hTcpClient.
+ * @returns NIL_RTSOCKET if consumed, otherwise hTcpClient.
  * @param   pThis           Transport instance.
  * @param   pClient         Client to set the socket for.
  * @param   fFromServer     Whether the socket is from a server (listening) or client (connecting) call.
@@ -162,7 +164,7 @@ static RTSOCKET atsTcpSetClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pCl
     if (   pClient->hTcpClient  == NIL_RTSOCKET
         && !pThis->fStopConnecting)
     {
-        LogFunc(("New client connected\n"));
+        LogRelFlowFunc(("New client %RTsock connected (fFromServer=%RTbool)\n", hTcpClient, fFromServer));
 
         pClient->fFromServer = fFromServer;
         pClient->hTcpClient = hTcpClient;
@@ -205,6 +207,8 @@ static DECLCALLBACK(int) atsTcpServerConnectThread(RTTHREAD hSelf, void *pvUser)
 
     /** @todo Implement cancellation support for using pConnCtx->msTimeout. */
 
+    LogRelFlowFuncEnter();
+
     RTSOCKET hTcpClient;
     int rc = RTTcpServerListen2(pThis->pTcpServer, &hTcpClient);
     if (RT_SUCCESS(rc))
@@ -213,6 +217,7 @@ static DECLCALLBACK(int) atsTcpServerConnectThread(RTTHREAD hSelf, void *pvUser)
         RTTcpServerDisconnectClient2(hTcpClient);
     }
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -231,6 +236,8 @@ static DECLCALLBACK(int) atsTcpClientConnectThread(RTTHREAD hSelf, void *pvUser)
     PATSTRANSPORTCLIENT pClient  = pConnCtx->pClient;
 
     uint64_t msStartTs = RTTimeMilliTS();
+
+    LogRelFlowFuncEnter();
 
     for (;;)
     {
@@ -258,12 +265,15 @@ static DECLCALLBACK(int) atsTcpClientConnectThread(RTTHREAD hSelf, void *pvUser)
         if (   pConnCtx->msTimeout         != RT_INDEFINITE_WAIT
             && RTTimeMilliTS() - msStartTs >= pConnCtx->msTimeout)
         {
+            LogRelFlowFunc(("Timed out (%RU32ms)\n", pConnCtx->msTimeout));
             return VERR_TIMEOUT;
         }
 
         /* Delay a wee bit before retrying. */
         RTThreadUserWait(hSelf, 1536);
     }
+
+    LogRelFlowFuncLeave();
     return VINF_SUCCESS;
 }
 
@@ -277,6 +287,8 @@ static DECLCALLBACK(int) atsTcpClientConnectThread(RTTHREAD hSelf, void *pvUser)
 static int atsTcpConnectWaitOnThreads(PATSTRANSPORTINST pThis, RTMSINTERVAL cMillies)
 {
     int rcRet = VINF_SUCCESS;
+
+    LogRelFlowFuncEnter();
 
     if (pThis->hThreadConnect != NIL_RTTHREAD)
     {
@@ -300,6 +312,8 @@ static int atsTcpConnectWaitOnThreads(PATSTRANSPORTINST pThis, RTMSINTERVAL cMil
                 rcRet = rcThread;
         }
     }
+
+    LogRelFlowFuncLeaveRC(rcRet);
     return rcRet;
 }
 
@@ -313,7 +327,7 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
 
     int rc;
 
-    LogFunc(("msTimeout=%RU32, enmConnMode=%#x\n", msTimeout, pThis->enmConnMode));
+    LogRelFlowFunc(("msTimeout=%RU32, enmConnMode=%#x\n", msTimeout, pThis->enmConnMode));
 
     uint64_t msStartTs = RTTimeMilliTS();
 
@@ -323,16 +337,16 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
 
         pClient->fFromServer = true;
         rc = RTTcpServerListen2(pThis->pTcpServer, &pClient->hTcpClient);
-        LogFunc(("RTTcpServerListen2 -> %Rrc\n", rc));
+        LogRelFlowFunc(("RTTcpServerListen2 -> %Rrc\n", rc));
     }
     else if (pThis->enmConnMode == ATSCONNMODE_CLIENT)
     {
         pClient->fFromServer = false;
         for (;;)
         {
-            Log2Func(("Calling RTTcpClientConnect(%s, %u,)...\n", pThis->szConnectAddr, pThis->uConnectPort));
+            LogRelFlowFunc(("Calling RTTcpClientConnect(%s, %u,)...\n", pThis->szConnectAddr, pThis->uConnectPort));
             rc = RTTcpClientConnect(pThis->szConnectAddr, pThis->uConnectPort, &pClient->hTcpClient);
-            LogFunc(("RTTcpClientConnect -> %Rrc\n", rc));
+            LogRelFlowFunc(("RTTcpClientConnect -> %Rrc\n", rc));
             if (RT_SUCCESS(rc) || atsTcpIsFatalClientConnectStatus(rc))
                 break;
 
@@ -421,6 +435,9 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
         }
     }
 
+    if (RT_FAILURE(rc))
+        LogRelFunc(("Failed with %Rrc\n", rc));
+
     return rc;
 }
 
@@ -429,14 +446,15 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
  */
 static DECLCALLBACK(void) atsTcpNotifyReboot(PATSTRANSPORTINST pThis)
 {
-    LogFunc(("RTTcpServerDestroy(%p)\n", pThis->pTcpServer));
+    LogRelFlowFuncEnter();
     if (pThis->pTcpServer)
     {
         int rc = RTTcpServerDestroy(pThis->pTcpServer);
         if (RT_FAILURE(rc))
-            LogRel(("RTTcpServerDestroy failed in atsTcpNotifyReboot: %Rrc", rc));
+            LogRelFunc(("RTTcpServerDestroy failed, rc=%Rrc", rc));
         pThis->pTcpServer = NULL;
     }
+    LogRelFlowFuncLeave();
 }
 
 /**
@@ -474,7 +492,7 @@ static DECLCALLBACK(void) atsTcpBabble(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
     /*
      * Disconnect the client.
      */
-    LogFunc(("atsTcpDisconnectClient(%RTsock) (RTTcpWrite rc=%Rrc)\n", pClient->hTcpClient, rc));
+    LogRelFlowFunc(("atsTcpDisconnectClient(%RTsock) (RTTcpWrite rc=%Rrc)\n", pClient->hTcpClient, rc));
     atsTcpDisconnectClient(pThis, pClient);
 }
 
@@ -492,20 +510,20 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
 
     Log3Func(("%RU32 -> %zu\n", pPktHdr->cb, cbToSend));
 
-    Log3Func(("Header:\n"
-              "%.*Rhxd\n", RT_MIN(sizeof(ATSPKTHDR), cbToSend), pPktHdr));
+    LogRelFlowFunc(("Header:\n"
+                    "%.*Rhxd\n", RT_MIN(sizeof(ATSPKTHDR), cbToSend), pPktHdr));
 
     if (cbToSend > sizeof(ATSPKTHDR))
-        Log3Func(("Payload:\n"
-                  "%.*Rhxd\n",
-                  RT_MIN(64, cbToSend - sizeof(ATSPKTHDR)), (uint8_t *)pPktHdr + sizeof(ATSPKTHDR)));
+        LogRelFlowFunc(("Payload:\n"
+                        "%.*Rhxd\n",
+                        RT_MIN(64, cbToSend - sizeof(ATSPKTHDR)), (uint8_t *)pPktHdr + sizeof(ATSPKTHDR)));
 
     int rc = RTTcpWrite(pClient->hTcpClient, pPktHdr, cbToSend);
     if (    RT_FAILURE(rc)
         &&  rc != VERR_INTERRUPTED)
     {
         /* assume fatal connection error. */
-        LogFunc(("RTTcpWrite -> %Rrc -> atsTcpDisconnectClient(%RTsock)\n", rc, pClient->hTcpClient));
+        LogRelFunc(("RTTcpWrite -> %Rrc -> atsTcpDisconnectClient(%RTsock)\n", rc, pClient->hTcpClient));
         atsTcpDisconnectClient(pThis, pClient);
     }
 
@@ -560,7 +578,7 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
             break;
         if (cbRead == 0)
         {
-            LogFunc(("RTTcpRead -> %Rrc / cbRead=0 -> VERR_NET_NOT_CONNECTED (#1)\n", rc));
+            LogRelFunc(("RTTcpRead -> %Rrc / cbRead=0 -> VERR_NET_NOT_CONNECTED (#1)\n", rc));
             rc = VERR_NET_NOT_CONNECTED;
             break;
         }
@@ -600,7 +618,7 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
                         break;
                     if (cbRead == 0)
                     {
-                        LogFunc(("RTTcpRead -> %Rrc / cbRead=0 -> VERR_NET_NOT_CONNECTED (#2)\n", rc));
+                        LogRelFunc(("RTTcpRead -> %Rrc / cbRead=0 -> VERR_NET_NOT_CONNECTED (#2)\n", rc));
                         rc = VERR_NET_NOT_CONNECTED;
                         break;
                     }
@@ -608,13 +626,13 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
                     offData += cbRead;
                 }
 
-                Log3Func(("Header:\n"
-                          "%.*Rhxd\n", sizeof(ATSPKTHDR), pbData));
+                LogRelFlowFunc(("Header:\n"
+                                "%.*Rhxd\n", sizeof(ATSPKTHDR), pbData));
 
                 if (   RT_SUCCESS(rc)
                     && cbData > sizeof(ATSPKTHDR))
-                    Log3Func(("Payload:\n"
-                              "%.*Rhxd\n", RT_MIN(64, cbData - sizeof(ATSPKTHDR)), (uint8_t *)pbData + sizeof(ATSPKTHDR)));
+                    LogRelFlowFunc(("Payload:\n"
+                                    "%.*Rhxd\n", RT_MIN(64, cbData - sizeof(ATSPKTHDR)), (uint8_t *)pbData + sizeof(ATSPKTHDR)));
             }
         }
         else
@@ -642,7 +660,7 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
             RTMemFree(pbData);
 
             /* assume fatal connection error. */
-            LogFunc(("RTTcpRead -> %Rrc -> atsTcpDisconnectClient(%RTsock)\n", rc, pClient->hTcpClient));
+            LogRelFunc(("RTTcpRead -> %Rrc -> atsTcpDisconnectClient(%RTsock)\n", rc, pClient->hTcpClient));
             atsTcpDisconnectClient(pThis, pClient);
         }
     }
@@ -683,6 +701,8 @@ static DECLCALLBACK(bool) atsTcpPollIn(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
  */
 static DECLCALLBACK(void) atsTcpTerm(PATSTRANSPORTINST pThis)
 {
+    LogRelFlowFuncEnter();
+
     /* Signal thread */
     if (RTCritSectIsInitialized(&pThis->CritSect))
     {
@@ -700,17 +720,17 @@ static DECLCALLBACK(void) atsTcpTerm(PATSTRANSPORTINST pThis)
     /* Shut down the server (will wake up thread). */
     if (pThis->pTcpServer)
     {
-        LogFunc(("Destroying server...\n"));
+        LogRelFlowFunc(("Destroying server...\n"));
         int rc = RTTcpServerDestroy(pThis->pTcpServer);
         if (RT_FAILURE(rc))
-            LogRel(("RTTcpServerDestroy failed in atsTcpTerm: %Rrc", rc));
+            LogRelFunc(("RTTcpServerDestroy failed with %Rrc", rc));
         pThis->pTcpServer        = NULL;
     }
 
     /* Wait for the thread (they should've had some time to quit by now). */
     atsTcpConnectWaitOnThreads(pThis, 15000);
 
-    LogFunc(("Done\n"));
+    LogRelFlowFuncLeave();
 }
 
 /**
@@ -758,8 +778,8 @@ static DECLCALLBACK(int) atsTcpStart(PATSTRANSPORTINST pThis)
         {
             if (rc == VERR_NET_DOWN)
             {
-                LogRel2(("RTTcpServerCreateEx(%s, %u,) failed: %Rrc, retrying for 20 seconds...\n",
-                         pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc));
+                LogRelFunc(("RTTcpServerCreateEx(%s, %u,) failed: %Rrc, retrying for 20 seconds...\n",
+                            pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc));
                 uint64_t StartMs = RTTimeMilliTS();
                 do
                 {
@@ -768,13 +788,13 @@ static DECLCALLBACK(int) atsTcpStart(PATSTRANSPORTINST pThis)
                 } while (   rc == VERR_NET_DOWN
                          && RTTimeMilliTS() - StartMs < 20000);
                 if (RT_SUCCESS(rc))
-                    LogRel2(("RTTcpServerCreateEx succceeded\n"));
+                    LogRelFunc(("RTTcpServerCreateEx succceeded\n"));
             }
 
             if (RT_FAILURE(rc))
             {
-                LogRel(("RTTcpServerCreateEx(%s, %u,) failed: %Rrc\n",
-                        pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc));
+                LogRelFunc(("RTTcpServerCreateEx(%s, %u,) failed: %Rrc\n",
+                            pThis->szBindAddr[0] ? pThis->szBindAddr : NULL, pThis->uBindPort, rc));
             }
         }
     }
