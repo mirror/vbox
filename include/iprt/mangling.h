@@ -2652,6 +2652,7 @@
 # define RTTlsSet                                       RT_MANGLER(RTTlsSet)
 # define RTTpmOpen                                      RT_MANGLER(RTTpmOpen)
 # define RTTpmClose                                     RT_MANGLER(RTTpmClose)
+# define RTTpmGetLocalityMax                            RT_MANGLER(RTTpmGetLocalityMax)
 # define RTTpmGetVersion                                RT_MANGLER(RTTpmGetVersion)
 # define RTTpmReqCancel                                 RT_MANGLER(RTTpmReqCancel)
 # define RTTpmReqExec                                   RT_MANGLER(RTTpmReqExec)

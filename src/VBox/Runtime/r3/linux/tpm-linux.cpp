@@ -155,6 +155,13 @@ RTDECL(RTTPMVERSION) RTTpmGetVersion(RTTPM hTpm)
 }
 
 
+RTDECL(uint32_t) RTTpmGetLocalityMax(RTTPM hTpm)
+{
+    RT_NOREF(hTpm);
+    return 0; /* On Linux only TPM locality 0 is supported. */
+}
+
+
 RTDECL(int) RTTpmReqCancel(RTTPM hTpm)
 {
     PRTTPMINT pThis = hTpm;

@@ -105,6 +105,15 @@ RTDECL(RTTPMVERSION) RTTpmGetVersion(RTTPM hTpm);
 
 
 /**
+ * Returns the maximum locality supported by the given TPM.
+ *
+ * @returns Maximum locality supported (0-4).
+ * @param   hTpm                Handle of the TPM.
+ */
+RTDECL(uint32_t) RTTpmGetLocalityMax(RTTPM hTpm);
+
+
+/**
  * Cancels a currently executed request for the given TPM handle.
  *
  * @returns IPRT status code.
