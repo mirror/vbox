@@ -306,7 +306,7 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         {
             /* Start lookup only for non-empty and alphanumerical strings: */
             const QString strText = pEvent->text();
-            if (!strText.isEmpty() && !strText.contains(QRegExp("[^A-Za-z0-9]", Qt::CaseInsensitive)))
+            if (!checkKey(pEvent->key()) && !strText.isEmpty())
                 model()->lookFor(strText);
             break;
         }
@@ -391,4 +391,36 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemSh
     model()->updateLayout();
     model()->setSelectedItem(pShiftedItem);
     model()->saveGroups();
+}
+
+bool UIChooserHandlerKeyboard::checkKey(int iKey) const
+{
+    if (iKey == Qt::Key_Tab ||
+        iKey == Qt::Key_Backtab ||
+        iKey == Qt::Key_Backspace ||
+        iKey == Qt::Key_Pause ||
+        iKey == Qt::Key_Print ||
+        iKey == Qt::Key_SysReq ||
+        iKey == Qt::Key_Home ||
+        iKey == Qt::Key_End ||
+        iKey == Qt::Key_Left ||
+        iKey == Qt::Key_Up ||
+        iKey == Qt::Key_Right ||
+        iKey == Qt::Key_Down ||
+        iKey == Qt::Key_PageUp ||
+        iKey == Qt::Key_PageDown ||
+        iKey == Qt::Key_Shift ||
+        iKey == Qt::Key_Alt ||
+        iKey == Qt::Key_AltGr ||
+        iKey == Qt::Key_CapsLock ||
+        iKey == Qt::Key_NumLock ||
+        iKey == Qt::Key_ScrollLock ||
+        iKey == Qt::Key_Control)
+        return true;
+
+    if ((Qt::Key)iKey >= Qt::Key_F1 &&
+        (Qt::Key)iKey <= Qt::Key_F35)
+        return true;
+
+    return false;
 }
