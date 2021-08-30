@@ -165,12 +165,8 @@ static int mmHyperLock(PVMCC pVM)
 #else
     Assert(PDMCritSectIsInitialized(&pHeap->Lock));
 #endif
-    int rc = PDMCritSectEnter(pVM, &pHeap->Lock, VERR_SEM_BUSY);
-#ifdef IN_RING0
-    if (rc == VERR_SEM_BUSY)
-        rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_MMHYPER_LOCK, 0);
-#endif
-    AssertRC(rc);
+    int rc = PDMCritSectEnter(pVM, &pHeap->Lock, VINF_SUCCESS);
+    PDM_CRITSECT_RELEASE_ASSERT_RC(pVM, &pHeap->Lock, rc);
     return rc;
 }
 
@@ -933,9 +929,7 @@ static int mmHyperFreeInternal(PVM pVM, void *pv)
  */
 VMMDECL(int) MMHyperFree(PVMCC pVM, void *pv)
 {
-    int rc;
-
-    rc = mmHyperLock(pVM);
+    int rc = mmHyperLock(pVM);
     AssertRCReturn(rc, rc);
 
     LogFlow(("MMHyperFree %p\n", pv));
@@ -1217,9 +1211,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
 VMMDECL(void) MMHyperHeapCheck(PVMCC pVM)
 {
 #ifdef MMHYPER_HEAP_STRICT
-    int rc;
-
-    rc = mmHyperLock(pVM);
+    int rc = mmHyperLock(pVM);
     AssertRC(rc);
     mmHyperHeapCheck(pVM->mm.s.CTX_SUFF(pHyperHeap));
     mmHyperUnlock(pVM);

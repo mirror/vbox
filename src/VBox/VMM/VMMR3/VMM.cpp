@@ -2549,15 +2549,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
         }
 
         /*
-         * Acquire the MM hypervisor heap lock.
-         */
-        case VMMCALLRING3_MMHYPER_LOCK:
-        {
-            pVCpu->vmm.s.rcCallRing3 = MMR3LockCall(pVM);
-            break;
-        }
-
-        /*
          * Set the VM error message.
          */
         case VMMCALLRING3_VM_SET_ERROR:
