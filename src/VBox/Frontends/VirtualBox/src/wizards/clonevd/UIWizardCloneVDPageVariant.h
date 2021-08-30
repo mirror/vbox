@@ -51,7 +51,6 @@ private:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
     void prepare();
-    UIWizardCloneVD *cloneWizard() const;
 
     /** Prepares the page. */
     virtual void initializePage() /* override */;

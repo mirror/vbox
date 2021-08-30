@@ -30,6 +30,7 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class UINewVMHardwareContainer;
+class UIWizardNewVM;
 
 namespace UIWizardNewVMHardwarePage
 {

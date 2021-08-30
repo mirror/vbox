@@ -87,38 +87,41 @@ void UIWizardNewVDPageExpert::prepare()
 
 void UIWizardNewVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
 {
-    newVDWizardPropertySet(MediumSize, uSize);
+    AssertReturnVoid(wizardWindow<UIWizardNewVD>());
+    wizardWindow<UIWizardNewVD>()->setMediumSize(uSize);
     emit completeChanged();
 }
 
 void UIWizardNewVDPageExpert::sltMediumPathChanged(const QString &strPath)
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strPath,
                                               UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
-    newVDWizardPropertySet(MediumPath, strMediumPath);
+    pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
 
 void UIWizardNewVDPageExpert::sltMediumVariantChanged(qulonglong uVariant)
 {
-    newVDWizardPropertySet(MediumVariant, uVariant);
+    AssertReturnVoid(wizardWindow<UIWizardNewVD>());
+    wizardWindow<UIWizardNewVD>()->setMediumVariant(uVariant);
     emit completeChanged();
 }
 
 void UIWizardNewVDPageExpert::sltMediumFormatChanged()
 {
     AssertReturnVoid(m_pFormatGroup);
-    newVDWizardPropertySet(MediumFormat, m_pFormatGroup->mediumFormat());
+    AssertReturnVoid(wizardWindow<UIWizardNewVD>());
+    wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatGroup->mediumFormat());
     updateDiskWidgetsAfterMediumFormatChange();
     completeChanged();
 }
 
 void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
     CMediumFormat comMediumFormat(pWizard->mediumFormat());
     QString strSelectedPath =
@@ -140,11 +143,13 @@ void UIWizardNewVDPageExpert::retranslateUi()
 
 void UIWizardNewVDPageExpert::initializePage()
 {
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
+    AssertReturnVoid(pWizard);
     /* First set the medium format of the wizard: */
     AssertReturnVoid(m_pFormatGroup);
     const CMediumFormat &comMediumFormat = m_pFormatGroup->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
-    newVDWizardPropertySet(MediumFormat, comMediumFormat);
+    pWizard->setMediumFormat(comMediumFormat);
 
     QString strExtension = UIDiskFormatsGroupBox::defaultExtension(comMediumFormat, KDeviceType_HardDisk);
     QString strMediumFilePath =
@@ -153,25 +158,25 @@ void UIWizardNewVDPageExpert::initializePage()
     m_pSizeAndPathGroup->blockSignals(true);
     m_pSizeAndPathGroup->setMediumPath(strMediumFilePath);
     m_pSizeAndPathGroup->blockSignals(false);
-    newVDWizardPropertySet(MediumPath, m_pSizeAndPathGroup->mediumPath());
+    pWizard->setMediumPath(m_pSizeAndPathGroup->mediumPath());
 
     m_pSizeAndPathGroup->blockSignals(true);
     m_pSizeAndPathGroup->setMediumSize(m_uDefaultSize > m_uMediumSizeMin && m_uDefaultSize < m_uMediumSizeMax ? m_uDefaultSize : m_uMediumSizeMin);
     m_pSizeAndPathGroup->blockSignals(false);
-    newVDWizardPropertySet(MediumSize, m_pSizeAndPathGroup->mediumSize());
+    pWizard->setMediumSize(m_pSizeAndPathGroup->mediumSize());
 
     m_pVariantGroup->blockSignals(true);
     m_pVariantGroup->updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
     m_pVariantGroup->blockSignals(false);
 
-    newVDWizardPropertySet(MediumVariant, m_pVariantGroup->mediumVariant());
+    pWizard->setMediumVariant(m_pVariantGroup->mediumVariant());
 
     retranslateUi();
 }
 
 bool UIWizardNewVDPageExpert::isComplete() const
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturn(pWizard, false);
     if (pWizard->mediumFormat().isNull())
         return false;
@@ -187,7 +192,7 @@ bool UIWizardNewVDPageExpert::isComplete() const
 bool UIWizardNewVDPageExpert::validatePage()
 {
     bool fResult = true;
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturn(pWizard, false);
     /* Make sure such file doesn't exist already: */
     const QString strMediumPath(pWizard->mediumPath());
@@ -214,7 +219,7 @@ bool UIWizardNewVDPageExpert::validatePage()
 
 void UIWizardNewVDPageExpert::updateDiskWidgetsAfterMediumFormatChange()
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pVariantGroup && m_pSizeAndPathGroup && m_pFormatGroup);
     const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
@@ -228,6 +233,6 @@ void UIWizardNewVDPageExpert::updateDiskWidgetsAfterMediumFormatChange()
     m_pSizeAndPathGroup->updateMediumPath(comMediumFormat, m_pFormatGroup->formatExtensions(), KDeviceType_HardDisk);
     m_pSizeAndPathGroup->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
-    newVDWizardPropertySet(MediumPath, m_pSizeAndPathGroup->mediumPath());
-    newVDWizardPropertySet(MediumVariant, m_pVariantGroup->mediumVariant());
+    pWizard->setMediumPath(m_pSizeAndPathGroup->mediumPath());
+    pWizard->setMediumVariant(m_pVariantGroup->mediumVariant());
 }

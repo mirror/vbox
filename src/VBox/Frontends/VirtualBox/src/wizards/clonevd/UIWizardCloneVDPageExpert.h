@@ -74,7 +74,6 @@ private:
 
     /** Sets the target disk name and location. */
     void setTargetLocation();
-    UIWizardCloneVD *cloneWizard();
     void updateDiskWidgetsAfterMediumFormatChange();
 
     UIDiskFormatsGroupBox *m_pFormatGroupBox;

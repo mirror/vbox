@@ -50,7 +50,7 @@ void UIWizardNewVDPageFileType::prepare()
 void UIWizardNewVDPageFileType::sltMediumFormatChanged()
 {
     AssertReturnVoid(m_pFormatButtonGroup);
-    newVDWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
+    wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
     emit completeChanged();
 }
 
@@ -65,14 +65,15 @@ void UIWizardNewVDPageFileType::retranslateUi()
 
 void UIWizardNewVDPageFileType::initializePage()
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVD>());
     retranslateUi();
     if (m_pFormatButtonGroup)
-        newVDWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
+        wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
 }
 
 bool UIWizardNewVDPageFileType::isComplete() const
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     if (pWizard && !pWizard->mediumFormat().isNull())
         return true;
     return false;

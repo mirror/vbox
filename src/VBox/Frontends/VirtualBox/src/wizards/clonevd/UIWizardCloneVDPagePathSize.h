@@ -67,7 +67,6 @@ private:
 
     /** Returns whether the page is valid. */
     virtual bool validatePage() /* override */;
-    UIWizardCloneVD *cloneWizard() const;
 
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
     QSet<QString> m_userModifiedParameters;

@@ -29,6 +29,7 @@ class QIRichTextLabel;
 class UIAdditionalUnattendedOptions;
 class UIGAInstallationGroupBox;
 class UIUserNamePasswordGroupBox;
+class UIWizardNewVM;
 
 namespace UIWizardNewVMUnattendedPage
 {

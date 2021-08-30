@@ -32,19 +32,12 @@ class UICloneVMAdditionalOptionsEditor;
 class UICloneVMCloneModeGroupBox;
 class UICloneVMCloneTypeGroupBox;
 class UICloneVMNamePathEditor;
-
+class UIWizardCloneVM;
 
 /* Expert page of the Clone Virtual Machine wizard: */
 class UIWizardCloneVMPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
-    // Q_PROPERTY(QString cloneName READ cloneName WRITE setCloneName);
-    // Q_PROPERTY(QString cloneFilePath READ cloneFilePath WRITE setCloneFilePath);
-    // Q_PROPERTY(bool linkedClone READ linkedClone);
-    // Q_PROPERTY(KCloneMode cloneMode READ cloneMode WRITE setCloneMode);
-    // Q_PROPERTY(MACAddressClonePolicy macAddressClonePolicy READ macAddressClonePolicy WRITE setMACAddressClonePolicy);
-    // Q_PROPERTY(bool keepDiskNames READ keepDiskNames WRITE setKeepDiskNames);
-    // Q_PROPERTY(bool keepHWUUIDs READ keepHWUUIDs WRITE setKeepHWUUIDs);
 
 public:
 

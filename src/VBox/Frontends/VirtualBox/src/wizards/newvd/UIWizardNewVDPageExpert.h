@@ -29,6 +29,7 @@ class QGroupBox;
 class UIDiskFormatsGroupBox;
 class UIDiskVariantGroupBox;
 class UIMediumSizeAndPathGroupBox;
+class UIWizardNewVD;
 
 /* Expert page of the New Virtual Hard Drive wizard: */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UINativeWizardPage

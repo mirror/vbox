@@ -73,6 +73,15 @@ protected:
     /** Returns wizard this page belongs to. */
     UINativeWizard *wizard() const;
 
+    template<typename T>
+        T *wizardWindow() const
+    {
+        return   parentWidget() && parentWidget()->window()
+            ? qobject_cast<T*>(parentWidget()->window())
+            : 0;
+    }
+
+
     /** Holds the page title. */
     QString  m_strTitle;
 };

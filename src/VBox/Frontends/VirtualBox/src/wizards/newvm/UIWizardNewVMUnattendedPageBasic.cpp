@@ -116,7 +116,7 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
         m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
     retranslateUi();
 
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     /* Initialize user/password if they are not modified by the user: */
     if (m_pUserNamePasswordGroupBox)
@@ -137,7 +137,7 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
             m_pAdditionalOptionsContainer->setHostname(pWizard->machineBaseName());
             m_pAdditionalOptionsContainer->setDomainName("myguest.virtualbox.org");
             /* Initialize unattended hostname here since we cannot get the efault value from CUnattended this early (unlike username etc): */
-            newVMWizardPropertySet(HostnameDomainName, m_pAdditionalOptionsContainer->hostnameDomainName());
+            pWizard->setHostnameDomainName(m_pAdditionalOptionsContainer->hostnameDomainName());
         }
         m_pAdditionalOptionsContainer->blockSignals(false);
     }
@@ -159,7 +159,7 @@ void UIWizardNewVMUnattendedPageBasic::initializePage()
 bool UIWizardNewVMUnattendedPageBasic::isComplete() const
 {
     markWidgets();
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && pWizard->installGuestAdditions() &&
         m_pGAInstallationISOContainer &&
         !UIWizardNewVMUnattendedPage::checkGAISOFile(m_pGAInstallationISOContainer->path()))
@@ -182,35 +182,35 @@ void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
 
 void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    newVMWizardPropertySet(InstallGuestAdditions, fEnabled);
+    wizardWindow<UIWizardNewVM>()->setInstallGuestAdditions(fEnabled);
     m_userModifiedParameters << "InstallGuestAdditions";
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltGAISOPathChanged(const QString &strPath)
 {
-    newVMWizardPropertySet(GuestAdditionsISOPath, strPath);
+    wizardWindow<UIWizardNewVM>()->setGuestAdditionsISOPath(strPath);
     m_userModifiedParameters << "GuestAdditionsISOPath";
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltPasswordChanged(const QString &strPassword)
 {
-    newVMWizardPropertySet(Password, strPassword);
+    wizardWindow<UIWizardNewVM>()->setPassword(strPassword);
     m_userModifiedParameters << "Password";
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltUserNameChanged(const QString &strUserName)
 {
-    newVMWizardPropertySet(UserName, strUserName);
+    wizardWindow<UIWizardNewVM>()->setUserName(strUserName);
     m_userModifiedParameters << "UserName";
     emit completeChanged();
 }
 
 bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (!pWizard || !pWizard->isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
         return false;
     return true;
@@ -218,26 +218,29 @@ bool UIWizardNewVMUnattendedPageBasic::isProductKeyWidgetEnabled() const
 
 void UIWizardNewVMUnattendedPageBasic::sltHostnameDomainNameChanged(const QString &strHostnameDomainName)
 {
-    newVMWizardPropertySet(HostnameDomainName, strHostnameDomainName);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setHostnameDomainName(strHostnameDomainName);
     m_userModifiedParameters << "HostnameDomainName";
     emit completeChanged();
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltProductKeyChanged(const QString &strProductKey)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "ProductKey";
-    newVMWizardPropertySet(ProductKey, strProductKey);
+    wizardWindow<UIWizardNewVM>()->setProductKey(strProductKey);
 }
 
 void UIWizardNewVMUnattendedPageBasic::sltStartHeadlessChanged(bool fStartHeadless)
 {
     m_userModifiedParameters << "StartHeadless";
-    newVMWizardPropertySet(StartHeadless, fStartHeadless);
+    wizardWindow<UIWizardNewVM>()->setStartHeadless(fStartHeadless);
 }
 
 void UIWizardNewVMUnattendedPageBasic::markWidgets() const
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && pWizard->installGuestAdditions() && m_pGAInstallationISOContainer)
         m_pGAInstallationISOContainer->mark();
 }

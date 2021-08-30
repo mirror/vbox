@@ -27,6 +27,7 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class UIDiskFormatsGroupBox;
+class UIWizardNewVD;
 
 namespace UIWizardNewVDFileType
 {

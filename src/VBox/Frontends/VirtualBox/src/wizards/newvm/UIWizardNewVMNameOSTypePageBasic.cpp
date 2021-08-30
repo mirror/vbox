@@ -362,28 +362,30 @@ bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
 
 void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     if (!m_userModifiedParameters.contains("GuestOSType"))
     {
         m_pNameAndSystemEditor->blockSignals(true);
         if (UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
-            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+            wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
         m_pNameAndSystemEditor->blockSignals(false);
     }
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
     emit completeChanged();
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
-        newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+        wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
 }
 
 void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
@@ -409,6 +411,9 @@ void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
 
 void UIWizardNewVMNameOSTypePageBasic::initializePage()
 {
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturnVoid(pWizard);
+
     retranslateUi();
 
     /* Initialize this page's widgets etc: */
@@ -422,8 +427,8 @@ void UIWizardNewVMNameOSTypePageBasic::initializePage()
     {
         if (m_pNameAndSystemEditor)
         {
-            newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
-            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+            pWizard->setGuestOSFamilyId(m_pNameAndSystemEditor->familyId());
+            pWizard->setGuestOSType(m_pNameAndSystemEditor->type());
             /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
         }
     }
@@ -432,17 +437,10 @@ void UIWizardNewVMNameOSTypePageBasic::initializePage()
         m_pNameAndSystemEditor->setFocus();
 }
 
-// void UIWizardNewVMNameOSTypePageBasic::cleanupPage()
-// {
-//     cleanupMachineFolder();
-//     /* Call to base-class: */
-//     UIWizardPage::cleanupPage();
-// }
-
 bool UIWizardNewVMNameOSTypePageBasic::validatePage()
 {
     /* Try to create machine folder: */
-    return UIWizardNewVMNameOSTypePage::createMachineFolder(m_pNameAndSystemEditor, this, qobject_cast<UIWizardNewVM*>(wizard()));
+    return UIWizardNewVMNameOSTypePage::createMachineFolder(m_pNameAndSystemEditor, this, wizardWindow<UIWizardNewVM>());
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
@@ -465,13 +463,15 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
 
 void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged(const QString &strGuestOSFamilyId)
 {
-    newVMWizardPropertySet(GuestOSFamilyId, strGuestOSFamilyId);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setGuestOSFamilyId(strGuestOSFamilyId);
 }
 
 void UIWizardNewVMNameOSTypePageBasic::sltSkipUnattendedInstallChanged(bool fSkip)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "SkipUnattendedInstall";
-    newVMWizardPropertySet(SkipUnattendedInstall, fSkip);
+    wizardWindow<UIWizardNewVM>()->setSkipUnattendedInstall(fSkip);
 }
 
 QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()

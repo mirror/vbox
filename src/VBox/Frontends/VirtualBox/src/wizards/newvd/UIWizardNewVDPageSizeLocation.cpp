@@ -55,13 +55,12 @@ void UIWizardNewVDPageSizeLocation::prepare()
             this, &UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked);
     pMainLayout->addWidget(m_pMediumSizePathGroup);
     pMainLayout->addStretch();
-//     }
     retranslateUi();
 }
 
 void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
     QString strSelectedPath =
         UIDiskEditorGroupBox::openFileDialogForDiskFile(pWizard->mediumPath(), pWizard->mediumFormat(),
@@ -78,20 +77,21 @@ void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
 
 void UIWizardNewVDPageSizeLocation::sltMediumSizeChanged(qulonglong uSize)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVD>());
     m_userModifiedParameters << "MediumSize";
-    newVDWizardPropertySet(MediumSize, uSize);
+    wizardWindow<UIWizardNewVD>()->setMediumSize(uSize);
     emit completeChanged();
 }
 
 void UIWizardNewVDPageSizeLocation::sltMediumPathChanged(const QString &strPath)
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
     m_userModifiedParameters << "MediumPath";
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strPath,
                                               UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
-    newVDWizardPropertySet(MediumPath, strMediumPath);
+    pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
 
@@ -102,7 +102,7 @@ void UIWizardNewVDPageSizeLocation::retranslateUi()
 
 void UIWizardNewVDPageSizeLocation::initializePage()
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pMediumSizePathGroup);
 
     if (!m_userModifiedParameters.contains("MediumPath"))
@@ -114,21 +114,21 @@ void UIWizardNewVDPageSizeLocation::initializePage()
         m_pMediumSizePathGroup->blockSignals(true);
         m_pMediumSizePathGroup->setMediumPath(strMediumFilePath);
         m_pMediumSizePathGroup->blockSignals(false);
-        newVDWizardPropertySet(MediumPath, m_pMediumSizePathGroup->mediumPath());
+        pWizard->setMediumPath(m_pMediumSizePathGroup->mediumPath());
     }
     if (!m_userModifiedParameters.contains("MediumSize"))
     {
         m_pMediumSizePathGroup->blockSignals(true);
         m_pMediumSizePathGroup->setMediumSize(m_uDefaultSize > m_uMediumSizeMin && m_uDefaultSize < m_uMediumSizeMax ? m_uDefaultSize : m_uMediumSizeMin);
         m_pMediumSizePathGroup->blockSignals(false);
-        newVDWizardPropertySet(MediumSize, m_pMediumSizePathGroup->mediumSize());
+        pWizard->setMediumSize(m_pMediumSizePathGroup->mediumSize());
     }
     retranslateUi();
 }
 
 bool UIWizardNewVDPageSizeLocation::isComplete() const
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturn(pWizard, false);
     if (pWizard->mediumPath().isEmpty())
         return false;
@@ -140,7 +140,7 @@ bool UIWizardNewVDPageSizeLocation::isComplete() const
 bool UIWizardNewVDPageSizeLocation::validatePage()
 {
     bool fResult = true;
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturn(pWizard, false);
     /* Make sure such file doesn't exist already: */
     const QString strMediumPath(pWizard->mediumPath());

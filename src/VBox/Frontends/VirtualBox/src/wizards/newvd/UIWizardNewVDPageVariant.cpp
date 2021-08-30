@@ -85,10 +85,10 @@ void UIWizardNewVDPageVariant::retranslateUi()
 
 void UIWizardNewVDPageVariant::initializePage()
 {
-    UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard());
+    UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pVariantGroupBox);
     setWidgetVisibility(pWizard->mediumFormat());
-    newVDWizardPropertySet(MediumVariant, m_pVariantGroupBox->mediumVariant());
+    pWizard->setMediumVariant(m_pVariantGroupBox->mediumVariant());
     retranslateUi();
 }
 
@@ -115,5 +115,6 @@ void UIWizardNewVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFo
 
 void UIWizardNewVDPageVariant::sltMediumVariantChanged(qulonglong uVariant)
 {
-    newVDWizardPropertySet(MediumVariant, uVariant);
+    AssertReturnVoid(wizardWindow<UIWizardNewVD>());
+    wizardWindow<UIWizardNewVD>()->setMediumVariant(uVariant);
 }

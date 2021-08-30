@@ -29,15 +29,6 @@
 #include "CMedium.h"
 #include "CMediumFormat.h"
 
-#define newVDWizardPropertySet(functionName, value)                      \
-    do                                                                   \
-    {                                                                    \
-        UIWizardNewVD *pWizard = qobject_cast<UIWizardNewVD*>(wizard()); \
-        if (pWizard)                                                     \
-            pWizard->set##functionName(value);                           \
-    }                                                                    \
-    while(0)
-
 /* New Virtual Hard Drive wizard: */
 class SHARED_LIBRARY_STUFF UIWizardNewVD : public UINativeWizard
 {

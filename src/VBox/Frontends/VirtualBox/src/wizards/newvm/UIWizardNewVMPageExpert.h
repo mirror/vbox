@@ -28,9 +28,6 @@
 #include "UINativeWizardPage.h"
 #include "UIWizardNewVMDiskPageBasic.h"
 
-// #include "COMEnums.h"
-// #include "CMediumFormat.h"
-
 /* Forward declarations: */
 class QButtonGroup;
 class QCheckBox;
@@ -47,6 +44,7 @@ class UINameAndSystemEditor;
 class UINewVMHardwareContainer;
 class UIToolBox;
 class UIUserNamePasswordGroupBox;
+class UIWizardNewVM;
 
 /** Expert page of the New Virtual Machine wizard. */
 class UIWizardNewVMPageExpert : public UINativeWizardPage

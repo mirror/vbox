@@ -31,15 +31,6 @@
 #include "CMediumFormat.h"
 #include "CGuestOSType.h"
 
-#define newVMWizardPropertySet(functionName, value)                     \
-    do                                                                  \
-    {                                                                   \
-        UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard()); \
-        if (pWizard)                                                   \
-            pWizard->set##functionName(value);                          \
-    }                                                                   \
-    while(0)
-
 /** Container for unattended install related data. */
 struct UIUnattendedInstallData
 {

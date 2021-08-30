@@ -66,24 +66,27 @@ void UIWizardCloneVMNamePathPageBasic::retranslateUi()
 
 void UIWizardCloneVMNamePathPageBasic::initializePage()
 {
+    UIWizardCloneVM *pWizard = wizardWindow<UIWizardCloneVM>();
+    AssertReturnVoid(pWizard);
     retranslateUi();
     if (m_pNamePathEditor)
     {
         m_pNamePathEditor->setFocus();
         if (!m_userModifiedParameters.contains("CloneName"))
-            cloneVMWizardPropertySet(CloneName, m_pNamePathEditor->cloneName());
-            if (!m_userModifiedParameters.contains("CloneFilePath"))
-                cloneVMWizardPropertySet(CloneFilePath,
-                             UIWizardCloneVMNamePathPage::composeCloneFilePath(m_pNamePathEditor->cloneName(), m_strGroup, m_pNamePathEditor->clonePath()));
+            pWizard->setCloneName(m_pNamePathEditor->cloneName());
+        if (!m_userModifiedParameters.contains("CloneFilePath"))
+            pWizard->setCloneFilePath(UIWizardCloneVMNamePathPage::composeCloneFilePath(m_pNamePathEditor->cloneName(),
+                                                                                        m_strGroup, m_pNamePathEditor->clonePath()));
+
     }
     if (m_pAdditionalOptionsEditor)
     {
         if (!m_userModifiedParameters.contains("MacAddressPolicy"))
-            cloneVMWizardPropertySet(MacAddressPolicy, m_pAdditionalOptionsEditor->macAddressClonePolicy());
+            pWizard->setMacAddressPolicy(m_pAdditionalOptionsEditor->macAddressClonePolicy());
         if (!m_userModifiedParameters.contains("KeepDiskNames"))
-            cloneVMWizardPropertySet(KeepDiskNames, m_pAdditionalOptionsEditor->keepDiskNames());
+            pWizard->setKeepDiskNames(m_pAdditionalOptionsEditor->keepDiskNames());
         if (!m_userModifiedParameters.contains("KeepHardwareUUIDs"))
-            cloneVMWizardPropertySet(KeepHardwareUUIDs, m_pAdditionalOptionsEditor->keepHardwareUUIDs());
+            pWizard->setKeepHardwareUUIDs(m_pAdditionalOptionsEditor->keepHardwareUUIDs());
     }
 }
 
@@ -134,41 +137,45 @@ bool UIWizardCloneVMNamePathPageBasic::isComplete() const
 
 void UIWizardCloneVMNamePathPageBasic::sltCloneNameChanged(const QString &strCloneName)
 {
+    UIWizardCloneVM *pWizard = wizardWindow<UIWizardCloneVM>();
+    AssertReturnVoid(pWizard);
     AssertReturnVoid(m_pNamePathEditor);
     m_userModifiedParameters << "CloneName";
     m_userModifiedParameters << "CloneFilePath";
-    cloneVMWizardPropertySet(CloneName, strCloneName);
-    cloneVMWizardPropertySet(CloneFilePath,
-                             UIWizardCloneVMNamePathPage::composeCloneFilePath(strCloneName, m_strGroup, m_pNamePathEditor->clonePath()));
+    pWizard->setCloneName(strCloneName);
+    pWizard->setCloneFilePath(UIWizardCloneVMNamePathPage::composeCloneFilePath(strCloneName, m_strGroup, m_pNamePathEditor->clonePath()));
     emit completeChanged();
 }
 
 void UIWizardCloneVMNamePathPageBasic::sltClonePathChanged(const QString &strClonePath)
 {
     AssertReturnVoid(m_pNamePathEditor);
+    AssertReturnVoid(wizardWindow<UIWizardCloneVM>());
     m_userModifiedParameters << "CloneFilePath";
-    cloneVMWizardPropertySet(CloneFilePath,
-                             UIWizardCloneVMNamePathPage::composeCloneFilePath(m_pNamePathEditor->cloneName(), m_strGroup, strClonePath));
+    wizardWindow<UIWizardCloneVM>()->setCloneFilePath(UIWizardCloneVMNamePathPage::composeCloneFilePath(m_pNamePathEditor->cloneName(), m_strGroup, strClonePath));
     emit completeChanged();
 }
 
 void UIWizardCloneVMNamePathPageBasic::sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy)
 {
+    AssertReturnVoid(wizardWindow<UIWizardCloneVM>());
     m_userModifiedParameters << "MacAddressPolicy";
-    cloneVMWizardPropertySet(MacAddressPolicy, enmMACAddressClonePolicy);
+    wizardWindow<UIWizardCloneVM>()->setMacAddressPolicy(enmMACAddressClonePolicy);
     emit completeChanged();
 }
 
 void UIWizardCloneVMNamePathPageBasic::sltKeepDiskNamesToggled(bool fKeepDiskNames)
 {
+    AssertReturnVoid(wizardWindow<UIWizardCloneVM>());
     m_userModifiedParameters << "KeepDiskNames";
-    cloneVMWizardPropertySet(KeepDiskNames, fKeepDiskNames);
+    wizardWindow<UIWizardCloneVM>()->setKeepDiskNames(fKeepDiskNames);
     emit completeChanged();
 }
 
 void UIWizardCloneVMNamePathPageBasic::sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs)
 {
+    AssertReturnVoid(wizardWindow<UIWizardCloneVM>());
     m_userModifiedParameters << "KeepHardwareUUIDs";
-    cloneVMWizardPropertySet(KeepHardwareUUIDs, fKeepHardwareUUIDs);
+    wizardWindow<UIWizardCloneVM>()->setKeepHardwareUUIDs(fKeepHardwareUUIDs);
     emit completeChanged();
 }

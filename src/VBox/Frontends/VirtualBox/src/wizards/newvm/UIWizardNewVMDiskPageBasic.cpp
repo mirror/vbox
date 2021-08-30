@@ -157,14 +157,15 @@ void UIWizardNewVMDiskPageBasic::createConnections()
 
 void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
 {
-    AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup);
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup && pWizard);
     m_userModifiedParameters << "SelectedDiskSource";
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
         m_enmSelectedDiskSource = SelectedDiskSource_Empty;
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
     {
         m_enmSelectedDiskSource = SelectedDiskSource_Existing;
-        newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
+        pWizard->setVirtualDisk(m_pDiskSelector->id());
     }
     else
         m_enmSelectedDiskSource = SelectedDiskSource_New;
@@ -177,15 +178,15 @@ void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
 
 void UIWizardNewVMDiskPageBasic::sltMediaComboBoxIndexChanged()
 {
-    AssertReturnVoid(m_pDiskSelector);
+    AssertReturnVoid(m_pDiskSelector && wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "SelectedExistingMediumIndex";
-    newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
+    wizardWindow<UIWizardNewVM>()->setVirtualDisk(m_pDiskSelector->id());
     emit completeChanged();
 }
 
 void UIWizardNewVMDiskPageBasic::sltGetWithFileOpenDialog()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     const CGuestOSType &comOSType = pWizard->guestOSType();
     AssertReturnVoid(!comOSType.isNull());
@@ -245,7 +246,7 @@ void UIWizardNewVMDiskPageBasic::initializePage()
 {
     retranslateUi();
 
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
 
     LONG64 iRecommendedSize = 0;
@@ -289,7 +290,7 @@ void UIWizardNewVMDiskPageBasic::initializePage()
         {
             if (format.GetName() == "VDI")
             {
-                newVMWizardPropertySet(MediumFormat, format);
+                pWizard->setMediumFormat(format);
                 m_fVDIFormatFound = true;
             }
         }
@@ -305,7 +306,7 @@ void UIWizardNewVMDiskPageBasic::initializePage()
     QString strMediumPath =
         UIDiskEditorGroupBox::constructMediumFilePath(UIDiskEditorGroupBox::appendExtension(strDefaultName,
                                                                                   strDefaultExtension), strMachineFolder);
-    newVMWizardPropertySet(MediumPath, strMediumPath);
+    pWizard->setMediumPath(strMediumPath);
 
     /* Set the recommended disk size if user has already not done so: */
     if (m_pMediumSizeEditor && !m_userModifiedParameters.contains("MediumSize"))
@@ -313,7 +314,7 @@ void UIWizardNewVMDiskPageBasic::initializePage()
         m_pMediumSizeEditor->blockSignals(true);
         m_pMediumSizeEditor->setMediumSize(iRecommendedSize);
         m_pMediumSizeEditor->blockSignals(false);
-        newVMWizardPropertySet(MediumSize, iRecommendedSize);
+        pWizard->setMediumSize(iRecommendedSize);
     }
 
     /* Initialize medium variant parameter of the wizard (only if user has not touched the checkbox yet): */
@@ -322,18 +323,18 @@ void UIWizardNewVMDiskPageBasic::initializePage()
         if (m_pFixedCheckBox)
         {
             if (m_pFixedCheckBox->isChecked())
-                newVMWizardPropertySet(MediumVariant, (qulonglong)KMediumVariant_Fixed);
+                pWizard->setMediumVariant((qulonglong)KMediumVariant_Fixed);
             else
-                newVMWizardPropertySet(MediumVariant, (qulonglong)KMediumVariant_Standard);
+                pWizard->setMediumVariant((qulonglong)KMediumVariant_Standard);
         }
         else
-            newVMWizardPropertySet(MediumVariant, (qulonglong)KMediumVariant_Standard);
+            pWizard->setMediumVariant((qulonglong)KMediumVariant_Standard);
     }
 }
 
 bool UIWizardNewVMDiskPageBasic::isComplete() const
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
 
     const qulonglong uSize = pWizard->mediumSize();
@@ -349,7 +350,7 @@ bool UIWizardNewVMDiskPageBasic::isComplete() const
 bool UIWizardNewVMDiskPageBasic::validatePage()
 {
     bool fResult = true;
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
 
     /* Make sure user really intents to creae a vm with no hard drive: */
@@ -405,19 +406,21 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
 
 void UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange(qulonglong uSize)
 {
-    newVMWizardPropertySet(MediumSize, uSize);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setMediumSize(uSize);
     m_userModifiedParameters << "MediumSize";
     emit completeChanged();
 }
 
 void UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled(bool fChecked)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
     if (fChecked)
         uMediumVariant = (qulonglong)KMediumVariant_Fixed;
     else
         uMediumVariant = (qulonglong)KMediumVariant_Standard;
-    newVMWizardPropertySet(MediumVariant, uMediumVariant);
+    wizardWindow<UIWizardNewVM>()->setMediumVariant(uMediumVariant);
     m_userModifiedParameters << "MediumVariant";
 }
 

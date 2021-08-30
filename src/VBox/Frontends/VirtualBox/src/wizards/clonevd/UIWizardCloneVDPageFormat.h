@@ -53,8 +53,6 @@ private slots:
 
 private:
 
-    UIWizardCloneVD *cloneWizard() const;
-
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
     void prepare(KDeviceType enmDeviceType);

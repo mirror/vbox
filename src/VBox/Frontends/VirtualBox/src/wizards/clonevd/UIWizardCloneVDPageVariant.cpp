@@ -91,24 +91,19 @@ void UIWizardCloneVDPageVariant::retranslateUi()
 
 void UIWizardCloneVDPageVariant::initializePage()
 {
-    AssertReturnVoid(cloneWizard());
+    AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
     /* Translate page: */
     retranslateUi();
 
-    setWidgetVisibility(cloneWizard()->mediumFormat());
+    setWidgetVisibility(wizardWindow<UIWizardCloneVD>()->mediumFormat());
     if (m_pVariantGroupBox)
-        cloneWizard()->setMediumVariant(m_pVariantGroupBox->mediumVariant());
+        wizardWindow<UIWizardCloneVD>()->setMediumVariant(m_pVariantGroupBox->mediumVariant());
 }
 
 bool UIWizardCloneVDPageVariant::isComplete() const
 {
     AssertReturn(m_pVariantGroupBox, false);
     return m_pVariantGroupBox->isComplete();
-}
-
-UIWizardCloneVD *UIWizardCloneVDPageVariant::cloneWizard() const
-{
-    return qobject_cast<UIWizardCloneVD*>(wizard());
 }
 
 void UIWizardCloneVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFormat)
@@ -127,6 +122,6 @@ void UIWizardCloneVDPageVariant::setWidgetVisibility(const CMediumFormat &medium
 
 void UIWizardCloneVDPageVariant::sltMediumVariantChanged(qulonglong uVariant)
 {
-    if (cloneWizard())
-        cloneWizard()->setMediumVariant(uVariant);
+    if (wizardWindow<UIWizardCloneVD>())
+        wizardWindow<UIWizardCloneVD>()->setMediumVariant(uVariant);
 }

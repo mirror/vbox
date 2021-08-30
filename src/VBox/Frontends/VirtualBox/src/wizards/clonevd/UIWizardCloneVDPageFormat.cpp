@@ -65,12 +65,13 @@ void UIWizardCloneVDPageFormat::retranslateUi()
 
 void UIWizardCloneVDPageFormat::initializePage()
 {
+    AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
     /* Translate page: */
     retranslateUi();
     if (!m_userModifiedParameters.contains("MediumFormat"))
     {
-        if (cloneWizard() && m_pFormatGroupBox)
-            cloneWizard()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+        if (m_pFormatGroupBox)
+            wizardWindow<UIWizardCloneVD>()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
     }
 }
 
@@ -86,13 +87,9 @@ bool UIWizardCloneVDPageFormat::isComplete() const
 
 void UIWizardCloneVDPageFormat::sltMediumFormatChanged()
 {
-    if (cloneWizard() && m_pFormatGroupBox)
-        cloneWizard()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+    AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
+    if (m_pFormatGroupBox)
+        wizardWindow<UIWizardCloneVD>()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
     m_userModifiedParameters << "MediumFormat";
     emit completeChanged();
-}
-
-UIWizardCloneVD *UIWizardCloneVDPageFormat::cloneWizard() const
-{
-    return qobject_cast<UIWizardCloneVD*>(wizard());
 }

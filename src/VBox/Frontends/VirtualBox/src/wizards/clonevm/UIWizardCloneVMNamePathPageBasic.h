@@ -32,6 +32,7 @@
 class UICloneVMAdditionalOptionsEditor;
 class UICloneVMNamePathEditor;
 class QIRichTextLabel;
+class UIWizardCloneVM;
 
 namespace UIWizardCloneVMNamePathPage
 {
@@ -65,7 +66,6 @@ private:
     bool isComplete() const;
 
     QIRichTextLabel *m_pMainLabel;
-    // QGridLayout     *m_pContainerLayout;
 
     UICloneVMNamePathEditor *m_pNamePathEditor;
     UICloneVMAdditionalOptionsEditor *m_pAdditionalOptionsEditor;

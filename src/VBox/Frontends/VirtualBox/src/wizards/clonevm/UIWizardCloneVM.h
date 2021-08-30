@@ -30,16 +30,6 @@
 #include "CMachine.h"
 #include "CSnapshot.h"
 
-#define cloneVMWizardPropertySet(functionName, value)                   \
-    do                                                                  \
-    {                                                                   \
-        UIWizardCloneVM *pWizard = qobject_cast<UIWizardCloneVM*>(wizard()); \
-        if (pWizard)                                                    \
-            pWizard->set##functionName(value);                          \
-    }                                                                   \
-    while(0)
-
-
 /* Clone VM wizard: */
 class UIWizardCloneVM : public UINativeWizard
 {

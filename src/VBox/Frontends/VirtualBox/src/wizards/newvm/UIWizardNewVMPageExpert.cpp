@@ -83,18 +83,19 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert()
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     if (!m_userModifiedParameters.contains("GuestOSType") && m_pNameAndSystemEditor)
     {
         m_pNameAndSystemEditor->blockSignals(true);
         if (UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
         {
-            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+            wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
             /* Since the type `possibly` changed: */
             setOSTypeDependedValues();
         }
         m_pNameAndSystemEditor->blockSignals(false);
     }
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
     if (!m_userModifiedParameters.contains("MediumPath"))
         updateVirtualMediumPathFromMachinePathName();
     if (!m_userModifiedParameters.contains("HostnameDomainName"))
@@ -105,22 +106,23 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewName)
 void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, qobject_cast<UIWizardNewVM*>(wizard()));
+    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
     if (!m_userModifiedParameters.contains("MediumPath"))
         updateVirtualMediumPathFromMachinePathName();
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
-        newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+        wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
     setOSTypeDependedValues();
 }
 
 void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     const CGuestOSType &comOSType = pWizard->guestOSType();
     AssertReturnVoid(!comOSType.isNull());
@@ -137,14 +139,14 @@ void UIWizardNewVMPageExpert::sltGetWithFileOpenDialog()
 
 void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strISOPath)
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
 
     UIWizardNewVMNameOSTypePage::determineOSType(strISOPath, pWizard);
 
     if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
             UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
-    newVMWizardPropertySet(ISOFilePath, strISOPath);
+    pWizard->setISOFilePath(strISOPath);
 
     /* Update the global recent ISO path: */
     QFileInfo fileInfo(strISOPath);
@@ -157,24 +159,27 @@ void UIWizardNewVMPageExpert::sltISOPathChanged(const QString &strISOPath)
 
 void UIWizardNewVMPageExpert::sltGAISOPathChanged(const QString &strPath)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "GuestAdditionsISOPath";
-    newVMWizardPropertySet(GuestAdditionsISOPath, strPath);
+    wizardWindow<UIWizardNewVM>()->setGuestAdditionsISOPath(strPath);
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle(bool fEnabled)
 {
-    newVMWizardPropertySet(InstallGuestAdditions, fEnabled);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setInstallGuestAdditions(fEnabled);
     m_userModifiedParameters << "InstallGuestAdditions";
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltOSFamilyTypeChanged(const QString &strGuestOSFamilyType)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     if (m_pAdditionalOptionsContainer)
         m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
     m_userModifiedParameters << "GuestOSFamilyId";
-    newVMWizardPropertySet(GuestOSFamilyId, strGuestOSFamilyType);
+    wizardWindow<UIWizardNewVM>()->setGuestOSFamilyId(strGuestOSFamilyType);
 }
 
 void UIWizardNewVMPageExpert::retranslateUi()
@@ -299,7 +304,7 @@ void UIWizardNewVMPageExpert::createConnections()
 
 void UIWizardNewVMPageExpert::setOSTypeDependedValues()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
 
     /* Get recommended 'ram' field value: */
@@ -348,34 +353,29 @@ void UIWizardNewVMPageExpert::setOSTypeDependedValues()
     if (m_pSizeAndLocationGroup  && !m_userModifiedParameters.contains("MediumSize"))
     {
         m_pSizeAndLocationGroup->setMediumSize(iRecommendedDiskSize);
-        newVMWizardPropertySet(MediumSize, iRecommendedDiskSize);
+        pWizard->setMediumSize(iRecommendedDiskSize);
     }
-
-    // if (m_pProductKeyLabel)
-    //     m_pProductKeyLabel->setEnabled(isProductKeyWidgetEnabled());
-    // if (m_pProductKeyLineEdit)
-    //     m_pProductKeyLineEdit->setEnabled(isProductKeyWidgetEnabled());
 }
 
 void UIWizardNewVMPageExpert::initializePage()
 {
     /* We need not to check existence of parameter within m_userModifiedParameters since initializePage() runs
         once the page loads before user has a chance to modify parameters explicitly: */
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     /* Initialize wizard properties: */
     {
         if (m_pNameAndSystemEditor)
         {
             /* Guest OS type: */
-            newVMWizardPropertySet(GuestOSFamilyId, m_pNameAndSystemEditor->familyId());
-            newVMWizardPropertySet(GuestOSType, m_pNameAndSystemEditor->type());
+            pWizard->setGuestOSFamilyId(m_pNameAndSystemEditor->familyId());
+            pWizard->setGuestOSType(m_pNameAndSystemEditor->type());
             /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
         }
 
         /* Medium related properties: */
         if (m_pFormatButtonGroup)
-            newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
+            pWizard->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
         updateVirtualMediumPathFromMachinePathName();
     }
 
@@ -417,7 +417,7 @@ void UIWizardNewVMPageExpert::markWidgets() const
         m_pNameAndSystemEditor->markImageEditor(!UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor),
                                                 UIWizardNewVM::tr("Invalid file path or unreadable file"));
     }
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && pWizard->installGuestAdditions() && m_pGAInstallationISOContainer)
         m_pGAInstallationISOContainer->mark();
     if (isUnattendedEnabled())
@@ -507,7 +507,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
     m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk, QIcon());
     m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Hardware, QIcon());
 
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
 
     /* Check unattended install related stuff: */
@@ -594,7 +594,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
 
 bool UIWizardNewVMPageExpert::validatePage()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
     bool fResult = true;
 
@@ -638,7 +638,7 @@ bool UIWizardNewVMPageExpert::validatePage()
 
 bool UIWizardNewVMPageExpert::isProductKeyWidgetEnabled() const
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (!pWizard || !isUnattendedEnabled() || !pWizard->isGuestOSTypeWindows())
         return false;
     return true;
@@ -657,40 +657,44 @@ void UIWizardNewVMPageExpert::disableEnableUnattendedRelatedWidgets(bool fEnable
 
 void UIWizardNewVMPageExpert::sltSkipUnattendedCheckBoxChecked(bool fSkip)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "SkipUnattendedInstall";
-    newVMWizardPropertySet(SkipUnattendedInstall, fSkip);
+    wizardWindow<UIWizardNewVM>()->setSkipUnattendedInstall(fSkip);
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltMediumFormatChanged()
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     if (!m_pFormatButtonGroup)
         return;
 
     m_userModifiedParameters << "MediumFormat";
-    newVMWizardPropertySet(MediumFormat, m_pFormatButtonGroup->mediumFormat());
+    wizardWindow<UIWizardNewVM>()->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
     updateDiskWidgetsAfterMediumFormatChange();
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltMediumSizeChanged(qulonglong uSize)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "MediumSize";
-    newVMWizardPropertySet(MediumSize, uSize);
+    wizardWindow<UIWizardNewVM>()->setMediumSize(uSize);
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltMediumPathChanged(const QString &strPath)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "MediumPath";
-    newVMWizardPropertySet(MediumPath, strPath);
+    wizardWindow<UIWizardNewVM>()->setMediumPath(strPath);
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltMediumLocationButtonClicked()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     CMediumFormat comMediumFormat(pWizard->mediumFormat());
     QString strSelectedPath =
@@ -706,29 +710,31 @@ void UIWizardNewVMPageExpert::sltMediumLocationButtonClicked()
 
 void UIWizardNewVMPageExpert::sltMediumVariantChanged(qulonglong uVariant)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "MediumVariant";
-    newVMWizardPropertySet(MediumVariant, uVariant);
+    wizardWindow<UIWizardNewVM>()->setMediumVariant(uVariant);
 }
 
 void UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged()
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     AssertReturnVoid(m_pDiskSelector);
     /* Make sure to set m_virtualDisk: */
-    newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
+    wizardWindow<UIWizardNewVM>()->setVirtualDisk(m_pDiskSelector->id());
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
 {
     AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup);
-
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "SelectedDiskSource";
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
         m_enmSelectedDiskSource = SelectedDiskSource_Empty;
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
     {
         m_enmSelectedDiskSource = SelectedDiskSource_Existing;
-        newVMWizardPropertySet(VirtualDisk, m_pDiskSelector->id());
+        wizardWindow<UIWizardNewVM>()->setVirtualDisk(m_pDiskSelector->id());
     }
     else
         m_enmSelectedDiskSource = SelectedDiskSource_New;
@@ -741,58 +747,65 @@ void UIWizardNewVMPageExpert::sltSelectedDiskSourceChanged()
 
 void UIWizardNewVMPageExpert::sltMemorySizeChanged(int iValue)
 {
-    newVMWizardPropertySet(MemorySize, iValue);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setMemorySize(iValue);
     m_userModifiedParameters << "MemorySize";
 }
 
 void UIWizardNewVMPageExpert::sltCPUCountChanged(int iCount)
 {
-    newVMWizardPropertySet(CPUCount, iCount);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setCPUCount(iCount);
 }
 
 void UIWizardNewVMPageExpert::sltEFIEnabledChanged(bool fEnabled)
 {
-    newVMWizardPropertySet(EFIEnabled, fEnabled);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setEFIEnabled(fEnabled);
     m_userModifiedParameters << "EFIEnabled";
 }
 
 void UIWizardNewVMPageExpert::sltPasswordChanged(const QString &strPassword)
 {
-    newVMWizardPropertySet(Password, strPassword);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setPassword(strPassword);
     m_userModifiedParameters << "Password";
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltUserNameChanged(const QString &strUserName)
 {
-    newVMWizardPropertySet(UserName, strUserName);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setUserName(strUserName);
     m_userModifiedParameters << "UserName";
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltHostnameDomainNameChanged(const QString &strHostnameDomainName)
 {
-    newVMWizardPropertySet(HostnameDomainName, strHostnameDomainName);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setHostnameDomainName(strHostnameDomainName);
     m_userModifiedParameters << "HostnameDomainName";
     emit completeChanged();
 }
 
 void UIWizardNewVMPageExpert::sltProductKeyChanged(const QString &strProductKey)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "ProductKey";
-    newVMWizardPropertySet(ProductKey, strProductKey);
+    wizardWindow<UIWizardNewVM>()->setProductKey(strProductKey);
 }
 
 void UIWizardNewVMPageExpert::sltStartHeadlessChanged(bool fStartHeadless)
 {
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "StartHeadless";
-    newVMWizardPropertySet(StartHeadless, fStartHeadless);
+    wizardWindow<UIWizardNewVM>()->setStartHeadless(fStartHeadless);
 }
-
 
 void UIWizardNewVMPageExpert::updateVirtualMediumPathFromMachinePathName()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     QString strDiskFileName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
     QString strMediumPath = pWizard->machineFolder();
@@ -812,13 +825,13 @@ void UIWizardNewVMPageExpert::updateVirtualMediumPathFromMachinePathName()
         m_pSizeAndLocationGroup->blockSignals(true);
         m_pSizeAndLocationGroup->setMediumPath(strMediumFilePath);
         m_pSizeAndLocationGroup->blockSignals(false);
-        newVMWizardPropertySet(MediumPath, m_pSizeAndLocationGroup->mediumPath());
+        pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumPath());
     }
 }
 
 void UIWizardNewVMPageExpert::updateDiskWidgetsAfterMediumFormatChange()
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard && m_pDiskVariantGroupBox && m_pSizeAndLocationGroup && m_pFormatButtonGroup);
     const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
@@ -832,8 +845,8 @@ void UIWizardNewVMPageExpert::updateDiskWidgetsAfterMediumFormatChange()
     m_pSizeAndLocationGroup->updateMediumPath(comMediumFormat, m_pFormatButtonGroup->formatExtensions(), KDeviceType_HardDisk);
     m_pSizeAndLocationGroup->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
-    newVMWizardPropertySet(MediumPath, m_pSizeAndLocationGroup->mediumPath());
-    newVMWizardPropertySet(MediumVariant, m_pDiskVariantGroupBox->mediumVariant());
+    pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumPath());
+pWizard->setMediumVariant(m_pDiskVariantGroupBox->mediumVariant());
 }
 
 void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)
@@ -882,21 +895,21 @@ void UIWizardNewVMPageExpert::updateHostnameDomainNameFromMachineName()
 {
     if (!m_pAdditionalOptionsContainer)
         return;
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
 
     m_pAdditionalOptionsContainer->blockSignals(true);
     m_pAdditionalOptionsContainer->setHostname(pWizard->machineBaseName());
     m_pAdditionalOptionsContainer->setDomainName("myguest.virtualbox.org");
     /* Initialize unattended hostname here since we cannot get the default value from CUnattended this early (unlike username etc): */
-    newVMWizardPropertySet(HostnameDomainName, m_pAdditionalOptionsContainer->hostnameDomainName());
+    pWizard->setHostnameDomainName(m_pAdditionalOptionsContainer->hostnameDomainName());
 
     m_pAdditionalOptionsContainer->blockSignals(false);
 }
 
 bool UIWizardNewVMPageExpert::isUnattendedEnabled() const
 {
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
     return pWizard->isUnattendedEnabled();
 }

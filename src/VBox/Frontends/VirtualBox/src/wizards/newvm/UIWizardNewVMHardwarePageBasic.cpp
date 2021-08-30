@@ -77,7 +77,7 @@ void UIWizardNewVMHardwarePageBasic::initializePage()
 {
     retranslateUi();
 
-    UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(wizard());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && m_pHardwareWidgetContainer)
     {
         CGuestOSType type = pWizard->guestOSType();
@@ -109,17 +109,20 @@ bool UIWizardNewVMHardwarePageBasic::isComplete() const
 
 void UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged(int iValue)
 {
-    newVMWizardPropertySet(MemorySize, iValue);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setMemorySize(iValue);
     m_userModifiedParameters << "MemorySize";
 }
 
 void UIWizardNewVMHardwarePageBasic::sltCPUCountChanged(int iCount)
 {
-    newVMWizardPropertySet(CPUCount, iCount);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setCPUCount(iCount);
 }
 
 void UIWizardNewVMHardwarePageBasic::sltEFIEnabledChanged(bool fEnabled)
 {
-    newVMWizardPropertySet(EFIEnabled, fEnabled);
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setEFIEnabled(fEnabled);
     m_userModifiedParameters << "EFIEnabled";
 }
