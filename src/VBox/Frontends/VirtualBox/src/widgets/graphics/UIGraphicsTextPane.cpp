@@ -24,9 +24,9 @@
 #include <QGraphicsSceneHoverEvent>
 
 /* GUI includes: */
+#include "UICursor.h"
 #include "UIGraphicsTextPane.h"
 #include "UIRichTextString.h"
-#include "UICommon.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -382,9 +382,9 @@ void UIGraphicsTextPane::updateHoverStuff()
 {
     /* Update mouse-cursor: */
     if (m_strHoveredAnchor.isNull())
-        UICommon::unsetCursor(this);
+        UICursor::unsetCursor(this);
     else
-        UICommon::setCursor(this, Qt::PointingHandCursor);
+        UICursor::setCursor(this, Qt::PointingHandCursor);
 
     /* Update text-layout: */
     updateTextLayout();

@@ -1343,6 +1343,7 @@ UICommon_SOURCES = \
 	src/globals/UIAnimationFramework.cpp \
 	src/globals/UICloudNetworkingStuff.cpp \
 	src/globals/UICommon.cpp \
+	src/globals/UICursor.cpp \
 	src/globals/UICustomFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \

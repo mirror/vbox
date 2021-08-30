@@ -41,6 +41,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
+#include "UICursor.h"
 #include "UIHelpViewer.h"
 #include "UIHelpBrowserWidget.h"
 #include "UIIconPool.h"
@@ -238,11 +239,11 @@ bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
     if (pObject == m_pDragMoveLabel)
     {
         if (pEvent->type() == QEvent::Enter)
-            m_pDragMoveLabel->setCursor(Qt::CrossCursor);
+            UICursor::setCursor(m_pDragMoveLabel, Qt::CrossCursor);
         else if (pEvent->type() == QEvent::Leave)
         {
             if (parentWidget())
-                m_pDragMoveLabel->setCursor(parentWidget()->cursor());
+                UICursor::setCursor(m_pDragMoveLabel, parentWidget()->cursor());
         }
         else if (pEvent->type() == QEvent::MouseMove)
         {
@@ -252,13 +253,13 @@ bool UIFindInPageWidget::eventFilter(QObject *pObject, QEvent *pEvent)
                 if (m_previousMousePosition != QPoint(-1, -1))
                     emit sigDragging(pMouseEvent->globalPos() - m_previousMousePosition);
                 m_previousMousePosition = pMouseEvent->globalPos();
-                m_pDragMoveLabel->setCursor(Qt::ClosedHandCursor);
+                UICursor::setCursor(m_pDragMoveLabel, Qt::ClosedHandCursor);
             }
         }
         else if (pEvent->type() == QEvent::MouseButtonRelease)
         {
             m_previousMousePosition = QPoint(-1, -1);
-            m_pDragMoveLabel->setCursor(Qt::CrossCursor);
+            UICursor::setCursor(m_pDragMoveLabel, Qt::CrossCursor);
         }
     }
     return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
@@ -666,12 +667,12 @@ void UIHelpViewer::setImageOverCursor(QPoint globalPosition)
     if (!m_fCursorChanged && cursor.charFormat().isImageFormat())
     {
         m_fCursorChanged = true;
-        viewport()->setCursor(m_handCursor);
+        UICursor::setCursor(viewport(), m_handCursor);
         emit sigMouseOverImage(cursor.charFormat().toImageFormat().name());
     }
     if (m_fCursorChanged && !cursor.charFormat().isImageFormat())
     {
-        viewport()->setCursor(m_defaultCursor);
+        UICursor::setCursor(viewport(), m_defaultCursor);
         m_fCursorChanged = false;
     }
 
@@ -987,7 +988,7 @@ void UIHelpViewer::enableOverlay()
     m_fOverlayMode = true;
     if (m_pOverlayBlurEffect)
         m_pOverlayBlurEffect->setEnabled(true);
-    viewport()->setCursor(m_defaultCursor);
+    UICursor::setCursor(viewport(), m_defaultCursor);
     m_fCursorChanged = false;
     toggleFindInPageWidget(false);
 
