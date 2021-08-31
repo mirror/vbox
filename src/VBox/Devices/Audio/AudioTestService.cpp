@@ -355,21 +355,15 @@ static int atsReplyFailureV(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR p
                             const char *pszOpcode, int rcReq, const char *pszDetailFmt, va_list va)
 {
     RT_NOREF(pPktHdr);
-    union
-    {
-        ATSPKTHDR   Hdr;
-        int         rc;
-        char        ach[256];
-    } uPkt;
-    RT_ZERO(uPkt);
 
-    size_t cchDetail = RTStrPrintfV(&uPkt.ach[sizeof(ATSPKTHDR)],
-                                    sizeof(uPkt) - sizeof(ATSPKTHDR),
-                                    pszDetailFmt, va);
+    ATSPKTREPFAIL Rep;
+    RT_ZERO(Rep);
 
-    uPkt.rc = rcReq;
+    size_t cchDetail = RTStrPrintfV(Rep.ach, sizeof(Rep.ach), pszDetailFmt, va);
 
-    return atsReplyInternal(pThis, pInst, &uPkt.Hdr, pszOpcode, sizeof(int) + cchDetail + 1);
+    Rep.rc = rcReq;
+
+    return atsReplyInternal(pThis, pInst, &Rep.Hdr, pszOpcode, sizeof(Rep.rc) + cchDetail + 1);
 }
 
 /**

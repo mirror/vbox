@@ -157,9 +157,34 @@ static int audioTestSvcClientRecvAck(PATSCLIENT pClient)
     int rc = audioTestSvcClientRecvReply(pClient, &Reply, true /* fNoDataOk */);
     if (RT_SUCCESS(rc))
     {
-        if (RTStrNCmp(Reply.szOp, "ACK     ", ATSPKT_OPCODE_MAX_LEN) != 0)
+        /* Most likely cases first. */
+        if (     RTStrNCmp(Reply.szOp, "ACK     ", ATSPKT_OPCODE_MAX_LEN) == 0)
         {
-            LogRelFunc(("Received invalid ACK opcode ('%.8s')\n", Reply.szOp));
+            /* Nothing to do here. */
+        }
+        else if (RTStrNCmp(Reply.szOp, "FAILED  ", ATSPKT_OPCODE_MAX_LEN) == 0)
+        {
+            if (Reply.cbPayload)
+            {
+                if (Reply.cbPayload == sizeof(ATSPKTREPFAIL))
+                {
+                    PATSPKTREPFAIL pRep = (PATSPKTREPFAIL)Reply.pvPayload;
+                    /** @todo Check NULL termination of pcszMsg? */
+
+                    LogRelFunc(("Received error: %s (%Rrc)\n", pRep->ach, pRep->rc));
+
+                    rc = pRep->rc; /* Reach error code back to caller. */
+                }
+                else
+                {
+                    LogRelFunc(("Received invalid failure payload (cb=%zu)\n", Reply.cbPayload));
+                    rc = VERR_NET_PROTOCOL_ERROR;
+                }
+            }
+        }
+        else
+        {
+            LogRelFunc(("Received invalid opcode ('%.8s')\n", Reply.szOp));
             rc = VERR_NET_PROTOCOL_ERROR;
         }
 
