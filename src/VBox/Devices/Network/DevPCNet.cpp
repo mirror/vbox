@@ -1595,6 +1595,22 @@ static void pcnetR3Init(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pTh
 {
     Log(("#%d pcnetR3Init: init_addr=%#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_IADR(pThis))));
 
+    /* If intialization was invoked with PCI bus mastering disabled, it's not going to
+     * go very well. Better report an error.
+     */
+    if (PCNET_IS_PCI(pThis))
+    {
+        PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+        uint8_t uCmd = PDMPciDevGetByte(pPciDev, 0x04);
+
+        if (!(uCmd & 4))
+        {
+            pThis->aCSR[0] |=  0x0801;       /* Set the MERR bit instead of IDON. */
+            LogRel(("PCnet#%d: Warning: Initialization failed due to disabled PCI bus mastering.\n", PCNET_INST_NR));
+            return;
+        }
+    }
+
     /** @todo Documentation says that RCVRL and XMTRL are stored as two's complement!
      *        Software is allowed to write these registers directly. */
 # define PCNET_INIT() do { \
@@ -2953,7 +2969,42 @@ static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCN
 
 #ifdef IN_RING3
                 if (!CSR_INIT(pThis) && (val & 1))
-                    pcnetR3Init(pDevIns, pThis, pThisCC);
+                {
+                    bool    fDelayInit = false;
+
+                    /* Many PCnet drivers disable PCI bus mastering before setting the INIT bit and
+                     * then immediately enable it back again. This is done to work around a silicon
+                     * bug that could cause a PCI bus hang under some circumstances. The bug only
+                     * existed in the early PCI chips (Am79C970 PCnet-PCI) but many drivers apply the
+                     * workaround to all PCnet PCI models. Drivers written by AMD generally do this
+                     * (DOS, Windows, OS/2). PCnet drivers in Windows 2000 and XP are new enough to
+                     * not apply the workaround to our emulated PCnet-PCI II (Am79C970A) and
+                     * PCnet-FAST III (Am79C973).
+                     *
+                     * The AMDPCnet32 drivers for NeXTSTEP/OpenStep (notably OS 4.2) cpompletely fail
+                     * unless we delay the initialization until after bus mastering is re-enabled.
+                     */
+                    if (PCNET_IS_PCI(pThis))
+                    {
+                        PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+                        uint8_t uCmd = PDMPciDevGetByte(pPciDev, 0x04);
+
+                        /* Recognize situation with PCI bus mastering disabled and setting
+                         * INIT bit without also setting STRT.
+                         */
+                        if (!(uCmd & 4) && !(val & 2))
+                            fDelayInit = true;
+                    }
+
+                    if (!fDelayInit)
+                        pcnetR3Init(pDevIns, pThis, pThisCC);
+                    else
+                    {
+                        LogRel(("PCnet#%d: Delaying INIT due to disabled PCI bus mastering\n", PCNET_INST_NR));
+                        pThis->aCSR[0] |=  0x0001;  /* Set INIT and MERR bits. */
+                        pThis->aCSR[6] = 1;         /* Set a flag in read-only CSR6. */
+                    }
+                }
 #endif
 
                 if (!CSR_STRT(pThis) && (val & 2))
@@ -3140,25 +3191,42 @@ static uint32_t pcnetLinkSpd(uint32_t speed)
     return (exp << 13) | speed;
 }
 
-static uint32_t pcnetCSRReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP)
+static VBOXSTRICTRC pcnetCSRReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t u32RAP, uint32_t *pu32)
 {
     uint32_t val;
     switch (u32RAP)
     {
         case 0:
+            /* Check if delayed initialization needs to run. */
+            if (RT_UNLIKELY(pThis->aCSR[6] == 1))
+            {
+#ifndef IN_RING3
+                return VINF_IOM_R3_IOPORT_READ;
+#else
+                /* This is the second half of delayed initialization required
+                 * to work around guest drivers that temporarily disable PCI bus
+                 * mastering around setting the INIT bit in CSR0.
+                 * See pcnetCSRWriteU16() for details.
+                 */
+                pcnetR3Init(pDevIns, pThis, pThisCC);
+                Assert(pThis->aCSR[6] != 1);
+#endif
+            }
             pcnetUpdateIrq(pDevIns, pThis);
             val = pThis->aCSR[0];
             val |= (val & 0x7800) ? 0x8000 : 0;
             pThis->u16CSR0LastSeenByGuest = val;
             break;
         case 16:
-            return pcnetCSRReadU16(pDevIns, pThis, 1);
+            return pcnetCSRReadU16(pDevIns, pThis, pThisCC, 1, pu32);
         case 17:
-            return pcnetCSRReadU16(pDevIns, pThis, 2);
+            return pcnetCSRReadU16(pDevIns, pThis, pThisCC, 2, pu32);
         case 58:
-            return pcnetBCRReadU16(pThis, BCR_SWS);
+            *pu32 = pcnetBCRReadU16(pThis, BCR_SWS);
+            return VINF_SUCCESS;
         case 68:    /* Custom register to pass link speed to driver */
-            return pcnetLinkSpd(pThis->u32LinkSpeed);
+            *pu32 = pcnetLinkSpd(pThis->u32LinkSpeed);
+            return VINF_SUCCESS;
         case 88:
             val = pThis->aCSR[89];
             val <<= 16;
@@ -3167,8 +3235,9 @@ static uint32_t pcnetCSRReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t 
         default:
             val = pThis->aCSR[u32RAP];
     }
+    *pu32 = val;
     Log8(("#%d pcnetCSRReadU16: rap=%d val=%#06x\n", PCNET_INST_NR, u32RAP, val));
-    return val;
+    return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC pcnetBCRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
@@ -3615,9 +3684,9 @@ static VBOXSTRICTRC pcnetIoPortWriteU8(PPCNETSTATE pThis, uint32_t addr, uint32_
     return VINF_SUCCESS;
 }
 
-static uint32_t pcnetIoPortReadU8(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr)
+static VBOXSTRICTRC pcnetIoPortReadU8(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_t addr, uint32_t *val)
 {
-    uint32_t val = UINT32_MAX;
+    *val = UINT32_MAX;
 
     if (RT_LIKELY(!BCR_DWIO(pThis)))
     {
@@ -3625,17 +3694,17 @@ static uint32_t pcnetIoPortReadU8(PPDMDEVINS pDevIns, PPCNETSTATE pThis, uint32_
         {
             case 0x04: /* RESET */
                 pcnetSoftReset(pThis);
-                val = 0;
+                *val = 0;
                 break;
         }
     }
     else
-        Log(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val & 0xff));
+        Log(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, *val & 0xff));
 
     pcnetUpdateIrq(pDevIns, pThis);
 
-    Log6(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xff));
-    return val;
+    Log6(("#%d pcnetIoPortReadU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, *val & 0xff));
+    return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr, uint32_t val)
@@ -3666,9 +3735,11 @@ static VBOXSTRICTRC pcnetIoPortWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, P
     return rc;
 }
 
-static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr)
+static VBOXSTRICTRC pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr, uint32_t *val)
 {
-    uint32_t val = ~0U;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
+
+    *val = ~0U;
 
     if (RT_LIKELY(!BCR_DWIO(pThis)))
     {
@@ -3680,30 +3751,30 @@ static uint32_t pcnetIoPortReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNET
                 if (!CSR_DPOLL(pThis))
                     pcnetPollTimer(pDevIns, pThis, pThisCC);
 
-                val = pcnetCSRReadU16(pDevIns, pThis, pThis->u32RAP);
+                rc = pcnetCSRReadU16(pDevIns, pThis, pThisCC, pThis->u32RAP, val);
                 if (pThis->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
                 break;
             case 0x02: /* RAP */
-                val = pThis->u32RAP;
+                *val = pThis->u32RAP;
                 goto skip_update_irq;
             case 0x04: /* RESET */
                 pcnetSoftReset(pThis);
-                val = 0;
+                *val = 0;
                 break;
             case 0x06: /* BDP */
-                val = pcnetBCRReadU16(pThis, pThis->u32RAP);
+                *val = pcnetBCRReadU16(pThis, pThis->u32RAP);
                 break;
         }
     }
     else
-        Log(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val & 0xffff));
+        Log(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, *val & 0xffff));
 
     pcnetUpdateIrq(pDevIns, pThis);
 
 skip_update_irq:
-    Log6(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xffff));
-    return val;
+    Log6(("#%d pcnetIoPortReadU16: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, *val & 0xffff));
+    return rc;
 }
 
 static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr, uint32_t val)
@@ -3740,9 +3811,11 @@ static VBOXSTRICTRC pcnetIoPortWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, P
     return rc;
 }
 
-static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr)
+static VBOXSTRICTRC pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, uint32_t addr, uint32_t *val)
 {
-    uint32_t val = ~0U;
+    VBOXSTRICTRC rc = VINF_SUCCESS;
+
+    *val = ~0U;
 
     if (RT_LIKELY(BCR_DWIO(pThis)))
     {
@@ -3754,29 +3827,29 @@ static uint32_t pcnetIoPortReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNET
                 if (!CSR_DPOLL(pThis))
                     pcnetPollTimer(pDevIns, pThis, pThisCC);
 
-                val = pcnetCSRReadU16(pDevIns, pThis, pThis->u32RAP);
+                rc = pcnetCSRReadU16(pDevIns, pThis, pThisCC, pThis->u32RAP, val);
                 if (pThis->u32RAP == 0)  // pcnetUpdateIrq() already called by pcnetCSRReadU16()
                     goto skip_update_irq;
                 break;
             case 0x04: /* RAP */
-                val = pThis->u32RAP;
+                *val = pThis->u32RAP;
                 goto skip_update_irq;
             case 0x08: /* RESET */
                 pcnetSoftReset(pThis);
-                val = 0;
+                *val = 0;
                 break;
             case 0x0c: /* BDP */
-                val = pcnetBCRReadU16(pThis, pThis->u32RAP);
+                *val = pcnetBCRReadU16(pThis, pThis->u32RAP);
                 break;
         }
     }
     else
-        Log(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNET_INST_NR, addr, val));
+        Log(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x !BCR_DWIO !!\n", PCNET_INST_NR, addr, *val));
     pcnetUpdateIrq(pDevIns, pThis);
 
 skip_update_irq:
-    Log6(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
-    return val;
+    Log6(("#%d pcnetIoPortReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, *val));
+    return rc;
 }
 
 
@@ -3787,16 +3860,16 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetIoPortRead(PPDMDEVINS pDevIns, void *pvUs
 {
     PPCNETSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PPCNETSTATE);
     PPCNETSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PPCNETSTATECC);
-    VBOXSTRICTRC    rc      = VINF_SUCCESS;
+    VBOXSTRICTRC    rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
     switch (cb)
     {
-        case 1: *pu32 = pcnetIoPortReadU8(pDevIns, pThis, offPort); break;
-        case 2: *pu32 = pcnetIoPortReadU16(pDevIns, pThis, pThisCC, offPort); break;
-        case 4: *pu32 = pcnetIoPortReadU32(pDevIns, pThis, pThisCC, offPort); break;
+        case 1: rc = pcnetIoPortReadU8(pDevIns, pThis, offPort, pu32); break;
+        case 2: rc = pcnetIoPortReadU16(pDevIns, pThis, pThisCC, offPort, pu32); break;
+        case 4: rc = pcnetIoPortReadU32(pDevIns, pThis, pThisCC, offPort, pu32); break;
         default:
             rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetIoPortRead: unsupported op size: offset=%#10x cb=%u\n", offPort, cb);
     }
@@ -3845,13 +3918,13 @@ static void pcnetR3MmioWriteU8(PPCNETSTATE pThis, RTGCPHYS off, uint32_t val)
         pcnetAPROMWriteU8(pThis, off, val);
 }
 
-static uint32_t pcnetR3MmioReadU8(PPCNETSTATE pThis, RTGCPHYS addr)
+static VBOXSTRICTRC pcnetR3MmioReadU8(PPCNETSTATE pThis, RTGCPHYS addr, uint8_t *val)
 {
-    uint32_t val = ~0U;
+    *val = 0xff;
     if (!(addr & 0x10))
-        val = pcnetAPROMReadU8(pThis, addr);
-    Log6(("#%d pcnetR3MmioReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, val & 0xff));
-    return val;
+        *val = pcnetAPROMReadU8(pThis, addr);
+    Log6(("#%d pcnetR3MmioReadU8: addr=%#010x val=%#04x\n", PCNET_INST_NR, addr, *val));
+    return VINF_SUCCESS;
 }
 
 static VBOXSTRICTRC pcnetR3MmioWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS off, uint32_t val)
@@ -3873,20 +3946,27 @@ static VBOXSTRICTRC pcnetR3MmioWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, P
     return rcStrict;
 }
 
-static uint32_t pcnetR3MmioReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS addr)
+static VBOXSTRICTRC pcnetR3MmioReadU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS addr, uint16_t *val)
 {
-    uint32_t val = ~0U;
+    VBOXSTRICTRC rcStrict;
+    uint32_t val32 = ~0U;
 
     if (addr & 0x10)
-        val = pcnetIoPortReadU16(pDevIns, pThis, pThisCC, addr & 0x0f);
+    {
+        rcStrict = pcnetIoPortReadU16(pDevIns, pThis, pThisCC, addr & 0x0f, &val32);
+        if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+            rcStrict = VINF_IOM_R3_MMIO_READ;
+    }
     else
     {
-        val = pcnetAPROMReadU8(pThis, addr+1);
-        val <<= 8;
-        val |= pcnetAPROMReadU8(pThis, addr);
+        val32 = pcnetAPROMReadU8(pThis, addr+1);
+        val32 <<= 8;
+        val32 |= pcnetAPROMReadU8(pThis, addr);
+        rcStrict = VINF_SUCCESS;
     }
-    Log6(("#%d pcnetR3MmioReadU16: addr=%#010x val = %#06x\n", PCNET_INST_NR, addr, val & 0xffff));
-    return val;
+    *val = (uint16_t)val32;
+    Log6(("#%d pcnetR3MmioReadU16: addr=%#010x val = %#06x\n", PCNET_INST_NR, addr, *val));
+    return rcStrict;
 }
 
 static VBOXSTRICTRC pcnetR3MmioWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS off, uint32_t val)
@@ -3910,24 +3990,32 @@ static VBOXSTRICTRC pcnetR3MmioWriteU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, P
     return rcStrict;
 }
 
-static uint32_t pcnetR3MmioReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS addr)
+static VBOXSTRICTRC pcnetR3MmioReadU32(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC pThisCC, RTGCPHYS addr, uint32_t *val)
 {
-    uint32_t val;
+    VBOXSTRICTRC rcStrict;
 
     if (addr & 0x10)
-        val = pcnetIoPortReadU32(pDevIns, pThis, pThisCC, addr & 0x0f);
+    {
+        rcStrict = pcnetIoPortReadU32(pDevIns, pThis, pThisCC, addr & 0x0f, val);
+        if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+            rcStrict = VINF_IOM_R3_MMIO_READ;
+    }
     else
     {
-        val  = pcnetAPROMReadU8(pThis, addr+3);
-        val <<= 8;
-        val |= pcnetAPROMReadU8(pThis, addr+2);
-        val <<= 8;
-        val |= pcnetAPROMReadU8(pThis, addr+1);
-        val <<= 8;
-        val |= pcnetAPROMReadU8(pThis, addr  );
+        uint32_t    val32;
+
+        val32  = pcnetAPROMReadU8(pThis, addr+3);
+        val32 <<= 8;
+        val32 |= pcnetAPROMReadU8(pThis, addr+2);
+        val32 <<= 8;
+        val32 |= pcnetAPROMReadU8(pThis, addr+1);
+        val32 <<= 8;
+        val32 |= pcnetAPROMReadU8(pThis, addr  );
+        *val = val32;
+        rcStrict = VINF_SUCCESS;
     }
-    Log6(("#%d pcnetR3MmioReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, val));
-    return val;
+    Log6(("#%d pcnetR3MmioReadU32: addr=%#010x val=%#010x\n", PCNET_INST_NR, addr, *val));
+    return rcStrict;
 }
 
 
@@ -3950,9 +4038,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pcnetR3MmioRead(PPDMDEVINS pDevIns, void *pvUs
         STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIORead), a);
         switch (cb)
         {
-            case 1:  *(uint8_t  *)pv = pcnetR3MmioReadU8 (pThis, off); break;
-            case 2:  *(uint16_t *)pv = pcnetR3MmioReadU16(pDevIns, pThis, pThisCC, off); break;
-            case 4:  *(uint32_t *)pv = pcnetR3MmioReadU32(pDevIns, pThis, pThisCC, off); break;
+            case 1:  rc = pcnetR3MmioReadU8 (pThis, off, (uint8_t *)pv); break;
+            case 2:  rc = pcnetR3MmioReadU16(pDevIns, pThis, pThisCC, off, (uint16_t *)pv); break;
+            case 4:  rc = pcnetR3MmioReadU32(pDevIns, pThis, pThisCC, off, (uint32_t *)pv); break;
             default:
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "pcnetR3MmioRead: unsupported op size: address=%RGp cb=%u\n", off, cb);
         }
@@ -5243,7 +5331,7 @@ static DECLCALLBACK(int) pcnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMPciDevSetByte(pPciDev, 0x05,     0x00);
     PDMPciDevSetByte(pPciDev, 0x06,     0x80); /* status */
     PDMPciDevSetByte(pPciDev, 0x07,     0x02);
-    PDMPciDevSetByte(pPciDev, 0x08,     pThis->uDevType == DEV_AM79C973 ? 0x40 : 0x10); /* revision */
+    PDMPciDevSetByte(pPciDev, 0x08,     pThis->uDevType == DEV_AM79C973 ? 0x40 : 0x16); /* revision */
     PDMPciDevSetByte(pPciDev, 0x09,     0x00);
     PDMPciDevSetByte(pPciDev, 0x0a,     0x00); /* ethernet network controller */
     PDMPciDevSetByte(pPciDev, 0x0b,     0x02);
