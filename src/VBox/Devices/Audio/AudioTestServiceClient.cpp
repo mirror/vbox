@@ -164,16 +164,19 @@ static int audioTestSvcClientRecvAck(PATSCLIENT pClient)
         }
         else if (RTStrNCmp(Reply.szOp, "FAILED  ", ATSPKT_OPCODE_MAX_LEN) == 0)
         {
+            LogRelFunc(("Received error from server (cbPayload=%zu)\n", Reply.cbPayload));
+
             if (Reply.cbPayload)
             {
-                if (Reply.cbPayload == sizeof(ATSPKTREPFAIL))
+                if (   Reply.cbPayload >=  sizeof(int) /* At least the rc must be present. */
+                    && Reply.cbPayload <= sizeof(ATSPKTREPFAIL) - sizeof(ATSPKTHDR))
                 {
-                    PATSPKTREPFAIL pRep = (PATSPKTREPFAIL)Reply.pvPayload;
+                    rc = *(int *)Reply.pvPayload; /* Reach error code back to caller. */
+
+                    const char *pcszMsg = (char *)Reply.pvPayload + sizeof(int);
                     /** @todo Check NULL termination of pcszMsg? */
 
-                    LogRelFunc(("Received error: %s (%Rrc)\n", pRep->ach, pRep->rc));
-
-                    rc = pRep->rc; /* Reach error code back to caller. */
+                    LogRelFunc(("Error message: %s (%Rrc)\n", pcszMsg, rc));
                 }
                 else
                 {
@@ -191,6 +194,7 @@ static int audioTestSvcClientRecvAck(PATSCLIENT pClient)
         audioTestSvcClientReplyDestroy(&Reply);
     }
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
