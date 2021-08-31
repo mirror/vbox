@@ -130,7 +130,7 @@ static void atsTcpDisconnectClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT 
 
     if (pClient->hTcpClient != NIL_RTSOCKET)
     {
-        LogRelFlowFunc(("Disconnecting client %RTsock\n", pClient->hTcpClient));
+        LogRelFlowFunc(("%RTsock\n", pClient->hTcpClient));
 
         int rc;
         if (pClient->fFromServer)
@@ -346,7 +346,7 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
         {
             LogRelFlowFunc(("Calling RTTcpClientConnect(%s, %u,)...\n", pThis->szConnectAddr, pThis->uConnectPort));
             rc = RTTcpClientConnect(pThis->szConnectAddr, pThis->uConnectPort, &pClient->hTcpClient);
-            LogRelFlowFunc(("RTTcpClientConnect -> %Rrc\n", rc));
+            LogRelFlowFunc(("RTTcpClientConnect(%RTsock) -> %Rrc\n", pClient->hTcpClient, rc));
             if (RT_SUCCESS(rc) || atsTcpIsFatalClientConnectStatus(rc))
                 break;
 
@@ -462,7 +462,7 @@ static DECLCALLBACK(void) atsTcpNotifyReboot(PATSTRANSPORTINST pThis)
  */
 static DECLCALLBACK(void) atsTcpNotifyBye(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
-    LogFunc(("atsTcpDisconnectClient %RTsock\n", pClient->hTcpClient));
+    LogRelFunc(("%RTsock\n", pClient->hTcpClient));
     atsTcpDisconnectClient(pThis, pClient);
 }
 
@@ -471,8 +471,10 @@ static DECLCALLBACK(void) atsTcpNotifyBye(PATSTRANSPORTINST pThis, PATSTRANSPORT
  */
 static DECLCALLBACK(void) atsTcpNotifyHowdy(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
+    LogRelFunc(("%RTsock\n", pClient->hTcpClient));
+
     /* nothing to do here */
-    RT_NOREF(pThis, pClient);
+    RT_NOREF(pThis);
 }
 
 /**
@@ -510,6 +512,7 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
 
     Log3Func(("%RU32 -> %zu\n", pPktHdr->cb, cbToSend));
 
+    LogRelFlowFunc(("%RTsock\n", pClient->hTcpClient));
     LogRelFlowFunc(("Header:\n"
                     "%.*Rhxd\n", RT_MIN(sizeof(ATSPKTHDR), cbToSend), pPktHdr));
 
@@ -537,6 +540,8 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
 {
     int rc = VINF_SUCCESS;
     *ppPktHdr = NULL;
+
+    LogRelFlowFunc(("%RTsock\n", pClient->hTcpClient));
 
     /*
      * Read state.

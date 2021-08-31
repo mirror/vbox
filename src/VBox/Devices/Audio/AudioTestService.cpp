@@ -987,6 +987,8 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
 {
     RT_NOREF(hThread);
 
+    LogRelFlowFuncEnter();
+
     PATSSERVER pThis = (PATSSERVER)pvUser;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -1023,15 +1025,16 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
             size_t cbWritten = 0;
             rc = RTPipeWrite(pThis->hPipeW, "", 1, &cbWritten);
             if (RT_FAILURE(rc))
-                LogRel(("Failed to inform worker thread of a new client, rc=%Rrc\n", rc));
+                LogRelFunc(("Failed to inform worker thread of a new client, rc=%Rrc\n", rc));
         }
         else
         {
-            LogRel(("Creating new client structure failed with out of memory error\n"));
+            LogRelFunc(("Creating new client structure failed with out of memory error\n"));
             pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pTransportClient);
         }
     }
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1120,6 +1123,8 @@ int AudioTestSvcHandleOption(PATSSERVER pThis, int ch, PCRTGETOPTUNION pVal)
  */
 int AudioTestSvcStart(PATSSERVER pThis)
 {
+    LogRelFlowFuncEnter();
+
     /* Spin off the thread serving connections. */
     int rc = RTThreadCreate(&pThis->hThreadServing, atsClientWorker, pThis, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
                             "ATSCLWORK");
@@ -1143,6 +1148,7 @@ int AudioTestSvcStart(PATSSERVER pThis)
         }
     }
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1156,6 +1162,8 @@ int AudioTestSvcStop(PATSSERVER pThis)
 {
     if (!pThis->fStarted)
         return VINF_SUCCESS;
+
+    LogRelFlowFuncEnter();
 
     ASMAtomicXchgBool(&pThis->fTerminate, true);
 
@@ -1187,6 +1195,7 @@ int AudioTestSvcStop(PATSSERVER pThis)
     if (RT_SUCCESS(rc))
         pThis->fStarted = false;
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1243,6 +1252,8 @@ static int audioTestSvcDestroyInternal(PATSSERVER pThis)
  */
 int AudioTestSvcDestroy(PATSSERVER pThis)
 {
+    LogRelFlowFuncEnter();
+
     int rc = audioTestSvcDestroyInternal(pThis);
     if (RT_SUCCESS(rc))
     {
@@ -1257,5 +1268,6 @@ int AudioTestSvcDestroy(PATSSERVER pThis)
         }
     }
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
