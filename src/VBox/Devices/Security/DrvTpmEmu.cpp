@@ -1006,8 +1006,8 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
             pszTpmVers = "2.0";
             break;
         default:
-            AssertLogRelReturn(("DrvTpmEmu#%d Emulated TPM version %d is not correctly handled", pDrvIns->iInstance, pThis->enmTpmVers),
-                               VERR_INVALID_STATE);
+            AssertMsgFailedReturn(("DrvTpmEmu#%d Emulated TPM version %d is not correctly handled", pDrvIns->iInstance, pThis->enmTpmVers),
+                                  VERR_INVALID_STATE);
     }
 
     if ((pThis->fCaps & fCapsReq) != fCapsReq)

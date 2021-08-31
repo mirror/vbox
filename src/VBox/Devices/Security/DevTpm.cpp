@@ -687,7 +687,7 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
         if (pThis->offCmdResp <= pThis->cbCmdResp - cb)
         {
             memcpy(pu64, &pThis->abCmdResp[pThis->offCmdResp], cb);
-            pThis->offCmdResp += cb;
+            pThis->offCmdResp += (uint32_t)cb;
         }
         else
             memset(pu64, 0xff, cb);
@@ -814,7 +814,7 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
         if (pThis->offCmdResp <=  pThis->cbCmdResp - cb)
         {
             memcpy(&pThis->abCmdResp[pThis->offCmdResp], &u64, cb);
-            pThis->offCmdResp += cb;
+            pThis->offCmdResp += (uint32_t)cb;
         }
         return VINF_SUCCESS;
     }
