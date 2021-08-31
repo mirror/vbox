@@ -315,18 +315,6 @@ VMMR3DECL(char *)   MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFo
 VMMR3DECL(void)     MMR3HeapFree(void *pv);
 /** @} */
 
-/** @defgroup grp_mm_ukheap   User-kernel Heap Manager.
- *
- * The memory is safely accessible from kernel context as well as user land.
- *
- * @{ */
-VMMR3DECL(void *)   MMR3UkHeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize, PRTR0PTR pR0Ptr);
-VMMR3DECL(int)      MMR3UkHeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv, PRTR0PTR pR0Ptr);
-VMMR3DECL(void *)   MMR3UkHeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize, PRTR0PTR pR0Ptr);
-VMMR3DECL(int)      MMR3UkHeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv, PRTR0PTR pR0Ptr);
-VMMR3DECL(void)     MMR3UkHeapFree(PVM pVM, void *pv, MMTAG enmTag);
-/** @} */
-
 /** @} */
 #endif /* IN_RING3 || DOXYGEN_RUNNING */
 
