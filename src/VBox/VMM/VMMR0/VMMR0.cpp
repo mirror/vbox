@@ -91,48 +91,9 @@
  * Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it will
  * be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
  * executed. */
-#if (defined(VBOX_STRICT) || 1) && !defined(VBOX_WITH_RAM_IN_KERNEL)
-# define VMM_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
-# define VMM_CHECK_SMAP_CHECK(a_BadExpr) \
-    do { \
-        if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
-        { \
-            RTCCUINTREG fEflCheck = ASMGetFlags(); \
-            if (RT_LIKELY(fEflCheck & X86_EFL_AC)) \
-            { /* likely */ } \
-            else \
-            { \
-                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)fEflCheck); \
-                a_BadExpr; \
-            } \
-        } \
-    } while (0)
-# define VMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr) \
-    do { \
-        if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
-        { \
-            RTCCUINTREG fEflCheck = ASMGetFlags(); \
-            if (RT_LIKELY(fEflCheck & X86_EFL_AC)) \
-            { /* likely */ } \
-            else if (a_pGVM) \
-            { \
-                SUPR0BadContext((a_pGVM)->pSession, __FILE__, __LINE__, "EFLAGS.AC is zero!"); \
-                RTStrPrintf((a_pGVM)->vmm.s.szRing0AssertMsg1, sizeof((a_pGVM)->vmm.s.szRing0AssertMsg1), \
-                            "%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)fEflCheck); \
-                a_BadExpr; \
-            } \
-            else \
-            { \
-                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)fEflCheck); \
-                a_BadExpr; \
-            } \
-        } \
-    } while (0)
-#else
-# define VMM_CHECK_SMAP_SETUP()                         uint32_t const fKernelFeatures = 0
-# define VMM_CHECK_SMAP_CHECK(a_BadExpr)                NOREF(fKernelFeatures)
-# define VMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr)       NOREF(fKernelFeatures)
-#endif
+#define VMM_CHECK_SMAP_SETUP()                          uint32_t const fKernelFeatures = 0
+#define VMM_CHECK_SMAP_CHECK(a_BadExpr)                 NOREF(fKernelFeatures)
+#define VMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr)        NOREF(fKernelFeatures)
 
 
 /*********************************************************************************************************************************

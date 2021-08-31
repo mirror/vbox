@@ -3036,7 +3036,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
         if (RT_SUCCESS(rc))
         {
             void *pvPages;
-#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
             RTR0PTR pvPagesR0;
             rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, &pvPagesR0, paPages);
 #else
@@ -3061,7 +3061,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
                     for (PPGMREGMMIO2RANGE pCur = pNew; pCur; pCur = pCur->pNextR3)
                     {
                         pCur->pvR3          = pbCurPages;
-#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
                         pCur->pvR0          = pvPagesR0 + (iSrcPage << PAGE_SHIFT);
 #endif
                         pCur->RamRange.pvR3 = pbCurPages;
@@ -4639,11 +4639,6 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pN
     }
 #endif
 
-#ifndef VBOX_WITH_RAM_IN_KERNEL
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR0.aEntries); i++)
-        if (pVM->pgm.s.PhysTlbR0.aEntries[i].pMap == pChunk)
-            return 0;
-#endif
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR3.aEntries); i++)
         if (pVM->pgm.s.PhysTlbR3.aEntries[i].pMap == pChunk)
             return 0;

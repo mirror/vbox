@@ -106,41 +106,9 @@
  * Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it will
  * be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
  * executed. */
-#if (defined(VBOX_STRICT) || 1) && !defined(VBOX_WITH_RAM_IN_KERNEL)
-# define GVMM_CHECK_SMAP_SETUP() uint32_t const fKernelFeatures = SUPR0GetKernelFeatures()
-# define GVMM_CHECK_SMAP_CHECK(a_BadExpr) \
-    do { \
-        if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
-        { \
-            RTCCUINTREG fEflCheck = ASMGetFlags(); \
-            if (RT_LIKELY(fEflCheck & X86_EFL_AC)) \
-            { /* likely */ } \
-            else \
-            { \
-                SUPR0Printf("%s, line %d: EFLAGS.AC is clear! (%#x)\n", __FUNCTION__, __LINE__, (uint32_t)fEflCheck); \
-                a_BadExpr; \
-            } \
-        } \
-    } while (0)
-# define GVMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr) \
-    do { \
-        if (fKernelFeatures & SUPKERNELFEATURES_SMAP) \
-        { \
-            RTCCUINTREG fEflCheck = ASMGetFlags(); \
-            if (RT_LIKELY(fEflCheck & X86_EFL_AC)) \
-            { /* likely */ } \
-            else \
-            { \
-                SUPR0BadContext((a_pGVM) ? (a_pGVM)->pSession : NULL, __FILE__, __LINE__, "EFLAGS.AC is zero!"); \
-                a_BadExpr; \
-            } \
-        } \
-    } while (0)
-#else
-# define GVMM_CHECK_SMAP_SETUP()           uint32_t const fKernelFeatures = 0
-# define GVMM_CHECK_SMAP_CHECK(a_BadExpr)           NOREF(fKernelFeatures)
-# define GVMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr)   NOREF(fKernelFeatures)
-#endif
+#define GVMM_CHECK_SMAP_SETUP()           uint32_t const fKernelFeatures = 0
+#define GVMM_CHECK_SMAP_CHECK(a_BadExpr)           NOREF(fKernelFeatures)
+#define GVMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr)   NOREF(fKernelFeatures)
 
 /** Special value that GVMMR0DeregisterVCpu sets. */
 #define GVMM_RTNATIVETHREAD_DESTROYED       (~(RTNATIVETHREAD)1)

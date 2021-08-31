@@ -193,8 +193,7 @@
 # define VBOX_USE_CRIT_SECT_FOR_GIANT
 #endif
 
-#if (!defined(VBOX_WITH_RAM_IN_KERNEL) || defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)) \
- && !defined(RT_OS_DARWIN)
+#if defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM) && !defined(RT_OS_DARWIN)
 /** Enable the legacy mode code (will be dropped soon). */
 # define GMM_WITH_LEGACY_MODE
 #endif
@@ -412,7 +411,7 @@ typedef struct GMMCHUNK
      * what the host can dish up with.  (Chunk mtx protects mapping accesses
      * and related frees.) */
     RTR0MEMOBJ          hMemObj;
-#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
     /** Pointer to the kernel mapping. */
     uint8_t            *pbMapping;
 #endif
@@ -2237,7 +2236,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
     Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE);
 #endif
 
-#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
     /*
      * Get a ring-0 mapping of the object.
      */
@@ -2269,7 +2268,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
          * Initialize it.
          */
         pChunk->hMemObj     = hMemObj;
-#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
         pChunk->pbMapping   = pbMapping;
 #endif
         pChunk->cFree       = GMM_CHUNK_NUM_PAGES;
@@ -3520,7 +3519,7 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
 
     RTMemFree(pChunk);
 
-#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
     int rc = RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
 #else
     int rc = RTR0MemObjFree(hMemObj, false /* fFreeMappings */);
@@ -4523,8 +4522,8 @@ GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3)
 #endif
 }
 
-#if defined(VBOX_WITH_RAM_IN_KERNEL) && !defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
 
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
 /**
  * Gets the ring-0 virtual address for the given page.
  *
@@ -4600,8 +4599,7 @@ GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv)
                      idPage, GMM_PAGE_IS_PRIVATE(pPage), pPage->Private.hGVM, pGVM->hSelf));
     return VERR_GMM_NOT_PAGE_OWNER;
 }
-
-#endif
+#endif /* !VBOX_WITH_LINEAR_HOST_PHYS_MEM */
 
 #ifdef VBOX_WITH_PAGE_SHARING
 
