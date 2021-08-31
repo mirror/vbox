@@ -26,13 +26,10 @@
 #include "UIWizardCloneVMEditors.h"
 
 /* Forward declarations: */
-class QGroupBox;
-class QGridLayout;
 class UICloneVMAdditionalOptionsEditor;
 class UICloneVMCloneModeGroupBox;
 class UICloneVMCloneTypeGroupBox;
 class UICloneVMNamePathEditor;
-class UIWizardCloneVM;
 
 /* Expert page of the Clone Virtual Machine wizard: */
 class UIWizardCloneVMPageExpert : public UINativeWizardPage
@@ -66,7 +63,6 @@ private:
     bool isComplete() const;
     bool validatePage();
 
-    QGridLayout *m_pMainLayout;
     UICloneVMNamePathEditor *m_pNamePathGroupBox;
     UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;
     UICloneVMCloneModeGroupBox *m_pCloneModeGroupBox;

@@ -24,12 +24,8 @@
 /* GUI includes: */
 #include "UINativeWizardPage.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-
 /* Forward declarations: */
 class QIRichTextLabel;
-class UIWizardCloneVD;
 class CMediumFormat;
 class UIDiskVariantGroupBox;
 
@@ -40,7 +36,7 @@ class UIWizardCloneVDPageVariant : public UINativeWizardPage
 public:
 
     /** Constructs basic page. */
-    UIWizardCloneVDPageVariant(KDeviceType enmDeviceType);
+    UIWizardCloneVDPageVariant();
 
 private slots:
 
@@ -67,7 +63,6 @@ private:
     QIRichTextLabel *m_pFixedLabel;
     /** Holds the 'Split to 2GB files' description label instance. */
     QIRichTextLabel *m_pSplitLabel;
-
     UIDiskVariantGroupBox *m_pVariantGroupBox;
 };
 

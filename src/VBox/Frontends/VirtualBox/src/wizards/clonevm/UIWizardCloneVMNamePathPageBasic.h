@@ -32,13 +32,10 @@
 class UICloneVMAdditionalOptionsEditor;
 class UICloneVMNamePathEditor;
 class QIRichTextLabel;
-class UIWizardCloneVM;
 
 namespace UIWizardCloneVMNamePathPage
 {
     QString composeCloneFilePath(const QString &strCloneName, const QString &strGroup, const QString &strFolderPath);
-
-
 }
 
 class UIWizardCloneVMNamePathPageBasic : public UINativeWizardPage
@@ -66,7 +63,6 @@ private:
     bool isComplete() const;
 
     QIRichTextLabel *m_pMainLabel;
-
     UICloneVMNamePathEditor *m_pNamePathEditor;
     UICloneVMAdditionalOptionsEditor *m_pAdditionalOptionsEditor;
     QString      m_strOriginalName;

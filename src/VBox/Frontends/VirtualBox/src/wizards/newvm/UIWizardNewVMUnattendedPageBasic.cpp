@@ -171,11 +171,6 @@ bool UIWizardNewVMUnattendedPageBasic::isComplete() const
     return true;
 }
 
-void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
-{
-    UINativeWizardPage::showEvent(pEvent);
-}
-
 void UIWizardNewVMUnattendedPageBasic::sltInstallGACheckBoxToggle(bool fEnabled)
 {
     wizardWindow<UIWizardNewVM>()->setInstallGuestAdditions(fEnabled);

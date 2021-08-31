@@ -41,7 +41,6 @@ class QIRichTextLabel;
 class QIToolButton;
 class UIMediaComboBox;
 class UIMediumSizeEditor;
-class UIWizardNewVM;
 
 enum SelectedDiskSource
 {

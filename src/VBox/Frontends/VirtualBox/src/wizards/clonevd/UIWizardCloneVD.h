@@ -40,29 +40,32 @@ public:
     UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtualDisk);
 
     /** Returns source virtual-disk. */
-    const CMedium &sourceVirtualDisk() const { return m_comSourceVirtualDisk; }
-
-    /** Returns the source virtual-disk device type. */
-    KDeviceType deviceType() const;
+    const CMedium &sourceVirtualDisk() const;
 
     /** Makes a copy of source virtual-disk. */
     bool copyVirtualDisk();
 
-    const CMediumFormat &mediumFormat() const;
-    void setMediumFormat(const CMediumFormat &comMediumFormat);
+    /** @name Parameter setter/getters
+      * @{ */
+        /** Returns the source virtual-disk device type. */
+        KDeviceType deviceType() const;
 
-    qulonglong mediumVariant() const;
-    void setMediumVariant(qulonglong uMediumVariant);
+        const CMediumFormat &mediumFormat() const;
+        void setMediumFormat(const CMediumFormat &comMediumFormat);
 
-    qulonglong mediumSize() const;
-    void setMediumSize(qulonglong uMediumSize);
+        qulonglong mediumVariant() const;
+        void setMediumVariant(qulonglong uMediumVariant);
 
-    const QString &mediumPath() const;
-    void setMediumPath(const QString &strPath);
+        qulonglong mediumSize() const;
+        void setMediumSize(qulonglong uMediumSize);
 
-    qulonglong sourceDiskLogicalSize() const;
-    QString sourceDiskFilePath() const;
-    QString sourceDiskName() const;
+        const QString &mediumPath() const;
+        void setMediumPath(const QString &strPath);
+
+        qulonglong sourceDiskLogicalSize() const;
+        QString sourceDiskFilePath() const;
+        QString sourceDiskName() const;
+   /** @} */
 
 protected:
 

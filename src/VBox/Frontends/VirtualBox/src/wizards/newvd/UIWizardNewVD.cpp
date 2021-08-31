@@ -25,7 +25,6 @@
 #include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVDPageExpert.h"
 
-
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
                              const QString &strDefaultName,
                              const QString &strDefaultPath,
@@ -99,7 +98,7 @@ void UIWizardNewVD::populatePages()
             addPage(new UIWizardNewVDPageSizeLocation(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;
         }
-       case WizardMode_Expert:
+        case WizardMode_Expert:
         {
             addPage(new UIWizardNewVDPageExpert(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
             break;

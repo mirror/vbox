@@ -44,6 +44,11 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtu
 #endif /* VBOX_WS_MAC */
 }
 
+const CMedium &UIWizardCloneVD::sourceVirtualDisk() const
+{
+    return m_comSourceVirtualDisk;
+}
+
 KDeviceType UIWizardCloneVD::deviceType() const
 {
     return m_enmDeviceType;
@@ -103,7 +108,7 @@ void UIWizardCloneVD::populatePages()
 
             {
             addPage(new UIWizardCloneVDPageFormat(m_enmDeviceType));
-            m_iMediumVariantPageIndex = addPage(new UIWizardCloneVDPageVariant(m_enmDeviceType));
+            m_iMediumVariantPageIndex = addPage(new UIWizardCloneVDPageVariant);
             addPage(new UIWizardCloneVDPagePathSize(sourceDiskLogicalSize()));
             break;
         }

@@ -31,7 +31,6 @@
 class UIDiskFormatsGroupBox;
 class UIDiskVariantGroupBox;
 class UIMediumSizeAndPathGroupBox;
-class UIWizardCloneVD;
 
 /** Expert page of the Clone Virtual Disk Image wizard: */
 class UIWizardCloneVDPageExpert : public UINativeWizardPage

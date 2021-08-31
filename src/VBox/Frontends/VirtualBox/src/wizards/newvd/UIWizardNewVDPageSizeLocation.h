@@ -25,9 +25,7 @@
 #include "UINativeWizardPage.h"
 
 /* Forward declarations: */
-class CMediumFormat;
 class UIMediumSizeAndPathGroupBox;
-class UIWizardNewVD;
 
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageSizeLocation : public UINativeWizardPage
 {
@@ -36,9 +34,6 @@ class SHARED_LIBRARY_STUFF UIWizardNewVDPageSizeLocation : public UINativeWizard
 public:
 
     UIWizardNewVDPageSizeLocation(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
-
-protected:
-
 
 private slots:
 

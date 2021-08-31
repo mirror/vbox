@@ -32,9 +32,7 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
 class UIMediumSizeAndPathGroupBox;
-class UIWizardCloneVD;
 
 /** 4th page of the Clone Virtual Disk Image wizard (basic extension): */
 class UIWizardCloneVDPagePathSize : public UINativeWizardPage

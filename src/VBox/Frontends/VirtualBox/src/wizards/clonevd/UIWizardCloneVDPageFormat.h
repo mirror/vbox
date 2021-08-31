@@ -33,8 +33,6 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class UIDiskFormatsGroupBox;
-class UIWizardCloneVD;
-
 
 /** 2nd page of the Clone Virtual Disk Image wizard (basic extension): */
 class UIWizardCloneVDPageFormat : public UINativeWizardPage

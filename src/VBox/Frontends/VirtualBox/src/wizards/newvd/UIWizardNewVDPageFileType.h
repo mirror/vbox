@@ -27,11 +27,6 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class UIDiskFormatsGroupBox;
-class UIWizardNewVD;
-
-namespace UIWizardNewVDFileType
-{
-}
 
 /* 1st page of the New Virtual Hard Drive wizard (basic extension): */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageFileType : public UINativeWizardPage

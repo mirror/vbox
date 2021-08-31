@@ -27,7 +27,7 @@
 /* COM includes: */
 #include "CMediumFormat.h"
 
-UIWizardCloneVDPageVariant::UIWizardCloneVDPageVariant(KDeviceType /*enmDeviceType*/)
+UIWizardCloneVDPageVariant::UIWizardCloneVDPageVariant()
     : m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
@@ -65,7 +65,6 @@ void UIWizardCloneVDPageVariant::prepare()
                 this, &UIWizardCloneVDPageVariant::sltMediumVariantChanged);
 
     }
-
     retranslateUi();
 }
 

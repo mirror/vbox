@@ -26,7 +26,6 @@
 #include "UIWizardCloneVMEditors.h"
 
 /* COM includes: */
-#include "COMEnums.h"
 #include "CMachine.h"
 #include "CSnapshot.h"
 

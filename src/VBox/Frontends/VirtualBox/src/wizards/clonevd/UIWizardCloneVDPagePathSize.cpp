@@ -34,7 +34,6 @@ UIWizardCloneVDPagePathSize::UIWizardCloneVDPagePathSize(qulonglong uSourceDiskL
 void UIWizardCloneVDPagePathSize::prepare(qulonglong uSourceDiskLogicaSize)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-
     m_pMediumSizePathGroupBox = new UIMediumSizeAndPathGroupBox(false /* expert mode */, 0 /* parent */, uSourceDiskLogicaSize);
     if (m_pMediumSizePathGroupBox)
     {
@@ -46,7 +45,6 @@ void UIWizardCloneVDPagePathSize::prepare(qulonglong uSourceDiskLogicaSize)
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
                 this, &UIWizardCloneVDPagePathSize::sltMediumSizeChanged);
     }
-
     pMainLayout->addStretch();
     retranslateUi();
 }

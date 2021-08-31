@@ -246,7 +246,6 @@ void UIWizardNewVMPageExpert::createConnections()
                 this, &UIWizardNewVMPageExpert::sltGAISOPathChanged);
         connect(m_pGAInstallationISOContainer, &UIGAInstallationGroupBox::toggled,
                 this, &UIWizardNewVMPageExpert::sltInstallGACheckBoxToggle);
-
     }
 
     if (m_pUserNamePasswordGroupBox)
@@ -293,7 +292,6 @@ void UIWizardNewVMPageExpert::createConnections()
     if (m_pDiskSelector)
         connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
                 this, &UIWizardNewVMPageExpert::sltMediaComboBoxIndexChanged);
-
 
     connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
             this, &UIWizardNewVMPageExpert::sltMediumFormatChanged);
@@ -400,7 +398,6 @@ void UIWizardNewVMPageExpert::initializePage()
     setSkipCheckBoxEnable();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateDiskWidgetsAfterMediumFormatChange();
-    // setSkipCheckBoxEnable();
     retranslateUi();
 }
 
@@ -582,8 +579,6 @@ bool UIWizardNewVMPageExpert::isComplete() const
             fIsComplete = false;
         }
     }
-
-
     return fIsComplete;
 }
 
@@ -841,7 +836,7 @@ void UIWizardNewVMPageExpert::updateDiskWidgetsAfterMediumFormatChange()
     m_pSizeAndLocationGroup->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
     pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumPath());
-pWizard->setMediumVariant(m_pDiskVariantGroupBox->mediumVariant());
+    pWizard->setMediumVariant(m_pDiskVariantGroupBox->mediumVariant());
 }
 
 void UIWizardNewVMPageExpert::setEnableNewDiskWidgets(bool fEnable)

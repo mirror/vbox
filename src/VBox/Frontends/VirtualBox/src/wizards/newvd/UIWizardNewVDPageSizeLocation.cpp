@@ -20,7 +20,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIFileDialog.h"
 #include "UIWizardNewVDPageSizeLocation.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"

@@ -18,33 +18,16 @@
 /* Qt includes: */
 #include <QDir>
 #include <QGridLayout>
-#include <QVBoxLayout>
-#include <QRegExpValidator>
-#include <QGroupBox>
-#include <QRadioButton>
-#include <QCheckBox>
-#include <QButtonGroup>
-#include <QLineEdit>
-#include <QSlider>
-#include <QLabel>
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
-#include "UIConverter.h"
 #include "UIWizardNewVDPageExpert.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
 #include "UIMessageCenter.h"
-#include "UIIconPool.h"
-#include "QIRichTextLabel.h"
-#include "QIToolButton.h"
-#include "QILineEdit.h"
-#include "UIMediumSizeEditor.h"
-#include "UIWizardNewVDPageSizeLocation.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
-
 
 UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
     : UINativeWizardPage()
@@ -224,15 +207,6 @@ void UIWizardNewVDPageExpert::updateDiskWidgetsAfterMediumFormatChange()
     const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
 
-    /* Block signals of the updated widgets to avoid calling corresponding slots since they add the parameters to m_userModifiedParameters: */
-    m_pVariantGroup->blockSignals(true);
     m_pVariantGroup->updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
-    m_pVariantGroup->blockSignals(false);
-
-    m_pSizeAndPathGroup->blockSignals(true);
     m_pSizeAndPathGroup->updateMediumPath(comMediumFormat, m_pFormatGroup->formatExtensions(), KDeviceType_HardDisk);
-    m_pSizeAndPathGroup->blockSignals(false);
-    /* Update the wizard parameters explicitly since we blocked th signals: */
-    pWizard->setMediumPath(m_pSizeAndPathGroup->mediumPath());
-    pWizard->setMediumVariant(m_pVariantGroup->mediumVariant());
 }

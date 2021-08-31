@@ -51,7 +51,6 @@ namespace UIWizardNewVMNameOSTypePage
 /** 1st page of the New Virtual Machine wizard (basic extension). */
 class UIWizardNewVMNameOSTypePageBasic : public UINativeWizardPage
 {
-
     Q_OBJECT;
 
 public:
@@ -84,7 +83,6 @@ private:
     void prepare();
     void createConnections();
     void initializePage();
-    //void cleanupPage();
     QWidget *createNameOSTypeWidgets();
     void markWidgets() const;
     void setSkipCheckBoxEnable();

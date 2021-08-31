@@ -24,10 +24,6 @@
 #include "QIRichTextLabel.h"
 #include "UIWizardCloneVMEditors.h"
 
-/* COM includes: */
-#include "CSystemProperties.h"
-
-
 UIWizardCloneVMTypePageBasic::UIWizardCloneVMTypePageBasic(bool fAdditionalInfo)
     : m_pLabel(0)
     , m_fAdditionalInfo(fAdditionalInfo)

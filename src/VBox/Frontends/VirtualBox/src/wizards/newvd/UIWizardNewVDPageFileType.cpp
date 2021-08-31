@@ -17,10 +17,8 @@
 
 /* Qt includes: */
 #include <QVBoxLayout>
-#include <QRadioButton>
 
 /* GUI includes: */
-#include "UIConverter.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVDPageFileType.h"
 #include "UIWizardNewVD.h"
@@ -57,7 +55,6 @@ void UIWizardNewVDPageFileType::sltMediumFormatChanged()
 void UIWizardNewVDPageFileType::retranslateUi()
 {
     setTitle(UIWizardNewVD::tr("Virtual Hard disk file type"));
-
     m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "
                                         "for the new virtual hard disk. If you do not need to use it "
                                         "with other virtualization software you can leave this setting unchanged."));

@@ -27,7 +27,6 @@
 #include "UIWizardCloneVMPageExpert.h"
 
 /* COM includes: */
-#include "CConsole.h"
 #include "CSystemProperties.h"
 
 

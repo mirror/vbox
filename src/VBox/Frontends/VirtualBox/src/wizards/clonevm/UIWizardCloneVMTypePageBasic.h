@@ -30,7 +30,6 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class UICloneVMCloneTypeGroupBox;
-class UIWizardCloneVM;
 
 class UIWizardCloneVMTypePageBasic : public UINativeWizardPage
 {

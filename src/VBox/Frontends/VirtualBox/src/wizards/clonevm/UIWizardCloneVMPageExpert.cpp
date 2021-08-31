@@ -37,8 +37,7 @@
 
 UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalName, const QString &strDefaultPath,
                                                      bool /*fAdditionalInfo*/, bool fShowChildsOption, const QString &strGroup)
-    : m_pMainLayout(0)
-    , m_pNamePathGroupBox(0)
+    : m_pNamePathGroupBox(0)
     , m_pCloneTypeGroupBox(0)
     , m_pCloneModeGroupBox(0)
     , m_pAdditionalOptionsGroupBox(0)
@@ -49,12 +48,12 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
 
 void UIWizardCloneVMPageExpert::prepare(const QString &strOriginalName, const QString &strDefaultPath, bool fShowChildsOption)
 {
-    m_pMainLayout = new QGridLayout(this);
-    AssertReturnVoid(m_pMainLayout);
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    AssertReturnVoid(pMainLayout);
     m_pNamePathGroupBox = new UICloneVMNamePathEditor(strOriginalName, strDefaultPath);
     if (m_pNamePathGroupBox)
     {
-        m_pMainLayout->addWidget(m_pNamePathGroupBox, 0, 0, 3, 2);
+        pMainLayout->addWidget(m_pNamePathGroupBox, 0, 0, 3, 2);
         connect(m_pNamePathGroupBox, &UICloneVMNamePathEditor::sigCloneNameChanged,
                 this, &UIWizardCloneVMPageExpert::sltCloneNameChanged);
         connect(m_pNamePathGroupBox, &UICloneVMNamePathEditor::sigClonePathChanged,
@@ -63,16 +62,16 @@ void UIWizardCloneVMPageExpert::prepare(const QString &strOriginalName, const QS
 
     m_pCloneTypeGroupBox = new UICloneVMCloneTypeGroupBox;
     if (m_pCloneTypeGroupBox)
-        m_pMainLayout->addWidget(m_pCloneTypeGroupBox, 3, 0, 2, 1);
+        pMainLayout->addWidget(m_pCloneTypeGroupBox, 3, 0, 2, 1);
 
     m_pCloneModeGroupBox = new UICloneVMCloneModeGroupBox(fShowChildsOption);
     if (m_pCloneModeGroupBox)
-        m_pMainLayout->addWidget(m_pCloneModeGroupBox, 3, 1, 2, 1);
+        pMainLayout->addWidget(m_pCloneModeGroupBox, 3, 1, 2, 1);
 
     m_pAdditionalOptionsGroupBox = new UICloneVMAdditionalOptionsEditor;
     if (m_pAdditionalOptionsGroupBox)
     {
-        m_pMainLayout->addWidget(m_pAdditionalOptionsGroupBox, 5, 0, 2, 2);
+        pMainLayout->addWidget(m_pAdditionalOptionsGroupBox, 5, 0, 2, 2);
         connect(m_pAdditionalOptionsGroupBox, &UICloneVMAdditionalOptionsEditor::sigMACAddressClonePolicyChanged,
                 this, &UIWizardCloneVMPageExpert::sltMACAddressClonePolicyChanged);
         connect(m_pAdditionalOptionsGroupBox, &UICloneVMAdditionalOptionsEditor::sigKeepDiskNamesToggled,

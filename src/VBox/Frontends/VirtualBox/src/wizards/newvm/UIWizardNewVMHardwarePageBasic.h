@@ -30,11 +30,6 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class UINewVMHardwareContainer;
-class UIWizardNewVM;
-
-namespace UIWizardNewVMHardwarePage
-{
-}
 
 class UIWizardNewVMHardwarePageBasic : public UINativeWizardPage
 {
@@ -43,9 +38,6 @@ class UIWizardNewVMHardwarePageBasic : public UINativeWizardPage
 public:
 
     UIWizardNewVMHardwarePageBasic();
-
-protected:
-
 
 private slots:
 
@@ -63,9 +55,9 @@ private:
     bool isComplete() const;
 
     /** @name Widgets
-     * @{ */
-       QIRichTextLabel    *m_pLabel;
-       UINewVMHardwareContainer *m_pHardwareWidgetContainer;
+      * @{ */
+        QIRichTextLabel    *m_pLabel;
+        UINewVMHardwareContainer *m_pHardwareWidgetContainer;
     /** @} */
     /** This set is used to decide if we have to set wizard's parameters
       * some default values or not. When user modifies a value through a widget we

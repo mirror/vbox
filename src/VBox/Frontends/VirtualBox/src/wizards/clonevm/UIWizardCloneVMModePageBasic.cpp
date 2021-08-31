@@ -18,13 +18,11 @@
 /* Global includes: */
 #include <QVBoxLayout>
 
-
 /* Local includes: */
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMEditors.h"
 #include "UIWizardCloneVMModePageBasic.h"
 #include "QIRichTextLabel.h"
-
 
 UIWizardCloneVMModePageBasic::UIWizardCloneVMModePageBasic(bool fShowChildsOption)
     : m_pLabel(0)

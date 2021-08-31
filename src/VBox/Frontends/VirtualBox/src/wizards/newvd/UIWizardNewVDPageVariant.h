@@ -28,7 +28,6 @@
 class CMediumFormat;
 class QIRichTextLabel;
 class UIDiskVariantGroupBox;
-class UIWizardNewVD;
 
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageVariant : public UINativeWizardPage
 {
