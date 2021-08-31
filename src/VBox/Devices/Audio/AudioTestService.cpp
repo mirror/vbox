@@ -795,6 +795,8 @@ static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR pP
  */
 static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pInst, bool *pfDisconnect)
 {
+    LogRelFlowFuncEnter();
+
     /*
      * Read client command packet and process it.
      */
@@ -833,6 +835,7 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pInst, bool *pfD
 
     RTMemFree(pPktHdr);
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -882,6 +885,7 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
             uint32_t fEvts;
             uint32_t uId;
             rc = RTPoll(pThis->hPollSet, RT_INDEFINITE_WAIT, &fEvts, &uId);
+            LogRelFlowFunc(("RTPoll(...) returned fEvts=#%x, uId=%RU32 -> %Rrc\n", fEvts, uId, rc));
             if (RT_SUCCESS(rc))
             {
                 if (uId == 0)

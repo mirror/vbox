@@ -28,6 +28,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_AUDIO_TEST
+
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
@@ -1361,7 +1363,7 @@ int main(int argc, char **argv)
 #endif
     static const char * const g_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
     rc = RTLogCreate(&g_pRelLogger, fFlags, "all.e.l", "VKAT_RELEASE_LOG",
-                     RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDERR, NULL /*"vkat-release.log"*/);
+                     RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDOUT, NULL /*"vkat-release.log"*/);
     if (RT_SUCCESS(rc))
     {
         RTLogRelSetDefaultInstance(g_pRelLogger);

@@ -515,7 +515,7 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
 
     Log3Func(("%RU32 -> %zu\n", pPktHdr->cb, cbToSend));
 
-    LogRelFlowFunc(("%RTsock\n", pClient->hTcpClient));
+    LogRelFlowFunc(("pClient=%RTsock\n", pClient->hTcpClient));
     LogRelFlowFunc(("Header:\n"
                     "%.*Rhxd\n", RT_MIN(sizeof(ATSPKTHDR), cbToSend), pPktHdr));
 
@@ -533,6 +533,9 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
         atsTcpDisconnectClient(pThis, pClient);
     }
 
+    LogRelFlowFunc(("pClient=%RTsock, cbSent=%zu -> %Rrc\n",
+                    pClient->hTcpClient, cbToSend, rc));
+
     return rc;
 }
 
@@ -544,7 +547,8 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
     int rc = VINF_SUCCESS;
     *ppPktHdr = NULL;
 
-    LogRelFlowFunc(("%RTsock\n", pClient->hTcpClient));
+    LogRelFlowFunc(("pClient=%RTsock (cbTcpStashed=%zu, cbTcpStashedAlloced=%zu)\n",
+                    pClient->hTcpClient, pClient->cbTcpStashed, pClient->cbTcpStashedAlloced));
 
     /*
      * Read state.
@@ -571,8 +575,7 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
     {
         cbDataAlloced = RT_ALIGN_Z(64,  ATSPKT_ALIGNMENT);
         pbData = (uint8_t *)RTMemAlloc(cbDataAlloced);
-        if (!pbData)
-            return VERR_NO_MEMORY;
+        AssertPtrReturn(pbData, VERR_NO_MEMORY);
     }
 
     /*
@@ -673,6 +676,8 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
         }
     }
 
+    LogRelFlowFunc(("pClient=%RTsock, cbData=%zu -> %Rrc\n",
+                    pClient->hTcpClient, cbData, rc));
     return rc;
 }
 
