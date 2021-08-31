@@ -85,9 +85,8 @@ typedef struct PDMITPMCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   cbCmdResp           Size of the command/response buffer.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartup, (PPDMITPMCONNECTOR pInterface, size_t cbCmdResp));
+    DECLR3CALLBACKMEMBER(int, pfnStartup, (PPDMITPMCONNECTOR pInterface));
 
     /**
      * Shuts down the TPM.
@@ -120,6 +119,14 @@ typedef struct PDMITPMCONNECTOR
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnGetLocalityMax, (PPDMITPMCONNECTOR pInterface));
+
+    /**
+     * Returns the command/response buffer size of the driver below.
+     *
+     * @returns Buffer size in bytes.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetBufferSize, (PPDMITPMCONNECTOR pInterface));
 
     /**
      * Returns the status of the established flag.
