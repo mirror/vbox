@@ -3280,6 +3280,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                         "drv_host_audio.e.l.l2.l3.f"
                                         " drv_audio.e.l.l2.l3.f"
                                         " audio_mixer.e.l.l2.l3.f"
+                                        " audio_test.e.l.l2.l3.f"
                                         " dev_hda_codec.e.l.l2.l3.f"
                                         " dev_hda.e.l.l2.l3.f"
                                         " dev_ac97.e.l.l2.l3.f"
