@@ -223,6 +223,10 @@ void UINativeWizard::retranslateUi()
     pButtonCancel->setToolTip(tr("Cancel wizard execution."));
 }
 
+void UINativeWizard::wizardClean()
+{
+}
+
 void UINativeWizard::sltHandleProgressStarted()
 {
     m_pProgressStack->setCurrentIndex(1);
@@ -558,6 +562,7 @@ void UINativeWizard::cleanup()
     m_iLastIndex = -1;
     /* Update invisible pages: */
     m_invisiblePages.clear();
+    wizardClean();
 }
 
 void UINativeWizard::init()
