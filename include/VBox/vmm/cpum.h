@@ -1250,6 +1250,8 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxCr3LoadExit : 1;
     /** VMX: Supports CR3-store exiting. */
     uint32_t        fVmxCr3StoreExit : 1;
+    /** VMX: Supports tertiary processor-based VM-execution controls. */
+    uint32_t        fVmxTertiaryExecCtls : 1;
     /** VMX: Supports CR8-load exiting. */
     uint32_t        fVmxCr8LoadExit : 1;
     /** VMX: Supports CR8-store exiting. */
@@ -1320,6 +1322,12 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxUseTscScaling : 1;
     /** @} */
 
+    /** @name VMX Tertiary processor-based controls.
+     * @{ */
+    /** VMX: Supports LOADIWKEY exiting. */
+    uint32_t        fVmxLoadIwKeyExit : 1;
+    /** @} */
+
     /** @name VMX VM-entry controls.
      * @{ */
     /** VMX: Supports load-debug controls on VM-entry. */
@@ -1367,8 +1375,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding1 : 1;
-    uint32_t        fVmxPadding2;
+    uint32_t        fVmxPadding1 : 31;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMFEATURES, 48);
@@ -2144,6 +2151,26 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCCPUMCTX pCtx, uint32_t uProcCtls2)
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
     return RT_BOOL(pVmcs->u32ProcCtls2 & uProcCtls2);
+}
+
+/**
+ * Checks whether one of the given Tertiary Processor-based VM-execution controls
+ * are set when executing a nested-guest.
+ *
+ * @returns @c true if set, @c false otherwise.
+ * @param   pCtx        Pointer to the context.
+ * @param   uProcCtls3  The Tertiary Processor-based VM-execution controls to
+ *                      check.
+ *
+ * @remarks This does not check if all given controls are set if more than one
+ *          control is passed in @a uProcCtls3.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxProcCtls3Set(PCCPUMCTX pCtx, uint64_t uProcCtls3)
+{
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    return RT_BOOL(pVmcs->u64ProcCtls3.u & uProcCtls3);
 }
 
 /**

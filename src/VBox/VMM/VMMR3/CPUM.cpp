@@ -409,6 +409,8 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64EnclsBitmap),
     SSMFIELD_ENTRY(       VMXVVMCS, u64SpptPtr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64TscMultiplier),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64ProcCtls3,               CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64EnclvExitBitmap,         CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved0),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64Cr0Mask),
@@ -436,6 +438,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostPatMsr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostEferMsr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostPerfGlobalCtlMsr),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostPkrsMsr,             CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved3),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostCr0),
@@ -450,6 +453,9 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostSysenterEip),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostRsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostRip),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostSCetMsr,             CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostSsp,                 CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostIntrSspTblAddrMsr,   CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved7),
 
     SSMFIELD_ENTRY(       VMXVVMCS, GuestEs),
@@ -500,6 +506,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPdpte3),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestBndcfgsMsr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestRtitCtlMsr),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestPkrsMsr,            CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved2),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestCr0),
@@ -522,6 +529,9 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPendingDbgXcpts),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEip),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestSCetMsr,            CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestSsp,                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestIntrSspTblAddrMsr,  CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved6),
 
     SSMFIELD_ENTRY_TERM()
@@ -1611,6 +1621,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
                                  | (pGuestFeatures->fVmxRdtscExit         << VMX_BF_PROC_CTLS_RDTSC_EXIT_SHIFT        )
                                  | (pGuestFeatures->fVmxCr3LoadExit       << VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_SHIFT     )
                                  | (pGuestFeatures->fVmxCr3StoreExit      << VMX_BF_PROC_CTLS_CR3_STORE_EXIT_SHIFT    )
+                                 | (pGuestFeatures->fVmxTertiaryExecCtls  << VMX_BF_PROC_CTLS_USE_TERTIARY_CTLS_SHIFT )
                                  | (pGuestFeatures->fVmxCr8LoadExit       << VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_SHIFT     )
                                  | (pGuestFeatures->fVmxCr8StoreExit      << VMX_BF_PROC_CTLS_CR8_STORE_EXIT_SHIFT    )
                                  | (pGuestFeatures->fVmxUseTprShadow      << VMX_BF_PROC_CTLS_USE_TPR_SHADOW_SHIFT    )
@@ -1656,6 +1667,12 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         uint32_t const fAllowed0 = 0;
         uint32_t const fAllowed1 = fFeatures;
         pGuestVmxMsrs->ProcCtls2.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+    }
+
+    /* Tertiary processor-based VM-execution controls. */
+    if (pGuestFeatures->fVmxTertiaryExecCtls)
+    {
+        pGuestVmxMsrs->u64ProcCtls3 = (pGuestFeatures->fVmxLoadIwKeyExit  << VMX_BF_PROC_CTLS3_LOADIWKEY_EXIT_SHIFT);
     }
 
     /* VM-exit controls. */
@@ -1772,7 +1789,10 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
  */
 static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCCPUMFEATURES pGst)
 {
-    if (cpumR3IsHwAssistNstGstExecAllowed(pVM))
+    if (!cpumR3IsHwAssistNstGstExecAllowed(pVM))
+        return false;
+
+    /* Check first set of feature bits. */
     {
         uint64_t const fBase = ((uint64_t)pBase->fVmxInsOutInfo         <<  0) | ((uint64_t)pBase->fVmxExtIntExit         <<  1)
                              | ((uint64_t)pBase->fVmxNmiExit            <<  2) | ((uint64_t)pBase->fVmxVirtNmi            <<  3)
@@ -1843,12 +1863,25 @@ static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCC
         if ((fBase | fGst) != fBase)
         {
             uint64_t const fDiff = fBase ^ fGst;
-            LogRel(("CPUM: VMX features now exposed to the guest are incompatible with those from the saved state. fBase=%#RX64 fGst=%#RX64 fDiff=%#RX64\n",
+            LogRel(("CPUM: VMX features (1) now exposed to the guest are incompatible with those from the saved state. fBase=%#RX64 fGst=%#RX64 fDiff=%#RX64\n",
                     fBase, fGst, fDiff));
             return false;
         }
-        return true;
     }
+
+    /* Check second set of feature bits. */
+    {
+        uint64_t const fBase = ((uint64_t)pBase->fVmxTertiaryExecCtls   <<  0) | ((uint64_t)pBase->fVmxLoadIwKeyExit      <<  1);
+        uint64_t const fGst  = ((uint64_t)pGst->fVmxTertiaryExecCtls    <<  0) | ((uint64_t)pGst->fVmxLoadIwKeyExit       <<  1);
+        if ((fBase | fGst) != fBase)
+        {
+            uint64_t const fDiff = fBase ^ fGst;
+            LogRel(("CPUM: VMX features (2) now exposed to the guest are incompatible with those from the saved state. fBase=%#RX64 fGst=%#RX64 fDiff=%#RX64\n",
+                    fBase, fGst, fDiff));
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -1891,6 +1924,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxRdtscExit             = 1;
     EmuFeat.fVmxCr3LoadExit           = 1;
     EmuFeat.fVmxCr3StoreExit          = 1;
+    EmuFeat.fVmxTertiaryExecCtls      = 0;
     EmuFeat.fVmxCr8LoadExit           = 1;
     EmuFeat.fVmxCr8StoreExit          = 1;
     EmuFeat.fVmxUseTprShadow          = 1;
@@ -1923,6 +1957,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxEptXcptVe             = 0;
     EmuFeat.fVmxXsavesXrstors         = 0;
     EmuFeat.fVmxUseTscScaling         = 0;
+    EmuFeat.fVmxLoadIwKeyExit         = 0;
     EmuFeat.fVmxEntryLoadDebugCtls    = 1;
     EmuFeat.fVmxIa32eModeGuest        = 1;
     EmuFeat.fVmxEntryLoadEferMsr      = 1;
@@ -1964,6 +1999,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxRdtscExit             = (pBaseFeat->fVmxRdtscExit             & EmuFeat.fVmxRdtscExit            );
     pGuestFeat->fVmxCr3LoadExit           = (pBaseFeat->fVmxCr3LoadExit           & EmuFeat.fVmxCr3LoadExit          );
     pGuestFeat->fVmxCr3StoreExit          = (pBaseFeat->fVmxCr3StoreExit          & EmuFeat.fVmxCr3StoreExit         );
+    pGuestFeat->fVmxTertiaryExecCtls      = (pBaseFeat->fVmxTertiaryExecCtls      & EmuFeat.fVmxTertiaryExecCtls     );
     pGuestFeat->fVmxCr8LoadExit           = (pBaseFeat->fVmxCr8LoadExit           & EmuFeat.fVmxCr8LoadExit          );
     pGuestFeat->fVmxCr8StoreExit          = (pBaseFeat->fVmxCr8StoreExit          & EmuFeat.fVmxCr8StoreExit         );
     pGuestFeat->fVmxUseTprShadow          = (pBaseFeat->fVmxUseTprShadow          & EmuFeat.fVmxUseTprShadow         );
@@ -1996,6 +2032,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxEptXcptVe             = (pBaseFeat->fVmxEptXcptVe             & EmuFeat.fVmxEptXcptVe            );
     pGuestFeat->fVmxXsavesXrstors         = (pBaseFeat->fVmxXsavesXrstors         & EmuFeat.fVmxXsavesXrstors        );
     pGuestFeat->fVmxUseTscScaling         = (pBaseFeat->fVmxUseTscScaling         & EmuFeat.fVmxUseTscScaling        );
+    pGuestFeat->fVmxLoadIwKeyExit         = (pBaseFeat->fVmxLoadIwKeyExit         & EmuFeat.fVmxLoadIwKeyExit        );
     pGuestFeat->fVmxEntryLoadDebugCtls    = (pBaseFeat->fVmxEntryLoadDebugCtls    & EmuFeat.fVmxEntryLoadDebugCtls   );
     pGuestFeat->fVmxIa32eModeGuest        = (pBaseFeat->fVmxIa32eModeGuest        & EmuFeat.fVmxIa32eModeGuest       );
     pGuestFeat->fVmxEntryLoadEferMsr      = (pBaseFeat->fVmxEntryLoadEferMsr      & EmuFeat.fVmxEntryLoadEferMsr     );
@@ -2045,6 +2082,8 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
         Assert(!pGuestFeat->fVmxXsavesXrstors);
         Assert(!pGuestFeat->fVmxUseTscScaling);
     }
+    if (!pGuestFeat->fVmxTertiaryExecCtls)
+        Assert(!pGuestFeat->fVmxLoadIwKeyExit);
     if (pGuestFeat->fVmxUnrestrictedGuest)
     {
         /* See footnote in Intel spec. 27.2 "Recording VM-Exit Information And Updating VM-entry Control Fields". */
@@ -2659,6 +2698,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64VmcsEnum);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64VmFunc);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64EptVpidCaps);
+            SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64ProcCtls3);
         }
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
@@ -2692,7 +2732,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     /*
      * Validate version.
      */
-    if (    uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX
+    if (    uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_SVM
         &&  uVersion != CPUM_SAVED_STATE_VERSION_XSAVE
         &&  uVersion != CPUM_SAVED_STATE_VERSION_GOOD_CPUID_COUNT
@@ -2939,6 +2980,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64VmcsEnum);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64VmFunc);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64EptVpidCaps);
+                        if (uVersion >= CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2)
+                            SSMR3GetU64(pSSM,  &pGstCtx->hwvirt.vmx.Msrs.u64ProcCtls3);
                     }
                 }
             }
@@ -3857,6 +3900,8 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sENCLS-exiting bitmap       = %#RX64\n",   pszPrefix, pVmcs->u64EnclsBitmap.u);
         pHlp->pfnPrintf(pHlp, "  %sSPPT ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64SpptPtr.u);
         pHlp->pfnPrintf(pHlp, "  %sTSC multiplier             = %#RX64\n",   pszPrefix, pVmcs->u64TscMultiplier.u);
+        pHlp->pfnPrintf(pHlp, "  %sTertiary processor ctls    = %#RX64\n",   pszPrefix, pVmcs->u64ProcCtls3.u);
+        pHlp->pfnPrintf(pHlp, "  %sENCLV-exiting bitmap       = %#RX64\n",   pszPrefix, pVmcs->u64EnclvExitBitmap.u);
 
         /* Natural width. */
         pHlp->pfnPrintf(pHlp, "  %sCR0 guest/host mask        = %#RX64\n",   pszPrefix, pVmcs->u64Cr0Mask.u);
@@ -3876,16 +3921,16 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "%sGuest state:\n", pszPrefix);
 
         /* 16-bit. */
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Cs,   "cs",   pszPrefix);
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ss,   "ss",   pszPrefix);
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Es,   "es",   pszPrefix);
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ds,   "ds",   pszPrefix);
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Fs,   "fs",   pszPrefix);
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Gs,   "gs",   pszPrefix);
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ldtr, "ldtr", pszPrefix);
-        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Tr,   "tr",   pszPrefix);
-        CPUMVMX_DUMP_GUEST_XDTR(pHlp,   pVmcs, Gdtr, "gdtr", pszPrefix);
-        CPUMVMX_DUMP_GUEST_XDTR(pHlp,   pVmcs, Idtr, "idtr", pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Cs,   "CS",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ss,   "SS",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Es,   "ES",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ds,   "DS",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Fs,   "FS",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Gs,   "GS",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ldtr, "LDTR", pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Tr,   "TR",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_XDTR(pHlp,   pVmcs, Gdtr, "GDTR", pszPrefix);
+        CPUMVMX_DUMP_GUEST_XDTR(pHlp,   pVmcs, Idtr, "IDTR", pszPrefix);
         pHlp->pfnPrintf(pHlp, "  %sInterrupt status           = %#RX16\n",   pszPrefix, pVmcs->u16GuestIntStatus);
         pHlp->pfnPrintf(pHlp, "  %sPML index                  = %#RX16\n",   pszPrefix, pVmcs->u16PmlIndex);
 
@@ -3908,18 +3953,22 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sPDPTE 3                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte3.u);
         pHlp->pfnPrintf(pHlp, "  %sBNDCFGS                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestBndcfgsMsr.u);
         pHlp->pfnPrintf(pHlp, "  %sRTIT_CTL                   = %#RX64\n",   pszPrefix, pVmcs->u64GuestRtitCtlMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPKRS                       = %#RX64\n",   pszPrefix, pVmcs->u64GuestPkrsMsr.u);
 
         /* Natural width. */
-        pHlp->pfnPrintf(pHlp, "  %scr0                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr0.u);
-        pHlp->pfnPrintf(pHlp, "  %scr3                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr3.u);
-        pHlp->pfnPrintf(pHlp, "  %scr4                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr4.u);
-        pHlp->pfnPrintf(pHlp, "  %sdr7                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestDr7.u);
-        pHlp->pfnPrintf(pHlp, "  %srsp                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRsp.u);
-        pHlp->pfnPrintf(pHlp, "  %srip                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRip.u);
-        pHlp->pfnPrintf(pHlp, "  %srflags                     = %#RX64 %31s\n",pszPrefix, pVmcs->u64GuestRFlags.u, szEFlags);
+        pHlp->pfnPrintf(pHlp, "  %sCR0                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr0.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr3.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR4                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr4.u);
+        pHlp->pfnPrintf(pHlp, "  %sDR7                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestDr7.u);
+        pHlp->pfnPrintf(pHlp, "  %sRSP                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sRIP                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRip.u);
+        pHlp->pfnPrintf(pHlp, "  %sRFLAGS                     = %#RX64 %31s\n",pszPrefix, pVmcs->u64GuestRFlags.u, szEFlags);
         pHlp->pfnPrintf(pHlp, "  %sPending debug xcpts        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPendingDbgXcpts.u);
         pHlp->pfnPrintf(pHlp, "  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEsp.u);
         pHlp->pfnPrintf(pHlp, "  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEip.u);
+        pHlp->pfnPrintf(pHlp, "  %sS_CET                      = %#RX64\n",   pszPrefix, pVmcs->u64GuestSCetMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sSSP                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestSsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sINTERRUPT_SSP_TABLE_ADDR   = %#RX64\n",   pszPrefix, pVmcs->u64GuestIntrSspTblAddrMsr.u);
     }
 
     /* Host state. */
@@ -3927,15 +3976,15 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "%sHost state:\n", pszPrefix);
 
         /* 16-bit. */
-        pHlp->pfnPrintf(pHlp, "  %scs                         = %#RX16\n",   pszPrefix, pVmcs->HostCs);
-        pHlp->pfnPrintf(pHlp, "  %sss                         = %#RX16\n",   pszPrefix, pVmcs->HostSs);
-        pHlp->pfnPrintf(pHlp, "  %sds                         = %#RX16\n",   pszPrefix, pVmcs->HostDs);
-        pHlp->pfnPrintf(pHlp, "  %ses                         = %#RX16\n",   pszPrefix, pVmcs->HostEs);
-        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Fs, "fs", pszPrefix);
-        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Gs, "gs", pszPrefix);
-        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Tr, "tr", pszPrefix);
-        CPUMVMX_DUMP_HOST_XDTR(pHlp, pVmcs, Gdtr, "gdtr", pszPrefix);
-        CPUMVMX_DUMP_HOST_XDTR(pHlp, pVmcs, Idtr, "idtr", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "  %sCS                         = %#RX16\n",   pszPrefix, pVmcs->HostCs);
+        pHlp->pfnPrintf(pHlp, "  %sSS                         = %#RX16\n",   pszPrefix, pVmcs->HostSs);
+        pHlp->pfnPrintf(pHlp, "  %sDS                         = %#RX16\n",   pszPrefix, pVmcs->HostDs);
+        pHlp->pfnPrintf(pHlp, "  %sES                         = %#RX16\n",   pszPrefix, pVmcs->HostEs);
+        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Fs, "FS", pszPrefix);
+        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Gs, "GS", pszPrefix);
+        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Tr, "TR", pszPrefix);
+        CPUMVMX_DUMP_HOST_XDTR(pHlp, pVmcs, Gdtr, "GDTR", pszPrefix);
+        CPUMVMX_DUMP_HOST_XDTR(pHlp, pVmcs, Idtr, "IDTR", pszPrefix);
 
         /* 32-bit. */
         pHlp->pfnPrintf(pHlp, "  %sSysEnter CS                = %#RX32\n",   pszPrefix, pVmcs->u32HostSysenterCs);
@@ -3944,15 +3993,20 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64HostEferMsr.u);
         pHlp->pfnPrintf(pHlp, "  %sPAT                        = %#RX64\n",   pszPrefix, pVmcs->u64HostPatMsr.u);
         pHlp->pfnPrintf(pHlp, "  %sPERFGLOBALCTRL             = %#RX64\n",   pszPrefix, pVmcs->u64HostPerfGlobalCtlMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPKRS                       = %#RX64\n",   pszPrefix, pVmcs->u64HostPkrsMsr.u);
 
         /* Natural width. */
-        pHlp->pfnPrintf(pHlp, "  %scr0                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr0.u);
-        pHlp->pfnPrintf(pHlp, "  %scr3                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr3.u);
-        pHlp->pfnPrintf(pHlp, "  %scr4                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr4.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR0                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr0.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr3.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR4                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr4.u);
         pHlp->pfnPrintf(pHlp, "  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64HostSysenterEsp.u);
         pHlp->pfnPrintf(pHlp, "  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64HostSysenterEip.u);
-        pHlp->pfnPrintf(pHlp, "  %srsp                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRsp.u);
-        pHlp->pfnPrintf(pHlp, "  %srip                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRip.u);
+        pHlp->pfnPrintf(pHlp, "  %sRSP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sRIP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRip.u);
+        pHlp->pfnPrintf(pHlp, "  %sS_CET                      = %#RX64\n",   pszPrefix, pVmcs->u64HostSCetMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sSSP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostSsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sINTERRUPT_SSP_TBL_ADDR     = %#RX64\n",   pszPrefix, pVmcs->u64HostIntrSspTblAddrMsr.u);
+
     }
 
     /* Read-only fields. */

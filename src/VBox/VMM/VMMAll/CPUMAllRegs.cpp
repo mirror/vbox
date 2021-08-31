@@ -2625,10 +2625,10 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64VmcsField
         case VMX_VMCS64_CTRL_VE_XCPT_INFO_ADDR_HIGH:      return pFeat->fVmxEptXcptVe;
         case VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL:
         case VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH:     return pFeat->fVmxXsavesXrstors;
-        case VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_FULL:
-        case VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_HIGH:   return false;
         case VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL:
         case VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH:         return pFeat->fVmxUseTscScaling;
+        case VMX_VMCS64_CTRL_PROC_EXEC3_FULL:
+        case VMX_VMCS64_CTRL_PROC_EXEC3_HIGH:             return pFeat->fVmxTertiaryExecCtls;
 
         /* Read-only data fields. */
         case VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL:
@@ -2643,8 +2643,6 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64VmcsField
         case VMX_VMCS64_GUEST_PAT_HIGH:                   return pFeat->fVmxEntryLoadPatMsr || pFeat->fVmxExitSavePatMsr;
         case VMX_VMCS64_GUEST_EFER_FULL:
         case VMX_VMCS64_GUEST_EFER_HIGH:                  return pFeat->fVmxEntryLoadEferMsr || pFeat->fVmxExitSaveEferMsr;
-        case VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL:
-        case VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_HIGH:      return false;
         case VMX_VMCS64_GUEST_PDPTE0_FULL:
         case VMX_VMCS64_GUEST_PDPTE0_HIGH:
         case VMX_VMCS64_GUEST_PDPTE1_FULL:
@@ -2653,16 +2651,12 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64VmcsField
         case VMX_VMCS64_GUEST_PDPTE2_HIGH:
         case VMX_VMCS64_GUEST_PDPTE3_FULL:
         case VMX_VMCS64_GUEST_PDPTE3_HIGH:                return pFeat->fVmxEpt;
-        case VMX_VMCS64_GUEST_BNDCFGS_FULL:
-        case VMX_VMCS64_GUEST_BNDCFGS_HIGH:               return false;
 
         /* Host-state fields. */
         case VMX_VMCS64_HOST_PAT_FULL:
         case VMX_VMCS64_HOST_PAT_HIGH:                    return pFeat->fVmxExitLoadPatMsr;
         case VMX_VMCS64_HOST_EFER_FULL:
         case VMX_VMCS64_HOST_EFER_HIGH:                   return pFeat->fVmxExitLoadEferMsr;
-        case VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL:
-        case VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH:       return false;
 
         /*
          * 32-bit fields.

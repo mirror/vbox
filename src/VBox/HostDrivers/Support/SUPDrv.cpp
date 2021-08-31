@@ -4728,6 +4728,9 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
                 if (Msrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMFUNC)
                     Msrs.u.vmx.u64VmFunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
             }
+
+            if (Msrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TERTIARY_CTLS)
+                Msrs.u.vmx.u64ProcCtls3 = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS3);
         }
         else if (fCaps & SUPVTCAPS_AMD_V)
         {

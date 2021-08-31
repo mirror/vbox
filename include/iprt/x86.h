@@ -1599,7 +1599,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_CR4_FIXED1             0x489
 /** Information for enumerating fields in the VMCS. */
 #define MSR_IA32_VMX_VMCS_ENUM              0x48A
-/** Allowed settings for secondary proc-based VM execution controls */
+/** Allowed settings for secondary processor-based VM-execution controls. */
 #define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 /** EPT capabilities. */
 #define MSR_IA32_VMX_EPT_VPID_CAP           0x48C
@@ -1613,6 +1613,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_TRUE_ENTRY_CTLS        0x490
 /** Allowed settings for the VM-function controls. */
 #define MSR_IA32_VMX_VMFUNC                 0x491
+/** Tertiary processor-based VM execution controls. */
+#define MSR_IA32_VMX_PROCBASED_CTLS3        0x492
 
 /** Intel PT - Enable and control for trace packet generation. */
 #define MSR_IA32_RTIT_CTL                   0x570

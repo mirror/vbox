@@ -1234,8 +1234,10 @@ typedef struct VMXMSRS
     uint64_t        u64VmFunc;
     /** EPT, VPID capabilities. */
     uint64_t        u64EptVpidCaps;
+    /** Tertiary processor-based VM-execution controls. */
+    uint64_t        u64ProcCtls3;
     /** Reserved for future. */
-    uint64_t        a_u64Reserved[9];
+    uint64_t        a_u64Reserved[8];
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
 AssertCompileSize(VMXMSRS, 224);
@@ -1401,8 +1403,10 @@ typedef const LBRMSRS *PCLBRMSRS;
 #define VMX_EXIT_UMWAIT                                         67
 /** TPAUSE. */
 #define VMX_EXIT_TPAUSE                                         68
+/** LOADIWKEY. */
+#define VMX_EXIT_LOADIWKEY                                      69
 /** The maximum VM-exit value (inclusive). */
-#define VMX_EXIT_MAX                                            (VMX_EXIT_TPAUSE)
+#define VMX_EXIT_MAX                                            (VMX_EXIT_LOADIWKEY)
 /** @} */
 
 
@@ -2223,6 +2227,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 /** VM-exit when executing the MOV from CR3 instruction. (forced to 1 on the
  *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_PROC_CTLS_CR3_STORE_EXIT                            RT_BIT(16)
+/** Whether the secondary processor based VM-execution controls are used. */
+#define VMX_PROC_CTLS_USE_TERTIARY_CTLS                         RT_BIT(17)
 /** VM-exit on CR8 loads. */
 #define VMX_PROC_CTLS_CR8_LOAD_EXIT                             RT_BIT(19)
 /** VM-exit on CR8 stores. */
@@ -2278,8 +2284,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_MASK                     UINT32_C(0x00008000)
 #define VMX_BF_PROC_CTLS_CR3_STORE_EXIT_SHIFT                   16
 #define VMX_BF_PROC_CTLS_CR3_STORE_EXIT_MASK                    UINT32_C(0x00010000)
-#define VMX_BF_PROC_CTLS_RSVD_17_18_SHIFT                       17
-#define VMX_BF_PROC_CTLS_RSVD_17_18_MASK                        UINT32_C(0x00060000)
+#define VMX_BF_PROC_CTLS_USE_TERTIARY_CTLS_SHIFT                17
+#define VMX_BF_PROC_CTLS_USE_TERTIARY_CTLS_MASK                 UINT32_C(0x00020000)
+#define VMX_BF_PROC_CTLS_RSVD_18_SHIFT                          18
+#define VMX_BF_PROC_CTLS_RSVD_18_MASK                           UINT32_C(0x00040000)
 #define VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_SHIFT                    19
 #define VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_MASK                     UINT32_C(0x00080000)
 #define VMX_BF_PROC_CTLS_CR8_STORE_EXIT_SHIFT                   20
@@ -2308,8 +2316,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PIN_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_MASK                UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
                             (RSVD_0_1, INT_WINDOW_EXIT, USE_TSC_OFFSETTING, RSVD_4_6, HLT_EXIT, RSVD_8, INVLPG_EXIT,
-                             MWAIT_EXIT, RDPMC_EXIT, RDTSC_EXIT, RSVD_13_14, CR3_LOAD_EXIT, CR3_STORE_EXIT, RSVD_17_18,
-                             CR8_LOAD_EXIT, CR8_STORE_EXIT, USE_TPR_SHADOW, NMI_WINDOW_EXIT, MOV_DR_EXIT, UNCOND_IO_EXIT,
+                             MWAIT_EXIT, RDPMC_EXIT, RDTSC_EXIT, RSVD_13_14, CR3_LOAD_EXIT, CR3_STORE_EXIT, USE_TERTIARY_CTLS,
+                             RSVD_18, CR8_LOAD_EXIT, CR8_STORE_EXIT, USE_TPR_SHADOW, NMI_WINDOW_EXIT, MOV_DR_EXIT, UNCOND_IO_EXIT,
                              USE_IO_BITMAPS, RSVD_26, MONITOR_TRAP_FLAG, USE_MSR_BITMAPS, MONITOR_EXIT, PAUSE_EXIT,
                              USE_SECONDARY_CTLS));
 /** @} */
@@ -3523,7 +3531,7 @@ AssertCompile(RT_ALIGN_Z(VMX_V_AUTOMSR_AREA_SIZE, X86_PAGE_4K_SIZE) == VMX_V_AUT
 #define VMX_V_AUTOMSR_AREA_PAGES                                ((VMX_V_AUTOMSR_AREA_SIZE) >> X86_PAGE_4K_SHIFT)
 
 /** The highest index value used for supported virtual VMCS field encoding. */
-#define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH, VMX_BF_VMCSFIELD_INDEX)
+#define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_ENCLV_EXITING_BITMAP_HIGH, VMX_BF_VMCSFIELD_INDEX)
 
 /**
  * Virtual VM-exit information.
@@ -3614,7 +3622,7 @@ typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
  * @note Any fields that are added or modified here, make sure to update the
  *       corresponding fields in IEM (g_aoffVmcsMap), the corresponding saved
  *       state structure in CPUM (g_aVmxHwvirtVmcs) and bump the SSM version.
- *       Also consider updating CPUMIsGuestVmxVmcsFieldValid.
+ *       Also consider updating CPUMIsGuestVmxVmcsFieldValid and cpumR3InfoVmxVmcs.
  */
 #pragma pack(1)
 typedef struct
@@ -3715,7 +3723,9 @@ typedef struct
     RTUINT64U       u64EnclsBitmap;              /**< 0x310 - ENCLS-exiting bitmap address. */
     RTUINT64U       u64SpptPtr;                  /**< 0x318 - Sub-page-permission-table pointer. */
     RTUINT64U       u64TscMultiplier;            /**< 0x320 - TSC multiplier. */
-    RTUINT64U       au64Reserved0[15];           /**< 0x328 - Reserved for future. */
+    RTUINT64U       u64ProcCtls3;                /**< 0x328 - Tertiary-Processor based VM-execution controls. */
+    RTUINT64U       u64EnclvExitBitmap;          /**< 0x330 - ENCLV-exiting bitmap. */
+    RTUINT64U       au64Reserved0[13];           /**< 0x338 - Reserved for future. */
 
     /** Natural-width fields. */
     RTUINT64U       u64Cr0Mask;                  /**< 0x3a0 - CR0 guest/host Mask. */
@@ -3750,7 +3760,8 @@ typedef struct
     RTUINT64U       u64HostPatMsr;               /**< 0x538 - Host PAT MSR. */
     RTUINT64U       u64HostEferMsr;              /**< 0x540 - Host EFER MSR. */
     RTUINT64U       u64HostPerfGlobalCtlMsr;     /**< 0x548 - Host global performance-control MSR. */
-    RTUINT64U       au64Reserved3[16];           /**< 0x550 - Reserved for future. */
+    RTUINT64U       u64HostPkrsMsr;              /**< 0x550 - Host PKRS MSR. */
+    RTUINT64U       au64Reserved3[15];           /**< 0x558 - Reserved for future. */
 
     /** Natural-width fields. */
     RTUINT64U       u64HostCr0;                  /**< 0x5d0 - Host CR0. */
@@ -3765,7 +3776,10 @@ typedef struct
     RTUINT64U       u64HostSysenterEip;          /**< 0x618 - Host SYSENTER ESP base. */
     RTUINT64U       u64HostRsp;                  /**< 0x620 - Host RSP. */
     RTUINT64U       u64HostRip;                  /**< 0x628 - Host RIP. */
-    RTUINT64U       au64Reserved7[32];           /**< 0x630 - Reserved for future. */
+    RTUINT64U       u64HostSCetMsr;              /**< 0x630 - Host S_CET MSR. */
+    RTUINT64U       u64HostSsp;                  /**< 0x638 - Host SSP. */
+    RTUINT64U       u64HostIntrSspTblAddrMsr;    /**< 0x640 - Host Interrupt SSP table address MSR. */
+    RTUINT64U       au64Reserved7[29];           /**< 0x648 - Reserved for future. */
     /** @} */
 
     /** @name Guest-state fields.
@@ -3823,7 +3837,8 @@ typedef struct
     RTUINT64U       u64GuestPdpte3;              /**< 0x828 - Guest PDPTE 2. */
     RTUINT64U       u64GuestBndcfgsMsr;          /**< 0x830 - Guest Bounds config MPX MSR (Intel Memory Protection Extensions). */
     RTUINT64U       u64GuestRtitCtlMsr;          /**< 0x838 - Guest RTIT control MSR (Intel Real Time Instruction Trace). */
-    RTUINT64U       au64Reserved2[32];           /**< 0x840 - Reserved for future. */
+    RTUINT64U       u64GuestPkrsMsr;             /**< 0x840 - Guest PKRS MSR. */
+    RTUINT64U       au64Reserved2[31];           /**< 0x848 - Reserved for future. */
 
     /** Natural-width fields. */
     RTUINT64U       u64GuestCr0;                 /**< 0x940 - Guest CR0. */
@@ -3846,7 +3861,10 @@ typedef struct
     RTUINT64U       u64GuestPendingDbgXcpts;     /**< 0x9c8 - Guest pending debug exceptions. */
     RTUINT64U       u64GuestSysenterEsp;         /**< 0x9d0 - Guest SYSENTER ESP. */
     RTUINT64U       u64GuestSysenterEip;         /**< 0x9d8 - Guest SYSENTER EIP. */
-    RTUINT64U       au64Reserved6[32];           /**< 0x9e0 - Reserved for future. */
+    RTUINT64U       u64GuestSCetMsr;             /**< 0x9e0 - Guest S_CET MSR. */
+    RTUINT64U       u64GuestSsp;                 /**< 0x9e8 - Guest SSP. */
+    RTUINT64U       u64GuestIntrSspTblAddrMsr;   /**< 0x9f0 - Guest Interrupt SSP table address MSR. */
+    RTUINT64U       au64Reserved6[29];           /**< 0x9f8 - Reserved for future. */
     /** @} */
 
     /** 0xae0 - Padding / reserved for future use. */

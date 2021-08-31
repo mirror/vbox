@@ -813,6 +813,10 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCt
 /**
  * Dumps the virtual VMCS state to the release log.
  *
+ * This is a purely a convenience function to output to the release log because
+ * cpumR3InfoVmxVmcs dumps only to the debug console and isn't always easy to use in
+ * case of a crash.
+ *
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)

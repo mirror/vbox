@@ -1355,6 +1355,18 @@ static void hmR3VmxReportProcBasedCtls2Msr(PCVMXCTLSMSR pVmxMsr)
 
 
 /**
+ * Reports MSR_IA32_VMX_PROCBASED_CTLS3 MSR to the log.
+ *
+ * @param   uProcCtls3    The tertiary processor-based VM-execution control MSR.
+ */
+static void hmR3VmxReportProcBasedCtls3Msr(uint64_t uProcCtls3)
+{
+    LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS3      = %#RX64\n", uProcCtls3));
+    LogRel(("HM:   LOADIWKEY_EXIT                    = %RTbool\n", RT_BOOL(uProcCtls3 & VMX_PROC_CTLS3_LOADIWKEY_EXIT)));
+}
+
+
+/**
  * Reports MSR_IA32_VMX_ENTRY_CTLS to the log.
  *
  * @param   pVmxMsr    Pointer to the VMX MSR.
@@ -1527,6 +1539,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     hmR3VmxReportProcBasedCtlsMsr(&pVM->hm.s.ForR3.vmx.Msrs.ProcCtls);
     if (pVM->hm.s.ForR3.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
         hmR3VmxReportProcBasedCtls2Msr(&pVM->hm.s.ForR3.vmx.Msrs.ProcCtls2);
+    if (pVM->hm.s.ForR3.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TERTIARY_CTLS)
+        hmR3VmxReportProcBasedCtls3Msr(pVM->hm.s.ForR3.vmx.Msrs.u64ProcCtls3);
 
     hmR3VmxReportEntryCtlsMsr(&pVM->hm.s.ForR3.vmx.Msrs.EntryCtls);
     hmR3VmxReportExitCtlsMsr(&pVM->hm.s.ForR3.vmx.Msrs.ExitCtls);

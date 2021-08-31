@@ -842,6 +842,7 @@ static const struct CLANG11NOTHROWWEIRDNESS { PFNVMXEXITHANDLER pfn; } g_aVMExit
     /* 66  VMX_EXIT_SPP_EVENT               */  { hmR0VmxExitErrUnexpected },
     /* 67  VMX_EXIT_UMWAIT                  */  { hmR0VmxExitErrUnexpected },
     /* 68  VMX_EXIT_TPAUSE                  */  { hmR0VmxExitErrUnexpected },
+    /* 69  VMX_EXIT_LOADIWKEY               */  { hmR0VmxExitErrUnexpected },
 };
 #endif /* HMVMX_USE_FUNCTION_TABLE */
 
@@ -13079,6 +13080,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
         case VMX_EXIT_XRSTORS:
         case VMX_EXIT_UMWAIT:
         case VMX_EXIT_TPAUSE:
+        case VMX_EXIT_LOADIWKEY:
         default:
             return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
     }
@@ -15347,6 +15349,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrUnexpected(PVMCPUCC pVCpu, PVMXTRANSIENT pVmx
      * VMX_EXIT_XRSTORS:
      * VMX_EXIT_UMWAIT:
      * VMX_EXIT_TPAUSE:
+     * VMX_EXIT_LOADIWKEY:
      *    These VM-exits are -not- caused unconditionally by execution of the corresponding
      *    instruction. Any VM-exit for these instructions indicate a hardware problem,
      *    unsupported CPU modes (like SMM) or potentially corrupt VMCS controls.
@@ -17659,6 +17662,10 @@ HMVMX_EXIT_DECL hmR0VmxExitInstrWithInfoNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_TPAUSE:
             Assert(CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_RDTSC_EXIT));
             Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_USER_WAIT_PAUSE));
+            break;
+
+        case VMX_EXIT_LOADIWKEY:
+            Assert(CPUMIsGuestVmxProcCtls3Set(pCtx, VMX_PROC_CTLS3_LOADIWKEY_EXIT));
             break;
     }
 #endif

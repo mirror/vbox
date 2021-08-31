@@ -114,7 +114,9 @@ typedef uint64_t STAMCOUNTER;
 /** @name CPUM Saved State Version.
  * @{ */
 /** The current saved state version. */
-#define CPUM_SAVED_STATE_VERSION                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX
+#define CPUM_SAVED_STATE_VERSION                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2
+/** The saved state version with more virtual VMCS fields and CPUMCTX VMX fields. */
+#define CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2   20
 /** The saved state version including VMX hardware virtualization state. */
 #define CPUM_SAVED_STATE_VERSION_HWVIRT_VMX     19
 /** The saved state version including SVM hardware virtualization state. */

@@ -851,6 +851,7 @@ VMM_INT_DECL(void) HMGetVmxMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pHwvirtMsrs, PVMXM
     pVmxMsrs->u64VmcsEnum      = pHwvirtMsrs->u.vmx.u64VmcsEnum;
     pVmxMsrs->u64VmFunc        = pHwvirtMsrs->u.vmx.u64VmFunc;
     pVmxMsrs->u64EptVpidCaps   = pHwvirtMsrs->u.vmx.u64EptVpidCaps;
+    pVmxMsrs->u64ProcCtls3     = pHwvirtMsrs->u.vmx.u64ProcCtls3;
 }
 
 
