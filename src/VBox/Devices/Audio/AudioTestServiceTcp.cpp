@@ -320,7 +320,8 @@ static int atsTcpConnectWaitOnThreads(PATSTRANSPORTINST pThis, RTMSINTERVAL cMil
 /**
  * @interface_method_impl{ATSTRANSPORT,pfnWaitForConnect}
  */
-static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTERVAL msTimeout, PPATSTRANSPORTCLIENT ppClientNew)
+static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTERVAL msTimeout,
+                                              bool *pfFromServer, PPATSTRANSPORTCLIENT ppClientNew)
 {
     PATSTRANSPORTCLIENT pClient = (PATSTRANSPORTCLIENT)RTMemAllocZ(sizeof(ATSTRANSPORTCLIENT));
     AssertPtrReturn(pClient, VERR_NO_MEMORY);
@@ -337,7 +338,7 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
 
         pClient->fFromServer = true;
         rc = RTTcpServerListen2(pThis->pTcpServer, &pClient->hTcpClient);
-        LogRelFlowFunc(("RTTcpServerListen2 -> %Rrc\n", rc));
+        LogRelFlowFunc(("RTTcpServerListen2(%RTsock) -> %Rrc\n", pClient->hTcpClient, rc));
     }
     else if (pThis->enmConnMode == ATSCONNMODE_CLIENT)
     {
@@ -422,6 +423,8 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
 
     if (RT_SUCCESS(rc))
     {
+        if (pfFromServer)
+            *pfFromServer = pClient->fFromServer;
         *ppClientNew = pClient;
     }
     else

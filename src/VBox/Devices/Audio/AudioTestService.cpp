@@ -1001,8 +1001,9 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
          * Wait for new connection and spin off a new thread
          * for every new client.
          */
+        bool                fFromServer;
         PATSTRANSPORTCLIENT pTransportClient;
-        rc = pThis->pTransport->pfnWaitForConnect(pThis->pTransportInst, 1000 /* msTimeout */, &pTransportClient);
+        rc = pThis->pTransport->pfnWaitForConnect(pThis->pTransportInst, 1000 /* msTimeout */, &fFromServer, &pTransportClient);
         if (RT_FAILURE(rc))
             continue;
 
@@ -1031,6 +1032,24 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
         {
             LogRelFunc(("Creating new client structure failed with out of memory error\n"));
             pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pTransportClient);
+            rc = VERR_NO_MEMORY;
+            break; /* This is fatal, break out of the loop. */
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            LogRelFunc(("New connection established (%s)\n", fFromServer ? "from server" : "as client"));
+
+            /**
+             * If the new client is from a remote server (also called a reverse connection)
+             * instead from this server, exit this loop and stop trying to connect to the remote server.
+             *
+             * Otherwise we would connect lots and lots of clients without any real use.
+             *
+             ** @todo Improve this handling -- there might be a better / more elegant solution.
+             */
+            if (fFromServer)
+                break;
         }
     }
 
@@ -1049,6 +1068,8 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
  */
 int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
 {
+    LogRelFlowFuncEnter();
+
     RT_BZERO(pThis, sizeof(ATSSERVER));
 
     pThis->hPipeR = NIL_RTPIPE;
@@ -1096,6 +1117,7 @@ int AudioTestSvcInit(PATSSERVER pThis, PCATSCALLBACKS pCallbacks)
     if (RT_FAILURE(rc))
         LogRel(("Creating server failed with %Rrc\n", rc));
 
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 

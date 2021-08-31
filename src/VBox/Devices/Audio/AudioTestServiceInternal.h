@@ -127,9 +127,11 @@ typedef struct ATSTRANSPORT
      * @param   msTimeout           Timeout (in ms) waiting for a connection to be established.
      *                              Use RT_INDEFINITE_WAIT to wait indefinitely.
      *                              This might or might not be supported by the specific transport implementation.
+     * @param   pfFromServer        Returns \c true if the returned client is from a remote server (called a reverse connection),
+     *                              or \c false if not (regular client). Optional and can be NULL.
      * @param   ppClientNew         Where to return the allocated client on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWaitForConnect, (PATSTRANSPORTINST pThis, RTMSINTERVAL msTimeout, PPATSTRANSPORTCLIENT ppClientNew));
+    DECLR3CALLBACKMEMBER(int, pfnWaitForConnect, (PATSTRANSPORTINST pThis, RTMSINTERVAL msTimeout, bool *pfFromServer, PPATSTRANSPORTCLIENT ppClientNew));
 
     /**
      * Polls for incoming packets.

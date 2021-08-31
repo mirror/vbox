@@ -330,7 +330,7 @@ int AudioTestSvcClientConnectEx(PATSCLIENT pClient, RTMSINTERVAL msTimeout)
     if (RT_SUCCESS(rc))
     {
         rc = pClient->pTransport->pfnWaitForConnect(pClient->pTransportInst,
-                                                    msTimeout, &pClient->pTransportClient);
+                                                    msTimeout, NULL /* pfFromServer */, &pClient->pTransportClient);
         if (RT_SUCCESS(rc))
         {
             rc = audioTestSvcClientDoGreet(pClient);
