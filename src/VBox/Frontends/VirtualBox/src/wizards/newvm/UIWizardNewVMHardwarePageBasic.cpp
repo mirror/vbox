@@ -97,11 +97,6 @@ void UIWizardNewVMHardwarePageBasic::initializePage()
     }
 }
 
-void UIWizardNewVMHardwarePageBasic::cleanupPage()
-{
-    //UIWizardPage::cleanupPage();
-}
-
 bool UIWizardNewVMHardwarePageBasic::isComplete() const
 {
     return true;

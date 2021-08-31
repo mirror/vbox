@@ -60,7 +60,6 @@ private:
     void createConnections();
     void retranslateUi();
     void initializePage();
-    void cleanupPage();
     bool isComplete() const;
 
     /** @name Widgets

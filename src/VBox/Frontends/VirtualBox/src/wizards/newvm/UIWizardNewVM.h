@@ -182,41 +182,41 @@ private:
        int m_iUSBCount;
        mutable UIUnattendedInstallData m_unattendedInstallData;
 
-      /** Path of the ISO file attached to the new vm. Possibly used for the unattended install. */
-      QString m_strISOFilePath;
+       /** Path of the ISO file attached to the new vm. Possibly used for the unattended install. */
+       QString m_strISOFilePath;
 
-      /** Path of the folder created by this wizard page. Used to remove previously created
-        *  folder. see cleanupMachineFolder();*/
-      QString m_strCreatedFolder;
+       /** Path of the folder created by this wizard page. Used to remove previously created
+         *  folder. see cleanupMachineFolder();*/
+       QString m_strCreatedFolder;
 
-      /** Full path (including the file name) of the machine's configuration file. */
-      QString m_strMachineFilePath;
-      /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
-      QString m_strMachineFolder;
-      /** Base name of the machine is generated from the m_strMachineFilePath. */
-      QString m_strMachineBaseName;
+       /** Full path (including the file name) of the machine's configuration file. */
+       QString m_strMachineFilePath;
+       /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
+       QString m_strMachineFolder;
+       /** Base name of the machine is generated from the m_strMachineFilePath. */
+       QString m_strMachineBaseName;
 
-      /** Type Id od the OS detected from the ISO file by IUnattended. */
-      QString m_strDetectedOSTypeId;
+       /** Type Id od the OS detected from the ISO file by IUnattended. */
+       QString m_strDetectedOSTypeId;
 
-      /** Holds the VM OS family ID. */
-      QString  m_strGuestOSFamilyId;
-      /** Holds the VM OS type. */
-      CGuestOSType m_comGuestOSType;
+       /** Holds the VM OS family ID. */
+       QString  m_strGuestOSFamilyId;
+       /** Holds the VM OS type. */
+       CGuestOSType m_comGuestOSType;
 
-      /** True if guest additions are to be installed during unattended install. */
-      bool m_fInstallGuestAdditions;
-      bool m_fSkipUnattendedInstall;
-      bool m_fEFIEnabled;
+       /** True if guest additions are to be installed during unattended install. */
+       bool m_fInstallGuestAdditions;
+       bool m_fSkipUnattendedInstall;
+       bool m_fEFIEnabled;
 
-      int m_iCPUCount;
-      int m_iMemorySize;
-      int m_iUnattendedInstallPageIndex;
+       int m_iCPUCount;
+       int m_iMemorySize;
+       int m_iUnattendedInstallPageIndex;
 
-      qulonglong m_uMediumVariant;
-      CMediumFormat m_comMediumFormat;
-      QString m_strMediumPath;
-      qulonglong m_uMediumSize;
+       qulonglong m_uMediumVariant;
+       CMediumFormat m_comMediumFormat;
+       QString m_strMediumPath;
+       qulonglong m_uMediumSize;
     /** @} */
 };
 

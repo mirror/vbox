@@ -171,10 +171,6 @@ bool UIWizardNewVMUnattendedPageBasic::isComplete() const
     return true;
 }
 
-void UIWizardNewVMUnattendedPageBasic::cleanupPage()
-{
-}
-
 void UIWizardNewVMUnattendedPageBasic::showEvent(QShowEvent *pEvent)
 {
     UINativeWizardPage::showEvent(pEvent);

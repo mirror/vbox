@@ -404,11 +404,6 @@ void UIWizardNewVMPageExpert::initializePage()
     retranslateUi();
 }
 
-void UIWizardNewVMPageExpert::cleanupPage()
-{
-    //cleanupMachineFolder();
-}
-
 void UIWizardNewVMPageExpert::markWidgets() const
 {
     if (m_pNameAndSystemEditor)

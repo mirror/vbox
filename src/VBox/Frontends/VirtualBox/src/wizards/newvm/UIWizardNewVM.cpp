@@ -308,8 +308,6 @@ void UIWizardNewVM::deleteVirtualDisk()
 
 void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
 {
-    Q_UNUSED(strGuestTypeId);
-    Q_UNUSED(comGuestType);
     /* Get graphics adapter: */
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
 
@@ -549,7 +547,6 @@ void UIWizardNewVM::retranslateUi()
 {
     UINativeWizard::retranslateUi();
     setWindowTitle(tr("Create Virtual Machine"));
-    // setButtonText(QWizard::FinishButton, tr("Create"));
 }
 
 QString UIWizardNewVM::getNextControllerName(KStorageBus type)
