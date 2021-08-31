@@ -1123,86 +1123,67 @@ int AudioTestSetOpen(PAUDIOTESTSET pSet, const char *pszPath)
  */
 int AudioTestSetClose(PAUDIOTESTSET pSet)
 {
-    if (!pSet)
-        return VINF_SUCCESS;
+    AssertPtrReturn(pSet, VERR_INVALID_POINTER);
 
-    if (!RTFileIsValid(pSet->f.hFile))
+    if (!audioTestManifestIsOpen(pSet))
         return VINF_SUCCESS;
 
     int rc;
 
-    /* Update number of bound test objects. */
-    PAUDIOTESTENTRY pTest;
-    RTListForEach(&pSet->lstTest, pTest, AUDIOTESTENTRY, Node)
+    if (pSet->enmMode == AUDIOTESTSETMODE_TEST)
     {
-        rc = RTFileSeek(pSet->f.hFile, pTest->offObjCount, RTFILE_SEEK_BEGIN, NULL);
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "%04RU32", pTest->cObj);
-        AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * Update number of ran tests.
-     */
-    rc = RTFileSeek(pSet->f.hFile, pSet->offObjCount, RTFILE_SEEK_BEGIN, NULL);
-    AssertRCReturn(rc, rc);
-    rc = audioTestManifestWrite(pSet, "%04RU32", pSet->cObj);
-    AssertRCReturn(rc, rc);
-
-    /*
-     * Update number of ran tests.
-     */
-    rc = RTFileSeek(pSet->f.hFile, pSet->offTestCount, RTFILE_SEEK_BEGIN, NULL);
-    AssertRCReturn(rc, rc);
-    rc = audioTestManifestWrite(pSet, "%04RU32", pSet->cTests);
-    AssertRCReturn(rc, rc);
-
-    /*
-     * Serialize all registered test objects.
-     */
-    rc = RTFileSeek(pSet->f.hFile, 0, RTFILE_SEEK_END, NULL);
-    AssertRCReturn(rc, rc);
-
-    PAUDIOTESTOBJINT pObj;
-    RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJINT, Node)
-    {
-        rc = audioTestManifestWrite(pSet, "\n");
-        AssertRCReturn(rc, rc);
-        char szUuid[AUDIOTEST_MAX_SEC_LEN];
-        rc = RTUuidToStr(&pObj->Uuid, szUuid, sizeof(szUuid));
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWriteSectionHdr(pSet, "obj_%s", szUuid);
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "obj_type=%RU32\n", pObj->enmType);
-        AssertRCReturn(rc, rc);
-        rc = audioTestManifestWrite(pSet, "obj_name=%s\n", pObj->szName);
-        AssertRCReturn(rc, rc);
-
-        switch (pObj->enmType)
+        /* Update number of bound test objects. */
+        PAUDIOTESTENTRY pTest;
+        RTListForEach(&pSet->lstTest, pTest, AUDIOTESTENTRY, Node)
         {
-            case AUDIOTESTOBJTYPE_FILE:
-            {
-                rc = audioTestManifestWrite(pSet, "obj_size=%RU64\n", pObj->File.cbSize);
-                AssertRCReturn(rc, rc);
-                break;
-            }
-
-            default:
-                AssertFailed();
-                break;
+            rc = RTFileSeek(pSet->f.hFile, pTest->offObjCount, RTFILE_SEEK_BEGIN, NULL);
+            AssertRCReturn(rc, rc);
+            rc = audioTestManifestWrite(pSet, "%04RU32", pTest->cObj);
+            AssertRCReturn(rc, rc);
         }
 
         /*
-         * Write all meta data.
+         * Update number of ran tests.
          */
-        PAUDIOTESTOBJMETA pMeta;
-        RTListForEach(&pObj->lstMeta, pMeta, AUDIOTESTOBJMETA, Node)
+        rc = RTFileSeek(pSet->f.hFile, pSet->offObjCount, RTFILE_SEEK_BEGIN, NULL);
+        AssertRCReturn(rc, rc);
+        rc = audioTestManifestWrite(pSet, "%04RU32", pSet->cObj);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * Update number of ran tests.
+         */
+        rc = RTFileSeek(pSet->f.hFile, pSet->offTestCount, RTFILE_SEEK_BEGIN, NULL);
+        AssertRCReturn(rc, rc);
+        rc = audioTestManifestWrite(pSet, "%04RU32", pSet->cTests);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * Serialize all registered test objects.
+         */
+        rc = RTFileSeek(pSet->f.hFile, 0, RTFILE_SEEK_END, NULL);
+        AssertRCReturn(rc, rc);
+
+        PAUDIOTESTOBJINT pObj;
+        RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJINT, Node)
         {
-            switch (pMeta->enmType)
+            rc = audioTestManifestWrite(pSet, "\n");
+            AssertRCReturn(rc, rc);
+            char szUuid[AUDIOTEST_MAX_SEC_LEN];
+            rc = RTUuidToStr(&pObj->Uuid, szUuid, sizeof(szUuid));
+            AssertRCReturn(rc, rc);
+            rc = audioTestManifestWriteSectionHdr(pSet, "obj_%s", szUuid);
+            AssertRCReturn(rc, rc);
+            rc = audioTestManifestWrite(pSet, "obj_type=%RU32\n", pObj->enmType);
+            AssertRCReturn(rc, rc);
+            rc = audioTestManifestWrite(pSet, "obj_name=%s\n", pObj->szName);
+            AssertRCReturn(rc, rc);
+
+            switch (pObj->enmType)
             {
-                case AUDIOTESTOBJMETADATATYPE_STRING:
+                case AUDIOTESTOBJTYPE_FILE:
                 {
-                    rc = audioTestManifestWrite(pSet, (const char *)pMeta->pvMeta);
+                    rc = audioTestManifestWrite(pSet, "obj_size=%RU64\n", pObj->File.cbSize);
                     AssertRCReturn(rc, rc);
                     break;
                 }
@@ -1211,11 +1192,41 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
                     AssertFailed();
                     break;
             }
-        }
-    }
 
-    RTFileClose(pSet->f.hFile);
-    pSet->f.hFile = NIL_RTFILE;
+            /*
+             * Write all meta data.
+             */
+            PAUDIOTESTOBJMETA pMeta;
+            RTListForEach(&pObj->lstMeta, pMeta, AUDIOTESTOBJMETA, Node)
+            {
+                switch (pMeta->enmType)
+                {
+                    case AUDIOTESTOBJMETADATATYPE_STRING:
+                    {
+                        rc = audioTestManifestWrite(pSet, (const char *)pMeta->pvMeta);
+                        AssertRCReturn(rc, rc);
+                        break;
+                    }
+
+                    default:
+                        AssertFailed();
+                        break;
+                }
+            }
+        }
+
+        RTFileClose(pSet->f.hFile);
+        pSet->f.hFile = NIL_RTFILE;
+    }
+    else if (pSet->enmMode == AUDIOTESTSETMODE_VERIFY)
+    {
+        RTIniFileRelease(pSet->f.hIniFile);
+        pSet->f.hIniFile = NIL_RTINIFILE;
+
+        rc = VINF_SUCCESS;
+    }
+    else /* Not supported, just skip. */
+        rc = VINF_SUCCESS;
 
     return rc;
 }
@@ -1561,6 +1572,7 @@ bool AudioTestSetTestIsRunning(PAUDIOTESTENTRY pEntry)
  */
 int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileName, size_t cbFileName)
 {
+    AssertPtrReturn(pSet, VERR_INVALID_POINTER);
     AssertReturn(!pszFileName || cbFileName, VERR_INVALID_PARAMETER);
     AssertReturn(!audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
 
