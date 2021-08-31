@@ -138,13 +138,13 @@ static DECLCALLBACK(int32_t) rtTpmWinInitOnce(void *pvUser)
         rc = RTLdrGetSymbol(hMod, "Tbsi_Context_Create", (void **)&g_pfnTbsiContextCreate);
         if (RT_FAILURE(rc)) return rc;
 
-        rc = RTLdrGetSymbol(hMod, "Tbsi_Context_Close", (void **)&g_pfnTbsiContextClose);
+        rc = RTLdrGetSymbol(hMod, "Tbsip_Context_Close", (void **)&g_pfnTbsiContextClose);
         if (RT_FAILURE(rc)) return rc;
 
         rc = RTLdrGetSymbol(hMod, "Tbsip_Cancel_Commands", (void **)&g_pfnTbsiCancelCommands);
         if (RT_FAILURE(rc)) return rc;
 
-        rc = RTLdrGetSymbol(hMod, "Tbsi_Submit_Command", (void **)&g_pfnTbsiSubmitCommands);
+        rc = RTLdrGetSymbol(hMod, "Tbsip_Submit_Command", (void **)&g_pfnTbsiSubmitCommands);
         if (RT_FAILURE(rc)) return rc;
 
         rc = RTLdrGetSymbol(hMod, "Tbsi_GetDeviceInfo", (void **)&g_pfnTbsiGetDeviceInfo);
