@@ -108,6 +108,11 @@ void UIWizardNewVM::populatePages()
     }
 }
 
+void UIWizardNewVM::wizardClean()
+{
+    UIWizardNewVMNameOSTypePage::cleanupMachineFolder(this, true);
+}
+
 bool UIWizardNewVM::createVM()
 {
     CVirtualBox vbox = uiCommon().virtualBox();

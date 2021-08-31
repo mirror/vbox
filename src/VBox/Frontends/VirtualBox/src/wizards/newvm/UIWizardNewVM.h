@@ -154,6 +154,7 @@ protected:
 
     /** Populates pages. */
     virtual void populatePages() /* final override */;
+    virtual void wizardClean() /* final override */;
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
     bool attachDefaultDevices();
 
