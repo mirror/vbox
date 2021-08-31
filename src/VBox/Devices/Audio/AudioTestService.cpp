@@ -558,19 +558,12 @@ static int atsDoTestSetBegin(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR 
     int rc = VINF_SUCCESS;
 
     if (pThis->Callbacks.pfnTestSetBegin)
-    {
         rc = pThis->Callbacks.pfnTestSetBegin(pThis->Callbacks.pvUser, pReq->szTag);
-        if (RT_FAILURE(rc))
-            return atsReplyRC(pThis, pInst, pPktHdr, rc, "Beginning test set '%s' failed", pReq->szTag);
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = atsReplyAck(pThis, pInst, pPktHdr);
-    }
     else
         rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Beginning test set failed");
-
     return rc;
 }
 
@@ -592,18 +585,12 @@ static int atsDoTestSetEnd(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR pP
     int rc = VINF_SUCCESS;
 
     if (pThis->Callbacks.pfnTestSetEnd)
-    {
         rc = pThis->Callbacks.pfnTestSetEnd(pThis->Callbacks.pvUser, pReq->szTag);
-        if (RT_FAILURE(rc))
-            return atsReplyRC(pThis, pInst, pPktHdr, rc, "Ending test set '%s' failed", pReq->szTag);
-    }
+
     if (RT_SUCCESS(rc))
-    {
         rc = atsReplyAck(pThis, pInst, pPktHdr);
-    }
     else
         rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Ending test set failed");
-
     return rc;
 }
 
@@ -733,24 +720,23 @@ static int atsDoTestSetSend(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR p
  */
 static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR pPktHdr)
 {
-    int rc = VINF_SUCCESS;
-
     if (pPktHdr->cb < sizeof(ATSPKTREQTONEPLAY))
         return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQTONEPLAY));
 
     if (pInst->enmState != ATSCLIENTSTATE_READY)
         return atsReplyInvalidState(pThis, pInst, pPktHdr);
 
-    if (!pThis->Callbacks.pfnTonePlay)
-        return atsReplyRC(pThis, pInst, pPktHdr, VERR_NOT_SUPPORTED, "Playing tones not supported");
+    int rc = VINF_SUCCESS;
 
     PATSPKTREQTONEPLAY pReq = (PATSPKTREQTONEPLAY)pPktHdr;
-    rc = pThis->Callbacks.pfnTonePlay(pThis->Callbacks.pvUser, &pReq->ToneParms);
 
-    int rc2 = atsReplyAck(pThis, pInst, pPktHdr);
+    if (pThis->Callbacks.pfnTonePlay)
+        rc = pThis->Callbacks.pfnTonePlay(pThis->Callbacks.pvUser, &pReq->ToneParms);
+
     if (RT_SUCCESS(rc))
-        rc = rc2;
-
+        rc = atsReplyAck(pThis, pInst, pPktHdr);
+    else
+        rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Playing test tone failed");
     return rc;
 }
 
@@ -764,24 +750,23 @@ static int atsDoTonePlay(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR pPkt
  */
 static int atsDoToneRecord(PATSSERVER pThis, PATSCLIENTINST pInst, PATSPKTHDR pPktHdr)
 {
-    int rc = VINF_SUCCESS;
-
     if (pPktHdr->cb < sizeof(ATSPKTREQTONEREC))
         return atsReplyBadSize(pThis, pInst, pPktHdr, sizeof(ATSPKTREQTONEREC));
 
     if (pInst->enmState != ATSCLIENTSTATE_READY)
         return atsReplyInvalidState(pThis, pInst, pPktHdr);
 
-    if (!pThis->Callbacks.pfnToneRecord)
-        return atsReplyRC(pThis, pInst, pPktHdr, VERR_NOT_SUPPORTED, "Recording tones not supported");
+    int rc = VINF_SUCCESS;
 
     PATSPKTREQTONEREC pReq = (PATSPKTREQTONEREC)pPktHdr;
-    rc = pThis->Callbacks.pfnToneRecord(pThis->Callbacks.pvUser, &pReq->ToneParms);
 
-    int rc2 = atsReplyAck(pThis, pInst, pPktHdr);
+    if (pThis->Callbacks.pfnToneRecord)
+        rc = pThis->Callbacks.pfnToneRecord(pThis->Callbacks.pvUser, &pReq->ToneParms);
+
     if (RT_SUCCESS(rc))
-        rc = rc2;
-
+        rc = atsReplyAck(pThis, pInst, pPktHdr);
+    else
+        rc = atsReplyRC(pThis, pInst, pPktHdr, rc, "Recording test tone failed");
     return rc;
 }
 
