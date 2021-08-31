@@ -34,7 +34,7 @@
 #include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -508,7 +508,7 @@ void UIAddDiskEncryptionPasswordDialog::accept()
         const QString strPassword = m_pTableEncryptionData->encryptionPasswords().value(strPasswordId);
         if (!isPasswordValid(uMediumId, strPassword))
         {
-            msgCenter().warnAboutInvalidEncryptionPassword(strPasswordId, this);
+            UINotificationMessage::warnAboutInvalidEncryptionPassword(strPasswordId);
             AssertPtrReturnVoid(m_pTableEncryptionData);
             m_pTableEncryptionData->setFocus();
             m_pTableEncryptionData->editFirstIndex();

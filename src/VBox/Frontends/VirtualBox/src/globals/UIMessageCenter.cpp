@@ -568,13 +568,6 @@ void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString 
           UIErrorString::formatErrorInfo(machine));
 }
 
-void UIMessageCenter::warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent /* = 0 */)
-{
-    alert(pParent, MessageType_Error,
-          tr("Encryption password for <nobr>ID = '%1'</nobr> is invalid.")
-             .arg(strPasswordId));
-}
-
 void UIMessageCenter::cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */

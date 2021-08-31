@@ -68,6 +68,9 @@ public:
     static void cannotMountImage(const QString &strMachineName, const QString &strMediumName);
     /** Notifies about inability to send ACPI shutdown. */
     static void cannotSendACPIToMachine();
+    /** Notifies about invalid encryption password.
+      * @param  strPasswordId  Brings password ID. */
+    static void warnAboutInvalidEncryptionPassword(const QString &strPasswordId);
 
     /** Reminds about keyboard auto capturing. */
     static void remindAboutAutoCapture();

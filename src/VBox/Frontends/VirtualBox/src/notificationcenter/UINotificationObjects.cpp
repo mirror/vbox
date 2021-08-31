@@ -88,6 +88,15 @@ void UINotificationMessage::cannotSendACPIToMachine()
 }
 
 /* static */
+void UINotificationMessage::warnAboutInvalidEncryptionPassword(const QString &strPasswordId)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid Password ..."),
+        QApplication::translate("UIMessageCenter", "Encryption password for <nobr>ID = '%1'</nobr> is invalid.")
+                                                   .arg(strPasswordId));
+}
+
+/* static */
 void UINotificationMessage::remindAboutAutoCapture()
 {
     createMessage(
