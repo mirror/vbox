@@ -4733,11 +4733,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                 AssertRelease(!pUnmappedChunk->cPermRefs);
                 pUnmappedChunk->pv       = NULL;
                 pUnmappedChunk->Core.Key = UINT32_MAX;
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
                 MMR3HeapFree(pUnmappedChunk);
-#else
-                MMR3UkHeapFree(pVM, pUnmappedChunk, MM_TAG_PGM_CHUNK_MAPPING);
-#endif
                 pVM->pgm.s.ChunkR3Map.c--;
                 pVM->pgm.s.cUnmappedChunks++;
 
@@ -4816,11 +4812,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     /*
      * Allocate a new tracking structure first.
      */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3HeapAllocZ(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk));
-#else
-    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3UkHeapAllocZ(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk), NULL);
-#endif
     AssertReturn(pChunk, VERR_NO_MEMORY);
     pChunk->Core.Key  = idChunk;
     pChunk->iLastUsed = pVM->pgm.s.ChunkR3Map.iNow;
@@ -4898,11 +4890,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         /** @todo this may fail because of /proc/sys/vm/max_map_count, so we
          *        should probably restrict ourselves on linux. */
         AssertRC(rc);
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         MMR3HeapFree(pChunk);
-#else
-        MMR3UkHeapFree(pVM, pChunk, MM_TAG_PGM_CHUNK_MAPPING);
-#endif
         pChunk = NULL;
     }
 
