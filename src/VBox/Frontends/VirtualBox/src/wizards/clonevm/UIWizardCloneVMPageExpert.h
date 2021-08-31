@@ -31,14 +31,14 @@ class UICloneVMCloneModeGroupBox;
 class UICloneVMCloneTypeGroupBox;
 class UICloneVMNamePathEditor;
 
-/* Expert page of the Clone Virtual Machine wizard: */
+/** Expert page of the Clone Virtual Machine wizard. */
 class UIWizardCloneVMPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
+    /** Constructor. */
     UIWizardCloneVMPageExpert(const QString &strOriginalName, const QString &strDefaultPath,
                               bool fAdditionalInfo, bool fShowChildsOption, const QString &strGroup);
 
@@ -52,14 +52,14 @@ private slots:
 
 private:
 
-    /* Translation stuff: */
+    /** Translation stuff. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Prepare stuff. */
     void initializePage();
     void prepare(const QString &strOriginalName, const QString &strDefaultPath, bool fShowChildsOption);
 
-    /* Validation stuff: */
+    /** Validation stuff. */
     bool isComplete() const;
     bool validatePage();
 

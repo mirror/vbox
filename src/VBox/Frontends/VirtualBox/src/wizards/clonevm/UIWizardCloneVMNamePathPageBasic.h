@@ -59,7 +59,7 @@ private:
     void retranslateUi();
     void initializePage();
     void prepare(const QString &strDefaultClonePath);
-    /* Validation stuff: */
+    /** Validation stuff */
     bool isComplete() const;
 
     QIRichTextLabel *m_pMainLabel;

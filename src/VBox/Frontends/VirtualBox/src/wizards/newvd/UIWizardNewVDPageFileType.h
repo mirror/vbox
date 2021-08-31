@@ -28,14 +28,14 @@
 class QIRichTextLabel;
 class UIDiskFormatsGroupBox;
 
-/* 1st page of the New Virtual Hard Drive wizard (basic extension): */
+/** 1st page of the New Virtual Hard Drive wizard (basic extension). */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageFileType : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
+    /** Constructor. */
     UIWizardNewVDPageFileType();
 
 private slots:
@@ -48,7 +48,7 @@ private:
     void prepare();
     void initializePage();
 
-    /* Validation stuff: */
+    /** Validation stuff. */
     bool isComplete() const;
 
     QIRichTextLabel *m_pLabel;

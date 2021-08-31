@@ -29,7 +29,7 @@ class UIDiskFormatsGroupBox;
 class UIDiskVariantGroupBox;
 class UIMediumSizeAndPathGroupBox;
 
-/* Expert page of the New Virtual Hard Drive wizard: */
+/** Expert page of the New Virtual Hard Drive wizard. */
 class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
@@ -48,28 +48,33 @@ private slots:
 
 private:
 
-    /* Translation stuff: */
+    /** Translation stuff. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Prepare stuff. */
     void prepare();
     void initializePage();
 
-    /* Validation stuff: */
+    /** Validation stuff. */
     bool isComplete() const;
     bool validatePage();
     void updateDiskWidgetsAfterMediumFormatChange();
 
-    /* Widgets: */
-    UIMediumSizeAndPathGroupBox *m_pSizeAndPathGroup;
-    UIDiskFormatsGroupBox *m_pFormatGroup;
-    UIDiskVariantGroupBox *m_pVariantGroup;
+   /** @name Widget
+     * @{ */
+       UIMediumSizeAndPathGroupBox *m_pSizeAndPathGroup;
+       UIDiskFormatsGroupBox *m_pFormatGroup;
+       UIDiskVariantGroupBox *m_pVariantGroup;
+   /** @} */
 
-    QString m_strDefaultName;
-    QString m_strDefaultPath;
-    qulonglong m_uDefaultSize;
-    qulonglong m_uMediumSizeMin;
-    qulonglong m_uMediumSizeMax;
+   /** @name Variable
+     * @{ */
+       QString m_strDefaultName;
+       QString m_strDefaultPath;
+       qulonglong m_uDefaultSize;
+       qulonglong m_uMediumSizeMin;
+       qulonglong m_uMediumSizeMax;
+   /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageExpert_h */

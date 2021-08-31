@@ -29,7 +29,7 @@
 #include "CMedium.h"
 #include "CMediumFormat.h"
 
-/* New Virtual Hard Drive wizard: */
+/** New Virtual Hard Drive wizard. */
 class SHARED_LIBRARY_STUFF UIWizardNewVD : public UINativeWizard
 {
     Q_OBJECT;
