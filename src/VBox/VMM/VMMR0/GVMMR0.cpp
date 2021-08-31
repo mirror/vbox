@@ -97,19 +97,6 @@
 #endif
 
 
-/** @def GVMM_CHECK_SMAP_SETUP
- * SMAP check setup. */
-/** @def GVMM_CHECK_SMAP_CHECK
- * Checks that the AC flag is set if SMAP is enabled. If AC is not set,
- * it will be logged and @a a_BadExpr is executed. */
-/** @def GVMM_CHECK_SMAP_CHECK2
- * Checks that the AC flag is set if SMAP is enabled.  If AC is not set, it will
- * be logged, written to the VMs assertion text buffer, and @a a_BadExpr is
- * executed. */
-#define GVMM_CHECK_SMAP_SETUP()           uint32_t const fKernelFeatures = 0
-#define GVMM_CHECK_SMAP_CHECK(a_BadExpr)           NOREF(fKernelFeatures)
-#define GVMM_CHECK_SMAP_CHECK2(a_pGVM, a_BadExpr)   NOREF(fKernelFeatures)
-
 /** Special value that GVMMR0DeregisterVCpu sets. */
 #define GVMM_RTNATIVETHREAD_DESTROYED       (~(RTNATIVETHREAD)1)
 AssertCompile(GVMM_RTNATIVETHREAD_DESTROYED != NIL_RTNATIVETHREAD);
@@ -2144,9 +2131,6 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
 {
     LogFlow(("GVMMR0SchedHalt: pGVM=%p pGVCpu=%p(%d) u64ExpireGipTime=%#RX64\n",
              pGVM, pGVCpu, pGVCpu->idCpu, u64ExpireGipTime));
-    GVMM_CHECK_SMAP_SETUP();
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-
     PGVMM pGVMM;
     GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
@@ -2162,7 +2146,6 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
     if (fDoEarlyWakeUps)
     {
         int rc2 = GVMMR0_USED_SHARED_LOCK(pGVMM); AssertRC(rc2);
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     }
 
     pGVCpu->gvmm.s.iCpuEmt = ASMGetApicId();
@@ -2173,13 +2156,9 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
     Assert(ASMGetFlags() & X86_EFL_IF);
     const uint64_t u64NowSys = RTTimeSystemNanoTS();
     const uint64_t u64NowGip = RTTimeNanoTS();
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
 
     if (fDoEarlyWakeUps)
-    {
         pGVM->gvmm.s.StatsSched.cHaltWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64NowGip);
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-    }
 
     /*
      * Go to sleep if we must...
@@ -2203,22 +2182,17 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
                 pGVMM->uNsNextEmtWakeup = u64ExpireGipTime;
             GVMMR0_USED_SHARED_UNLOCK(pGVMM);
         }
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
 
         rc = RTSemEventMultiWaitEx(pGVCpu->gvmm.s.HaltEventMulti,
                                    RTSEMWAIT_FLAGS_ABSOLUTE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE,
                                    u64NowGip > u64NowSys ? u64ExpireGipTime : u64NowSys + cNsInterval);
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
 
         ASMAtomicWriteU64(&pGVCpu->gvmm.s.u64HaltExpire, 0);
         ASMAtomicDecU32(&pGVMM->cHaltedEMTs);
 
         /* Reset the semaphore to try prevent a few false wake-ups. */
         if (rc == VINF_SUCCESS)
-        {
             RTSemEventMultiReset(pGVCpu->gvmm.s.HaltEventMulti);
-            GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-        }
         else if (rc == VERR_TIMEOUT)
         {
             pGVM->gvmm.s.StatsSched.cHaltTimeouts++;
@@ -2230,9 +2204,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
         pGVM->gvmm.s.StatsSched.cHaltNotBlocking++;
         if (fDoEarlyWakeUps)
             GVMMR0_USED_SHARED_UNLOCK(pGVMM);
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
         RTSemEventMultiReset(pGVCpu->gvmm.s.HaltEventMulti);
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
         rc = VINF_SUCCESS;
     }
 
@@ -2252,16 +2224,10 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
  */
 GVMMR0DECL(int) GVMMR0SchedHaltReq(PGVM pGVM, VMCPUID idCpu, uint64_t u64ExpireGipTime)
 {
-    GVMM_CHECK_SMAP_SETUP();
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     PGVMM pGVMM;
     int rc = gvmmR0ByGVMandEMT(pGVM, idCpu, &pGVMM);
     if (RT_SUCCESS(rc))
-    {
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
         rc = GVMMR0SchedHalt(pGVM, &pGVM->aCpus[idCpu], u64ExpireGipTime);
-    }
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     return rc;
 }
 
@@ -2323,15 +2289,11 @@ DECLINLINE(int) gvmmR0SchedWakeUpOne(PGVM pGVM, PGVMCPU pGVCpu)
  */
 GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PGVM pGVM, VMCPUID idCpu, bool fTakeUsedLock)
 {
-    GVMM_CHECK_SMAP_SETUP();
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-
     /*
      * Validate input and take the UsedLock.
      */
     PGVMM pGVMM;
     int rc = gvmmR0ByGVM(pGVM, &pGVMM, fTakeUsedLock);
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     if (RT_SUCCESS(rc))
     {
         if (idCpu < pGVM->cCpus)
@@ -2340,7 +2302,6 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PGVM pGVM, VMCPUID idCpu, bool fTakeUsedLock
              * Do the actual job.
              */
             rc = gvmmR0SchedWakeUpOne(pGVM, &pGVM->aCpus[idCpu]);
-            GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
 
             if (fTakeUsedLock && pGVMM->fDoEarlyWakeUps)
             {
@@ -2350,7 +2311,6 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PGVM pGVM, VMCPUID idCpu, bool fTakeUsedLock
                 Assert(ASMGetFlags() & X86_EFL_IF);
                 const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
                 pGVM->gvmm.s.StatsSched.cWakeUpWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
-                GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
             }
         }
         else
@@ -2360,7 +2320,6 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpEx(PGVM pGVM, VMCPUID idCpu, bool fTakeUsedLock
         {
             int rc2 = GVMMR0_USED_SHARED_UNLOCK(pGVMM);
             AssertRC(rc2);
-            GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
         }
     }
 
@@ -2401,11 +2360,8 @@ GVMMR0DECL(int) GVMMR0SchedWakeUp(PGVM pGVM, VMCPUID idCpu)
  */
 GVMMR0DECL(int) GVMMR0SchedWakeUpNoGVMNoLock(PGVM pGVM, VMCPUID idCpu)
 {
-    GVMM_CHECK_SMAP_SETUP();
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     PGVMM pGVMM;
     int rc = gvmmR0ByGVM(pGVM, &pGVMM, false /*fTakeUsedLock*/);
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     if (RT_SUCCESS(rc))
         rc = GVMMR0SchedWakeUpEx(pGVM, idCpu, false /*fTakeUsedLock*/);
     return rc;
@@ -2535,8 +2491,6 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PGVM pGVM, PCVMCPUSET pSleepSet, PC
 {
     AssertPtrReturn(pSleepSet, VERR_INVALID_POINTER);
     AssertPtrReturn(pPokeSet, VERR_INVALID_POINTER);
-    GVMM_CHECK_SMAP_SETUP();
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     RTNATIVETHREAD hSelf = RTThreadNativeSelf();
 
     /*
@@ -2544,7 +2498,6 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PGVM pGVM, PCVMCPUSET pSleepSet, PC
      */
     PGVMM pGVMM;
     int rc = gvmmR0ByGVM(pGVM, &pGVMM, true /* fTakeUsedLock */);
-    GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     if (RT_SUCCESS(rc))
     {
         rc = VINF_SUCCESS;
@@ -2557,20 +2510,13 @@ GVMMR0DECL(int) GVMMR0SchedWakeUpAndPokeCpus(PGVM pGVM, PCVMCPUSET pSleepSet, PC
 
             /* just ignore errors for now. */
             if (VMCPUSET_IS_PRESENT(pSleepSet, idCpu))
-            {
                 gvmmR0SchedWakeUpOne(pGVM, &pGVM->aCpus[idCpu]);
-                GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-            }
             else if (VMCPUSET_IS_PRESENT(pPokeSet, idCpu))
-            {
                 gvmmR0SchedPokeOne(pGVM, &pGVM->aCpus[idCpu]);
-                GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-            }
         }
 
         int rc2 = GVMMR0_USED_SHARED_UNLOCK(pGVMM);
         AssertRC(rc2);
-        GVMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
     }
 
     LogFlow(("GVMMR0SchedWakeUpAndPokeCpus: returns %Rrc\n", rc));
