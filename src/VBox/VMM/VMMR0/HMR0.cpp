@@ -1449,11 +1449,6 @@ VMMR0_INT_DECL(int) HMR0Enter(PVMCPUCC pVCpu)
             Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
                    ==                            (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        AssertReturn(!VMMR0ThreadCtxHookIsEnabled(pVCpu), VERR_HM_IPE_5);
-        bool const fStartedSet = PGMR0DynMapStartOrMigrateAutoSet(pVCpu);
-#endif
-
         /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
         rc = g_HmR0Ops.pfnEnterSession(pVCpu);
         AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hmr0.s.idEnteredCpu = NIL_RTCPUID, rc);
@@ -1462,11 +1457,6 @@ VMMR0_INT_DECL(int) HMR0Enter(PVMCPUCC pVCpu)
            possibly now be scheduled on a different CPU. */
         rc = g_HmR0Ops.pfnExportHostState(pVCpu);
         AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hmr0.s.idEnteredCpu = NIL_RTCPUID, rc);
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        if (fStartedSet)
-            PGMRZDynMapReleaseAutoSet(pVCpu);
-#endif
     }
     return rc;
 }
@@ -1556,17 +1546,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVMCC pVM, PVMCPUCC pVCpu)
     }
 #endif
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    AssertReturn(!VMMR0ThreadCtxHookIsEnabled(pVCpu), VERR_HM_IPE_4);
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    PGMRZDynMapStartAutoSet(pVCpu);
-#endif
-
     VBOXSTRICTRC rcStrict = g_HmR0Ops.pfnRunGuestCode(pVCpu);
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    PGMRZDynMapReleaseAutoSet(pVCpu);
-#endif
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 

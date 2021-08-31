@@ -1793,7 +1793,7 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst
             AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
         }
 
-# if defined(IN_RING3) || (defined(IN_RING0) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE))
+# if defined(IN_RING3) || defined(IN_RING0) /** @todo fixme */
         /*
          * Try do a direct read using the pbMappingR3 pointer.
          */

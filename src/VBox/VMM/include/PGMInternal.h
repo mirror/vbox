@@ -1739,141 +1739,6 @@ typedef PGMPAGER0MAPTLB *PPGMPAGER0MAPTLB;
 /** @} */
 
 
-/**
- * Raw-mode context dynamic mapping cache entry.
- *
- * Because of raw-mode context being reloctable and all relocations are applied
- * in ring-3, this has to be defined here and be RC specific.
- *
- * @sa PGMRZDYNMAPENTRY, PGMR0DYNMAPENTRY.
- */
-typedef struct PGMRCDYNMAPENTRY
-{
-    /** The physical address of the currently mapped page.
-     * This is duplicate for three reasons: cache locality, cache policy of the PT
-     * mappings and sanity checks. */
-    RTHCPHYS                    HCPhys;
-    /** Pointer to the page. */
-    RTRCPTR                     pvPage;
-    /** The number of references. */
-    int32_t volatile            cRefs;
-    /** PTE pointer union. */
-    struct PGMRCDYNMAPENTRY_PPTE
-    {
-        /** PTE pointer, 32-bit legacy version. */
-        RCPTRTYPE(PX86PTE)      pLegacy;
-        /** PTE pointer, PAE version. */
-        RCPTRTYPE(PX86PTEPAE)   pPae;
-    } uPte;
-} PGMRCDYNMAPENTRY;
-/** Pointer to a dynamic mapping cache entry for the raw-mode context. */
-typedef PGMRCDYNMAPENTRY *PPGMRCDYNMAPENTRY;
-
-
-/**
- * Dynamic mapping cache for the raw-mode context.
- *
- * This is initialized during VMMRC init based upon the pbDynPageMapBaseGC and
- * paDynPageMap* PGM members.  However, it has to be defined in PGMInternal.h
- * so that we can perform relocations from PGMR3Relocate.  This has the
- * consequence that we must have separate ring-0 and raw-mode context versions
- * of this struct even if they share the basic elements.
- *
- * @sa PPGMRZDYNMAP, PGMR0DYNMAP.
- */
-typedef struct PGMRCDYNMAP
-{
-    /** The usual magic number / eye catcher (PGMRZDYNMAP_MAGIC). */
-    uint32_t                        u32Magic;
-    /** Array for tracking and managing the pages. */
-    RCPTRTYPE(PPGMRCDYNMAPENTRY)    paPages;
-    /** The cache size given as a number of pages. */
-    uint32_t                        cPages;
-    /** The current load.
-     * This does not include guard pages. */
-    uint32_t                        cLoad;
-    /** The max load ever.
-     * This is maintained to get trigger adding of more mapping space. */
-    uint32_t                        cMaxLoad;
-    /** The number of guard pages. */
-    uint32_t                        cGuardPages;
-    /** The number of users (protected by hInitLock). */
-    uint32_t                        cUsers;
-} PGMRCDYNMAP;
-/** Pointer to the dynamic cache for the raw-mode context. */
-typedef PGMRCDYNMAP *PPGMRCDYNMAP;
-
-
-/**
- * Mapping cache usage set entry.
- *
- * @remarks 16-bit ints was chosen as the set is not expected to be used beyond
- *          the dynamic ring-0 and (to some extent) raw-mode context mapping
- *          cache.  If it's extended to include ring-3, well, then something
- *          will have be changed here...
- */
-typedef struct PGMMAPSETENTRY
-{
-    /** Pointer to the page. */
-    RTR0PTR                     pvPage;
-    /** The mapping cache index. */
-    uint16_t                    iPage;
-    /** The number of references.
-     * The max is UINT16_MAX - 1. */
-    uint16_t                    cRefs;
-    /** The number inlined references.
-     * The max is UINT16_MAX - 1. */
-    uint16_t                    cInlinedRefs;
-    /** Unreferences. */
-    uint16_t                    cUnrefs;
-
-#if HC_ARCH_BITS == 32
-    uint32_t                    u32Alignment1;
-#endif
-    /** The physical address for this entry. */
-    RTHCPHYS                    HCPhys;
-} PGMMAPSETENTRY;
-AssertCompileMemberOffset(PGMMAPSETENTRY, iPage, RT_MAX(sizeof(RTR0PTR), sizeof(RTRCPTR)));
-AssertCompileMemberAlignment(PGMMAPSETENTRY, HCPhys, sizeof(RTHCPHYS));
-/** Pointer to a mapping cache usage set entry. */
-typedef PGMMAPSETENTRY *PPGMMAPSETENTRY;
-
-/**
- * Mapping cache usage set.
- *
- * This is used in ring-0 and the raw-mode context to track dynamic mappings
- * done during exits / traps.  The set is
- */
-typedef struct PGMMAPSET
-{
-    /** The number of occupied entries.
-     * This is PGMMAPSET_CLOSED if the set is closed and we're not supposed to do
-     * dynamic mappings. */
-    uint32_t                    cEntries;
-    /** The start of the current subset.
-     * This is UINT32_MAX if no subset is currently open. */
-    uint32_t                    iSubset;
-    /** The index of the current CPU, only valid if the set is open. */
-    int32_t                     iCpu;
-    uint32_t                    alignment;
-    /** The entries. */
-    PGMMAPSETENTRY              aEntries[64];
-    /** HCPhys -> iEntry fast lookup table.
-     * Use PGMMAPSET_HASH for hashing.
-     * The entries may or may not be valid, check against cEntries. */
-    uint8_t                     aiHashTable[128];
-} PGMMAPSET;
-AssertCompileSizeAlignment(PGMMAPSET, 8);
-/** Pointer to the mapping cache set. */
-typedef PGMMAPSET *PPGMMAPSET;
-
-/** PGMMAPSET::cEntries value for a closed set. */
-#define PGMMAPSET_CLOSED            UINT32_C(0xdeadc0fe)
-
-/** Hash function for aiHashTable. */
-#define PGMMAPSET_HASH(HCPhys)      (((HCPhys) >> PAGE_SHIFT) & 127)
-
-
 /** @name Context neutral page mapper TLB.
  *
  * Hoping to avoid some code and bug duplication parts of the GCxxx->CCPtr
@@ -3661,12 +3526,6 @@ typedef struct PGMCPU
     int32_t                         offPGM;
     uint32_t                        uPadding0;      /**< structure size alignment. */
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /** Automatically tracked physical memory mapping set.
-     * Ring-0 and strict raw-mode builds. */
-    PGMMAPSET                       AutoSet;
-#endif
-
     /** A20 gate mask.
      * Our current approach to A20 emulation is to let REM do it and don't bother
      * anywhere else. The interesting Guests will be operating with it enabled anyway.
@@ -3704,10 +3563,8 @@ typedef struct PGMCPU
      * @{ */
     /** The guest's page directory, R3 pointer. */
     R3PTRTYPE(PX86PD)               pGst32BitPdR3;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The guest's page directory, R0 pointer. */
     R0PTRTYPE(PX86PD)               pGst32BitPdR0;
-#endif
     /** Mask containing the MBZ bits of a big page PDE. */
     uint32_t                        fGst32BitMbzBigPdeMask;
     /** Set if the page size extension (PSE) is enabled. */
@@ -3720,10 +3577,8 @@ typedef struct PGMCPU
      * @{ */
     /** The guest's page directory pointer table, R3 pointer. */
     R3PTRTYPE(PX86PDPT)             pGstPaePdptR3;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The guest's page directory pointer table, R0 pointer. */
     R0PTRTYPE(PX86PDPT)             pGstPaePdptR0;
-#endif
 
     /** The guest's page directories, R3 pointers.
      * These are individual pointers and don't have to be adjacent.
@@ -3731,9 +3586,7 @@ typedef struct PGMCPU
     R3PTRTYPE(PX86PDPAE)            apGstPaePDsR3[4];
     /** The guest's page directories, R0 pointers.
      * Same restrictions as apGstPaePDsR3. */
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
-#endif
     /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
     RTGCPHYS                        aGCPhysGstPaePDs[4];
     /** The values of the 4 PDPE CPU registers (PAE).
@@ -3758,12 +3611,8 @@ typedef struct PGMCPU
      * @{ */
     /** The guest's page directory pointer table, R3 pointer. */
     R3PTRTYPE(PX86PML4)             pGstAmd64Pml4R3;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The guest's page directory pointer table, R0 pointer. */
     R0PTRTYPE(PX86PML4)             pGstAmd64Pml4R0;
-#else
-    RTR0PTR                         alignment6b; /**< alignment equalizer. */
-#endif
     /** Mask containing the MBZ PTE bits. */
     uint64_t                        fGstAmd64MbzPteMask;
     /** Mask containing the MBZ PDE bits. */

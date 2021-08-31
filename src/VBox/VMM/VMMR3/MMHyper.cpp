@@ -1005,14 +1005,6 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
         }
     }
 
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    /*
-     * Set MMHYPER_AONR_FLAGS_KERNEL_MAPPING if we're in going to execute in ring-0.
-     */
-    if (VM_IS_HM_OR_NEM_ENABLED(pVM))
-        fFlags |= MMHYPER_AONR_FLAGS_KERNEL_MAPPING;
-#endif
-
     /*
      * Validate alignment.
      */

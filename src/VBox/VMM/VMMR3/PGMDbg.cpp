@@ -2561,28 +2561,22 @@ void pgmLogState(PVM pVM)
         LOG_PGMCPU_MEMBER("RGp",    GCPhysCR3);
 
         LOG_PGMCPU_MEMBER("p",      pGst32BitPdR3);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         LOG_PGMCPU_MEMBER("p",      pGst32BitPdR0);
-# endif
         LOG_PGMCPU_MEMBER("RRv",    pGst32BitPdRC);
         LOG_PGMCPU_MEMBER("#RX32",  fGst32BitMbzBigPdeMask);
         LOG_PGMCPU_MEMBER("RTbool", fGst32BitPageSizeExtension);
 
         LOG_PGMCPU_MEMBER("p",      pGstPaePdptR3);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         LOG_PGMCPU_MEMBER("p",      pGstPaePdptR0);
-# endif
         LOG_PGMCPU_MEMBER("RRv",    pGstPaePdptRC);
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR3[0]);
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR3[1]);
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR3[2]);
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR3[3]);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR0[0]);
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR0[1]);
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR0[2]);
         LOG_PGMCPU_MEMBER("p",      apGstPaePDsR0[3]);
-# endif
         LOG_PGMCPU_MEMBER("RRv",    apGstPaePDsR0[0]);
         LOG_PGMCPU_MEMBER("RRv",    apGstPaePDsR0[1]);
         LOG_PGMCPU_MEMBER("RRv",    apGstPaePDsR0[2]);
@@ -2606,9 +2600,7 @@ void pgmLogState(PVM pVM)
         LOG_PGMCPU_MEMBER("#RX64",  fGstPaeMbzPdpeMask);
 
         LOG_PGMCPU_MEMBER("p",      pGstAmd64Pml4R3);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         LOG_PGMCPU_MEMBER("p",      pGstAmd64Pml4R0);
-# endif
         LOG_PGMCPU_MEMBER("#RX64",  fGstAmd64MbzPteMask);
         LOG_PGMCPU_MEMBER("#RX64",  fGstAmd64MbzPdeMask);
         LOG_PGMCPU_MEMBER("#RX64",  fGstAmd64MbzBigPdeMask);

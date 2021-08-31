@@ -2314,9 +2314,7 @@ int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
     /* Invalid page or some failure, invalidate the entry. */
     pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = NIL_RTGCPHYS;
     pVCpu->pgm.s.apGstPaePDsR3[iPdpt]      = NIL_RTR3PTR;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVCpu->pgm.s.apGstPaePDsR0[iPdpt]      = NIL_RTR0PTR;
-# endif
 
     PGM_UNLOCK(pVM);
     return rc;
@@ -2406,9 +2404,7 @@ VMM_INT_DECL(void) PGMGstUpdatePaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPdpes)
 
             /* Force lazy remapping if it changed in any way. */
             pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
-#endif
             pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
         }
     }

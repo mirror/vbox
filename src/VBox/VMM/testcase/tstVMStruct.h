@@ -430,10 +430,8 @@
     GEN_CHECK_OFF(MM, pHyperHeapR0);
     GEN_CHECK_OFF(MM, pPagePoolR3);
     GEN_CHECK_OFF(MM, pPagePoolLowR3);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(MM, pPagePoolR0);
     GEN_CHECK_OFF(MM, pPagePoolLowR0);
-#endif
     GEN_CHECK_OFF(MM, pvDummyPage);
     GEN_CHECK_OFF(MM, HCPhysDummyPage);
     GEN_CHECK_OFF(MM, cbRamBase);
@@ -670,9 +668,6 @@
     GEN_CHECK_OFF(PGMCPU, offVM);
     GEN_CHECK_OFF(PGMCPU, offVCpu);
     GEN_CHECK_OFF(PGMCPU, offPGM);
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_RAW_MODE)
-    GEN_CHECK_OFF(PGMCPU, AutoSet);
-#endif
     GEN_CHECK_OFF(PGMCPU, GCPhysA20Mask);
     GEN_CHECK_OFF(PGMCPU, fA20Enabled);
     GEN_CHECK_OFF(PGMCPU, fSyncFlags);
@@ -681,19 +676,13 @@
     GEN_CHECK_OFF(PGMCPU, GCPhysCR3);
     GEN_CHECK_OFF(PGM, GCPtrCR3Mapping);
     GEN_CHECK_OFF(PGMCPU, pGst32BitPdR3);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGMCPU, pGst32BitPdR0);
-#endif
     GEN_CHECK_OFF(PGMCPU, pGst32BitPdRC);
     GEN_CHECK_OFF(PGMCPU, pGstPaePdptR3);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGMCPU, pGstPaePdptR0);
-#endif
     GEN_CHECK_OFF(PGMCPU, pGstPaePdptRC);
     GEN_CHECK_OFF(PGMCPU, apGstPaePDsR3);
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGMCPU, apGstPaePDsR0);
-#endif
     GEN_CHECK_OFF(PGMCPU, apGstPaePDsRC);
     GEN_CHECK_OFF(PGMCPU, aGCPhysGstPaePDs);
     GEN_CHECK_OFF(PGMCPU, aGCPhysGstPaePDsMonitored);

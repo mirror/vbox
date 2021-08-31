@@ -644,14 +644,6 @@ VMMDECL(unsigned)   PGMAssertNoMappingConflicts(PVM pVM);
 VMMDECL(unsigned)   PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4);
 #endif /* VBOX_STRICT */
 
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-VMMDECL(void)       PGMRZDynMapStartAutoSet(PVMCPU pVCpu);
-VMMDECL(void)       PGMRZDynMapReleaseAutoSet(PVMCPU pVCpu);
-VMMDECL(void)       PGMRZDynMapFlushAutoSet(PVMCPU pVCpu);
-VMMDECL(uint32_t)   PGMRZDynMapPushAutoSubset(PVMCPU pVCpu);
-VMMDECL(void)       PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
-#endif
-
 VMMDECL(int)        PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages);
 
 /**
@@ -661,15 +653,6 @@ VMMDECL(int)        PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages);
  * @param   pVM         The cross context VM structure.
  */
 #define PGMIsUsingLargePages(pVM)   ((pVM)->fUseLargePages)
-
-
-#ifdef IN_RC
-/** @defgroup grp_pgm_gc  The PGM Guest Context API
- * @{
- */
-VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
-/** @} */
-#endif /* IN_RC */
 
 
 #ifdef IN_RING0
@@ -692,16 +675,6 @@ VMMR0DECL(int)       PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, P
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode,
                                                       PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
 VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM);
-
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-VMMR0DECL(int)       PGMR0DynMapInit(void);
-VMMR0DECL(void)      PGMR0DynMapTerm(void);
-VMMR0DECL(int)       PGMR0DynMapInitVM(PVMCC pVM);
-VMMR0DECL(void)      PGMR0DynMapTermVM(PVMCC pVM);
-VMMR0DECL(int)       PGMR0DynMapAssertIntegrity(void);
-VMMR0DECL(bool)      PGMR0DynMapStartOrMigrateAutoSet(PVMCPUCC pVCpu);
-VMMR0DECL(void)      PGMR0DynMapMigrateAutoSet(PVMCPUCC pVCpu);
-# endif
 /** @} */
 #endif /* IN_RING0 */
 

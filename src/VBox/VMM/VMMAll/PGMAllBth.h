@@ -4371,9 +4371,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
             }
 
             pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
-#  endif
             pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
         }
 
@@ -4490,29 +4488,21 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
      */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
     pVCpu->pgm.s.pGst32BitPdR3 = 0;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVCpu->pgm.s.pGst32BitPdR0 = 0;
-# endif
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
     pVCpu->pgm.s.pGstPaePdptR3 = 0;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVCpu->pgm.s.pGstPaePdptR0 = 0;
-# endif
     for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
     {
         pVCpu->pgm.s.apGstPaePDsR3[i]    = 0;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVCpu->pgm.s.apGstPaePDsR0[i]    = 0;
-# endif
         pVCpu->pgm.s.aGCPhysGstPaePDs[i] = NIL_RTGCPHYS;
     }
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
     pVCpu->pgm.s.pGstAmd64Pml4R3 = 0;
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVCpu->pgm.s.pGstAmd64Pml4R0 = 0;
-# endif
 
 #else /* prot/real mode stub */
     /* nothing to do */

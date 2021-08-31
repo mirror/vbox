@@ -89,12 +89,9 @@ VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM)
  */
 VMMR0_INT_DECL(int) PGMR0InitVM(PGVM pGVM)
 {
-    int rc = VINF_SUCCESS;
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    rc = PGMR0DynMapInitVM(pGVM);
-#endif
     RT_NOREF(pGVM);
-    return rc;
+    /* Was used for DynMap init */
+    return VINF_SUCCESS;
 }
 
 

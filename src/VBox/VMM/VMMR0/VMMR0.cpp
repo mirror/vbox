@@ -167,59 +167,48 @@ DECLEXPORT(int) ModuleInit(void *hMod)
                     rc = PGMRegisterStringFormatTypes();
                     if (RT_SUCCESS(rc))
                     {
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                        rc = PGMR0DynMapInit();
-#endif
+                        rc = IntNetR0Init();
                         if (RT_SUCCESS(rc))
                         {
-                            rc = IntNetR0Init();
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                            rc = PciRawR0Init();
+#endif
                             if (RT_SUCCESS(rc))
                             {
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                                rc = PciRawR0Init();
-#endif
+                                rc = CPUMR0ModuleInit();
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = CPUMR0ModuleInit();
+#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+                                    rc = vmmR0TripleFaultHackInit();
                                     if (RT_SUCCESS(rc))
+#endif
                                     {
-#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
-                                        rc = vmmR0TripleFaultHackInit();
                                         if (RT_SUCCESS(rc))
-#endif
                                         {
-                                            if (RT_SUCCESS(rc))
-                                            {
-                                                LogFlow(("ModuleInit: returns success\n"));
-                                                return VINF_SUCCESS;
-                                            }
+                                            LogFlow(("ModuleInit: returns success\n"));
+                                            return VINF_SUCCESS;
                                         }
-
-                                        /*
-                                         * Bail out.
-                                         */
-#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
-                                        vmmR0TripleFaultHackTerm();
-#endif
                                     }
-                                    else
-                                        LogRel(("ModuleInit: CPUMR0ModuleInit -> %Rrc\n", rc));
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                                    PciRawR0Term();
+
+                                    /*
+                                     * Bail out.
+                                     */
+#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+                                    vmmR0TripleFaultHackTerm();
 #endif
                                 }
                                 else
-                                    LogRel(("ModuleInit: PciRawR0Init -> %Rrc\n", rc));
-                                IntNetR0Term();
+                                    LogRel(("ModuleInit: CPUMR0ModuleInit -> %Rrc\n", rc));
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                                PciRawR0Term();
+#endif
                             }
                             else
-                                LogRel(("ModuleInit: IntNetR0Init -> %Rrc\n", rc));
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                            PGMR0DynMapTerm();
-#endif
+                                LogRel(("ModuleInit: PciRawR0Init -> %Rrc\n", rc));
+                            IntNetR0Term();
                         }
                         else
-                            LogRel(("ModuleInit: PGMR0DynMapInit -> %Rrc\n", rc));
+                            LogRel(("ModuleInit: IntNetR0Init -> %Rrc\n", rc));
                         PGMDeregisterStringFormatTypes();
                     }
                     else
@@ -270,9 +259,6 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
     /*
      * PGM (Darwin), HM and PciRaw global cleanup.
      */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    PGMR0DynMapTerm();
-#endif
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     PciRawR0Term();
 #endif
@@ -560,9 +546,6 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, VMCPUID idCpu)
 
         /** @todo I wish to call PGMR0PhysFlushHandyPages(pGVM, &pGVM->aCpus[idCpu])
          *        here to make sure we don't leak any shared pages if we crash... */
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        PGMR0DynMapTermVM(pGVM);
-#endif
         HMR0TermVM(pGVM);
     }
 

@@ -4752,17 +4752,13 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                     pPGM->pGst32BitPdR3    = NULL;
                     pPGM->pGstPaePdptR3    = NULL;
                     pPGM->pGstAmd64Pml4R3  = NULL;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
                     pPGM->pGst32BitPdR0    = NIL_RTR0PTR;
                     pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
                     pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
-#endif
                     for (unsigned i = 0; i < RT_ELEMENTS(pPGM->apGstPaePDsR3); i++)
                     {
-                        pPGM->apGstPaePDsR3[i]             = NULL;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                        pPGM->apGstPaePDsR0[i]             = NIL_RTR0PTR;
-#endif
+                        pPGM->apGstPaePDsR3[i] = NULL;
+                        pPGM->apGstPaePDsR0[i] = NIL_RTR0PTR;
                     }
 
                     /* Flush REM TLBs. */
