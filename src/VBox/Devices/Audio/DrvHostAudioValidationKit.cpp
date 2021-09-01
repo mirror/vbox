@@ -260,7 +260,7 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
         if (cbOutstanding)
             LogRel(("ValKit: \tRecording test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
                     pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
-                    (pTst->t.TestTone.u.Rec.cbWritten * 100) / RT_MAX(pTst->t.TestTone.u.Rec.cbToWrite, 1)));
+                    100 - (pTst->t.TestTone.u.Rec.cbWritten * 100) / RT_MAX(pTst->t.TestTone.u.Rec.cbToWrite, 1)));
         drvHostValKiUnregisterRecTest(pThis, pTst);
     }
 
@@ -273,7 +273,7 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
         if (cbOutstanding)
             LogRel(("ValKit: \tPlayback test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
                     pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
-                    (pTst->t.TestTone.u.Play.cbRead * 100) / RT_MAX(pTst->t.TestTone.u.Play.cbToRead, 1)));
+                    100 - (pTst->t.TestTone.u.Play.cbRead * 100) / RT_MAX(pTst->t.TestTone.u.Play.cbToRead, 1)));
         drvHostValKiUnregisterPlayTest(pThis, pTst);
     }
 
