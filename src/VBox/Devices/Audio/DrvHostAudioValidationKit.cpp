@@ -1109,11 +1109,11 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     Callbacks.pvUser              = pThis;
 
     /** @todo Make this configurable via CFGM. */
-    const char *pszTcpAddr = "127.0.0.1"; /* Only reachable for localhost for now. */
-    uint32_t    uTcpPort   = ATS_TCP_DEF_BIND_PORT_VALKIT;
+    const char *pszBindAddr = "127.0.0.1"; /* Only reachable for localhost for now. */
+    uint32_t    uBindPort   = ATS_TCP_DEF_BIND_PORT_VALKIT;
 
     LogRel(("ValKit: Starting Audio Test Service (ATS) at %s:%RU32...\n",
-            pszTcpAddr, uTcpPort));
+            pszBindAddr, uBindPort));
 
     /* Dont' use rc here, as this will be reported back to PDM and will prevent VBox
      * from starting -- not critical but warn the user though. */
@@ -1127,11 +1127,11 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
         rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_CONN_MODE, &Val);
         AssertRC(rc2);
 
-        Val.psz = pszTcpAddr;
+        Val.psz = pszBindAddr;
         rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_ADDRESS, &Val);
         AssertRC(rc2);
 
-        Val.u16 = uTcpPort;
+        Val.u16 = uBindPort;
         rc2 = AudioTestSvcHandleOption(&pThis->Srv, ATSTCPOPT_BIND_PORT, &Val);
         AssertRC(rc2);
 
