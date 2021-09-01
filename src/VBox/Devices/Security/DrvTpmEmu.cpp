@@ -656,7 +656,7 @@ static DECLCALLBACK(int) drvTpmEmuShutdown(PPDMITPMCONNECTOR pInterface)
 static DECLCALLBACK(int) drvTpmEmuReset(PPDMITPMCONNECTOR pInterface)
 {
     RT_NOREF(pInterface);
-    return VERR_NOT_IMPLEMENTED;
+    return VINF_SUCCESS;
 }
 
 

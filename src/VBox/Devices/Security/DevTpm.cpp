@@ -1407,11 +1407,14 @@ static DECLCALLBACK(void) tpmR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
 {
-    PDEVTPM pThis = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
+    PDEVTPM   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
+    PDEVTPMCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMCC);
 
-    pThis->enmState   = DEVTPMSTATE_IDLE;
-    pThis->bLoc       = TPM_NO_LOCALITY_SELECTED;
-    pThis->offCmdResp = 0;
+    pThis->enmState       = DEVTPMSTATE_IDLE;
+    pThis->bLoc           = TPM_NO_LOCALITY_SELECTED;
+    pThis->bmLocReqAcc    = 0;
+    pThis->bmLocSeizedAcc = 0;
+    pThis->offCmdResp     = 0;
     RT_ZERO(pThis->abCmdResp);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aLoc); i++)
@@ -1419,6 +1422,12 @@ static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
         PDEVTPMLOCALITY pLoc = &pThis->aLoc[i];
         pLoc->uRegIntEn  = 0;
         pLoc->uRegIntSts = 0;
+    }
+
+    if (pThisCC->pDrvTpm)
+    {
+        int rc = pThisCC->pDrvTpm->pfnReset(pThisCC->pDrvTpm);
+        AssertRC(rc);
     }
 }
 
