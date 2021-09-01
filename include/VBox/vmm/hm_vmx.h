@@ -2498,6 +2498,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS3_, UINT64_C(0), UINT64_MAX,
 #define VMX_ENTRY_CTLS_LOAD_RTIT_CTL_MSR                        RT_BIT(18)
 /** Whether the guest CET-related MSRs and SPP are loaded on VM-entry. */
 #define VMX_ENTRY_CTLS_LOAD_CET_STATE                           RT_BIT(20)
+/** Whether the guest IA32_PKRS MSR is loaded on VM-entry. */
+#define VMX_ENTRY_CTLS_LOAD_PKRS_MSR                            RT_BIT(22)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_ENTRY_CTLS_DEFAULT1                                 UINT32_C(0x000011ff)
 
@@ -2529,12 +2531,21 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS3_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_FROM_PT_MASK              UINT32_C(0x00020000)
 #define VMX_BF_ENTRY_CTLS_LOAD_RTIT_CTL_MSR_SHIFT               18
 #define VMX_BF_ENTRY_CTLS_LOAD_RTIT_CTL_MSR_MASK                UINT32_C(0x00040000)
-#define VMX_BF_ENTRY_CTLS_RSVD_19_31_SHIFT                      19
-#define VMX_BF_ENTRY_CTLS_RSVD_19_31_MASK                       UINT32_C(0xfff80000)
+#define VMX_BF_ENTRY_CTLS_RSVD_19_SHIFT                         19
+#define VMX_BF_ENTRY_CTLS_RSVD_19_MASK                          UINT32_C(0x00080000)
+#define VMX_BF_ENTRY_CTLS_LOAD_CET_SHIFT                        20
+#define VMX_BF_ENTRY_CTLS_LOAD_CET_MASK                         UINT32_C(0x00100000)
+#define VMX_BF_ENTRY_CTLS_RSVD_21_SHIFT                         21
+#define VMX_BF_ENTRY_CTLS_RSVD_21_MASK                          UINT32_C(0x00200000)
+#define VMX_BF_ENTRY_CTLS_LOAD_PKRS_MSR_SHIFT                   22
+#define VMX_BF_ENTRY_CTLS_LOAD_PKRS_MSR_MASK                    UINT32_C(0x00400000)
+#define VMX_BF_ENTRY_CTLS_RSVD_23_31_SHIFT                      23
+#define VMX_BF_ENTRY_CTLS_RSVD_23_31_MASK                       UINT32_C(0xff800000)
+
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
                             (RSVD_0_1, LOAD_DEBUG, RSVD_3_8, IA32E_MODE_GUEST, ENTRY_SMM, DEACTIVATE_DUAL_MON, RSVD_12,
                              LOAD_PERF_MSR, LOAD_PAT_MSR, LOAD_EFER_MSR, LOAD_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT,
-                             LOAD_RTIT_CTL_MSR, RSVD_19_31));
+                             LOAD_RTIT_CTL_MSR, RSVD_19, LOAD_CET, RSVD_21, LOAD_PKRS_MSR, RSVD_23_31));
 /** @} */
 
 
@@ -2568,6 +2579,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_CTLS_CLEAR_RTIT_CTL_MSR                        RT_BIT(25)
 /** Whether CET-related MSRs and SPP are loaded on VM-exit. */
 #define VMX_EXIT_CTLS_LOAD_CET_STATE                            RT_BIT(28)
+/** Whether the host IA32_PKRS MSR is loaded on VM-exit. */
+#define VMX_EXIT_CTLS_LOAD_PKRS_MSR                             RT_BIT(29)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
 
@@ -2607,12 +2620,19 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_EXIT_CTLS_CONCEAL_VMX_FROM_PT_MASK               UINT32_C(0x01000000)
 #define VMX_BF_EXIT_CTLS_CLEAR_RTIT_CTL_MSR_SHIFT               25
 #define VMX_BF_EXIT_CTLS_CLEAR_RTIT_CTL_MSR_MASK                UINT32_C(0x02000000)
-#define VMX_BF_EXIT_CTLS_RSVD_26_31_SHIFT                       26
-#define VMX_BF_EXIT_CTLS_RSVD_26_31_MASK                        UINT32_C(0xfc000000)
+#define VMX_BF_EXIT_CTLS_RSVD_26_27_SHIFT                       26
+#define VMX_BF_EXIT_CTLS_RSVD_26_27_MASK                        UINT32_C(0x0c000000)
+#define VMX_BF_EXIT_CTLS_LOAD_CET_SHIFT                         28
+#define VMX_BF_EXIT_CTLS_LOAD_CET_MASK                          UINT32_C(0x10000000)
+#define VMX_BF_EXIT_CTLS_LOAD_PKRS_MSR_SHIFT                    29
+#define VMX_BF_EXIT_CTLS_LOAD_PKRS_MSR_MASK                     UINT32_C(0x20000000)
+#define VMX_BF_EXIT_CTLS_RSVD_30_31_SHIFT                       30
+#define VMX_BF_EXIT_CTLS_RSVD_30_31_MASK                        UINT32_C(0xc0000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
                             (RSVD_0_1, SAVE_DEBUG, RSVD_3_8, HOST_ADDR_SPACE_SIZE, RSVD_10_11, LOAD_PERF_MSR, RSVD_13_14,
                              ACK_EXT_INT, RSVD_16_17, SAVE_PAT_MSR, LOAD_PAT_MSR, SAVE_EFER_MSR, LOAD_EFER_MSR,
-                             SAVE_PREEMPT_TIMER, CLEAR_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT, CLEAR_RTIT_CTL_MSR, RSVD_26_31));
+                             SAVE_PREEMPT_TIMER, CLEAR_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT, CLEAR_RTIT_CTL_MSR, RSVD_26_27,
+                             LOAD_CET, LOAD_PKRS_MSR, RSVD_30_31));
 /** @} */
 
 
