@@ -237,6 +237,8 @@ static void testSendPositionRel(RTTEST hTest)
     {
         g_drvTstMouse.pDrv->pfnPutEvent(g_drvTstMouse.pDrv, 123, -16, 1, -1, 3);
         Urb.EndPt = 0x01;
+        Urb.enmType = VUSBXFERTYPE_INTR;
+        Urb.cbData = 4;
         rc = g_UsbHidMou.pfnUrbQueue(pUsbIns, &Urb);
     }
     if (RT_SUCCESS(rc))
@@ -282,6 +284,8 @@ static void testSendPositionAbs(RTTEST hTest)
     if (RT_SUCCESS(rc))
     {
         Urb.EndPt = 0x01;
+        Urb.enmType = VUSBXFERTYPE_INTR;
+        Urb.cbData = 8;
         rc = g_UsbHidMou.pfnUrbQueue(pUsbIns, &Urb);
     }
     if (RT_SUCCESS(rc))
@@ -332,6 +336,8 @@ static void testSendPositionMT(RTTEST hTest)
     if (RT_SUCCESS(rc))
     {
         Urb.EndPt = 0x01;
+        Urb.enmType = VUSBXFERTYPE_INTR;
+        Urb.cbData = 8;
         rc = g_UsbHidMou.pfnUrbQueue(pUsbIns, &Urb);
     }
     if (RT_SUCCESS(rc))
