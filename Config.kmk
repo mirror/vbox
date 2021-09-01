@@ -631,6 +631,8 @@ VBOX_WITH_IOMMU_AMD = 1
 VBOX_WITH_IOMMU_INTEL = 1
 # Enables the new DBGF tracing framework
 VBOX_WITH_DBGF_TRACING = 1
+# Enable TPM device emulation support.
+VBOX_WITH_TPM = 1
 ## @}
 
 # legacy
