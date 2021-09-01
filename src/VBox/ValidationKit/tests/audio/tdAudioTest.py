@@ -412,8 +412,11 @@ class tdAudioTest(vbox.TestDriver):
         if fRc:
             reporter.log('Using VKAT on guest at \"%s\"' % (sVkatExe));
 
-            asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'guest', '--probe-backends', \
+            asArgs = [ sVkatExe, 'test', '--mode', 'guest', '--probe-backends', \
                                  '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
+
+            for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
+                asArgs.extend([ '-v' ]);
 
             # Needed for NATed VMs.
             asArgs.extend(['--tcp-connect-addr', '10.0.2.2' ]);
@@ -471,8 +474,11 @@ class tdAudioTest(vbox.TestDriver):
         asEnv  = [ 'VKAT_RELEASE_LOG=all.e.l.l2.l3.f+audio_test.e.l.l2.l3.f' ];
 
         # Build the base command line, exclude all tests by default.
-        asArgs = [ sVkatExe, 'test', '-vv', '--mode', 'host', '--probe-backends', \
+        asArgs = [ sVkatExe, 'test', '--mode', 'host', '--probe-backends', \
                              '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
+
+        for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
+            asArgs.extend([ '-v' ]);
 
         # ... and extend it with wanted tests.
         asArgs.extend(asTests);
