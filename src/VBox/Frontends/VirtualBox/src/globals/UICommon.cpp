@@ -127,19 +127,20 @@
 #include <VBox/VBoxOGL.h>
 #include <VBox/vd.h>
 #include <VBox/com/Guid.h>
+#ifdef VBOX_WS_WIN
+# include <iprt/win/shlobj.h>
+#endif
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
 
 /* External includes: */
-#ifdef VBOX_WS_WIN
-# include <iprt/win/shlobj.h>
-#endif
-
-/* External includes: */
 #include <math.h>
 #ifdef VBOX_WS_MAC
 # include <sys/utsname.h>
+#endif
+#ifdef VBOX_WS_X11
+# include <xcb/xcb.h>
 #endif
 
 /* Namespaces: */
