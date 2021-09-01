@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMDiskPageBasic class implementation.
+ * VBox Qt GUI - UIWizardNewVMDiskPage class implementation.
  */
 
 /*
@@ -31,7 +31,7 @@
 #include "UIMediumSizeEditor.h"
 #include "UIMessageCenter.h"
 #include "UICommon.h"
-#include "UIWizardNewVMDiskPageBasic.h"
+#include "UIWizardNewVMDiskPage.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVM.h"
 
@@ -40,10 +40,10 @@
 #include "CGuestOSType.h"
 #include "CSystemProperties.h"
 
-QUuid UIWizardNewVMDiskPage::getWithFileOpenDialog(const QString &strOSTypeID,
-                                                   const QString &strMachineFolder,
-                                                   const QString &strMachineBaseName,
-                                                   QWidget *pCaller)
+QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,
+                                                     const QString &strMachineFolder,
+                                                     const QString &strMachineBaseName,
+                                                     QWidget *pCaller)
 {
     QUuid uMediumId;
     int returnCode = uiCommon().openMediumSelectorDialog(pCaller, UIMediumDeviceType_HardDisk,
@@ -57,7 +57,7 @@ QUuid UIWizardNewVMDiskPage::getWithFileOpenDialog(const QString &strOSTypeID,
     return uMediumId;
 }
 
-UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
+UIWizardNewVMDiskPage::UIWizardNewVMDiskPage()
     : m_pDiskSourceButtonGroup(0)
     , m_pDiskEmpty(0)
     , m_pDiskNew(0)
@@ -81,7 +81,7 @@ UIWizardNewVMDiskPageBasic::UIWizardNewVMDiskPageBasic()
 }
 
 
-void UIWizardNewVMDiskPageBasic::prepare()
+void UIWizardNewVMDiskPage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -96,7 +96,7 @@ void UIWizardNewVMDiskPageBasic::prepare()
     createConnections();
 }
 
-QWidget *UIWizardNewVMDiskPageBasic::createNewDiskWidgets()
+QWidget *UIWizardNewVMDiskPage::createNewDiskWidgets()
 {
     QWidget *pWidget = new QWidget;
     if (pWidget)
@@ -136,26 +136,26 @@ QWidget *UIWizardNewVMDiskPageBasic::createNewDiskWidgets()
     return pWidget;
 }
 
-void UIWizardNewVMDiskPageBasic::createConnections()
+void UIWizardNewVMDiskPage::createConnections()
 {
     if (m_pDiskSourceButtonGroup)
         connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-                this, &UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged);
+                this, &UIWizardNewVMDiskPage::sltSelectedDiskSourceChanged);
     if (m_pDiskSelector)
         connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
-                this, &UIWizardNewVMDiskPageBasic::sltMediaComboBoxIndexChanged);
+                this, &UIWizardNewVMDiskPage::sltMediaComboBoxIndexChanged);
     if (m_pDiskSelectionButton)
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,
-                this, &UIWizardNewVMDiskPageBasic::sltGetWithFileOpenDialog);
+                this, &UIWizardNewVMDiskPage::sltGetWithFileOpenDialog);
     if (m_pMediumSizeEditor)
         connect(m_pMediumSizeEditor, &UIMediumSizeEditor::sigSizeChanged,
-                this, &UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange);
+                this, &UIWizardNewVMDiskPage::sltHandleSizeEditorChange);
     if (m_pFixedCheckBox)
         connect(m_pFixedCheckBox, &QCheckBox::toggled,
-                this, &UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled);
+                this, &UIWizardNewVMDiskPage::sltFixedCheckBoxToggled);
 }
 
-void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
+void UIWizardNewVMDiskPage::sltSelectedDiskSourceChanged()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup && pWizard);
@@ -176,7 +176,7 @@ void UIWizardNewVMDiskPageBasic::sltSelectedDiskSourceChanged()
     emit completeChanged();
 }
 
-void UIWizardNewVMDiskPageBasic::sltMediaComboBoxIndexChanged()
+void UIWizardNewVMDiskPage::sltMediaComboBoxIndexChanged()
 {
     AssertReturnVoid(m_pDiskSelector && wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "SelectedExistingMediumIndex";
@@ -184,16 +184,16 @@ void UIWizardNewVMDiskPageBasic::sltMediaComboBoxIndexChanged()
     emit completeChanged();
 }
 
-void UIWizardNewVMDiskPageBasic::sltGetWithFileOpenDialog()
+void UIWizardNewVMDiskPage::sltGetWithFileOpenDialog()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     const CGuestOSType &comOSType = pWizard->guestOSType();
     AssertReturnVoid(!comOSType.isNull());
-    QUuid uMediumId = UIWizardNewVMDiskPage::getWithFileOpenDialog(comOSType.GetId(),
-                                                                   pWizard->machineFolder(),
-                                                                   pWizard->machineBaseName(),
-                                                                   this);
+    QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(comOSType.GetId(),
+                                                                     pWizard->machineFolder(),
+                                                                     pWizard->machineBaseName(),
+                                                                     this);
     if (!uMediumId.isNull())
     {
         m_pDiskSelector->setCurrentItem(uMediumId);
@@ -201,7 +201,7 @@ void UIWizardNewVMDiskPageBasic::sltGetWithFileOpenDialog()
     }
 }
 
-void UIWizardNewVMDiskPageBasic::retranslateUi()
+void UIWizardNewVMDiskPage::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Virtual Hard disk"));
 
@@ -242,7 +242,7 @@ void UIWizardNewVMDiskPageBasic::retranslateUi()
                                                  "systems but is often faster to use.</p>"));
 }
 
-void UIWizardNewVMDiskPageBasic::initializePage()
+void UIWizardNewVMDiskPage::initializePage()
 {
     retranslateUi();
 
@@ -332,7 +332,7 @@ void UIWizardNewVMDiskPageBasic::initializePage()
     }
 }
 
-bool UIWizardNewVMDiskPageBasic::isComplete() const
+bool UIWizardNewVMDiskPage::isComplete() const
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
@@ -347,7 +347,7 @@ bool UIWizardNewVMDiskPageBasic::isComplete() const
     return true;
 }
 
-bool UIWizardNewVMDiskPageBasic::validatePage()
+bool UIWizardNewVMDiskPage::validatePage()
 {
     bool fResult = true;
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
@@ -404,7 +404,7 @@ bool UIWizardNewVMDiskPageBasic::validatePage()
     return fResult;
 }
 
-void UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange(qulonglong uSize)
+void UIWizardNewVMDiskPage::sltHandleSizeEditorChange(qulonglong uSize)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     wizardWindow<UIWizardNewVM>()->setMediumSize(uSize);
@@ -412,7 +412,7 @@ void UIWizardNewVMDiskPageBasic::sltHandleSizeEditorChange(qulonglong uSize)
     emit completeChanged();
 }
 
-void UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled(bool fChecked)
+void UIWizardNewVMDiskPage::sltFixedCheckBoxToggled(bool fChecked)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
@@ -424,7 +424,7 @@ void UIWizardNewVMDiskPageBasic::sltFixedCheckBoxToggled(bool fChecked)
     m_userModifiedParameters << "MediumVariant";
 }
 
-void UIWizardNewVMDiskPageBasic::setEnableNewDiskWidgets(bool fEnable)
+void UIWizardNewVMDiskPage::setEnableNewDiskWidgets(bool fEnable)
 {
     if (m_pMediumSizeEditor)
         m_pMediumSizeEditor->setEnabled(fEnable);
@@ -434,7 +434,7 @@ void UIWizardNewVMDiskPageBasic::setEnableNewDiskWidgets(bool fEnable)
         m_pFixedCheckBox->setEnabled(fEnable);
 }
 
-QWidget *UIWizardNewVMDiskPageBasic::createDiskWidgets()
+QWidget *UIWizardNewVMDiskPage::createDiskWidgets()
 {
     QWidget *pDiskContainer = new QWidget;
     QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
@@ -469,7 +469,7 @@ QWidget *UIWizardNewVMDiskPageBasic::createDiskWidgets()
     return pDiskContainer;
 }
 
-QWidget *UIWizardNewVMDiskPageBasic::createMediumVariantWidgets(bool fWithLabels)
+QWidget *UIWizardNewVMDiskPage::createMediumVariantWidgets(bool fWithLabels)
 {
     QWidget *pContainerWidget = new QWidget;
     QVBoxLayout *pMainLayout = new QVBoxLayout(pContainerWidget);
@@ -498,7 +498,7 @@ QWidget *UIWizardNewVMDiskPageBasic::createMediumVariantWidgets(bool fWithLabels
     return pContainerWidget;
 }
 
-void UIWizardNewVMDiskPageBasic::setEnableDiskSelectionWidgets(bool fEnabled)
+void UIWizardNewVMDiskPage::setEnableDiskSelectionWidgets(bool fEnabled)
 {
     if (!m_pDiskSelector || !m_pDiskSelectionButton)
         return;
@@ -507,7 +507,7 @@ void UIWizardNewVMDiskPageBasic::setEnableDiskSelectionWidgets(bool fEnabled)
     m_pDiskSelectionButton->setEnabled(fEnabled);
 }
 
-void UIWizardNewVMDiskPageBasic::setWidgetVisibility(const CMediumFormat &mediumFormat)
+void UIWizardNewVMDiskPage::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
     ULONG uCapabilities = 0;
     QVector<KMediumFormatCapabilities> capabilities;

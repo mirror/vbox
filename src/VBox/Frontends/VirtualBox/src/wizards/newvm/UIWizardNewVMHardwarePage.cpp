@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMHardwarePageBasic class implementation.
+ * VBox Qt GUI - UIWizardNewVMHardwarePage class implementation.
  */
 
 /*
@@ -24,12 +24,12 @@
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMEditors.h"
-#include "UIWizardNewVMHardwarePageBasic.h"
+#include "UIWizardNewVMHardwarePage.h"
 
 /* COM includes: */
 #include "CGuestOSType.h"
 
-UIWizardNewVMHardwarePageBasic::UIWizardNewVMHardwarePageBasic()
+UIWizardNewVMHardwarePage::UIWizardNewVMHardwarePage()
     : m_pLabel(0)
     , m_pHardwareWidgetContainer(0)
 {
@@ -37,7 +37,7 @@ UIWizardNewVMHardwarePageBasic::UIWizardNewVMHardwarePageBasic()
     qRegisterMetaType<CMedium>();
 }
 
-void UIWizardNewVMHardwarePageBasic::prepare()
+void UIWizardNewVMHardwarePage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -51,20 +51,20 @@ void UIWizardNewVMHardwarePageBasic::prepare()
     createConnections();
 }
 
-void UIWizardNewVMHardwarePageBasic::createConnections()
+void UIWizardNewVMHardwarePage::createConnections()
 {
     if (m_pHardwareWidgetContainer)
     {
         connect(m_pHardwareWidgetContainer, &UINewVMHardwareContainer::sigMemorySizeChanged,
-                this, &UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged);
+                this, &UIWizardNewVMHardwarePage::sltMemorySizeChanged);
         connect(m_pHardwareWidgetContainer, &UINewVMHardwareContainer::sigCPUCountChanged,
-                this, &UIWizardNewVMHardwarePageBasic::sltCPUCountChanged);
+                this, &UIWizardNewVMHardwarePage::sltCPUCountChanged);
         connect(m_pHardwareWidgetContainer, &UINewVMHardwareContainer::sigEFIEnabledChanged,
-                this, &UIWizardNewVMHardwarePageBasic::sltEFIEnabledChanged);
+                this, &UIWizardNewVMHardwarePage::sltEFIEnabledChanged);
     }
 }
 
-void UIWizardNewVMHardwarePageBasic::retranslateUi()
+void UIWizardNewVMHardwarePage::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Hardware"));
 
@@ -73,7 +73,7 @@ void UIWizardNewVMHardwarePageBasic::retranslateUi()
                                             "virtual CPU count. Enabling EFI is also possible.</p>"));
 }
 
-void UIWizardNewVMHardwarePageBasic::initializePage()
+void UIWizardNewVMHardwarePage::initializePage()
 {
     retranslateUi();
 
@@ -97,25 +97,25 @@ void UIWizardNewVMHardwarePageBasic::initializePage()
     }
 }
 
-bool UIWizardNewVMHardwarePageBasic::isComplete() const
+bool UIWizardNewVMHardwarePage::isComplete() const
 {
     return true;
 }
 
-void UIWizardNewVMHardwarePageBasic::sltMemorySizeChanged(int iValue)
+void UIWizardNewVMHardwarePage::sltMemorySizeChanged(int iValue)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     wizardWindow<UIWizardNewVM>()->setMemorySize(iValue);
     m_userModifiedParameters << "MemorySize";
 }
 
-void UIWizardNewVMHardwarePageBasic::sltCPUCountChanged(int iCount)
+void UIWizardNewVMHardwarePage::sltCPUCountChanged(int iCount)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     wizardWindow<UIWizardNewVM>()->setCPUCount(iCount);
 }
 
-void UIWizardNewVMHardwarePageBasic::sltEFIEnabledChanged(bool fEnabled)
+void UIWizardNewVMHardwarePage::sltEFIEnabledChanged(bool fEnabled)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     wizardWindow<UIWizardNewVM>()->setEFIEnabled(fEnabled);

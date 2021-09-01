@@ -25,7 +25,7 @@
 #include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
-#include "UIWizardNewVMNameOSTypePageBasic.h"
+#include "UIWizardNewVMNameOSTypePage.h"
 #include "UIWizardNewVM.h"
 
 /* COM includes: */
@@ -172,7 +172,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot",                   Qt::CaseInsensitive), "Other" },
 };
 
-bool UIWizardNewVMNameOSTypePage::guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
+bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
 {
     CHost host = uiCommon().host();
     bool fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
@@ -195,7 +195,7 @@ bool UIWizardNewVMNameOSTypePage::guessOSTypeFromName(UINameAndSystemEditor *pNa
     return false;
 }
 
-void UIWizardNewVMNameOSTypePage::composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor,
+void UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor,
                                                          UIWizardNewVM *pWizard)
 {
     if (!pNameAndSystemEditor || !pWizard)
@@ -216,7 +216,7 @@ void UIWizardNewVMNameOSTypePage::composeMachineFilePath(UINameAndSystemEditor *
     pWizard->setMachineBaseName(fileInfo.completeBaseName());
 }
 
-bool UIWizardNewVMNameOSTypePage::createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
+bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
                                                       UINativeWizardPage *pCaller,
                                                       UIWizardNewVM *pWizard)
 {
@@ -257,7 +257,7 @@ bool UIWizardNewVMNameOSTypePage::createMachineFolder(UINameAndSystemEditor *pNa
     return true;
 }
 
-bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(UIWizardNewVM *pWizard, bool fWizardCancel /* = false */)
+bool UIWizardNewVMNameOSTypeCommon::cleanupMachineFolder(UIWizardNewVM *pWizard, bool fWizardCancel /* = false */)
 {
     if (!pWizard)
         return false;
@@ -280,7 +280,7 @@ bool UIWizardNewVMNameOSTypePage::cleanupMachineFolder(UIWizardNewVM *pWizard, b
     return true;
 }
 
-void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UIWizardNewVM *pWizard)
+void UIWizardNewVMNameOSTypeCommon::determineOSType(const QString &strISOPath, UIWizardNewVM *pWizard)
 {
     if (!pWizard)
         return;
@@ -298,7 +298,7 @@ void UIWizardNewVMNameOSTypePage::determineOSType(const QString &strISOPath, UIW
     pWizard->setDetectedOSTypeId(comUnatteded.GetDetectedOSTypeId());
 }
 
-bool UIWizardNewVMNameOSTypePage::checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor)
+bool UIWizardNewVMNameOSTypeCommon::checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor)
 {
     if (!pNameAndSystemEditor)
         return false;
@@ -311,7 +311,7 @@ bool UIWizardNewVMNameOSTypePage::checkISOFile(UINameAndSystemEditor *pNameAndSy
     return true;
 }
 
-UIWizardNewVMNameOSTypePageBasic::UIWizardNewVMNameOSTypePageBasic()
+UIWizardNewVMNameOSTypePage::UIWizardNewVMNameOSTypePage()
     : m_pNameAndSystemLayout(0)
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
@@ -320,7 +320,7 @@ UIWizardNewVMNameOSTypePageBasic::UIWizardNewVMNameOSTypePageBasic()
     prepare();
 }
 
-void UIWizardNewVMNameOSTypePageBasic::prepare()
+void UIWizardNewVMNameOSTypePage::prepare()
 {
     QVBoxLayout *pPageLayout = new QVBoxLayout(this);
     if (pPageLayout)
@@ -338,49 +338,49 @@ void UIWizardNewVMNameOSTypePageBasic::prepare()
     createConnections();
 }
 
-void UIWizardNewVMNameOSTypePageBasic::createConnections()
+void UIWizardNewVMNameOSTypePage::createConnections()
 {
     if (m_pNameAndSystemEditor)
     {
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltNameChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltPathChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged);
-        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged, this, &UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMNameOSTypePage::sltNameChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMNameOSTypePage::sltPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMNameOSTypePage::sltOsTypeChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePage::sltISOPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged, this, &UIWizardNewVMNameOSTypePage::sltGuestOSFamilyChanged);
     }
     if (m_pSkipUnattendedCheckBox)
-        connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMNameOSTypePageBasic::sltSkipUnattendedInstallChanged);
+        connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMNameOSTypePage::sltSkipUnattendedInstallChanged);
 }
 
-bool UIWizardNewVMNameOSTypePageBasic::isComplete() const
+bool UIWizardNewVMNameOSTypePage::isComplete() const
 {
     markWidgets();
     if (m_pNameAndSystemEditor->name().isEmpty())
         return false;
-    return UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor);
+    return UIWizardNewVMNameOSTypeCommon::checkISOFile(m_pNameAndSystemEditor);
 }
 
-void UIWizardNewVMNameOSTypePageBasic::sltNameChanged(const QString &strNewName)
+void UIWizardNewVMNameOSTypePage::sltNameChanged(const QString &strNewName)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     if (!m_userModifiedParameters.contains("GuestOSType"))
     {
         m_pNameAndSystemEditor->blockSignals(true);
-        if (UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
+        if (UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
             wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
         m_pNameAndSystemEditor->blockSignals(false);
     }
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
+    UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
     emit completeChanged();
 }
 
-void UIWizardNewVMNameOSTypePageBasic::sltPathChanged(const QString &strNewPath)
+void UIWizardNewVMNameOSTypePage::sltPathChanged(const QString &strNewPath)
 {
     Q_UNUSED(strNewPath);
-    UIWizardNewVMNameOSTypePage::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
+    UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
 }
 
-void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
+void UIWizardNewVMNameOSTypePage::sltOsTypeChanged()
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "GuestOSType";
@@ -388,7 +388,7 @@ void UIWizardNewVMNameOSTypePageBasic::sltOsTypeChanged()
         wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
 }
 
-void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
+void UIWizardNewVMNameOSTypePage::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Virtual machine Name and Operating System"));
 
@@ -409,7 +409,7 @@ void UIWizardNewVMNameOSTypePageBasic::retranslateUi()
         m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
 }
 
-void UIWizardNewVMNameOSTypePageBasic::initializePage()
+void UIWizardNewVMNameOSTypePage::initializePage()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
@@ -437,20 +437,20 @@ void UIWizardNewVMNameOSTypePageBasic::initializePage()
         m_pNameAndSystemEditor->setFocus();
 }
 
-bool UIWizardNewVMNameOSTypePageBasic::validatePage()
+bool UIWizardNewVMNameOSTypePage::validatePage()
 {
     /* Try to create machine folder: */
-    return UIWizardNewVMNameOSTypePage::createMachineFolder(m_pNameAndSystemEditor, this, wizardWindow<UIWizardNewVM>());
+    return UIWizardNewVMNameOSTypeCommon::createMachineFolder(m_pNameAndSystemEditor, this, wizardWindow<UIWizardNewVM>());
 }
 
-void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
+void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(this->wizard());
     AssertReturnVoid(pWizard);
-    UIWizardNewVMNameOSTypePage::determineOSType(strPath, pWizard);
+    UIWizardNewVMNameOSTypeCommon::determineOSType(strPath, pWizard);
 
     if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
-            UIWizardNewVMNameOSTypePage::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+            UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
     pWizard->setISOFilePath(strPath);
 
     /* Update the global recent ISO path: */
@@ -461,20 +461,20 @@ void UIWizardNewVMNameOSTypePageBasic::sltISOPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardNewVMNameOSTypePageBasic::sltGuestOSFamilyChanged(const QString &strGuestOSFamilyId)
+void UIWizardNewVMNameOSTypePage::sltGuestOSFamilyChanged(const QString &strGuestOSFamilyId)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     wizardWindow<UIWizardNewVM>()->setGuestOSFamilyId(strGuestOSFamilyId);
 }
 
-void UIWizardNewVMNameOSTypePageBasic::sltSkipUnattendedInstallChanged(bool fSkip)
+void UIWizardNewVMNameOSTypePage::sltSkipUnattendedInstallChanged(bool fSkip)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "SkipUnattendedInstall";
     wizardWindow<UIWizardNewVM>()->setSkipUnattendedInstall(fSkip);
 }
 
-QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()
+QWidget *UIWizardNewVMNameOSTypePage::createNameOSTypeWidgets()
 {
     /* Prepare container widget: */
     QWidget *pContainerWidget = new QWidget;
@@ -506,17 +506,17 @@ QWidget *UIWizardNewVMNameOSTypePageBasic::createNameOSTypeWidgets()
     return pContainerWidget;
 }
 
-void UIWizardNewVMNameOSTypePageBasic::markWidgets() const
+void UIWizardNewVMNameOSTypePage::markWidgets() const
 {
     if (m_pNameAndSystemEditor)
     {
         m_pNameAndSystemEditor->markNameEditor(m_pNameAndSystemEditor->name().isEmpty());
-        m_pNameAndSystemEditor->markImageEditor(!UIWizardNewVMNameOSTypePage::checkISOFile(m_pNameAndSystemEditor),
+        m_pNameAndSystemEditor->markImageEditor(!UIWizardNewVMNameOSTypeCommon::checkISOFile(m_pNameAndSystemEditor),
                                                 UIWizardNewVM::tr("Invalid file path or unreadable file"));
     }
 }
 
-void UIWizardNewVMNameOSTypePageBasic::setSkipCheckBoxEnable()
+void UIWizardNewVMNameOSTypePage::setSkipCheckBoxEnable()
 {
     if (!m_pSkipUnattendedCheckBox)
         return;
@@ -527,7 +527,7 @@ void UIWizardNewVMNameOSTypePageBasic::setSkipCheckBoxEnable()
     }
 }
 
-bool UIWizardNewVMNameOSTypePageBasic::isUnattendedEnabled() const
+bool UIWizardNewVMNameOSTypePage::isUnattendedEnabled() const
 {
     if (!m_pNameAndSystemEditor)
         return false;

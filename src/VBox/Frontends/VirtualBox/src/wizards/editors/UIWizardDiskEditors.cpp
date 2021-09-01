@@ -37,7 +37,7 @@
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMDiskPageBasic.h"
+#include "UIWizardNewVMDiskPage.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"

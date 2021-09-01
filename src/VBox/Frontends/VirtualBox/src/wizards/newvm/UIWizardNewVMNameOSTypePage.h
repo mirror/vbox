@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMNameOSTypePageBasic class declaration.
+ * VBox Qt GUI - UIWizardNewVMNameOSTypePage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMNameOSTypePageBasic_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMNameOSTypePageBasic_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMNameOSTypePage_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMNameOSTypePage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -31,7 +31,7 @@ class QIRichTextLabel;
 class UINameAndSystemEditor;
 class UIWizardNewVM;
 
-namespace UIWizardNewVMNameOSTypePage
+namespace UIWizardNewVMNameOSTypeCommon
 {
     bool guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
     bool createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
@@ -49,14 +49,14 @@ namespace UIWizardNewVMNameOSTypePage
 }
 
 /** 1st page of the New Virtual Machine wizard (basic extension). */
-class UIWizardNewVMNameOSTypePageBasic : public UINativeWizardPage
+class UIWizardNewVMNameOSTypePage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
     /** Constructor. */
-    UIWizardNewVMNameOSTypePageBasic();
+    UIWizardNewVMNameOSTypePage();
 
 
 protected:
@@ -98,4 +98,4 @@ private:
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMNameOSTypePageBasic_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMNameOSTypePage_h */

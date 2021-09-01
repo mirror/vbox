@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMDiskPageBasic class declaration.
+ * VBox Qt GUI - UIWizardNewVMDiskPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPageBasic_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPageBasic_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPage_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -50,7 +50,7 @@ enum SelectedDiskSource
     SelectedDiskSource_Max
 };
 
-namespace UIWizardNewVMDiskPage
+namespace UIWizardNewVMDiskCommon
 {
     QUuid getWithFileOpenDialog(const QString &strOSTypeID,
                                 const QString &strMachineFolder,
@@ -59,13 +59,13 @@ namespace UIWizardNewVMDiskPage
 }
 
 
-class UIWizardNewVMDiskPageBasic : public UINativeWizardPage
+class UIWizardNewVMDiskPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardNewVMDiskPageBasic();
+    UIWizardNewVMDiskPage();
 
 protected:
 
@@ -123,4 +123,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPageBasic_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPage_h */

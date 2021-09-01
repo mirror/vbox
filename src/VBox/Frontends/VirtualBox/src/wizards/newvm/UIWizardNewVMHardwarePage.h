@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMHardwarePageBasic class declaration.
+ * VBox Qt GUI - UIWizardNewVMHardwarePage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMHardwarePageBasic_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMHardwarePageBasic_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMHardwarePage_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMHardwarePage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -31,13 +31,13 @@
 class QIRichTextLabel;
 class UINewVMHardwareContainer;
 
-class UIWizardNewVMHardwarePageBasic : public UINativeWizardPage
+class UIWizardNewVMHardwarePage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardNewVMHardwarePageBasic();
+    UIWizardNewVMHardwarePage();
 
 private slots:
 
@@ -65,4 +65,4 @@ private:
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMHardwarePageBasic_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMHardwarePage_h */

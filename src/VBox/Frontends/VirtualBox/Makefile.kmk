@@ -659,11 +659,11 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.h \
 	src/wizards/newvm/UIWizardNewVM.h \
-	src/wizards/newvm/UIWizardNewVMNameOSTypePageBasic.h \
-	src/wizards/newvm/UIWizardNewVMUnattendedPageBasic.h \
-	src/wizards/newvm/UIWizardNewVMHardwarePageBasic.h \
-	src/wizards/newvm/UIWizardNewVMDiskPageBasic.h \
-	src/wizards/newvm/UIWizardNewVMPageExpert.h \
+	src/wizards/newvm/UIWizardNewVMNameOSTypePage.h \
+	src/wizards/newvm/UIWizardNewVMUnattendedPage.h \
+	src/wizards/newvm/UIWizardNewVMHardwarePage.h \
+	src/wizards/newvm/UIWizardNewVMDiskPage.h \
+	src/wizards/newvm/UIWizardNewVMExpertPage.h \
 	src/wizards/clonevm/UIWizardCloneVM.h \
 	src/wizards/clonevm/UIWizardCloneVMNamePathPageBasic.h \
 	src/wizards/clonevm/UIWizardCloneVMTypePageBasic.h \
@@ -1167,11 +1167,11 @@ VirtualBox_SOURCES = \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp \
 	src/wizards/newvm/UIWizardNewVM.cpp \
-	src/wizards/newvm/UIWizardNewVMNameOSTypePageBasic.cpp \
-	src/wizards/newvm/UIWizardNewVMUnattendedPageBasic.cpp \
-	src/wizards/newvm/UIWizardNewVMHardwarePageBasic.cpp \
-	src/wizards/newvm/UIWizardNewVMDiskPageBasic.cpp \
-	src/wizards/newvm/UIWizardNewVMPageExpert.cpp \
+	src/wizards/newvm/UIWizardNewVMNameOSTypePage.cpp \
+	src/wizards/newvm/UIWizardNewVMUnattendedPage.cpp \
+	src/wizards/newvm/UIWizardNewVMHardwarePage.cpp \
+	src/wizards/newvm/UIWizardNewVMDiskPage.cpp \
+	src/wizards/newvm/UIWizardNewVMExpertPage.cpp \
 	src/wizards/clonevm/UIWizardCloneVM.cpp \
 	src/wizards/clonevm/UIWizardCloneVMNamePathPageBasic.cpp \
 	src/wizards/clonevm/UIWizardCloneVMTypePageBasic.cpp \

@@ -23,11 +23,11 @@
 #include "UICommon.h"
 #include "UIProgressObject.h"
 #include "UIWizardNewVM.h"
-#include "UIWizardNewVMNameOSTypePageBasic.h"
-#include "UIWizardNewVMUnattendedPageBasic.h"
-#include "UIWizardNewVMHardwarePageBasic.h"
-#include "UIWizardNewVMDiskPageBasic.h"
-#include "UIWizardNewVMPageExpert.h"
+#include "UIWizardNewVMNameOSTypePage.h"
+#include "UIWizardNewVMUnattendedPage.h"
+#include "UIWizardNewVMHardwarePage.h"
+#include "UIWizardNewVMDiskPage.h"
+#include "UIWizardNewVMExpertPage.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
 
@@ -88,16 +88,16 @@ void UIWizardNewVM::populatePages()
     {
         case WizardMode_Basic:
         {
-            addPage(new UIWizardNewVMNameOSTypePageBasic);
-            m_iUnattendedInstallPageIndex = addPage(new UIWizardNewVMUnattendedPageBasic);
+            addPage(new UIWizardNewVMNameOSTypePage);
+            m_iUnattendedInstallPageIndex = addPage(new UIWizardNewVMUnattendedPage);
             setUnattendedPageVisible(false);
-            addPage(new UIWizardNewVMHardwarePageBasic);
-            addPage(new UIWizardNewVMDiskPageBasic);
+            addPage(new UIWizardNewVMHardwarePage);
+            addPage(new UIWizardNewVMDiskPage);
             break;
         }
         case WizardMode_Expert:
         {
-            addPage(new UIWizardNewVMPageExpert);
+            addPage(new UIWizardNewVMExpertPage);
             break;
         }
         default:
@@ -110,7 +110,7 @@ void UIWizardNewVM::populatePages()
 
 void UIWizardNewVM::wizardClean()
 {
-    UIWizardNewVMNameOSTypePage::cleanupMachineFolder(this, true);
+    UIWizardNewVMNameOSTypeCommon::cleanupMachineFolder(this, true);
 }
 
 bool UIWizardNewVM::createVM()
@@ -545,7 +545,7 @@ bool UIWizardNewVM::attachDefaultDevices()
 
 void UIWizardNewVM::sltHandleWizardCancel()
 {
-    UIWizardNewVMNameOSTypePage::cleanupMachineFolder(this, true);
+    UIWizardNewVMNameOSTypeCommon::cleanupMachineFolder(this, true);
 }
 
 void UIWizardNewVM::retranslateUi()

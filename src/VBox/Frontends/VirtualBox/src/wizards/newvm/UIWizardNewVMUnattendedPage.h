@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMUnattendedPageBasic class declaration.
+ * VBox Qt GUI - UIWizardNewVMUnattendedPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMUnattendedPageBasic_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMUnattendedPageBasic_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMUnattendedPage_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMUnattendedPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -30,19 +30,19 @@ class UIAdditionalUnattendedOptions;
 class UIGAInstallationGroupBox;
 class UIUserNamePasswordGroupBox;
 
-namespace UIWizardNewVMUnattendedPage
+namespace UIWizardNewVMUnattendedCommon
 {
     /** Returns false if ISO path selector is non empty but has invalid file path. */
     bool checkGAISOFile(const QString &strPatho);
 }
 
-class UIWizardNewVMUnattendedPageBasic : public UINativeWizardPage
+class UIWizardNewVMUnattendedPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardNewVMUnattendedPageBasic();
+    UIWizardNewVMUnattendedPage();
 
 private slots:
 
@@ -76,4 +76,4 @@ private:
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMUnattendedPageBasic_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMUnattendedPage_h */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVMPageExpert class declaration.
+ * VBox Qt GUI - UIWizardNewVMExpertPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h
-#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMExpertPage_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMExpertPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -26,7 +26,7 @@
 
 /* GUI includes: */
 #include "UINativeWizardPage.h"
-#include "UIWizardNewVMDiskPageBasic.h"
+#include "UIWizardNewVMDiskPage.h"
 
 /* Forward declarations: */
 class QButtonGroup;
@@ -46,13 +46,13 @@ class UIToolBox;
 class UIUserNamePasswordGroupBox;
 
 /** Expert page of the New Virtual Machine wizard. */
-class UIWizardNewVMPageExpert : public UINativeWizardPage
+class UIWizardNewVMExpertPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardNewVMPageExpert();
+    UIWizardNewVMExpertPage();
 
 private slots:
 
@@ -150,4 +150,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMExpertPage_h */
