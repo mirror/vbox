@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVMPageExpert class declaration.
+ * VBox Qt GUI - UIWizardCloneVMExpertPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageExpert_h
-#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageExpert_h
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMExpertPage_h
+#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMExpertPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -32,14 +32,14 @@ class UICloneVMCloneTypeGroupBox;
 class UICloneVMNamePathEditor;
 
 /** Expert page of the Clone Virtual Machine wizard. */
-class UIWizardCloneVMPageExpert : public UINativeWizardPage
+class UIWizardCloneVMExpertPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
     /** Constructor. */
-    UIWizardCloneVMPageExpert(const QString &strOriginalName, const QString &strDefaultPath,
+    UIWizardCloneVMExpertPage(const QString &strOriginalName, const QString &strDefaultPath,
                               bool fAdditionalInfo, bool fShowChildsOption, const QString &strGroup);
 
 private slots:
@@ -70,4 +70,4 @@ private:
     QString m_strGroup;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMPageExpert_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMExpertPage_h */

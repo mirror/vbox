@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVMNamePathPageBasic class declaration.
+ * VBox Qt GUI - UIWizardCloneVMNamePathPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMNamePathPageBasic_h
-#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMNamePathPageBasic_h
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMNamePathPage_h
+#define FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMNamePathPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -33,18 +33,18 @@ class UICloneVMAdditionalOptionsEditor;
 class UICloneVMNamePathEditor;
 class QIRichTextLabel;
 
-namespace UIWizardCloneVMNamePathPage
+namespace UIWizardCloneVMNamePathCommon
 {
     QString composeCloneFilePath(const QString &strCloneName, const QString &strGroup, const QString &strFolderPath);
 }
 
-class UIWizardCloneVMNamePathPageBasic : public UINativeWizardPage
+class UIWizardCloneVMNamePathPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardCloneVMNamePathPageBasic(const QString &strOriginalName, const QString &strDefaultPath, const QString &strGroup);
+    UIWizardCloneVMNamePathPage(const QString &strOriginalName, const QString &strDefaultPath, const QString &strGroup);
 
 private slots:
 
@@ -70,4 +70,4 @@ private:
     QSet<QString> m_userModifiedParameters;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMNamePathPageBasic_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevm_UIWizardCloneVMNamePathPage_h */

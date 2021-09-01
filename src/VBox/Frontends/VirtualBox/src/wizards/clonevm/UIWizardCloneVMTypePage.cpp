@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVMTypePageBasic class implementation.
+ * VBox Qt GUI - UIWizardCloneVMTypePage class implementation.
  */
 
 /*
@@ -19,12 +19,12 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIWizardCloneVMTypePageBasic.h"
+#include "UIWizardCloneVMTypePage.h"
 #include "UIWizardCloneVM.h"
 #include "QIRichTextLabel.h"
 #include "UIWizardCloneVMEditors.h"
 
-UIWizardCloneVMTypePageBasic::UIWizardCloneVMTypePageBasic(bool fAdditionalInfo)
+UIWizardCloneVMTypePage::UIWizardCloneVMTypePage(bool fAdditionalInfo)
     : m_pLabel(0)
     , m_fAdditionalInfo(fAdditionalInfo)
     , m_pCloneTypeGroupBox(0)
@@ -32,7 +32,7 @@ UIWizardCloneVMTypePageBasic::UIWizardCloneVMTypePageBasic(bool fAdditionalInfo)
     prepare();
 }
 
-void UIWizardCloneVMTypePageBasic::prepare()
+void UIWizardCloneVMTypePage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
@@ -46,13 +46,13 @@ void UIWizardCloneVMTypePageBasic::prepare()
         m_pCloneTypeGroupBox->setFlat(true);
         pMainLayout->addWidget(m_pCloneTypeGroupBox);
         connect(m_pCloneTypeGroupBox, &UICloneVMCloneTypeGroupBox::sigFullCloneSelected,
-                this, &UIWizardCloneVMTypePageBasic::sltCloneTypeChanged);
+                this, &UIWizardCloneVMTypePage::sltCloneTypeChanged);
     }
 
     pMainLayout->addStretch();
 }
 
-void UIWizardCloneVMTypePageBasic::sltCloneTypeChanged(bool fIsFullClone)
+void UIWizardCloneVMTypePage::sltCloneTypeChanged(bool fIsFullClone)
 {
     UIWizardCloneVM *pWizard = wizardWindow<UIWizardCloneVM>();
     AssertReturnVoid(pWizard);
@@ -62,7 +62,7 @@ void UIWizardCloneVMTypePageBasic::sltCloneTypeChanged(bool fIsFullClone)
     pWizard->setCloneModePageVisible(fIsFullClone);
 }
 
-void UIWizardCloneVMTypePageBasic::retranslateUi()
+void UIWizardCloneVMTypePage::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVM::tr("Clone type"));
@@ -84,7 +84,7 @@ void UIWizardCloneVMTypePageBasic::retranslateUi()
         m_pLabel->setText(strLabel);
 }
 
-void UIWizardCloneVMTypePageBasic::initializePage()
+void UIWizardCloneVMTypePage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVM>());
     retranslateUi();
@@ -92,7 +92,7 @@ void UIWizardCloneVMTypePageBasic::initializePage()
         wizardWindow<UIWizardCloneVM>()->setLinkedClone(!m_pCloneTypeGroupBox->isFullClone());
 }
 
-bool UIWizardCloneVMTypePageBasic::validatePage()
+bool UIWizardCloneVMTypePage::validatePage()
 {
     UIWizardCloneVM *pWizard = wizardWindow<UIWizardCloneVM>();
     AssertReturn(pWizard, false);

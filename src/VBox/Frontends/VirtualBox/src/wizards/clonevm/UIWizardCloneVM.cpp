@@ -21,10 +21,10 @@
 #include "UINotificationCenter.h"
 #include "UIProgressObject.h"
 #include "UIWizardCloneVM.h"
-#include "UIWizardCloneVMNamePathPageBasic.h"
-#include "UIWizardCloneVMTypePageBasic.h"
-#include "UIWizardCloneVMModePageBasic.h"
-#include "UIWizardCloneVMPageExpert.h"
+#include "UIWizardCloneVMNamePathPage.h"
+#include "UIWizardCloneVMTypePage.h"
+#include "UIWizardCloneVMModePage.h"
+#include "UIWizardCloneVMExpertPage.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -283,15 +283,15 @@ void UIWizardCloneVM::populatePages()
     {
         case WizardMode_Basic:
         {
-            addPage(new UIWizardCloneVMNamePathPageBasic(m_strCloneName, strDefaultMachineFolder, m_strGroup));
-            addPage(new UIWizardCloneVMTypePageBasic(m_snapshot.isNull()));
+            addPage(new UIWizardCloneVMNamePathPage(m_strCloneName, strDefaultMachineFolder, m_strGroup));
+            addPage(new UIWizardCloneVMTypePage(m_snapshot.isNull()));
             if (m_machine.GetSnapshotCount() > 0)
-                m_iCloneModePageIndex = addPage(new UIWizardCloneVMModePageBasic(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
+                m_iCloneModePageIndex = addPage(new UIWizardCloneVMModePage(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
             break;
         }
         case WizardMode_Expert:
         {
-            addPage(new UIWizardCloneVMPageExpert(m_machine.GetName(),
+            addPage(new UIWizardCloneVMExpertPage(m_machine.GetName(),
                                                   strDefaultMachineFolder,
                                                   m_snapshot.isNull(),
                                                   m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0,

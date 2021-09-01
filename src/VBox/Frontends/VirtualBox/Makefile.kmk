@@ -665,10 +665,10 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/newvm/UIWizardNewVMDiskPage.h \
 	src/wizards/newvm/UIWizardNewVMExpertPage.h \
 	src/wizards/clonevm/UIWizardCloneVM.h \
-	src/wizards/clonevm/UIWizardCloneVMNamePathPageBasic.h \
-	src/wizards/clonevm/UIWizardCloneVMTypePageBasic.h \
-	src/wizards/clonevm/UIWizardCloneVMModePageBasic.h \
-	src/wizards/clonevm/UIWizardCloneVMPageExpert.h \
+	src/wizards/clonevm/UIWizardCloneVMNamePathPage.h \
+	src/wizards/clonevm/UIWizardCloneVMTypePage.h \
+	src/wizards/clonevm/UIWizardCloneVMModePage.h \
+	src/wizards/clonevm/UIWizardCloneVMExpertPage.h \
 	src/wizards/clonevd/UIWizardCloneVD.h \
 	src/wizards/clonevd/UIWizardCloneVDPageFormat.h \
 	src/wizards/clonevd/UIWizardCloneVDPageVariant.h \
@@ -1173,10 +1173,10 @@ VirtualBox_SOURCES = \
 	src/wizards/newvm/UIWizardNewVMDiskPage.cpp \
 	src/wizards/newvm/UIWizardNewVMExpertPage.cpp \
 	src/wizards/clonevm/UIWizardCloneVM.cpp \
-	src/wizards/clonevm/UIWizardCloneVMNamePathPageBasic.cpp \
-	src/wizards/clonevm/UIWizardCloneVMTypePageBasic.cpp \
-	src/wizards/clonevm/UIWizardCloneVMModePageBasic.cpp \
-	src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp \
+	src/wizards/clonevm/UIWizardCloneVMNamePathPage.cpp \
+	src/wizards/clonevm/UIWizardCloneVMTypePage.cpp \
+	src/wizards/clonevm/UIWizardCloneVMModePage.cpp \
+	src/wizards/clonevm/UIWizardCloneVMExpertPage.cpp \
 	src/wizards/clonevd/UIWizardCloneVD.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageFormat.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageVariant.cpp \
