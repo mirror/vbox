@@ -74,13 +74,6 @@ public:
         QString sessionStateName() const { return m_strSessionStateName; }
     /** @} */
 
-    /** @name Console attributes.
-      * @{ */
-        /** Tries to switch to the main window of the VM process.
-          * @return true if switched successfully. */
-        bool switchTo();
-    /** @} */
-
     /** @name Update stuff.
       * @{ */
         /** Recaches machine data. */

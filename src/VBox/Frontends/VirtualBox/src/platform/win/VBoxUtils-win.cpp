@@ -90,3 +90,29 @@ const void NativeWindowSubsystem::setScreenSaverActive(BOOL fDisableScreenSaver)
 */
 }
 
+BOOL NativeWindowSubsystem::ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
+{
+    BOOL fResult = FALSE;
+    typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONCREATE)(HWND hWnd, LPCWSTR pwszReason);
+
+    PFNSHUTDOWNBLOCKREASONCREATE pfn = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(
+        GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
+    _ASSERTE(pfn);
+    if (pfn)
+        fResult = pfn(hWnd, pwszReason);
+    return fResult;
+}
+
+bool NativeWindowSubsystem::WinActivateWindow(WId wId, bool)
+{
+    bool fResult = true;
+    HWND handle = (HWND)wId;
+
+    if (IsIconic(handle))
+        fResult &= !!ShowWindow(handle, SW_RESTORE);
+    else if (!IsWindowVisible(handle))
+        fResult &= !!ShowWindow(handle, SW_SHOW);
+
+    fResult &= !!SetForegroundWindow(handle);
+    return fResult;
+}

@@ -36,6 +36,12 @@ namespace NativeWindowSubsystem
     /* Returns area covered by visible always-on-top (top-most) windows: */
     SHARED_LIBRARY_STUFF const QRegion areaCoveredByTopMostWindows();
     SHARED_LIBRARY_STUFF const void setScreenSaverActive(BOOL fDisableScreenSaver);
+
+    /** Wraps WinAPI ShutdownBlockReasonCreate function. */
+    SHARED_LIBRARY_STUFF BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason);
+
+    /** Activates window with certain @a wId, @a fSwitchDesktop if requested. */
+    bool WinActivateWindow(WId wId, bool fSwitchDesktop);
 }
 
 #endif /* !FEQT_INCLUDED_SRC_platform_win_VBoxUtils_win_h */

@@ -684,14 +684,6 @@ private:
                                 const QString &strMachineGuestOSTypeId = QString());
     /** @} */
 
-    /** @name Common stuff.
-     * @{ */
-#ifdef VBOX_WS_WIN
-        /** Wraps WinAPI ShutdownBlockReasonCreate function. */
-        static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason);
-#endif
-    /** @} */
-
     /** @name Process arguments stuff.
      * @{ */
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -885,7 +877,7 @@ private:
         QStringList         m_recentMediaExcludeList;
     /** @} */
 
-#if defined(VBOX_WS_WIN)
+#ifdef VBOX_WS_WIN
     /** @name ATL stuff.
      * @{ */
         /** Holds the ATL module instance (for use with UICommon shared library only).

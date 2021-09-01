@@ -38,7 +38,6 @@
 #include <QToolTip>
 #include <QTranslator>
 #ifdef VBOX_WS_WIN
-# include <QEventLoop>
 # include <QStyleFactory>
 #endif
 #ifdef VBOX_WS_X11
@@ -78,6 +77,9 @@
 # include "UIMachineWindowFullscreen.h"
 # include "UIMachineWindowSeamless.h"
 # include "VBoxUtils-darwin.h"
+#endif
+#ifdef VBOX_WS_WIN
+# include "VBoxUtils-win.h"
 #endif
 #ifdef VBOX_WS_X11
 # include "UIHostComboEditor.h"
@@ -127,9 +129,6 @@
 #include <VBox/VBoxOGL.h>
 #include <VBox/vd.h>
 #include <VBox/com/Guid.h>
-#ifdef VBOX_WS_WIN
-# include <iprt/win/shlobj.h>
-#endif
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
@@ -1564,23 +1563,16 @@ void UICommon::setTopLevelGeometry(QWidget *pWidget, const QRect &rect)
 /* static */
 bool UICommon::activateWindow(WId wId, bool fSwitchDesktop /* = true */)
 {
-    RT_NOREF(fSwitchDesktop);
+    Q_UNUSED(fSwitchDesktop);
     bool fResult = true;
 
 #if defined(VBOX_WS_WIN)
 
-    HWND handle = (HWND)wId;
-
-    if (IsIconic(handle))
-        fResult &= !!ShowWindow(handle, SW_RESTORE);
-    else if (!IsWindowVisible(handle))
-        fResult &= !!ShowWindow(handle, SW_SHOW);
-
-    fResult &= !!SetForegroundWindow(handle);
+    fResult &= NativeWindowSubsystem::WinActivateWindow(wId, fSwitchDesktop);
 
 #elif defined(VBOX_WS_X11)
 
-    return NativeWindowSubsystem::X11ActivateWindow(wId, fSwitchDesktop);
+    fResult &= NativeWindowSubsystem::X11ActivateWindow(wId, fSwitchDesktop);
 
 #else
 
@@ -3394,7 +3386,7 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
                 // WORKAROUND:
                 // In theory that's Qt5 who should allow us to provide canceling reason as well, but that functionality
                 // seems to be missed in Windows platform plugin, so we are making that ourselves.
-                ShutdownBlockReasonCreateAPI((HWND)windowManager().mainWindowShown()->winId(), L"VM is still running.");
+                NativeWindowSubsystem::ShutdownBlockReasonCreateAPI((HWND)windowManager().mainWindowShown()->winId(), L"VM is still running.");
 #endif
             }
 
@@ -3466,22 +3458,6 @@ void UICommon::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
     /* Notify listeners about the VBoxSVC availability change: */
     emit sigVBoxSVCAvailabilityChange();
 }
-
-#ifdef VBOX_WS_WIN
-/* static */
-BOOL UICommon::ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
-{
-    BOOL fResult = FALSE;
-    typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONCREATE)(HWND hWnd, LPCWSTR pwszReason);
-
-    PFNSHUTDOWNBLOCKREASONCREATE pfn = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(
-        GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
-    _ASSERTE(pfn);
-    if (pfn)
-        fResult = pfn(hWnd, pwszReason);
-    return fResult;
-}
-#endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 

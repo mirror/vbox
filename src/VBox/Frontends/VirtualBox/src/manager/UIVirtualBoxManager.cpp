@@ -2484,7 +2484,7 @@ void UIVirtualBoxManager::launchMachine(CMachine &comMachine,
     if (   comMachine.GetSessionState() == KSessionState_Locked // precondition for CanShowConsoleWindow()
         && comMachine.CanShowConsoleWindow())
     {
-        uiCommon().switchToMachine(comMachine);
+        UICommon::switchToMachine(comMachine);
         return;
     }
 
