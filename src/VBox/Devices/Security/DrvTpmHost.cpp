@@ -358,7 +358,8 @@ static DECLCALLBACK(int) drvTpmHostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     rc = drvTpmHostQueryBufferSize(pThis);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmHost%d: Querying input buffer size of TPM with id %u failed with %Rrc"), idTpm, rc);
+                                   N_("DrvTpmHost%d: Querying input buffer size of TPM with id %u failed with %Rrc"),
+                                   pDrvIns->iInstance, idTpm, rc);
 
     LogRel(("DrvTpmHost#%d: Connected to TPM %u.\n", pDrvIns->iInstance, idTpm));
     return VINF_SUCCESS;
