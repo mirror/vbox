@@ -44,10 +44,6 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-#define DRVTPMEMU_POLLSET_ID_SOCKET_CTRL 0
-#define DRVTPMEMU_POLLSET_ID_SOCKET_DATA 1
-#define DRVTPMEMU_POLLSET_ID_WAKEUP      2
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -291,20 +287,6 @@ typedef struct DRVTPMEMU
     /** Socket handle for the data connection. */
     RTSOCKET            hSockData;
 
-#if 0
-    /** Poll set used to wait for I/O events. */
-    RTPOLLSET           hPollSet;
-    /** Reading end of the wakeup pipe. */
-    RTPIPE              hPipeWakeR;
-    /** Writing end of the wakeup pipe. */
-    RTPIPE              hPipeWakeW;
-
-    /** Flag to signal listening thread to shut down. */
-    bool volatile       fShutdown;
-    /** Flag to signal whether the thread was woken up from external. */
-    bool volatile       fWokenUp;
-#endif
-
     /** Currently set locality. */
     uint8_t             bLoc;
 
@@ -453,14 +435,12 @@ static int drvTpmEmuExecCtrlCmdNoResp(PDRVTPMEMU pThis, SWTPMCMD enmCmd, const v
 
 
 /**
- * Executes the given command over the control connection to the TPM emulator - variant with no command payload.
+ * Executes the given command over the control connection to the TPM emulator - variant with no command and response payload.
  *
  * @returns VBox status code.
  * @retval  VERR_NET_IO_ERROR if the executed command returned an error in the response status field.
  * @param   pThis               Pointer to the TPM emulator driver instance data.
  * @param   enmCmd              The command to execute.
- * @param   pvResp              Where to store additional resposne data.
- * @param   cbResp              Size of the Response data in bytes (excluding the response status code which is implicit).
  * @param   cMillies            Number of milliseconds to wait before aborting the command with a timeout error.
  */
 static int drvTpmEmuExecCtrlCmdNoPayloadAndResp(PDRVTPMEMU pThis, SWTPMCMD enmCmd, RTMSINTERVAL cMillies)
@@ -810,11 +790,6 @@ static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->hSockCtrl != NIL_RTSOCKET)
     {
-#if 0
-        int rc = RTPollSetRemove(pThis->hPollSet, DRVTPMEMU_POLLSET_ID_SOCKET_CTRL);
-        AssertRC(rc);
-#endif
-
         int rc = RTSocketShutdown(pThis->hSockCtrl, true /* fRead */, true /* fWrite */);
         AssertRC(rc);
 
@@ -826,11 +801,6 @@ static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->hSockData != NIL_RTSOCKET)
     {
-#if 0
-        int rc = RTPollSetRemove(pThis->hPollSet, DRVTPMEMU_POLLSET_ID_SOCKET_DATA);
-        AssertRC(rc);
-#endif
-
         int rc = RTSocketShutdown(pThis->hSockData, true /* fRead */, true /* fWrite */);
         AssertRC(rc);
 
@@ -839,32 +809,6 @@ static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
 
         pThis->hSockCtrl = NIL_RTSOCKET;
     }
-
-#if 0
-    if (pThis->hPipeWakeR != NIL_RTPIPE)
-    {
-        int rc = RTPipeClose(pThis->hPipeWakeR);
-        AssertRC(rc);
-
-        pThis->hPipeWakeR = NIL_RTPIPE;
-    }
-
-    if (pThis->hPipeWakeW != NIL_RTPIPE)
-    {
-        int rc = RTPipeClose(pThis->hPipeWakeW);
-        AssertRC(rc);
-
-        pThis->hPipeWakeW = NIL_RTPIPE;
-    }
-
-    if (pThis->hPollSet != NIL_RTPOLLSET)
-    {
-        int rc = RTPollSetDestroy(pThis->hPollSet);
-        AssertRC(rc);
-
-        pThis->hPollSet = NIL_RTPOLLSET;
-    }
-#endif
 }
 
 
@@ -883,12 +827,6 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     pThis->hSockData                                = NIL_RTSOCKET;
     pThis->enmTpmVers                               = TPMVERSION_UNKNOWN;
     pThis->bLoc                                     = TPM_NO_LOCALITY_SELECTED;
-
-#if 0
-    pThis->hPollSet                                 = NIL_RTPOLLSET;
-    pThis->hPipeWakeR                               = NIL_RTPIPE;
-    pThis->hPipeWakeW                               = NIL_RTPIPE;
-#endif
 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvTpmEmuQueryInterface;
@@ -915,26 +853,6 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"Location\" resulted in %Rrc"), rc);
 
-#if 0
-    rc = RTPipeCreate(&pThis->hPipeWakeR, &pThis->hPipeWakeW, 0 /* fFlags */);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmEmu#%d: Failed to create wake pipe"), pDrvIns->iInstance);
-
-    rc = RTPollSetCreate(&pThis->hPollSet);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmEmu#%d: Failed to create poll set"), pDrvIns->iInstance);
-
-    rc = RTPollSetAddPipe(pThis->hPollSet, pThis->hPipeWakeR,
-                            RTPOLL_EVT_READ | RTPOLL_EVT_ERROR,
-                            DRVTPMEMU_POLLSET_ID_WAKEUP);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmEmu#%d failed to add wakeup pipe for %s to poll set"),
-                                   pDrvIns->iInstance, szLocation);
-#endif
-
     /*
      * Create/Open the socket.
      */
@@ -958,16 +876,6 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("DrvTpmEmu#%d failed to connect to control socket %s"),
                                    pDrvIns->iInstance, szLocation);
-
-#if 0
-    rc = RTPollSetAddSocket(pThis->hPollSet, pThis->hSockCtrl,
-                            RTPOLL_EVT_READ | RTPOLL_EVT_WRITE | RTPOLL_EVT_ERROR,
-                            DRVTPMEMU_POLLSET_ID_SOCKET_CTRL);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("DrvTpmEmu#%d failed to add socket for %s to poll set"),
-                                   pDrvIns->iInstance, szLocation);
-#endif
 
     rc = drvTpmEmuQueryCaps(pThis);
     if (RT_FAILURE(rc))

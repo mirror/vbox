@@ -591,6 +591,9 @@ endif
 
   VBoxDD_SOURCES.linux += \
   	Security/DrvTpmHost.cpp
+
+  VBoxDD_SOURCES.win += \
+  	Security/DrvTpmHost.cpp
  endif
 
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
