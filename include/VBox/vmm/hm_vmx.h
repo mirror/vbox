@@ -3704,7 +3704,7 @@ typedef struct
     RTUINT64U       u64AddrExitMsrLoad;          /**< 0x278 - VM-exit MSR-load area address. */
     RTUINT64U       u64AddrEntryMsrLoad;         /**< 0x280 - VM-entry MSR-load area address. */
     RTUINT64U       u64ExecVmcsPtr;              /**< 0x288 - Executive-VMCS pointer. */
-    RTUINT64U       u64AddrPml;                  /**< 0x290 - PML address. */
+    RTUINT64U       u64AddrPml;                  /**< 0x290 - Page-modification log address (PML). */
     RTUINT64U       u64TscOffset;                /**< 0x298 - TSC offset. */
     RTUINT64U       u64AddrVirtApic;             /**< 0x2a0 - Virtual-APIC address. */
     RTUINT64U       u64AddrApicAccess;           /**< 0x2a8 - APIC-access address. */
@@ -3719,9 +3719,9 @@ typedef struct
     RTUINT64U       u64AddrVmreadBitmap;         /**< 0x2f0 - VMREAD-bitmap address. */
     RTUINT64U       u64AddrVmwriteBitmap;        /**< 0x2f8 - VMWRITE-bitmap address. */
     RTUINT64U       u64AddrXcptVeInfo;           /**< 0x300 - Virtualization-exception information address. */
-    RTUINT64U       u64XssBitmap;                /**< 0x308 - XSS-exiting bitmap. */
-    RTUINT64U       u64EnclsBitmap;              /**< 0x310 - ENCLS-exiting bitmap address. */
-    RTUINT64U       u64SpptPtr;                  /**< 0x318 - Sub-page-permission-table pointer. */
+    RTUINT64U       u64XssExitBitmap;            /**< 0x308 - XSS-exiting bitmap. */
+    RTUINT64U       u64EnclsExitBitmap;          /**< 0x310 - ENCLS-exiting bitmap address. */
+    RTUINT64U       u64SppTablePtr;              /**< 0x318 - Sub-page-permission-table pointer (SPPTP). */
     RTUINT64U       u64TscMultiplier;            /**< 0x320 - TSC multiplier. */
     RTUINT64U       u64ProcCtls3;                /**< 0x328 - Tertiary-Processor based VM-execution controls. */
     RTUINT64U       u64EnclvExitBitmap;          /**< 0x330 - ENCLV-exiting bitmap. */
@@ -3778,7 +3778,7 @@ typedef struct
     RTUINT64U       u64HostRip;                  /**< 0x628 - Host RIP. */
     RTUINT64U       u64HostSCetMsr;              /**< 0x630 - Host S_CET MSR. */
     RTUINT64U       u64HostSsp;                  /**< 0x638 - Host SSP. */
-    RTUINT64U       u64HostIntrSspTblAddrMsr;    /**< 0x640 - Host Interrupt SSP table address MSR. */
+    RTUINT64U       u64HostIntrSspTableAddrMsr;  /**< 0x640 - Host Interrupt SSP table address MSR. */
     RTUINT64U       au64Reserved7[29];           /**< 0x648 - Reserved for future. */
     /** @} */
 
@@ -3863,7 +3863,7 @@ typedef struct
     RTUINT64U       u64GuestSysenterEip;         /**< 0x9d8 - Guest SYSENTER EIP. */
     RTUINT64U       u64GuestSCetMsr;             /**< 0x9e0 - Guest S_CET MSR. */
     RTUINT64U       u64GuestSsp;                 /**< 0x9e8 - Guest SSP. */
-    RTUINT64U       u64GuestIntrSspTblAddrMsr;   /**< 0x9f0 - Guest Interrupt SSP table address MSR. */
+    RTUINT64U       u64GuestIntrSspTableAddrMsr; /**< 0x9f0 - Guest Interrupt SSP table address MSR. */
     RTUINT64U       au64Reserved6[29];           /**< 0x9f8 - Reserved for future. */
     /** @} */
 

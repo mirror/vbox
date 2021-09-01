@@ -405,12 +405,12 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64AddrVmreadBitmap),
     SSMFIELD_ENTRY(       VMXVVMCS, u64AddrVmwriteBitmap),
     SSMFIELD_ENTRY(       VMXVVMCS, u64AddrXcptVeInfo),
-    SSMFIELD_ENTRY(       VMXVVMCS, u64XssBitmap),
-    SSMFIELD_ENTRY(       VMXVVMCS, u64EnclsBitmap),
-    SSMFIELD_ENTRY(       VMXVVMCS, u64SpptPtr),
+    SSMFIELD_ENTRY(       VMXVVMCS, u64XssExitBitmap),
+    SSMFIELD_ENTRY(       VMXVVMCS, u64EnclsExitBitmap),
+    SSMFIELD_ENTRY(       VMXVVMCS, u64SppTablePtr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64TscMultiplier),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64ProcCtls3,               CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64EnclvExitBitmap,         CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64ProcCtls3,                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64EnclvExitBitmap,          CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved0),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64Cr0Mask),
@@ -438,7 +438,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostPatMsr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostEferMsr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostPerfGlobalCtlMsr),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostPkrsMsr,             CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostPkrsMsr,              CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved3),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostCr0),
@@ -453,9 +453,9 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostSysenterEip),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostRsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostRip),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostSCetMsr,             CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostSsp,                 CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostIntrSspTblAddrMsr,   CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostSCetMsr,              CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostSsp,                  CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64HostIntrSspTableAddrMsr,  CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved7),
 
     SSMFIELD_ENTRY(       VMXVVMCS, GuestEs),
@@ -506,7 +506,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPdpte3),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestBndcfgsMsr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestRtitCtlMsr),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestPkrsMsr,            CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestPkrsMsr,             CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved2),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestCr0),
@@ -529,9 +529,9 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPendingDbgXcpts),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEip),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestSCetMsr,            CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestSsp,                CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
-    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestIntrSspTblAddrMsr,  CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestSCetMsr,             CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestSsp,                 CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
+    SSMFIELD_ENTRY_VER(   VMXVVMCS, u64GuestIntrSspTableAddrMsr, CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved6),
 
     SSMFIELD_ENTRY_TERM()
@@ -3888,17 +3888,17 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sPosted-intr desc addr      = %#RX64\n",   pszPrefix, pVmcs->u64AddrPostedIntDesc.u);
         pHlp->pfnPrintf(pHlp, "  %sVM-functions control       = %#RX64\n",   pszPrefix, pVmcs->u64VmFuncCtls.u);
         pHlp->pfnPrintf(pHlp, "  %sEPTP ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64EptpPtr.u);
-        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 0 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap0.u);
-        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 1 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap1.u);
-        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 2 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap2.u);
-        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 3 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap3.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 0          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap0.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 1          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap1.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 2          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap2.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 3          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap3.u);
         pHlp->pfnPrintf(pHlp, "  %sEPTP-list addr             = %#RX64\n",   pszPrefix, pVmcs->u64AddrEptpList.u);
         pHlp->pfnPrintf(pHlp, "  %sVMREAD-bitmap addr         = %#RX64\n",   pszPrefix, pVmcs->u64AddrVmreadBitmap.u);
         pHlp->pfnPrintf(pHlp, "  %sVMWRITE-bitmap addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrVmwriteBitmap.u);
         pHlp->pfnPrintf(pHlp, "  %sVirt-Xcpt info addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrXcptVeInfo.u);
-        pHlp->pfnPrintf(pHlp, "  %sXSS-bitmap                 = %#RX64\n",   pszPrefix, pVmcs->u64XssBitmap.u);
-        pHlp->pfnPrintf(pHlp, "  %sENCLS-exiting bitmap       = %#RX64\n",   pszPrefix, pVmcs->u64EnclsBitmap.u);
-        pHlp->pfnPrintf(pHlp, "  %sSPPT ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64SpptPtr.u);
+        pHlp->pfnPrintf(pHlp, "  %sXSS-exiting bitmap         = %#RX64\n",   pszPrefix, pVmcs->u64XssExitBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sENCLS-exiting bitmap       = %#RX64\n",   pszPrefix, pVmcs->u64EnclsExitBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sSPP-table ptr              = %#RX64\n",   pszPrefix, pVmcs->u64SppTablePtr.u);
         pHlp->pfnPrintf(pHlp, "  %sTSC multiplier             = %#RX64\n",   pszPrefix, pVmcs->u64TscMultiplier.u);
         pHlp->pfnPrintf(pHlp, "  %sTertiary processor ctls    = %#RX64\n",   pszPrefix, pVmcs->u64ProcCtls3.u);
         pHlp->pfnPrintf(pHlp, "  %sENCLV-exiting bitmap       = %#RX64\n",   pszPrefix, pVmcs->u64EnclvExitBitmap.u);
@@ -3968,7 +3968,7 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEip.u);
         pHlp->pfnPrintf(pHlp, "  %sS_CET                      = %#RX64\n",   pszPrefix, pVmcs->u64GuestSCetMsr.u);
         pHlp->pfnPrintf(pHlp, "  %sSSP                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestSsp.u);
-        pHlp->pfnPrintf(pHlp, "  %sINTERRUPT_SSP_TABLE_ADDR   = %#RX64\n",   pszPrefix, pVmcs->u64GuestIntrSspTblAddrMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sINTERRUPT_SSP_TABLE_ADDR   = %#RX64\n",   pszPrefix, pVmcs->u64GuestIntrSspTableAddrMsr.u);
     }
 
     /* Host state. */
@@ -4005,7 +4005,7 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sRIP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRip.u);
         pHlp->pfnPrintf(pHlp, "  %sS_CET                      = %#RX64\n",   pszPrefix, pVmcs->u64HostSCetMsr.u);
         pHlp->pfnPrintf(pHlp, "  %sSSP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostSsp.u);
-        pHlp->pfnPrintf(pHlp, "  %sINTERRUPT_SSP_TBL_ADDR     = %#RX64\n",   pszPrefix, pVmcs->u64HostIntrSspTblAddrMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sINTERRUPT_SSP_TABLE_ADDR   = %#RX64\n",   pszPrefix, pVmcs->u64HostIntrSspTableAddrMsr.u);
 
     }
 

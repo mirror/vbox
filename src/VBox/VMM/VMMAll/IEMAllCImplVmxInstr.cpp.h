@@ -262,9 +262,9 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    19 */ RT_UOFFSETOF(VMXVVMCS, u64AddrVmreadBitmap),
         /*    20 */ RT_UOFFSETOF(VMXVVMCS, u64AddrVmwriteBitmap),
         /*    21 */ RT_UOFFSETOF(VMXVVMCS, u64AddrXcptVeInfo),
-        /*    22 */ RT_UOFFSETOF(VMXVVMCS, u64XssBitmap),
-        /*    23 */ RT_UOFFSETOF(VMXVVMCS, u64EnclsBitmap),
-        /*    24 */ RT_UOFFSETOF(VMXVVMCS, u64SpptPtr),
+        /*    22 */ RT_UOFFSETOF(VMXVVMCS, u64XssExitBitmap),
+        /*    23 */ RT_UOFFSETOF(VMXVVMCS, u64EnclsExitBitmap),
+        /*    24 */ RT_UOFFSETOF(VMXVVMCS, u64SppTablePtr),
         /*    25 */ RT_UOFFSETOF(VMXVVMCS, u64TscMultiplier),
         /*    26 */ RT_UOFFSETOF(VMXVVMCS, u64ProcCtls3),
         /*    27 */ RT_UOFFSETOF(VMXVVMCS, u64EnclvExitBitmap)
@@ -428,7 +428,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    19 */ RT_UOFFSETOF(VMXVVMCS, u64GuestSysenterEip),
         /*    20 */ RT_UOFFSETOF(VMXVVMCS, u64GuestSCetMsr),
         /*    21 */ RT_UOFFSETOF(VMXVVMCS, u64GuestSsp),
-        /*    22 */ RT_UOFFSETOF(VMXVVMCS, u64GuestIntrSspTblAddrMsr),
+        /*    22 */ RT_UOFFSETOF(VMXVVMCS, u64GuestIntrSspTableAddrMsr),
         /* 23-27 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCSFIELD_WIDTH_NATURAL | VMX_VMCSFIELD_TYPE_HOST_STATE: */
@@ -447,7 +447,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    11 */ RT_UOFFSETOF(VMXVVMCS, u64HostRip),
         /*    12 */ RT_UOFFSETOF(VMXVVMCS, u64HostSCetMsr),
         /*    13 */ RT_UOFFSETOF(VMXVVMCS, u64HostSsp),
-        /*    14 */ RT_UOFFSETOF(VMXVVMCS, u64HostIntrSspTblAddrMsr),
+        /*    14 */ RT_UOFFSETOF(VMXVVMCS, u64HostIntrSspTableAddrMsr),
         /* 15-22 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 23-27 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     }
