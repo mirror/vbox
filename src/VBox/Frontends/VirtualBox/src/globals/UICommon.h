@@ -45,11 +45,6 @@
 /* Other VBox includes: */
 #include "VBox/com/Guid.h"
 
-/* Other includes: */
-#ifdef VBOX_WS_X11
-# include <X11/Xdefs.h>
-#endif
-
 /* Forward declarations: */
 class QGraphicsWidget;
 class QMenu;
@@ -217,10 +212,10 @@ public:
 #endif
 
 #ifdef VBOX_WS_X11
-        /** X11: Returns whether the Window Manager we are running under is composition one. */
-        bool isCompositingManagerRunning() const { return m_fCompositingManagerRunning; }
         /** X11: Returns the type of the Window Manager we are running under. */
         X11WMType typeOfWindowManager() const { return m_enmWindowManagerType; }
+        /** X11: Returns whether the Window Manager we are running under is composition one. */
+        bool isCompositingManagerRunning() const { return m_fCompositingManagerRunning; }
 #endif
     /** @} */
 
@@ -341,32 +336,6 @@ public:
 
         /** Activates the specified window with given @a wId. Can @a fSwitchDesktop if requested. */
         static bool activateWindow(WId wId, bool fSwitchDesktop = true);
-
-#ifdef VBOX_WS_X11
-        /** X11: Test whether the current window manager supports full screen mode. */
-        static bool supportsFullScreenMonitorsProtocolX11();
-        /** X11: Performs mapping of the passed @a pWidget to host-screen with passed @a uScreenId. */
-        static bool setFullScreenMonitorX11(QWidget *pWidget, ulong uScreenId);
-
-        /** X11: Returns a list of current _NET_WM_STATE flags for passed @a pWidget. */
-        static QVector<Atom> flagsNetWmState(QWidget *pWidget);
-        /** X11: Check whether _NET_WM_STATE_FULLSCREEN flag is set for passed @a pWidget. */
-        static bool isFullScreenFlagSet(QWidget *pWidget);
-        /** X11: Sets _NET_WM_STATE_FULLSCREEN flag for passed @a pWidget. */
-        static void setFullScreenFlag(QWidget *pWidget);
-        /** X11: Sets _NET_WM_STATE_SKIP_TASKBAR flag for passed @a pWidget. */
-        static void setSkipTaskBarFlag(QWidget *pWidget);
-        /** X11: Sets _NET_WM_STATE_SKIP_PAGER flag for passed @a pWidget. */
-        static void setSkipPagerFlag(QWidget *pWidget);
-
-        /** Assigns WM_CLASS property for passed @a pWidget. */
-        static void setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
-        /** Tell the WM we are well behaved wrt Xwayland keyboard-grabs. This will
-          * make the WM turn our grab into a Wayland shortcut inhibition request,
-          * so that e.g. alt+tab will get send to the VM instead of moving the
-          * focus away from the VM. */
-        static void setXwaylandMayGrabKeyboardFlag(QWidget *pWidget);
-#endif /* VBOX_WS_X11 */
 
         /** Assigns minimum @a pSpinBox to correspond to @a cCount digits. */
         static void setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount);

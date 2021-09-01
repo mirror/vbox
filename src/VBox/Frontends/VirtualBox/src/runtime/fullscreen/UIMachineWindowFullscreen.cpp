@@ -393,12 +393,12 @@ void UIMachineWindowFullscreen::placeOnScreen()
 #elif defined(VBOX_WS_X11)
 
     /* Determine whether we should use the native full-screen mode: */
-    const bool fUseNativeFullScreen = UICommon::supportsFullScreenMonitorsProtocolX11() &&
-                                      !gEDataManager->legacyFullscreenModeRequested();
+    const bool fUseNativeFullScreen =    NativeWindowSubsystem::X11SupportsFullScreenMonitorsProtocol()
+                                      && !gEDataManager->legacyFullscreenModeRequested();
     if (fUseNativeFullScreen)
     {
         /* Tell recent window managers which host-screen this window should be mapped to: */
-        UICommon::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+        NativeWindowSubsystem::X11SetFullScreenMonitor(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
     }
 
     /* Set appropriate window geometry: */

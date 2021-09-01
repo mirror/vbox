@@ -23,11 +23,13 @@
 #include <QtXml/QDomDocument>
 #include <QtXml/QDomElement>
 #include <QX11Info>
+#include <QWidget>
 
 /* GUI includes: */
 #include "VBoxUtils-x11.h"
 
 /* Other VBox includes: */
+#include <iprt/assert.h>
 #include <VBox/log.h>
 
 /* Other includes: */
@@ -334,4 +336,315 @@ void NativeWindowSubsystem::X11InhibitUninhibitScrenSaver(bool fInhibit, QVector
                     error.message().toUtf8().constData()));
         }
     }
+}
+
+char *XXGetProperty(Display *pDpy, Window windowHandle, Atom propType, const char *pszPropName)
+{
+    Atom propNameAtom = XInternAtom(pDpy, pszPropName, True /* only_if_exists */);
+    if (propNameAtom == None)
+        return NULL;
+
+    Atom actTypeAtom = None;
+    int actFmt = 0;
+    unsigned long nItems = 0;
+    unsigned long nBytesAfter = 0;
+    unsigned char *propVal = NULL;
+    int rc = XGetWindowProperty(pDpy, windowHandle, propNameAtom,
+                                0, LONG_MAX, False /* delete */,
+                                propType, &actTypeAtom, &actFmt,
+                                &nItems, &nBytesAfter, &propVal);
+    if (rc != Success)
+        return NULL;
+
+    return reinterpret_cast<char*>(propVal);
+}
+
+bool XXSendClientMessage(Display *pDpy, Window windowHandle, const char *pszMsg,
+                         unsigned long aData0 = 0, unsigned long aData1 = 0,
+                         unsigned long aData2 = 0, unsigned long aData3 = 0,
+                         unsigned long aData4 = 0)
+{
+    Atom msgAtom = XInternAtom(pDpy, pszMsg, True /* only_if_exists */);
+    if (msgAtom == None)
+        return false;
+
+    XEvent ev;
+
+    ev.xclient.type = ClientMessage;
+    ev.xclient.serial = 0;
+    ev.xclient.send_event = True;
+    ev.xclient.display = pDpy;
+    ev.xclient.window = windowHandle;
+    ev.xclient.message_type = msgAtom;
+
+    /* Always send as 32 bit for now: */
+    ev.xclient.format = 32;
+    ev.xclient.data.l[0] = aData0;
+    ev.xclient.data.l[1] = aData1;
+    ev.xclient.data.l[2] = aData2;
+    ev.xclient.data.l[3] = aData3;
+    ev.xclient.data.l[4] = aData4;
+
+    return XSendEvent(pDpy, DefaultRootWindow(pDpy), False,
+                      SubstructureRedirectMask, &ev) != 0;
+}
+
+bool NativeWindowSubsystem::X11ActivateWindow(WId wId, bool fSwitchDesktop)
+{
+    bool fResult = false;
+    Display *pDisplay = QX11Info::display();
+
+    if (fSwitchDesktop)
+    {
+        /* Try to find the desktop ID using the NetWM property: */
+        CARD32 *pDesktop = (CARD32*)XXGetProperty(pDisplay, wId, XA_CARDINAL, "_NET_WM_DESKTOP");
+        if (pDesktop == NULL)
+            // WORKAROUND:
+            // if the NetWM properly is not supported try to find
+            // the desktop ID using the GNOME WM property.
+            pDesktop = (CARD32*)XXGetProperty(pDisplay, wId, XA_CARDINAL, "_WIN_WORKSPACE");
+
+        if (pDesktop != NULL)
+        {
+            bool ok = XXSendClientMessage(pDisplay, DefaultRootWindow(pDisplay), "_NET_CURRENT_DESKTOP", *pDesktop);
+            if (!ok)
+            {
+                Log1WarningFunc(("Couldn't switch to pDesktop=%08X\n", pDesktop));
+                fResult = false;
+            }
+            XFree(pDesktop);
+        }
+        else
+        {
+            Log1WarningFunc(("Couldn't find a pDesktop ID for wId=%08X\n", wId));
+            fResult = false;
+        }
+    }
+
+    bool ok = XXSendClientMessage(pDisplay, wId, "_NET_ACTIVE_WINDOW");
+    fResult &= !!ok;
+
+    XRaiseWindow(pDisplay, wId);
+    return fResult;
+}
+
+bool NativeWindowSubsystem::X11SupportsFullScreenMonitorsProtocol()
+{
+    /* This method tests whether the current X11 window manager supports full-screen mode as we need it.
+     * Unfortunately the EWMH specification was not fully clear about whether we can expect to find
+     * all of these atoms on the _NET_SUPPORTED root window property, so we have to test with all
+     * interesting window managers. If this fails for a user when you think it should succeed
+     * they should try executing:
+     * xprop -root | egrep -w '_NET_WM_FULLSCREEN_MONITORS|_NET_WM_STATE|_NET_WM_STATE_FULLSCREEN'
+     * in an X11 terminal window.
+     * All three strings should be found under a property called "_NET_SUPPORTED(ATOM)". */
+
+    /* Using a global to get at the display does not feel right, but that is how it is done elsewhere in the code. */
+    Display *pDisplay = QX11Info::display();
+    Atom atomSupported            = XInternAtom(pDisplay, "_NET_SUPPORTED",
+                                                True /* only_if_exists */);
+    Atom atomWMFullScreenMonitors = XInternAtom(pDisplay,
+                                                "_NET_WM_FULLSCREEN_MONITORS",
+                                                True /* only_if_exists */);
+    Atom atomWMState              = XInternAtom(pDisplay,
+                                                "_NET_WM_STATE",
+                                                True /* only_if_exists */);
+    Atom atomWMStateFullScreen    = XInternAtom(pDisplay,
+                                                "_NET_WM_STATE_FULLSCREEN",
+                                                True /* only_if_exists */);
+    bool fFoundFullScreenMonitors = false;
+    bool fFoundState              = false;
+    bool fFoundStateFullScreen    = false;
+    Atom atomType;
+    int cFormat;
+    unsigned long cItems;
+    unsigned long cbLeft;
+    Atom *pAtomHints;
+    int rc;
+    unsigned i;
+
+    if (   atomSupported == None || atomWMFullScreenMonitors == None
+        || atomWMState == None || atomWMStateFullScreen == None)
+        return false;
+    /* Get atom value: */
+    rc = XGetWindowProperty(pDisplay, DefaultRootWindow(pDisplay),
+                            atomSupported, 0, 0x7fffffff /*LONG_MAX*/,
+                            False /* delete */, XA_ATOM, &atomType,
+                            &cFormat, &cItems, &cbLeft,
+                            (unsigned char **)&pAtomHints);
+    if (rc != Success)
+        return false;
+    if (pAtomHints == NULL)
+        return false;
+    if (atomType == XA_ATOM && cFormat == 32 && cbLeft == 0)
+        for (i = 0; i < cItems; ++i)
+        {
+            if (pAtomHints[i] == atomWMFullScreenMonitors)
+                fFoundFullScreenMonitors = true;
+            if (pAtomHints[i] == atomWMState)
+                fFoundState = true;
+            if (pAtomHints[i] == atomWMStateFullScreen)
+                fFoundStateFullScreen = true;
+        }
+    XFree(pAtomHints);
+    return fFoundFullScreenMonitors && fFoundState && fFoundStateFullScreen;
+}
+
+bool NativeWindowSubsystem::X11SetFullScreenMonitor(QWidget *pWidget, ulong uScreenId)
+{
+    return XXSendClientMessage(QX11Info::display(),
+                               pWidget->window()->winId(),
+                               "_NET_WM_FULLSCREEN_MONITORS",
+                               uScreenId, uScreenId, uScreenId, uScreenId,
+                               1 /* Source indication (1 = normal application) */);
+}
+
+QVector<Atom> flagsNetWmState(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState;
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+
+    /* Get the size of the property data: */
+    Atom actual_type;
+    int iActualFormat;
+    ulong uPropertyLength;
+    ulong uBytesLeft;
+    uchar *pPropertyData = 0;
+    if (XGetWindowProperty(pDisplay, pWidget->window()->winId(),
+                           net_wm_state, 0, 0, False, XA_ATOM, &actual_type, &iActualFormat,
+                           &uPropertyLength, &uBytesLeft, &pPropertyData) == Success &&
+        actual_type == XA_ATOM && iActualFormat == 32)
+    {
+        resultNetWmState.resize(uBytesLeft / 4);
+        XFree((char*)pPropertyData);
+        pPropertyData = 0;
+
+        /* Fetch all data: */
+        if (XGetWindowProperty(pDisplay, pWidget->window()->winId(),
+                               net_wm_state, 0, resultNetWmState.size(), False, XA_ATOM, &actual_type, &iActualFormat,
+                               &uPropertyLength, &uBytesLeft, &pPropertyData) != Success)
+            resultNetWmState.clear();
+        else if (uPropertyLength != (ulong)resultNetWmState.size())
+            resultNetWmState.resize(uPropertyLength);
+
+        /* Put it into resultNetWmState: */
+        if (!resultNetWmState.isEmpty())
+            memcpy(resultNetWmState.data(), pPropertyData, resultNetWmState.size() * sizeof(Atom));
+        if (pPropertyData)
+            XFree((char*)pPropertyData);
+    }
+
+    /* Return result: */
+    return resultNetWmState;
+}
+
+#if 0 // unused for now?
+bool NativeWindowSubsystem::isFullScreenFlagSet(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Prepare atoms: */
+    Atom net_wm_state_fullscreen = XInternAtom(pDisplay, "_NET_WM_STATE_FULLSCREEN", True /* only if exists */);
+
+    /* Check if flagsNetWmState(pWidget) contains full-screen flag: */
+    return flagsNetWmState(pWidget).contains(net_wm_state_fullscreen);
+}
+
+void NativeWindowSubsystem::setFullScreenFlag(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+    Atom net_wm_state_fullscreen = XInternAtom(pDisplay, "_NET_WM_STATE_FULLSCREEN", True /* only if exists */);
+
+    /* Append resultNetWmState with fullscreen flag if necessary: */
+    if (!resultNetWmState.contains(net_wm_state_fullscreen))
+    {
+        resultNetWmState.append(net_wm_state_fullscreen);
+        /* Apply property to widget again: */
+        XChangeProperty(pDisplay, pWidget->window()->winId(),
+                        net_wm_state, XA_ATOM, 32, PropModeReplace,
+                        (unsigned char*)resultNetWmState.data(), resultNetWmState.size());
+    }
+}
+#endif // unused for now?
+
+void NativeWindowSubsystem::X11SetSkipTaskBarFlag(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+    Atom net_wm_state_skip_taskbar = XInternAtom(pDisplay, "_NET_WM_STATE_SKIP_TASKBAR", True /* only if exists */);
+
+    /* Append resultNetWmState with skip-taskbar flag if necessary: */
+    if (!resultNetWmState.contains(net_wm_state_skip_taskbar))
+    {
+        resultNetWmState.append(net_wm_state_skip_taskbar);
+        /* Apply property to widget again: */
+        XChangeProperty(pDisplay, pWidget->window()->winId(),
+                        net_wm_state, XA_ATOM, 32, PropModeReplace,
+                        (unsigned char*)resultNetWmState.data(), resultNetWmState.size());
+    }
+}
+
+void NativeWindowSubsystem::X11SetSkipPagerFlag(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+    Atom net_wm_state_skip_pager = XInternAtom(pDisplay, "_NET_WM_STATE_SKIP_PAGER", True /* only if exists */);
+
+    /* Append resultNetWmState with skip-pager flag if necessary: */
+    if (!resultNetWmState.contains(net_wm_state_skip_pager))
+    {
+        resultNetWmState.append(net_wm_state_skip_pager);
+        /* Apply property to widget again: */
+        XChangeProperty(pDisplay, pWidget->window()->winId(),
+                        net_wm_state, XA_ATOM, 32, PropModeReplace,
+                        (unsigned char*)resultNetWmState.data(), resultNetWmState.size());
+    }
+}
+
+void NativeWindowSubsystem::X11SetWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString)
+{
+    /* Make sure all arguments set: */
+    AssertReturnVoid(pWidget && !strNameString.isNull() && !strClassString.isNull());
+
+    /* Define QByteArray objects to make sure data is alive within the scope: */
+    QByteArray nameByteArray;
+    /* Check the existence of RESOURCE_NAME env. variable and override name string if necessary: */
+    const char resourceName[] = "RESOURCE_NAME";
+    if (qEnvironmentVariableIsSet(resourceName))
+        nameByteArray = qgetenv(resourceName);
+    else
+        nameByteArray = strNameString.toLatin1();
+    QByteArray classByteArray = strClassString.toLatin1();
+
+    AssertReturnVoid(nameByteArray.data() && classByteArray.data());
+
+    XClassHint windowClass;
+    windowClass.res_name = nameByteArray.data();
+    windowClass.res_class = classByteArray.data();
+    /* Set WM_CLASS of the window to passed name and class strings: */
+    XSetClassHint(QX11Info::display(), pWidget->window()->winId(), &windowClass);
+}
+
+void NativeWindowSubsystem::X11SetXwaylandMayGrabKeyboardFlag(QWidget *pWidget)
+{
+    XXSendClientMessage(QX11Info::display(), pWidget->window()->winId(),
+                        "_XWAYLAND_MAY_GRAB_KEYBOARD", 1);
 }
