@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageExpert class implementation.
+ * VBox Qt GUI - UIWizardNewVDExpertPage class implementation.
  */
 
 /*
@@ -21,7 +21,7 @@
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
-#include "UIWizardNewVDPageExpert.h"
+#include "UIWizardNewVDExpertPage.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
 #include "UIMessageCenter.h"
@@ -29,7 +29,7 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
+UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
     : UINativeWizardPage()
     , m_pSizeAndPathGroup(0)
     , m_pFormatGroup(0)
@@ -43,7 +43,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
     prepare();
 }
 
-void UIWizardNewVDPageExpert::prepare()
+void UIWizardNewVDExpertPage::prepare()
 {
     QGridLayout *pMainLayout = new QGridLayout(this);
     m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
@@ -55,27 +55,27 @@ void UIWizardNewVDPageExpert::prepare()
     pMainLayout->addWidget(m_pVariantGroup, 4, 1, 3, 1);
 
     connect(m_pFormatGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
-            this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);
+            this, &UIWizardNewVDExpertPage::sltMediumFormatChanged);
     connect(m_pVariantGroup, &UIDiskVariantGroupBox::sigMediumVariantChanged,
-            this, &UIWizardNewVDPageExpert::sltMediumVariantChanged);
+            this, &UIWizardNewVDExpertPage::sltMediumVariantChanged);
     connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
-            this, &UIWizardNewVDPageExpert::sltSelectLocationButtonClicked);
+            this, &UIWizardNewVDExpertPage::sltSelectLocationButtonClicked);
     connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
-            this, &UIWizardNewVDPageExpert::sltMediumSizeChanged);
+            this, &UIWizardNewVDExpertPage::sltMediumSizeChanged);
     connect(m_pSizeAndPathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
-            this, &UIWizardNewVDPageExpert::sltMediumPathChanged);
+            this, &UIWizardNewVDExpertPage::sltMediumPathChanged);
 
     retranslateUi();
 }
 
-void UIWizardNewVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
+void UIWizardNewVDExpertPage::sltMediumSizeChanged(qulonglong uSize)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
     wizardWindow<UIWizardNewVD>()->setMediumSize(uSize);
     emit completeChanged();
 }
 
-void UIWizardNewVDPageExpert::sltMediumPathChanged(const QString &strPath)
+void UIWizardNewVDExpertPage::sltMediumPathChanged(const QString &strPath)
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
@@ -86,14 +86,14 @@ void UIWizardNewVDPageExpert::sltMediumPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardNewVDPageExpert::sltMediumVariantChanged(qulonglong uVariant)
+void UIWizardNewVDExpertPage::sltMediumVariantChanged(qulonglong uVariant)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
     wizardWindow<UIWizardNewVD>()->setMediumVariant(uVariant);
     emit completeChanged();
 }
 
-void UIWizardNewVDPageExpert::sltMediumFormatChanged()
+void UIWizardNewVDExpertPage::sltMediumFormatChanged()
 {
     AssertReturnVoid(m_pFormatGroup);
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
@@ -102,7 +102,7 @@ void UIWizardNewVDPageExpert::sltMediumFormatChanged()
     completeChanged();
 }
 
-void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
+void UIWizardNewVDExpertPage::sltSelectLocationButtonClicked()
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
@@ -120,11 +120,11 @@ void UIWizardNewVDPageExpert::sltSelectLocationButtonClicked()
     emit completeChanged();
 }
 
-void UIWizardNewVDPageExpert::retranslateUi()
+void UIWizardNewVDExpertPage::retranslateUi()
 {
 }
 
-void UIWizardNewVDPageExpert::initializePage()
+void UIWizardNewVDExpertPage::initializePage()
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
@@ -157,7 +157,7 @@ void UIWizardNewVDPageExpert::initializePage()
     retranslateUi();
 }
 
-bool UIWizardNewVDPageExpert::isComplete() const
+bool UIWizardNewVDExpertPage::isComplete() const
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturn(pWizard, false);
@@ -172,7 +172,7 @@ bool UIWizardNewVDPageExpert::isComplete() const
     return true;
 }
 
-bool UIWizardNewVDPageExpert::validatePage()
+bool UIWizardNewVDExpertPage::validatePage()
 {
     bool fResult = true;
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
@@ -200,7 +200,7 @@ bool UIWizardNewVDPageExpert::validatePage()
     return fResult;
 }
 
-void UIWizardNewVDPageExpert::updateDiskWidgetsAfterMediumFormatChange()
+void UIWizardNewVDExpertPage::updateDiskWidgetsAfterMediumFormatChange()
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pVariantGroup && m_pSizeAndPathGroup && m_pFormatGroup);

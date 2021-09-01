@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageVariant class implementation.
+ * VBox Qt GUI - UIWizardNewVDVariantPage class implementation.
  */
 
 /*
@@ -20,14 +20,14 @@
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
-#include "UIWizardNewVDPageVariant.h"
+#include "UIWizardNewVDVariantPage.h"
 #include "UIWizardNewVD.h"
 #include "QIRichTextLabel.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
 
-UIWizardNewVDPageVariant::UIWizardNewVDPageVariant()
+UIWizardNewVDVariantPage::UIWizardNewVDVariantPage()
     : m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
@@ -37,7 +37,7 @@ UIWizardNewVDPageVariant::UIWizardNewVDPageVariant()
     prepare();
 }
 
-void UIWizardNewVDPageVariant::prepare()
+void UIWizardNewVDVariantPage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
@@ -57,11 +57,11 @@ void UIWizardNewVDPageVariant::prepare()
     pMainLayout->addStretch();
 
     connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
-            this, &UIWizardNewVDPageVariant::sltMediumVariantChanged);
+            this, &UIWizardNewVDVariantPage::sltMediumVariantChanged);
     retranslateUi();
 }
 
-void UIWizardNewVDPageVariant::retranslateUi()
+void UIWizardNewVDVariantPage::retranslateUi()
 {
     setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
 
@@ -82,7 +82,7 @@ void UIWizardNewVDPageVariant::retranslateUi()
                                                  "handle very large files."));
 }
 
-void UIWizardNewVDPageVariant::initializePage()
+void UIWizardNewVDVariantPage::initializePage()
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pVariantGroupBox);
@@ -91,14 +91,14 @@ void UIWizardNewVDPageVariant::initializePage()
     retranslateUi();
 }
 
-bool UIWizardNewVDPageVariant::isComplete() const
+bool UIWizardNewVDVariantPage::isComplete() const
 {
     if (m_pVariantGroupBox && m_pVariantGroupBox->mediumVariant() != (qulonglong)KMediumVariant_Max)
         return true;
     return false;
 }
 
-void UIWizardNewVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFormat)
+void UIWizardNewVDVariantPage::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
     AssertReturnVoid(m_pVariantGroupBox);
     m_pVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(mediumFormat);
@@ -110,7 +110,7 @@ void UIWizardNewVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFo
         m_pSplitLabel->setHidden(!m_pVariantGroupBox->isCreateSplitPossible());
 }
 
-void UIWizardNewVDPageVariant::sltMediumVariantChanged(qulonglong uVariant)
+void UIWizardNewVDVariantPage::sltMediumVariantChanged(qulonglong uVariant)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
     wizardWindow<UIWizardNewVD>()->setMediumVariant(uVariant);

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageSizeLocation class declaration.
+ * VBox Qt GUI - UIWizardNewVDSizeLocationPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageSizeLocation_h
-#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageSizeLocation_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDSizeLocationPage_h
+#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDSizeLocationPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,13 +27,13 @@
 /* Forward declarations: */
 class UIMediumSizeAndPathGroupBox;
 
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageSizeLocation : public UINativeWizardPage
+class SHARED_LIBRARY_STUFF UIWizardNewVDSizeLocationPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardNewVDPageSizeLocation(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
+    UIWizardNewVDSizeLocationPage(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
 
 private slots:
 
@@ -59,4 +59,4 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageSizeLocation_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDSizeLocationPage_h */

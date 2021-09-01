@@ -70,8 +70,6 @@ private:
     CMediumFormat m_comMediumFormat;
     QString m_strMediumPath;
     qulonglong m_uMediumSize;
-
-
     QString     m_strDefaultName;
     QString     m_strDefaultPath;
     qulonglong  m_uDefaultSize;

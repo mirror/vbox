@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageFileType class implementation.
+ * VBox Qt GUI - UIWizardNewVDFileTypePage class implementation.
  */
 
 /*
@@ -20,18 +20,18 @@
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
-#include "UIWizardNewVDPageFileType.h"
+#include "UIWizardNewVDFileTypePage.h"
 #include "UIWizardNewVD.h"
 #include "QIRichTextLabel.h"
 
-UIWizardNewVDPageFileType::UIWizardNewVDPageFileType()
+UIWizardNewVDFileTypePage::UIWizardNewVDFileTypePage()
     : m_pLabel(0)
     , m_pFormatButtonGroup(0)
 {
     prepare();
 }
 
-void UIWizardNewVDPageFileType::prepare()
+void UIWizardNewVDFileTypePage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pLabel = new QIRichTextLabel(this);
@@ -41,18 +41,18 @@ void UIWizardNewVDPageFileType::prepare()
 
     pMainLayout->addStretch();
     connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
-            this, &UIWizardNewVDPageFileType::sltMediumFormatChanged);
+            this, &UIWizardNewVDFileTypePage::sltMediumFormatChanged);
     retranslateUi();
 }
 
-void UIWizardNewVDPageFileType::sltMediumFormatChanged()
+void UIWizardNewVDFileTypePage::sltMediumFormatChanged()
 {
     AssertReturnVoid(m_pFormatButtonGroup);
     wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
     emit completeChanged();
 }
 
-void UIWizardNewVDPageFileType::retranslateUi()
+void UIWizardNewVDFileTypePage::retranslateUi()
 {
     setTitle(UIWizardNewVD::tr("Virtual Hard disk file type"));
     m_pLabel->setText(UIWizardNewVD::tr("Please choose the type of file that you would like to use "
@@ -60,7 +60,7 @@ void UIWizardNewVDPageFileType::retranslateUi()
                                         "with other virtualization software you can leave this setting unchanged."));
 }
 
-void UIWizardNewVDPageFileType::initializePage()
+void UIWizardNewVDFileTypePage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
     retranslateUi();
@@ -68,7 +68,7 @@ void UIWizardNewVDPageFileType::initializePage()
         wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
 }
 
-bool UIWizardNewVDPageFileType::isComplete() const
+bool UIWizardNewVDFileTypePage::isComplete() const
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     if (pWizard && !pWizard->mediumFormat().isNull())

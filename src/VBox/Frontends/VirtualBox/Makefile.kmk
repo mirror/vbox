@@ -920,10 +920,10 @@ UICommon_QT_MOCHDRS = \
 	src/wizards/UIWizardPage.h \
 	src/wizards/editors/UIWizardDiskEditors.h \
 	src/wizards/newvd/UIWizardNewVD.h \
-	src/wizards/newvd/UIWizardNewVDPageFileType.h \
-	src/wizards/newvd/UIWizardNewVDPageVariant.h \
-	src/wizards/newvd/UIWizardNewVDPageSizeLocation.h \
-	src/wizards/newvd/UIWizardNewVDPageExpert.h
+	src/wizards/newvd/UIWizardNewVDFileTypePage.h \
+	src/wizards/newvd/UIWizardNewVDVariantPage.h \
+	src/wizards/newvd/UIWizardNewVDSizeLocationPage.h \
+	src/wizards/newvd/UIWizardNewVDExpertPage.h
 
 ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_QT_MOCHDRS += \
@@ -1477,10 +1477,10 @@ UICommon_SOURCES = \
 	src/wizards/UIWizardPage.cpp \
 	src/wizards/editors/UIWizardDiskEditors.cpp \
 	src/wizards/newvd/UIWizardNewVD.cpp \
-	src/wizards/newvd/UIWizardNewVDPageFileType.cpp \
-	src/wizards/newvd/UIWizardNewVDPageVariant.cpp \
-	src/wizards/newvd/UIWizardNewVDPageSizeLocation.cpp \
-	src/wizards/newvd/UIWizardNewVDPageExpert.cpp
+	src/wizards/newvd/UIWizardNewVDFileTypePage.cpp \
+	src/wizards/newvd/UIWizardNewVDVariantPage.cpp \
+	src/wizards/newvd/UIWizardNewVDSizeLocationPage.cpp \
+	src/wizards/newvd/UIWizardNewVDExpertPage.cpp
 
 ifdef VBOX_WITH_QHELP_VIEWER
  UICommon_SOURCES += \

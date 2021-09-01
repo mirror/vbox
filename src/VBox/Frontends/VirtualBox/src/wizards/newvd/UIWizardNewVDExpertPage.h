@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageExpert class declaration.
+ * VBox Qt GUI - UIWizardNewVDExpertPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageExpert_h
-#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageExpert_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDExpertPage_h
+#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDExpertPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -30,13 +30,13 @@ class UIDiskVariantGroupBox;
 class UIMediumSizeAndPathGroupBox;
 
 /** Expert page of the New Virtual Hard Drive wizard. */
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UINativeWizardPage
+class SHARED_LIBRARY_STUFF UIWizardNewVDExpertPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardNewVDPageExpert(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
+    UIWizardNewVDExpertPage(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
 
 private slots:
 
@@ -77,4 +77,4 @@ private:
    /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageExpert_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDExpertPage_h */

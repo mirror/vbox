@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageSizeLocation class implementation.
+ * VBox Qt GUI - UIWizardNewVDSizeLocationPage class implementation.
  */
 
 /*
@@ -20,7 +20,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIWizardNewVDPageSizeLocation.h"
+#include "UIWizardNewVDSizeLocationPage.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
 #include "UIMessageCenter.h"
@@ -29,7 +29,7 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &strDefaultName,
+UIWizardNewVDSizeLocationPage::UIWizardNewVDSizeLocationPage(const QString &strDefaultName,
                                                              const QString &strDefaultPath, qulonglong uDefaultSize)
     : m_pMediumSizePathGroup(0)
     , m_uMediumSizeMin(_4M)
@@ -41,23 +41,23 @@ UIWizardNewVDPageSizeLocation::UIWizardNewVDPageSizeLocation(const QString &strD
     prepare();
 }
 
-void UIWizardNewVDPageSizeLocation::prepare()
+void UIWizardNewVDSizeLocationPage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
     m_pMediumSizePathGroup = new UIMediumSizeAndPathGroupBox(false /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
     connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
-            this, &UIWizardNewVDPageSizeLocation::sltMediumSizeChanged);
+            this, &UIWizardNewVDSizeLocationPage::sltMediumSizeChanged);
     connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
-            this, &UIWizardNewVDPageSizeLocation::sltMediumPathChanged);
+            this, &UIWizardNewVDSizeLocationPage::sltMediumPathChanged);
     connect(m_pMediumSizePathGroup, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
-            this, &UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked);
+            this, &UIWizardNewVDSizeLocationPage::sltSelectLocationButtonClicked);
     pMainLayout->addWidget(m_pMediumSizePathGroup);
     pMainLayout->addStretch();
     retranslateUi();
 }
 
-void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
+void UIWizardNewVDSizeLocationPage::sltSelectLocationButtonClicked()
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
@@ -74,7 +74,7 @@ void UIWizardNewVDPageSizeLocation::sltSelectLocationButtonClicked()
     m_pMediumSizePathGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
 
-void UIWizardNewVDPageSizeLocation::sltMediumSizeChanged(qulonglong uSize)
+void UIWizardNewVDSizeLocationPage::sltMediumSizeChanged(qulonglong uSize)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
     m_userModifiedParameters << "MediumSize";
@@ -82,7 +82,7 @@ void UIWizardNewVDPageSizeLocation::sltMediumSizeChanged(qulonglong uSize)
     emit completeChanged();
 }
 
-void UIWizardNewVDPageSizeLocation::sltMediumPathChanged(const QString &strPath)
+void UIWizardNewVDSizeLocationPage::sltMediumPathChanged(const QString &strPath)
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
@@ -94,12 +94,12 @@ void UIWizardNewVDPageSizeLocation::sltMediumPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardNewVDPageSizeLocation::retranslateUi()
+void UIWizardNewVDSizeLocationPage::retranslateUi()
 {
     setTitle(UIWizardNewVD::tr("File location and size"));
 }
 
-void UIWizardNewVDPageSizeLocation::initializePage()
+void UIWizardNewVDSizeLocationPage::initializePage()
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pMediumSizePathGroup);
@@ -125,7 +125,7 @@ void UIWizardNewVDPageSizeLocation::initializePage()
     retranslateUi();
 }
 
-bool UIWizardNewVDPageSizeLocation::isComplete() const
+bool UIWizardNewVDSizeLocationPage::isComplete() const
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturn(pWizard, false);
@@ -136,7 +136,7 @@ bool UIWizardNewVDPageSizeLocation::isComplete() const
     return true;
 }
 
-bool UIWizardNewVDPageSizeLocation::validatePage()
+bool UIWizardNewVDSizeLocationPage::validatePage()
 {
     bool fResult = true;
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();

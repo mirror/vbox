@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewVDPageVariant class declaration.
+ * VBox Qt GUI - UIWizardNewVDVariantPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageVariant_h
-#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageVariant_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDVariantPage_h
+#define FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDVariantPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -29,13 +29,13 @@ class CMediumFormat;
 class QIRichTextLabel;
 class UIDiskVariantGroupBox;
 
-class SHARED_LIBRARY_STUFF UIWizardNewVDPageVariant : public UINativeWizardPage
+class SHARED_LIBRARY_STUFF UIWizardNewVDVariantPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    UIWizardNewVDPageVariant();
+    UIWizardNewVDVariantPage();
 
 private slots:
 
@@ -56,4 +56,4 @@ private:
     UIDiskVariantGroupBox *m_pVariantGroupBox;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDPageVariant_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDVariantPage_h */
