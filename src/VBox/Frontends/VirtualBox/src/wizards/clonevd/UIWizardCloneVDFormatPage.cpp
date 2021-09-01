@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageFormat class implementation.
+ * VBox Qt GUI - UIWizardCloneVDFormatPage class implementation.
  */
 
 /*
@@ -19,7 +19,7 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "UIWizardCloneVDPageFormat.h"
+#include "UIWizardCloneVDFormatPage.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardDiskEditors.h"
 #include "UICommon.h"
@@ -28,14 +28,14 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardCloneVDPageFormat::UIWizardCloneVDPageFormat(KDeviceType enmDeviceType)
+UIWizardCloneVDFormatPage::UIWizardCloneVDFormatPage(KDeviceType enmDeviceType)
     : m_pLabel(0)
     , m_pFormatGroupBox(0)
 {
     prepare(enmDeviceType);
 }
 
-void UIWizardCloneVDPageFormat::prepare(KDeviceType enmDeviceType)
+void UIWizardCloneVDFormatPage::prepare(KDeviceType enmDeviceType)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pLabel = new QIRichTextLabel(this);
@@ -46,13 +46,13 @@ void UIWizardCloneVDPageFormat::prepare(KDeviceType enmDeviceType)
     {
         pMainLayout->addWidget(m_pFormatGroupBox);
         connect(m_pFormatGroupBox, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
-                this, &UIWizardCloneVDPageFormat::sltMediumFormatChanged);
+                this, &UIWizardCloneVDFormatPage::sltMediumFormatChanged);
     }
     pMainLayout->addStretch();
     retranslateUi();
 }
 
-void UIWizardCloneVDPageFormat::retranslateUi()
+void UIWizardCloneVDFormatPage::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Disk image file type"));
@@ -63,7 +63,7 @@ void UIWizardCloneVDPageFormat::retranslateUi()
                                           "with other virtualization software you can leave this setting unchanged."));
 }
 
-void UIWizardCloneVDPageFormat::initializePage()
+void UIWizardCloneVDFormatPage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
     /* Translate page: */
@@ -75,7 +75,7 @@ void UIWizardCloneVDPageFormat::initializePage()
     }
 }
 
-bool UIWizardCloneVDPageFormat::isComplete() const
+bool UIWizardCloneVDFormatPage::isComplete() const
 {
     if (m_pFormatGroupBox)
     {
@@ -85,7 +85,7 @@ bool UIWizardCloneVDPageFormat::isComplete() const
     return true;
 }
 
-void UIWizardCloneVDPageFormat::sltMediumFormatChanged()
+void UIWizardCloneVDFormatPage::sltMediumFormatChanged()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
     if (m_pFormatGroupBox)

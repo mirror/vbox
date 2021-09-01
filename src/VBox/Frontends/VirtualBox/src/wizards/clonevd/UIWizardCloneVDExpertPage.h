@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageExpert class declaration.
+ * VBox Qt GUI - UIWizardCloneVDExpertPage class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageExpert_h
-#define FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageExpert_h
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDExpertPage_h
+#define FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDExpertPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -33,7 +33,7 @@ class UIDiskVariantGroupBox;
 class UIMediumSizeAndPathGroupBox;
 
 /** Expert page of the Clone Virtual Disk Image wizard: */
-class UIWizardCloneVDPageExpert : public UINativeWizardPage
+class UIWizardCloneVDExpertPage : public UINativeWizardPage
 {
     Q_OBJECT;
 
@@ -42,7 +42,7 @@ public:
     /** Constructs the page.
       * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from.
       * @param  enmDeviceType         Brings the device type to limit format to. */
-    UIWizardCloneVDPageExpert(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize);
+    UIWizardCloneVDExpertPage(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize);
 
 private slots:
 
@@ -81,4 +81,4 @@ private:
     KDeviceType m_enmDeviceType;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageExpert_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDExpertPage_h */

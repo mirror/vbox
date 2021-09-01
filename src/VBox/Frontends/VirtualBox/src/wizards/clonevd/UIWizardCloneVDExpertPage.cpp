@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageExpert class implementation.
+ * VBox Qt GUI - UIWizardCloneVDExpertPage class implementation.
  */
 
 /*
@@ -23,13 +23,13 @@
 #include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIWizardCloneVD.h"
-#include "UIWizardCloneVDPageExpert.h"
+#include "UIWizardCloneVDExpertPage.h"
 #include "UIWizardDiskEditors.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize)
+UIWizardCloneVDExpertPage::UIWizardCloneVDExpertPage(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize)
     :m_pFormatGroupBox(0)
     , m_pVariantGroupBox(0)
     , m_pMediumSizePathGroupBox(0)
@@ -38,7 +38,7 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(KDeviceType enmDeviceType, 
     prepare(enmDeviceType, uSourceDiskLogicaSize);
 }
 
-void UIWizardCloneVDPageExpert::prepare(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize)
+void UIWizardCloneVDExpertPage::prepare(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize)
 {
     QGridLayout *pMainLayout = new QGridLayout(this);
 
@@ -48,11 +48,11 @@ void UIWizardCloneVDPageExpert::prepare(KDeviceType enmDeviceType, qulonglong uS
     {
         pMainLayout->addWidget(m_pMediumSizePathGroupBox, 0, 0, 4, 2);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
-                this, &UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked);
+                this, &UIWizardCloneVDExpertPage::sltSelectLocationButtonClicked);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
-                this, &UIWizardCloneVDPageExpert::sltMediumPathChanged);
+                this, &UIWizardCloneVDExpertPage::sltMediumPathChanged);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumSizeChanged,
-                this, &UIWizardCloneVDPageExpert::sltMediumSizeChanged);
+                this, &UIWizardCloneVDExpertPage::sltMediumSizeChanged);
     }
 
     m_pFormatGroupBox = new UIDiskFormatsGroupBox(true /* expert mode */, enmDeviceType, 0);
@@ -60,7 +60,7 @@ void UIWizardCloneVDPageExpert::prepare(KDeviceType enmDeviceType, qulonglong uS
     {
         pMainLayout-> addWidget(m_pFormatGroupBox, 4, 0, 7, 1);
         connect(m_pFormatGroupBox, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
-                this, &UIWizardCloneVDPageExpert::sltMediumFormatChanged);
+                this, &UIWizardCloneVDExpertPage::sltMediumFormatChanged);
     }
 
     m_pVariantGroupBox = new UIDiskVariantGroupBox(true /* expert mode */, 0);
@@ -68,11 +68,11 @@ void UIWizardCloneVDPageExpert::prepare(KDeviceType enmDeviceType, qulonglong uS
     {
         pMainLayout-> addWidget(m_pVariantGroupBox, 4, 1, 3, 1);
         connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
-                this, &UIWizardCloneVDPageExpert::sltMediumVariantChanged);
+                this, &UIWizardCloneVDExpertPage::sltMediumVariantChanged);
     }
 }
 
-void UIWizardCloneVDPageExpert::sltMediumFormatChanged()
+void UIWizardCloneVDExpertPage::sltMediumFormatChanged()
 {
     if (wizardWindow<UIWizardCloneVD>() && m_pFormatGroupBox)
         wizardWindow<UIWizardCloneVD>()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
@@ -80,7 +80,7 @@ void UIWizardCloneVDPageExpert::sltMediumFormatChanged()
     emit completeChanged();
 }
 
-void UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked()
+void UIWizardCloneVDExpertPage::sltSelectLocationButtonClicked()
 {
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
     AssertReturnVoid(pWizard);
@@ -97,13 +97,13 @@ void UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked()
     m_pMediumSizePathGroupBox->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
 
-void UIWizardCloneVDPageExpert::sltMediumVariantChanged(qulonglong uVariant)
+void UIWizardCloneVDExpertPage::sltMediumVariantChanged(qulonglong uVariant)
 {
     if (wizardWindow<UIWizardCloneVD>())
         wizardWindow<UIWizardCloneVD>()->setMediumVariant(uVariant);
 }
 
-void UIWizardCloneVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
+void UIWizardCloneVDExpertPage::sltMediumSizeChanged(qulonglong uSize)
 {
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
     AssertReturnVoid(pWizard);
@@ -111,7 +111,7 @@ void UIWizardCloneVDPageExpert::sltMediumSizeChanged(qulonglong uSize)
     emit completeChanged();
 }
 
-void UIWizardCloneVDPageExpert::sltMediumPathChanged(const QString &strPath)
+void UIWizardCloneVDExpertPage::sltMediumPathChanged(const QString &strPath)
 {
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
     AssertReturnVoid(pWizard);
@@ -122,11 +122,11 @@ void UIWizardCloneVDPageExpert::sltMediumPathChanged(const QString &strPath)
     emit completeChanged();
 }
 
-void UIWizardCloneVDPageExpert::retranslateUi()
+void UIWizardCloneVDExpertPage::retranslateUi()
 {
 }
 
-void UIWizardCloneVDPageExpert::initializePage()
+void UIWizardCloneVDExpertPage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVD>() && m_pMediumSizePathGroupBox && m_pFormatGroupBox && m_pVariantGroupBox);
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
@@ -155,7 +155,7 @@ void UIWizardCloneVDPageExpert::initializePage()
     retranslateUi();
 }
 
-bool UIWizardCloneVDPageExpert::isComplete() const
+bool UIWizardCloneVDExpertPage::isComplete() const
 {
     bool fResult = true;
 
@@ -169,7 +169,7 @@ bool UIWizardCloneVDPageExpert::isComplete() const
     return fResult;
 }
 
-bool UIWizardCloneVDPageExpert::validatePage()
+bool UIWizardCloneVDExpertPage::validatePage()
 {
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
     AssertReturn(pWizard, false);
@@ -184,7 +184,7 @@ bool UIWizardCloneVDPageExpert::validatePage()
     return pWizard->copyVirtualDisk();
 }
 
-void UIWizardCloneVDPageExpert::updateDiskWidgetsAfterMediumFormatChange()
+void UIWizardCloneVDExpertPage::updateDiskWidgetsAfterMediumFormatChange()
 {
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
     AssertReturnVoid(pWizard && m_pVariantGroupBox && m_pMediumSizePathGroupBox && m_pFormatGroupBox);

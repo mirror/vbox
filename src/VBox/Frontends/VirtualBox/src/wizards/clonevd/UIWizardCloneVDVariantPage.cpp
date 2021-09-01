@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardCloneVDPageVariant class implementation.
+ * VBox Qt GUI - UIWizardCloneVDVariantPage class implementation.
  */
 
 /*
@@ -20,14 +20,14 @@
 
 /* GUI includes: */
 #include "UIWizardDiskEditors.h"
-#include "UIWizardCloneVDPageVariant.h"
+#include "UIWizardCloneVDVariantPage.h"
 #include "UIWizardCloneVD.h"
 #include "QIRichTextLabel.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
 
-UIWizardCloneVDPageVariant::UIWizardCloneVDPageVariant()
+UIWizardCloneVDVariantPage::UIWizardCloneVDVariantPage()
     : m_pDescriptionLabel(0)
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
@@ -37,7 +37,7 @@ UIWizardCloneVDPageVariant::UIWizardCloneVDPageVariant()
     prepare();
 }
 
-void UIWizardCloneVDPageVariant::prepare()
+void UIWizardCloneVDVariantPage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
@@ -62,14 +62,14 @@ void UIWizardCloneVDPageVariant::prepare()
     {
         pMainLayout->addWidget(m_pVariantGroupBox);
         connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
-                this, &UIWizardCloneVDPageVariant::sltMediumVariantChanged);
+                this, &UIWizardCloneVDVariantPage::sltMediumVariantChanged);
 
     }
     retranslateUi();
 }
 
 
-void UIWizardCloneVDPageVariant::retranslateUi()
+void UIWizardCloneVDVariantPage::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardCloneVD::tr("Storage on physical hard disk"));
@@ -88,7 +88,7 @@ void UIWizardCloneVDPageVariant::retranslateUi()
                                                "handle very large files."));
 }
 
-void UIWizardCloneVDPageVariant::initializePage()
+void UIWizardCloneVDVariantPage::initializePage()
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVD>());
     /* Translate page: */
@@ -99,13 +99,13 @@ void UIWizardCloneVDPageVariant::initializePage()
         wizardWindow<UIWizardCloneVD>()->setMediumVariant(m_pVariantGroupBox->mediumVariant());
 }
 
-bool UIWizardCloneVDPageVariant::isComplete() const
+bool UIWizardCloneVDVariantPage::isComplete() const
 {
     AssertReturn(m_pVariantGroupBox, false);
     return m_pVariantGroupBox->isComplete();
 }
 
-void UIWizardCloneVDPageVariant::setWidgetVisibility(const CMediumFormat &mediumFormat)
+void UIWizardCloneVDVariantPage::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
     AssertReturnVoid(m_pVariantGroupBox);
 
@@ -119,7 +119,7 @@ void UIWizardCloneVDPageVariant::setWidgetVisibility(const CMediumFormat &medium
         m_pSplitLabel->setHidden(!m_pVariantGroupBox->isCreateSplitPossible());
 }
 
-void UIWizardCloneVDPageVariant::sltMediumVariantChanged(qulonglong uVariant)
+void UIWizardCloneVDVariantPage::sltMediumVariantChanged(qulonglong uVariant)
 {
     if (wizardWindow<UIWizardCloneVD>())
         wizardWindow<UIWizardCloneVD>()->setMediumVariant(uVariant);
