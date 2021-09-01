@@ -288,6 +288,28 @@ void UINotificationMessage::cannotDetachWebCam(const CEmulatedUSB &comDispatcher
 }
 
 /* static */
+void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
+{
+    /* Refer users to manual's trouble shooting section depending on the host platform: */
+    QString strHelpKeyword;
+#if defined(RT_OS_LINUX)
+    strHelpKeyword = "ts_usb-linux";
+#elif defined(RT_OS_WINDOWS)
+    strHelpKeyword = "ts_win-guests";
+#elif defined(RT_OS_SOLARIS)
+    strHelpKeyword = "ts_sol-guests";
+#elif defined(RT_OS_DARWIN)
+#endif
+
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't enumerate USB devices ..."),
+        QApplication::translate("UIMessageCenter", "Failed to enumerate host USB devices.") +
+        UIErrorString::formatErrorInfo(comHost),
+        QString(),
+        strHelpKeyword);
+}
+
+/* static */
 void UINotificationMessage::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation)
 {
     createMessage(

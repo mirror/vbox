@@ -708,7 +708,7 @@ void UIVirtualBoxManager::sltCheckUSBAccesibility()
     if (!comHost.isOk())
         return;
     if (comHost.GetUSBDevices().isEmpty() && comHost.isWarning())
-        msgCenter().cannotEnumerateHostUSBDevices(comHost, this);
+        UINotificationMessage::cannotEnumerateHostUSBDevices(comHost);
 }
 
 void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()

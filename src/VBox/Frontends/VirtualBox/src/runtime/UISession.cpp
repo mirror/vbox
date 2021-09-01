@@ -1831,7 +1831,7 @@ bool UISession::preprocessInitialization()
         {
             /* Do not bitch if there are no filters (check if enabled too?): */
             if (!machine().GetUSBDeviceFilters().GetDeviceFilters().isEmpty())
-                msgCenter().cannotEnumerateHostUSBDevices(comHost, activeMachineWindow());
+                UINotificationMessage::cannotEnumerateHostUSBDevices(comHost);
         }
     }
 
