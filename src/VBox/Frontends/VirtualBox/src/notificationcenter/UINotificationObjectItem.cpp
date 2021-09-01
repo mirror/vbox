@@ -29,6 +29,7 @@
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UIIconPool.h"
+#include "UIMessageCenter.h"
 #include "UINotificationObject.h"
 #include "UINotificationObjectItem.h"
 
@@ -43,6 +44,7 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
     , m_pLayoutMain(0)
     , m_pLayoutUpper(0)
     , m_pLabelName(0)
+    , m_pButtonHelp(0)
     , m_pButtonForget(0)
     , m_pButtonClose(0)
     , m_pLabelDetails(0)
@@ -66,6 +68,20 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
             {
                 m_pLabelName->setText(m_pObject->name());
                 m_pLayoutUpper->addWidget(m_pLabelName);
+            }
+
+            /* Prepare help button: */
+            if (!m_pObject->helpKeyword().isEmpty())
+                m_pButtonHelp = new QIToolButton(this);
+            if (m_pButtonHelp)
+            {
+                m_pButtonHelp->setIcon(UIIconPool::iconSet(":/help_16px.png"));
+                m_pButtonHelp->setIconSize(QSize(10, 10));
+                m_pButtonHelp->setProperty("helpkeyword", m_pObject->helpKeyword());
+                connect(m_pButtonHelp, &QIToolButton::clicked,
+                        &msgCenter(), &UIMessageCenter::sltHandleHelpRequest);
+
+                m_pLayoutUpper->addWidget(m_pButtonHelp);
             }
 
             /* Prepare forget button: */
@@ -106,6 +122,8 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
             m_pLabelDetails->setBrowserFont(myFont);
             m_pLabelDetails->setVisible(false);
             int iHint = m_pLabelName->minimumSizeHint().width();
+            if (m_pButtonHelp)
+                iHint += m_pLayoutUpper->spacing() + m_pButtonHelp->minimumSizeHint().width();
             if (m_pButtonForget)
                 iHint += m_pLayoutUpper->spacing() + m_pButtonForget->minimumSizeHint().width();
             if (m_pButtonClose)

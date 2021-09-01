@@ -51,10 +51,12 @@ void UINotificationObject::close()
 UINotificationSimple::UINotificationSimple(const QString &strName,
                                            const QString &strDetails,
                                            const QString &strInternalName,
+                                           const QString &strHelpKeyword,
                                            bool fCritical /* = true */)
     : m_strName(strName)
     , m_strDetails(strDetails)
     , m_strInternalName(strInternalName)
+    , m_strHelpKeyword(strHelpKeyword)
     , m_fCritical(fCritical)
 {
 }
@@ -77,6 +79,11 @@ QString UINotificationSimple::details() const
 QString UINotificationSimple::internalName() const
 {
     return m_strInternalName;
+}
+
+QString UINotificationSimple::helpKeyword() const
+{
+    return m_strHelpKeyword;
 }
 
 void UINotificationSimple::handle()
@@ -134,6 +141,11 @@ bool UINotificationProgress::isCritical() const
 }
 
 QString UINotificationProgress::internalName() const
+{
+    return QString();
+}
+
+QString UINotificationProgress::helpKeyword() const
 {
     return QString();
 }
@@ -212,6 +224,11 @@ bool UINotificationDownloader::isCritical() const
 }
 
 QString UINotificationDownloader::internalName() const
+{
+    return QString();
+}
+
+QString UINotificationDownloader::helpKeyword() const
 {
     return QString();
 }
@@ -312,6 +329,11 @@ bool UINotificationNewVersionChecker::isCritical() const
 }
 
 QString UINotificationNewVersionChecker::internalName() const
+{
+    return QString();
+}
+
+QString UINotificationNewVersionChecker::helpKeyword() const
 {
     return QString();
 }

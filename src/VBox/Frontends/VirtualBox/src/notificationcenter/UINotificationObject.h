@@ -61,6 +61,8 @@ public:
     virtual QString details() const = 0;
     /** Returns object internal name. */
     virtual QString internalName() const = 0;
+    /** Returns object help heyword. */
+    virtual QString helpKeyword() const = 0;
     /** Handles notification-object being added. */
     virtual void handle() = 0;
 
@@ -83,10 +85,12 @@ protected:
       * @param  strName          Brings the message name.
       * @param  strDetails       Brings the message details.
       * @param  strInternalName  Brings the message internal name.
+      * @param  strHelpKeyword   Brings the message help keyword.
       * @param  fCritical        Brings whether message is critical. */
     UINotificationSimple(const QString &strName,
                          const QString &strDetails,
                          const QString &strInternalName,
+                         const QString &strHelpKeyword,
                          bool fCritical = true);
 
     /** Returns whether object is critical. */
@@ -97,6 +101,8 @@ protected:
     virtual QString details() const /* override final */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
+    /** Returns object help heyword. */
+    virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -111,6 +117,8 @@ private:
     QString  m_strDetails;
     /** Holds the message internal name. */
     QString  m_strInternalName;
+    /** Holds the message help keyword. */
+    QString  m_strHelpKeyword;
     /** Holds whether message is critical. */
     bool     m_fCritical;
 };
@@ -151,6 +159,8 @@ public:
     virtual bool isCritical() const /* override */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
+    /** Returns object help heyword. */
+    virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -215,6 +225,8 @@ public:
     virtual bool isCritical() const /* override */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
+    /** Returns object help heyword. */
+    virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
@@ -280,6 +292,8 @@ public:
     virtual bool isCritical() const /* override */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
+    /** Returns object help heyword. */
+    virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
 
