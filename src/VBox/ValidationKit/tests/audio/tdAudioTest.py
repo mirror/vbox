@@ -573,7 +573,7 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.testStart('Waiting for TXS');
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
-                                                                  fCdWait = False,
+                                                                  fCdWait = True,
                                                                   cMsTimeout = 3 * 60 * 1000,
                                                                   sFileCdWait = '${OS/ARCH}/vkat${EXESUFF}');
         reporter.testDone();
