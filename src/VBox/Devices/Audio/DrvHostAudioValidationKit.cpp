@@ -236,9 +236,6 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
 {
     LogRel(("ValKit: Cleaning up ...\n"));
 
-    if (pThis->cTestsRec)
-        LogRel(("ValKit: Warning: %RU32 guest recording tests still outstanding:\n", pThis->cTestsRec));
-
     if (   pThis->cTestsTotal
         && (   !pThis->cbPlayedTotal
             && !pThis->cbRecordedTotal)
@@ -252,6 +249,9 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
                 "ValKit:     - Is the guest's audio mixer or input / output sinks muted?\n"
                 "ValKit:     - Audio stack misconfiguration / bug?\n\n"));
     }
+
+    if (pThis->cTestsRec)
+        LogRel(("ValKit: Warning: %RU32 guest recording tests still outstanding:\n", pThis->cTestsRec));
 
     PVALKITTESTDATA pTst, pTstNext;
     RTListForEachSafe(&pThis->lstTestsRec, pTst, pTstNext, VALKITTESTDATA, Node)
