@@ -305,7 +305,7 @@ void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
         QApplication::translate("UIMessageCenter", "Can't enumerate USB devices ..."),
         QApplication::translate("UIMessageCenter", "Failed to enumerate host USB devices.") +
         UIErrorString::formatErrorInfo(comHost),
-        QString(),
+        "cannotEnumerateHostUSBDevices",
         strHelpKeyword);
 }
 
