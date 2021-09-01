@@ -651,9 +651,14 @@ static DECLCALLBACK(void) vnetR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
 
     VNET_R3_CS_ENTER_RETURN_VOID(pDevIns, pThis);
 
-    pThis->config.uStatus |= VNET_S_LINK_UP;
-    vnetR3RaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
-    vnetWakeupReceive(pDevIns);
+    Log(("%s vnetR3LinkUpTimer: connected=%s\n", INSTANCE(pThis), vnetR3IsConnected(pDevIns)?"true":"false"));
+    /* Do not bring up the link if the device is not connected. */
+    if (vnetR3IsConnected(pDevIns))
+    {
+        pThis->config.uStatus |= VNET_S_LINK_UP;
+        vnetR3RaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+        vnetWakeupReceive(pDevIns);
+    }
 
     vnetR3CsLeave(pDevIns, pThis);
 
@@ -1591,7 +1596,12 @@ static DECLCALLBACK(int) vnetR3TxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             vnetR3TransmitPendingPackets(pDevIns, pThis, pThisCC, pThisCC->pTxQueue, false /*fOnWorkerThread*/); /// @todo shouldn't it be true instead?
             Log(("vnetR3TxThread: enable kicking and get to sleep\n"));
             vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, true);
-            if (vqueueIsEmpty(pDevIns, pThisCC->pTxQueue))
+            /*
+             * Break out of the loop if the device is not connected. Otherwise we will
+             * end up in a tight loop, not being able to transmit, if there is something
+             * in TX queue. See @bugref{10096}.
+             */
+            if (vqueueIsEmpty(pDevIns, pThisCC->pTxQueue) || !vnetR3IsConnected(pDevIns))
                 break;
             vringSetNotification(pDevIns, &pThisCC->pTxQueue->VRing, false);
         }
@@ -1998,6 +2008,7 @@ static DECLCALLBACK(int) vnetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, true);
         }
     }
+    Log(("%s State has been restored\n", INSTANCE(pThis)));
 
     return rc;
 }
@@ -2020,7 +2031,16 @@ static DECLCALLBACK(int) vnetR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * been lost, unless we've been teleported here.
      */
     if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
+    {
+        /*
+         * Since we do not restore the link state, we pretend it is up, so it will be
+         * lowered by vnetR3TempLinkDown, and the guest will be notified. The actual state
+         * of the link will be determined later by vnetR3IsConnected in vnetR3LinkUpTimer.
+         * See @bugref{10096}.
+         */
+        pThis->config.uStatus |= VNET_S_LINK_UP;
         vnetR3TempLinkDown(pDevIns, pThis, pThisCC);
+    }
 
     return VINF_SUCCESS;
 }
