@@ -245,13 +245,9 @@ class tdAudioTest(vbox.TestDriver):
             iExitCode = oProcess.poll();
             if iExitCode:
                 if iExitCode == 0:
-                    reporter.error('Executing \"%s\" was successful' % (sWhat));
                     fRc = True;
                 else:
                     reporter.error('Executing \"%s\" on host returned exit code error %d' % (sWhat, iExitCode));
-
-        if not fRc:
-            reporter.error('Executing \"%s\" on host failed' % (sWhat,));
 
         return fRc;
 
