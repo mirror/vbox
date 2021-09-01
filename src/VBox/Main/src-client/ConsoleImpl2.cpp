@@ -3010,6 +3010,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
             const bool fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
 
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/Level", &strTmp);
+            const uint32_t uDebugLevel = strTmp.toUInt32();
+
             Utf8Str strDebugPathOut;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
 
@@ -3276,15 +3279,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 /*
                  * Tweak the logging groups.
                  */
+                Utf8Str strGroups("drv_host_audio.e.l.l2.l3.f"
+                                  " drv_audio.e.l.l2.l3.f"
+                                  " audio_mixer.e.l.l2.l3.f"
+                                  " dev_hda_codec.e.l.l2.l3.f"
+                                  " dev_hda.e.l.l2.l3.f"
+                                  " dev_ac97.e.l.l2.l3.f"
+                                  " dev_sb16.e.l.l2.l3.f");
+
+                if (uDebugLevel)
+                    strGroups += " audio_test.e.l.l2.l3.f";
+
                 rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(),
-                                        "drv_host_audio.e.l.l2.l3.f"
-                                        " drv_audio.e.l.l2.l3.f"
-                                        " audio_mixer.e.l.l2.l3.f"
-                                        " audio_test.e.l.l2.l3.f"
-                                        " dev_hda_codec.e.l.l2.l3.f"
-                                        " dev_hda.e.l.l2.l3.f"
-                                        " dev_ac97.e.l.l2.l3.f"
-                                        " dev_sb16.e.l.l2.l3.f");
+                                        strGroups.c_str());
                 if (RT_FAILURE(rc))
                     LogRel(("Audio: Setting debug logging failed, rc=%Rrc\n", rc));
             }
