@@ -244,7 +244,13 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
             && !pThis->cbRecordedTotal)
        )
     {
-        LogRel(("ValKit: Warning: Did not get any audio data to play or record altough tests were configured -- audio stack misconfiguration / bug?\n"));
+        LogRel(("ValKit: Warning: Did not get any audio data to play or record altough tests were configured\n\n"));
+        LogRel(("ValKit: Hints:\n"
+                "ValKit:     - Audio device emulation configured and enabled for the VM?\n"
+                "ValKit:     - Audio input and/or output enabled for the VM?\n"
+                "ValKit:     - Is the guest able to play / record sound at all?\n"
+                "ValKit:     - Is the guest's audio mixer or input / output sinks muted?\n"
+                "ValKit:     - Audio stack misconfiguration / bug?\n\n"));
     }
 
     PVALKITTESTDATA pTst, pTstNext;
