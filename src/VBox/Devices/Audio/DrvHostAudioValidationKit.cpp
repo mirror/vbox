@@ -120,6 +120,10 @@ typedef struct DRVHOSTVALKITAUDIO
     PPDMDRVINS          pDrvIns;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO       IHostAudio;
+    /** Total number of bytes played since driver construction. */
+    uint64_t            cbPlayedTotal;
+    /** Total number of bytes recorded since driver construction. */
+    uint64_t            cbRecordedTotal;
     /** Temporary path to use. */
     char                szPathTemp[RTPATH_MAX];
     /** Output path to use. */
@@ -235,13 +239,22 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
     if (pThis->cTestsRec)
         LogRel(("ValKit: Warning: %RU32 guest recording tests still outstanding:\n", pThis->cTestsRec));
 
+    if (   pThis->cTestsTotal
+        && (   !pThis->cbPlayedTotal
+            && !pThis->cbRecordedTotal)
+       )
+    {
+        LogRel(("ValKit: Warning: Did not get any audio data to play or record altough tests were configured -- audio stack misconfiguration / bug?\n"));
+    }
+
     PVALKITTESTDATA pTst, pTstNext;
     RTListForEachSafe(&pThis->lstTestsRec, pTst, pTstNext, VALKITTESTDATA, Node)
     {
         size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
         if (cbOutstanding)
-            LogRel(("ValKit: \tRecording test #%RU32 has %RU64 bytes (%RU32ms) outstanding\n",
-                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding)));
+            LogRel(("ValKit: \tRecording test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
+                    (pTst->t.TestTone.u.Rec.cbWritten * 100) / RT_MAX(pTst->t.TestTone.u.Rec.cbToWrite, 1)));
         drvHostValKiUnregisterRecTest(pThis, pTst);
     }
 
@@ -252,8 +265,9 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
     {
         size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
         if (cbOutstanding)
-            LogRel(("ValKit: \tPlayback test #%RU32 has %RU64 bytes (%RU32ms) outstanding\n",
-                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding)));
+            LogRel(("ValKit: \tPlayback test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
+                    (pTst->t.TestTone.u.Play.cbRead * 100) / RT_MAX(pTst->t.TestTone.u.Play.cbToRead, 1)));
         drvHostValKiUnregisterPlayTest(pThis, pTst);
     }
 
@@ -318,6 +332,9 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
                     rc = rc2;
             }
         }
+
+        LogRel(("ValKit: Test set has %RU32 tests total, %RU32 (still) running, %RU32 failures total\n",
+                AudioTestSetGetTestsTotal(pSet), AudioTestSetGetTestsRunning(pSet), AudioTestSetGetTotalFailures(pSet)));
 
         if (RT_SUCCESS(rc))
         {
@@ -796,6 +813,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
     PVALKITTESTDATA     pTst  = NULL;
 
+    pThis->cbPlayedTotal += cbBuf; /* Do a bit of accounting. */
+
     bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
@@ -928,6 +947,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
     PDRVHOSTVALKITAUDIO pThis       = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
     PVALKITAUDIOSTREAM  pStrmValKit = (PVALKITAUDIOSTREAM)pStream;
     PVALKITTESTDATA     pTst        = NULL;
+
+    pThis->cbRecordedTotal += cbBuf; /* Do a bit of accounting. */
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -1090,6 +1111,9 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     rc = RTSemEventCreate(&pThis->EventSemEnded);
     AssertRCReturn(rc, rc);
 
+    pThis->cbPlayedTotal   = 0;
+    pThis->cbRecordedTotal = 0;
+
     pThis->fTestSetEnd = false;
 
     RTListInit(&pThis->lstTestsRec);
@@ -1111,6 +1135,8 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     /** @todo Make this configurable via CFGM. */
     const char *pszBindAddr = "127.0.0.1"; /* Only reachable for localhost for now. */
     uint32_t    uBindPort   = ATS_TCP_DEF_BIND_PORT_VALKIT;
+
+    LogRel2(("ValKit: Debug logging enabled\n"));
 
     LogRel(("ValKit: Starting Audio Test Service (ATS) at %s:%RU32...\n",
             pszBindAddr, uBindPort));

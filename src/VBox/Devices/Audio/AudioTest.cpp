@@ -920,6 +920,39 @@ const char *AudioTestSetGetTag(PAUDIOTESTSET pSet)
 }
 
 /**
+ * Returns the total number of registered tests.
+ *
+ * @returns Total number of registered tests.
+ * @param   pSet                Test set to return value for.
+ */
+uint32_t AudioTestSetGetTestsTotal(PAUDIOTESTSET pSet)
+{
+    return pSet->cTests;
+}
+
+/**
+ * Returns the total number of (still) running tests.
+ *
+ * @returns Total number of (still) running tests.
+ * @param   pSet                Test set to return value for.
+ */
+uint32_t AudioTestSetGetTestsRunning(PAUDIOTESTSET pSet)
+{
+    return pSet->cTestsRunning;
+}
+
+/**
+ * Returns the total number of test failures occurred.
+ *
+ * @returns Total number of test failures occurred.
+ * @param   pSet                Test set to return value for.
+ */
+uint32_t AudioTestSetGetTotalFailures(PAUDIOTESTSET pSet)
+{
+    return pSet->cTotalFailures;
+}
+
+/**
  * Creates a new audio test set.
  *
  * @returns VBox status code.
@@ -1215,8 +1248,9 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
             }
         }
 
-        RTFileClose(pSet->f.hFile);
-        pSet->f.hFile = NIL_RTFILE;
+        rc = RTFileClose(pSet->f.hFile);
+        if (RT_SUCCESS(rc))
+            pSet->f.hFile = NIL_RTFILE;
     }
     else if (pSet->enmMode == AUDIOTESTSETMODE_VERIFY)
     {
@@ -1225,8 +1259,8 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
 
         rc = VINF_SUCCESS;
     }
-    else /* Not supported, just skip. */
-        rc = VINF_SUCCESS;
+    else
+        AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
 
     return rc;
 }
@@ -1576,8 +1610,8 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileNam
     AssertReturn(!pszFileName || cbFileName, VERR_INVALID_PARAMETER);
     AssertReturn(!audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
 
-    AssertMsgReturn(pSet->cTests, ("No tests run yet"), VERR_WRONG_ORDER);
-    AssertMsgReturn(pSet->cTestsRunning == 0 , ("Some tests are still running"), VERR_WRONG_ORDER);
+    AssertMsgReturn(pSet->cTests, ("No tests run yet"), VERR_INVALID_STATE);
+    AssertMsgReturn(pSet->cTestsRunning == 0 , ("Some tests are still running"), VERR_INVALID_STATE);
 
     /** @todo Check and deny if \a pszOutDir is part of the set's path. */
 
