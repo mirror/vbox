@@ -28,22 +28,21 @@
 #include "VBoxUtils-x11.h"
 
 /* Other VBox includes: */
-#include <iprt/cdefs.h>
 #include <VBox/log.h>
 
+/* Other includes: */
+#include <X11/Xatom.h>
+#include <X11/Xutil.h>
+#include <X11/extensions/dpms.h>
+
+/// @todo is it required still?
 // WORKAROUND:
 // rhel3 build hack
-RT_C_DECLS_BEGIN
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#undef BOOL /* VBox/com/defs.h conflict */
-#include <X11/extensions/dpms.h>
-RT_C_DECLS_END
+//RT_C_DECLS_BEGIN
+//#include <X11/Xlib.h>
+//#undef BOOL /* VBox/com/defs.h conflict */
+//RT_C_DECLS_END
 
-
-static int  gX11ScreenSaverTimeout;
-static BOOL gX11ScreenSaverDpmsAvailable;
-static BOOL gX11DpmsState;
 
 bool NativeWindowSubsystem::X11IsCompositingManagerRunning()
 {
@@ -109,6 +108,11 @@ X11WMType NativeWindowSubsystem::X11WindowManagerType()
     return wmType;
 }
 
+#if 0 // unused for now?
+static int  gX11ScreenSaverTimeout;
+static BOOL gX11ScreenSaverDpmsAvailable;
+static BOOL gX11DpmsState;
+
 void NativeWindowSubsystem::X11ScreenSaverSettingsInit()
 {
     /* Init screen-save availability: */
@@ -147,6 +151,7 @@ void NativeWindowSubsystem::X11ScreenSaverSettingsRestore()
     if (gX11DpmsState && gX11ScreenSaverDpmsAvailable)
         DPMSEnable(pDisplay);
 }
+#endif // unused for now?
 
 bool NativeWindowSubsystem::X11CheckExtension(const char *pExtensionName)
 {
@@ -158,7 +163,7 @@ bool NativeWindowSubsystem::X11CheckExtension(const char *pExtensionName)
     return XQueryExtension(pDisplay, pExtensionName, &major_opcode, &first_event, &first_error);
 }
 
-bool NativeWindowSubsystem::X11CheckDBusConnection(const QDBusConnection &connection)
+bool X11CheckDBusConnection(const QDBusConnection &connection)
 {
     if (!connection.isConnected())
     {
@@ -176,7 +181,7 @@ bool NativeWindowSubsystem::X11CheckDBusConnection(const QDBusConnection &connec
     return true;
 }
 
-QStringList NativeWindowSubsystem::X11FindDBusScreenSaverServices(const QDBusConnection &connection)
+QStringList X11FindDBusScreenSaverServices(const QDBusConnection &connection)
 {
     QStringList serviceNames;
 
@@ -225,9 +230,9 @@ bool NativeWindowSubsystem::X11CheckDBusScreenSaverServices()
     return false;
 }
 
-void NativeWindowSubsystem::X11IntrospectInterfaceNode(const QDomElement &interface,
-                                                       const QString &strServiceName,
-                                                       QVector<X11ScreenSaverInhibitMethod*> &methods)
+void X11IntrospectInterfaceNode(const QDomElement &interface,
+                                const QString &strServiceName,
+                                QVector<X11ScreenSaverInhibitMethod*> &methods)
 {
     QDomElement child = interface.firstChildElement();
     while (!child.isNull())
@@ -247,10 +252,10 @@ void NativeWindowSubsystem::X11IntrospectInterfaceNode(const QDomElement &interf
     }
 }
 
-void NativeWindowSubsystem::X11IntrospectServices(const QDBusConnection &connection,
-                                                  const QString &strService,
-                                                  const QString &strPath,
-                                                  QVector<X11ScreenSaverInhibitMethod*> &methods)
+void X11IntrospectServices(const QDBusConnection &connection,
+                           const QString &strService,
+                           const QString &strPath,
+                           QVector<X11ScreenSaverInhibitMethod*> &methods)
 {
     QDBusMessage call = QDBusMessage::createMethodCall(strService, strPath.isEmpty() ? QLatin1String("/") : strPath,
                                                        QLatin1String("org.freedesktop.DBus.Introspectable"),
