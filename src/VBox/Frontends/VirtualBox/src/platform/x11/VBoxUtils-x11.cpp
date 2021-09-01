@@ -391,7 +391,7 @@ bool XXSendClientMessage(Display *pDpy, Window windowHandle, const char *pszMsg,
 
 bool NativeWindowSubsystem::X11ActivateWindow(WId wId, bool fSwitchDesktop)
 {
-    bool fResult = false;
+    bool fResult = true;
     Display *pDisplay = QX11Info::display();
 
     if (fSwitchDesktop)
