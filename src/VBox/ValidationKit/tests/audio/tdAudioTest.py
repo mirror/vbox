@@ -558,13 +558,20 @@ class tdAudioTest(vbox.TestDriver):
                 reporter.log('Set extradata: %s => %s' % (sKey, sValue));
                 fRc = oSession.setExtraData(sKey, sValue) and fRc;
 
+            # Make sure that the VM's audio adapter is configured the way we need it to.
+            if self.fpApiVer >= 4.0:
+                oOsType = oSession.getOsType();
+                ## @ŧdoo Make this configurable via driver opts (to use as a variant)?
+                oSession.setupAudio(oOsType.recommendedAudioController,
+                                    fEnable = True, fEnableIn = True, fEnableOut = True);
+
             # Save the settings.
             fRc = fRc and oSession.saveSettings();
             fRc = oSession.close() and fRc;
 
         reporter.testStart('Waiting for TXS');
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName,
-                                                                  fCdWait = True,
+                                                                  fCdWait = False,
                                                                   cMsTimeout = 3 * 60 * 1000,
                                                                   sFileCdWait = '${OS/ARCH}/vkat${EXESUFF}');
         reporter.testDone();
