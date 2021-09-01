@@ -2363,7 +2363,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 /** Enables page-modification logging. */
 #define VMX_PROC_CTLS2_PML                                      RT_BIT(17)
 /** Controls whether EPT-violations may cause \#VE instead of exits. */
-#define VMX_PROC_CTLS2_EPT_VE                                   RT_BIT(18)
+#define VMX_PROC_CTLS2_EPT_XCPT_VE                              RT_BIT(18)
 /** Conceal VMX non-root operation from Intel processor trace (PT). */
 #define VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT                      RT_BIT(19)
 /** Enables XSAVES/XRSTORS instructions. */
@@ -2371,8 +2371,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 /** Enables supervisor/user mode based EPT execute permission for linear
  *  addresses. */
 #define VMX_PROC_CTLS2_MODE_BASED_EPT_PERM                      RT_BIT(22)
-/** Enables EPT permissions to be specified at granularity of 128 bytes. */
-#define VMX_PROC_CTLS2_SPPTP_EPT                                RT_BIT(23)
+/** Enables EPT write permissions to be specified at granularity of 128 bytes. */
+#define VMX_PROC_CTLS2_SPP_EPT                                  RT_BIT(23)
 /** Intel PT output addresses are treated as guest-physical addresses and
  *  translated using EPT. */
 #define VMX_PROC_CTLS2_PT_EPT                                   RT_BIT(24)
@@ -2431,8 +2431,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_RSVD_21_MASK                          UINT32_C(0x00200000)
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_SHIFT             22
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_MASK              UINT32_C(0x00400000)
-#define VMX_BF_PROC_CTLS2_SPPTP_EPT_SHIFT                       23
-#define VMX_BF_PROC_CTLS2_SPPTP_EPT_MASK                        UINT32_C(0x00800000)
+#define VMX_BF_PROC_CTLS2_SPP_EPT_SHIFT                         23
+#define VMX_BF_PROC_CTLS2_SPP_EPT_MASK                          UINT32_C(0x00800000)
 #define VMX_BF_PROC_CTLS2_PT_EPT_SHIFT                          24
 #define VMX_BF_PROC_CTLS2_PT_EPT_MASK                           UINT32_C(0x01000000)
 #define VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT                     25
@@ -2450,7 +2450,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
                             (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_MODE, VPID, WBINVD_EXIT,
                              UNRESTRICTED_GUEST, APIC_REG_VIRT, VIRT_INT_DELIVERY, PAUSE_LOOP_EXIT, RDRAND_EXIT, INVPCID, VMFUNC,
                              VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_VMX_FROM_PT, XSAVES_XRSTORS, RSVD_21,
-                             MODE_BASED_EPT_PERM, SPPTP_EPT, PT_EPT, TSC_SCALING, USER_WAIT_PAUSE, RSVD_27, ENCLV_EXIT,
+                             MODE_BASED_EPT_PERM, SPP_EPT, PT_EPT, TSC_SCALING, USER_WAIT_PAUSE, RSVD_27, ENCLV_EXIT,
                              RSVD_29_31));
 /** @} */
 
