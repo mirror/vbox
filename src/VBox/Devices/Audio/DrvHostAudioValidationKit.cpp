@@ -124,6 +124,12 @@ typedef struct DRVHOSTVALKITAUDIO
     uint64_t            cbPlayedTotal;
     /** Total number of bytes recorded since driver construction. */
     uint64_t            cbRecordedTotal;
+    /** Total number of bytes silence was played in a consequtive block so far.
+     *  Will be reset once audible data is being played (again). */
+    uint64_t            cbPlayedSilence;
+    /** Total number of bytes audio (audible or not) was played while no active
+     *  audio test was registered / available. */
+    uint64_t            cbPlayedNoTest;
     /** Temporary path to use. */
     char                szPathTemp[RTPATH_MAX];
     /** Output path to use. */
@@ -841,23 +847,32 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     if (pTst == NULL) /* Empty list? */
     {
-#ifdef DEBUG_andy
-        if (!fIsSilence)
-#endif
-            LogRel(("ValKit: Warning: Guest is playing back audio (%s, %RU32 bytes, %RU64ms) when no playback test is active\n",
-                    fIsSilence ? "silence" : "audible", cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf)));
+        pThis->cbPlayedNoTest += cbBuf;
 
         *pcbWritten = cbBuf;
         return VINF_SUCCESS;
     }
 
-#ifndef DEBUG_andy
-    if (fIsSilence)
-        LogRel2(("ValKit: Guest is playing back %RU32 bytes (%RU64ms) silence\n",
-                 cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf)));
-#endif
+    if (pThis->cbPlayedNoTest)
+    {
+        LogRel(("ValKit: Warning: Guest was playing back audio (%s, %RU32 bytes, %RU64ms) when no playback test is active\n",
+                pThis->cbPlayedNoTest, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedNoTest)));
+        pThis->cbPlayedNoTest = 0;
+    }
 
-    const bool fHandleSilence = false; /** @todo Skip blocks of entire silence for now. */
+    if (fIsSilence)
+    {
+        pThis->cbPlayedSilence += cbBuf;
+    }
+    else /* Audible data */
+    {
+        if (pThis->cbPlayedSilence)
+            LogRel(("ValKit: Guest was playing back %RU32 bytes (%RU64ms) of silence\n",
+                    pThis->cbPlayedSilence, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedSilence)));
+        pThis->cbPlayedSilence = 0;
+    }
+
+    const bool fHandleSilence = true;
 
     if (pTst->pEntry == NULL) /* Test not started yet? */
     {
@@ -1119,6 +1134,8 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
 
     pThis->cbPlayedTotal   = 0;
     pThis->cbRecordedTotal = 0;
+    pThis->cbPlayedSilence = 0;
+    pThis->cbPlayedNoTest  = 0;
 
     pThis->fTestSetEnd = false;
 
