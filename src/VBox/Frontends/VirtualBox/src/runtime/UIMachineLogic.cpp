@@ -609,8 +609,8 @@ void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
 {
 #if defined(VBOX_WS_X11)
     if (m_methods.isEmpty())
-        m_methods = X11FindDBusScrenSaverInhibitMethods();
-    X11InhibitUninhibitScrenSaver(fDisabled, m_methods);
+        m_methods = NativeWindowSubsystem::X11FindDBusScrenSaverInhibitMethods();
+    NativeWindowSubsystem::X11InhibitUninhibitScrenSaver(fDisabled, m_methods);
 #elif defined(VBOX_WS_WIN)
     NativeWindowSubsystem::setScreenSaverActive(fDisabled);
 #else

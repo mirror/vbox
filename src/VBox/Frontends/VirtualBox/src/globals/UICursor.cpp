@@ -38,7 +38,7 @@ void UICursor::setCursor(QWidget *pWidget, const QCursor &cursor)
     if ((UICommon::qtRTMajorVersion() < 5) ||
         (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
     {
-        if (X11CheckExtension("RENDER"))
+        if (NativeWindowSubsystem::X11CheckExtension("RENDER"))
             pWidget->setCursor(cursor);
     }
     else
@@ -64,7 +64,7 @@ void UICursor::setCursor(QGraphicsWidget *pWidget, const QCursor &cursor)
     if ((UICommon::qtRTMajorVersion() < 5) ||
         (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
     {
-        if (X11CheckExtension("RENDER"))
+        if (NativeWindowSubsystem::X11CheckExtension("RENDER"))
             pWidget->setCursor(cursor);
     }
     else
@@ -90,7 +90,7 @@ void UICursor::unsetCursor(QWidget *pWidget)
     if ((UICommon::qtRTMajorVersion() < 5) ||
         (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
     {
-        if (X11CheckExtension("RENDER"))
+        if (NativeWindowSubsystem::X11CheckExtension("RENDER"))
             pWidget->unsetCursor();
     }
     else
@@ -116,7 +116,7 @@ void UICursor::unsetCursor(QGraphicsWidget *pWidget)
     if ((UICommon::qtRTMajorVersion() < 5) ||
         (UICommon::qtRTMajorVersion() == 5 && UICommon::qtRTMinorVersion() < 11))
     {
-        if (X11CheckExtension("RENDER"))
+        if (NativeWindowSubsystem::X11CheckExtension("RENDER"))
             pWidget->unsetCursor();
     }
     else

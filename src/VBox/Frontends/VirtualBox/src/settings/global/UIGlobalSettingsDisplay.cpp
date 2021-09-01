@@ -28,7 +28,7 @@
 #include "UIMessageCenter.h"
 #include "UIScaleFactorEditor.h"
 #ifdef VBOX_WS_X11
-# include "VBoxX11Helper.h"
+# include "VBoxUtils-x11.h"
 #endif
 
 
@@ -259,7 +259,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
 #if defined(VBOX_WS_WIN)
         m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
 #elif defined(VBOX_WS_X11)
-        if (X11CheckDBusScreenSaverServices())
+        if (NativeWindowSubsystem::X11CheckDBusScreenSaverServices())
             m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
 #endif
         if (m_pCheckBoxDisableHostScreenSaver)

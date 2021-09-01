@@ -1508,7 +1508,7 @@ endif
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  UICommon_SOURCES += \
-	src/platform/x11/VBoxX11Helper.cpp \
+	src/platform/x11/VBoxUtils-x11.cpp \
 	src/platform/x11/XKeyboard-new.cpp
 endif
 

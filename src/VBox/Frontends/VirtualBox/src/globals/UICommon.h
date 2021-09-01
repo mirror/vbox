@@ -31,7 +31,7 @@
 #include "UILibraryDefs.h"
 #include "UIMediumDefs.h"
 #ifdef VBOX_WS_X11
-# include "VBoxX11Helper.h"
+# include "VBoxUtils-x11.h"
 #endif
 
 /* COM includes: */

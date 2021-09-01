@@ -53,8 +53,7 @@
 
 /* External includes: */
 #ifdef VBOX_WS_X11
-#include "VBoxX11Helper.h"
-# include <xcb/xcb.h>
+#include "VBoxUtils-x11.h"
 #endif
 
 
