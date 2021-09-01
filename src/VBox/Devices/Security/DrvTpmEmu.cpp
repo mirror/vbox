@@ -885,7 +885,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
 
     if (!(pThis->fCaps & SWTPM_CAP_GET_CONFIG))
         return PDMDrvHlpVMSetError(pDrvIns, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                                   N_("DrvTpmEmu#%d Emulated TPM misses the GET_CONFIG capability"),
+                                   N_("DrvTpmEmu#%d Emulated TPM at '%s' misses the GET_CONFIG capability"),
                                    pDrvIns->iInstance, szLocation);
 
     rc = drvTpmEmuQueryTpmVersion(pThis);
