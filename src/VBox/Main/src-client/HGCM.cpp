@@ -148,7 +148,7 @@ class HGCMService
         ~HGCMService() {};
 
         static DECLCALLBACK(int)  svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc);
-        static DECLCALLBACK(int)  svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId);
+        static DECLCALLBACK(int)  svcHlpDisconnectClient(void *pvInstance, uint32_t idClient);
         static DECLCALLBACK(bool) svcHlpIsCallRestored(VBOXHGCMCALLHANDLE callHandle);
         static DECLCALLBACK(bool) svcHlpIsCallCancelled(VBOXHGCMCALLHANDLE callHandle);
         static DECLCALLBACK(int)  svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmType,
@@ -926,7 +926,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 /**
  * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnDisconnectClient}
  */
-/* static */ DECLCALLBACK(int) HGCMService::svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId)
+/* static */ DECLCALLBACK(int) HGCMService::svcHlpDisconnectClient(void *pvInstance, uint32_t idClient)
 {
      HGCMService *pService = static_cast <HGCMService *> (pvInstance);
      AssertReturn(pService, VERR_INVALID_HANDLE);
@@ -936,7 +936,17 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
         we'd risk racing it and corrupt data structures. */
      AssertReturn(pService->m_fInConnectOrDisconnect, VERR_INVALID_CONTEXT);
 
-     return pService->DisconnectClient(u32ClientId, true, NULL);
+     /* Resolve the client ID and verify that it belongs to this service before
+        trying to disconnect it. */
+     int rc = VERR_NOT_FOUND;
+     HGCMClient * const pClient = (HGCMClient *)hgcmObjReference(idClient, HGCMOBJ_CLIENT);
+     if (pClient)
+     {
+         if (pClient->pService == pService)
+             rc = pService->DisconnectClient(idClient, true, pClient);
+         hgcmObjDereference(pClient);
+     }
+     return rc;
 }
 
 /**
@@ -1793,15 +1803,13 @@ int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32C
  *
  * @param   u32ClientId     The handle of the client.
  * @param   fFromService    Set if called by the service via
- *                          svcHlpDisconnectClient().  pClient can be NULL when
- *                          this is @c true.
- * @param   pClient         The client disconnecting.  NULL if from service.
+ *                          svcHlpDisconnectClient().
+ * @param   pClient         The client disconnecting.
  * @return  VBox status code.
  */
 int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService, HGCMClient *pClient)
 {
-    Assert(pClient || !fFromService);
-
+    AssertPtr(pClient);
     LogFlowFunc(("client id = %d, fFromService = %d, pClient = %p\n", u32ClientId, fFromService, pClient));
 
     /*
@@ -1846,9 +1854,8 @@ int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService, HGCMC
         fReleaseService = true;
     }
 
-    if (pClient)
-        LogFunc(("idClient=%u m_cClients=%u m_acClients[%u]=%u %s (cPendingCalls=%u) rc=%Rrc\n", u32ClientId, m_cClients,
-                 pClient->idxCategory, m_acClients[pClient->idxCategory], m_pszSvcName, pClient->cPendingCalls, rc));
+    LogFunc(("idClient=%u m_cClients=%u m_acClients[%u]=%u %s (cPendingCalls=%u) rc=%Rrc\n", u32ClientId, m_cClients,
+             pClient->idxCategory, m_acClients[pClient->idxCategory], m_pszSvcName, pClient->cPendingCalls, rc));
 
     /*
      * Call the service.

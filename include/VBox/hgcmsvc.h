@@ -106,7 +106,10 @@ typedef struct VBOXHGCMSVCHELPERS
      *
      * This can only be used during VBOXHGCMSVCFNTABLE::pfnConnect or
      * VBOXHGCMSVCFNTABLE::pfnDisconnect and will fail if called out side that
-     * context.
+     * context.  Using this on the new client during VBOXHGCMSVCFNTABLE::pfnConnect
+     * is not advisable, it would be better to just return a failure status for that
+     * and it will be done automatically.  (It is not possible to call this method
+     * on a client passed to VBOXHGCMSVCFNTABLE::pfnDisconnect.)
      *
      * There will be no VBOXHGCMSVCFNTABLE::pfnDisconnect callback for a client
      * diconnected in this manner.
@@ -118,7 +121,7 @@ typedef struct VBOXHGCMSVCHELPERS
      * @remarks Used by external parties, so don't remove just because we don't use
      *          it ourselves.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDisconnectClient, (void *pvInstance, uint32_t u32ClientID));
+    DECLR3CALLBACKMEMBER(int, pfnDisconnectClient, (void *pvInstance, uint32_t idClient));
 
     /**
      * Check if the @a callHandle is for a call restored and re-submitted from saved state.
