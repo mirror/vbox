@@ -967,6 +967,36 @@ AssertCompileSize(ACPITBLTPM20, 52);
 /** CRB interface. */
 #define ACPITBL_TPM20_START_METHOD_CRB      UINT16_C(7)
 /** @} */
+
+
+/**
+ * TPM: The ACPI table for a TPM 1.2 device
+  * (from: https://trustedcomputinggroup.org/wp-content/uploads/TCG_ACPIGeneralSpecification_v1.20_r8.pdf).
+ */
+typedef struct ACPITBLTCPA
+{
+    /** The common ACPI table header. */
+    ACPITBLHEADER       Hdr;
+    /** The platform class. */
+    uint16_t            u16PlatCls;
+    /** Log Area Minimum Length. */
+    uint32_t            u32Laml;
+    /** Log Area Start Address. */
+    uint64_t            u64Lasa;
+} ACPITBLTCPA;
+AssertCompileSize(ACPITBLTCPA, 50);
+
+/** Revision of the TPM1.2 ACPI table. */
+#define ACPI_TCPA_REVISION                  2
+/** LAML region size. */
+#define ACPI_TCPA_LAML_SZ                   _16K
+
+
+/** @name Possible values for the ACPITBLTCPA::u16PlatCls member.
+ * @{ */
+/** Client platform. */
+#define ACPI_TCPA_PLAT_CLS_CLIENT           UINT16_C(0)
+/** @} */
 #endif
 
 
@@ -3501,33 +3531,53 @@ static void acpiR3SetupIommuIntel(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS
  */
 static void acpiR3SetupTpm(PPDMDEVINS pDevIns, PACPISTATE pThis, RTGCPHYS32 addr)
 {
-    ACPITBLTPM20 Tpm2Tbl;
-    RT_ZERO(Tpm2Tbl);
-
-    acpiR3PrepareHeader(pThis, &Tpm2Tbl.Hdr, "TPM2", sizeof(ACPITBLTPM20), ACPI_TPM20_REVISION);
-
-    switch (pThis->enmTpmMode)
+    if (pThis->enmTpmMode == ACPITPMMODE_TIS_1_2)
     {
-        case ACPITPMMODE_CRB_2_0:
-            Tpm2Tbl.u32StartMethod       = ACPITBL_TPM20_START_METHOD_CRB;
-            Tpm2Tbl.u64BaseAddrCrbOrFifo = pThis->GCPhysTpmMmio;
-            break;
-        case ACPITPMMODE_TIS_1_2:
-        case ACPITPMMODE_FIFO_2_0:
-            Tpm2Tbl.u32StartMethod = ACPITBL_TPM20_START_METHOD_TIS12;
-            break;
-        case ACPITPMMODE_DISABLED: /* Should never be called with the TPM disabled. */
-        default:
-            AssertFailed();
+        ACPITBLTCPA TcpaTbl;
+        RT_ZERO(TcpaTbl);
+
+        acpiR3PrepareHeader(pThis, &TcpaTbl.Hdr, "TCPA", sizeof(TcpaTbl), ACPI_TCPA_REVISION);
+
+        TcpaTbl.u16PlatCls = ACPI_TCPA_PLAT_CLS_CLIENT;
+        TcpaTbl.u32Laml    = ACPI_TCPA_LAML_SZ;
+        TcpaTbl.u64Lasa    = addr + sizeof(TcpaTbl);
+
+        /* Finally, compute checksum. */
+        TcpaTbl.Hdr.u8Checksum = acpiR3Checksum(&TcpaTbl, sizeof(TcpaTbl));
+
+        /* Plant the ACPI table. */
+        acpiR3PhysCopy(pDevIns, addr, (const uint8_t *)&TcpaTbl, sizeof(TcpaTbl));
     }
+    else
+    {
+        ACPITBLTPM20 Tpm2Tbl;
+        RT_ZERO(Tpm2Tbl);
 
-    Tpm2Tbl.u16PlatCls = ACPITBL_TPM20_PLAT_CLS_CLIENT;
+        acpiR3PrepareHeader(pThis, &Tpm2Tbl.Hdr, "TPM2", sizeof(ACPITBLTPM20), ACPI_TPM20_REVISION);
 
-    /* Finally, compute checksum. */
-    Tpm2Tbl.Hdr.u8Checksum = acpiR3Checksum(&Tpm2Tbl, sizeof(Tpm2Tbl));
+        switch (pThis->enmTpmMode)
+        {
+            case ACPITPMMODE_CRB_2_0:
+                Tpm2Tbl.u32StartMethod       = ACPITBL_TPM20_START_METHOD_CRB;
+                Tpm2Tbl.u64BaseAddrCrbOrFifo = pThis->GCPhysTpmMmio;
+                break;
+            case ACPITPMMODE_FIFO_2_0:
+                Tpm2Tbl.u32StartMethod = ACPITBL_TPM20_START_METHOD_TIS12;
+                break;
+            case ACPITPMMODE_TIS_1_2: /* Handled above. */
+            case ACPITPMMODE_DISABLED: /* Should never be called with the TPM disabled. */
+            default:
+                AssertFailed();
+        }
 
-    /* Plant the ACPI table. */
-    acpiR3PhysCopy(pDevIns, addr, (const uint8_t *)&Tpm2Tbl, sizeof(Tpm2Tbl));
+        Tpm2Tbl.u16PlatCls = ACPITBL_TPM20_PLAT_CLS_CLIENT;
+
+        /* Finally, compute checksum. */
+        Tpm2Tbl.Hdr.u8Checksum = acpiR3Checksum(&Tpm2Tbl, sizeof(Tpm2Tbl));
+
+        /* Plant the ACPI table. */
+        acpiR3PhysCopy(pDevIns, addr, (const uint8_t *)&Tpm2Tbl, sizeof(Tpm2Tbl));
+    }
 }
 #endif
 
@@ -3796,7 +3846,11 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
     if (pThis->enmTpmMode != ACPITPMMODE_DISABLED)
     {
         GCPhysTpm = GCPhysCur;
-        GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLTPM20), 16); /** @todo TPM1.2 */
+
+        if (pThis->enmTpmMode == ACPITPMMODE_TIS_1_2)
+            GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLTCPA) + ACPI_TCPA_LAML_SZ, 16);
+        else
+            GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLTPM20), 16);
 
         rc = acpiPrepareTpmSsdt(pDevIns, &pvSsdtTpmCode, &cbSsdtTpm);
         if (RT_FAILURE(rc))

@@ -21,9 +21,41 @@ DefinitionBlock ("SSDT.aml", "SSDT", 1, "VBOX  ", "VBOXTPMT", 2)
     {
         Device (TPM)
         {
-            Name (_HID, "MSFT0101")
-            Name (_CID, "MSFT0101")
-            Name (_STR, Unicode ("TPM 2.0 Device"))
+            Method (_HID, 0, NotSerialized)
+            {
+                If (LEqual(IFID, One))
+                {
+                    Return ("PNP0C31")
+                }
+                Else
+                {
+                    Return ("MSFT0101")
+                }
+            }
+
+            Method (_CID, 0, NotSerialized)
+            {
+                If (LEqual(IFID, One))
+                {
+                    Return ("PNP0C31")
+                }
+                Else
+                {
+                    Return ("MSFT0101")
+                }
+            }
+
+            Method (_STR, 0, NotSerialized)
+            {
+                If (LEqual(IFID, One))
+                {
+                    Return (Unicode ("TPM 1.2 Device"))
+                }
+                Else
+                {
+                    Return (Unicode ("TPM 2.0 Device"))
+                }
+            }
 
             Method (_STA, 0, NotSerialized)
             {
@@ -31,6 +63,11 @@ DefinitionBlock ("SSDT.aml", "SSDT", 1, "VBOX  ", "VBOXTPMT", 2)
             }
 
             OperationRegion (TPMR, SystemMemory, 0xFED40000, 0x5000)
+            Field(TPMR, AnyAcc, NoLock, Preserve)
+            {
+                Offset(0x30),
+                IFID,       1,
+            }
 
             Name(RES, ResourceTemplate()
             {
