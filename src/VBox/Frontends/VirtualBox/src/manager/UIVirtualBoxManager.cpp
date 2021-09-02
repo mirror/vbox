@@ -2460,7 +2460,7 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
     CMachine comMachineNew = comVBox.OpenMachine(strTmpFile);
     if (!comVBox.isOk())
     {
-        msgCenter().cannotOpenMachine(comVBox, strTmpFile);
+        UINotificationMessage::cannotOpenMachine(comVBox, strTmpFile);
         return;
     }
 

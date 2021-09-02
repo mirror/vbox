@@ -38,6 +38,7 @@
 #include "UIMedium.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
+#include "UINotificationCenter.h"
 #include "UIProgressDialog.h"
 #include "UITranslator.h"
 #include "VBoxAboutDlg.h"
@@ -407,7 +408,47 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
     return fRc;
 }
 
-void UIMessageCenter::warnAboutUnrelatedOptionType(const QString &strOption) const
+void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const
+{
+    alert(0, MessageType_Error,
+          tr("<p>Could not find a language file for the language <b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
+             "<p>The language will be temporarily reset to the system default language. "
+             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
+             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
+             .arg(strLangId).arg(strNlsPath));
+}
+
+void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
+{
+    alert(0, MessageType_Error,
+          tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
+             "<p>The language will be temporarily reset to English (built-in). "
+             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
+             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
+             .arg(strLangFile));
+}
+
+void UIMessageCenter::cannotInitUserHome(const QString &strUserHome) const
+{
+    error(0, MessageType_Critical,
+          tr("<p>Failed to initialize COM because the VirtualBox global "
+             "configuration directory <b><nobr>%1</nobr></b> is not accessible. "
+             "Please check the permissions of this directory and of its parent directory.</p>"
+             "<p>The application will now terminate.</p>")
+             .arg(strUserHome),
+          UIErrorString::formatErrorInfo(COMErrorInfo()));
+}
+
+void UIMessageCenter::cannotInitCOM(HRESULT rc) const
+{
+    error(0, MessageType_Critical,
+          tr("<p>Failed to initialize COM or to find the VirtualBox COM server. "
+             "Most likely, the VirtualBox server is not running or failed to start.</p>"
+             "<p>The application will now terminate.</p>"),
+          UIErrorString::formatErrorInfo(COMErrorInfo(), rc));
+}
+
+void UIMessageCenter::cannotHandleRuntimeOption(const QString &strOption) const
 {
     alert(0, MessageType_Error,
           tr("<b>%1</b> is an option for the VirtualBox VM runner (VirtualBoxVM) application, not the VirtualBox Manager.")
@@ -452,112 +493,72 @@ void UIMessageCenter::cannotStartRuntime() const
     alert(0, MessageType_Error, strError.arg(strTable.arg(strUsage)));
 }
 
-void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>Could not find a language file for the language <b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
-             "<p>The language will be temporarily reset to the system default language. "
-             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
-             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
-             .arg(strLangId).arg(strNlsPath));
-}
-
-void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
-             "<p>The language will be temporarily reset to English (built-in). "
-             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
-             "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
-             .arg(strLangFile));
-}
-
-void UIMessageCenter::cannotInitUserHome(const QString &strUserHome) const
-{
-    error(0, MessageType_Critical,
-          tr("<p>Failed to initialize COM because the VirtualBox global "
-             "configuration directory <b><nobr>%1</nobr></b> is not accessible. "
-             "Please check the permissions of this directory and of its parent directory.</p>"
-             "<p>The application will now terminate.</p>")
-             .arg(strUserHome),
-          UIErrorString::formatErrorInfo(COMErrorInfo()));
-}
-
-void UIMessageCenter::cannotInitCOM(HRESULT rc) const
-{
-    error(0, MessageType_Critical,
-          tr("<p>Failed to initialize COM or to find the VirtualBox COM server. "
-             "Most likely, the VirtualBox server is not running or failed to start.</p>"
-             "<p>The application will now terminate.</p>"),
-          UIErrorString::formatErrorInfo(COMErrorInfo(), rc));
-}
-
-void UIMessageCenter::cannotCreateVirtualBoxClient(const CVirtualBoxClient &client) const
+void UIMessageCenter::cannotCreateVirtualBoxClient(const CVirtualBoxClient &comClient) const
 {
     error(0, MessageType_Critical,
           tr("<p>Failed to create the VirtualBoxClient COM object.</p>"
              "<p>The application will now terminate.</p>"),
-          UIErrorString::formatErrorInfo(client));
+          UIErrorString::formatErrorInfo(comClient));
 }
 
-void UIMessageCenter::cannotAcquireVirtualBox(const CVirtualBoxClient &client) const
+void UIMessageCenter::cannotAcquireVirtualBox(const CVirtualBoxClient &comClient) const
 {
     QString err = tr("<p>Failed to acquire the VirtualBox COM object.</p>"
                      "<p>The application will now terminate.</p>");
 #if defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
-    if (client.lastRC() == NS_ERROR_SOCKET_FAIL)
+    if (comClient.lastRC() == NS_ERROR_SOCKET_FAIL)
         err += tr("<p>The reason for this error are most likely wrong permissions of the IPC "
                   "daemon socket due to an installation problem. Please check the permissions of "
                   "<font color=blue>'/tmp'</font> and <font color=blue>'/tmp/.vbox-*-ipc/'</font></p>");
 #endif
-    error(0, MessageType_Critical, err, UIErrorString::formatErrorInfo(client));
+    error(0, MessageType_Critical, err, UIErrorString::formatErrorInfo(comClient));
 }
 
-void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const
+void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &comVBox, const QString &strName) const
 {
     error(0, MessageType_Error,
           tr("There is no virtual machine named <b>%1</b>.")
              .arg(strName),
-          UIErrorString::formatErrorInfo(vbox));
+          UIErrorString::formatErrorInfo(comVBox));
 }
 
-void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QUuid &uId) const
+void UIMessageCenter::cannotFindMachineById(const CVirtualBox &comVBox, const QUuid &uId) const
 {
     error(0, MessageType_Error,
           tr("There is no virtual machine with the identifier <b>%1</b>.")
              .arg(uId.toString()),
-          UIErrorString::formatErrorInfo(vbox));
+          UIErrorString::formatErrorInfo(comVBox));
 }
 
-void UIMessageCenter::cannotOpenSession(const CSession &session) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to create a new session."),
-          UIErrorString::formatErrorInfo(session));
-}
-
-void UIMessageCenter::cannotOpenSession(const CMachine &machine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to open a session for the virtual machine <b>%1</b>.")
-             .arg(CMachine(machine).GetName()),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotOpenSession(const CProgress &progress, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to open a session for the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotSetExtraData(const CVirtualBox &vbox, const QString &strKey, const QString &strValue)
+void UIMessageCenter::cannotSetExtraData(const CVirtualBox &comVBox, const QString &strKey, const QString &strValue)
 {
     error(0, MessageType_Error,
           tr("Failed to set the global VirtualBox extra data for key <i>%1</i> to value <i>{%2}</i>.")
              .arg(strKey, strValue),
-          UIErrorString::formatErrorInfo(vbox));
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotOpenSession(const CSession &comSession) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to create a new session."),
+          UIErrorString::formatErrorInfo(comSession));
+}
+
+void UIMessageCenter::cannotOpenSession(const CMachine &comMachine) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to open a session for the virtual machine <b>%1</b>.")
+             .arg(CMachine(comMachine).GetName()),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotOpenSession(const CProgress &comProgress, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to open a session for the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(comProgress));
 }
 
 void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue)
@@ -566,47 +567,6 @@ void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString 
           tr("Failed to set the extra data for key <i>%1</i> of machine <i>%2</i> to value <i>{%3}</i>.")
              .arg(strKey, CMachine(machine).GetName(), strValue),
           UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire VirtualBox parameter."), UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotAcquireSessionParameter(const CSession &comSession, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire session parameter."), UIErrorString::formatErrorInfo(comSession));
-}
-
-void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire snapshot parameter."), UIErrorString::formatErrorInfo(comSnapshot));
-}
-
-void UIMessageCenter::cannotFindHelpFile(const QString &strFileLocation) const
-{
-    alert(0, MessageType_Error, QString("<p>%1:</p>%2").arg(tr("Failed to find the following help file")).arg(strFileLocation));
-}
-
-void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to open virtual machine located in %1.")
-             .arg(strMachinePath),
-          UIErrorString::formatErrorInfo(vbox));
 }
 
 void UIMessageCenter::cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const
@@ -3373,6 +3333,31 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 #endif
 }
 
+void UIMessageCenter::sltHelpBrowserClosed()
+{
+    m_pHelpBrowserDialog = 0;
+}
+
+void UIMessageCenter::sltHandleHelpRequest()
+{
+#if defined(VBOX_WITH_QHELP_VIEWER)
+    sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
+#endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+}
+
+void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
+{
+#if defined(VBOX_WITH_QHELP_VIEWER)
+    /* First open or show the help browser: */
+    showHelpBrowser(uiCommon().helpFile());
+    /* Show the help page for the @p strHelpKeyword: */
+    if (m_pHelpBrowserDialog)
+        m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
+#else
+    Q_UNUSED(strHelpKeyword);
+# endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
+}
+
 void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,
                                         const QString &strMessage, const QString &strDetails,
                                         int iButton1, int iButton2, int iButton3,
@@ -3563,7 +3548,7 @@ void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *p
 #if defined(VBOX_WITH_QHELP_VIEWER)
     if (!QFileInfo(strHelpFilePath).exists())
     {
-        cannotFindHelpFile(strHelpFilePath);
+        UINotificationMessage::cannotFindHelpFile(strHelpFilePath);
         return;
     }
     if (!m_pHelpBrowserDialog)
@@ -3579,29 +3564,4 @@ void UIMessageCenter::showHelpBrowser(const QString &strHelpFilePath, QWidget *p
 #else
     Q_UNUSED(strHelpFilePath);
 #endif
-}
-
-void UIMessageCenter::sltHelpBrowserClosed()
-{
-    m_pHelpBrowserDialog = 0;
-}
-
-void UIMessageCenter::sltHandleHelpRequest()
-{
-#if defined(VBOX_WITH_QHELP_VIEWER)
-    sltHandleHelpRequestWithKeyword(uiCommon().helpKeyword(sender()));
-#endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
-}
-
-void UIMessageCenter::sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword)
-{
-#if defined(VBOX_WITH_QHELP_VIEWER)
-    /* First open or show the help browser: */
-    showHelpBrowser(uiCommon().helpFile());
-    /* Show the help page for the @p strHelpKeyword: */
-    if (m_pHelpBrowserDialog)
-        m_pHelpBrowserDialog->showHelpForKeyword(strHelpKeyword);
-#else
-    Q_UNUSED(strHelpKeyword);
-# endif /* #if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))&& (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)) */
 }

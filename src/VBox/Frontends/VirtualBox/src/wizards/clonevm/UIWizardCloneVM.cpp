@@ -148,11 +148,6 @@ bool UIWizardCloneVM::cloneVM()
     {
         /* Acquire machine name beforehand: */
         const QString strMachineName = m_machine.GetName();
-        if (!m_machine.isOk())
-        {
-            msgCenter().cannotAcquireMachineParameter(m_machine);
-            return false;
-        }
 
         /* Open session: */
         CSession comSession = uiCommon().openSession(m_machine.GetId());

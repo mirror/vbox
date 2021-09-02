@@ -60,6 +60,8 @@ class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
 
 public:
 
+    /** Notifies about inability to find help file at certain @a strLocation. */
+    static void cannotFindHelpFile(const QString &strLocation);
     /** Notifies about inability to open @a strUrl. */
     static void cannotOpenURL(const QString &strUrl);
     /** Notifies about inability to mount image.
@@ -93,6 +95,19 @@ public:
     static void forgetAboutWrongColorDepth();
     /** Reminds about GA not affected. */
     static void remindAboutGuestAdditionsAreNotActive();
+
+    /** Notifies about inability to acquire IVirtualBox parameter.
+      * @param  comVBox  Brings the object paramter get acquired from. */
+    static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox);
+    /** Notifies about inability to acquire ISession parameter.
+      * @param  comSession  Brings the object paramter get acquired from. */
+    static void cannotAcquireSessionParameter(const CSession &comSession);
+    /** Notifies about inability to acquire IMachine parameter.
+      * @param  comSession  Brings the object paramter get acquired from. */
+    static void cannotAcquireMachineParameter(const CMachine &comMachine);
+    /** Notifies about inability to acquire ISnapshot parameter.
+      * @param  comSnapshot  Brings the object paramter get acquired from. */
+    static void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot);
 
     /** Notifies about inability to attach USB device.
       * @param  comConsole  Brings console USB device belongs to.
@@ -129,6 +144,10 @@ public:
     /** Notifies about inability to enumerate host USB devices.
       * @param  comHost  Brings the host devices enumerated for. */
     static void cannotEnumerateHostUSBDevices(const CHost &comHost);
+    /** Notifies about inability to open machine.
+      * @param  comVBox      Brings common VBox object trying to open machine.
+      * @param  strLocation  Brings the machine location. */
+    static void cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation);
     /** Notifies about inability to open medium.
       * @param  comVBox      Brings common VBox object trying to open medium.
       * @param  strLocation  Brings the medium location. */

@@ -141,7 +141,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 CGraphicsAdapter comGraphics = comMachine.GetGraphicsAdapter();
                 if (!comMachine.isOk())
                 {
-                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    UINotificationMessage::cannotAcquireMachineParameter(comMachine);
                     fErrorHappened = true;
                     break;
                 }
@@ -160,7 +160,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 CGraphicsAdapter comGraphics = comMachine.GetGraphicsAdapter();
                 if (!comMachine.isOk())
                 {
-                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    UINotificationMessage::cannotAcquireMachineParameter(comMachine);
                     fErrorHappened = true;
                     break;
                 }
@@ -179,7 +179,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
                 if (!comMachine.isOk())
                 {
-                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    UINotificationMessage::cannotAcquireMachineParameter(comMachine);
                     fErrorHappened = true;
                     break;
                 }
@@ -198,7 +198,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
                 if (!comMachine.isOk())
                 {
-                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    UINotificationMessage::cannotAcquireMachineParameter(comMachine);
                     fErrorHappened = true;
                     break;
                 }
@@ -219,7 +219,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(nad.m_iSlot);
                 if (!comMachine.isOk())
                 {
-                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    UINotificationMessage::cannotAcquireMachineParameter(comMachine);
                     fErrorHappened = true;
                     break;
                 }

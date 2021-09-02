@@ -241,43 +241,41 @@ public:
                                  const QString &strImage = "", QWidget *pParent = 0,
                                  int cMinDuration = 2000);
 
-    /** @name General (startup) warnings.
+    /** @name Startup warnings.
       * @{ */
-        void warnAboutUnrelatedOptionType(const QString &strOption) const;
+        void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
+        void cannotLoadLanguage(const QString &strLangFile) const;
+
+        void cannotInitUserHome(const QString &strUserHome) const;
+        void cannotInitCOM(HRESULT rc) const;
+
+        void cannotHandleRuntimeOption(const QString &strOption) const;
+
 #ifdef RT_OS_LINUX
         void warnAboutWrongUSBMounted() const;
 #endif
+
         void cannotStartSelector() const;
         void cannotStartRuntime() const;
-
-        void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
-        void cannotLoadLanguage(const QString &strLangFile) const;
     /** @} */
 
-    /** @name COM (startup) warnings.
+    /** @name General COM warnings.
       * @{ */
-        void cannotInitUserHome(const QString &strUserHome) const;
-        void cannotInitCOM(HRESULT rc) const;
-        void cannotCreateVirtualBoxClient(const CVirtualBoxClient &client) const;
-        void cannotAcquireVirtualBox(const CVirtualBoxClient &client) const;
-    /** @} */
+        void cannotCreateVirtualBoxClient(const CVirtualBoxClient &comClient) const;
+        void cannotAcquireVirtualBox(const CVirtualBoxClient &comClient) const;
 
-    /* API: Global warnings: */
-    void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const;
-    void cannotFindMachineById(const CVirtualBox &vbox, const QUuid &uId) const;
-    void cannotOpenSession(const CSession &session) const;
-    void cannotOpenSession(const CMachine &machine) const;
-    void cannotOpenSession(const CProgress &progress, const QString &strMachineName) const;
-    void cannotSetExtraData(const CVirtualBox &vbox, const QString &strKey, const QString &strValue);
-    void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
-    void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
-    void cannotAcquireSessionParameter(const CSession &comSession, QWidget *pParent = 0) const;
-    void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
-    void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot, QWidget *pParent = 0) const;
-    void cannotFindHelpFile(const QString &strFileLocation) const;
+        void cannotFindMachineByName(const CVirtualBox &comVBox, const QString &strName) const;
+        void cannotFindMachineById(const CVirtualBox &comVBox, const QUuid &uId) const;
+        void cannotSetExtraData(const CVirtualBox &comVBox, const QString &strKey, const QString &strValue);
+
+        void cannotOpenSession(const CSession &comSession) const;
+        void cannotOpenSession(const CMachine &comMachine) const;
+        void cannotOpenSession(const CProgress &comProgress, const QString &strMachineName) const;
+
+        void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
+    /** @} */
 
     /* API: Selector warnings: */
-    void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;
     void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const;
     void cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName) const;
     bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const;
@@ -580,6 +578,8 @@ public slots:
     void sltShowHelpHelpDialog();
     void sltResetSuppressedMessages();
     void sltShowUserManual(const QString &strLocation);
+
+    /// @todo move it away ..
     void sltHelpBrowserClosed();
     void sltHandleHelpRequest();
     void sltHandleHelpRequestWithKeyword(const QString &strHelpKeyword);
@@ -635,6 +635,8 @@ private:
                        int iButton1, int iButton2, int iButton3,
                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                        const QString &strAutoConfirmId, const QString &strHelpKeyword) const;
+
+    /// @todo move it away ..
     void showHelpBrowser(const QString &strHelpFilePath, QWidget *pParent = 0);
 
     /** Holds the list of shown warnings. */

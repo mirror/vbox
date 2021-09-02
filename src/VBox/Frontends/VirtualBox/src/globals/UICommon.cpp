@@ -611,7 +611,7 @@ void UICommon::prepare()
         }
 #endif
         if (enmOptType == OptType_VMRunner && m_enmType != UIType_RuntimeUI)
-            msgCenter().warnAboutUnrelatedOptionType(arg);
+            msgCenter().cannotHandleRuntimeOption(arg);
 
         i++;
     }

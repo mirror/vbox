@@ -57,6 +57,15 @@
 QMap<QString, QUuid> UINotificationMessage::m_messages = QMap<QString, QUuid>();
 
 /* static */
+void UINotificationMessage::cannotFindHelpFile(const QString &strLocation)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't fina help file ..."),
+        QApplication::translate("UIMessageCenter", "Failed to find the following help file:")
+                                                   .arg(strLocation));
+}
+
+/* static */
 void UINotificationMessage::cannotOpenURL(const QString &strUrl)
 {
     createMessage(
@@ -224,6 +233,42 @@ void UINotificationMessage::remindAboutGuestAdditionsAreNotActive()
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "VirtualBox failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire VirtualBox parameter.") +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireSessionParameter(const CSession &comSession)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Session failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire session parameter.") +
+        UIErrorString::formatErrorInfo(comSession));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireMachineParameter(const CMachine &comMachine)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Machine failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire machine parameter.") +
+        UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Snapshot failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire snapshot parameter.") +
+        UIErrorString::formatErrorInfo(comSnapshot));
+}
+
+/* static */
 void UINotificationMessage::cannotAttachUSBDevice(const CConsole &comConsole, const QString &strDevice)
 {
     createMessage(
@@ -307,6 +352,16 @@ void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
         UIErrorString::formatErrorInfo(comHost),
         "cannotEnumerateHostUSBDevices",
         strHelpKeyword);
+}
+
+/* static */
+void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open virtual machine located in %1.")
+                                                   .arg(strLocation) +
+        UIErrorString::formatErrorInfo(comVBox));
 }
 
 /* static */
