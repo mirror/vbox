@@ -108,6 +108,12 @@ class HGCMService
 
         VBOXHGCMSVCFNTABLE m_fntable;
 
+        /** Set if servicing SVC_MSG_CONNECT or SVC_MSG_DISCONNECT.
+         * Used for context checking pfnDisconnectClient calls, as it can only
+         * safely be made when the main HGCM thread is waiting on the service to
+         * process those messages. */
+        bool m_fInConnectOrDisconnect;
+
         uint32_t m_acClients[HGCM_CLIENT_CATEGORY_MAX]; /**< Clients per category. */
         uint32_t m_cClients;
         uint32_t m_cClientsAllocated;
@@ -142,7 +148,7 @@ class HGCMService
         ~HGCMService() {};
 
         static DECLCALLBACK(int)  svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc);
-        static DECLCALLBACK(void) svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId);
+        static DECLCALLBACK(int)  svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId);
         static DECLCALLBACK(bool) svcHlpIsCallRestored(VBOXHGCMCALLHANDLE callHandle);
         static DECLCALLBACK(bool) svcHlpIsCallCancelled(VBOXHGCMCALLHANDLE callHandle);
         static DECLCALLBACK(int)  svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmType,
@@ -281,6 +287,7 @@ HGCMService::HGCMService()
     m_pszSvcLibrary (NULL),
     m_hLdrMod    (NIL_RTLDRMOD),
     m_pfnLoad    (NULL),
+    m_fInConnectOrDisconnect(false),
     m_cClients   (0),
     m_cClientsAllocated (0),
     m_paClientIds (NULL),
@@ -671,9 +678,11 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 
                 if (pClient)
                 {
+                    pSvc->m_fInConnectOrDisconnect = true;
                     rc = pSvc->m_fntable.pfnConnect(pSvc->m_fntable.pvService, pMsg->u32ClientId,
                                                     HGCM_CLIENT_DATA(pSvc, pClient),
                                                     pMsg->fRequestor, pMsg->fRestoring);
+                    pSvc->m_fInConnectOrDisconnect = false;
 
                     hgcmObjDereference(pClient);
                 }
@@ -691,8 +700,10 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 
                 if (pMsg->pClient)
                 {
+                    pSvc->m_fInConnectOrDisconnect = true;
                     rc = pSvc->m_fntable.pfnDisconnect(pSvc->m_fntable.pvService, pMsg->u32ClientId,
                                                        HGCM_CLIENT_DATA(pSvc, pMsg->pClient));
+                    pSvc->m_fInConnectOrDisconnect = false;
                 }
                 else
                 {
@@ -912,23 +923,21 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
    return hgcmMsgComplete(pMsgCore, rc);
 }
 
-#if 0 /* not thread safe */
 /**
  * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnDisconnectClient}
  */
-/* static */ DECLCALLBACK(void) HGCMService::svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId)
+/* static */ DECLCALLBACK(int) HGCMService::svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId)
 {
      HGCMService *pService = static_cast <HGCMService *> (pvInstance);
+     AssertReturn(pService, VERR_INVALID_HANDLE);
 
-     AssertMsgFailed(("This is unused code with a serialization issue.\n"
-                      "It touches data which is normally serialized by only running on the HGCM thread!\n"));
+     /* Only safe to call when the main HGCM thread is waiting on the service
+        to handle a SVC_MSG_CONNECT or SVC_MSG_DISCONNECT message.  Otherwise
+        we'd risk racing it and corrupt data structures. */
+     AssertReturn(pService->m_fInConnectOrDisconnect, VERR_INVALID_CONTEXT);
 
-     if (pService)
-     {
-         pService->DisconnectClient(u32ClientId, true, NULL);
-     }
+     return pService->DisconnectClient(u32ClientId, true, NULL);
 }
-#endif
 
 /**
  * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnIsCallRestored}
@@ -1134,9 +1143,7 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
             /* Initialize service helpers table. */
             m_svcHelpers.pfnCallComplete       = svcHlpCallComplete;
             m_svcHelpers.pvInstance            = this;
-#if 0 /* not thread safe */
             m_svcHelpers.pfnDisconnectClient   = svcHlpDisconnectClient;
-#endif
             m_svcHelpers.pfnIsCallRestored     = svcHlpIsCallRestored;
             m_svcHelpers.pfnIsCallCancelled    = svcHlpIsCallCancelled;
             m_svcHelpers.pfnStamRegisterV      = svcHlpStamRegisterV;
