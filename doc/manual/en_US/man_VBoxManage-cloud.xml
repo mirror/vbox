@@ -19,13 +19,14 @@
 ]>
 <refentry id="vboxmanage-cloud" lang="en">
   <refentryinfo>
-    <pubdate>$Date$</pubdate>
     <title>VBoxManage cloud</title>
+    <pubdate>$Date$</pubdate>
   </refentryinfo>
 
   <refmeta>
     <refentrytitle>VBoxManage-cloud</refentrytitle>
     <manvolnum>1</manvolnum>
+    <refmiscinfo class="manual">Oracle VM VirtualBox</refmiscinfo>
   </refmeta>
 
   <refnamediv>
