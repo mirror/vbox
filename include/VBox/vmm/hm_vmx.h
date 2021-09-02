@@ -3157,26 +3157,56 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
 /** @name Exit qualification for EPT violations.
  * @{
  */
-/** Set if the violation was caused by a data read. */
-#define VMX_EXIT_QUAL_EPT_DATA_READ                             RT_BIT(0)
-/** Set if the violation was caused by a data write. */
-#define VMX_EXIT_QUAL_EPT_DATA_WRITE                            RT_BIT(1)
+/** Set if acess causing the violation was a data read. */
+#define VMX_EXIT_QUAL_EPT_ACCESS_READ                           RT_BIT(0)
+/** Set if acess causing the violation was a data write. */
+#define VMX_EXIT_QUAL_EPT_ACCESS_WRITE                          RT_BIT(1)
 /** Set if the violation was caused by an instruction fetch. */
-#define VMX_EXIT_QUAL_EPT_INSTR_FETCH                           RT_BIT(2)
+#define VMX_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH                    RT_BIT(2)
 /** AND of the present bit of all EPT structures. */
-#define VMX_EXIT_QUAL_EPT_ENTRY_PRESENT                         RT_BIT(3)
+#define VMX_EXIT_QUAL_EPT_ENTRY_READ                            RT_BIT(3)
 /** AND of the write bit of all EPT structures. */
 #define VMX_EXIT_QUAL_EPT_ENTRY_WRITE                           RT_BIT(4)
 /** AND of the execute bit of all EPT structures. */
 #define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE                         RT_BIT(5)
-/** Set if the guest linear address field contains the faulting address. */
-#define VMX_EXIT_QUAL_EPT_GUEST_ADDR_VALID                      RT_BIT(7)
+/** And of the execute bit of all EPT structures for user-mode addresses
+ *  (requires mode-based execute control). */
+#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE_USER                    RT_BIT(6)
+/** Set if the guest linear address field is valid. */
+#define VMX_EXIT_QUAL_EPT_GST_LINEAR_ADDR_VALID                 RT_BIT(7)
 /** If bit 7 is one: (reserved otherwise)
  *  1 - violation due to physical address access.
  *  0 - violation caused by page walk or access/dirty bit updates
  */
 #define VMX_EXIT_QUAL_EPT_TRANSLATED_ACCESS                     RT_BIT(8)
+/** If bit 7, 8 and advanced VM-exit info. for EPT is one: (reserved otherwise)
+ *  1 - linear address is user-mode address.
+ *  0 - linear address is supervisor-mode address.
+ */
+#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_USER                      RT_BIT(9)
+/** If bit 7, 8 and advanced VM-exit info. for EPT is one: (reserved otherwise)
+ *  1 - linear address translates to read-only page.
+ *  0 - linear address translates to read-write page.
+ */
+#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_RO                        RT_BIT(10)
+/** If bit 7, 8 and advanced VM-exit info. for EPT is one: (reserved otherwise)
+ *  1 - linear address translates to executable-disabled page.
+ *  0 - linear address translates to executable page.
+ */
+#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_XD                        RT_BIT(11)
 /** NMI unblocking due to IRET. */
+#define VMX_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET                      RT_BIT(12)
+/** Set if acess causing the violation was a shadow-stack access. */
+#define VMX_EXIT_QUAL_EPT_ACCESS_SUPERVISOR_SHW_STACK           RT_BIT(13)
+/** If supervisor-shadow stack is enabled: (reserved otherwise)
+ *  1 - supervisor shadow-stack access allowed.
+ *  0 - supervisor shadow-stack access disallowed.
+ */
+#define VMX_EXIT_QUAL_EPT_ENTRY_SHW_STACK_ALLOWED               RT_BIT(14)
+/** Set if access is related to trace output by Intel PT (reserved otherwise). */
+#define VMX_EXIT_QUAL_EPT_ACCESS_PT_TRACE                       RT_BIT(16)
+
+/** Checks whether NMI unblocking due to IRET. */
 #define VMX_EXIT_QUAL_EPT_IS_NMI_UNBLOCK_IRET(a)                (((a) >> 12) & 1)
 /** @} */
 
