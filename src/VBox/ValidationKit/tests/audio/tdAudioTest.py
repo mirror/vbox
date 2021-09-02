@@ -242,12 +242,11 @@ class tdAudioTest(vbox.TestDriver):
         if oProcess:
             for line in iter(oProcess.stdout.readline, b''):
                 reporter.log('[' + sWhat + '] ' + line.decode('utf-8'));
-            iExitCode = oProcess.poll();
-            if iExitCode:
-                if iExitCode == 0:
-                    fRc = True;
-                else:
-                    reporter.error('Executing \"%s\" on host returned exit code error %d' % (sWhat, iExitCode));
+            oProcess.communicate();
+            if oProcess.returncode == 0:
+                fRc = True;
+            else:
+                reporter.log2('Executing \"%s\" on host returned exit code error %d' % (sWhat, oProcess.returncode));
 
         return fRc;
 
@@ -266,9 +265,9 @@ class tdAudioTest(vbox.TestDriver):
 
         fRc = self.executeHstLoop(sWhat, asArgs, asEnv);
         if fRc:
-            reporter.error('Executing \"%s\" on host done' % (sWhat,));
+            reporter.log('Executing \"%s\" on host done' % (sWhat,));
         else:
-            reporter.error('Executing \"%s\" on host failed' % (sWhat,));
+            reporter.log('Executing \"%s\" on host failed' % (sWhat,));
 
         reporter.testDone();
 
@@ -540,16 +539,31 @@ class tdAudioTest(vbox.TestDriver):
 
         self.logVmInfo(oVM);
 
+        reporter.testStart("Audio Testing");
+
+        fSkip = False;
+
         if  oTestVm.isWindows() \
         and oTestVm.sKind in ('WindowsNT4', 'Windows2000'): # Too old for DirectSound and WASAPI backends.
             reporter.log('Audio testing skipped, not implemented/available for that OS yet.');
-            return True;
+            fSkip = True;
 
-        if self.fpApiVer < 7.0:
+        if  not fSkip \
+        and self.fpApiVer < 7.0:
             reporter.log('Audio testing for non-trunk builds skipped.');
-            return True;
+            fSkip = True;
 
-        fRc = False;
+        sVkatExe = self.getBinTool('vkat');
+        asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
+        fRc      = self.executeHst("VKAT Host Audio Probing", asArgs);
+        if  not fSkip \
+        and not fRc:
+            reporter.log('Audio not available on host, skipping audio tests.');
+            fSkip = True;
+
+        if fSkip:
+            reporter.testDone(fSkipped = True);
+            return True;
 
         # Reconfigure the VM.
         oSession = self.openSession(oVM);
@@ -587,6 +601,7 @@ class tdAudioTest(vbox.TestDriver):
             self.removeTask(oTxsSession);
             self.terminateVmBySession(oSession);
 
+        reporter.testDone();
         return fRc;
 
     def onExit(self, iRc):
