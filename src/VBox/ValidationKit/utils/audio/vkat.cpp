@@ -69,18 +69,11 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB);
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
- * Backends.
+ * Backends description table.
  *
  * @note The first backend in the array is the default one for the platform.
  */
-struct
-{
-    /** The driver registration structure. */
-    PCPDMDRVREG pDrvReg;
-    /** The backend name.
-     * Aliases are implemented by having multiple entries for the same backend.  */
-    const char *pszName;
-} const g_aBackends[] =
+AUDIOTESTBACKENDDESC const g_aBackends[] =
 {
 #ifdef VBOX_WITH_AUDIO_PULSE
     {   &g_DrvHostPulseAudio,         "pulseaudio" },
@@ -115,6 +108,8 @@ struct
     {   &g_DrvHostValidationKitAudio, "valkit" }
 };
 AssertCompile(sizeof(g_aBackends) > 0 /* port me */);
+/** Number of backends defined. */
+unsigned g_cBackends = RT_ELEMENTS(g_aBackends);
 
 /**
  * Long option values for the 'test' command.
@@ -205,7 +200,7 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
  */
 static const RTGETOPTDEF g_aCmdVerifyOptions[] =
 {
-    { "--tag",              VKAT_VERIFY_OPT_TAG,          RTGETOPT_REQ_STRING  }
+    { "--tag",              VKAT_VERIFY_OPT_TAG,                RTGETOPT_REQ_STRING  }
 };
 
 /** Terminate ASAP if set.  Set on Ctrl-C. */
@@ -925,32 +920,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Only one TCP connection mode (connect as client *or* bind as server) can be specified) at a time!\n");
 
     AUDIOTESTDRVSTACK DrvStack;
-    for (size_t i = 0; i < RT_ELEMENTS(g_aBackends); i++)
-    {
-        if (fProbeBackends)
-        {
-            pDrvReg = g_aBackends[i].pDrvReg;
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing for backend '%s' ...\n", g_aBackends[i].pszName);
-        }
+    if (fProbeBackends)
+        rc = audioTestDriverStackProbe(&DrvStack, pDrvReg,
+                                       true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio); /** @todo Make in/out configurable, too. */
+    else
         rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,
                                         true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio); /** @todo Make in/out configurable, too. */
-        if (RT_SUCCESS(rc))
-        {
-            if (fProbeBackends)
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' successful\n", g_aBackends[i].pszName);
-            break;
-        }
-        if (fProbeBackends)
-        {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Probing backend '%s' failed with %Rrc, trying next one\n",
-                         g_aBackends[i].pszName, rc);
-            continue;
-        }
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
-    }
-
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Probing all backends failed, unable to continue\n");
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
 
     PPDMAUDIOHOSTDEV pDev;
     rc = audioTestDevicesEnumerateAndCheck(&DrvStack, TstEnv.szDev, &pDev);

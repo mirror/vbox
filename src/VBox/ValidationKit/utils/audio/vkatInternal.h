@@ -291,6 +291,18 @@ typedef struct AUDIOTESTDESC
 } AUDIOTESTDESC;
 
 /**
+ * Backend description.
+ */
+typedef struct AUDIOTESTBACKENDDESC
+{
+    /** The driver registration structure. */
+    PCPDMDRVREG pDrvReg;
+    /** The backend name.
+     * Aliases are implemented by having multiple entries for the same backend.  */
+    const char *pszName;
+} AUDIOTESTBACKENDDESC;
+
+/**
  * VKAT command table entry.
  */
 typedef struct VKATCMD
@@ -347,6 +359,9 @@ extern const VKATCMD    g_CmdSelfTest;
 extern AUDIOTESTDESC    g_aTests[];
 extern unsigned         g_cTests;
 
+extern AUDIOTESTBACKENDDESC const g_aBackends[];
+extern unsigned                   g_cBackends;
+
 
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
@@ -364,6 +379,7 @@ void       audioTestShowLogo(PRTSTREAM pStream);
 void        audioTestDriverStackDelete(PAUDIOTESTDRVSTACK pDrvStack);
 int         audioTestDriverStackInitEx(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio);
 int         audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fWithDrvAudio);
+int         audioTestDriverStackProbe(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio);
 int         audioTestDriverStackSetDevice(PAUDIOTESTDRVSTACK pDrvStack, PDMAUDIODIR enmDir, const char *pszDevId);
 /** @}  */
 
