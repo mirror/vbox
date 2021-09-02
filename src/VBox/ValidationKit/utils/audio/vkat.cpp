@@ -82,13 +82,20 @@ struct
     const char *pszName;
 } const g_aBackends[] =
 {
-#if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
-    {   &g_DrvHostALSAAudio,          "alsa" },
-#endif
 #ifdef VBOX_WITH_AUDIO_PULSE
     {   &g_DrvHostPulseAudio,         "pulseaudio" },
     {   &g_DrvHostPulseAudio,         "pulse" },
     {   &g_DrvHostPulseAudio,         "pa" },
+#endif
+/*
+ * Note: ALSA has to come second so that PulseAudio above always is the default on Linux-y OSes
+ *       -- most distros are using an ALSA plugin for PulseAudio nowadays.
+ *       However, some of these configurations do not seem to work by default (can't create audio streams).
+ *
+ *       If PulseAudio is not available, the (optional) probing ("--probe") will choose the "pure" ALSA stack instead then.
+ */
+#if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
+    {   &g_DrvHostALSAAudio,          "alsa" },
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
     {   &g_DrvHostOSSAudio,           "oss" },
