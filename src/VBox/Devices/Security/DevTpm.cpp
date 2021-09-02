@@ -492,6 +492,8 @@ typedef struct DEVTPM
     bool                            fCrb;
     /** Flag whether the TPM driver below supportes other localities than 0. */
     bool                            fLocChangeSup;
+    /** Flag whether the establishment bit is set. */
+    bool                            fEstablishmentSet;
 
     /** Currently selected locality. */
     uint8_t                         bLoc;
@@ -708,7 +710,8 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
             if (   pThis->bLoc != bLoc
                 && pThis->bmLocReqAcc & RT_BIT_32(bLoc))
                 u64 |= TPM_FIFO_LOCALITY_REG_ACCESS_REQUEST_USE;
-            /** @todo Establishment bit. */
+            if (pThis->fEstablishmentSet)
+                u64 |= TPM_FIFO_LOCALITY_REG_ACCESS_ESTABLISHMENT;
             break;
         case TPM_FIFO_LOCALITY_REG_INT_ENABLE:
             u64 = pLoc->uRegIntEn;
@@ -799,7 +802,9 @@ static VBOXSTRICTRC tpmMmioFifoRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
 static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
                                      uint8_t bLoc, uint32_t uReg, uint64_t u64, size_t cb)
 {
-    RT_NOREF(pDevIns);
+#ifdef IN_RING3
+    PDEVTPMR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMR3);
+#endif
 
     /* Special path for the data buffer. */
     if (   (   (   uReg >= TPM_FIFO_LOCALITY_REG_DATA_FIFO
@@ -870,7 +875,8 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
         case TPM_FIFO_LOCALITY_REG_INT_ENABLE:
             if (bLoc != pThis->bLoc)
                 break;
-            /** @todo */
+            pLoc->uRegIntEn = u32;
+            tpmLocIrqUpdate(pDevIns, pThis, pLoc);
             break;
         case TPM_FIFO_LOCALITY_REG_INT_STS:
             if (bLoc != pThis->bLoc)
@@ -903,7 +909,46 @@ static VBOXSTRICTRC tpmMmioFifoWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPML
                 pThis->enmState = DEVTPMSTATE_CMD_EXEC;
                 rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hTpmCmdTask);
             }
-            /** @todo Cancel and reset establishment. */
+
+            if (   (u64 & TPM_FIFO_LOCALITY_REG_STS_RST_ESTABLISHMENT)
+                && pThis->bLoc >= 3
+                && (   pThis->enmState == DEVTPMSTATE_IDLE
+                    || pThis->enmState == DEVTPMSTATE_CMD_COMPLETION))
+            {
+#ifndef IN_RING3
+                rc = VINF_IOM_R3_MMIO_WRITE;
+                break;
+#else
+                if (pThisCC->pDrvTpm)
+                {
+                    int rc2 = pThisCC->pDrvTpm->pfnResetEstablishedFlag(pThisCC->pDrvTpm, pThis->bLoc);
+                    if (RT_SUCCESS(rc2))
+                        pThis->fEstablishmentSet = false;
+                    else
+                        pThis->enmState == DEVTPMSTATE_FATAL_ERROR;
+                }
+                else
+                    pThis->fEstablishmentSet = false;
+#endif
+            }
+
+            if (   (u64 & TPM_FIFO_LOCALITY_REG_STS_CMD_CANCEL)
+                && pThis->enmState == DEVTPMSTATE_CMD_EXEC)
+            {
+#ifndef IN_RING3
+                rc = VINF_IOM_R3_MMIO_WRITE;
+                break;
+#else
+                if (pThisCC->pDrvTpm)
+                {
+                    pThis->enmState = DEVTPMSTATE_CMD_CANCEL;
+                    int rc2 = pThisCC->pDrvTpm->pfnCmdCancel(pThisCC->pDrvTpm);
+                    if (RT_FAILURE(rc2))
+                        pThis->enmState == DEVTPMSTATE_FATAL_ERROR;
+                }
+#endif
+            }
+
             break;
         case TPM_FIFO_LOCALITY_REG_INT_VEC:
         case TPM_FIFO_LOCALITY_REG_IF_CAP:
@@ -953,6 +998,8 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
                   | (  pThis->bLoc != TPM_NO_LOCALITY_SELECTED
                      ? TPM_CRB_LOCALITY_REG_STATE_ACTIVE_LOC_SET(pThis->bLoc) | TPM_CRB_LOCALITY_REG_STATE_LOC_ASSIGNED
                      : TPM_CRB_LOCALITY_REG_STATE_ACTIVE_LOC_SET(0));
+            if (pThis->fEstablishmentSet)
+                u64 |= TPM_CRB_LOCALITY_REG_ESTABLISHMENT;
             break;
         case TPM_CRB_LOCALITY_REG_STS:
             u64 =   pThis->bLoc == bLoc
@@ -1060,6 +1107,10 @@ static VBOXSTRICTRC tpmMmioCrbRead(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOC
 static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLOCALITY pLoc,
                                     uint8_t bLoc, uint32_t uReg, uint64_t u64, size_t cb)
 {
+#ifdef IN_RING3
+    PDEVTPMR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMR3);
+#endif
+
     VBOXSTRICTRC rc = VINF_SUCCESS;
     uint32_t u32 = (uint32_t)u64;
 
@@ -1080,10 +1131,27 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
         case TPM_CRB_LOCALITY_REG_CTRL:
         {
             /* See chapter 6.5.3.2.2.1. */
-#if 0
-            if (u64 & TPM_CRB_LOCALITY_REG_CTRL_RST_ESTABLISHMENT)
-                /** @todo */;
+            if (   (u64 & TPM_CRB_LOCALITY_REG_CTRL_RST_ESTABLISHMENT)
+                && pThis->bLoc >= 3
+                && (   pThis->enmState == DEVTPMSTATE_IDLE
+                    || pThis->enmState == DEVTPMSTATE_CMD_COMPLETION))
+            {
+#ifndef IN_RING3
+                rc = VINF_IOM_R3_MMIO_WRITE;
+                break;
+#else
+                if (pThisCC->pDrvTpm)
+                {
+                    int rc2 = pThisCC->pDrvTpm->pfnResetEstablishedFlag(pThisCC->pDrvTpm, pThis->bLoc);
+                    if (RT_SUCCESS(rc2))
+                        pThis->fEstablishmentSet = false;
+                    else
+                        pThis->enmState == DEVTPMSTATE_FATAL_ERROR;
+                }
+                else
+                    pThis->fEstablishmentSet = false;
 #endif
+            }
 
             /*
              * The following three checks should be mutually exclusive as the writer shouldn't
@@ -1094,8 +1162,28 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
                 && pThis->bLoc != TPM_NO_LOCALITY_SELECTED
                 && bLoc > pThis->bLoc)
             {
+                if (pThis->enmState == DEVTPMSTATE_CMD_EXEC)
+                {
+#ifndef IN_RING3
+                    rc = VINF_IOM_R3_MMIO_WRITE;
+                    break;
+#else
+                    pThis->enmState = DEVTPMSTATE_CMD_CANCEL;
+                    if (pThisCC->pDrvTpm)
+                    {
+                        int rc2 = pThisCC->pDrvTpm->pfnCmdCancel(pThisCC->pDrvTpm);
+                        if (RT_FAILURE(rc2))
+                            pThis->enmState == DEVTPMSTATE_FATAL_ERROR;
+                        else
+                        {
+                            pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
+                            tpmLocSetIntSts(pDevIns, pThis, pLoc, TPM_CRB_LOCALITY_REG_INT_STS_START);
+                        }
+                    }
+#endif
+                }
+
                 pThis->bmLocSeizedAcc |= RT_BIT_32(pThis->bLoc);
-                /** @todo Abort command. */
                 pThis->bLoc = bLoc;
             }
 
@@ -1149,10 +1237,23 @@ static VBOXSTRICTRC tpmMmioCrbWrite(PPDMDEVINS pDevIns, PDEVTPM pThis, PDEVTPMLO
             if (   pThis->enmState == DEVTPMSTATE_CMD_EXEC
                 && u32 == 0x1)
             {
+#ifndef IN_RING3
+                rc = VINF_IOM_R3_MMIO_WRITE;
+                break;
+#else
                 pThis->enmState = DEVTPMSTATE_CMD_CANCEL;
-                /** @todo Cancel. */
-                pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
-                tpmLocSetIntSts(pDevIns, pThis, pLoc, TPM_CRB_LOCALITY_REG_INT_STS_START);
+                if (pThisCC->pDrvTpm)
+                {
+                    int rc2 = pThisCC->pDrvTpm->pfnCmdCancel(pThisCC->pDrvTpm);
+                    if (RT_FAILURE(rc2))
+                        pThis->enmState == DEVTPMSTATE_FATAL_ERROR;
+                    else
+                    {
+                        pThis->enmState = DEVTPMSTATE_CMD_COMPLETION;
+                        tpmLocSetIntSts(pDevIns, pThis, pLoc, TPM_CRB_LOCALITY_REG_INT_STS_START);
+                    }
+                }
+#endif
             }
             break;
         case TPM_CRB_LOCALITY_REG_CTRL_START:
@@ -1520,8 +1621,9 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThisCC->pDrvTpm = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMITPMCONNECTOR);
         AssertLogRelMsgReturn(pThisCC->pDrvTpm, ("TPM#%d: Driver is missing the TPM interface.\n", iInstance), VERR_PDM_MISSING_INTERFACE);
 
-        pThis->fLocChangeSup = pThisCC->pDrvTpm->pfnGetLocalityMax(pThisCC->pDrvTpm) > 0;
-        pThis->cbCmdResp     = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
+        pThis->fLocChangeSup     = pThisCC->pDrvTpm->pfnGetLocalityMax(pThisCC->pDrvTpm) > 0;
+        pThis->fEstablishmentSet = pThisCC->pDrvTpm->pfnGetEstablishedFlag(pThisCC->pDrvTpm);
+        pThis->cbCmdResp         = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
 
         /* Startup the TPM here instead of in the power on callback as we can convey errors here to the upper layer. */
         rc = pThisCC->pDrvTpm->pfnStartup(pThisCC->pDrvTpm);
@@ -1534,7 +1636,8 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        pThis->fLocChangeSup = false;
+        pThis->fLocChangeSup     = false;
+        pThis->fEstablishmentSet = false;
 
         pThisCC->pDrvBase = NULL;
         pThisCC->pDrvTpm  = NULL;
