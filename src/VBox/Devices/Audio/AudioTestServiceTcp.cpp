@@ -465,7 +465,7 @@ static DECLCALLBACK(void) atsTcpNotifyReboot(PATSTRANSPORTINST pThis)
  */
 static DECLCALLBACK(void) atsTcpNotifyBye(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
-    LogRelFunc(("%RTsock\n", pClient->hTcpClient));
+    LogRelFlowFunc(("pClient=%RTsock\n", pClient->hTcpClient));
     atsTcpDisconnectClient(pThis, pClient);
 }
 
@@ -474,7 +474,7 @@ static DECLCALLBACK(void) atsTcpNotifyBye(PATSTRANSPORTINST pThis, PATSTRANSPORT
  */
 static DECLCALLBACK(void) atsTcpNotifyHowdy(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
-    LogRelFunc(("%RTsock\n", pClient->hTcpClient));
+    LogRelFlowFunc(("pClient=%RTsock\n", pClient->hTcpClient));
 
     /* nothing to do here */
     RT_NOREF(pThis);
