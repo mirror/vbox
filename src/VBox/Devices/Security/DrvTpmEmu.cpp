@@ -959,7 +959,7 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
 
 
 /**
- * TCP stream driver registration record.
+ * TPM libtpms emulator driver registration record.
  */
 const PDMDRVREG g_DrvTpmEmu =
 {
