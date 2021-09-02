@@ -337,7 +337,10 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
         }
 
         if (RT_FAILURE(rc))
+        {
             RTTestFailed(g_hTest, "Test #%RU32/%RU16: Playing test tone failed with %Rrc\n", pTstParms->idxCurrent, i, rc);
+            break; /* Not worth retrying, bail out. */
+        }
     }
 
     return rc;
@@ -440,7 +443,10 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
         }
 
         if (RT_FAILURE(rc))
+        {
             RTTestFailed(g_hTest, "Test #%RU32/%RU16: Recording test tone failed with %Rrc\n", pTstParms->idxCurrent, i, rc);
+            break; /* Not worth retrying, bail out. */
+        }
     }
 
     return rc;
