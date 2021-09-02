@@ -210,7 +210,7 @@ class tdAudioTest(vbox.TestDriver):
         """
         for sVkatPath in self.asGstVkatPaths:
             reporter.log2('Checking for VKAT at: %s ...' % (sVkatPath));
-            if self.txsIsFile(oSession, oTxsSession, sVkatPath):
+            if self.txsIsFile(oSession, oTxsSession, sVkatPath, fIgnoreErrors = True):
                 return (True, sVkatPath);
         reporter.error('Unable to find guest VKAT in any of these places:\n%s' % ('\n'.join(self.asGstVkatPaths),));
         return (False, "");
