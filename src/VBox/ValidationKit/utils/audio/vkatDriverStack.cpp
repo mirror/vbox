@@ -600,7 +600,7 @@ int audioTestDriverStackInit(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, 
  */
 int audioTestDriverStackProbe(PAUDIOTESTDRVSTACK pDrvStack, PCPDMDRVREG pDrvReg, bool fEnabledIn, bool fEnabledOut, bool fWithDrvAudio)
 {
-    int rc;
+    int rc = VERR_IPE_UNINITIALIZED_STATUS; /* Shut up MSVC. */
 
     for (size_t i = 0; i < g_cBackends; i++)
     {
