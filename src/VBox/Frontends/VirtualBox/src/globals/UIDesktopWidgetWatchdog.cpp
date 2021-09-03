@@ -24,6 +24,7 @@
 #endif
 #ifdef VBOX_WS_X11
 # include <QTimer>
+# include <QX11Info>
 #endif
 
 /* GUI includes: */
@@ -47,6 +48,7 @@
 
 /* External includes: */
 #ifdef VBOX_WS_X11
+# include <math.h>
 # include <xcb/xcb.h>
 #endif
 

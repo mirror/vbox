@@ -40,9 +40,6 @@
 #ifdef VBOX_WS_WIN
 # include <QStyleFactory>
 #endif
-#ifdef VBOX_WS_X11
-# include <QX11Info>
-#endif
 #ifdef VBOX_GUI_WITH_PIDFILE
 # include <QTextStream>
 #endif
@@ -134,7 +131,6 @@
 #include <VBox/com/VirtualBox.h>
 
 /* External includes: */
-#include <math.h>
 #ifdef VBOX_WS_MAC
 # include <sys/utsname.h>
 #endif
