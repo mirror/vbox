@@ -84,7 +84,7 @@
  *          acMaxClients and acMaxCallsPerClient added (VBox 6.1.26).
  * 9.1->10.1 Because pfnDisconnectClient was added back (VBox 6.1.28).
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0009)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x000a)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
