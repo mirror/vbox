@@ -3158,56 +3158,99 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
  * @{
  */
 /** Set if acess causing the violation was a data read. */
-#define VMX_EXIT_QUAL_EPT_ACCESS_READ                           RT_BIT(0)
+#define VMX_EXIT_QUAL_EPT_ACCESS_READ                           RT_BIT_64(0)
 /** Set if acess causing the violation was a data write. */
-#define VMX_EXIT_QUAL_EPT_ACCESS_WRITE                          RT_BIT(1)
+#define VMX_EXIT_QUAL_EPT_ACCESS_WRITE                          RT_BIT_64(1)
 /** Set if the violation was caused by an instruction fetch. */
-#define VMX_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH                    RT_BIT(2)
+#define VMX_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH                    RT_BIT_64(2)
 /** AND of the present bit of all EPT structures. */
-#define VMX_EXIT_QUAL_EPT_ENTRY_READ                            RT_BIT(3)
+#define VMX_EXIT_QUAL_EPT_ENTRY_READ                            RT_BIT_64(3)
 /** AND of the write bit of all EPT structures. */
-#define VMX_EXIT_QUAL_EPT_ENTRY_WRITE                           RT_BIT(4)
+#define VMX_EXIT_QUAL_EPT_ENTRY_WRITE                           RT_BIT_64(4)
 /** AND of the execute bit of all EPT structures. */
-#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE                         RT_BIT(5)
+#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE                         RT_BIT_64(5)
 /** And of the execute bit of all EPT structures for user-mode addresses
  *  (requires mode-based execute control). */
-#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE_USER                    RT_BIT(6)
+#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE_USER                    RT_BIT_64(6)
 /** Set if the guest linear address field is valid. */
-#define VMX_EXIT_QUAL_EPT_GST_LINEAR_ADDR_VALID                 RT_BIT(7)
+#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_VALID                     RT_BIT_64(7)
 /** If bit 7 is one: (reserved otherwise)
  *  1 - violation due to physical address access.
  *  0 - violation caused by page walk or access/dirty bit updates
  */
-#define VMX_EXIT_QUAL_EPT_TRANSLATED_ACCESS                     RT_BIT(8)
+#define VMX_EXIT_QUAL_EPT_ACCESS_TRANSLATE                      RT_BIT_64(8)
 /** If bit 7, 8 and advanced VM-exit info. for EPT is one: (reserved otherwise)
  *  1 - linear address is user-mode address.
  *  0 - linear address is supervisor-mode address.
  */
-#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_USER                      RT_BIT(9)
+#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_USER                      RT_BIT_64(9)
 /** If bit 7, 8 and advanced VM-exit info. for EPT is one: (reserved otherwise)
  *  1 - linear address translates to read-only page.
  *  0 - linear address translates to read-write page.
  */
-#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_RO                        RT_BIT(10)
+#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_RO                        RT_BIT_64(10)
 /** If bit 7, 8 and advanced VM-exit info. for EPT is one: (reserved otherwise)
  *  1 - linear address translates to executable-disabled page.
  *  0 - linear address translates to executable page.
  */
-#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_XD                        RT_BIT(11)
+#define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_XD                        RT_BIT_64(11)
 /** NMI unblocking due to IRET. */
-#define VMX_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET                      RT_BIT(12)
+#define VMX_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET                      RT_BIT_64(12)
 /** Set if acess causing the violation was a shadow-stack access. */
-#define VMX_EXIT_QUAL_EPT_ACCESS_SUPERVISOR_SHW_STACK           RT_BIT(13)
+#define VMX_EXIT_QUAL_EPT_ACCESS_SHW_STACK                      RT_BIT_64(13)
 /** If supervisor-shadow stack is enabled: (reserved otherwise)
  *  1 - supervisor shadow-stack access allowed.
  *  0 - supervisor shadow-stack access disallowed.
  */
-#define VMX_EXIT_QUAL_EPT_ENTRY_SHW_STACK_ALLOWED               RT_BIT(14)
+#define VMX_EXIT_QUAL_EPT_ENTRY_SHW_STACK_SUPER                 RT_BIT_64(14)
 /** Set if access is related to trace output by Intel PT (reserved otherwise). */
-#define VMX_EXIT_QUAL_EPT_ACCESS_PT_TRACE                       RT_BIT(16)
+#define VMX_EXIT_QUAL_EPT_ACCESS_PT_TRACE                       RT_BIT_64(16)
 
 /** Checks whether NMI unblocking due to IRET. */
 #define VMX_EXIT_QUAL_EPT_IS_NMI_UNBLOCK_IRET(a)                (((a) >> 12) & 1)
+
+/** Bit fields for Exit qualification for EPT violations. */
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_READ_SHIFT                  0
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_READ_MASK                   UINT64_C(0x0000000000000001)
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_WRITE_SHIFT                 1
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_WRITE_MASK                  UINT64_C(0x0000000000000002)
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH_SHIFT           2
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH_MASK            UINT64_C(0x0000000000000004)
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_READ_SHIFT                   3
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_READ_MASK                    UINT64_C(0x0000000000000008)
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_WRITE_SHIFT                  4
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_WRITE_MASK                   UINT64_C(0x0000000000000010)
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE_SHIFT                5
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE_MASK                 UINT64_C(0x0000000000000020)
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE_USER_SHIFT           6
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE_USER_MASK            UINT64_C(0x0000000000000040)
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID_SHIFT            7
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID_MASK             UINT64_C(0x0000000000000080)
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_TRANSLATE_SHIFT             8
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_TRANSLATE_MASK              UINT64_C(0x0000000000000100)
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_USER_SHIFT             9
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_USER_MASK              UINT64_C(0x0000000000000200)
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_RO_SHIFT               10
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_RO_MASK                UINT64_C(0x0000000000000400)
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_XD_SHIFT               11
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_XD_MASK                UINT64_C(0x0000000000000800)
+#define VMX_BF_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET_SHIFT             12
+#define VMX_BF_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET_MASK              UINT64_C(0x0000000000001000)
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_SHW_STACK_SHIFT             13
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_SHW_STACK_MASK              UINT64_C(0x0000000000002000)
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_SHW_STACK_SUPER_SHIFT         14
+#define VMX_BF_EXIT_QUAL_EPT_ENTRY_SHW_STACK_SUPER_MASK          UINT64_C(0x0000000000004000)
+#define VMX_BF_EXIT_QUAL_EPT_RSVD_15_SHIFT                      15
+#define VMX_BF_EXIT_QUAL_EPT_RSVD_15_MASK                       UINT64_C(0x0000000000008000)
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_PT_TRACE_SHIFT              16
+#define VMX_BF_EXIT_QUAL_EPT_ACCESS_PT_TRACE_MASK               UINT64_C(0x0000000000010000)
+#define VMX_BF_EXIT_QUAL_EPT_RSVD_17_63_SHIFT                   17
+#define VMX_BF_EXIT_QUAL_EPT_RSVD_17_63_MASK                    UINT64_C(0xfffffffffffe0000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_EPT_, UINT64_C(0), UINT64_MAX,
+                            (ACCESS_READ, ACCESS_WRITE, ACCESS_INSTR_FETCH, ENTRY_READ, ENTRY_WRITE, ENTRY_EXECUTE,
+                             ENTRY_EXECUTE_USER, LINEAR_ADDR_VALID, ACCESS_TRANSLATE, LINEAR_ADDR_USER, LINEAR_ADDR_RO,
+                             LINEAR_ADDR_XD, NMI_UNBLOCK_IRET, ACCESS_SHW_STACK, ENTRY_SHW_STACK_SUPER, RSVD_15,
+                             ACCESS_PT_TRACE, RSVD_17_63));
 /** @} */
 
 
