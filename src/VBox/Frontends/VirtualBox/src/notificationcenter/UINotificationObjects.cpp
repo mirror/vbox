@@ -60,7 +60,7 @@ QMap<QString, QUuid> UINotificationMessage::m_messages = QMap<QString, QUuid>();
 void UINotificationMessage::cannotFindHelpFile(const QString &strLocation)
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Can't fina help file ..."),
+        QApplication::translate("UIMessageCenter", "Can't find help file ..."),
         QApplication::translate("UIMessageCenter", "Failed to find the following help file:")
                                                    .arg(strLocation));
 }
@@ -73,6 +73,33 @@ void UINotificationMessage::cannotOpenURL(const QString &strUrl)
         QApplication::translate("UIMessageCenter", "Failed to open <tt>%1</tt>. "
                                                    "Make sure your desktop environment can properly handle URLs of this type.")
                                                    .arg(strUrl));
+}
+
+/* static */
+void UINotificationMessage::remindAboutBetaBuild()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "BETA build warning!"),
+        QApplication::translate("UIMessageCenter", "You are running a prerelease version of VirtualBox. "
+                                                   "This version is not suitable for production use."));
+}
+
+/* static */
+void UINotificationMessage::remindAboutExperimentalBuild()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Experimental build warning!"),
+        QApplication::translate("UIMessageCenter", "You are running an EXPERIMENTAL build of VirtualBox. "
+                                                   "This version is not suitable for production use."));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidEncryptionPassword(const QString &strPasswordId)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid Password ..."),
+        QApplication::translate("UIMessageCenter", "Encryption password for <nobr>ID = '%1'</nobr> is invalid.")
+                                                   .arg(strPasswordId));
 }
 
 /* static */
@@ -90,19 +117,10 @@ void UINotificationMessage::cannotMountImage(const QString &strMachineName, cons
 void UINotificationMessage::cannotSendACPIToMachine()
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "Can't send ACPI ..."),
+        QApplication::translate("UIMessageCenter", "Can't send ACPI shutdown ..."),
         QApplication::translate("UIMessageCenter", "You are trying to shut down the guest with the ACPI power button. "
                                                    "This is currently not possible because the guest does not support "
                                                    "software shutdown."));
-}
-
-/* static */
-void UINotificationMessage::warnAboutInvalidEncryptionPassword(const QString &strPasswordId)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Invalid Password ..."),
-        QApplication::translate("UIMessageCenter", "Encryption password for <nobr>ID = '%1'</nobr> is invalid.")
-                                                   .arg(strPasswordId));
 }
 
 /* static */
@@ -129,21 +147,18 @@ void UINotificationMessage::remindAboutAutoCapture()
 }
 
 /* static */
-void UINotificationMessage::remindAboutBetaBuild()
+void UINotificationMessage::remindAboutGuestAdditionsAreNotActive()
 {
     createMessage(
-        QApplication::translate("UIMessageCenter", "BETA build warning!"),
-        QApplication::translate("UIMessageCenter", "You are running a prerelease version of VirtualBox. "
-                                                   "This version is not suitable for production use."));
-}
-
-/* static */
-void UINotificationMessage::remindAboutExperimentalBuild()
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Experimental build warning!"),
-        QApplication::translate("UIMessageCenter", "You are running an EXPERIMENTAL build of VirtualBox. "
-                                                   "This version is not suitable for production use."));
+        QApplication::translate("UIMessageCenter", "GA not active ..."),
+        QApplication::translate("UIMessageCenter", "<p>The VirtualBox Guest Additions do not appear to be available on this "
+                                                   "virtual machine, and shared folders cannot be used without them. To use "
+                                                   "shared folders inside the virtual machine, please install the Guest "
+                                                   "Additions if they are not installed, or re-install them if they are not "
+                                                   "working correctly, by selecting <b>Insert Guest Additions CD image</b> from "
+                                                   "the <b>Devices</b> menu. If they are installed but the machine is not yet "
+                                                   "fully started then shared folders will be available once it is.</p>"),
+        "remindAboutGuestAdditionsAreNotActive");
 }
 
 /* static */
@@ -218,21 +233,6 @@ void UINotificationMessage::forgetAboutWrongColorDepth()
 }
 
 /* static */
-void UINotificationMessage::remindAboutGuestAdditionsAreNotActive()
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "GA not active ..."),
-        QApplication::translate("UIMessageCenter", "<p>The VirtualBox Guest Additions do not appear to be available on this "
-                                                   "virtual machine, and shared folders cannot be used without them. To use "
-                                                   "shared folders inside the virtual machine, please install the Guest "
-                                                   "Additions if they are not installed, or re-install them if they are not "
-                                                   "working correctly, by selecting <b>Insert Guest Additions CD image</b> from "
-                                                   "the <b>Devices</b> menu. If they are installed but the machine is not yet "
-                                                   "fully started then shared folders will be available once it is.</p>"),
-        "remindAboutGuestAdditionsAreNotActive");
-}
-
-/* static */
 void UINotificationMessage::cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox)
 {
     createMessage(
@@ -266,6 +266,48 @@ void UINotificationMessage::cannotAcquireSnapshotParameter(const CSnapshot &comS
         QApplication::translate("UIMessageCenter", "Snapshot failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire snapshot parameter.") +
         UIErrorString::formatErrorInfo(comSnapshot));
+}
+
+/* static */
+void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
+{
+    /* Refer users to manual's trouble shooting section depending on the host platform: */
+    QString strHelpKeyword;
+#if defined(RT_OS_LINUX)
+    strHelpKeyword = "ts_usb-linux";
+#elif defined(RT_OS_WINDOWS)
+    strHelpKeyword = "ts_win-guests";
+#elif defined(RT_OS_SOLARIS)
+    strHelpKeyword = "ts_sol-guests";
+#elif defined(RT_OS_DARWIN)
+#endif
+
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't enumerate USB devices ..."),
+        QApplication::translate("UIMessageCenter", "Failed to enumerate host USB devices.") +
+        UIErrorString::formatErrorInfo(comHost),
+        "cannotEnumerateHostUSBDevices",
+        strHelpKeyword);
+}
+
+/* static */
+void UINotificationMessage::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open medium ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the disk image file <nobr><b>%1</b></nobr>.")
+                                                   .arg(strLocation) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open virtual machine located in %1.")
+                                                   .arg(strLocation) +
+        UIErrorString::formatErrorInfo(comVBox));
 }
 
 /* static */
@@ -330,48 +372,6 @@ void UINotificationMessage::cannotDetachWebCam(const CEmulatedUSB &comDispatcher
         QApplication::translate("UIMessageCenter", "Failed to detach the webcam <b>%1</b> from the virtual machine <b>%2</b>.")
                                 .arg(strWebCamName, strMachineName) +
         UIErrorString::formatErrorInfo(comDispatcher));
-}
-
-/* static */
-void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
-{
-    /* Refer users to manual's trouble shooting section depending on the host platform: */
-    QString strHelpKeyword;
-#if defined(RT_OS_LINUX)
-    strHelpKeyword = "ts_usb-linux";
-#elif defined(RT_OS_WINDOWS)
-    strHelpKeyword = "ts_win-guests";
-#elif defined(RT_OS_SOLARIS)
-    strHelpKeyword = "ts_sol-guests";
-#elif defined(RT_OS_DARWIN)
-#endif
-
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Can't enumerate USB devices ..."),
-        QApplication::translate("UIMessageCenter", "Failed to enumerate host USB devices.") +
-        UIErrorString::formatErrorInfo(comHost),
-        "cannotEnumerateHostUSBDevices",
-        strHelpKeyword);
-}
-
-/* static */
-void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Can't open machine ..."),
-        QApplication::translate("UIMessageCenter", "Failed to open virtual machine located in %1.")
-                                                   .arg(strLocation) +
-        UIErrorString::formatErrorInfo(comVBox));
-}
-
-/* static */
-void UINotificationMessage::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Can't open medium ..."),
-        QApplication::translate("UIMessageCenter", "Failed to open the disk image file <nobr><b>%1</b></nobr>.")
-                                                   .arg(strLocation) +
-        UIErrorString::formatErrorInfo(comVBox));
 }
 
 /* static */

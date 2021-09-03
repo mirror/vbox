@@ -60,129 +60,161 @@ class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
 
 public:
 
-    /** Notifies about inability to find help file at certain @a strLocation. */
-    static void cannotFindHelpFile(const QString &strLocation);
-    /** Notifies about inability to open @a strUrl. */
-    static void cannotOpenURL(const QString &strUrl);
-    /** Notifies about inability to mount image.
-      * @param  strMachineName  Brings the machine name.
-      * @param  strMediumName   Brings the medium name. */
-    static void cannotMountImage(const QString &strMachineName, const QString &strMediumName);
-    /** Notifies about inability to send ACPI shutdown. */
-    static void cannotSendACPIToMachine();
-    /** Notifies about invalid encryption password.
-      * @param  strPasswordId  Brings password ID. */
-    static void warnAboutInvalidEncryptionPassword(const QString &strPasswordId);
+    /** @name Simple general warnings.
+      * @{ */
+        /** Notifies about inability to find help file at certain @a strLocation. */
+        static void cannotFindHelpFile(const QString &strLocation);
 
-    /** Reminds about keyboard auto capturing. */
-    static void remindAboutAutoCapture();
-    /** Reminds about BETA build. */
-    static void remindAboutBetaBuild();
-    /** Reminds about BETA build. */
-    static void remindAboutExperimentalBuild();
-    /** Reminds about mouse integration.
-      * @param  fSupportsAbsolute  Brings whether mouse supports absolute pointing. */
-    static void remindAboutMouseIntegration(bool fSupportsAbsolute);
-    /** Reminds about paused VM input. */
-    static void remindAboutPausedVMInput();
-    /** Revokes message about paused VM input. */
-    static void forgetAboutPausedVMInput();
-    /** Reminds about wrong color depth.
-      * @param  uRealBPP    Brings real bit per pixel value.
-      * @param  uWantedBPP  Brings wanted bit per pixel value. */
-    static void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
-    /** Revokes message about wrong color depth. */
-    static void forgetAboutWrongColorDepth();
-    /** Reminds about GA not affected. */
-    static void remindAboutGuestAdditionsAreNotActive();
+        /** Notifies about inability to open @a strUrl. */
+        static void cannotOpenURL(const QString &strUrl);
 
-    /** Notifies about inability to acquire IVirtualBox parameter.
-      * @param  comVBox  Brings the object paramter get acquired from. */
-    static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox);
-    /** Notifies about inability to acquire ISession parameter.
-      * @param  comSession  Brings the object paramter get acquired from. */
-    static void cannotAcquireSessionParameter(const CSession &comSession);
-    /** Notifies about inability to acquire IMachine parameter.
-      * @param  comSession  Brings the object paramter get acquired from. */
-    static void cannotAcquireMachineParameter(const CMachine &comMachine);
-    /** Notifies about inability to acquire ISnapshot parameter.
-      * @param  comSnapshot  Brings the object paramter get acquired from. */
-    static void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot);
+        /** Reminds about BETA build. */
+        static void remindAboutBetaBuild();
+        /** Reminds about BETA build. */
+        static void remindAboutExperimentalBuild();
+        /** Notifies about invalid encryption password.
+          * @param  strPasswordId  Brings password ID. */
+        static void warnAboutInvalidEncryptionPassword(const QString &strPasswordId);
+    /** @} */
 
-    /** Notifies about inability to attach USB device.
-      * @param  comConsole  Brings console USB device belongs to.
-      * @param  strDevice   Brings the device name. */
-    static void cannotAttachUSBDevice(const CConsole &comConsole, const QString &strDevice);
-    /** Notifies about inability to attach USB device.
-      * @param  comErrorInfo    Brings info about error happened.
-      * @param  strDevice       Brings the device name.
-      * @param  strMachineName  Brings the machine name. */
-    static void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &comErrorInfo,
-                                      const QString &strDevice, const QString &strMachineName);
-    /** Notifies about inability to detach USB device.
-      * @param  comConsole  Brings console USB device belongs to.
-      * @param  strDevice   Brings the device name. */
-    static void cannotDetachUSBDevice(const CConsole &comConsole, const QString &strDevice);
-    /** Notifies about inability to detach USB device.
-      * @param  comErrorInfo    Brings info about error happened.
-      * @param  strDevice       Brings the device name.
-      * @param  strMachineName  Brings the machine name. */
-    static void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &comErrorInfo,
-                                      const QString &strDevice, const QString &strMachineName);
-    /** Notifies about inability to attach webcam.
-      * @param  comDispatcher   Brings emulated USB dispatcher webcam being attached to.
-      * @param  strWebCamName   Brings the webcam name.
-      * @param  strMachineName  Brings the machine name. */
-    static void cannotAttachWebCam(const CEmulatedUSB &comDispatcher,
-                                   const QString &strWebCamName, const QString &strMachineName);
-    /** Notifies about inability to detach webcam.
-      * @param  comDispatcher   Brings emulated USB dispatcher webcam being detached from.
-      * @param  strWebCamName   Brings the webcam name.
-      * @param  strMachineName  Brings the machine name. */
-    static void cannotDetachWebCam(const CEmulatedUSB &comDispatcher,
-                                   const QString &strWebCamName, const QString &strMachineName);
-    /** Notifies about inability to enumerate host USB devices.
-      * @param  comHost  Brings the host devices enumerated for. */
-    static void cannotEnumerateHostUSBDevices(const CHost &comHost);
-    /** Notifies about inability to open machine.
-      * @param  comVBox      Brings common VBox object trying to open machine.
-      * @param  strLocation  Brings the machine location. */
-    static void cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation);
-    /** Notifies about inability to open medium.
-      * @param  comVBox      Brings common VBox object trying to open medium.
-      * @param  strLocation  Brings the medium location. */
-    static void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation);
-    /** Notifies about inability to save machine settings.
-      * @param  comMachine  Brings the machine trying to save settings. */
-    static void cannotSaveMachineSettings(const CMachine &comMachine);
-    /** Notifies about inability to toggle audio input.
-      * @param  comAdapter      Brings the adapter input being toggled for.
-      * @param  strMachineName  Brings the machine name.
-      * @param  fEnable         Brings whether adapter input is enabled or not. */
-    static void cannotToggleAudioInput(const CAudioAdapter &comAdapter,
-                                       const QString &strMachineName, bool fEnable);
-    /** Notifies about inability to toggle audio output.
-      * @param  comAdapter      Brings the adapter output being toggled for.
-      * @param  strMachineName  Brings the machine name.
-      * @param  fEnable         Brings whether adapter output is enabled or not. */
-    static void cannotToggleAudioOutput(const CAudioAdapter &comAdapter,
-                                        const QString &strMachineName, bool fEnable);
-    /** Notifies about inability to toggle network cable.
-      * @param  comAdapter      Brings the adapter network cable being toggled for.
-      * @param  strMachineName  Brings the machine name.
-      * @param  fConnect        Brings whether network cable is connected or not. */
-    static void cannotToggleNetworkCable(const CNetworkAdapter &comAdapter,
-                                         const QString &strMachineName, bool fConnect);
-    /** Notifies about inability to toggle recording.
-      * @param  comMachine  Brings the machine recording being toggled for.
-      * @param  fEnable     Brings whether recording is enabled or not. */
-    static void cannotToggleRecording(const CMachine &comMachine, bool fEnable);
-    /** Notifies about inability to toggle VRDE server.
-      * @param  comServer       Brings the server being toggled.
-      * @param  strMachineName  Brings the machine name.
-      * @param  fEnable         Brings whether server is enabled or not. */
-    static void cannotToggleVRDEServer(const CVRDEServer &comServer,
-                                       const QString &strMachineName, bool fEnable);
+
+    /** @name Simple Runtime UI warnings.
+      * @{ */
+        /** Notifies about inability to mount image.
+          * @param  strMachineName  Brings the machine name.
+          * @param  strMediumName   Brings the medium name. */
+        static void cannotMountImage(const QString &strMachineName, const QString &strMediumName);
+
+        /** Notifies about inability to send ACPI shutdown. */
+        static void cannotSendACPIToMachine();
+
+        /** Reminds about keyboard auto capturing. */
+        static void remindAboutAutoCapture();
+
+        /** Reminds about GA not affected. */
+        static void remindAboutGuestAdditionsAreNotActive();
+
+        /** Reminds about mouse integration.
+          * @param  fSupportsAbsolute  Brings whether mouse supports absolute pointing. */
+        static void remindAboutMouseIntegration(bool fSupportsAbsolute);
+
+        /** Reminds about paused VM input. */
+        static void remindAboutPausedVMInput();
+        /** Revokes message about paused VM input. */
+        static void forgetAboutPausedVMInput();
+
+        /** Reminds about wrong color depth.
+          * @param  uRealBPP    Brings real bit per pixel value.
+          * @param  uWantedBPP  Brings wanted bit per pixel value. */
+        static void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
+        /** Revokes message about wrong color depth. */
+        static void forgetAboutWrongColorDepth();
+    /** @} */
+
+    /** @name COM general warnings.
+      * @{ */
+        /** Notifies about inability to acquire IVirtualBox parameter.
+          * @param  comVBox  Brings the object paramter get acquired from. */
+        static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox);
+        /** Notifies about inability to acquire ISession parameter.
+          * @param  comSession  Brings the object paramter get acquired from. */
+        static void cannotAcquireSessionParameter(const CSession &comSession);
+        /** Notifies about inability to acquire IMachine parameter.
+          * @param  comSession  Brings the object paramter get acquired from. */
+        static void cannotAcquireMachineParameter(const CMachine &comMachine);
+        /** Notifies about inability to acquire ISnapshot parameter.
+          * @param  comSnapshot  Brings the object paramter get acquired from. */
+        static void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot);
+
+        /** Notifies about inability to enumerate host USB devices.
+          * @param  comHost  Brings the host devices enumerated for. */
+        static void cannotEnumerateHostUSBDevices(const CHost &comHost);
+        /** Notifies about inability to open medium.
+          * @param  comVBox      Brings common VBox object trying to open medium.
+          * @param  strLocation  Brings the medium location. */
+        static void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation);
+    /** @} */
+
+    /** @name COM VirtualBox Manager warnings.
+      * @{ */
+        /** Notifies about inability to open machine.
+          * @param  comVBox      Brings common VBox object trying to open machine.
+          * @param  strLocation  Brings the machine location. */
+        static void cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation);
+    /** @} */
+
+    /** @name COM Runtime UI warnings.
+      * @{ */
+        /** Notifies about inability to attach USB device.
+          * @param  comConsole  Brings console USB device belongs to.
+          * @param  strDevice   Brings the device name. */
+        static void cannotAttachUSBDevice(const CConsole &comConsole, const QString &strDevice);
+        /** Notifies about inability to attach USB device.
+          * @param  comErrorInfo    Brings info about error happened.
+          * @param  strDevice       Brings the device name.
+          * @param  strMachineName  Brings the machine name. */
+        static void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &comErrorInfo,
+                                          const QString &strDevice, const QString &strMachineName);
+        /** Notifies about inability to detach USB device.
+          * @param  comConsole  Brings console USB device belongs to.
+          * @param  strDevice   Brings the device name. */
+        static void cannotDetachUSBDevice(const CConsole &comConsole, const QString &strDevice);
+        /** Notifies about inability to detach USB device.
+          * @param  comErrorInfo    Brings info about error happened.
+          * @param  strDevice       Brings the device name.
+          * @param  strMachineName  Brings the machine name. */
+        static void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &comErrorInfo,
+                                          const QString &strDevice, const QString &strMachineName);
+
+        /** Notifies about inability to attach webcam.
+          * @param  comDispatcher   Brings emulated USB dispatcher webcam being attached to.
+          * @param  strWebCamName   Brings the webcam name.
+          * @param  strMachineName  Brings the machine name. */
+        static void cannotAttachWebCam(const CEmulatedUSB &comDispatcher,
+                                       const QString &strWebCamName, const QString &strMachineName);
+        /** Notifies about inability to detach webcam.
+          * @param  comDispatcher   Brings emulated USB dispatcher webcam being detached from.
+          * @param  strWebCamName   Brings the webcam name.
+          * @param  strMachineName  Brings the machine name. */
+        static void cannotDetachWebCam(const CEmulatedUSB &comDispatcher,
+                                       const QString &strWebCamName, const QString &strMachineName);
+
+        /** Notifies about inability to save machine settings.
+          * @param  comMachine  Brings the machine trying to save settings. */
+        static void cannotSaveMachineSettings(const CMachine &comMachine);
+
+        /** Notifies about inability to toggle audio input.
+          * @param  comAdapter      Brings the adapter input being toggled for.
+          * @param  strMachineName  Brings the machine name.
+          * @param  fEnable         Brings whether adapter input is enabled or not. */
+        static void cannotToggleAudioInput(const CAudioAdapter &comAdapter,
+                                           const QString &strMachineName, bool fEnable);
+        /** Notifies about inability to toggle audio output.
+          * @param  comAdapter      Brings the adapter output being toggled for.
+          * @param  strMachineName  Brings the machine name.
+          * @param  fEnable         Brings whether adapter output is enabled or not. */
+        static void cannotToggleAudioOutput(const CAudioAdapter &comAdapter,
+                                            const QString &strMachineName, bool fEnable);
+
+        /** Notifies about inability to toggle network cable.
+          * @param  comAdapter      Brings the adapter network cable being toggled for.
+          * @param  strMachineName  Brings the machine name.
+          * @param  fConnect        Brings whether network cable is connected or not. */
+        static void cannotToggleNetworkCable(const CNetworkAdapter &comAdapter,
+                                             const QString &strMachineName, bool fConnect);
+
+        /** Notifies about inability to toggle recording.
+          * @param  comMachine  Brings the machine recording being toggled for.
+          * @param  fEnable     Brings whether recording is enabled or not. */
+        static void cannotToggleRecording(const CMachine &comMachine, bool fEnable);
+
+        /** Notifies about inability to toggle VRDE server.
+          * @param  comServer       Brings the server being toggled.
+          * @param  strMachineName  Brings the machine name.
+          * @param  fEnable         Brings whether server is enabled or not. */
+        static void cannotToggleVRDEServer(const CVRDEServer &comServer,
+                                           const QString &strMachineName, bool fEnable);
+    /** @} */
 
 protected:
 
