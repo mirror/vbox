@@ -28,7 +28,7 @@
 
 class HGCMObject;
 
-typedef struct _ObjectAVLCore
+typedef struct ObjectAVLCore
 {
     AVLU32NODECORE AvlCore;
     HGCMObject *pSelf;
