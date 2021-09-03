@@ -21,6 +21,7 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 
 
 QIDialog::QIDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
@@ -123,5 +124,5 @@ void QIDialog::polishEvent(QShowEvent *)
 #endif /* VBOX_WS_MAC */
 
     /* Explicit centering according to our parent: */
-    UICommon::centerWidget(this, parentWidget(), false);
+    UIDesktopWidgetWatchdog::centerWidget(this, parentWidget(), false);
 }

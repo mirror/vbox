@@ -612,7 +612,7 @@ void UIMediumSelector::showEvent(QShowEvent *pEvent)
     resize(proposedSize);
 
     if (m_pParent)
-        UICommon::centerWidget(this, m_pParent, false);
+        UIDesktopWidgetWatchdog::centerWidget(this, m_pParent, false);
 }
 
 void UIMediumSelector::repopulateTreeWidget()

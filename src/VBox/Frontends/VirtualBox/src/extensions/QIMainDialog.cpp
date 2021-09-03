@@ -29,6 +29,7 @@
 /* GUI includes: */
 #include "QIMainDialog.h"
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "VBoxUtils.h"
 
 /* Other VBox includes: */
@@ -232,7 +233,7 @@ void QIMainDialog::polishEvent(QShowEvent *)
 {
     /* Explicit centering according to our parent: */
     if (m_fIsAutoCentering)
-        UICommon::centerWidget(this, parentWidget(), false);
+        UIDesktopWidgetWatchdog::centerWidget(this, parentWidget(), false);
 }
 
 void QIMainDialog::resizeEvent(QResizeEvent *pEvent)

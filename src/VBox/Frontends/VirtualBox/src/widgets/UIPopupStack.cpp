@@ -26,6 +26,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UICursor.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIPopupStack.h"
 #include "UIPopupStackViewport.h"
 
@@ -202,7 +203,7 @@ void UIPopupStack::sltAdjustGeometry()
     }
 
     /* Adjust geometry: */
-    UICommon::setTopLevelGeometry(this, iX, iY, iWidth, iHeight);
+    UIDesktopWidgetWatchdog::setTopLevelGeometry(this, iX, iY, iWidth, iHeight);
 }
 
 void UIPopupStack::sltPopupPaneRemoved(QString)

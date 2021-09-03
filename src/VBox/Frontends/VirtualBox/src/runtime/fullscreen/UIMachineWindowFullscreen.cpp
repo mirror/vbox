@@ -380,7 +380,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
             geo = QRect(QPoint(0, 0), QSize(800, 600).boundedTo(workingArea.size()));
         /* Move window to the center of working-area: */
         geo.moveCenter(workingArea.center());
-        UICommon::setTopLevelGeometry(this, geo);
+        UIDesktopWidgetWatchdog::setTopLevelGeometry(this, geo);
     }
 
 #elif defined(VBOX_WS_WIN)

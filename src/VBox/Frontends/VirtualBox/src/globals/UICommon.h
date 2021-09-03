@@ -313,30 +313,8 @@ public:
         static QString findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName);
     /** @} */
 
-    /** @name Window/widget stuff.
+    /** @name Widget stuff.
      * @{ */
-        /** Search position for @a rectangle to make sure it is fully contained @a boundRegion. */
-        static QRect normalizeGeometry(const QRect &rectangle, const QRegion &boundRegion,
-                                       bool fCanResize = true);
-        /** Ensures that the given rectangle @a rectangle is fully contained within the region @a boundRegion. */
-        static QRect getNormalized(const QRect &rectangle, const QRegion &boundRegion,
-                                   bool fCanResize = true);
-        /** Returns the flipped (transposed) @a region. */
-        static QRegion flip(const QRegion &region);
-
-        /** Aligns the center of @a pWidget with the center of @a pRelative. */
-        static void centerWidget(QWidget *pWidget, QWidget *pRelative, bool fCanResize = true);
-
-        /** Assigns top-level @a pWidget geometry passed as QRect coordinates.
-          * @note  Take into account that this request may fail on X11. */
-        static void setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h);
-        /** Assigns top-level @a pWidget geometry passed as @a rect.
-          * @note  Take into account that this request may fail on X11. */
-        static void setTopLevelGeometry(QWidget *pWidget, const QRect &rect);
-
-        /** Activates the specified window with given @a wId. Can @a fSwitchDesktop if requested. */
-        static bool activateWindow(WId wId, bool fSwitchDesktop = true);
-
         /** Assigns minimum @a pSpinBox to correspond to @a cCount digits. */
         static void setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount);
     /** @} */
@@ -447,7 +425,6 @@ public:
           * @param  fUseLastFolder    Brings whether we should propose to use last used folder. */
         QUuid openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
                                              const QString &strDefaultFolder = QString(), bool fUseLastFolder = false);
-
 
         /** Creates and shows a UIMediumSelector dialog.
           * @param  parent                   Passes the parent of the dialog,

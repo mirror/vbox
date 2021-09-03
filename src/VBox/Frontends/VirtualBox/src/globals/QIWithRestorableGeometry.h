@@ -112,7 +112,7 @@ protected:
         this->resize(m_geometry.size());
 #else
         /* Use the new approach otherwise: */
-        UICommon::setTopLevelGeometry(this, m_geometry);
+        UIDesktopWidgetWatchdog::setTopLevelGeometry(this, m_geometry);
 #endif
 
         /* Maximize (if necessary): */

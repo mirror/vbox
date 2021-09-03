@@ -120,7 +120,7 @@ void QIManagerDialog::prepare()
     finalize();
 
     /* Center according requested widget: */
-    UICommon::centerWidget(this, m_pCenterWidget, false);
+    UIDesktopWidgetWatchdog::centerWidget(this, m_pCenterWidget, false);
 
     /* Load the dialog's settings from extradata */
     loadSettings();

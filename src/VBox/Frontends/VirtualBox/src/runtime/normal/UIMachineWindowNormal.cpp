@@ -392,7 +392,7 @@ void UIMachineWindowNormal::loadSettings()
         {
             /* Restore window geometry: */
             m_geometry = geo;
-            UICommon::setTopLevelGeometry(this, m_geometry);
+            UIDesktopWidgetWatchdog::setTopLevelGeometry(this, m_geometry);
 
             /* If previous machine-state was NOT SAVED => normalize window to the optimal-size: */
             if (machine().GetState() != KMachineState_Saved)
@@ -412,7 +412,7 @@ void UIMachineWindowNormal::loadSettings()
             /* Move it to the screen-center: */
             m_geometry = geometry();
             m_geometry.moveCenter(gpDesktop->availableGeometry(this).center());
-            UICommon::setTopLevelGeometry(this, m_geometry);
+            UIDesktopWidgetWatchdog::setTopLevelGeometry(this, m_geometry);
         }
 
         /* Normalize to the optimal size: */
@@ -624,10 +624,10 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition, bool fResize
 
     /* Adjust position if necessary: */
     if (fAdjustPosition)
-        frGeo = UICommon::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion());
+        frGeo = UIDesktopWidgetWatchdog::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion());
 
     /* Finally, set the frame geometry: */
-    UICommon::setTopLevelGeometry(this, frGeo.left() + dl, frGeo.top() + dt,
+    UIDesktopWidgetWatchdog::setTopLevelGeometry(this, frGeo.left() + dl, frGeo.top() + dt,
                                     frGeo.width() - dl - dr, frGeo.height() - dt - db);
 #else /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
     /* Customer request: There should no be

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2015-2020 Oracle Corporation
+ * Copyright (C) 2015-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,9 +23,10 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QWindow>
 #ifdef VBOX_WS_X11
-# include <QVector>
 # include <QRect>
+# include <QVector>
 #endif
 
 /* GUI includes: */
@@ -43,7 +44,7 @@ class SHARED_LIBRARY_STUFF UIDesktopWidgetWatchdog : public QObject
     /** Constructs desktop-widget watchdog. */
     UIDesktopWidgetWatchdog();
     /** Destructs desktop-widget watchdog. */
-    ~UIDesktopWidgetWatchdog();
+    virtual ~UIDesktopWidgetWatchdog() /* override final */;
 
 signals:
 
@@ -123,6 +124,32 @@ public:
     /** Returns actual device-pixel-ratio of the host-screen which contains @a pWidget. */
     double devicePixelRatioActual(QWidget *pWidget);
 
+    /** Search position for @a rectangle to make sure it is fully
+      * contained within @a boundRegion, performing resize if allowed. */
+    static QRect normalizeGeometry(const QRect &rectangle,
+                                   const QRegion &boundRegion,
+                                   bool fCanResize = true);
+    /** Ensures that the given rectangle @a rectangle is fully
+      * contained within the region @a boundRegion, performing resize if allowed. */
+    static QRect getNormalized(const QRect &rectangle,
+                               const QRegion &boundRegion,
+                               bool fCanResize = true);
+    /** Aligns the center of @a pWidget with the center
+      * of @a pRelative, performing resize if allowed. */
+    static void centerWidget(QWidget *pWidget,
+                             QWidget *pRelative,
+                             bool fCanResize = true);
+
+    /** Assigns top-level @a pWidget geometry passed as QRect coordinates.
+      * @note  Take into account that this request may fail on X11. */
+    static void setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h);
+    /** Assigns top-level @a pWidget geometry passed as @a rect.
+      * @note  Take into account that this request may fail on X11. */
+    static void setTopLevelGeometry(QWidget *pWidget, const QRect &rect);
+
+    /** Activates the specified window with given @a wId. Can @a fSwitchDesktop if requested. */
+    static bool activateWindow(WId wId, bool fSwitchDesktop = true);
+
 private slots:
 
     /** Handles @a pHostScreen adding. */
@@ -145,6 +172,9 @@ private:
     void prepare();
     /** Cleanup routine. */
     void cleanup();
+
+    /** Returns the flipped (transposed) @a region. */
+    static QRegion flip(const QRegion &region);
 
     /** Holds the static instance of the desktop-widget watchdog. */
     static UIDesktopWidgetWatchdog *s_pInstance;
@@ -171,4 +201,3 @@ private:
 #define gpDesktop UIDesktopWidgetWatchdog::instance()
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIDesktopWidgetWatchdog_h */
-

@@ -732,7 +732,7 @@ void UIExtraDataManagerWindow::showAndRaise(QWidget*)
     /* Raise: */
     activateWindow();
 //    /* Center according passed widget: */
-//    UICommon::centerWidget(this, pCenterWidget, false);
+//    UIDesktopWidgetWatchdog::centerWidget(this, pCenterWidget, false);
 }
 
 void UIExtraDataManagerWindow::sltMachineRegistered(const QUuid &uID, bool fRegistered)
@@ -5050,7 +5050,7 @@ QRect UIExtraDataManager::dialogGeometry(const QString &strKey,
 #ifdef VBOX_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
     if (!availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
+        geometry = UIDesktopWidgetWatchdog::getNormalized(geometry, QRegion(availableGeometry));
 #endif /* VBOX_WS_WIN */
 
     /* Return result: */
