@@ -276,50 +276,19 @@ public:
     /** @} */
 
     /* API: Selector warnings: */
-    void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const;
-    void cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName) const;
     bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const;
+    /// @todo move after fixing thread stuff
     void cannotSetGroups(const CMachine &machine) const;
     bool confirmMachineItemRemoval(const QStringList &names) const;
     int confirmMachineRemoval(const QList<CMachine> &machines) const;
     int confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const;
-    void cannotRemoveMachine(const CMachine &machine) const;
-    void cannotRemoveMachine(const CMachine &machine, const CProgress &progress) const;
-    void cannotRemoveCloudMachine(const CCloudMachine &comMachine) const;
-    void cannotRemoveCloudMachine(const CCloudMachine &comMachine, const CProgress &comProgress) const;
     bool warnAboutInaccessibleMedia() const;
     bool confirmDiscardSavedState(const QString &strNames) const;
     bool confirmTerminateCloudInstance(const QString &strNames) const;
     bool confirmResetMachine(const QString &strNames) const;
     bool confirmACPIShutdownMachine(const QString &strNames) const;
     bool confirmPowerOffMachine(const QString &strNames) const;
-    void cannotPauseMachine(const CConsole &console) const;
-    void cannotResumeMachine(const CConsole &console) const;
-    void cannotDiscardSavedState(const CMachine &machine) const;
-    void cannotTerminateCloudInstance(const CCloudMachine &comMachine) const;
-    void cannotTerminateCloudInstance(const CProgress &comProgress, const QString &strMachineName) const;
-    void cannotSaveMachineState(const CMachine &machine);
-    void cannotSaveMachineState(const CProgress &progress, const QString &strMachineName);
-    void cannotACPIShutdownMachine(const CConsole &console) const;
-    void cannotACPIShutdownCloudMachine(const CCloudMachine &comMachine) const;
-    void cannotACPIShutdownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
-    void cannotPowerUpCloudMachine(const CCloudMachine &comMachine) const;
-    void cannotPowerUpCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
-    void cannotPowerOffMachine(const CConsole &comConsole) const;
-    void cannotPowerOffMachine(const CProgress &comProgress, const QString &strMachineName) const;
-    void cannotPowerDownCloudMachine(const CCloudMachine &comMachine) const;
-    void cannotPowerDownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const;
     bool confirmStartMultipleMachines(const QString &strNames) const;
-    void cannotMoveMachine(const CMachine &machine, QWidget *pParent = 0) const;
-    void cannotMoveMachine(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
-    void cannotCreateConsoleConnection(const CCloudMachine &comMachine, QWidget *pParent = 0);
-    void cannotCreateConsoleConnection(const CProgress &comProgress, const QString &strMachineName, QWidget *pParent = 0);
-    void cannotDeleteConsoleConnection(const CCloudMachine &comMachine, QWidget *pParent = 0);
-    void cannotDeleteConsoleConnection(const CProgress &comProgress, const QString &strMachineName, QWidget *pParent = 0);
-    void publicKeyFilePathIsEmpty(QWidget *pParent = 0) const;
-    void publicKeyFileDoesntExist(const QString &strPath, QWidget *pParent = 0) const;
-    void publicKeyFileIsOfTooLargeSize(const QString &strPath, QWidget *pParent = 0) const;
-    void publicKeyFileIsntReadable(const QString &strPath, QWidget *pParent = 0) const;
 
     /* API: Snapshot warnings: */
     int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;

@@ -365,7 +365,7 @@ void UISession::shutdown()
     LogRel(("GUI: Sending ACPI shutdown signal..\n"));
     console().PowerButton();
     if (!console().isOk())
-        msgCenter().cannotACPIShutdownMachine(console());
+        UINotificationMessage::cannotACPIShutdownMachine(console());
 }
 
 void UISession::powerOff(bool fIncludingDiscard)
@@ -434,9 +434,9 @@ bool UISession::setPause(bool fOn)
     if (!ok)
     {
         if (fOn)
-            msgCenter().cannotPauseMachine(console());
+            UINotificationMessage::cannotPauseMachine(console());
         else
-            msgCenter().cannotResumeMachine(console());
+            UINotificationMessage::cannotResumeMachine(console());
     }
 
     return ok;

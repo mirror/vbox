@@ -103,6 +103,62 @@ void UINotificationMessage::warnAboutInvalidEncryptionPassword(const QString &st
 }
 
 /* static */
+void UINotificationMessage::cannotReregisterExistingMachine(const QString &strName, const QString &strLocation)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't add machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to add virtual machine <b>%1</b> located in <i>%2</i> because its "
+                                                   "already present.")
+                                                   .arg(strName, strLocation));
+}
+
+/* static */
+void UINotificationMessage::cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't resolve collision ..."),
+        QApplication::translate("UIMessageCenter", "<p>You are trying to move machine <nobr><b>%1</b></nobr> to group "
+                                                   "<nobr><b>%2</b></nobr> which already have another item with the same "
+                                                   "name.</p><p>Please resolve this name conflict and try again.</p>")
+                                                   .arg(strCollisionName, strGroupName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutPublicKeyFilePathIsEmpty()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Public key missing ..."),
+        QApplication::translate("UIMessageCenter", "Public key file path is empty."));
+}
+
+/* static */
+void UINotificationMessage::warnAboutPublicKeyFileDoesntExist(const QString &strPath)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Public key missing ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the public key file <nobr><b>%1</b></nobr>. "
+                                                   "File doesn't exist.").arg(strPath));
+}
+
+/* static */
+void UINotificationMessage::warnAboutPublicKeyFileIsOfTooLargeSize(const QString &strPath)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Public key too large ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the public key file <nobr><b>%1</b></nobr>. File is too "
+                                                   "large for the key.").arg(strPath));
+}
+
+/* static */
+void UINotificationMessage::warnAboutPublicKeyFileIsntReadable(const QString &strPath)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Public key isn't readable ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the public key file <nobr><b>%1</b></nobr>. Check file "
+                                                   "permissions.").arg(strPath));
+}
+
+/* static */
 void UINotificationMessage::cannotMountImage(const QString &strMachineName, const QString &strMediumName)
 {
     createMessage(
@@ -301,6 +357,36 @@ void UINotificationMessage::cannotOpenMedium(const CVirtualBox &comVBox, const Q
 }
 
 /* static */
+void UINotificationMessage::cannotPauseMachine(const CConsole &comConsole)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't pause machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to pause the execution of the virtual machine <b>%1</b>.")
+                                                   .arg(CConsole(comConsole).GetMachine().GetName()) +
+        UIErrorString::formatErrorInfo(comConsole));
+}
+
+/* static */
+void UINotificationMessage::cannotResumeMachine(const CConsole &comConsole)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't resume machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to resume the execution of the virtual machine <b>%1</b>.")
+                                                   .arg(CConsole(comConsole).GetMachine().GetName()) +
+        UIErrorString::formatErrorInfo(comConsole));
+}
+
+/* static */
+void UINotificationMessage::cannotACPIShutdownMachine(const CConsole &comConsole)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't shutdown machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to send the ACPI Power Button press event to the virtual machine "
+                                                   "<b>%1</b>.").arg(CConsole(comConsole).GetMachine().GetName()) +
+        UIErrorString::formatErrorInfo(comConsole));
+}
+
+/* static */
 void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation)
 {
     createMessage(
@@ -308,6 +394,26 @@ void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const 
         QApplication::translate("UIMessageCenter", "Failed to open virtual machine located in %1.")
                                                    .arg(strLocation) +
         UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotDiscardSavedState(const CMachine &comMachine)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't discard saved state ..."),
+        QApplication::translate("UIMessageCenter", "Failed to discard the saved state of the virtual machine <b>%1</b>.")
+                                                   .arg(CMachine(comMachine).GetName()) +
+        UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotRemoveMachine(const CMachine &comMachine)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't remove machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to remove the virtual machine <b>%1</b>.")
+                                                   .arg(CMachine(comMachine).GetName()) +
+        UIErrorString::formatErrorInfo(comMachine));
 }
 
 /* static */

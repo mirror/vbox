@@ -77,6 +77,31 @@ public:
         static void warnAboutInvalidEncryptionPassword(const QString &strPasswordId);
     /** @} */
 
+    /** @name Simple VirtualBox Manager warnings.
+      * @{ */
+        /** Notifies about inability to register existing machine.
+          * @param  streName     Brings the machine name.
+          * @param  strLocation  Brings the machine location. */
+        static void cannotReregisterExistingMachine(const QString &strName, const QString &strLocation);
+
+        /** Notifies about inability to resolve collision automatically.
+          * @param  strCollisionName  Brings the collision VM name.
+          * @param  strGroupName      Brings the group name. */
+        static void cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName);
+
+        /** Notifies about inability to remove machine.
+          * @param  comMachine  Brings machine being removed. */
+        static void warnAboutPublicKeyFilePathIsEmpty();
+        /** Notifies about inability to remove machine.
+          * @param  comMachine  Brings machine being removed. */
+        static void warnAboutPublicKeyFileDoesntExist(const QString &strPath);
+        /** Notifies about inability to remove machine.
+          * @param  comMachine  Brings machine being removed. */
+        static void warnAboutPublicKeyFileIsOfTooLargeSize(const QString &strPath);
+        /** Notifies about inability to remove machine.
+          * @param  comMachine  Brings machine being removed. */
+        static void warnAboutPublicKeyFileIsntReadable(const QString &strPath);
+    /** @} */
 
     /** @name Simple Runtime UI warnings.
       * @{ */
@@ -133,6 +158,16 @@ public:
           * @param  comVBox      Brings common VBox object trying to open medium.
           * @param  strLocation  Brings the medium location. */
         static void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation);
+
+        /** Notifies about inability to pause machine.
+          * @param  comConsole  Brings console trying to pause machine. */
+        static void cannotPauseMachine(const CConsole &comConsole);
+        /** Notifies about inability to resume machine.
+          * @param  comConsole  Brings console trying to resume machine. */
+        static void cannotResumeMachine(const CConsole &comConsole);
+        /** Notifies about inability to ACPI shutdown machine.
+          * @param  comConsole  Brings console trying to shutdown machine. */
+        static void cannotACPIShutdownMachine(const CConsole &comConsole);
     /** @} */
 
     /** @name COM VirtualBox Manager warnings.
@@ -141,6 +176,13 @@ public:
           * @param  comVBox      Brings common VBox object trying to open machine.
           * @param  strLocation  Brings the machine location. */
         static void cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation);
+
+        /** Notifies about inability to discard saved state.
+          * @param  comMachine  Brings the collision VM name. */
+        static void cannotDiscardSavedState(const CMachine &comMachine);
+        /** Notifies about inability to remove machine.
+          * @param  comMachine  Brings machine being removed. */
+        static void cannotRemoveMachine(const CMachine &comMachine);
     /** @} */
 
     /** @name COM Runtime UI warnings.

@@ -569,22 +569,6 @@ void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString 
           UIErrorString::formatErrorInfo(machine));
 }
 
-void UIMessageCenter::cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const
-{
-    alert(0, MessageType_Error,
-          tr("Failed to add virtual machine <b>%1</b> located in <i>%2</i> because its already present.")
-             .arg(strMachineName, strMachinePath));
-}
-
-void UIMessageCenter::cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>You are trying to move machine <nobr><b>%1</b></nobr> to group "
-             "<nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
-             "<p>Please resolve this name conflict and try again.</p>")
-             .arg(strCollisionName, strGroupName));
-}
-
 bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const
 {
     return questionBinary(0, MessageType_Question,
@@ -730,38 +714,6 @@ int UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &mach
                    tr("Remove only"));
 }
 
-void UIMessageCenter::cannotRemoveMachine(const CMachine &machine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to remove the virtual machine <b>%1</b>.")
-             .arg(CMachine(machine).GetName()),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgress &progress) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to remove the virtual machine <b>%1</b>.")
-             .arg(CMachine(machine).GetName()),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotRemoveCloudMachine(const CCloudMachine &comMachine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to remove the cloud virtual machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotRemoveCloudMachine(const CCloudMachine &comMachine, const CProgress &comProgress) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to remove the cloud virtual machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
 bool UIMessageCenter::warnAboutInaccessibleMedia() const
 {
     return questionBinary(0, MessageType_Warning,
@@ -829,134 +781,6 @@ bool UIMessageCenter::confirmPowerOffMachine(const QString &strNames) const
                           tr("Power Off", "machine"));
 }
 
-void UIMessageCenter::cannotPauseMachine(const CConsole &console) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to pause the execution of the virtual machine <b>%1</b>.")
-             .arg(CConsole(console).GetMachine().GetName()),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotResumeMachine(const CConsole &console) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to resume the execution of the virtual machine <b>%1</b>.")
-             .arg(CConsole(console).GetMachine().GetName()),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotDiscardSavedState(const CMachine &machine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to discard the saved state of the virtual machine <b>%1</b>.")
-             .arg(CMachine(machine).GetName()),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotTerminateCloudInstance(const CCloudMachine &comMachine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to terminate the cloud instance of the virtual machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotTerminateCloudInstance(const CProgress &comProgress, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to terminate the cloud instance of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotSaveMachineState(const CMachine &machine)
-{
-    error(0, MessageType_Error,
-          tr("Failed to save the state of the virtual machine <b>%1</b>.")
-             .arg(CMachine(machine).GetName()),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotSaveMachineState(const CProgress &progress, const QString &strMachineName)
-{
-    error(0, MessageType_Error,
-          tr("Failed to save the state of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotACPIShutdownMachine(const CConsole &console) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to send the ACPI Power Button press event to the virtual machine <b>%1</b>.")
-             .arg(CConsole(console).GetMachine().GetName()),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotACPIShutdownCloudMachine(const CCloudMachine &comMachine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to send the ACPI Power Button press event to the virtual machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotACPIShutdownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to send the ACPI Power Button press event to the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotPowerUpCloudMachine(const CCloudMachine &comMachine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to start the virtual machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotPowerUpCloudMachine(const CProgress &comProgress, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to start the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotPowerOffMachine(const CConsole &comConsole) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to stop the virtual machine <b>%1</b>.")
-             .arg(CConsole(comConsole).GetMachine().GetName()),
-          UIErrorString::formatErrorInfo(comConsole));
-}
-
-void UIMessageCenter::cannotPowerOffMachine(const CProgress &comProgress, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to stop the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotPowerDownCloudMachine(const CCloudMachine &comMachine) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to stop the virtual machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotPowerDownCloudMachine(const CProgress &comProgress, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to stop the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
 bool UIMessageCenter::confirmStartMultipleMachines(const QString &strNames) const
 {
     return questionBinary(0, MessageType_Question,
@@ -964,81 +788,6 @@ bool UIMessageCenter::confirmStartMultipleMachines(const QString &strNames) cons
                              "<p><b>%1</b></p><p>This could take some time and consume a lot of "
                              "host system resources. Do you wish to proceed?</p>").arg(strNames),
                           "confirmStartMultipleMachines" /* auto-confirm id */);
-}
-
-void UIMessageCenter::cannotMoveMachine(const CMachine &machine, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to move the virtual machine <b>%1</b>.")
-          .arg(CMachine(machine).GetName()),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotMoveMachine(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to move the virtual machine <b>%1</b>.")
-          .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotCreateConsoleConnection(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create console connection for cloud machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotCreateConsoleConnection(const CProgress &comProgress, const QString &strMachineName, QWidget *pParent /* = 0 */)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create console connection for cloud machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotDeleteConsoleConnection(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to delete console connection for cloud machine <b>%1</b>.")
-             .arg(CCloudMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotDeleteConsoleConnection(const CProgress &comProgress, const QString &strMachineName, QWidget *pParent /* = 0 */)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to delete console connection for cloud machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::publicKeyFilePathIsEmpty(QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Public key file path is empty."));
-}
-
-void UIMessageCenter::publicKeyFileDoesntExist(const QString &strPath, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Failed to open the public key file <nobr><b>%1</b></nobr>. File doesn't exist.")
-             .arg(strPath));
-}
-
-void UIMessageCenter::publicKeyFileIsOfTooLargeSize(const QString &strPath, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Failed to open the public key file <nobr><b>%1</b></nobr>. File is too large for the key.")
-             .arg(strPath));
-}
-
-void UIMessageCenter::publicKeyFileIsntReadable(const QString &strPath, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Failed to open the public key file <nobr><b>%1</b></nobr>. Check file permissions.")
-             .arg(strPath));
 }
 
 

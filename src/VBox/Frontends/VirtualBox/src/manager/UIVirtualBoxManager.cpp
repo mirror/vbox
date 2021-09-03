@@ -391,7 +391,7 @@ bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIg
     if (strPath.isEmpty())
     {
         if (!fIgnoreErrors)
-            msgCenter().publicKeyFilePathIsEmpty();
+            UINotificationMessage::warnAboutPublicKeyFilePathIsEmpty();
         return false;
     }
 
@@ -400,13 +400,13 @@ bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIg
     if (!fi.exists())
     {
         if (!fIgnoreErrors)
-            msgCenter().publicKeyFileDoesntExist(strPath);
+            UINotificationMessage::warnAboutPublicKeyFileDoesntExist(strPath);
         return false;
     }
     if (fi.size() > 10 * _1K)
     {
         if (!fIgnoreErrors)
-            msgCenter().publicKeyFileIsOfTooLargeSize(strPath);
+            UINotificationMessage::warnAboutPublicKeyFileIsOfTooLargeSize(strPath);
         return false;
     }
 
@@ -415,7 +415,7 @@ bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIg
     if (!file.open(QIODevice::ReadOnly))
     {
         if (!fIgnoreErrors)
-            msgCenter().publicKeyFileIsntReadable(strPath);
+            UINotificationMessage::warnAboutPublicKeyFileIsntReadable(strPath);
         return false;
     }
 
@@ -1542,7 +1542,7 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
         CMachine comMachine = comSession.GetMachine();
         comMachine.DiscardSavedState(true);
         if (!comMachine.isOk())
-            msgCenter().cannotDiscardSavedState(comMachine);
+            UINotificationMessage::cannotDiscardSavedState(comMachine);
 
         /* Unlock machine finally: */
         comSession.UnlockMachine();
@@ -1600,9 +1600,9 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
         if (!comConsole.isOk())
         {
             if (fPause)
-                msgCenter().cannotPauseMachine(comConsole);
+                UINotificationMessage::cannotPauseMachine(comConsole);
             else
-                msgCenter().cannotResumeMachine(comConsole);
+                UINotificationMessage::cannotResumeMachine(comConsole);
         }
 
         /* Unlock machine finally: */
@@ -1771,7 +1771,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
             /* ACPI Shutdown: */
             comConsole.PowerButton();
             if (!comConsole.isOk())
-                msgCenter().cannotACPIShutdownMachine(comConsole);
+                UINotificationMessage::cannotACPIShutdownMachine(comConsole);
 
             /* Unlock machine finally: */
             comSession.UnlockMachine();
@@ -2468,7 +2468,7 @@ void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = Q
     CMachine comMachineOld = comVBox.FindMachine(comMachineNew.GetId().toString());
     if (!comMachineOld.isNull())
     {
-        msgCenter().cannotReregisterExistingMachine(strTmpFile, comMachineOld.GetName());
+        UINotificationMessage::cannotReregisterExistingMachine(comMachineOld.GetName(), strTmpFile);
         return;
     }
 

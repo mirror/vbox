@@ -677,7 +677,7 @@ void UIChooserModel::disbandSelectedGroupItem()
                 /* We can't resolve collision automatically for VMs: */
                 case UIChooserNodeType_Machine:
                 {
-                    msgCenter().cannotResolveCollisionAutomatically(strChildName, pParentNode->name());
+                    UINotificationMessage::cannotResolveCollisionAutomatically(strChildName, pParentNode->name());
                     return;
                 }
                 /* But we can do it for VM groups: */
@@ -1884,7 +1884,7 @@ void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
             CMediumVector media = comMachine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
             if (!comMachine.isOk())
             {
-                msgCenter().cannotRemoveMachine(comMachine);
+                UINotificationMessage::cannotRemoveMachine(comMachine);
                 continue;
             }
             /* Removing machine: */
@@ -1897,7 +1897,7 @@ void UIChooserModel::unregisterLocalMachines(const QList<CMachine> &machines)
             CMediumVector media = comMachine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
             if (!comMachine.isOk())
             {
-                msgCenter().cannotRemoveMachine(comMachine);
+                UINotificationMessage::cannotRemoveMachine(comMachine);
                 continue;
             }
             /* Finally close all media, deliberately ignoring errors: */
