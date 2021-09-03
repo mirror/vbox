@@ -32,6 +32,7 @@
 #include "UIToolBox.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardDiskEditors.h"
+#include "UIWizardNewVMDiskPage.h"
 #include "UIWizardNewVMEditors.h"
 #include "UIWizardNewVMExpertPage.h"
 #include "UIWizardNewVMNameOSTypePage.h"
@@ -56,7 +57,6 @@ UIWizardNewVMExpertPage::UIWizardNewVMExpertPage()
     , m_pDiskExisting(0)
     , m_pDiskSelector(0)
     , m_pDiskSelectionButton(0)
-    , m_enmSelectedDiskSource(SelectedDiskSource_New)
     , m_fRecommendedNoDisk(false)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
@@ -330,7 +330,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         {
             if (m_pDiskNew)
                 m_pDiskNew->setChecked(true);
-            m_enmSelectedDiskSource = SelectedDiskSource_New;
+            pWizard->setDiskSource(SelectedDiskSource_New);
             setEnableDiskSelectionWidgets(false);
             setEnableNewDiskWidgets(true);
             m_fRecommendedNoDisk = false;
@@ -339,7 +339,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         {
             if (m_pDiskEmpty)
                 m_pDiskEmpty->setChecked(true);
-            m_enmSelectedDiskSource = SelectedDiskSource_Empty;
+            pWizard->setDiskSource(SelectedDiskSource_Empty);
             setEnableDiskSelectionWidgets(false);
             setEnableNewDiskWidgets(false);
             m_fRecommendedNoDisk = true;
@@ -562,14 +562,14 @@ bool UIWizardNewVMExpertPage::isComplete() const
         }
     }
 
-    if (m_enmSelectedDiskSource == SelectedDiskSource_Existing && uiCommon().medium(m_pDiskSelector->id()).isNull())
+    if (pWizard->diskSource() == SelectedDiskSource_Existing && uiCommon().medium(m_pDiskSelector->id()).isNull())
     {
         m_pToolBox->setPageTitleIcon(ExpertToolboxItems_Disk,
                                      UIIconPool::iconSet(":/status_error_16px.png"), UIWizardNewVM::tr("No valid disk is selected"));
         fIsComplete = false;
     }
 
-    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
+    if (pWizard->diskSource() == SelectedDiskSource_New)
     {
         qulonglong uSize = pWizard->mediumSize();
         if( uSize < m_uMediumSizeMin || uSize > m_uMediumSizeMax)
@@ -588,7 +588,7 @@ bool UIWizardNewVMExpertPage::validatePage()
     AssertReturn(pWizard, false);
     bool fResult = true;
 
-    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
+    if (pWizard->diskSource() == SelectedDiskSource_New)
     {
         /* Check if the path we will be using for hard drive creation exists: */
         const QString &strMediumPath = pWizard->mediumPath();
@@ -607,10 +607,6 @@ bool UIWizardNewVMExpertPage::validatePage()
             msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
             return fResult;
         }
-    }
-
-    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
-    {
         /* Try to create the hard drive:*/
         fResult = pWizard->createVirtualDisk();
         /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
@@ -717,20 +713,21 @@ void UIWizardNewVMExpertPage::sltMediaComboBoxIndexChanged()
 void UIWizardNewVMExpertPage::sltSelectedDiskSourceChanged()
 {
     AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup);
-    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturnVoid(pWizard);
     m_userModifiedParameters << "SelectedDiskSource";
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
-        m_enmSelectedDiskSource = SelectedDiskSource_Empty;
+        pWizard->setDiskSource(SelectedDiskSource_Empty);
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
     {
-        m_enmSelectedDiskSource = SelectedDiskSource_Existing;
-        wizardWindow<UIWizardNewVM>()->setVirtualDisk(m_pDiskSelector->id());
+        pWizard->setDiskSource(SelectedDiskSource_Existing);
+        pWizard->setVirtualDisk(m_pDiskSelector->id());
     }
     else
-        m_enmSelectedDiskSource = SelectedDiskSource_New;
+        pWizard->setDiskSource(SelectedDiskSource_New);
 
-    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
+    setEnableDiskSelectionWidgets(pWizard->diskSource() == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(pWizard->diskSource() == SelectedDiskSource_New);
 
     emit completeChanged();
 }

@@ -28,6 +28,7 @@
 #include "UIWizardNewVMHardwarePage.h"
 #include "UIWizardNewVMDiskPage.h"
 #include "UIWizardNewVMExpertPage.h"
+#include "UIWizardNewVMSummaryPage.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
 
@@ -68,6 +69,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_iUnattendedInstallPageIndex(-1)
     , m_uMediumVariant(0)
     , m_uMediumSize(0)
+    , m_enmDiskSource(SelectedDiskSource_New)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -93,6 +95,7 @@ void UIWizardNewVM::populatePages()
             setUnattendedPageVisible(false);
             addPage(new UIWizardNewVMHardwarePage);
             addPage(new UIWizardNewVMDiskPage);
+            addPage(new UIWizardNewVMSummaryPage);
             break;
         }
         case WizardMode_Expert:
@@ -882,6 +885,16 @@ qulonglong UIWizardNewVM::mediumSize() const
 void UIWizardNewVM::setMediumSize(qulonglong uMediumSize)
 {
     m_uMediumSize = uMediumSize;
+}
+
+SelectedDiskSource UIWizardNewVM::diskSource() const
+{
+    return m_enmDiskSource;
+}
+
+void UIWizardNewVM::setDiskSource(SelectedDiskSource enmDiskSource)
+{
+    m_enmDiskSource = enmDiskSource;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const

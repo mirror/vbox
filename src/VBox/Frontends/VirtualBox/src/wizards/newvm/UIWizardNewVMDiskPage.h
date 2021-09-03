@@ -42,14 +42,6 @@ class QIToolButton;
 class UIMediaComboBox;
 class UIMediumSizeEditor;
 
-enum SelectedDiskSource
-{
-    SelectedDiskSource_Empty = 0,
-    SelectedDiskSource_New,
-    SelectedDiskSource_Existing,
-    SelectedDiskSource_Max
-};
-
 namespace UIWizardNewVMDiskCommon
 {
     QUuid getWithFileOpenDialog(const QString &strOSTypeID,
@@ -90,7 +82,6 @@ private:
     virtual void retranslateUi() /* override final */;
     virtual void initializePage() /* override final */;
     virtual bool isComplete() const /* override final */;
-    virtual bool validatePage() /* override final */;
 
     void setEnableDiskSelectionWidgets(bool fEnabled);
     void setWidgetVisibility(const CMediumFormat &mediumFormat);
@@ -114,7 +105,6 @@ private:
 
     /** @name Variables
      * @{ */
-      SelectedDiskSource m_enmSelectedDiskSource;
       bool m_fRecommendedNoDisk;
       QSet<QString> m_userModifiedParameters;
       bool m_fVDIFormatFound;

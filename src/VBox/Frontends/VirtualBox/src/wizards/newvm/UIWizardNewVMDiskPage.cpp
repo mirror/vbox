@@ -71,7 +71,6 @@ UIWizardNewVMDiskPage::UIWizardNewVMDiskPage()
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
     , m_pFixedCheckBox(0)
-    , m_enmSelectedDiskSource(SelectedDiskSource_New)
     , m_fRecommendedNoDisk(false)
     , m_fVDIFormatFound(false)
     , m_uMediumSizeMin(_4M)
@@ -79,7 +78,6 @@ UIWizardNewVMDiskPage::UIWizardNewVMDiskPage()
 {
     prepare();
 }
-
 
 void UIWizardNewVMDiskPage::prepare()
 {
@@ -90,8 +88,6 @@ void UIWizardNewVMDiskPage::prepare()
     pMainLayout->addWidget(createDiskWidgets());
 
     pMainLayout->addStretch();
-    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
 
     createConnections();
 }
@@ -161,17 +157,17 @@ void UIWizardNewVMDiskPage::sltSelectedDiskSourceChanged()
     AssertReturnVoid(m_pDiskSelector && m_pDiskSourceButtonGroup && pWizard);
     m_userModifiedParameters << "SelectedDiskSource";
     if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskEmpty)
-        m_enmSelectedDiskSource = SelectedDiskSource_Empty;
+        pWizard->setDiskSource(SelectedDiskSource_Empty);
     else if (m_pDiskSourceButtonGroup->checkedButton() == m_pDiskExisting)
     {
-        m_enmSelectedDiskSource = SelectedDiskSource_Existing;
+        pWizard->setDiskSource(SelectedDiskSource_Existing);
         pWizard->setVirtualDisk(m_pDiskSelector->id());
     }
     else
-        m_enmSelectedDiskSource = SelectedDiskSource_New;
+        pWizard->setDiskSource(SelectedDiskSource_New);
 
-    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
+    setEnableDiskSelectionWidgets(pWizard->diskSource() == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(pWizard->diskSource() == SelectedDiskSource_New);
 
     emit completeChanged();
 }
@@ -261,7 +257,7 @@ void UIWizardNewVMDiskPage::initializePage()
                 m_pDiskNew->setFocus();
                 m_pDiskNew->setChecked(true);
             }
-            m_enmSelectedDiskSource = SelectedDiskSource_New;
+            pWizard->setDiskSource(SelectedDiskSource_New);
             m_fRecommendedNoDisk = false;
         }
         else
@@ -271,15 +267,15 @@ void UIWizardNewVMDiskPage::initializePage()
                 m_pDiskEmpty->setFocus();
                 m_pDiskEmpty->setChecked(true);
             }
-            m_enmSelectedDiskSource = SelectedDiskSource_Empty;
+            pWizard->setDiskSource(SelectedDiskSource_Empty);
             m_fRecommendedNoDisk = true;
         }
     }
 
     if (m_pDiskSelector && !m_userModifiedParameters.contains("SelectedExistingMediumIndex"))
         m_pDiskSelector->setCurrentIndex(0);
-    setEnableDiskSelectionWidgets(m_enmSelectedDiskSource == SelectedDiskSource_Existing);
-    setEnableNewDiskWidgets(m_enmSelectedDiskSource == SelectedDiskSource_New);
+    setEnableDiskSelectionWidgets(pWizard->diskSource() == SelectedDiskSource_Existing);
+    setEnableNewDiskWidgets(pWizard->diskSource() == SelectedDiskSource_New);
 
     if (!m_fVDIFormatFound)
     {
@@ -338,70 +334,13 @@ bool UIWizardNewVMDiskPage::isComplete() const
     AssertReturn(pWizard, false);
 
     const qulonglong uSize = pWizard->mediumSize();
-    if (m_enmSelectedDiskSource == SelectedDiskSource_New)
+    if (pWizard->diskSource() == SelectedDiskSource_New)
         return uSize >= m_uMediumSizeMin && uSize <= m_uMediumSizeMax;
 
-    if (m_enmSelectedDiskSource == SelectedDiskSource_Existing)
+    if (pWizard->diskSource() == SelectedDiskSource_Existing)
         return !pWizard->virtualDisk().isNull();
 
     return true;
-}
-
-bool UIWizardNewVMDiskPage::validatePage()
-{
-    bool fResult = true;
-    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
-    AssertReturn(pWizard, false);
-
-    /* Make sure user really intents to creae a vm with no hard drive: */
-    if (m_enmSelectedDiskSource == SelectedDiskSource_Empty)
-    {
-        /* Ask user about disk-less machine unless that's the recommendation: */
-        if (!m_fRecommendedNoDisk)
-        {
-            if (!msgCenter().confirmHardDisklessMachine(this))
-                return false;
-        }
-    }
-    else if (m_enmSelectedDiskSource == SelectedDiskSource_New)
-    {
-        /* Check if the path we will be using for hard drive creation exists: */
-        const QString &strMediumPath = pWizard->mediumPath();
-        fResult = !QFileInfo(strMediumPath).exists();
-        if (!fResult)
-        {
-            msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
-            return fResult;
-        }
-        /* Check FAT size limitation of the host hard drive: */
-        fResult = UIDiskEditorGroupBox::checkFATSizeLimitation(pWizard->mediumVariant(),
-                                                                strMediumPath,
-                                                                pWizard->mediumSize());
-        if (!fResult)
-        {
-            msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
-            return fResult;
-        }
-    }
-    if (pWizard)
-    {
-            if (m_enmSelectedDiskSource == SelectedDiskSource_New)
-            {
-                /* Try to create the hard drive:*/
-                fResult = pWizard->createVirtualDisk();
-                /*Don't show any error message here since UIWizardNewVM::createVirtualDisk already does so: */
-                if (!fResult)
-                    return fResult;
-            }
-
-            fResult = pWizard->createVM();
-            /* Try to delete the hard disk: */
-            if (!fResult)
-                pWizard->deleteVirtualDisk();
-    }
-    // endProcessing();
-
-    return fResult;
 }
 
 void UIWizardNewVMDiskPage::sltHandleSizeEditorChange(qulonglong uSize)

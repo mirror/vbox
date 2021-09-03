@@ -31,6 +31,14 @@
 #include "CMediumFormat.h"
 #include "CGuestOSType.h"
 
+enum SelectedDiskSource
+{
+    SelectedDiskSource_Empty = 0,
+    SelectedDiskSource_New,
+    SelectedDiskSource_Existing,
+    SelectedDiskSource_Max
+};
+
 /** Container for unattended install related data. */
 struct UIUnattendedInstallData
 {
@@ -79,75 +87,78 @@ public:
     const QString &machineGroup() const;
 
     /** @name Setter/getters for vm parameters
-     * @{ */
-       const QString &machineFilePath() const;
-       void setMachineFilePath(const QString &strMachineFilePath);
+      * @{ */
+        const QString &machineFilePath() const;
+        void setMachineFilePath(const QString &strMachineFilePath);
 
-       const QString &machineFolder() const;
-       void setMachineFolder(const QString &strMachineFolder);
+        const QString &machineFolder() const;
+        void setMachineFolder(const QString &strMachineFolder);
 
-       const QString &machineBaseName() const;
-       void setMachineBaseName(const QString &strMachineBaseName);
+        const QString &machineBaseName() const;
+        void setMachineBaseName(const QString &strMachineBaseName);
 
-      const QString &createdMachineFolder() const;
-      void setCreatedMachineFolder(const QString &strCreatedMachineFolder);
+        const QString &createdMachineFolder() const;
+        void setCreatedMachineFolder(const QString &strCreatedMachineFolder);
 
-      const QString &detectedOSTypeId() const;
-      void setDetectedOSTypeId(const QString &strDetectedOSTypeId);
+        const QString &detectedOSTypeId() const;
+        void setDetectedOSTypeId(const QString &strDetectedOSTypeId);
 
-      const QString &guestOSFamilyId() const;
-      void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
+        const QString &guestOSFamilyId() const;
+        void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
 
-      const CGuestOSType &guestOSType() const;
-      void setGuestOSType(const CGuestOSType &guestOSType);
+        const CGuestOSType &guestOSType() const;
+        void setGuestOSType(const CGuestOSType &guestOSType);
 
-      bool installGuestAdditions() const;
-      void setInstallGuestAdditions(bool fInstallGA);
+        bool installGuestAdditions() const;
+        void setInstallGuestAdditions(bool fInstallGA);
 
-      bool startHeadless() const;
-      void setStartHeadless(bool fStartHeadless);
+        bool startHeadless() const;
+        void setStartHeadless(bool fStartHeadless);
 
-      bool skipUnattendedInstall() const;
-      void setSkipUnattendedInstall(bool fSkipUnattendedInstall);
+        bool skipUnattendedInstall() const;
+        void setSkipUnattendedInstall(bool fSkipUnattendedInstall);
 
-      bool EFIEnabled() const;
-      void setEFIEnabled(bool fEnabled);
+        bool EFIEnabled() const;
+        void setEFIEnabled(bool fEnabled);
 
-      const QString &ISOFilePath() const;
-      void setISOFilePath(const QString &strISOFilePath);
+        const QString &ISOFilePath() const;
+        void setISOFilePath(const QString &strISOFilePath);
 
-      const QString &userName() const;
-      void setUserName(const QString &strUserName);
+        const QString &userName() const;
+        void setUserName(const QString &strUserName);
 
-      const QString &password() const;
-      void setPassword(const QString &strPassword);
+        const QString &password() const;
+        void setPassword(const QString &strPassword);
 
-      const QString &guestAdditionsISOPath() const;
-      void setGuestAdditionsISOPath(const QString &strGAISOPath);
+        const QString &guestAdditionsISOPath() const;
+        void setGuestAdditionsISOPath(const QString &strGAISOPath);
 
-      const QString &hostnameDomainName() const;
-      void setHostnameDomainName(const QString &strHostnameDomainName);
+        const QString &hostnameDomainName() const;
+        void setHostnameDomainName(const QString &strHostnameDomainName);
 
-      const QString &productKey() const;
-      void setProductKey(const QString &productKey);
+        const QString &productKey() const;
+        void setProductKey(const QString &productKey);
 
-      int CPUCount() const;
-      void setCPUCount(int iCPUCount);
+        int CPUCount() const;
+        void setCPUCount(int iCPUCount);
 
-      int memorySize() const;
-      void setMemorySize(int iMemory);
+        int memorySize() const;
+        void setMemorySize(int iMemory);
 
-      qulonglong mediumVariant() const;
-      void setMediumVariant(qulonglong uMediumVariant);
+        qulonglong mediumVariant() const;
+        void setMediumVariant(qulonglong uMediumVariant);
 
-      const CMediumFormat &mediumFormat();
-      void setMediumFormat(const CMediumFormat &mediumFormat);
+        const CMediumFormat &mediumFormat();
+        void setMediumFormat(const CMediumFormat &mediumFormat);
 
-      const QString &mediumPath() const;
-      void setMediumPath(const QString &strMediumPath);
+        const QString &mediumPath() const;
+        void setMediumPath(const QString &strMediumPath);
 
-      qulonglong mediumSize() const;
-      void setMediumSize(qulonglong mediumSize);
+        qulonglong mediumSize() const;
+        void setMediumSize(qulonglong mediumSize);
+
+        SelectedDiskSource diskSource() const;
+        void setDiskSource(SelectedDiskSource enmDiskSource);
     /** @} */
 
 protected:
@@ -218,6 +229,7 @@ private:
        CMediumFormat m_comMediumFormat;
        QString m_strMediumPath;
        qulonglong m_uMediumSize;
+       SelectedDiskSource m_enmDiskSource;
     /** @} */
 };
 

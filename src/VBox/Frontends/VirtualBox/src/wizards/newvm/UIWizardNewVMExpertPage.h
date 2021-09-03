@@ -26,7 +26,6 @@
 
 /* GUI includes: */
 #include "UINativeWizardPage.h"
-#include "UIWizardNewVMDiskPage.h"
 
 /* Forward declarations: */
 class QButtonGroup;
@@ -143,7 +142,6 @@ private:
         UIMediaComboBox *m_pDiskSelector;
         QIToolButton *m_pDiskSelectionButton;
         QSet<QString> m_userModifiedParameters;
-        SelectedDiskSource m_enmSelectedDiskSource;
         bool m_fRecommendedNoDisk;
         qulonglong m_uMediumSizeMin;
         qulonglong m_uMediumSizeMax;
