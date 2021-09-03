@@ -30,7 +30,7 @@ class HGCMObject;
 
 typedef struct _ObjectAVLCore
 {
-    AVLULNODECORE AvlCore;
+    AVLU32NODECORE AvlCore;
     HGCMObject *pSelf;
 } ObjectAVLCore;
 

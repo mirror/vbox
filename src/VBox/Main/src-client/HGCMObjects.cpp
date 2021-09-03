@@ -35,7 +35,7 @@ static RTCRITSECT g_critsect;
 static uint32_t volatile g_u32InternalHandleCount;
 static uint32_t volatile g_u32ClientHandleCount;
 
-static PAVLULNODECORE g_pTree;
+static PAVLU32NODECORE g_pTree;
 
 
 DECLINLINE(int) hgcmObjEnter(void)
@@ -122,7 +122,7 @@ uint32_t hgcmObjMake(HGCMObject *pObject, uint32_t u32HandleIn)
             /* Insert object to AVL tree. */
             pCore->AvlCore.Key = Key;
 
-            bool fRC = RTAvlULInsert(&g_pTree, &pCore->AvlCore);
+            bool fRC = RTAvlU32Insert(&g_pTree, &pCore->AvlCore);
 
             /* Could not insert a handle. */
             if (!fRC)
@@ -184,7 +184,7 @@ void hgcmObjDeleteHandle(uint32_t handle)
 
         if (RT_SUCCESS(rc))
         {
-            ObjectAVLCore *pCore = (ObjectAVLCore *)RTAvlULRemove(&g_pTree, handle);
+            ObjectAVLCore *pCore = (ObjectAVLCore *)RTAvlU32Remove(&g_pTree, handle);
 
             if (pCore)
             {
@@ -219,7 +219,7 @@ HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType)
 
     if (RT_SUCCESS(rc))
     {
-        ObjectAVLCore *pCore = (ObjectAVLCore *)RTAvlULGet(&g_pTree, handle);
+        ObjectAVLCore *pCore = (ObjectAVLCore *)RTAvlU32Get(&g_pTree, handle);
 
         Assert(!pCore || (pCore->pSelf && pCore->pSelf->Type() == enmObjType));
         if (    pCore
