@@ -411,14 +411,37 @@ class tdAudioTest(vbox.TestDriver):
         if fRc:
             reporter.log('Using VKAT on guest at \"%s\"' % (sVkatExe));
 
-            asArgs = [ sVkatExe, 'test', '--mode', 'guest', '--probe-backends', \
-                                 '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
+            asArgs = [];
+
+            asArgsVkat = [ sVkatExe, 'test', '--mode', 'guest', '--probe-backends', \
+                           '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
+
+            asArgs.extend(asArgsVkat);
 
             for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
                 asArgs.extend([ '-v' ]);
 
             # Needed for NATed VMs.
             asArgs.extend(['--tcp-connect-addr', '10.0.2.2' ]);
+
+            if oTestVm.isLinux(): ## @todo Might need some more fine tuning later.
+                #
+                # Some Linux distros have a bug / are configured (?) so that processes started by init system
+                # cannot access the PulseAudio server ("Connection refused"), for example OL 8.1.
+                #
+                # To work around this, we use the (hopefully) configured user "vbox" and run it under its behalf,
+                # as the Test Execution Service (TxS) currently does not implement impersonation yet.
+                #
+                sCmd     = '/usr/bin/su';
+                sCmdArgs = '';
+                for sArg in asArgs:
+                    sCmdArgs += sArg + " ";
+                asArgs   = [ sCmd, 'vbox', '-c', sCmdArgs ];
+            else: # Just start it with the same privileges as TxS.
+                sCmd     = sVkatExe;
+
+            reporter.log2('startVkatOnGuest: sCmd=%s' % (sCmd,));
+            reporter.log2('startVkatOnGuest: asArgs=%s' % (asArgs,));
 
             #
             # Add own environment stuff.
@@ -435,7 +458,7 @@ class tdAudioTest(vbox.TestDriver):
             #
             # Execute asynchronously on the guest.
             #
-            fRc = oTxsSession.asyncExec(sVkatExe, asArgs, asEnv, cMsTimeout = 15 * 60 * 1000);
+            fRc = oTxsSession.asyncExec(sCmd, asArgs, asEnv, cMsTimeout = 15 * 60 * 1000, sPrefix = '[VKAT Guest] ');
             if fRc:
                 self.addTask(oTxsSession);
 
