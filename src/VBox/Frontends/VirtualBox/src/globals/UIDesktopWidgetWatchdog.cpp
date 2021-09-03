@@ -41,10 +41,13 @@
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
 #include <VBox/log.h>
-
-/* Platform includes: */
 #ifdef VBOX_WS_WIN
 # include <iprt/win/windows.h>
+#endif
+
+/* External includes: */
+#ifdef VBOX_WS_X11
+# include <xcb/xcb.h>
 #endif
 
 
