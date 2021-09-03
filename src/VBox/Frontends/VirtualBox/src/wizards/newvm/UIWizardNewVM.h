@@ -159,6 +159,9 @@ public:
 
         SelectedDiskSource diskSource() const;
         void setDiskSource(SelectedDiskSource enmDiskSource);
+
+        bool emptyDiskRecommended() const;
+        void setEmptyDiskRecommended(bool fEmptyDiskRecommended);
     /** @} */
 
 protected:
@@ -230,6 +233,7 @@ private:
        QString m_strMediumPath;
        qulonglong m_uMediumSize;
        SelectedDiskSource m_enmDiskSource;
+       bool m_fEmptyDiskRecommended;
     /** @} */
 };
 

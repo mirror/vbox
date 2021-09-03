@@ -104,12 +104,11 @@ private:
     /** @} */
 
     /** @name Variables
-     * @{ */
-      bool m_fRecommendedNoDisk;
-      QSet<QString> m_userModifiedParameters;
-      bool m_fVDIFormatFound;
-      qulonglong m_uMediumSizeMin;
-      qulonglong m_uMediumSizeMax;
+      * @{ */
+        QSet<QString> m_userModifiedParameters;
+        bool m_fVDIFormatFound;
+        qulonglong m_uMediumSizeMin;
+        qulonglong m_uMediumSizeMax;
     /** @} */
 };
 

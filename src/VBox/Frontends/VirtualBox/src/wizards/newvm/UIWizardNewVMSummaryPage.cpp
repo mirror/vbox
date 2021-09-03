@@ -91,11 +91,11 @@ bool UIWizardNewVMSummaryPage::validatePage()
     if (pWizard->diskSource() == SelectedDiskSource_Empty)
     {
         /* Ask user about disk-less machine unless that's the recommendation: */
-        // if (!m_fRecommendedNoDisk)
-        // {
-        //     if (!msgCenter().confirmHardDisklessMachine(this))
-        //         return false;
-        // }
+        if (!pWizard->emptyDiskRecommended())
+        {
+            if (!msgCenter().confirmHardDisklessMachine(this))
+                return false;
+        }
     }
     else if (pWizard->diskSource() == SelectedDiskSource_New)
     {

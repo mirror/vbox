@@ -70,6 +70,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_uMediumVariant(0)
     , m_uMediumSize(0)
     , m_enmDiskSource(SelectedDiskSource_New)
+    , m_fEmptyDiskRecommended(false)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -895,6 +896,16 @@ SelectedDiskSource UIWizardNewVM::diskSource() const
 void UIWizardNewVM::setDiskSource(SelectedDiskSource enmDiskSource)
 {
     m_enmDiskSource = enmDiskSource;
+}
+
+bool UIWizardNewVM::emptyDiskRecommended() const
+{
+    return m_fEmptyDiskRecommended;
+}
+
+void UIWizardNewVM::setEmptyDiskRecommended(bool fEmptyDiskRecommended)
+{
+    m_fEmptyDiskRecommended = fEmptyDiskRecommended;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const

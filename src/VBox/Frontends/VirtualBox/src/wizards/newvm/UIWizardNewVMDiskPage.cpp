@@ -71,7 +71,6 @@ UIWizardNewVMDiskPage::UIWizardNewVMDiskPage()
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
     , m_pFixedCheckBox(0)
-    , m_fRecommendedNoDisk(false)
     , m_fVDIFormatFound(false)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
@@ -258,7 +257,7 @@ void UIWizardNewVMDiskPage::initializePage()
                 m_pDiskNew->setChecked(true);
             }
             pWizard->setDiskSource(SelectedDiskSource_New);
-            m_fRecommendedNoDisk = false;
+            pWizard->setEmptyDiskRecommended(false);
         }
         else
         {
@@ -268,7 +267,7 @@ void UIWizardNewVMDiskPage::initializePage()
                 m_pDiskEmpty->setChecked(true);
             }
             pWizard->setDiskSource(SelectedDiskSource_Empty);
-            m_fRecommendedNoDisk = true;
+            pWizard->setEmptyDiskRecommended(true);
         }
     }
 
