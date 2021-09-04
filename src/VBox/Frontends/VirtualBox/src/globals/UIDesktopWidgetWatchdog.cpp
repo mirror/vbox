@@ -29,8 +29,11 @@
 
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
 #ifdef VBOX_WS_WIN
-#include "VBoxUtils-win.h"
+# include "VBoxUtils-win.h"
 #endif
 #ifdef VBOX_WS_X11
 # include "UICommon.h"
@@ -47,8 +50,8 @@
 #endif
 
 /* External includes: */
+#include <math.h>
 #ifdef VBOX_WS_X11
-# include <math.h>
 # include <xcb/xcb.h>
 #endif
 

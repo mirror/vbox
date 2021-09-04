@@ -73,7 +73,6 @@
 #ifdef VBOX_WS_MAC
 # include "UIMachineWindowFullscreen.h"
 # include "UIMachineWindowSeamless.h"
-# include "VBoxUtils-darwin.h"
 #endif
 #ifdef VBOX_WS_WIN
 # include "VBoxUtils-win.h"
