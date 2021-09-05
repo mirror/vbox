@@ -448,6 +448,8 @@ typedef enum DEVTPMSTATE
     DEVTPMSTATE_CMD_CANCEL,
     /** TPM ran into a fatal error and is not operational. */
     DEVTPMSTATE_FATAL_ERROR,
+    /** Last valid state (used for saved state sanity check). */
+    DEVTPMSTATE_LAST_VALID = DEVTPMSTATE_FATAL_ERROR,
     /** 32bit hack. */
     DEVTPMSTATE_32BIT_HACK = 0x7fffffff
 } DEVTPMSTATE;
@@ -569,6 +571,35 @@ typedef CTX_SUFF(PDEVTPM) PDEVTPMCC;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#ifdef IN_RING3
+/**
+ * SSM descriptor table for the TPM structure.
+ */
+static SSMFIELD const g_aTpmFields[] =
+{
+    SSMFIELD_ENTRY(DEVTPM, fEstablishmentSet),
+    SSMFIELD_ENTRY(DEVTPM, bLoc),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[0].uRegIntEn),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[0].uRegIntSts),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[1].uRegIntEn),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[1].uRegIntSts),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[2].uRegIntEn),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[2].uRegIntSts),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[3].uRegIntEn),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[3].uRegIntSts),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[4].uRegIntEn),
+    SSMFIELD_ENTRY(DEVTPM, aLoc[4].uRegIntSts),
+    SSMFIELD_ENTRY(DEVTPM, bmLocReqAcc),
+    SSMFIELD_ENTRY(DEVTPM, bmLocSeizedAcc),
+    SSMFIELD_ENTRY(DEVTPM, enmState),
+    SSMFIELD_ENTRY(DEVTPM, offCmdResp),
+    SSMFIELD_ENTRY(DEVTPM, abCmdResp),
+    SSMFIELD_ENTRY_TERM()
+};
+#endif
 
 
 /**
@@ -1420,7 +1451,16 @@ static DECLCALLBACK(int) tpmR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     RT_NOREF(uPass);
 
-    pHlp->pfnSSMPutU8(pSSM, pThis->uIrq);
+    /* Save the part of the config used for verification purposes when restoring. */
+    pHlp->pfnSSMPutGCPhys(pSSM, pThis->GCPhysMmio);
+    pHlp->pfnSSMPutU16(   pSSM, pThis->uVenId);
+    pHlp->pfnSSMPutU16(   pSSM, pThis->uDevId);
+    pHlp->pfnSSMPutU8(    pSSM, pThis->bRevId);
+    pHlp->pfnSSMPutU8(    pSSM, pThis->uIrq);
+    pHlp->pfnSSMPutBool(  pSSM, pThis->fLocChangeSup);
+    pHlp->pfnSSMPutU32(   pSSM, (uint32_t)pThis->enmTpmVers);
+    pHlp->pfnSSMPutU32(   pSSM, pThis->cbCmdResp);
+
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -1433,7 +1473,10 @@ static DECLCALLBACK(int) tpmR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PDEVTPM         pThis = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
-    pHlp->pfnSSMPutU8(pSSM, pThis->uIrq);
+    tpmR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    int rc = pHlp->pfnSSMPutStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aTpmFields[0], NULL);
+    AssertRCReturn(rc, rc);
 
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
@@ -1446,27 +1489,92 @@ static DECLCALLBACK(int) tpmR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 {
     PDEVTPM         pThis = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
-    uint8_t         bIrq;
-    int rc;
+    uint8_t         u8;
+    uint16_t        u16;
+    uint32_t        u32;
+    bool            f;
+    RTGCPHYS        GCPhysMmio;
+    TPMVERSION      enmTpmVers;
 
-    AssertMsgReturn(uVersion >= TPM_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-    pHlp->pfnSSMGetU8(    pSSM, &bIrq);
+    Assert(uPass == SSM_PASS_FINAL); RT_NOREF(uPass);
+    AssertMsgReturn(uVersion == TPM_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    /* Verify the config first. */
+    int rc = pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysMmio);
+    AssertRCReturn(rc, rc);
+    if (GCPhysMmio != pThis->GCPhysMmio)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved GCPhysMmio=%#RGp; configured GCPhysMmio=%#RGp"),
+                                       GCPhysMmio, pThis->GCPhysMmio);
+
+    rc = pHlp->pfnSSMGetU16(pSSM, &u16);
+    AssertRCReturn(rc, rc);
+    if (u16 != pThis->uVenId)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved uVenId=%#RX16; configured uVenId=%#RX16"),
+                                       u16, pThis->uVenId);
+
+    rc = pHlp->pfnSSMGetU16(pSSM,  &u16);
+    AssertRCReturn(rc, rc);
+    if (u16 != pThis->uDevId)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved uDevId=%#RX16; configured uDevId=%#RX16"),
+                                       u16, pThis->uDevId);
+
+    rc = pHlp->pfnSSMGetU8(pSSM, &u8);
+    AssertRCReturn(rc, rc);
+    if (u8 != pThis->bRevId)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved bRevId=%#RX8; configured bDevId=%#RX8"),
+                                       u8, pThis->bRevId);
+
+    rc = pHlp->pfnSSMGetU8(pSSM, &u8);
+    AssertRCReturn(rc, rc);
+    if (u8 != pThis->uIrq)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved uIrq=%#RX8; configured uIrq=%#RX8"),
+                                       u8, pThis->uIrq);
+
+    rc = pHlp->pfnSSMGetBool(pSSM, &f);
+    AssertRCReturn(rc, rc);
+    if (f != pThis->fLocChangeSup)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved fLocChangeSup=%RTbool; configured fLocChangeSup=%RTbool"),
+                                       f, pThis->fLocChangeSup);
+
+    rc = pHlp->pfnSSMGetU32(pSSM,  (uint32_t *)&enmTpmVers);
+    AssertRCReturn(rc, rc);
+    if (enmTpmVers != pThis->enmTpmVers)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved enmTpmVers=%RU32; configured enmTpmVers=%RU32"),
+                                       enmTpmVers, pThis->enmTpmVers);
+
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+    if (u32 != pThis->cbCmdResp)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                       N_("Config mismatch - saved cbCmdResp=%RU32; configured cbCmdResp=%RU32"),
+                                       u32, pThis->cbCmdResp);
+
     if (uPass == SSM_PASS_FINAL)
     {
+        rc = pHlp->pfnSSMGetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aTpmFields[0], NULL);
+
         /* The marker. */
-        uint32_t u32;
         rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertRCReturn(rc, rc);
         AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-    }
 
-    /*
-     * Check the config.
-     */
-    if (pThis->uIrq != bIrq)
-        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
-                                       N_("Config mismatch - saved IRQ=%#x; configured IRQ=%#x"),
-                                       bIrq, pThis->uIrq);
+        /* Verify device state sanity. */
+        AssertLogRelMsgReturn(   pThis->enmState > DEVTPMSTATE_INVALID
+                              && pThis->enmState <= DEVTPMSTATE_LAST_VALID,
+                              ("Invalid TPM state loaded from saved state: %#x\n", pThis->enmState),
+                              VERR_SSM_UNEXPECTED_DATA);
+
+        AssertLogRelMsgReturn(pThis->offCmdResp <= pThis->cbCmdResp,
+                              ("Invalid TPM command/response buffer offset loaded from saved state: %#x\n", pThis->offCmdResp),
+                              VERR_SSM_UNEXPECTED_DATA);
+    }
 
     return VINF_SUCCESS;
 }
