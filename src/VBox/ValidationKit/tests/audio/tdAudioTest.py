@@ -536,7 +536,7 @@ class tdAudioTest(vbox.TestDriver):
 
             fRc = self.executeHst("VKAT Host Verify", asArgs);
             if fRc:
-                reporter.error("Verification audio data successful");
+                reporter.log("Verification audio data successful");
             else:
                 #
                 # Add the test sets to the test manager for later (manual) diagnosis.
