@@ -273,11 +273,32 @@ public:
         void cannotOpenSession(const CProgress &comProgress, const QString &strMachineName) const;
 
         void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
+
+        void cannotAttachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
+
+        void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
+        void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
+        void cannotApplyCloudMachineFormSettings(const CForm &comForm, const QString &strName, QWidget *pParent = 0) const;
+        void cannotApplyCloudMachineFormSettings(const CProgress &comProgress, const QString &strName, QWidget *pParent = 0) const;
     /** @} */
 
     /** @name Common warnings.
       * @{ */
         bool confirmResetMachine(const QString &strNames) const;
+
+        void cannotSaveSettings(const QString strDetails, QWidget *pParent = 0) const;
+        void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;
+        void warnAboutStateChange(QWidget *pParent = 0) const;
+        bool confirmSettingsReloading(QWidget *pParent = 0) const;
+        int confirmRemovingOfLastDVDDevice(QWidget *pParent = 0) const;
+        bool confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent = 0) const;
+        bool confirmStorageBusChangeWithExcessiveRemoval(QWidget *pParent = 0) const;
+        bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
+        bool warnAboutIncorrectAddress(QWidget *pParent = 0) const;
+        bool warnAboutEmptyGuestAddress(QWidget *pParent = 0) const;
+        bool warnAboutNameShouldBeUnique(QWidget *pParent = 0) const;
+        bool warnAboutRulesConflict(QWidget *pParent = 0) const;
+        bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
     /** @} */
 
     /** @name VirtualBox Manager warnings.
@@ -322,35 +343,6 @@ public:
         bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
     /** @} */
 
-    /* API: Common settings warnings: */
-    void cannotSaveSettings(const QString strDetails, QWidget *pParent = 0) const;
-
-    /* API: Global settings warnings: */
-    bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
-    void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
-
-    /* API: Machine settings warnings: */
-    void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;
-    void warnAboutStateChange(QWidget *pParent = 0) const;
-    bool confirmSettingsReloading(QWidget *pParent = 0) const;
-    int confirmRemovingOfLastDVDDevice(QWidget *pParent = 0) const;
-    bool confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent = 0) const;
-    bool confirmStorageBusChangeWithExcessiveRemoval(QWidget *pParent = 0) const;
-    void cannotAttachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
-    bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
-    bool warnAboutIncorrectAddress(QWidget *pParent = 0) const;
-    bool warnAboutEmptyGuestAddress(QWidget *pParent = 0) const;
-    bool warnAboutNameShouldBeUnique(QWidget *pParent = 0) const;
-    bool warnAboutRulesConflict(QWidget *pParent = 0) const;
-    bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
-    void cannotChangeMachineAttribute(const CMachine &comMachine, QWidget *pParent = 0) const;
-    void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
-    void cannotApplyCloudMachineFormSettings(const CForm &comForm, const QString &strName, QWidget *pParent = 0) const;
-    void cannotApplyCloudMachineFormSettings(const CProgress &comProgress, const QString &strName, QWidget *pParent = 0) const;
-    void cannotChangeGraphicsAdapterAttribute(const CGraphicsAdapter &comAdapter, QWidget *pParent = 0) const;
-    void cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter, QWidget *pParent = 0) const;
-    void cannotChangeNetworkAdapterAttribute(const CNetworkAdapter &comAdapter, QWidget *pParent = 0) const;
-
     /* API: Virtual Medium Manager warnings: */
     void cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent = 0) const;
     void cannotMoveMediumStorage(const CMedium &comMedium, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent = 0) const;
@@ -372,6 +364,7 @@ public:
     void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 
     /* API: Network Manager warnings: */
+    bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
     bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
     void cannotAcquireHostNetworkInterfaces(const CHost &comHost, QWidget *pParent = 0) const;
     void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;

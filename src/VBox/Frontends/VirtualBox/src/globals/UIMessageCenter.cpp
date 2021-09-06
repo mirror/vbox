@@ -57,7 +57,6 @@
 
 /* COM includes: */
 #include "CAppliance.h"
-#include "CAudioAdapter.h"
 #include "CBooleanFormValue.h"
 #include "CChoiceFormValue.h"
 #include "CCloudClient.h"
@@ -72,14 +71,12 @@
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
 #include "CForm.h"
-#include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
 #include "CMachine.h"
 #include "CMediumAttachment.h"
 #include "CMediumFormat.h"
 #include "CNATEngine.h"
 #include "CNATNetwork.h"
-#include "CNetworkAdapter.h"
 #include "CRangedIntegerFormValue.h"
 #include "CSerialPort.h"
 #include "CSharedFolder.h"
@@ -569,6 +566,67 @@ void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString 
           UIErrorString::formatErrorInfo(machine));
 }
 
+void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumDeviceType enmType,
+                                         const QString &strLocation, const StorageSlot &storageSlot,
+                                         QWidget *pParent /* = 0*/)
+{
+    QString strMessage;
+    switch (enmType)
+    {
+        case UIMediumDeviceType_HardDisk:
+        {
+            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumDeviceType_DVD:
+        {
+            strMessage = tr("Failed to attach the optical drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumDeviceType_Floppy:
+        {
+            strMessage = tr("Failed to attach the floppy drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    error(pParent, MessageType_Error,
+          strMessage, UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Critical,
+          tr("Failed to set global VirtualBox properties."),
+          UIErrorString::formatErrorInfo(properties));
+}
+
+void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
+             .arg(CMachine(machine).GetName(), CMachine(machine).GetSettingsFilePath()),
+          UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotApplyCloudMachineFormSettings(const CForm &comForm, const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save the settings of the cloud virtual machine <b>%1</b>.").arg(strName),
+          UIErrorString::formatErrorInfo(comForm));
+}
+
+void UIMessageCenter::cannotApplyCloudMachineFormSettings(const CProgress &comProgress, const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save the settings of the cloud virtual machine <b>%1</b>.").arg(strName),
+          UIErrorString::formatErrorInfo(comProgress));
+}
+
 bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
 {
     return questionBinary(0, MessageType_Question,
@@ -578,6 +636,131 @@ bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
                              .arg(strNames),
                           "confirmResetMachine" /* auto-confirm id */,
                           tr("Reset", "machine"));
+}
+
+void UIMessageCenter::cannotSaveSettings(const QString strDetails, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save the settings."),
+          strDetails);
+}
+
+void UIMessageCenter::warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent /* = 0*/) const
+{
+    /* If IMachine::GetUSBController(), IHost::GetUSBDevices() etc. return
+     * E_NOTIMPL, it means the USB support is intentionally missing
+     * (as in the OSE version). Don't show the error message in this case. */
+    COMResult res(object);
+    if (res.rc() == E_NOTIMPL)
+        return;
+    /* Show the error: */
+    error(pParent, res.isWarning() ? MessageType_Warning : MessageType_Error,
+          tr("Failed to access the USB subsystem."),
+          UIErrorString::formatErrorInfo(res),
+          "warnAboutUnaccessibleUSB");
+}
+
+void UIMessageCenter::warnAboutStateChange(QWidget *pParent /* = 0*/) const
+{
+    if (warningShown("warnAboutStateChange"))
+        return;
+    setWarningShown("warnAboutStateChange", true);
+
+    alert(pParent, MessageType_Warning,
+          tr("The virtual machine that you are changing has been started. "
+             "Only certain settings can be changed while a machine is running. "
+             "All other changes will be lost if you close this window now."));
+
+    setWarningShown("warnAboutStateChange", false);
+}
+
+bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0*/) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>The machine settings were changed while you were editing them. "
+                             "You currently have unsaved setting changes.</p>"
+                             "<p>Would you like to reload the changed settings or to keep your own changes?</p>"),
+                          0 /* auto-confirm id */,
+                          tr("Reload settings"), tr("Keep changes"));
+}
+
+int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) const
+{
+    return questionBinary(pParent, MessageType_Info,
+                          tr("<p>Are you sure you want to delete the optical drive?</p>"
+                             "<p>You will not be able to insert any optical disks or ISO images "
+                             "or install the Guest Additions without it!</p>"),
+                          0 /* auto-confirm id */,
+                          tr("&Remove", "medium") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+bool UIMessageCenter::confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>This controller has optical devices attached.  You have requested storage bus "
+                             "change to type which doesn't support optical devices.</p><p>If you proceed optical "
+                             "devices will be removed.</p>"));
+}
+
+bool UIMessageCenter::confirmStorageBusChangeWithExcessiveRemoval(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>This controller has devices attached.  You have requested storage bus change to "
+                             "type which supports smaller amount of attached devices.</p><p>If you proceed "
+                             "excessive devices will be removed.</p>"));
+}
+
+bool UIMessageCenter::warnAboutIncorrectPort(QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("The current port forwarding rules are not valid. "
+             "None of the host or guest port values may be set to zero."));
+    return false;
+}
+
+bool UIMessageCenter::warnAboutIncorrectAddress(QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("The current port forwarding rules are not valid. "
+             "All of the host or guest address values should be correct or empty."));
+    return false;
+}
+
+bool UIMessageCenter::warnAboutEmptyGuestAddress(QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("The current port forwarding rules are not valid. "
+             "None of the guest address values may be empty."));
+    return false;
+}
+
+bool UIMessageCenter::warnAboutNameShouldBeUnique(QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("The current port forwarding rules are not valid. "
+             "Rule names should be unique."));
+    return false;
+}
+
+bool UIMessageCenter::warnAboutRulesConflict(QWidget *pParent /* = 0 */) const
+{
+    alert(pParent, MessageType_Error,
+          tr("The current port forwarding rules are not valid. "
+             "Few rules have same host ports and conflicting IP addresses."));
+    return false;
+}
+
+bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* = 0*/) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
+                             "<p>If you proceed your changes will be discarded.</p>"),
+                          0 /* auto-confirm id */,
+                          QString() /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::warnAboutInaccessibleMedia() const
@@ -891,237 +1074,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
     return false;
 }
 
-void UIMessageCenter::cannotSaveSettings(const QString strDetails, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save the settings."),
-          strDetails);
-}
-
-bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p>"
-                             "<p>If this network is in use by one or more virtual "
-                             "machine network adapters these adapters will no longer be "
-                             "usable until you correct their settings by either choosing "
-                             "a different network name or a different adapter attachment "
-                             "type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Critical,
-          tr("Failed to set global VirtualBox properties."),
-          UIErrorString::formatErrorInfo(properties));
-}
-
-void UIMessageCenter::warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent /* = 0*/) const
-{
-    /* If IMachine::GetUSBController(), IHost::GetUSBDevices() etc. return
-     * E_NOTIMPL, it means the USB support is intentionally missing
-     * (as in the OSE version). Don't show the error message in this case. */
-    COMResult res(object);
-    if (res.rc() == E_NOTIMPL)
-        return;
-    /* Show the error: */
-    error(pParent, res.isWarning() ? MessageType_Warning : MessageType_Error,
-          tr("Failed to access the USB subsystem."),
-          UIErrorString::formatErrorInfo(res),
-          "warnAboutUnaccessibleUSB");
-}
-
-void UIMessageCenter::warnAboutStateChange(QWidget *pParent /* = 0*/) const
-{
-    if (warningShown("warnAboutStateChange"))
-        return;
-    setWarningShown("warnAboutStateChange", true);
-
-    alert(pParent, MessageType_Warning,
-          tr("The virtual machine that you are changing has been started. "
-             "Only certain settings can be changed while a machine is running. "
-             "All other changes will be lost if you close this window now."));
-
-    setWarningShown("warnAboutStateChange", false);
-}
-
-bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>The machine settings were changed while you were editing them. "
-                             "You currently have unsaved setting changes.</p>"
-                             "<p>Would you like to reload the changed settings or to keep your own changes?</p>"),
-                          0 /* auto-confirm id */,
-                          tr("Reload settings"), tr("Keep changes"));
-}
-
-int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Info,
-                          tr("<p>Are you sure you want to delete the optical drive?</p>"
-                             "<p>You will not be able to insert any optical disks or ISO images "
-                             "or install the Guest Additions without it!</p>"),
-                          0 /* auto-confirm id */,
-                          tr("&Remove", "medium") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-bool UIMessageCenter::confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>This controller has optical devices attached.  You have requested storage bus "
-                             "change to type which doesn't support optical devices.</p><p>If you proceed optical "
-                             "devices will be removed.</p>"));
-}
-
-bool UIMessageCenter::confirmStorageBusChangeWithExcessiveRemoval(QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>This controller has devices attached.  You have requested storage bus change to "
-                             "type which supports smaller amount of attached devices.</p><p>If you proceed "
-                             "excessive devices will be removed.</p>"));
-}
-
-void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumDeviceType enmType,
-                                         const QString &strLocation, const StorageSlot &storageSlot,
-                                         QWidget *pParent /* = 0*/)
-{
-    QString strMessage;
-    switch (enmType)
-    {
-        case UIMediumDeviceType_HardDisk:
-        {
-            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumDeviceType_DVD:
-        {
-            strMessage = tr("Failed to attach the optical drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumDeviceType_Floppy:
-        {
-            strMessage = tr("Failed to attach the floppy drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        default:
-            break;
-    }
-    error(pParent, MessageType_Error,
-          strMessage, UIErrorString::formatErrorInfo(machine));
-}
-
-bool UIMessageCenter::warnAboutIncorrectPort(QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("The current port forwarding rules are not valid. "
-             "None of the host or guest port values may be set to zero."));
-    return false;
-}
-
-bool UIMessageCenter::warnAboutIncorrectAddress(QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("The current port forwarding rules are not valid. "
-             "All of the host or guest address values should be correct or empty."));
-    return false;
-}
-
-bool UIMessageCenter::warnAboutEmptyGuestAddress(QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("The current port forwarding rules are not valid. "
-             "None of the guest address values may be empty."));
-    return false;
-}
-
-bool UIMessageCenter::warnAboutNameShouldBeUnique(QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("The current port forwarding rules are not valid. "
-             "Rule names should be unique."));
-    return false;
-}
-
-bool UIMessageCenter::warnAboutRulesConflict(QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("The current port forwarding rules are not valid. "
-             "Few rules have same host ports and conflicting IP addresses."));
-    return false;
-}
-
-bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
-                             "<p>If you proceed your changes will be discarded.</p>"),
-                          0 /* auto-confirm id */,
-                          QString() /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-void UIMessageCenter::cannotChangeMachineAttribute(const CMachine &comMachine, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to change the attribute of the virtual machine <b>%1</b>.")
-             .arg(CMachine(comMachine).GetName()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
-             .arg(CMachine(machine).GetName(), CMachine(machine).GetSettingsFilePath()),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotApplyCloudMachineFormSettings(const CForm &comForm, const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save the settings of the cloud virtual machine <b>%1</b>.").arg(strName),
-          UIErrorString::formatErrorInfo(comForm));
-}
-
-void UIMessageCenter::cannotApplyCloudMachineFormSettings(const CProgress &comProgress, const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save the settings of the cloud virtual machine <b>%1</b>.").arg(strName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotChangeGraphicsAdapterAttribute(const CGraphicsAdapter &comAdapter, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to change graphics adapter attribute."),
-          UIErrorString::formatErrorInfo(comAdapter));
-}
-
-void UIMessageCenter::cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to change audio adapter attribute."),
-          UIErrorString::formatErrorInfo(comAdapter));
-}
-
-void UIMessageCenter::cannotChangeNetworkAdapterAttribute(const CNetworkAdapter &comAdapter, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to change network adapter attribute."),
-          UIErrorString::formatErrorInfo(comAdapter));
-}
-
 void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
@@ -1405,6 +1357,22 @@ void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult 
     /* Show the error: */
     error(pParent, MessageType_Error,
           tr("Failed to close the disk image file <nobr><b>%1</b></nobr>.").arg(medium.location()), UIErrorString::formatErrorInfo(rc));
+}
+
+bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p>"
+                             "<p>If this network is in use by one or more virtual "
+                             "machine network adapters these adapters will no longer be "
+                             "usable until you correct their settings by either choosing "
+                             "a different network name or a different adapter attachment "
+                             "type.</p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const

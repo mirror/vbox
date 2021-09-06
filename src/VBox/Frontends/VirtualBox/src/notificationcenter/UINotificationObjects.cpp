@@ -36,6 +36,7 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CConsole.h"
+#include "CGraphicsAdapter.h"
 #include "CEmulatedUSB.h"
 #include "CNetworkAdapter.h"
 #include "CVRDEServer.h"
@@ -322,6 +323,43 @@ void UINotificationMessage::cannotAcquireSnapshotParameter(const CSnapshot &comS
         QApplication::translate("UIMessageCenter", "Snapshot failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire snapshot parameter.") +
         UIErrorString::formatErrorInfo(comSnapshot));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeMachineAttribute(const CMachine &comMachine)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Machine failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change the attribute of the virtual machine <b>%1</b>.")
+                                                   .arg(CMachine(comMachine).GetName()) +
+        UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeGraphicsAdapterAttribute(const CGraphicsAdapter &comAdapter)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Graphics adapter failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change graphics adapter attribute.") +
+        UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Audio adapter failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change audio adapter attribute.") +
+        UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeNetworkAdapterAttribute(const CNetworkAdapter &comAdapter)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Network adapter failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change network adapter attribute.") +
+        UIErrorString::formatErrorInfo(comAdapter));
 }
 
 /* static */
