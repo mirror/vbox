@@ -482,11 +482,11 @@ class tdAudioTest(vbox.TestDriver):
         communicate with VKAT running on the guest and the Validation Kit
         audio driver ATS (Audio Testing Service).
         """
-        _              = oSession, oTxsSession;
+        _              = oTestVm, oSession, oTxsSession;
 
         sPathTemp      = self.sScratchPath;
-        sPathAudioOut  = oTestVm.pathJoin(sPathTemp, 'vkat-host-out-%s' % (sTag));
-        sPathAudioTemp = oTestVm.pathJoin(sPathTemp, 'vkat-host-temp-%s' % (sTag));
+        sPathAudioOut  = os.path.join(sPathTemp, 'vkat-host-out-%s' % (sTag));
+        sPathAudioTemp = os.path.join(sPathTemp, 'vkat-host-temp-%s' % (sTag));
 
         reporter.log('Host audio test temp path is \"%s\"' % (sPathAudioOut));
         reporter.log('Host audio test output path is \"%s\"' % (sPathAudioTemp));
@@ -525,9 +525,9 @@ class tdAudioTest(vbox.TestDriver):
             reporter.testStart('Verifying audio data');
 
             sNameSetHst = '%s-host.tar.gz' % (sTag);
-            sPathSetHst = oTestVm.pathJoin(sPathAudioOut, sNameSetHst);
+            sPathSetHst = os.path.join(sPathAudioOut, sNameSetHst);
             sNameSetGst = '%s-guest.tar.gz' % (sTag);
-            sPathSetGst = oTestVm.pathJoin(sPathAudioOut, sNameSetGst);
+            sPathSetGst = os.path.join(sPathAudioOut, sNameSetGst);
 
             asArgs = [ sVkatExe, 'verify', sPathSetHst, sPathSetGst ];
 
