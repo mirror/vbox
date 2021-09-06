@@ -97,7 +97,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comMachine.SetName(guiAttribute.toString());
                 if (!comMachine.isOk())
                 {
-                    UINotificationMessage::cannotChangeMachineAttribute(comMachine);
+                    UINotificationMessage::cannotChangeMachineParameter(comMachine);
                     fErrorHappened = true;
                 }
                 break;
@@ -108,7 +108,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comMachine.SetOSTypeId(guiAttribute.toString());
                 if (!comMachine.isOk())
                 {
-                    UINotificationMessage::cannotChangeMachineAttribute(comMachine);
+                    UINotificationMessage::cannotChangeMachineParameter(comMachine);
                     fErrorHappened = true;
                 }
                 break;
@@ -119,7 +119,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comMachine.SetMemorySize(guiAttribute.toInt());
                 if (!comMachine.isOk())
                 {
-                    UINotificationMessage::cannotChangeMachineAttribute(comMachine);
+                    UINotificationMessage::cannotChangeMachineParameter(comMachine);
                     fErrorHappened = true;
                 }
                 break;
@@ -130,7 +130,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 saveBootItems(guiAttribute.value<UIBootItemDataList>(), comMachine);
                 if (!comMachine.isOk())
                 {
-                    UINotificationMessage::cannotChangeMachineAttribute(comMachine);
+                    UINotificationMessage::cannotChangeMachineParameter(comMachine);
                     fErrorHappened = true;
                 }
                 break;
@@ -149,7 +149,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comGraphics.SetVRAMSize(guiAttribute.toInt());
                 if (!comGraphics.isOk())
                 {
-                    UINotificationMessage::cannotChangeGraphicsAdapterAttribute(comGraphics);
+                    UINotificationMessage::cannotChangeGraphicsAdapterParameter(comGraphics);
                     fErrorHappened = true;
                 }
                 break;
@@ -168,7 +168,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comGraphics.SetGraphicsControllerType(guiAttribute.value<KGraphicsControllerType>());
                 if (!comGraphics.isOk())
                 {
-                    UINotificationMessage::cannotChangeGraphicsAdapterAttribute(comGraphics);
+                    UINotificationMessage::cannotChangeGraphicsAdapterParameter(comGraphics);
                     fErrorHappened = true;
                 }
                 break;
@@ -187,7 +187,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comAdapter.SetAudioDriver(guiAttribute.value<KAudioDriverType>());
                 if (!comAdapter.isOk())
                 {
-                    UINotificationMessage::cannotChangeAudioAdapterAttribute(comAdapter);
+                    UINotificationMessage::cannotChangeAudioAdapterParameter(comAdapter);
                     fErrorHappened = true;
                 }
                 break;
@@ -206,7 +206,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comAdapter.SetAudioController(guiAttribute.value<KAudioControllerType>());
                 if (!comAdapter.isOk())
                 {
-                    UINotificationMessage::cannotChangeAudioAdapterAttribute(comAdapter);
+                    UINotificationMessage::cannotChangeAudioAdapterParameter(comAdapter);
                     fErrorHappened = true;
                 }
                 break;
@@ -227,7 +227,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 comAdapter.SetAttachmentType(nad.m_enmType);
                 if (!comAdapter.isOk())
                 {
-                    UINotificationMessage::cannotChangeNetworkAdapterAttribute(comAdapter);
+                    UINotificationMessage::cannotChangeNetworkAdapterParameter(comAdapter);
                     fErrorHappened = true;
                     break;
                 }
@@ -246,7 +246,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 }
                 if (!comAdapter.isOk())
                 {
-                    UINotificationMessage::cannotChangeNetworkAdapterAttribute(comAdapter);
+                    UINotificationMessage::cannotChangeNetworkAdapterParameter(comAdapter);
                     fErrorHappened = true;
                 }
                 break;
@@ -257,7 +257,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 removeUSBControllers(comMachine);
                 if (!comMachine.isOk())
                 {
-                    UINotificationMessage::cannotChangeMachineAttribute(comMachine);
+                    UINotificationMessage::cannotChangeMachineParameter(comMachine);
                     fErrorHappened = true;
                     break;
                 }
@@ -268,7 +268,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                     createUSBControllers(comMachine, controllerSet);
                     if (!comMachine.isOk())
                     {
-                        UINotificationMessage::cannotChangeMachineAttribute(comMachine);
+                        UINotificationMessage::cannotChangeMachineParameter(comMachine);
                         fErrorHappened = true;
                     }
                 }

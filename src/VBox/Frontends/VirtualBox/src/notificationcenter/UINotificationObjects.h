@@ -139,30 +139,39 @@ public:
     /** @name COM general warnings.
       * @{ */
         /** Notifies about inability to acquire IVirtualBox parameter.
-          * @param  comVBox  Brings the object paramter get acquired from. */
+          * @param  comVBox  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox);
+        /** Notifies about inability to acquire IMedium parameter.
+          * @param  comMedium  Brings the object parameter get acquired from. */
+        static void cannotAcquireMediumParameter(const CMedium &comMedium);
         /** Notifies about inability to acquire ISession parameter.
-          * @param  comSession  Brings the object paramter get acquired from. */
+          * @param  comSession  Brings the object parameter get acquired from. */
         static void cannotAcquireSessionParameter(const CSession &comSession);
         /** Notifies about inability to acquire IMachine parameter.
-          * @param  comSession  Brings the object paramter get acquired from. */
+          * @param  comSession  Brings the object parameter get acquired from. */
         static void cannotAcquireMachineParameter(const CMachine &comMachine);
         /** Notifies about inability to acquire ISnapshot parameter.
-          * @param  comSnapshot  Brings the object paramter get acquired from. */
+          * @param  comSnapshot  Brings the object parameter get acquired from. */
         static void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot);
+        /** Notifies about inability to acquire IMediumAttachment parameter.
+          * @param  comAttachment  Brings the object parameter get acquired from. */
+        static void cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment);
 
+        /** Notifies about inability to change IMedium parameter.
+          * @param  comMedium  Brings the object parameter being changed for. */
+        static void cannotChangeMediumParameter(const CMedium &comMedium);
         /** Notifies about inability to change IMachine parameter.
-          * @param  comMachine  Brings the object paramter being changed for. */
-        static void cannotChangeMachineAttribute(const CMachine &comMachine);
+          * @param  comMachine  Brings the object parameter being changed for. */
+        static void cannotChangeMachineParameter(const CMachine &comMachine);
         /** Notifies about inability to change IGraphicsAdapter parameter.
-          * @param  comAdapter  Brings the object paramter being changed for. */
-        static void cannotChangeGraphicsAdapterAttribute(const CGraphicsAdapter &comAdapter);
+          * @param  comAdapter  Brings the object parameter being changed for. */
+        static void cannotChangeGraphicsAdapterParameter(const CGraphicsAdapter &comAdapter);
         /** Notifies about inability to change IAudioAdapter parameter.
-          * @param  comAdapter  Brings the object paramter being changed for. */
-        static void cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter);
+          * @param  comAdapter  Brings the object parameter being changed for. */
+        static void cannotChangeAudioAdapterParameter(const CAudioAdapter &comAdapter);
         /** Notifies about inability to change INetworkAdapter parameter.
-          * @param  comAdapter  Brings the object paramter being changed for. */
-        static void cannotChangeNetworkAdapterAttribute(const CNetworkAdapter &comAdapter);
+          * @param  comAdapter  Brings the object parameter being changed for. */
+        static void cannotChangeNetworkAdapterParameter(const CNetworkAdapter &comAdapter);
 
         /** Notifies about inability to enumerate host USB devices.
           * @param  comHost  Brings the host devices enumerated for. */
@@ -185,10 +194,18 @@ public:
 
     /** @name COM VirtualBox Manager warnings.
       * @{ */
+        /** Notifies about inability to open known medium.
+          * @param  comVBox    Brings common VBox object trying to open medium.
+          * @param  uMediumId  Brings the medium ID. */
+        static void cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId);
         /** Notifies about inability to open machine.
           * @param  comVBox      Brings common VBox object trying to open machine.
           * @param  strLocation  Brings the machine location. */
         static void cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation);
+
+        /** Notifies about inability to open machine.
+          * @param  comMedium  Brings the medium being closed. */
+        static void cannotCloseMedium(const CMedium &comMedium);
 
         /** Notifies about inability to discard saved state.
           * @param  comMachine  Brings the collision VM name. */

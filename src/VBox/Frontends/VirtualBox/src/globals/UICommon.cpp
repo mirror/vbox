@@ -2855,7 +2855,7 @@ void UICommon::sltHandleMediumCreated(const CMedium &comMedium)
     /* Acquire device type: */
     const KDeviceType enmDeviceType = comMedium.GetDeviceType();
     if (!comMedium.isOk())
-        msgCenter().cannotAcquireMediumAttribute(comMedium);
+        UINotificationMessage::cannotAcquireMediumParameter(comMedium);
     else
     {
         /* Convert to medium type: */

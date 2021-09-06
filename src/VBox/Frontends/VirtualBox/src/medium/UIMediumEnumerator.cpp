@@ -21,7 +21,6 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIMediumEnumerator.h"
-#include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UITask.h"
 #include "UIThreadPool.h"
@@ -338,7 +337,7 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
 
             /* Show error message if necessary: */
             if (!comVBox.isOk())
-                msgCenter().cannotOpenKnownMedium(comVBox, uMediumId);
+                UINotificationMessage::cannotOpenKnownMedium(comVBox, uMediumId);
             else
             {
                 /* Create new UIMedium: */
@@ -529,7 +528,7 @@ void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<
         if (!comAttachment.isOk())
         {
             LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire attachment medium!\n"));
-            msgCenter().cannotAcquireAttachmentParameter(comAttachment);
+            UINotificationMessage::cannotAcquireAttachmentParameter(comAttachment);
         }
         else
         {
@@ -546,7 +545,7 @@ void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<
             if (!comAttachment.isOk())
             {
                 LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire attachment parent machine!\n"));
-                msgCenter().cannotAcquireAttachmentParameter(comAttachment);
+                UINotificationMessage::cannotAcquireAttachmentParameter(comAttachment);
             }
             else
             {
@@ -583,7 +582,7 @@ void UIMediumEnumerator::parseMedium(CMedium comMedium, QList<QUuid> &result)
         if (!comMedium.isOk())
         {
             LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire medium ID!\n"));
-            msgCenter().cannotAcquireMediumAttribute(comMedium);
+            UINotificationMessage::cannotAcquireMediumParameter(comMedium);
         }
         else
         {

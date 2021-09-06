@@ -173,7 +173,7 @@ bool UIMediumItem::isMediumAttachedTo(QUuid uId)
    return medium().curStateMachineIds().contains(uId);
 }
 
-bool UIMediumItem::changeMediumType(KMediumType enmOldType, KMediumType enmNewType)
+bool UIMediumItem::changeMediumType(KMediumType enmNewType)
 {
     /* Cache the list of VMs the medium is attached to. We will need this for the re-attachment: */
     QList<AttachmentCache> attachmentCacheList;
@@ -214,7 +214,7 @@ bool UIMediumItem::changeMediumType(KMediumType enmOldType, KMediumType enmNewTy
     comMedium.SetType(enmNewType);
     if (!comMedium.isOk())
     {
-        msgCenter().cannotChangeMediumType(comMedium, enmOldType, enmNewType, parentTree());
+        UINotificationMessage::cannotChangeMediumParameter(comMedium);
         return false;
     }
 
@@ -246,7 +246,7 @@ void UIMediumItem::sltHandleMediumRemoveRequest(CMedium comMedium)
     /* Close medium finally: */
     comMedium.Close();
     if (!comMedium.isOk())
-        msgCenter().cannotCloseMedium(medium(), comMedium, treeWidget());
+        UINotificationMessage::cannotCloseMedium(comMedium);
 }
 
 void UIMediumItem::refresh()

@@ -38,6 +38,7 @@
 #include "CConsole.h"
 #include "CGraphicsAdapter.h"
 #include "CEmulatedUSB.h"
+#include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CVRDEServer.h"
 
@@ -299,6 +300,15 @@ void UINotificationMessage::cannotAcquireVirtualBoxParameter(const CVirtualBox &
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireMediumParameter(const CMedium &comMedium)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Medium failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire medium parameter.") +
+        UIErrorString::formatErrorInfo(comMedium));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireSessionParameter(const CSession &comSession)
 {
     createMessage(
@@ -326,7 +336,26 @@ void UINotificationMessage::cannotAcquireSnapshotParameter(const CSnapshot &comS
 }
 
 /* static */
-void UINotificationMessage::cannotChangeMachineAttribute(const CMachine &comMachine)
+void UINotificationMessage::cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Medium attachment failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire attachment parameter.") +
+        UIErrorString::formatErrorInfo(comAttachment));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeMediumParameter(const CMedium &comMedium)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Medium failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change the attribute of the medium <b>%1</b>.")
+                                                   .arg(CMedium(comMedium).GetLocation()) +
+        UIErrorString::formatErrorInfo(comMedium));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeMachineParameter(const CMachine &comMachine)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Machine failure ..."),
@@ -336,7 +365,7 @@ void UINotificationMessage::cannotChangeMachineAttribute(const CMachine &comMach
 }
 
 /* static */
-void UINotificationMessage::cannotChangeGraphicsAdapterAttribute(const CGraphicsAdapter &comAdapter)
+void UINotificationMessage::cannotChangeGraphicsAdapterParameter(const CGraphicsAdapter &comAdapter)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Graphics adapter failure ..."),
@@ -345,7 +374,7 @@ void UINotificationMessage::cannotChangeGraphicsAdapterAttribute(const CGraphics
 }
 
 /* static */
-void UINotificationMessage::cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter)
+void UINotificationMessage::cannotChangeAudioAdapterParameter(const CAudioAdapter &comAdapter)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Audio adapter failure ..."),
@@ -354,7 +383,7 @@ void UINotificationMessage::cannotChangeAudioAdapterAttribute(const CAudioAdapte
 }
 
 /* static */
-void UINotificationMessage::cannotChangeNetworkAdapterAttribute(const CNetworkAdapter &comAdapter)
+void UINotificationMessage::cannotChangeNetworkAdapterParameter(const CNetworkAdapter &comAdapter)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Network adapter failure ..."),
@@ -425,6 +454,16 @@ void UINotificationMessage::cannotACPIShutdownMachine(const CConsole &comConsole
 }
 
 /* static */
+void UINotificationMessage::cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open medium ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the medium with following ID: <nobr><b>%1</b></nobr>.")
+                                                   .arg(uMediumId.toString()) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
 void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation)
 {
     createMessage(
@@ -432,6 +471,17 @@ void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const 
         QApplication::translate("UIMessageCenter", "Failed to open virtual machine located in %1.")
                                                    .arg(strLocation) +
         UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotCloseMedium(const CMedium &comMedium)
+{
+    /* Show the error: */
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't close medium ..."),
+        QApplication::translate("UIMessageCenter", "Failed to close the disk image file <nobr><b>%1</b></nobr>.")
+                                                   .arg(CMedium(comMedium).GetLocation()) +
+        UIErrorString::formatErrorInfo(comMedium));
 }
 
 /* static */

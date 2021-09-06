@@ -109,7 +109,7 @@ public:
     bool isMediumModifiable() const;
     /** Returns true if the medium is attached to the vm with @p uId. */
     bool isMediumAttachedTo(QUuid uId);
-    bool changeMediumType(KMediumType enmOldType, KMediumType enmNewType);
+    bool changeMediumType(KMediumType enmNewType);
 
 protected:
 

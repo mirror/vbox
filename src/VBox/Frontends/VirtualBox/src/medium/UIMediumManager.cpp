@@ -274,7 +274,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     /* Try to assign new medium type: */
     if (   comMedium.isOk()
         && newData.m_options.m_enmMediumType != oldData.m_options.m_enmMediumType)
-        pMediumItem->changeMediumType(oldData.m_options.m_enmMediumType, newData.m_options.m_enmMediumType);
+        pMediumItem->changeMediumType(newData.m_options.m_enmMediumType);
 
     /* Try to assign new medium description: */
     if (   comMedium.isOk()
@@ -284,9 +284,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
 
         /* Show error message if necessary: */
         if (!comMedium.isOk())
-            msgCenter().cannotChangeMediumDescription(comMedium,
-                                                      oldData.m_options.m_strLocation,
-                                                      this);
+            UINotificationMessage::cannotChangeMediumParameter(comMedium);
     }
 
     /* Try to assign new medium location: */

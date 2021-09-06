@@ -2410,7 +2410,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
             /* Compare the name part ignoring the file case: */
             const QString strPath = comMedium.GetLocation();
             if (!comMedium.isOk())
-                msgCenter().cannotAcquireMediumAttribute(comMedium);
+                UINotificationMessage::cannotAcquireMediumParameter(comMedium);
             {
                 const QString strFileName = QFileInfo(strPath).fileName();
                 if (RTPathCompare(strName.toUtf8().constData(), strFileName.toUtf8().constData()) == 0)

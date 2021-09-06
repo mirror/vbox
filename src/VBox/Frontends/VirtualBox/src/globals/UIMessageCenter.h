@@ -267,6 +267,7 @@ public:
         void cannotFindMachineByName(const CVirtualBox &comVBox, const QString &strName) const;
         void cannotFindMachineById(const CVirtualBox &comVBox, const QUuid &uId) const;
         void cannotSetExtraData(const CVirtualBox &comVBox, const QString &strKey, const QString &strValue);
+        void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent = 0) const;
 
         void cannotOpenSession(const CSession &comSession) const;
         void cannotOpenSession(const CMachine &comMachine) const;
@@ -274,7 +275,12 @@ public:
 
         void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
 
-        void cannotAttachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
+        void cannotAttachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation,
+                                const StorageSlot &storageSlot, QWidget *pParent = 0);
+        void cannotDetachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation,
+                                const StorageSlot &storageSlot, QWidget *pParent = 0) const;
+        bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium,
+                                 bool fMount, bool fRetry, QWidget *pParent = 0) const;
 
         void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
         void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
@@ -330,6 +336,20 @@ public:
                                                const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
     /** @} */
 
+    /** @name VirtualBox Manager / Media Manager warnings.
+      * @{ */
+        bool confirmMediumRelease(const UIMedium &medium, bool fInduced, QWidget *pParent = 0) const;
+        bool confirmMediumRemoval(const UIMedium &medium, QWidget *pParent = 0) const;
+        int confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
+    /** @} */
+
+    /** @name VirtualBox Manager / New VM wizard warnings.
+      * @{ */
+        void cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent = 0) const;
+        void cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
+        void cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0) const;
+    /** @} */
+
     /** @name VirtualBox Manager / Clone VM wizard warnings.
       * @{ */
         void cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent = 0) const;
@@ -342,26 +362,6 @@ public:
         bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
         bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
     /** @} */
-
-    /* API: Virtual Medium Manager warnings: */
-    void cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent = 0) const;
-    void cannotMoveMediumStorage(const CMedium &comMedium, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent = 0) const;
-    void cannotMoveMediumStorage(const CProgress &comProgress, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent = 0) const;
-    void cannotChangeMediumDescription(const CMedium &comMedium, const QString &strLocation, QWidget *pParent = 0) const;
-    bool confirmMediumRelease(const UIMedium &medium, bool fInduced, QWidget *pParent = 0) const;
-    bool confirmMediumRemoval(const UIMedium &medium, QWidget *pParent = 0) const;
-    int confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
-    void cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
-    void cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0) const;
-    void cannotResizeHardDiskStorage(const CMedium &comMedium, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent = 0) const;
-    void cannotResizeHardDiskStorage(const CProgress &comProgress, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent = 0) const;
-    void cannotDetachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0) const;
-    bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0) const;
-    void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent = 0) const;
-    void cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId, QWidget *pParent = 0) const;
-    void cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment, QWidget *pParent = 0) const;
-    void cannotAcquireMediumAttribute(const CMedium &comMedium, QWidget *pParent = 0) const;
-    void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 
     /* API: Network Manager warnings: */
     bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;

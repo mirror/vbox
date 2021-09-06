@@ -535,6 +535,13 @@ void UIMessageCenter::cannotSetExtraData(const CVirtualBox &comVBox, const QStri
           UIErrorString::formatErrorInfo(comVBox));
 }
 
+void UIMessageCenter::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to open the disk image file <nobr><b>%1</b></nobr>.").arg(strLocation), UIErrorString::formatErrorInfo(comVBox));
+}
+
 void UIMessageCenter::cannotOpenSession(const CSession &comSession) const
 {
     error(0, MessageType_Error,
@@ -596,6 +603,94 @@ void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumDevice
     }
     error(pParent, MessageType_Error,
           strMessage, UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumDeviceType enmType,
+                                         const QString &strLocation, const StorageSlot &storageSlot,
+                                         QWidget *pParent /* = 0*/) const
+{
+    /* Prepare the message: */
+    QString strMessage;
+    switch (enmType)
+    {
+        case UIMediumDeviceType_HardDisk:
+        {
+            strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+                            .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumDeviceType_DVD:
+        {
+            strMessage = tr("Failed to detach the optical drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+                            .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumDeviceType_Floppy:
+        {
+            strMessage = tr("Failed to detach the floppy drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+                            .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    /* Show the error: */
+    error(pParent, MessageType_Error, strMessage, UIErrorString::formatErrorInfo(machine));
+}
+
+bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount,
+                                          bool fRetry, QWidget *pParent /* = 0*/) const
+{
+    /* Compose the message: */
+    QString strMessage;
+    switch (medium.type())
+    {
+        case UIMediumDeviceType_DVD:
+        {
+            if (fMount)
+            {
+                strMessage = tr("<p>Unable to insert the virtual optical disk <nobr><b>%1</b></nobr> into the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try to force insertion of this disk?</p>");
+            }
+            else
+            {
+                strMessage = tr("<p>Unable to eject the virtual optical disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try to force ejection of this disk?</p>");
+            }
+            break;
+        }
+        case UIMediumDeviceType_Floppy:
+        {
+            if (fMount)
+            {
+                strMessage = tr("<p>Unable to insert the virtual floppy disk <nobr><b>%1</b></nobr> into the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try to force insertion of this disk?</p>");
+            }
+            else
+            {
+                strMessage = tr("<p>Unable to eject the virtual floppy disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try to force ejection of this disk?</p>");
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    /* Show the messsage: */
+    if (fRetry)
+        return errorWithQuestion(pParent, MessageType_Question,
+                                 strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location(), CMachine(machine).GetName()),
+                                 UIErrorString::formatErrorInfo(machine),
+                                 0 /* Auto Confirm ID */,
+                                 tr("Force Unmount"));
+    error(pParent, MessageType_Error,
+          strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location(), CMachine(machine).GetName()),
+          UIErrorString::formatErrorInfo(machine));
+    return false;
 }
 
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const
@@ -1030,82 +1125,6 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
                           false /* ok button by default? */);
 }
 
-void UIMessageCenter::cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
-                                               const QString &strName,
-                                               QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Can't find snapshot named <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-bool UIMessageCenter::cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-             .arg(strSnapshotName, strMachineName),
-          UIErrorString::formatErrorInfo(machine));
-    return false;
-}
-
-bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-             .arg(strSnapshotName, strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-    return false;
-}
-
-void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("<p>Error changing disk image mode from <b>%1</b> to <b>%2</b>.</p>")
-             .arg(gpConverter->toString(oldMediumType)).arg(gpConverter->toString(newMediumType)),
-          UIErrorString::formatErrorInfo(medium));
-}
-
-void UIMessageCenter::cannotMoveMediumStorage(const CMedium &comMedium, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to move the storage unit of the disk image <b>%1</b> to <b>%2</b>.")
-             .arg(strLocationOld, strLocationNew),
-          UIErrorString::formatErrorInfo(comMedium));
-}
-
-void UIMessageCenter::cannotMoveMediumStorage(const CProgress &comProgress, const QString &strLocationOld, const QString &strLocationNew, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to move the storage unit of the disk image <b>%1</b> to <b>%2</b>.")
-             .arg(strLocationOld, strLocationNew),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotChangeMediumDescription(const CMedium &comMedium, const QString &strLocation, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("<p>Error changing the description of the disk image <b>%1</b>.</p>")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(comMedium));
-}
-
 bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, bool fInduced, QWidget *pParent /* = 0 */) const
 {
     /* Prepare the usage: */
@@ -1207,6 +1226,13 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                            tr("Keep", "hard disk storage"));
 }
 
+void UIMessageCenter::cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire hard disk location."), UIErrorString::formatErrorInfo(comMedium));
+}
+
 void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
@@ -1223,140 +1249,48 @@ void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, con
           UIErrorString::formatErrorInfo(progress));
 }
 
-void UIMessageCenter::cannotResizeHardDiskStorage(const CMedium &comMedium, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to resize the storage unit of the hard disk <b>%1</b> from <b>%2</b> to <b>%3</b>.")
-             .arg(strLocation, strSizeOld, strSizeNew),
-          UIErrorString::formatErrorInfo(comMedium));
+          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(machine));
 }
 
-void UIMessageCenter::cannotResizeHardDiskStorage(const CProgress &comProgress, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to resize the storage unit of the hard disk <b>%1</b> from <b>%2</b> to <b>%3</b>.")
-             .arg(strLocation, strSizeOld, strSizeNew),
-          UIErrorString::formatErrorInfo(comProgress));
+          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(progress));
 }
 
-void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumDeviceType enmType, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
+                                               const QString &strName,
+                                               QWidget *pParent /* = 0 */) const
 {
-    /* Prepare the message: */
-    QString strMessage;
-    switch (enmType)
-    {
-        case UIMediumDeviceType_HardDisk:
-        {
-            strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                            .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumDeviceType_DVD:
-        {
-            strMessage = tr("Failed to detach the optical drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                            .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumDeviceType_Floppy:
-        {
-            strMessage = tr("Failed to detach the floppy drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                            .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
-            break;
-        }
-        default:
-            break;
-    }
-    /* Show the error: */
-    error(pParent, MessageType_Error, strMessage, UIErrorString::formatErrorInfo(machine));
-}
-
-bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent /* = 0*/) const
-{
-    /* Compose the message: */
-    QString strMessage;
-    switch (medium.type())
-    {
-        case UIMediumDeviceType_DVD:
-        {
-            if (fMount)
-            {
-                strMessage = tr("<p>Unable to insert the virtual optical disk <nobr><b>%1</b></nobr> into the machine <b>%2</b>.</p>");
-                if (fRetry)
-                    strMessage += tr("<p>Would you like to try to force insertion of this disk?</p>");
-            }
-            else
-            {
-                strMessage = tr("<p>Unable to eject the virtual optical disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
-                if (fRetry)
-                    strMessage += tr("<p>Would you like to try to force ejection of this disk?</p>");
-            }
-            break;
-        }
-        case UIMediumDeviceType_Floppy:
-        {
-            if (fMount)
-            {
-                strMessage = tr("<p>Unable to insert the virtual floppy disk <nobr><b>%1</b></nobr> into the machine <b>%2</b>.</p>");
-                if (fRetry)
-                    strMessage += tr("<p>Would you like to try to force insertion of this disk?</p>");
-            }
-            else
-            {
-                strMessage = tr("<p>Unable to eject the virtual floppy disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
-                if (fRetry)
-                    strMessage += tr("<p>Would you like to try to force ejection of this disk?</p>");
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    /* Show the messsage: */
-    if (fRetry)
-        return errorWithQuestion(pParent, MessageType_Question,
-                                 strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location(), CMachine(machine).GetName()),
-                                 UIErrorString::formatErrorInfo(machine),
-                                 0 /* Auto Confirm ID */,
-                                 tr("Force Unmount"));
     error(pParent, MessageType_Error,
-          strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location(), CMachine(machine).GetName()),
+          tr("Can't find snapshot named <b>%1</b>.")
+             .arg(strName),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
+bool UIMessageCenter::cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+             .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(machine));
     return false;
 }
 
-void UIMessageCenter::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent /* = 0 */) const
+bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const
 {
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to open the disk image file <nobr><b>%1</b></nobr>.").arg(strLocation), UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to open the medium with following ID: <nobr><b>%1</b></nobr>.").arg(uMediumId.toString()), UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire attachment parameter."), UIErrorString::formatErrorInfo(comAttachment));
-}
-
-void UIMessageCenter::cannotAcquireMediumAttribute(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire medium attribute."), UIErrorString::formatErrorInfo(comMedium));
-}
-
-void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent /* = 0*/) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to close the disk image file <nobr><b>%1</b></nobr>.").arg(medium.location()), UIErrorString::formatErrorInfo(rc));
+    error(0, MessageType_Error,
+          tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+             .arg(strSnapshotName, strMachineName),
+          UIErrorString::formatErrorInfo(progress));
+    return false;
 }
 
 bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const

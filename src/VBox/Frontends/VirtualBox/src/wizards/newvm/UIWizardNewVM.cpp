@@ -270,7 +270,7 @@ void UIWizardNewVM::deleteVirtualDisk()
     QString strLocation = m_virtualDisk.GetLocation();
     if (!m_virtualDisk.isOk())
     {
-        msgCenter().cannotAcquireMediumAttribute(m_virtualDisk, this);
+        msgCenter().cannotAcquireHardDiskLocation(m_virtualDisk, this);
         return;
     }
 
