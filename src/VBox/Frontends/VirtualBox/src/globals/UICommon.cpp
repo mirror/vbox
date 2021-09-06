@@ -2407,7 +2407,7 @@ void UICommon::checkForWrongUSBMounted()
 #endif /* RT_OS_LINUX */
 
 /* static */
-QString UICommon::details(const CUSBDevice &comDevice)
+QString UICommon::usbDetails(const CUSBDevice &comDevice)
 {
     QString strDetails;
     if (comDevice.isNull())
@@ -2446,7 +2446,7 @@ QString UICommon::details(const CUSBDevice &comDevice)
 }
 
 /* static */
-QString UICommon::toolTip(const CUSBDevice &comDevice)
+QString UICommon::usbToolTip(const CUSBDevice &comDevice)
 {
     QString strTip =
         tr("<nobr>Vendor ID: %1</nobr><br>"
@@ -2473,7 +2473,7 @@ QString UICommon::toolTip(const CUSBDevice &comDevice)
 }
 
 /* static */
-QString UICommon::toolTip(const CUSBDeviceFilter &comFilter)
+QString UICommon::usbToolTip(const CUSBDeviceFilter &comFilter)
 {
     QString strTip;
 
@@ -2524,7 +2524,7 @@ QString UICommon::toolTip(const CUSBDeviceFilter &comFilter)
 }
 
 /* static */
-QString UICommon::toolTip(const CHostVideoInputDevice &comWebcam)
+QString UICommon::usbToolTip(const CHostVideoInputDevice &comWebcam)
 {
     QStringList records;
 

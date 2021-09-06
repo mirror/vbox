@@ -208,7 +208,7 @@ private slots:
             {
                 CHostUSBDevice dev = devvec[i];
                 CUSBDevice usb(dev);
-                QAction *pAction = addAction(uiCommon().details(usb));
+                QAction *pAction = addAction(uiCommon().usbDetails(usb));
                 pAction->setCheckable(true);
                 m_usbDeviceMap[pAction] = usb;
                 /* Check if created item was already attached to this session: */
@@ -237,7 +237,7 @@ private:
                 CUSBDevice usb = m_usbDeviceMap[pAction];
                 if (!usb.isNull())
                 {
-                    QToolTip::showText(pHelpEvent->globalPos(), uiCommon().toolTip(usb));
+                    QToolTip::showText(pHelpEvent->globalPos(), uiCommon().usbToolTip(usb));
                     return true;
                 }
             }
@@ -726,7 +726,7 @@ void UIMachineSettingsUSB::sltAddFilterConfirmed(QAction *pAction)
     /* Prepare new USB filter data: */
     UIDataSettingsMachineUSBFilter filterData;
     filterData.m_fActive = true;
-    filterData.m_strName = uiCommon().details(usb);
+    filterData.m_strName = uiCommon().usbDetails(usb);
     filterData.m_fHostUSBDevice = false;
     filterData.m_strVendorId = QString().sprintf("%04hX", usb.GetVendorId());
     filterData.m_strProductId = QString().sprintf("%04hX", usb.GetProductId());

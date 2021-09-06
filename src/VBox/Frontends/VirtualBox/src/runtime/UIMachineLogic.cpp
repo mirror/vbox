@@ -652,9 +652,9 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
     if (!error.isNull())
     {
         if (fIsAttached)
-            UINotificationMessage::cannotAttachUSBDevice(error, uiCommon().details(device), machineName());
+            UINotificationMessage::cannotAttachUSBDevice(error, uiCommon().usbDetails(device), machineName());
         else
-            UINotificationMessage::cannotDetachUSBDevice(error, uiCommon().details(device), machineName());
+            UINotificationMessage::cannotDetachUSBDevice(error, uiCommon().usbDetails(device), machineName());
     }
 }
 
@@ -2293,7 +2293,7 @@ void UIMachineLogic::sltAttachUSBDevice()
             /* Get USB device from host USB device: */
             CUSBDevice device(hostDevice);
             /* Show a message about procedure failure: */
-            UINotificationMessage::cannotAttachUSBDevice(console(), uiCommon().details(device));
+            UINotificationMessage::cannotAttachUSBDevice(console(), uiCommon().usbDetails(device));
         }
     }
     /* Detach USB device: */
@@ -2307,7 +2307,7 @@ void UIMachineLogic::sltAttachUSBDevice()
         if (!console().isOk())
         {
             /* Show a message about procedure failure: */
-            UINotificationMessage::cannotDetachUSBDevice(console(), uiCommon().details(device));
+            UINotificationMessage::cannotDetachUSBDevice(console(), uiCommon().usbDetails(device));
         }
     }
 }
@@ -2876,9 +2876,9 @@ void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
             const CUSBDevice device(hostDevice);
 
             /* Create USB device action: */
-            QAction *pAttachUSBAction = pMenu->addAction(uiCommon().details(device),
+            QAction *pAttachUSBAction = pMenu->addAction(uiCommon().usbDetails(device),
                                                          this, SLOT(sltAttachUSBDevice()));
-            pAttachUSBAction->setToolTip(uiCommon().toolTip(device));
+            pAttachUSBAction->setToolTip(uiCommon().usbToolTip(device));
             pAttachUSBAction->setCheckable(true);
 
             /* Check if that USB device was already attached to this session: */
@@ -2926,7 +2926,7 @@ void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
             /* Create/configure webcam action: */
             QAction *pAttachWebcamAction = pMenu->addAction(strWebcamName,
                                                             this, SLOT(sltAttachWebCamDevice()));
-            pAttachWebcamAction->setToolTip(uiCommon().toolTip(webcam));
+            pAttachWebcamAction->setToolTip(uiCommon().usbToolTip(webcam));
             pAttachWebcamAction->setCheckable(true);
 
             /* Check if that webcam was already attached to this session: */

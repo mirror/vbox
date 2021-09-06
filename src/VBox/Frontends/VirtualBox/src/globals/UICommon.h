@@ -467,13 +467,13 @@ public:
 #endif
 
         /** Generates details for passed USB @a comDevice. */
-        static QString details(const CUSBDevice &comDevice);
+        static QString usbDetails(const CUSBDevice &comDevice);
         /** Generates tool-tip for passed USB @a comDevice. */
-        static QString toolTip(const CUSBDevice &comDevice);
+        static QString usbToolTip(const CUSBDevice &comDevice);
         /** Generates tool-tip for passed USB @a comFilter. */
-        static QString toolTip(const CUSBDeviceFilter &comFilter);
+        static QString usbToolTip(const CUSBDeviceFilter &comFilter);
         /** Generates tool-tip for passed USB @a comWebcam. */
-        static QString toolTip(const CHostVideoInputDevice &comWebcam);
+        static QString usbToolTip(const CHostVideoInputDevice &comWebcam);
     /** @} */
 
     /** @name File-system stuff.
