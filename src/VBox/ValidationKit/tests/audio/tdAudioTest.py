@@ -489,9 +489,6 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.log('Using VKAT on host at: \"%s\"' % (sVkatExe));
 
-        # Enable more verbose logging for all groups. Disable later again?
-        asEnv  = [ 'VKAT_RELEASE_LOG=all.e.l.l2.l3.f+audio_test.e.l.l2.l3.f' ];
-
         # Build the base command line, exclude all tests by default.
         asArgs = [ sVkatExe, 'test', '--mode', 'host', '--probe-backends', \
                              '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
@@ -505,7 +502,7 @@ class tdAudioTest(vbox.TestDriver):
         #
         # Let VKAT on the host run synchronously.
         #
-        fRc = self.executeHst("VKAT Host", asArgs, asEnv);
+        fRc = self.executeHst("VKAT Host", asArgs);
 
         reporter.testDone();
 
