@@ -449,25 +449,40 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
  */
 static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
+    enum
+    {
+        kCloudListIota = 1000,
+        kCloudList_Images,
+        kCloudList_Instances,
+        kCloudList_Machines,
+        kCloudList_Networks,
+        kCloudList_Objects,
+        kCloudList_Subnets,
+        kCloudList_Vcns,
+    };
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "images",              kCloudList_Images,    RTGETOPT_REQ_NOTHING },
+        { "instances",           kCloudList_Instances, RTGETOPT_REQ_NOTHING },
+        { "machines",            kCloudList_Machines,  RTGETOPT_REQ_NOTHING },
+        { "networks",            kCloudList_Networks,  RTGETOPT_REQ_NOTHING },
+        { "objects",             kCloudList_Objects,   RTGETOPT_REQ_NOTHING },
+        { "subnets",             kCloudList_Subnets,   RTGETOPT_REQ_NOTHING },
+        { "vcns",                kCloudList_Vcns,      RTGETOPT_REQ_NOTHING },
+
+        { "help",                'h',                  RTGETOPT_REQ_NOTHING },
+        { "-?",                  'h',                  RTGETOPT_REQ_NOTHING },
+        { "-help",               'h',                  RTGETOPT_REQ_NOTHING },
+        { "--help",              'h',                  RTGETOPT_REQ_NOTHING },
+    };
+
     if (a->argc == iFirst)
     {
         RTPrintf("Empty command parameter list, show help.\n");
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
-
-    static const RTGETOPTDEF s_aOptions[] =
-    {
-        { "images",              1000, RTGETOPT_REQ_NOTHING },
-        { "instances",           1001, RTGETOPT_REQ_NOTHING },
-        { "networks",            1002, RTGETOPT_REQ_NOTHING },
-        { "subnets",             1003, RTGETOPT_REQ_NOTHING },
-        { "vcns",                1004, RTGETOPT_REQ_NOTHING },
-        { "objects",             1005, RTGETOPT_REQ_NOTHING },
-        { "help",                1006, RTGETOPT_REQ_NOTHING },
-        { "--help",              1007, RTGETOPT_REQ_NOTHING },
-        { "machines",            1008, RTGETOPT_REQ_NOTHING }
-    };
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
@@ -479,21 +494,22 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     {
         switch (c)
         {
-            case 1000:
+            case kCloudList_Images:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDLIST_IMAGES);
                 return listCloudImages(a, GetState.iNext, pCommonOpts);
-            case 1001:
+
+            case kCloudList_Instances:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDLIST_INSTANCES);
                 return listCloudInstances(a, GetState.iNext, pCommonOpts);
-            case 1006:
-            case 1007:
-                printHelp(g_pStdOut);
-                return RTEXITCODE_SUCCESS;
 
-            case 1008:          /* machines */
+            case kCloudList_Machines:
                 return listCloudMachines(a, GetState.iNext,
                                          pCommonOpts->provider.pszProviderName,
                                          pCommonOpts->profile.pszProfileName);
+
+            case 'h':
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
@@ -1105,24 +1121,38 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
 
 static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
+    enum
+    {
+        kCloudInstanceIota = 1000,
+        kCloudInstance_Create,
+        kCloudInstance_Info,
+        kCloudInstance_Pause,
+        kCloudInstance_Start,
+        kCloudInstance_Terminate,
+        kCloudInstance_Update,
+    };
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "create",         kCloudInstance_Create,    RTGETOPT_REQ_NOTHING },
+        { "info",           kCloudInstance_Info,      RTGETOPT_REQ_NOTHING },
+        { "pause",          kCloudInstance_Pause,     RTGETOPT_REQ_NOTHING },
+        { "start",          kCloudInstance_Start,     RTGETOPT_REQ_NOTHING },
+        { "terminate",      kCloudInstance_Terminate, RTGETOPT_REQ_NOTHING },
+        { "update",         kCloudInstance_Update,    RTGETOPT_REQ_NOTHING },
+
+        { "help",           'h',                      RTGETOPT_REQ_NOTHING },
+        { "-?",             'h',                      RTGETOPT_REQ_NOTHING },
+        { "-help",          'h',                      RTGETOPT_REQ_NOTHING },
+        { "--help",         'h',                      RTGETOPT_REQ_NOTHING },
+    };
+
     if (a->argc == iFirst)
     {
         RTPrintf("Empty command parameter list, show help.\n");
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
-
-    static const RTGETOPTDEF s_aOptions[] =
-    {
-        { "create",         1000, RTGETOPT_REQ_NOTHING },
-        { "start",          1001, RTGETOPT_REQ_NOTHING },
-        { "pause",          1002, RTGETOPT_REQ_NOTHING },
-        { "info",           1003, RTGETOPT_REQ_NOTHING },
-        { "update",         1004, RTGETOPT_REQ_NOTHING },
-        { "terminate",      1005, RTGETOPT_REQ_NOTHING },
-        { "help",           1006, RTGETOPT_REQ_NOTHING },
-        { "--help",         1007, RTGETOPT_REQ_NOTHING }
-    };
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
@@ -1135,28 +1165,34 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         switch (c)
         {
             /* Sub-commands: */
-            case 1000:
+            case kCloudInstance_Create:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_CREATE);
                 return createCloudInstance(a, GetState.iNext, pCommonOpts);
-            case 1001:
+
+            case kCloudInstance_Start:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_START);
                 return startCloudInstance(a, GetState.iNext, pCommonOpts);
-            case 1002:
+
+            case kCloudInstance_Pause:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_PAUSE);
                 return pauseCloudInstance(a, GetState.iNext, pCommonOpts);
-            case 1003:
+
+            case kCloudInstance_Info:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_INFO);
                 return showCloudInstanceInfo(a, GetState.iNext, pCommonOpts);
-            case 1004:
+
+            case kCloudInstance_Update:
 //              setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_UPDATE);
                 return updateCloudInstance(a, GetState.iNext, pCommonOpts);
-            case 1005:
+
+            case kCloudInstance_Terminate:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDINSTANCE_TERMINATE);
                 return terminateCloudInstance(a, GetState.iNext, pCommonOpts);
-            case 1006:
-            case 1007:
+
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -1739,24 +1775,38 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
 static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
+    enum
+    {
+        kCloudImageIota = 1000,
+        kCloudImage_Create,
+        kCloudImage_Delete,
+        kCloudImage_Export,
+        kCloudImage_Import,
+        kCloudImage_Info,
+        kCloudImage_Update,
+    };
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "create",         kCloudImage_Create,     RTGETOPT_REQ_NOTHING },
+        { "delete",         kCloudImage_Delete,     RTGETOPT_REQ_NOTHING },
+        { "export",         kCloudImage_Export,     RTGETOPT_REQ_NOTHING },
+        { "import",         kCloudImage_Import,     RTGETOPT_REQ_NOTHING },
+        { "info",           kCloudImage_Info,       RTGETOPT_REQ_NOTHING },
+        { "update",         kCloudImage_Update,     RTGETOPT_REQ_NOTHING },
+
+        { "help",                'h',               RTGETOPT_REQ_NOTHING },
+        { "-?",                  'h',               RTGETOPT_REQ_NOTHING },
+        { "-help",               'h',               RTGETOPT_REQ_NOTHING },
+        { "--help",              'h',               RTGETOPT_REQ_NOTHING },
+    };
+
     if (a->argc == iFirst)
     {
         RTPrintf("Empty command parameter list, show help.\n");
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
-
-    static const RTGETOPTDEF s_aOptions[] =
-    {
-        { "create",         1000, RTGETOPT_REQ_NOTHING },
-        { "export",         1001, RTGETOPT_REQ_NOTHING },
-        { "import",         1002, RTGETOPT_REQ_NOTHING },
-        { "info",           1003, RTGETOPT_REQ_NOTHING },
-        { "update",         1004, RTGETOPT_REQ_NOTHING },
-        { "delete",         1005, RTGETOPT_REQ_NOTHING },
-        { "help",           1006, RTGETOPT_REQ_NOTHING },
-        { "--help",         1007, RTGETOPT_REQ_NOTHING }
-    };
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
@@ -1769,28 +1819,34 @@ static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         switch (c)
         {
             /* Sub-commands: */
-            case 1000:
+            case kCloudImage_Create:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_CREATE);
                 return createCloudImage(a, GetState.iNext, pCommonOpts);
-            case 1001:
+
+            case kCloudImage_Export:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_EXPORT);
                 return exportCloudImage(a, GetState.iNext, pCommonOpts);
-            case 1002:
+
+            case kCloudImage_Import:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_IMPORT);
                 return importCloudImage(a, GetState.iNext, pCommonOpts);
-            case 1003:
+
+            case kCloudImage_Info:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_INFO);
                 return showCloudImageInfo(a, GetState.iNext, pCommonOpts);
-            case 1004:
+
+            case kCloudImage_Update:
 //              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_UPDATE);
                 return updateCloudImage(a, GetState.iNext, pCommonOpts);
-            case 1005:
+
+            case kCloudImage_Delete:
                 setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_DELETE);
                 return deleteCloudImage(a, GetState.iNext, pCommonOpts);
-            case 1006:
-            case 1007:
+
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -2706,17 +2762,27 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
 
 static RTEXITCODE handleCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    if (a->argc < 1)
-        return errorNoSubcommand();
+    enum
+    {
+        kCloudNetworkIota = 1000,
+        kCloudNetwork_Create,
+        kCloudNetwork_Delete,
+        kCloudNetwork_Info,
+        kCloudNetwork_Setup,
+        kCloudNetwork_Update,
+    };
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "create",         1000, RTGETOPT_REQ_NOTHING },
-        { "info",           1001, RTGETOPT_REQ_NOTHING },
-        { "update",         1002, RTGETOPT_REQ_NOTHING },
-        { "delete",         1003, RTGETOPT_REQ_NOTHING },
-        { "setup",          1004, RTGETOPT_REQ_NOTHING }
+        { "create",         kCloudNetwork_Create,   RTGETOPT_REQ_NOTHING },
+        { "delete",         kCloudNetwork_Delete,   RTGETOPT_REQ_NOTHING },
+        { "info",           kCloudNetwork_Info,     RTGETOPT_REQ_NOTHING },
+        { "setup",          kCloudNetwork_Setup,    RTGETOPT_REQ_NOTHING }
+        { "update",         kCloudNetwork_Update,   RTGETOPT_REQ_NOTHING },
     };
+
+    if (a->argc < 1)
+        return errorNoSubcommand();
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
@@ -2729,16 +2795,21 @@ static RTEXITCODE handleCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         switch (c)
         {
             /* Sub-commands: */
-            case 1000:
+            case kCloudNetwork_Create:
                 return createCloudNetwork(a, GetState.iNext, pCommonOpts);
-            case 1001:
+
+            case kCloudNetwork_Info:
                 return showCloudNetworkInfo(a, GetState.iNext, pCommonOpts);
-            case 1002:
+
+            case kCloudNetwork_Update:
                 return updateCloudNetwork(a, GetState.iNext, pCommonOpts);
-            case 1003:
+
+            case kCloudNetwork_Delete:
                 return deleteCloudNetwork(a, GetState.iNext, pCommonOpts);
-            case 1004:
+
+            case kCloudNetwork_Setup:
                 return setupCloudNetworkEnv(a, GetState.iNext, pCommonOpts);
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
 
@@ -2754,22 +2825,35 @@ static RTEXITCODE handleCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
 RTEXITCODE handleCloud(HandlerArg *a)
 {
-    if (a->argc < 1)
-        return errorNoSubcommand();
+    enum
+    {
+        kCloudIota = 1000,
+        kCloud_Image,
+        kCloud_Instance,
+        kCloud_List,
+        kCloud_Machine,
+        kCloud_Network,
+        kCloud_Object,
+        kCloud_Volume,
+    };
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         /* common options */
-        { "--provider",     'v', RTGETOPT_REQ_STRING },
-        { "--profile",      'f', RTGETOPT_REQ_STRING },
-        { "list",             1000, RTGETOPT_REQ_NOTHING },
-        { "image",            1001, RTGETOPT_REQ_NOTHING },
-        { "instance",         1002, RTGETOPT_REQ_NOTHING },
-        { "network",          1003, RTGETOPT_REQ_NOTHING },
-        { "volume",           1004, RTGETOPT_REQ_NOTHING },
-        { "object",           1005, RTGETOPT_REQ_NOTHING },
-        { "machine",          1006, RTGETOPT_REQ_NOTHING }
+        { "--provider",     'v',                    RTGETOPT_REQ_STRING },
+        { "--profile",      'f',                    RTGETOPT_REQ_STRING },
+
+        { "image",            kCloud_Image,         RTGETOPT_REQ_NOTHING },
+        { "instance",         kCloud_Instance,      RTGETOPT_REQ_NOTHING },
+        { "list",             kCloud_List,          RTGETOPT_REQ_NOTHING },
+        { "machine",          kCloud_Machine,       RTGETOPT_REQ_NOTHING },
+        { "network",          kCloud_Network,       RTGETOPT_REQ_NOTHING },
+        { "object",           kCloud_Object,        RTGETOPT_REQ_NOTHING },
+        { "volume",           kCloud_Volume,        RTGETOPT_REQ_NOTHING },
     };
+
+    if (a->argc < 1)
+        return errorNoSubcommand();
 
     RTGETOPTSTATE GetState;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
@@ -2785,21 +2869,27 @@ RTEXITCODE handleCloud(HandlerArg *a)
             case 'v':   // --provider
                 commonOpts.provider.pszProviderName = ValueUnion.psz;
                 break;
+
             case 'f':   // --profile
                 commonOpts.profile.pszProfileName = ValueUnion.psz;
                 break;
+
             /* Sub-commands: */
-            case 1000:
+            case kCloud_List:
                 return handleCloudLists(a, GetState.iNext, &commonOpts);
-            case 1001:
+
+            case kCloud_Image:
                 return handleCloudImage(a, GetState.iNext, &commonOpts);
-            case 1002:
+
+            case kCloud_Instance:
                 return handleCloudInstance(a, GetState.iNext, &commonOpts);
+
 #ifdef VBOX_WITH_CLOUD_NET
-            case 1003:
+            case kCloud_Network:
                 return handleCloudNetwork(a, GetState.iNext, &commonOpts);
 #endif /* VBOX_WITH_CLOUD_NET */
-            case 1006:
+
+            case kCloud_Machine:
                 return handleCloudMachine(a, GetState.iNext,
                                           commonOpts.provider.pszProviderName,
                                           commonOpts.profile.pszProfileName);
