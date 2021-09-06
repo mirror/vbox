@@ -515,7 +515,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
                 continue;
 
             /* Prepare attachment information: */
-            QString strAttachmentInfo = uiCommon().details(attachment.GetMedium(), false, false);
+            QString strAttachmentInfo = uiCommon().storageDetails(attachment.GetMedium(), false, false);
             /* That hack makes sure 'Inaccessible' word is always bold: */
             { // hack
                 const QString strInaccessibleString(UICommon::tr("Inaccessible", "medium"));

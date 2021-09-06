@@ -1160,131 +1160,6 @@ void UICommon::deletePidfile()
 
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
-/* static */
-QString UICommon::helpFile()
-{
-#if defined (VBOX_WITH_QHELP_VIEWER)
-    const QString strName = "UserManual";
-    const QString strSuffix = "qhc";
-#else
- #if defined(VBOX_WS_WIN)
-     const QString strName = "VirtualBox";
-     const QString strSuffix = "chm";
- #elif defined(VBOX_WS_MAC)
-     const QString strName = "UserManual";
-     const QString strSuffix = "pdf";
- #elif defined(VBOX_WS_X11)
-     //# if defined(VBOX_OSE) || !defined(VBOX_WITH_KCHMVIEWER)
-     const QString strName = "UserManual";
-     const QString strSuffix = "pdf";
- #endif
-#endif
-    /* Where are the docs located? */
-    char szDocsPath[RTPATH_MAX];
-    int rc = RTPathAppDocs(szDocsPath, sizeof(szDocsPath));
-    AssertRC(rc);
-
-    /* Make sure that the language is in two letter code.
-     * Note: if languageId() returns an empty string lang.name() will
-     * return "C" which is an valid language code. */
-    QLocale lang(UITranslator::languageId());
-
-    /* Construct the path and the filename: */
-    QString strManual = QString("%1/%2_%3.%4").arg(szDocsPath)
-                                              .arg(strName)
-                                              .arg(lang.name())
-                                              .arg(strSuffix);
-
-    /* Check if a help file with that name exists: */
-    QFileInfo fi(strManual);
-    if (fi.exists())
-        return strManual;
-
-    /* Fall back to the standard: */
-    strManual = QString("%1/%2.%4").arg(szDocsPath)
-                                   .arg(strName)
-                                   .arg(strSuffix);
-    return strManual;
-}
-
-/* static */
-QString UICommon::documentsPath()
-{
-    QString strPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    QDir dir(strPath);
-    if (dir.exists())
-        return QDir::cleanPath(dir.canonicalPath());
-    else
-    {
-        dir.setPath(QDir::homePath() + "/Documents");
-        if (dir.exists())
-            return QDir::cleanPath(dir.canonicalPath());
-        else
-            return QDir::homePath();
-    }
-}
-
-/* static */
-bool UICommon::hasAllowedExtension(const QString &strFileName, const QStringList &extensions)
-{
-    foreach (const QString &strExtension, extensions)
-        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
-            return true;
-    return false;
-}
-
-/* static */
-QString UICommon::findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName)
-{
-    QDir folder(strFullFolderPath);
-    if (!folder.exists())
-        return strBaseFileName;
-    QFileInfoList folderContent = folder.entryInfoList();
-    QSet<QString> fileNameSet;
-    foreach (const QFileInfo &fileInfo, folderContent)
-    {
-        /* Remove the extension : */
-        fileNameSet.insert(fileInfo.completeBaseName());
-    }
-    int iSuffix = 0;
-    QString strNewName(strBaseFileName);
-    while (fileNameSet.contains(strNewName))
-    {
-        strNewName = strBaseFileName + QString("_") + QString::number(++iSuffix);
-    }
-    return strNewName;
-}
-
-/* static */
-void UICommon::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount)
-{
-    /* Shame on Qt it hasn't stuff for tuning
-     * widget size suitable for reflecting content of desired size.
-     * For example QLineEdit, QSpinBox and similar widgets should have a methods
-     * to strict the minimum width to reflect at least [n] symbols. */
-
-    /* Load options: */
-    QStyleOptionSpinBox option;
-    option.initFrom(pSpinBox);
-
-    /* Acquire edit-field rectangle: */
-    QRect rect = pSpinBox->style()->subControlRect(QStyle::CC_SpinBox,
-                                                   &option,
-                                                   QStyle::SC_SpinBoxEditField,
-                                                   pSpinBox);
-
-    /* Calculate minimum-width magic: */
-    const int iSpinBoxWidth = pSpinBox->width();
-    const int iSpinBoxEditFieldWidth = rect.width();
-    const int iSpinBoxDelta = qMax(0, iSpinBoxWidth - iSpinBoxEditFieldWidth);
-    QFontMetrics metrics(pSpinBox->font(), pSpinBox);
-    const QString strDummy(cCount, '0');
-    const int iTextWidth = metrics.width(strDummy);
-
-    /* Tune spin-box minimum-width: */
-    pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
-}
-
 QString UICommon::vmGuestOSFamilyDescription(const QString &strFamilyId) const
 {
     AssertMsg(m_guestOSFamilyDescriptions.contains(strFamilyId),
@@ -1301,7 +1176,7 @@ QList<CGuestOSType> UICommon::vmGuestOSTypeList(const QString &strFamilyId) cons
 }
 
 CGuestOSType UICommon::vmGuestOSType(const QString &strTypeId,
-                                       const QString &strFamilyId /* = QString() */) const
+                                     const QString &strFamilyId /* = QString() */) const
 {
     QList<CGuestOSType> list;
     if (m_guestOSFamilyIDs.contains(strFamilyId))
@@ -1393,13 +1268,14 @@ bool UICommon::switchToMachine(CMachine &comMachine)
 #endif
 }
 
+/* static */
 bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* = LaunchMode_Default */)
 {
     /* Switch to machine window(s) if possible: */
     if (   comMachine.GetSessionState() == KSessionState_Locked /* precondition for CanShowConsoleWindow() */
         && comMachine.CanShowConsoleWindow())
     {
-        switch (uiType())
+        switch (uiCommon().uiType())
         {
             /* For Selector UI: */
             case UIType_SelectorUI:
@@ -1459,7 +1335,7 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     switch (enmLaunchMode)
     {
         case LaunchMode_Default:  strType = ""; break;
-        case LaunchMode_Separate: strType = isSeparateProcess() ? "headless" : "separate"; break;
+        case LaunchMode_Separate: strType = uiCommon().isSeparateProcess() ? "headless" : "separate"; break;
         case LaunchMode_Headless: strType = "headless"; break;
         default: AssertFailedReturn(false);
     }
@@ -2378,7 +2254,7 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
         comSession.UnlockMachine();
 }
 
-QString UICommon::details(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml /* = true */)
+QString UICommon::storageDetails(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml /* = true */)
 {
     /* Search for corresponding UI medium: */
     const QUuid uMediumID = comMedium.isNull() ? UIMedium::nullID() : comMedium.GetId();
@@ -2661,6 +2537,131 @@ QString UICommon::toolTip(const CHostVideoInputDevice &comWebcam)
         records << strPath;
 
     return records.join("<br>");
+}
+
+/* static */
+QString UICommon::helpFile()
+{
+#if defined (VBOX_WITH_QHELP_VIEWER)
+    const QString strName = "UserManual";
+    const QString strSuffix = "qhc";
+#else
+ #if defined(VBOX_WS_WIN)
+     const QString strName = "VirtualBox";
+     const QString strSuffix = "chm";
+ #elif defined(VBOX_WS_MAC)
+     const QString strName = "UserManual";
+     const QString strSuffix = "pdf";
+ #elif defined(VBOX_WS_X11)
+     //# if defined(VBOX_OSE) || !defined(VBOX_WITH_KCHMVIEWER)
+     const QString strName = "UserManual";
+     const QString strSuffix = "pdf";
+ #endif
+#endif
+    /* Where are the docs located? */
+    char szDocsPath[RTPATH_MAX];
+    int rc = RTPathAppDocs(szDocsPath, sizeof(szDocsPath));
+    AssertRC(rc);
+
+    /* Make sure that the language is in two letter code.
+     * Note: if languageId() returns an empty string lang.name() will
+     * return "C" which is an valid language code. */
+    QLocale lang(UITranslator::languageId());
+
+    /* Construct the path and the filename: */
+    QString strManual = QString("%1/%2_%3.%4").arg(szDocsPath)
+                                              .arg(strName)
+                                              .arg(lang.name())
+                                              .arg(strSuffix);
+
+    /* Check if a help file with that name exists: */
+    QFileInfo fi(strManual);
+    if (fi.exists())
+        return strManual;
+
+    /* Fall back to the standard: */
+    strManual = QString("%1/%2.%4").arg(szDocsPath)
+                                   .arg(strName)
+                                   .arg(strSuffix);
+    return strManual;
+}
+
+/* static */
+QString UICommon::documentsPath()
+{
+    QString strPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QDir dir(strPath);
+    if (dir.exists())
+        return QDir::cleanPath(dir.canonicalPath());
+    else
+    {
+        dir.setPath(QDir::homePath() + "/Documents");
+        if (dir.exists())
+            return QDir::cleanPath(dir.canonicalPath());
+        else
+            return QDir::homePath();
+    }
+}
+
+/* static */
+bool UICommon::hasAllowedExtension(const QString &strFileName, const QStringList &extensions)
+{
+    foreach (const QString &strExtension, extensions)
+        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
+            return true;
+    return false;
+}
+
+/* static */
+QString UICommon::findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName)
+{
+    QDir folder(strFullFolderPath);
+    if (!folder.exists())
+        return strBaseFileName;
+    QFileInfoList folderContent = folder.entryInfoList();
+    QSet<QString> fileNameSet;
+    foreach (const QFileInfo &fileInfo, folderContent)
+    {
+        /* Remove the extension : */
+        fileNameSet.insert(fileInfo.completeBaseName());
+    }
+    int iSuffix = 0;
+    QString strNewName(strBaseFileName);
+    while (fileNameSet.contains(strNewName))
+    {
+        strNewName = strBaseFileName + QString("_") + QString::number(++iSuffix);
+    }
+    return strNewName;
+}
+
+/* static */
+void UICommon::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount)
+{
+    /* Shame on Qt it hasn't stuff for tuning
+     * widget size suitable for reflecting content of desired size.
+     * For example QLineEdit, QSpinBox and similar widgets should have a methods
+     * to strict the minimum width to reflect at least [n] symbols. */
+
+    /* Load options: */
+    QStyleOptionSpinBox option;
+    option.initFrom(pSpinBox);
+
+    /* Acquire edit-field rectangle: */
+    QRect rect = pSpinBox->style()->subControlRect(QStyle::CC_SpinBox,
+                                                   &option,
+                                                   QStyle::SC_SpinBoxEditField,
+                                                   pSpinBox);
+
+    /* Calculate minimum-width magic: */
+    const int iSpinBoxWidth = pSpinBox->width();
+    const int iSpinBoxEditFieldWidth = rect.width();
+    const int iSpinBoxDelta = qMax(0, iSpinBoxWidth - iSpinBoxEditFieldWidth);
+    QFontMetrics metrics(pSpinBox->font(), pSpinBox);
+    const QString strDummy(cCount, '0');
+    const int iTextWidth = metrics.width(strDummy);
+
+    /* Tune spin-box minimum-width: */
+    pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
 }
 
 #ifdef VBOX_WITH_3D_ACCELERATION

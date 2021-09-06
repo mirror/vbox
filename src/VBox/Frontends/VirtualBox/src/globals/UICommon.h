@@ -297,28 +297,6 @@ public:
 #endif
     /** @} */
 
-    /** @name File-system stuff.
-     * @{ */
-        /** Returns full help file name. */
-        static QString helpFile();
-
-        /** Returns documents path. */
-        static QString documentsPath();
-
-        /** Returns whether passed @a strFileName ends with one of allowed extension in the @a extensions list. */
-        static bool hasAllowedExtension(const QString &strFileName, const QStringList &extensions);
-
-        /** Returns a file name (unique up to extension) wrt. @a strFullFolderPath folder content. Starts
-          * searching strBaseFileName and adds suffixes until a unique file name is found. */
-        static QString findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName);
-    /** @} */
-
-    /** @name Widget stuff.
-     * @{ */
-        /** Assigns minimum @a pSpinBox to correspond to @a cCount digits. */
-        static void setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount);
-    /** @} */
-
     /** @name COM stuff.
      * @{ */
         /** Try to acquire COM cleanup protection token for reading. */
@@ -339,7 +317,7 @@ public:
         bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
     /** @} */
 
-    /** @name COM: Guest OS Type.
+    /** @name COM: Guest OS Type stuff.
      * @{ */
         /** Returns the list of family IDs. */
         QList<QString> vmGuestOSFamilyIDs() const { return m_guestOSFamilyIDs; }
@@ -364,7 +342,7 @@ public:
         /** Switches to certain @a comMachine. */
         static bool switchToMachine(CMachine &comMachine);
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
-        bool launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode = LaunchMode_Default);
+        static bool launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode = LaunchMode_Default);
 
         /** Opens session of certain @a enmLockType for VM with certain @a uId. */
         CSession openSession(const QUuid &uId, KLockType enmLockType = KLockType_Write);
@@ -376,7 +354,7 @@ public:
         CSession tryToOpenSessionFor(CMachine &comMachine);
     /** @} */
 
-    /** @name Cloud Virtual Machine stuff.
+    /** @name COM: Cloud Virtual Machine stuff.
      * @{ */
         /** Notifies listeners about cloud VM was unregistered.
           * @param  strProviderShortName  Brings provider short name.
@@ -424,7 +402,7 @@ public:
           * @param  strDefaultFolder  Brings the folder to browse for medium.
           * @param  fUseLastFolder    Brings whether we should propose to use last used folder. */
         QUuid openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
-                                             const QString &strDefaultFolder = QString(), bool fUseLastFolder = false);
+                                           const QString &strDefaultFolder = QString(), bool fUseLastFolder = false);
 
         /** Creates and shows a UIMediumSelector dialog.
           * @param  parent                   Passes the parent of the dialog,
@@ -468,7 +446,7 @@ public:
         /** Generates details for passed @a comMedium.
           * @param  fPredictDiff  Brings whether medium will be marked differencing on attaching.
           * @param  fUseHtml      Brings whether HTML subsets should be used in the generated output. */
-        QString details(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml = true);
+        QString storageDetails(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml = true);
 
         /** Update extra data related to recently used/referred media.
           * @param  enmMediumType       Passes the medium type.
@@ -496,6 +474,28 @@ public:
         static QString toolTip(const CUSBDeviceFilter &comFilter);
         /** Generates tool-tip for passed USB @a comWebcam. */
         static QString toolTip(const CHostVideoInputDevice &comWebcam);
+    /** @} */
+
+    /** @name File-system stuff.
+     * @{ */
+        /** Returns full help file name. */
+        static QString helpFile();
+
+        /** Returns documents path. */
+        static QString documentsPath();
+
+        /** Returns whether passed @a strFileName ends with one of allowed extension in the @a extensions list. */
+        static bool hasAllowedExtension(const QString &strFileName, const QStringList &extensions);
+
+        /** Returns a file name (unique up to extension) wrt. @a strFullFolderPath folder content. Starts
+          * searching strBaseFileName and adds suffixes until a unique file name is found. */
+        static QString findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName);
+    /** @} */
+
+    /** @name Widget stuff.
+     * @{ */
+        /** Assigns minimum @a pSpinBox to correspond to @a cCount digits. */
+        static void setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount);
     /** @} */
 
     /** @name Display stuff.

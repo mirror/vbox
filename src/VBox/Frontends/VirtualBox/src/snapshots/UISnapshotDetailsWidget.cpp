@@ -1794,7 +1794,7 @@ QPair<QStringList, QList<QMap<QString, QString> > > UISnapshotDetailsWidget::sto
 
             /* Prepare current medium information: */
             const QString strMediumInfo = comAttachment.isOk()
-                                        ? wipeHtmlStuff(uiCommon().details(comAttachment.GetMedium(), false))
+                                        ? wipeHtmlStuff(uiCommon().storageDetails(comAttachment.GetMedium(), false))
                                         : QString();
 
             /* Cache current slot/medium information: */
