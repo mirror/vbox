@@ -361,7 +361,12 @@ typedef struct CPUM
     uint32_t                fHostMxCsrMask;
     /** Nested VMX: Whether to expose VMX-preemption timer to the guest. */
     bool                    fNestedVmxPreemptTimer;
-    uint8_t                 abPadding1[3];
+    /** Nested VMX: Whether to expose EPT to the guest. If this is disabled make sure
+     *  to also disable fNestedVmxUnrestrictedGuest. */
+    bool                    fNestedVmxEpt;
+    /** Nested VMX: Whether to expose "unrestricted guest" to the guest. */
+    bool                    fNestedVmxUnrestrictedGuest;
+    uint8_t                 abPadding1[1];
 
     /** Align to 64-byte boundary. */
     uint8_t                 abPadding2[20+4];

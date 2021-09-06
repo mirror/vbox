@@ -1752,6 +1752,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
     pGuestVmxMsrs->u64VmcsEnum = VMX_V_VMCS_MAX_INDEX << VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT;
 
     /* VPID and EPT Capabilities. */
+    if (pGuestFeatures->fVmxEpt)
     {
         /*
          * INVVPID instruction always causes a VM-exit unconditionally, so we are free to fake
@@ -1763,11 +1764,40 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
          * See Intel spec. 25.1.2 "Instructions That Cause VM Exits Unconditionally".
          * See Intel spec. 30.3 "VMX Instructions".
          */
-        uint8_t const fVpid = pGuestFeatures->fVmxVpid;
-        pGuestVmxMsrs->u64EptVpidCaps = RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID,                           fVpid)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX,                fVpid & 1)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX,                   fVpid & 1)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS, fVpid & 1);
+        uint64_t const uHostMsr = fIsNstGstHwExecAllowed ? pHostVmxMsrs->u64EptVpidCaps : UINT64_MAX;
+        uint8_t const  fVpid    = pGuestFeatures->fVmxVpid;
+
+        uint8_t const  fExecOnly         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_RWX_X_ONLY);
+        uint8_t const  fPml4             = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4);
+        uint8_t const  fEptMemUc         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_EMT_UC);
+        uint8_t const  fEptMemWb         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_EMT_WB);
+        uint8_t const  f2MPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDE_2M);
+        uint8_t const  f1GPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDPTE_1G);
+        uint8_t const  fInvept           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT);
+        uint8_t const  fEptAccDirty      = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY);
+        uint8_t const  fEptSingle        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX);
+        uint8_t const  fEptAll           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX);
+        uint8_t const  fVpidIndiv        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
+        uint8_t const  fVpidSingle       = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX);
+        uint8_t const  fVpidAll          = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX);
+        uint8_t const  fVpidSingleGlobal = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS);
+        pGuestVmxMsrs->u64EptVpidCaps = RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_RWX_X_ONLY,                        fExecOnly)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4,                fPml4)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_EMT_UC,                            fEptMemUc)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_EMT_WB,                            fEptMemWb)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDE_2M,                            f2MPage)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDPTE_1G,                          f1GPage)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT,                            fInvept)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY,                  fEptAccDirty)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT,                   0)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_SUPER_SHW_STACK,                   0)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX,                 fEptSingle)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX,                    fEptAll)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID,                           fVpid)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR,                fVpid & fVpidIndiv)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX,                fVpid & fVpidSingle)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX,                   fVpid & fVpidAll)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS, fVpid & fVpidSingleGlobal);
     }
 
     /* VM Functions. */
@@ -1901,6 +1931,18 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     Assert(pGuestVmxMsrs);
 
     /*
+     * While it would be nice to check this earlier while initializing fNestedVmxEpt
+     * but we would not have enumearted host features then, so do it at least now.
+     */
+    if (   !pVM->cpum.s.HostFeatures.fNoExecute
+        && pVM->cpum.s.fNestedVmxEpt)
+    {
+        LogRel(("CPUM: Warning! EPT not exposed to the guest since NX isn't available on the host.\n"));
+        pVM->cpum.s.fNestedVmxEpt               = false;
+        pVM->cpum.s.fNestedVmxUnrestrictedGuest = false;
+    }
+
+    /*
      * Initialize the set of VMX features we emulate.
      *
      * Note! Some bits might be reported as 1 always if they fall under the
@@ -1913,7 +1955,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxExtIntExit            = 1;
     EmuFeat.fVmxNmiExit               = 1;
     EmuFeat.fVmxVirtNmi               = 1;
-    EmuFeat.fVmxPreemptTimer          = 0;  /* Currently disabled on purpose, see @bugref{9180#c108}. */
+    EmuFeat.fVmxPreemptTimer          = 0;  /* pVM->cpum.s.fNestedVmxPreemptTimer -- Currently disabled on purpose, see @bugref{9180#c108}. */
     EmuFeat.fVmxPostedInt             = 0;
     EmuFeat.fVmxIntWindowExit         = 1;
     EmuFeat.fVmxTscOffsetting         = 1;
@@ -1938,13 +1980,13 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxPauseExit             = 1;
     EmuFeat.fVmxSecondaryExecCtls     = 1;
     EmuFeat.fVmxVirtApicAccess        = 1;
-    EmuFeat.fVmxEpt                   = 0;  /* Cannot be disabled if unrestricted guest is enabled. */
+    EmuFeat.fVmxEpt                   = pVM->cpum.s.fNestedVmxEpt;
     EmuFeat.fVmxDescTableExit         = 1;
     EmuFeat.fVmxRdtscp                = 1;
     EmuFeat.fVmxVirtX2ApicMode        = 0;
-    EmuFeat.fVmxVpid                  = 0;  /** @todo NSTVMX: enable this. */
+    EmuFeat.fVmxVpid                  = EmuFeat.fVmxEpt;
     EmuFeat.fVmxWbinvdExit            = 1;
-    EmuFeat.fVmxUnrestrictedGuest     = 0;
+    EmuFeat.fVmxUnrestrictedGuest     = pVM->cpum.s.fNestedVmxUnrestrictedGuest;
     EmuFeat.fVmxApicRegVirt           = 0;
     EmuFeat.fVmxVirtIntDelivery       = 0;
     EmuFeat.fVmxPauseLoopExit         = 0;
@@ -2050,15 +2092,16 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
     pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
 
-    if (   !pVM->cpum.s.fNestedVmxPreemptTimer
-        || HMIsSubjectToVmxPreemptTimerErratum())
+    /* Don't expose VMX preemption timer if host is subject to VMX-preemption timer erratum. */
+    if (   pGuestFeat->fVmxPreemptTimer
+        && HMIsSubjectToVmxPreemptTimerErratum())
     {
-        LogRel(("CPUM: Warning! VMX-preemption timer not exposed to guest due to forced CFGM setting or CPU erratum.\n"));
+        LogRel(("CPUM: Warning! VMX-preemption timer not exposed to guest due to host CPU erratum.\n"));
         pGuestFeat->fVmxPreemptTimer     = 0;
         pGuestFeat->fVmxSavePreemptTimer = 0;
     }
 
-    /* Paranoia. */
+    /* Sanity checking. */
     if (!pGuestFeat->fVmxSecondaryExecCtls)
     {
         Assert(!pGuestFeat->fVmxVirtApicAccess);
@@ -2082,13 +2125,16 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
         Assert(!pGuestFeat->fVmxXsavesXrstors);
         Assert(!pGuestFeat->fVmxUseTscScaling);
     }
-    if (!pGuestFeat->fVmxTertiaryExecCtls)
-        Assert(!pGuestFeat->fVmxLoadIwKeyExit);
-    if (pGuestFeat->fVmxUnrestrictedGuest)
+    else if (pGuestFeat->fVmxUnrestrictedGuest)
     {
         /* See footnote in Intel spec. 27.2 "Recording VM-Exit Information And Updating VM-entry Control Fields". */
         Assert(pGuestFeat->fVmxExitSaveEferLma);
+        /* Unrestricted guest execution requires EPT. See Intel spec. 25.2.1.1 "VM-Execution Control Fields". */
+        Assert(pGuestFeat->fVmxEpt);
     }
+
+    if (!pGuestFeat->fVmxTertiaryExecCtls)
+        Assert(!pGuestFeat->fVmxLoadIwKeyExit);
 
     /*
      * Finally initialize the VMX guest MSRs.
