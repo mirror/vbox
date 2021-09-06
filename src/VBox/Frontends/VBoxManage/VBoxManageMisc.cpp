@@ -316,8 +316,8 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
 {
     HRESULT                        rc;
     const char                    *pszSrcName      = NULL;
-    const char                    *pszTargetFolder = NULL;
     const char                    *pszType         = NULL;
+    char                          szTargetFolder[RTPATH_MAX];
 
     int c;
     int vrc = VINF_SUCCESS;
@@ -336,13 +336,14 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
                 break;
 
             case 'f':   // --target folder
-
-                char szPath[RTPATH_MAX];
-                pszTargetFolder = ValueUnion.psz;
-
-                vrc = RTPathAbs(pszTargetFolder, szPath, sizeof(szPath));
-                if (RT_FAILURE(vrc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs(%s,,) failed with rc=%Rrc", pszTargetFolder, vrc);
+                if (ValueUnion.psz && ValueUnion.psz[0] != '\0')
+                {
+                    vrc = RTPathAbs(ValueUnion.psz, szTargetFolder, sizeof(szTargetFolder));
+                    if (RT_FAILURE(vrc))
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs(%s,,) failed with rc=%Rrc", ValueUnion.psz, vrc);
+                } else {
+                    szTargetFolder[0] = '\0';
+                }
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -383,35 +384,18 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
         ComPtr<IMachine> sessionMachine;
 
         CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
-        CHECK_ERROR_RET(sessionMachine, MoveTo(Bstr(pszTargetFolder).raw(),
+        CHECK_ERROR_RET(sessionMachine,
+                        MoveTo(Bstr(szTargetFolder).raw(),
                                Bstr(pszType).raw(),
-                               progress.asOutParam()), RTEXITCODE_FAILURE);
+                               progress.asOutParam()),
+                        RTEXITCODE_FAILURE);
         rc = showProgress(progress);
         CHECK_PROGRESS_ERROR_RET(progress, ("Move VM failed"), RTEXITCODE_FAILURE);
 
         sessionMachine.setNull();
         CHECK_ERROR_RET(a->session, UnlockMachine(), RTEXITCODE_FAILURE);
 
-//        do
-//        {
-//            /* we have to open a session for this task */
-//            CHECK_ERROR_BREAK(srcMachine, LockMachine(a->session, LockType_Write));
-//            ComPtr<IMachine> sessionMachine;
-//            do
-//            {
-//                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-//                CHECK_ERROR_BREAK(sessionMachine, MoveTo(Bstr(pszTargetFolder).raw(),
-//                                       Bstr(pszType).raw(),
-//                                       progress.asOutParam()));
-//                rc = showProgress(progress);
-//                CHECK_PROGRESS_ERROR_RET(progress, ("Move VM failed"), RTEXITCODE_FAILURE);
-////              CHECK_ERROR_BREAK(sessionMachine, SaveSettings());
-//            } while (0);
-//
-//            sessionMachine.setNull();
-//            CHECK_ERROR_BREAK(a->session, UnlockMachine());
-//        } while (0);
-        RTPrintf("Machine has been successfully moved into %s\n", pszTargetFolder);
+        RTPrintf("Machine has been successfully moved into %s\n", szTargetFolder[0] != '\0' ? szTargetFolder : "the same location");
     }
 
     return RTEXITCODE_SUCCESS;
