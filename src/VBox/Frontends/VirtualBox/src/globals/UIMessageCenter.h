@@ -275,36 +275,52 @@ public:
         void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
     /** @} */
 
-    /* API: Selector warnings: */
-    bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const;
-    /// @todo move after fixing thread stuff
-    void cannotSetGroups(const CMachine &machine) const;
-    bool confirmMachineItemRemoval(const QStringList &names) const;
-    int confirmMachineRemoval(const QList<CMachine> &machines) const;
-    int confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const;
-    bool warnAboutInaccessibleMedia() const;
-    bool confirmDiscardSavedState(const QString &strNames) const;
-    bool confirmTerminateCloudInstance(const QString &strNames) const;
-    bool confirmResetMachine(const QString &strNames) const;
-    bool confirmACPIShutdownMachine(const QString &strNames) const;
-    bool confirmPowerOffMachine(const QString &strNames) const;
-    bool confirmStartMultipleMachines(const QString &strNames) const;
+    /** @name Common warnings.
+      * @{ */
+        bool confirmResetMachine(const QString &strNames) const;
+    /** @} */
 
-    /* API: Snapshot warnings: */
-    int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;
-    bool confirmSnapshotRemoval(const QString &strSnapshotName) const;
-    bool warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName, const QString &strTargetImageName,
-                                           const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
-    void cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent = 0) const;
-    void cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
-    bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
-    bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
-    void cannotRemoveSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
-    void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
-    void cannotChangeSnapshot(const CSnapshot &comSnapshot, const QString &strSnapshotName, const QString &strMachineName) const;
-    void cannotFindSnapshotByName(const CMachine &comMachine, const QString &strName, QWidget *pParent = 0) const;
-    void cannotFindSnapshotById(const CMachine &comMachine, const QUuid &uId, QWidget *pParent = 0) const;
-    void cannotAcquireSnapshotAttributes(const CSnapshot &comSnapshot, QWidget *pParent = 0);
+    /** @name VirtualBox Manager warnings.
+      * @{ */
+        bool warnAboutInaccessibleMedia() const;
+
+        bool confirmDiscardSavedState(const QString &strNames) const;
+        bool confirmTerminateCloudInstance(const QString &strNames) const;
+        bool confirmACPIShutdownMachine(const QString &strNames) const;
+        bool confirmPowerOffMachine(const QString &strNames) const;
+        bool confirmStartMultipleMachines(const QString &strNames) const;
+    /** @} */
+
+    /** @name VirtualBox Manager / Chooser Pane warnings.
+      * @{ */
+        bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const;
+        /// @todo move after fixing thread stuff
+        void cannotSetGroups(const CMachine &machine) const;
+        bool confirmMachineItemRemoval(const QStringList &names) const;
+        int confirmMachineRemoval(const QList<CMachine> &machines) const;
+        int confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const;
+    /** @} */
+
+    /** @name VirtualBox Manager / Snapshot Pane warnings.
+      * @{ */
+        int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;
+        bool confirmSnapshotRemoval(const QString &strSnapshotName) const;
+        bool warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName, const QString &strTargetImageName,
+                                               const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
+    /** @} */
+
+    /** @name VirtualBox Manager / Clone VM wizard warnings.
+      * @{ */
+        void cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent = 0) const;
+        void cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
+        void cannotFindSnapshotByName(const CMachine &comMachine, const QString &strName, QWidget *pParent = 0) const;
+    /** @} */
+
+    /** @name Runtime UI warnings.
+      * @{ */
+        bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
+        bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
+    /** @} */
 
     /* API: Common settings warnings: */
     void cannotSaveSettings(const QString strDetails, QWidget *pParent = 0) const;

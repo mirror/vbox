@@ -183,6 +183,16 @@ public:
         /** Notifies about inability to remove machine.
           * @param  comMachine  Brings machine being removed. */
         static void cannotRemoveMachine(const CMachine &comMachine);
+
+        /** Notifies about inability to find snapshot by ID.
+          * @param  comMachine  Brings the machine being searched for particular snapshot.
+          * @param  uId         Brings the required snapshot ID. */
+        static void cannotFindSnapshotById(const CMachine &comMachine, const QUuid &uId);
+        /** Notifies about inability to change snapshot.
+          * @param  comSnapshot      Brings the snapshot being changed.
+          * @param  strSnapshotName  Brings snapshot name.
+          * @param  strMachineName   Brings machine name. */
+        static void cannotChangeSnapshot(const CSnapshot &comSnapshot, const QString &strSnapshotName, const QString &strMachineName);
     /** @} */
 
     /** @name COM Runtime UI warnings.

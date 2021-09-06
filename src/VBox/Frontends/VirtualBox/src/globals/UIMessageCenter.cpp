@@ -569,6 +569,82 @@ void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString 
           UIErrorString::formatErrorInfo(machine));
 }
 
+bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Do you really want to reset the following virtual machines?</p>"
+                             "<p><b>%1</b></p><p>This will cause any unsaved data "
+                             "in applications running inside it to be lost.</p>")
+                             .arg(strNames),
+                          "confirmResetMachine" /* auto-confirm id */,
+                          tr("Reset", "machine"));
+}
+
+bool UIMessageCenter::warnAboutInaccessibleMedia() const
+{
+    return questionBinary(0, MessageType_Warning,
+                          tr("<p>One or more disk image files are not currently accessible. As a result, you will "
+                             "not be able to operate virtual machines that use these files until "
+                             "they become accessible later.</p>"
+                             "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
+                             "see which files are inaccessible, or press <b>Ignore</b> to "
+                             "ignore this message.</p>"),
+                          "warnAboutInaccessibleMedia",
+                          tr("Check", "inaccessible media message box"), tr("Ignore"));
+}
+
+bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Are you sure you want to discard the saved state of "
+                             "the following virtual machines?</p><p><b>%1</b></p>"
+                             "<p>This operation is equivalent to resetting or powering off "
+                             "the machine without doing a proper shutdown of the guest OS.</p>")
+                             .arg(strNames),
+                          0 /* auto-confirm id */,
+                          tr("Discard", "saved state"));
+}
+
+bool UIMessageCenter::confirmTerminateCloudInstance(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Are you sure you want to terminate the cloud instance "
+                             "of the following virtual machines?</p><p><b>%1</b></p>")
+                             .arg(strNames),
+                          0 /* auto-confirm id */,
+                          tr("Terminate", "cloud instance"));
+}
+
+bool UIMessageCenter::confirmACPIShutdownMachine(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Do you really want to send an ACPI shutdown signal "
+                             "to the following virtual machines?</p><p><b>%1</b></p>")
+                             .arg(strNames),
+                          "confirmACPIShutdownMachine" /* auto-confirm id */,
+                          tr("ACPI Shutdown", "machine"));
+}
+
+bool UIMessageCenter::confirmPowerOffMachine(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Do you really want to power off the following virtual machines?</p>"
+                             "<p><b>%1</b></p><p>This will cause any unsaved data in applications "
+                             "running inside it to be lost.</p>")
+                             .arg(strNames),
+                          "confirmPowerOffMachine" /* auto-confirm id */,
+                          tr("Power Off", "machine"));
+}
+
+bool UIMessageCenter::confirmStartMultipleMachines(const QString &strNames) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>You are about to start all of the following virtual machines:</p>"
+                             "<p><b>%1</b></p><p>This could take some time and consume a lot of "
+                             "host system resources. Do you wish to proceed?</p>").arg(strNames),
+                          "confirmStartMultipleMachines" /* auto-confirm id */);
+}
+
 bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const
 {
     return questionBinary(0, MessageType_Question,
@@ -714,82 +790,6 @@ int UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &mach
                    tr("Remove only"));
 }
 
-bool UIMessageCenter::warnAboutInaccessibleMedia() const
-{
-    return questionBinary(0, MessageType_Warning,
-                          tr("<p>One or more disk image files are not currently accessible. As a result, you will "
-                             "not be able to operate virtual machines that use these files until "
-                             "they become accessible later.</p>"
-                             "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
-                             "see which files are inaccessible, or press <b>Ignore</b> to "
-                             "ignore this message.</p>"),
-                          "warnAboutInaccessibleMedia",
-                          tr("Check", "inaccessible media message box"), tr("Ignore"));
-}
-
-bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Are you sure you want to discard the saved state of "
-                             "the following virtual machines?</p><p><b>%1</b></p>"
-                             "<p>This operation is equivalent to resetting or powering off "
-                             "the machine without doing a proper shutdown of the guest OS.</p>")
-                             .arg(strNames),
-                          0 /* auto-confirm id */,
-                          tr("Discard", "saved state"));
-}
-
-bool UIMessageCenter::confirmTerminateCloudInstance(const QString &strNames) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Are you sure you want to terminate the cloud instance "
-                             "of the following virtual machines?</p><p><b>%1</b></p>")
-                             .arg(strNames),
-                          0 /* auto-confirm id */,
-                          tr("Terminate", "cloud instance"));
-}
-
-bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Do you really want to reset the following virtual machines?</p>"
-                             "<p><b>%1</b></p><p>This will cause any unsaved data "
-                             "in applications running inside it to be lost.</p>")
-                             .arg(strNames),
-                          "confirmResetMachine" /* auto-confirm id */,
-                          tr("Reset", "machine"));
-}
-
-bool UIMessageCenter::confirmACPIShutdownMachine(const QString &strNames) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Do you really want to send an ACPI shutdown signal "
-                             "to the following virtual machines?</p><p><b>%1</b></p>")
-                             .arg(strNames),
-                          "confirmACPIShutdownMachine" /* auto-confirm id */,
-                          tr("ACPI Shutdown", "machine"));
-}
-
-bool UIMessageCenter::confirmPowerOffMachine(const QString &strNames) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Do you really want to power off the following virtual machines?</p>"
-                             "<p><b>%1</b></p><p>This will cause any unsaved data in applications "
-                             "running inside it to be lost.</p>")
-                             .arg(strNames),
-                          "confirmPowerOffMachine" /* auto-confirm id */,
-                          tr("Power Off", "machine"));
-}
-
-bool UIMessageCenter::confirmStartMultipleMachines(const QString &strNames) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>You are about to start all of the following virtual machines:</p>"
-                             "<p><b>%1</b></p><p>This could take some time and consume a lot of "
-                             "host system resources. Do you wish to proceed?</p>").arg(strNames),
-                          "confirmStartMultipleMachines" /* auto-confirm id */);
-}
-
 
 int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const
 {
@@ -863,6 +863,16 @@ void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QStrin
           UIErrorString::formatErrorInfo(progress));
 }
 
+void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
+                                               const QString &strName,
+                                               QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Can't find snapshot named <b>%1</b>.")
+             .arg(strName),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
 bool UIMessageCenter::cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
@@ -879,58 +889,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
              .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(progress));
     return false;
-}
-
-void UIMessageCenter::cannotRemoveSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-             .arg(strSnapshotName, strMachineName),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-             .arg(strSnapshotName).arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotChangeSnapshot(const CSnapshot &comSnapshot, const QString &strSnapshotName, const QString &strMachineName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to change the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-             .arg(strSnapshotName).arg(strMachineName),
-          UIErrorString::formatErrorInfo(comSnapshot));
-}
-
-void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
-                                               const QString &strName,
-                                               QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Can't find snapshot named <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotFindSnapshotById(const CMachine &comMachine,
-                                             const QUuid &uId,
-                                             QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Can't find snapshot with ID=<b>%1</b>.")
-             .arg(uId.toString()),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotAcquireSnapshotAttributes(const CSnapshot &comSnapshot,
-                                                      QWidget *pParent /* = 0 */)
-{
-    error(pParent, MessageType_Error,
-          tr("Can't acquire snapshot attributes."),
-          UIErrorString::formatErrorInfo(comSnapshot));
 }
 
 void UIMessageCenter::cannotSaveSettings(const QString strDetails, QWidget *pParent /* = 0 */) const

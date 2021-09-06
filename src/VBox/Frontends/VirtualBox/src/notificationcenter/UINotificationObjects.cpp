@@ -417,6 +417,28 @@ void UINotificationMessage::cannotRemoveMachine(const CMachine &comMachine)
 }
 
 /* static */
+void UINotificationMessage::cannotFindSnapshotById(const CMachine &comMachine, const QUuid &uId)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find snapshot ..."),
+        QApplication::translate("UIMessageCenter", "Can't find snapshot with ID=<b>%1</b>.")
+                                                   .arg(uId.toString()) +
+        UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeSnapshot(const CSnapshot &comSnapshot,
+                                                 const QString &strSnapshotName,
+                                                 const QString &strMachineName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't change snapshot ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+                                                   .arg(strSnapshotName, strMachineName) +
+        UIErrorString::formatErrorInfo(comSnapshot));
+}
+
+/* static */
 void UINotificationMessage::cannotAttachUSBDevice(const CConsole &comConsole, const QString &strDevice)
 {
     createMessage(
