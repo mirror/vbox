@@ -33,11 +33,11 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Standard Python imports.
+from datetime import datetime
 import os
 import sys
 import signal
 import subprocess
-import uuid
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -396,7 +396,7 @@ class tdAudioTest(vbox.TestDriver):
             iRc = abPayload[0]; # ASSUMES 8-bit rc for now.
         return iRc;
 
-    def startVkatOnGuest(self, oTestVm, oSession, oTxsSession):
+    def startVkatOnGuest(self, oTestVm, oSession, oTxsSession, sTag):
         """
         Starts VKAT on the guest (running in background).
         """
@@ -406,6 +406,7 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.log('Guest audio test temp path is \"%s\"' % (sPathAudioOut));
         reporter.log('Guest audio test output path is \"%s\"' % (sPathAudioTemp));
+        reporter.log('Guest audio test tag is \"%s\"' % (sTag));
 
         fRc, sVkatExe = self.locateGstVkat(oSession, oTxsSession);
         if fRc:
@@ -414,7 +415,8 @@ class tdAudioTest(vbox.TestDriver):
             asArgs = [];
 
             asArgsVkat = [ sVkatExe, 'test', '--mode', 'guest', '--probe-backends', \
-                           '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut ];
+                           '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, \
+                           '--tag', sTag ];
 
             asArgs.extend(asArgsVkat);
 
@@ -466,14 +468,13 @@ class tdAudioTest(vbox.TestDriver):
 
         return fRc;
 
-    def runTests(self, oTestVm, oSession, oTxsSession, sDesc, asTests):
+    def runTests(self, oTestVm, oSession, oTxsSession, sDesc, sTag, asTests):
         """
         Runs one or more tests using VKAT on the host, which in turn will
         communicate with VKAT running on the guest and the Validation Kit
         audio driver ATS (Audio Testing Service).
         """
         _              = oSession, oTxsSession;
-        sTag           = uuid.uuid4();
 
         sPathTemp      = self.sScratchPath;
         sPathAudioOut  = oTestVm.pathJoin(sPathTemp, 'vkat-host-out-%s' % (sTag));
@@ -491,7 +492,9 @@ class tdAudioTest(vbox.TestDriver):
 
         # Build the base command line, exclude all tests by default.
         asArgs = [ sVkatExe, 'test', '--mode', 'host', '--probe-backends', \
-                             '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a' ];
+                             '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a', \
+                             '--tag', sTag, \
+                             '--no-verify' ]; # We do the verification separately in the step below.
 
         for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
             asArgs.extend([ '-v' ]);
@@ -505,6 +508,37 @@ class tdAudioTest(vbox.TestDriver):
         fRc = self.executeHst("VKAT Host", asArgs);
 
         reporter.testDone();
+
+        if fRc:
+            #
+            # When running the test(s) above were successful, do the verification step next.
+            # This gives us a bit more fine-grained test results in the test manager.
+            #
+            reporter.testStart('Verifying audio data');
+
+            sNameSetHst = '%s-host.tar.gz' % (sTag);
+            sPathSetHst = oTestVm.pathJoin(sPathAudioOut, sNameSetHst);
+            sNameSetGst = '%s-guest.tar.gz' % (sTag);
+            sPathSetGst = oTestVm.pathJoin(sPathAudioOut, sNameSetGst);
+
+            asArgs = [ sVkatExe, 'verify', sPathSetHst, sPathSetGst ];
+
+            for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
+                asArgs.extend([ '-v' ]);
+
+            fRc = self.executeHst("VKAT Host Verify", asArgs);
+            if fRc:
+                reporter.error("Verification audio data successful");
+            else:
+                #
+                # Add the test sets to the test manager for later (manual) diagnosis.
+                #
+                reporter.addLogFile(sPathSetGst, 'misc/other', 'Guest audio test set');
+                reporter.addLogFile(sPathSetHst, 'misc/other', 'Host audio test set');
+
+                reporter.error("Verification of audio data failed");
+
+            reporter.testDone();
 
         return fRc;
 
@@ -526,15 +560,22 @@ class tdAudioTest(vbox.TestDriver):
 
         reporter.log("Active tests: %s" % (self.asTests,));
 
-        fRc = self.startVkatOnGuest(oTestVm, oSession, oTxsSession);
+        # Define a tag for the whole run.
+        sTag = oTestVm.sVmName + "_" + datetime.now().strftime("%Y%m%d_%H%M%S");
+
+        fRc = self.startVkatOnGuest(oTestVm, oSession, oTxsSession, sTag);
         if fRc:
             #
             # Execute the tests using VKAT on the guest side (in guest mode).
             #
             if "guest_tone_playback" in self.asTests:
-                fRc = self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio playback', asTests = [ '-i0' ]);
+                fRc = self.runTests(oTestVm, oSession, oTxsSession, \
+                                    'Guest audio playback', sTag + "_test_playback", \
+                                    asTests = [ '-i0' ]);
             if "guest_tone_recording" in self.asTests:
-                fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, 'Guest audio recording', asTests = [ '-i1' ]);
+                fRc = fRc and self.runTests(oTestVm, oSession, oTxsSession, \
+                                            'Guest audio recording', sTag + "_test_recording", \
+                                            asTests = [ '-i1' ]);
 
             # Cancel guest VKAT execution task summoned by startVkatOnGuest().
             oTxsSession.cancelTask();

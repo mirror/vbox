@@ -669,8 +669,13 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
                 else
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification skipped\n");
 
-                RTFileDelete(pTstEnv->u.Host.szPathTestSetGuest);
-                RTFileDelete(pTstEnv->u.Host.szPathTestSetValKit);
+                if (!pTstEnv->fSkipVerify)
+                {
+                    RTFileDelete(pTstEnv->u.Host.szPathTestSetGuest);
+                    RTFileDelete(pTstEnv->u.Host.szPathTestSetValKit);
+                }
+                else
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Leaving test set files behind\n");
             }
         }
     }
@@ -749,7 +754,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 
     int         rc;
 
-    const char *pszTag        = NULL; /* Custom tag to use. Can be NULL if not being used. */
     PCPDMDRVREG pDrvReg       = AudioTestGetDefaultBackend();
     bool        fWithDrvAudio = false;
     uint8_t     cPcmSampleBit = 0;
@@ -861,7 +865,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VKAT_TEST_OPT_TAG:
-                pszTag = ValueUnion.psz;
+                rc = RTStrCopy(TstEnv.szTag, sizeof(TstEnv.szTag), ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Tag invalid, rc=%Rrc", rc);
                 break;
 
             case VKAT_TEST_OPT_TEMPDIR:
@@ -977,26 +983,38 @@ static int audioVerifyOpenTestSet(const char *pszPathSet, PAUDIOTESTSET pSet)
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Opening test set '%s'\n", pszPathSet);
 
     const bool fPacked = AudioTestSetIsPacked(pszPathSet);
+
     if (fPacked)
     {
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set is an archive and needs to be unpacked\n");
 
-        char szPathTemp[RTPATH_MAX];
-        rc = RTPathTemp(szPathTemp, sizeof(szPathTemp));
+        if (!RTFileExists(pszPathSet))
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test set '%s' does not exist\n", pszPathSet);
+            rc = VERR_FILE_NOT_FOUND;
+        }
+        else
+            rc = VINF_SUCCESS;
+
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using temporary directory '%s'\n", szPathTemp);
-
-            rc = RTPathJoin(szPathExtracted, sizeof(szPathExtracted), szPathTemp, "vkat-testset-XXXX");
+            char szPathTemp[RTPATH_MAX];
+            rc = RTPathTemp(szPathTemp, sizeof(szPathTemp));
             if (RT_SUCCESS(rc))
             {
-                rc = RTDirCreateTemp(szPathExtracted, 0755);
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using temporary directory '%s'\n", szPathTemp);
+
+                rc = RTPathJoin(szPathExtracted, sizeof(szPathExtracted), szPathTemp, "vkat-testset-XXXX");
                 if (RT_SUCCESS(rc))
                 {
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Unpacking archive to '%s'\n", szPathExtracted);
-                    rc = AudioTestSetUnpack(pszPathSet, szPathExtracted);
+                    rc = RTDirCreateTemp(szPathExtracted, 0755);
                     if (RT_SUCCESS(rc))
-                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Archive successfully unpacked\n");
+                    {
+                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Unpacking archive to '%s'\n", szPathExtracted);
+                        rc = AudioTestSetUnpack(pszPathSet, szPathExtracted);
+                        if (RT_SUCCESS(rc))
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Archive successfully unpacked\n");
+                    }
                 }
             }
         }
