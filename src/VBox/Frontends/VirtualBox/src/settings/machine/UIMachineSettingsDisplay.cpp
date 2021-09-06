@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QComboBox>
+#include <QFileInfo>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>

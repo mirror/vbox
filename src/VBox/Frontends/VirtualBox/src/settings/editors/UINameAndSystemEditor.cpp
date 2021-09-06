@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QILineEdit.h"
 #include "UICommon.h"
+#include "UIIconPool.h"
 #include "UIFilePathSelector.h"
 #include "UINameAndSystemEditor.h"
 
@@ -396,7 +397,7 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
     m_strTypeId = m_pComboType->itemData(iIndex, TypeID).toString();
 
     /* Update selected type pixmap: */
-    m_pIconType->setPixmap(uiCommon().vmGuestOSTypePixmapDefault(m_strTypeId));
+    m_pIconType->setPixmap(generalIconPool().guestOSTypePixmapDefault(m_strTypeId));
 
     /* Save the most recently used item: */
     m_currentIds[m_strFamilyId] = m_strTypeId;

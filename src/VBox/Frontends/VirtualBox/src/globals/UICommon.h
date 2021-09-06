@@ -22,9 +22,9 @@
 #endif
 
 /* Qt includes: */
-#include <QFileIconProvider>
 #include <QMap>
 #include <QReadWriteLock>
+#include <QObject>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -55,7 +55,6 @@ class CCloudMachine;
 class CHostVideoInputDevice;
 class CMachine;
 class CUSBDevice;
-class UIIconPoolGeneral;
 class UIMedium;
 class UIMediumEnumerator;
 class UIThreadPool;
@@ -517,38 +516,6 @@ public:
         UIThreadPool *threadPoolCloud() const { return m_pThreadPoolCloud; }
     /** @} */
 
-    /** @name Icon/Pixmap stuff.
-     * @{ */
-        /** Returns icon defined for a passed @a comMachine. */
-        QIcon vmUserIcon(const CMachine &comMachine) const;
-        /** Returns pixmap of a passed @a size defined for a passed @a comMachine. */
-        QPixmap vmUserPixmap(const CMachine &comMachine, const QSize &size) const;
-        /** Returns pixmap defined for a passed @a comMachine.
-          * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
-        QPixmap vmUserPixmapDefault(const CMachine &comMachine, QSize *pLogicalSize = 0) const;
-
-        /** Returns pixmap corresponding to passed @a strOSTypeID. */
-        QIcon vmGuestOSTypeIcon(const QString &strOSTypeID) const;
-        /** Returns pixmap corresponding to passed @a strOSTypeID and @a size. */
-        QPixmap vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const;
-        /** Returns pixmap corresponding to passed @a strOSTypeID.
-          * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
-        QPixmap vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
-
-        /** Returns default icon of certain @a enmType. */
-        QIcon icon(QFileIconProvider::IconType enmType) { return m_fileIconProvider.icon(enmType); }
-        /** Returns file icon fetched from passed file @a info. */
-        QIcon icon(const QFileInfo &info) { return m_fileIconProvider.icon(info); }
-
-        /** Returns cached default warning pixmap. */
-        QPixmap warningIcon() const { return m_pixWarning; }
-        /** Returns cached default error pixmap. */
-        QPixmap errorIcon() const { return m_pixError; }
-
-        /** Joins two pixmaps horizontally with 2px space between them and returns the result. */
-        static QPixmap joinPixmaps(const QPixmap &pixmap1, const QPixmap &pixmap2);
-    /** @} */
-
     /** @name Context sensitive help related functionality
      * @{ */
         /** Sets the property for help keyword on a QObject
@@ -827,20 +794,6 @@ private:
         UIThreadPool *m_pThreadPool;
         /** Holds the thread-pool instance for cloud needs. */
         UIThreadPool *m_pThreadPoolCloud;
-    /** @} */
-
-    /** @name Icon/Pixmap stuff.
-     * @{ */
-        /** Holds the general icon-pool instance. */
-        UIIconPoolGeneral *m_pIconPool;
-
-        /** Holds the global file icon provider instance. */
-        QFileIconProvider  m_fileIconProvider;
-
-        /** Holds the warning pixmap. */
-        QPixmap  m_pixWarning;
-        /** Holds the error pixmap. */
-        QPixmap  m_pixError;
     /** @} */
 
     /** @name Media related stuff.

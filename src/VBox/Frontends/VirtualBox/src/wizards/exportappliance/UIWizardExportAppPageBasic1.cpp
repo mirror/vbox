@@ -22,6 +22,7 @@
 #include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppDefs.h"
@@ -53,9 +54,9 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
         const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
         if (machine.GetAccessible())
         {
-            pixIcon = uiCommon().vmUserPixmapDefault(machine);
+            pixIcon = generalIconPool().userMachinePixmapDefault(machine);
             if (pixIcon.isNull())
-                pixIcon = uiCommon().vmGuestOSTypePixmapDefault(machine.GetOSTypeId());
+                pixIcon = generalIconPool().guestOSTypePixmapDefault(machine.GetOSTypeId());
             strName = machine.GetName();
             uUuid = machine.GetId();
             fEnabled = machine.GetSessionState() == KSessionState_Unlocked;

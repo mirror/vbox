@@ -24,7 +24,6 @@
 #include <QLocale>
 #include <QMenu>
 #include <QMutex>
-#include <QPainter>
 #include <QProcess>
 #include <QProgressDialog>
 #include <QSessionManager>
@@ -214,7 +213,6 @@ UICommon::UICommon(UIType enmType)
     , m_fVBoxSVCAvailable(true)
     , m_pThreadPool(0)
     , m_pThreadPoolCloud(0)
-    , m_pIconPool(0)
     , m_pMediumEnumerator(0)
 {
     /* Assign instance: */
@@ -256,7 +254,7 @@ void UICommon::prepare()
     UIPopupCenter::create();
 
     /* Prepare general icon-pool: */
-    m_pIconPool = new UIIconPoolGeneral;
+    UIIconPoolGeneral::create();
 
     /* Load translation based on the current locale: */
     UITranslator::loadLanguage();
@@ -823,9 +821,9 @@ void UICommon::cleanup()
     m_pThreadPool = 0;
     delete m_pThreadPoolCloud;
     m_pThreadPoolCloud = 0;
+
     /* Cleanup general icon-pool: */
-    delete m_pIconPool;
-    m_pIconPool = 0;
+    UIIconPoolGeneral::destroy();
 
     /* Ensure CGuestOSType objects are no longer used: */
     m_guestOSFamilyIDs.clear();
@@ -2736,98 +2734,6 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
     return uNeedMBytes * _1M;
 }
 
-QIcon UICommon::vmUserIcon(const CMachine &comMachine) const
-{
-    /* Prepare fallback icon: */
-    static QIcon nullIcon;
-
-    /* Make sure general icon-pool initialized: */
-    AssertReturn(m_pIconPool, nullIcon);
-
-    /* Redirect to general icon-pool: */
-    return m_pIconPool->userMachineIcon(comMachine);
-}
-
-QPixmap UICommon::vmUserPixmap(const CMachine &comMachine, const QSize &size) const
-{
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
-
-    /* Make sure general icon-pool initialized: */
-    AssertReturn(m_pIconPool, nullPixmap);
-
-    /* Redirect to general icon-pool: */
-    return m_pIconPool->userMachinePixmap(comMachine, size);
-}
-
-QPixmap UICommon::vmUserPixmapDefault(const CMachine &comMachine, QSize *pLogicalSize /* = 0 */) const
-{
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
-
-    /* Make sure general icon-pool initialized: */
-    AssertReturn(m_pIconPool, nullPixmap);
-
-    /* Redirect to general icon-pool: */
-    return m_pIconPool->userMachinePixmapDefault(comMachine, pLogicalSize);
-}
-
-QIcon UICommon::vmGuestOSTypeIcon(const QString &strOSTypeID) const
-{
-    /* Prepare fallback icon: */
-    static QIcon nullIcon;
-
-    /* Make sure general icon-pool initialized: */
-    AssertReturn(m_pIconPool, nullIcon);
-
-    /* Redirect to general icon-pool: */
-    return m_pIconPool->guestOSTypeIcon(strOSTypeID);
-}
-
-QPixmap UICommon::vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const
-{
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
-
-    /* Make sure general icon-pool initialized: */
-    AssertReturn(m_pIconPool, nullPixmap);
-
-    /* Redirect to general icon-pool: */
-    return m_pIconPool->guestOSTypePixmap(strOSTypeID, size);
-}
-
-QPixmap UICommon::vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize /* = 0 */) const
-{
-    /* Prepare fallback pixmap: */
-    static QPixmap nullPixmap;
-
-    /* Make sure general icon-pool initialized: */
-    AssertReturn(m_pIconPool, nullPixmap);
-
-    /* Redirect to general icon-pool: */
-    return m_pIconPool->guestOSTypePixmapDefault(strOSTypeID, pLogicalSize);
-}
-
-/* static */
-QPixmap UICommon::joinPixmaps(const QPixmap &pixmap1, const QPixmap &pixmap2)
-{
-    if (pixmap1.isNull())
-        return pixmap2;
-    if (pixmap2.isNull())
-        return pixmap1;
-
-    QPixmap result(pixmap1.width() + pixmap2.width() + 2,
-                   qMax(pixmap1.height(), pixmap2.height()));
-    result.fill(Qt::transparent);
-
-    QPainter painter(&result);
-    painter.drawPixmap(0, 0, pixmap1);
-    painter.drawPixmap(pixmap1.width() + 2, result.height() - pixmap2.height(), pixmap2);
-    painter.end();
-
-    return result;
-}
-
 /* static */
 void UICommon::setHelpKeyword(QObject *pObject, const QString &strHelpKeyword)
 {
@@ -3005,12 +2911,6 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
 
 void UICommon::retranslateUi()
 {
-    m_pixWarning = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning).pixmap(16, 16);
-    Assert(!m_pixWarning.isNull());
-
-    m_pixError = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxCritical).pixmap(16, 16);
-    Assert(!m_pixError.isNull());
-
     /* Re-enumerate uimedium since they contain some translations too: */
     if (m_fValid)
         refreshMedia();

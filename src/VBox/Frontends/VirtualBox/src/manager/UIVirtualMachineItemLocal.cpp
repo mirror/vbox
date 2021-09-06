@@ -24,6 +24,7 @@
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UIVirtualMachineItemLocal.h"
 #ifdef VBOX_WS_MAC
 # include <ApplicationServices/ApplicationServices.h>
@@ -154,16 +155,16 @@ void UIVirtualMachineItemLocal::recachePixmap()
     if (m_fAccessible)
     {
         /* First, we are trying to acquire personal machine guest OS type icon: */
-        m_pixmap = uiCommon().vmUserPixmapDefault(m_comMachine, &m_logicalPixmapSize);
+        m_pixmap = generalIconPool().userMachinePixmapDefault(m_comMachine, &m_logicalPixmapSize);
         /* If there is nothing, we are using icon corresponding to cached guest OS type: */
         if (m_pixmap.isNull())
-            m_pixmap = uiCommon().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
+            m_pixmap = generalIconPool().guestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
     }
     /* Otherwise: */
     else
     {
         /* We are using "Other" guest OS type icon: */
-        m_pixmap = uiCommon().vmGuestOSTypePixmapDefault("Other", &m_logicalPixmapSize);
+        m_pixmap = generalIconPool().guestOSTypePixmapDefault("Other", &m_logicalPixmapSize);
     }
 }
 

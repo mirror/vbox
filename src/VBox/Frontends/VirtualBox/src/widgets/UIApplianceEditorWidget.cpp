@@ -663,7 +663,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_NetworkAdapter:         value = UIIconPool::iconSet(":/nw_16px.png"); break;
                     case KVirtualSystemDescriptionType_USBController:          value = UIIconPool::iconSet(":/usb_16px.png"); break;
                     case KVirtualSystemDescriptionType_SoundCard:              value = UIIconPool::iconSet(":/sound_16px.png"); break;
-                    case KVirtualSystemDescriptionType_BaseFolder:             value = uiCommon().icon(QFileIconProvider::Folder); break;
+                    case KVirtualSystemDescriptionType_BaseFolder:             value = generalIconPool().defaultSystemIcon(QFileIconProvider::Folder); break;
                     case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIIconPool::iconSet(":/vm_group_name_16px.png"); break;
                     case KVirtualSystemDescriptionType_CloudProfileName:
                     case KVirtualSystemDescriptionType_CloudInstanceShape:
@@ -679,7 +679,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                 }
             }
             else if (iColumn == ApplianceViewSection_ConfigValue && m_enmVSDType == KVirtualSystemDescriptionType_OS)
-                value = uiCommon().vmGuestOSTypeIcon(m_strConfigValue);
+                value = generalIconPool().guestOSTypeIcon(m_strConfigValue);
             break;
         }
         case Qt::FontRole:

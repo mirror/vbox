@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 #endif
 
 /* Qt includes: */
+#include <QFileIconProvider>
 #include <QIcon>
 #include <QPixmap>
 #include <QHash>
@@ -31,7 +32,6 @@
 
 /* Forward declarations: */
 class CMachine;
-
 
 /** Interface which provides GUI with static API
   * allowing to dynamically compose icons at runtime. */
@@ -87,6 +87,9 @@ public:
       * based on passed @a pWidget style (if any) or application style (otherwise). */
     static QIcon defaultIcon(UIDefaultIconType defaultIconType, const QWidget *pWidget = 0);
 
+    /** Joins two pixmaps horizontally with 2px space between them and returns the result. */
+    static QPixmap joinPixmaps(const QPixmap &pixmap1, const QPixmap &pixmap2);
+
 protected:
 
     /** Constructs icon-pool.
@@ -105,15 +108,18 @@ private:
                         QIcon::Mode mode = QIcon::Normal, QIcon::State state = QIcon::Off);
 };
 
-
 /** UIIconPool interface extension used as general GUI icon-pool.
   * Provides GUI with guest OS types pixmap cache. */
 class SHARED_LIBRARY_STUFF UIIconPoolGeneral : public UIIconPool
 {
 public:
 
-    /** Constructs general icon-pool. */
-    UIIconPoolGeneral();
+    /** Creates singleton instance. */
+    static void create();
+    /** Destroys singleton instance. */
+    static void destroy();
+    /** Returns singleton instance. */
+    static UIIconPoolGeneral *instance();
 
     /** Returns icon defined for a passed @a comMachine. */
     QIcon userMachineIcon(const CMachine &comMachine) const;
@@ -131,14 +137,44 @@ public:
       * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
     QPixmap guestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
 
+    /** Returns default system icon of certain @a enmType. */
+    QIcon defaultSystemIcon(QFileIconProvider::IconType enmType) { return m_fileIconProvider.icon(enmType); }
+    /** Returns file icon fetched from passed file @a info. */
+    QIcon defaultFileIcon(const QFileInfo &info) { return m_fileIconProvider.icon(info); }
+
+    /** Returns cached default warning pixmap. */
+    QPixmap warningIcon() const { return m_pixWarning; }
+    /** Returns cached default error pixmap. */
+    QPixmap errorIcon() const { return m_pixError; }
+
 private:
 
+    /** Constructs general icon-pool. */
+    UIIconPoolGeneral();
+    /** Destructs general icon-pool. */
+    virtual ~UIIconPoolGeneral() /* override final */;
+
+    /** Holds the singleton instance. */
+    static UIIconPoolGeneral *s_pInstance;
+
+    /** Holds the global file icon provider instance. */
+    QFileIconProvider  m_fileIconProvider;
+
     /** Guest OS type icon-names cache. */
-    QHash<QString, QString> m_guestOSTypeIconNames;
+    QHash<QString, QString>        m_guestOSTypeIconNames;
     /** Guest OS type icons cache. */
-    mutable QHash<QString, QIcon> m_guestOSTypeIcons;
+    mutable QHash<QString, QIcon>  m_guestOSTypeIcons;
+
+    /** Holds the warning pixmap. */
+    QPixmap  m_pixWarning;
+    /** Holds the error pixmap. */
+    QPixmap  m_pixError;
+
+    /** Allows for shortcut access. */
+    friend UIIconPoolGeneral &generalIconPool();
 };
 
+/** Singleton UIIconPoolGeneral 'official' name. */
+inline UIIconPoolGeneral &generalIconPool() { return *UIIconPoolGeneral::instance(); }
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIIconPool_h */
-

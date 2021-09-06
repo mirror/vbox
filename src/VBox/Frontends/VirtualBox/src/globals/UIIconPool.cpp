@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2020 Oracle Corporation
+ * Copyright (C) 2010-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QFile>
+#include <QPainter>
 #include <QStyle>
 #include <QWidget>
 
@@ -235,6 +236,26 @@ QIcon UIIconPool::defaultIcon(UIDefaultIconType defaultIconType, const QWidget *
 }
 
 /* static */
+QPixmap UIIconPool::joinPixmaps(const QPixmap &pixmap1, const QPixmap &pixmap2)
+{
+    if (pixmap1.isNull())
+        return pixmap2;
+    if (pixmap2.isNull())
+        return pixmap1;
+
+    QPixmap result(pixmap1.width() + pixmap2.width() + 2,
+                   qMax(pixmap1.height(), pixmap2.height()));
+    result.fill(Qt::transparent);
+
+    QPainter painter(&result);
+    painter.drawPixmap(0, 0, pixmap1);
+    painter.drawPixmap(pixmap1.width() + 2, result.height() - pixmap2.height(), pixmap2);
+    painter.end();
+
+    return result;
+}
+
+/* static */
 void UIIconPool::addName(QIcon &icon, const QString &strName,
                          QIcon::Mode mode /* = QIcon::Normal */, QIcon::State state /* = QIcon::Off */)
 {
@@ -269,8 +290,34 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
 *   Class UIIconPoolGeneral implementation.                                                                                      *
 *********************************************************************************************************************************/
 
+/* static */
+UIIconPoolGeneral *UIIconPoolGeneral::s_pInstance = 0;
+
+/* static */
+void UIIconPoolGeneral::create()
+{
+    AssertReturnVoid(!s_pInstance);
+    new UIIconPoolGeneral;
+}
+
+/* static */
+void UIIconPoolGeneral::destroy()
+{
+    AssertPtrReturnVoid(s_pInstance);
+    delete s_pInstance;
+}
+
+/* static */
+UIIconPoolGeneral *UIIconPoolGeneral::instance()
+{
+    return s_pInstance;
+}
+
 UIIconPoolGeneral::UIIconPoolGeneral()
 {
+    /* Init instance: */
+    s_pInstance = this;
+
     /* Prepare OS type icon-name hash: */
     m_guestOSTypeIconNames.insert("Other",           ":/os_other.png");
     m_guestOSTypeIconNames.insert("Other_64",        ":/os_other_64.png");
@@ -366,6 +413,18 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("JRockitVE",       ":/os_jrockitve.png");
     m_guestOSTypeIconNames.insert("VBoxBS_64",       ":/os_other_64.png");
     m_guestOSTypeIconNames.insert("Cloud",           ":/os_cloud.png");
+
+    /* Prepare warning/error icons: */
+    m_pixWarning = defaultIcon(UIDefaultIconType_MessageBoxWarning).pixmap(16, 16);
+    Assert(!m_pixWarning.isNull());
+    m_pixError = defaultIcon(UIDefaultIconType_MessageBoxCritical).pixmap(16, 16);
+    Assert(!m_pixError.isNull());
+}
+
+UIIconPoolGeneral::~UIIconPoolGeneral()
+{
+    /* Deinit instance: */
+    s_pInstance = 0;
 }
 
 QIcon UIIconPoolGeneral::userMachineIcon(const CMachine &comMachine) const
@@ -533,4 +592,3 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
     /* Return pixmap: */
     return pixmap;
 }
-

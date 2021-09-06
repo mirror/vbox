@@ -438,9 +438,9 @@ void UIFilePathSelector::selectPath()
 QIcon UIFilePathSelector::defaultIcon() const
 {
     if (m_enmMode == Mode_Folder)
-        return uiCommon().icon(QFileIconProvider::Folder);
+        return generalIconPool().defaultSystemIcon(QFileIconProvider::Folder);
     else
-        return uiCommon().icon(QFileIconProvider::File);
+        return generalIconPool().defaultSystemIcon(QFileIconProvider::File);
 }
 
 QString UIFilePathSelector::fullPath(bool fAbsolute /* = true */) const
@@ -578,7 +578,7 @@ void UIFilePathSelector::refreshText()
 
         /* Attach corresponding icon: */
         setItemIcon(PathId, QFileInfo(m_strPath).exists() ?
-                            uiCommon().icon(QFileInfo(m_strPath)) :
+                            generalIconPool().defaultFileIcon(QFileInfo(m_strPath)) :
                             defaultIcon());
 
         /* Set the tool-tip: */

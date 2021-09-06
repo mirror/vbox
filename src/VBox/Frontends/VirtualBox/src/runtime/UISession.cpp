@@ -35,6 +35,7 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UISession.h"
 #include "UIMachine.h"
 #include "UIMedium.h"
@@ -1127,10 +1128,10 @@ void UISession::prepareConnections()
 void UISession::prepareMachineWindowIcon()
 {
     /* Acquire user machine-window icon: */
-    QIcon icon = uiCommon().vmUserIcon(machine());
+    QIcon icon = generalIconPool().userMachineIcon(machine());
     /* Use the OS type icon if user one was not set: */
     if (icon.isNull())
-        icon = uiCommon().vmGuestOSTypeIcon(machine().GetOSTypeId());
+        icon = generalIconPool().guestOSTypeIcon(machine().GetOSTypeId());
     /* Use the default icon if nothing else works: */
     if (icon.isNull())
         icon = QIcon(":/VirtualBox_48px.png");

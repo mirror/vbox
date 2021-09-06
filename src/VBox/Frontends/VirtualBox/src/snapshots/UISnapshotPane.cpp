@@ -1544,9 +1544,9 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
         windowManager().registerNewParent(pDlg, pDlgParent);
 
         /* Assign corresponding icon: */
-        QIcon icon = uiCommon().vmUserIcon(m_comMachine);
+        QIcon icon = generalIconPool().userMachineIcon(m_comMachine);
         if (icon.isNull())
-            icon = uiCommon().vmGuestOSTypeIcon(m_comMachine.GetOSTypeId());
+            icon = generalIconPool().guestOSTypeIcon(m_comMachine.GetOSTypeId());
         pDlg->setIcon(icon);
 
         /* Assign corresponding snapshot name: */

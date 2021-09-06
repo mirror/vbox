@@ -30,9 +30,10 @@
 #include "QILabel.h"
 #include "QIMessageBox.h"
 #include "QITabWidget.h"
-#include "UICommon.h"
 #include "UIActionPoolManager.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UIMediumDetailsWidget.h"
 #include "UIMediumItem.h"
 #include "UIMediumManager.h"
@@ -1142,7 +1143,7 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
             *pfInaccessible = true;
 
             if (m_pTabWidget)
-                m_pTabWidget->setTabIcon(tabIndex(mediumType), uiCommon().warningIcon());
+                m_pTabWidget->setTabIcon(tabIndex(mediumType), generalIconPool().warningIcon());
 
             break;
         }
@@ -1179,7 +1180,7 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
             if (m_pTabWidget)
             {
                 if (*pfInaccessible)
-                    m_pTabWidget->setTabIcon(tabIndex(mediumType), uiCommon().warningIcon());
+                    m_pTabWidget->setTabIcon(tabIndex(mediumType), generalIconPool().warningIcon());
                 else
                     m_pTabWidget->setTabIcon(tabIndex(mediumType), *pIcon);
             }
