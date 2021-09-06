@@ -9078,13 +9078,13 @@
     <method name="moveTo">
       <desc>
         Move machine on to new place/folder
-        <result name="E_INVALIDARG">
-          @a target is @c null.
-        </result>
       </desc>
 
       <param name="folder" type="wstring" dir="in">
-        <desc>Target folder where machine is moved.</desc>
+        <desc>Target folder where machine is moved. May be the same folder
+          where the VM already is located or the empty string, in which
+          case the machine is kept in this location and the disk images
+          and other files which are stored elsewhere are moved.</desc>
       </param>
 
       <param name="type" type="wstring" dir="in">

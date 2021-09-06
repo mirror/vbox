@@ -6974,11 +6974,15 @@ HRESULT Machine::moveTo(const com::Utf8Str &aTargetPath,
     HRESULT hrc = ptrProgress.createObject();
     if (SUCCEEDED(hrc))
     {
+        com::Utf8Str strDefaultPath;
+        if (aTargetPath.isEmpty())
+            i_calculateFullPath(".", strDefaultPath);
+
         /* Initialize our worker task */
         MachineMoveVM *pTask = NULL;
         try
         {
-            pTask = new MachineMoveVM(this, aTargetPath, aType, ptrProgress);
+            pTask = new MachineMoveVM(this, aTargetPath.isEmpty() ? strDefaultPath : aTargetPath, aType, ptrProgress);
         }
         catch (std::bad_alloc &)
         {
