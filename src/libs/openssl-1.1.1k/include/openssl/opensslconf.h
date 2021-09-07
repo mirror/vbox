@@ -66,6 +66,12 @@ extern "C" {
 #ifndef OPENSSL_NO_RMD160
 # define OPENSSL_NO_RMD160
 #endif
+#ifndef OPENSSL_NO_SM2
+# define OPENSSL_NO_SM2     /* Following Oracle Linux' lead and disable this. */
+#endif
+#ifndef OPENSSL_NO_SM4
+# define OPENSSL_NO_SM4     /* Following Oracle Linux' lead and disable this. */
+#endif
 #ifndef OPENSSL_NO_WHIRLPOOL
 # define OPENSSL_NO_WHIRLPOOL
 #endif
