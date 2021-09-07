@@ -662,7 +662,7 @@
     "jmp done" \
     \
     "not_found_high:" \
-    "bsf eax, edx" \
+    "bsr eax, edx" \
     "jz  not_found" \
     "inc eax" \
     "jmp done" \
