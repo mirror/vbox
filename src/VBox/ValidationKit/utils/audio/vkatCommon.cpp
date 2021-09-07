@@ -286,9 +286,9 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         uint64_t        nsDonePreBuffering = 0;
 
         uint64_t        offStream          = 0;
-        uint64_t        uTimeoutNs         = (pParms->msDuration * 4) * RT_NS_1MS; /* Four times the time playback should roughly take */
+        uint64_t        nsTimeout          = RT_MS_5MIN_64 * RT_NS_1MS;
 
-        while (cbToPlayTotal)
+        while (cbPlayedTotal < cbToPlayTotal)
         {
             /* Pace ourselves a little. */
             if (offStream >= cbPreBuffer)
@@ -305,7 +305,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             uint32_t const cbCanWrite = AudioTestMixStreamGetWritable(&pStream->Mix);
             if (cbCanWrite)
             {
-                uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbToPlayTotal, sizeof(abBuf)), cbCanWrite);
+                uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbToPlayTotal - cbPlayedTotal, sizeof(abBuf)), cbCanWrite);
                 uint32_t       cbToPlay;
                 rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbToPlay);
                 if (RT_SUCCESS(rc))
@@ -320,6 +320,8 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
                         rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
                         if (RT_SUCCESS(rc))
                         {
+                            AssertBreakStmt(cbPlayed <= cbToPlay, rc = VERR_TOO_MUCH_DATA);
+
                             offStream += cbPlayed;
 
                             if (cbPlayed != cbToPlay)
@@ -340,9 +342,10 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             AssertBreakStmt(cbPlayedTotal <= cbToPlayTotal, VERR_BUFFER_OVERFLOW);
 
             /* Fail-safe in case something screwed up while playing back. */
-            if (RTTimeNanoTS() - nsStarted > uTimeoutNs)
+            uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
+            if (cNsElapsed > nsTimeout)
             {
-                RTTestFailed(g_hTest, "Playback took too long (%RU32ms exceeded), aborting\n", uTimeoutNs / RT_NS_1MS);
+                RTTestFailed(g_hTest, "Playback took too long (runng %RU64 vs. timeout %RU64), aborting\n", cNsElapsed, nsTimeout);
                 rc = VERR_TIMEOUT;
             }
 
