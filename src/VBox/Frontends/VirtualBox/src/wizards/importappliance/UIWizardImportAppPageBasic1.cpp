@@ -28,6 +28,7 @@
 #include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
+#include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
@@ -80,31 +81,13 @@ void UIWizardImportAppPage1::populateSources()
         m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, strShortName, SourceData_ShortName);
     }
 
-    /* Do we have OCI source? */
+    /* Initialize Cloud Provider Manager: */
     bool fOCIPresent = false;
-
-    /* Main API request sequence, can be interrupted after any step: */
-    do
+    m_comCloudProviderManager = cloudProviderManager(wizardImp());
+    if (m_comCloudProviderManager.isNotNull())
     {
-        /* Initialize Cloud Provider Manager: */
-        CVirtualBox comVBox = uiCommon().virtualBox();
-        m_comCloudProviderManager = comVBox.GetCloudProviderManager();
-        if (!comVBox.isOk())
-        {
-            msgCenter().cannotAcquireCloudProviderManager(comVBox);
-            break;
-        }
-
-        /* Acquire existing providers: */
-        const QVector<CCloudProvider> providers = m_comCloudProviderManager.GetProviders();
-        if (!m_comCloudProviderManager.isOk())
-        {
-            msgCenter().cannotAcquireCloudProviderManagerParameter(m_comCloudProviderManager);
-            break;
-        }
-
         /* Iterate through existing providers: */
-        foreach (const CCloudProvider &comProvider, providers)
+        foreach (const CCloudProvider &comProvider, listCloudProviders(wizardImp()))
         {
             /* Skip if we have nothing to populate (file missing?): */
             if (comProvider.isNull())
@@ -120,7 +103,6 @@ void UIWizardImportAppPage1::populateSources()
                 fOCIPresent = true;
         }
     }
-    while (0);
 
     /* Set default: */
     if (m_fImportFromOCIByDefault && fOCIPresent)

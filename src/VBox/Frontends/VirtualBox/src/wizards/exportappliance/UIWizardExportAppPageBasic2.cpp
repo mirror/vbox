@@ -30,6 +30,7 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
+#include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIEmptyFilePathSelector.h"
@@ -94,36 +95,24 @@ void UIWizardExportAppPage2::populateFormats()
 
     /* Initialize Cloud Provider Manager: */
     bool fOCIPresent = false;
-    CVirtualBox comVBox = uiCommon().virtualBox();
-    m_comCloudProviderManager = comVBox.GetCloudProviderManager();
-    /* Show error message if necessary: */
-    if (!comVBox.isOk())
-        msgCenter().cannotAcquireCloudProviderManager(comVBox);
-    else
+    m_comCloudProviderManager = cloudProviderManager(wizardImp());
+    if (m_comCloudProviderManager.isNotNull())
     {
-        /* Acquire existing providers: */
-        const QVector<CCloudProvider> providers = m_comCloudProviderManager.GetProviders();
-        /* Show error message if necessary: */
-        if (!m_comCloudProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(m_comCloudProviderManager);
-        else
+        /* Iterate through existing providers: */
+        foreach (const CCloudProvider &comProvider, listCloudProviders(wizardImp()))
         {
-            /* Iterate through existing providers: */
-            foreach (const CCloudProvider &comProvider, providers)
-            {
-                /* Skip if we have nothing to populate (file missing?): */
-                if (comProvider.isNull())
-                    continue;
+            /* Skip if we have nothing to populate (file missing?): */
+            if (comProvider.isNull())
+                continue;
 
-                /* Compose empty item, fill it's data: */
-                m_pFormatComboBox->addItem(QString());
-                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetId(),        FormatData_ID);
-                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetName(),      FormatData_Name);
-                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetShortName(), FormatData_ShortName);
-                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, true,                       FormatData_IsItCloudFormat);
-                if (m_pFormatComboBox->itemData(m_pFormatComboBox->count() - 1, FormatData_ShortName).toString() == "OCI")
-                    fOCIPresent = true;
-            }
+            /* Compose empty item, fill it's data: */
+            m_pFormatComboBox->addItem(QString());
+            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetId(),        FormatData_ID);
+            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetName(),      FormatData_Name);
+            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetShortName(), FormatData_ShortName);
+            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, true,                       FormatData_IsItCloudFormat);
+            if (m_pFormatComboBox->itemData(m_pFormatComboBox->count() - 1, FormatData_ShortName).toString() == "OCI")
+                fOCIPresent = true;
         }
     }
 
