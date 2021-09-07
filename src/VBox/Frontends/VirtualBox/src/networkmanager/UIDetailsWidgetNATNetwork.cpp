@@ -34,6 +34,7 @@
 #include "UIDetailsWidgetNATNetwork.h"
 #include "UIMessageCenter.h"
 #include "UINetworkManagerUtils.h"
+#include "UINotificationCenter.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -85,7 +86,7 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
     /* Make sure network name isn't empty: */
     if (m_newData.m_strName.isEmpty())
     {
-        msgCenter().warnAboutNoNameSpecified(m_oldData.m_strName);
+        UINotificationMessage::warnAboutNoNameSpecified(m_oldData.m_strName);
         return false;
     }
     else
@@ -93,7 +94,7 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
         /* Make sure item names are unique: */
         if (m_busyNames.contains(m_newData.m_strName))
         {
-            msgCenter().warnAboutNameAlreadyBusy(m_newData.m_strName);
+            UINotificationMessage::warnAboutNameAlreadyBusy(m_newData.m_strName);
             return false;
         }
     }
@@ -101,13 +102,13 @@ bool UIDetailsWidgetNATNetwork::revalidate() const
     /* Make sure IPv4 prefix isn't empty: */
     if (m_newData.m_strPrefixIPv4.isEmpty())
     {
-        msgCenter().warnAboutNoIPv4PrefixSpecified(m_newData.m_strName);
+        UINotificationMessage::warnAboutNoIPv4PrefixSpecified(m_newData.m_strName);
         return false;
     }
     /* Make sure IPv6 prefix isn't empty if IPv6 is supported: */
     if (m_newData.m_fSupportsIPv6 && m_newData.m_strPrefixIPv6.isEmpty())
     {
-        msgCenter().warnAboutNoIPv6PrefixSpecified(m_newData.m_strName);
+        UINotificationMessage::warnAboutNoIPv6PrefixSpecified(m_newData.m_strName);
         return false;
     }
 

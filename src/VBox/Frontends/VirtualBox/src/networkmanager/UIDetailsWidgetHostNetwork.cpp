@@ -32,6 +32,7 @@
 #include "UIDetailsWidgetHostNetwork.h"
 #include "UIMessageCenter.h"
 #include "UINetworkManagerUtils.h"
+#include "UINotificationCenter.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -77,7 +78,7 @@ bool UIDetailsWidgetHostNetwork::revalidate() const
     if (   m_newData.m_interface.m_fDHCPEnabled
         && !m_newData.m_dhcpserver.m_fEnabled)
     {
-        msgCenter().warnAboutDHCPServerIsNotEnabled(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutDHCPServerIsNotEnabled(m_newData.m_interface.m_strName);
         return false;
     }
     if (   !m_newData.m_interface.m_fDHCPEnabled
@@ -85,7 +86,7 @@ bool UIDetailsWidgetHostNetwork::revalidate() const
         && (   !RTNetIsIPv4AddrStr(m_newData.m_interface.m_strAddress.toUtf8().constData())
             || RTNetStrIsIPv4AddrAny(m_newData.m_interface.m_strAddress.toUtf8().constData())))
     {
-        msgCenter().warnAboutInvalidIPv4Address(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidIPv4Address(m_newData.m_interface.m_strName);
         return false;
     }
     if (   !m_newData.m_interface.m_fDHCPEnabled
@@ -93,7 +94,7 @@ bool UIDetailsWidgetHostNetwork::revalidate() const
         && (   !RTNetIsIPv4AddrStr(m_newData.m_interface.m_strMask.toUtf8().constData())
             || RTNetStrIsIPv4AddrAny(m_newData.m_interface.m_strMask.toUtf8().constData())))
     {
-        msgCenter().warnAboutInvalidIPv4Mask(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidIPv4Mask(m_newData.m_interface.m_strName);
         return false;
     }
     if (    !m_newData.m_interface.m_fDHCPEnabled
@@ -102,7 +103,7 @@ bool UIDetailsWidgetHostNetwork::revalidate() const
         && (   !RTNetIsIPv6AddrStr(m_newData.m_interface.m_strAddress6.toUtf8().constData())
             || RTNetStrIsIPv6AddrAny(m_newData.m_interface.m_strAddress6.toUtf8().constData())))
     {
-        msgCenter().warnAboutInvalidIPv6Address(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidIPv6Address(m_newData.m_interface.m_strName);
         return false;
     }
     bool fIsMaskPrefixLengthNumber = false;
@@ -113,7 +114,7 @@ bool UIDetailsWidgetHostNetwork::revalidate() const
             || iMaskPrefixLength < 0
             || iMaskPrefixLength > 128))
     {
-        msgCenter().warnAboutInvalidIPv6PrefixLength(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidIPv6PrefixLength(m_newData.m_interface.m_strName);
         return false;
     }
 
@@ -122,28 +123,28 @@ bool UIDetailsWidgetHostNetwork::revalidate() const
         && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strAddress.toUtf8().constData())
             || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strAddress.toUtf8().constData())))
     {
-        msgCenter().warnAboutInvalidDHCPServerAddress(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidDHCPServerAddress(m_newData.m_interface.m_strName);
         return false;
     }
     if (   m_newData.m_dhcpserver.m_fEnabled
         && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strMask.toUtf8().constData())
             || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strMask.toUtf8().constData())))
     {
-        msgCenter().warnAboutInvalidDHCPServerMask(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidDHCPServerMask(m_newData.m_interface.m_strName);
         return false;
     }
     if (   m_newData.m_dhcpserver.m_fEnabled
         && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData())
             || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData())))
     {
-        msgCenter().warnAboutInvalidDHCPServerLowerAddress(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidDHCPServerLowerAddress(m_newData.m_interface.m_strName);
         return false;
     }
     if (   m_newData.m_dhcpserver.m_fEnabled
         && (   !RTNetIsIPv4AddrStr(m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData())
             || RTNetStrIsIPv4AddrAny(m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData())))
     {
-        msgCenter().warnAboutInvalidDHCPServerUpperAddress(m_newData.m_interface.m_strName);
+        UINotificationMessage::warnAboutInvalidDHCPServerUpperAddress(m_newData.m_interface.m_strName);
         return false;
     }
 

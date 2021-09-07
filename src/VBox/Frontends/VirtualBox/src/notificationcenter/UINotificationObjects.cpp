@@ -36,9 +36,12 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CConsole.h"
+#include "CDHCPServer.h"
 #include "CGraphicsAdapter.h"
+#include "CHostNetworkInterface.h"
 #include "CEmulatedUSB.h"
 #include "CMediumAttachment.h"
+#include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
 #include "CVRDEServer.h"
 
@@ -158,6 +161,132 @@ void UINotificationMessage::warnAboutPublicKeyFileIsntReadable(const QString &st
         QApplication::translate("UIMessageCenter", "Public key isn't readable ..."),
         QApplication::translate("UIMessageCenter", "Failed to open the public key file <nobr><b>%1</b></nobr>. Check file "
                                                    "permissions.").arg(strPath));
+}
+
+/* static */
+void UINotificationMessage::warnAboutDHCPServerIsNotEnabled(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "DHCP server isn't enabled ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> is set to obtain the address "
+                                                   "automatically but the corresponding DHCP server is not enabled.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidIPv4Address(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid IPv4 address ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid IPv4 address.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidIPv4Mask(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid IPv4 mask ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid IPv4 network mask.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidIPv6Address(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid IPv6 address ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid IPv6 address.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidIPv6PrefixLength(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid IPv6 prefix length ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid IPv6 prefix length.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidDHCPServerAddress(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid DHCP server address ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid DHCP server address.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidDHCPServerMask(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid DHCP server mask ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid DHCP server mask.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidDHCPServerLowerAddress(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid DHCP lower address ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid DHCP server lower address bound.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutInvalidDHCPServerUpperAddress(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Invalid DHCP upper address ..."),
+        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid DHCP server upper address bound.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutNoNameSpecified(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "No name specified ..."),
+        QApplication::translate("UIMessageCenter", "No new name specified for the NAT network previously called <b>%1</b>.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutNameAlreadyBusy(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Name already busy ..."),
+        QApplication::translate("UIMessageCenter", "The name <b>%1</b> is being used for several NAT networks.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutNoIPv4PrefixSpecified(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "No IPv4 prefix specified ..."),
+        QApplication::translate("UIMessageCenter", "No IPv4 prefix specified for the NAT network <b>%1</b>.")
+                                                   .arg(strName));
+}
+
+/* static */
+void UINotificationMessage::warnAboutNoIPv6PrefixSpecified(const QString &strName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "No IPv6 prefix specified ..."),
+        QApplication::translate("UIMessageCenter", "No IPv6 prefix specified for the NAT network <b>%1</b>.")
+                                                   .arg(strName));
 }
 
 /* static */
@@ -300,6 +429,15 @@ void UINotificationMessage::cannotAcquireVirtualBoxParameter(const CVirtualBox &
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireHostParameter(const CHost &comHost)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Host failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire host parameter.") +
+        UIErrorString::formatErrorInfo(comHost));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireMediumParameter(const CMedium &comMedium)
 {
     createMessage(
@@ -345,11 +483,38 @@ void UINotificationMessage::cannotAcquireAttachmentParameter(const CMediumAttach
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireDHCPServerParameter(const CDHCPServer &comServer)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "DHCP server failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire DHCP server parameter.") +
+        UIErrorString::formatErrorInfo(comServer));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Host network interface failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire host network interface parameter.") +
+        UIErrorString::formatErrorInfo(comInterface));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "NAT network failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire NAT network parameter.") +
+        UIErrorString::formatErrorInfo(comNetwork));
+}
+
+/* static */
 void UINotificationMessage::cannotChangeMediumParameter(const CMedium &comMedium)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Medium failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to change the attribute of the medium <b>%1</b>.")
+        QApplication::translate("UIMessageCenter", "Failed to change the parameter of the medium <b>%1</b>.")
                                                    .arg(CMedium(comMedium).GetLocation()) +
         UIErrorString::formatErrorInfo(comMedium));
 }
@@ -359,7 +524,7 @@ void UINotificationMessage::cannotChangeMachineParameter(const CMachine &comMach
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Machine failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to change the attribute of the virtual machine <b>%1</b>.")
+        QApplication::translate("UIMessageCenter", "Failed to change the parameter of the virtual machine <b>%1</b>.")
                                                    .arg(CMachine(comMachine).GetName()) +
         UIErrorString::formatErrorInfo(comMachine));
 }
@@ -369,7 +534,7 @@ void UINotificationMessage::cannotChangeGraphicsAdapterParameter(const CGraphics
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Graphics adapter failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to change graphics adapter attribute.") +
+        QApplication::translate("UIMessageCenter", "Failed to change graphics adapter parameter.") +
         UIErrorString::formatErrorInfo(comAdapter));
 }
 
@@ -378,7 +543,7 @@ void UINotificationMessage::cannotChangeAudioAdapterParameter(const CAudioAdapte
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Audio adapter failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to change audio adapter attribute.") +
+        QApplication::translate("UIMessageCenter", "Failed to change audio adapter parameter.") +
         UIErrorString::formatErrorInfo(comAdapter));
 }
 
@@ -387,8 +552,35 @@ void UINotificationMessage::cannotChangeNetworkAdapterParameter(const CNetworkAd
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Network adapter failure ..."),
-        QApplication::translate("UIMessageCenter", "Failed to change network adapter attribute.") +
+        QApplication::translate("UIMessageCenter", "Failed to change network adapter parameter.") +
         UIErrorString::formatErrorInfo(comAdapter));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeDHCPServerParameter(const CDHCPServer &comServer)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "DHCP server failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change DHCP server parameter.") +
+        UIErrorString::formatErrorInfo(comServer));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Host network interface failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change host network interface parameter.") +
+        UIErrorString::formatErrorInfo(comInterface));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeNATNetworkParameter(const CNATNetwork &comNetwork)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "NAT network failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change NAT network parameter.") +
+        UIErrorString::formatErrorInfo(comNetwork));
 }
 
 /* static */
@@ -474,6 +666,45 @@ void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const 
 }
 
 /* static */
+void UINotificationMessage::cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create DHCP server ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create a DHCP server for the network interface <b>%1</b>.")
+                                                   .arg(strInterfaceName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't remove DHCP server ..."),
+        QApplication::translate("UIMessageCenter", "Failed to remove the DHCP server for the network interface <b>%1</b>.")
+                                                   .arg(strInterfaceName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotCreateNATNetwork(const CVirtualBox &comVBox)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create NAT network ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create a NAT network.") +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't remove NAT network ..."),
+        QApplication::translate("UIMessageCenter", "Failed to remove the NAT network <b>%1</b>.")
+                                                   .arg(strNetworkName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
 void UINotificationMessage::cannotCloseMedium(const CMedium &comMedium)
 {
     /* Show the error: */
@@ -524,6 +755,26 @@ void UINotificationMessage::cannotChangeSnapshot(const CSnapshot &comSnapshot,
         QApplication::translate("UIMessageCenter", "Failed to change the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
                                                    .arg(strSnapshotName, strMachineName) +
         UIErrorString::formatErrorInfo(comSnapshot));
+}
+
+/* static */
+void UINotificationMessage::cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find host network interface ..."),
+        QApplication::translate("UIMessageCenter", "Unable to find the host network interface <b>%1</b>.")
+                                                   .arg(strInterfaceName) +
+        UIErrorString::formatErrorInfo(comHost));
+}
+
+/* static */
+void UINotificationMessage::cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find NAT network ..."),
+        QApplication::translate("UIMessageCenter", "Unable to find the NAT network <b>%1</b>.")
+                                                   .arg(strNetworkName) +
+        UIErrorString::formatErrorInfo(comVBox));
 }
 
 /* static */

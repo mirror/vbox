@@ -89,18 +89,57 @@ public:
           * @param  strGroupName      Brings the group name. */
         static void cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName);
 
-        /** Notifies about inability to remove machine.
-          * @param  comMachine  Brings machine being removed. */
+        /** Notifies about public key path is empty. */
         static void warnAboutPublicKeyFilePathIsEmpty();
-        /** Notifies about inability to remove machine.
-          * @param  comMachine  Brings machine being removed. */
+        /** Notifies about public key file doesn't exist.
+          * @param  strPath  Brings the path being checked. */
         static void warnAboutPublicKeyFileDoesntExist(const QString &strPath);
-        /** Notifies about inability to remove machine.
-          * @param  comMachine  Brings machine being removed. */
+        /** Notifies about public key file is of too large size.
+          * @param  strPath  Brings the path being checked. */
         static void warnAboutPublicKeyFileIsOfTooLargeSize(const QString &strPath);
-        /** Notifies about inability to remove machine.
-          * @param  comMachine  Brings machine being removed. */
+        /** Notifies about public key file isn't readable.
+          * @param  strPath  Brings the path being checked. */
         static void warnAboutPublicKeyFileIsntReadable(const QString &strPath);
+
+        /** Notifies about DHCP server isn't enabled.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutDHCPServerIsNotEnabled(const QString &strName);
+        /** Notifies about invalid IPv4 address.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidIPv4Address(const QString &strName);
+        /** Notifies about invalid IPv4 mask.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidIPv4Mask(const QString &strName);
+        /** Notifies about invalid IPv6 address.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidIPv6Address(const QString &strName);
+        /** Notifies about invalid IPv6 prefix length.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidIPv6PrefixLength(const QString &strName);
+        /** Notifies about invalid DHCP server address.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidDHCPServerAddress(const QString &strName);
+        /** Notifies about invalid DHCP server mask.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidDHCPServerMask(const QString &strName);
+        /** Notifies about invalid DHCP server lower address.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidDHCPServerLowerAddress(const QString &strName);
+        /** Notifies about invalid DHCP server upper address.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutInvalidDHCPServerUpperAddress(const QString &strName);
+        /** Notifies about no name specified.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutNoNameSpecified(const QString &strName);
+        /** Notifies about name already busy.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutNameAlreadyBusy(const QString &strName);
+        /** Notifies about no IPv4 prefix specified.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutNoIPv4PrefixSpecified(const QString &strName);
+        /** Notifies about no IPv6 prefix specified.
+          * @param  strName  Brings the interface name. */
+        static void warnAboutNoIPv6PrefixSpecified(const QString &strName);
     /** @} */
 
     /** @name Simple Runtime UI warnings.
@@ -141,6 +180,9 @@ public:
         /** Notifies about inability to acquire IVirtualBox parameter.
           * @param  comVBox  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox);
+        /** Notifies about inability to acquire IHost parameter.
+          * @param  comHost  Brings the object parameter get acquired from. */
+        static void cannotAcquireHostParameter(const CHost &comHost);
         /** Notifies about inability to acquire IMedium parameter.
           * @param  comMedium  Brings the object parameter get acquired from. */
         static void cannotAcquireMediumParameter(const CMedium &comMedium);
@@ -156,6 +198,15 @@ public:
         /** Notifies about inability to acquire IMediumAttachment parameter.
           * @param  comAttachment  Brings the object parameter get acquired from. */
         static void cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment);
+        /** Notifies about inability to acquire IDHCPServer parameter.
+          * @param  comServer  Brings the object parameter get acquired from. */
+        static void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer);
+        /** Notifies about inability to acquire IHostNetworkInterface parameter.
+          * @param  comInterface  Brings the object parameter get acquired from. */
+        static void cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface);
+        /** Notifies about inability to acquire INATNetwork parameter.
+          * @param  comNetwork  Brings the object parameter get acquired from. */
+        static void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork);
 
         /** Notifies about inability to change IMedium parameter.
           * @param  comMedium  Brings the object parameter being changed for. */
@@ -172,6 +223,15 @@ public:
         /** Notifies about inability to change INetworkAdapter parameter.
           * @param  comAdapter  Brings the object parameter being changed for. */
         static void cannotChangeNetworkAdapterParameter(const CNetworkAdapter &comAdapter);
+        /** Notifies about inability to change IDHCPServer parameter.
+          * @param  comServer  Brings the object parameter being changed for. */
+        static void cannotChangeDHCPServerParameter(const CDHCPServer &comServer);
+        /** Notifies about inability to change IHostNetworkInterface parameter.
+          * @param  comInterface  Brings the object parameter being changed for. */
+        static void cannotChangeHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface);
+        /** Notifies about inability to change INATNetwork parameter.
+          * @param  comNetwork  Brings the object parameter being changed for. */
+        static void cannotChangeNATNetworkParameter(const CNATNetwork &comNetwork);
 
         /** Notifies about inability to enumerate host USB devices.
           * @param  comHost  Brings the host devices enumerated for. */
@@ -202,6 +262,21 @@ public:
           * @param  comVBox      Brings common VBox object trying to open machine.
           * @param  strLocation  Brings the machine location. */
         static void cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation);
+        /** Notifies about inability to create DHCP server.
+          * @param  comVBox           Brings common VBox object trying to create DHCP server.
+          * @param  strInterfaceName  Brings the interface name. */
+        static void cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName);
+        /** Notifies about inability to remove DHCP server.
+          * @param  comVBox           Brings common VBox object trying to remove DHCP server.
+          * @param  strInterfaceName  Brings the interface name. */
+        static void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName);
+        /** Notifies about inability to create NAT network.
+          * @param  comVBox  Brings common VBox object trying to create NAT network. */
+        static void cannotCreateNATNetwork(const CVirtualBox &comVBox);
+        /** Notifies about inability to remove NAT network.
+          * @param  comVBox         Brings common VBox object trying to remove DHCP server.
+          * @param  strNetworkName  Brings the network name. */
+        static void cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
 
         /** Notifies about inability to open machine.
           * @param  comMedium  Brings the medium being closed. */
@@ -223,6 +298,15 @@ public:
           * @param  strSnapshotName  Brings snapshot name.
           * @param  strMachineName   Brings machine name. */
         static void cannotChangeSnapshot(const CSnapshot &comSnapshot, const QString &strSnapshotName, const QString &strMachineName);
+
+        /** Notifies about inability to find host network interface.
+          * @param  comHost  Brings the host being search through.
+          * @param  strInterfaceName  Brings interface name. */
+        static void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName);
+        /** Notifies about inability to find NAT network.
+          * @param  comVBox         Brings common VBox object being search through.
+          * @param  strNetworkName  Brings network name. */
+        static void cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
     /** @} */
 
     /** @name COM Runtime UI warnings.

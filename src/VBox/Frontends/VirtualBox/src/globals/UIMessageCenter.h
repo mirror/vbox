@@ -343,6 +343,12 @@ public:
         int confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
     /** @} */
 
+    /** @name VirtualBox Manager / Network Manager warnings.
+      * @{ */
+        bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
+        bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
+    /** @} */
+
     /** @name VirtualBox Manager / New VM wizard warnings.
       * @{ */
         void cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent = 0) const;
@@ -362,42 +368,6 @@ public:
         bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
         bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
     /** @} */
-
-    /* API: Network Manager warnings: */
-    bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
-    bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
-    void cannotAcquireHostNetworkInterfaces(const CHost &comHost, QWidget *pParent = 0) const;
-    void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent = 0) const;
-    void cannotCreateHostNetworkInterface(const CProgress &progress, QWidget *pParent = 0) const;
-    void cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotRemoveHostNetworkInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent = 0) const;
-    void cannotSaveHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent = 0) const;
-    void cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent = 0) const;
-    void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
-    void cannotSaveDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent = 0) const;
-    void warnAboutDHCPServerIsNotEnabled(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidIPv4Address(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidIPv4Mask(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidIPv6Address(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidIPv6PrefixLength(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidDHCPServerAddress(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidDHCPServerMask(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidDHCPServerLowerAddress(const QString &strName, QWidget *pParent = 0) const;
-    void warnAboutInvalidDHCPServerUpperAddress(const QString &strName, QWidget *pParent = 0) const;
-    void cannotAcquireNATNetworks(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
-    void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent = 0) const;
-    void cannotCreateNATNetwork(const CVirtualBox &comVBox, QWidget *pParent = 0);
-    void cannotSaveNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent = 0) const;
-    void cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent = 0) const;
-    void cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent = 0) const;
-    void warnAboutNoNameSpecified(const QString &strName, QWidget *pParent = 0);
-    void warnAboutNameAlreadyBusy(const QString &strName, QWidget *pParent = 0);
-    void warnAboutNoIPv4PrefixSpecified(const QString &strName, QWidget *pParent = 0);
-    void warnAboutNoIPv6PrefixSpecified(const QString &strName, QWidget *pParent = 0);
-    void warnAboutInvalidCIDRSpecified(const QString &strCIDR, const QString &strName, QWidget *pParent = 0);
 
     /* API: Cloud Profile Manager warnings: */
     void cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;

@@ -408,7 +408,7 @@ void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated(const CHos
 
     /* Show error message if necessary: */
     if (!comInterface.isOk())
-        msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface);
+        UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(comInterface);
     else
     {
         /* Get VBox for further activities: */
@@ -421,7 +421,7 @@ void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated(const CHos
 
         /* Show error message if necessary: */
         if (!comVBox.isOk() || comServer.isNull())
-            msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
+            UINotificationMessage::cannotCreateDHCPServer(comVBox, strNetworkName);
 
         /* Add interface to the tree: */
         UIDataHostNetwork data;
@@ -461,7 +461,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
 
     /* Show error message if necessary: */
     if (!comHost.isOk() || comInterface.isNull())
-        msgCenter().cannotFindHostNetworkInterface(comHost, strInterfaceName, this);
+        UINotificationMessage::cannotFindHostNetworkInterface(comHost, strInterfaceName);
     else
     {
         /* Get network name for further activities: */
@@ -475,7 +475,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
 
         /* Show error message if necessary: */
         if (!comInterface.isOk())
-            msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
+            UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(comInterface);
         else
         {
             /* Get VBox for further activities: */
@@ -490,7 +490,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
 
                 /* Show error message if necessary: */
                 if (!comVBox.isOk())
-                    msgCenter().cannotRemoveDHCPServer(comVBox, strInterfaceName, this);
+                    UINotificationMessage::cannotRemoveDHCPServer(comVBox, strInterfaceName);
             }
 
             /* Create interface: */
@@ -575,7 +575,7 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
 
     /* Show error message if necessary: */
     if (!comVBox.isOk())
-        msgCenter().cannotCreateNATNetwork(comVBox, this);
+        UINotificationMessage::cannotCreateNATNetwork(comVBox);
     else
     {
         /* Save NAT network name: */
@@ -599,7 +599,7 @@ void UINetworkManagerWidget::sltCreateNATNetwork()
 
         /* Show error message if necessary: */
         if (!comNetwork.isOk())
-            msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
+            UINotificationMessage::cannotChangeNATNetworkParameter(comNetwork);
 
         /* Add network to the tree: */
         UIDataNATNetwork newData;
@@ -639,7 +639,7 @@ void UINetworkManagerWidget::sltRemoveNATNetwork()
 
     /* Show error message if necessary: */
     if (!comVBox.isOk() || comNetwork.isNull())
-        msgCenter().cannotFindNATNetwork(comVBox, strNetworkName, this);
+        UINotificationMessage::cannotFindNATNetwork(comVBox, strNetworkName);
     else
     {
         /* Remove network finally: */
@@ -647,7 +647,7 @@ void UINetworkManagerWidget::sltRemoveNATNetwork()
 
         /* Show error message if necessary: */
         if (!comVBox.isOk())
-            msgCenter().cannotRemoveNATNetwork(comVBox, strNetworkName, this);
+            UINotificationMessage::cannotRemoveNATNetwork(comVBox, strNetworkName);
         else
         {
             /* Move selection to somewhere else: */
@@ -846,7 +846,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
         /* Show error message if necessary: */
         if (!comHost.isOk() || comInterface.isNull())
-            msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
+            UINotificationMessage::cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName);
         else
         {
             /* Save automatic interface configuration: */
@@ -876,7 +876,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
             /* Show error message if necessary: */
             if (!comInterface.isOk())
-                msgCenter().cannotSaveHostNetworkInterfaceParameter(comInterface, this);
+                UINotificationMessage::cannotChangeHostNetworkInterfaceParameter(comInterface);
             else
             {
                 /* Get network name for further activities: */
@@ -884,7 +884,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
                 /* Show error message if necessary: */
                 if (!comInterface.isOk())
-                    msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
+                    UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(comInterface);
                 else
                 {
                     /* Get VBox for further activities: */
@@ -897,7 +897,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
                     /* Show error message if necessary: */
                     if (!comVBox.isOk() || comServer.isNull())
-                        msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
+                        UINotificationMessage::cannotCreateDHCPServer(comVBox, strNetworkName);
                     else
                     {
                         /* Save whether DHCP server is enabled: */
@@ -916,7 +916,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
                         /* Show error message if necessary: */
                         if (!comServer.isOk())
-                            msgCenter().cannotSaveDHCPServerParameter(comServer, this);
+                            UINotificationMessage::cannotChangeDHCPServerParameter(comServer);
                     }
                 }
             }
@@ -928,7 +928,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
                 /* Show error message if necessary: */
                 if (!comHost.isOk() || comInterface.isNull())
-                    msgCenter().cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName, this);
+                    UINotificationMessage::cannotFindHostNetworkInterface(comHost, oldData.m_interface.m_strName);
             }
 
             /* If interface is Ok now: */
@@ -1032,7 +1032,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
 
         /* Show error message if necessary: */
         if (!comVBox.isOk() || comNetwork.isNull())
-            msgCenter().cannotFindNATNetwork(comVBox, oldData.m_strName, this);
+            UINotificationMessage::cannotFindNATNetwork(comVBox, oldData.m_strName);
         else
         {
             /* Save NAT network name: */
@@ -1101,7 +1101,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
 
             /* Show error message if necessary: */
             if (!comNetwork.isOk())
-                msgCenter().cannotSaveNATNetworkParameter(comNetwork, this);
+                UINotificationMessage::cannotChangeNATNetworkParameter(comNetwork);
 
             /* Update network in the tree: */
             UIDataNATNetwork data;
@@ -1384,7 +1384,7 @@ void UINetworkManagerWidget::loadHostNetworks()
 
     /* Show error message if necessary: */
     if (!comHost.isOk())
-        msgCenter().cannotAcquireHostNetworkInterfaces(comHost, this);
+        UINotificationMessage::cannotAcquireHostParameter(comHost);
     else
     {
         /* For each host-only interface => load it to the tree: */
@@ -1432,7 +1432,7 @@ void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInt
 
     /* Show error message if necessary: */
     if (!comInterface.isOk())
-        msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
+        UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(comInterface);
 
     /* Get VBox for further activities: */
     CVirtualBox comVBox = uiCommon().virtualBox();
@@ -1444,7 +1444,7 @@ void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInt
 
     /* Show error message if necessary: */
     if (!comVBox.isOk() || comServer.isNull())
-        msgCenter().cannotCreateDHCPServer(comVBox, strNetworkName, this);
+        UINotificationMessage::cannotCreateDHCPServer(comVBox, strNetworkName);
     else
     {
         /* Gather DHCP server settings: */
@@ -1461,7 +1461,7 @@ void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInt
 
         /* Show error message if necessary: */
         if (!comServer.isOk())
-            return msgCenter().cannotAcquireDHCPServerParameter(comServer, this);
+            return UINotificationMessage::cannotAcquireDHCPServerParameter(comServer);
     }
 }
 
@@ -1482,7 +1482,7 @@ void UINetworkManagerWidget::loadNATNetworks()
 
     /* Show error message if necessary: */
     if (!comVBox.isOk())
-        msgCenter().cannotAcquireNATNetworks(comVBox, this);
+        UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
     else
     {
         /* For each NAT network => load it to the tree: */
@@ -1572,7 +1572,7 @@ void UINetworkManagerWidget::loadNATNetwork(const CNATNetwork &comNetwork, UIDat
 
     /* Show error message if necessary: */
     if (!comNetwork.isOk())
-        msgCenter().cannotAcquireNATNetworkParameter(comNetwork, this);
+        UINotificationMessage::cannotAcquireNATNetworkParameter(comNetwork);
 }
 
 void UINetworkManagerWidget::createItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem)

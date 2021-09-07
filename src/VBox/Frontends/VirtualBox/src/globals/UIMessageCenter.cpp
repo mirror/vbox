@@ -1068,7 +1068,6 @@ int UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &mach
                    tr("Remove only"));
 }
 
-
 int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const
 {
     return fAlsoCreateNewSnapshot ?
@@ -1226,6 +1225,40 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                            tr("Keep", "hard disk storage"));
 }
 
+bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Deleting this host-only network will remove "
+                             "the host-only interface this network is based on. Do you want to "
+                             "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
+                             "<p><b>Note:</b> this interface may be in use by one or more "
+                             "virtual network adapters belonging to one of your VMs. "
+                             "After it is removed, these adapters will no longer be usable until "
+                             "you correct their settings by either choosing a different interface "
+                             "name or a different adapter attachment type.</p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p>"
+                             "<p>If this network is in use by one or more virtual "
+                             "machine network adapters these adapters will no longer be "
+                             "usable until you correct their settings by either choosing "
+                             "a different network name or a different adapter attachment "
+                             "type.</p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
 void UIMessageCenter::cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */
@@ -1291,266 +1324,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
              .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(progress));
     return false;
-}
-
-bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p>"
-                             "<p>If this network is in use by one or more virtual "
-                             "machine network adapters these adapters will no longer be "
-                             "usable until you correct their settings by either choosing "
-                             "a different network name or a different adapter attachment "
-                             "type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Deleting this host-only network will remove "
-                             "the host-only interface this network is based on. Do you want to "
-                             "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
-                             "<p><b>Note:</b> this interface may be in use by one or more "
-                             "virtual network adapters belonging to one of your VMs. "
-                             "After it is removed, these adapters will no longer be usable until "
-                             "you correct their settings by either choosing a different interface "
-                             "name or a different adapter attachment type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-void UIMessageCenter::cannotAcquireHostNetworkInterfaces(const CHost &comHost, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire host network interfaces."),
-          UIErrorString::formatErrorInfo(comHost));
-}
-
-void UIMessageCenter::cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Unable to find the host network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          UIErrorString::formatErrorInfo(comHost));
-}
-
-void UIMessageCenter::cannotCreateHostNetworkInterface(const CHost &comHost, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a host network interface."),
-          UIErrorString::formatErrorInfo(comHost));
-}
-
-void UIMessageCenter::cannotCreateHostNetworkInterface(const CProgress &progress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a host network interface."),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotRemoveHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove the host network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          UIErrorString::formatErrorInfo(comHost));
-}
-
-void UIMessageCenter::cannotRemoveHostNetworkInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove the host network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire host network interface parameter."),
-          UIErrorString::formatErrorInfo(comInterface));
-}
-
-void UIMessageCenter::cannotSaveHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save host network interface parameter."),
-          UIErrorString::formatErrorInfo(comInterface));
-}
-
-void UIMessageCenter::cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a DHCP server for the network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove the DHCP server for the network interface <b>%1</b>.")
-             .arg(strInterfaceName),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotAcquireDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire DHCP server parameter."),
-          UIErrorString::formatErrorInfo(comServer));
-}
-
-void UIMessageCenter::cannotSaveDHCPServerParameter(const CDHCPServer &comServer, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save DHCP server parameter."),
-          UIErrorString::formatErrorInfo(comServer));
-}
-
-void UIMessageCenter::warnAboutDHCPServerIsNotEnabled(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> is set to obtain the address "
-             "automatically but the corresponding DHCP server is not enabled.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidIPv4Address(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid IPv4 address.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidIPv4Mask(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid IPv4 network mask.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidIPv6Address(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid IPv6 address.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidIPv6PrefixLength(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid IPv6 prefix length.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidDHCPServerAddress(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid DHCP server address.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidDHCPServerMask(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid DHCP server mask.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidDHCPServerLowerAddress(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid DHCP server lower address bound.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidDHCPServerUpperAddress(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Host interface <nobr><b>%1</b></nobr> does not "
-             "currently have a valid DHCP server upper address bound.").arg(strName));
-}
-
-void UIMessageCenter::cannotAcquireNATNetworks(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire NAT networks."),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire NAT network parameter."),
-          UIErrorString::formatErrorInfo(comNetwork));
-}
-
-void UIMessageCenter::cannotCreateNATNetwork(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */)
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a NAT network."),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotSaveNATNetworkParameter(const CNATNetwork &comNetwork, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save NAT network parameter."),
-          UIErrorString::formatErrorInfo(comNetwork));
-}
-
-void UIMessageCenter::cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Unable to find the NAT network <b>%1</b>.")
-             .arg(strNetworkName),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove the NAT network <b>%1</b>.")
-             .arg(strNetworkName),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::warnAboutNoNameSpecified(const QString &strName, QWidget *pParent /* = 0 */)
-{
-    alert(pParent, MessageType_Error,
-          tr("No new name specified for the NAT network previously called <b>%1</b>.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutNameAlreadyBusy(const QString &strName, QWidget *pParent /* = 0 */)
-{
-    alert(pParent, MessageType_Error,
-          tr("The name <b>%1</b> is being used for several NAT networks.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutNoIPv4PrefixSpecified(const QString &strName, QWidget *pParent /* = 0 */)
-{
-    alert(pParent, MessageType_Error,
-          tr("No IPv4 prefix specified for the NAT network <b>%1</b>.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutNoIPv6PrefixSpecified(const QString &strName, QWidget *pParent /* = 0 */)
-{
-    alert(pParent, MessageType_Error,
-          tr("No IPv6 prefix specified for the NAT network <b>%1</b>.").arg(strName));
-}
-
-void UIMessageCenter::warnAboutInvalidCIDRSpecified(const QString &strCIDR, const QString &strName, QWidget *pParent /* = 0 */)
-{
-    alert(pParent, MessageType_Error,
-          tr("Invalid CIDR specified (<i>%1</i>) for the NAT network <b>%2</b>.").arg(strCIDR, strName));
 }
 
 void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
