@@ -1259,6 +1259,43 @@ bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *
                           false /* ok button by default? */);
 }
 
+bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the cloud profile <nobr><b>%1</b>?</nobr></p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+bool UIMessageCenter::confirmCloudProfilesImport(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to import cloud profiles from external files?</p>"
+                             "<p>VirtualBox cloud profiles will be overwritten and their data will be lost.</p>"),
+                          0 /* auto-confirm id */,
+                          tr("Import") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+int UIMessageCenter::confirmCloudProfileManagerClosing(QWidget *pParent /* = 0 */) const
+{
+    return question(pParent, MessageType_Question,
+                    tr("<p>Do you want to close the Cloud Profile Manager?</p>"
+                       "<p>There seems to be an unsaved changes. "
+                       "You can choose to <b>Accept</b> or <b>Reject</b> them automatically "
+                       "or cancel to keep the dialog opened.</p>"),
+                    0 /* auto-confirm id */,
+                    AlertButton_Choice1,
+                    AlertButton_Choice2,
+                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                    tr("Accept", "cloud profile manager changes"),
+                    tr("Reject", "cloud profile manager changes"));
+}
+
 void UIMessageCenter::cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */
@@ -1308,6 +1345,55 @@ void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
           UIErrorString::formatErrorInfo(comMachine));
 }
 
+void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud provider manager."),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to find cloud provider with following uuid: <b>%1</b>.").arg(uId.toString()),
+          UIErrorString::formatErrorInfo(comManager));
+}
+
+void UIMessageCenter::cannotFindCloudProfile(const CCloudProvider &comProvider, const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to find cloud profile with following name: <b>%1</b>.").arg(strName),
+          UIErrorString::formatErrorInfo(comProvider));
+}
+
+void UIMessageCenter::cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud provider manager parameter."),
+          UIErrorString::formatErrorInfo(comManager));
+}
+
+void UIMessageCenter::cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud provider parameter."),
+          UIErrorString::formatErrorInfo(comProvider));
+}
+
+void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud profile parameter."),
+          UIErrorString::formatErrorInfo(comProfile));
+}
+
+void UIMessageCenter::cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to assign cloud profile parameter."),
+          UIErrorString::formatErrorInfo(comProfile));
+}
+
 bool UIMessageCenter::cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
@@ -1324,41 +1410,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
              .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(progress));
     return false;
-}
-
-void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud provider manager."),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud provider manager parameter."),
-          UIErrorString::formatErrorInfo(comManager));
-}
-
-void UIMessageCenter::cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to find cloud provider with following uuid: <b>%1</b>.").arg(uId.toString()),
-          UIErrorString::formatErrorInfo(comManager));
-}
-
-void UIMessageCenter::cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud provider parameter."),
-          UIErrorString::formatErrorInfo(comProvider));
-}
-
-void UIMessageCenter::cannotFindCloudProfile(const CCloudProvider &comProvider, const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to find cloud profile with following name: <b>%1</b>.").arg(strName),
-          UIErrorString::formatErrorInfo(comProvider));
 }
 
 void UIMessageCenter::cannotCreateCloudProfile(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
@@ -1389,39 +1440,11 @@ void UIMessageCenter::cannotImportCloudProfiles(const CCloudProvider &comProvide
           UIErrorString::formatErrorInfo(comProvider));
 }
 
-void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud profile parameter."),
-          UIErrorString::formatErrorInfo(comProfile));
-}
-
-void UIMessageCenter::cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign cloud profile parameter."),
-          UIErrorString::formatErrorInfo(comProfile));
-}
-
 void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to create cloud client."),
           UIErrorString::formatErrorInfo(comProfile));
-}
-
-void UIMessageCenter::cannotCreateCloudMachine(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create cloud machine."),
-          UIErrorString::formatErrorInfo(comClient));
-}
-
-void UIMessageCenter::cannotCreateCloudMachine(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create cloud machine."),
-          UIErrorString::formatErrorInfo(comProgress));
 }
 
 void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
@@ -1459,48 +1482,11 @@ void UIMessageCenter::cannotAcquireCloudMachineParameter(const QString &strError
           strErrorDetails);
 }
 
-bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the cloud profile <nobr><b>%1</b>?</nobr></p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-bool UIMessageCenter::confirmCloudProfilesImport(QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to import cloud profiles from external files?</p>"
-                             "<p>VirtualBox cloud profiles will be overwritten and their data will be lost.</p>"),
-                          0 /* auto-confirm id */,
-                          tr("Import") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
 void UIMessageCenter::cannotAssignFormValue(const QString &strError, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to assign form value."),
           strError);
-}
-
-int UIMessageCenter::confirmCloudProfileManagerClosing(QWidget *pParent /* = 0 */) const
-{
-    return question(pParent, MessageType_Question,
-                    tr("<p>Do you want to close the Cloud Profile Manager?</p>"
-                       "<p>There seems to be an unsaved changes. "
-                       "You can choose to <b>Accept</b> or <b>Reject</b> them automatically "
-                       "or cancel to keep the dialog opened.</p>"),
-                    0 /* auto-confirm id */,
-                    AlertButton_Choice1,
-                    AlertButton_Choice2,
-                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                    tr("Accept", "cloud profile manager changes"),
-                    tr("Reject", "cloud profile manager changes"));
 }
 
 bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent /* = 0 */) const

@@ -349,6 +349,13 @@ public:
         bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
     /** @} */
 
+    /** @name VirtualBox Manager / Cloud Profile Manager warnings.
+      * @{ */
+        bool confirmCloudProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
+        bool confirmCloudProfilesImport(QWidget *pParent = 0) const;
+        int confirmCloudProfileManagerClosing(QWidget *pParent = 0) const;
+    /** @} */
+
     /** @name VirtualBox Manager / New VM wizard warnings.
       * @{ */
         void cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent = 0) const;
@@ -363,6 +370,19 @@ public:
         void cannotFindSnapshotByName(const CMachine &comMachine, const QString &strName, QWidget *pParent = 0) const;
     /** @} */
 
+    /** @name VirtualBox Manager / Cloud networking stuff.
+      * @{ */
+        void cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
+
+        void cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent = 0) const;
+        void cannotFindCloudProfile(const CCloudProvider &comProvider, const QString &strName, QWidget *pParent = 0) const;
+
+        void cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent = 0) const;
+        void cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
+        void cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
+        void cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
+    /** @} */
+
     /** @name Runtime UI warnings.
       * @{ */
         bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
@@ -370,29 +390,18 @@ public:
     /** @} */
 
     /* API: Cloud Profile Manager warnings: */
-    void cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
-    void cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent = 0) const;
-    void cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent = 0) const;
-    void cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
-    void cannotFindCloudProfile(const CCloudProvider &comProvider, const QString &strName, QWidget *pParent = 0) const;
     void cannotCreateCloudProfile(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
     void cannotRemoveCloudProfile(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
     void cannotSaveCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
     void cannotImportCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
-    void cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
-    void cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
+
     void cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
-    void cannotCreateCloudMachine(const CCloudClient &comClient, QWidget *pParent = 0) const;
-    void cannotCreateCloudMachine(const CProgress &comProgress, QWidget *pParent = 0) const;
     void cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent = 0) const;
     void cannotAcquireCloudClientParameter(const CProgress &comProgress, QWidget *pParent = 0) const;
     void cannotAcquireCloudMachineParameter(const CCloudMachine &comMachine, QWidget *pParent = 0) const;
     void cannotAcquireCloudMachineParameter(const CProgress &comProgress, QWidget *pParent = 0) const;
     void cannotAcquireCloudMachineParameter(const QString &strErrorDetails, QWidget *pParent = 0) const;
-    bool confirmCloudProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
-    bool confirmCloudProfilesImport(QWidget *pParent = 0) const;
     void cannotAssignFormValue(const QString &strError, QWidget *pParent = 0) const;
-    int confirmCloudProfileManagerClosing(QWidget *pParent = 0) const;
 
     /* API: Cloud Console Manager warnings: */
     bool confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent = 0) const;
