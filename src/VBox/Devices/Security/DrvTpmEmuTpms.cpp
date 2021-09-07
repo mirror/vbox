@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_TCP /** @todo */
+#define LOG_GROUP LOG_GROUP_DRV_TPM_EMU
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmtpmifs.h>
 #include <iprt/assert.h>
@@ -48,6 +48,9 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
+/** The TPMS saved state version. */
+#define TPMS_SAVED_STATE_VERSION                        1
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -71,6 +74,8 @@ typedef struct DRVTPMEMU
     uint32_t            cbBuffer;
     /** Currently set locality. */
     uint8_t             bLoc;
+    /** Flag whether the TPM state was saved in  save state operation (skips writing the state to the NVRAM file). */
+    bool                fSsmCalled;
 
     /** NVRAM file path. */
     char                *pszNvramPath;
@@ -253,48 +258,6 @@ static int drvTpmEmuTpmsNvramStore(PDRVTPMEMU pThis)
     }
 
     return rc;
-}
-
-
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnStartup} */
-static DECLCALLBACK(int) drvTpmEmuTpmsStartup(PPDMITPMCONNECTOR pInterface)
-{
-    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
-
-    TPM_RESULT rcTpm = TPMLIB_MainInit();
-    if (RT_LIKELY(rcTpm == TPM_SUCCESS))
-        return VINF_SUCCESS;
-
-    LogRel(("DrvTpmEmuTpms#%u: Failed to initialize TPM emulation with %#x\n",
-            pThis->pDrvIns->iInstance, rcTpm));
-    return VERR_DEV_IO_ERROR;
-}
-
-
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnShutdown} */
-static DECLCALLBACK(int) drvTpmEmuTpmsShutdown(PPDMITPMCONNECTOR pInterface)
-{
-    RT_NOREF(pInterface);
-
-    TPMLIB_Terminate();
-    return VINF_SUCCESS;
-}
-
-
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnReset} */
-static DECLCALLBACK(int) drvTpmEmuTpmsReset(PPDMITPMCONNECTOR pInterface)
-{
-    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
-
-    TPMLIB_Terminate();
-    TPM_RESULT rcTpm = TPMLIB_MainInit();
-    if (RT_LIKELY(rcTpm == TPM_SUCCESS))
-        return VINF_SUCCESS;
-
-
-    LogRel(("DrvTpmEmuTpms#%u: Failed to reset TPM emulation with %#x\n",
-            pThis->pDrvIns->iInstance, rcTpm));
-    return VERR_DEV_IO_ERROR;
 }
 
 
@@ -561,7 +524,160 @@ static DECLCALLBACK(TPM_RESULT) drvTpmEmuTpmsCbkIoGetPhysicalPresence(TPM_BOOL *
 }
 
 
+/* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
+static DECLCALLBACK(int) drvTpmEmuTpmsSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
+    uint8_t *pbTpmStatePerm = NULL;
+    uint32_t cbTpmStatePerm = 0;
+    uint8_t *pbTpmStateVol = NULL;
+    uint32_t cbTpmStateVol = 0;
+
+    TPM_RESULT rcTpm = TPMLIB_GetState(TPMLIB_STATE_PERMANENT, &pbTpmStatePerm, &cbTpmStatePerm);
+    if (rcTpm == TPM_SUCCESS)
+        rcTpm = TPMLIB_GetState(TPMLIB_STATE_VOLATILE, &pbTpmStateVol, &cbTpmStateVol);
+    if (rcTpm == TPM_SUCCESS)
+    {
+        SSMR3PutU32(pSSM, cbTpmStatePerm);
+        int rc = SSMR3PutU32(pSSM, cbTpmStateVol);
+        AssertRCReturn(rc, rc);
+
+        SSMR3PutMem(pSSM, pbTpmStatePerm, cbTpmStatePerm);
+        SSMR3PutMem(pSSM, pbTpmStateVol, cbTpmStateVol);
+
+        free(pbTpmStatePerm);
+        free(pbTpmStateVol);
+        rc = SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+        if (RT_SUCCESS(rc))
+            pThis->fSsmCalled = true;
+        return rc;
+    }
+
+    if (pbTpmStatePerm)
+        free(pbTpmStatePerm);
+
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
+static DECLCALLBACK(int) drvTpmEmuTpmsLoadExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
+
+    Assert(uPass == SSM_PASS_FINAL); RT_NOREF(uPass);
+    AssertMsgReturn(uVersion == TPMS_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    uint8_t *pbTpmStatePerm = NULL;
+    uint32_t cbTpmStatePerm = 0;
+    uint8_t *pbTpmStateVol = NULL;
+    uint32_t cbTpmStateVol = 0;
+
+    int rc = SSMR3GetU32(pSSM, &cbTpmStatePerm);
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3GetU32(pSSM, &cbTpmStateVol);
+    AssertRCReturn(rc, rc);
+
+    pbTpmStatePerm = (uint8_t *)RTMemAllocZ(cbTpmStatePerm);
+    if (pbTpmStatePerm)
+    {
+        pbTpmStateVol = (uint8_t *)RTMemAllocZ(cbTpmStateVol);
+        if (pbTpmStateVol)
+        {
+            rc = SSMR3GetMem(pSSM, pbTpmStatePerm, cbTpmStatePerm);
+            if (RT_SUCCESS(rc))
+                rc = SSMR3GetMem(pSSM, pbTpmStateVol, cbTpmStateVol);
+
+            if (RT_SUCCESS(rc))
+            {
+                TPM_RESULT rcTpm = TPMLIB_SetState(TPMLIB_STATE_PERMANENT, pbTpmStatePerm, cbTpmStatePerm);
+                if (rcTpm == TPM_SUCCESS)
+                {
+                    rcTpm = TPMLIB_SetState(TPMLIB_STATE_VOLATILE, pbTpmStateVol, cbTpmStateVol);
+                    if (rcTpm == TPM_SUCCESS)
+                    {
+                        uint32_t u32 = 0;
+
+                        /* The marker. */
+                        rc = SSMR3GetU32(pSSM, &u32);
+                        AssertRCReturn(rc, rc);
+                        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+                        pThis->fSsmCalled = true;
+                    }
+                    else
+                        rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
+            }
+
+            RTMemFree(pbTpmStateVol);
+        }
+
+        RTMemFree(pbTpmStatePerm);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADDONE}
+ */
+static DECLCALLBACK(int) drvTpmEmuTpmsLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PDRVTPMEMU    pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
+    RT_NOREF(pSSM);
+
+    if (!pThis->fSsmCalled)
+    {
+        /* Issue a warning as restoring a saved state without loading the TPM state will most likely cause issues in the guest. */
+    }
+
+    pThis->fSsmCalled = false;
+    return VINF_SUCCESS;
+}
+
+
 /* -=-=-=-=- PDMDRVREG -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOn}
+ */
+static DECLCALLBACK(void) drvTpmEmuTpmsPowerOn(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    TPM_RESULT rcTpm = TPMLIB_MainInit();
+    if (RT_UNLIKELY(rcTpm != TPM_SUCCESS))
+    {
+        LogRel(("DrvTpmEmuTpms#%u: Failed to initialize TPM emulation with %#x\n",
+                pDrvIns->iInstance, rcTpm));
+        PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, "Failed to startup the TPM with %u", rcTpm);
+    }
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOff}
+ */
+static DECLCALLBACK(void) drvTpmEmuTpmsPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    TPMLIB_Terminate();
+}
+
 
 /** @copydoc FNPDMDRVDESTRUCT */
 static DECLCALLBACK(void) drvTpmEmuTpmsDestruct(PPDMDRVINS pDrvIns)
@@ -571,8 +687,11 @@ static DECLCALLBACK(void) drvTpmEmuTpmsDestruct(PPDMDRVINS pDrvIns)
     PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
     LogFlow(("%s\n", __FUNCTION__));
 
-    int rc = drvTpmEmuTpmsNvramStore(pThis);
-    AssertRC(rc);
+    if (!pThis->fSsmCalled)
+    {
+        int rc = drvTpmEmuTpmsNvramStore(pThis);
+        AssertRC(rc);
+    }
 
     if (pThis->pvNvPermall)
     {
@@ -609,6 +728,7 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->pDrvIns                                  = pDrvIns;
     pThis->enmVersion                               = TPMVERSION_UNKNOWN;
     pThis->bLoc                                     = TPM_NO_LOCALITY_SELECTED;
+    pThis->fSsmCalled                               = false;
     pThis->pvNvPermall                              = NULL;
     pThis->cbNvPermall                              = 0;
     pThis->pvNvVolatile                             = NULL;
@@ -617,9 +737,6 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvTpmEmuTpmsQueryInterface;
     /* ITpmConnector */
-    pThis->ITpmConnector.pfnStartup                 = drvTpmEmuTpmsStartup;
-    pThis->ITpmConnector.pfnShutdown                = drvTpmEmuTpmsShutdown;
-    pThis->ITpmConnector.pfnReset                   = drvTpmEmuTpmsReset;
     pThis->ITpmConnector.pfnGetVersion              = drvTpmEmuTpmsGetVersion;
     pThis->ITpmConnector.pfnGetLocalityMax          = drvTpmEmuGetLocalityMax;
     pThis->ITpmConnector.pfnGetBufferSize           = drvTpmEmuGetBufferSize;
@@ -706,6 +823,14 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
                                    N_("Failed to register callbacks with the TPM emulation: %u"),
                                    rcTpm);
 
+    rc = PDMDrvHlpSSMRegisterEx(pDrvIns, TPMS_SAVED_STATE_VERSION, 0 /*cbGuess*/,
+                                NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveVote*/,
+                                NULL /*pfnSavePrep*/, drvTpmEmuTpmsSaveExec, NULL /*pfnSaveDone*/,
+                                NULL /*pfnLoadPrep*/, drvTpmEmuTpmsLoadExec, drvTpmEmuTpmsLoadDone);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Failed to register saved state handlers"));
+
     /* We can only have one instance of the TPM emulation and require the global variable for the callbacks unfortunately. */
     g_pDrvTpmEmuTpms = pThis;
     return VINF_SUCCESS;
@@ -744,7 +869,7 @@ const PDMDRVREG g_DrvTpmEmuTpms =
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    NULL,
+    drvTpmEmuTpmsPowerOn,
     /* pfnReset */
     NULL,
     /* pfnSuspend */
@@ -756,7 +881,7 @@ const PDMDRVREG g_DrvTpmEmuTpms =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    drvTpmEmuTpmsPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

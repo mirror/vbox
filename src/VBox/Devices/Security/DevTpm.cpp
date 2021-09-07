@@ -22,7 +22,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEFAULT /** @todo DEV_TPM */
+#define LOG_GROUP LOG_GROUP_DEV_TPM
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmtpmifs.h>
 #include <iprt/assert.h>
@@ -1598,27 +1598,11 @@ static DECLCALLBACK(void *) tpmR3QueryInterface(PPDMIBASE pInterface, const char
 /* -=-=-=-=-=-=-=-=- PDMDEVREG -=-=-=-=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnPowerOff}
- */
-static DECLCALLBACK(void) tpmR3PowerOff(PPDMDEVINS pDevIns)
-{
-    PDEVTPMCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMCC);
-
-    if (pThisCC->pDrvTpm)
-    {
-        int rc = pThisCC->pDrvTpm->pfnShutdown(pThisCC->pDrvTpm);
-        AssertRC(rc);
-    }
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
 {
     PDEVTPM   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVTPM);
-    PDEVTPMCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMCC);
 
     pThis->enmState       = DEVTPMSTATE_IDLE;
     pThis->bLoc           = TPM_NO_LOCALITY_SELECTED;
@@ -1632,12 +1616,6 @@ static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
         PDEVTPMLOCALITY pLoc = &pThis->aLoc[i];
         pLoc->uRegIntEn  = 0;
         pLoc->uRegIntSts = 0;
-    }
-
-    if (pThisCC->pDrvTpm)
-    {
-        int rc = pThisCC->pDrvTpm->pfnReset(pThisCC->pDrvTpm);
-        AssertRC(rc);
     }
 }
 
@@ -1734,11 +1712,6 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThis->fEstablishmentSet = pThisCC->pDrvTpm->pfnGetEstablishedFlag(pThisCC->pDrvTpm);
         pThis->cbCmdResp         = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
 
-        /* Startup the TPM here instead of in the power on callback as we can convey errors here to the upper layer. */
-        rc = pThisCC->pDrvTpm->pfnStartup(pThisCC->pDrvTpm);
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to startup the TPM"));
-
         pThis->enmTpmVers = pThisCC->pDrvTpm->pfnGetVersion(pThisCC->pDrvTpm);
         if (pThis->enmTpmVers == TPMVERSION_UNKNOWN)
             return PDMDEV_SET_ERROR(pDevIns, VERR_NOT_SUPPORTED, N_("The emulated TPM version is not supported"));
@@ -1815,14 +1788,14 @@ const PDMDEVREG g_DeviceTpm =
     /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               tpmR3Reset,
+    /* .pfnReset = */               NULL,
     /* .pfnSuspend = */             NULL,
     /* .pfnResume = */              NULL,
     /* .pfnAttach = */              NULL,
     /* .pfnDetach = */              NULL,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            tpmR3PowerOff,
+    /* .pfnPowerOff = */            NULL,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,

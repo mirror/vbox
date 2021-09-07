@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_TCP /** @todo */
+#define LOG_GROUP LOG_GROUP_DRV_TPM_EMU
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmtpmifs.h>
 #include <iprt/assert.h>
@@ -628,38 +628,6 @@ static int drvTpmEmuSetLocality(PDRVTPMEMU pThis, uint8_t bLoc)
 }
 
 
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnStartup} */
-static DECLCALLBACK(int) drvTpmEmuStartup(PPDMITPMCONNECTOR pInterface)
-{
-    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
-
-    SWTPMCMDTPMINIT Cmd;
-    uint32_t u32Resp = 0;
-
-    RT_ZERO(Cmd);
-    Cmd.u32Flags = 0;
-    return drvTpmEmuExecCtrlCmdEx(pThis, SWTPMCMD_INIT, &Cmd, sizeof(Cmd), &u32Resp,
-                                  NULL, 0, RT_MS_10SEC);
-}
-
-
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnShutdown} */
-static DECLCALLBACK(int) drvTpmEmuShutdown(PPDMITPMCONNECTOR pInterface)
-{
-    PDRVTPMEMU pThis = RT_FROM_MEMBER(pInterface, DRVTPMEMU, ITpmConnector);
-
-    return drvTpmEmuExecCtrlCmdNoPayload(pThis, SWTPMCMD_SHUTDOWN, NULL, 0, RT_MS_10SEC);
-}
-
-
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnReset} */
-static DECLCALLBACK(int) drvTpmEmuReset(PPDMITPMCONNECTOR pInterface)
-{
-    RT_NOREF(pInterface);
-    return VINF_SUCCESS;
-}
-
-
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnGetVersion} */
 static DECLCALLBACK(TPMVERSION) drvTpmEmuGetVersion(PPDMITPMCONNECTOR pInterface)
 {
@@ -781,6 +749,40 @@ static DECLCALLBACK(void *) drvTpmEmuQueryInterface(PPDMIBASE pInterface, const 
 
 /* -=-=-=-=- PDMDRVREG -=-=-=-=- */
 
+/**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOn}
+ */
+static DECLCALLBACK(void) drvTpmEmuPowerOn(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
+
+    SWTPMCMDTPMINIT Cmd;
+    uint32_t u32Resp = 0;
+
+    RT_ZERO(Cmd);
+    Cmd.u32Flags = 0;
+    int rc = drvTpmEmuExecCtrlCmdEx(pThis, SWTPMCMD_INIT, &Cmd, sizeof(Cmd), &u32Resp,
+                                    NULL, 0, RT_MS_10SEC);
+    if (RT_FAILURE(rc))
+        PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, "Failed to startup the TPM with %Rrc", rc);
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOff}
+ */
+static DECLCALLBACK(void) drvTpmEmuPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
+
+    int rc = drvTpmEmuExecCtrlCmdNoPayload(pThis, SWTPMCMD_SHUTDOWN, NULL, 0, RT_MS_10SEC);
+    if (RT_FAILURE(rc))
+        PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, "Failed to shutdown the TPM with %Rrc", rc);
+}
+
+
 /** @copydoc FNPDMDRVDESTRUCT */
 static DECLCALLBACK(void) drvTpmEmuDestruct(PPDMDRVINS pDrvIns)
 {
@@ -831,9 +833,6 @@ static DECLCALLBACK(int) drvTpmEmuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvTpmEmuQueryInterface;
     /* ITpmConnector */
-    pThis->ITpmConnector.pfnStartup                 = drvTpmEmuStartup;
-    pThis->ITpmConnector.pfnShutdown                = drvTpmEmuShutdown;
-    pThis->ITpmConnector.pfnReset                   = drvTpmEmuReset;
     pThis->ITpmConnector.pfnGetVersion              = drvTpmEmuGetVersion;
     pThis->ITpmConnector.pfnGetLocalityMax          = drvTpmEmuGetLocalityMax;
     pThis->ITpmConnector.pfnGetBufferSize           = drvTpmEmuGetBufferSize;
@@ -990,7 +989,7 @@ const PDMDRVREG g_DrvTpmEmu =
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    NULL,
+    drvTpmEmuPowerOn,
     /* pfnReset */
     NULL,
     /* pfnSuspend */
@@ -1002,7 +1001,7 @@ const PDMDRVREG g_DrvTpmEmu =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    drvTpmEmuPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

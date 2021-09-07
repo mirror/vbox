@@ -162,6 +162,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DEV_SERIAL,
     /** System Management Controller Device group. */
     LOG_GROUP_DEV_SMC,
+    /** Trusted Platform Module Device group. */
+    LOG_GROUP_DEV_TPM,
     /** VGA Device group. */
     LOG_GROUP_DEV_VGA,
     /** Virtio PCI Device group. */
@@ -234,6 +236,10 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DRV_SCSIHOST,
     /** TCP socket stream driver group. */
     LOG_GROUP_DRV_TCP,
+    /** Trusted Platform Module Emulation driver group. */
+    LOG_GROUP_DRV_TPM_EMU,
+    /** Trusted Platform Module Host driver group. */
+    LOG_GROUP_DRV_TPM_HOST,
     /** Async transport driver group */
     LOG_GROUP_DRV_TRANSPORT_ASYNC,
     /** TUN network transport driver group */
@@ -841,6 +847,7 @@ typedef enum VBOXLOGGROUP
     "DEV_SB16", \
     "DEV_SERIAL", \
     "DEV_SMC", \
+    "DEV_TPM", \
     "DEV_VGA", \
     "DEV_VIRTIO", \
     "DEV_VIRTIO_NET", \
@@ -877,6 +884,8 @@ typedef enum VBOXLOGGROUP
     "DRV_SCSI", \
     "DRV_SCSIHOST", \
     "DRV_TCP", \
+    "DRV_TPM_EMU", \
+    "DRV_TPM_HOST", \
     "DRV_TRANSPORT_ASYNC", \
     "DRV_TUN", \
     "DRV_UDP", \

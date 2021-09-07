@@ -81,30 +81,6 @@ typedef struct PDMITPMCONNECTOR *PPDMITPMCONNECTOR;
 typedef struct PDMITPMCONNECTOR
 {
     /**
-     * Starts the TPM.
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnStartup, (PPDMITPMCONNECTOR pInterface));
-
-    /**
-     * Shuts down the TPM.
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnShutdown, (PPDMITPMCONNECTOR pInterface));
-
-    /**
-     * Resets the TPM.
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnReset, (PPDMITPMCONNECTOR pInterface));
-
-    /**
      * Returns the version of the TPM implemented by the driver below.
      *
      * @returns The TPM version.

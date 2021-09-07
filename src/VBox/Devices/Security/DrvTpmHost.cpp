@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_TCP /** @todo */
+#define LOG_GROUP LOG_GROUP_DRV_TPM_HOST
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmtpmifs.h>
 #include <iprt/assert.h>
@@ -181,30 +181,6 @@ static int drvTpmHostQueryBufferSize(PDRVTPMHOST pThis)
 }
 
 
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnStartup} */
-static DECLCALLBACK(int) drvTpmHostStartup(PPDMITPMCONNECTOR pInterface)
-{
-    RT_NOREF(pInterface);
-    return VINF_SUCCESS;
-}
-
-
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnShutdown} */
-static DECLCALLBACK(int) drvTpmHostShutdown(PPDMITPMCONNECTOR pInterface)
-{
-    RT_NOREF(pInterface);
-    return VINF_SUCCESS;
-}
-
-
-/** @interface_method_impl{PDMITPMCONNECTOR,pfnReset} */
-static DECLCALLBACK(int) drvTpmHostReset(PPDMITPMCONNECTOR pInterface)
-{
-    RT_NOREF(pInterface);
-    return VINF_SUCCESS;
-}
-
-
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnGetVersion} */
 static DECLCALLBACK(TPMVERSION) drvTpmHostGetVersion(PPDMITPMCONNECTOR pInterface)
 {
@@ -311,9 +287,6 @@ static DECLCALLBACK(int) drvTpmHostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvTpmHostQueryInterface;
     /* ITpmConnector */
-    pThis->ITpmConnector.pfnStartup                 = drvTpmHostStartup;
-    pThis->ITpmConnector.pfnShutdown                = drvTpmHostShutdown;
-    pThis->ITpmConnector.pfnReset                   = drvTpmHostReset;
     pThis->ITpmConnector.pfnGetVersion              = drvTpmHostGetVersion;
     pThis->ITpmConnector.pfnGetLocalityMax          = drvTpmHostGetLocalityMax;
     pThis->ITpmConnector.pfnGetBufferSize           = drvTpmHostGetBufferSize;
