@@ -181,11 +181,8 @@ typedef struct AUDIOTESTVERIFYJOB
     PAUDIOTESTERRORDESC pErr;
     /** Zero-based index of current test being verified. */
     uint32_t            idxTest;
-    /** Flag indicating whether to keep going after an error has occurred. */
-    bool                fKeepGoing;
-    /** Threshold of file differences (chunks) at when we consider audio files
-     *  as not matching. */
-    uint32_t            cThresholdDiff;
+    /** The verification options to use. */
+    AUDIOTESTVERIFYOPTS Opts;
     /** PCM properties to use for verification. */
     PDMAUDIOPCMPROPS    PCMProps;
 } AUDIOTESTVERIFYJOB;
@@ -1845,7 +1842,7 @@ static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerJob,
 
     va_end(va);
 
-    return pVerJob->fKeepGoing ? VINF_SUCCESS : rc;
+    return pVerJob->Opts.fKeepGoing ? VINF_SUCCESS : rc;
 }
 
 /**
@@ -2016,10 +2013,10 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
         {
             if (cDiffs)
             {
-                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A [%RU64-%RU64] vs. B [%RU64-%RU64] (%RU64 bytes, %RU64us)",
+                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A [%RU64-%RU64] vs. B [%RU64-%RU64] (%RU64 bytes, %RU64ms)",
                                                                                      pCmpA->offStart + offLastDiff, pCmpA->offStart + offCur,
                                                                                      pCmpB->offStart + offLastDiff, pCmpB->offStart + offCur, offCur - offLastDiff,
-                                                                                     PDMAudioPropsBytesToMicro(&pToneParms->Props, offCur - offLastDiff));
+                                                                                     PDMAudioPropsBytesToMilli(&pToneParms->Props, offCur - offLastDiff));
                 AssertRC(rc2);
             }
             offLastDiff = 0;
@@ -2036,7 +2033,7 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
 #define CHECK_RC_MAYBE_RET(a_rc, a_pVerJob) \
     if (RT_FAILURE(a_rc)) \
     { \
-        if (!a_pVerJob->fKeepGoing) \
+        if (!a_pVerJob->Opts.fKeepGoing) \
             return VINF_SUCCESS; \
     }
 
@@ -2045,7 +2042,7 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     { \
         int rc3 = audioTestErrorDescAddError(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg); \
         AssertRC(rc3); \
-        if (!a_pVerJob->fKeepGoing) \
+        if (!a_pVerJob->Opts.fKeepGoing) \
             return VINF_SUCCESS; \
     }
 
@@ -2054,7 +2051,7 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     { \
         int rc3 = audioTestErrorDescAddError(a_pVerJob->pErr, a_pVerJob->idxTest, a_Msg, __VA_ARGS__); \
         AssertRC(rc3); \
-        if (!a_pVerJob->fKeepGoing) \
+        if (!a_pVerJob->Opts.fKeepGoing) \
             return VINF_SUCCESS; \
 
 /**
@@ -2110,20 +2107,27 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     {
         size_t const cbDiffAbs = cbSizeA > cbSizeB ? cbSizeA - cbSizeB : cbSizeB - cbSizeA;
 
-        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes (%RU64us)",
-                                            ObjA.szName, cbSizeA, PDMAudioPropsBytesToMicro(&pVerJob->PCMProps, cbSizeA));
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes (%RU64ms)",
+                                            ObjA.szName, cbSizeA, PDMAudioPropsBytesToMilli(&pVerJob->PCMProps, cbSizeA));
         AssertRC(rc2);
-        rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes (%RU64us)",
-                                        ObjB.szName, cbSizeB, PDMAudioPropsBytesToMicro(&pVerJob->PCMProps, cbSizeB));
+        rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes (%RU64ms)",
+                                        ObjB.szName, cbSizeB, PDMAudioPropsBytesToMilli(&pVerJob->PCMProps, cbSizeB));
         AssertRC(rc2);
 
-        rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %u%% (%zu bytes, %RU64us) %s than '%s'",
-                                        ObjA.szName,
-                                        cbSizeA > cbSizeB ? 100 - ((cbSizeB * 100) / cbSizeA) : 100 - ((cbSizeA * 100) / cbSizeB),
-                                        cbDiffAbs, PDMAudioPropsBytesToMicro(&pVerJob->PCMProps, (uint32_t)cbDiffAbs),
-                                        cbSizeA > cbSizeB ? "bigger" : "smaller",
-                                        ObjB.szName);
-        AssertRC(rc2);
+        uint8_t const uSizeDiffPercentAbs
+            = cbSizeA > cbSizeB ? 100 - ((cbSizeB * 100) / cbSizeA) : 100 - ((cbSizeA * 100) / cbSizeB);
+
+        if (uSizeDiffPercentAbs > pVerJob->Opts.uMaxSizePercent)
+        {
+            rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest,
+                                             "File '%s' is %RU8%% (%zu bytes, %RU64ms) %s than '%s' (threshold is %RU8%%)",
+                                             ObjA.szName,
+                                             uSizeDiffPercentAbs,
+                                             cbDiffAbs, PDMAudioPropsBytesToMilli(&pVerJob->PCMProps, (uint32_t)cbDiffAbs),
+                                             cbSizeA > cbSizeB ? "bigger" : "smaller",
+                                             ObjB.szName, pVerJob->Opts.uMaxSizePercent);
+            AssertRC(rc2);
+        }
     }
 
     /** @todo For now we only support comparison of data which do have identical PCM properties! */
@@ -2160,14 +2164,18 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
 
     uint32_t const cDiffs = audioTestFilesFindDiffsBinary(pVerJob, &FileA, &FileB, &ToneParmsA);
 
-    rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' are %s (%RU32 different chunks, threshold is %RU32)",
-                                    ObjA.szName, ObjB.szName, cDiffs == 0 ? "equal" : "different", cDiffs, pVerJob->cThresholdDiff);
-    AssertRC(rc2);
-
-    if (cDiffs > pVerJob->cThresholdDiff)
+    if (cDiffs > pVerJob->Opts.cMaxDiff)
     {
-        rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' do not match",
-                                         ObjA.szName, ObjB.szName);
+        rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest,
+                                         "Files '%s' and '%s' have too many different chunks (%RU32 vs. %RU32)",
+                                         ObjA.szName, ObjB.szName, cDiffs, pVerJob->Opts.cMaxDiff);
+        AssertRC(rc2);
+    }
+
+    if (AudioTestErrorDescFailed(pVerJob->pErr))
+    {
+        rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Files '%s' and '%s' do not match",
+                                        ObjA.szName, ObjB.szName);
         AssertRC(rc2);
     }
 
@@ -2237,20 +2245,26 @@ static int audioTestVerifyTestTone(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOBJINT
 }
 
 /**
- * Verifies an opened audio test set.
+ * Verifies an opened audio test set, extended version.
  *
  * @returns VBox status code.
  * @param   pSetA               Test set A to verify.
  * @param   pSetB               Test set to verify test set A with.
+ * @param   pOpts               Verification options to use.
  * @param   pErrDesc            Where to return the test verification errors.
  *
  * @note    Test verification errors have to be checked for errors, regardless of the
  *          actual return code.
+ * @note    Uses the standard verification options. Use AudioTestSetVerifyEx() to specify
+ *          own options.
  */
-int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERRORDESC pErrDesc)
+int AudioTestSetVerifyEx(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTVERIFYOPTS pOpts, PAUDIOTESTERRORDESC pErrDesc)
 {
+    AssertPtrReturn(pSetA, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSetB, VERR_INVALID_POINTER);
     AssertReturn(audioTestManifestIsOpen(pSetA), VERR_WRONG_ORDER);
     AssertReturn(audioTestManifestIsOpen(pSetB), VERR_WRONG_ORDER);
+    AssertPtrReturn(pOpts, VERR_INVALID_POINTER);
 
     /* We ASSUME the caller has not init'd pErrDesc. */
     audioTestErrorDescInit(pErrDesc);
@@ -2260,11 +2274,8 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
     VerJob.pErr       = pErrDesc;
     VerJob.pSetA      = pSetA;
     VerJob.pSetB      = pSetB;
-    VerJob.fKeepGoing = true; /** @todo Make this configurable. */
 
-    /** @todo For now we're very strict and consider any diff as being erroneous.
-     *        We might want / need to change this depending on the test boxes lateron. */
-    VerJob.cThresholdDiff = 0;
+    memcpy(&VerJob.Opts, pOpts, sizeof(AUDIOTESTVERIFYOPTS));
 
     PAUDIOTESTVERIFYJOB pVerJob = &VerJob;
 
@@ -2355,6 +2366,41 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
 
     /* Only return critical stuff not related to actual testing here. */
     return VINF_SUCCESS;
+}
+
+/**
+ * Initializes audio test verification options in a strict manner.
+ *
+ * @param   pOpts               Verification options to initialize.
+ */
+void AudioTestSetVerifyOptsInitStrict(PAUDIOTESTVERIFYOPTS pOpts)
+{
+    RT_BZERO(pOpts, sizeof(AUDIOTESTVERIFYOPTS));
+
+    pOpts->fKeepGoing      = true;
+    pOpts->cMaxDiff        = 0; /* By default we're very strict and consider any diff as being erroneous. */
+    pOpts->uMaxSizePercent = 0; /* Ditto for size difference. */
+}
+
+/**
+ * Verifies an opened audio test set.
+ *
+ * @returns VBox status code.
+ * @param   pSetA               Test set A to verify.
+ * @param   pSetB               Test set to verify test set A with.
+ * @param   pErrDesc            Where to return the test verification errors.
+ *
+ * @note    Test verification errors have to be checked for errors, regardless of the
+ *          actual return code.
+ * @note    Uses the standard verification options (strict!).
+ *          Use AudioTestSetVerifyEx() to specify own options.
+ */
+int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERRORDESC pErrDesc)
+{
+    AUDIOTESTVERIFYOPTS Opts;
+    AudioTestSetVerifyOptsInitStrict(&Opts);
+
+    return AudioTestSetVerifyEx(pSetA,pSetB, &Opts, pErrDesc);
 }
 
 #undef CHECK_RC_MAYBE_RET

@@ -84,6 +84,9 @@ class tdAudioTest(vbox.TestDriver):
         ];
         self.asTests          = self.asTestsDef;
 
+        # Optional arguments passing to VKAT when verifying audio test sets.
+        self.asVkatVerifyArgs = [];
+
         # Enable audio debug mode.
         #
         # This is needed in order to load and use the Validation Kit audio driver,
@@ -106,6 +109,12 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('  --runningvmname <vmname>');
         reporter.log('  --audio-tests   <s1[:s2[:]]>');
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
+        reporter.log('  --audio-verify-max-diff-count <number>');
+        reporter.log('      Default: 0 (strict)');
+        reporter.log('  --audio-verify-max-diff-percent <0-100>');
+        reporter.log('      Default: 0 (strict)');
+        reporter.log('  --audio-verify-max-size-percent <0-100>');
+        reporter.log('      Default: 0 (strict)');
         return fRc;
 
     def parseOption(self, asArgs, iArg):
@@ -128,6 +137,17 @@ class tdAudioTest(vbox.TestDriver):
                     if s not in self.asTestsDef:
                         raise base.InvalidOption('The "--audio-tests" value "%s" is not valid; valid values are: %s'
                                                     % (s, ' '.join(self.asTestsDef)));
+        elif    asArgs[iArg] == '--audio-verify-max-diff-count' \
+             or asArgs[iArg] == '--audio-verify-max-diff-percent' \
+             or asArgs[iArg] == '--audio-verify-max-size-percent':
+            # Strip the "--audio-verify-" prefix and keep the options as defined in VKAT,
+            # e.g. "--audio-verify-max-diff-count" -> "--max-diff-count". That way we don't
+            # need to do any special argument translation and whatnot.
+            self.asVkatVerifyArgs.extend(['--' + asArgs[iArg][len('--audio-verify-'):]]);
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
+            self.asVkatVerifyArgs.extend([asArgs[iArg]]);
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -533,6 +553,9 @@ class tdAudioTest(vbox.TestDriver):
 
             for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
                 asArgs.extend([ '-v' ]);
+
+            if self.asVkatVerifyArgs:
+                asArgs += self.asVkatVerifyArgs;
 
             fRc = self.executeHst("VKAT Host Verify", asArgs);
             if fRc:
