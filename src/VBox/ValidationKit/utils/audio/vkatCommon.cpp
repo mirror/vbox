@@ -287,16 +287,19 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
 
         uint64_t        offStream          = 0;
         uint64_t        nsTimeout          = RT_MS_5MIN_64 * RT_NS_1MS;
+        uint64_t        nsLastMsgCantWrite = 0; /* Timestamp (in ns) when the last message of an unwritable stream was shown. */
 
         while (cbPlayedTotal < cbToPlayTotal)
         {
+            uint64_t const nsNow = RTTimeNanoTS();
+
             /* Pace ourselves a little. */
             if (offStream >= cbPreBuffer)
             {
                 if (!nsDonePreBuffering)
-                    nsDonePreBuffering = RTTimeNanoTS();
+                    nsDonePreBuffering = nsNow;
                 uint64_t const cNsWritten = PDMAudioPropsBytesToNano64(pMix->pProps, offStream - cbPreBuffer);
-                uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
+                uint64_t const cNsElapsed = nsNow - nsStarted;
                 if (cNsWritten > cNsElapsed + RT_NS_10MS)
                     RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
             }
@@ -332,9 +335,18 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
 
                 if (RT_FAILURE(rc))
                     break;
+
+                nsLastMsgCantWrite = 0;
             }
             else if (AudioTestMixStreamIsOkay(&pStream->Mix))
+            {
+                if (!nsLastMsgCantWrite || nsNow - nsLastMsgCantWrite > RT_NS_10SEC) /* Don't spam the output too much. */
+                {
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting for stream to be writable again ...\n");
+                    nsLastMsgCantWrite = nsNow;
+                }
                 RTThreadSleep(RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256));
+            }
             else
                 AssertFailedBreakStmt(rc = VERR_AUDIO_STREAM_NOT_READY);
 
@@ -342,7 +354,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             AssertBreakStmt(cbPlayedTotal <= cbToPlayTotal, VERR_BUFFER_OVERFLOW);
 
             /* Fail-safe in case something screwed up while playing back. */
-            uint64_t const cNsElapsed = RTTimeNanoTS() - nsStarted;
+            uint64_t const cNsElapsed = nsNow - nsStarted;
             if (cNsElapsed > nsTimeout)
             {
                 RTTestFailed(g_hTest, "Playback took too long (runng %RU64 vs. timeout %RU64), aborting\n", cNsElapsed, nsTimeout);
