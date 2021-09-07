@@ -129,49 +129,34 @@ void UIWizardImportAppPage1::populateProfiles()
     /* If provider chosen: */
     if (!sourceId().isNull())
     {
-        /* Main API request sequence, can be interrupted after any step: */
-        do
+        /* (Re)initialize Cloud Provider: */
+        m_comCloudProvider = cloudProviderById(sourceId(), wizardImp());
+        if (m_comCloudProvider.isNotNull())
         {
-            /* (Re)initialize Cloud Provider: */
-            m_comCloudProvider = m_comCloudProviderManager.GetProviderById(sourceId());
-            if (!m_comCloudProviderManager.isOk())
-            {
-                msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, sourceId());
-                break;
-            }
-
-            /* Acquire existing profile names: */
-            const QVector<QString> profileNames = m_comCloudProvider.GetProfileNames();
-            if (!m_comCloudProvider.isOk())
-            {
-                msgCenter().cannotAcquireCloudProviderParameter(m_comCloudProvider);
-                break;
-            }
-
             /* Iterate through existing profile names: */
-            foreach (const QString &strProfileName, profileNames)
+            foreach (const CCloudProfile &comProfile, listCloudProfiles(m_comCloudProvider, wizardImp()))
             {
-                /* Skip if we have nothing to show (wtf happened?): */
-                if (strProfileName.isEmpty())
-                    continue;
-
-                /* Compose item, fill it's data: */
-                m_pProfileComboBox->addItem(strProfileName);
-                m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
+                /* Acquire profile name: */
+                QString strProfileName;
+                if (cloudProfileName(comProfile, strProfileName, wizardImp()))
+                {
+                    /* Compose item, fill it's data: */
+                    m_pProfileComboBox->addItem(strProfileName);
+                    m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
+                }
             }
-
-            /* Set previous/default item if possible: */
-            int iNewIndex = -1;
-            if (   iNewIndex == -1
-                && !strOldData.isNull())
-                iNewIndex = m_pProfileComboBox->findData(strOldData, ProfileData_Name);
-            if (   iNewIndex == -1
-                && m_pProfileComboBox->count() > 0)
-                iNewIndex = 0;
-            if (iNewIndex != -1)
-                m_pProfileComboBox->setCurrentIndex(iNewIndex);
         }
-        while (0);
+
+        /* Set previous/default item if possible: */
+        int iNewIndex = -1;
+        if (   iNewIndex == -1
+            && !strOldData.isNull())
+            iNewIndex = m_pProfileComboBox->findData(strOldData, ProfileData_Name);
+        if (   iNewIndex == -1
+            && m_pProfileComboBox->count() > 0)
+            iNewIndex = 0;
+        if (iNewIndex != -1)
+            m_pProfileComboBox->setCurrentIndex(iNewIndex);
     }
 
     /* Unblock signals after update: */
@@ -184,13 +169,10 @@ void UIWizardImportAppPage1::populateProfile()
     m_comCloudProfile = CCloudProfile();
 
     /* If both provider and profile chosen: */
-    if (m_comCloudProvider.isNotNull() && !profileName().isNull())
+    if (!source().isNull() && !profileName().isNull())
     {
         /* Acquire Cloud Profile: */
-        m_comCloudProfile = m_comCloudProvider.GetProfileByName(profileName());
-        /* Show error message if necessary: */
-        if (!m_comCloudProvider.isOk())
-            msgCenter().cannotFindCloudProfile(m_comCloudProvider, profileName());
+        m_comCloudProfile = cloudProfileByName(source(), profileName(), wizardImp());
     }
 }
 

@@ -175,26 +175,16 @@ void UIWizardExportAppPage2::populateProfiles()
     if (!providerId().isNull())
     {
         /* (Re)initialize Cloud Provider: */
-        m_comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
-        /* Show error message if necessary: */
-        if (!m_comCloudProviderManager.isOk())
-            msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, providerId());
-        else
+        m_comCloudProvider = cloudProviderById(providerId(), wizardImp());
+        if (m_comCloudProvider.isNotNull())
         {
-            /* Acquire existing profile names: */
-            const QVector<QString> profileNames = m_comCloudProvider.GetProfileNames();
-            /* Show error message if necessary: */
-            if (!m_comCloudProvider.isOk())
-                msgCenter().cannotAcquireCloudProviderParameter(m_comCloudProvider);
-            else
+            /* Iterate through existing profile names: */
+            foreach (const CCloudProfile &comProfile, listCloudProfiles(m_comCloudProvider, wizardImp()))
             {
-                /* Iterate through existing profile names: */
-                foreach (const QString &strProfileName, profileNames)
+                /* Acquire profile name: */
+                QString strProfileName;
+                if (cloudProfileName(comProfile, strProfileName, wizardImp()))
                 {
-                    /* Skip if we have nothing to show (wtf happened?): */
-                    if (strProfileName.isEmpty())
-                        continue;
-
                     /* Compose item, fill it's data: */
                     m_pProfileComboBox->addItem(strProfileName);
                     m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
@@ -224,13 +214,10 @@ void UIWizardExportAppPage2::populateProfile()
     m_comCloudProfile = CCloudProfile();
 
     /* If both provider and profile chosen: */
-    if (!m_comCloudProvider.isNull() && !profileName().isNull())
+    if (!providerShortName().isNull() && !profileName().isNull())
     {
         /* Acquire Cloud Profile: */
-        m_comCloudProfile = m_comCloudProvider.GetProfileByName(profileName());
-        /* Show error message if necessary: */
-        if (!m_comCloudProvider.isOk())
-            msgCenter().cannotFindCloudProfile(m_comCloudProvider, profileName());
+        m_comCloudProfile = cloudProfileByName(providerShortName(), profileName(), wizardImp());
     }
 }
 

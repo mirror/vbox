@@ -75,7 +75,7 @@ CCloudProvider UICloudNetworkingStuff::cloudProviderById(const QUuid &uProviderI
         /* Acquire cloud provider: */
         CCloudProvider comProvider = comProviderManager.GetProviderById(uProviderId);
         if (!comProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(comProviderManager, pParent);
+            msgCenter().cannotFindCloudProvider(comProviderManager, uProviderId, pParent);
         else
             return comProvider;
     }

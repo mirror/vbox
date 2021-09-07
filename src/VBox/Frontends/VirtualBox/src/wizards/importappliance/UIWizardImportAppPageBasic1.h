@@ -169,6 +169,9 @@ public:
 
 protected:
 
+    /** Allows access wizard from base part. */
+    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
