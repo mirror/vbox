@@ -62,7 +62,7 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB);
+static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB, PAUDIOTESTVERIFYOPTS pOpts);
 
 
 /*********************************************************************************************************************************
@@ -145,7 +145,9 @@ enum
  */
 enum
 {
-    VKAT_VERIFY_OPT_TAG = 900
+    VKAT_VERIFY_OPT_MAX_DIFF_COUNT = 900,
+    VKAT_VERIFY_OPT_MAX_DIFF_PERCENT,
+    VKAT_VERIFY_OPT_MAX_SIZE_PERCENT
 };
 
 /**
@@ -200,7 +202,9 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
  */
 static const RTGETOPTDEF g_aCmdVerifyOptions[] =
 {
-    { "--tag",              VKAT_VERIFY_OPT_TAG,                RTGETOPT_REQ_STRING  }
+    { "--max-diff-count",      VKAT_VERIFY_OPT_MAX_DIFF_COUNT,     RTGETOPT_REQ_UINT32 },
+    { "--max-diff-percent",    VKAT_VERIFY_OPT_MAX_DIFF_PERCENT,   RTGETOPT_REQ_UINT8  },
+    { "--max-size-percent",    VKAT_VERIFY_OPT_MAX_SIZE_PERCENT,   RTGETOPT_REQ_UINT8  }
 };
 
 /** Terminate ASAP if set.  Set on Ctrl-C. */
@@ -664,7 +668,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
                 if (   RT_SUCCESS(rc)
                     && !pTstEnv->fSkipVerify)
                 {
-                    rc = audioVerifyOne(pTstEnv->u.Host.szPathTestSetGuest, pTstEnv->u.Host.szPathTestSetValKit);
+                    rc = audioVerifyOne(pTstEnv->u.Host.szPathTestSetGuest, pTstEnv->u.Host.szPathTestSetValKit, NULL /* pOpts */);
                 }
                 else
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verification skipped\n");
@@ -1037,8 +1041,10 @@ static int audioVerifyOpenTestSet(const char *pszPathSet, PAUDIOTESTSET pSet)
  * @returns VBox status code.
  * @param   pszPathSetA         Absolute path to test set A.
  * @param   pszPathSetB         Absolute path to test set B.
+ * @param   pOpts               Verification options to use. Optional.
+ *                              When NULL, the (very strict) defaults will be used.
  */
-static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
+static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB, PAUDIOTESTVERIFYOPTS pOpts)
 {
     RTTestSubF(g_hTest, "Verifying");
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Verifying test set '%s' with test set '%s'\n", pszPathSetA, pszPathSetB);
@@ -1051,7 +1057,10 @@ static int audioVerifyOne(const char *pszPathSetA, const char *pszPathSetB)
         if (RT_SUCCESS(rc))
         {
             AUDIOTESTERRORDESC errDesc;
-            rc = AudioTestSetVerify(&SetA, &SetB, &errDesc);
+            if (pOpts)
+                rc = AudioTestSetVerifyEx(&SetA, &SetB, pOpts, &errDesc);
+            else
+                rc = AudioTestSetVerify(&SetA, &SetB, &errDesc);
             if (RT_SUCCESS(rc))
             {
                 uint32_t const cErr = AudioTestErrorDescCount(&errDesc);
@@ -1112,13 +1121,25 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
     const char *apszSets[2] = { NULL, NULL };
     unsigned    iTestSet    = 0;
 
+    AUDIOTESTVERIFYOPTS Opts;
+    AudioTestSetVerifyOptsInitStrict(&Opts);
+
     int           ch;
     RTGETOPTUNION ValueUnion;
     while ((ch = RTGetOpt(pGetState, &ValueUnion)))
     {
         switch (ch)
         {
-            case VKAT_VERIFY_OPT_TAG:
+            case VKAT_VERIFY_OPT_MAX_DIFF_COUNT:
+                Opts.cMaxDiff = ValueUnion.u32;
+                break;
+
+            case VKAT_VERIFY_OPT_MAX_DIFF_PERCENT:
+                Opts.uMaxDiffPercent = ValueUnion.u8;
+                break;
+
+            case VKAT_VERIFY_OPT_MAX_SIZE_PERCENT:
+                Opts.uMaxSizePercent = ValueUnion.u8;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1156,7 +1177,7 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
     }
 
     if (RT_SUCCESS(rc))
-        audioVerifyOne(apszSets[0], apszSets[1]);
+        audioVerifyOne(apszSets[0], apszSets[1], &Opts);
 
     /*
      * Print summary and exit.
