@@ -264,6 +264,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
 
         uint32_t cbToPlayTotal  = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
         AssertStmt(cbToPlayTotal, rc = VERR_INVALID_PARAMETER);
+        uint32_t cbPlayedTotal  = 0;
 
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes total\n", cbToPlayTotal);
 
@@ -285,8 +286,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         uint64_t        nsDonePreBuffering = 0;
 
         uint64_t        offStream          = 0;
-        uint64_t        tsStartMs          = RTTimeMilliTS();
-        RTMSINTERVAL    uTimeoutMs         = pParms->msDuration * 4; /* Four times the time playback should roughly take */
+        uint64_t        uTimeoutNs         = (pParms->msDuration * 4) * RT_NS_1MS; /* Four times the time playback should roughly take */
 
         while (cbToPlayTotal)
         {
@@ -321,6 +321,9 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
                         if (RT_SUCCESS(rc))
                         {
                             offStream += cbPlayed;
+
+                            if (cbPlayed != cbToPlay)
+                                RTTestFailed(g_hTest, "Only played %RU32/%RU32 bytes", cbPlayed, cbToPlay);
                         }
                     }
                 }
@@ -333,20 +336,22 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             else
                 AssertFailedBreakStmt(rc = VERR_AUDIO_STREAM_NOT_READY);
 
-            Assert(cbToPlayTotal >= cbPlayed);
-            cbToPlayTotal -= cbPlayed;
+            cbPlayedTotal += cbPlayed;
+            AssertBreakStmt(cbPlayedTotal <= cbToPlayTotal, VERR_BUFFER_OVERFLOW);
 
             /* Fail-safe in case something screwed up while playing back. */
-            if (RTTimeMilliTS() - tsStartMs > uTimeoutMs)
+            if (RTTimeNanoTS() - nsStarted > uTimeoutNs)
             {
-                RTTestFailed(g_hTest, "Playback took too long (%RU32ms exceeded), aborting\n", uTimeoutMs);
+                RTTestFailed(g_hTest, "Playback took too long (%RU32ms exceeded), aborting\n", uTimeoutNs / RT_NS_1MS);
                 rc = VERR_TIMEOUT;
-                break;
             }
+
+            if (RT_FAILURE(rc))
+                break;
         }
 
-        if (cbToPlayTotal != 0)
-            RTTestFailed(g_hTest, "Playback ended unexpectedly (%RU32 bytes left)\n", cbToPlayTotal);
+        if (cbPlayedTotal != cbToPlayTotal)
+            RTTestFailed(g_hTest, "Playback ended unexpectedly (%RU32/%RU32 played)\n", cbPlayedTotal, cbToPlayTotal);
 
         if (RT_SUCCESS(rc))
         {
