@@ -232,6 +232,9 @@ public:
         /** Notifies about inability to change INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter being changed for. */
         static void cannotChangeNATNetworkParameter(const CNATNetwork &comNetwork);
+        /** Notifies about inability to change ICloudProfile parameter.
+          * @param  comProfile  Brings the object parameter being changed for. */
+        static void cannotChangeCloudProfileParameter(const CCloudProfile &comProfile);
 
         /** Notifies about inability to enumerate host USB devices.
           * @param  comHost  Brings the host devices enumerated for. */
@@ -262,6 +265,15 @@ public:
           * @param  comVBox      Brings common VBox object trying to open machine.
           * @param  strLocation  Brings the machine location. */
         static void cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation);
+
+        /** Notifies about inability to find host network interface.
+          * @param  comHost  Brings the host being search through.
+          * @param  strInterfaceName  Brings interface name. */
+        static void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName);
+        /** Notifies about inability to find NAT network.
+          * @param  comVBox         Brings common VBox object being search through.
+          * @param  strNetworkName  Brings network name. */
+        static void cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
         /** Notifies about inability to create DHCP server.
           * @param  comVBox           Brings common VBox object trying to create DHCP server.
           * @param  strInterfaceName  Brings the interface name. */
@@ -277,6 +289,19 @@ public:
           * @param  comVBox         Brings common VBox object trying to remove DHCP server.
           * @param  strNetworkName  Brings the network name. */
         static void cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
+
+        /** Notifies about inability to create cloud profile.
+          * @param  comProvider  Brings the provider profile being created for. */
+        static void cannotCreateCloudProfile(const CCloudProvider &comProvider);
+        /** Notifies about inability to remove cloud profile.
+          * @param  comProvider  Brings the provider profile being removed from. */
+        static void cannotRemoveCloudProfile(const CCloudProfile &comProfile);
+        /** Notifies about inability to save cloud profiles.
+          * @param  comProvider  Brings the provider profiles being saved for. */
+        static void cannotSaveCloudProfiles(const CCloudProvider &comProvider);
+        /** Notifies about inability to import cloud profiles.
+          * @param  comProvider  Brings the provider profiles being imported for. */
+        static void cannotImportCloudProfiles(const CCloudProvider &comProvider);
 
         /** Notifies about inability to open machine.
           * @param  comMedium  Brings the medium being closed. */
@@ -298,15 +323,6 @@ public:
           * @param  strSnapshotName  Brings snapshot name.
           * @param  strMachineName   Brings machine name. */
         static void cannotChangeSnapshot(const CSnapshot &comSnapshot, const QString &strSnapshotName, const QString &strMachineName);
-
-        /** Notifies about inability to find host network interface.
-          * @param  comHost  Brings the host being search through.
-          * @param  strInterfaceName  Brings interface name. */
-        static void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName);
-        /** Notifies about inability to find NAT network.
-          * @param  comVBox         Brings common VBox object being search through.
-          * @param  strNetworkName  Brings network name. */
-        static void cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
     /** @} */
 
     /** @name COM Runtime UI warnings.

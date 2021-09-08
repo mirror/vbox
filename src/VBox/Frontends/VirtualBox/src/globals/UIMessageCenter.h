@@ -380,7 +380,6 @@ public:
         void cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent = 0) const;
         void cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
         void cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
-        void cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
     /** @} */
 
     /** @name Runtime UI warnings.
@@ -388,12 +387,6 @@ public:
         bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
         bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
     /** @} */
-
-    /* API: Cloud Profile Manager warnings: */
-    void cannotCreateCloudProfile(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
-    void cannotRemoveCloudProfile(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
-    void cannotSaveCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
-    void cannotImportCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent = 0) const;
 
     void cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent = 0) const;
     void cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent = 0) const;

@@ -34,6 +34,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
@@ -285,7 +286,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                 comCloudProfile.SetName(newData.m_strName);
             /* Show error message if necessary: */
             if (!comCloudProfile.isOk())
-                msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
+                UINotificationMessage::cannotChangeCloudProfileParameter(comCloudProfile);
             else
             {
                 /* Iterate through old/new data: */
@@ -301,7 +302,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                         /* Show error message if necessary: */
                         if (!comCloudProfile.isOk())
                         {
-                            msgCenter().cannotAssignCloudProfileParameter(comCloudProfile, this);
+                            UINotificationMessage::cannotChangeCloudProfileParameter(comCloudProfile);
                             break;
                         }
                     }
@@ -315,7 +316,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                 comCloudProvider.SaveProfiles();
                 /* Show error message if necessary: */
                 if (!comCloudProvider.isOk())
-                    msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
+                    UINotificationMessage::cannotSaveCloudProfiles(comCloudProvider);
             }
         }
     }
@@ -362,14 +363,14 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
         comCloudProvider.CreateProfile(strProfileName, keys, values);
         /* Show error message if necessary: */
         if (!comCloudProvider.isOk())
-            msgCenter().cannotCreateCloudProfile(comCloudProvider, this);
+            UINotificationMessage::cannotCreateCloudProfile(comCloudProvider);
         else
         {
             /* Save profile changes: */
             comCloudProvider.SaveProfiles();
             /* Show error message if necessary: */
             if (!comCloudProvider.isOk())
-                msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
+                UINotificationMessage::cannotSaveCloudProfiles(comCloudProvider);
         }
     }
 }
@@ -397,7 +398,7 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
         comCloudProvider.ImportProfiles();
         /* Show error message if necessary: */
         if (!comCloudProvider.isOk())
-            msgCenter().cannotImportCloudProfiles(comCloudProvider, this);
+            UINotificationMessage::cannotImportCloudProfiles(comCloudProvider);
     }
 }
 
@@ -433,14 +434,14 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
             comCloudProfile.Remove();
             /* Show error message if necessary: */
             if (!comCloudProfile.isOk())
-                msgCenter().cannotRemoveCloudProfile(comCloudProfile, this);
+                UINotificationMessage::cannotRemoveCloudProfile(comCloudProfile);
             else
             {
                 /* Save profile changes: */
                 comCloudProvider.SaveProfiles();
                 /* Show error message if necessary: */
                 if (!comCloudProvider.isOk())
-                    msgCenter().cannotSaveCloudProfiles(comCloudProvider, this);
+                    UINotificationMessage::cannotSaveCloudProfiles(comCloudProvider);
             }
         }
     }

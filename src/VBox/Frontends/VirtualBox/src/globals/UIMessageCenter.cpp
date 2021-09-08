@@ -1387,13 +1387,6 @@ void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &co
           UIErrorString::formatErrorInfo(comProfile));
 }
 
-void UIMessageCenter::cannotAssignCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign cloud profile parameter."),
-          UIErrorString::formatErrorInfo(comProfile));
-}
-
 bool UIMessageCenter::cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
@@ -1410,34 +1403,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
              .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(progress));
     return false;
-}
-
-void UIMessageCenter::cannotCreateCloudProfile(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create cloud profile."),
-          UIErrorString::formatErrorInfo(comProvider));
-}
-
-void UIMessageCenter::cannotRemoveCloudProfile(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove cloud profile."),
-          UIErrorString::formatErrorInfo(comProfile));
-}
-
-void UIMessageCenter::cannotSaveCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save cloud profiles."),
-          UIErrorString::formatErrorInfo(comProvider));
-}
-
-void UIMessageCenter::cannotImportCloudProfiles(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to import cloud profiles."),
-          UIErrorString::formatErrorInfo(comProvider));
 }
 
 void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const

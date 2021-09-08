@@ -35,6 +35,8 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CCloudProfile.h"
+#include "CCloudProvider.h"
 #include "CConsole.h"
 #include "CDHCPServer.h"
 #include "CGraphicsAdapter.h"
@@ -584,6 +586,15 @@ void UINotificationMessage::cannotChangeNATNetworkParameter(const CNATNetwork &c
 }
 
 /* static */
+void UINotificationMessage::cannotChangeCloudProfileParameter(const CCloudProfile &comProfile)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Cloud profile failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to assign cloud profile parameter.") +
+        UIErrorString::formatErrorInfo(comProfile));
+}
+
+/* static */
 void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
 {
     /* Refer users to manual's trouble shooting section depending on the host platform: */
@@ -666,6 +677,26 @@ void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const 
 }
 
 /* static */
+void UINotificationMessage::cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find host network interface ..."),
+        QApplication::translate("UIMessageCenter", "Unable to find the host network interface <b>%1</b>.")
+                                                   .arg(strInterfaceName) +
+        UIErrorString::formatErrorInfo(comHost));
+}
+
+/* static */
+void UINotificationMessage::cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find NAT network ..."),
+        QApplication::translate("UIMessageCenter", "Unable to find the NAT network <b>%1</b>.")
+                                                   .arg(strNetworkName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
 void UINotificationMessage::cannotCreateDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName)
 {
     createMessage(
@@ -702,6 +733,42 @@ void UINotificationMessage::cannotRemoveNATNetwork(const CVirtualBox &comVBox, c
         QApplication::translate("UIMessageCenter", "Failed to remove the NAT network <b>%1</b>.")
                                                    .arg(strNetworkName) +
         UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotCreateCloudProfile(const CCloudProvider &comProvider)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create cloud profile ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create cloud profile.") +
+        UIErrorString::formatErrorInfo(comProvider));
+}
+
+/* static */
+void UINotificationMessage::cannotRemoveCloudProfile(const CCloudProfile &comProfile)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't remove cloud profile ..."),
+        QApplication::translate("UIMessageCenter", "Failed to remove cloud profile.") +
+        UIErrorString::formatErrorInfo(comProfile));
+}
+
+/* static */
+void UINotificationMessage::cannotSaveCloudProfiles(const CCloudProvider &comProvider)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't save cloud profiles ..."),
+        QApplication::translate("UIMessageCenter", "Failed to save cloud profiles.") +
+        UIErrorString::formatErrorInfo(comProvider));
+}
+
+/* static */
+void UINotificationMessage::cannotImportCloudProfiles(const CCloudProvider &comProvider)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't import cloud profiles ..."),
+        QApplication::translate("UIMessageCenter", "Failed to import cloud profiles.") +
+        UIErrorString::formatErrorInfo(comProvider));
 }
 
 /* static */
@@ -755,26 +822,6 @@ void UINotificationMessage::cannotChangeSnapshot(const CSnapshot &comSnapshot,
         QApplication::translate("UIMessageCenter", "Failed to change the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
                                                    .arg(strSnapshotName, strMachineName) +
         UIErrorString::formatErrorInfo(comSnapshot));
-}
-
-/* static */
-void UINotificationMessage::cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Can't find host network interface ..."),
-        QApplication::translate("UIMessageCenter", "Unable to find the host network interface <b>%1</b>.")
-                                                   .arg(strInterfaceName) +
-        UIErrorString::formatErrorInfo(comHost));
-}
-
-/* static */
-void UINotificationMessage::cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Can't find NAT network ..."),
-        QApplication::translate("UIMessageCenter", "Unable to find the NAT network <b>%1</b>.")
-                                                   .arg(strNetworkName) +
-        UIErrorString::formatErrorInfo(comVBox));
 }
 
 /* static */
