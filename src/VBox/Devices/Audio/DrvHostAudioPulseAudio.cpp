@@ -457,7 +457,7 @@ static void drvHstAudPaEnumSourceCallback(pa_context *pCtx, const pa_source_info
 
     if (eol == 0 && pInfo != NULL)
     {
-        LogRel2(("Pulse Audio: Source #%u: %u Hz %uch format=%u name='%s' desc='%s' driver='%s' flags=%#x\n",
+        LogRel2(("PulseAudio: Source #%u: %u Hz %uch format=%u name='%s' desc='%s' driver='%s' flags=%#x\n",
                  pInfo->index, pInfo->sample_spec.rate, pInfo->sample_spec.channels, pInfo->sample_spec.format,
                  pInfo->name, pInfo->description, pInfo->driver, pInfo->flags));
         drvHstAudPaEnumAddDevice(pCbCtx, PDMAUDIODIR_IN, pInfo->name, pInfo->description,
@@ -493,7 +493,7 @@ static void drvHstAudPaEnumSinkCallback(pa_context *pCtx, const pa_sink_info *pI
 
     if (eol == 0 && pInfo != NULL)
     {
-        LogRel2(("Pulse Audio: Sink #%u: %u Hz %uch format=%u name='%s' desc='%s' driver='%s' flags=%#x\n",
+        LogRel2(("PulseAudio: Sink #%u: %u Hz %uch format=%u name='%s' desc='%s' driver='%s' flags=%#x\n",
                  pInfo->index, pInfo->sample_spec.rate, pInfo->sample_spec.channels, pInfo->sample_spec.format,
                  pInfo->name, pInfo->description, pInfo->driver, pInfo->flags));
         drvHstAudPaEnumAddDevice(pCbCtx, PDMAUDIODIR_OUT, pInfo->name, pInfo->description,
@@ -1821,7 +1821,8 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetWritable(PPDMIHOSTAUDIO pIn
                 drvHstAudPaError(pThis, "pa_stream_writable_size failed on '%s'", pStreamPA->Cfg.szName);
         }
         else
-            LogFunc(("non-good stream state: %d\n", enmState));
+            LogRel(("PulseAudio: Non-good %s stream state for '%s' (%#x)\n",
+                    PDMAudioDirGetName(pStreamPA->Cfg.enmDir), pStreamPA->Cfg.szName, enmState));
 
         pa_threaded_mainloop_unlock(pThis->pMainLoop);
     }
@@ -1930,7 +1931,7 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetReadable(PPDMIHOSTAUDIO pIn
             size_t cbReadablePa = pa_stream_readable_size(pStreamPA->pStream);
             if (cbReadablePa != (size_t)-1)
             {
-                /* As with WASAPI on windows, the peek buffer must be subtracked.*/
+                /* As with WASAPI on Windows, the peek buffer must be subtracted.*/
                 if (cbReadablePa >= pStreamPA->cbPeekBuf)
                     cbReadable = (uint32_t)(cbReadablePa - pStreamPA->cbPeekBuf);
                 else
@@ -1943,7 +1944,8 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetReadable(PPDMIHOSTAUDIO pIn
                 drvHstAudPaError(pThis, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
         }
         else
-            LogFunc(("non-good stream state: %d\n", enmState));
+            LogRel(("PulseAudio: Non-good %s stream state for '%s' (%#x)\n",
+                    PDMAudioDirGetName(pStreamPA->Cfg.enmDir), pStreamPA->Cfg.szName, enmState));
 
         pa_threaded_mainloop_unlock(pThis->pMainLoop);
     }
