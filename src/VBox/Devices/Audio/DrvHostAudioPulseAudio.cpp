@@ -1821,8 +1821,8 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetWritable(PPDMIHOSTAUDIO pIn
                 drvHstAudPaError(pThis, "pa_stream_writable_size failed on '%s'", pStreamPA->Cfg.szName);
         }
         else
-            LogRel(("PulseAudio: Non-good %s stream state for '%s' (%#x)\n",
-                    PDMAudioDirGetName(pStreamPA->Cfg.enmDir), pStreamPA->Cfg.szName, enmState));
+            drvHstAudPaError(pThis, "Non-good %s stream state for '%s' (%#x)\n",
+                             PDMAudioDirGetName(pStreamPA->Cfg.enmDir), pStreamPA->Cfg.szName, enmState);
 
         pa_threaded_mainloop_unlock(pThis->pMainLoop);
     }
@@ -1944,8 +1944,8 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetReadable(PPDMIHOSTAUDIO pIn
                 drvHstAudPaError(pThis, "pa_stream_readable_size failed on '%s'", pStreamPA->Cfg.szName);
         }
         else
-            LogRel(("PulseAudio: Non-good %s stream state for '%s' (%#x)\n",
-                    PDMAudioDirGetName(pStreamPA->Cfg.enmDir), pStreamPA->Cfg.szName, enmState));
+            drvHstAudPaError(pThis, "Non-good %s stream state for '%s' (%#x)\n",
+                             PDMAudioDirGetName(pStreamPA->Cfg.enmDir), pStreamPA->Cfg.szName, enmState);
 
         pa_threaded_mainloop_unlock(pThis->pMainLoop);
     }
