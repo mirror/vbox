@@ -67,7 +67,6 @@ private:
     UIWizardNewVMSummaryItem(UIWizardNewVMSummaryItem *pParentItem, const QString &strText,
                              const QVariant &data = QVariant(), const QIcon &icon = QIcon());
 
-    UIWizardNewVMSummaryItem *m_pParentItem;
     QString m_strText;
     QVariant m_data;
     QIcon m_icon;
@@ -103,8 +102,9 @@ private:
 
 };
 
+
 /*********************************************************************************************************************************
-*   UIWizardNewVMSummaryItem implementation.                                                                                  *
+*   UIWizardNewVMSummaryItem implementation.                                                                                     *
 *********************************************************************************************************************************/
 
 
@@ -198,7 +198,7 @@ bool UIWizardNewVMSummaryItem::isSectionTitle() const
 
 
 /*********************************************************************************************************************************
-*   UIWizardNewVMSummaryModel implementation.                                                                                  *
+*   UIWizardNewVMSummaryModel implementation.                                                                                    *
 *********************************************************************************************************************************/
 
 UIWizardNewVMSummaryModel::UIWizardNewVMSummaryModel(QITreeView *pParentTree)
@@ -325,48 +325,48 @@ void UIWizardNewVMSummaryModel::populateData(UIWizardNewVM *pWizard)
         delete m_pRootItem;
     m_pRootItem = new UIWizardNewVMSummaryItem(pParentTree, "root");
 
-    UIWizardNewVMSummaryItem *pNameRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Machine Name and OS Type"));
+    UIWizardNewVMSummaryItem *pNameRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Machine Name and OS Type"),
+                                                                QVariant(), UIIconPool::iconSet(":/name_16px.png"));
     pNameRoot->setIsSectionTitle(true);
 
     /* Name and OS Type page stuff: */
-    pNameRoot->addChild(UIWizardNewVM::tr("Machine Name"), pWizard->machineBaseName(), UIIconPool::iconSet(":/name_16px.png"));
-    pNameRoot->addChild(UIWizardNewVM::tr("Machine Folder"), pWizard->machineFolder(), UIIconPool::iconSet(":/name_16px.png"));
-    pNameRoot->addChild(UIWizardNewVM::tr("ISO Image"), pWizard->ISOFilePath(), UIIconPool::iconSet(":/cd_16px.png"));
-    pNameRoot->addChild(UIWizardNewVM::tr("Guest OS Type"), pWizard->guestOSType().GetDescription(), UIIconPool::iconSet(":/system_type_16px.png"));
+    pNameRoot->addChild(UIWizardNewVM::tr("Machine Name"), pWizard->machineBaseName());
+    pNameRoot->addChild(UIWizardNewVM::tr("Machine Folder"), pWizard->machineFolder());
+    pNameRoot->addChild(UIWizardNewVM::tr("ISO Image"), pWizard->ISOFilePath());
+    pNameRoot->addChild(UIWizardNewVM::tr("Guest OS Type"), pWizard->guestOSType().GetDescription());
 
     const QString &ISOPath = pWizard->ISOFilePath();
     if (!ISOPath.isNull() && !ISOPath.isEmpty())
-        pNameRoot->addChild(UIWizardNewVM::tr("Skip Unattended Install"), pWizard->skipUnattendedInstall(),
-                            UIIconPool::iconSet(":/extension_pack_install_16px.png"));
-
+        pNameRoot->addChild(UIWizardNewVM::tr("Skip Unattended Install"), pWizard->skipUnattendedInstall());
 
     /* Unattended install related info: */
     if (pWizard->isUnattendedEnabled())
     {
-        UIWizardNewVMSummaryItem *pUnattendedRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Unattended Install"));
+        UIWizardNewVMSummaryItem *pUnattendedRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Unattended Install"), QVariant(),
+                                                                          UIIconPool::iconSet(":/extension_pack_install_16px.png"));
         pUnattendedRoot->setIsSectionTitle(true);
-        pUnattendedRoot->addChild(UIWizardNewVM::tr("Username"), pWizard->userName(),
-                                  UIIconPool::iconSet(":/extension_pack_install_16px.png"));
-        pUnattendedRoot->addChild(UIWizardNewVM::tr("Product Key"), pWizard->installGuestAdditions(),
-                                  UIIconPool::iconSet(":/extension_pack_install_16px.png"));
-        pUnattendedRoot->addChild(UIWizardNewVM::tr("Hostname/Domain Name"), pWizard->hostnameDomainName(),
-                                  UIIconPool::iconSet(":/extension_pack_install_16px.png"));
-        pUnattendedRoot->addChild(UIWizardNewVM::tr("Install in Background"), pWizard->startHeadless(),
-                                  UIIconPool::iconSet(":/extension_pack_install_16px.png"));
-        pUnattendedRoot->addChild(UIWizardNewVM::tr("Install Guest Additions"), pWizard->installGuestAdditions(),
-                                  UIIconPool::iconSet(":/extension_pack_install_16px.png"));
+
+        pUnattendedRoot->addChild(UIWizardNewVM::tr("Username"), pWizard->userName());
+        pUnattendedRoot->addChild(UIWizardNewVM::tr("Product Key"), pWizard->installGuestAdditions());
+        pUnattendedRoot->addChild(UIWizardNewVM::tr("Hostname/Domain Name"), pWizard->hostnameDomainName());
+        pUnattendedRoot->addChild(UIWizardNewVM::tr("Install in Background"), pWizard->startHeadless());
+        pUnattendedRoot->addChild(UIWizardNewVM::tr("Install Guest Additions"), pWizard->installGuestAdditions());
         if (pWizard->installGuestAdditions())
-            pUnattendedRoot->addChild(UIWizardNewVM::tr("Guest Additions ISO"), pWizard->guestAdditionsISOPath(),
-                                      UIIconPool::iconSet(":/extension_pack_install_16px.png"));
+            pUnattendedRoot->addChild(UIWizardNewVM::tr("Guest Additions ISO"), pWizard->guestAdditionsISOPath());
     }
 
 
-    // UIWizardNewVMSummaryItem *pHardwareRoot = new UIWizardNewVMSummaryItem(m_pRootItem, UIWizardNewVM::tr("Hardware"));
-    // UIWizardNewVMSummaryItem *pDiskRoot = new UIWizardNewVMSummaryItem(m_pRootItem, UIWizardNewVM::tr("Disk"));
-    // Q_UNUSED(pHardwareRoot);
+    UIWizardNewVMSummaryItem *pHardwareRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Hardware"), QVariant(),
+                                                                    UIIconPool::iconSet(":/cpu_16px.png"));
+    pHardwareRoot->addChild(UIWizardNewVM::tr("Base Memory"), pWizard->memorySize());
+    pHardwareRoot->addChild(UIWizardNewVM::tr("Processor(s)"), pWizard->CPUCount());
+    // UIWizardNewVMSummaryItem *pDiskRoot = new UIWizardNewVMSummaryItem(m_pRootItem, UIWizardNewVM::tr("Disk"), QVariant(),
+    //                                                                    UIIconPool::iconSet(":/hd_16px.png"));
+
     // Q_UNUSED(pDiskRoot);
 
 }
+
 
 /*********************************************************************************************************************************
 *   UIWizardNewVMSummaryPage implementation.                                                                                     *
