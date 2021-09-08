@@ -183,6 +183,31 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachineStubs(CCloudClient comCloudClient,
                                                                       QString &strErrorMessage);
 
+    /** Acquires @a comCloudClient export description form as a @a comResult, using @a pParent to show messages according to.
+      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
+    SHARED_LIBRARY_STUFF bool exportDescriptionForm(CCloudClient comCloudClient,
+                                                    CVirtualSystemDescription comDescription,
+                                                    CVirtualSystemDescriptionForm &comResult,
+                                                    QWidget *pParent = 0);
+    /** Acquires @a comCloudClient export description form as a @a comResult, using @a strErrorMessage to store messages to.
+      * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
+    SHARED_LIBRARY_STUFF bool exportDescriptionForm(CCloudClient comCloudClient,
+                                                    CVirtualSystemDescription comDescription,
+                                                    CVirtualSystemDescriptionForm &comResult,
+                                                    QString &strErrorMessage);
+    /** Acquires @a comCloudClient import description form as a @a comResult, using @a pParent to show messages according to.
+      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
+    SHARED_LIBRARY_STUFF bool importDescriptionForm(CCloudClient comCloudClient,
+                                                    CVirtualSystemDescription comDescription,
+                                                    CVirtualSystemDescriptionForm &comResult,
+                                                    QWidget *pParent = 0);
+    /** Acquires @a comCloudClient import description form as a @a comResult, using @a strErrorMessage to store messages to.
+      * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
+    SHARED_LIBRARY_STUFF bool importDescriptionForm(CCloudClient comCloudClient,
+                                                    CVirtualSystemDescription comDescription,
+                                                    CVirtualSystemDescriptionForm &comResult,
+                                                    QString &strErrorMessage);
+
     /** Acquires @a comCloudMachine ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineId(const CCloudMachine &comCloudMachine,
                                              QUuid &uResult,

@@ -148,7 +148,7 @@ CCloudProfile UICloudNetworkingStuff::cloudProfileByName(const QString &strProvi
         /* Acquire cloud profile: */
         CCloudProfile comProfile = comProvider.GetProfileByName(strProfileName);
         if (!comProvider.isOk())
-            msgCenter().cannotAcquireCloudProviderParameter(comProvider, pParent);
+            msgCenter().cannotFindCloudProfile(comProvider, strProfileName, pParent);
         else
             return comProfile;
     }
@@ -697,6 +697,98 @@ QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachineStubs(CCloudClien
     }
     /* Return empty list by default: */
     return QVector<CCloudMachine>();
+}
+
+bool UICloudNetworkingStuff::exportDescriptionForm(CCloudClient comCloudClient,
+                                                   CVirtualSystemDescription comDescription,
+                                                   CVirtualSystemDescriptionForm &comResult,
+                                                   QWidget *pParent /* = 0 */)
+{
+    /* Execute GetExportDescriptionForm async method: */
+    CProgress comProgress = comCloudClient.GetExportDescriptionForm(comDescription, comResult);
+    if (!comCloudClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+    else
+    {
+        /* Show "Get Export Description Form" progress: */
+        msgCenter().showModalProgressDialog(comProgress,
+                                            QString(),
+                                            ":/progress_refresh_90px.png", pParent, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress);
+        else
+            return true;
+    }
+    /* False by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::exportDescriptionForm(CCloudClient comCloudClient,
+                                                   CVirtualSystemDescription comDescription,
+                                                   CVirtualSystemDescriptionForm &comResult,
+                                                   QString &strErrorMessage)
+{
+    /* Execute GetExportDescriptionForm async method: */
+    CProgress comProgress = comCloudClient.GetExportDescriptionForm(comDescription, comResult);
+    if (!comCloudClient.isOk())
+        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
+    else
+    {
+        /* Show "Get Export Description Form" progress: */
+        comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        else
+            return true;
+    }
+    /* False by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::importDescriptionForm(CCloudClient comCloudClient,
+                                                   CVirtualSystemDescription comDescription,
+                                                   CVirtualSystemDescriptionForm &comResult,
+                                                   QWidget *pParent /* = 0 */)
+{
+    /* Execute GetImportDescriptionForm async method: */
+    CProgress comProgress = comCloudClient.GetImportDescriptionForm(comDescription, comResult);
+    if (!comCloudClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+    else
+    {
+        /* Show "Get Import Description Form" progress: */
+        msgCenter().showModalProgressDialog(comProgress,
+                                            QString(),
+                                            ":/progress_refresh_90px.png", pParent, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress);
+        else
+            return true;
+    }
+    /* False by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::importDescriptionForm(CCloudClient comCloudClient,
+                                                   CVirtualSystemDescription comDescription,
+                                                   CVirtualSystemDescriptionForm &comResult,
+                                                   QString &strErrorMessage)
+{
+    /* Execute GetImportDescriptionForm async method: */
+    CProgress comProgress = comCloudClient.GetImportDescriptionForm(comDescription, comResult);
+    if (!comCloudClient.isOk())
+        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
+    else
+    {
+        /* Show "Get Import Description Form" progress: */
+        comProgress.WaitForCompletion(-1);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
+        else
+            return true;
+    }
+    /* False by default: */
+    return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineId(const CCloudMachine &comCloudMachine,
