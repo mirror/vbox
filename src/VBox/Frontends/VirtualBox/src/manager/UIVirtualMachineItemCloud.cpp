@@ -25,7 +25,7 @@
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIProgressTask.h"
 #include "UIThreadPool.h"
 #include "UIVirtualMachineItemCloud.h"
@@ -35,7 +35,8 @@
 #include "CVirtualBoxErrorInfo.h"
 
 
-/** UIProgressTask extension performing cloud machine refresh task. */
+/** UIProgressTask extension performing cloud machine refresh task.
+  * @todo rework this task to be a part of notification-center. */
 class UIProgressTaskRefreshCloudMachine : public UIProgressTask
 {
     Q_OBJECT;
@@ -77,7 +78,7 @@ CProgress UIProgressTaskRefreshCloudMachine::createProgress()
     /* Initialize actual progress-wrapper: */
     CProgress comProgress = m_comCloudMachine.Refresh();
     if (!m_comCloudMachine.isOk())
-        msgCenter().cannotAcquireCloudMachineParameter(m_comCloudMachine);
+        UINotificationMessage::cannotRefreshCloudMachine(m_comCloudMachine);
     else
         comResult = comProgress;
 
@@ -89,7 +90,7 @@ void UIProgressTaskRefreshCloudMachine::handleProgressFinished(CProgress &comPro
 {
     /* Handle progress-wrapper errors: */
     if (!comProgress.GetCanceled() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
-        msgCenter().cannotAcquireCloudMachineParameter(comProgress);
+        UINotificationMessage::cannotRefreshCloudMachine(comProgress);
 }
 
 

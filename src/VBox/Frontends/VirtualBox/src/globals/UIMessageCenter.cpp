@@ -1366,6 +1366,13 @@ void UIMessageCenter::cannotFindCloudProfile(const CCloudProvider &comProvider, 
           UIErrorString::formatErrorInfo(comProvider));
 }
 
+void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create cloud client."),
+          UIErrorString::formatErrorInfo(comProfile));
+}
+
 void UIMessageCenter::cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -1401,11 +1408,25 @@ void UIMessageCenter::cannotAcquireCloudClientParameter(const CProgress &comProg
           UIErrorString::formatErrorInfo(comProgress));
 }
 
-void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotAcquireCloudMachineParameter(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create cloud client."),
-          UIErrorString::formatErrorInfo(comProfile));
+          tr("Failed to acquire cloud machine parameter."),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
+void UIMessageCenter::cannotAcquireCloudMachineParameter(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud machine parameter."),
+          UIErrorString::formatErrorInfo(comProgress));
+}
+
+void UIMessageCenter::cannotAssignFormValue(const QString &strError, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to assign form value."),
+          strError);
 }
 
 bool UIMessageCenter::cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
@@ -1424,34 +1445,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
              .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(progress));
     return false;
-}
-
-void UIMessageCenter::cannotAcquireCloudMachineParameter(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud machine parameter."),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotAcquireCloudMachineParameter(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud machine parameter."),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotAcquireCloudMachineParameter(const QString &strErrorDetails, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud machine parameter."),
-          strErrorDetails);
-}
-
-void UIMessageCenter::cannotAssignFormValue(const QString &strError, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign form value."),
-          strError);
 }
 
 bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent /* = 0 */) const

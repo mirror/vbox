@@ -131,6 +131,15 @@ void UINotificationMessage::cannotResolveCollisionAutomatically(const QString &s
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireCloudMachineSettings(const QString &strErrorDetails)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Cloud machine failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire cloud machine settings.") +
+        strErrorDetails);
+}
+
+/* static */
 void UINotificationMessage::warnAboutPublicKeyFilePathIsEmpty()
 {
     createMessage(
@@ -769,6 +778,24 @@ void UINotificationMessage::cannotImportCloudProfiles(const CCloudProvider &comP
         QApplication::translate("UIMessageCenter", "Can't import cloud profiles ..."),
         QApplication::translate("UIMessageCenter", "Failed to import cloud profiles.") +
         UIErrorString::formatErrorInfo(comProvider));
+}
+
+/* static */
+void UINotificationMessage::cannotRefreshCloudMachine(const CCloudMachine &comMachine)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't refresh cloud machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to refresh cloud machine.") +
+        UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotRefreshCloudMachine(const CProgress &comProgress)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't refresh cloud machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to refresh cloud machine.") +
+        UIErrorString::formatErrorInfo(comProgress));
 }
 
 /* static */

@@ -21,7 +21,7 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UICloudNetworkingStuff.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UITaskCloudGetSettingsForm.h"
 #include "UIThreadPool.h"
 
@@ -87,7 +87,7 @@ void UIReceiverCloudGetSettingsForm::sltHandleTaskComplete(UITask *pTask)
         emit sigTaskComplete(pSettingsTask->result());
     else
     {
-        msgCenter().cannotAcquireCloudMachineParameter(pSettingsTask->errorInfo(), m_pParent);
+        UINotificationMessage::cannotAcquireCloudMachineSettings(pSettingsTask->errorInfo());
         emit sigTaskFailed(pSettingsTask->errorInfo());
     }
 }
