@@ -976,8 +976,8 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UITabBar.cpp \
 	src/widgets/graphics/UIGraphicsScrollBar.cpp \
 	src/wizards/editors/UIUserNamePasswordEditor.cpp \
-	src/wizards/importappliance/UIWizardImportApp.cpp
-
+	src/wizards/importappliance/UIWizardImportApp.cpp \
+	src/wizards/newvm/UIWizardNewVMSummaryPage.cpp
 
 #
 # VirtualBox Virtual Machine Application

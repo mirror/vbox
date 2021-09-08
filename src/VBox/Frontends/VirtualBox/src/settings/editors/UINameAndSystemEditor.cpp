@@ -131,7 +131,7 @@ QString UINameAndSystemEditor::path() const
     return m_pPathSelector->path();
 }
 
-QString UINameAndSystemEditor::image() const
+QString UINameAndSystemEditor::ISOImagePath() const
 {
     if (!m_pImageSelector)
         return QString();

@@ -21,27 +21,13 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QSet>
-
 /* GUI includes: */
-#include "QIFileDialog.h"
 #include "UINativeWizardPage.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMedium.h"
-
 /* Forward declarations: */
-class QButtonGroup;
-class QCheckBox;
-class QRadioButton;
-class QLabel;
 class QIRichTextLabel;
-class QIToolButton;
-class UIMediaComboBox;
-class UIMediumSizeEditor;
-
+class QITreeView;
+class UIWizardNewVMSummaryModel;
 
 class UIWizardNewVMSummaryPage : public UINativeWizardPage
 {
@@ -51,31 +37,20 @@ public:
 
     UIWizardNewVMSummaryPage();
 
-protected:
-
-
-private slots:
-
-
 private:
 
     void prepare();
     void createConnections();
-
-
     virtual void retranslateUi() /* override final */;
     virtual void initializePage() /* override final */;
     virtual bool isComplete() const /* override final */;
     virtual bool validatePage() /* override final */;
-
-
-
     /** @name Widgets
      * @{ */
        QIRichTextLabel *m_pLabel;
+       QITreeView *m_pTree;
     /** @} */
-
-
+    UIWizardNewVMSummaryModel *m_pModel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMSummaryPage_h */
