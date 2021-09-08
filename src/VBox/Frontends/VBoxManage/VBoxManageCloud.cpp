@@ -2823,6 +2823,7 @@ RTEXITCODE handleCloud(HandlerArg *a)
         kCloud_Machine,
         kCloud_Network,
         kCloud_Object,
+        kCloud_ShowVMInfo,
         kCloud_Volume,
     };
 
@@ -2838,6 +2839,7 @@ RTEXITCODE handleCloud(HandlerArg *a)
         { "machine",          kCloud_Machine,       RTGETOPT_REQ_NOTHING },
         { "network",          kCloud_Network,       RTGETOPT_REQ_NOTHING },
         { "object",           kCloud_Object,        RTGETOPT_REQ_NOTHING },
+        { "showvminfo",       kCloud_ShowVMInfo,    RTGETOPT_REQ_NOTHING },
         { "volume",           kCloud_Volume,        RTGETOPT_REQ_NOTHING },
     };
 
@@ -2878,10 +2880,17 @@ RTEXITCODE handleCloud(HandlerArg *a)
                 return handleCloudNetwork(a, GetState.iNext, &commonOpts);
 #endif /* VBOX_WITH_CLOUD_NET */
 
+            /* "cloud machine ..." handling is in VBoxManageCloudMachine.cpp */
             case kCloud_Machine:
                 return handleCloudMachine(a, GetState.iNext,
                                           commonOpts.provider.pszProviderName,
                                           commonOpts.profile.pszProfileName);
+
+            /* ... including aliases that mimic the local vm commands */
+            case kCloud_ShowVMInfo:
+                return handleCloudShowVMInfo(a, GetState.iNext,
+                                             commonOpts.provider.pszProviderName,
+                                             commonOpts.profile.pszProfileName);
 
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
