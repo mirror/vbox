@@ -357,11 +357,27 @@ void UIWizardNewVMSummaryModel::populateData(UIWizardNewVM *pWizard)
 
     UIWizardNewVMSummaryItem *pHardwareRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Hardware"), QVariant(),
                                                                     UIIconPool::iconSet(":/cpu_16px.png"));
+    pHardwareRoot->setIsSectionTitle(true);
     pHardwareRoot->addChild(UIWizardNewVM::tr("Base Memory"), pWizard->memorySize());
     pHardwareRoot->addChild(UIWizardNewVM::tr("Processor(s)"), pWizard->CPUCount());
+    pHardwareRoot->addChild(UIWizardNewVM::tr("EFI Enable"), pWizard->EFIEnabled());
+
+    /* Disk related info: */
     UIWizardNewVMSummaryItem *pDiskRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Disk"), QVariant(),
                                                                 UIIconPool::iconSet(":/hd_16px.png"));
-    pDiskRoot->addChild(UIWizardNewVM::tr("Disk Size"), UITranslator::formatSize(pWizard->mediumSize()));
+    pDiskRoot->setIsSectionTitle(true);
+    if (pWizard->diskSource() == SelectedDiskSource_New)
+    {
+        pDiskRoot->addChild(UIWizardNewVM::tr("Disk Size"), UITranslator::formatSize(pWizard->mediumSize()));
+        const QVector<KMediumVariant> &mediumVariants = pWizard->mediumVariants();
+        pDiskRoot->addChild(UIWizardNewVM::tr("Pre-allocate Full Size"),
+                            (mediumVariants.contains(KMediumVariant_Fixed) ? true : false));
+    }
+    else if (pWizard->diskSource() == SelectedDiskSource_Existing)
+        pDiskRoot->addChild(UIWizardNewVM::tr("Attached Disk"), pWizard->mediumPath());
+    else if (pWizard->diskSource() == SelectedDiskSource_Empty)
+        pDiskRoot->addChild(UIWizardNewVM::tr("Attached Disk"), UIWizardNewVM::tr("None"));
+
     Q_UNUSED(pDiskRoot);
 
 }

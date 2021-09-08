@@ -703,10 +703,13 @@ void UIWizardNewVMExpertPage::sltMediumVariantChanged(qulonglong uVariant)
 
 void UIWizardNewVMExpertPage::sltMediaComboBoxIndexChanged()
 {
-    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     AssertReturnVoid(m_pDiskSelector);
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturnVoid(pWizard);
+
     /* Make sure to set m_virtualDisk: */
-    wizardWindow<UIWizardNewVM>()->setVirtualDisk(m_pDiskSelector->id());
+    pWizard->setVirtualDisk(m_pDiskSelector->id());
+    pWizard->setMediumPath(m_pDiskSelector->location());
     emit completeChanged();
 }
 
@@ -722,6 +725,7 @@ void UIWizardNewVMExpertPage::sltSelectedDiskSourceChanged()
     {
         pWizard->setDiskSource(SelectedDiskSource_Existing);
         pWizard->setVirtualDisk(m_pDiskSelector->id());
+        pWizard->setMediumPath(m_pDiskSelector->location());
     }
     else
         pWizard->setDiskSource(SelectedDiskSource_New);

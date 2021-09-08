@@ -162,6 +162,8 @@ public:
 
         bool emptyDiskRecommended() const;
         void setEmptyDiskRecommended(bool fEmptyDiskRecommended);
+
+        QVector<KMediumVariant> mediumVariants() const;
     /** @} */
 
 protected:
@@ -234,6 +236,7 @@ private:
        qulonglong m_uMediumSize;
        SelectedDiskSource m_enmDiskSource;
        bool m_fEmptyDiskRecommended;
+       QVector<KMediumVariant> m_mediumVariants;
     /** @} */
 };
 

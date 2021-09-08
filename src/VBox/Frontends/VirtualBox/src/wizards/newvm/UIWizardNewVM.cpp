@@ -201,17 +201,8 @@ bool UIWizardNewVM::createVirtualDisk()
         return fResult;
     }
 
-    /* Compose medium-variant: */
-    QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
-    for (int i = 0; i < variants.size(); ++i)
-    {
-        qulonglong temp = m_uMediumVariant;
-        temp &= UINT64_C(1)<<i;
-        variants[i] = (KMediumVariant)temp;
-    }
-
     /* Create base storage for the new virtual-disk: */
-    CProgress comProgress = newVirtualDisk.CreateBaseStorage(m_uMediumSize, variants);
+    CProgress comProgress = newVirtualDisk.CreateBaseStorage(m_uMediumSize, mediumVariants());
     if (!newVirtualDisk.isOk())
         msgCenter().cannotCreateHardDiskStorage(newVirtualDisk, m_strMediumPath, this);
     else
@@ -906,6 +897,19 @@ bool UIWizardNewVM::emptyDiskRecommended() const
 void UIWizardNewVM::setEmptyDiskRecommended(bool fEmptyDiskRecommended)
 {
     m_fEmptyDiskRecommended = fEmptyDiskRecommended;
+}
+
+QVector<KMediumVariant> UIWizardNewVM::mediumVariants() const
+{
+    /* Compose medium-variant: */
+    QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
+    for (int i = 0; i < variants.size(); ++i)
+    {
+        qulonglong temp = m_uMediumVariant;
+        temp &= UINT64_C(1)<<i;
+        variants[i] = (KMediumVariant)temp;
+    }
+    return variants;
 }
 
 const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
