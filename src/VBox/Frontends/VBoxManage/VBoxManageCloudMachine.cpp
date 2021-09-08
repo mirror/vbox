@@ -38,6 +38,13 @@ static int getCloudClient(ComPtr<ICloudClient> &aClient,
                           const char *pcszProviderName,
                           const char *pcszProfileName);
 
+static HRESULT getMachineList(com::SafeIfaceArray<ICloudMachine> &aMachines,
+                              const ComPtr<ICloudClient> &pClient);
+static HRESULT getMachineById(ComPtr<ICloudMachine> &pMachineOut,
+                              const ComPtr<ICloudClient> &pClient,
+                              const char *pcszStrId);
+
+
 static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
                                          const ComPtr<ICloudClient> &pClient);
 
@@ -245,6 +252,29 @@ getCloudClient(ComPtr<ICloudClient> &aCloudClient,
 
 
 static HRESULT
+getMachineList(com::SafeIfaceArray<ICloudMachine> &aMachines,
+               const ComPtr<ICloudClient> &pClient)
+{
+    HRESULT hrc;
+
+    ComPtr<IProgress> pListProgress;
+    CHECK_ERROR2_RET(hrc, pClient,
+        ReadCloudMachineList(pListProgress.asOutParam()),
+            hrc);
+
+    hrc = showProgress(pListProgress, SHOW_PROGRESS_NONE);
+    if (FAILED(hrc))
+        return hrc;
+
+    CHECK_ERROR2_RET(hrc, pClient,
+        COMGETTER(CloudMachineList)(ComSafeArrayAsOutParam(aMachines)),
+            hrc);
+
+    return S_OK;
+}
+
+
+static HRESULT
 getMachineById(ComPtr<ICloudMachine> &pMachineOut,
                const ComPtr<ICloudClient> &pClient,
                const char *pcszStrId)
@@ -448,19 +478,10 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
         }
     }
 
-    ComPtr<IProgress> pListProgress;
-    CHECK_ERROR2_RET(hrc, pClient,
-        ReadCloudMachineList(pListProgress.asOutParam()),
-            RTEXITCODE_FAILURE);
-
-    hrc = showProgress(pListProgress, SHOW_PROGRESS_NONE);
+    com::SafeIfaceArray<ICloudMachine> aMachines;
+    hrc = getMachineList(aMachines, pClient);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
-
-    com::SafeIfaceArray<ICloudMachine> aMachines;
-    CHECK_ERROR2_RET(hrc, pClient,
-        COMGETTER(CloudMachineList)(ComSafeArrayAsOutParam(aMachines)),
-            RTEXITCODE_FAILURE);
 
     const size_t cMachines = aMachines.size();
     if (cMachines == 0)
