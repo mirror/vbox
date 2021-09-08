@@ -301,21 +301,9 @@ void UIWizardExportAppPage2::populateFormProperties()
 
             /* Read Cloud Client Export description form: */
             CVirtualSystemDescriptionForm comExportForm;
-            CProgress comExportDescriptionFormProgress = m_comClient.GetExportDescriptionForm(m_comVSD, comExportForm);
-            if (!m_comClient.isOk())
-            {
-                msgCenter().cannotAcquireCloudClientParameter(m_comClient);
+            bool fResult = exportDescriptionForm(m_comClient, m_comVSD, comExportForm, wizardImp());
+            if (!fResult)
                 break;
-            }
-
-            /* Show "Acquire export form" progress: */
-            msgCenter().showModalProgressDialog(comExportDescriptionFormProgress, UIWizardExportApp::tr("Acquire export form ..."),
-                                                ":/progress_refresh_90px.png", 0, 0);
-            if (!comExportDescriptionFormProgress.isOk() || comExportDescriptionFormProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comExportDescriptionFormProgress);
-                break;
-            }
 
             /* Remember description form: */
             m_comVSDExportForm = comExportForm;

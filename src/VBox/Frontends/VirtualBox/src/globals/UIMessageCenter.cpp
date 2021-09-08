@@ -1387,6 +1387,20 @@ void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &co
           UIErrorString::formatErrorInfo(comProfile));
 }
 
+void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud client parameter."),
+          UIErrorString::formatErrorInfo(comClient));
+}
+
+void UIMessageCenter::cannotAcquireCloudClientParameter(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud client parameter."),
+          UIErrorString::formatErrorInfo(comProgress));
+}
+
 void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -1410,20 +1424,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
              .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(progress));
     return false;
-}
-
-void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud client parameter."),
-          UIErrorString::formatErrorInfo(comClient));
-}
-
-void UIMessageCenter::cannotAcquireCloudClientParameter(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud client parameter."),
-          UIErrorString::formatErrorInfo(comProgress));
 }
 
 void UIMessageCenter::cannotAcquireCloudMachineParameter(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */) const

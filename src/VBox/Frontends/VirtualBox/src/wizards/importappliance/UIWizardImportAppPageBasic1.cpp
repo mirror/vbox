@@ -199,40 +199,18 @@ void UIWizardImportAppPage1::populateProfileInstances()
 
             /* Gather VM names, ids and states.
              * Currently we are interested in Running and Stopped VMs only. */
-            CStringArray comNames;
-            CStringArray comIDs;
-            const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
-                                                                 << KCloudMachineState_Running
-                                                                 << KCloudMachineState_Stopped;
-
-            /* Ask for cloud VMs: */
-            CProgress comProgress = m_comCloudClient.ListInstances(cloudMachineStates, comNames, comIDs);
-            if (!m_comCloudClient.isOk())
-            {
-                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-                break;
-            }
-
-            /* Show "Acquire cloud instances" progress: */
-            msgCenter().showModalProgressDialog(comProgress, QString(),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comProgress);
-                break;
-            }
+            QString strErrorMessage;
+            QMap<QString, QString> instances = listInstances(m_comCloudClient, strErrorMessage, wizardImp());
 
             /* Push acquired names to list rows: */
-            const QVector<QString> names = comNames.GetValues();
-            const QVector<QString> ids = comIDs.GetValues();
-            for (int i = 0; i < names.size(); ++i)
+            foreach (const QString &strId, instances.keys())
             {
                 /* Create list item: */
-                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pProfileInstanceList);
+                QListWidgetItem *pItem = new QListWidgetItem(instances.value(strId), m_pProfileInstanceList);
                 if (pItem)
                 {
                     pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
-                    pItem->setData(Qt::UserRole, ids.at(i));
+                    pItem->setData(Qt::UserRole, strId);
                 }
             }
 
@@ -303,21 +281,9 @@ void UIWizardImportAppPage1::populateFormProperties()
 
             /* Read Cloud Client description form: */
             CVirtualSystemDescriptionForm comForm;
-            CProgress comImportDescriptionFormProgress = m_comCloudClient.GetImportDescriptionForm(comDescription, comForm);
-            if (!m_comCloudClient.isOk())
-            {
-                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+            bool fSuccess = importDescriptionForm(m_comCloudClient, comDescription, comForm, wizardImp());
+            if (!fSuccess)
                 break;
-            }
-
-            /* Show "Acquire import form" progress: */
-            msgCenter().showModalProgressDialog(comImportDescriptionFormProgress, UIWizardImportApp::tr("Acquire import form ..."),
-                                                ":/progress_refresh_90px.png", 0, 0);
-            if (!comImportDescriptionFormProgress.isOk() || comImportDescriptionFormProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comImportDescriptionFormProgress);
-                break;
-            }
 
             /* Remember form: */
             m_comVSDForm = comForm;
