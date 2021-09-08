@@ -26,6 +26,7 @@
 #include "QITreeView.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UITranslator.h"
 #include "UIWizardNewVMSummaryPage.h"
 #include "UIWizardDiskEditors.h"
 #include "UIWizardNewVM.h"
@@ -299,21 +300,19 @@ int UIWizardNewVMSummaryModel::rowCount(const QModelIndex &parent /* = QModelInd
 
 int UIWizardNewVMSummaryModel::columnCount(const QModelIndex &parentIndex /* = QModelIndex() */) const
 {
+    Q_UNUSED(parentIndex);
     return 2;
+#if 0
     AssertReturn(m_pRootItem, 0);
     if (parentIndex.isValid())
     {
         UIWizardNewVMSummaryItem *pParent = static_cast<UIWizardNewVMSummaryItem*>(parentIndex.internalPointer());
-        // if (pParent && pParent->childItem(0))
-        // {
-        //     printf("sasadasd %d\n", pParent->childItem(0)->columnCount());
-        //     return pParent->childItem(0)->columnCount();
-        // }
         if (pParent)
             return pParent->columnCount();
 
     }
     return m_pRootItem->columnCount();
+#endif
 }
 
 void UIWizardNewVMSummaryModel::populateData(UIWizardNewVM *pWizard)
@@ -360,10 +359,10 @@ void UIWizardNewVMSummaryModel::populateData(UIWizardNewVM *pWizard)
                                                                     UIIconPool::iconSet(":/cpu_16px.png"));
     pHardwareRoot->addChild(UIWizardNewVM::tr("Base Memory"), pWizard->memorySize());
     pHardwareRoot->addChild(UIWizardNewVM::tr("Processor(s)"), pWizard->CPUCount());
-    // UIWizardNewVMSummaryItem *pDiskRoot = new UIWizardNewVMSummaryItem(m_pRootItem, UIWizardNewVM::tr("Disk"), QVariant(),
-    //                                                                    UIIconPool::iconSet(":/hd_16px.png"));
-
-    // Q_UNUSED(pDiskRoot);
+    UIWizardNewVMSummaryItem *pDiskRoot = m_pRootItem->addChild(UIWizardNewVM::tr("Disk"), QVariant(),
+                                                                UIIconPool::iconSet(":/hd_16px.png"));
+    pDiskRoot->addChild(UIWizardNewVM::tr("Disk Size"), UITranslator::formatSize(pWizard->mediumSize()));
+    Q_UNUSED(pDiskRoot);
 
 }
 
