@@ -39,6 +39,7 @@
 #include "CCloudProvider.h"
 #include "CConsole.h"
 #include "CDHCPServer.h"
+#include "CDisplay.h"
 #include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
 #include "CEmulatedUSB.h"
@@ -518,6 +519,14 @@ void UINotificationMessage::cannotAcquireNATNetworkParameter(const CNATNetwork &
         QApplication::translate("UIMessageCenter", "NAT network failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire NAT network parameter.") +
         UIErrorString::formatErrorInfo(comNetwork));
+}
+
+void UINotificationMessage::cannotAcquireDispayParameter(const CDisplay &comDisplay)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Display failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire display parameter.") +
+        UIErrorString::formatErrorInfo(comDisplay));
 }
 
 /* static */

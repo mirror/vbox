@@ -36,6 +36,7 @@
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
 #include "UIMachineViewScale.h"
+#include "UINotificationCenter.h"
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UIFrameBuffer.h"
@@ -377,7 +378,7 @@ void UIMachineView::sltHandleActionTriggerViewScreenToggle(int iScreen, bool fEn
     display().GetScreenResolution(screenId(), uWidth, uHeight, uBitsPerPixel, uOriginX, uOriginY, monitorStatus);
     if (!display().isOk())
     {
-        msgCenter().cannotAcquireDispayParameter(display());
+        UINotificationMessage::cannotAcquireDispayParameter(display());
         return;
     }
 

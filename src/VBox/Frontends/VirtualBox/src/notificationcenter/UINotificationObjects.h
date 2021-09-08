@@ -211,6 +211,9 @@ public:
         /** Notifies about inability to acquire INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter get acquired from. */
         static void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork);
+        /** Notifies about inability to acquire INATNetwork parameter.
+          * @param  comNetwork  Brings the object parameter get acquired from. */
+        static void cannotAcquireDispayParameter(const CDisplay &comDisplay);
 
         /** Notifies about inability to change IMedium parameter.
           * @param  comMedium  Brings the object parameter being changed for. */

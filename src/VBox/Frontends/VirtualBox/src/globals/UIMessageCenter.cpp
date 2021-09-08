@@ -722,6 +722,13 @@ void UIMessageCenter::cannotApplyCloudMachineFormSettings(const CProgress &comPr
           UIErrorString::formatErrorInfo(comProgress));
 }
 
+void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)
+{
+    error(0, MessageType_Error,
+          tr("Bad password or authentication failure."),
+          UIErrorString::formatErrorInfo(console));
+}
+
 bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
 {
     return questionBinary(0, MessageType_Question,
@@ -1296,6 +1303,28 @@ int UIMessageCenter::confirmCloudProfileManagerClosing(QWidget *pParent /* = 0 *
                     tr("Reject", "cloud profile manager changes"));
 }
 
+bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the cloud console application <nobr><b>%1</b>?</nobr></p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
+bool UIMessageCenter::confirmCloudConsoleProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the cloud console profile <nobr><b>%1</b>?</nobr></p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
 void UIMessageCenter::cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */
@@ -1447,26 +1476,315 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
     return false;
 }
 
-bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString &strName) const
 {
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the cloud console application <nobr><b>%1</b>?</nobr></p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
+    error(0, MessageType_Error,
+          tr("Failed to start the virtual machine <b>%1</b>.")
+             .arg(strName),
+          UIErrorString::formatErrorInfo(console));
 }
 
-bool UIMessageCenter::confirmCloudConsoleProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QString &strName) const
 {
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the cloud console profile <nobr><b>%1</b>?</nobr></p>")
-                             .arg(strName),
+    error(0, MessageType_Error,
+          tr("Failed to start the virtual machine <b>%1</b>.")
+             .arg(strName),
+          UIErrorString::formatErrorInfo(progress));
+}
+
+bool UIMessageCenter::warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const
+{
+    return questionBinary(0, MessageType_Error,
+                          tr("<p>Could not start the machine <b>%1</b> because the following "
+                             "physical network interfaces were not found:</p><p><b>%2</b></p>"
+                             "<p>You can either change the machine's network settings or stop the machine.</p>")
+                             .arg(strMachineName, strIfNames),
                           0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
+                          tr("Change Network Settings"), tr("Close VM"));
+}
+
+bool UIMessageCenter::warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSupported) const
+{
+    if (fHWVirtExSupported)
+        return questionBinary(0, MessageType_Error,
+                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
+                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</p>"
+                                 "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
+                              0 /* auto-confirm id */,
+                              tr("Close VM"), tr("Continue"));
+    else
+        return questionBinary(0, MessageType_Error,
+                              tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
+                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot."),
+                              0 /* auto-confirm id */,
+                              tr("Close VM"), tr("Continue"));
+}
+
+bool UIMessageCenter::warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExSupported) const
+{
+    if (fHWVirtExSupported)
+        return questionBinary(0, MessageType_Error,
+                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
+                                 "Certain guests (e.g. OS/2 and QNX) require this feature.</p>"
+                                 "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
+                              0 /* auto-confirm id */,
+                              tr("Close VM"), tr("Continue"));
+    else
+        return questionBinary(0, MessageType_Error,
+                              tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
+                                 "Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.</p>"),
+                              0 /* auto-confirm id */,
+                              tr("Close VM"), tr("Continue"));
+}
+
+void UIMessageCenter::warnAboutVBoxSVCUnavailable() const
+{
+    alert(0, MessageType_Critical,
+          tr("<p>A critical error has occurred while running the virtual "
+             "machine and the machine execution should be stopped.</p>"
+             ""
+             "<p>For help, please see the Community section on "
+             "<a href=https://www.virtualbox.org>https://www.virtualbox.org</a> "
+             "or your support contract. Please provide the contents of the "
+             "log file <tt>VBox.log</tt>, "
+             "which you can find in the virtual machine log directory, "
+             "as well as a description of what you were doing when this error happened. "
+             ""
+             "Note that you can also access the above file by selecting <b>Show Log</b> "
+             "from the <b>Machine</b> menu of the main VirtualBox window.</p>"
+             ""
+             "<p>Press <b>OK</b> to power off the machine.</p>"),
+          0 /* auto-confirm id */);
+}
+
+bool UIMessageCenter::warnAboutGuruMeditation(const QString &strLogFolder)
+{
+    return questionBinary(0, MessageType_GuruMeditation,
+                          tr("<p>A critical error has occurred while running the virtual "
+                             "machine and the machine execution has been stopped.</p>"
+                             ""
+                             "<p>For help, please see the Community section on "
+                             "<a href=https://www.virtualbox.org>https://www.virtualbox.org</a> "
+                             "or your support contract. Please provide the contents of the "
+                             "log file <tt>VBox.log</tt> and the image file <tt>VBox.png</tt>, "
+                             "which you can find in the <nobr><b>%1</b></nobr> directory, "
+                             "as well as a description of what you were doing when this error happened. "
+                             ""
+                             "Note that you can also access the above files by selecting <b>Show Log</b> "
+                             "from the <b>Machine</b> menu of the main VirtualBox window.</p>"
+                             ""
+                             "<p>Press <b>OK</b> if you want to power off the machine "
+                             "or press <b>Ignore</b> if you want to leave it as is for debugging. "
+                             "Please note that debugging requires special knowledge and tools, "
+                             "so it is recommended to press <b>OK</b> now.</p>")
+                             .arg(strLogFolder),
+                          0 /* auto-confirm id */,
+                          QIMessageBox::tr("OK"),
+                          tr("Ignore"));
+}
+
+void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const
+{
+    /* Prepare auto-confirm id: */
+    QByteArray autoConfimId = "showRuntimeError.";
+
+    /* Prepare variables: */
+    CConsole console1 = console;
+    KMachineState state = console1.GetState();
+    MessageType enmType;
+    QString severity;
+
+    /// @todo Move to Runtime UI!
+    /* Preprocessing: */
+    if (fFatal)
+    {
+        /* The machine must be paused on fFatal errors: */
+        Assert(state == KMachineState_Paused);
+        if (state != KMachineState_Paused)
+            console1.Pause();
+    }
+
+    /* Compose type, severity, advance confirm id: */
+    if (fFatal)
+    {
+        enmType = MessageType_Critical;
+        severity = tr("<nobr>Fatal Error</nobr>", "runtime error info");
+        autoConfimId += "fatal.";
+    }
+    else if (state == KMachineState_Paused)
+    {
+        enmType = MessageType_Error;
+        severity = tr("<nobr>Non-Fatal Error</nobr>", "runtime error info");
+        autoConfimId += "error.";
+    }
+    else
+    {
+        enmType = MessageType_Warning;
+        severity = tr("<nobr>Warning</nobr>", "runtime error info");
+        autoConfimId += "warning.";
+    }
+    /* Advance auto-confirm id: */
+    autoConfimId += strErrorId.toUtf8();
+
+    /* Format error-details: */
+    QString formatted("<!--EOM-->");
+    if (!strErrorMsg.isEmpty())
+        formatted.prepend(QString("<p>%1.</p>").arg(UITranslator::emphasize(strErrorMsg)));
+    if (!strErrorId.isEmpty())
+        formatted += QString("<table bgcolor=%1 border=0 cellspacing=5 "
+                             "cellpadding=0 width=100%>"
+                             "<tr><td>%2</td><td>%3</td></tr>"
+                             "<tr><td>%4</td><td>%5</td></tr>"
+                             "</table>")
+                             .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
+                             .arg(tr("<nobr>Error ID: </nobr>", "runtime error info"), strErrorId)
+                             .arg(tr("Severity: ", "runtime error info"), severity);
+    if (!formatted.isEmpty())
+        formatted = "<qt>" + formatted + "</qt>";
+
+    /* Show the error: */
+    if (enmType == MessageType_Critical)
+    {
+        error(0, enmType,
+              tr("<p>A fatal error has occurred during virtual machine execution! "
+                 "The virtual machine will be powered off. Please copy the following error message "
+                 "using the clipboard to help diagnose the problem:</p>"),
+              formatted, autoConfimId.data());
+    }
+    else if (enmType == MessageType_Error)
+    {
+        error(0, enmType,
+              tr("<p>An error has occurred during virtual machine execution! "
+                 "The error details are shown below. You may try to correct the error "
+                 "and resume the virtual machine execution.</p>"),
+              formatted, autoConfimId.data());
+    }
+    else
+    {
+        /** @todo r=bird: This is a very annoying message as it refers to invisible text
+         * below.  User have to expand "Details" to see what actually went wrong.
+         * Probably a good idea to check strErrorId and see if we can come up with better
+         * messages here, at least for common stuff like DvdOrFloppyImageInaccesssible... */
+        error(0, enmType,
+              tr("<p>The virtual machine execution ran into a non-fatal problem as described below. "
+                 "We suggest that you take appropriate action to prevent the problem from recurring.</p>"),
+              formatted, autoConfimId.data());
+    }
+
+    /// @todo Move to Runtime UI!
+    /* Postprocessing: */
+    if (fFatal)
+    {
+        /* Power off after a fFatal error: */
+        LogRel(("GUI: Powering VM off after a fatal runtime error...\n"));
+        console1.PowerDown();
+    }
+}
+
+bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
+{
+    int rc = question(0, MessageType_Info,
+                      tr("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display or pressed the <b>host key</b>. "
+                         "This will cause the Virtual Machine to <b>capture</b> the host mouse pointer (only if the mouse pointer "
+                         "integration is not currently supported by the guest OS) and the keyboard, which will make them "
+                         "unavailable to other applications running on your host machine.</p>"
+                         "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the keyboard and mouse "
+                         "(if it is captured) and return them to normal operation. "
+                         "The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, "
+                         "next to the&nbsp;<img src=:/hostkey_16px.png/>&nbsp;icon. "
+                         "This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.</p>") +
+                      tr("<p>The host key is currently defined as <b>%1</b>.</p>", "additional message box paragraph")
+                         .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
+                      "confirmInputCapture",
+                      AlertButton_Ok | AlertButtonOption_Default,
+                      AlertButton_Cancel | AlertButtonOption_Escape,
+                      0,
+                      tr("Capture", "do input capture"));
+    /* Was the message auto-confirmed? */
+    fAutoConfirmed = (rc & AlertOption_AutoConfirmed);
+    /* True if "Ok" was pressed: */
+    return (rc & AlertButtonMask) == AlertButton_Ok;
+}
+
+bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
+{
+    return questionBinary(0, MessageType_Info,
+                          tr("<p>The virtual machine window will be now switched to <b>full-screen</b> mode. "
+                             "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+                             "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+                             "<p>Note that the main menu bar is hidden in full-screen mode. "
+                             "You can access it by pressing <b>Host+Home</b>.</p>")
+                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
+                          "confirmGoingFullscreen",
+                          tr("Switch"));
+}
+
+bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey) const
+{
+    return questionBinary(0, MessageType_Info,
+                          tr("<p>The virtual machine window will be now switched to <b>Seamless</b> mode. "
+                             "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+                             "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+                             "<p>Note that the main menu bar is hidden in seamless mode. "
+                             "You can access it by pressing <b>Host+Home</b>.</p>")
+                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
+                          "confirmGoingSeamless",
+                          tr("Switch"));
+}
+
+bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
+{
+    return questionBinary(0, MessageType_Info,
+                          tr("<p>The virtual machine window will be now switched to <b>Scale</b> mode. "
+                             "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+                             "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+                             "<p>Note that the main menu bar is hidden in scaled mode. "
+                             "You can access it by pressing <b>Host+Home</b>.</p>")
+                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
+                          "confirmGoingScale",
+                          tr("Switch"));
+}
+
+bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
+{
+    return questionBinary(0, MessageType_Warning,
+                          tr("<p>Could not switch the guest display to full-screen mode due to insufficient guest video memory.</p>"
+                             "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
+                             "<p>Press <b>Ignore</b> to switch to full-screen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
+                             .arg(UITranslator::formatSize(uMinVRAM)),
+                          0 /* auto-confirm id */,
+                          tr("Ignore"));
+}
+
+void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
+{
+    alert(0, MessageType_Error,
+          tr("<p>Could not enter seamless mode due to insufficient guest "
+             "video memory.</p>"
+             "<p>You should configure the virtual machine to have at "
+             "least <b>%1</b> of video memory.</p>")
+             .arg(UITranslator::formatSize(uMinVRAM)));
+}
+
+bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
+{
+    return questionBinary(0, MessageType_Warning,
+                          tr("<p>Could not change the guest screen to this host screen due to insufficient guest video memory.</p>"
+                             "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
+                             "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
+                             .arg(UITranslator::formatSize(uMinVRAM)),
+                          0 /* auto-confirm id */,
+                          tr("Ignore"));
+}
+
+void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
+{
+    alert(0, MessageType_Error,
+          tr("<p>Could not change the guest screen to this host screen "
+             "due to insufficient guest video memory.</p>"
+             "<p>You should configure the virtual machine to have at "
+             "least <b>%1</b> of video memory.</p>")
+             .arg(UITranslator::formatSize(uMinVRAM)));
 }
 
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const
@@ -1494,22 +1812,6 @@ void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox, const QStri
           tr("Failed to register the virtual machine <b>%1</b>.")
              .arg(strMachineName),
           UIErrorString::formatErrorInfo(vbox));
-}
-
-void UIMessageCenter::cannotCreateClone(const CMachine &machine, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to clone the virtual machine <b>%1</b>.")
-             .arg(CMachine(machine).GetName()),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to clone the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
 }
 
 void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
@@ -1754,332 +2056,6 @@ void UIMessageCenter::cannotRunUnattendedGuestInstall(const CUnattended &comUnat
     error(pParent, MessageType_Error,
           tr("An error has occured during unattended guest install setup."),
           UIErrorString::formatErrorInfo(comErrorInfo));
-}
-
-
-void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const
-{
-    /* Prepare auto-confirm id: */
-    QByteArray autoConfimId = "showRuntimeError.";
-
-    /* Prepare variables: */
-    CConsole console1 = console;
-    KMachineState state = console1.GetState();
-    MessageType enmType;
-    QString severity;
-
-    /// @todo Move to Runtime UI!
-    /* Preprocessing: */
-    if (fFatal)
-    {
-        /* The machine must be paused on fFatal errors: */
-        Assert(state == KMachineState_Paused);
-        if (state != KMachineState_Paused)
-            console1.Pause();
-    }
-
-    /* Compose type, severity, advance confirm id: */
-    if (fFatal)
-    {
-        enmType = MessageType_Critical;
-        severity = tr("<nobr>Fatal Error</nobr>", "runtime error info");
-        autoConfimId += "fatal.";
-    }
-    else if (state == KMachineState_Paused)
-    {
-        enmType = MessageType_Error;
-        severity = tr("<nobr>Non-Fatal Error</nobr>", "runtime error info");
-        autoConfimId += "error.";
-    }
-    else
-    {
-        enmType = MessageType_Warning;
-        severity = tr("<nobr>Warning</nobr>", "runtime error info");
-        autoConfimId += "warning.";
-    }
-    /* Advance auto-confirm id: */
-    autoConfimId += strErrorId.toUtf8();
-
-    /* Format error-details: */
-    QString formatted("<!--EOM-->");
-    if (!strErrorMsg.isEmpty())
-        formatted.prepend(QString("<p>%1.</p>").arg(UITranslator::emphasize(strErrorMsg)));
-    if (!strErrorId.isEmpty())
-        formatted += QString("<table bgcolor=%1 border=0 cellspacing=5 "
-                             "cellpadding=0 width=100%>"
-                             "<tr><td>%2</td><td>%3</td></tr>"
-                             "<tr><td>%4</td><td>%5</td></tr>"
-                             "</table>")
-                             .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
-                             .arg(tr("<nobr>Error ID: </nobr>", "runtime error info"), strErrorId)
-                             .arg(tr("Severity: ", "runtime error info"), severity);
-    if (!formatted.isEmpty())
-        formatted = "<qt>" + formatted + "</qt>";
-
-    /* Show the error: */
-    if (enmType == MessageType_Critical)
-    {
-        error(0, enmType,
-              tr("<p>A fatal error has occurred during virtual machine execution! "
-                 "The virtual machine will be powered off. Please copy the following error message "
-                 "using the clipboard to help diagnose the problem:</p>"),
-              formatted, autoConfimId.data());
-    }
-    else if (enmType == MessageType_Error)
-    {
-        error(0, enmType,
-              tr("<p>An error has occurred during virtual machine execution! "
-                 "The error details are shown below. You may try to correct the error "
-                 "and resume the virtual machine execution.</p>"),
-              formatted, autoConfimId.data());
-    }
-    else
-    {
-        /** @todo r=bird: This is a very annoying message as it refers to invisible text
-         * below.  User have to expand "Details" to see what actually went wrong.
-         * Probably a good idea to check strErrorId and see if we can come up with better
-         * messages here, at least for common stuff like DvdOrFloppyImageInaccesssible... */
-        error(0, enmType,
-              tr("<p>The virtual machine execution ran into a non-fatal problem as described below. "
-                 "We suggest that you take appropriate action to prevent the problem from recurring.</p>"),
-              formatted, autoConfimId.data());
-    }
-
-    /// @todo Move to Runtime UI!
-    /* Postprocessing: */
-    if (fFatal)
-    {
-        /* Power off after a fFatal error: */
-        LogRel(("GUI: Powering VM off after a fatal runtime error...\n"));
-        console1.PowerDown();
-    }
-}
-
-bool UIMessageCenter::remindAboutGuruMeditation(const QString &strLogFolder)
-{
-    return questionBinary(0, MessageType_GuruMeditation,
-                          tr("<p>A critical error has occurred while running the virtual "
-                             "machine and the machine execution has been stopped.</p>"
-                             ""
-                             "<p>For help, please see the Community section on "
-                             "<a href=https://www.virtualbox.org>https://www.virtualbox.org</a> "
-                             "or your support contract. Please provide the contents of the "
-                             "log file <tt>VBox.log</tt> and the image file <tt>VBox.png</tt>, "
-                             "which you can find in the <nobr><b>%1</b></nobr> directory, "
-                             "as well as a description of what you were doing when this error happened. "
-                             ""
-                             "Note that you can also access the above files by selecting <b>Show Log</b> "
-                             "from the <b>Machine</b> menu of the main VirtualBox window.</p>"
-                             ""
-                             "<p>Press <b>OK</b> if you want to power off the machine "
-                             "or press <b>Ignore</b> if you want to leave it as is for debugging. "
-                             "Please note that debugging requires special knowledge and tools, "
-                             "so it is recommended to press <b>OK</b> now.</p>")
-                             .arg(strLogFolder),
-                          0 /* auto-confirm id */,
-                          QIMessageBox::tr("OK"),
-                          tr("Ignore"));
-}
-
-void UIMessageCenter::warnAboutVBoxSVCUnavailable() const
-{
-    alert(0, MessageType_Critical,
-          tr("<p>A critical error has occurred while running the virtual "
-             "machine and the machine execution should be stopped.</p>"
-             ""
-             "<p>For help, please see the Community section on "
-             "<a href=https://www.virtualbox.org>https://www.virtualbox.org</a> "
-             "or your support contract. Please provide the contents of the "
-             "log file <tt>VBox.log</tt>, "
-             "which you can find in the virtual machine log directory, "
-             "as well as a description of what you were doing when this error happened. "
-             ""
-             "Note that you can also access the above file by selecting <b>Show Log</b> "
-             "from the <b>Machine</b> menu of the main VirtualBox window.</p>"
-             ""
-             "<p>Press <b>OK</b> to power off the machine.</p>"),
-          0 /* auto-confirm id */);
-}
-
-bool UIMessageCenter::warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSupported) const
-{
-    if (fHWVirtExSupported)
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
-                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</p>"
-                                 "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-    else
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
-                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot."),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-}
-
-bool UIMessageCenter::warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExSupported) const
-{
-    if (fHWVirtExSupported)
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
-                                 "Certain guests (e.g. OS/2 and QNX) require this feature.</p>"
-                                 "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-    else
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
-                                 "Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.</p>"),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-}
-
-bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const
-{
-    return questionBinary(0, MessageType_Error,
-                          tr("<p>Could not start the machine <b>%1</b> because the following "
-                             "physical network interfaces were not found:</p><p><b>%2</b></p>"
-                             "<p>You can either change the machine's network settings or stop the machine.</p>")
-                             .arg(strMachineName, strIfNames),
-                          0 /* auto-confirm id */,
-                          tr("Change Network Settings"), tr("Close VM"));
-}
-
-void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString &strName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to start the virtual machine <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QString &strName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to start the virtual machine <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
-{
-    int rc = question(0, MessageType_Info,
-                      tr("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display or pressed the <b>host key</b>. "
-                         "This will cause the Virtual Machine to <b>capture</b> the host mouse pointer (only if the mouse pointer "
-                         "integration is not currently supported by the guest OS) and the keyboard, which will make them "
-                         "unavailable to other applications running on your host machine.</p>"
-                         "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the keyboard and mouse "
-                         "(if it is captured) and return them to normal operation. "
-                         "The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, "
-                         "next to the&nbsp;<img src=:/hostkey_16px.png/>&nbsp;icon. "
-                         "This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.</p>") +
-                      tr("<p>The host key is currently defined as <b>%1</b>.</p>", "additional message box paragraph")
-                         .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                      "confirmInputCapture",
-                      AlertButton_Ok | AlertButtonOption_Default,
-                      AlertButton_Cancel | AlertButtonOption_Escape,
-                      0,
-                      tr("Capture", "do input capture"));
-    /* Was the message auto-confirmed? */
-    fAutoConfirmed = (rc & AlertOption_AutoConfirmed);
-    /* True if "Ok" was pressed: */
-    return (rc & AlertButtonMask) == AlertButton_Ok;
-}
-
-bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
-{
-    return questionBinary(0, MessageType_Info,
-                          tr("<p>The virtual machine window will be now switched to <b>full-screen</b> mode. "
-                             "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
-                             "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-                             "<p>Note that the main menu bar is hidden in full-screen mode. "
-                             "You can access it by pressing <b>Host+Home</b>.</p>")
-                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                          "confirmGoingFullscreen",
-                          tr("Switch"));
-}
-
-bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey) const
-{
-    return questionBinary(0, MessageType_Info,
-                          tr("<p>The virtual machine window will be now switched to <b>Seamless</b> mode. "
-                             "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
-                             "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-                             "<p>Note that the main menu bar is hidden in seamless mode. "
-                             "You can access it by pressing <b>Host+Home</b>.</p>")
-                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                          "confirmGoingSeamless",
-                          tr("Switch"));
-}
-
-bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
-{
-    return questionBinary(0, MessageType_Info,
-                          tr("<p>The virtual machine window will be now switched to <b>Scale</b> mode. "
-                             "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
-                             "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-                             "<p>Note that the main menu bar is hidden in scaled mode. "
-                             "You can access it by pressing <b>Host+Home</b>.</p>")
-                             .arg(strHotKey, UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
-                          "confirmGoingScale",
-                          tr("Switch"));
-}
-
-bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
-{
-    return questionBinary(0, MessageType_Warning,
-                          tr("<p>Could not switch the guest display to full-screen mode due to insufficient guest video memory.</p>"
-                             "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
-                             "<p>Press <b>Ignore</b> to switch to full-screen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
-                             .arg(UITranslator::formatSize(uMinVRAM)),
-                          0 /* auto-confirm id */,
-                          tr("Ignore"));
-}
-
-void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>Could not enter seamless mode due to insufficient guest "
-             "video memory.</p>"
-             "<p>You should configure the virtual machine to have at "
-             "least <b>%1</b> of video memory.</p>")
-             .arg(UITranslator::formatSize(uMinVRAM)));
-}
-
-bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
-{
-    return questionBinary(0, MessageType_Warning,
-                          tr("<p>Could not change the guest screen to this host screen due to insufficient guest video memory.</p>"
-                             "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
-                             "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
-                             .arg(UITranslator::formatSize(uMinVRAM)),
-                          0 /* auto-confirm id */,
-                          tr("Ignore"));
-}
-
-void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
-{
-    alert(0, MessageType_Error,
-          tr("<p>Could not change the guest screen to this host screen "
-             "due to insufficient guest video memory.</p>"
-             "<p>You should configure the virtual machine to have at "
-             "least <b>%1</b> of video memory.</p>")
-             .arg(UITranslator::formatSize(uMinVRAM)));
-}
-
-void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)
-{
-    error(0, MessageType_Error,
-          tr("Bad password or authentication failure."),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotAcquireDispayParameter(const CDisplay &comDisplay)
-{
-    error(0, MessageType_Error,
-          tr("Failed to acquire display parameter."),
-          UIErrorString::formatErrorInfo(comDisplay));
 }
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER

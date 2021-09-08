@@ -1813,7 +1813,7 @@ bool UISession::preprocessInitialization()
     /* Check if non-existent interfaces found */
     if (!failedInterfaceNames.isEmpty())
     {
-        if (msgCenter().cannotStartWithoutNetworkIf(machineName(), failedInterfaceNames.join(", ")))
+        if (msgCenter().warnAboutNetworkInterfaceNotFound(machineName(), failedInterfaceNames.join(", ")))
             machineLogic()->openNetworkSettingsDialog();
         else
         {

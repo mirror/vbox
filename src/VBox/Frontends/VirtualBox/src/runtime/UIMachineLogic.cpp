@@ -464,7 +464,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 /* Ask how to proceed; Power off VM if proposal accepted: */
                 case GuruMeditationHandlerType_Default:
                 {
-                    if (msgCenter().remindAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
+                    if (msgCenter().warnAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
                     {
                         LogRel(("GUI: User requested to power VM off on Guru Meditation.\n"));
                         uisession()->powerOff(false /* do NOT restore current snapshot */);

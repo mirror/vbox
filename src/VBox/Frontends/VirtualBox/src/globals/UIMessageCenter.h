@@ -286,6 +286,8 @@ public:
         void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
         void cannotApplyCloudMachineFormSettings(const CForm &comForm, const QString &strName, QWidget *pParent = 0) const;
         void cannotApplyCloudMachineFormSettings(const CProgress &comProgress, const QString &strName, QWidget *pParent = 0) const;
+
+        void cannotAddDiskEncryptionPassword(const CConsole &console);
     /** @} */
 
     /** @name Common warnings.
@@ -356,6 +358,12 @@ public:
         int confirmCloudProfileManagerClosing(QWidget *pParent = 0) const;
     /** @} */
 
+    /** @name VirtualBox Manager / Cloud Console Manager warnings.
+      * @{ */
+        bool confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent = 0) const;
+        bool confirmCloudConsoleProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
+    /** @} */
+
     /** @name VirtualBox Manager / New VM wizard warnings.
       * @{ */
         void cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent = 0) const;
@@ -394,18 +402,32 @@ public:
       * @{ */
         bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
         bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
-    /** @} */
+        void cannotStartMachine(const CConsole &console, const QString &strName) const;
+        void cannotStartMachine(const CProgress &progress, const QString &strName) const;
 
-    /* API: Cloud Console Manager warnings: */
-    bool confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent = 0) const;
-    bool confirmCloudConsoleProfileRemoval(const QString &strName, QWidget *pParent = 0) const;
+        bool warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const;
+        bool warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSupported) const;
+        bool warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExSupported) const;
+
+        void warnAboutVBoxSVCUnavailable() const;
+        bool warnAboutGuruMeditation(const QString &strLogFolder);
+        void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;
+
+        bool confirmInputCapture(bool &fAutoConfirmed) const;
+        bool confirmGoingFullscreen(const QString &strHotKey) const;
+        bool confirmGoingSeamless(const QString &strHotKey) const;
+        bool confirmGoingScale(const QString &strHotKey) const;
+
+        bool cannotEnterFullscreenMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
+        void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
+        bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
+        void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
+    /** @} */
 
     /* API: Wizards warnings: */
     bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
     void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0) const;
     void cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent = 0) const;
-    void cannotCreateClone(const CMachine &machine, QWidget *pParent = 0) const;
-    void cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
     void cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
     void cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation,QWidget *pParent = 0) const;
     void cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
@@ -435,26 +457,6 @@ public:
     bool cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent = 0) const;
     bool cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent = 0);
     void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
-
-    /* API: Runtime UI warnings: */
-    void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;
-    bool remindAboutGuruMeditation(const QString &strLogFolder);
-    void warnAboutVBoxSVCUnavailable() const;
-    bool warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSupported) const;
-    bool warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExSupported) const;
-    bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const;
-    void cannotStartMachine(const CConsole &console, const QString &strName) const;
-    void cannotStartMachine(const CProgress &progress, const QString &strName) const;
-    bool confirmInputCapture(bool &fAutoConfirmed) const;
-    bool confirmGoingFullscreen(const QString &strHotKey) const;
-    bool confirmGoingSeamless(const QString &strHotKey) const;
-    bool confirmGoingScale(const QString &strHotKey) const;
-    bool cannotEnterFullscreenMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
-    void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
-    bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
-    void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
-    void cannotAddDiskEncryptionPassword(const CConsole &console);
-    void cannotAcquireDispayParameter(const CDisplay &comDisplay);
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* API: Network management warnings: */
