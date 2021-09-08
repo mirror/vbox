@@ -388,9 +388,12 @@ HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
             RTStrmPrintf(g_pStdErr, "CANCELED\n");
         else
         {
-            if (!fDetailed)
-                RTStrmPrintf(g_pStdErr, "\n");
-            RTStrmPrintf(g_pStdErr, "Progress state: %Rhrc\n", iRc);
+            if (!fQuiet)
+            {
+                if (!fDetailed)
+                    RTStrmPrintf(g_pStdErr, "\n");
+                RTStrmPrintf(g_pStdErr, "Progress state: %Rhrc\n", iRc);
+            }
         }
         hrc = iRc;
     }
