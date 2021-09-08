@@ -346,6 +346,14 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a);
 /* VBoxManageCloud.cpp */
 RTEXITCODE handleCloud(HandlerArg *a);
 
+/* VBoxManageCloudMachine.cpp */
+RTEXITCODE handleCloudMachine(HandlerArg *a, int iFirst,
+                              const char *pszProviderName,
+                              const char *pszProfileName);
+RTEXITCODE listCloudMachines(HandlerArg *a, int iFirst,
+                              const char *pszProviderName,
+                              const char *pszProfileName);
+
 /* VBoxManageUpdateCheck.cpp */
 RTEXITCODE handleUpdateCheck(HandlerArg *a);
 
