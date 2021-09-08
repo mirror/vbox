@@ -345,7 +345,12 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting for stream to be writable again ...\n");
                     nsLastMsgCantWrite = nsNow;
                 }
+
                 RTThreadSleep(RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256));
+
+                /* Try draining the stream in the hope that we can write to it soon again. */
+                rc = AudioTestMixStreamDrain(&pStream->Mix, true /*fSync*/);
+                AssertRCBreak(rc);
             }
             else
                 AssertFailedBreakStmt(rc = VERR_AUDIO_STREAM_NOT_READY);
