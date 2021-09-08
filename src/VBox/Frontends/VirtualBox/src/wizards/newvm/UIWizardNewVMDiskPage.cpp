@@ -380,7 +380,7 @@ QWidget *UIWizardNewVMDiskPage::createDiskWidgets()
     QWidget *pDiskContainer = new QWidget;
     QGridLayout *pDiskLayout = new QGridLayout(pDiskContainer);
     pDiskLayout->setContentsMargins(0, 0, 0, 0);
-    m_pDiskSourceButtonGroup = new QButtonGroup;
+    m_pDiskSourceButtonGroup = new QButtonGroup(this);
     m_pDiskEmpty = new QRadioButton;
     m_pDiskNew = new QRadioButton;
     m_pDiskExisting = new QRadioButton;

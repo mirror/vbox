@@ -43,7 +43,7 @@ public:
 
     UIWizardNewVMSummaryItem(QITreeView *pParentTree, const QString &strText,
                              const QVariant &data = QVariant(), const QIcon &icon = QIcon());
-
+    ~UIWizardNewVMSummaryItem();
     virtual UIWizardNewVMSummaryItem *childItem(int iIndex) const /* override final */;
     virtual int childCount() const /* override final */;
     virtual QString text() const /* override final */;
@@ -86,7 +86,7 @@ class UIWizardNewVMSummaryModel : public QAbstractItemModel
 public:
 
     UIWizardNewVMSummaryModel(QITreeView *pParentTree);
-
+    ~UIWizardNewVMSummaryModel();
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const /* override final */;
 
     QModelIndex index(int row, int column,
@@ -127,6 +127,11 @@ UIWizardNewVMSummaryItem::UIWizardNewVMSummaryItem(UIWizardNewVMSummaryItem *pPa
     , m_icon(icon)
     , m_fIsSectionTitle(false)
 {
+}
+
+UIWizardNewVMSummaryItem::~UIWizardNewVMSummaryItem()
+{
+    qDeleteAll(m_childList);
 }
 
 UIWizardNewVMSummaryItem *UIWizardNewVMSummaryItem::childItem(int iIndex) const
@@ -206,6 +211,11 @@ UIWizardNewVMSummaryModel::UIWizardNewVMSummaryModel(QITreeView *pParentTree)
     : QAbstractItemModel(pParentTree)
     , m_pRootItem(0)
 {
+}
+
+UIWizardNewVMSummaryModel::~UIWizardNewVMSummaryModel()
+{
+    delete m_pRootItem;
 }
 
 QVariant UIWizardNewVMSummaryModel::data(const QModelIndex &index, int role /* = Qt::DisplayRole */) const
