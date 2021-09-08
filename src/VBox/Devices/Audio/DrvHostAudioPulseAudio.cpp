@@ -830,15 +830,15 @@ static void drvHstAudPaStreamUnderflowStatsCallback(pa_stream *pStream, void *pv
         LogRel2(("PulseAudio: Latency now is %'RU64 us\n", cUsLatency));
 
 # ifdef LOG_ENABLED
-        if (LogIs2Enabled())
+        if (LogRelIs2Enabled())
         {
             const pa_timing_info *pTInfo = pa_stream_get_timing_info(pStream);
             AssertReturnVoid(pTInfo);
             const pa_sample_spec *pSpec  = pa_stream_get_sample_spec(pStream);
             AssertReturnVoid(pSpec);
-            Log2Func(("writepos=%'RU64 us, readpost=%'RU64 us, age=%'RU64 us, latency=%'RU64 us (%RU32Hz %RU8ch)\n",
-                      pa_bytes_to_usec(pTInfo->write_index, pSpec), pa_bytes_to_usec(pTInfo->read_index, pSpec),
-                      pa_rtclock_now() - pStreamPA->tsStartUs, cUsLatency, pSpec->rate, pSpec->channels));
+            LogRel2(("PulseAudio: Timing info: writepos=%'RU64 us, readpost=%'RU64 us, age=%'RU64 us, latency=%'RU64 us (%RU32Hz %RU8ch)\n",
+                     pa_bytes_to_usec(pTInfo->write_index, pSpec), pa_bytes_to_usec(pTInfo->read_index, pSpec),
+                     pa_rtclock_now() - pStreamPA->tsStartUs, cUsLatency, pSpec->rate, pSpec->channels));
         }
 # endif
     }
