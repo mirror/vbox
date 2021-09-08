@@ -33,16 +33,20 @@ static int selectCloudProvider(ComPtr<ICloudProvider> &pProvider,
 static int selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
                               const ComPtr<ICloudProvider> &pProvider,
                               const char *pszProviderName);
+static int getCloudClient(ComPtr<ICloudClient> &aClient,
+                          HandlerArg *a,
+                          const char *pcszProviderName,
+                          const char *pcszProfileName);
 
 static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
-                                         const ComPtr<ICloudProfile> &pProfile);
+                                         const ComPtr<ICloudClient> &pClient);
 
 static RTEXITCODE handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
-                                                   const ComPtr<ICloudProfile> &pProfile);
+                                                   const ComPtr<ICloudClient> &pClient);
 static RTEXITCODE listCloudMachinesImpl(HandlerArg *a, int iFirst,
-                                        const ComPtr<ICloudProfile> &pProfile);
+                                        const ComPtr<ICloudClient> &pClient);
 static RTEXITCODE handleCloudMachineInfo(HandlerArg *a, int iFirst,
-                                          const ComPtr<ICloudProfile> &pProfile);
+                                          const ComPtr<ICloudClient> &pClient);
 
 static HRESULT printMachineInfo(const ComPtr<ICloudMachine> &pMachine);
 static HRESULT printFormValue(const ComPtr<IFormValue> &pValue);
@@ -69,40 +73,17 @@ static HRESULT printFormValue(const ComPtr<IFormValue> &pValue);
  * do this here at our earliest opportunity (without actually doing it
  * in handleCloud).
  */
-static int
-getCloudProfile(ComPtr<ICloudProfile> &aProfile,
-                HandlerArg *a,
-                const char *pcszProviderName,
-                const char *pcszProfileName)
-{
-    int rc;
-
-    ComPtr<ICloudProvider> pProvider;
-    rc = selectCloudProvider(pProvider, a->virtualBox, pcszProviderName);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    ComPtr<ICloudProfile> pProfile;
-    rc = selectCloudProfile(pProfile, pProvider, pcszProfileName);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    aProfile = pProfile;
-    return VINF_SUCCESS;
-}
-
-
 RTEXITCODE
 handleCloudMachine(HandlerArg *a, int iFirst,
                    const char *pcszProviderName,
                    const char *pcszProfileName)
 {
-    ComPtr<ICloudProfile> pProfile;
-    int rc = getCloudProfile(pProfile, a, pcszProviderName, pcszProfileName);
+    ComPtr<ICloudClient> pClient;
+    int rc = getCloudClient(pClient, a, pcszProviderName, pcszProfileName);
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    return handleCloudMachineImpl(a, iFirst, pProfile);
+    return handleCloudMachineImpl(a, iFirst, pClient);
 }
 
 
@@ -234,19 +215,44 @@ selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
 }
 
 
+static int
+getCloudClient(ComPtr<ICloudClient> &aCloudClient,
+                HandlerArg *a,
+                const char *pcszProviderName,
+                const char *pcszProfileName)
+{
+    HRESULT hrc;
+    int rc;
+
+    ComPtr<ICloudProvider> pProvider;
+    rc = selectCloudProvider(pProvider, a->virtualBox, pcszProviderName);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    ComPtr<ICloudProfile> pProfile;
+    rc = selectCloudProfile(pProfile, pProvider, pcszProfileName);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    ComPtr<ICloudClient> pCloudClient;
+    CHECK_ERROR2_RET(hrc, pProfile,
+        CreateCloudClient(pCloudClient.asOutParam()),
+            VERR_GENERAL_FAILURE);
+
+    aCloudClient = pCloudClient;
+    return VINF_SUCCESS;
+}
+
+
 static HRESULT
 getMachineById(ComPtr<ICloudMachine> &pMachineOut,
-               const ComPtr<ICloudProfile> &pProfile,
+               const ComPtr<ICloudClient> &pClient,
                const char *pcszStrId)
 {
     HRESULT hrc;
 
-    ComPtr<ICloudClient> pCloudClient;
-    CHECK_ERROR2_RET(hrc, pProfile,
-        CreateCloudClient(pCloudClient.asOutParam()), hrc);
-
     ComPtr<ICloudMachine> pMachine;
-    CHECK_ERROR2_RET(hrc, pCloudClient,
+    CHECK_ERROR2_RET(hrc, pClient,
         GetCloudMachine(com::Bstr(pcszStrId).raw(),
                         pMachine.asOutParam()), hrc);
 
@@ -283,7 +289,7 @@ getMachineById(ComPtr<ICloudMachine> &pMachineOut,
  */
 static RTEXITCODE
 handleCloudMachineImpl(HandlerArg *a, int iFirst,
-                       const ComPtr<ICloudProfile> &pProfile)
+                       const ComPtr<ICloudClient> &pClient)
 {
     /*
      * cloud machine ...
@@ -324,13 +330,13 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
         switch (ch)
         {
             case kMachine_ConsoleHistory:
-                return handleCloudMachineConsoleHistory(a, OptState.iNext, pProfile);
+                return handleCloudMachineConsoleHistory(a, OptState.iNext, pClient);
 
             case kMachine_Info:
-                return handleCloudMachineInfo(a, OptState.iNext, pProfile);
+                return handleCloudMachineInfo(a, OptState.iNext, pClient);
 
             case kMachine_List:
-                return listCloudMachinesImpl(a, OptState.iNext, pProfile);
+                return listCloudMachinesImpl(a, OptState.iNext, pClient);
 
 
             case 'h':           /* --help */
@@ -367,17 +373,12 @@ listCloudMachines(HandlerArg *a, int iFirst,
 {
     int rc;
 
-    ComPtr<ICloudProvider> pProvider;
-    rc = selectCloudProvider(pProvider, a->virtualBox, pcszProviderName);
+    ComPtr<ICloudClient> pClient;
+    rc = getCloudClient(pClient, a, pcszProviderName, pcszProfileName);
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    ComPtr<ICloudProfile> pProfile;
-    rc = selectCloudProfile(pProfile, pProvider, pcszProfileName);
-    if (RT_FAILURE(rc))
-        return RTEXITCODE_FAILURE;
-
-    return listCloudMachinesImpl(a, iFirst, pProfile);
+    return listCloudMachinesImpl(a, iFirst, pClient);
 }
 
 
@@ -387,7 +388,7 @@ listCloudMachines(HandlerArg *a, int iFirst,
  */
 static RTEXITCODE
 listCloudMachinesImpl(HandlerArg *a, int iFirst,
-                      const ComPtr<ICloudProfile> &pProfile)
+                      const ComPtr<ICloudClient> &pClient)
 {
     /*
      * cloud machine list
@@ -446,11 +447,6 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
                 return RTGetOptPrintError(ch, &Val);
         }
     }
-
-    ComPtr<ICloudClient> pClient;
-    CHECK_ERROR2_RET(hrc, pProfile,
-        CreateCloudClient(pClient.asOutParam()),
-            RTEXITCODE_FAILURE);
 
     ComPtr<IProgress> pListProgress;
     CHECK_ERROR2_RET(hrc, pClient,
@@ -553,12 +549,14 @@ handleCloudShowVMInfo(HandlerArg *a, int iFirst,
                       const char *pcszProviderName,
                       const char *pcszProfileName)
 {
-    ComPtr<ICloudProfile> pProfile;
-    int rc = getCloudProfile(pProfile, a, pcszProviderName, pcszProfileName);
+    int rc;
+
+    ComPtr<ICloudClient> pClient;
+    rc = getCloudClient(pClient, a, pcszProviderName, pcszProfileName);
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    return handleCloudMachineInfo(a, iFirst, pProfile);
+    return handleCloudMachineInfo(a, iFirst, pClient);
 }
 
 
@@ -567,7 +565,7 @@ handleCloudShowVMInfo(HandlerArg *a, int iFirst,
  */
 static RTEXITCODE
 handleCloudMachineInfo(HandlerArg *a, int iFirst,
-                       const ComPtr<ICloudProfile> &pProfile)
+                       const ComPtr<ICloudClient> &pClient)
 {
     HRESULT hrc;
 
@@ -583,7 +581,7 @@ handleCloudMachineInfo(HandlerArg *a, int iFirst,
     for (int i = iFirst; i < a->argc; ++i)
     {
         ComPtr<ICloudMachine> pMachine;
-        hrc = getMachineById(pMachine, pProfile, a->argv[i]);
+        hrc = getMachineById(pMachine, pClient, a->argv[i]);
         if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
 
@@ -830,7 +828,7 @@ printFormValue(const ComPtr<IFormValue> &pValue)
  */
 static RTEXITCODE
 handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
-                                 const ComPtr<ICloudProfile> &pProfile)
+                                 const ComPtr<ICloudClient> &pClient)
 {
     HRESULT hrc;
 
@@ -851,7 +849,7 @@ handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
     }
 
     ComPtr<ICloudMachine> pMachine;
-    hrc = getMachineById(pMachine, pProfile, a->argv[iFirst]);
+    hrc = getMachineById(pMachine, pClient, a->argv[iFirst]);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
