@@ -439,6 +439,11 @@ void UIWizardNewVMSummaryPage::createConnections()
 void UIWizardNewVMSummaryPage::retranslateUi()
 {
     setTitle(UIWizardNewVM::tr("Summary"));
+    if (m_pLabel)
+        m_pLabel->setText(UIWizardNewVM::tr("The following table summarizes the configuration you have"
+                                          " chosen for the new virtual machine. When you are happy with the configuration"
+                                          " press Finish to create the virtual machine. Alternatively you can go back"
+                                          " and modify the configuration."));
 }
 
 void UIWizardNewVMSummaryPage::initializePage()
