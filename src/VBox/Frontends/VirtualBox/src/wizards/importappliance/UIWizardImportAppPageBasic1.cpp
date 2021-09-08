@@ -193,12 +193,9 @@ void UIWizardImportAppPage1::populateProfileInstances()
         do
         {
             /* Acquire Cloud Client: */
-            m_comCloudClient = m_comCloudProfile.CreateCloudClient();
-            if (!m_comCloudProfile.isOk())
-            {
-                msgCenter().cannotCreateCloudClient(m_comCloudProfile);
+            m_comCloudClient = cloudClient(m_comCloudProfile);
+            if (m_comCloudClient.isNull())
                 break;
-            }
 
             /* Gather VM names, ids and states.
              * Currently we are interested in Running and Stopped VMs only. */

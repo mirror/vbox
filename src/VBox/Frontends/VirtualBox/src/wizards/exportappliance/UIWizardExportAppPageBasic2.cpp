@@ -292,12 +292,9 @@ void UIWizardExportAppPage2::populateFormProperties()
             }
 
             /* Create Cloud Client: */
-            CCloudClient comClient = m_comCloudProfile.CreateCloudClient();
-            if (!m_comCloudProfile.isOk())
-            {
-                msgCenter().cannotCreateCloudClient(m_comCloudProfile);
+            CCloudClient comClient = cloudClient(m_comCloudProfile);
+            if (comClient.isNull())
                 break;
-            }
 
             /* Remember client: */
             m_comClient = comClient;
