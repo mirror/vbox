@@ -291,7 +291,7 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
 
     int rc;
 
-    // setCurrentSubcommand(...);
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE);
 
     RTGETOPTSTATE OptState;
     rc = RTGetOptInit(&OptState, a->argc, a->argv,
@@ -392,6 +392,7 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
     HRESULT hrc;
     int rc;
 
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_LIST);
 
     RTGETOPTSTATE OptState;
     rc = RTGetOptInit(&OptState, a->argc, a->argv,
@@ -533,6 +534,8 @@ handleCloudMachineInfo(HandlerArg *a, int iFirst,
                        const ComPtr<ICloudProfile> &pProfile)
 {
     HRESULT hrc;
+
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_INFO);
 
     if (iFirst == a->argc)
     {
@@ -794,6 +797,8 @@ handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
                                  const ComPtr<ICloudProfile> &pProfile)
 {
     HRESULT hrc;
+
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_CONSOLEHISTORY);
 
     if (iFirst == a->argc)
     {
