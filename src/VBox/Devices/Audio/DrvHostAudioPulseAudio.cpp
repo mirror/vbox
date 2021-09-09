@@ -155,12 +155,10 @@ typedef struct DRVHSTAUDPASTREAM
     pa_operation           *pTriggerOp;
     /** Internal byte offset. */
     uint64_t                offInternal;
-#ifdef LOG_ENABLED
     /** Creation timestamp (in microsecs) of stream playback / recording. */
     pa_usec_t               tsStartUs;
     /** Timestamp (in microsecs) when last read from / written to the stream. */
     pa_usec_t               tsLastReadWrittenUs;
-#endif
     /** Number of occurred audio data underflows. */
     uint32_t                cUnderflows;
     /** Pulse sample format and attribute specification. */
