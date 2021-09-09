@@ -27,6 +27,7 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkReply.h"
+#include "UINotificationCenter.h"
 #include "UIVersion.h"
 
 /* Other VBox includes: */
@@ -117,7 +118,7 @@ void UIDownloaderGuestAdditions::handleVerifiedObject(UINetworkReply *pReply)
     if (!fSuccess)
     {
         /* Warn the user about additions-image was downloaded and saved but checksum is invalid: */
-        msgCenter().cannotValidateGuestAdditionsSHA256Sum(source().toString(), QDir::toNativeSeparators(target()));
+        UINotificationMessage::cannotValidateGuestAdditionsSHA256Sum(source().toString(), QDir::toNativeSeparators(target()));
         return;
     }
 

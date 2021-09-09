@@ -75,6 +75,41 @@ public:
         /** Notifies about invalid encryption password.
           * @param  strPasswordId  Brings password ID. */
         static void warnAboutInvalidEncryptionPassword(const QString &strPasswordId);
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        /** Notifies about update not found. */
+        static void showUpdateNotFound();
+        /** Notifies about update successful.
+          * @param  strVersion  Brings the found version.
+          * @param  strLink     Brings the link to found package. */
+        static void showUpdateSuccess(const QString &strVersion, const QString &strLink);
+        /** Notifies about extension pack needs to be updated.
+          * @param  strExtPackName     Brings the package name.
+          * @param  strExtPackVersion  Brings the package version.
+          * @param  strVBoxVersion     Brings VBox version. */
+        static void askUserToDownloadExtensionPack(const QString &strExtPackName,
+                                                   const QString &strExtPackVersion,
+                                                   const QString &strVBoxVersion);
+
+        /** Notifies about inability to validate guest additions.
+          * @param  strUrl  Brings the GA URL.
+          * @param  strSrc  Brings the GA source. */
+        static void cannotValidateGuestAdditionsSHA256Sum(const QString &strUrl,
+                                                          const QString &strSrc);
+
+        /** Notifies about user manual downloded.
+          * @param  strUrl  Brings the GA URL.
+          * @param  strSrc  Brings the GA source. */
+        static void warnAboutUserManualDownloaded(const QString &strUrl,
+                                                  const QString &strTarget);
+
+        /** Notifies about inability to validate guest additions.
+          * @param  strUrl  Brings the GA URL.
+          * @param  strSrc  Brings the GA source. */
+        static void cannotValidateExtentionPackSHA256Sum(const QString &strExtPackName,
+                                                         const QString &strFrom,
+                                                         const QString &strTo);
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     /** @} */
 
     /** @name Simple VirtualBox Manager warnings.

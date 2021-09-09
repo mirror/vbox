@@ -21,9 +21,9 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
-#include "UIMessageCenter.h"
 #include "UINetworkReply.h"
 #include "UINewVersionChecker.h"
+#include "UINotificationCenter.h"
 #include "UIUpdateDefs.h"
 #ifdef Q_OS_LINUX
 # include "QIProcess.h"
@@ -105,13 +105,13 @@ void UINewVersionChecker::processNetworkReplyFinished(UINetworkReply *pReply)
     if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
     {
         const QStringList response = strResponseData.split(" ", QString::SkipEmptyParts);
-        msgCenter().showUpdateSuccess(response[0], response[1]);
+        UINotificationMessage::showUpdateSuccess(response[0], response[1]);
     }
     /* No newer version of necessary package found: */
     else
     {
         if (isItForcedCall())
-            msgCenter().showUpdateNotFound();
+            UINotificationMessage::showUpdateNotFound();
     }
 
     /* Increment update check counter: */

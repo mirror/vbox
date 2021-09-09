@@ -110,6 +110,76 @@ void UINotificationMessage::warnAboutInvalidEncryptionPassword(const QString &st
                                                    .arg(strPasswordId));
 }
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+/* static */
+void UINotificationMessage::showUpdateNotFound()
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Nothing to update ..."),
+        QApplication::translate("UIMessageCenter", "You are already running the most recent version of VirtualBox."));
+}
+
+/* static */
+void UINotificationMessage::showUpdateSuccess(const QString &strVersion, const QString &strLink)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "New version found ..."),
+        QApplication::translate("UIMessageCenter", "<p>A new version of VirtualBox has been released! Version <b>%1</b> is available "
+                                                   "at <a href=\"https://www.virtualbox.org/\">virtualbox.org</a>.</p>"
+                                                   "<p>You can download this version using the link:</p>"
+                                                   "<p><a href=%2>%3</a></p>").arg(strVersion, strLink, strLink));
+}
+
+/* static */
+void UINotificationMessage::askUserToDownloadExtensionPack(const QString &strExtPackName,
+                                                           const QString &strExtPackVersion,
+                                                           const QString &strVBoxVersion)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Update is required ..."),
+        QApplication::translate("UIMessageCenter", "<p>You have version %1 of the <b><nobr>%2</nobr></b> installed.</p>"
+                                                   "<p>You should download and install version %3 of this extension pack from "
+                                                   "Oracle!</p>").arg(strExtPackVersion, strExtPackName, strVBoxVersion));
+}
+
+/* static */
+void UINotificationMessage::cannotValidateGuestAdditionsSHA256Sum(const QString &strUrl,
+                                                                  const QString &strSrc)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Unable to validate GA ..."),
+        QApplication::translate("UIMessageCenter", "<p>The <b>VirtualBox Guest Additions</b> disk image file has been "
+                                                   "successfully downloaded from <nobr><a href=\"%1\">%1</a></nobr> and saved "
+                                                   "locally as <nobr><b>%2</b>, </nobr>but the SHA-256 checksum verification "
+                                                   "failed.</p><p>Please do the download, installation and verification "
+                                                   "manually.</p>").arg(strUrl, strSrc));
+}
+
+/* static */
+void UINotificationMessage::warnAboutUserManualDownloaded(const QString &strUrl, const QString &strTarget)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "User manual downloaded ..."),
+        QApplication::translate("UIMessageCenter", "<p>The VirtualBox User Manual has been successfully downloaded from "
+                                                   "<nobr><a href=\"%1\">%1</a></nobr> and saved locally as "
+                                                   "<nobr><b>%2</b>.</nobr></p>").arg(strUrl, strTarget));
+}
+
+/* static */
+void UINotificationMessage::cannotValidateExtentionPackSHA256Sum(const QString &strExtPackName,
+                                                                 const QString &strFrom,
+                                                                 const QString &strTo)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Unable to validate EP ..."),
+        QApplication::translate("UIMessageCenter", "<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
+                                                   "from <nobr><a href=\"%2\">%2</a></nobr> and saved locally as "
+                                                   "<nobr><b>%3</b>, </nobr>but the SHA-256 checksum verification failed.</p>"
+                                                   "<p>Please do the download, installation and verification manually.</p>")
+                                                   .arg(strExtPackName, strFrom, strTo));
+}
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
 /* static */
 void UINotificationMessage::cannotReregisterExistingMachine(const QString &strName, const QString &strLocation)
 {

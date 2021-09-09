@@ -27,6 +27,7 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkReply.h"
+#include "UINotificationCenter.h"
 #include "UIVersion.h"
 
 
@@ -86,7 +87,7 @@ void UIDownloaderUserManual::handleDownloadedObject(UINetworkReply *pReply)
         if (fSuccess)
         {
             /* Warn the user about user-manual loaded and saved: */
-            msgCenter().warnAboutUserManualDownloaded(source().toString(), QDir::toNativeSeparators(target()));
+            UINotificationMessage::warnAboutUserManualDownloaded(source().toString(), QDir::toNativeSeparators(target()));
             /* Warn the listener about user-manual was downloaded: */
             emit sigDownloadFinished(target());
             break;

@@ -1458,6 +1458,139 @@ void UIMessageCenter::cannotAssignFormValue(const QString &strError, QWidget *pP
           strError);
 }
 
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+bool UIMessageCenter::confirmLookingForGuestAdditions() const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Could not find the <b>VirtualBox Guest Additions</b> disk image file.</p>"
+                             "<p>Do you wish to download this disk image file from the Internet?</p>"),
+                          0 /* auto-confirm id */,
+                          tr("Download"));
+}
+
+bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> disk image file "
+                             "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
+                             .arg(strUrl, QLocale(UITranslator::languageId()).toString(uSize)),
+                          0 /* auto-confirm id */,
+                          tr("Download"));
+}
+
+void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const
+{
+    alert(windowManager().mainWindowShown(), MessageType_Error,
+          tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
+             "from <nobr><a href=\"%1\">%1</a></nobr> "
+             "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
+             "<p>Please choose another location for that file.</p>")
+             .arg(strURL, strTarget));
+}
+
+bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
+                             "from <nobr><a href=\"%1\">%1</a></nobr> "
+                             "and saved locally as <nobr><b>%2</b>.</nobr></p>"
+                             "<p>Do you wish to register this disk image file and insert it into the virtual optical drive?</p>")
+                             .arg(strUrl, strSrc),
+                          0 /* auto-confirm id */,
+                          tr("Insert", "additions"));
+}
+
+bool UIMessageCenter::confirmLookingForUserManual(const QString &strMissedLocation) const
+{
+    return questionBinary(0, MessageType_Question,
+                          tr("<p>Could not find the <b>VirtualBox User Manual</b> <nobr><b>%1</b>.</nobr></p>"
+                             "<p>Do you wish to download this file from the Internet?</p>")
+                             .arg(strMissedLocation),
+                          0 /* auto-confirm id */,
+                          tr("Download"));
+}
+
+bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
+                             "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
+                             .arg(strURL, QLocale(UITranslator::languageId()).toString(uSize)),
+                          0 /* auto-confirm id */,
+                          tr("Download"));
+}
+
+void UIMessageCenter::cannotSaveUserManual(const QString &strURL, const QString &strTarget) const
+{
+    alert(windowManager().mainWindowShown(), MessageType_Error,
+          tr("<p>The VirtualBox User Manual has been successfully downloaded "
+             "from <nobr><a href=\"%1\">%1</a></nobr> "
+             "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
+             "<p>Please choose another location for that file.</p>")
+             .arg(strURL, strTarget));
+}
+
+bool UIMessageCenter::confirmLookingForExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
+                             "<p>Do you wish to download latest one from the Internet?</p>")
+                             .arg(strExtPackVersion).arg(strExtPackName),
+                          0 /* auto-confirm id */,
+                          tr("Download"));
+}
+
+bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
+                             "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
+                             .arg(strExtPackName, strURL, QLocale(UITranslator::languageId()).toString(uSize)),
+                          0 /* auto-confirm id */,
+                          tr("Download"));
+}
+
+void UIMessageCenter::cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
+{
+    alert(windowManager().mainWindowShown(), MessageType_Error,
+          tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
+             "from <nobr><a href=\"%2\">%2</a></nobr> "
+             "but can't be saved locally as <nobr><b>%3</b>.</nobr></p>"
+             "<p>Please choose another location for that file.</p>")
+             .arg(strExtPackName, strFrom, strTo));
+}
+
+bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
+                             "from <nobr><a href=\"%2\">%2</a></nobr> "
+                             "and saved locally as <nobr><b>%3</b>.</nobr></p>"
+                             "<p>Do you wish to install this extension pack?</p>")
+                             .arg(strExtPackName, strFrom, strTo),
+                          0 /* auto-confirm id */,
+                          tr("Install", "extension pack"));
+}
+
+bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("Do you want to delete the downloaded file <nobr><b>%1</b></nobr>?")
+                             .arg(strTo),
+                          0 /* auto-confirm id */,
+                          tr("Delete", "extension pack"));
+}
+
+bool UIMessageCenter::proposeDeleteOldExtentionPacks(const QStringList &strFiles) const
+{
+    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
+                          tr("Do you want to delete following list of files <nobr><b>%1</b></nobr>?")
+                             .arg(strFiles.join(",")),
+                          0 /* auto-confirm id */,
+                          tr("Delete", "extension pack"));
+}
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
 bool UIMessageCenter::cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
@@ -2058,208 +2191,6 @@ void UIMessageCenter::cannotRunUnattendedGuestInstall(const CUnattended &comUnat
           UIErrorString::formatErrorInfo(comErrorInfo));
 }
 
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-bool UIMessageCenter::confirmCancelingAllNetworkRequests() const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("Do you wish to cancel all current network operations?"));
-}
-
-void UIMessageCenter::showUpdateSuccess(const QString &strVersion, const QString &strLink) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Info,
-          tr("<p>A new version of VirtualBox has been released! Version <b>%1</b> is available "
-             "at <a href=\"https://www.virtualbox.org/\">virtualbox.org</a>.</p>"
-             "<p>You can download this version using the link:</p>"
-             "<p><a href=%2>%3</a></p>")
-             .arg(strVersion, strLink, strLink));
-}
-
-void UIMessageCenter::showUpdateNotFound() const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Info,
-          tr("You are already running the most recent version of VirtualBox."));
-}
-
-void UIMessageCenter::askUserToDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Info,
-          tr("<p>You have version %1 of the <b><nobr>%2</nobr></b> installed.</p>"
-             "<p>You should download and install version %3 of this extension pack from Oracle!</p>")
-             .arg(strExtPackVersion).arg(strExtPackName).arg(strVBoxVersion));
-}
-
-bool UIMessageCenter::cannotFindGuestAdditions() const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Could not find the <b>VirtualBox Guest Additions</b> disk image file.</p>"
-                             "<p>Do you wish to download this disk image file from the Internet?</p>"),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
-}
-
-bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> disk image file "
-                             "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
-                             .arg(strUrl, QLocale(UITranslator::languageId()).toString(uSize)),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
-}
-
-void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Error,
-          tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
-             "from <nobr><a href=\"%1\">%1</a></nobr> "
-             "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
-             "<p>Please choose another location for that file.</p>")
-             .arg(strURL, strTarget));
-}
-
-bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
-                             "from <nobr><a href=\"%1\">%1</a></nobr> "
-                             "and saved locally as <nobr><b>%2</b>.</nobr></p>"
-                             "<p>Do you wish to register this disk image file and insert it into the virtual optical drive?</p>")
-                             .arg(strUrl, strSrc),
-                          0 /* auto-confirm id */,
-                          tr("Insert", "additions"));
-}
-
-void UIMessageCenter::cannotValidateGuestAdditionsSHA256Sum(const QString &strUrl, const QString &strSrc) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Error,
-          tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
-             "from <nobr><a href=\"%1\">%1</a></nobr> "
-             "and saved locally as <nobr><b>%2</b>, </nobr>"
-             "but the SHA-256 checksum verification failed.</p>"
-             "<p>Please do the download, installation and verification manually.</p>")
-             .arg(strUrl, strSrc));
-}
-
-void UIMessageCenter::cannotUpdateGuestAdditions(const CProgress &progress) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to update Guest Additions. "
-             "The Guest Additions disk image file will be inserted for user installation."),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-bool UIMessageCenter::cannotFindUserManual(const QString &strMissedLocation) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Could not find the <b>VirtualBox User Manual</b> <nobr><b>%1</b>.</nobr></p>"
-                             "<p>Do you wish to download this file from the Internet?</p>")
-                             .arg(strMissedLocation),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
-}
-
-bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
-                             "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
-                             .arg(strURL, QLocale(UITranslator::languageId()).toString(uSize)),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
-}
-
-void UIMessageCenter::cannotSaveUserManual(const QString &strURL, const QString &strTarget) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Error,
-          tr("<p>The VirtualBox User Manual has been successfully downloaded "
-             "from <nobr><a href=\"%1\">%1</a></nobr> "
-             "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
-             "<p>Please choose another location for that file.</p>")
-             .arg(strURL, strTarget));
-}
-
-void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Warning,
-          tr("<p>The VirtualBox User Manual has been successfully downloaded "
-             "from <nobr><a href=\"%1\">%1</a></nobr> "
-             "and saved locally as <nobr><b>%2</b>.</nobr></p>")
-             .arg(strURL, strTarget));
-}
-
-bool UIMessageCenter::warnAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
-                             "<p>Do you wish to download latest one from the Internet?</p>")
-                             .arg(strExtPackVersion).arg(strExtPackName),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
-}
-
-bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
-                             "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
-                             .arg(strExtPackName, strURL, QLocale(UITranslator::languageId()).toString(uSize)),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
-}
-
-void UIMessageCenter::cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Error,
-          tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
-             "from <nobr><a href=\"%2\">%2</a></nobr> "
-             "but can't be saved locally as <nobr><b>%3</b>.</nobr></p>"
-             "<p>Please choose another location for that file.</p>")
-             .arg(strExtPackName, strFrom, strTo));
-}
-
-bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
-                             "from <nobr><a href=\"%2\">%2</a></nobr> "
-                             "and saved locally as <nobr><b>%3</b>.</nobr></p>"
-                             "<p>Do you wish to install this extension pack?</p>")
-                             .arg(strExtPackName, strFrom, strTo),
-                          0 /* auto-confirm id */,
-                          tr("Install", "extension pack"));
-}
-
-void UIMessageCenter::cannotValidateExtentionPackSHA256Sum(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
-{
-    alert(windowManager().mainWindowShown(), MessageType_Error,
-          tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
-             "from <nobr><a href=\"%2\">%2</a></nobr> "
-             "and saved locally as <nobr><b>%3</b>, </nobr>"
-             "but the SHA-256 checksum verification failed.</p>"
-             "<p>Please do the download, installation and verification manually.</p>")
-             .arg(strExtPackName, strFrom, strTo));
-}
-
-bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("Do you want to delete the downloaded file <nobr><b>%1</b></nobr>?")
-                             .arg(strTo),
-                          0 /* auto-confirm id */,
-                          tr("Delete", "extension pack"));
-}
-
-bool UIMessageCenter::proposeDeleteOldExtentionPacks(const QStringList &strFiles) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("Do you want to delete following list of files <nobr><b>%1</b></nobr>?")
-                             .arg(strFiles.join(",")),
-                          0 /* auto-confirm id */,
-                          tr("Delete", "extension pack"));
-}
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
 bool UIMessageCenter::confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion,
                                                   const QString &strPackDescription, QWidget *pParent /* = 0*/) const
 {
@@ -2589,7 +2520,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
     else if (UINotificationDownloaderUserManual::exists())
         gpNotificationCenter->invoke();
     /* Else propose to download user manual: */
-    else if (cannotFindUserManual(strUserManualFileName1))
+    else if (confirmLookingForUserManual(strUserManualFileName1))
     {
         /* Download user manual: */
         UINotificationDownloaderUserManual *pNotification = UINotificationDownloaderUserManual::instance(UICommon::helpFile());

@@ -2424,7 +2424,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
     if (UINotificationDownloaderGuestAdditions::exists())
         gpNotificationCenter->invoke();
     /* Else propose to download additions: */
-    else if (msgCenter().cannotFindGuestAdditions())
+    else if (msgCenter().confirmLookingForGuestAdditions())
     {
         /* Download guest additions: */
         UINotificationDownloaderGuestAdditions *pNotification = UINotificationDownloaderGuestAdditions::instance(GUI_GuestAdditionsName);

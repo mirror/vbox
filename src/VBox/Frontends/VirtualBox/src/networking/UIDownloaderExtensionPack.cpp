@@ -27,6 +27,7 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINetworkReply.h"
+#include "UINotificationCenter.h"
 #include "UIVersion.h"
 
 /* Other VBox includes: */
@@ -119,7 +120,7 @@ void UIDownloaderExtensionPack::handleVerifiedObject(UINetworkReply *pReply)
     if (!fSuccess)
     {
         /* Warn the user about additions-image was downloaded and saved but checksum is invalid: */
-        msgCenter().cannotValidateExtentionPackSHA256Sum(GUI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
+        UINotificationMessage::cannotValidateExtentionPackSHA256Sum(GUI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
         return;
     }
 

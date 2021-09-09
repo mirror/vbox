@@ -378,7 +378,7 @@ public:
         void cannotFindSnapshotByName(const CMachine &comMachine, const QString &strName, QWidget *pParent = 0) const;
     /** @} */
 
-    /** @name VirtualBox Manager / Cloud networking stuff.
+    /** @name VirtualBox Manager / Cloud networking warnings.
       * @{ */
         void cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
         void cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent = 0) const;
@@ -393,9 +393,30 @@ public:
         void cannotAcquireCloudMachineParameter(const CProgress &comProgress, QWidget *pParent = 0) const;
     /** @} */
 
-    /** @name VirtualBox Manager / Cloud machine settings.
+    /** @name VirtualBox Manager / Cloud machine settings warnings.
       * @{ */
         void cannotAssignFormValue(const QString &strError, QWidget *pParent = 0) const;
+    /** @} */
+
+    /** @name VirtualBox Manager / Downloading warnings.
+      * @{ */
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        bool confirmLookingForGuestAdditions() const;
+        bool confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const;
+        void cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const;
+        bool proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const;
+
+        bool confirmLookingForUserManual(const QString &strMissedLocation) const;
+        bool confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const;
+        void cannotSaveUserManual(const QString &strURL, const QString &strTarget) const;
+
+        bool confirmLookingForExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const;
+        bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;
+        void cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
+        bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
+        bool proposeDeleteExtentionPack(const QString &strTo) const;
+        bool proposeDeleteOldExtentionPacks(const QStringList &strFiles) const;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
     /** @} */
 
     /** @name Runtime UI warnings.
@@ -457,33 +478,6 @@ public:
     bool cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent = 0) const;
     bool cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent = 0);
     void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* API: Network management warnings: */
-    bool confirmCancelingAllNetworkRequests() const;
-    void showUpdateSuccess(const QString &strVersion, const QString &strLink) const;
-    void showUpdateNotFound() const;
-    void askUserToDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion) const;
-
-    /* API: Downloading warnings: */
-    bool cannotFindGuestAdditions() const;
-    bool confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const;
-    void cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const;
-    bool proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const;
-    void cannotValidateGuestAdditionsSHA256Sum(const QString &strUrl, const QString &strSrc) const;
-    void cannotUpdateGuestAdditions(const CProgress &progress) const;
-    bool cannotFindUserManual(const QString &strMissedLocation) const;
-    bool confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const;
-    void cannotSaveUserManual(const QString &strURL, const QString &strTarget) const;
-    void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget) const;
-    bool warnAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const;
-    bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;
-    void cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
-    bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
-    void cannotValidateExtentionPackSHA256Sum(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
-    bool proposeDeleteExtentionPack(const QString &strTo) const;
-    bool proposeDeleteOldExtentionPacks(const QStringList &strFiles) const;
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /* API: Extension-pack warnings: */
     bool confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent = 0) const;
