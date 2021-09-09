@@ -305,7 +305,8 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             }
 
             uint32_t       cbPlayed   = 0;
-            uint32_t const cbCanWrite = AudioTestMixStreamGetWritable(&pStream->Mix);
+            AudioTestMixStreamGetWritable(&pStream->Mix);
+            uint32_t const cbCanWrite = PDMAudioPropsMilliToBytes(pMix->pProps, pStream->Cfg.Device.cMsSchedulingHint);
             if (cbCanWrite)
             {
                 uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbToPlayTotal - cbPlayedTotal, sizeof(abBuf)), cbCanWrite);
