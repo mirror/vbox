@@ -36,6 +36,7 @@
 #include "DrvHostAudioPulseAudioStubs.h"
 
 #include <pulse/pulseaudio.h>
+#include <pulse/rtclock.h>
 #ifndef PA_STREAM_NOFLAGS
 # define PA_STREAM_NOFLAGS  (pa_context_flags_t)0x0000U /* since 0.9.19 */
 #endif
