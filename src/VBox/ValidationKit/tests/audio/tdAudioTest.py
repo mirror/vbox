@@ -463,7 +463,7 @@ class tdAudioTest(vbox.TestDriver):
                     sCmdArgs = '';
                     for sArg in asArgs:
                         sCmdArgs += sArg + " ";
-                    asArgs   = [ sCmd, 'vbox', '-c', sCmdArgs ];
+                    asArgs   = [ sCmd, oTestVm.getTestUser(), '-c', sCmdArgs ];
                 else:
                     reporter.log('Unable to find SU on guest, falling back to regular starting ...')
 
