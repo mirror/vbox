@@ -1828,8 +1828,8 @@ static DECLCALLBACK(uint32_t) drvHstAudPaHA_StreamGetWritable(PPDMIHOSTAUDIO pIn
 
         pa_threaded_mainloop_unlock(pThis->pMainLoop);
     }
-    LogRel2(("PulseAudio: drvHstAudPaHA_StreamGetWritable returns %#x (%u) [max=%#RX32 min=%#RX32]\n",
-                 cbWritable, cbWritable, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
+    Log3Func(("returns %#x (%u) [max=%#RX32 min=%#RX32]\n",
+              cbWritable, cbWritable, pStreamPA->BufAttr.maxlength, pStreamPA->BufAttr.minreq));
     return cbWritable;
 }
 
