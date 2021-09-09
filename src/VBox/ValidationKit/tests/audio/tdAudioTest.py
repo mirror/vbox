@@ -447,7 +447,7 @@ class tdAudioTest(vbox.TestDriver):
             # Needed for NATed VMs.
             asArgs.extend(['--tcp-connect-addr', '10.0.2.2' ]);
 
-            if oTestVm.isLinux(): ## @todo Might need some more fine tuning later.
+            if oTestVm.sKind in 'Oracle_64':
                 #
                 # Some Linux distros have a bug / are configured (?) so that processes started by init system
                 # cannot access the PulseAudio server ("Connection refused"), for example OL 8.1.
