@@ -308,6 +308,10 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             uint32_t const cbCanWrite = AudioTestMixStreamGetWritable(&pStream->Mix);
             if (cbCanWrite)
             {
+                if (g_uVerbosity)
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Stream is writable with %RU32ms (%RU32 bytes)\n",
+                                 PDMAudioPropsBytesToMilli(pMix->pProps, cbCanWrite), cbCanWrite);
+
                 uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbToPlayTotal - cbPlayedTotal, sizeof(abBuf)), cbCanWrite);
                 uint32_t       cbToPlay;
                 rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbToPlay);
@@ -340,13 +344,15 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             }
             else if (AudioTestMixStreamIsOkay(&pStream->Mix))
             {
+                RTMSINTERVAL const msSleep = RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256);
+
                 if (!nsLastMsgCantWrite || nsNow - nsLastMsgCantWrite > RT_NS_10SEC) /* Don't spam the output too much. */
                 {
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting for stream to be writable again ...\n");
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be writable again ...\n", msSleep);
                     nsLastMsgCantWrite = nsNow;
                 }
 
-                RTThreadSleep(RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256));
+                RTThreadSleep(msSleep);
             }
             else
                 AssertFailedBreakStmt(rc = VERR_AUDIO_STREAM_NOT_READY);
@@ -358,7 +364,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
             uint64_t const cNsElapsed = nsNow - nsStarted;
             if (cNsElapsed > nsTimeout)
             {
-                RTTestFailed(g_hTest, "Playback took too long (runng %RU64 vs. timeout %RU64), aborting\n", cNsElapsed, nsTimeout);
+                RTTestFailed(g_hTest, "Playback took too long (running %RU64 vs. timeout %RU64), aborting\n", cNsElapsed, nsTimeout);
                 rc = VERR_TIMEOUT;
             }
 
@@ -432,14 +438,26 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
         uint8_t         abSamples[16384];
         uint32_t const  cbSamplesAligned = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
         uint64_t        cbRecTotal  = 0;
+
+        uint64_t const  nsStarted         = RTTimeNanoTS();
+
+        uint64_t        nsTimeout         = RT_MS_5MIN_64 * RT_NS_1MS;
+        uint64_t        nsLastMsgCantRead = 0; /* Timestamp (in ns) when the last message of an unreadable stream was shown. */
+
         while (!g_fTerminate && cbRecTotal < cbToRecTotal)
         {
+            uint64_t const nsNow = RTTimeNanoTS();
+
             /*
              * Anything we can read?
              */
             uint32_t const cbCanRead = AudioTestMixStreamGetReadable(pMix);
             if (cbCanRead)
             {
+                if (g_uVerbosity)
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Stream is readable with %RU32ms (%RU32 bytes)\n",
+                                 PDMAudioPropsBytesToMilli(pMix->pProps, cbCanRead), cbCanRead);
+
                 uint32_t const cbToRead   = RT_MIN(cbCanRead, cbSamplesAligned);
                 uint32_t       cbRecorded = 0;
                 rc = AudioTestMixStreamCapture(pMix, abSamples, cbToRead, &cbRecorded);
@@ -458,11 +476,32 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
                 }
             }
             else if (AudioTestMixStreamIsOkay(pMix))
-                RTThreadSleep(RT_MIN(RT_MAX(1, pTstEnv->cMsSchedulingHint), 256));
+            {
+                RTMSINTERVAL const msSleep = RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256);
+
+                if (!nsLastMsgCantRead || nsNow - nsLastMsgCantRead > RT_NS_10SEC) /* Don't spam the output too much. */
+                {
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be readable again ...\n", msSleep);
+                    nsLastMsgCantRead = nsNow;
+                }
+
+                RTThreadSleep(msSleep);
+            }
+
+            /* Fail-safe in case something screwed up while playing back. */
+            uint64_t const cNsElapsed = nsNow - nsStarted;
+            if (cNsElapsed > nsTimeout)
+            {
+                RTTestFailed(g_hTest, "Recording took too long (running %RU64 vs. timeout %RU64), aborting\n", cNsElapsed, nsTimeout);
+                rc = VERR_TIMEOUT;
+            }
 
             if (RT_FAILURE(rc))
                 break;
         }
+
+        if (cbRecTotal != cbToRecTotal)
+            RTTestFailed(g_hTest, "Recording ended unexpectedly (%RU32/%RU32 recorded)\n", cbRecTotal, cbToRecTotal);
 
         int rc2 = AudioTestMixStreamDisable(pMix);
         if (RT_SUCCESS(rc))
