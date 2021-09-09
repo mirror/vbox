@@ -32,27 +32,27 @@ void UIExtension::install(QString const &strFilePath,
                           QString *pstrExtPackName)
 {
     /* If the extension pack manager isn't available, skip any attempts to install: */
-    CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
-    if (extPackManager.isNull())
+    CExtPackManager comExtPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+    if (comExtPackManager.isNull())
         return;
     /* Open the extpack tarball via IExtPackManager: */
     CExtPackFile comExtPackFile;
     if (strDigest.isEmpty())
-        comExtPackFile = extPackManager.OpenExtPackFile(strFilePath);
+        comExtPackFile = comExtPackManager.OpenExtPackFile(strFilePath);
     else
     {
         QString strFileAndHash = QString("%1::SHA-256=%2").arg(strFilePath).arg(strDigest);
-        comExtPackFile = extPackManager.OpenExtPackFile(strFileAndHash);
+        comExtPackFile = comExtPackManager.OpenExtPackFile(strFileAndHash);
     }
-    if (!extPackManager.isOk())
+    if (!comExtPackManager.isOk())
     {
-        msgCenter().cannotOpenExtPack(strFilePath, extPackManager, pParent);
+        UINotificationMessage::cannotOpenExtPack(comExtPackManager, strFilePath);
         return;
     }
 
     if (!comExtPackFile.GetUsable())
     {
-        msgCenter().warnAboutBadExtPackFile(strFilePath, comExtPackFile, pParent);
+        UINotificationMessage::cannotOpenExtPackFile(comExtPackFile, strFilePath);
         return;
     }
 
@@ -62,7 +62,7 @@ void UIExtension::install(QString const &strFilePath,
 
     /* Check if there is a version of the extension pack already
      * installed on the system and let the user decide what to do about it. */
-    CExtPack comExtPackCur = extPackManager.Find(strPackName);
+    CExtPack comExtPackCur = comExtPackManager.Find(strPackName);
     bool fReplaceIt = comExtPackCur.isOk();
     if (fReplaceIt)
     {

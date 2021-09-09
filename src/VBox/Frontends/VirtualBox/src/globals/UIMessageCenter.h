@@ -338,6 +338,16 @@ public:
                                                const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
     /** @} */
 
+    /** @name VirtualBox Manager / Extension Manager warnings.
+      * @{ */
+        bool confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion,
+                                         const QString &strPackDescription, QWidget *pParent = 0) const;
+        bool confirmReplaceExtensionPack(const QString &strPackName, const QString &strPackVersionNew,
+                                         const QString &strPackVersionOld, const QString &strPackDescription,
+                                         QWidget *pParent = 0) const;
+        bool confirmRemoveExtensionPack(const QString &strPackName, QWidget *pParent = 0) const;
+    /** @} */
+
     /** @name VirtualBox Manager / Media Manager warnings.
       * @{ */
         bool confirmMediumRelease(const UIMedium &medium, bool fInduced, QWidget *pParent = 0) const;
@@ -478,22 +488,6 @@ public:
     bool cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent = 0) const;
     bool cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent = 0);
     void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
-
-    /* API: Extension-pack warnings: */
-    bool confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent = 0) const;
-    bool confirmReplaceExtensionPack(const QString &strPackName, const QString &strPackVersionNew, const QString &strPackVersionOld,
-                                     const QString &strPackDescription, QWidget *pParent = 0) const;
-    bool confirmRemoveExtensionPack(const QString &strPackName, QWidget *pParent = 0) const;
-    void cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent = 0) const;
-    void warnAboutBadExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent = 0) const;
-    void cannotInstallExtPack(const CExtPackFile &extPackFile, const QString &strFilename, QWidget *pParent = 0) const;
-    void cannotInstallExtPack(const CProgress &progress, const QString &strFilename, QWidget *pParent = 0) const;
-    void cannotUninstallExtPack(const CExtPackManager &extPackManager, const QString &strPackName, QWidget *pParent = 0) const;
-    void cannotUninstallExtPack(const CProgress &progress, const QString &strPackName, QWidget *pParent = 0) const;
-    void warnAboutExtPackInstalled(const QString &strPackName, QWidget *pParent = 0) const;
-    void cannotAcquireExtensionPackManager(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
-    void cannotAcquireExtensionPacks(const CExtPackManager &comEPManager, QWidget *pParent = 0) const;
-    void cannotAcquireExtensionPackParameter(const CExtPack &comPackage, QWidget *pParent = 0) const;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     /* API: Drag and drop warnings: */

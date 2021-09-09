@@ -40,6 +40,7 @@
 #include "CConsole.h"
 #include "CDHCPServer.h"
 #include "CDisplay.h"
+#include "CExtPack.h"
 #include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
 #include "CEmulatedUSB.h"
@@ -511,6 +512,24 @@ void UINotificationMessage::cannotAcquireVirtualBoxParameter(const CVirtualBox &
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireExtensionPackManagerParameter(const CExtPackManager &comEPManager)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "EP Manager failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire EP Manager parameter.") +
+        UIErrorString::formatErrorInfo(comEPManager));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireExtensionPackParameter(const CExtPack &comPackage)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "EP failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire EP parameter.") +
+        UIErrorString::formatErrorInfo(comPackage));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireHostParameter(const CHost &comHost)
 {
     createMessage(
@@ -762,6 +781,35 @@ void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const 
         QApplication::translate("UIMessageCenter", "Failed to open virtual machine located in %1.")
                                                    .arg(strLocation) +
         UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotGetExtensionPackManager(const CVirtualBox &comVBox)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't get EP Manager ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire Extension Pack Manager.") +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotOpenExtPack(const CExtPackManager &comExtPackManager, const QString &strFilename)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open EP ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the Extension Pack <b>%1</b>.")
+                                                   .arg(strFilename) +
+        UIErrorString::formatErrorInfo(comExtPackManager));
+}
+
+/* static */
+void UINotificationMessage::cannotOpenExtPackFile(const CExtPackFile &comExtPackFile, const QString &strFilename)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open EP file ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the Extension Pack <b>%1</b>.")
+                                                   .arg(strFilename) +
+        comExtPackFile.GetWhyUnusable());
 }
 
 /* static */

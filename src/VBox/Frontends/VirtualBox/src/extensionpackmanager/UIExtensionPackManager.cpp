@@ -253,7 +253,7 @@ void UIExtensionPackManagerWidget::sltUninstallExtensionPack()
 
             /* Show error message if necessary: */
             if (!comVBox.isOk())
-                msgCenter().cannotAcquireExtensionPackManager(comVBox);
+                UINotificationMessage::cannotGetExtensionPackManager(comVBox);
             else
             {
                 /* Uninstall the package: */
@@ -491,7 +491,7 @@ void UIExtensionPackManagerWidget::loadExtensionPacks()
 
     /* Show error message if necessary: */
     if (!comVBox.isOk())
-        msgCenter().cannotAcquireExtensionPackManager(comVBox);
+        UINotificationMessage::cannotGetExtensionPackManager(comVBox);
     else
     {
         /* Get extension packs for further activities: */
@@ -499,7 +499,7 @@ void UIExtensionPackManagerWidget::loadExtensionPacks()
 
         /* Show error message if necessary: */
         if (!comEPManager.isOk())
-            msgCenter().cannotAcquireExtensionPacks(comEPManager);
+            UINotificationMessage::cannotAcquireExtensionPackManagerParameter(comEPManager);
         else
         {
             /* Iterate through existing extension packs: */
@@ -544,7 +544,7 @@ void UIExtensionPackManagerWidget::loadExtensionPack(const CExtPack &comExtensio
 
     /* Show error message if necessary: */
     if (!comExtensionPack.isOk())
-        msgCenter().cannotAcquireExtensionPackParameter(comExtensionPack, this);
+        UINotificationMessage::cannotAcquireExtensionPackParameter(comExtensionPack);
 }
 
 void UIExtensionPackManagerWidget::createItemForExtensionPack(const UIDataExtensionPack &extensionPackData, bool fChooseItem)
