@@ -36,7 +36,6 @@
 #include "DrvHostAudioPulseAudioStubs.h"
 
 #include <pulse/pulseaudio.h>
-#include <pulse/rtclock.h>
 #ifndef PA_STREAM_NOFLAGS
 # define PA_STREAM_NOFLAGS  (pa_context_flags_t)0x0000U /* since 0.9.19 */
 #endif
@@ -156,10 +155,12 @@ typedef struct DRVHSTAUDPASTREAM
     pa_operation           *pTriggerOp;
     /** Internal byte offset. */
     uint64_t                offInternal;
+#ifdef LOG_ENABLED
     /** Creation timestamp (in microsecs) of stream playback / recording. */
     pa_usec_t               tsStartUs;
     /** Timestamp (in microsecs) when last read from / written to the stream. */
     pa_usec_t               tsLastReadWrittenUs;
+#endif
     /** Number of occurred audio data underflows. */
     uint32_t                cUnderflows;
     /** Pulse sample format and attribute specification. */
@@ -834,10 +835,14 @@ static void drvHstAudPaStreamUnderflowStatsCallback(pa_stream *pStream, void *pv
             AssertReturnVoid(pTInfo);
             const pa_sample_spec *pSpec  = pa_stream_get_sample_spec(pStream);
             AssertReturnVoid(pSpec);
-            LogRel2(("PulseAudio: Timing info: writepos=%'RU64 us, readpost=%'RU64 us, age=%'RU64 us, latency=%'RU64 us (%RU32Hz %RU8ch)\n",
+            LogRel2(("PulseAudio: Timing info: writepos=%'RU64 us, readpost=%'RU64 us, latency=%'RU64 us (%RU32Hz %RU8ch)\n",
                      pa_bytes_to_usec(pTInfo->write_index, pSpec), pa_bytes_to_usec(pTInfo->read_index, pSpec),
-                     pa_rtclock_now() - pStreamPA->tsStartUs, cUsLatency, pSpec->rate, pSpec->channels));
+                     cUsLatency, pSpec->rate, pSpec->channels));
         }
+
+#ifdef LOG_ENABLED
+        Log2Func(("age=%'RU64 us\n", pa_rtclock_now() - pStreamPA->tsStartUs));
+#endif
     }
 }
 
