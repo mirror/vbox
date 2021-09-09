@@ -1802,8 +1802,8 @@ static int audioTestObjGetChild(PAUDIOTESTOBJINT pParent, uint32_t idxObj, PAUDI
  * @returns VBox status code.
  * @returns Error if the verification failed and test verification job has fKeepGoing not set.
  * @param   pVerJob             Verification job to verify value for.
- * @param   pObjA              Object handle A to verify value for.
- * @param   pObjB              Object handle B to verify value for.
+ * @param   pObjA               Object handle A to verify value for.
+ * @param   pObjB               Object handle B to verify value for.
  * @param   pszKey              Key to verify.
  * @param   pszVal              Value to verify.
  * @param   pszErrFmt           Error format string in case the verification failed.
@@ -1824,12 +1824,22 @@ static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerJob,
         if (RT_SUCCESS(rc))
         {
             if (RTStrCmp(szValA, szValB))
+            {
+                int rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest,
+                                                     "Values are not equal ('%s' vs. '%s')", szValA, szValB);
+                AssertRC(rc2);
                 rc = VERR_WRONG_TYPE; /** @todo Fudge! */
+            }
 
             if (pszVal)
             {
                 if (RTStrCmp(szValA, pszVal))
+                {
+                    int rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest,
+                                                         "Values don't match expected value (got '%s', expected '%s')", szValA, pszVal);
+                    AssertRC(rc2);
                     rc = VERR_WRONG_TYPE; /** @todo Fudge! */
+                }
             }
         }
     }
