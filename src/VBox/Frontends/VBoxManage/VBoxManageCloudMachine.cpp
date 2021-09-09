@@ -40,15 +40,30 @@ static int getCloudClient(ComPtr<ICloudClient> &aClient,
 
 static HRESULT getMachineList(com::SafeIfaceArray<ICloudMachine> &aMachines,
                               const ComPtr<ICloudClient> &pClient);
+
 static HRESULT getMachineById(ComPtr<ICloudMachine> &pMachineOut,
                               const ComPtr<ICloudClient> &pClient,
                               const char *pcszId);
 static HRESULT getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
                                 const ComPtr<ICloudClient> &pClient,
                                 const char *pcszName);
-static HRESULT getMachine(ComPtr<ICloudMachine> &pMachineOut,
-                          const ComPtr<ICloudClient> &pClient,
-                          const char *pcszWhatever);
+static HRESULT getMachineByGuess(ComPtr<ICloudMachine> &pMachineOut,
+                                 const ComPtr<ICloudClient> &pClient,
+                                 const char *pcszWhatever);
+
+struct MachineSpec {
+    const char *pcszSpec;
+    enum { GUESS, ID, NAME } enmKind;
+
+    MachineSpec()
+      : pcszSpec(NULL), enmKind(GUESS) {}
+};
+
+static int checkMachineSpecArgument(MachineSpec &aMachineSpec,
+                                    int ch, const RTGETOPTUNION &Val);
+static HRESULT getMachineBySpec(ComPtr<ICloudMachine> &pMachineOut,
+                                const ComPtr<ICloudClient> &pClient,
+                                const MachineSpec &aMachineSpec);
 
 
 static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
@@ -370,9 +385,9 @@ getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
  * explicit --id/--name options instead.
  */
 static HRESULT
-getMachine(ComPtr<ICloudMachine> &pMachineOut,
-           const ComPtr<ICloudClient> &pClient,
-           const char *pcszWhatever)
+getMachineByGuess(ComPtr<ICloudMachine> &pMachineOut,
+                  const ComPtr<ICloudClient> &pClient,
+                  const char *pcszWhatever)
 {
     ComPtr<ICloudMachine> pMachine;
 
@@ -405,6 +420,173 @@ getMachine(ComPtr<ICloudMachine> &pMachineOut,
         { "help",           'h',                    RTGETOPT_REQ_NOTHING }, \
         { "-?",             'h',                    RTGETOPT_REQ_NOTHING }
 
+static RTEXITCODE
+errThereCanBeOnlyOne()
+{
+    return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+               "only one machine can be specified");
+}
+
+
+#define CLOUD_MACHINE_RTGETOPTDEF_MACHINE               \
+        { "--id",       'i',    RTGETOPT_REQ_STRING },  \
+        { "--name",     'n',    RTGETOPT_REQ_STRING }
+
+
+/*
+ * Almost all the cloud machine commands take a machine argument, so
+ * factor out the code to fish it out from the command line.
+ *
+ * ch - option should be processed by the caller.
+ * VINF_SUCCESS - option was processed.
+ * VERR_PARSE_ERROR - RTEXITCODE_SYNTAX
+ * Other IPRT errors - RTEXITCODE_FAILURE
+ */
+static int
+checkMachineSpecArgument(MachineSpec &aMachineSpec,
+                         int ch, const RTGETOPTUNION &Val)
+{
+    int rc;
+
+    switch (ch)
+    {
+        /*
+         * Note that we don't used RTGETOPT_REQ_UUID here as it would
+         * be too limiting.  First, we need the original string for
+         * the API call, not the UUID, and second, if the UUID has bad
+         * forward RTGetOptPrintError doesn't have access to the
+         * option argument for the error message.  So do the format
+         * check ourselves.
+         */
+        case 'i':               /* --id */
+        {
+            const char *pcszId = Val.psz;
+
+            if (aMachineSpec.pcszSpec != NULL)
+            {
+                errThereCanBeOnlyOne();
+                return VERR_PARSE_ERROR;
+            }
+
+            RTUUID Uuid;
+            rc = RTUuidFromStr(&Uuid, pcszId);
+            if (RT_FAILURE(rc))
+            {
+                RTMsgError("not a valid uuid: %s", pcszId);
+                return VERR_PARSE_ERROR;
+            }
+
+            aMachineSpec.pcszSpec = pcszId;
+            aMachineSpec.enmKind = MachineSpec::ID;
+            return VINF_SUCCESS;
+        }
+
+        case 'n':               /* --name */
+        {
+            const char *pcszName = Val.psz;
+
+            if (aMachineSpec.pcszSpec != NULL)
+            {
+                errThereCanBeOnlyOne();
+                return VERR_PARSE_ERROR;
+            }
+
+            aMachineSpec.pcszSpec = pcszName;
+            aMachineSpec.enmKind = MachineSpec::NAME;
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Plain word (no dash/es).  This must name a machine, though
+         * we have to guess whether it's an id or a name.
+         */
+        case VINF_GETOPT_NOT_OPTION:
+        {
+            const char *pcszNameOrId = Val.psz;
+
+            if (aMachineSpec.pcszSpec != NULL)
+            {
+                errThereCanBeOnlyOne();
+                return VERR_PARSE_ERROR;
+            }
+
+            aMachineSpec.pcszSpec = pcszNameOrId;
+            aMachineSpec.enmKind = MachineSpec::GUESS;
+            return VINF_SUCCESS;
+        }
+
+        /* might as well do it here */
+        case 'h':               /* --help */
+        {
+            printHelp(g_pStdOut);
+            return VINF_CALLBACK_RETURN;
+        }
+    }
+
+    /* let the caller deal with it */
+    return VINF_NOT_SUPPORTED;
+}
+
+
+static HRESULT
+getMachineBySpec(ComPtr<ICloudMachine> &pMachineOut,
+                 const ComPtr<ICloudClient> &pClient,
+                 const MachineSpec &aMachineSpec)
+{
+    HRESULT hrc = E_FAIL;
+
+    if (aMachineSpec.pcszSpec == NULL)
+    {
+        RTMsgErrorExit(RTEXITCODE_SYNTAX, "machine not specified");
+        return E_FAIL;
+    }
+
+    if (aMachineSpec.pcszSpec[0] == '\0')
+    {
+        RTMsgError("machine name is empty");
+        return E_FAIL;
+    }
+
+    switch (aMachineSpec.enmKind)
+    {
+        case MachineSpec::ID:
+            hrc = getMachineById(pMachineOut, pClient, aMachineSpec.pcszSpec);
+            if (FAILED(hrc))
+            {
+                if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+                    RTMsgError("unable to find machine with id %s", aMachineSpec.pcszSpec);
+                return hrc;
+            }
+            break;
+
+        case MachineSpec::NAME:
+            hrc = getMachineByName(pMachineOut, pClient, aMachineSpec.pcszSpec);
+            if (FAILED(hrc))
+            {
+                if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+                    RTMsgError("unable to find machine with name %s", aMachineSpec.pcszSpec);
+                return hrc;
+            }
+            break;
+
+        case MachineSpec::GUESS:
+            hrc = getMachineByGuess(pMachineOut, pClient, aMachineSpec.pcszSpec);
+            if (FAILED(hrc))
+            {
+                if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+                    RTMsgError("unable to find machine %s", aMachineSpec.pcszSpec);
+                return hrc;
+            }
+            break;
+    }
+
+    /* switch was exhaustive (and successful) */
+    AssertReturn(SUCCEEDED(hrc), E_FAIL);
+    return S_OK;
+}
+
+
+
 
 /*
  * cloud machine ...
@@ -416,9 +598,8 @@ static RTEXITCODE
 handleCloudMachineImpl(HandlerArg *a, int iFirst,
                        const ComPtr<ICloudClient> &pClient)
 {
-    /*
-     * cloud machine ...
-     */
+    int rc;
+
     enum
     {
         kMachineIota = 1000,
@@ -427,26 +608,22 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
         kMachine_List,
     };
 
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE);
     static const RTGETOPTDEF s_aOptions[] =
-    {
+        {
         { "console-history",    kMachine_ConsoleHistory,    RTGETOPT_REQ_NOTHING },
         { "consolehistory",     kMachine_ConsoleHistory,    RTGETOPT_REQ_NOTHING },
         { "info",               kMachine_Info,              RTGETOPT_REQ_NOTHING },
         { "list",               kMachine_List,              RTGETOPT_REQ_NOTHING },
-          CLOUD_MACHINE_RTGETOPTDEF_HELP
+        CLOUD_MACHINE_RTGETOPTDEF_HELP
     };
-
-    int rc;
-
-    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE);
 
     RTGETOPTSTATE OptState;
     rc = RTGetOptInit(&OptState, a->argc, a->argv,
                       s_aOptions, RT_ELEMENTS(s_aOptions),
                       iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCStmt(rc,
-        return RTMsgErrorExit(RTEXITCODE_INIT, /* internal error */
-                   "cloud machine: RTGetOptInit: %Rra", rc));
+    AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
+                           "cloud machine: RTGetOptInit: %Rra", rc));
 
     int ch;
     RTGETOPTUNION Val;
@@ -515,14 +692,15 @@ static RTEXITCODE
 listCloudMachinesImpl(HandlerArg *a, int iFirst,
                       const ComPtr<ICloudClient> &pClient)
 {
-    /*
-     * cloud machine list
-     */
+    HRESULT hrc;
+    int rc;
+
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_LIST);
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--long",         'l',                    RTGETOPT_REQ_NOTHING },
         { "--sort",         's',                    RTGETOPT_REQ_NOTHING },
-          CLOUD_MACHINE_RTGETOPTDEF_HELP
+        CLOUD_MACHINE_RTGETOPTDEF_HELP
     };
 
     enum kFormatEnum { kFormat_Short, kFormat_Long };
@@ -531,18 +709,12 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
     enum kSortOrderEnum { kSortOrder_None, kSortOrder_Name, kSortOrder_Id };
     kSortOrderEnum enmSortOrder = kSortOrder_None;
 
-    HRESULT hrc;
-    int rc;
-
-    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_LIST);
-
     RTGETOPTSTATE OptState;
     rc = RTGetOptInit(&OptState, a->argc, a->argv,
                       s_aOptions, RT_ELEMENTS(s_aOptions),
                       iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCStmt(rc,
-        return RTMsgErrorExit(RTEXITCODE_INIT, /* internal error */
-                   "cloud machine list: RTGetOptInit: %Rra", rc));
+    AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
+                           "cloud machine list: RTGetOptInit: %Rra", rc));
 
     int ch;
     RTGETOPTUNION Val;
@@ -683,31 +855,63 @@ static RTEXITCODE
 handleCloudMachineInfo(HandlerArg *a, int iFirst,
                        const ComPtr<ICloudClient> &pClient)
 {
+    MachineSpec machineSpec;
+    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
+    int rc;
+
+    enum
+    {
+        kMachineInfoIota = 1000,
+        kMachineInfo_Details,
+    };
 
     // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_INFO);
-
-    if (iFirst == a->argc)
+    static const RTGETOPTDEF s_aOptions[] =
     {
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                   "cloud machine info: machine id required\n"
-                   "Try '--help' for more information.");
+        { "--details", kMachineInfo_Details, RTGETOPT_REQ_NOTHING },
+        CLOUD_MACHINE_RTGETOPTDEF_MACHINE,
+        CLOUD_MACHINE_RTGETOPTDEF_HELP
+    };
+
+    RTGETOPTSTATE OptState;
+    rc = RTGetOptInit(&OptState, a->argc, a->argv,
+                      s_aOptions, RT_ELEMENTS(s_aOptions),
+                      iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
+                           "RTGetOptInit: %Rra", rc));
+
+    int ch;
+    RTGETOPTUNION Val;
+    while ((ch = RTGetOpt(&OptState, &Val)) != 0)
+    {
+        rc = checkMachineSpecArgument(machineSpec, ch, Val);
+        if (rc == VINF_SUCCESS)
+            continue;
+        else if (rc == VINF_CALLBACK_RETURN)
+            return RTEXITCODE_SUCCESS;
+        else if (rc == VERR_PARSE_ERROR)
+            return RTEXITCODE_SYNTAX;
+
+        switch (ch)
+        {
+            case kMachineInfo_Details:
+                /* currently no-op */
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &Val);
+        }
     }
 
-    for (int i = iFirst; i < a->argc; ++i)
-    {
-        ComPtr<ICloudMachine> pMachine;
-        hrc = getMachine(pMachine, pClient, a->argv[i]);
-        if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                       "%s: not found", a->argv[i]);
-        else if (FAILED(hrc))
-            return RTEXITCODE_FAILURE;
+    hrc = getMachineBySpec(pMachine, pClient, machineSpec);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
-        hrc = printMachineInfo(pMachine);
-        if (FAILED(hrc))
-            return RTEXITCODE_FAILURE;
-    }
+
+    hrc = printMachineInfo(pMachine);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
 
     return RTEXITCODE_SUCCESS;
 }
@@ -949,28 +1153,50 @@ static RTEXITCODE
 handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
                                  const ComPtr<ICloudClient> &pClient)
 {
+    MachineSpec machineSpec;
+    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
+    int rc;
 
     // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_CONSOLEHISTORY);
-
-    if (iFirst == a->argc)
+    static const RTGETOPTDEF s_aOptions[] =
     {
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                   "cloud machine info: machine id required\n"
-                   "Try '--help' for more information.");
+        CLOUD_MACHINE_RTGETOPTDEF_MACHINE,
+        CLOUD_MACHINE_RTGETOPTDEF_HELP
+    };
+
+    RTGETOPTSTATE OptState;
+    rc = RTGetOptInit(&OptState, a->argc, a->argv,
+                      s_aOptions, RT_ELEMENTS(s_aOptions),
+                      iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCStmt(rc,
+        return RTMsgErrorExit(RTEXITCODE_INIT, /* internal error */
+                   "RTGetOptInit: %Rra", rc));
+
+    int ch;
+    RTGETOPTUNION Val;
+    while ((ch = RTGetOpt(&OptState, &Val)) != 0)
+    {
+        rc = checkMachineSpecArgument(machineSpec, ch, Val);
+        if (rc == VINF_SUCCESS)
+            continue;
+        else if (rc == VINF_CALLBACK_RETURN)
+            return RTEXITCODE_SUCCESS;
+        else if (rc == VERR_PARSE_ERROR)
+            return RTEXITCODE_SYNTAX;
+
+        switch (ch)
+        {
+            /* no other options currently */
+            default:
+                return RTGetOptPrintError(ch, &Val);
+        }
     }
 
-    if (a->argc - iFirst > 1)
-    {
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                   "cloud machine info: too many arguments\n"
-                   "Try '--help' for more information.");
-    }
-
-    ComPtr<ICloudMachine> pMachine;
-    hrc = getMachine(pMachine, pClient, a->argv[iFirst]);
+    hrc = getMachineBySpec(pMachine, pClient, machineSpec);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
+
 
     ComPtr<IDataStream> pHistoryStream;
     ComPtr<IProgress> pHistoryProgress;
