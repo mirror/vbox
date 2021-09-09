@@ -316,6 +316,9 @@ int    AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFile
 int    AudioTestSetUnpack(const char *pszFile, const char *pszOutDir);
 
 void   AudioTestSetVerifyOptsInitStrict(PAUDIOTESTVERIFYOPTS pOpts);
+void   AudioTestSetVerifyOptsInit(PAUDIOTESTVERIFYOPTS pOpts);
+bool   AudioTestSetVerifyOptsAreEqual(PAUDIOTESTVERIFYOPTS pOptsA, PAUDIOTESTVERIFYOPTS pOptsB);
+
 int    AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERRORDESC pErrDesc);
 int    AudioTestSetVerifyEx(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTVERIFYOPTS pOpts, PAUDIOTESTERRORDESC pErrDesc);
 

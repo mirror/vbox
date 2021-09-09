@@ -1122,7 +1122,7 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
     unsigned    iTestSet    = 0;
 
     AUDIOTESTVERIFYOPTS Opts;
-    AudioTestSetVerifyOptsInitStrict(&Opts);
+    AudioTestSetVerifyOptsInit(&Opts);
 
     int           ch;
     RTGETOPTUNION ValueUnion;

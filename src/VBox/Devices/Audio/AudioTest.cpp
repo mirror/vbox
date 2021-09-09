@@ -2393,6 +2393,34 @@ void AudioTestSetVerifyOptsInitStrict(PAUDIOTESTVERIFYOPTS pOpts)
 }
 
 /**
+ * Initializes audio test verification options with default values (strict!).
+ *
+ * @param   pOpts               Verification options to initialize.
+ */
+void AudioTestSetVerifyOptsInit(PAUDIOTESTVERIFYOPTS pOpts)
+{
+    AudioTestSetVerifyOptsInitStrict(pOpts);
+}
+
+/**
+ * Returns whether two audio test verification options are equal.
+ *
+ * @returns \c true if equal, or \c false if not.
+ * @param   pOptsA              Options A to compare.
+ * @param   pOptsB              Options B to compare Options A with.
+ */
+bool AudioTestSetVerifyOptsAreEqual(PAUDIOTESTVERIFYOPTS pOptsA, PAUDIOTESTVERIFYOPTS pOptsB)
+{
+    if (pOptsA == pOptsB)
+        return true;
+
+    return (   pOptsA->cMaxDiff        == pOptsB->cMaxDiff
+            && pOptsA->fKeepGoing      == pOptsB->fKeepGoing
+            && pOptsA->uMaxDiffPercent == pOptsB->uMaxDiffPercent
+            && pOptsA->uMaxSizePercent == pOptsB->uMaxSizePercent);
+}
+
+/**
  * Verifies an opened audio test set.
  *
  * @returns VBox status code.
