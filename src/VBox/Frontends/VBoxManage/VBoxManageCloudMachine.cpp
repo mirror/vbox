@@ -348,7 +348,7 @@ getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
                 COMGETTER(Id)(bstrId2.asOutParam()),
                     hrc);
 
-            RTMsgError("ambiguous name: %ls and %ls", bstrId1, bstrId2);
+            RTMsgError("ambiguous name: %ls and %ls", bstrId1.raw(), bstrId2.raw());
             return VBOX_E_OBJECT_NOT_FOUND;
         }
     }
