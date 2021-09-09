@@ -42,7 +42,13 @@ static HRESULT getMachineList(com::SafeIfaceArray<ICloudMachine> &aMachines,
                               const ComPtr<ICloudClient> &pClient);
 static HRESULT getMachineById(ComPtr<ICloudMachine> &pMachineOut,
                               const ComPtr<ICloudClient> &pClient,
-                              const char *pcszStrId);
+                              const char *pcszId);
+static HRESULT getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
+                                const ComPtr<ICloudClient> &pClient,
+                                const char *pcszName);
+static HRESULT getMachine(ComPtr<ICloudMachine> &pMachineOut,
+                          const ComPtr<ICloudClient> &pClient,
+                          const char *pcszWhatever);
 
 
 static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
@@ -277,13 +283,13 @@ getMachineList(com::SafeIfaceArray<ICloudMachine> &aMachines,
 static HRESULT
 getMachineById(ComPtr<ICloudMachine> &pMachineOut,
                const ComPtr<ICloudClient> &pClient,
-               const char *pcszStrId)
+               const char *pcszId)
 {
     HRESULT hrc;
 
     ComPtr<ICloudMachine> pMachine;
     CHECK_ERROR2_RET(hrc, pClient,
-        GetCloudMachine(com::Bstr(pcszStrId).raw(),
+        GetCloudMachine(com::Bstr(pcszId).raw(),
                         pMachine.asOutParam()), hrc);
 
     ComPtr<IProgress> pRefreshProgress;
@@ -297,6 +303,95 @@ getMachineById(ComPtr<ICloudMachine> &pMachineOut,
     pMachineOut = pMachine;
     return S_OK;
 }
+
+
+static HRESULT
+getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
+                 const ComPtr<ICloudClient> &pClient,
+                 const char *pcszName)
+{
+    HRESULT hrc;
+
+    com::SafeIfaceArray<ICloudMachine> aMachines;
+    hrc = getMachineList(aMachines, pClient);
+    if (FAILED(hrc))
+        return hrc;
+
+    const size_t cMachines = aMachines.size();
+    if (cMachines == 0)
+        return VBOX_E_OBJECT_NOT_FOUND;
+
+    ComPtr<ICloudMachine> pMachineFound;
+    for (size_t i = 0; i < cMachines; ++i)
+    {
+        const ComPtr<ICloudMachine> pMachine = aMachines[i];
+
+        com::Bstr bstrName;
+        CHECK_ERROR2_RET(hrc, pMachine,
+            COMGETTER(Name)(bstrName.asOutParam()),
+                hrc);
+
+        if (!bstrName.equals(pcszName))
+            continue;
+
+        if (pMachineFound.isNull())
+        {
+            pMachineFound = pMachine;
+        }
+        else
+        {
+            com::Bstr bstrId1, bstrId2;
+            CHECK_ERROR2_RET(hrc, pMachineFound,
+                COMGETTER(Id)(bstrId1.asOutParam()),
+                    hrc);
+            CHECK_ERROR2_RET(hrc, pMachine,
+                COMGETTER(Id)(bstrId2.asOutParam()),
+                    hrc);
+
+            RTMsgError("ambiguous name: %ls and %ls", bstrId1, bstrId2);
+            return VBOX_E_OBJECT_NOT_FOUND;
+        }
+    }
+
+    if (pMachineFound.isNull())
+        return VBOX_E_OBJECT_NOT_FOUND;
+
+    pMachineOut = pMachineFound;
+    return S_OK;
+}
+
+
+/*
+ * Try to find the machine refered by pcszWhatever.  If the look up by
+ * id fails we might want to fallback to look up by name, b/c someone
+ * might want to use a uuid as a display name of a machine.  But cloud
+ * lookups are not fast, so that would be incurring performance
+ * penalty for typos or for machines that are gone.  Should provide
+ * explicit --id/--name options instead.
+ */
+static HRESULT
+getMachine(ComPtr<ICloudMachine> &pMachineOut,
+           const ComPtr<ICloudClient> &pClient,
+           const char *pcszWhatever)
+{
+    ComPtr<ICloudMachine> pMachine;
+
+    HRESULT hrc;
+
+    RTUUID Uuid;
+    int rc = RTUuidFromStr(&Uuid, pcszWhatever);
+    if (RT_SUCCESS(rc))
+        hrc = getMachineById(pMachine, pClient, pcszWhatever);
+    else
+        hrc = getMachineByName(pMachine, pClient, pcszWhatever);
+
+    if (FAILED(hrc))
+        return hrc;
+
+    pMachineOut = pMachine;
+    return S_OK;
+}
+
 
 
 /*
@@ -602,8 +697,11 @@ handleCloudMachineInfo(HandlerArg *a, int iFirst,
     for (int i = iFirst; i < a->argc; ++i)
     {
         ComPtr<ICloudMachine> pMachine;
-        hrc = getMachineById(pMachine, pClient, a->argv[i]);
-        if (FAILED(hrc))
+        hrc = getMachine(pMachine, pClient, a->argv[i]);
+        if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                       "%s: not found", a->argv[i]);
+        else if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
 
         hrc = printMachineInfo(pMachine);
@@ -870,7 +968,7 @@ handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
     }
 
     ComPtr<ICloudMachine> pMachine;
-    hrc = getMachineById(pMachine, pClient, a->argv[iFirst]);
+    hrc = getMachine(pMachine, pClient, a->argv[iFirst]);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
