@@ -470,8 +470,9 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes)\n",
-                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite));
+        LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes, host test #%RU32)\n",
+                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite,
+                pToneParms->Hdr.idxSeq));
 
         RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
 
@@ -510,8 +511,9 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("ValKit: Registering guest playback test #%RU32 (%RU32ms, %RU64 bytes)\n",
-                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead));
+        LogRel(("ValKit: Registering guest playback test #%RU32 (%RU32ms, %RU64 bytes, host test #%RU32)\n",
+                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead,
+                pToneParms->Hdr.idxSeq));
 
         RTListAppend(&pThis->lstTestsPlay, &pTestData->Node);
 
@@ -806,8 +808,8 @@ static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAU
         if (RT_SUCCESS(rc))
         {
             pTst->msStartedTS = RTTimeMilliTS();
-            LogRel(("ValKit: Injecting audio input data (%RU16Hz, %RU32ms, %RU32 bytes) for test #%RU32 started (delay is %RU32ms)\n",
-                    (uint16_t)pTst->t.TestTone.Tone.rdFreqHz,
+            LogRel(("ValKit: Test #%RU32: Injecting audio input data (%RU16Hz, %RU32ms, %RU32 bytes) for host test #%RU32 started (delay is %RU32ms)\n",
+                    pTst->idxTest, (uint16_t)pTst->t.TestTone.Tone.rdFreqHz,
                     pTst->t.TestTone.Parms.msDuration, pTst->t.TestTone.u.Rec.cbToWrite,
                     Parms.TestTone.Hdr.idxSeq, RTTimeMilliTS() - pTst->msRegisteredTS));
 
@@ -820,8 +822,6 @@ static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAU
         LogRel(("ValKit: Now total of %RU32 bytes available for capturing\n", pStrmValKit->cbAvail));
     }
 
-    LogRel(("ValKit: Test #%RU32: Reporting %RU32 bytes as available\n",
-            pTst ? pTst->idxTest : 9999, pStrmValKit->cbAvail));
     return pStrmValKit->cbAvail;
 }
 
@@ -955,7 +955,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         if (RT_SUCCESS(rc))
         {
             pTst->msStartedTS = RTTimeMilliTS();
-            LogRel(("ValKit: Test #%RU32: Recording audio data (%RU16Hz, %RU32ms) for test #%RU32 started (delay is %RU32ms)\n",
+            LogRel(("ValKit: Test #%RU32: Recording audio data (%RU16Hz, %RU32ms) for host test #%RU32 started (delay is %RU32ms)\n",
                     pTst->idxTest, (uint16_t)Parms.TestTone.dbFreqHz, Parms.TestTone.msDuration,
                     Parms.TestTone.Hdr.idxSeq, RTTimeMilliTS() - pTst->msRegisteredTS));
 
