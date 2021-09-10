@@ -313,7 +313,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
         /*
          * 1. Arm the (host) ValKit ATS with the recording parameters.
          */
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling ValKit audio driver on host to record new tone ...\n");
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling ValKit audio driver on host to record new tone ...\n");
         rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClValKit, pToneParms);
         if (RT_SUCCESS(rc))
         {
@@ -323,7 +323,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
             /*
              * 2. Tell VKAT on guest  to start playback.
              */
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling VKAT on guest to play tone ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling VKAT on guest to play tone ...\n");
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientTonePlay() failed with %Rrc\n",
@@ -335,7 +335,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing tone done\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing tone done\n");
 
             /* Give the audio stack a random amount of time for draining data before the next iteration. */
             if (pTstParms->cIterations > 1)
@@ -424,14 +424,14 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
         /*
          * 1. Arm the (host) ValKit ATS with the playback parameters.
          */
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling ValKit audio driver on host to inject recording data ...\n");
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling ValKit audio driver on host to inject recording data ...\n");
         rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClValKit, &pTstParms->TestTone);
         if (RT_SUCCESS(rc))
         {
             /*
              * 2. Tell the guest ATS to start recording.
              */
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Telling VKAT on guest to record audio ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling VKAT on guest to record audio ...\n");
             rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "Test #%RU32/%RU16: AudioTestSvcClientToneRecord() failed with %Rrc\n",
