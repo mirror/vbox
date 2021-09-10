@@ -238,6 +238,10 @@ enum
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     MODIFYVM_IOMMU,
 #endif
+#if defined(VBOX_WITH_TPM)
+    MODIFYVM_TPM_LOCATION,
+    MODIFYVM_TPM_TYPE,
+#endif
     MODIFYVM_DEFAULTFRONTEND,
     MODIFYVM_VMPROC_PRIORITY
 };
@@ -413,6 +417,10 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     { "--iommu",                    MODIFYVM_IOMMU,                     RTGETOPT_REQ_STRING },
+#endif
+#if defined(VBOX_WITH_TPM)
+    { "--tpm-type",                 MODIFYVM_TPM_TYPE,                  RTGETOPT_REQ_STRING },
+    { "--tpm-location",             MODIFYVM_TPM_LOCATION,              RTGETOPT_REQ_STRING },
 #endif
 #ifdef VBOX_WITH_RECORDING
     { "--recording",                MODIFYVM_RECORDING,                 RTGETOPT_REQ_BOOL_ONOFF },
@@ -3052,6 +3060,40 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     errorArgument("Invalid --iommu argument '%s'", ValueUnion.psz);
                     rc = E_FAIL;
                 }
+                break;
+            }
+#endif
+#if defined(VBOX_WITH_TPM)
+            case MODIFYVM_TPM_TYPE:
+            {
+                ComPtr<ITrustedPlatformModule> tpm;
+                sessionMachine->COMGETTER(TrustedPlatformModule)(tpm.asOutParam());
+
+                if (   !RTStrICmp(ValueUnion.psz, "none")
+                    || !RTStrICmp(ValueUnion.psz, "disabled"))
+                    CHECK_ERROR(tpm, COMSETTER(Type)(TpmType_None));
+                else if (!RTStrICmp(ValueUnion.psz, "1.2"))
+                    CHECK_ERROR(tpm, COMSETTER(Type)(TpmType_v1_2));
+                else if (!RTStrICmp(ValueUnion.psz, "2.0"))
+                    CHECK_ERROR(tpm, COMSETTER(Type)(TpmType_v2_0));
+                else if (!RTStrICmp(ValueUnion.psz, "host"))
+                    CHECK_ERROR(tpm, COMSETTER(Type)(TpmType_Host));
+                else if (!RTStrICmp(ValueUnion.psz, "swtpm"))
+                    CHECK_ERROR(tpm, COMSETTER(Type)(TpmType_Swtpm));
+                else
+                {
+                    errorArgument("Invalid --tpm-type argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                break;
+            }
+
+            case MODIFYVM_TPM_LOCATION:
+            {
+                ComPtr<ITrustedPlatformModule> tpm;
+                sessionMachine->COMGETTER(TrustedPlatformModule)(tpm.asOutParam());
+
+                CHECK_ERROR(tpm, COMSETTER(Location)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
 #endif

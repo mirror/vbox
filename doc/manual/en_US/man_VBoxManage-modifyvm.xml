@@ -183,6 +183,16 @@
         <arg choice="plain">amd</arg>
         <arg choice="plain">intel</arg>
       </group></arg>
+    <arg>--tpm-type=<group choice="plain">
+        <arg choice="plain">none</arg>
+        <arg choice="plain">1.2</arg>
+        <arg choice="plain">2.0</arg>
+        <arg choice="plain">host</arg>
+        <arg choice="plain">swtpm</arg>
+      </group></arg>
+      <arg>--tpm-location=<group choice="plain">
+          <arg choice="plain"><replaceable>location</replaceable></arg>
+        </group></arg>
       <arg>--bioslogofadein=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
@@ -1077,6 +1087,36 @@ it unless this changes. -->
               <listitem><para>
                   <literal>intel</literal> &ndash; An Intel IOMMU is
                   present.
+                </para></listitem>
+            </itemizedlist></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--tpm-type=none | 1.2 | 2.0 | host | swtpm</option></term>
+          <listitem><para>
+              Specifies the TPM type for &product-name; to emulate.
+            </para><para>
+              Valid values are as follows:
+            </para><itemizedlist>
+              <listitem><para>
+                  <literal>none</literal> &ndash; No TPM is present
+                  and is the default value.
+                </para></listitem>
+              <listitem><para>
+                  <literal>1.2</literal> &ndash; A TPM conforming to the TCG specification
+                  version 1.2 is present.
+                </para></listitem>
+              <listitem><para>
+                  <literal>2.0</literal> &ndash; A TPM conforming to the TCG specification
+                  version 2.0 is present.
+                </para></listitem>
+              <listitem><para>
+                  <literal>host</literal> &ndash; The host TPM is passed through to the guest.
+                  May not be available on all supported host platforms.
+                </para></listitem>
+              <listitem><para>
+                  <literal>swtpm</literal> &ndash; The VM connects to an external TPM emulation
+                  compliant to swtpm. Requires to set the TPM location to connect to (see
+                  <option>--tpm-location</option> option).
                 </para></listitem>
             </itemizedlist></listitem>
         </varlistentry>

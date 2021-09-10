@@ -487,6 +487,7 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_LIBCURL),VBOX_WITH_HOST_UPDATE_CHECK,) \
 	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,) \
 	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,) \
+	$(if $(VBOX_WITH_TPM),VBOX_WITH_TPM,) \
 	$(if-expr defined(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_USB
  VBoxSVC_DEFS += \
@@ -611,6 +612,7 @@ VBoxSVC_SOURCES = \
 	src-server/StorageControllerImpl.cpp \
 	src-server/SystemPropertiesImpl.cpp \
 	src-server/TokenImpl.cpp \
+	src-server/TrustedPlatformModuleImpl.cpp \
 	$(if $(VBOX_WITH_UNATTENDED), \
 	src-server/UnattendedImpl.cpp \
 	src-server/UnattendedInstaller.cpp \
@@ -902,7 +904,8 @@ VBoxC_DEFS = \
 	$(if $(VBOX_WITH_VRDEAUTH_IN_VBOXSVC),VBOX_WITH_VRDEAUTH_IN_VBOXSVC,) \
  	$(if $(VBOX_WITH_LIBCURL), VBOX_WITH_PROXY_INFO) \
 	$(if $(VBOX_WITH_IOMMU_AMD),VBOX_WITH_IOMMU_AMD,) \
-	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,)
+	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,) \
+	$(if $(VBOX_WITH_TPM),VBOX_WITH_TPM,)
 ifdef VBOX_WITH_NETSHAPER
  VBoxC_DEFS += VBOX_WITH_NETSHAPER
 endif

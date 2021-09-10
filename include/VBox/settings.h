@@ -545,6 +545,23 @@ struct BIOSSettings
     com::Utf8Str    strNVRAMPath;
 };
 
+/**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
+struct TpmSettings
+{
+    TpmSettings();
+
+    bool areDefaultSettings() const;
+
+    bool operator==(const TpmSettings &d) const;
+
+    TpmType_T       tpmType;
+    com::Utf8Str    strLocation;
+};
+
 /** List for keeping a recording feature list. */
 typedef std::map<RecordingFeature_T, bool> RecordingFeatureMap;
 
@@ -1156,6 +1173,7 @@ struct Hardware
     RecordingSettings   recordingSettings;
     GraphicsAdapter     graphicsAdapter;
     USB                 usbSettings;
+    TpmSettings         tpmSettings;            // requires settings version 1.19 (VirtualBox 6.2)
     NetworkAdaptersList llNetworkAdapters;
     SerialPortsList     llSerialPorts;
     ParallelPortsList   llParallelPorts;

@@ -2829,6 +2829,35 @@ bool GraphicsAdapter::operator==(const GraphicsAdapter &g) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
+TpmSettings::TpmSettings() :
+    tpmType(TpmType_None)
+{
+}
+
+/**
+ * Check if all settings have default values.
+ */
+bool TpmSettings::areDefaultSettings() const
+{
+    return    tpmType     == TpmType_None
+           && strLocation.isEmpty();
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool TpmSettings::operator==(const TpmSettings &g) const
+{
+    return (this == &g)
+        || (   tpmType         == g.tpmType
+            && strLocation     == g.strLocation);
+}
+
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
 USBController::USBController() :
     enmType(USBControllerType_Null)
 {
@@ -3503,6 +3532,7 @@ bool Hardware::operator==(const Hardware& h) const
             && biosSettings                   == h.biosSettings
             && graphicsAdapter                == h.graphicsAdapter
             && usbSettings                    == h.usbSettings
+            && tpmSettings                    == h.tpmSettings
             && llNetworkAdapters              == h.llNetworkAdapters
             && llSerialPorts                  == h.llSerialPorts
             && llParallelPorts                == h.llParallelPorts
@@ -4923,6 +4953,30 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 sctl.ulPortCount = 2;
                 hw.storage.llStorageControllers.push_back(sctl);
             }
+        }
+        else if (pelmHwChild->nameEquals("TrustedPlatformModule"))
+        {
+            Utf8Str strTpmType;
+            if (pelmHwChild->getAttributeValue("type", strTpmType))
+            {
+                if (strTpmType == "None")
+                    hw.tpmSettings.tpmType = TpmType_None;
+                else if (strTpmType == "v1_2")
+                    hw.tpmSettings.tpmType = TpmType_v1_2;
+                else if (strTpmType == "v2_0")
+                    hw.tpmSettings.tpmType = TpmType_v2_0;
+                else if (strTpmType == "Host")
+                    hw.tpmSettings.tpmType = TpmType_Host;
+                else if (strTpmType == "Swtpm")
+                    hw.tpmSettings.tpmType = TpmType_Swtpm;
+                else
+                    throw ConfigFileError(this,
+                                          pelmHwChild,
+                                          N_("Invalid value '%s' in TrustedPlatformModule/@type"),
+                                          strTpmType.c_str());
+            }
+
+            pelmHwChild->getAttributeValue("location", hw.tpmSettings.strLocation);
         }
         else if (   (m->sv <= SettingsVersion_v1_14)
                  && pelmHwChild->nameEquals("USBController"))
@@ -6394,6 +6448,34 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmBIOS->createChild("SmbiosUuidLittleEndian")->setAttribute("enabled", hw.biosSettings.fSmbiosUuidLittleEndian);
     }
 
+    if (!hw.tpmSettings.areDefaultSettings())
+    {
+        xml::ElementNode *pelmTpm = pelmHardware->createChild("TrustedPlatformModule");
+
+        const char *pcszTpm;
+        switch (hw.tpmSettings.tpmType)
+        {
+            default:
+            case TpmType_None:
+                pcszTpm = "None";
+                break;
+            case TpmType_v1_2:
+                pcszTpm = "v1_2";
+                break;
+            case TpmType_v2_0:
+                pcszTpm = "v2_0";
+                break;
+            case TpmType_Host:
+                pcszTpm = "Host";
+                break;
+            case TpmType_Swtpm:
+                pcszTpm = "Swtpm";
+                break;
+        }
+        pelmTpm->setAttribute("type", pcszTpm);
+        pelmTpm->setAttribute("location", hw.tpmSettings.strLocation);
+    }
+
     if (m->sv < SettingsVersion_v1_9)
     {
         // settings formats before 1.9 had separate DVDDrive and FloppyDrive items under Hardware;
@@ -7682,6 +7764,14 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     {
         // VirtualBox 6.2 adds iommu device.
         if (hardwareMachine.iommuType != IommuType_None)
+        {
+            m->sv = SettingsVersion_v1_19;
+            return;
+        }
+
+        // VirtualBox 6.2 adds a Trusted Platform Module.
+        if (   hardwareMachine.tpmSettings.tpmType != TpmType_None
+            || hardwareMachine.tpmSettings.strLocation.isNotEmpty())
         {
             m->sv = SettingsVersion_v1_19;
             return;

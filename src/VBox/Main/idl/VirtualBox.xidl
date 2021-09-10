@@ -5422,6 +5422,57 @@
   </interface>
 
   <enum
+    name="TpmType"
+    uuid="c669b9f7-a547-42b6-8464-636aa53401eb"
+    >
+    <desc>
+      TPM type enumeration.
+    </desc>
+
+    <const name="None"                   value="0">
+      <desc>No TPM present in the virtual machine.</desc>
+    </const>
+    <const name="v1_2"                   value="1">
+      <desc>A TPM compliant to the 1.2 TCG specification is emulated.</desc>
+    </const>
+    <const name="v2_0"                   value="2">
+      <desc>A TPM compliant to the 2.0 TCG specification is emulated.</desc>
+    </const>
+    <const name="Host"                   value="3">
+      <desc>The host TPM is passed through, might not be available on all host platforms.</desc>
+    </const>
+    <const name="Swtpm"                  value="4">
+      <desc>The VM will attach to an external software TPM emulation compliant to swtpm.</desc>
+    </const>
+  </enum>
+
+  <interface
+    name="ITrustedPlatformModule" extends="$unknown"
+    uuid="cf11d345-0241-4ea9-ac4c-c69ed3d674e3"
+    wsmap="managed"
+    reservedMethods="2" reservedAttributes="8"
+    >
+    <desc>
+        The ITrustedPlatformModule interface represents the settings of the virtual
+        machine's trusted platform module. This is used only in the <link to="IMachine::TrustedPlatformModule"/> attribute.
+    </desc>
+
+    <attribute name="type" type="TpmType">
+      <desc>
+        Type of TPM configured for the virtual machine.
+      </desc>
+    </attribute>
+
+    <attribute name="location" type="wstring">
+      <desc>
+        Location of the TPM. This is only used for the TpmType_Swtpm type of TPM
+        where the location denotes a <b>hostname:port</b> where to connect to.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <enum
     name="RecordingDestination"
     uuid="11E3F06B-DEC1-48B9-BDC4-1E618D72893C"
     >
@@ -6015,7 +6066,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="621a4d3f-97a5-4f64-89eb-e0a9b2b79e23"
+    uuid="9764b032-9f0f-4b3f-a6a3-e1630c8384bd"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -6272,6 +6323,10 @@
 
     <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">
       <desc>Object containing all BIOS settings.</desc>
+    </attribute>
+
+    <attribute name="TrustedPlatformModule" type="ITrustedPlatformModule" readonly="yes">
+      <desc>Object containing all TPM settings.</desc>
     </attribute>
 
     <attribute name="recordingSettings" type="IRecordingSettings" readonly="yes">

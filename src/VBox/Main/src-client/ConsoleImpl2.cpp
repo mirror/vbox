@@ -3394,6 +3394,57 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
+#if defined(VBOX_WITH_TPM)
+        /*
+         * Configure the Trusted Platform Module.
+         */
+        ComObjPtr<ITrustedPlatformModule> ptrTpm;
+        TpmType_T enmTpmType = TpmType_None;
+
+        hrc = pMachine->COMGETTER(TrustedPlatformModule)(ptrTpm.asOutParam());              H();
+        hrc = ptrTpm->COMGETTER(Type)(&enmTpmType);                                         H();
+        if (enmTpmType != TpmType_None)
+        {
+            InsertConfigNode(pDevices, "tpm", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
+            InsertConfigNode(pInst,    "Config", &pCfg);
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+
+            switch (enmTpmType)
+            {
+                case TpmType_v1_2:
+                case TpmType_v2_0:
+                {
+                    InsertConfigString(pLunL0, "Driver",               "TpmEmuTpms");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+                    InsertConfigInteger(pCfg, "TpmVersion", enmTpmType == TpmType_v1_2 ? 1 : 2);
+                    break;
+                }
+                case TpmType_Host:
+                {
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
+                    InsertConfigString(pLunL0, "Driver",               "TpmHost");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+#endif
+                    break;
+                }
+                case TpmType_Swtpm:
+                {
+                    Bstr location;
+                    hrc = ptrTpm->COMGETTER(Location)(location.asOutParam());               H();
+
+                    InsertConfigString(pLunL0, "Driver",               "TpmEmu");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+                    InsertConfigString(pCfg,   "Location", location);
+                    break;
+                }
+                default:
+                    AssertFailedBreak();
+            }
+        }
+#endif
+
         /*
          * ACPI
          */
@@ -3527,6 +3578,21 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             InsertConfigInteger(pCfg,  "Parallel1IoPortBase", auParallelIoPortBase[1]);
             InsertConfigInteger(pCfg,  "Parallel1Irq", auParallelIrq[1]);
+
+#if defined(VBOX_WITH_TPM)
+            switch (enmTpmType)
+            {
+                case TpmType_v1_2:
+                    InsertConfigString(pCfg, "TpmMode", "tis1.2");
+                    break;
+                case TpmType_v2_0:
+                    InsertConfigString(pCfg, "TpmMode", "fifo2.0");
+                    break;
+                /** @todo Host and swtpm. */
+                default:
+                    break;
+            }
+#endif
 
             InsertConfigNode(pInst,    "LUN#0", &pLunL0);
             InsertConfigString(pLunL0, "Driver",               "ACPIHost");

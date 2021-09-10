@@ -1847,6 +1847,14 @@ HRESULT Machine::getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings)
     return S_OK;
 }
 
+HRESULT Machine::getTrustedPlatformModule(ComPtr<ITrustedPlatformModule> &aTrustedPlatformModule)
+{
+    /* mTrustedPlatformModule is constant during life time, no need to lock */
+    aTrustedPlatformModule = mTrustedPlatformModule;
+
+    return S_OK;
+}
+
 HRESULT Machine::getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSettings)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -8162,6 +8170,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
 
+    /* create associated trusted platform module object */
+    unconst(mTrustedPlatformModule).createObject();
+    mTrustedPlatformModule->init(this);
+
     /* create associated record settings object */
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this);
@@ -8291,6 +8303,12 @@ void Machine::uninitDataAndChildObjects()
     {
         mBIOSSettings->uninit();
         unconst(mBIOSSettings).setNull();
+    }
+
+    if (mTrustedPlatformModule)
+    {
+        mTrustedPlatformModule->uninit();
+        unconst(mTrustedPlatformModule).setNull();
     }
 
     if (mRecordingSettings)
@@ -8816,6 +8834,10 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
 
         /* BIOS */
         rc = mBIOSSettings->i_loadSettings(data.biosSettings);
+        if (FAILED(rc)) return rc;
+
+        /* Trusted Platform Module */
+        rc = mTrustedPlatformModule->i_loadSettings(data.tpmSettings);
         if (FAILED(rc)) return rc;
 
         /* Recording settings */
@@ -10163,6 +10185,10 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         /* BIOS settings (required) */
         rc = mBIOSSettings->i_saveSettings(data.biosSettings);
+        if (FAILED(rc)) throw rc;
+
+        /* Trusted Platform Module settings (required) */
+        rc = mTrustedPlatformModule->i_saveSettings(data.tpmSettings);
         if (FAILED(rc)) throw rc;
 
         /* Recording settings (required) */
@@ -11679,6 +11705,9 @@ void Machine::i_rollback(bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->i_rollback();
 
+    if (mTrustedPlatformModule)
+        mTrustedPlatformModule->i_rollback();
+
     if (mRecordingSettings && (mData->flModifications & IsModified_Recording))
         mRecordingSettings->i_rollback();
 
@@ -11804,6 +11833,7 @@ void Machine::i_commit()
         i_commitMedia(Global::IsOnline(mData->mMachineState));
 
     mBIOSSettings->i_commit();
+    mTrustedPlatformModule->i_commit();
     mRecordingSettings->i_commit();
     mGraphicsAdapter->i_commit();
     mVRDEServer->i_commit();
@@ -12058,6 +12088,7 @@ void Machine::i_copyFrom(Machine *aThat)
     }
 
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
+    mTrustedPlatformModule->i_copyFrom(aThat->mTrustedPlatformModule);
     mRecordingSettings->i_copyFrom(aThat->mRecordingSettings);
     mGraphicsAdapter->i_copyFrom(aThat->mGraphicsAdapter);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
@@ -12433,6 +12464,10 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
+
+    unconst(mTrustedPlatformModule).createObject();
+    mTrustedPlatformModule->init(this, aMachine->mTrustedPlatformModule);
+
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this, aMachine->mRecordingSettings);
     /* create another GraphicsAdapter object that will be mutable */

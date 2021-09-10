@@ -40,6 +40,7 @@
 #include "USBControllerImpl.h"              // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
 #include "BandwidthGroupImpl.h"
+#include "TrustedPlatformModuleImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "Performance.h"
 # include "PerformanceImpl.h"
@@ -471,20 +472,21 @@ public:
 
     enum
     {
-        IsModified_MachineData          = 0x0001,
-        IsModified_Storage              = 0x0002,
-        IsModified_NetworkAdapters      = 0x0008,
-        IsModified_SerialPorts          = 0x0010,
-        IsModified_ParallelPorts        = 0x0020,
-        IsModified_VRDEServer           = 0x0040,
-        IsModified_AudioAdapter         = 0x0080,
-        IsModified_USB                  = 0x0100,
-        IsModified_BIOS                 = 0x0200,
-        IsModified_SharedFolders        = 0x0400,
-        IsModified_Snapshots            = 0x0800,
-        IsModified_BandwidthControl     = 0x1000,
-        IsModified_Recording            = 0x2000,
-        IsModified_GraphicsAdapter      = 0x4000,
+        IsModified_MachineData           = 0x0001,
+        IsModified_Storage               = 0x0002,
+        IsModified_NetworkAdapters       = 0x0008,
+        IsModified_SerialPorts           = 0x0010,
+        IsModified_ParallelPorts         = 0x0020,
+        IsModified_VRDEServer            = 0x0040,
+        IsModified_AudioAdapter          = 0x0080,
+        IsModified_USB                   = 0x0100,
+        IsModified_BIOS                  = 0x0200,
+        IsModified_SharedFolders         = 0x0400,
+        IsModified_Snapshots             = 0x0800,
+        IsModified_BandwidthControl      = 0x1000,
+        IsModified_Recording             = 0x2000,
+        IsModified_GraphicsAdapter       = 0x4000,
+        IsModified_TrustedPlatformModule = 0x8000,
     };
 
     /**
@@ -794,6 +796,8 @@ protected:
     const ComObjPtr<GraphicsAdapter>   mGraphicsAdapter;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
 
+    const ComObjPtr<TrustedPlatformModule> mTrustedPlatformModule;
+
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
     NetworkAdapterVector               mNetworkAdapters;
 
@@ -885,6 +889,7 @@ private:
     HRESULT setPageFusionEnabled(BOOL aPageFusionEnabled);
     HRESULT getGraphicsAdapter(ComPtr<IGraphicsAdapter> &aGraphicsAdapter);
     HRESULT getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings);
+    HRESULT getTrustedPlatformModule(ComPtr<ITrustedPlatformModule> &aTrustedPlatformModule);
     HRESULT getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSettings);
     HRESULT getFirmwareType(FirmwareType_T *aFirmwareType);
     HRESULT setFirmwareType(FirmwareType_T aFirmwareType);
