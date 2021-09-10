@@ -147,6 +147,8 @@ void UICloneVMNamePathEditor::prepare()
         m_pNameLineEdit->setText(tr("%1 Clone").arg(m_strOriginalName));
         connect(m_pNameLineEdit, &QILineEdit::textChanged,
                 this, &UICloneVMNamePathEditor::sigCloneNameChanged);
+        if (m_pNameLabel)
+            m_pNameLabel->setBuddy(m_pNameLineEdit);
     }
 
     m_pPathLabel = new QLabel(this);
@@ -164,6 +166,9 @@ void UICloneVMNamePathEditor::prepare()
         m_pPathSelector->setPath(m_strDefaultPath);
         connect(m_pPathSelector, &UIFilePathSelector::pathChanged,
                 this, &UICloneVMNamePathEditor::sigClonePathChanged);
+    if (m_pPathLabel)
+        m_pPathLabel->setBuddy(m_pPathSelector);
+
     }
 
     retranslateUi();
@@ -172,10 +177,13 @@ void UICloneVMNamePathEditor::prepare()
 void UICloneVMNamePathEditor::retranslateUi()
 {
     if (m_pNameLabel)
-        m_pNameLabel->setText(tr("Name:"));
-
+        m_pNameLabel->setText(tr("&Name:"));
     if (m_pPathLabel)
-        m_pPathLabel->setText(tr("Path:"));
+        m_pPathLabel->setText(tr("&Path:"));
+    if (m_pNameLineEdit)
+        m_pNameLineEdit->setToolTip("The name of the new virtual machine");
+    if (m_pPathSelector)
+        m_pPathSelector->setToolTip("The location of the new virtual machine in host's storage.");
 }
 
 
@@ -252,7 +260,6 @@ void UICloneVMAdditionalOptionsEditor::prepare()
     if (m_pMACComboBoxLabel)
     {
         m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-        m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
         m_pContainerLayout->addWidget(m_pMACComboBoxLabel, 2, 0, 1, 1);
     }
 
@@ -262,6 +269,8 @@ void UICloneVMAdditionalOptionsEditor::prepare()
         m_pContainerLayout->addWidget(m_pMACComboBox, 2, 1, 1, 1);
         connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UICloneVMAdditionalOptionsEditor::sltMACAddressClonePolicyChanged);
+        if (m_pMACComboBoxLabel)
+            m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
     }
     m_pMACComboBox->blockSignals(true);
     populateMACAddressClonePolicies();
@@ -310,7 +319,8 @@ void UICloneVMAdditionalOptionsEditor::prepare()
 
 void UICloneVMAdditionalOptionsEditor::retranslateUi()
 {
-    m_pMACComboBoxLabel->setText(tr("MAC Address &Policy:"));
+    m_pMACComboBoxLabel->setText(tr("MAC Address P&olicy:"));
+    m_pMACComboBox->setToolTip(tr("MAC address policy for clonning:"));
     for (int i = 0; i < m_pMACComboBox->count(); ++i)
     {
         const MACAddressClonePolicy enmPolicy = m_pMACComboBox->itemData(i).value<MACAddressClonePolicy>();
@@ -349,7 +359,7 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
     if (m_pKeepHWUUIDsCheckBox)
     {
         m_pKeepHWUUIDsCheckBox->setToolTip(tr("Don't change hardware UUIDs during cloning."));
-        m_pKeepHWUUIDsCheckBox->setText(tr("Keep &Hardware UUIDs"));
+        m_pKeepHWUUIDsCheckBox->setText(tr("Keep Hard&ware UUIDs"));
     }
 
 }

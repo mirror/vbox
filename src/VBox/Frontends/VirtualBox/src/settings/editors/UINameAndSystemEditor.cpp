@@ -306,6 +306,11 @@ void UINameAndSystemEditor::retranslateUi()
     if (m_pLabelType)
         m_pLabelType->setText(tr("&Version:"));
 
+    if (m_pPathSelector)
+        m_pPathSelector->setToolTip(tr("The folder hosting the virtual machine"));
+    if (m_pNameLineEdit)
+        m_pNameLineEdit->setToolTip(tr("The name of the virtual machine"));
+
     if (m_pComboFamily)
     {
         m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
