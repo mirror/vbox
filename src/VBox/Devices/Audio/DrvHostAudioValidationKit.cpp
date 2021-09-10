@@ -731,37 +731,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamResume(PPDMIHOSTAUDIO pInter
  */
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDrain(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pStream);
-
-    PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
-
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        PVALKITTESTDATA pTst = pThis->pTestCurPlay;
-
-        if (pTst)
-        {
-            LogRel(("ValKit: Test #%RU32: Recording audio data ended (took %RU32ms)\n",
-                pTst->idxTest, RTTimeMilliTS() - pTst->msStartedTS));
-
-            if (pTst->t.TestTone.u.Play.cbRead > pTst->t.TestTone.u.Play.cbToRead)
-                LogRel(("ValKit: Warning: Test #%RU32 read %RU32 bytes more than announced\n",
-                        pTst->idxTest, pTst->t.TestTone.u.Play.cbRead - pTst->t.TestTone.u.Play.cbToRead));
-
-            AudioTestSetTestDone(pTst->pEntry);
-
-            pThis->pTestCurPlay = NULL;
-            pTst                = NULL;
-
-            if (ASMAtomicReadBool(&pThis->fTestSetEnd))
-                rc = RTSemEventSignal(pThis->EventSemEnded);
-        }
-
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
-        AssertRC(rc2);
-    }
-
+    RT_NOREF(pInterface, pStream);
     return VINF_SUCCESS;
 }
 
@@ -887,13 +857,15 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
     PVALKITTESTDATA     pTst  = NULL;
 
-    pThis->cbPlayedTotal += cbBuf; /* Do a bit of accounting. */
-
     bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf);
+
+    LogRel2(("ValKit: Playing stream '%s' ...\n", pStream->pStream->Cfg.szName));
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
+        pThis->cbPlayedTotal += cbBuf; /* Do a bit of accounting. */
+
         if (pThis->pTestCurPlay == NULL)
         {
             pThis->pTestCurPlay = RTListGetFirst(&pThis->lstTestsPlay, VALKITTESTDATA, Node);
@@ -1039,11 +1011,13 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
     PVALKITAUDIOSTREAM  pStrmValKit = (PVALKITAUDIOSTREAM)pStream;
     PVALKITTESTDATA     pTst        = NULL;
 
-    pThis->cbRecordedTotal += cbBuf; /* Do a bit of accounting. */
+    LogRel2(("ValKit: Capturing stream '%s' ...\n", pStream->pStream->Cfg.szName));
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
+        pThis->cbRecordedTotal += cbBuf; /* Do a bit of accounting. */
+
         if (pThis->pTestCurRec == NULL)
         {
             pThis->pTestCurRec = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
@@ -1202,8 +1176,6 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pThis->cbPlayedNoTest  = 0;
 
     pThis->cTestsTotal = 0;
-    pThis->cTestsPlay  = 0;
-    pThis->cTestsRec   = 0;
     pThis->fTestSetEnd = false;
 
     RTListInit(&pThis->lstTestsRec);
