@@ -307,6 +307,10 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
     {
         PAUDIOTESTTONEPARMS const pToneParms = &pTstParms->TestTone;
 
+        pToneParms->Hdr.idxSeq = i;
+        RTTIMESPEC NowTimeSpec;
+        RTTimeExplode(&pToneParms->Hdr.tsCreated, RTTimeNow(&NowTimeSpec));
+
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32/%RU16: Playing test tone (%RU16Hz, %RU32ms)\n",
                      pTstParms->idxCurrent, i, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
 
@@ -417,6 +421,10 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
     for (uint32_t i = 0; i < pTstParms->cIterations; i++)
     {
         PAUDIOTESTTONEPARMS const pToneParms = &pTstParms->TestTone;
+
+        pToneParms->Hdr.idxSeq = i;
+        RTTIMESPEC NowTimeSpec;
+        RTTimeExplode(&pToneParms->Hdr.tsCreated, RTTimeNow(&NowTimeSpec));
 
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32/%RU16: Recording test tone (%RU16Hz, %RU32ms)\n",
                      pTstParms->idxCurrent, i, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);

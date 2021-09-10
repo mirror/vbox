@@ -600,8 +600,12 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for playing test tone (%RU16Hz, %RU32ms) ...\n",
-                 (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for playing test tone #%RU32 (%RU16Hz, %RU32ms) ...\n",
+                 pToneParms->Hdr.idxSeq, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
+
+    char szTimeCreated[RTTIME_STR_LEN];
+    RTTimeToString(&pToneParms->Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Created (caller UTC): %s\n", szTimeCreated);
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
@@ -644,7 +648,12 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
     PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
     PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for recording test tone (%RU32ms) ...\n", pToneParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for recording test tone #%RU32 (%RU32ms) ...\n",
+                 pToneParms->Hdr.idxSeq, pToneParms->msDuration);
+
+    char szTimeCreated[RTTIME_STR_LEN];
+    RTTimeToString(&pToneParms->Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Created (caller UTC): %s\n", szTimeCreated);
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
