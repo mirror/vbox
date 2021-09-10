@@ -232,6 +232,9 @@ typedef struct AUDIOTESTENV
     /** Audio volume to use (in percent).
      *  Might not be available on all systems. */
     uint8_t                 uVolumePercent;
+    /** Number of iterations for *all* tests specified.
+     *  When set to 0 (default), a random value (see specific test) will be chosen. */
+    uint32_t                cIterations;
     /** Output path for storing the test environment's final test files. */
     char                    szTag[AUDIOTEST_TAG_MAX];
     /** Output path for storing the test environment's final test files. */
