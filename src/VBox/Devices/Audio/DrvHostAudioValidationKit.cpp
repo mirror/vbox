@@ -294,6 +294,28 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
 *   ATS callback implementations                                                                                                 *
 *********************************************************************************************************************************/
 
+/** @copydoc ATSCALLBACKS::pfnHowdy */
+static DECLCALLBACK(int) drvHostValKitHowdy(void const *pvUser)
+{
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
+    RT_NOREF(pThis);
+
+    LogRel(("ValKit: Client connected\n"));
+
+    return VINF_SUCCESS;
+}
+
+/** @copydoc ATSCALLBACKS::pfnBye */
+static DECLCALLBACK(int) drvHostValKitBye(void const *pvUser)
+{
+    PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
+    RT_NOREF(pThis);
+
+    LogRel(("ValKit: Client disconnected\n"));
+
+    return VINF_SUCCESS;
+}
+
 /** @copydoc ATSCALLBACKS::pfnTestSetBegin */
 static DECLCALLBACK(int) drvHostValKitTestSetBegin(void const *pvUser, const char *pszTag)
 {
@@ -1155,6 +1177,8 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
 
     ATSCALLBACKS Callbacks;
     RT_ZERO(Callbacks);
+    Callbacks.pfnHowdy            = drvHostValKitHowdy;
+    Callbacks.pfnBye              = drvHostValKitBye;
     Callbacks.pfnTestSetBegin     = drvHostValKitTestSetBegin;
     Callbacks.pfnTestSetEnd       = drvHostValKitTestSetEnd;
     Callbacks.pfnTonePlay         = drvHostValKitRegisterGuestRecTest;
