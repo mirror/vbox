@@ -381,7 +381,14 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
                 LogRel(("ValKit: Waiting for all tests of set '%s' to end ...\n", pszTag));
                 rc = RTSemEventWait(pThis->EventSemEnded, RT_MS_1MIN);
                 if (RT_FAILURE(rc))
+                {
                     LogRel(("ValKit: Waiting for tests of set '%s' to end failed with %Rrc\n", pszTag, rc));
+
+                    /* The verification on the host will tell us later which tests did run and which didn't (anymore).
+                     * So continue and pack (plus transfer) the test set to the host. */
+                    if (rc == VERR_TIMEOUT)
+                        rc = VINF_SUCCESS;
+                }
 
                 int rc2 = RTCritSectEnter(&pThis->CritSect);
                 if (RT_SUCCESS(rc))
