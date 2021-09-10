@@ -605,7 +605,7 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
 
     char szTimeCreated[RTTIME_STR_LEN];
     RTTimeToString(&pToneParms->Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Created (caller UTC): %s\n", szTimeCreated);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test created (caller UTC): %s\n", szTimeCreated);
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
@@ -653,7 +653,7 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
 
     char szTimeCreated[RTTIME_STR_LEN];
     RTTimeToString(&pToneParms->Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Created (caller UTC): %s\n", szTimeCreated);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test created (caller UTC): %s\n", szTimeCreated);
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
