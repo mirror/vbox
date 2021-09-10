@@ -90,9 +90,9 @@ enum
     MODIFYVM_PLUGCPU,
     MODIFYVM_UNPLUGCPU,
     MODIFYVM_SETCPUID,
-    MODIFYVM_SETCPUID_OLD,
+    MODIFYVM_SETCPUID_OLD,      // legacy (not yet deprecated)
     MODIFYVM_DELCPUID,
-    MODIFYVM_DELCPUID_OLD,
+    MODIFYVM_DELCPUID_OLD,      // legacy (not yet deprecated)
     MODIFYVM_DELALLCPUID,
     MODIFYVM_GRAPHICSCONTROLLER,
     MODIFYVM_MONITORCOUNT,
@@ -282,8 +282,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--nested-hw-virt",           MODIFYVM_NESTED_HW_VIRT,            RTGETOPT_REQ_BOOL_ONOFF },
     { "--cpuid-set",                MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
     { "--cpuid-remove",             MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
-    { "--cpuidset",                 MODIFYVM_SETCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
-    { "--cpuidremove",              MODIFYVM_DELCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX },
+    { "--cpuidset",                 MODIFYVM_SETCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX }, /* legacy */
+    { "--cpuidremove",              MODIFYVM_DELCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX }, /* legacy */
     { "--cpuidremoveall",           MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING},
     { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
     { "--cpuhotplug",               MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF },
@@ -308,19 +308,19 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--biospxedebug",             MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--system-uuid-le",           MODIFYVM_SYSTEMUUIDLE,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--boot",                     MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--hda",                      MODIFYVM_HDA,                       RTGETOPT_REQ_STRING },
-    { "--hdb",                      MODIFYVM_HDB,                       RTGETOPT_REQ_STRING },
-    { "--hdd",                      MODIFYVM_HDD,                       RTGETOPT_REQ_STRING },
-    { "--idecontroller",            MODIFYVM_IDECONTROLLER,             RTGETOPT_REQ_STRING },
-    { "--sataportcount",            MODIFYVM_SATAPORTCOUNT,             RTGETOPT_REQ_UINT32 },
-    { "--sataport",                 MODIFYVM_SATAPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--sata",                     MODIFYVM_SATA,                      RTGETOPT_REQ_STRING },
-    { "--scsiport",                 MODIFYVM_SCSIPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--scsitype",                 MODIFYVM_SCSITYPE,                  RTGETOPT_REQ_STRING },
-    { "--scsi",                     MODIFYVM_SCSI,                      RTGETOPT_REQ_STRING },
-    { "--dvdpassthrough",           MODIFYVM_DVDPASSTHROUGH,            RTGETOPT_REQ_STRING },
-    { "--dvd",                      MODIFYVM_DVD,                       RTGETOPT_REQ_STRING },
-    { "--floppy",                   MODIFYVM_FLOPPY,                    RTGETOPT_REQ_STRING },
+    { "--hda",                      MODIFYVM_HDA,                       RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--hdb",                      MODIFYVM_HDB,                       RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--hdd",                      MODIFYVM_HDD,                       RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--idecontroller",            MODIFYVM_IDECONTROLLER,             RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--sataportcount",            MODIFYVM_SATAPORTCOUNT,             RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--sataport",                 MODIFYVM_SATAPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX }, /* deprecated */
+    { "--sata",                     MODIFYVM_SATA,                      RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--scsiport",                 MODIFYVM_SCSIPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX }, /* deprecated */
+    { "--scsitype",                 MODIFYVM_SCSITYPE,                  RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--scsi",                     MODIFYVM_SCSI,                      RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--dvdpassthrough",           MODIFYVM_DVDPASSTHROUGH,            RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--dvd",                      MODIFYVM_DVD,                       RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--floppy",                   MODIFYVM_FLOPPY,                    RTGETOPT_REQ_STRING }, /* deprecated */
     { "--nictracefile",             MODIFYVM_NICTRACEFILE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nictrace",                 MODIFYVM_NICTRACE,                  RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--nicproperty",              MODIFYVM_NICPROPERTY,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -336,7 +336,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nicgenericdrv",            MODIFYVM_GENERICDRV,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nat-network",              MODIFYVM_NATNETWORKNAME,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--natnetwork",               MODIFYVM_NATNETWORKNAME,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--natnetwork",               MODIFYVM_NATNETWORKNAME,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX }, /* deprecated */
     { "--natnet",                   MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natbindip",                MODIFYVM_NATBINDIP,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natsettings",              MODIFYVM_NATSETTINGS,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },

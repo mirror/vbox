@@ -472,366 +472,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 
 #define SEP pcszSep1, pcszSep2
 
-    if (enmCommand == USAGE_LIST || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s list [--long|-l] [--sorted|-s]%s vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
-#if defined(VBOX_WITH_NETFLT)
-                     "                            intnets|bridgedifs|hostonlyifs|natnets|dhcpservers|\n"
-#else
-                     "                            intnets|bridgedifs|natnets|dhcpservers|hostinfo|\n"
-#endif
-                     "                            hostinfo|hostcpuids|hddbackends|hdds|dvds|floppies|\n"
-                     "                            usbhost|usbfilters|systemproperties|extpacks|\n"
-                     "                            groups|webcams|screenshotformats|cloudproviders|\n"
-#if defined(VBOX_WITH_CLOUD_NET)
-                     "                            cloudprofiles|cloudnets|cpu-profiles|hostdrives\n"
-#else
-                     "                            cloudprofiles|cpu-profiles|hostdrives\n"
-#endif
-                     "\n", SEP);
-
-    if (enmCommand == USAGE_SHOWVMINFO || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s showvminfo %s      <uuid|vmname> [--details]\n"
-                     "                            [--machinereadable]\n"
-                           "%s showvminfo %s      <uuid|vmname> --log <idx>\n"
-                     "\n", SEP, SEP);
-
-    if (enmCommand == USAGE_REGISTERVM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s registervm %s      <filename>\n"
-                     "\n", SEP);
-
-    if (enmCommand == USAGE_UNREGISTERVM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s unregistervm %s    <uuid|vmname> [--delete]\n"
-                     "\n", SEP);
-
-    if (enmCommand == USAGE_CREATEVM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s createvm %s        --name <name>\n"
-                     "                            [--groups <group>, ...]\n"
-                     "                            [--ostype <ostype>]\n"
-                     "                            [--register]\n"
-                     "                            [--basefolder <path>]\n"
-                     "                            [--uuid <uuid>]\n"
-                     "                            [--default]\n"
-                     "\n", SEP);
-
-    if (enmCommand == USAGE_MODIFYVM || enmCommand == USAGE_S_ALL)
-    {
-        RTStrmPrintf(pStrm,
-                           "%s modifyvm %s        <uuid|vmname>\n"
-                     "                            [--name <name>]\n"
-                     "                            [--groups <group>, ...]\n"
-                     "                            [--description <desc>]\n"
-                     "                            [--ostype <ostype>]\n"
-                     "                            [--iconfile <filename>]\n"
-                     "                            [--memory <memorysize in MB>]\n"
-                     "                            [--pagefusion on|off]\n"
-                     "                            [--vram <vramsize in MB>]\n"
-                     "                            [--acpi on|off]\n"
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                     "                            [--pciattach 03:04.0]\n"
-                     "                            [--pciattach 03:04.0@02:01.0]\n"
-                     "                            [--pcidetach 03:04.0]\n"
-#endif
-                     "                            [--ioapic on|off]\n"
-                     "                            [--hpet on|off]\n"
-                     "                            [--triplefaultreset on|off]\n"
-                     "                            [--apic on|off]\n"
-                     "                            [--x2apic on|off]\n"
-                     "                            [--paravirtprovider none|default|legacy|minimal|\n"
-                     "                                                hyperv|kvm]\n"
-                     "                            [--paravirtdebug <key=value> [,<key=value> ...]]\n"
-                     "                            [--hwvirtex on|off]\n"
-                     "                            [--nestedpaging on|off]\n"
-                     "                            [--largepages on|off]\n"
-                     "                            [--vtxvpid on|off]\n"
-                     "                            [--vtxux on|off]\n"
-                     "                            [--pae on|off]\n"
-                     "                            [--longmode on|off]\n"
-                     "                            [--ibpb-on-vm-exit on|off]\n"
-                     "                            [--ibpb-on-vm-entry on|off]\n"
-                     "                            [--spec-ctrl on|off]\n"
-                     "                            [--l1d-flush-on-sched on|off]\n"
-                     "                            [--l1d-flush-on-vm-entry on|off]\n"
-                     "                            [--mds-clear-on-sched on|off]\n"
-                     "                            [--mds-clear-on-vm-entry on|off]\n"
-                     "                            [--nested-hw-virt on|off]\n"
-                     "                            [--virt-vmsave-vmload on|off]\n"
-                     "                            [--cpu-profile \"host|Intel 80[86|286|386]\"]\n"
-                     "                            [--cpuid-portability-level <0..3>]\n"
-                     "                            [--cpuid-set <leaf[:subleaf]> <eax> <ebx> <ecx> <edx>]\n"
-                     "                            [--cpuid-remove <leaf[:subleaf]>]\n"
-                     "                            [--cpuidremoveall]\n"
-                     "                            [--hardwareuuid <uuid>]\n"
-                     "                            [--cpus <number>]\n"
-                     "                            [--cpuhotplug on|off]\n"
-                     "                            [--plugcpu <id>]\n"
-                     "                            [--unplugcpu <id>]\n"
-                     "                            [--cpuexecutioncap <1-100>]\n"
-                     "                            [--rtcuseutc on|off]\n"
-#ifdef VBOX_WITH_VMSVGA
-                     "                            [--graphicscontroller none|vboxvga|vmsvga|vboxsvga]\n"
-#else
-                     "                            [--graphicscontroller none|vboxvga]\n"
-#endif
-                     "                            [--monitorcount <number>]\n"
-                     "                            [--accelerate3d on|off]\n"
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                     "                            [--accelerate2dvideo on|off]\n"
-#endif
-                     "                            [--firmware bios|efi|efi32|efi64]\n"
-                     "                            [--chipset ich9|piix3]\n"
-#if defined(VBOX_WITH_IOMMU_AMD) && defined(VBOX_WITH_IOMMU_INTEL)
-                     "                            [--iommu none|automatic|amd|intel]\n"
-#elif defined(VBOX_WITH_IOMMU_AMD)
-                     "                            [--iommu none|automatic|amd]\n"
-#elif defined(VBOX_WITH_IOMMU_INTEL)
-                     "                            [--iommu none|automatic|intel]\n"
-#endif
-                     "                            [--bioslogofadein on|off]\n"
-                     "                            [--bioslogofadeout on|off]\n"
-                     "                            [--bioslogodisplaytime <msec>]\n"
-                     "                            [--bioslogoimagepath <imagepath>]\n"
-                     "                            [--biosbootmenu disabled|menuonly|messageandmenu]\n"
-                     "                            [--biosapic disabled|apic|x2apic]\n"
-                     "                            [--biossystemtimeoffset <msec>]\n"
-                     "                            [--biospxedebug on|off]\n"
-                     "                            [--system-uuid-le on|off]\n"
-                     "                            [--boot<1-4> none|floppy|dvd|disk|net>]\n"
-                     "                            [--nic<1-N> none|null|nat|bridged|intnet"
-#if defined(VBOX_WITH_NETFLT)
-                     "|hostonly"
-#endif
-                     "|\n"
-                     "                                        generic|natnetwork"
-                     "]\n"
-                     "                            [--nictype<1-N> Am79C970A|Am79C973|Am79C960"
-#ifdef VBOX_WITH_E1000
-                  "|\n                                            82540EM|82543GC|82545EM"
-#endif
-#ifdef VBOX_WITH_VIRTIO
-                  "|\n                                            virtio"
-#endif /* VBOX_WITH_VIRTIO */
-                     "]\n"
-                     "                            [--cableconnected<1-N> on|off]\n"
-                     "                            [--nictrace<1-N> on|off]\n"
-                     "                            [--nictracefile<1-N> <filename>]\n"
-                     "                            [--nicproperty<1-N> name=[value]]\n"
-                     "                            [--nicspeed<1-N> <kbps>]\n"
-                     "                            [--nicbootprio<1-N> <priority>]\n"
-                     "                            [--nicpromisc<1-N> deny|allow-vms|allow-all]\n"
-                     "                            [--nicbandwidthgroup<1-N> none|<name>]\n"
-                     "                            [--bridgeadapter<1-N> none|<devicename>]\n"
-#if defined(VBOX_WITH_NETFLT)
-                     "                            [--hostonlyadapter<1-N> none|<devicename>]\n"
-#endif
-                     "                            [--intnet<1-N> <network name>]\n"
-                     "                            [--nat-network<1-N> <network name>]\n"
-                     "                            [--nicgenericdrv<1-N> <driver>]\n"
-                     "                            [--natnet<1-N> <network>|default]\n"
-                     "                            [--natsettings<1-N> [<mtu>],[<socksnd>],\n"
-                     "                                                [<sockrcv>],[<tcpsnd>],\n"
-                     "                                                [<tcprcv>]]\n"
-                     "                            [--natpf<1-N> [<rulename>],tcp|udp,[<hostip>],\n"
-                     "                                          <hostport>,[<guestip>],<guestport>]\n"
-                     "                            [--natpf<1-N> delete <rulename>]\n"
-                     "                            [--nattftpprefix<1-N> <prefix>]\n"
-                     "                            [--nattftpfile<1-N> <file>]\n"
-                     "                            [--nattftpserver<1-N> <ip>]\n"
-                     "                            [--natbindip<1-N> <ip>]\n"
-                     "                            [--natdnspassdomain<1-N> on|off]\n"
-                     "                            [--natdnsproxy<1-N> on|off]\n"
-                     "                            [--natdnshostresolver<1-N> on|off]\n"
-                     "                            [--nataliasmode<1-N> default|[log],[proxyonly],\n"
-                     "                                                         [sameports]]\n"
-                     "                            [--macaddress<1-N> auto|<mac>]\n"
-                     "                            [--mouse ps2|usb|usbtablet|usbmultitouch]\n"
-                     "                            [--keyboard ps2|usb]\n"
-                     "                            [--uart<1-N> off|<I/O base> <IRQ>]\n"
-                     "                            [--uartmode<1-N> disconnected|\n"
-                     "                                             server <pipe>|\n"
-                     "                                             client <pipe>|\n"
-                     "                                             tcpserver <port>|\n"
-                     "                                             tcpclient <hostname:port>|\n"
-                     "                                             file <file>|\n"
-                     "                                             <devicename>]\n"
-                     "                            [--uarttype<1-N> 16450|16550A|16750]\n"
-#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
-                     "                            [--lpt<1-N> off|<I/O base> <IRQ>]\n"
-                     "                            [--lptmode<1-N> <devicename>]\n"
-#endif
-                     "                            [--guestmemoryballoon <balloonsize in MB>]\n"
-                     "                            [--vm-process-priority default|flat|low|normal|high]\n"
-                     "                            [--audio none|null", SEP);
-        if (fWin)
-        {
-#ifdef VBOX_WITH_WINMM
-            RTStrmPrintf(pStrm, "|winmm|dsound");
-#else
-            RTStrmPrintf(pStrm, "|dsound");
-#endif
-        }
-        if (fLinux || fSolaris)
-        {
-            RTStrmPrintf(pStrm, ""
-#ifdef VBOX_WITH_AUDIO_OSS
-                                "|oss"
-#endif
-#ifdef VBOX_WITH_AUDIO_ALSA
-                                "|alsa"
-#endif
-#ifdef VBOX_WITH_AUDIO_PULSE
-                                "|pulse"
-#endif
-                        );
-        }
-        if (fFreeBSD)
-        {
-#ifdef VBOX_WITH_AUDIO_OSS
-            /* Get the line break sorted when dumping all option variants. */
-            if (fDumpOpts)
-            {
-                RTStrmPrintf(pStrm, "|\n"
-                     "                                     oss");
-            }
-            else
-                RTStrmPrintf(pStrm, "|oss");
-#endif
-#ifdef VBOX_WITH_AUDIO_PULSE
-            RTStrmPrintf(pStrm, "|pulse");
-#endif
-        }
-        if (fDarwin)
-        {
-            RTStrmPrintf(pStrm, "|coreaudio");
-        }
-        RTStrmPrintf(pStrm, "]\n");
-        RTStrmPrintf(pStrm,
-                     "                            [--audioin on|off]\n"
-                     "                            [--audioout on|off]\n"
-                     "                            [--audiocontroller ac97|hda|sb16]\n"
-                     "                            [--audiocodec stac9700|ad1980|stac9221|sb16]\n"
-#ifdef VBOX_WITH_SHARED_CLIPBOARD
-                     "                            [--clipboard-mode disabled|hosttoguest|guesttohost|\n"
-                     "                                              bidirectional]\n"
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                     "                            [--clipboard-file-transfers enabled|disabled]\n"
-# endif
-#endif
-                     "                            [--draganddrop disabled|hosttoguest|guesttohost|\n"
-                     "                                           bidirectional]\n");
-        RTStrmPrintf(pStrm,
-                     "                            [--vrde on|off]\n"
-                     "                            [--vrdeextpack default|<name>]\n"
-                     "                            [--vrdeproperty <name=[value]>]\n"
-                     "                            [--vrdeport <hostport>]\n"
-                     "                            [--vrdeaddress <hostip>]\n"
-                     "                            [--vrdeauthtype null|external|guest]\n"
-                     "                            [--vrdeauthlibrary default|<name>]\n"
-                     "                            [--vrdemulticon on|off]\n"
-                     "                            [--vrdereusecon on|off]\n"
-                     "                            [--vrdevideochannel on|off]\n"
-                     "                            [--vrdevideochannelquality <percent>]\n");
-        RTStrmPrintf(pStrm,
-                     "                            [--usbohci on|off]\n"
-                     "                            [--usbehci on|off]\n"
-                     "                            [--usbxhci on|off]\n"
-                     "                            [--usbrename <oldname> <newname>]\n"
-                     "                            [--snapshotfolder default|<path>]\n"
-                     "                            [--teleporter on|off]\n"
-                     "                            [--teleporterport <port>]\n"
-                     "                            [--teleporteraddress <address|empty>]\n"
-                     "                            [--teleporterpassword <password>]\n"
-                     "                            [--teleporterpasswordfile <file>|stdin]\n"
-                     "                            [--tracing-enabled on|off]\n"
-                     "                            [--tracing-config <config-string>]\n"
-                     "                            [--tracing-allow-vm-access on|off]\n"
-#if 0
-                     "                            [--iocache on|off]\n"
-                     "                            [--iocachesize <I/O cache size in MB>]\n"
-#endif
-#ifdef VBOX_WITH_USB_CARDREADER
-                     "                            [--usbcardreader on|off]\n"
-#endif
-                     "                            [--autostart-enabled on|off]\n"
-                     "                            [--autostart-delay <seconds>]\n"
-#if 0
-                     "                            [--autostop-type disabled|savestate|poweroff|\n"
-                     "                                             acpishutdown]\n"
-#endif
-#ifdef VBOX_WITH_RECORDING
-                     "                            [--recording on|off]\n"
-                     "                            [--recordingscreens all|<screen ID> [<screen ID> ...]]\n"
-                     "                            [--recordingfile <filename>]\n"
-                     "                            [--recordingvideores <width> <height>]\n"
-                     "                            [--recordingvideorate <rate>]\n"
-                     "                            [--recordingvideofps <fps>]\n"
-                     "                            [--recordingmaxtime <s>]\n"
-                     "                            [--recordingmaxsize <MB>]\n"
-                     "                            [--recordingopts <key=value> [,<key=value> ...]]\n"
-#endif
-                     "                            [--defaultfrontend default|<name>]\n"
-                     "\n");
-    }
-
-    if (enmCommand == USAGE_MOVEVM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s movevm %s          <uuid|vmname>\n"
-                     "                            --type basic\n"
-                     "                            [--folder <path>]\n"
-                     "\n", SEP);
-
-    if (enmCommand == USAGE_IMPORTAPPLIANCE || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s import %s          <ovfname/ovaname>\n"
-                     "                            [--dry-run|-n]\n"
-                     "                            [--options keepallmacs|keepnatmacs|importtovdi]\n"
-                     "                            [--vmname <name>]\n"
-                     "                            [--cloud]\n"
-                     "                            [--cloudprofile <cloud profile name>]\n"
-                     "                            [--cloudinstanceid <instance id>]\n"
-                     "                            [--cloudbucket <bucket name>]\n"
-                     "                            [more options]\n"
-                     "                            (run with -n to have options displayed\n"
-                     "                             for a particular OVF. It doesn't work for the Cloud import.)\n\n", SEP);
-
-    if (enmCommand == USAGE_EXPORTAPPLIANCE || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s export %s          <machines> --output|-o <name>.<ovf/ova/tar.gz>\n"
-                     "                            [--legacy09|--ovf09|--ovf10|--ovf20|--opc10]\n"
-                     "                            [--manifest]\n"
-                     "                            [--iso]\n"
-                     "                            [--options manifest|iso|nomacs|nomacsbutnat]\n"
-                     "                            [--vsys <number of virtual system>]\n"
-                     "                                    [--vmname <name>]\n"
-                     "                                    [--product <product name>]\n"
-                     "                                    [--producturl <product url>]\n"
-                     "                                    [--vendor <vendor name>]\n"
-                     "                                    [--vendorurl <vendor url>]\n"
-                     "                                    [--version <version info>]\n"
-                     "                                    [--description <description info>]\n"
-                     "                                    [--eula <license text>]\n"
-                     "                                    [--eulafile <filename>]\n"
-                     "                            [--cloud <number of virtual system>]\n"
-                     "                                    [--vmname <name>]\n"
-                     "                                    [--cloudprofile <cloud profile name>]\n"
-                     "                                    [--cloudbucket <bucket name>]\n"
-                     "                                    [--cloudkeepobject <true/false>]\n"
-                     "                                    [--cloudlaunchmode EMULATED|PARAVIRTUALIZED]\n"
-                     "                                    [--cloudlaunchinstance <true/false>]\n"
-                     "                                    [--clouddomain <domain>]\n"
-                     "                                    [--cloudshape <shape>]\n"
-                     "                                    [--clouddisksize <disk size in GB>]\n"
-                     "                                    [--cloudocivcn <OCI vcn id>]\n"
-                     "                                    [--cloudocisubnet <OCI subnet id>]\n"
-                     "                                    [--cloudpublicip <true/false>]\n"
-                     "                                    [--cloudprivateip <ip>]\n"
-                     "                                    [--cloudinitscriptpath <script path>]\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_STARTVM || enmCommand == USAGE_S_ALL)
     {
         RTStrmPrintf(pStrm,
@@ -1287,8 +927,10 @@ RTEXITCODE errorSyntax(USAGECATEGORY enmCommand, const char *pszFormat, ...)
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
         printUsageInternal(enmCommand, g_pStdErr);
-    else
+    else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
         printUsage(enmCommand, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdErr);
+    else
+        printUsage(g_pStdErr);
 #else
     RT_NOREF_PV(enmCommand);
 #endif
@@ -1309,8 +951,10 @@ RTEXITCODE errorSyntaxEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, co
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
         printUsageInternal(enmCommand, g_pStdErr);
-    else
+    else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
         printUsage(enmCommand, fSubcommandScope, g_pStdErr);
+    else
+        printUsage(g_pStdErr);
 #else
     RT_NOREF2(enmCommand, fSubcommandScope);
 #endif
@@ -1350,8 +994,10 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, in
 #ifndef VBOX_ONLY_DOCS
         if (g_fInternalMode)
             printUsageInternal(enmCommand, g_pStdOut);
-        else
+        else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
             printUsage(enmCommand, fSubcommandScope, g_pStdOut);
+        else
+            printUsage(g_pStdErr);
 #endif
         return RTEXITCODE_SUCCESS;
     }
@@ -1363,8 +1009,10 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, in
 #ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
         printUsageInternal(enmCommand, g_pStdErr);
-    else
+    else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
         printUsage(enmCommand, fSubcommandScope, g_pStdErr);
+    else
+        printUsage(g_pStdErr);
 #else
     RT_NOREF2(enmCommand, fSubcommandScope);
 #endif

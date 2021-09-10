@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-movevm" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage movevm</title>
   </refentryinfo>
 
@@ -42,7 +42,7 @@
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg choice="req">--type=basic</arg>
+      <arg>--type=basic</arg>
       <arg>--folder=<replaceable>folder-name</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -70,14 +70,19 @@
       <varlistentry>
         <term><option>--type=basic</option></term>
         <listitem><para>
-            Specifies that the type of the move operation is basic.
+            Specifies the type of the move operation. So far
+            <literal>basic</literal> is the only recognized value and also
+            the default if not specified.
           </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--folder=<replaceable>folder-name</replaceable></option></term>
         <listitem><para>
             Specifies a full path name or relative path name of the new
-            location on the host file system.
+            location on the host file system. Not specifying the option
+            or specifying the current location is allowed, and moves
+            disk images and other parts of the VM to this location if
+            they are currently in other locations.
           </para></listitem>
       </varlistentry>
     </variablelist>

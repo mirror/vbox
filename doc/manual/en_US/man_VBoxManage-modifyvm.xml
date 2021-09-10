@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-modifyvm" lang="en">
   <refentryinfo>
-    <pubdate>September 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage modifyvm</title>
   </refentryinfo>
 
@@ -57,8 +57,6 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--pciattach=<replaceable>host-PCI-address</replaceable></arg>
-      <arg>--pcidetach=<replaceable>host-PCI-address</replaceable></arg>
       <arg>--ioapic=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
@@ -159,6 +157,14 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
+      <arg>--nested-hw-virt=<group choice="plain">
+          <arg choice="plain">on</arg>
+          <arg choice="plain">off</arg>
+        </group></arg>
+      <arg>--virt-vmsave-vmload=<group choice="plain">
+          <arg choice="plain">on</arg>
+          <arg choice="plain">off</arg>
+        </group></arg>
       <arg>--accelerate3d=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
@@ -238,10 +244,9 @@
           <arg choice="plain">default</arg>
           <arg choice="plain"><replaceable>name</replaceable></arg>
         </group></arg>
-      <arg>--nested-hw-virt=<group choice="plain">
-          <arg choice="plain">on</arg>
-          <arg choice="plain">off</arg>
-        </group></arg>
+<!-- There are currently undocumented options &#45;&#45;iocache and
+&#45;&#45;iocachesize which are scheduled for removal. Not worth spending
+time on documenting it. -->
       <arg>--vm-process-priority=<group choice="plain">
           <arg choice="plain">default</arg>
           <arg choice="plain">flat</arg>
@@ -418,12 +423,15 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--clipboard=<group choice="plain">
+      <arg>--clipboard-mode=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">hosttoguest</arg>
           <arg choice="plain">guesttohost</arg>
           <arg choice="plain">bidirectional</arg>
         </group></arg>
+<!-- There is a currently undocumented option &#45;&#45;clipboard-file-transfers.
+The implementation is not finished, so postpone documenting until it
+actually is ready for users. -->
       <arg>--draganddrop=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">hosttoguest</arg>
@@ -531,8 +539,8 @@
           <arg choice="plain">stdin</arg>
         </group></arg>
       <arg>--cpuid-portability-level=<replaceable>level</replaceable></arg>
-      <arg>--cpuid-set=<replaceable>leaf</replaceable> <arg>:<replaceable>subleaf</replaceable></arg> <replaceable>eax</replaceable> <replaceable>ebx</replaceable> <replaceable>ecx</replaceable> <replaceable>edx</replaceable></arg>
-      <arg>--cpuid-remove=<replaceable>leaf</replaceable> <arg>:<replaceable>subleaf</replaceable></arg></arg>
+      <arg>--cpuid-set=<replaceable>leaf</replaceable><arg>:<replaceable>subleaf</replaceable></arg> <replaceable>eax</replaceable>&nbsp;<replaceable>ebx</replaceable>&nbsp;<replaceable>ecx</replaceable>&nbsp;<replaceable>edx</replaceable></arg>
+      <arg>--cpuid-remove=<replaceable>leaf</replaceable><arg>:<replaceable>subleaf</replaceable></arg></arg>
       <arg>--cpuidremoveall</arg>
     </cmdsynopsis>
 
@@ -576,6 +584,21 @@
           <arg choice="plain">off</arg>
         </group></arg>
       <arg>--autostart-delay=<replaceable>seconds</replaceable></arg>
+<!-- There is a currently undocumented option &#45;&#45;autostop-type.
+Most autostart service implementations either ignore it or rely it is
+left unchanged due to otherwise running into timeouts established by the
+host OS, defeating the purpose. Not worth spending time on documenting
+it unless this changes. -->
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-modifyvm-pcipassthrough">
+      <command>VBoxManage modifyvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg>--pciattach=<replaceable>host-PCI-address</replaceable><arg>@<replaceable>guest-PCI-bus-address</replaceable></arg></arg>
+      <arg>--pcidetach=<replaceable>host-PCI-address</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -629,7 +652,9 @@
               Changes the group membership of a VM. Group names always
               begin with a slash character (<literal>/</literal>) and
               can be nested. By default, VMs are members of the
-              <literal>/</literal> group.
+              <literal>/</literal> group. A VM can be member of multiple
+              groups, but its primary group determines the directory
+              structure where the internal VM files are placed by default.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -645,16 +670,17 @@
         <varlistentry>
           <term><option>--ostype=<replaceable>OS-type</replaceable></option></term>
           <listitem><para>
-              Specifies the guest operating system (OS) to run in the
-              VM. Use the <command>VBoxManage list ostypes</command>
+              Specifies the guest operating system (OS) information for
+              the VM. Use the <command>VBoxManage list ostypes</command>
               command to view the OS type identifiers.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--iconfile=<replaceable>filename</replaceable></option></term>
           <listitem><para>
-              Specifies the absolute path to the &product-name; icon on
-              the host system. The icon is shown on the VM.
+              Specifies the path to the VM icon file in PNG format
+              on the host system. The icon is shown in the VM manager
+              UI and when running the VM with UI.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -697,31 +723,15 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--pciattach=<replaceable>host-PCI-address</replaceable>[@<replaceable>guest-PCI-host-bus-address</replaceable>]</option></term>
-          <listitem><para>
-              Attaches the specified PCI network controller on the host
-              to the guest VM. You can optionally specify the PCI bus on
-              the guest VM on which to attach the controller. See
-              <xref linkend="pcipassthrough" />.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--pcidetach=<replaceable>host-PCI-address</replaceable></option></term>
-          <listitem><para>
-              Detaches the specified PCI network controller from the
-              attached PCI bus on the guest VM. See
-              <xref linkend="pcipassthrough" />.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term><option>--hardwareuuid=<replaceable>uuid</replaceable></option></term>
           <listitem><para>
               Specifies the Universally Unique Identifier (UUID) to
               present to the guest VM in memory tables (DMI/SMBIOS),
               hardware, and VM properties. By default this hardware UUID
-              is the same as the VM UUID. Use this option when cloning a
-              VM. Note that the teleporting feature automatically
-              handles the UUID value.
+              is the same as the VM UUID. Cloning a VM and the teleporting
+              feature automatically preserve the hardware UUID value.
+              Likewise for Virtual Appliance export and import, but only
+              if both operations are done by &product-name;.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -891,9 +901,9 @@
         <varlistentry>
           <term><option>--apic=on | off</option></term>
           <listitem><para>
-              Enables or disables I/O APIC. With I/O APIC, OSes can use
+              Enables or disables APIC. With APIC, OSes can use
               more than 16 interrupt requests (IRQs) to avoid IRQ
-              sharing and to improve reliability. I/O APIC is enabled by
+              sharing and to improve reliability. APIC is enabled by
               default. See <xref linkend="settings-motherboard" />.
             </para></listitem>
         </varlistentry>
@@ -991,18 +1001,41 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><option>--nested-hw-virt=on | off</option></term>
+          <listitem><para>
+              Enables or disables nested virtualization. Enabling makes
+              hardware virtualization features available to the VM. See
+              <xref linkend="nested-virt" />.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--virt-vmsave-vmload=on | off</option></term>
+          <listitem><para>
+              If hardware virtualization is enabled and the host has an
+              AMD CPU, this setting enables or disables the use of the
+              virtualized vmsave/vmload host feature while executing the
+              VM. It is enabled by default. It is recommended to leave it
+              enabled as it has a drastic impact on performance while
+              executing nested VMs when using the nested hardware
+              virtualization feature.
+              <xref linkend="nested-virt" />.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><option>--accelerated3d=on | off</option></term>
           <listitem><para>
-              Enables or disables hardware 3D acceleration. This option
-              is available only when the Guest Additions are installed.
+              Enables or disables hardware 3D acceleration for the
+              graphics adapter variants which support it. This option
+              has an effect only when the Guest Additions are installed.
               See <xref linkend="guestadd-3d" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--accelerated2dvideo=on | off</option></term>
           <listitem><para>
-              Enables or disables 2D video acceleration. This option is
-              available only when the Guest Additions are installed. See
+              Enables or disables 2D video acceleration for the graphics
+              adapter variants which support it. This option has an effect
+              only when the Guest Additions are installed. See
               <xref linkend="guestadd-2d" />.
             </para></listitem>
         </varlistentry>
@@ -1048,14 +1081,14 @@
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bioslogofacein=on | off</option></term>
+          <term><option>--bioslogofadein=on | off</option></term>
           <listitem><para>
               Specifies whether the BIOS logo fades in on VM startup. By
               default, an &product-name; logo is shown.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bioslogofacein=on | off</option></term>
+          <term><option>--bioslogofadeout=on | off</option></term>
           <listitem><para>
               Specifies whether the BIOS logo fades out on VM startup.
             </para></listitem>
@@ -1071,8 +1104,8 @@
           <term><option>--bioslogoimagepath=<replaceable>pathname</replaceable></option></term>
           <listitem><para>
               Replaces the existing BIOS logo with a different image.
-              The replacement image must be an uncompressed 256-color
-              bitmap file (BMP) that does not contain color space
+              The replacement image must be an uncompressed 16, 256 or 16M
+              color bitmap file (BMP) that does not contain color space
               information (Windows 3.0 format). Also ensure that the
               image is no larger than 640 X 480 pixels.
             </para></listitem>
@@ -1223,13 +1256,6 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nested-hw-virt=on | off</option></term>
-          <listitem><para>
-              Enables or disables nested virtualization. See
-              <xref linkend="nested-virt" />.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term><option>--vm-process-priority=default | flat | low | normal | high</option></term>
           <listitem><para>
               Specifies the priority scheme of the VM process to use
@@ -1299,7 +1325,7 @@
                 </para></listitem>
               <listitem><para>
                   <literal>natnetwork</literal> &ndash; Use a NAT
-                  metwork
+                  network
                 </para></listitem>
               <listitem><para>
                   <literal>bridged</literal> &ndash; Use bridged
@@ -1744,7 +1770,7 @@
                   <replaceable>filename</replaceable> redirects the
                   serial port output to the specified raw file. Ensure
                   that <replaceable>filename</replaceable> is the
-                  absolute path of the on the host system.
+                  absolute path of the file on the host system.
                 </para></listitem>
               <listitem><para>
                   <replaceable>device-name</replaceable>: specifies the
@@ -1776,8 +1802,6 @@
           <term><option>--lptmode<replaceable>N</replaceable>=<replaceable>device-name</replaceable></option></term>
           <listitem><para>
               Specifies the device name of the parallel port to use.
-              Ensure that you use this option before using the
-              <option>--lpt</option> option.
             </para><para>
               For a Windows host system, use a device name such as
               <command>lpt1</command>. For a Linux host system, use a
@@ -1788,8 +1812,7 @@
           <term><option>--lpt<replaceable>N</replaceable>=<replaceable>I/O-base</replaceable> <replaceable>IRQ</replaceable></option></term>
           <listitem><para>
               Specifies the I/O base address and IRQ of the parallel
-              port. Ensure that you use this option after using the
-              <option>--lptmode</option> option.
+              port.
             </para><para>
               You can view the I/O base address and IRQ that the VM uses
               for the parallel port in the Device Manager.
@@ -1844,7 +1867,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--clipboard=<replaceable>value</replaceable></option></term>
+          <term><option>--clipboard-mode=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies how to share the guest VM or host system OS's
               clipboard with the host system or guest VM, respectively.
@@ -1881,13 +1904,6 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--usb=on | off</option></term>
-          <listitem><para>
-              Enables or disables the VM's virtual USB controller. See
-              <xref linkend="settings-usb" />.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term><option>--usbohci=on | off</option></term>
           <listitem><para>
               Enables or disables the VM's virtual USB 1.1 controller.
@@ -1905,6 +1921,7 @@
           <term><option>--usbxhci=on | off</option></term>
           <listitem><para>
               Enables or disables the VM's virtual USB 3.0 controller.
+              This is the most efficient option if the VM supports it.
               See <xref linkend="settings-usb" />.
             </para></listitem>
         </varlistentry>
@@ -2243,7 +2260,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdereport=default | <replaceable>port</replaceable></option></term>
+          <term><option>--vrdeport=default | <replaceable>port</replaceable></option></term>
           <listitem><para>
               <replaceable>port</replaceable> is the port or port range
               to which the VRDE server binds. The
@@ -2421,23 +2438,57 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--cpuid=<replaceable>leaf</replaceable> <replaceable>eax</replaceable> <replaceable>ebx</replaceable> <replaceable>ecx</replaceable> <replaceable>edx</replaceable></option></term>
-          <listitem><para>
-              For advanced users only.
-            </para><para>
+          <term><option>--cpuid-portability-level=<replaceable>level</replaceable></option></term>
+          <listitem>
+            <para>
               Restricts the virtual CPU capabilities that &product-name;
-              presents to the guest VM OS. This option affects what the
-              guest VM sees when it executes the
-              <literal>CPUID</literal> machine instruction.
+              presents to the guest OS by using portability rules. Higher
+              integer values designate more restrictive behavior. The
+              default level of <literal>0</literal> indicates that all
+              virtualized features supported by the host are made available
+              to the guest. The value <literal>3</literal> supresses most
+              features. Values of <literal>1</literal> and <literal>2</literal>
+              represent restrictions in between. The behavior may change
+              depending on the product version.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cpuid-set=<replaceable>leaf</replaceable>[:<replaceable>subleaf</replaceable>]
+              <replaceable>eax</replaceable>&nbsp;<replaceable>ebx</replaceable>&nbsp;<replaceable>ecx</replaceable>&nbsp;<replaceable>edx</replaceable></option></term>
+          <listitem>
+            <para>
+              Advanced users can use this setting before a teleporting
+              operation (in fact before starting the VM) to restrict the
+              virtual CPU capabilities that &product-name; presents to
+              the guest operating system. This must be run on both the
+              source and the target machines involved in teleporting and
+              will then modify what the guest sees when it executes the
+              CPUID machine instruction. This might help with misbehaving
+              applications that wrongly assume that certain CPU
+              capabilities are present. The meaning of the parameters
+              is hardware dependent. Refer to the AMD or Intel processor
+              documentation.
             </para><para>
-              Run the <command>VBoxManage modifyvm</command> command
-              with this option prior to a teleporting operation on both
-              the source and the target machines.
-            </para><para>
-              Use this option if a misbehaving application assumes that
-              certain CPU capabilities are present when they are not.
-              The meaning of the values is hardware dependent. See the
-              AMD or Intel processor documentation.
+              The values of <replaceable>leaf</replaceable>,
+              <replaceable>subleaf</replaceable> (optional),
+              <replaceable>eax</replaceable>, <replaceable>ebx</replaceable>,
+              <replaceable>ecx</replaceable> and <replaceable>edx</replaceable>
+              are integers given in hexadecimal format, i.e. using a radix
+              (base) of 16 without requiring any prefix.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cpuid-remove=<replaceable>leaf</replaceable>[:<replaceable>subleaf</replaceable>]</option></term>
+          <listitem>
+            <para>
+              Removes an adjustment established with <option>--cpuid-set</option>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cpuidremoveall</option></term>
+          <listitem>
+            <para>
+              Removes all adjustments established with <option>--cpuid-set</option>.
             </para></listitem>
         </varlistentry>
       </variablelist>
@@ -2515,6 +2566,34 @@
           <listitem><para>
               Specifies the number of seconds after host system boot-up
               to autostart the VM.
+            </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2 id="vboxmanage-modifyvm-pcipassthrough">
+      <title>PCI Passthrough Settings</title>
+      <para>
+        The following options enable you to configure the PCI passthrough
+        feature, which currently is not available in &product-name;. It is
+        planned to bring this functionality back in the future.
+      </para>
+      <remark role="help-copy-synopsis"/>
+      <variablelist>
+        <varlistentry>
+          <term><option>--pciattach=<replaceable>host-PCI-address</replaceable>[@<replaceable>guest-PCI-bus-address</replaceable>]</option></term>
+          <listitem><para>
+              Attaches the specified PCI network controller on the host
+              to the guest VM. You can optionally specify the PCI bus on
+              the guest VM on which to attach the controller.
+<!-- See <xref linkend="pcipassthrough" />. -->
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--pcidetach=<replaceable>host-PCI-address</replaceable></option></term>
+          <listitem><para>
+              Detaches the specified PCI network controller from the
+              attached PCI bus on the guest VM.
+<!-- See <xref linkend="pcipassthrough" />. -->
             </para></listitem>
         </varlistentry>
       </variablelist>

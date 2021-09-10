@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-export" lang="en">
   <refentryinfo>
-    <pubdate>November 2019</pubdate>
+    <pubdate>$Date</pubdate>
     <title>VBoxManage export</title>
   </refentryinfo>
 
@@ -30,7 +30,7 @@
 
   <refnamediv>
     <refname>VBoxManage-export</refname>
-    <refpurpose>export a virtual machine to a virtual appliance or to a cloud service</refpurpose>
+    <refpurpose>export one or more virtual machines to a virtual appliance or to a cloud service</refpurpose>
     <refclass>Oracle VM VirtualBox</refclass>
   </refnamediv>
 
@@ -45,7 +45,6 @@
         <arg choice="plain">--ovf09</arg>
         <arg choice="plain">--ovf10</arg>
         <arg choice="plain">--ovf20</arg>
-        <arg choice="plain">--opc10</arg>
       </group>
       <arg>--manifest</arg>
       <arg>--iso</arg>
@@ -71,6 +70,7 @@
       <command>VBoxManage export</command>
       <arg choice="req"><replaceable>machine</replaceable></arg>
       <arg choice="req">--output=<replaceable>cloud-service-provider</replaceable></arg>
+      <arg>--opc10</arg>
       <arg>--vmname=<replaceable>vmname</replaceable></arg>
       <arg>--cloud=<replaceable>virtual-system-number</replaceable></arg>
       <arg>--cloudprofile=<replaceable>cloud-profile-name</replaceable></arg>
@@ -114,7 +114,7 @@
         </para></listitem>
       <listitem><para>
           <emphasis role="bold">Cloud service such as &oci;.</emphasis>
-          Exports a single VM in VMDK format.
+          Exports a single VM.
         </para></listitem>
     </itemizedlist>
     <para>
@@ -172,12 +172,6 @@
           <term><option>--ovf20</option></term>
           <listitem><para>
               Exports in OVF 2.0 format.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--opc10</option></term>
-          <listitem><para>
-              Exports in &oci; format.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -295,8 +289,9 @@
       <para>
         The <command>VBoxManage export</command> command enables you to
         export a VM to a cloud service provider such as &oci;. By
-        default, the exported disk image is converted into stream VMDK
-        format. This ensures compatibility with &oci;.
+        default, the exported disk image is converted into compressed VMDK
+        format. This minimizes the amount of data to transfer to the cloud
+        service.
       </para>
       <para>
         Some of the following options are configuration settings for the
@@ -312,6 +307,12 @@
               <literal>OCI://</literal>.
             </para><para>
               The short form of this option is <option>-o</option>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--opc10</option></term>
+          <listitem><para>
+              Exports in &oci; format.
             </para></listitem>
         </varlistentry>
         <varlistentry>

@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-import" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage import</title>
   </refentryinfo>
 
@@ -30,12 +30,12 @@
 
   <refnamediv>
     <refname>VBoxManage-import</refname>
-    <refpurpose>import a virtual appliance in OVF format and create virtual machines</refpurpose>
+    <refpurpose>import a virtual appliance in OVF format or from a cloud service and create virtual machines</refpurpose>
     <refclass>Oracle VM VirtualBox</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
-    <cmdsynopsis id="synopsis-vboxmanage-import">
+    <cmdsynopsis id="synopsis-vboxmanage-import-ovf">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage import</command>
       <group choice="req">
@@ -46,9 +46,45 @@
       <arg>--options=<group choice="plain">
           <arg choice="plain">keepallmacs</arg>
           <arg choice="plain">keepnatmacs</arg>
-          <arg choice="plain">keepdisknames</arg>
           <arg choice="plain">importtovdi</arg>
         </group></arg>
+      <arg>--vsys=<replaceable>n</replaceable></arg>
+      <arg>--ostype=<replaceable>ostype</replaceable></arg>
+      <arg>--vmname=<replaceable>name</replaceable></arg>
+      <arg>--settingsfile=<replaceable>file</replaceable></arg>
+      <arg>--basefolder=<replaceable>folder</replaceable></arg>
+      <arg>--group=<replaceable>group</replaceable></arg>
+      <arg>--memory=<replaceable>MB</replaceable></arg>
+      <arg>--cpus=<replaceable>n</replaceable></arg>
+      <arg>--description=<replaceable>text</replaceable></arg>
+      <arg>--eula=<group choice="plain">
+          <arg choice="plain">show</arg>
+          <arg choice="plain">accept</arg>
+        </group></arg>
+      <arg>--unit=<replaceable>n</replaceable></arg>
+      <arg>--ignore</arg>
+      <arg>--scsitype=<group choice="plain">
+          <arg choice="plain">BusLogic</arg>
+          <arg choice="plain">LsiLogic</arg>
+        </group></arg>
+      <!-- <arg>&#45;&#45;controller=<replaceable>n</replaceable></arg> -->
+      <arg>--disk=<replaceable>path</replaceable></arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-import-cloud">
+<!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage import</command>
+      <arg choice="plain">OCI://</arg>
+      <arg choice="plain">--cloud</arg>
+      <arg>--ostype=<replaceable>ostype</replaceable></arg>
+      <arg>--vmname=<replaceable>name</replaceable></arg>
+      <arg>--basefolder=<replaceable>folder</replaceable></arg>
+      <arg>--memory=<replaceable>MB</replaceable></arg>
+      <arg>--cpus=<replaceable>n</replaceable></arg>
+      <arg>--description=<replaceable>text</replaceable></arg>
+      <arg choice="req">--cloudprofile=<replaceable>profile</replaceable></arg>
+      <arg choice="req">--cloudinstanceid=<replaceable>id</replaceable></arg>
+      <arg>--cloudbucket=<replaceable>bucket</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -56,23 +92,31 @@
     <title>Description</title>
     <para>
       The <command>VBoxManage import</command> command imports a virtual
-      appliance in OVF or OVA format by copying virtual disk images and
-      by creating virtual machines (VMs) in &product-name;. See
-      <xref linkend="ovf" />.
+      appliance either in OVF format or from a cloud service such as &oci;.
+      The import is performed by copying virtual disk images (by default using
+      the VMDK image format) and by creating virtual machines (VMs) in
+      &product-name;. See <xref linkend="ovf" />.
     </para>
     <para>
       You must specify the path name of an OVF file or OVA archive to
-      use as input. Also, ensure that any disk images are in the same
-      directory as the OVF file or OVA archive.
+      use as input, or a placeholder for the cloud case. For OVF appliances
+      ensure that any disk images are in the same directory as the OVF file.
     </para>
     <para>
       Note that any options you specify to control the imported virtual
       appliance or to modify the import parameters rely on the contents
-      of the OVF file.
+      of the OVF file or the information from the cloud service.
     </para>
     <para>
       Before you use the import operation to create the VM, perform a
-      dry run to verify the correctness of your configuration.
+      dry run to verify the correctness of your configuration. This is more
+      useful with an OVF or OVA appliance, because with a cloud service even
+      a dry run needs to perform most of the time consuming steps.
+    </para>
+    <para>
+      The import from a cloud service downloads a temporary file containing
+      both the boot image and some metadata describing the details of the
+      VM instance. The temporary file is deleted after successful import.
     </para>
     <refsect2>
       <title>Common Options</title>
@@ -81,11 +125,13 @@
           <term><replaceable>ovfname</replaceable> | <replaceable>ovaname</replaceable></term>
           <listitem><para>
               Specifies the name of the OVF file or OVA archive that
-              describes the appliance.
+              describes the appliance. In the cloud case this is usually
+              a fixed string such as <literal>OCI://</literal>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--dry-run</option></term>
+          <!-- Does this option really work for cloud import? -->
           <listitem><para>
               Performs a dry run of the <command>VBoxManage
               import</command> command before you perform the actual
@@ -106,7 +152,8 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--options keepallmacs | keepnatmacs | keepdisknames | importtovdi</option></term>
+          <term><option>--options=keepallmacs | keepnatmacs | importtovdi</option></term>
+          <!-- Does this option really work for cloud import? -->
           <listitem><para>
               Enables you to fine tune the import operation.
             </para><para>
@@ -123,15 +170,181 @@
                   unchanged if the network type is NAT.
                 </para></listitem>
               <listitem><para>
-                  <literal>keepdisknames</literal>: Specifies that all
-                  new disk images are assigned the same names as the
-                  originals.
-                </para></listitem>
-              <listitem><para>
                   <literal>importtovdi</literal>: Specifies that all new
                   disk images are in VDI file format.
                 </para></listitem>
             </itemizedlist></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--ostype=<replaceable>ostype</replaceable></option></term>
+          <listitem><para>
+              Specifies the guest operating system (OS) information for
+              the VM. Use the <command>VBoxManage list ostypes</command>
+              command to view the OS type identifiers.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--vmname=<replaceable>name</replaceable></option></term>
+          <listitem><para>
+              Specifies the name of the VM to be used by &product-name;.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--basefolder=<replaceable>folder</replaceable></option></term>
+          <!-- Does this option really work for cloud import? -->
+          <listitem><para>
+              Specifies the folder where the files of the imported VM
+              are stored.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--memory=<replaceable>MB</replaceable></option></term>
+          <listitem><para>
+              Specifies the memory size in Megabytes for the imported VM.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cpus=<replaceable>n</replaceable></option></term>
+          <listitem><para>
+              Specifies the number of CPUs for the imported VM.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--description=<replaceable>text</replaceable></option></term>
+          <listitem><para>
+              Specifies the description text visible in the GUI and
+              CLI when checking the VM details.
+            </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-import-ovf">
+      <title>OVF / OVA Import Options</title>
+      <para>
+        The following options are specific for importing a virtual appliance
+        in OVF or OVA format. Such an appliance can contain one or more VMs,
+        which requires specifying which VM configuration should be adjusted
+        in case you want to change it. See <xref linkend="ovf-import-appliance" />.
+      </para>
+      <remark role="help-copy-synopsis"/>
+      <variablelist>
+        <varlistentry>
+          <term><option>--vsys=<replaceable>n</replaceable></option></term>
+          <listitem><para>
+              Specifies the index selecting a specific VM within the
+              appliance. Affects the following options.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--unit=<replaceable>n</replaceable></option></term>
+          <listitem><para>
+              Specifies the index selecting a specific unit of a VM
+              within the appliance. Affects the following options.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--settingsfile=<replaceable>file</replaceable></option></term>
+          <listitem><para>
+              Specifies the name (with or without path) of the VM config
+              file which will be created as part of the import. Usually
+              the preferred way is overriding the VM name with
+              <option>--vmname</option> and if necessary specify the
+              folder in which to create the VM with
+              <option>--basefolder</option>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--group=<replaceable>group</replaceable></option></term>
+          <listitem><para>
+              Specifies the primary group of the imported VM.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--eula=show | accept</option></term>
+          <listitem><para>
+              Enables you to show or accept the license conditions of a
+              VM within the appliance,
+            </para><para>
+              Valid arguments are as follows:
+            </para><itemizedlist>
+              <listitem><para>
+                  <literal>show</literal>: Shows the EULA of a VM.
+                </para></listitem>
+              <listitem><para>
+                  <literal>accepts</literal>: Accepts the EULA of a VM.
+                  Any VMs in an appliance which have an EULA require
+                  accepting it, otherwise the import will fail.
+                </para></listitem>
+            </itemizedlist></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--ignore</option></term>
+          <listitem><para>
+              Ignores the current unit of an imported VM, effectively
+              removing the associated hardware.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--scsitype=BusLogic | LsiLogic</option></term>
+          <listitem><para>
+              Enables you to select the type of the SCSI controller for
+              the current unit of an imported VM.
+            </para><para>
+              Valid arguments are as follows:
+            </para><itemizedlist>
+              <listitem><para>
+                  <literal>BusLogic</literal>: Uses the (very old) BusLogic
+                  SCSI controller type.
+                </para></listitem>
+              <listitem><para>
+                  <literal>LsiLogic</literal>: Uses the (more modern)
+                  LsiLogic SCSI controller type.
+                </para></listitem>
+            </itemizedlist></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-import-cloud">
+      <title>Cloud Import Options</title>
+      <para>
+        The following options are specific for importing a VM instance
+        from a cloud service provider. It always deals with a single VM.
+        See <xref linkend="cloud-import-oci" />.
+      </para>
+      <remark role="help-copy-synopsis"/>
+      <variablelist>
+        <varlistentry>
+          <term><option>--cloud</option></term>
+          <listitem><para>
+              Specifies that the import should be from the cloud.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cloudprofile=<replaceable>profile</replaceable></option></term>
+          <listitem><para>
+              Specifies the cloud profile which is used to connect to the
+              cloud service provider. The cloud profile contains your &oci;
+              account details, such as your user OCID and the fingerprint
+              for your public key. To use a cloud profile, you must have
+              the required permissions on &oci;.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cloudinstanceid=<replaceable>id</replaceable></option></term>
+          <listitem><para>
+              Specifies the ID of an existing instance in the cloud.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cloudbucket=<replaceable>bucket</replaceable></option></term>
+          <listitem><para>
+              Specifies the bucket name in which to store the object created
+              from the instance. In &oci;, a bucket is a logical container
+              for storing objects. By default the first bucket available with
+              the cloud profile is used.
+            </para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
@@ -141,7 +354,7 @@
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL"/>
     <para>
-      The following example performs the dry run of an import operation
+      The following example performs the dry run of an OVF import operation
       for a sample appliance that contains a Windows 10 guest:
     </para>
 <screen>$ VBoxManage import Windows10.ovf --dry-run
@@ -163,7 +376,7 @@ Virtual system 0:
     accept with "--vsys 0 --eula accept")
  6: Number of CPUs: 1
     (change with "--vsys 0 --cpus &lt;n&gt;")
- 7: Guest memory: 1024 MB (change with "--vsys 0 --memory &lt;MB&gt;")
+ 7: Guest memory: 2048 MB (change with "--vsys 0 --memory &lt;MB&gt;")
  8: Sound card (appliance expects "ensoniq1371", can change on import)
     (disable with "--vsys 0 --unit 5 --ignore")
  9: USB controller
@@ -178,7 +391,7 @@ Virtual system 0:
     (disable with "--vsys 0 --unit 10 --ignore")
 14: Hard disk image: source image=Windows10.vmdk,
       target path=/home/user1/disks/Windows10.vmdk, controller=9;channel=0
-    (change controller with "--vsys 0 --unit 11 --controller &lt;id&gt;";
+    (change target path with "--vsys 0 --unit 11 --disk &lt;path&gt;";
     disable with "--vsys 0 --unit 11 --ignore")</screen>
     <para>
       The dry run output lists and numbers the individual configuration
@@ -201,18 +414,30 @@ Virtual system 0:
     </para>
     <para>
       Item 14 indicates the hard disk image and the
-      <option>--controller</option> option specifies the device on which
-      the image resides. The default value is specified in the OVF file.
+      <option>--disk</option> option specifies the target path where the
+      image will be stored. The default value is specified in the OVF file.
     </para>
     <para>
       You can combine several items for the same virtual system by
       specifying the same value for the <option>--vsys</option> option.
       For example use the following command to import a machine as
       described in the OVF, exclude the sound card and USB controller
-      and specify that the disk image is connected to the IDE controller
-      instead of the SCSI controller.
+      and specify that the disk image is stored with a different name.
     </para>
 <screen>$ VBoxManage import Windows10.ovf --vsys 0 --unit 8 --ignore \
-  --unit 9 --ignore --unit 14 --controller 13</screen>
+  --unit 9 --ignore --unit 14 --disk Windows10_disk0.vmdk</screen>
+    <para>
+      The following example illustrates how to import a VM from &oci;. To find
+      the &oci; VM instances and its ID you can list all available instances
+      with:
+    </para>
+<screen>$ VBoxManage cloud --provider=OCI --profile=<replaceable>cloud-profile-name</replaceable> list instances</screen>
+    <para>
+      Once you know the ID the following command imports the instance from
+      &oci;:
+    </para>
+<screen>$ VBoxManage import OCI:// --cloud --vmname OCI_FreeBSD_VM --memory 4000 \
+  --cpus 3 --ostype FreeBSD_64 --cloudprofile "standard user" \
+  --cloudinstanceid ocid1.instance.oc1.iad.abuwc... --cloudbucket myBucket</screen>
   </refsect1>
 </refentry>

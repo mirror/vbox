@@ -98,12 +98,12 @@ static volatile bool    g_fCanceled = false;
 static const VBMGCMD g_aCommands[] =
 {
     { "internalcommands",   USAGE_INVALID,          VBMG_CMD_TODO, handleInternalCommands,     0 },
-    { "list",               USAGE_LIST,             VBMG_CMD_TODO, handleList,                 0 },
-    { "showvminfo",         USAGE_SHOWVMINFO,       VBMG_CMD_TODO, handleShowVMInfo,           0 },
-    { "registervm",         USAGE_REGISTERVM,       VBMG_CMD_TODO, handleRegisterVM,           0 },
-    { "unregistervm",       USAGE_UNREGISTERVM,     VBMG_CMD_TODO, handleUnregisterVM,         0 },
+    { "list",               USAGE_S_NEWCMD,         HELP_CMD_LIST, handleList,                 0 },
+    { "showvminfo",         USAGE_S_NEWCMD,   HELP_CMD_SHOWVMINFO, handleShowVMInfo,           0 },
+    { "registervm",         USAGE_S_NEWCMD,   HELP_CMD_REGISTERVM, handleRegisterVM,           0 },
+    { "unregistervm",       USAGE_S_NEWCMD, HELP_CMD_UNREGISTERVM, handleUnregisterVM,         0 },
     { "clonevm",            USAGE_S_NEWCMD,      HELP_CMD_CLONEVM, handleCloneVM,              0 },
-    { "movevm",             USAGE_MOVEVM,           VBMG_CMD_TODO, handleMoveVM,               0 },
+    { "movevm",             USAGE_S_NEWCMD,       HELP_CMD_MOVEVM, handleMoveVM,               0 },
     { "mediumproperty",     USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 },
     { "hdproperty",         USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 }, /* backward compatibility */
     { "createmedium",       USAGE_CREATEMEDIUM,     VBMG_CMD_TODO, handleCreateMedium,         0 },
@@ -117,8 +117,8 @@ static const VBMGCMD g_aCommands[] =
     { "clonevdi",           USAGE_CLONEMEDIUM,      VBMG_CMD_TODO, handleCloneMedium,          0 }, /* backward compatibility */
     { "encryptmedium",      USAGE_ENCRYPTMEDIUM,    VBMG_CMD_TODO, handleEncryptMedium,        0 },
     { "checkmediumpwd",     USAGE_MEDIUMENCCHKPWD,  VBMG_CMD_TODO, handleCheckMediumPassword,  0 },
-    { "createvm",           USAGE_CREATEVM,         VBMG_CMD_TODO, handleCreateVM,             0 },
-    { "modifyvm",           USAGE_MODIFYVM,         VBMG_CMD_TODO, handleModifyVM,             0 },
+    { "createvm",           USAGE_S_NEWCMD,     HELP_CMD_CREATEVM, handleCreateVM,             0 },
+    { "modifyvm",           USAGE_S_NEWCMD,     HELP_CMD_MODIFYVM, handleModifyVM,             0 },
     { "startvm",            USAGE_STARTVM,          VBMG_CMD_TODO, handleStartVM,              0 },
     { "controlvm",          USAGE_CONTROLVM,        VBMG_CMD_TODO, handleControlVM,            0 },
     { "unattended",         USAGE_S_NEWCMD,   HELP_CMD_UNATTENDED, handleUnattended,           0 },
@@ -144,8 +144,8 @@ static const VBMGCMD g_aCommands[] =
     { "guestcontrol",       USAGE_GUESTCONTROL,     VBMG_CMD_TODO, handleGuestControl,         0 },
 #endif
     { "metrics",            USAGE_METRICS,          VBMG_CMD_TODO, handleMetrics,              0 },
-    { "import",             USAGE_IMPORTAPPLIANCE,  VBMG_CMD_TODO, handleImportAppliance,      0 },
-    { "export",             USAGE_EXPORTAPPLIANCE,  VBMG_CMD_TODO, handleExportAppliance,      0 },
+    { "import",             USAGE_S_NEWCMD,       HELP_CMD_IMPORT, handleImportAppliance,      0 },
+    { "export",             USAGE_S_NEWCMD,       HELP_CMD_EXPORT, handleExportAppliance,      0 },
     { "signova",            USAGE_S_NEWCMD,      HELP_CMD_SIGNOVA, handleSignAppliance,        VBMG_CMD_F_NO_COM },
 #ifdef VBOX_WITH_NETFLT
     { "hostonlyif",         USAGE_HOSTONLYIFS,      VBMG_CMD_TODO, handleHostonlyIf,           0 },

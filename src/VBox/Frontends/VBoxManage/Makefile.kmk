@@ -134,6 +134,11 @@ endif
 #
 $(call KB_FN_DO_PASS0_ON_TARGET,VBoxManage)
 
+## @todo r=klaus the VBoxManage manpage handling currently cannot deal with
+# man_VBoxManage.xml and that's not just removing the - in the patterns. The
+# common options (and the included overview of the command) need to be handled
+# specially to be useful in VBoxManage.
+
 VBoxManage_CLEAN += \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.cpp \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.cpp.ts \

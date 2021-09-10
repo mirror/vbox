@@ -1198,7 +1198,7 @@ $ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/D
         capabilities are presented to the guest operating system.
         Advanced users can attempt to restrict these virtual CPU
         capabilities with the <command>VBoxManage modifyvm
-        --cpuid</command> command. See
+        --cpuid-portability-level</command> command. See
         <xref linkend="vboxmanage-modifyvm" />.
       </para>
     </note>
