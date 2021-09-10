@@ -84,6 +84,8 @@ class tdAudioTest(vbox.TestDriver):
         ];
         self.asTests          = self.asTestsDef;
 
+        # Optional arguments passing to VKAT when doing the actual audio tests.
+        self.asVkatTestArgs   = [];
         # Optional arguments passing to VKAT when verifying audio test sets.
         self.asVkatVerifyArgs = [];
 
@@ -109,6 +111,8 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('  --runningvmname <vmname>');
         reporter.log('  --audio-tests   <s1[:s2[:]]>');
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
+        reporter.log('  --audio-test-count <number>');
+        reporter.log('      Default: 0 (means random)');
         reporter.log('  --audio-verify-max-diff-count <number>');
         reporter.log('      Default: 0 (strict)');
         reporter.log('  --audio-verify-max-diff-percent <0-100>');
@@ -137,6 +141,15 @@ class tdAudioTest(vbox.TestDriver):
                     if s not in self.asTestsDef:
                         raise base.InvalidOption('The "--audio-tests" value "%s" is not valid; valid values are: %s'
                                                     % (s, ' '.join(self.asTestsDef)));
+        elif    asArgs[iArg] == '--audio-test-count':
+            # Strip the "--audio-test-" prefix and keep the options as defined in VKAT,
+            # e.g. "--audio-test-count" -> "--count". That way we don't
+            # need to do any special argument translation and whatnot.
+            self.asVkatTestArgs.extend(['--' + asArgs[iArg][len('--audio-test-'):]]);
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
+            self.asVkatTestArgs.extend([asArgs[iArg]]);
         elif    asArgs[iArg] == '--audio-verify-max-diff-count' \
              or asArgs[iArg] == '--audio-verify-max-diff-percent' \
              or asArgs[iArg] == '--audio-verify-max-size-percent':
@@ -526,6 +539,9 @@ class tdAudioTest(vbox.TestDriver):
 
         for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
             asArgs.extend([ '-v' ]);
+
+        if self.asVkatTestArgs:
+            asArgs += self.asVkatTestArgs;
 
         # ... and extend it with wanted tests.
         asArgs.extend(asTests);
