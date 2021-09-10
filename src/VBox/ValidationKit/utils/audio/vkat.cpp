@@ -271,11 +271,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_PLAY;
     pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
-#ifdef DEBUG
-    pTstParmsAcq->cIterations = 1;
-#else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
-#endif
     pTstParmsAcq->idxCurrent  = 0;
 
     PAUDIOTESTTONEPARMS pToneParms = &pTstParmsAcq->TestTone;
@@ -283,11 +279,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     pToneParms->Props          = pTstParmsAcq->Props;
     pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
     pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
-#ifdef DEBUG
-    pToneParms->msDuration     = RTRandU32Ex(50, 2500);
-#else
-    pToneParms->msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
-#endif
+    pToneParms->msDuration     = RTRandU32Ex(200, RT_MS_30SEC); /** @todo Probably a bit too long, but let's see. */
     pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
     pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
 
@@ -385,11 +377,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_RECORD;
     pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
-#ifdef DEBUG
-    pTstParmsAcq->cIterations = 1;
-#else
     pTstParmsAcq->cIterations = RTRandU32Ex(1, 10);
-#endif
     pTstParmsAcq->idxCurrent  = 0;
 
     PAUDIOTESTTONEPARMS pToneParms = &pTstParmsAcq->TestTone;
@@ -398,11 +386,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
     pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
     pToneParms->Props          = pTstParmsAcq->Props;
-#ifdef DEBUG
-    pToneParms->msDuration     = RTRandU32Ex(50 /* ms */, 2500);
-#else
-    pToneParms->msDuration     = RTRandU32Ex(50 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
-#endif
+    pToneParms->msDuration     = RTRandU32Ex(200 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
     pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
     pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
 
