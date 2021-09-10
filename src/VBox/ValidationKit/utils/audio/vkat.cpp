@@ -1402,10 +1402,30 @@ int main(int argc, char **argv)
         if (g_uVerbosity)
         {
             RTMsgInfo("Setting verbosity logging to level %u\n", g_uVerbosity);
-            rc = RTLogGroupSettings(g_pRelLogger,
-                                    "drv_audio.e.l.l2.l3.f"
-                                    " audio_mixer.e.l.l2.l3.f"
-                                    " audio_test.e.l.l2.l3.f");
+            switch (g_uVerbosity) /* Not very elegant, but has to do it for now. */
+            {
+                case 1:
+                    rc = RTLogGroupSettings(g_pRelLogger,
+                                            "drv_audio.e.l+audio_mixer.e.l+audio_test.e.l");
+                    break;
+
+                case 2:
+                    rc = RTLogGroupSettings(g_pRelLogger,
+                                            "drv_audio.e.l.l2+audio_mixer.e.l.l2+audio_test.e.l.l2");
+                    break;
+
+                case 3:
+                    rc = RTLogGroupSettings(g_pRelLogger,
+                                            "drv_audio.e.l.l2.l3+audio_mixer.e.l.l2.l3+audio_test.e.l.l2.l3");
+                    break;
+
+                case 4:
+                    RT_FALL_THROUGH();
+                default:
+                    rc = RTLogGroupSettings(g_pRelLogger,
+                                            "drv_audio.e.l.l2.l3.f+audio_mixer.e.l.l2.l3.f+audio_test.e.l.l2.l3.f");
+                    break;
+            }
             if (RT_FAILURE(rc))
                 RTMsgError("Setting debug logging failed, rc=%Rrc\n", rc);
         }
