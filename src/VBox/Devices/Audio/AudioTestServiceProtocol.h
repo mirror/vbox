@@ -162,7 +162,11 @@ typedef struct ATSPKTREQTONEPLAY
     ATSPKTHDR          Hdr;
     /** Test tone parameters for playback. */
     AUDIOTESTTONEPARMS ToneParms;
+#if ARCH_BITS == 64
     uint8_t            aPadding[8];
+#else
+    uint8_t            aPadding[12];
+#endif
 } ATSPKTREQTONEPLAY;
 AssertCompileSizeAlignment(ATSPKTREQTONEPLAY, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEPLAY structure. */
@@ -179,7 +183,11 @@ typedef struct ATSPKTREQTONEREC
     ATSPKTHDR          Hdr;
     /** Test tone parameters for playback. */
     AUDIOTESTTONEPARMS ToneParms;
+#if ARCH_BITS == 64
     uint8_t            aPadding[8];
+#else
+    uint8_t            aPadding[12];
+#endif
 } ATSPKTREQTONEREC;
 AssertCompileSizeAlignment(ATSPKTREQTONEREC, ATSPKT_ALIGNMENT);
 /** Pointer to a ATSPKTREQTONEREC structure. */
