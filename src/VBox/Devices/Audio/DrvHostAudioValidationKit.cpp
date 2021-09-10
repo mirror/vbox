@@ -844,6 +844,7 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostValKitAudioHA_StreamGetState
 {
     AssertPtrReturn(pStream, PDMHOSTAUDIOSTREAMSTATE_INVALID);
 
+#if 0
     PDRVHOSTVALKITAUDIO     pThis    = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
     PDMHOSTAUDIOSTREAMSTATE enmState = PDMHOSTAUDIOSTREAMSTATE_NOT_WORKING;
 
@@ -863,6 +864,10 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHostValKitAudioHA_StreamGetState
         enmState = PDMHOSTAUDIOSTREAMSTATE_OKAY;
 
     return enmState;
+#else
+    RT_NOREF(pInterface, pStream);
+    return PDMHOSTAUDIOSTREAMSTATE_OKAY;
+#endif
 }
 
 
