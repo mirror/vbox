@@ -128,6 +128,10 @@ public:
           * @param  strErrorDetails  Brings the error details. */
         static void cannotAcquireCloudMachineSettings(const QString &strErrorDetails);
 
+        /** Notifies about inability to open license file.
+          * @param  strPath  Brings the license file path. */
+        static void cannotOpenLicenseFile(const QString &strPath);
+
         /** Notifies about public key path is empty. */
         static void warnAboutPublicKeyFilePathIsEmpty();
         /** Notifies about public key file doesn't exist.

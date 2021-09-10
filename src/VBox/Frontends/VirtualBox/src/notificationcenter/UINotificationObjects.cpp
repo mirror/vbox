@@ -212,6 +212,15 @@ void UINotificationMessage::cannotAcquireCloudMachineSettings(const QString &str
 }
 
 /* static */
+void UINotificationMessage::cannotOpenLicenseFile(const QString &strPath)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open license file ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the license file <nobr><b>%1</b></nobr>. Check file "
+                                                   "permissions.").arg(strPath));
+}
+
+/* static */
 void UINotificationMessage::warnAboutPublicKeyFilePathIsEmpty()
 {
     createMessage(

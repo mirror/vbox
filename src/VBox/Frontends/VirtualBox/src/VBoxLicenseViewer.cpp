@@ -26,6 +26,7 @@
 #include "QIDialogButtonBox.h"
 #include "VBoxLicenseViewer.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 
 
 VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)
@@ -110,7 +111,7 @@ int VBoxLicenseViewer::showLicenseFromFile(const QString &strLicenseFileName)
         return showLicenseFromString(file.readAll());
     else
     {
-        msgCenter().cannotOpenLicenseFile(strLicenseFileName, this);
+        UINotificationMessage::cannotOpenLicenseFile(strLicenseFileName);
         return QDialog::Rejected;
     }
 }

@@ -453,6 +453,14 @@ public:
         void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
         bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
         void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+        /// @todo move to notification-center as progress notification .. one day :)
+        void cannotDropDataToGuest(const CDnDTarget &dndTarget, QWidget *pParent = 0) const;
+        void cannotDropDataToGuest(const CProgress &progress, QWidget *pParent = 0) const;
+        void cannotDropDataToHost(const CDnDSource &dndSource, QWidget *pParent = 0) const;
+        void cannotDropDataToHost(const CProgress &progress, QWidget *pParent = 0) const;
+#endif /* VBOX_WITH_DRAG_AND_DROP */
     /** @} */
 
     /* API: Wizards warnings: */
@@ -488,18 +496,6 @@ public:
     bool cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent = 0) const;
     bool cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent = 0);
     void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
-
-#ifdef VBOX_WITH_DRAG_AND_DROP
-    /* API: Drag and drop warnings: */
-    void cannotDropDataToGuest(const CDnDTarget &dndTarget, QWidget *pParent = 0) const;
-    void cannotDropDataToGuest(const CProgress &progress, QWidget *pParent = 0) const;
-    void cannotCancelDropToGuest(const CDnDTarget &dndTarget, QWidget *pParent = 0) const;
-    void cannotDropDataToHost(const CDnDSource &dndSource, QWidget *pParent = 0) const;
-    void cannotDropDataToHost(const CProgress &progress, QWidget *pParent = 0) const;
-#endif /* VBOX_WITH_DRAG_AND_DROP */
-
-    /* API: License-viewer warnings: */
-    void cannotOpenLicenseFile(const QString &strPath, QWidget *pParent = 0) const;
 
     /* API: File-dialog warnings: */
     bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0) const;

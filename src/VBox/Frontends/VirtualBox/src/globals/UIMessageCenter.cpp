@@ -2008,6 +2008,36 @@ void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
              .arg(UITranslator::formatSize(uMinVRAM)));
 }
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+void UIMessageCenter::cannotDropDataToGuest(const CDnDTarget &dndTarget, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Drag and drop operation from host to guest failed."),
+          UIErrorString::formatErrorInfo(dndTarget));
+}
+
+void UIMessageCenter::cannotDropDataToGuest(const CProgress &progress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Drag and drop operation from host to guest failed."),
+          UIErrorString::formatErrorInfo(progress));
+}
+
+void UIMessageCenter::cannotDropDataToHost(const CDnDSource &dndSource, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Drag and drop operation from guest to host failed."),
+          UIErrorString::formatErrorInfo(dndSource));
+}
+
+void UIMessageCenter::cannotDropDataToHost(const CProgress &progress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Drag and drop operation from guest to host failed."),
+          UIErrorString::formatErrorInfo(progress));
+}
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Warning,
@@ -2277,50 +2307,6 @@ void UIMessageCenter::cannotRunUnattendedGuestInstall(const CUnattended &comUnat
     error(pParent, MessageType_Error,
           tr("An error has occured during unattended guest install setup."),
           UIErrorString::formatErrorInfo(comErrorInfo));
-}
-
-#ifdef VBOX_WITH_DRAG_AND_DROP
-void UIMessageCenter::cannotDropDataToGuest(const CDnDTarget &dndTarget, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Drag and drop operation from host to guest failed."),
-          UIErrorString::formatErrorInfo(dndTarget));
-}
-
-void UIMessageCenter::cannotDropDataToGuest(const CProgress &progress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Drag and drop operation from host to guest failed."),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotCancelDropToGuest(const CDnDTarget &dndTarget, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Unable to cancel host to guest drag and drop operation."),
-          UIErrorString::formatErrorInfo(dndTarget));
-}
-
-void UIMessageCenter::cannotDropDataToHost(const CDnDSource &dndSource, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Drag and drop operation from guest to host failed."),
-          UIErrorString::formatErrorInfo(dndSource));
-}
-
-void UIMessageCenter::cannotDropDataToHost(const CProgress &progress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Drag and drop operation from guest to host failed."),
-          UIErrorString::formatErrorInfo(progress));
-}
-#endif /* VBOX_WITH_DRAG_AND_DROP */
-
-void UIMessageCenter::cannotOpenLicenseFile(const QString &strPath, QWidget *pParent /* = 0*/) const
-{
-    alert(pParent, MessageType_Error,
-          tr("Failed to open the license file <nobr><b>%1</b></nobr>. Check file permissions.")
-             .arg(strPath));
 }
 
 bool UIMessageCenter::confirmOverridingFile(const QString &strPath, QWidget *pParent /* = 0*/) const

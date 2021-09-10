@@ -68,7 +68,6 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVisoCreator.h"
 #include "UIWizardNewVD.h"
-#include "VBoxLicenseViewer.h"
 #ifdef VBOX_WS_MAC
 # include "UIMachineWindowFullscreen.h"
 # include "UIMachineWindowSeamless.h"
