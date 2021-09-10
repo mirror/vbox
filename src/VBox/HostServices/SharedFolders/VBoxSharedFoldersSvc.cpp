@@ -766,8 +766,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             /* Update parameters.*/
             if (RT_SUCCESS(rc))
             {
+                paParms[2].u.uint64 = offFile;
                 paParms[3].u.uint32 = cbWrite;
-                paParms[4].u.uint64 = offFile;
             }
             else
                 paParms[3].u.uint32 = 0;
