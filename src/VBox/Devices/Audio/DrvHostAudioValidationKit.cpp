@@ -139,8 +139,10 @@ typedef struct DRVHOSTVALKITAUDIO
     /** Current test set being handled.
      *  At the moment only one test set can be around at a time. */
     AUDIOTESTSET        Set;
-    /** Number of total tests created. */
+    /** Number of total tests in \a lstTestsRec and \a lstTestsPlay. */
     uint32_t            cTestsTotal;
+    /** Increasing number to identify tests. */
+    uint32_t            idxTest;
     /** Number of tests in \a lstTestsRec. */
     uint32_t            cTestsRec;
     /** List keeping the recording tests (FIFO). */
@@ -183,10 +185,11 @@ typedef DRVHOSTVALKITAUDIO *PDRVHOSTVALKITAUDIO;
 /**
  * Unregisters a ValKit test, common code.
  *
+ * @param   pThis               ValKit audio driver instance.
  * @param   pTst                Test to unregister.
  *                              The pointer will be invalid afterwards.
  */
-static void drvHostValKiUnregisterTest(PVALKITTESTDATA pTst)
+static void drvHostValKiUnregisterTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTESTDATA pTst)
 {
     AssertPtrReturnVoid(pTst);
 
@@ -203,6 +206,17 @@ static void drvHostValKiUnregisterTest(PVALKITTESTDATA pTst)
 
     RTMemFree(pTst);
     pTst = NULL;
+
+    Assert(pThis->cTestsTotal);
+    pThis->cTestsTotal--;
+    if (pThis->cTestsTotal == 0)
+    {
+        if (ASMAtomicReadBool(&pThis->fTestSetEnd))
+        {
+            int rc2 = RTSemEventSignal(pThis->EventSemEnded);
+            AssertRC(rc2);
+        }
+    }
 }
 
 /**
@@ -214,10 +228,10 @@ static void drvHostValKiUnregisterTest(PVALKITTESTDATA pTst)
  */
 static void drvHostValKiUnregisterRecTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTESTDATA pTst)
 {
-    drvHostValKiUnregisterTest(pTst);
-
     Assert(pThis->cTestsRec);
     pThis->cTestsRec--;
+
+    drvHostValKiUnregisterTest(pThis, pTst);
 }
 
 /**
@@ -229,10 +243,10 @@ static void drvHostValKiUnregisterRecTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTEST
  */
 static void drvHostValKiUnregisterPlayTest(PDRVHOSTVALKITAUDIO pThis, PVALKITTESTDATA pTst)
 {
-    drvHostValKiUnregisterTest(pTst);
-
     Assert(pThis->cTestsPlay);
     pThis->cTestsPlay--;
+
+    drvHostValKiUnregisterTest(pThis, pTst);
 }
 
 /**
@@ -349,28 +363,31 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        const PAUDIOTESTSET pSet  = &pThis->Set;
+        const PAUDIOTESTSET pSet = &pThis->Set;
 
-        if (AudioTestSetIsRunning(pSet))
+        LogRel(("ValKit: Test set has %RU32 tests total, %RU32 (still) running, %RU32 failures total so far\n",
+                AudioTestSetGetTestsTotal(pSet), AudioTestSetGetTestsRunning(pSet), AudioTestSetGetTotalFailures(pSet)));
+        LogRel(("ValKit: %RU32 tests still registered total (%RU32 play, %RU32 record)\n",
+                pThis->cTestsTotal, pThis->cTestsPlay, pThis->cTestsRec));
+
+        if (   AudioTestSetIsRunning(pSet)
+            || pThis->cTestsTotal)
         {
             ASMAtomicWriteBool(&pThis->fTestSetEnd, true);
 
             rc = RTCritSectLeave(&pThis->CritSect);
             if (RT_SUCCESS(rc))
             {
-                LogRel(("ValKit: Waiting for runnig test set '%s' to end ...\n", pszTag));
-                rc = RTSemEventWait(pThis->EventSemEnded, RT_MS_30SEC);
+                LogRel(("ValKit: Waiting for all tests of set '%s' to end ...\n", pszTag));
+                rc = RTSemEventWait(pThis->EventSemEnded, RT_MS_1MIN);
                 if (RT_FAILURE(rc))
-                    LogRel(("ValKit: Waiting for runnig test set '%s' failed with %Rrc\n", pszTag, rc));
+                    LogRel(("ValKit: Waiting for tests of set '%s' to end failed with %Rrc\n", pszTag, rc));
 
                 int rc2 = RTCritSectEnter(&pThis->CritSect);
                 if (RT_SUCCESS(rc))
                     rc = rc2;
             }
         }
-
-        LogRel(("ValKit: Test set has %RU32 tests total, %RU32 (still) running, %RU32 failures total\n",
-                AudioTestSetGetTestsTotal(pSet), AudioTestSetGetTestsRunning(pSet), AudioTestSetGetTotalFailures(pSet)));
 
         if (RT_SUCCESS(rc))
         {
@@ -447,14 +464,15 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
     if (RT_SUCCESS(rc))
     {
         LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes)\n",
-                pThis->cTestsTotal, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite));
+                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite));
 
         RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
 
         pTestData->msRegisteredTS = RTTimeMilliTS();
-        pTestData->idxTest        = pThis->cTestsTotal++;
+        pTestData->idxTest        = pThis->idxTest++;
 
         pThis->cTestsRec++;
+        pThis->cTestsTotal++;
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
@@ -486,13 +504,14 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     if (RT_SUCCESS(rc))
     {
         LogRel(("ValKit: Registering guest playback test #%RU32 (%RU32ms, %RU64 bytes)\n",
-                pThis->cTestsTotal, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead));
+                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead));
 
         RTListAppend(&pThis->lstTestsPlay, &pTestData->Node);
 
         pTestData->msRegisteredTS = RTTimeMilliTS();
-        pTestData->idxTest        = pThis->cTestsTotal++;
+        pTestData->idxTest        = pThis->idxTest++;
 
+        pThis->cTestsTotal++;
         pThis->cTestsPlay++;
 
         int rc2 = RTCritSectLeave(&pThis->CritSect);
@@ -1093,12 +1112,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         }
     }
 
-    if (ASMAtomicReadBool(&pThis->fTestSetEnd))
-    {
-        int rc2 = RTSemEventSignal(pThis->EventSemEnded);
-        AssertRC(rc2);
-    }
-
     if (RT_FAILURE(rc))
     {
         if (pTst->pEntry)
@@ -1176,6 +1189,9 @@ static DECLCALLBACK(int) drvHostValKitAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNO
     pThis->cbPlayedSilence = 0;
     pThis->cbPlayedNoTest  = 0;
 
+    pThis->cTestsTotal = 0;
+    pThis->cTestsPlay  = 0;
+    pThis->cTestsRec   = 0;
     pThis->fTestSetEnd = false;
 
     RTListInit(&pThis->lstTestsRec);
