@@ -611,6 +611,13 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
                     break;
             }
 
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Fudge! */
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting a bit to let guest and the audio stack process remaining data  ...\n");
+                RTThreadSleep(RT_MS_30SEC);
+            }
+
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Ending test set on guest ...\n");
             int rc2 = AudioTestSvcClientTestSetEnd(&pTstEnv->u.Host.AtsClGuest, pTstEnv->szTag);
             if (RT_FAILURE(rc2))
