@@ -25,6 +25,23 @@
   <xsl:strip-space elements="*"/>
   -->
 
+  <!--
+      Extract manual's date from an *info/pubdate node (cf.
+      get.refentry.date).  Detect RCS Date keyword.
+  -->
+  <xsl:template match="pubdate">
+    <xsl:choose>
+      <!-- careful with that keyword -->
+      <xsl:when test="starts-with(text(), concat('$', 'Date:'))">
+        <!-- Fetch the ISO 8601 date from inside -->
+        <xsl:value-of select="substring(text(), 8, 10)"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <!-- Use as-is -->
+        <xsl:value-of select="text()"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
 
 </xsl:stylesheet>
 
