@@ -343,12 +343,12 @@ void UIDiskVariantGroupBox::retranslateUi()
     if (m_pFixedCheckBox)
     {
         m_pFixedCheckBox->setText(tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(tr("<p>Allocate the virtual disk image during VM creation."));
+        m_pFixedCheckBox->setToolTip(tr("<p>Allocates the virtual disk image during VM creation."));
     }
     if (m_pSplitBox)
     {
         m_pSplitBox->setText(tr("&Split into 2GB parts"));
-        m_pSplitBox->setToolTip(tr("<p>Split hard disk file into 2GB parts in the host storage.</p>"));
+        m_pSplitBox->setToolTip(tr("<p>Splits hard disk file into 2GB parts in the host storage.</p>"));
     }
 }
 
@@ -482,6 +482,10 @@ void UIMediumSizeAndPathGroupBox::prepare(qulonglong uMinimumMediumSize)
         m_pLocationOpenButton->setAutoRaise(true);
         m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
     }
+    if (m_pLocationEditor)
+        m_pLocationEditor->setToolTip(tr("Holds the location of the virtual disk file."));
+    if (m_pLocationOpenButton)
+        m_pLocationEditor->setToolTip(tr("Opens file selection dialog so that a location for the disk file can be selected."));
     pLocationLayout->addWidget(m_pLocationEditor);
     pLocationLayout->addWidget(m_pLocationOpenButton);
 

@@ -334,11 +334,11 @@ void UIUserNamePasswordEditor::retranslateUi()
             m_pPasswordRepeatLineEdit->setPlaceholderText(QString());
     }
     if(m_pUserNameLineEdit)
-        m_pUserNameLineEdit->setToolTip(tr("Enter username."));
+        m_pUserNameLineEdit->setToolTip(tr("Holds username."));
     if (m_pPasswordLineEdit)
-        m_pPasswordLineEdit->setToolTip(tr("Enter password."));
+        m_pPasswordLineEdit->setToolTip(tr("Holds password."));
     if (m_pPasswordRepeatLineEdit)
-        m_pPasswordRepeatLineEdit->setToolTip(tr("Re-enter password."));
+        m_pPasswordRepeatLineEdit->setToolTip(tr("Holds the repeated password."));
     m_strPasswordError = tr("Invalid password pair");
 }
 

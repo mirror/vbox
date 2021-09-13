@@ -157,11 +157,11 @@ void UIGAInstallationGroupBox::prepare()
 void UIGAInstallationGroupBox::retranslateUi()
 {
     if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Select an installation medium (ISO file) for the Guest Additions."));
+        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Selects an installation medium (ISO file) for the Guest Additions."));
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
     setTitle(UIWizardNewVM::tr("Gu&est Additions"));
-    setToolTip(UIWizardNewVM::tr("<p>Enable installation of the guest additions  "
+    setToolTip(UIWizardNewVM::tr("<p>Enables installation of the guest additions  "
                                  "after the guest OS install.</p>"));
 }
 
@@ -268,7 +268,7 @@ void UIAdditionalUnattendedOptions::retranslateUi()
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>Enable headless boot (with no GUI) of the newly created virtual machine "
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>Enables headless boot (with no GUI) of the newly created virtual machine "
                                                                "for the unattended guest OS install.</p>"));
     }
 
@@ -283,7 +283,7 @@ void UIAdditionalUnattendedOptions::retranslateUi()
         m_pHostnameDomainNameEditor->setFirstColumnWidth(iMaxWidth);
     }
     if (m_pProductKeyLineEdit)
-        m_pProductKeyLineEdit->setToolTip(tr("Enter a product key."));
+        m_pProductKeyLineEdit->setToolTip(tr("Holds the product key."));
 }
 
 QString UIAdditionalUnattendedOptions::hostname() const
@@ -397,7 +397,7 @@ void UINewVMHardwareContainer::retranslateUi()
     if (m_pEFICheckBox)
     {
         m_pEFICheckBox->setText(UIWizardNewVM::tr("&Enable EFI (special OSes only)"));
-        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>Enable Extended Firmware Interface (EFI), which is required to boot certain "
+        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>Enables Extended Firmware Interface (EFI), which is required to boot certain "
                                                      "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</p>"));
     }
 }

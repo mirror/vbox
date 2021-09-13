@@ -215,7 +215,7 @@ void UIWizardNewVMDiskPage::retranslateUi()
     if (m_pDiskExisting)
         m_pDiskExisting->setText(UIWizardNewVM::tr("U&se an Existing Virtual Hard Disk File"));
     if (m_pDiskSelectionButton)
-        m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Choose a Virtual Hard Fisk File..."));
+        m_pDiskSelectionButton->setToolTip(UIWizardNewVM::tr("Chooses a Virtual Hard Fisk File..."));
 
     if (m_pMediumSizeEditorLabel)
         m_pMediumSizeEditorLabel->setText(UIWizardNewVM::tr("D&isk Size:"));
@@ -223,7 +223,7 @@ void UIWizardNewVMDiskPage::retranslateUi()
     if (m_pFixedCheckBox)
     {
         m_pFixedCheckBox->setText(UIWizardNewVM::tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(UIWizardNewVM::tr("<p>Allocate the virtual disk image at VM creation time"));
+        m_pFixedCheckBox->setToolTip(UIWizardNewVM::tr("<p>Allocates the virtual disk image at VM creation time"));
     }
 
     /* Translate rich text labels: */

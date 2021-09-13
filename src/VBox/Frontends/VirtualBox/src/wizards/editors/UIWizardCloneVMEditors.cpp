@@ -181,9 +181,9 @@ void UICloneVMNamePathEditor::retranslateUi()
     if (m_pPathLabel)
         m_pPathLabel->setText(tr("&Path:"));
     if (m_pNameLineEdit)
-        m_pNameLineEdit->setToolTip("Enter a name for the new virtual machine.");
+        m_pNameLineEdit->setToolTip("Holds a name for the new virtual machine.");
     if (m_pPathSelector)
-        m_pPathSelector->setToolTip("Specify The location of the new virtual machine in host's storage.");
+        m_pPathSelector->setToolTip("Specifies The location of the new virtual machine in host's storage.");
 }
 
 
@@ -320,7 +320,7 @@ void UICloneVMAdditionalOptionsEditor::prepare()
 void UICloneVMAdditionalOptionsEditor::retranslateUi()
 {
     m_pMACComboBoxLabel->setText(tr("MAC Address P&olicy:"));
-    m_pMACComboBox->setToolTip(tr("Determine MAC address policy for clonning:"));
+    m_pMACComboBox->setToolTip(tr("Determines MAC address policy for clonning:"));
     for (int i = 0; i < m_pMACComboBox->count(); ++i)
     {
         const MACAddressClonePolicy enmPolicy = m_pMACComboBox->itemData(i).value<MACAddressClonePolicy>();
@@ -353,12 +353,12 @@ void UICloneVMAdditionalOptionsEditor::retranslateUi()
         m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
     if (m_pKeepDiskNamesCheckBox)
     {
-        m_pKeepDiskNamesCheckBox->setToolTip(tr("Enable keeping the disk names during cloning."));
+        m_pKeepDiskNamesCheckBox->setToolTip(tr("Enables keeping the disk names during cloning."));
         m_pKeepDiskNamesCheckBox->setText(tr("Keep &Disk Names"));
     }
     if (m_pKeepHWUUIDsCheckBox)
     {
-        m_pKeepHWUUIDsCheckBox->setToolTip(tr("Enable keeping hardware UUIDs during cloning."));
+        m_pKeepHWUUIDsCheckBox->setToolTip(tr("Enables keeping hardware UUIDs during cloning."));
         m_pKeepHWUUIDsCheckBox->setText(tr("Keep Hard&ware UUIDs"));
     }
 }

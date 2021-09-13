@@ -115,11 +115,11 @@ void UIHostnameDomainNameEditor::retranslateUi()
     if (m_pHostnameLabel)
         m_pHostnameLabel->setText(tr("Hostna&me:"));
     if (m_pHostnameLineEdit)
-        m_pHostnameLineEdit->setToolTip(tr("Type the hostname."));
+        m_pHostnameLineEdit->setToolTip(tr("Holds the hostname."));
     if (m_pDomainNameLabel)
         m_pDomainNameLabel->setText(tr("&Domain Name:"));
     if (m_pDomainNameLineEdit)
-        m_pDomainNameLineEdit->setToolTip(tr("Enter the domain name."));
+        m_pDomainNameLineEdit->setToolTip(tr("Holds the domain name."));
 }
 
 void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineEdit *&pLineEdit, QGridLayout *pLayout)
