@@ -1413,55 +1413,6 @@ bool UIMessageCenter::confirmCloudConsoleProfileRemoval(const QString &strName, 
                           false /* ok button by default? */);
 }
 
-void UIMessageCenter::cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire hard disk location."), UIErrorString::formatErrorInfo(comMedium));
-}
-
-void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(medium));
-}
-
-void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
-                                               const QString &strName,
-                                               QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Can't find snapshot named <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
 void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -2050,6 +2001,55 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) cons
                           tr("Go Back", "no hard disk attached"));
 }
 
+void UIMessageCenter::cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire hard disk location."), UIErrorString::formatErrorInfo(comMedium));
+}
+
+void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
+             .arg(strLocation),
+          UIErrorString::formatErrorInfo(medium));
+}
+
+void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
+             .arg(strLocation),
+          UIErrorString::formatErrorInfo(progress));
+}
+
+void UIMessageCenter::cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
+             .arg(strMachineName),
+          UIErrorString::formatErrorInfo(progress));
+}
+
+void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
+                                               const QString &strName,
+                                               QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Can't find snapshot named <b>%1</b>.")
+             .arg(strName),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
 void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
@@ -2337,33 +2337,6 @@ bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, Q
                               QString() /* ok button text */,
                               QString() /* cancel button text */,
                               false /* ok button by default? */);
-    else
-        return true;
-}
-
-bool UIMessageCenter::confirmOverridingFileIfExists(const QString &strPath, QWidget *pParent /* = 0*/) const
-{
-    QFileInfo fi(strPath);
-    if (fi.exists())
-        return confirmOverridingFile(strPath, pParent);
-    else
-        return true;
-}
-
-bool UIMessageCenter::confirmOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent /* = 0*/) const
-{
-    QVector<QString> existingFiles;
-    foreach(const QString &file, strPaths)
-    {
-        QFileInfo fi(file);
-        if (fi.exists())
-            existingFiles << fi.absoluteFilePath();
-    }
-    /* If it is only one file use the single question versions above: */
-    if (existingFiles.size() == 1)
-        return confirmOverridingFileIfExists(existingFiles.at(0), pParent);
-    else if (existingFiles.size() > 1)
-        return confirmOverridingFiles(existingFiles, pParent);
     else
         return true;
 }
