@@ -157,12 +157,12 @@ void UIGAInstallationGroupBox::prepare()
 void UIGAInstallationGroupBox::retranslateUi()
 {
     if (m_pGAISOFilePathSelector)
-        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Please select an installation medium (ISO file)"));
+        m_pGAISOFilePathSelector->setToolTip(UIWizardNewVM::tr("Select an installation medium (ISO file) for the Guest Additions."));
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
     setTitle(UIWizardNewVM::tr("Gu&est Additions"));
-    setToolTip(UIWizardNewVM::tr("<p>When checked the guest additions will be installed "
-                                                                    "after the OS install.</p>"));
+    setToolTip(UIWizardNewVM::tr("<p>Enable installation of the guest additions  "
+                                 "after the guest OS install.</p>"));
 }
 
 QString UIGAInstallationGroupBox::path() const
@@ -268,8 +268,8 @@ void UIAdditionalUnattendedOptions::retranslateUi()
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the newly created virtual machine will be started "
-                                                               "in headless mode (without a GUI) for the unattended guest OS install.</p>"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>Enable headless boot (with no GUI) of the newly created virtual machine "
+                                                               "for the unattended guest OS install.</p>"));
     }
 
     int iMaxWidth = 0;
@@ -282,6 +282,8 @@ void UIAdditionalUnattendedOptions::retranslateUi()
         m_pMainLayout->setColumnMinimumWidth(0, iMaxWidth);
         m_pHostnameDomainNameEditor->setFirstColumnWidth(iMaxWidth);
     }
+    if (m_pProductKeyLineEdit)
+        m_pProductKeyLineEdit->setToolTip(tr("Enter a product key."));
 }
 
 QString UIAdditionalUnattendedOptions::hostname() const
@@ -395,8 +397,7 @@ void UINewVMHardwareContainer::retranslateUi()
     if (m_pEFICheckBox)
     {
         m_pEFICheckBox->setText(UIWizardNewVM::tr("&Enable EFI (special OSes only)"));
-        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked, the guest will support the "
-                                                       "Extended Firmware Interface (EFI), which is required to boot certain "
-                                                       "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</p>"));
+        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>Enable Extended Firmware Interface (EFI), which is required to boot certain "
+                                                     "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</p>"));
     }
 }

@@ -400,9 +400,7 @@ void UIWizardNewVMNameOSTypePage::retranslateUi()
     if (m_pSkipUnattendedCheckBox)
     {
         m_pSkipUnattendedCheckBox->setText(UIWizardNewVM::tr("&Skip Unattended Installation"));
-        m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("<p>When checked selected ISO file will be mounted to the CD "
-                                                                "drive of the virtual machine but the unattended installation "
-                                                                "will not start.</p>"));
+        m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("<p>Disable the unattended install and just mount the ISO.</p>"));
     }
 
     if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)

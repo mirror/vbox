@@ -64,6 +64,12 @@ void UIVirtualCPUEditor::retranslateUi()
         m_pLabelVCPUMin->setText(tr("%1 CPU", "%1 is 1 for now").arg(m_uMinVCPUCount));
     if (m_pLabelVCPUMax)
         m_pLabelVCPUMax->setText(tr("%1 CPUs", "%1 is host cpu count * 2 for now").arg(m_uMaxVCPUCount));
+
+    QString strToolTip(tr("Specify the number of virtual CPUs the virtual machine will have"));
+    if (m_pSlider)
+        m_pSlider->setToolTip(strToolTip);
+    if (m_pSpinBox)
+        m_pSpinBox->setToolTip(strToolTip);
 }
 
 void UIVirtualCPUEditor::sltHandleSliderChange()

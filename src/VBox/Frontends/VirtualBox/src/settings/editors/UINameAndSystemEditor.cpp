@@ -307,27 +307,29 @@ void UINameAndSystemEditor::retranslateUi()
         m_pLabelType->setText(tr("&Version:"));
 
     if (m_pPathSelector)
-        m_pPathSelector->setToolTip(tr("The folder hosting the virtual machine"));
+        m_pPathSelector->setToolTip(tr("Select the folder hosting the virtual machine."));
     if (m_pNameLineEdit)
-        m_pNameLineEdit->setToolTip(tr("The name of the virtual machine"));
+        m_pNameLineEdit->setToolTip(tr("Enter a name for the new virtual machine."));
 
     if (m_pComboFamily)
     {
-        m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
+        m_pComboFamily->setWhatsThis(tr("Select the operating system family that "
                                         "you plan to install into this virtual machine."));
-        m_pComboFamily->setToolTip(tr("Selects the operating system family that "
+        m_pComboFamily->setToolTip(tr("Select the operating system family that "
                                         "you plan to install into this virtual machine."));
     }
 
     if (m_pComboType)
     {
-        m_pComboType->setWhatsThis(tr("Selects the operating system type that "
+        m_pComboType->setWhatsThis(tr("Select the operating system type that "
                                       "you plan to install into this virtual machine "
                                       "(called a guest operating system)."));
-        m_pComboType->setToolTip(tr("Selects the operating system type that "
+        m_pComboType->setToolTip(tr("Select the operating system type that "
                                       "you plan to install into this virtual machine "
                                       "(called a guest operating system)."));
     }
+    if (m_pImageSelector)
+        m_pImageSelector->setToolTip(tr("Select an ISO image to be attached to the new virtual machine or used in attended install."));
 }
 
 void UINameAndSystemEditor::sltFamilyChanged(int iIndex)

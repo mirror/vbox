@@ -303,26 +303,17 @@ void UIUserNamePasswordEditor::setLabelsVisible(bool fVisible)
 
 void UIUserNamePasswordEditor::retranslateUi()
 {
-    QString strPassword = UIUserNamePasswordEditor::tr("Pass&word");
-    QString strRepeatPassword = UIUserNamePasswordEditor::tr("&Repeat Password");
-    QString strUsername = UIUserNamePasswordEditor::tr("U&sername");
+    QString strPassword = tr("Pass&word");
+    QString strRepeatPassword = tr("&Repeat Password");
+    QString strUsername = tr("U&sername");
     if (m_pUserNameLabel)
-    {
         m_pUserNameLabel->setText(QString("%1%2").arg(strUsername).arg(":"));
-        m_pUserNameLabel->setToolTip(UIUserNamePasswordEditor::tr("Type the user name which will be used in attended install:"));
 
-    }
     if (m_pPasswordLabel)
-    {
         m_pPasswordLabel->setText(QString("%1%2").arg(strPassword).arg(":"));
-        m_pPasswordLabel->setToolTip(UIUserNamePasswordEditor::tr("Type the password for the user name"));
 
-    }
     if (m_pPasswordRepeatLabel)
-    {
         m_pPasswordRepeatLabel->setText(QString("%1%2").arg(strRepeatPassword).arg(":"));
-        m_pPasswordRepeatLabel->setToolTip(UIUserNamePasswordEditor::tr("Retype the password:"));
-    }
 
     if (m_fShowPlaceholderText)
     {
@@ -342,7 +333,13 @@ void UIUserNamePasswordEditor::retranslateUi()
         if (m_pPasswordRepeatLineEdit)
             m_pPasswordRepeatLineEdit->setPlaceholderText(QString());
     }
-    m_strPasswordError = UIUserNamePasswordEditor::tr("Invalid password pair");
+    if(m_pUserNameLineEdit)
+        m_pUserNameLineEdit->setToolTip(tr("Enter username."));
+    if (m_pPasswordLineEdit)
+        m_pPasswordLineEdit->setToolTip(tr("Enter password."));
+    if (m_pPasswordRepeatLineEdit)
+        m_pPasswordRepeatLineEdit->setToolTip(tr("Re-enter password."));
+    m_strPasswordError = tr("Invalid password pair");
 }
 
 template <class T>

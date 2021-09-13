@@ -343,14 +343,12 @@ void UIDiskVariantGroupBox::retranslateUi()
     if (m_pFixedCheckBox)
     {
         m_pFixedCheckBox->setText(tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(tr("<p>When checked, the virtual disk image will be fully allocated at "
-                                                       "VM creation time, rather than being allocated dynamically at VM run-time.</p>"));
+        m_pFixedCheckBox->setToolTip(tr("<p>Allocate the virtual disk image during VM creation."));
     }
     if (m_pSplitBox)
     {
-        m_pSplitBox->setText(tr("&Split into files of less than 2GB"));
-        m_pSplitBox->setToolTip(tr("<p>Possible only for some hard disk file types. When checked the virtual disk file will "
-                                   "be splitted into 2GB parts in the host storage.</p>"));
+        m_pSplitBox->setText(tr("&Split into 2GB parts"));
+        m_pSplitBox->setToolTip(tr("<p>Split hard disk file into 2GB parts in the host storage.</p>"));
     }
 }
 
@@ -517,7 +515,7 @@ void UIMediumSizeAndPathGroupBox::retranslateUi()
     if (m_fExpertMode)
         setTitle(tr("Hard Disk File Location and Size"));
     if (m_pLocationOpenButton)
-        m_pLocationOpenButton->setToolTip(tr("Choose a location for new virtual hard disk file..."));
+        m_pLocationOpenButton->setToolTip(tr("Specify a location for new virtual hard disk file..."));
 
     if (!m_fExpertMode && m_pLocationLabel)
         m_pLocationLabel->setText(tr("Please type the name of the new virtual hard disk file into the box below or "

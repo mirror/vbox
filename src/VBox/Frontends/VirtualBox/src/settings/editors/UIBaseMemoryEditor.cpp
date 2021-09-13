@@ -280,8 +280,16 @@ void UIBaseMemoryEditor::retranslateUi()
         m_pLabelMemoryMin->setText(tr("%1 MB").arg(m_pSlider->minRAM()));
     if (m_pLabelMemoryMax)
         m_pLabelMemoryMax->setText(tr("%1 MB").arg(m_pSlider->maxRAM()));
+
+    QString strToolTip(tr("Specify the amount of RAM the virtual machine will have"));
+
     if (m_pSpinBox)
+    {
         m_pSpinBox->setSuffix(QString(" %1").arg(tr("MB")));
+        m_pSpinBox->setToolTip(strToolTip);
+    }
+    if (m_pSlider)
+        m_pSlider->setToolTip(strToolTip);
 }
 
 void UIBaseMemoryEditor::sltHandleSliderChange()

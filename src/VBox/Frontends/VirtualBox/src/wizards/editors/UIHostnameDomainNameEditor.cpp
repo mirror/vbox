@@ -112,21 +112,14 @@ void UIHostnameDomainNameEditor::setFirstColumnWidth(int iWidth)
 
 void UIHostnameDomainNameEditor::retranslateUi()
 {
-    QString strHostnameTooltip(tr("Type the hostname which will be used in attended install:"));
-    QString strDomainTooltip(tr("The domain name"));
     if (m_pHostnameLabel)
-    {
         m_pHostnameLabel->setText(tr("Hostna&me:"));
-        m_pHostnameLabel->setToolTip(strHostnameTooltip);
-    }
     if (m_pHostnameLineEdit)
-        m_pHostnameLineEdit->setToolTip(strHostnameTooltip);
+        m_pHostnameLineEdit->setToolTip(tr("Type the hostname."));
     if (m_pDomainNameLabel)
-    {
         m_pDomainNameLabel->setText(tr("&Domain Name:"));
-        m_pDomainNameLabel->setToolTip(strDomainTooltip);
-    }
-    m_pDomainNameLineEdit->setToolTip(strDomainTooltip);
+    if (m_pDomainNameLineEdit)
+        m_pDomainNameLineEdit->setToolTip(tr("Enter the domain name."));
 }
 
 void UIHostnameDomainNameEditor::addLineEdit(int &iRow, QLabel *&pLabel, QILineEdit *&pLineEdit, QGridLayout *pLayout)
