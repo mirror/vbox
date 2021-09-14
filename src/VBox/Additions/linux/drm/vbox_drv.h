@@ -157,7 +157,9 @@
 # include <drm/drm_device.h>
 # include <drm/drm_ioctl.h>
 # include <drm/drm_fourcc.h>
-# include <drm/drm_irq.h>
+# if RTLNX_VER_MAX(5,15,0)
+#  include <drm/drm_irq.h>
+# endif
 # include <drm/drm_vblank.h>
 #else /* < 5.5.0 || RHEL < 8.3 || SLES < 15-SP3 */
 # include <drm/drmP.h>
@@ -517,7 +519,9 @@ int vbox_gem_prime_mmap(struct drm_gem_object *obj,
 int vbox_irq_init(struct vbox_private *vbox);
 void vbox_irq_fini(struct vbox_private *vbox);
 void vbox_report_hotplug(struct vbox_private *vbox);
+#if RTLNX_VER_MAX(5,15,0)
 irqreturn_t vbox_irq_handler(int irq, void *arg);
+#endif
 
 /* vbox_hgsmi.c */
 void *hgsmi_buffer_alloc(struct gen_pool *guest_pool, size_t size,

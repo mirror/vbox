@@ -70,13 +70,17 @@ static int vbox_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	int ret = 0;
 
 # if RTLNX_VER_MIN(5,14,0)
+#  if RTLNX_VER_MIN(5,15,0)
+	ret = drm_aperture_remove_conflicting_pci_framebuffers(pdev, &driver);
+#  else
 	ret = drm_aperture_remove_conflicting_pci_framebuffers(pdev, "vboxvideofb");
+#  endif
 	if (ret)
 	{
 		printk("unable to remove conflicting framebuffer devices\n");
 		return ret;
 	}
-# endif /* 5.14 */
+# endif /* >= 5.14. */
 
 	dev = drm_dev_alloc(&driver, &pdev->dev);
 	if (IS_ERR(dev)) {
@@ -350,7 +354,9 @@ static struct drm_driver driver = {
 #endif
 
 	.fops = &vbox_fops,
+#if RTLNX_VER_MAX(5,15,0)
 	.irq_handler = vbox_irq_handler,
+#endif
 	.name = DRIVER_NAME,
 	.desc = DRIVER_DESC,
 	.date = DRIVER_DATE,
