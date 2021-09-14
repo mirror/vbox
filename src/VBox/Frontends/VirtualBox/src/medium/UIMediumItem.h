@@ -46,8 +46,6 @@ public:
       * @param  pParent    Brings the parent item reference. */
     UIMediumItem(const UIMedium &guiMedium, QITreeWidgetItem *pParent);
 
-    /** Copies UIMedium wrapped by <i>this</i> item. */
-    //virtual bool copy();
     /** Moves UIMedium wrapped by <i>this</i> item. */
     virtual bool move();
     /** Removes UIMedium wrapped by <i>this</i> item. */

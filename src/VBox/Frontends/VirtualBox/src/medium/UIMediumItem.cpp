@@ -90,21 +90,6 @@ bool UIMediumItem::move()
     return true;
 }
 
-// bool UIMediumItem::copy()
-// {
-//     /* Show Clone VD wizard: */
-//     // UISafePointerWizard pWizard = new UIWizardCloneVD(treeWidget(), medium().medium());
-//     // pWizard->prepare();
-//     // pWizard->exec();
-
-//     // /* Delete if still exists: */
-//     // if (pWizard)
-//     //     delete pWizard;
-
-//     // /* True by default: */
-//     return true;
-// }
-
 bool UIMediumItem::release(bool fInduced /* = false */)
 {
     /* Refresh medium and item: */
