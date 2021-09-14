@@ -24,6 +24,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/vmcpuset.h>
+#include <VBox/AssertGuest.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/pci.h>
@@ -1471,7 +1472,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3BatIndexWrite(PPDMDEVINS pDevIns, void *
         pThis->u8IndexShift = 2;
         u32 >>= 2;
     }
-    Assert(u32 < BAT_INDEX_LAST);
+    ASSERT_GUEST_MSG(u32 < BAT_INDEX_LAST, ("%#x\n", u32));
     pThis->uBatteryIndex = u32;
 
     DEVACPI_UNLOCK(pDevIns, pThis);
@@ -1566,7 +1567,7 @@ static DECLCALLBACK(VBOXSTRICTRC)  acpiR3SysInfoIndexWrite(PPDMDEVINS pDevIns, v
         if (u32 > SYSTEM_INFO_INDEX_END && pThis->u8IndexShift == 2 && (u32 >> 2) < SYSTEM_INFO_INDEX_END)
             u32 >>= 2;
 
-        AssertMsg(u32 < SYSTEM_INFO_INDEX_END, ("%u - Max=%u. IndexShift=%u\n", u32, SYSTEM_INFO_INDEX_END, pThis->u8IndexShift));
+        ASSERT_GUEST_MSG(u32 < SYSTEM_INFO_INDEX_END, ("%u - Max=%u. IndexShift=%u\n", u32, SYSTEM_INFO_INDEX_END, pThis->u8IndexShift));
         pThis->uSystemInfoIndex = u32;
     }
 
@@ -1774,7 +1775,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void
 
         default:
             *pu32 = UINT32_MAX;
-            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "cb=%d offPort=%u idx=%u\n", cb, offPort, pThis->uBatteryIndex);
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "cb=%d offPort=%u idx=%u\n", cb, offPort, uSystemInfoIndex);
             break;
     }
 
@@ -3971,7 +3972,7 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
     }
     for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
-        Assert(i < MAX_CUST_TABLES);
+        AssertBreak(i < MAX_CUST_TABLES);
         acpiR3PhysCopy(pDevIns, aGCPhysCust[i] + addend, pThisCC->apu8CustBin[i], pThisCC->acbCustBin[i]);
         aGCPhysRsdt[iCust + i] = aGCPhysCust[i] + addend;
         aGCPhysXsdt[iCust + i] = aGCPhysCust[i] + addend;
@@ -4686,7 +4687,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             pThis->u32CreatorRev = pTblHdr->u32CreatorRev;
 
             pThis->cCustTbls++;
-            Assert(pThis->cCustTbls <= MAX_CUST_TABLES);
+            AssertBreak(pThis->cCustTbls <= MAX_CUST_TABLES);
         }
     }
 
