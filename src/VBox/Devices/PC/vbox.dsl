@@ -371,12 +371,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         PP1I,  32, // Parallel1 IRQ
         PMNX,  32, // limit of 64-bit prefetch window (64KB units)
         NVMA,  32, // Primary NVMe controller PCI address
-        Offset (0x80),
-        ININ, 32,
+        IOMA,  32, // AMD IOMMU
+        SIOA,  32, // Southbridge IO APIC (when AMD IOMMU is present)
         Offset (0x200),
         VAIN, 32,
-        IOMA, 32, // AMD IOMMU
-        SIOA, 32, // Southbridge IO APIC (when AMD IOMMU is present)
     }
 
     Scope (\_SB)
