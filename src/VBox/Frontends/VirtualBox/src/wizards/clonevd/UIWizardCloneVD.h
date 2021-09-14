@@ -77,16 +77,20 @@ private:
     virtual void retranslateUi() /* override */;
     void setMediumVariantPageVisibility();
 
-    CMediumFormat m_comMediumFormat;
-    qulonglong m_uMediumVariant;
-    /** Holds the source virtual disk wrapper. */
-    CMedium m_comSourceVirtualDisk;
+    /** @name Parameters needed during medium cloning
+      * @{ */
+        CMediumFormat m_comMediumFormat;
+        qulonglong m_uMediumVariant;
+        /** Holds the source virtual disk wrapper. */
+        CMedium m_comSourceVirtualDisk;
 
-    /** Holds the source virtual-disk device type. */
-    KDeviceType m_enmDeviceType;
-    int m_iMediumVariantPageIndex;
-    qulonglong m_uMediumSize;
-    QString m_strMediumPath;
+        /** Holds the source virtual-disk device type. */
+        KDeviceType m_enmDeviceType;
+        int m_iMediumVariantPageIndex;
+        qulonglong m_uMediumSize;
+        QString m_strMediumPath;
+        QString m_strSourceDiskPath;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVD_h */

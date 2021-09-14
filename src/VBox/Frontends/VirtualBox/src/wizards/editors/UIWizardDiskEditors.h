@@ -84,6 +84,8 @@ public:
     void setMediumFormat(const CMediumFormat &mediumFormat);
     const CMediumFormat &VDIMediumFormat() const;
     const QStringList formatExtensions() const;
+    /** Attempts to find a file extention for the device type @p enmDeviceType withing the extensions
+      * returned by CMediumFormat::DescribeFileExtensions(..). */
     static QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
 
 private:
