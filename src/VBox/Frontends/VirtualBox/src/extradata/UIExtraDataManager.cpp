@@ -2344,6 +2344,12 @@ bool UIExtraDataManager::keepSuccessfullNotificationProgresses()
     return isFeatureAllowed(GUI_KeepSuccessfullNotificationProgresses);
 }
 
+void UIExtraDataManager::setKeepSuccessfullNotificationProgresses(bool fKeep)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    setExtraDataString(GUI_KeepSuccessfullNotificationProgresses, toFeatureAllowed(fKeep));
+}
+
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
 QString UIExtraDataManager::preventBetaBuildWarningForVersion()
 {

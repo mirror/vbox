@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
+#include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UINotificationCenter.h"
 #include "UINotificationObjectItem.h"
@@ -153,7 +154,7 @@ void UINotificationCenter::setParent(QWidget *pParent)
         parent()->removeEventFilter(this);
 
     /* Reparent: */
-    QWidget::setParent(pParent);
+    QIWithRetranslateUI<QWidget>::setParent(pParent);
 
     /* Install filter to new parent: */
     if (parent())
@@ -197,11 +198,12 @@ void UINotificationCenter::revoke(const QUuid &uId)
 }
 
 UINotificationCenter::UINotificationCenter(QWidget *pParent)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pModel(0)
     , m_pLayoutMain(0)
-    , m_pLayoutOpenButton(0)
+    , m_pLayoutButtons(0)
     , m_pOpenButton(0)
+    , m_pKeepButton(0)
     , m_pLayoutItems(0)
     , m_pStateMachineSliding(0)
     , m_iAnimatedValue(0)
@@ -214,6 +216,14 @@ UINotificationCenter::UINotificationCenter(QWidget *pParent)
 UINotificationCenter::~UINotificationCenter()
 {
     s_pInstance = 0;
+}
+
+void UINotificationCenter::retranslateUi()
+{
+    if (m_pOpenButton)
+        m_pOpenButton->setToolTip(tr("Open notification center"));
+    if (m_pKeepButton)
+        m_pKeepButton->setToolTip(tr("Keep finished progresses"));
 }
 
 bool UINotificationCenter::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -237,7 +247,7 @@ bool UINotificationCenter::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QWidget::eventFilter(pObject, pEvent);
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
 }
 
 bool UINotificationCenter::event(QEvent *pEvent)
@@ -265,7 +275,7 @@ bool UINotificationCenter::event(QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QWidget::event(pEvent);
+    return QIWithRetranslateUI<QWidget>::event(pEvent);
 }
 
 void UINotificationCenter::paintEvent(QPaintEvent *pEvent)
@@ -290,6 +300,11 @@ void UINotificationCenter::sltHandleOpenButtonToggled(bool fToggled)
         emit sigOpen();
     else
         emit sigClose();
+}
+
+void UINotificationCenter::sltHandleKeepButtonToggled(bool fToggled)
+{
+    gEDataManager->setKeepSuccessfullNotificationProgresses(fToggled);
 }
 
 void UINotificationCenter::sltHandleOpenTimerTimeout()
@@ -351,6 +366,9 @@ void UINotificationCenter::prepare()
     prepareWidgets();
     prepareStateMachineSliding();
     prepareOpenTimer();
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UINotificationCenter::prepareModel()
@@ -367,11 +385,11 @@ void UINotificationCenter::prepareWidgets()
     m_pLayoutMain = new QVBoxLayout(this);
     if (m_pLayoutMain)
     {
-        /* Prepare open-button layout: */
-        m_pLayoutOpenButton = new QHBoxLayout;
-        if (m_pLayoutOpenButton)
+        /* Prepare buttons layout: */
+        m_pLayoutButtons = new QHBoxLayout;
+        if (m_pLayoutButtons)
         {
-            m_pLayoutOpenButton->setContentsMargins(0, 0, 0, 0);
+            m_pLayoutButtons->setContentsMargins(0, 0, 0, 0);
 
             /* Prepare open-button: */
             m_pOpenButton = new QIToolButton(this);
@@ -380,13 +398,24 @@ void UINotificationCenter::prepareWidgets()
                 m_pOpenButton->setIcon(UIIconPool::iconSet(":/reset_warnings_16px.png"));
                 m_pOpenButton->setCheckable(true);
                 connect(m_pOpenButton, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleOpenButtonToggled);
-                m_pLayoutOpenButton->addWidget(m_pOpenButton);
+                m_pLayoutButtons->addWidget(m_pOpenButton);
             }
 
-            m_pLayoutOpenButton->addStretch();
+            /* Prepare keep-button: */
+            m_pKeepButton = new QIToolButton(this);
+            if (m_pKeepButton)
+            {
+                m_pKeepButton->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
+                m_pKeepButton->setCheckable(true);
+                m_pKeepButton->setChecked(gEDataManager->keepSuccessfullNotificationProgresses());
+                connect(m_pKeepButton, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleKeepButtonToggled);
+                m_pLayoutButtons->addWidget(m_pKeepButton);
+            }
+
+            m_pLayoutButtons->addStretch();
 
             /* Add to layout: */
-            m_pLayoutMain->addLayout(m_pLayoutOpenButton);
+            m_pLayoutMain->addLayout(m_pLayoutButtons);
         }
 
         /* Create items scroll-area: */

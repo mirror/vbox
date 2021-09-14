@@ -185,6 +185,8 @@ public:
 
         /** Returns whether successfull notification-progresses should NOT close automatically. */
         bool keepSuccessfullNotificationProgresses();
+        /** Defines whether successfull notification-progresses should NOT close (@a fKeep) automatically. */
+        void setKeepSuccessfullNotificationProgresses(bool fKeep);
 
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
         /** Returns version for which user wants to prevent BETA build warning. */

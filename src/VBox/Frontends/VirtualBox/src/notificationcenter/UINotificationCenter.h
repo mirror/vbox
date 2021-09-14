@@ -26,6 +26,7 @@
 #include <QWidget>
 
 /* GUI includes: */
+#include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 #include "UINotificationObjects.h"
 
@@ -40,7 +41,7 @@ class UINotificationModel;
 class UINotificationObject;
 
 /** QWidget-based notification-center overlay. */
-class SHARED_LIBRARY_STUFF UINotificationCenter : public QWidget
+class SHARED_LIBRARY_STUFF UINotificationCenter : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(int animatedValue READ animatedValue WRITE setAnimatedValue);
@@ -79,6 +80,9 @@ protected:
     /** Destructs notification-center. */
     virtual ~UINotificationCenter() /* override final */;
 
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override final */;
+
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override final */;
 
@@ -92,6 +96,9 @@ private slots:
 
     /** Issues request to make open button @a fToggled. */
     void sltHandleOpenButtonToggled(bool fToggled);
+    /** Toggles notification-progresses keep approach. */
+    void sltHandleKeepButtonToggled(bool fToggled);
+
     /** Handles open-timer timeout. */
     void sltHandleOpenTimerTimeout();
 
@@ -134,10 +141,12 @@ private:
 
     /** Holds the main layout instance. */
     QVBoxLayout  *m_pLayoutMain;
-    /** Holds the open button layout instance. */
-    QHBoxLayout  *m_pLayoutOpenButton;
+    /** Holds the buttons layout instance. */
+    QHBoxLayout  *m_pLayoutButtons;
     /** Holds the open button instance. */
     QIToolButton *m_pOpenButton;
+    /** Holds the keep button instance. */
+    QIToolButton *m_pKeepButton;
     /** Holds the items layout instance. */
     QVBoxLayout  *m_pLayoutItems;
 
