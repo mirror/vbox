@@ -183,6 +183,9 @@ public:
         /** Returns the list of messages for the Message/Popup center frameworks with inverted check-box state. */
         QStringList messagesWithInvertedOption();
 
+        /** Returns whether successfull notification-progresses should NOT close automatically. */
+        bool keepSuccessfullNotificationProgresses();
+
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
         /** Returns version for which user wants to prevent BETA build warning. */
         QString preventBetaBuildWarningForVersion();

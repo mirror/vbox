@@ -187,7 +187,8 @@ void UINotificationProgress::sltHandleProgressFinished()
 {
     m_uPercent = 100;
     emit sigProgressFinished();
-    close();
+    if (!gEDataManager->keepSuccessfullNotificationProgresses())
+        close();
 }
 
 
