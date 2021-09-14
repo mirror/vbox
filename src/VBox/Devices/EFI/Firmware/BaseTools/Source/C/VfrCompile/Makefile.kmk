@@ -30,6 +30,13 @@ include $(KBUILD_PATH)/subheader.kmk
 BLDPROGS += VfrCompile
 VfrCompile_TEMPLATE = VBoxEfiBldProg
 VfrCompile_DEFS = PCCTS_USE_NAMESPACE_STD __USE_PROTOS
+#
+# Workaround a crash in the release version of VfrCompile on Windos
+# when parsing Tcg2Config.vfr, no time to investigate that deeper right now...
+#
+if "$(KBUILD_TARGET)" == "win" || "$(KBUILD_TYPE)" == "release"
+	VfrCompile_CXXFLAGS += -noover -Od
+endif
 VfrCompile_INCS = \
 	. \
 	Pccts/h \
