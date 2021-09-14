@@ -68,6 +68,11 @@ void UINotificationModel::revokeObject(const QUuid &uId)
     emit sigChanged();
 }
 
+bool UINotificationModel::hasObject(const QUuid &uId) const
+{
+    return m_objects.contains(uId);
+}
+
 QList<QUuid> UINotificationModel::ids() const
 {
     return m_ids;

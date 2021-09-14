@@ -54,6 +54,8 @@ public:
     QUuid appendObject(UINotificationObject *pObject);
     /** Revokes a notification object referenced by @a uId from intenal storage. */
     void revokeObject(const QUuid &uId);
+    /** Returns whether there is a notification object referenced by @a uId. */
+    bool hasObject(const QUuid &uId) const;
 
     /** Returns a list of registered notification object IDs. */
     QList<QUuid> ids() const;

@@ -26,6 +26,7 @@
 #include <QState>
 #include <QStateMachine>
 #include <QStyle>
+#include <QTimer>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -175,9 +176,16 @@ QUuid UINotificationCenter::append(UINotificationObject *pObject)
     AssertPtrReturn(m_pModel, QUuid());
     const QUuid uId = m_pModel->appendObject(pObject);
 
-    /* Open if object is critical and center isn't opened yet: */
+    /* If object is critical and center isn't opened yet: */
     if (!m_pOpenButton->isChecked() && pObject->isCritical())
-        m_pOpenButton->animateClick();
+    {
+        /* We should delay progresses for a bit: */
+        const int iDelay = pObject->inherits("UINotificationProgress") ? 2000 : 0;
+        /* We should issue an open request: */
+        AssertPtrReturn(m_pTimerOpen, uId);
+        m_uOpenObjectId = uId;
+        m_pTimerOpen->start(iDelay);
+    }
 
     return uId;
 }
@@ -197,6 +205,7 @@ UINotificationCenter::UINotificationCenter(QWidget *pParent)
     , m_pLayoutItems(0)
     , m_pStateMachineSliding(0)
     , m_iAnimatedValue(0)
+    , m_pTimerOpen(0)
 {
     s_pInstance = this;
     prepare();
@@ -283,6 +292,20 @@ void UINotificationCenter::sltHandleOpenButtonToggled(bool fToggled)
         emit sigClose();
 }
 
+void UINotificationCenter::sltHandleOpenTimerTimeout()
+{
+    /* Check whether we really closed: */
+    if (m_pOpenButton->isChecked())
+        return;
+
+    /* Check whether message with particular ID exists: */
+    if (!m_pModel->hasObject(m_uOpenObjectId))
+        return;
+
+    /* Toggle open-button: */
+    m_pOpenButton->animateClick();
+}
+
 void UINotificationCenter::sltModelChanged()
 {
     /* Cleanup layout first: */
@@ -319,6 +342,7 @@ void UINotificationCenter::prepare()
     prepareModel();
     prepareWidgets();
     prepareStateMachineSliding();
+    prepareOpenTimer();
 }
 
 void UINotificationCenter::prepareModel()
@@ -453,6 +477,14 @@ void UINotificationCenter::prepareStateMachineSliding()
         /* Start state-machine: */
         m_pStateMachineSliding->start();
     }
+}
+
+void UINotificationCenter::prepareOpenTimer()
+{
+    m_pTimerOpen = new QTimer(this);
+    if (m_pTimerOpen)
+        connect(m_pTimerOpen, &QTimer::timeout,
+                this, &UINotificationCenter::sltHandleOpenTimerTimeout);
 }
 
 void UINotificationCenter::paintBackground(QPainter *pPainter)

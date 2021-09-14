@@ -33,6 +33,7 @@
 class QHBoxLayout;
 class QPainter;
 class QStateMachine;
+class QTimer;
 class QVBoxLayout;
 class QIToolButton;
 class UINotificationModel;
@@ -91,6 +92,8 @@ private slots:
 
     /** Issues request to make open button @a fToggled. */
     void sltHandleOpenButtonToggled(bool fToggled);
+    /** Handles open-timer timeout. */
+    void sltHandleOpenTimerTimeout();
 
     /** Handles signal about model being updated. */
     void sltModelChanged();
@@ -105,6 +108,8 @@ private:
     void prepareWidgets();
     /** Prepares sliding state-machine. */
     void prepareStateMachineSliding();
+    /** Prepares open-timer. */
+    void prepareOpenTimer();
 
     /** Paints background using pre-configured @a pPainter. */
     void paintBackground(QPainter *pPainter);
@@ -140,6 +145,11 @@ private:
     QStateMachine *m_pStateMachineSliding;
     /** Holds the sliding animation current value. */
     int            m_iAnimatedValue;
+
+    /** Holds the open-timer instance. */
+    QTimer *m_pTimerOpen;
+    /** Holds the open-object ID. */
+    QUuid   m_uOpenObjectId;
 };
 
 /** Singleton notification-center 'official' name. */
