@@ -390,6 +390,7 @@ void UIVisoContentBrowser::prepareObjects()
         m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_pTableView->setAlternatingRowColors(true);
+        m_pTableView->setTabKeyNavigation(false);
         QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
         if (pVerticalHeader)
         {

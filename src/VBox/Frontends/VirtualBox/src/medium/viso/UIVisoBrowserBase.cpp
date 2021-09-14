@@ -196,6 +196,7 @@ void UIVisoBrowserBase::prepareObjects()
         m_pTreeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
         m_pTreeView->setFrameStyle(QFrame::Panel | QFrame::Plain);
         m_pTreeView->installEventFilter(this);
+        m_pTreeView->setTabKeyNavigation(false);
     }
 }
 
