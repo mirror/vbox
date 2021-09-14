@@ -187,7 +187,10 @@ void UINotificationProgress::sltHandleProgressFinished()
 {
     m_uPercent = 100;
     emit sigProgressFinished();
-    if (!gEDataManager->keepSuccessfullNotificationProgresses())
+
+    /* If there was no error and no reason to keep progress alive, - finish him! */
+    if (   !error().isEmpty()
+        && !gEDataManager->keepSuccessfullNotificationProgresses())
         close();
 }
 
