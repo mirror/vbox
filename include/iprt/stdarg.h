@@ -43,6 +43,13 @@
 #  if __GNUC__ >= 4 /* System headers refers to __builtin_stdarg_start. */
 #   define __builtin_stdarg_start __builtin_va_start
 #  endif
+# elif defined(RT_OS_LINUX) && defined(IN_RING0)
+#  include "linux/version.h"
+#  if RTLNX_VER_MIN(5,15,0)
+#   include <linux/stdarg.h>
+#  else
+#   include <stdarg.h>
+#  endif
 # else
 #  include <stdarg.h>
 # endif
