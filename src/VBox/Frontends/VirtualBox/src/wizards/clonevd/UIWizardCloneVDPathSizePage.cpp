@@ -72,7 +72,7 @@ void UIWizardCloneVDPathSizePage::initializePage()
 
     if (!m_userModifiedParameters.contains("MediumPath"))
     {
-        QString strExtension = UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType());
+        QString strExtension = UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType());
         QString strSourceDiskPath = QDir::toNativeSeparators(QFileInfo(pWizard->sourceDiskFilePath()).absolutePath());
         /* Disk name without the format extension: */
         QString strDiskName = QString("%1_%2").arg(QFileInfo(pWizard->sourceDiskName()).completeBaseName()).arg(tr("copy"));
@@ -118,7 +118,7 @@ void UIWizardCloneVDPathSizePage::sltSelectLocationButtonClicked()
         return;
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strSelectedPath,
-                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
+                                              UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     QFileInfo mediumPath(strMediumPath);
     m_pMediumSizePathGroupBox->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
@@ -130,7 +130,7 @@ void UIWizardCloneVDPathSizePage::sltMediumPathChanged(const QString &strPath)
     m_userModifiedParameters << "MediumPath";
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strPath,
-                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
+                                              UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }

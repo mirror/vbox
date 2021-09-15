@@ -687,7 +687,7 @@ void UIWizardNewVMExpertPage::sltMediumLocationButtonClicked()
         return;
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strSelectedPath,
-                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                              UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
     m_pSizeAndLocationGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
@@ -805,7 +805,7 @@ void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()
         else
             strMediumPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     }
-    QString strExtension = UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
+    QString strExtension = UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
     if (m_pSizeAndLocationGroup)
     {
         QString strMediumFilePath =

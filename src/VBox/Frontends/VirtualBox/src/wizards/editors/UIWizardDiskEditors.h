@@ -73,66 +73,6 @@ protected:
     bool m_fExpertMode;
 };
 
-class UIDiskFormatBase
-{
-
-public:
-
-    UIDiskFormatBase(KDeviceType enmDeviceType)
-        : m_enmDeviceType(enmDeviceType)
-    {}
-
-protected:
-
-    struct Format
-    {
-        CMediumFormat m_comFormat;
-        QString       m_strName;
-        QString       m_strExtension;
-        bool          m_fPreferred;
-        Format(const CMediumFormat &comFormat, const QString &strName,
-               const QString &strExtension, bool fPreferred)
-               : m_comFormat(comFormat)
-               , m_strName(strName)
-               , m_strExtension(strExtension)
-               , m_fPreferred(fPreferred){}
-        Format(){}
-    };
-
-    QVector<Format> m_formatList;
-    CMediumFormat m_comVDIMediumFormat;
-    KDeviceType m_enmDeviceType;
-
-};
-
-class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public UIDiskEditorGroupBox, public UIDiskFormatBase
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigMediumFormatChanged();
-
-public:
-
-    UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent = 0);
-    CMediumFormat mediumFormat() const;
-    void setMediumFormat(const CMediumFormat &mediumFormat);
-    const CMediumFormat &VDIMediumFormat() const;
-    const QStringList formatExtensions() const;
-
-private:
-
-    void prepare();
-    void populateFormats();
-    void addFormat(CMediumFormat medFormat, bool fPreferred = false);
-    void createFormatWidgets();
-    virtual void retranslateUi() /* override final */;
-
-
-    QButtonGroup *m_pFormatButtonGroup;
-    QVBoxLayout *m_pMainLayout;
-};
 
 class SHARED_LIBRARY_STUFF UIDiskVariantGroupBox : public UIDiskEditorGroupBox
 {
@@ -206,6 +146,67 @@ private:
     UIMediumSizeEditor *m_pMediumSizeEditor;
     QIRichTextLabel *m_pLocationLabel;
     QIRichTextLabel *m_pSizeLabel;
+};
+
+/** Base class for the widgets used to select virtual medium format. It implements mutual functioanlity
+  * like finding name, extension etc for a CMediumFormat and device type. */
+class SHARED_LIBRARY_STUFF UIDiskFormatBase
+{
+public:
+
+    UIDiskFormatBase(KDeviceType enmDeviceType, bool fExpertMode);
+    const CMediumFormat &VDIMediumFormat() const;
+    QStringList formatExtensions() const;
+
+protected:
+
+    struct Format
+    {
+        CMediumFormat m_comFormat;
+        QString       m_strExtension;
+        bool          m_fPreferred;
+        Format(const CMediumFormat &comFormat,
+               const QString &strExtension, bool fPreferred)
+               : m_comFormat(comFormat)
+               , m_strExtension(strExtension)
+               , m_fPreferred(fPreferred){}
+        Format(){}
+    };
+
+    void addFormat(CMediumFormat medFormat, bool fPreferred = false);
+    void populateFormats();
+    bool isExpertMode() const;
+    QVector<Format> m_formatList;
+
+private:
+
+    CMediumFormat m_comVDIMediumFormat;
+    KDeviceType m_enmDeviceType;
+    bool m_fExpertMode;
+};
+
+class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public QIWithRetranslateUI<QWidget>, public UIDiskFormatBase
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigMediumFormatChanged();
+
+public:
+
+    UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent = 0);
+    CMediumFormat mediumFormat() const;
+    void setMediumFormat(const CMediumFormat &mediumFormat);
+
+private:
+
+    void prepare();
+    void createFormatWidgets();
+    virtual void retranslateUi() /* override final */;
+
+    QButtonGroup *m_pFormatButtonGroup;
+    QVBoxLayout *m_pMainLayout;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardDiskEditors_h */

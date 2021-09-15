@@ -81,7 +81,7 @@ void UIWizardNewVDExpertPage::sltMediumPathChanged(const QString &strPath)
     AssertReturnVoid(pWizard);
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strPath,
-                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                              UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
@@ -114,7 +114,7 @@ void UIWizardNewVDExpertPage::sltSelectLocationButtonClicked()
         return;
     QString strMediumPath =
         UIDiskEditorGroupBox::appendExtension(strSelectedPath,
-                                              UIDiskFormatsGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                              UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
     m_pSizeAndPathGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
     emit completeChanged();
@@ -134,7 +134,7 @@ void UIWizardNewVDExpertPage::initializePage()
     AssertReturnVoid(!comMediumFormat.isNull());
     pWizard->setMediumFormat(comMediumFormat);
 
-    QString strExtension = UIDiskFormatsGroupBox::defaultExtension(comMediumFormat, KDeviceType_HardDisk);
+    QString strExtension = UIDiskEditorGroupBox::defaultExtension(comMediumFormat, KDeviceType_HardDisk);
     QString strMediumFilePath =
         UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_strDefaultName,
                                                                                              strExtension), m_strDefaultPath);
