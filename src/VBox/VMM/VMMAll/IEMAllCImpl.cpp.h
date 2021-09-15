@@ -5865,8 +5865,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             /*
              * Inform PGM.
              */
-            if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
-                !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
+            if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE | X86_CR0_CD | X86_CR0_NW))
+                !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE | X86_CR0_CD | X86_CR0_NW)) )
             {
                 rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */);
                 AssertRCReturn(rc, rc);
