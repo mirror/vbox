@@ -172,7 +172,7 @@ QString UIDiskEditorGroupBox::defaultExtension(const CMediumFormat &mediumFormat
 
 UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
     : UIDiskEditorGroupBox(fExpertMode, pParent)
-    , m_enmDeviceType(enmDeviceType)
+    , UIDiskFormatBase(enmDeviceType)
     , m_pFormatButtonGroup(0)
     , m_pMainLayout(0)
 {

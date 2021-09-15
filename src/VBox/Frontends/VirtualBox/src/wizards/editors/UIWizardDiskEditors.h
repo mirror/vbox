@@ -73,7 +73,39 @@ protected:
     bool m_fExpertMode;
 };
 
-class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public UIDiskEditorGroupBox
+class UIDiskFormatBase
+{
+
+public:
+
+    UIDiskFormatBase(KDeviceType enmDeviceType)
+        : m_enmDeviceType(enmDeviceType)
+    {}
+
+protected:
+
+    struct Format
+    {
+        CMediumFormat m_comFormat;
+        QString       m_strName;
+        QString       m_strExtension;
+        bool          m_fPreferred;
+        Format(const CMediumFormat &comFormat, const QString &strName,
+               const QString &strExtension, bool fPreferred)
+               : m_comFormat(comFormat)
+               , m_strName(strName)
+               , m_strExtension(strExtension)
+               , m_fPreferred(fPreferred){}
+        Format(){}
+    };
+
+    QVector<Format> m_formatList;
+    CMediumFormat m_comVDIMediumFormat;
+    KDeviceType m_enmDeviceType;
+
+};
+
+class SHARED_LIBRARY_STUFF UIDiskFormatsGroupBox : public UIDiskEditorGroupBox, public UIDiskFormatBase
 {
     Q_OBJECT;
 
@@ -90,20 +122,6 @@ public:
     const QStringList formatExtensions() const;
 
 private:
-    struct Format
-    {
-        CMediumFormat m_comFormat;
-        QString       m_strName;
-        QString       m_strExtension;
-        bool          m_fPreferred;
-        Format(const CMediumFormat &comFormat, const QString &strName,
-               const QString &strExtension, bool fPreferred)
-               : m_comFormat(comFormat)
-               , m_strName(strName)
-               , m_strExtension(strExtension)
-               , m_fPreferred(fPreferred){}
-        Format(){}
-    };
 
     void prepare();
     void populateFormats();
@@ -111,10 +129,6 @@ private:
     void createFormatWidgets();
     virtual void retranslateUi() /* override final */;
 
-    QVector<Format> m_formatList;
-
-    CMediumFormat m_comVDIMediumFormat;
-    KDeviceType m_enmDeviceType;
 
     QButtonGroup *m_pFormatButtonGroup;
     QVBoxLayout *m_pMainLayout;
