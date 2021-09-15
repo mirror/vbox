@@ -122,11 +122,19 @@ typedef struct GVMCPU
         uint8_t             padding[512];
     } vmmr0;
 
+    union
+    {
+#if defined(VMM_INCLUDED_SRC_include_PGMInternal_h) && defined(IN_RING0)
+        struct PGMR0PERVCPU s;
+#endif
+        uint8_t             padding[64];
+    } pgmr0;
+
     /** Padding the structure size to page boundrary. */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 64 - 512];
+    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 64 - 512 - 64];
 #else
-    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 512];
+    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 512 - 64];
 #endif
 } GVMCPU;
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)

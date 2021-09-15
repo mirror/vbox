@@ -3631,13 +3631,8 @@ typedef struct PGMCPU
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS
-    /** @name Statistics
-     * @{ */
-    /** R0: Which statistic this \#PF should be attributed to. */
-    R0PTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionR0;
     /** These are statistics that used to be on the hyper heap. */
     PGMCPUSTATS                     Stats;
-    /** @} */
 #endif
 } PGMCPU;
 /** Pointer to the per-cpu PGM data. */
@@ -3660,6 +3655,19 @@ typedef PGMCPU *PPGMCPU;
 #define PGM_SYNC_CLEAR_PGM_POOL_BIT             8
 #define PGM_SYNC_CLEAR_PGM_POOL                 RT_BIT(PGM_SYNC_CLEAR_PGM_POOL_BIT)
 /** @} */
+
+
+/**
+ * PGM GVMCPU instance data.
+ */
+typedef struct PGMR0PERVCPU
+{
+#ifdef VBOX_WITH_STATISTICS
+    /** R0: Which statistic this \#PF should be attributed to. */
+    R0PTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionR0;
+#endif
+    uint64_t                        u64Dummy;
+} PGMR0PERVCPU;
 
 
 /**

@@ -597,7 +597,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
 
     LogFlow(("PGMTrap0eHandler: uErr=%RGx GCPhysFault=%RGp eip=%RGv\n", uErr, GCPhysFault, (RTGCPTR)pRegFrame->rip));
     STAM_PROFILE_START(&pGVCpu->pgm.s.StatRZTrap0e, a);
-    STAM_STATS({ pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
+    STAM_STATS({ pGVCpu->pgmr0.s.pStatTrap0eAttributionR0 = NULL; } );
 
     /* AMD uses the host's paging mode; Intel has a single mode (EPT). */
     AssertMsg(   enmShwPagingMode == PGMMODE_32_BIT || enmShwPagingMode == PGMMODE_PAE      || enmShwPagingMode == PGMMODE_PAE_NX
@@ -699,9 +699,9 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
         rc = VINF_SUCCESS;
     }
 
-    STAM_STATS({ if (!pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
-                    pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pGVCpu->pgm.s.Stats.StatRZTrap0eTime2Misc; });
-    STAM_PROFILE_STOP_EX(&pGVCpu->pgm.s.Stats.StatRZTrap0e, pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
+    STAM_STATS({ if (!pGVCpu->pgmr0.s.pStatTrap0eAttributionR0)
+                    pGVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pGVCpu->pgm.s.Stats.StatRZTrap0eTime2Misc; });
+    STAM_PROFILE_STOP_EX(&pGVCpu->pgm.s.Stats.StatRZTrap0e, pGVCpu->pgmr0.s.pStatTrap0eAttributionR0, a);
     return rc;
 }
 

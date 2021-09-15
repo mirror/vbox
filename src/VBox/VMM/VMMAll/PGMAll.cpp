@@ -892,7 +892,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
 
     Log(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv eip=%04x:%RGv cr3=%RGp\n", uErr, pvFault, pRegFrame->cs.Sel, (RTGCPTR)pRegFrame->rip, (RTGCPHYS)CPUMGetGuestCR3(pVCpu)));
     STAM_PROFILE_START(&pVCpu->pgm.s.Stats.StatRZTrap0e, a);
-    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
+    STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = NULL; } );
 
 
 # ifdef VBOX_WITH_STATISTICS
@@ -971,9 +971,9 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
     }
 
     STAM_STATS({ if (rc == VINF_EM_RAW_GUEST_TRAP) STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eGuestPF); });
-    STAM_STATS({ if (!pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
-                    pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2Misc; });
-    STAM_PROFILE_STOP_EX(&pVCpu->pgm.s.Stats.StatRZTrap0e, pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
+    STAM_STATS({ if (!pVCpu->pgmr0.s.pStatTrap0eAttributionR0)
+                    pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2Misc; });
+    STAM_PROFILE_STOP_EX(&pVCpu->pgm.s.Stats.StatRZTrap0e, pVCpu->pgmr0.s.pStatTrap0eAttributionR0, a);
     return rc;
 }
 #endif /* IN_RING0 */
