@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QIcon>
 #include <QGroupBox>
+#include <QVector>
 
 /* Local includes: */
 #include "QIWithRetranslateUI.h"
@@ -63,6 +64,9 @@ public:
     static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
     static QString openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
                                              KDeviceType enmDeviceType, QWidget *pParent);
+    /** Attempts to find a file extention for the device type @p enmDeviceType within the extensions
+      * returned by CMediumFormat::DescribeFileExtensions(..). */
+    static QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
 
 protected:
 
@@ -84,22 +88,35 @@ public:
     void setMediumFormat(const CMediumFormat &mediumFormat);
     const CMediumFormat &VDIMediumFormat() const;
     const QStringList formatExtensions() const;
-    /** Attempts to find a file extention for the device type @p enmDeviceType within the extensions
-      * returned by CMediumFormat::DescribeFileExtensions(..). */
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
 
 private:
+    struct Format
+    {
+        CMediumFormat m_comFormat;
+        QString       m_strName;
+        QString       m_strExtension;
+        bool          m_fPreferred;
+        Format(const CMediumFormat &comFormat, const QString &strName,
+               const QString &strExtension, bool fPreferred)
+               : m_comFormat(comFormat)
+               , m_strName(strName)
+               , m_strExtension(strExtension)
+               , m_fPreferred(fPreferred){}
+    };
 
-    void prepare(KDeviceType enmDeviceType);
-    void addFormatButton(QVBoxLayout *pFormatLayout, CMediumFormat medFormat, KDeviceType enmDeviceType, bool fPreferred = false);
-
+    void prepare();
+    void populateFormats();
+    void addFormat(CMediumFormat medFormat, bool fPreferred = false);
+    void createFormatWidgets();
     virtual void retranslateUi() /* override final */;
 
-    QList<CMediumFormat>  m_formats;
+    QVector<Format> m_formatList;
+
     CMediumFormat m_comVDIMediumFormat;
-    QStringList           m_formatNames;
-    QStringList m_formatExtensions;
+    KDeviceType m_enmDeviceType;
+
     QButtonGroup *m_pFormatButtonGroup;
+    QVBoxLayout *m_pMainLayout;
 };
 
 class SHARED_LIBRARY_STUFF UIDiskVariantGroupBox : public UIDiskEditorGroupBox

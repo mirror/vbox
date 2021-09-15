@@ -147,6 +147,24 @@ QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitia
     return strChosenFilePath;
 }
 
+/* static */
+QString UIDiskEditorGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType)
+{
+    if (!mediumFormatRef.isNull())
+    {
+        /* Load extension / device list: */
+        QVector<QString> fileExtensions;
+        QVector<KDeviceType> deviceTypes;
+        CMediumFormat mediumFormat(mediumFormatRef);
+        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+        for (int i = 0; i < fileExtensions.size(); ++i)
+            if (deviceTypes[i] == enmDeviceType)
+                return fileExtensions[i].toLower();
+    }
+    AssertMsgFailed(("Extension can't be NULL!\n"));
+    return QString();
+}
+
 
 /*********************************************************************************************************************************
 *   UIDiskFormatsGroupBox implementation.                                                                                   *
@@ -154,19 +172,28 @@ QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitia
 
 UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
     : UIDiskEditorGroupBox(fExpertMode, pParent)
+    , m_enmDeviceType(enmDeviceType)
     , m_pFormatButtonGroup(0)
+    , m_pMainLayout(0)
 {
-    prepare(enmDeviceType);
+    prepare();
+
 }
 
 CMediumFormat UIDiskFormatsGroupBox::mediumFormat() const
 {
-    return m_pFormatButtonGroup && m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
+    return m_pFormatButtonGroup &&
+           m_pFormatButtonGroup->checkedButton() ? m_formatList[m_pFormatButtonGroup->checkedId()].m_comFormat : CMediumFormat();
 }
 
 void UIDiskFormatsGroupBox::setMediumFormat(const CMediumFormat &mediumFormat)
 {
-    int iPosition = m_formats.indexOf(mediumFormat);
+    int iPosition = -1;
+    for (int i = 0; i < m_formatList.size(); ++i)
+    {
+        if (mediumFormat == m_formatList[i].m_comFormat)
+            iPosition = i;
+    }
     if (iPosition >= 0)
     {
         m_pFormatButtonGroup->button(iPosition)->click();
@@ -179,12 +206,15 @@ const CMediumFormat &UIDiskFormatsGroupBox::VDIMediumFormat() const
     return m_comVDIMediumFormat;
 }
 
-void UIDiskFormatsGroupBox::prepare(KDeviceType enmDeviceType)
+void UIDiskFormatsGroupBox::prepare()
 {
-    QVBoxLayout *pContainerLayout = new QVBoxLayout(this);
+    m_pMainLayout = new QVBoxLayout(this);
+    populateFormats();
+    createFormatWidgets();
+    retranslateUi();
+}
 
-    m_pFormatButtonGroup = new QButtonGroup(this);
-    AssertReturnVoid(m_pFormatButtonGroup);
+void UIDiskFormatsGroupBox::populateFormats(){
     /* Enumerate medium formats in special order: */
     CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
     const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
@@ -208,27 +238,15 @@ void UIDiskFormatsGroupBox::prepare(KDeviceType enmDeviceType)
 
     /* Create buttons for VDI, preferred and others: */
     foreach (const QString &strId, vdi.keys())
-        addFormatButton(pContainerLayout, vdi.value(strId), enmDeviceType, true);
+        addFormat(vdi.value(strId), true);
     foreach (const QString &strId, preferred.keys())
-        addFormatButton(pContainerLayout, preferred.value(strId), enmDeviceType, true);
+        addFormat(preferred.value(strId), true);
 
-    if (m_fExpertMode || enmDeviceType == KDeviceType_DVD || enmDeviceType == KDeviceType_Floppy)
+    if (m_fExpertMode || m_enmDeviceType == KDeviceType_DVD || m_enmDeviceType == KDeviceType_Floppy)
     {
         foreach (const QString &strId, others.keys())
-            addFormatButton(pContainerLayout, others.value(strId), enmDeviceType);
+            addFormat(others.value(strId));
     }
-
-    /* Select VDI: */
-    if (!m_pFormatButtonGroup->buttons().isEmpty())
-    {
-        m_pFormatButtonGroup->button(0)->click();
-        m_pFormatButtonGroup->button(0)->setFocus();
-    }
-
-    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
-            this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
-
-    retranslateUi();
 }
 
 void UIDiskFormatsGroupBox::retranslateUi()
@@ -240,13 +258,12 @@ void UIDiskFormatsGroupBox::retranslateUi()
     for (int i = 0; i < buttons.size(); ++i)
     {
         QAbstractButton *pButton = buttons[i];
-        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatList[m_pFormatButtonGroup->id(pButton)].m_strName);
         pButton->setText(gpConverter->toString(enmFormat));
     }
 }
 
-void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumFormat medFormat,
-                                            KDeviceType enmDeviceType, bool fPreferred /* = false */)
+void UIDiskFormatsGroupBox::addFormat(CMediumFormat medFormat, bool fPreferred /* = false */)
 {
     /* Check that medium format supports creation: */
     ULONG uFormatCapabilities = 0;
@@ -263,52 +280,47 @@ void UIDiskFormatsGroupBox::addFormatButton(QVBoxLayout *pFormatLayout, CMediumF
     QVector<QString> fileExtensions;
     QVector<KDeviceType> deviceTypes;
     medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    if (!deviceTypes.contains(enmDeviceType))
+    if (!deviceTypes.contains(m_enmDeviceType))
         return;
+    m_formatList << Format(medFormat, medFormat.GetName(), defaultExtension(medFormat, m_enmDeviceType), fPreferred);
+}
 
-    /* Create/add corresponding radio-button: */
-    QRadioButton *pFormatButton = new QRadioButton;
-    AssertPtrReturnVoid(pFormatButton);
+const QStringList UIDiskFormatsGroupBox::formatExtensions() const
+{
+    QStringList extensionList;
+    foreach (const Format &format, m_formatList)
+        extensionList << format.m_strExtension;
+    return extensionList;
+}
+
+void UIDiskFormatsGroupBox::createFormatWidgets()
+{
+    AssertReturnVoid(m_pMainLayout);
+    AssertReturnVoid(!m_formatList.isEmpty());
+    m_pFormatButtonGroup = new QButtonGroup(this);
+    AssertReturnVoid(m_pFormatButtonGroup);
+
+    for (int i = 0; i < m_formatList.size(); ++i)
     {
+        QRadioButton *pFormatButton = new QRadioButton;
+        if (!pFormatButton)
+            continue;
+
         /* Make the preferred button font bold: */
-        if (fPreferred && m_fExpertMode)
+        if (m_formatList[i].m_fPreferred && m_fExpertMode)
         {
             QFont font = pFormatButton->font();
             font.setBold(true);
             pFormatButton->setFont(font);
         }
-        pFormatLayout->addWidget(pFormatButton);
-        m_formats << medFormat;
-        m_formatNames << medFormat.GetName();
-        m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-        m_formatExtensions << defaultExtension(medFormat, enmDeviceType);
+        m_pMainLayout->addWidget(pFormatButton);
+        m_pFormatButtonGroup->addButton(pFormatButton, i);
     }
+
+    setMediumFormat(m_formatList[0].m_comFormat);
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
+            this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
 }
-
-const QStringList UIDiskFormatsGroupBox::formatExtensions() const
-{
-    return m_formatExtensions;
-}
-
-/* static */
-QString UIDiskFormatsGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType)
-{
-    if (!mediumFormatRef.isNull())
-    {
-        /* Load extension / device list: */
-        QVector<QString> fileExtensions;
-        QVector<KDeviceType> deviceTypes;
-        CMediumFormat mediumFormat(mediumFormatRef);
-        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-        for (int i = 0; i < fileExtensions.size(); ++i)
-            if (deviceTypes[i] == enmDeviceType)
-                return fileExtensions[i].toLower();
-    }
-    AssertMsgFailed(("Extension can't be NULL!\n"));
-    return QString();
-}
-
-
 /*********************************************************************************************************************************
 *   UIDiskVariantGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
