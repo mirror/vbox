@@ -12411,7 +12411,11 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPUCC pVCpu, uint16_t uSel)
  * @{
  */
 #ifdef VBOX_WITH_STATISTICS
-# define IEMOP_INC_STATS(a_Stats) do { pVCpu->iem.s.CTX_SUFF(pStats)->a_Stats += 1; } while (0)
+# ifdef IN_RING3
+#  define IEMOP_INC_STATS(a_Stats) do { pVCpu->iem.s.StatsR3.a_Stats += 1; } while (0)
+# else
+#  define IEMOP_INC_STATS(a_Stats) do { pVCpu->iem.s.StatsRZ.a_Stats += 1; } while (0)
+# endif
 #else
 # define IEMOP_INC_STATS(a_Stats) do { } while (0)
 #endif
@@ -14102,6 +14106,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
  */
 VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPUCC pVCpu)
 {
+    AssertCompile(sizeof(pVCpu->iem.s) <= sizeof(pVCpu->iem.padding)); /* (tstVMStruct can't do it's job w/o instruction stats) */
 #ifdef LOG_ENABLED
     iemLogCurInstr(pVCpu, true, "IEMExecOne");
 #endif

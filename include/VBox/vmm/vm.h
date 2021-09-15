@@ -135,7 +135,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_IEMInternal_h
         struct IEMCPU       s;
 #endif
-        uint8_t             padding[18496];     /* multiple of 64 */
+        uint8_t             padding[26688];     /* multiple of 64 */
     } iem;
 
     /** @name Static per-cpu data.

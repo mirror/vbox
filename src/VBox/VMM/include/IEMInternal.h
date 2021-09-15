@@ -611,12 +611,12 @@ typedef struct IEMCPU
      * @remarks Must be 64-byte aligned. */
     IEMTLB                  CodeTlb;
 
-    /** Pointer to instruction statistics for ring-0 context. */
-    R0PTRTYPE(PIEMINSTRSTATS) pStatsR0;
-    /** Ring-3 pointer to instruction statistics for non-ring-3 code. */
-    R3PTRTYPE(PIEMINSTRSTATS) pStatsCCR3;
-    /** Pointer to instruction statistics for ring-3 context. */
-    R3PTRTYPE(PIEMINSTRSTATS) pStatsR3;
+#if defined(VBOX_WITH_STATISTICS) && !defined(IN_TSTVMSTRUCT) && !defined(DOXYGEN_RUNNING)
+    /** Instruction statistics for ring-0/raw-mode. */
+    IEMINSTRSTATS           StatsRZ;
+    /** Instruction statistics for ring-3. */
+    IEMINSTRSTATS           StatsR3;
+#endif
 } IEMCPU;
 AssertCompileMemberOffset(IEMCPU, fCurXcpt, 0x48);
 AssertCompileMemberAlignment(IEMCPU, DataTlb, 64);
