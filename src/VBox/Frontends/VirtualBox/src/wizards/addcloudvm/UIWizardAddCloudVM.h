@@ -35,11 +35,9 @@ class UIWizardAddCloudVM : public UINativeWizard
 
 public:
 
-    /** Constructs Add Cloud VM wizard passing @a pParent & @a enmMode to the base-class.
+    /** Constructs Add Cloud VM wizard passing @a pParent to the base-class.
       * @param  strFullGroupName  Brings full group name (/provider/profile) to add VM to. */
-    UIWizardAddCloudVM(QWidget *pParent,
-                       const QString &strFullGroupName = QString(),
-                       WizardMode enmMode = WizardMode_Auto);
+    UIWizardAddCloudVM(QWidget *pParent, const QString &strFullGroupName = QString());
 
     /** Returns full group name. */
     QString fullGroupName() const { return m_strFullGroupName; }

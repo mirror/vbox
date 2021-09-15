@@ -29,9 +29,8 @@
 
 
 UIWizardAddCloudVM::UIWizardAddCloudVM(QWidget *pParent,
-                                       const QString &strFullGroupName /* = QString() */,
-                                       WizardMode enmMode /* = WizardMode_Auto */)
-    : UINativeWizard(pParent, WizardType_AddCloudVM, enmMode)
+                                       const QString &strFullGroupName /* = QString() */)
+    : UINativeWizard(pParent, WizardType_AddCloudVM, WizardMode_Auto)
     , m_strFullGroupName(strFullGroupName)
 {
 #ifndef VBOX_WS_MAC
