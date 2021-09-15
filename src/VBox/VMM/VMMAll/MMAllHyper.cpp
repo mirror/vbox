@@ -337,6 +337,7 @@ VMMDECL(int) MMHyperAlloc(PVMCC pVM, size_t cb, unsigned uAlignment, MMTAG enmTa
 }
 
 
+#if 0
 /**
  * Duplicates a block of memory.
  *
@@ -358,6 +359,7 @@ VMMDECL(int) MMHyperDupMem(PVMCC pVM, const void *pvSrc, size_t cb, unsigned uAl
         memcpy(*ppv, pvSrc, cb);
     return rc;
 }
+#endif
 
 
 /**

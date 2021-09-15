@@ -27,7 +27,6 @@
 #include <VBox/vmm/ssm.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vmcc.h>
-#include <VBox/vmm/mm.h>
 #include <VBox/sup.h>
 
 #include <VBox/err.h>
@@ -801,18 +800,15 @@ static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves,
         AssertReleaseFailed();
 #else
         Assert(ppaLeaves == &pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
+        Assert(*ppaLeaves == pVM->cpum.s.GuestInfo.aCpuIdLeaves);
         Assert(cLeaves == pVM->cpum.s.GuestInfo.cCpuIdLeaves);
 
-        size_t cb    = cLeaves       * sizeof(**ppaLeaves);
-        size_t cbNew = (cLeaves + 1) * sizeof(**ppaLeaves);
-        int rc = MMR3HyperRealloc(pVM, *ppaLeaves, cb, 32, MM_TAG_CPUM_CPUID, cbNew, (void **)ppaLeaves);
-        if (RT_SUCCESS(rc))
-            pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = MMHyperR3ToR0(pVM, *ppaLeaves);
+        if (cLeaves + 1 <= RT_ELEMENTS(pVM->cpum.s.GuestInfo.aCpuIdLeaves))
+        { }
         else
         {
             *ppaLeaves = NULL;
-            pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = NIL_RTR0PTR;
-            LogRel(("CPUM: cpumR3CpuIdEnsureSpace: MMR3HyperRealloc failed. rc=%Rrc\n", rc));
+            LogRel(("CPUM: cpumR3CpuIdEnsureSpace: Out of CPUID space!\n"));
         }
 #endif
     }
@@ -926,6 +922,7 @@ static int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLea
     {
         AssertReturn(!ppaLeaves, VERR_INVALID_PARAMETER);
         AssertReturn(!pcLeaves, VERR_INVALID_PARAMETER);
+        AssertReturn(pVM->cpum.s.GuestInfo.paCpuIdLeavesR3 == pVM->cpum.s.GuestInfo.aCpuIdLeaves, VERR_INVALID_PARAMETER);
 
         ppaLeaves = &pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
         pcLeaves  = &pVM->cpum.s.GuestInfo.cCpuIdLeaves;
@@ -2369,13 +2366,13 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
     /*
      * Install the CPUID information.
      */
-    int rc = MMHyperDupMem(pVM, paLeaves, sizeof(paLeaves[0]) * cLeaves, 32,
-                           MM_TAG_CPUM_CPUID, (void **)&pCpum->GuestInfo.paCpuIdLeavesR3);
-
-    AssertLogRelRCReturn(rc, rc);
-    pCpum->GuestInfo.cCpuIdLeaves = cLeaves;
-    pCpum->GuestInfo.paCpuIdLeavesR0 = MMHyperR3ToR0(pVM, pCpum->GuestInfo.paCpuIdLeavesR3);
-    Assert(MMHyperR0ToR3(pVM, pCpum->GuestInfo.paCpuIdLeavesR0) == (void *)pCpum->GuestInfo.paCpuIdLeavesR3);
+    AssertLogRelMsgReturn(cLeaves <= RT_ELEMENTS(pVM->cpum.s.GuestInfo.aCpuIdLeaves),
+                          ("cLeaves=%u - max %u\n", cLeaves, RT_ELEMENTS(pVM->cpum.s.GuestInfo.aCpuIdLeaves)),
+                          VERR_CPUM_IPE_1); /** @todo better status! */
+    if (paLeaves != pCpum->GuestInfo.aCpuIdLeaves)
+        memcpy(pCpum->GuestInfo.aCpuIdLeaves, paLeaves, cLeaves * sizeof(paLeaves[0]));
+    pCpum->GuestInfo.paCpuIdLeavesR3 = pCpum->GuestInfo.aCpuIdLeaves;
+    pCpum->GuestInfo.cCpuIdLeaves    = cLeaves;
 
     /*
      * Update the default CPUID leaf if necessary.
@@ -2408,8 +2405,8 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
     /*
      * Explode the guest CPU features.
      */
-    rc = cpumR3CpuIdExplodeFeatures(pCpum->GuestInfo.paCpuIdLeavesR3, pCpum->GuestInfo.cCpuIdLeaves, pMsrs,
-                                    &pCpum->GuestFeatures);
+    int rc = cpumR3CpuIdExplodeFeatures(pCpum->GuestInfo.paCpuIdLeavesR3, pCpum->GuestInfo.cCpuIdLeaves, pMsrs,
+                                        &pCpum->GuestFeatures);
     AssertLogRelRCReturn(rc, rc);
 
     /*
@@ -4527,6 +4524,10 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
      * fragmenting the hyper heap (and because there isn't/wasn't any realloc
      * API for the hyper heap).  This means special cleanup considerations.
      */
+    /** @todo The hyper heap will be removed ASAP, so the final destination is
+     *        now a fixed sized arrays in the VM structure.  Maybe we can simplify
+     *        this allocation fun a little now?  Or maybe it's too convenient for
+     *        the CPU reporter code... No time to figure that out now.   */
     rc = cpumR3DbGetCpuInfo(Config.szCpuName, &pCpum->GuestInfo);
     if (RT_FAILURE(rc))
         return rc == VERR_CPUM_DB_CPU_NOT_FOUND
@@ -4567,10 +4568,8 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
      * Pre-explode the CPUID info.
      */
     if (RT_SUCCESS(rc))
-    {
         rc = cpumR3CpuIdExplodeFeatures(pCpum->GuestInfo.paCpuIdLeavesR3, pCpum->GuestInfo.cCpuIdLeaves, &GuestMsrs,
                                         &pCpum->GuestFeatures);
-    }
 
     /*
      * Sanitize the cpuid information passed on to the guest.
@@ -4611,23 +4610,22 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Move the MSR and CPUID arrays over on the hypervisor heap, and explode
-         * guest CPU features again.
+         * Move the MSR and CPUID arrays over to the static VM structure allocations
+         * and explode guest CPU features again.
          */
         void *pvFree = pCpum->GuestInfo.paCpuIdLeavesR3;
-        int rc1 = cpumR3CpuIdInstallAndExplodeLeaves(pVM, pCpum, pCpum->GuestInfo.paCpuIdLeavesR3,
-                                                     pCpum->GuestInfo.cCpuIdLeaves, &GuestMsrs);
+        rc = cpumR3CpuIdInstallAndExplodeLeaves(pVM, pCpum, pCpum->GuestInfo.paCpuIdLeavesR3,
+                                                pCpum->GuestInfo.cCpuIdLeaves, &GuestMsrs);
         RTMemFree(pvFree);
 
-        pvFree = pCpum->GuestInfo.paMsrRangesR3;
-        int rc2 = MMHyperDupMem(pVM, pvFree,
-                                sizeof(pCpum->GuestInfo.paMsrRangesR3[0]) * pCpum->GuestInfo.cMsrRanges, 32,
-                                MM_TAG_CPUM_MSRS, (void **)&pCpum->GuestInfo.paMsrRangesR3);
-        RTMemFree(pvFree);
-        AssertLogRelRCReturn(rc1, rc1);
-        AssertLogRelRCReturn(rc2, rc2);
+        AssertFatalMsg(pCpum->GuestInfo.cMsrRanges <= RT_ELEMENTS(pCpum->GuestInfo.aMsrRanges),
+                       ("%u\n", pCpum->GuestInfo.cMsrRanges));
+        memcpy(pCpum->GuestInfo.aMsrRanges, pCpum->GuestInfo.paMsrRangesR3,
+               sizeof(pCpum->GuestInfo.paMsrRangesR3[0]) * pCpum->GuestInfo.cMsrRanges);
+        RTMemFree(pCpum->GuestInfo.paMsrRangesR3);
+        pCpum->GuestInfo.paMsrRangesR3 = pCpum->GuestInfo.aMsrRanges;
 
-        pCpum->GuestInfo.paMsrRangesR0 = MMHyperR3ToR0(pVM, pCpum->GuestInfo.paMsrRangesR3);
+        AssertLogRelRCReturn(rc, rc);
 
         /*
          * Finally, initialize guest VMX MSRs.
@@ -6000,9 +5998,6 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
     /*
      * We're good, commit the CPU ID leaves.
      */
-    MMHyperFree(pVM, pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
-    pVM->cpum.s.GuestInfo.paCpuIdLeavesR3 = NULL;
-    pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = NIL_RTR0PTR;
     pVM->cpum.s.GuestInfo.DefCpuId = GuestDefCpuId;
     rc = cpumR3CpuIdInstallAndExplodeLeaves(pVM, &pVM->cpum.s, paLeaves, cLeaves, pMsrs);
     AssertLogRelRCReturn(rc, rc);

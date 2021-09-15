@@ -177,15 +177,17 @@ typedef struct CPUMINFO
     /** Scalable bus frequency used for reporting other frequencies. */
     uint64_t                    uScalableBusFreq;
 
-    /** Pointer to the MSR ranges (ring-0 pointer). */
-    R0PTRTYPE(PCPUMMSRRANGE)    paMsrRangesR0;
-    /** Pointer to the CPUID leaves (ring-0 pointer). */
-    R0PTRTYPE(PCPUMCPUIDLEAF)   paCpuIdLeavesR0;
-
-    /** Pointer to the MSR ranges (ring-3 pointer). */
+    /** Pointer to the MSR ranges (for compatibility with old hyper heap code). */
     R3PTRTYPE(PCPUMMSRRANGE)    paMsrRangesR3;
-    /** Pointer to the CPUID leaves (ring-3 pointer). */
+    /** Pointer to the CPUID leaves (for compatibility with old hyper heap code). */
     R3PTRTYPE(PCPUMCPUIDLEAF)   paCpuIdLeavesR3;
+
+    /** CPUID leaves. */
+    CPUMCPUIDLEAF               aCpuIdLeaves[256];
+    /** MSR ranges.
+     * @todo This is insane, so might want to move this into a separate
+     *       allocation.  The insanity is mainly for more recent AMD CPUs. */
+    CPUMMSRRANGE                aMsrRanges[8192];
 } CPUMINFO;
 /** Pointer to a CPU info structure. */
 typedef CPUMINFO *PCPUMINFO;

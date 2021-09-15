@@ -969,7 +969,6 @@ typedef struct CPUMMSRRANGE
     /** The register name, if applicable. [40] */
     char        szName[56];
 
-#ifdef VBOX_WITH_STATISTICS
     /** The number of reads. */
     STAMCOUNTER cReads;
     /** The number of writes. */
@@ -978,14 +977,9 @@ typedef struct CPUMMSRRANGE
     STAMCOUNTER cIgnoredBits;
     /** The number of GPs generated. */
     STAMCOUNTER cGps;
-#endif
 } CPUMMSRRANGE;
 #ifndef VBOX_FOR_DTRACE_LIB
-# ifdef VBOX_WITH_STATISTICS
 AssertCompileSize(CPUMMSRRANGE, 128);
-# else
-AssertCompileSize(CPUMMSRRANGE, 96);
-# endif
 #endif
 /** Pointer to an MSR range. */
 typedef CPUMMSRRANGE *PCPUMMSRRANGE;

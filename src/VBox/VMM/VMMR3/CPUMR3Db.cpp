@@ -377,57 +377,34 @@ static uint32_t cpumR3MsrRangesBinSearch(PCCPUMMSRRANGE paMsrRanges, uint32_t cM
  */
 static PCPUMMSRRANGE cpumR3MsrRangesEnsureSpace(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t cMsrRanges, uint32_t cNewRanges)
 {
-    uint32_t cMsrRangesAllocated;
-    if (!pVM)
-        cMsrRangesAllocated = RT_ALIGN_32(cMsrRanges, 16);
+    if (  cMsrRanges + cNewRanges
+        > RT_ELEMENTS(pVM->cpum.s.GuestInfo.aMsrRanges) + (pVM ? 0 : 128 /* Catch too many MSRs in CPU reporter! */))
+    {
+        LogRel(("CPUM: Too many MSR ranges! %#x, max %#x\n",
+                cMsrRanges + cNewRanges, RT_ELEMENTS(pVM->cpum.s.GuestInfo.aMsrRanges)));
+        return NULL;
+    }
+    if (pVM)
+    {
+        Assert(cMsrRanges == pVM->cpum.s.GuestInfo.cMsrRanges);
+        Assert(*ppaMsrRanges == pVM->cpum.s.GuestInfo.aMsrRanges);
+    }
     else
     {
-        /*
-         * We're using the hyper heap now, but when the range array was copied over to it from
-         * the host-context heap, we only copy the exact size and not the ensured size.
-         * See @bugref{7270}.
-         */
-        cMsrRangesAllocated = cMsrRanges;
-    }
-    if (cMsrRangesAllocated < cMsrRanges + cNewRanges)
-    {
-        void    *pvNew;
-        uint32_t cNew = RT_ALIGN_32(cMsrRanges + cNewRanges, 16);
-        if (pVM)
+        if (cMsrRanges + cNewRanges > RT_ALIGN_32(cMsrRanges, 16))
         {
-            Assert(ppaMsrRanges == &pVM->cpum.s.GuestInfo.paMsrRangesR3);
-            Assert(cMsrRanges   == pVM->cpum.s.GuestInfo.cMsrRanges);
 
-            size_t cb    = cMsrRangesAllocated * sizeof(**ppaMsrRanges);
-            size_t cbNew = cNew * sizeof(**ppaMsrRanges);
-            int rc = MMR3HyperRealloc(pVM, *ppaMsrRanges, cb, 32, MM_TAG_CPUM_MSRS, cbNew, &pvNew);
-            if (RT_FAILURE(rc))
-            {
-                *ppaMsrRanges = NULL;
-                pVM->cpum.s.GuestInfo.paMsrRangesR0 = NIL_RTR0PTR;
-                LogRel(("CPUM: cpumR3MsrRangesEnsureSpace: MMR3HyperRealloc failed. rc=%Rrc\n", rc));
-                return NULL;
-            }
-            *ppaMsrRanges = (PCPUMMSRRANGE)pvNew;
-        }
-        else
-        {
-            pvNew = RTMemRealloc(*ppaMsrRanges, cNew * sizeof(**ppaMsrRanges));
-            if (!pvNew)
+            uint32_t const cNew = RT_ALIGN_32(cMsrRanges + cNewRanges, 16);
+            void *pvNew = RTMemRealloc(*ppaMsrRanges, cNew * sizeof(**ppaMsrRanges));
+            if (pvNew)
+                *ppaMsrRanges = (PCPUMMSRRANGE)pvNew;
+            else
             {
                 RTMemFree(*ppaMsrRanges);
                 *ppaMsrRanges = NULL;
                 return NULL;
             }
         }
-        *ppaMsrRanges = (PCPUMMSRRANGE)pvNew;
-    }
-
-    if (pVM)
-    {
-        /* Update the R0 pointer. */
-        Assert(ppaMsrRanges == &pVM->cpum.s.GuestInfo.paMsrRangesR3);
-        pVM->cpum.s.GuestInfo.paMsrRangesR0 = MMHyperR3ToR0(pVM, *ppaMsrRanges);
     }
 
     return *ppaMsrRanges;
@@ -465,6 +442,7 @@ int cpumR3MsrRangesInsert(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrR
     {
         AssertReturn(!ppaMsrRanges, VERR_INVALID_PARAMETER);
         AssertReturn(!pcMsrRanges,  VERR_INVALID_PARAMETER);
+        AssertReturn(pVM->cpum.s.GuestInfo.paMsrRangesR3 == pVM->cpum.s.GuestInfo.aMsrRanges, VERR_INTERNAL_ERROR_3);
 
         ppaMsrRanges = &pVM->cpum.s.GuestInfo.paMsrRangesR3;
         pcMsrRanges  = &pVM->cpum.s.GuestInfo.cMsrRanges;
@@ -1042,8 +1020,6 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
     pInfo->fMsrMask             = pEntry->fMsrMask;
     pInfo->iFirstExtCpuIdLeaf   = 0; /* Set by caller. */
     pInfo->uScalableBusFreq     = pEntry->uScalableBusFreq;
-    pInfo->paCpuIdLeavesR0      = NIL_RTR0PTR;
-    pInfo->paMsrRangesR0        = NIL_RTR0PTR;
 
     /*
      * Copy the MSR range.

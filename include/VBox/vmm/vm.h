@@ -1264,7 +1264,9 @@ typedef struct VM
             CPUMFEATURES            GuestFeatures;
         } const ro;
 #endif
-        uint8_t     padding[1536];      /* multiple of 64 */
+        /** @todo this is rather bloated because of static MSR range allocation.
+         *        Probably a good idea to move it to a separate R0 allocation... */
+        uint8_t     padding[8832 + 128*8192];    /* multiple of 64 */
     } cpum;
 
     /** VMM part. */
@@ -1462,7 +1464,7 @@ typedef struct VM
     } R0Stats;
 
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[1240 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[2136 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 

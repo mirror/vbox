@@ -5516,10 +5516,10 @@ PCPUMMSRRANGE cpumLookupMsrRange(PVM pVM, uint32_t idMsr)
     /*
      * Binary lookup.
      */
-    uint32_t        cRanges   = pVM->cpum.s.GuestInfo.cMsrRanges;
+    uint32_t        cRanges   = RT_MIN(pVM->cpum.s.GuestInfo.cMsrRanges, RT_ELEMENTS(pVM->cpum.s.GuestInfo.aMsrRanges));
     if (!cRanges)
         return NULL;
-    PCPUMMSRRANGE   paRanges  = pVM->cpum.s.GuestInfo.CTX_SUFF(paMsrRanges);
+    PCPUMMSRRANGE   paRanges  = pVM->cpum.s.GuestInfo.aMsrRanges;
     for (;;)
     {
         uint32_t i = cRanges / 2;
@@ -5549,8 +5549,8 @@ PCPUMMSRRANGE cpumLookupMsrRange(PVM pVM, uint32_t idMsr)
     /*
      * Linear lookup to verify the above binary search.
      */
-    uint32_t        cLeft = pVM->cpum.s.GuestInfo.cMsrRanges;
-    PCPUMMSRRANGE   pCur  = pVM->cpum.s.GuestInfo.CTX_SUFF(paMsrRanges);
+    uint32_t        cLeft = RT_MIN(pVM->cpum.s.GuestInfo.cMsrRanges, RT_ELEMENTS(pVM->cpum.s.GuestInfo.aMsrRanges));
+    PCPUMMSRRANGE   pCur  = pVM->cpum.s.GuestInfo.aMsrRanges;
     while (cLeft-- > 0)
     {
         if (idMsr >= pCur->uFirst && idMsr <= pCur->uLast)

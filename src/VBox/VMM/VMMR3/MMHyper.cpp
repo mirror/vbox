@@ -1429,6 +1429,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
 }
 
 
+#if 0
 /**
  * Re-allocates memory from the hyper heap.
  *
@@ -1486,4 +1487,5 @@ VMMR3DECL(int) MMR3HyperRealloc(PVM pVM, void *pvOld, size_t cbOld, unsigned uAl
     RTMemTmpFree(pvTmp);
     return rc;
 }
+#endif
 

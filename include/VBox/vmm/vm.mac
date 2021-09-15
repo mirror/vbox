@@ -129,7 +129,7 @@ struc VM
     .hTraceBufR0            RTR0PTR_RES 1
 
     alignb 64
-    .cpum                   resb 1536
+    .cpum                   resb 8832 + 128*8192
     alignb 64
     .vmm                    resb 1600
     alignb 64

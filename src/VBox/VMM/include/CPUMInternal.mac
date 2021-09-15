@@ -44,10 +44,10 @@ struc CPUMINFO
     .enmUnknownCpuIdMethod  resd 1                  ; CPUMUNKNOWNCPUID
     .DefCpuId               resb CPUMCPUID_size     ; CPUMCPUID
     .uScalableBusFreq       resq 1                  ; uint64_t
-    .paMsrRangesR0          RTR0PTR_RES 1           ; R0PTRTYPE(PCPUMMSRRANGE)
-    .paCpuIdLeavesR0        RTR0PTR_RES 1           ; R0PTRTYPE(PCPUMCPUIDLEAF)
     .paMsrRangesR3          RTR3PTR_RES 1           ; R3PTRTYPE(PCPUMMSRRANGE)
     .paCpuIdLeavesR3        RTR3PTR_RES 1           ; R3PTRTYPE(PCPUMCPUIDLEAF)
+    .aCpuIdLeaves           resb 256*32
+    .aMsrRanges             resb 8192*128
 endstruc
 
 
@@ -91,7 +91,7 @@ struc CPUM
     alignb 64
     .HostFeatures               resb    48
     .GuestFeatures              resb    48
-    .GuestInfo                  resb    RTHCPTR_CB*4 + 4*12
+    .GuestInfo                  resb    CPUMINFO_size
 
     ; Patch manager saved state compatability CPUID leaf arrays
     .aGuestCpuIdPatmStd         resb    16*6
