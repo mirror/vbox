@@ -4946,7 +4946,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
 #ifdef IN_RING3
         int rc = PGMR3PoolGrow(pVM, VMMGetCpu(pVM));
 #else
-        int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_POOL_GROW, 0);
+        int rc = PGMR0PoolGrow(pVM, VMMGetCpuId(pVM));
 #endif
         if (RT_FAILURE(rc))
             return rc;

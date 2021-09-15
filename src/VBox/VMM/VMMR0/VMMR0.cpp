@@ -1287,9 +1287,6 @@ static void vmmR0RecordRC(PVMCC pVM, PVMCPUCC pVCpu, int rc)
         case VINF_VMM_CALL_HOST:
             switch (pVCpu->vmm.s.enmCallRing3Operation)
             {
-                case VMMCALLRING3_PGM_POOL_GROW:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMPoolGrow);
-                    break;
                 case VMMCALLRING3_PGM_MAP_CHUNK:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMMapChunk);
                     break;
@@ -1882,7 +1879,7 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
         case VMMR0_DO_PGM_POOL_GROW:
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
-            rc = PGMR0PoolGrow(pGVM);
+            rc = PGMR0PoolGrow(pGVM, idCpu);
             break;
 
         /*

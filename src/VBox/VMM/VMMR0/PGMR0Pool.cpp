@@ -33,31 +33,18 @@
 #include <iprt/memobj.h>
 
 
-
 /**
- * Grows the shadow page pool.
- *
- * I.e. adds more pages to it, assuming that hasn't reached cMaxPages yet.
- *
- * @returns VBox status code.
- * @param   pGVM    The ring-0 VM structure.
+ * Worker for PGMR0PoolGrow.
  */
-VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
+static int pgmR0PoolGrowInner(PGVM pGVM, PPGMPOOL pPool)
 {
-    PPGMPOOL pPool = pGVM->pgm.s.pPoolR0;
-    AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
-    AssertReturn(pPool->pVMR3 == pGVM->pVMR3, VERR_PGM_POOL_IPE);
-    AssertReturn(pPool->pVMR0 == pGVM, VERR_PGM_POOL_IPE);
+    int rc;
 
     /* With 32-bit guests and no EPT, the CR3 limits the root pages to low
        (below 4 GB) memory. */
     /** @todo change the pool to handle ROOT page allocations specially when
      *        required. */
     bool const fCanUseHighMemory = HMIsNestedPagingActive(pGVM);
-
-    STAM_REL_PROFILE_START(&pPool->StatGrow, a);
-    int rc = RTCritSectEnter(&pGVM->pgmr0.s.PoolGrowCritSect);
-    AssertRCReturn(rc, rc);
 
     /*
      * Figure out how many pages should allocate.
@@ -69,7 +56,7 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
         uint32_t cNewPages = cMaxPages - cCurPages;
         if (cNewPages > PGMPOOL_CFG_MAX_GROW)
             cNewPages = PGMPOOL_CFG_MAX_GROW;
-        LogFlow(("PGMR3PoolGrow: Growing the pool by %u (%#x) pages to %u (%#x) pages. fCanUseHighMemory=%RTbool\n",
+        LogFlow(("PGMR0PoolGrow: Growing the pool by %u (%#x) pages to %u (%#x) pages. fCanUseHighMemory=%RTbool\n",
                  cNewPages, cNewPages, cCurPages + cNewPages, cCurPages + cNewPages, fCanUseHighMemory));
 
         /* Check that the handles in the arrays entry are both NIL. */
@@ -77,10 +64,9 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
         AssertCompile(   (PGMPOOL_IDX_LAST + (PGMPOOL_CFG_MAX_GROW - 1)) / PGMPOOL_CFG_MAX_GROW
                       <= RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMemObjs));
         AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMemObjs) == RT_ELEMENTS(pGVM->pgmr0.s.ahPoolMapObjs));
-        AssertLogRelMsgReturnStmt(   pGVM->pgmr0.s.ahPoolMemObjs[idxMemHandle] == NIL_RTR0MEMOBJ
-                                  && pGVM->pgmr0.s.ahPoolMapObjs[idxMemHandle] == NIL_RTR0MEMOBJ,
-                                  ("idxMemHandle=%#x\n", idxMemHandle), RTCritSectLeave(&pGVM->pgmr0.s.PoolGrowCritSect),
-                                  VERR_PGM_POOL_IPE);
+        AssertLogRelMsgReturn(   pGVM->pgmr0.s.ahPoolMemObjs[idxMemHandle] == NIL_RTR0MEMOBJ
+                              && pGVM->pgmr0.s.ahPoolMapObjs[idxMemHandle] == NIL_RTR0MEMOBJ, ("idxMemHandle=%#x\n", idxMemHandle),
+                              VERR_PGM_POOL_IPE);
 
         /*
          * Allocate the new pages and map them into ring-3.
@@ -119,7 +105,7 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
                     pPage->GCPhys           = NIL_RTGCPHYS;
                     pPage->enmKind          = PGMPOOLKIND_FREE;
                     pPage->idx              = pPage - &pPool->aPages[0];
-                    LogFlow(("PGMR3PoolGrow: insert page #%#x - %RHp\n", pPage->idx, pPage->Core.Key));
+                    LogFlow(("PGMR0PoolGrow: insert page #%#x - %RHp\n", pPage->idx, pPage->Core.Key));
                     pPage->iNext            = pPool->iFreeHead;
                     pPage->iUserHead        = NIL_PGMPOOL_USER_INDEX;
                     pPage->iModifiedNext    = NIL_PGMPOOL_IDX;
@@ -134,8 +120,6 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
                     pPool->cCurPages = cCurPages + iNewPage + 1;
                 }
 
-                STAM_REL_PROFILE_STOP(&pPool->StatGrow, a);
-                RTCritSectLeave(&pGVM->pgmr0.s.PoolGrowCritSect);
                 return VINF_SUCCESS;
             }
 
@@ -148,7 +132,54 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM)
             LogRel(("PGMR0PoolGrow: rc=%Rrc cNewPages=%#x cCurPages=%#x cMaxPages=%#x fCanUseHighMemory=%d\n",
                     rc, cNewPages, cCurPages, cMaxPages, fCanUseHighMemory));
     }
+    else
+        rc = VINF_SUCCESS;
+    return rc;
+}
+
+
+/**
+ * Grows the shadow page pool.
+ *
+ * I.e. adds more pages to it, assuming that hasn't reached cMaxPages yet.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    The ring-0 VM structure.
+ * @param   idCpu   The ID of the calling EMT.
+ * @thread  EMT(idCpu)
+ */
+VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu)
+{
+    /*
+     * Validate input.
+     */
+    PPGMPOOL pPool = pGVM->pgm.s.pPoolR0;
+    AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
+    AssertReturn(pPool->pVMR3 == pGVM->pVMR3, VERR_PGM_POOL_IPE);
+    AssertReturn(pPool->pVMR0 == pGVM, VERR_PGM_POOL_IPE);
+
+    AssertReturn(idCpu < pGVM->cCpus, VERR_VM_THREAD_NOT_EMT);
+    PGVMCPU const pGVCpu = &pGVM->aCpus[idCpu];
+
+    /*
+     * Enter the grow critical section and call worker.
+     */
+    STAM_REL_PROFILE_START(&pPool->StatGrow, a);
+
+    VMMR0EMTBLOCKCTX Ctx;
+    int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, __FUNCTION__, &pGVM->pgmr0.s.PoolGrowCritSect, &Ctx);
+    AssertRCReturn(rc, rc);
+
+    rc = RTCritSectEnter(&pGVM->pgmr0.s.PoolGrowCritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = pgmR0PoolGrowInner(pGVM, pPool);
+
+    STAM_REL_PROFILE_STOP(&pPool->StatGrow, a);
     RTCritSectLeave(&pGVM->pgmr0.s.PoolGrowCritSect);
+
+    VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
+
     return rc;
 }
 

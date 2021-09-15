@@ -674,7 +674,7 @@ VMMR0DECL(int)       PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, P
                                                     PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode,
                                                       PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
-VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM);
+VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu);
 /** @} */
 #endif /* IN_RING0 */
 

@@ -57,8 +57,6 @@ typedef enum VMMCALLRING3
     /** Signal a ring 0 assertion. */
     VMMCALLRING3_VM_R0_ASSERTION,
 
-    /** Grow the PGM shadow page pool. */
-    VMMCALLRING3_PGM_POOL_GROW,
     /** Maps a chunk into ring-3. */
     VMMCALLRING3_PGM_MAP_CHUNK,
     /** Allocates more handy pages. */
