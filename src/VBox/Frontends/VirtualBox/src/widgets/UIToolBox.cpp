@@ -66,7 +66,7 @@ private:
 *   UIToolBoxPage definition.                                                                                                    *
 *********************************************************************************************************************************/
 
-class UIToolBoxPage : public QWidget
+class UIToolBoxPage : public QIWithRetranslateUI<QWidget>
 {
 
     Q_OBJECT;
@@ -79,8 +79,6 @@ public:
 
     UIToolBoxPage(bool fEnableCheckBoxEnabled = false, QWidget *pParent = 0);
     void setTitle(const QString &strTitle);
-    /* @p pWidget's ownership is transferred to the page. */
-    void setWidget(QWidget *pWidget);
     void setTitleBackgroundColor(const QColor &color);
     void setExpanded(bool fExpanded);
     int index() const;
@@ -93,6 +91,7 @@ public:
 protected:
 
     virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) /* override */;
+    virtual void retranslateUi() /* override final */;
 
 private slots:
 
@@ -102,6 +101,8 @@ private:
 
     void prepare(bool fEnableCheckBoxEnabled);
     void setExpandCollapseIcon();
+    /* @p pWidget's ownership is transferred to the page. */
+    void setWidget(QWidget *pWidget);
 
     bool         m_fExpanded;
     QVBoxLayout *m_pLayout;
@@ -115,6 +116,7 @@ private:
     bool         m_fExpandCollapseIconVisible;
     QIcon        m_expandCollapseIcon;
     UIToolPageButton *m_pTitleButton;
+    friend class UIToolBox;
 };
 
 
@@ -161,7 +163,7 @@ QSize UIToolPageButton::sizeHint() const
 *********************************************************************************************************************************/
 
 UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget *pParent /* = 0 */)
-    :QWidget(pParent)
+    :QIWithRetranslateUI<QWidget>(pParent)
     , m_fExpanded(false)
     , m_pLayout(0)
     , m_pTitleContainerWidget(0)
@@ -222,6 +224,7 @@ void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
     m_pLayout->addWidget(m_pTitleContainerWidget);
 
     setExpandCollapseIcon();
+    retranslateUi();
 }
 
 void UIToolBoxPage::setWidget(QWidget *pWidget)
@@ -334,6 +337,12 @@ void UIToolBoxPage::setExpandCollapseIcon()
         transformedPixmap.setDevicePixelRatio(basePixmap.devicePixelRatio());
         m_pTitleButton->setPixmap(transformedPixmap);
     }
+}
+
+void UIToolBoxPage::retranslateUi()
+{
+    if (m_pTitleButton)
+        m_pTitleButton->setToolTip(tr("Expands and hides the page"));
 }
 
 
