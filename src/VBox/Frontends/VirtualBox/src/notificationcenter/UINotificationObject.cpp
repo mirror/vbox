@@ -189,7 +189,7 @@ void UINotificationProgress::sltHandleProgressFinished()
     emit sigProgressFinished();
 
     /* If there was no error and no reason to keep progress alive, - finish him! */
-    if (   !error().isEmpty()
+    if (   error().isEmpty()
         && !gEDataManager->keepSuccessfullNotificationProgresses())
         close();
 }
