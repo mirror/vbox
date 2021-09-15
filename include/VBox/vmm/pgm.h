@@ -789,7 +789,7 @@ VMMR3DECL(int)      PGMR3PhysBulkGCPhys2CCPtrReadOnlyExternal(PVM pVM, uint32_t 
                                                               void const **papvPages, PPGMPAGEMAPLOCK paLocks);
 VMMR3DECL(void)     PGMR3PhysChunkInvalidateTLB(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysAllocateHandyPages(PVM pVM);
-VMMR3DECL(int)      PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys);
+VMMR3_INT_DECL(int) PGMR3PhysAllocateLargePage(PVM pVM, RTGCPHYS GCPhys);
 
 VMMR3DECL(int)      PGMR3CheckIntegrity(PVM pVM);
 

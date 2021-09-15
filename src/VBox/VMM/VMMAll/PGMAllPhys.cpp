@@ -946,7 +946,7 @@ int pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys)
              * Do the allocation.
              */
 # ifdef IN_RING3
-            rc = PGMR3PhysAllocateLargeHandyPage(pVM, GCPhysBase);
+            rc = PGMR3PhysAllocateLargePage(pVM, GCPhysBase);
 # else
             rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhysBase);
 # endif

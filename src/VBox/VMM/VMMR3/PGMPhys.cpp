@@ -4929,17 +4929,15 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
  * @param   pVM         The cross context VM structure.
  * @param   GCPhys      GC physical start address of the 2 MB range
  */
-VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
+VMMR3_INT_DECL(int) PGMR3PhysAllocateLargePage(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef PGM_WITH_LARGE_PAGES
-    uint64_t u64TimeStamp1, u64TimeStamp2;
-
     PGM_LOCK_VOID(pVM);
 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatAllocLargePage, a);
-    u64TimeStamp1 = RTTimeMilliTS();
+    uint64_t const msAllocStart = RTTimeMilliTS();
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE, 0, NULL);
-    u64TimeStamp2 = RTTimeMilliTS();
+    uint64_t const cMsElapsed   = RTTimeMilliTS() - msAllocStart;
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatAllocLargePage, a);
     if (RT_SUCCESS(rc))
     {
@@ -5011,23 +5009,20 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
     if (RT_SUCCESS(rc))
     {
         static uint32_t cTimeOut = 0;
-        uint64_t u64TimeStampDelta = u64TimeStamp2 - u64TimeStamp1;
-
-        if (u64TimeStampDelta > 100)
+        if (cMsElapsed > 100)
         {
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatLargePageOverflow);
-            if (    ++cTimeOut > 10
-                ||  u64TimeStampDelta > 1000 /* more than one second forces an early retirement from allocating large pages. */)
+            if (   ++cTimeOut > 10
+                || cMsElapsed > 1000 /* more than one second forces an early retirement from allocating large pages. */)
             {
                 /* If repeated attempts to allocate a large page takes more than 100 ms, then we fall back to normal 4k pages.
                  * E.g. Vista 64 tries to move memory around, which takes a huge amount of time.
                  */
-                LogRel(("PGMR3PhysAllocateLargePage: allocating large pages takes too long (last attempt %d ms; nr of timeouts %d); DISABLE\n", u64TimeStampDelta, cTimeOut));
+                LogRel(("PGMR3PhysAllocateLargePage: allocating large pages takes too long (last attempt %RU64 ms; nr of timeouts %d); DISABLE\n", cMsElapsed, cTimeOut));
                 PGMSetLargePageUsage(pVM, false);
             }
         }
-        else
-        if (cTimeOut > 0)
+        else if (cTimeOut > 0)
             cTimeOut--;
     }
 
