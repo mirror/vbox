@@ -2910,22 +2910,10 @@ typedef struct PGMSTATS
 
 
 /**
- * Converts a PGM pointer into a VM pointer.
- * @returns Pointer to the VM structure the PGM is part of.
- * @param   pPGM   Pointer to PGM instance data.
- */
-#define PGM2VM(pPGM)  ( (PVM)((char*)pPGM - pPGM->offVM) )
-
-/**
  * PGM Data (part of VM)
  */
 typedef struct PGM
 {
-    /** Offset to the VM structure. */
-    int32_t                         offVM;
-    /** Offset of the PGMCPU structure relative to VMCPU. */
-    int32_t                         offVCpuPGM;
-
     /** @cfgm{/RamPreAlloc, boolean, false}
      * Indicates whether the base RAM should all be allocated before starting
      * the VM (default), or if it should be allocated when first written to.
@@ -3102,7 +3090,7 @@ typedef struct PGM
      *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
     uint32_t                        cDeprecatedPageLocks;
     /** Alignment padding. */
-    uint32_t                        au32Alignment2[1];
+    uint32_t                        au32Alignment2[1+2];
 
 
     /** PGM critical section.
@@ -3306,6 +3294,9 @@ typedef PGM *PPGM;
 
 
 #ifdef VBOX_WITH_STATISTICS
+/**
+ * Per CPU statistis for PGM (used to be on the heap).
+ */
 typedef struct PGMCPUSTATS
 {
     /* Common */
@@ -3495,32 +3486,10 @@ typedef struct PGMCPUSTATS
 
 
 /**
- * Converts a PGMCPU pointer into a VM pointer.
- * @returns Pointer to the VM structure the PGM is part of.
- * @param   pPGM    Pointer to PGMCPU instance data.
- */
-#define PGMCPU2VM(pPGM)         ( (PVM)((char*)(pPGM) - (pPGM)->offVM) )
-
-/**
- * Converts a PGMCPU pointer into a PGM pointer.
- * @returns Pointer to the VM structure the PGM is part of.
- * @param   pPGMCpu Pointer to PGMCPU instance data.
- */
-#define PGMCPU2PGM(pPGMCpu)     ( (PPGM)((char *)(pPGMCpu) - (pPGMCpu)->offPGM) )
-
-/**
  * PGMCPU Data (part of VMCPU).
  */
 typedef struct PGMCPU
 {
-    /** Offset to the VM structure. */
-    int32_t                         offVM;
-    /** Offset to the VMCPU structure. */
-    int32_t                         offVCpu;
-    /** Offset of the PGM structure relative to VMCPU. */
-    int32_t                         offPGM;
-    uint32_t                        uPadding0;      /**< structure size alignment. */
-
     /** A20 gate mask.
      * Our current approach to A20 emulation is to let REM do it and don't bother
      * anywhere else. The interesting Guests will be operating with it enabled anyway.

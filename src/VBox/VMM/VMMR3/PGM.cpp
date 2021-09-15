@@ -759,8 +759,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     /*
      * Init the structure.
      */
-    pVM->pgm.s.offVM       = RT_UOFFSETOF(VM, pgm.s);
-    pVM->pgm.s.offVCpuPGM  = RT_UOFFSETOF(VMCPU, pgm.s);
     /*pVM->pgm.s.fRestoreRomPagesAtReset = false;*/
 
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
@@ -782,10 +780,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     {
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         PPGMCPU pPGM = &pVCpu->pgm.s;
-
-        pPGM->offVM      = (uintptr_t)&pVCpu->pgm.s - (uintptr_t)pVM;
-        pPGM->offVCpu    = RT_UOFFSETOF(VMCPU, pgm.s);
-        pPGM->offPGM     = (uintptr_t)&pVCpu->pgm.s - (uintptr_t)&pVM->pgm.s;
 
         pPGM->enmShadowMode     = PGMMODE_INVALID;
         pPGM->enmGuestMode      = PGMMODE_INVALID;
@@ -2724,8 +2718,6 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysHandlerNode(PAVLROGCPHYSNODECORE
  */
 VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
 {
-    AssertReleaseReturn(pVM->pgm.s.offVM, VERR_INTERNAL_ERROR);
-
     /*
      * Check the trees.
      */
