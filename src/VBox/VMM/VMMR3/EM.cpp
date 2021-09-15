@@ -228,44 +228,8 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
          * Statistics.
          */
 #ifdef VBOX_WITH_STATISTICS
-        PEMSTATS pStats;
-        rc = MMHyperAlloc(pVM, sizeof(*pStats), 0, MM_TAG_EM, (void **)&pStats);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        pVCpu->em.s.pStatsR3 = pStats;
-        pVCpu->em.s.pStatsR0 = MMHyperR3ToR0(pVM, pStats);
-
-# if 1 /* rawmode only? */
-        EM_REG_COUNTER_USED(&pStats->StatIoRestarted,       "/EM/CPU%u/R3/PrivInst/IoRestarted",        "I/O instructions restarted in ring-3.");
-        EM_REG_COUNTER_USED(&pStats->StatIoIem,             "/EM/CPU%u/R3/PrivInst/IoIem",              "I/O instructions end to IEM in ring-3.");
-        EM_REG_COUNTER_USED(&pStats->StatCli,               "/EM/CPU%u/R3/PrivInst/Cli",                "Number of cli instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSti,               "/EM/CPU%u/R3/PrivInst/Sti",                "Number of sli instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatHlt,               "/EM/CPU%u/R3/PrivInst/Hlt",                "Number of hlt instructions not handled in GC because of PATM.");
-        EM_REG_COUNTER_USED(&pStats->StatInvlpg,            "/EM/CPU%u/R3/PrivInst/Invlpg",             "Number of invlpg instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMisc,              "/EM/CPU%u/R3/PrivInst/Misc",               "Number of misc. instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[0],     "/EM/CPU%u/R3/PrivInst/Mov CR0, X",         "Number of mov CR0 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[1],     "/EM/CPU%u/R3/PrivInst/Mov CR1, X",         "Number of mov CR1 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[2],     "/EM/CPU%u/R3/PrivInst/Mov CR2, X",         "Number of mov CR2 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[3],     "/EM/CPU%u/R3/PrivInst/Mov CR3, X",         "Number of mov CR3 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[4],     "/EM/CPU%u/R3/PrivInst/Mov CR4, X",         "Number of mov CR4 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[0],      "/EM/CPU%u/R3/PrivInst/Mov X, CR0",         "Number of mov CR0 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[1],      "/EM/CPU%u/R3/PrivInst/Mov X, CR1",         "Number of mov CR1 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[2],      "/EM/CPU%u/R3/PrivInst/Mov X, CR2",         "Number of mov CR2 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[3],      "/EM/CPU%u/R3/PrivInst/Mov X, CR3",         "Number of mov CR3 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[4],      "/EM/CPU%u/R3/PrivInst/Mov X, CR4",         "Number of mov CR4 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovDRx,            "/EM/CPU%u/R3/PrivInst/MovDRx",             "Number of mov DRx instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatIret,              "/EM/CPU%u/R3/PrivInst/Iret",               "Number of iret instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovLgdt,           "/EM/CPU%u/R3/PrivInst/Lgdt",               "Number of lgdt instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovLidt,           "/EM/CPU%u/R3/PrivInst/Lidt",               "Number of lidt instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovLldt,           "/EM/CPU%u/R3/PrivInst/Lldt",               "Number of lldt instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysEnter,          "/EM/CPU%u/R3/PrivInst/Sysenter",           "Number of sysenter instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysExit,           "/EM/CPU%u/R3/PrivInst/Sysexit",            "Number of sysexit instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysCall,           "/EM/CPU%u/R3/PrivInst/Syscall",            "Number of syscall instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysRet,            "/EM/CPU%u/R3/PrivInst/Sysret",             "Number of sysret instructions.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatTotalClis,          "/EM/CPU%u/Cli/Total",                      "Total number of cli instructions executed.");
-#endif
-        pVCpu->em.s.pCliStatTree = 0;
+        EM_REG_COUNTER_USED(&pVCpu->em.s.StatIoRestarted,   "/EM/CPU%u/R3/PrivInst/IoRestarted",        "I/O instructions restarted in ring-3.");
+        EM_REG_COUNTER_USED(&pVCpu->em.s.StatIoIem,         "/EM/CPU%u/R3/PrivInst/IoIem",              "I/O instructions end to IEM in ring-3.");
 
         /* these should be considered for release statistics. */
         EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,              "/PROF/CPU%u/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
@@ -507,8 +471,6 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
             rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.MWait.uMonitorRDX);
             AssertRCReturn(rc, rc);
         }
-
-        Assert(!pVCpu->em.s.pCliStatTree);
     }
     return VINF_SUCCESS;
 }

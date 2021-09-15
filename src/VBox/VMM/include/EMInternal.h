@@ -80,39 +80,6 @@ AssertCompileMemberAlignment(CLISTAT, Counter, 8);
 
 
 /**
- * Excessive (used to be) EM statistics.
- */
-typedef struct EMSTATS
-{
-#if 1 /* rawmode only? */
-    /** @name Privileged Instructions Ending Up In HC.
-     * @{ */
-    STAMCOUNTER             StatIoRestarted;
-    STAMCOUNTER             StatIoIem;
-    STAMCOUNTER             StatCli;
-    STAMCOUNTER             StatSti;
-    STAMCOUNTER             StatInvlpg;
-    STAMCOUNTER             StatHlt;
-    STAMCOUNTER             StatMovReadCR[DISCREG_CR4 + 1];
-    STAMCOUNTER             StatMovWriteCR[DISCREG_CR4 + 1];
-    STAMCOUNTER             StatMovDRx;
-    STAMCOUNTER             StatIret;
-    STAMCOUNTER             StatMovLgdt;
-    STAMCOUNTER             StatMovLldt;
-    STAMCOUNTER             StatMovLidt;
-    STAMCOUNTER             StatMisc;
-    STAMCOUNTER             StatSysEnter;
-    STAMCOUNTER             StatSysExit;
-    STAMCOUNTER             StatSysCall;
-    STAMCOUNTER             StatSysRet;
-    /** @} */
-#endif
-} EMSTATS;
-/** Pointer to the excessive EM statistics. */
-typedef EMSTATS *PEMSTATS;
-
-
-/**
  * Exit history entry.
  *
  * @remarks We could perhaps trim this down a little bit by assuming uFlatPC
@@ -260,6 +227,8 @@ typedef struct EMCPU
 
     /** R3: Profiling of emR3RawExecuteIOInstruction. */
     STAMPROFILE             StatIOEmu;
+    STAMCOUNTER             StatIoRestarted;
+    STAMCOUNTER             StatIoIem;
     /** R3: Profiling of emR3RawPrivileged. */
     STAMPROFILE             StatPrivEmu;
     /** R3: Number of times emR3HmExecute is called. */
@@ -267,16 +236,8 @@ typedef struct EMCPU
     /** R3: Number of times emR3NEMExecute is called. */
     STAMCOUNTER             StatNEMExecuteCalled;
 
-    /** More statistics (R3). */
-    R3PTRTYPE(PEMSTATS)     pStatsR3;
-    /** More statistics (R0). */
-    R0PTRTYPE(PEMSTATS)     pStatsR0;
-
-    /** Tree for keeping track of cli occurrences (debug only). */
-    R3PTRTYPE(PAVLGCPTRNODECORE) pCliStatTree;
-    STAMCOUNTER             StatTotalClis;
-    /** Align the next member at a 16-byte boundrary. */
-    uint64_t                au64Padding2[1];
+    /** Align the next member at a 32-byte boundrary. */
+    uint64_t                au64Padding2[1+2];
 
     /** Exit history table (6KB). */
     EMEXITENTRY             aExitHistory[256];

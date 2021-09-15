@@ -253,10 +253,10 @@ static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
         rcStrict = EMHistoryExec(pVCpu, &pVCpu->em.s.aExitRecords[idxContinueExitRec], 0);
         LogFlow(("emR3HmExecuteIOInstruction: %Rrc (EMHistoryExec)\n", VBOXSTRICTRC_VAL(rcStrict)));
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
+        STAM_COUNTER_INC(&pVCpu->em.s.StatIoRestarted);
     }
 
-    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
+    STAM_COUNTER_INC(&pVCpu->em.s.StatIoIem);
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return VBOXSTRICTRC_TODO(rcStrict);
 }
