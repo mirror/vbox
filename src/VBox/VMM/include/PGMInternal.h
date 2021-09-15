@@ -3280,8 +3280,10 @@ typedef struct PGM
     STAMPROFILE                     StatShModCheck;         /**< Profiles shared module checks. */
     /** @} */
 
+#ifdef VBOX_WITH_STATISTICS
     /** These are optional statistics that used to be on the hyper heap. */
     PGMSTATS                        Stats;
+#endif
 } PGM;
 #ifndef IN_TSTVMSTRUCTGC /* HACK */
 # ifndef PGM_WITHOUT_MAPPINGS
@@ -3303,7 +3305,7 @@ AssertCompileMemberAlignment(PGM, cRelocations, 8);
 typedef PGM *PPGM;
 
 
-
+#ifdef VBOX_WITH_STATISTICS
 typedef struct PGMCPUSTATS
 {
     /* Common */
@@ -3489,6 +3491,7 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatR3FlushTLBSameCR3Global;        /**< R3: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
     STAMPROFILE StatR3GstModifyPage;                /**< R3: Profiling of the PGMGstModifyPage() body */
 } PGMCPUSTATS;
+#endif /* VBOX_WITH_STATISTICS */
 
 
 /**
@@ -3658,6 +3661,7 @@ typedef struct PGMCPU
     STAMCOUNTER                     cA20Changes;
     /** @} */
 
+#ifdef VBOX_WITH_STATISTICS
     /** @name Statistics
      * @{ */
     /** R0: Which statistic this \#PF should be attributed to. */
@@ -3665,6 +3669,7 @@ typedef struct PGMCPU
     /** These are statistics that used to be on the hyper heap. */
     PGMCPUSTATS                     Stats;
     /** @} */
+#endif
 } PGMCPU;
 /** Pointer to the per-cpu PGM data. */
 typedef PGMCPU *PPGMCPU;
