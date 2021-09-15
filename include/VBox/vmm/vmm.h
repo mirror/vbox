@@ -57,8 +57,6 @@ typedef enum VMMCALLRING3
     /** Signal a ring 0 assertion. */
     VMMCALLRING3_VM_R0_ASSERTION,
 
-    /** Maps a chunk into ring-3. */
-    VMMCALLRING3_PGM_MAP_CHUNK,
     /** Allocates more handy pages. */
     VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES,
     /** Allocates a large (2MB) page. */

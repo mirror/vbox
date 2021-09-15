@@ -4900,25 +4900,6 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 
 
 /**
- * For VMMCALLRING3_PGM_MAP_CHUNK, considered internal.
- *
- * @returns see pgmR3PhysChunkMap.
- * @param   pVM         The cross context VM structure.
- * @param   idChunk     The chunk to map.
- */
-VMMR3DECL(int) PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk)
-{
-    PPGMCHUNKR3MAP pChunk;
-    int rc;
-
-    PGM_LOCK_VOID(pVM);
-    rc = pgmR3PhysChunkMap(pVM, idChunk, &pChunk);
-    PGM_UNLOCK(pVM);
-    return rc;
-}
-
-
-/**
  * Invalidates the TLB for the ring-3 mapping cache.
  *
  * @param   pVM         The cross context VM structure.
