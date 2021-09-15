@@ -95,6 +95,10 @@ private slots:
     /** Handles change in MAC address export policy combo-box. */
     void sltHandleMACAddressExportPolicyComboChange();
 
+    /** Handles custom button clicked.
+      * @param  iId  Brings clicked button id. */
+    void sltHandleCustomButtonClicked(int iId);
+
     /** Handles change in profile combo-box. */
     void sltHandleProfileComboChange();
 

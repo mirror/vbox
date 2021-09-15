@@ -64,9 +64,6 @@ protected slots:
     /** Handles page change to @a iId. */
     virtual void sltCurrentIdChanged(int iId) /* override */;
 
-    /** Handles custom button @a iId click. */
-    virtual void sltCustomButtonClicked(int iId) /* override */;
-
 protected:
 
     /** Handles translation event. */

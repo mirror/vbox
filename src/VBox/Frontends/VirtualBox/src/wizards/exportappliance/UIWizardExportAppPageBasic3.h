@@ -91,12 +91,20 @@ protected:
 
     /** Performs page initialization. */
     virtual void initializePage() /* override */;
+    /** Performs page cleanup. */
+    virtual void cleanupPage() /* override */;
 
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
     /** Updates page appearance. */
     virtual void updatePageAppearance() /* override */;
+
+private slots:
+
+    /** Handles custom button clicked.
+      * @param  iId  Brings clicked button id. */
+    void sltHandleCustomButtonClicked(int iId);
 
 private:
 

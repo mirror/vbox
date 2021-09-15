@@ -560,11 +560,20 @@ void UIWizardExportAppPageExpert::initializePage()
 
     /* Choose default cloud export option: */
     m_pRadioExportThenAsk->setChecked(true);
+
+    /* Listen for custom button clicks: */
+    connect(wizard(), &UIWizard::customButtonClicked,
+            this, &UIWizardExportAppPageExpert::sltHandleCustomButtonClicked,
+            Qt::UniqueConnection);
 }
 
 void UIWizardExportAppPageExpert::cleanupPage()
 {
-    /* Do nothing, we don't want field values to be reseted. */
+    /* Do not pass call to base-class, we don't want field values to be reseted. */
+
+    /* Stop listen for custom button clicks: */
+    disconnect(wizard(), &UIWizard::customButtonClicked,
+               this, &UIWizardExportAppPageExpert::sltHandleCustomButtonClicked);
 }
 
 bool UIWizardExportAppPageExpert::isComplete() const
@@ -693,6 +702,16 @@ void UIWizardExportAppPageExpert::sltHandleMACAddressExportPolicyComboChange()
 {
     /* Update tool-tip: */
     updateMACAddressExportPolicyComboToolTip();
+}
+
+void UIWizardExportAppPageExpert::sltHandleCustomButtonClicked(int iId)
+{
+    /* Handle 2nd button: */
+    if (iId == QWizard::CustomButton2)
+    {
+        /* Reset widget to default: */
+        m_pApplianceWidget->restoreDefaults();
+    }
 }
 
 void UIWizardExportAppPageExpert::sltHandleProfileComboChange()

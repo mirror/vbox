@@ -188,22 +188,6 @@ void UIWizardExportApp::sltCurrentIdChanged(int iId)
                                           || (mode() == WizardMode_Expert && iId == PageExpert));
 }
 
-void UIWizardExportApp::sltCustomButtonClicked(int iId)
-{
-    /* Call to base-class: */
-    UIWizard::sltCustomButtonClicked(iId);
-
-    /* Handle 2nd button: */
-    if (iId == CustomButton2)
-    {
-        /* Get appliance widget and make sure it's valid: */
-        ExportAppliancePointer pApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
-        AssertMsg(!pApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
-        /* Reset it to default: */
-        pApplianceWidget->restoreDefaults();
-    }
-}
-
 void UIWizardExportApp::retranslateUi()
 {
     /* Call to base-class: */
