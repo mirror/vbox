@@ -102,6 +102,7 @@ private:
                , m_strName(strName)
                , m_strExtension(strExtension)
                , m_fPreferred(fPreferred){}
+        Format(){}
     };
 
     void prepare();
