@@ -156,7 +156,7 @@ class SHARED_LIBRARY_STUFF UIDiskFormatBase
 public:
 
     UIDiskFormatBase(KDeviceType enmDeviceType, bool fExpertMode);
-
+    virtual ~UIDiskFormatBase();
     virtual CMediumFormat mediumFormat() const = 0;
     virtual void setMediumFormat(const CMediumFormat &mediumFormat) = 0;
 

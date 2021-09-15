@@ -462,6 +462,10 @@ UIDiskFormatBase::UIDiskFormatBase(KDeviceType enmDeviceType, bool fExpertMode)
 {
 }
 
+UIDiskFormatBase::~UIDiskFormatBase()
+{
+}
+
 const CMediumFormat &UIDiskFormatBase::VDIMediumFormat() const
 {
     return m_comVDIMediumFormat;
