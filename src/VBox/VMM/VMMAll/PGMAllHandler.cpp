@@ -1137,7 +1137,7 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
             case PGMPHYSHANDLERKIND_ALL:
             case PGMPHYSHANDLERKIND_MMIO: /* NOTE: Only use when clearing MMIO ranges with aliased MMIO2 pages! */
             {
-                STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PhysHandlerReset)); /** @todo move out of switch */
+                STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PhysHandlerReset)); /** @todo move out of switch */
                 PPGMRAMRANGE pRam = pgmPhysGetRange(pVM, GCPhys);
                 Assert(pRam);
                 Assert(pRam->GCPhys     <= pCur->Core.Key);

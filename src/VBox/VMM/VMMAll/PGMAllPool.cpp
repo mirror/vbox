@@ -3963,7 +3963,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVMCC pVM, uint16_t iPhysExt, uint16_t
     {
         paPhysExts[iPhysExt].aidx[1] = iShwPT;
         paPhysExts[iPhysExt].apte[1] = iPte;
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedMany);
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatTrackAliasedMany);
         LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,%d pte %d,}\n", iPhysExt, iShwPT, iPte));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
     }
@@ -3971,7 +3971,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVMCC pVM, uint16_t iPhysExt, uint16_t
     {
         paPhysExts[iPhysExt].aidx[2] = iShwPT;
         paPhysExts[iPhysExt].apte[2] = iPte;
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedMany);
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatTrackAliasedMany);
         LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,,%d pte %d}\n", iPhysExt, iShwPT, iPte));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
     }
@@ -3990,13 +3990,13 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVMCC pVM, uint16_t iPhysExt, uint16_t
             {
                 paPhysExts[iPhysExt].aidx[i] = iShwPT;
                 paPhysExts[iPhysExt].apte[i] = iPte;
-                STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedMany);
+                STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatTrackAliasedMany);
                 LogFlow(("pgmPoolTrackPhysExtInsert: %d:{%d pte %d} i=%d cMax=%d\n", iPhysExt, iShwPT, iPte, i, cMax));
                 return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtStart);
             }
         if (!--cMax)
         {
-            STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackOverflows);
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatTrackOverflows);
             pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
             LogFlow(("pgmPoolTrackPhysExtInsert: overflow (1) iShwPT=%d\n", iShwPT));
             return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
@@ -4014,7 +4014,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVMCC pVM, uint16_t iPhysExt, uint16_t
     PPGMPOOLPHYSEXT pNew = pgmPoolTrackPhysExtAlloc(pVM, &iPhysExt);
     if (!pNew)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackNoExtentsLeft);
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatTrackNoExtentsLeft);
         pgmPoolTrackPhysExtFreeList(pVM, iPhysExtStart);
         LogFlow(("pgmPoolTrackPhysExtInsert: pgmPoolTrackPhysExtAlloc failed iShwPT=%d\n", iShwPT));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, PGMPOOL_TD_IDX_OVERFLOWED);
@@ -4052,7 +4052,7 @@ uint16_t pgmPoolTrackPhysExtAddref(PVMCC pVM, PPGMPAGE pPhysPage, uint16_t u16, 
         if (pPhysExt)
         {
             LogFlow(("pgmPoolTrackPhysExtAddref: new extent: %d:{%d, %d}\n", iPhysExt, PGMPOOL_TD_GET_IDX(u16), iShwPT));
-            STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliased);
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatTrackAliased);
             pPhysExt->aidx[0] = PGMPOOL_TD_GET_IDX(u16);
             pPhysExt->apte[0] = PGM_PAGE_GET_PTE_INDEX(pPhysPage);
             pPhysExt->aidx[1] = iShwPT;
@@ -4070,7 +4070,7 @@ uint16_t pgmPoolTrackPhysExtAddref(PVMCC pVM, PPGMPAGE pPhysPage, uint16_t u16, 
         u16 = pgmPoolTrackPhysExtInsert(pVM, PGMPOOL_TD_GET_IDX(u16), iShwPT, iPte);
     }
     else
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackAliasedLots);
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatTrackAliasedLots);
     PGM_UNLOCK(pVM);
     return u16;
 }

@@ -874,29 +874,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgPGM, "ZeroRamPagesOnReset", &pVM->pgm.s.fZeroRamPagesOnReset, true);
     AssertLogRelRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_STATISTICS
-    /*
-     * Allocate memory for the statistics before someone tries to use them.
-     */
-    size_t cbTotalStats = RT_ALIGN_Z(sizeof(PGMSTATS), 64) + RT_ALIGN_Z(sizeof(PGMCPUSTATS), 64) * pVM->cCpus;
-    void *pv;
-    rc = MMHyperAlloc(pVM, RT_ALIGN_Z(cbTotalStats, PAGE_SIZE), PAGE_SIZE, MM_TAG_PGM, &pv);
-    AssertRCReturn(rc, rc);
-
-    pVM->pgm.s.pStatsR3 = (PGMSTATS *)pv;
-    pVM->pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
-    pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMSTATS), 64);
-
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-        pVCpu->pgm.s.pStatsR3 = (PGMCPUSTATS *)pv;
-        pVCpu->pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
-
-        pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMCPUSTATS), 64);
-    }
-#endif /* VBOX_WITH_STATISTICS */
-
     /*
      * Register callbacks, string formatters and the saved state data unit.
      */
@@ -1307,7 +1284,7 @@ static int pgmR3InitStats(PVM pVM)
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b); \
         AssertRC(rc);
 
-    PGMSTATS *pStats = pVM->pgm.s.pStatsR3;
+    PGMSTATS *pStats = &pVM->pgm.s.Stats;
 
     PGM_REG_PROFILE(&pStats->StatAllocLargePage,                "/PGM/LargePage/Alloc",               "Time spent by the host OS for large page allocation.");
     PGM_REG_PROFILE(&pStats->StatClearLargePage,                "/PGM/LargePage/Clear",               "Time spent clearing the newly allocated large pages.");
@@ -1417,7 +1394,7 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPgmCpu->cA20Changes, "/PGM/CPU%u/cA20Changes",  "Number of A20 gate changes.");
 
 #ifdef VBOX_WITH_STATISTICS
-        PGMCPUSTATS *pCpuStats = pVM->apCpusR3[idCpu]->pgm.s.pStatsR3;
+        PGMCPUSTATS *pCpuStats = &pVM->apCpusR3[idCpu]->pgm.s.Stats;
 
 # if 0 /* rarely useful; leave for debugging. */
         for (unsigned j = 0; j < RT_ELEMENTS(pPgmCpu->StatSyncPtPD); j++)

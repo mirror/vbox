@@ -616,34 +616,34 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNotPresentWrite);
+                STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eUSNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNotPresentRead);
+                STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eUSNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSWrite);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eUSWrite);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSReserved);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eUSReserved);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNXE);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eUSNXE);
         else
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSRead);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eUSRead);
     }
     else
     {   /* Supervisor */
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVNotPresentWrite);
+                STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eSVNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVNotPresentRead);
+                STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eSVNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVWrite);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eSVWrite);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSNXE);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eSNXE);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVReserved);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatRZTrap0eSVReserved);
     }
 #endif
 
@@ -700,8 +700,8 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
     }
 
     STAM_STATS({ if (!pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
-                    pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2Misc; });
-    STAM_PROFILE_STOP_EX(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0e, pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
+                    pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pGVCpu->pgm.s.Stats.StatRZTrap0eTime2Misc; });
+    STAM_PROFILE_STOP_EX(&pGVCpu->pgm.s.Stats.StatRZTrap0e, pGVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
     return rc;
 }
 
@@ -748,7 +748,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
            )
         {
             Log(("PGMR0Trap0eHandlerNPMisconfig: Resyncing aliases / tmp-off page at %RGp (uErr=%#x) %R[pgmpage]\n", GCPhysFault, uErr, pPage));
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
+            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatR0NpMiscfgSyncPage);
             rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
             PGM_UNLOCK(pGVM);
         }
@@ -789,12 +789,12 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
          * (assumption asserted in PGMHandlerPhysicalRegisterEx).
          */
         Log(("PGMR0Trap0eHandlerNPMisconfig: Out of sync page at %RGp (uErr=%#x)\n", GCPhysFault, uErr));
-        STAM_COUNTER_INC(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfgSyncPage);
+        STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatR0NpMiscfgSyncPage);
         rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
         PGM_UNLOCK(pGVM);
     }
 
-    STAM_PROFILE_STOP(&pGVCpu->pgm.s.CTX_SUFF(pStats)->StatR0NpMiscfg, a);
+    STAM_PROFILE_STOP(&pGVCpu->pgm.s.Stats.StatR0NpMiscfg, a);
     return rc;
 
 #else

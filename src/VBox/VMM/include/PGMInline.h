@@ -63,7 +63,7 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PVMCC pVM, RTGCPHYS GCPhys)
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     if (!pRam || GCPhys - pRam->GCPhys >= pRam->cb)
         return pgmPhysGetRangeSlow(pVM, GCPhys);
-    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
+    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
     return pRam;
 }
 
@@ -84,7 +84,7 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRangeAtOrAbove(PVMCC pVM, RTGCPHYS GCPhys)
     if (   !pRam
         || (GCPhys - pRam->GCPhys) >= pRam->cb)
         return pgmPhysGetRangeAtOrAboveSlow(pVM, GCPhys);
-    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
+    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
     return pRam;
 }
 
@@ -105,7 +105,7 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVMCC pVM, RTGCPHYS GCPhys)
     if (   !pRam
         || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
         return pgmPhysGetPageSlow(pVM, GCPhys);
-    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
+    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
     return &pRam->aPages[off >> PAGE_SHIFT];
 }
 
@@ -131,7 +131,7 @@ DECLINLINE(int) pgmPhysGetPageEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
         || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
         return pgmPhysGetPageExSlow(pVM, GCPhys, ppPage);
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
-    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
+    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
     return VINF_SUCCESS;
 }
 
@@ -163,7 +163,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE p
             || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
             return pgmPhysGetPageAndRangeExSlow(pVM, GCPhys, ppPage, ppRamHint);
 
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
         *ppRamHint = pRam;
     }
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
@@ -190,7 +190,7 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE p
         || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
         return pgmPhysGetPageAndRangeExSlow(pVM, GCPhys, ppPage, ppRam);
 
-    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbHits));
+    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
     *ppRam = pRam;
     *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
     return VINF_SUCCESS;
@@ -237,7 +237,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
     PPGMPAGEMAPTLBE pTlbe = &pVM->pgm.s.CTX_SUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
     if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbHits));
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
     }
     else
@@ -267,7 +267,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS
     PPGMPAGEMAPTLBE pTlbe = &pVM->pgm.s.CTX_SUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
     if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbHits));
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
         AssertPtr(pTlbe->pv);
 #ifdef IN_RING3
@@ -915,11 +915,11 @@ DECLINLINE(PPGMPHYSHANDLER) pgmHandlerPhysicalLookup(PVMCC pVM, RTGCPHYS GCPhys)
         && GCPhys >= pHandler->Core.Key
         && GCPhys < pHandler->Core.KeyLast)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PhysHandlerLookupHits));
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PhysHandlerLookupHits));
         return pHandler;
     }
 
-    STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PhysHandlerLookupMisses));
+    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PhysHandlerLookupMisses));
     pHandler = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pHandler)
         pVM->pgm.s.CTX_SUFF(pLastPhysHandler) = pHandler;

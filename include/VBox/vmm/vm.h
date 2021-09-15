@@ -289,7 +289,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
         struct PGMCPU       s;
 #endif
-        uint8_t             padding[4096];      /* multiple of 4096 */
+        uint8_t             padding[4096 + 28672]; /* multiple of 4096 */
     } pgm;
 
     /** CPUM part. */
@@ -1282,7 +1282,7 @@ typedef struct VM
 #ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
         struct PGM  s;
 #endif
-        uint8_t     padding[21120];      /* multiple of 64 */
+        uint8_t     padding[21120];     /* multiple of 64 */
     } pgm;
 
     /** HM part. */

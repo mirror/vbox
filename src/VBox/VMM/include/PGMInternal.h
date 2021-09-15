@@ -2817,9 +2817,6 @@ extern PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE];
 #ifdef VBOX_WITH_STATISTICS
 /**
  * PGM statistics.
- *
- * These lives on the heap when compiled in as they would otherwise waste
- * unnecessary space in release builds.
  */
 typedef struct PGMSTATS
 {
@@ -2894,20 +2891,20 @@ typedef struct PGMSTATS
     STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
 
     /** Time spent by the host OS for large page allocation. */
-    STAMPROFILE                 StatAllocLargePage;
+    STAMPROFILE StatAllocLargePage;
     /** Time spent clearing the newly allocated large pages. */
-    STAMPROFILE                 StatClearLargePage;
+    STAMPROFILE StatClearLargePage;
     /** The number of times allocating a large pages takes more than the allowed period. */
-    STAMCOUNTER                 StatLargePageOverflow;
+    STAMCOUNTER StatLargePageOverflow;
     /** pgmPhysIsValidLargePage profiling - R3 */
-    STAMPROFILE                 StatR3IsValidLargePage;
+    STAMPROFILE StatR3IsValidLargePage;
     /** pgmPhysIsValidLargePage profiling - RZ*/
-    STAMPROFILE                 StatRZIsValidLargePage;
+    STAMPROFILE StatRZIsValidLargePage;
 
-    STAMPROFILE                 StatChunkAging;
-    STAMPROFILE                 StatChunkFindCandidate;
-    STAMPROFILE                 StatChunkUnmap;
-    STAMPROFILE                 StatChunkMap;
+    STAMPROFILE StatChunkAging;
+    STAMPROFILE StatChunkFindCandidate;
+    STAMPROFILE StatChunkUnmap;
+    STAMPROFILE StatChunkMap;
 } PGMSTATS;
 #endif /* VBOX_WITH_STATISTICS */
 
@@ -3283,13 +3280,8 @@ typedef struct PGM
     STAMPROFILE                     StatShModCheck;         /**< Profiles shared module checks. */
     /** @} */
 
-#ifdef VBOX_WITH_STATISTICS
-    /** @name Statistics on the heap.
-     * @{ */
-    R3PTRTYPE(PGMSTATS *)           pStatsR3;
-    R0PTRTYPE(PGMSTATS *)           pStatsR0;
-    /** @} */
-#endif
+    /** These are optional statistics that used to be on the hyper heap. */
+    PGMSTATS                        Stats;
 } PGM;
 #ifndef IN_TSTVMSTRUCTGC /* HACK */
 # ifndef PGM_WITHOUT_MAPPINGS
@@ -3666,19 +3658,13 @@ typedef struct PGMCPU
     STAMCOUNTER                     cA20Changes;
     /** @} */
 
-#ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap. */
     /** @name Statistics
      * @{ */
-    /** R0: Pointer to the statistics. */
-    R0PTRTYPE(PGMCPUSTATS *)        pStatsR0;
     /** R0: Which statistic this \#PF should be attributed to. */
     R0PTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionR0;
-    /** R3: Pointer to the statistics. */
-    R3PTRTYPE(PGMCPUSTATS *)        pStatsR3;
-    /** Alignment padding. */
-    RTR3PTR                         pPaddingR3;
+    /** These are statistics that used to be on the hyper heap. */
+    PGMCPUSTATS                     Stats;
     /** @} */
-#endif /* VBOX_WITH_STATISTICS */
 } PGMCPU;
 /** Pointer to the per-cpu PGM data. */
 typedef PGMCPU *PPGMCPU;

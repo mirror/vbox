@@ -88,7 +88,7 @@ struc VMCPU
     .aStatAdHoc             resb STAMPROFILEADV_size * 8
 
     alignb 4096
-    .pgm                    resb 4096
+    .pgm                    resb 4096+28672
     alignb 4096
     .cpum                   resb 4096
 %define VMCPU.cpum.GstCtx   VMCPU.cpum

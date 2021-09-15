@@ -891,7 +891,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
     Log(("PGMTrap0eHandler: uErr=%RGx pvFault=%RGv eip=%04x:%RGv cr3=%RGp\n", uErr, pvFault, pRegFrame->cs.Sel, (RTGCPTR)pRegFrame->rip, (RTGCPHYS)CPUMGetGuestCR3(pVCpu)));
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0e, a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.Stats.StatRZTrap0e, a);
     STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
 
@@ -904,34 +904,34 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNotPresentWrite);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eUSNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNotPresentRead);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eUSNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSWrite);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eUSWrite);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSReserved);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eUSReserved);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSNXE);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eUSNXE);
         else
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eUSRead);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eUSRead);
     }
     else
     {   /* Supervisor */
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVNotPresentWrite);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eSVNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVNotPresentRead);
+                STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eSVNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVWrite);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eSVWrite);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSNXE);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eSNXE);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eSVReserved);
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eSVReserved);
     }
 # endif /* VBOX_WITH_STATISTICS */
 
@@ -970,10 +970,10 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
         }
     }
 
-    STAM_STATS({ if (rc == VINF_EM_RAW_GUEST_TRAP) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eGuestPF); });
+    STAM_STATS({ if (rc == VINF_EM_RAW_GUEST_TRAP) STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eGuestPF); });
     STAM_STATS({ if (!pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
-                    pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2Misc; });
-    STAM_PROFILE_STOP_EX(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0e, pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
+                    pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2Misc; });
+    STAM_PROFILE_STOP_EX(&pVCpu->pgm.s.Stats.StatRZTrap0e, pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
     return rc;
 }
 #endif /* IN_RING0 */
@@ -993,14 +993,14 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFr
  */
 VMMDECL(int) PGMPrefetchPage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 {
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Prefetch), a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,Prefetch), a);
 
     uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmBothModeData[idxBth].pfnPrefetchPage, VERR_PGM_MODE_IPE);
     int rc = g_aPgmBothModeData[idxBth].pfnPrefetchPage(pVCpu, GCPtrPage);
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Prefetch), a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,Prefetch), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     return rc;
 }
@@ -1223,7 +1223,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     /*
      * Call paging mode specific worker.
      */
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage), a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,InvalidatePage), a);
     PGM_LOCK_VOID(pVM);
 
     uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
@@ -1232,7 +1232,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     rc = g_aPgmBothModeData[idxBth].pfnInvalidatePage(pVCpu, GCPtrPage);
 
     PGM_UNLOCK(pVM);
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePage), a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,InvalidatePage), a);
 
 #ifdef IN_RING3
     /*
@@ -2154,7 +2154,7 @@ VMMDECL(int)  PGMGstSetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
  */
 VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,GstModifyPage), a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,GstModifyPage), a);
     VMCPU_ASSERT_EMT(pVCpu);
 
     /*
@@ -2180,7 +2180,7 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_
     AssertReturn(g_aPgmGuestModeData[idx].pfnModifyPage, VERR_PGM_MODE_IPE);
     int rc = g_aPgmGuestModeData[idx].pfnModifyPage(pVCpu, GCPtr, cb, fFlags, fMask);
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,GstModifyPage), a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,GstModifyPage), a);
     return rc;
 }
 
@@ -2440,7 +2440,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
  */
 VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
 {
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLB), a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLB), a);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
     VMCPU_ASSERT_EMT(pVCpu);
@@ -2500,9 +2500,9 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
         }
 
         if (fGlobal)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLBNewCR3Global));
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBNewCR3Global));
         else
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLBNewCR3));
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBNewCR3));
     }
     else
     {
@@ -2524,13 +2524,13 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
             Assert(!pVM->pgm.s.fMappingsFixed); Assert(pgmMapAreMappingsEnabled(pVM));
         }
         if (fGlobal)
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLBSameCR3Global));
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBSameCR3Global));
         else
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLBSameCR3));
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBSameCR3));
     }
 
     IEMTlbInvalidateAll(pVCpu, false /*fVmm*/);
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLB), a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLB), a);
     return rc;
 }
 
@@ -2707,14 +2707,14 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
     /*
      * Let the 'Bth' function do the work and we'll just keep track of the flags.
      */
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncCR3), a);
 
     uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmBothModeData[idxBth].pfnSyncCR3, VERR_PGM_MODE_IPE);
     rc = g_aPgmBothModeData[idxBth].pfnSyncCR3(pVCpu, cr0, cr3, cr4, fGlobal);
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncCR3), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
     {
@@ -3700,7 +3700,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
  */
 VMMDECL(unsigned) PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4)
 {
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
+    STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncCR3), a);
 
     uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), -VERR_PGM_MODE_IPE);
@@ -3710,7 +3710,7 @@ VMMDECL(unsigned) PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t
     unsigned cErrors = g_aPgmBothModeData[idxBth].pfnAssertCR3(pVCpu, cr3, cr4, 0, ~(RTGCPTR)0);
     PGM_UNLOCK(pVM);
 
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
+    STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;
 }
 
