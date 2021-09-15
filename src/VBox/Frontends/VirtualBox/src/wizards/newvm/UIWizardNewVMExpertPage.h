@@ -34,7 +34,7 @@ class QGridLayout;
 class QRadioButton;
 class QIToolButton;
 class UIAdditionalUnattendedOptions;
-class UIDiskFormatsGroupBox;
+class UIDiskFormatsComboBox;
 class UIDiskVariantGroupBox;
 class UIMediumSizeAndPathGroupBox;
 class UIGAInstallationGroupBox;
@@ -126,7 +126,7 @@ private:
       * @{ */
         UIToolBox  *m_pToolBox;
         UIDiskVariantGroupBox *m_pDiskVariantGroupBox;
-        UIDiskFormatsGroupBox *m_pFormatButtonGroup;
+        UIDiskFormatsComboBox *m_pFormatComboBox;
         UIMediumSizeAndPathGroupBox *m_pSizeAndLocationGroup;
         UINameAndSystemEditor *m_pNameAndSystemEditor;
         QCheckBox *m_pSkipUnattendedCheckBox;

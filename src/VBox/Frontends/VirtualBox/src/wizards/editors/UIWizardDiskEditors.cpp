@@ -167,175 +167,6 @@ QString UIDiskEditorGroupBox::defaultExtension(const CMediumFormat &mediumFormat
 
 
 /*********************************************************************************************************************************
-*   UIDiskFormatBase implementation.                                                                                   *
-*********************************************************************************************************************************/
-
-UIDiskFormatBase::UIDiskFormatBase(KDeviceType enmDeviceType, bool fExpertMode)
-    : m_enmDeviceType(enmDeviceType)
-    , m_fExpertMode(fExpertMode)
-{
-}
-
-const CMediumFormat &UIDiskFormatBase::VDIMediumFormat() const
-{
-    return m_comVDIMediumFormat;
-}
-
-void UIDiskFormatBase::populateFormats(){
-    /* Enumerate medium formats in special order: */
-    CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
-    const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
-    QMap<QString, CMediumFormat> vdi, preferred, others;
-    foreach (const CMediumFormat &format, formats)
-    {
-        if (format.GetName() == "VDI")
-        {
-            vdi[format.GetId()] = format;
-            m_comVDIMediumFormat = format;
-        }
-        else
-        {
-            const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
-            if (capabilities.contains(KMediumFormatCapabilities_Preferred))
-                preferred[format.GetId()] = format;
-            else
-                others[format.GetId()] = format;
-        }
-    }
-
-    /* Create buttons for VDI, preferred and others: */
-    foreach (const QString &strId, vdi.keys())
-        addFormat(vdi.value(strId), true);
-    foreach (const QString &strId, preferred.keys())
-        addFormat(preferred.value(strId), true);
-
-    if (m_fExpertMode || m_enmDeviceType == KDeviceType_DVD || m_enmDeviceType == KDeviceType_Floppy)
-    {
-        foreach (const QString &strId, others.keys())
-            addFormat(others.value(strId));
-    }
-}
-
-void UIDiskFormatBase::addFormat(CMediumFormat medFormat, bool fPreferred /* = false */)
-{
-    /* Check that medium format supports creation: */
-    ULONG uFormatCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = medFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uFormatCapabilities |= capabilities[i];
-
-    if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
-          uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
-        return;
-
-    /* Check that medium format supports creation of virtual hard-disks: */
-    QVector<QString> fileExtensions;
-    QVector<KDeviceType> deviceTypes;
-    medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    if (!deviceTypes.contains(m_enmDeviceType))
-        return;
-    m_formatList << Format(medFormat, UIDiskEditorGroupBox::defaultExtension(medFormat, m_enmDeviceType), fPreferred);
-}
-
-QStringList UIDiskFormatBase::formatExtensions() const
-{
-    QStringList extensionList;
-    foreach (const Format &format, m_formatList)
-        extensionList << format.m_strExtension;
-    return extensionList;
-}
-
-bool UIDiskFormatBase::isExpertMode() const
-{
-    return m_fExpertMode;
-}
-
-/*********************************************************************************************************************************
-*   UIDiskFormatsGroupBox implementation.                                                                                   *
-*********************************************************************************************************************************/
-
-UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
-    , UIDiskFormatBase(enmDeviceType, fExpertMode)
-    , m_pFormatButtonGroup(0)
-    , m_pMainLayout(0)
-{
-    prepare();
-}
-
-CMediumFormat UIDiskFormatsGroupBox::mediumFormat() const
-{
-    return m_pFormatButtonGroup &&
-           m_pFormatButtonGroup->checkedButton() ? m_formatList[m_pFormatButtonGroup->checkedId()].m_comFormat : CMediumFormat();
-}
-
-void UIDiskFormatsGroupBox::setMediumFormat(const CMediumFormat &mediumFormat)
-{
-    int iPosition = -1;
-    for (int i = 0; i < m_formatList.size(); ++i)
-    {
-        if (mediumFormat == m_formatList[i].m_comFormat)
-            iPosition = i;
-    }
-    if (iPosition >= 0)
-    {
-        m_pFormatButtonGroup->button(iPosition)->click();
-        m_pFormatButtonGroup->button(iPosition)->setFocus();
-    }
-}
-
-void UIDiskFormatsGroupBox::prepare()
-{
-    m_pMainLayout = new QVBoxLayout(this);
-    populateFormats();
-    createFormatWidgets();
-    retranslateUi();
-}
-
-void UIDiskFormatsGroupBox::retranslateUi()
-{
-    QList<QAbstractButton*> buttons = m_pFormatButtonGroup ? m_pFormatButtonGroup->buttons() : QList<QAbstractButton*>();
-    for (int i = 0; i < buttons.size(); ++i)
-    {
-        QAbstractButton *pButton = buttons[i];
-        const CMediumFormat &format = m_formatList[m_pFormatButtonGroup->id(pButton)].m_comFormat;
-        if (format.isNull())
-            continue;
-        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(format.GetName());
-        pButton->setText(gpConverter->toString(enmFormat));
-    }
-}
-
-void UIDiskFormatsGroupBox::createFormatWidgets()
-{
-    AssertReturnVoid(m_pMainLayout);
-    AssertReturnVoid(!m_formatList.isEmpty());
-    m_pFormatButtonGroup = new QButtonGroup(this);
-    AssertReturnVoid(m_pFormatButtonGroup);
-
-    for (int i = 0; i < m_formatList.size(); ++i)
-    {
-        QRadioButton *pFormatButton = new QRadioButton;
-        if (!pFormatButton)
-            continue;
-
-        /* Make the preferred button font bold: */
-        if (m_formatList[i].m_fPreferred && isExpertMode())
-        {
-            QFont font = pFormatButton->font();
-            font.setBold(true);
-            pFormatButton->setFont(font);
-        }
-        m_pMainLayout->addWidget(pFormatButton);
-        m_pFormatButtonGroup->addButton(pFormatButton, i);
-    }
-
-    setMediumFormat(m_formatList[0].m_comFormat);
-    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
-            this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
-}
-/*********************************************************************************************************************************
 *   UIDiskVariantGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
@@ -619,4 +450,238 @@ QString UIMediumSizeAndPathGroupBox::stripFormatExtension(const QString &strFile
         }
     }
     return result;
+}
+
+/*********************************************************************************************************************************
+*   UIDiskFormatBase implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIDiskFormatBase::UIDiskFormatBase(KDeviceType enmDeviceType, bool fExpertMode)
+    : m_enmDeviceType(enmDeviceType)
+    , m_fExpertMode(fExpertMode)
+{
+}
+
+const CMediumFormat &UIDiskFormatBase::VDIMediumFormat() const
+{
+    return m_comVDIMediumFormat;
+}
+
+void UIDiskFormatBase::populateFormats(){
+    /* Enumerate medium formats in special order: */
+    CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+    const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+    QMap<QString, CMediumFormat> vdi, preferred, others;
+    foreach (const CMediumFormat &format, formats)
+    {
+        if (format.GetName() == "VDI")
+        {
+            vdi[format.GetId()] = format;
+            m_comVDIMediumFormat = format;
+        }
+        else
+        {
+            const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
+            if (capabilities.contains(KMediumFormatCapabilities_Preferred))
+                preferred[format.GetId()] = format;
+            else
+                others[format.GetId()] = format;
+        }
+    }
+
+    /* Create buttons for VDI, preferred and others: */
+    foreach (const QString &strId, vdi.keys())
+        addFormat(vdi.value(strId), true);
+    foreach (const QString &strId, preferred.keys())
+        addFormat(preferred.value(strId), true);
+
+    if (m_fExpertMode || m_enmDeviceType == KDeviceType_DVD || m_enmDeviceType == KDeviceType_Floppy)
+    {
+        foreach (const QString &strId, others.keys())
+            addFormat(others.value(strId));
+    }
+}
+
+void UIDiskFormatBase::addFormat(CMediumFormat medFormat, bool fPreferred /* = false */)
+{
+    AssertReturnVoid(!medFormat.isNull());
+    /* Check that medium format supports creation: */
+    ULONG uFormatCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = medFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uFormatCapabilities |= capabilities[i];
+
+    if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
+          uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
+        return;
+
+    /* Check that medium format supports creation of virtual hard-disks: */
+    QVector<QString> fileExtensions;
+    QVector<KDeviceType> deviceTypes;
+    medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+    if (!deviceTypes.contains(m_enmDeviceType))
+        return;
+    m_formatList << Format(medFormat, UIDiskEditorGroupBox::defaultExtension(medFormat, m_enmDeviceType), fPreferred);
+}
+
+QStringList UIDiskFormatBase::formatExtensions() const
+{
+    QStringList extensionList;
+    foreach (const Format &format, m_formatList)
+        extensionList << format.m_strExtension;
+    return extensionList;
+}
+
+bool UIDiskFormatBase::isExpertMode() const
+{
+    return m_fExpertMode;
+}
+
+/*********************************************************************************************************************************
+*   UIDiskFormatsGroupBox implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIDiskFormatsGroupBox::UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , UIDiskFormatBase(enmDeviceType, fExpertMode)
+    , m_pFormatButtonGroup(0)
+    , m_pMainLayout(0)
+{
+    prepare();
+}
+
+CMediumFormat UIDiskFormatsGroupBox::mediumFormat() const
+{
+    if (!m_pFormatButtonGroup)
+        return CMediumFormat();
+    int iIndex = m_pFormatButtonGroup->checkedId();
+    if (iIndex < 0 || iIndex >= m_formatList.size())
+        return CMediumFormat();
+    return m_formatList[iIndex].m_comFormat;
+}
+
+void UIDiskFormatsGroupBox::setMediumFormat(const CMediumFormat &mediumFormat)
+{
+    int iPosition = -1;
+    for (int i = 0; i < m_formatList.size(); ++i)
+    {
+        if (mediumFormat == m_formatList[i].m_comFormat)
+            iPosition = i;
+    }
+    if (iPosition >= 0)
+    {
+        m_pFormatButtonGroup->button(iPosition)->click();
+        m_pFormatButtonGroup->button(iPosition)->setFocus();
+    }
+}
+
+void UIDiskFormatsGroupBox::prepare()
+{
+    m_pMainLayout = new QVBoxLayout(this);
+    populateFormats();
+    createFormatWidgets();
+    retranslateUi();
+}
+
+void UIDiskFormatsGroupBox::retranslateUi()
+{
+    QList<QAbstractButton*> buttons = m_pFormatButtonGroup ? m_pFormatButtonGroup->buttons() : QList<QAbstractButton*>();
+    for (int i = 0; i < buttons.size(); ++i)
+    {
+        QAbstractButton *pButton = buttons[i];
+        const CMediumFormat &format = m_formatList[m_pFormatButtonGroup->id(pButton)].m_comFormat;
+        if (format.isNull())
+            continue;
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(format.GetName());
+        pButton->setText(gpConverter->toString(enmFormat));
+    }
+}
+
+void UIDiskFormatsGroupBox::createFormatWidgets()
+{
+    AssertReturnVoid(m_pMainLayout);
+    AssertReturnVoid(!m_formatList.isEmpty());
+    m_pFormatButtonGroup = new QButtonGroup(this);
+    AssertReturnVoid(m_pFormatButtonGroup);
+
+    for (int i = 0; i < m_formatList.size(); ++i)
+    {
+        QRadioButton *pFormatButton = new QRadioButton;
+        if (!pFormatButton)
+            continue;
+
+        /* Make the preferred button font bold: */
+        if (m_formatList[i].m_fPreferred && isExpertMode())
+        {
+            QFont font = pFormatButton->font();
+            font.setBold(true);
+            pFormatButton->setFont(font);
+        }
+        m_pMainLayout->addWidget(pFormatButton);
+        m_pFormatButtonGroup->addButton(pFormatButton, i);
+    }
+
+    setMediumFormat(m_formatList[0].m_comFormat);
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
+            this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
+}
+
+/*********************************************************************************************************************************
+*   UIDiskFormatsGroupBox implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIDiskFormatsComboBox::UIDiskFormatsComboBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QIComboBox>(pParent)
+    , UIDiskFormatBase(enmDeviceType, fExpertMode)
+{
+    prepare();
+}
+
+void UIDiskFormatsComboBox::prepare()
+{
+    populateFormats();
+    foreach (const Format &format, m_formatList)
+    {
+        addItem(format.m_comFormat.GetName());
+    }
+
+    connect(this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIDiskFormatsComboBox::sigMediumFormatChanged);
+
+    retranslateUi();
+}
+
+CMediumFormat UIDiskFormatsComboBox::mediumFormat() const
+{
+    int iIndex = currentIndex();
+    if (iIndex < 0 || iIndex >= m_formatList.size())
+        return CMediumFormat();
+    return m_formatList[iIndex].m_comFormat;
+}
+
+void UIDiskFormatsComboBox::setMediumFormat(const CMediumFormat &mediumFormat)
+{
+    int iPosition = -1;
+    for (int i = 0; i < m_formatList.size(); ++i)
+    {
+        if (mediumFormat == m_formatList[i].m_comFormat)
+            iPosition = i;
+    }
+    if (iPosition >= 0)
+        setCurrentIndex(iPosition);
+}
+
+void UIDiskFormatsComboBox::retranslateUi()
+{
+    for (int i = 0; i < count(); ++i)
+    {
+        if (i >= m_formatList.size())
+            break;
+        const CMediumFormat &format = m_formatList[i].m_comFormat;
+        if (format.isNull())
+            continue;
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(format.GetName());
+        setItemText(i, gpConverter->toString(enmFormat));
+    }
 }

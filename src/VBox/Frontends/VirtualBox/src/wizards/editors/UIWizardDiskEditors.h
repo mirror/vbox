@@ -27,6 +27,7 @@
 #include <QVector>
 
 /* Local includes: */
+#include "QIComboBox.h"
 #include "QIWithRetranslateUI.h"
 
 
@@ -155,6 +156,10 @@ class SHARED_LIBRARY_STUFF UIDiskFormatBase
 public:
 
     UIDiskFormatBase(KDeviceType enmDeviceType, bool fExpertMode);
+
+    virtual CMediumFormat mediumFormat() const = 0;
+    virtual void setMediumFormat(const CMediumFormat &mediumFormat) = 0;
+
     const CMediumFormat &VDIMediumFormat() const;
     QStringList formatExtensions() const;
 
@@ -196,8 +201,8 @@ signals:
 public:
 
     UIDiskFormatsGroupBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent = 0);
-    CMediumFormat mediumFormat() const;
-    void setMediumFormat(const CMediumFormat &mediumFormat);
+    virtual CMediumFormat mediumFormat() const /* override final */;
+    virtual void setMediumFormat(const CMediumFormat &mediumFormat) /* override final */;
 
 private:
 
@@ -207,6 +212,26 @@ private:
 
     QButtonGroup *m_pFormatButtonGroup;
     QVBoxLayout *m_pMainLayout;
+};
+
+class SHARED_LIBRARY_STUFF UIDiskFormatsComboBox : public QIWithRetranslateUI<QIComboBox>, public UIDiskFormatBase
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigMediumFormatChanged();
+
+public:
+
+    UIDiskFormatsComboBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent = 0);
+    virtual CMediumFormat mediumFormat() const /* override final */;
+    virtual void setMediumFormat(const CMediumFormat &mediumFormat) /* override final */;
+
+private:
+
+    void prepare();
+    virtual void retranslateUi() /* override final */;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_editors_UIWizardDiskEditors_h */

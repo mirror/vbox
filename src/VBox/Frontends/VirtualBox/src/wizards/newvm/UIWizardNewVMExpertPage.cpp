@@ -43,7 +43,7 @@
 UIWizardNewVMExpertPage::UIWizardNewVMExpertPage()
     : m_pToolBox(0)
     , m_pDiskVariantGroupBox(0)
-    , m_pFormatButtonGroup(0)
+    , m_pFormatComboBox(0)
     , m_pSizeAndLocationGroup(0)
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
@@ -291,11 +291,13 @@ void UIWizardNewVMExpertPage::createConnections()
         connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
                 this, &UIWizardNewVMExpertPage::sltMediaComboBoxIndexChanged);
 
-    connect(m_pFormatButtonGroup, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
-            this, &UIWizardNewVMExpertPage::sltMediumFormatChanged);
+    if (m_pFormatComboBox)
+        connect(m_pFormatComboBox, &UIDiskFormatsComboBox::sigMediumFormatChanged,
+                this, &UIWizardNewVMExpertPage::sltMediumFormatChanged);
 
-    connect(m_pDiskVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
-            this, &UIWizardNewVMExpertPage::sltMediumVariantChanged);
+    if (m_pDiskVariantGroupBox)
+        connect(m_pDiskVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
+                this, &UIWizardNewVMExpertPage::sltMediumVariantChanged);
 }
 
 void UIWizardNewVMExpertPage::setOSTypeDependedValues()
@@ -370,8 +372,8 @@ void UIWizardNewVMExpertPage::initializePage()
         }
 
         /* Medium related properties: */
-        if (m_pFormatButtonGroup)
-            pWizard->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
+        if (m_pFormatComboBox)
+            pWizard->setMediumFormat(m_pFormatComboBox->mediumFormat());
         updateVirtualMediumPathFromMachinePathName();
     }
 
@@ -445,11 +447,10 @@ QWidget *UIWizardNewVMExpertPage::createNewDiskWidgets()
 
     m_pSizeAndLocationGroup = new UIMediumSizeAndPathGroupBox(true, 0 /* parent */, _4M /* minimum size */);
     pDiskContainerLayout->addWidget(m_pSizeAndLocationGroup, 0, 0, 2, 2);
-    m_pFormatButtonGroup = new UIDiskFormatsGroupBox(true, KDeviceType_HardDisk, 0);
-    pDiskContainerLayout->addWidget(m_pFormatButtonGroup, 2, 0, 4, 1);
+    m_pFormatComboBox = new UIDiskFormatsComboBox(true, KDeviceType_HardDisk, 0);
+    pDiskContainerLayout->addWidget(m_pFormatComboBox, 2, 0, 1, 1);
     m_pDiskVariantGroupBox  = new UIDiskVariantGroupBox(true, 0);
     pDiskContainerLayout->addWidget(m_pDiskVariantGroupBox, 2, 1, 2, 1);
-
     return pNewDiskContainerWidget;
 }
 
@@ -651,11 +652,11 @@ void UIWizardNewVMExpertPage::sltSkipUnattendedCheckBoxChecked(bool fSkip)
 void UIWizardNewVMExpertPage::sltMediumFormatChanged()
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    if (!m_pFormatButtonGroup)
+    if (!m_pFormatComboBox)
         return;
 
     m_userModifiedParameters << "MediumFormat";
-    wizardWindow<UIWizardNewVM>()->setMediumFormat(m_pFormatButtonGroup->mediumFormat());
+    wizardWindow<UIWizardNewVM>()->setMediumFormat(m_pFormatComboBox->mediumFormat());
     updateDiskWidgetsAfterMediumFormatChange();
     emit completeChanged();
 }
@@ -821,7 +822,7 @@ void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()
 void UIWizardNewVMExpertPage::updateDiskWidgetsAfterMediumFormatChange()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
-    AssertReturnVoid(pWizard && m_pDiskVariantGroupBox && m_pSizeAndLocationGroup && m_pFormatButtonGroup);
+    AssertReturnVoid(pWizard && m_pDiskVariantGroupBox && m_pSizeAndLocationGroup && m_pFormatComboBox);
     const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
 
@@ -831,7 +832,7 @@ void UIWizardNewVMExpertPage::updateDiskWidgetsAfterMediumFormatChange()
     m_pDiskVariantGroupBox->blockSignals(false);
 
     m_pSizeAndLocationGroup->blockSignals(true);
-    m_pSizeAndLocationGroup->updateMediumPath(comMediumFormat, m_pFormatButtonGroup->formatExtensions(), KDeviceType_HardDisk);
+    m_pSizeAndLocationGroup->updateMediumPath(comMediumFormat, m_pFormatComboBox->formatExtensions(), KDeviceType_HardDisk);
     m_pSizeAndLocationGroup->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
     pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumPath());
@@ -842,8 +843,8 @@ void UIWizardNewVMExpertPage::setEnableNewDiskWidgets(bool fEnable)
 {
     if (m_pSizeAndLocationGroup)
         m_pSizeAndLocationGroup->setEnabled(fEnable);
-    if (m_pFormatButtonGroup)
-        m_pFormatButtonGroup->setEnabled(fEnable);
+    if (m_pFormatComboBox)
+        m_pFormatComboBox->setEnabled(fEnable);
     if (m_pDiskVariantGroupBox)
         m_pDiskVariantGroupBox->setEnabled(fEnable);
 }
