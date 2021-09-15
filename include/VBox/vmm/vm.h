@@ -182,7 +182,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_HMInternal_h
         struct HMCPU    s;
 #endif
-        uint8_t             padding[5888];      /* multiple of 64 */
+        uint8_t             padding[9984];      /* multiple of 64 */
     } hm;
 
     /** NEM part. */

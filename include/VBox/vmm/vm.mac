@@ -60,7 +60,7 @@ struc VMCPU
     .idCpu                  resd 1
 
     alignb 64
-    .hm                     resb 5888
+    .hm                     resb 9984
     alignb 64
     .nem                    resb 512
     alignb 64

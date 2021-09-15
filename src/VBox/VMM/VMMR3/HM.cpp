@@ -40,7 +40,6 @@
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pgm.h>
@@ -885,11 +884,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
         /*
          * Guest Exit reason stats.
          */
-        pHmCpu->paStatExitReason = NULL;
-        rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT * sizeof(*pHmCpu->paStatExitReason), 0 /* uAlignment */, MM_TAG_HM,
-                          (void **)&pHmCpu->paStatExitReason);
-        AssertRCReturn(rc, rc);
-
         if (fCpuSupportsVmx)
         {
             for (int j = 0; j < MAX_EXITREASON_STAT; j++)
@@ -897,7 +891,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 const char *pszExitName = HMGetVmxExitName(j);
                 if (pszExitName)
                 {
-                    rc = STAMR3RegisterF(pVM, &pHmCpu->paStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                    rc = STAMR3RegisterF(pVM, &pHmCpu->aStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/Exit/Reason/%02x", idCpu, j);
                     AssertRCReturn(rc, rc);
                 }
@@ -910,7 +904,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 const char *pszExitName = HMGetSvmExitName(j);
                 if (pszExitName)
                 {
-                    rc = STAMR3RegisterF(pVM, &pHmCpu->paStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                    rc = STAMR3RegisterF(pVM, &pHmCpu->aStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/Exit/Reason/%02x", idCpu, j);
                     AssertRC(rc);
                 }
@@ -918,17 +912,10 @@ static int hmR3InitFinalizeR3(PVM pVM)
         }
         HM_REG_COUNTER(&pHmCpu->StatExitReasonNpf, "/HM/CPU%u/Exit/Reason/#NPF", "Nested page faults");
 
-        pHmCpu->paStatExitReasonR0 = MMHyperR3ToR0(pVM, pHmCpu->paStatExitReason);
-        Assert(pHmCpu->paStatExitReasonR0 != NIL_RTR0PTR);
-
 #if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
         /*
          * Nested-guest VM-exit reason stats.
          */
-        pHmCpu->paStatNestedExitReason = NULL;
-        rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT * sizeof(*pHmCpu->paStatNestedExitReason), 0 /* uAlignment */, MM_TAG_HM,
-                          (void **)&pHmCpu->paStatNestedExitReason);
-        AssertRCReturn(rc, rc);
         if (fCpuSupportsVmx)
         {
             for (int j = 0; j < MAX_EXITREASON_STAT; j++)
@@ -936,7 +923,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 const char *pszExitName = HMGetVmxExitName(j);
                 if (pszExitName)
                 {
-                    rc = STAMR3RegisterF(pVM, &pHmCpu->paStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                    rc = STAMR3RegisterF(pVM, &pHmCpu->aStatNestedExitReason, STAMTYPE_COUNTER, STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/Exit/NestedGuest/Reason/%02x", idCpu, j);
                     AssertRC(rc);
                 }
@@ -949,55 +936,36 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 const char *pszExitName = HMGetSvmExitName(j);
                 if (pszExitName)
                 {
-                    rc = STAMR3RegisterF(pVM, &pHmCpu->paStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                    rc = STAMR3RegisterF(pVM, &pHmCpu->aStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/Exit/NestedGuest/Reason/%02x", idCpu, j);
                     AssertRC(rc);
                 }
             }
         }
         HM_REG_COUNTER(&pHmCpu->StatNestedExitReasonNpf, "/HM/CPU%u/Exit/NestedGuest/Reason/#NPF", "Nested page faults");
-        pHmCpu->paStatNestedExitReasonR0 = MMHyperR3ToR0(pVM, pHmCpu->paStatNestedExitReason);
-        Assert(pHmCpu->paStatNestedExitReasonR0 != NIL_RTR0PTR);
 #endif
 
         /*
          * Injected interrupts stats.
          */
+        char szDesc[64];
+        for (unsigned j = 0; j < RT_ELEMENTS(pHmCpu->aStatInjectedIrqs); j++)
         {
-            uint32_t const cInterrupts = 0xff + 1;
-            rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * cInterrupts, 8, MM_TAG_HM, (void **)&pHmCpu->paStatInjectedIrqs);
-            AssertRCReturn(rc, rc);
-            pHmCpu->paStatInjectedIrqsR0 = MMHyperR3ToR0(pVM, pHmCpu->paStatInjectedIrqs);
-            Assert(pHmCpu->paStatInjectedIrqsR0 != NIL_RTR0PTR);
-            for (unsigned j = 0; j < cInterrupts; j++)
-            {
-                char aszIntrName[64];
-                RTStrPrintf(&aszIntrName[0], sizeof(aszIntrName),  "Interrupt %u", j);
-                rc = STAMR3RegisterF(pVM, &pHmCpu->paStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                     STAMUNIT_OCCURENCES, aszIntrName,
-                                     "/HM/CPU%u/EventInject/InjectIntr/%02X", idCpu, j);
-                AssertRC(rc);
-            }
+            RTStrPrintf(&szDesc[0], sizeof(szDesc),  "Interrupt %u", j);
+            rc = STAMR3RegisterF(pVM, &pHmCpu->aStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                                 STAMUNIT_OCCURENCES, szDesc, "/HM/CPU%u/EventInject/InjectIntr/%02X", idCpu, j);
+            AssertRC(rc);
         }
 
         /*
          * Injected exception stats.
          */
+        for (unsigned j = 0; j < RT_ELEMENTS(pHmCpu->aStatInjectedXcpts); j++)
         {
-            uint32_t const cXcpts = X86_XCPT_LAST + 1;
-            rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * cXcpts, 8, MM_TAG_HM, (void **)&pHmCpu->paStatInjectedXcpts);
-            AssertRCReturn(rc, rc);
-            pHmCpu->paStatInjectedXcptsR0 = MMHyperR3ToR0(pVM, pHmCpu->paStatInjectedXcpts);
-            Assert(pHmCpu->paStatInjectedXcptsR0 != NIL_RTR0PTR);
-            for (unsigned j = 0; j < cXcpts; j++)
-            {
-                char aszXcptName[64];
-                RTStrPrintf(&aszXcptName[0], sizeof(aszXcptName),  "%s exception", hmR3GetXcptName(j));
-                rc = STAMR3RegisterF(pVM, &pHmCpu->paStatInjectedXcpts[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                     STAMUNIT_OCCURENCES, aszXcptName,
-                                     "/HM/CPU%u/EventInject/InjectXcpt/%02X", idCpu, j);
-                AssertRC(rc);
-            }
+            RTStrPrintf(&szDesc[0], sizeof(szDesc),  "%s exception", hmR3GetXcptName(j));
+            rc = STAMR3RegisterF(pVM, &pHmCpu->aStatInjectedXcpts[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                                 STAMUNIT_OCCURENCES, szDesc, "/HM/CPU%u/EventInject/InjectXcpt/%02X", idCpu, j);
+            AssertRC(rc);
         }
 
 #endif /* VBOX_WITH_STATISTICS */
@@ -1945,8 +1913,6 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
  */
 VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
 {
-    Log(("HMR3Relocate to %RGv\n", MMHyperGetArea(pVM, 0)));
-
     /* Fetch the current paging mode during the relocate callback during state loading. */
     if (VMR3GetState(pVM) == VMSTATE_LOADING)
     {
@@ -1988,40 +1954,7 @@ VMMR3_INT_DECL(int) HMR3Term(PVM pVM)
  */
 static int hmR3TermCPU(PVM pVM)
 {
-#ifdef VBOX_WITH_STATISTICS
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU pVCpu = pVM->apCpusR3[idCpu]; NOREF(pVCpu);
-        if (pVCpu->hm.s.paStatExitReason)
-        {
-            MMHyperFree(pVM, pVCpu->hm.s.paStatExitReason);
-            pVCpu->hm.s.paStatExitReason   = NULL;
-            pVCpu->hm.s.paStatExitReasonR0 = NIL_RTR0PTR;
-        }
-        if (pVCpu->hm.s.paStatInjectedIrqs)
-        {
-            MMHyperFree(pVM, pVCpu->hm.s.paStatInjectedIrqs);
-            pVCpu->hm.s.paStatInjectedIrqs   = NULL;
-            pVCpu->hm.s.paStatInjectedIrqsR0 = NIL_RTR0PTR;
-        }
-        if (pVCpu->hm.s.paStatInjectedXcpts)
-        {
-            MMHyperFree(pVM, pVCpu->hm.s.paStatInjectedXcpts);
-            pVCpu->hm.s.paStatInjectedXcpts   = NULL;
-            pVCpu->hm.s.paStatInjectedXcptsR0 = NIL_RTR0PTR;
-        }
-# if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
-        if (pVCpu->hm.s.paStatNestedExitReason)
-        {
-            MMHyperFree(pVM, pVCpu->hm.s.paStatNestedExitReason);
-            pVCpu->hm.s.paStatNestedExitReason   = NULL;
-            pVCpu->hm.s.paStatNestedExitReasonR0 = NIL_RTR0PTR;
-        }
-# endif
-    }
-#else
     RT_NOREF(pVM);
-#endif
     return VINF_SUCCESS;
 }
 

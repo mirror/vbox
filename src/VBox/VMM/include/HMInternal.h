@@ -1327,14 +1327,10 @@ typedef struct HMCPU
     STAMCOUNTER             StatVmxPreemptionReusingDeadlineExpired;
 
 #ifdef VBOX_WITH_STATISTICS
-    R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
-    R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
-    R3PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqs;
-    R0PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqsR0;
-    R3PTRTYPE(PSTAMCOUNTER) paStatInjectedXcpts;
-    R0PTRTYPE(PSTAMCOUNTER) paStatInjectedXcptsR0;
-    R3PTRTYPE(PSTAMCOUNTER) paStatNestedExitReason;
-    R0PTRTYPE(PSTAMCOUNTER) paStatNestedExitReasonR0;
+    STAMCOUNTER             aStatExitReason[MAX_EXITREASON_STAT];
+    STAMCOUNTER             aStatNestedExitReason[MAX_EXITREASON_STAT];
+    STAMCOUNTER             aStatInjectedIrqs[256];
+    STAMCOUNTER             aStatInjectedXcpts[X86_XCPT_LAST + 1];
 #endif
 #ifdef HM_PROFILE_EXIT_DISPATCH
     STAMPROFILEADV          StatExitDispatch;

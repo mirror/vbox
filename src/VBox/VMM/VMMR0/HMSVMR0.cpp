@@ -55,7 +55,7 @@
         if ((u64ExitCode) == SVM_EXIT_NPF) \
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf); \
         else \
-            STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[(u64ExitCode) & MASK_EXITREASON_STAT]); \
+            STAM_COUNTER_INC(&pVCpu->hm.s.aStatExitReason[(u64ExitCode) & MASK_EXITREASON_STAT]); \
         } while (0)
 
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -65,7 +65,7 @@
         if ((u64ExitCode) == SVM_EXIT_NPF) \
             STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitReasonNpf); \
         else \
-            STAM_COUNTER_INC(&pVCpu->hm.s.paStatNestedExitReasonR0[(u64ExitCode) & MASK_EXITREASON_STAT]); \
+            STAM_COUNTER_INC(&pVCpu->hm.s.aStatNestedExitReason[(u64ExitCode) & MASK_EXITREASON_STAT]); \
         } while (0)
 # endif
 #else
@@ -3384,10 +3384,10 @@ DECLINLINE(void) hmR0SvmInjectEventVmcb(PVMCPUCC pVCpu, PSVMVMCB pVmcb, PSVMEVEN
         || pVmcb->ctrl.EventInject.n.u3Type == SVM_EVENT_NMI)
     {
         Assert(pEvent->n.u8Vector <= X86_XCPT_LAST);
-        STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedXcptsR0[pEvent->n.u8Vector]);
+        STAM_COUNTER_INC(&pVCpu->hm.s.aStatInjectedXcpts[pEvent->n.u8Vector]);
     }
     else
-        STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
+        STAM_COUNTER_INC(&pVCpu->hm.s.aStatInjectedIrqs[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
     RT_NOREF(pVCpu);
 
     Log4Func(("u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u, pEvent->n.u8Vector,
