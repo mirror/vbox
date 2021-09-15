@@ -63,7 +63,8 @@ bool UIWizardExportApp::exportAppliance()
     if (fIsFormatCloudOne)
     {
         /* Get appliance: */
-        CAppliance comAppliance = field("appliance").value<CAppliance>();
+        CAppliance comAppliance = field("cloudAppliance").value<CAppliance>();
+        AssertReturn(comAppliance.isNotNull(), false);
 
         /* Export the VMs, on success we are finished: */
         return exportVMs(comAppliance);

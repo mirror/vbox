@@ -516,7 +516,7 @@ QString UIWizardExportAppPage2::profileName() const
     return m_pProfileComboBox->itemData(iIndex, ProfileData_Name).toString();
 }
 
-CAppliance UIWizardExportAppPage2::appliance() const
+CAppliance UIWizardExportAppPage2::cloudAppliance() const
 {
     return m_comAppliance;
 }
@@ -845,7 +845,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
-    registerField("appliance", this, "appliance");
+    registerField("cloudAppliance", this, "cloudAppliance");
     registerField("client", this, "client");
     registerField("vsd", this, "vsd");
     registerField("vsdExportForm", this, "vsdExportForm");
@@ -1010,7 +1010,7 @@ bool UIWizardExportAppPageBasic2::validatePage()
         /* Create appliance and populate form properties: */
         populateFormProperties();
         /* Which are required to continue to the next page: */
-        fResult =    field("appliance").value<CAppliance>().isNotNull()
+        fResult =    field("cloudAppliance").value<CAppliance>().isNotNull()
                   && field("client").value<CCloudClient>().isNotNull()
                   && field("vsd").value<CVirtualSystemDescription>().isNotNull()
                   && field("vsdExportForm").value<CVirtualSystemDescriptionForm>().isNotNull();

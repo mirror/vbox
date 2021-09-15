@@ -161,8 +161,8 @@ protected:
     QString providerShortName() const;
     /** Returns profile name. */
     QString profileName() const;
-    /** Returns Appliance object. */
-    CAppliance appliance() const;
+    /** Returns Cloud Appliance object. */
+    CAppliance cloudAppliance() const;
     /** Returns Cloud Client object. */
     CCloudClient client() const;
     /** Returns Virtual System Description object. */
@@ -259,7 +259,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString providerShortName READ providerShortName);
-    Q_PROPERTY(CAppliance appliance READ appliance);
+    Q_PROPERTY(CAppliance cloudAppliance READ cloudAppliance);
     Q_PROPERTY(CCloudClient client READ client);
     Q_PROPERTY(CVirtualSystemDescription vsd READ vsd);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdExportForm READ vsdExportForm);
