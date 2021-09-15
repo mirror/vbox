@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardAddCloudVMPageBasic1 class implementation.
+ * VBox Qt GUI - UIWizardAddCloudVMPageSource class implementation.
  */
 
 /*
@@ -32,7 +32,7 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardAddCloudVM.h"
-#include "UIWizardAddCloudVMPageBasic1.h"
+#include "UIWizardAddCloudVMPageSource.h"
 
 /* COM includes: */
 #include "CStringArray.h"
@@ -231,10 +231,10 @@ QStringList UIWizardAddCloudVMPage1::currentListWidgetData(QListWidget *pList)
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardAddCloudVMPageBasic1 implementation.                                                                           *
+*   Class UIWizardAddCloudVMPageSource implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIWizardAddCloudVMPageBasic1::UIWizardAddCloudVMPageBasic1()
+UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
     : m_pLabelMain(0)
     , m_pProviderLayout(0)
     , m_pProviderLabel(0)
@@ -360,20 +360,20 @@ UIWizardAddCloudVMPageBasic1::UIWizardAddCloudVMPageBasic1()
 
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
-            this, &UIWizardAddCloudVMPageBasic1::sltHandleProviderComboChange);
+            this, &UIWizardAddCloudVMPageSource::sltHandleProviderComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
-            this, &UIWizardAddCloudVMPageBasic1::sltHandleProviderComboChange);
+            this, &UIWizardAddCloudVMPageSource::sltHandleProviderComboChange);
     connect(m_pProviderComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardAddCloudVMPageBasic1::sltHandleProviderComboChange);
+            this, &UIWizardAddCloudVMPageSource::sltHandleProviderComboChange);
     connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardAddCloudVMPageBasic1::sltHandleProfileComboChange);
+            this, &UIWizardAddCloudVMPageSource::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
-            this, &UIWizardAddCloudVMPageBasic1::sltHandleProfileButtonClick);
+            this, &UIWizardAddCloudVMPageSource::sltHandleProfileButtonClick);
     connect(m_pSourceInstanceList, &QListWidget::currentRowChanged,
-            this, &UIWizardAddCloudVMPageBasic1::sltHandleSourceInstanceChange);
+            this, &UIWizardAddCloudVMPageSource::sltHandleSourceInstanceChange);
 }
 
-void UIWizardAddCloudVMPageBasic1::retranslateUi()
+void UIWizardAddCloudVMPageSource::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardAddCloudVM::tr("Source to add from"));
@@ -418,7 +418,7 @@ void UIWizardAddCloudVMPageBasic1::retranslateUi()
     updateComboToolTip(m_pProviderComboBox);
 }
 
-void UIWizardAddCloudVMPageBasic1::initializePage()
+void UIWizardAddCloudVMPageSource::initializePage()
 {
     /* Populate providers: */
     populateProviders(m_pProviderComboBox);
@@ -430,7 +430,7 @@ void UIWizardAddCloudVMPageBasic1::initializePage()
     m_pSourceInstanceList->setFocus();
 }
 
-bool UIWizardAddCloudVMPageBasic1::isComplete() const
+bool UIWizardAddCloudVMPageSource::isComplete() const
 {
     /* Initial result: */
     bool fResult = true;
@@ -444,7 +444,7 @@ bool UIWizardAddCloudVMPageBasic1::isComplete() const
     return fResult;
 }
 
-bool UIWizardAddCloudVMPageBasic1::validatePage()
+bool UIWizardAddCloudVMPageSource::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -456,71 +456,71 @@ bool UIWizardAddCloudVMPageBasic1::validatePage()
     return fResult;
 }
 
-void UIWizardAddCloudVMPageBasic1::sltHandleProviderComboChange()
+void UIWizardAddCloudVMPageSource::sltHandleProviderComboChange()
 {
     updateProvider();
     emit completeChanged();
 }
 
-void UIWizardAddCloudVMPageBasic1::sltHandleProfileComboChange()
+void UIWizardAddCloudVMPageSource::sltHandleProfileComboChange()
 {
     updateProfile();
     emit completeChanged();
 }
 
-void UIWizardAddCloudVMPageBasic1::sltHandleProfileButtonClick()
+void UIWizardAddCloudVMPageSource::sltHandleProfileButtonClick()
 {
     if (gpManager)
         gpManager->openCloudProfileManager();
 }
 
-void UIWizardAddCloudVMPageBasic1::sltHandleSourceInstanceChange()
+void UIWizardAddCloudVMPageSource::sltHandleSourceInstanceChange()
 {
     updateSourceInstance();
     emit completeChanged();
 }
 
-void UIWizardAddCloudVMPageBasic1::setShortProviderName(const QString &strProviderShortName)
+void UIWizardAddCloudVMPageSource::setShortProviderName(const QString &strProviderShortName)
 {
     qobject_cast<UIWizardAddCloudVM*>(wizard())->setShortProviderName(strProviderShortName);
 }
 
-QString UIWizardAddCloudVMPageBasic1::shortProviderName() const
+QString UIWizardAddCloudVMPageSource::shortProviderName() const
 {
     return qobject_cast<UIWizardAddCloudVM*>(wizard())->shortProviderName();
 }
 
-void UIWizardAddCloudVMPageBasic1::setProfileName(const QString &strProfileName)
+void UIWizardAddCloudVMPageSource::setProfileName(const QString &strProfileName)
 {
     qobject_cast<UIWizardAddCloudVM*>(wizard())->setProfileName(strProfileName);
 }
 
-QString UIWizardAddCloudVMPageBasic1::profileName() const
+QString UIWizardAddCloudVMPageSource::profileName() const
 {
     return qobject_cast<UIWizardAddCloudVM*>(wizard())->profileName();
 }
 
-void UIWizardAddCloudVMPageBasic1::setClient(const CCloudClient &comClient)
+void UIWizardAddCloudVMPageSource::setClient(const CCloudClient &comClient)
 {
     qobject_cast<UIWizardAddCloudVM*>(wizard())->setClient(comClient);
 }
 
-CCloudClient UIWizardAddCloudVMPageBasic1::client() const
+CCloudClient UIWizardAddCloudVMPageSource::client() const
 {
     return qobject_cast<UIWizardAddCloudVM*>(wizard())->client();
 }
 
-void UIWizardAddCloudVMPageBasic1::setInstanceIds(const QStringList &instanceIds)
+void UIWizardAddCloudVMPageSource::setInstanceIds(const QStringList &instanceIds)
 {
     qobject_cast<UIWizardAddCloudVM*>(wizard())->setInstanceIds(instanceIds);
 }
 
-QStringList UIWizardAddCloudVMPageBasic1::instanceIds() const
+QStringList UIWizardAddCloudVMPageSource::instanceIds() const
 {
     return qobject_cast<UIWizardAddCloudVM*>(wizard())->instanceIds();
 }
 
-void UIWizardAddCloudVMPageBasic1::updateProvider()
+void UIWizardAddCloudVMPageSource::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
     setShortProviderName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
@@ -529,7 +529,7 @@ void UIWizardAddCloudVMPageBasic1::updateProvider()
     updateProfile();
 }
 
-void UIWizardAddCloudVMPageBasic1::updateProfile()
+void UIWizardAddCloudVMPageSource::updateProfile()
 {
     setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
     setClient(cloudClientByName(shortProviderName(), profileName(), wizard()));
@@ -537,7 +537,7 @@ void UIWizardAddCloudVMPageBasic1::updateProfile()
     updateSourceInstance();
 }
 
-void UIWizardAddCloudVMPageBasic1::updateSourceInstance()
+void UIWizardAddCloudVMPageSource::updateSourceInstance()
 {
     setInstanceIds(currentListWidgetData(m_pSourceInstanceList));
 }

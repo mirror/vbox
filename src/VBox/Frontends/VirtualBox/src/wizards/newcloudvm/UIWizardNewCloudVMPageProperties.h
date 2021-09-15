@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewCloudVMPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardNewCloudVMPageProperties class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageProperties_h
+#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageProperties_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -43,14 +43,14 @@ namespace UIWizardNewCloudVMPage2
 
 /** UINativeWizardPage extension for 2nd page of the New Cloud VM wizard,
   * based on UIWizardNewCloudVMPage2 namespace functions. */
-class UIWizardNewCloudVMPageBasic2 : public UINativeWizardPage
+class UIWizardNewCloudVMPageProperties : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs 2nd basic page. */
-    UIWizardNewCloudVMPageBasic2();
+    UIWizardNewCloudVMPageProperties();
 
 protected:
 
@@ -90,4 +90,4 @@ private:
     UIFormEditorWidgetPointer  m_pFormEditor;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageProperties_h */

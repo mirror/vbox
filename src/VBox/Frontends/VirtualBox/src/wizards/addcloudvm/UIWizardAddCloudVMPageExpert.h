@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardAddCloudVMPageBasic1.h"
+#include "UIWizardAddCloudVMPageSource.h"
 
 /* Forward declarations: */
 class QGroupBox;

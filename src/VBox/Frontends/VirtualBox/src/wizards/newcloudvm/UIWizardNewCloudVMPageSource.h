@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewCloudVMPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardNewCloudVMPageSource class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageSource_h
+#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageSource_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -74,14 +74,14 @@ namespace UIWizardNewCloudVMPage1
 
 /** UINativeWizardPage extension for 1st page of the New Cloud VM wizard,
   * based on UIWizardNewCloudVMPage1 namespace functions. */
-class UIWizardNewCloudVMPageBasic1 : public UINativeWizardPage
+class UIWizardNewCloudVMPageSource : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs 1st basic page. */
-    UIWizardNewCloudVMPageBasic1();
+    UIWizardNewCloudVMPageSource();
 
 protected:
 
@@ -179,4 +179,4 @@ private:
     QListWidget  *m_pSourceImageList;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageSource_h */

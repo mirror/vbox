@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardNewCloudVMPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardNewCloudVMPageProperties class implementation.
  */
 
 /*
@@ -23,7 +23,7 @@
 #include "QIRichTextLabel.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewCloudVM.h"
-#include "UIWizardNewCloudVMPageBasic2.h"
+#include "UIWizardNewCloudVMPageProperties.h"
 
 /* Namespaces: */
 using namespace UIWizardNewCloudVMPage2;
@@ -46,10 +46,10 @@ void UIWizardNewCloudVMPage2::refreshFormPropertiesTable(UIFormEditorWidgetPoint
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardNewCloudVMPageBasic2 implementation.                                                                           *
+*   Class UIWizardNewCloudVMPageProperties implementation.                                                                       *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
+UIWizardNewCloudVMPageProperties::UIWizardNewCloudVMPageProperties()
 {
     /* Prepare main layout: */
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
@@ -72,11 +72,11 @@ UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
                 m_pFormEditor->setMinimumHeight(8 * iDefaultSectionHeight);
             /* Setup connections: */
             connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
-                    this, &UIWizardNewCloudVMPageBasic2::sigProgressStarted);
+                    this, &UIWizardNewCloudVMPageProperties::sigProgressStarted);
             connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
-                    this, &UIWizardNewCloudVMPageBasic2::sigProgressChange);
+                    this, &UIWizardNewCloudVMPageProperties::sigProgressChange);
             connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
-                    this, &UIWizardNewCloudVMPageBasic2::sigProgressFinished);
+                    this, &UIWizardNewCloudVMPageProperties::sigProgressFinished);
 
             /* Add into layout: */
             pLayoutMain->addWidget(m_pFormEditor);
@@ -84,7 +84,7 @@ UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
     }
 }
 
-void UIWizardNewCloudVMPageBasic2::retranslateUi()
+void UIWizardNewCloudVMPageProperties::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardNewCloudVM::tr("Cloud Virtual Machine settings"));
@@ -96,13 +96,13 @@ void UIWizardNewCloudVMPageBasic2::retranslateUi()
                                              "check boxes below."));
 }
 
-void UIWizardNewCloudVMPageBasic2::initializePage()
+void UIWizardNewCloudVMPageProperties::initializePage()
 {
     /* Generate VSD form, asynchronously: */
     QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
 }
 
-bool UIWizardNewCloudVMPageBasic2::isComplete() const
+bool UIWizardNewCloudVMPageProperties::isComplete() const
 {
     /* Initial result: */
     bool fResult = true;
@@ -115,7 +115,7 @@ bool UIWizardNewCloudVMPageBasic2::isComplete() const
     return fResult;
 }
 
-bool UIWizardNewCloudVMPageBasic2::validatePage()
+bool UIWizardNewCloudVMPageProperties::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -152,7 +152,7 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
     return fResult;
 }
 
-void UIWizardNewCloudVMPageBasic2::sltInitShortWizardForm()
+void UIWizardNewCloudVMPageProperties::sltInitShortWizardForm()
 {
     /* Create Virtual System Description Form: */
     if (vsdForm().isNull())
@@ -163,22 +163,22 @@ void UIWizardNewCloudVMPageBasic2::sltInitShortWizardForm()
     emit completeChanged();
 }
 
-CCloudClient UIWizardNewCloudVMPageBasic2::client() const
+CCloudClient UIWizardNewCloudVMPageProperties::client() const
 {
     return qobject_cast<UIWizardNewCloudVM*>(wizard())->client();
 }
 
-CVirtualSystemDescription UIWizardNewCloudVMPageBasic2::vsd() const
+CVirtualSystemDescription UIWizardNewCloudVMPageProperties::vsd() const
 {
     return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsd();
 }
 
-void UIWizardNewCloudVMPageBasic2::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
+void UIWizardNewCloudVMPageProperties::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
 {
     qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSDForm(comForm);
 }
 
-CVirtualSystemDescriptionForm UIWizardNewCloudVMPageBasic2::vsdForm() const
+CVirtualSystemDescriptionForm UIWizardNewCloudVMPageProperties::vsdForm() const
 {
     return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsdForm();
 }

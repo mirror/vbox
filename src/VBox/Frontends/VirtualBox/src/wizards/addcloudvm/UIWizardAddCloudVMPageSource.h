@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardAddCloudVMPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardAddCloudVMPageSource class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageSource_h
+#define FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageSource_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -49,7 +49,7 @@ enum
     ProfileData_Name = Qt::UserRole + 1
 };
 
-/** Namespace for 1st page of the Add Cloud VM wizard. */
+/** Namespace for Source page of the Add Cloud VM wizard. */
 namespace UIWizardAddCloudVMPage1
 {
     /** Populates @a pCombo with known providers. */
@@ -66,16 +66,16 @@ namespace UIWizardAddCloudVMPage1
     QStringList currentListWidgetData(QListWidget *pList);
 }
 
-/** UINativeWizardPage extension for 1st page of the Add Cloud VM wizard,
+/** UINativeWizardPage extension for Source page of the Add Cloud VM wizard,
   * based on UIWizardAddCloudVMPage1 namespace functions. */
-class UIWizardAddCloudVMPageBasic1 : public UINativeWizardPage
+class UIWizardAddCloudVMPageSource : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 1st basic page. */
-    UIWizardAddCloudVMPageBasic1();
+    /** Constructs Source page. */
+    UIWizardAddCloudVMPageSource();
 
 protected:
 
@@ -160,4 +160,4 @@ private:
     QListWidget  *m_pSourceInstanceList;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_addcloudvm_UIWizardAddCloudVMPageSource_h */

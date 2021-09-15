@@ -648,16 +648,16 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/graphics/UIGraphicsToolBar.h \
 	src/widgets/graphics/UIGraphicsTextPane.h \
 	src/wizards/addcloudvm/UIWizardAddCloudVM.h \
-	src/wizards/addcloudvm/UIWizardAddCloudVMPageBasic1.h \
 	src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.h \
+	src/wizards/addcloudvm/UIWizardAddCloudVMPageSource.h \
 	src/wizards/editors/UIHostnameDomainNameEditor.h \
 	src/wizards/editors/UIUserNamePasswordEditor.h \
 	src/wizards/editors/UIWizardCloneVMEditors.h \
 	src/wizards/editors/UIWizardNewVMEditors.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVM.h \
-	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.h \
-	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.h \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.h \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageProperties.h \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageSource.h \
 	src/wizards/newvm/UIWizardNewVM.h \
 	src/wizards/newvm/UIWizardNewVMNameOSTypePage.h \
 	src/wizards/newvm/UIWizardNewVMUnattendedPage.h \
@@ -1157,16 +1157,16 @@ VirtualBox_SOURCES = \
 	src/widgets/graphics/UIGraphicsToolBar.cpp \
 	src/widgets/graphics/UIGraphicsTextPane.cpp \
 	src/wizards/addcloudvm/UIWizardAddCloudVM.cpp \
-	src/wizards/addcloudvm/UIWizardAddCloudVMPageBasic1.cpp \
 	src/wizards/addcloudvm/UIWizardAddCloudVMPageExpert.cpp \
+	src/wizards/addcloudvm/UIWizardAddCloudVMPageSource.cpp \
 	src/wizards/editors/UIHostnameDomainNameEditor.cpp \
 	src/wizards/editors/UIUserNamePasswordEditor.cpp \
 	src/wizards/editors/UIWizardCloneVMEditors.cpp \
 	src/wizards/editors/UIWizardNewVMEditors.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVM.cpp \
-	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.cpp \
-	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.cpp \
 	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageProperties.cpp \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageSource.cpp \
 	src/wizards/newvm/UIWizardNewVM.cpp \
 	src/wizards/newvm/UIWizardNewVMNameOSTypePage.cpp \
 	src/wizards/newvm/UIWizardNewVMUnattendedPage.cpp \

@@ -22,8 +22,8 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardNewCloudVMPageBasic1.h"
-#include "UIWizardNewCloudVMPageBasic2.h"
+#include "UIWizardNewCloudVMPageSource.h"
+#include "UIWizardNewCloudVMPageProperties.h"
 
 /* Forward declarations: */
 class QGroupBox;
