@@ -26,7 +26,6 @@
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
 #include "UIWizardExportApp.h"
-#include "UIWizardExportAppDefs.h"
 #include "UIWizardExportAppPageBasic1.h"
 #include "UIWizardExportAppPageBasic2.h"
 #include "UIWizardExportAppPageBasic3.h"
@@ -71,14 +70,9 @@ bool UIWizardExportApp::exportAppliance()
     }
     else
     {
-        /* Get export appliance widget & fetch all settings from the appliance editor: */
-        UIApplianceExportEditorWidget *pExportApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
-        AssertPtrReturn(pExportApplianceWidget, false);
-        pExportApplianceWidget->prepareExport();
-
-        /* Acquire the appliance: */
-        CAppliance *pComAppliance = pExportApplianceWidget->appliance();
-        AssertPtrReturn(pComAppliance, false);
+        /* Get appliance: */
+        CAppliance comAppliance = field("localAppliance").value<CAppliance>();
+        AssertReturn(comAppliance.isNotNull(), false);
 
         /* We need to know every filename which will be created, so that we can ask the user for confirmation of overwriting.
          * For that we iterating over all virtual systems & fetch all descriptions of the type HardDiskImage. Also add the
@@ -99,7 +93,7 @@ bool UIWizardExportApp::exportAppliance()
                 files << fi.baseName() + ".mf";
 
             /* Add all hard disk images: */
-            CVirtualSystemDescriptionVector vsds = pComAppliance->GetVirtualSystemDescriptions();
+            CVirtualSystemDescriptionVector vsds = comAppliance.GetVirtualSystemDescriptions();
             for (int i = 0; i < vsds.size(); ++i)
             {
                 QVector<KVirtualSystemDescriptionType> types;
@@ -112,7 +106,7 @@ bool UIWizardExportApp::exportAppliance()
         }
 
         /* Initialize VFS explorer: */
-        CVFSExplorer comExplorer = pComAppliance->CreateVFSExplorer(uri(false /* fWithFile */));
+        CVFSExplorer comExplorer = comAppliance.CreateVFSExplorer(uri(false /* fWithFile */));
         if (comExplorer.isNotNull())
         {
             CProgress comProgress = comExplorer.Update();
@@ -129,7 +123,7 @@ bool UIWizardExportApp::exportAppliance()
                 return msgCenter().cannotCheckFiles(comExplorer, this);
         }
         else
-            return msgCenter().cannotCheckFiles(*pComAppliance, this);
+            return msgCenter().cannotCheckFiles(comAppliance, this);
 
         /* Confirm overwriting for existing files: */
         QVector<QString> exists = comExplorer.Exists(files);
@@ -154,7 +148,7 @@ bool UIWizardExportApp::exportAppliance()
         }
 
         /* Export the VMs, on success we are finished: */
-        return exportVMs(*pComAppliance);
+        return exportVMs(comAppliance);
     }
 }
 

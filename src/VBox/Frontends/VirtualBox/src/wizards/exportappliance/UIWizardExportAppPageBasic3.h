@@ -28,12 +28,15 @@
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 #include "UIFormEditorWidget.h"
-#include "UIWizardExportAppDefs.h"
 #include "UIWizardPage.h"
+
+/* COM includes: */
+#include "CAppliance.h"
 
 /* Forward declarations: */
 class QStackedLayout;
 class QIRichTextLabel;
+class UIApplianceExportEditorWidget;
 class UIWizardExportApp;
 
 
@@ -53,16 +56,16 @@ protected:
     /** Refreshes form properties table. */
     void refreshFormPropertiesTable();
 
-    /** Returns the appliance widget reference. */
-    ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
+    /** Returns Local Appliance object. */
+    CAppliance localAppliance() const;
 
     /** Holds the settings container layout instance. */
     QStackedLayout *m_pSettingsCntLayout;
 
     /** Holds the appliance widget reference. */
-    ExportAppliancePointer     m_pApplianceWidget;
+    UIApplianceExportEditorWidget *m_pApplianceWidget;
     /** Holds the Form Editor widget instance. */
-    UIFormEditorWidgetPointer  m_pFormEditor;
+    UIFormEditorWidgetPointer      m_pFormEditor;
 };
 
 
@@ -70,7 +73,7 @@ protected:
 class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAppPage3
 {
     Q_OBJECT;
-    Q_PROPERTY(ExportAppliancePointer applianceWidget READ applianceWidget);
+    Q_PROPERTY(CAppliance localAppliance READ localAppliance);
 
 public:
 

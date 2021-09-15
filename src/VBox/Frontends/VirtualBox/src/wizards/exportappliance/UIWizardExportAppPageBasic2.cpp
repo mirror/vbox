@@ -39,7 +39,6 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardExportApp.h"
-#include "UIWizardExportAppDefs.h"
 #include "UIWizardExportAppPageBasic2.h"
 
 /* COM includes: */

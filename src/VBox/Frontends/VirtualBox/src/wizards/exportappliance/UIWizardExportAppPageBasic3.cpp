@@ -22,13 +22,13 @@
 /* GUI includes: */
 #include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
+#include "UIApplianceExportEditorWidget.h"
 #include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppPageBasic3.h"
 
 /* COM includes: */
-#include "CAppliance.h"
 #include "CMachine.h"
 #include "CVirtualSystemDescriptionForm.h"
 
@@ -39,6 +39,7 @@
 
 UIWizardExportAppPage3::UIWizardExportAppPage3()
     : m_pSettingsCntLayout(0)
+    , m_pApplianceWidget(0)
 {
 }
 
@@ -95,6 +96,12 @@ void UIWizardExportAppPage3::refreshFormPropertiesTable()
     /* Make sure the properties table get the new description form: */
     if (comForm.isNotNull())
         m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
+}
+
+CAppliance UIWizardExportAppPage3::localAppliance() const
+{
+    CAppliance *pAppliance = m_pApplianceWidget->appliance();
+    return pAppliance ? *pAppliance : CAppliance();
 }
 
 
@@ -173,11 +180,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         }
     }
 
-    /* Register classes: */
-    qRegisterMetaType<ExportAppliancePointer>();
-
     /* Register fields: */
-    registerField("applianceWidget", this, "applianceWidget");
+    registerField("localAppliance", this, "localAppliance");
 }
 
 void UIWizardExportAppPageBasic3::retranslateUi()
@@ -246,6 +250,12 @@ bool UIWizardExportAppPageBasic3::validatePage()
                 msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
         }
     }
+    /* Otherwise if there was local target selected: */
+    else
+    {
+        /* Prepare export: */
+        m_pApplianceWidget->prepareExport();
+    }
 
     /* Try to export appliance: */
     if (fResult)
@@ -286,7 +296,6 @@ void UIWizardExportAppPageBasic3::sltHandleCustomButtonClicked(int iId)
     if (iId == QWizard::CustomButton2)
     {
         /* Reset widget to default: */
-        AssertPtrReturnVoid(m_pApplianceWidget.data());
         m_pApplianceWidget->restoreDefaults();
     }
 }
