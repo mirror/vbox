@@ -51,29 +51,18 @@ class UIMediumSizeEditor;
 #include "COMEnums.h"
 #include "CMediumFormat.h"
 
-/** Base class for disk related group boxes. */
-class SHARED_LIBRARY_STUFF UIDiskEditorGroupBox : public QIWithRetranslateUI<QGroupBox>
+/** A set of static utility functions used by several wizard in the context of virtual media. */
+namespace SHARED_LIBRARY_STUFF UIDiskEditorGroupBox
 {
-    Q_OBJECT;
-
-public:
-
-    UIDiskEditorGroupBox(bool fExpertMode, QWidget *pParent = 0);
-
-    static QString appendExtension(const QString &strName, const QString &strExtension);
-    static QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
-    static bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
-    static QString openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
+    QString appendExtension(const QString &strName, const QString &strExtension);
+    QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
+    bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
+    QString openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
                                              KDeviceType enmDeviceType, QWidget *pParent);
     /** Attempts to find a file extention for the device type @p enmDeviceType within the extensions
       * returned by CMediumFormat::DescribeFileExtensions(..). */
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
-
-protected:
-
-    bool m_fExpertMode;
+    QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
 };
-
 
 class SHARED_LIBRARY_STUFF UIDiskVariantWidget : public QIWithRetranslateUI<QWidget>
 {
@@ -113,7 +102,7 @@ private:
 };
 
 
-class SHARED_LIBRARY_STUFF UIMediumSizeAndPathGroupBox : public UIDiskEditorGroupBox
+class SHARED_LIBRARY_STUFF UIMediumSizeAndPathGroupBox : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;
 
@@ -152,6 +141,7 @@ private:
     UIMediumSizeEditor *m_pMediumSizeEditor;
     QIRichTextLabel *m_pLocationLabel;
     QIRichTextLabel *m_pSizeLabel;
+    bool m_fExpertMode;
 };
 
 /** Base class for the widgets used to select virtual medium format. It implements mutual functioanlity

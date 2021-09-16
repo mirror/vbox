@@ -49,14 +49,6 @@
 *   UIDiskEditorGroupBox implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIDiskEditorGroupBox::UIDiskEditorGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
-    , m_fExpertMode(fExpertMode)
-{
-    if (!m_fExpertMode)
-        setFlat(true);
-}
-
 /* static */
 QString UIDiskEditorGroupBox::appendExtension(const QString &strName, const QString &strExtension)
 {
@@ -301,12 +293,13 @@ void UIDiskVariantWidget::sltVariantChanged()
 *********************************************************************************************************************************/
 
 UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent, qulonglong uMinimumMediumSize)
-    : UIDiskEditorGroupBox(fExpertMode, pParent)
+    : QIWithRetranslateUI<QGroupBox>(pParent)
     , m_pLocationEditor(0)
     , m_pLocationOpenButton(0)
     , m_pMediumSizeEditor(0)
     , m_pLocationLabel(0)
     , m_pSizeLabel(0)
+    , m_fExpertMode(fExpertMode)
 {
     prepare(uMinimumMediumSize);
 }
