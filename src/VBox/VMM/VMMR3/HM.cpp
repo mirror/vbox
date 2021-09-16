@@ -923,7 +923,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 const char *pszExitName = HMGetVmxExitName(j);
                 if (pszExitName)
                 {
-                    rc = STAMR3RegisterF(pVM, &pHmCpu->aStatNestedExitReason, STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                    rc = STAMR3RegisterF(pVM, &pHmCpu->aStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%u/Exit/NestedGuest/Reason/%02x", idCpu, j);
                     AssertRC(rc);
                 }
