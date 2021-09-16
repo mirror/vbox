@@ -265,6 +265,7 @@ struc CPUMCTX
 
     alignb 4096
     .hwvirt.svm.Vmcb                   resb          4096
+    .hwvirt.svm.abMsrBitmap            resb          8192
     .hwvirt.svm.uMsrHSavePa            resq          1
     .hwvirt.svm.GCPhysVmcb             resq          1
     alignb 8
@@ -273,10 +274,6 @@ struc CPUMCTX
     .hwvirt.svm.cPauseFilter           resw          1
     .hwvirt.svm.cPauseFilterThreshold  resw          1
     .hwvirt.svm.fInterceptEvents       resb          1
-    alignb 8
-    .hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES   1
-    alignb 8
-    .hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES   1
     alignb 8
     .hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES   1
     alignb 8

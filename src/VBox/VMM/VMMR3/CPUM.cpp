@@ -1021,12 +1021,6 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
     {
         PVMCPU pVCpu = pVM->apCpusR3[i];
 
-        if (pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3)
-        {
-            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES);
-            pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3 = NULL;
-        }
-
         if (pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pvIoBitmapR3, SVM_IOPM_PAGES);
@@ -1054,25 +1048,8 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
         PVMCPU pVCpu = pVM->apCpusR3[i];
         pVCpu->cpum.s.Guest.hwvirt.enmHwvirt = CPUMHWVIRT_SVM;
 
-        AssertCompile(SVM_VMCB_PAGES * PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.Vmcb));
-
-        /*
-         * Allocate the MSRPM (MSR Permission bitmap).
-         *
-         * This need not be physically contiguous pages because we use the one from
-         * HMPHYSCPU while executing the nested-guest using hardware-assisted SVM.
-         * This one is just used for caching the bitmap from guest physical memory.
-         */
-        Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
-        rc = SUPR3PageAllocEx(SVM_MSRPM_PAGES, 0 /* fFlags */, &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3,
-                              &pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR0, NULL /* paPages */);
-        if (RT_FAILURE(rc))
-        {
-            Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3);
-            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's MSR permission bitmap\n", pVCpu->idCpu,
-                    SVM_MSRPM_PAGES));
-            break;
-        }
+        AssertCompile(SVM_VMCB_PAGES * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.Vmcb));
+        AssertCompile(SVM_MSRPM_PAGES * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abMsrBitmap));
 
         /*
          * Allocate the IOPM (IO Permission bitmap).
@@ -2651,8 +2628,8 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutBool(pSSM,   pGstCtx->hwvirt.svm.fInterceptEvents);
             SSMR3PutStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState), 0 /* fFlags */,
                              g_aSvmHwvirtHostState, NULL /* pvUser */);
-            SSMR3PutMem(pSSM,   &pGstCtx->hwvirt.svm.Vmcb,          sizeof(pGstCtx->hwvirt.svm.Vmcb));
-            SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+            SSMR3PutMem(pSSM,   &pGstCtx->hwvirt.svm.Vmcb,           sizeof(pGstCtx->hwvirt.svm.Vmcb));
+            SSMR3PutMem(pSSM,   &pGstCtx->hwvirt.svm.abMsrBitmap[0], sizeof(pGstCtx->hwvirt.svm.abMsrBitmap));
             SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pvIoBitmapR3,  SVM_IOPM_PAGES  << X86_PAGE_4K_SHIFT);
             SSMR3PutU32(pSSM,    pGstCtx->hwvirt.fLocalForcedActions);
             SSMR3PutBool(pSSM,   pGstCtx->hwvirt.fGif);
@@ -2938,7 +2915,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState),
                                          0 /* fFlags */, g_aSvmHwvirtHostState, NULL /* pvUser */);
                         SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.svm.Vmcb,          sizeof(pGstCtx->hwvirt.svm.Vmcb));
-                        SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+                        SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.svm.abMsrBitmap[0], sizeof(pGstCtx->hwvirt.svm.abMsrBitmap));
                         SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pvIoBitmapR3,  SVM_IOPM_PAGES  << X86_PAGE_4K_SHIFT);
                         SSMR3GetU32(pSSM,      &pGstCtx->hwvirt.fLocalForcedActions);
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.fGif);
@@ -4156,8 +4133,6 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  cPauseFilter               = %RU16\n",     pCtx->hwvirt.svm.cPauseFilter);
         pHlp->pfnPrintf(pHlp, "  cPauseFilterThreshold      = %RU32\n",     pCtx->hwvirt.svm.cPauseFilterThreshold);
         pHlp->pfnPrintf(pHlp, "  fInterceptEvents           = %u\n",        pCtx->hwvirt.svm.fInterceptEvents);
-        pHlp->pfnPrintf(pHlp, "  pvMsrBitmapR3              = %p\n",        pCtx->hwvirt.svm.pvMsrBitmapR3);
-        pHlp->pfnPrintf(pHlp, "  pvMsrBitmapR0              = %RKv\n",      pCtx->hwvirt.svm.pvMsrBitmapR0);
         pHlp->pfnPrintf(pHlp, "  pvIoBitmapR3               = %p\n",        pCtx->hwvirt.svm.pvIoBitmapR3);
         pHlp->pfnPrintf(pHlp, "  pvIoBitmapR0               = %RKv\n",      pCtx->hwvirt.svm.pvIoBitmapR0);
     }

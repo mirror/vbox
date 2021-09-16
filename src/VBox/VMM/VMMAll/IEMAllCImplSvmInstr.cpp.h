@@ -574,9 +574,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
         /*
          * Copy the MSR permission bitmap into the cache.
          */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap));
-        rc = PGMPhysSimpleReadGCPhys(pVM, pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap), GCPhysMsrBitmap,
-                                     SVM_MSRPM_PAGES * X86_PAGE_4K_SIZE);
+        AssertCompile(sizeof(pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap) == SVM_MSRPM_PAGES * X86_PAGE_4K_SIZE);
+        rc = PGMPhysSimpleReadGCPhys(pVM, pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap, GCPhysMsrBitmap,
+                                     sizeof(pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap));
         if (RT_FAILURE(rc))
         {
             Log(("iemSvmVmrun: Failed reading the MSR permission bitmap at %#RGp. rc=%Rrc\n", GCPhysMsrBitmap, rc));
@@ -1049,9 +1049,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr,
         /*
          * Check if the bit is set, if so, trigger a #VMEXIT.
          */
-        uint8_t *pbMsrpm = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap);
-        pbMsrpm += offMsrpm;
-        if (*pbMsrpm & RT_BIT(uMsrpmBit))
+        if (pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap[offMsrpm] & RT_BIT(uMsrpmBit))
         {
             IEM_SVM_UPDATE_NRIP(pVCpu);
             return iemSvmVmexit(pVCpu, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);

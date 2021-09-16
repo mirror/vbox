@@ -944,9 +944,7 @@ static void hmR0SvmSetMsrPermission(PVMCPUCC pVCpu, uint8_t *pbMsrBitmap, uint32
         else
         {
             /* Only clear the bit if the nested-guest is also not intercepting the MSR read.*/
-            uint8_t const *pbNstGstMsrBitmap = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap);
-            pbNstGstMsrBitmap += offMsrpm;
-            if (!(*pbNstGstMsrBitmap & RT_BIT(uMsrpmBit)))
+            if (!(pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap[offMsrpm] & RT_BIT(uMsrpmBit)))
                 *pbMsrBitmap &= ~RT_BIT(uMsrpmBit);
             else
                 Assert(*pbMsrBitmap & RT_BIT(uMsrpmBit));
@@ -964,9 +962,7 @@ static void hmR0SvmSetMsrPermission(PVMCPUCC pVCpu, uint8_t *pbMsrBitmap, uint32
         else
         {
             /* Only clear the bit if the nested-guest is also not intercepting the MSR write.*/
-            uint8_t const *pbNstGstMsrBitmap = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap);
-            pbNstGstMsrBitmap += offMsrpm;
-            if (!(*pbNstGstMsrBitmap & RT_BIT(uMsrpmBit + 1)))
+            if (!(pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap[offMsrpm] & RT_BIT(uMsrpmBit + 1)))
                 *pbMsrBitmap &= ~RT_BIT(uMsrpmBit + 1);
             else
                 Assert(*pbMsrBitmap & RT_BIT(uMsrpmBit + 1));
@@ -2509,7 +2505,7 @@ static int hmR0SvmExportGuestState(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
 DECLINLINE(void) hmR0SvmMergeMsrpmNested(PHMPHYSCPU pHostCpu, PVMCPUCC pVCpu)
 {
     uint64_t const *pu64GstMsrpm    = (uint64_t const *)pVCpu->hmr0.s.svm.pvMsrBitmap;
-    uint64_t const *pu64NstGstMsrpm = (uint64_t const *)pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap);
+    uint64_t const *pu64NstGstMsrpm = (uint64_t const *)&pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap[0];
     uint64_t       *pu64DstMsrpm    = (uint64_t *)pHostCpu->n.svm.pvNstGstMsrpm;
 
     /* MSRPM bytes from offset 0x1800 are reserved, so we stop merging there. */
@@ -4938,8 +4934,7 @@ static VBOXSTRICTRC hmR0SvmHandleExitNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTr
                     Assert(uMsrpmBit == 0 || uMsrpmBit == 2 || uMsrpmBit == 4 || uMsrpmBit == 6);
                     Assert(offMsrpm < SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
 
-                    uint8_t const *pbMsrBitmap = (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap);
-                    pbMsrBitmap               += offMsrpm;
+                    uint8_t const * const pbMsrBitmap = &pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap[offMsrpm];
                     bool const fInterceptRead  = RT_BOOL(*pbMsrBitmap & RT_BIT(uMsrpmBit));
                     bool const fInterceptWrite = RT_BOOL(*pbMsrBitmap & RT_BIT(uMsrpmBit + 1));
 
