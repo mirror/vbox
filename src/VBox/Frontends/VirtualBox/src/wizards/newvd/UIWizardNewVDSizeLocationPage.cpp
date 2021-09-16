@@ -111,7 +111,7 @@ void UIWizardNewVDSizeLocationPage::initializePage()
         strMediumFilePath =
             UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_strDefaultName,
                                                                                                  strExtension), m_strDefaultPath);
-    /* Initialize the medium file path with file path and file name from the location editor. This part is to update the 
+    /* Initialize the medium file path with file path and file name from the location editor. This part is to update the
      * file extention correctly in case user has gone back and changed the file format after modifying medium file path: */
     else
         strMediumFilePath =
