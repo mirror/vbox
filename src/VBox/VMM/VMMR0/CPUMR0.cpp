@@ -185,6 +185,7 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
 VMMR0_INT_DECL(int) CPUMR0InitVM(PVMCC pVM)
 {
     LogFlow(("CPUMR0Init: %p\n", pVM));
+    AssertCompile(sizeof(pVM->aCpus[0].cpum.s.Host.abXState) >= sizeof(pVM->aCpus[0].cpum.s.Guest.abXState));
 
     /*
      * Check CR0 & CR4 flags.

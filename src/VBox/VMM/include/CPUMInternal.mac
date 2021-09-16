@@ -285,6 +285,8 @@ struc CPUMCPU
     ;
     alignb 64
     .Host                resb    0
+    .Host.abXState          resb    0x4000-0x300
+    .Host.XState            EQU     .Host.abXState
     ;.Host.rax            resq    1 - scratch
     .Host.rbx            resq    1
     ;.Host.rcx            resq    1 - scratch
@@ -345,10 +347,6 @@ struc CPUMCPU
     .Host.FSbase         resq    1
     .Host.GSbase         resq    1
     .Host.efer           resq    1
-    .Host.auPadding      resb    4
-    alignb RTR0PTR_CB
-    .Host.pXStateR0 RTR0PTR_RES  1
-    .Host.pXStateR3 RTR3PTR_RES  1
     alignb 8
     .Host.xcr0           resq    1
     .Host.fXStateMask    resq    1
@@ -477,11 +475,7 @@ endstruc
         ;
         ; Load a couple of registers we'll use later in all branches.
         ;
- %ifdef IN_RING0
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
- %else
-  %error "Unsupported context!"
- %endif
+        lea     pXState, [pCpumCpu + CPUMCPU.Host.XState]
         mov     eax, [pCpumCpu + CPUMCPU.Host.fXStateMask]
 
         ;
@@ -522,11 +516,7 @@ endstruc
         ;
         ; Load a couple of registers we'll use later in all branches.
         ;
- %ifdef IN_RING0
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
- %else
-  %error "Unsupported context!"
- %endif
+        lea     pXState, [pCpumCpu + CPUMCPU.Host.XState]
         mov     eax, [pCpumCpu + CPUMCPU.Host.fXStateMask]
 
         ;
@@ -678,11 +668,7 @@ endstruc
         ;
         ; Load a couple of registers we'll use later in all branches.
         ;
- %ifdef IN_RING0
         lea     pXState, [pCpumCpu + CPUMCPU.Guest.XState]
- %else
-  %error "Unsupported context!"
- %endif
         mov     eax, [pCpumCpu + CPUMCPU.Guest.fXStateMask]
 
         ;

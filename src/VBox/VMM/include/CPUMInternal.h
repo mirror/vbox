@@ -202,6 +202,15 @@ typedef CPUMINFO const *CPCPUMINFO;
  */
 typedef struct CPUMHOSTCTX
 {
+    /** The extended state (FPU/SSE/AVX/AVX-2/XXXX). Must be aligned on 64 bytes. */
+    union /* no tag */
+    {
+        X86XSAVEAREA    XState;
+        /** Byte view for simple indexing and space allocation.
+         * @note Must match or exceed the size of CPUMCTX::abXState. */
+        uint8_t         abXState[0x4000 - 0x300];
+    } CPUM_UNION_NM(u);
+
     /** General purpose register, selectors, flags and more
      * @{ */
     /** General purpose register ++
@@ -283,22 +292,17 @@ typedef struct CPUMHOSTCTX
     uint64_t        efer;
     /** @} */
 
-    /* padding to get 64byte aligned size */
-    uint8_t         auPadding[8];
+    /** The XCR0 register. */
+    uint64_t        xcr0;
+    /** The mask to pass to XSAVE/XRSTOR in EDX:EAX.  If zero we use
+     *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
+    uint64_t        fXStateMask;
 
+    /* padding to get 64byte aligned size */
+    uint8_t         auPadding[24];
 #if HC_ARCH_BITS != 64
 # error HC_ARCH_BITS not defined or unsupported
 #endif
-
-    /** Pointer to the FPU/SSE/AVX/XXXX state ring-0 mapping. */
-    R0PTRTYPE(PX86XSAVEAREA)    pXStateR0;
-    /** Pointer to the FPU/SSE/AVX/XXXX state ring-3 mapping. */
-    R3PTRTYPE(PX86XSAVEAREA)    pXStateR3;
-    /** The XCR0 register. */
-    uint64_t                    xcr0;
-    /** The mask to pass to XSAVE/XRSTOR in EDX:EAX.  If zero we use
-     *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
-    uint64_t                    fXStateMask;
 } CPUMHOSTCTX;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSizeAlignment(CPUMHOSTCTX, 64);
@@ -480,6 +484,9 @@ typedef struct CPUMCPU
     uint64_t                uMagic;
 #endif
 } CPUMCPU;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileMemberAlignment(CPUMCPU, Host, 64);
+#endif
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
 

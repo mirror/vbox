@@ -143,7 +143,7 @@ SEH64_END_PROLOGUE
 .already_saved_host:
 %ifdef VBOX_WITH_KERNEL_USING_XMM
         ; If we didn't save the host state, we must save the non-volatile XMM registers.
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+        lea     pXState, [pCpumCpu + CPUMCPU.Host.XState]
         stmxcsr [pXState + X86FXSTATE.MXCSR]
         movdqa  [pXState + X86FXSTATE.xmm6 ], xmm6
         movdqa  [pXState + X86FXSTATE.xmm7 ], xmm7
@@ -165,7 +165,7 @@ SEH64_END_PROLOGUE
 
 %ifdef VBOX_WITH_KERNEL_USING_XMM
         ; Restore the non-volatile xmm registers. ASSUMING 64-bit host.
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+        lea     pXState, [pCpumCpu + CPUMCPU.Host.XState]
         movdqa  xmm6,  [pXState + X86FXSTATE.xmm6]
         movdqa  xmm7,  [pXState + X86FXSTATE.xmm7]
         movdqa  xmm8,  [pXState + X86FXSTATE.xmm8]
@@ -241,7 +241,7 @@ SEH64_END_PROLOGUE
         ; Copy non-volatile XMM registers to the host state so we can use
         ; them while saving the guest state (we've gotta do this anyway).
         ;
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+        lea     pXState, [pCpumCpu + CPUMCPU.Host.XState]
         stmxcsr [pXState + X86FXSTATE.MXCSR]
         movdqa  [pXState + X86FXSTATE.xmm6], xmm6
         movdqa  [pXState + X86FXSTATE.xmm7], xmm7

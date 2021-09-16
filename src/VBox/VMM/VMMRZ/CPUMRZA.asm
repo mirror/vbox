@@ -158,7 +158,7 @@ SEH64_END_PROLOGUE
         ;
 
         ; Save caller's XMM registers.
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+        lea     pXState, [pCpumCpu + CPUMCPU.Host.XState]
         movdqa  [pXState + X86FXSTATE.xmm6 ], xmm6
         movdqa  [pXState + X86FXSTATE.xmm7 ], xmm7
         movdqa  [pXState + X86FXSTATE.xmm8 ], xmm8
@@ -194,7 +194,7 @@ SEH64_END_PROLOGUE
         CPUMR0_SAVE_GUEST
 
         ; Restore caller's XMM registers.
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
+        lea     pXState, [pCpumCpu + CPUMCPU.Host.XState]
         movdqa  xmm6,  [pXState + X86FXSTATE.xmm6 ]
         movdqa  xmm7,  [pXState + X86FXSTATE.xmm7 ]
         movdqa  xmm8,  [pXState + X86FXSTATE.xmm8 ]
@@ -248,7 +248,7 @@ SEH64_END_PROLOGUE
 
 %ifndef VBOX_WITH_KERNEL_USING_XMM
         ;
-        ; Load xCX with the guest pXStateR0.
+        ; Load xCX with the guest pXState.
         ;
  %ifdef ASM_CALL64_GCC
         mov     xCX, rdi
@@ -322,7 +322,7 @@ BEGINPROC cpumRZSaveGuestAvxRegisters
 SEH64_END_PROLOGUE
 
         ;
-        ; Load xCX with the guest pXStateR0.
+        ; Load xCX with the guest pXState.
         ;
 %ifdef ASM_CALL64_GCC
         mov     xCX, rdi

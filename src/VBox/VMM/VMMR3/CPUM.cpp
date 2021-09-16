@@ -2280,27 +2280,20 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
             pVM->cpum.s.fXStateHostMask, fXStateHostMask, fXcr0Host));
 
     /*
-     * Allocate memory for the extended CPU state and initialize the host XSAVE/XRSTOR mask.
+     * Initialize the host XSAVE/XRSTOR mask.
      */
     uint32_t cbMaxXState = pVM->cpum.s.HostFeatures.cbMaxExtendedState;
     cbMaxXState = RT_ALIGN(cbMaxXState, 128);
-    AssertLogRelReturn(cbMaxXState >= sizeof(X86FXSTATE) && cbMaxXState <= _8K, VERR_CPUM_IPE_2);
-
-    uint8_t *pbXStates;
-    rc = MMR3HyperAllocOnceNoRelEx(pVM, cbMaxXState * pVM->cCpus, PAGE_SIZE, MM_TAG_CPUM_CTX,
-                                   MMHYPER_AONR_FLAGS_KERNEL_MAPPING, (void **)&pbXStates);
-    AssertLogRelRCReturn(rc, rc);
+    AssertLogRelReturn(   pVM->cpum.s.HostFeatures.cbMaxExtendedState >= sizeof(X86FXSTATE)
+                       && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Host.XState)
+                       && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Guest.XState)
+                       , VERR_CPUM_IPE_2);
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[i];
 
-        pVCpu->cpum.s.Host.pXStateR3  = (PX86XSAVEAREA)pbXStates;
-        pVCpu->cpum.s.Host.pXStateR0  = MMHyperR3ToR0(pVM, pbXStates);
-        pbXStates += cbMaxXState;
-
-        pVCpu->cpum.s.Host.fXStateMask = fXStateHostMask;
-
+        pVCpu->cpum.s.Host.fXStateMask       = fXStateHostMask;
         pVCpu->cpum.s.hNestedVmxPreemptTimer = NIL_TMTIMERHANDLE;
     }
 
