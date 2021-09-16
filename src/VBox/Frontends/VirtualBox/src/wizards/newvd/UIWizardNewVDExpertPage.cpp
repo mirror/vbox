@@ -34,6 +34,7 @@ UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(const QString &strDefaultName, 
     , m_pSizeAndPathGroup(0)
     , m_pFormatComboxBox(0)
     , m_pVariantWidget(0)
+    , m_pFormatVariantGroupBox(0)
     , m_strDefaultName(strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uDefaultSize(uDefaultSize)
@@ -45,16 +46,20 @@ UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(const QString &strDefaultName, 
 
 void UIWizardNewVDExpertPage::prepare()
 {
-    QGridLayout *pMainLayout = new QGridLayout(this);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
-    m_pFormatComboxBox = new UIDiskFormatsGroupBox(true /* fExpertMode */, KDeviceType_HardDisk, 0);
+    m_pFormatComboxBox = new UIDiskFormatsComboBox(true /* fExpertMode */, KDeviceType_HardDisk, 0);
     m_pVariantWidget = new UIDiskVariantWidget(0);
 
-    pMainLayout->addWidget(m_pSizeAndPathGroup, 0, 0, 4, 2);
-    pMainLayout->addWidget(m_pFormatComboxBox, 4, 0, 7, 1);
-    pMainLayout->addWidget(m_pVariantWidget, 4, 1, 3, 1);
+    m_pFormatVariantGroupBox = new QGroupBox;
+    QHBoxLayout *pFormatVariantLayout = new QHBoxLayout(m_pFormatVariantGroupBox);
+    pFormatVariantLayout->addWidget(m_pFormatComboxBox, 0, Qt::AlignTop);
+    pFormatVariantLayout->addWidget(m_pVariantWidget);
 
-    connect(m_pFormatComboxBox, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
+    pMainLayout->addWidget(m_pSizeAndPathGroup);
+    pMainLayout->addWidget(m_pFormatVariantGroupBox);
+
+    connect(m_pFormatComboxBox, &UIDiskFormatsComboBox::sigMediumFormatChanged,
             this, &UIWizardNewVDExpertPage::sltMediumFormatChanged);
     connect(m_pVariantWidget, &UIDiskVariantWidget::sigMediumVariantChanged,
             this, &UIWizardNewVDExpertPage::sltMediumVariantChanged);
@@ -122,6 +127,8 @@ void UIWizardNewVDExpertPage::sltSelectLocationButtonClicked()
 
 void UIWizardNewVDExpertPage::retranslateUi()
 {
+    if (m_pFormatVariantGroupBox)
+        m_pFormatVariantGroupBox->setTitle(UIWizardNewVD::tr("Hard Disk File &Type and Variant"));
 }
 
 void UIWizardNewVDExpertPage::initializePage()

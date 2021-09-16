@@ -42,6 +42,7 @@
 
 UIWizardNewVMExpertPage::UIWizardNewVMExpertPage()
     : m_pToolBox(0)
+    , m_pDiskFormatVariantGroupBox(0)
     , m_pDiskVariantWidget(0)
     , m_pFormatComboBox(0)
     , m_pSizeAndLocationGroup(0)
@@ -209,6 +210,9 @@ void UIWizardNewVMExpertPage::retranslateUi()
 
     if (m_pNameAndSystemLayout && m_pNameAndSystemEditor)
         m_pNameAndSystemLayout->setColumnMinimumWidth(0, m_pNameAndSystemEditor->firstColumnWidth());
+
+    if (m_pDiskFormatVariantGroupBox)
+        m_pDiskFormatVariantGroupBox->setTitle(UIWizardNewVM::tr("Hard Disk File &Type and Variant"));
 }
 
 void UIWizardNewVMExpertPage::createConnections()
@@ -447,10 +451,17 @@ QWidget *UIWizardNewVMExpertPage::createNewDiskWidgets()
 
     m_pSizeAndLocationGroup = new UIMediumSizeAndPathGroupBox(true, 0 /* parent */, _4M /* minimum size */);
     pDiskContainerLayout->addWidget(m_pSizeAndLocationGroup, 0, 0, 2, 2);
+
+    m_pDiskFormatVariantGroupBox = new QGroupBox;
+    QHBoxLayout *pDiskFormatVariantLayout = new QHBoxLayout(m_pDiskFormatVariantGroupBox);
+
     m_pFormatComboBox = new UIDiskFormatsComboBox(true, KDeviceType_HardDisk, 0);
-    pDiskContainerLayout->addWidget(m_pFormatComboBox, 2, 0, 1, 1);
+    pDiskFormatVariantLayout->addWidget(m_pFormatComboBox, 0 /* stretch */, Qt::AlignTop);
+
     m_pDiskVariantWidget  = new UIDiskVariantWidget(0);
-    pDiskContainerLayout->addWidget(m_pDiskVariantWidget, 2, 1, 2, 1);
+    pDiskFormatVariantLayout->addWidget(m_pDiskVariantWidget);
+
+    pDiskContainerLayout->addWidget(m_pDiskFormatVariantGroupBox, 2, 0, 2, 2);
     return pNewDiskContainerWidget;
 }
 

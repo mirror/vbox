@@ -251,7 +251,6 @@ void UIDiskVariantWidget::updateMediumVariantWidgetsAfterFormatChange(const CMed
     m_fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
     m_fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
     m_fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
-
     m_pFixedCheckBox->setEnabled(true);
     if (!m_fIsCreateDynamicPossible)
     {

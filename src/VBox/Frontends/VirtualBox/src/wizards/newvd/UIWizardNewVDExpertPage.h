@@ -25,7 +25,8 @@
 #include "UINativeWizardPage.h"
 
 /* Forward declarations: */
-class UIDiskFormatsGroupBox;
+class QGroupBox;
+class UIDiskFormatsComboBox;
 class UIDiskVariantWidget;
 class UIMediumSizeAndPathGroupBox;
 
@@ -63,8 +64,9 @@ private:
    /** @name Widgets
      * @{ */
        UIMediumSizeAndPathGroupBox *m_pSizeAndPathGroup;
-       UIDiskFormatsGroupBox *m_pFormatComboxBox;
+       UIDiskFormatsComboBox *m_pFormatComboxBox;
        UIDiskVariantWidget *m_pVariantWidget;
+       QGroupBox *m_pFormatVariantGroupBox;
    /** @} */
 
    /** @name Variable
