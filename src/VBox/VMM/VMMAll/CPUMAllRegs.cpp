@@ -1387,13 +1387,13 @@ VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPUCC pVCpu, uint64_t uNewValue)
             {
                 if (pVCpu->cpum.s.Guest.fXStateMask != 0)
                     /* Adding more components. */
-                    ASMXRstor(pVCpu->cpum.s.Guest.CTX_SUFF(pXState), fNewComponents);
+                    ASMXRstor(&pVCpu->cpum.s.Guest.XState, fNewComponents);
                 else
                 {
                     /* We're switching from FXSAVE/FXRSTOR to XSAVE/XRSTOR. */
                     pVCpu->cpum.s.Guest.fXStateMask |= XSAVE_C_X87 | XSAVE_C_SSE;
                     if (uNewValue & ~(XSAVE_C_X87 | XSAVE_C_SSE))
-                        ASMXRstor(pVCpu->cpum.s.Guest.CTX_SUFF(pXState), uNewValue & ~(XSAVE_C_X87 | XSAVE_C_SSE));
+                        ASMXRstor(&pVCpu->cpum.s.Guest.XState, uNewValue & ~(XSAVE_C_X87 | XSAVE_C_SSE));
                 }
             }
 #endif

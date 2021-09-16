@@ -8190,7 +8190,7 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
         return iemRaiseMathFault(pVCpu);
      */
 
-    PX86XSAVEAREA pXState = pVCpu->cpum.GstCtx.CTX_SUFF(pXState);
+    PX86XSAVEAREA pXState = &pVCpu->cpum.GstCtx.XState;
     pXState->x87.FCW   = 0x37f;
     pXState->x87.FSW   = 0;
     pXState->x87.FTW   = 0x00;         /* 0 - empty. */
@@ -8245,7 +8245,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PX86FXSTATE  pDst = (PX86FXSTATE)pvMem512;
-    PCX86FXSTATE pSrc = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PCX86FXSTATE pSrc = &pVCpu->cpum.GstCtx.XState.x87;
 
     /*
      * Store the registers.
@@ -8349,7 +8349,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PCX86FXSTATE pSrc = (PCX86FXSTATE)pvMem512;
-    PX86FXSTATE  pDst = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE  pDst = &pVCpu->cpum.GstCtx.XState.x87;
 
     /*
      * Check the state for stuff which will #GP(0).
@@ -8483,7 +8483,7 @@ IEM_CIMPL_DEF_3(iemCImpl_xsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, en
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PX86FXSTATE  pDst = (PX86FXSTATE)pvMem512;
-    PCX86FXSTATE pSrc = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PCX86FXSTATE pSrc = &pVCpu->cpum.GstCtx.XState.x87;
 
     /* The header.  */
     PX86XSAVEHDR pHdr;
@@ -8639,12 +8639,12 @@ IEM_CIMPL_DEF_3(iemCImpl_xrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PCX86FXSTATE pSrc = (PCX86FXSTATE)pvMem512;
-    PX86FXSTATE  pDst = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE  pDst = &pVCpu->cpum.GstCtx.XState.x87;
 
     /*
      * Calc the requested mask
      */
-    PX86XSAVEHDR  pHdrDst = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->Hdr;
+    PX86XSAVEHDR  pHdrDst = &pVCpu->cpum.GstCtx.XState.Hdr;
     PCX86XSAVEHDR pHdrSrc;
     rcStrict = iemMemMap(pVCpu, (void **)&pHdrSrc, sizeof(&pHdrSrc), iEffSeg, GCPtrEff + 512, IEM_ACCESS_DATA_R);
     if (rcStrict != VINF_SUCCESS)
@@ -8822,7 +8822,7 @@ IEM_CIMPL_DEF_2(iemCImpl_stmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
             /*
              * Do the job.
              */
-            VBOXSTRICTRC rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrEff, pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87.MXCSR);
+            VBOXSTRICTRC rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrEff, pVCpu->cpum.GstCtx.XState.x87.MXCSR);
             if (rcStrict == VINF_SUCCESS)
             {
                 iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8858,7 +8858,7 @@ IEM_CIMPL_DEF_2(iemCImpl_vstmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
             /*
              * Do the job.
              */
-            VBOXSTRICTRC rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrEff, pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87.MXCSR);
+            VBOXSTRICTRC rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrEff, pVCpu->cpum.GstCtx.XState.x87.MXCSR);
             if (rcStrict == VINF_SUCCESS)
             {
                 iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8901,7 +8901,7 @@ IEM_CIMPL_DEF_2(iemCImpl_ldmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
                 uint32_t const fMxCsrMask = CPUMGetGuestMxCsrMask(pVCpu->CTX_SUFF(pVM));
                 if (!(fNewMxCsr & ~fMxCsrMask))
                 {
-                    pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87.MXCSR = fNewMxCsr;
+                    pVCpu->cpum.GstCtx.XState.x87.MXCSR = fNewMxCsr;
                     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
                     return VINF_SUCCESS;
                 }
@@ -8927,7 +8927,7 @@ IEM_CIMPL_DEF_2(iemCImpl_ldmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
 static void iemCImplCommonFpuStoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RTPTRUNION uPtr)
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87);
-    PCX86FXSTATE pSrcX87 = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PCX86FXSTATE pSrcX87 = &pVCpu->cpum.GstCtx.XState.x87;
     if (enmEffOpSize == IEMMODE_16BIT)
     {
         uPtr.pu16[0] = pSrcX87->FCW;
@@ -8992,7 +8992,7 @@ static void iemCImplCommonFpuStoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RTPT
 static void iemCImplCommonFpuRestoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RTCPTRUNION uPtr)
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87);
-    PX86FXSTATE pDstX87 = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE pDstX87 = &pVCpu->cpum.GstCtx.XState.x87;
     if (enmEffOpSize == IEMMODE_16BIT)
     {
         pDstX87->FCW = uPtr.pu16[0];
@@ -9098,7 +9098,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemCImplCommonFpuStoreEnv(pVCpu, enmEffOpSize, uPtr);
     PRTFLOAT80U paRegs = (PRTFLOAT80U)(uPtr.pu8 + (enmEffOpSize == IEMMODE_16BIT ? 14 : 28));
     for (uint32_t i = 0; i < RT_ELEMENTS(pFpuCtx->aRegs); i++)
@@ -9174,7 +9174,7 @@ IEM_CIMPL_DEF_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemCImplCommonFpuRestoreEnv(pVCpu, enmEffOpSize, uPtr);
     PCRTFLOAT80U paRegs = (PCRTFLOAT80U)(uPtr.pu8 + (enmEffOpSize == IEMMODE_16BIT ? 14 : 28));
     for (uint32_t i = 0; i < RT_ELEMENTS(pFpuCtx->aRegs); i++)
@@ -9209,7 +9209,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
      *        (other than 6 and 7).  Currently ignoring them. */
     /** @todo Testcase: Test that it raises and loweres the FPU exception bits
      *        according to FSW. (This is was is currently implemented.) */
-    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     pFpuCtx->FCW = u16Fcw & ~X86_FCW_ZERO_MASK;
     iemFpuRecalcExceptionStatus(pFpuCtx);
 
@@ -9230,7 +9230,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fxch_underflow, uint8_t, iStReg)
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87);
 
-    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     unsigned const iReg1 = X86_FSW_TOP_GET(pFpuCtx->FSW);
     unsigned const iReg2 = (iReg1 + iStReg) & X86_FSW_TOP_SMASK;
     Assert(!(RT_BIT(iReg1) & pFpuCtx->FTW) || !(RT_BIT(iReg2) & pFpuCtx->FTW));
@@ -9286,7 +9286,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
     if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))
         return iemRaiseDeviceNotAvailable(pVCpu);
 
-    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     uint16_t u16Fsw = pFpuCtx->FSW;
     if (u16Fsw & X86_FSW_ES)
         return iemRaiseMathFault(pVCpu);

@@ -421,67 +421,78 @@ typedef struct CPUMCTX
      * @remarks DR8-15 are currently not supported by AMD or Intel, so
      *          neither do we.
      */
-    uint64_t        dr[8];
+    uint64_t            dr[8];
 
     /** Padding before the structure so the 64-bit member is correctly aligned.
      * @todo fix this structure!  */
-    uint16_t        gdtrPadding[3];
+    uint16_t            gdtrPadding[3];
     /** Global Descriptor Table register. */
-    VBOXGDTR        gdtr;
+    VBOXGDTR            gdtr;
 
     /** Padding before the structure so the 64-bit member is correctly aligned.
      * @todo fix this structure!  */
-    uint16_t        idtrPadding[3];
+    uint16_t            idtrPadding[3];
     /** Interrupt Descriptor Table register. */
-    VBOXIDTR        idtr;
+    VBOXIDTR            idtr;
 
     /** The task register.
      * Only the guest context uses all the members. */
-    CPUMSELREG      ldtr;
+    CPUMSELREG          ldtr;
     /** The task register.
      * Only the guest context uses all the members. */
-    CPUMSELREG      tr;
+    CPUMSELREG          tr;
 
     /** The sysenter msr registers.
      * This member is not used by the hypervisor context. */
-    CPUMSYSENTER    SysEnter;
+    CPUMSYSENTER        SysEnter;
 
     /** @name System MSRs.
      * @{ */
-    uint64_t        msrEFER;
-    uint64_t        msrSTAR;            /**< Legacy syscall eip, cs & ss. */
-    uint64_t        msrPAT;             /**< Page attribute table. */
-    uint64_t        msrLSTAR;           /**< 64 bits mode syscall rip. */
-    uint64_t        msrCSTAR;           /**< Compatibility mode syscall rip. */
-    uint64_t        msrSFMASK;          /**< syscall flag mask. */
-    uint64_t        msrKERNELGSBASE;    /**< swapgs exchange value. */
-    uint64_t        uMsrPadding0;       /**< no longer used (used to hold a copy of APIC base MSR). */
+    uint64_t            msrEFER;
+    uint64_t            msrSTAR;            /**< Legacy syscall eip, cs & ss. */
+    uint64_t            msrPAT;             /**< Page attribute table. */
+    uint64_t            msrLSTAR;           /**< 64 bits mode syscall rip. */
+    uint64_t            msrCSTAR;           /**< Compatibility mode syscall rip. */
+    uint64_t            msrSFMASK;          /**< syscall flag mask. */
+    uint64_t            msrKERNELGSBASE;    /**< swapgs exchange value. */
+    uint64_t            uMsrPadding0;       /**< no longer used (used to hold a copy of APIC base MSR). */
     /** @} */
 
-    /** The XCR0..XCR1 registers. */
-    uint64_t                    aXcr[2];
-    /** The mask to pass to XSAVE/XRSTOR in EDX:EAX.  If zero we use
-     *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
-    uint64_t                    fXStateMask;
-
-    /** Pointer to the FPU/SSE/AVX/XXXX state ring-0 mapping. */
-    R0PTRTYPE(PX86XSAVEAREA)    pXStateR0;
-    /** Pointer to the FPU/SSE/AVX/XXXX state ring-3 mapping. */
-    R3PTRTYPE(PX86XSAVEAREA)    pXStateR3;
-    /** State component offsets into pXState, UINT16_MAX if not present. */
-    uint16_t                    aoffXState[64];
-
-    /** 0x2d4 - Mirror of CPUMCPU::fUseFlags[CPUM_USED_FPU_GUEST]. */
-    bool                        fUsedFpuGuest;
-    uint8_t                     afUnused[7];
-    /** 0x2d8 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
+    /** 0x228 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
      * Currently only used internally in NEM/win.  */
-    uint64_t                    fExtrn;
+    uint64_t            fExtrn;
 
-    /** 0x2e0 - PAE PDPTEs. */
-    X86PDPE                     aPaePdpes[4];
+    uint64_t            au64Unused[2];
 
-    /** 0x300 - Hardware virtualization state.   */
+    /** 0x240 - PAE PDPTEs. */
+    X86PDPE             aPaePdpes[4];
+
+    /** 0x260 - The XCR0..XCR1 registers. */
+    uint64_t            aXcr[2];
+    /** 0x270 - The mask to pass to XSAVE/XRSTOR in EDX:EAX.  If zero we use
+     *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
+    uint64_t            fXStateMask;
+    /** 0x278 - Mirror of CPUMCPU::fUseFlags[CPUM_USED_FPU_GUEST]. */
+    bool                fUsedFpuGuest;
+    uint8_t             afUnused[7];
+
+    /* ---- Start of members not zeroed at reset. ---- */
+
+    /** 0x280 - State component offsets into pXState, UINT16_MAX if not present.
+     * @note Everything before this member will be memset to zero during reset. */ 
+    uint16_t            aoffXState[64];
+    /** 0x300 - The extended state (FPU/SSE/AVX/AVX-2/XXXX).
+     * Aligned on 256 byte boundrary (min req is currently 64 bytes). */
+    union /* no tag */
+    {
+        X86XSAVEAREA    XState;
+        /** Byte view for simple indexing and space allocation. */
+        uint8_t         abXState[0x4000 - 0x300];
+    } CPUM_UNION_NM(u);
+
+    /** 0x4000 - Hardware virtualization state.
+     * @note This is page aligned, so an full page member comes first in the
+     *       substructures. */
     struct
     {
         union   /* no tag! */
@@ -688,12 +699,15 @@ AssertCompileMemberOffset(CPUMCTX,                   msrLSTAR, 512);
 AssertCompileMemberOffset(CPUMCTX,                   msrCSTAR, 520);
 AssertCompileMemberOffset(CPUMCTX,                  msrSFMASK, 528);
 AssertCompileMemberOffset(CPUMCTX,            msrKERNELGSBASE, 536);
-AssertCompileMemberOffset(CPUMCTX,                       aXcr, 552);
-AssertCompileMemberOffset(CPUMCTX,                fXStateMask, 568);
-AssertCompileMemberOffset(CPUMCTX,                  pXStateR0, 576);
-AssertCompileMemberOffset(CPUMCTX,                  pXStateR3, 584);
-AssertCompileMemberOffset(CPUMCTX,                 aoffXState, 592);
-AssertCompileMemberOffset(CPUMCTX, aPaePdpes, 0x2e0);
+AssertCompileMemberOffset(CPUMCTX,                  aPaePdpes, 0x240);
+AssertCompileMemberOffset(CPUMCTX,                       aXcr, 0x260);
+AssertCompileMemberOffset(CPUMCTX,                fXStateMask, 0x270);
+AssertCompileMemberOffset(CPUMCTX,                fUsedFpuGuest, 0x278);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(u.) XState, 0x300);
+AssertCompileMemberOffset(CPUMCTX,   CPUM_UNION_NM(u.) abXState, 0x300);
+AssertCompileMemberAlignment(CPUMCTX, CPUM_UNION_NM(u.) XState, 0x100);
+AssertCompileMemberAlignment(CPUMCTX,                   hwvirt, 0x1000);
+#if 0
 AssertCompileMemberOffset(CPUMCTX, hwvirt,    0x300);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,                 0x300);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.GCPhysVmcb,                  0x308);
@@ -757,6 +771,7 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysIoBitmap, 
 AssertCompileMemberOffset(CPUMCTX, hwvirt.enmHwvirt,           0x520);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.fGif,                0x524);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions, 0x528);
+#endif
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r1);
@@ -870,7 +885,7 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,        
         AssertCompile((a_iCompBit) < 64U); \
         AssertMsg(a_pLambdaCtx->fXStateMask & RT_BIT_64(a_iCompBit), (#a_iCompBit "\n")); \
         AssertMsg(a_pLambdaCtx->aoffXState[(a_iCompBit)] != UINT16_MAX, (#a_iCompBit "\n")); \
-        return (a_PtrType)((uint8_t *)a_pLambdaCtx->CTX_SUFF(pXState) + a_pLambdaCtx->aoffXState[(a_iCompBit)]); \
+        return (a_PtrType)(&a_pLambdaCtx->abXState[a_pLambdaCtx->aoffXState[(a_iCompBit)]]); \
     }(a_pCtx))
 #elif defined(VBOX_STRICT) && defined(__GNUC__)
 # define CPUMCTX_XSAVE_C_PTR(a_pCtx, a_iCompBit, a_PtrType) \
@@ -879,11 +894,11 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,        
         AssertCompile((a_iCompBit) < 64U); \
         AssertMsg((a_pCtx)->fXStateMask & RT_BIT_64(a_iCompBit), (#a_iCompBit "\n")); \
         AssertMsg((a_pCtx)->aoffXState[(a_iCompBit)] != UINT16_MAX, (#a_iCompBit "\n")); \
-        (a_PtrType)((uint8_t *)(a_pCtx)->CTX_SUFF(pXState) + (a_pCtx)->aoffXState[(a_iCompBit)]); \
+        (a_PtrType)(&(a_pCtx)->abXState[(a_pCtx)->aoffXState[(a_iCompBit)]]); \
     })
 #else
 # define CPUMCTX_XSAVE_C_PTR(a_pCtx, a_iCompBit, a_PtrType) \
-    ((a_PtrType)((uint8_t *)(a_pCtx)->CTX_SUFF(pXState) + (a_pCtx)->aoffXState[(a_iCompBit)]))
+    ((a_PtrType)(&(a_pCtx)->abXState[(a_pCtx)->aoffXState[(a_iCompBit)])])
 #endif
 
 /**

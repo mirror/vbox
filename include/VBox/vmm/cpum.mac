@@ -246,18 +246,24 @@ struc CPUMCTX
     .msrSFMASK          resb    8
     .msrKERNELGSBASE    resb    8
     .uMsrPadding0       resb    8
+
+    alignb 8
+    .fExtrn             resq    1
+
+    alignb 32
+    .aPaePdpes          resq    4
+
     alignb 8
     .aXcr               resq    2
     .fXStateMask        resq    1
-    .pXStateR0      RTR0PTR_RES 1
-    alignb 8
-    .pXStateR3      RTR3PTR_RES 1
-    .aoffXState         resw    64
     .fUsedFpuGuest      resb    1
     alignb 8
-    .fExtrn             resq    1
-    .aPaePdpes          resq    4
-    alignb 8
+    .aoffXState         resw    64
+    alignb 256
+    .abXState           resb    0x4000-0x300
+    .XState             EQU     .abXState
+
+    alignb 4096
     .hwvirt.svm.uMsrHSavePa            resq          1
     .hwvirt.svm.GCPhysVmcb             resq          1
     .hwvirt.svm.pVmcbR0                RTR0PTR_RES   1

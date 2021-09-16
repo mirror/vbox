@@ -41,8 +41,9 @@
 *********************************************************************************************************************************/
 /** For sanity and avoid wasting hyper heap on buggy config / saved state. */
 #define CPUM_CPUID_MAX_LEAVES       2048
-/* Max size we accept for the XSAVE area. */
-#define CPUM_MAX_XSAVE_AREA_SIZE    10240
+/** Max size we accept for the XSAVE area.
+ * @see CPUMCTX::abXSave */
+#define CPUM_MAX_XSAVE_AREA_SIZE    (0x4000 - 0x300)
 /* Min size we accept for the XSAVE area. */
 #define CPUM_MIN_XSAVE_AREA_SIZE    0x240
 
@@ -2457,6 +2458,7 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
      * Configure XSAVE offsets according to the CPUID info and set the feature flags.
      */
     PVMCPU pVCpu0 = pVM->apCpusR3[0];
+    AssertCompile(sizeof(pVCpu0->cpum.s.Guest.abXState) == CPUM_MAX_XSAVE_AREA_SIZE);
     memset(&pVCpu0->cpum.s.Guest.aoffXState[0], 0xff, sizeof(pVCpu0->cpum.s.Guest.aoffXState));
     pVCpu0->cpum.s.Guest.aoffXState[XSAVE_C_X87_BIT] = 0;
     pVCpu0->cpum.s.Guest.aoffXState[XSAVE_C_SSE_BIT] = 0;

@@ -191,8 +191,7 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.fLocalForcedActions);
     /** @todo NSTVMX: add rest of hwvirt fields when code is more
      *        finalized. */
-    GEN_CHECK_OFF(CPUMCTX, pXStateR0);
-    GEN_CHECK_OFF(CPUMCTX, pXStateR3);
+    GEN_CHECK_OFF(CPUMCTX, XState);
     GEN_CHECK_OFF(CPUMCTX, rdi);
     GEN_CHECK_OFF(CPUMCTX, rsi);
     GEN_CHECK_OFF(CPUMCTX, rbp);

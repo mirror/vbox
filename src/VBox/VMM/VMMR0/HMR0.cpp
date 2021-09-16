@@ -1878,7 +1878,7 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
 
     if (fFlags & HM_DUMP_REG_FLAGS_FPU)
     {
-        PCX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
+        PCX86FXSTATE pFpuCtx = &pCtx->XState.x87;
         Log(("FPU:\n"
             "FCW=%04x FSW=%04x FTW=%02x\n"
             "FOP=%04x FPUIP=%08x CS=%04x Rsrvd1=%04x\n"

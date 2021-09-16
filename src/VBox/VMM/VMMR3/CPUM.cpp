@@ -2287,17 +2287,13 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     AssertLogRelReturn(cbMaxXState >= sizeof(X86FXSTATE) && cbMaxXState <= _8K, VERR_CPUM_IPE_2);
 
     uint8_t *pbXStates;
-    rc = MMR3HyperAllocOnceNoRelEx(pVM, cbMaxXState * 2 * pVM->cCpus, PAGE_SIZE, MM_TAG_CPUM_CTX,
+    rc = MMR3HyperAllocOnceNoRelEx(pVM, cbMaxXState * pVM->cCpus, PAGE_SIZE, MM_TAG_CPUM_CTX,
                                    MMHYPER_AONR_FLAGS_KERNEL_MAPPING, (void **)&pbXStates);
     AssertLogRelRCReturn(rc, rc);
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[i];
-
-        pVCpu->cpum.s.Guest.pXStateR3 = (PX86XSAVEAREA)pbXStates;
-        pVCpu->cpum.s.Guest.pXStateR0 = MMHyperR3ToR0(pVM, pbXStates);
-        pbXStates += cbMaxXState;
 
         pVCpu->cpum.s.Host.pXStateR3  = (PX86XSAVEAREA)pbXStates;
         pVCpu->cpum.s.Host.pXStateR0  = MMHyperR3ToR0(pVM, pbXStates);
@@ -2450,8 +2446,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      */
     uint32_t fUseFlags              =  pVCpu->cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
 
-    AssertCompile(RTASSERT_OFFSET_OF(CPUMCTX, pXStateR0) < RTASSERT_OFFSET_OF(CPUMCTX, pXStateR3));
-    memset(pCtx, 0, RT_UOFFSETOF(CPUMCTX, pXStateR0));
+    RT_BZERO(pCtx, RT_UOFFSETOF(CPUMCTX, aoffXState));
 
     pVCpu->cpum.s.fUseFlags         = fUseFlags;
 
@@ -2515,7 +2510,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     pCtx->dr[6]                     = X86_DR6_INIT_VAL;
     pCtx->dr[7]                     = X86_DR7_INIT_VAL;
 
-    PX86FXSTATE pFpuCtx = &pCtx->pXStateR3->x87; AssertReleaseMsg(RT_VALID_PTR(pFpuCtx), ("%p\n", pFpuCtx));
+    PX86FXSTATE pFpuCtx = &pCtx->XState.x87;
     pFpuCtx->FTW                    = 0x00;         /* All empty (abbridged tag reg edition). */
     pFpuCtx->FCW                    = 0x37f;
 
@@ -2529,7 +2524,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     {
         /* The entire FXSAVE state needs loading when we switch to XSAVE/XRSTOR
            as we don't know what happened before.  (Bother optimize later?) */
-        pCtx->pXStateR3->Hdr.bmXState = XSAVE_C_X87 | XSAVE_C_SSE;
+        pCtx->XState.Hdr.bmXState   = XSAVE_C_X87 | XSAVE_C_SSE;
     }
 
     /*
@@ -2656,9 +2651,9 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 
         PCPUMCTX pGstCtx = &pVCpu->cpum.s.Guest;
         SSMR3PutStructEx(pSSM, pGstCtx,                  sizeof(*pGstCtx),                0, g_aCpumCtxFields, NULL);
-        SSMR3PutStructEx(pSSM, &pGstCtx->pXStateR3->x87, sizeof(pGstCtx->pXStateR3->x87), 0, g_aCpumX87Fields, NULL);
+        SSMR3PutStructEx(pSSM, &pGstCtx->XState.x87,     sizeof(pGstCtx->XState.x87),     0, g_aCpumX87Fields, NULL);
         if (pGstCtx->fXStateMask != 0)
-            SSMR3PutStructEx(pSSM, &pGstCtx->pXStateR3->Hdr, sizeof(pGstCtx->pXStateR3->Hdr), 0, g_aCpumXSaveHdrFields, NULL);
+            SSMR3PutStructEx(pSSM, &pGstCtx->XState.Hdr, sizeof(pGstCtx->XState.Hdr),     0, g_aCpumXSaveHdrFields, NULL);
         if (pGstCtx->fXStateMask & XSAVE_C_YMM)
         {
             PCX86XSAVEYMMHI pYmmHiCtx = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_YMM_BIT, PCX86XSAVEYMMHI);
@@ -2888,7 +2883,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                  * Start by restoring the CPUMCTX structure and the X86FXSAVE bits of the extended state.
                  */
                 rc = SSMR3GetStructEx(pSSM, pGstCtx,                  sizeof(*pGstCtx),                0, g_aCpumCtxFields, NULL);
-                rc = SSMR3GetStructEx(pSSM, &pGstCtx->pXStateR3->x87, sizeof(pGstCtx->pXStateR3->x87), 0, g_aCpumX87Fields, NULL);
+                rc = SSMR3GetStructEx(pSSM, &pGstCtx->XState.x87,     sizeof(pGstCtx->XState.x87),     0, g_aCpumX87Fields, NULL);
                 AssertRCReturn(rc, rc);
 
                 /* Check that the xsave/xrstor mask is valid (invalid results in #GP). */
@@ -2933,12 +2928,12 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                  */
                 if (pGstCtx->fXStateMask != 0)
                 {
-                    rc = SSMR3GetStructEx(pSSM, &pGstCtx->pXStateR3->Hdr, sizeof(pGstCtx->pXStateR3->Hdr),
+                    rc = SSMR3GetStructEx(pSSM, &pGstCtx->XState.Hdr, sizeof(pGstCtx->XState.Hdr),
                                           0, g_aCpumXSaveHdrFields, NULL);
                     AssertRCReturn(rc, rc);
-                    AssertLogRelMsgReturn(!(pGstCtx->pXStateR3->Hdr.bmXState & ~pGstCtx->fXStateMask),
+                    AssertLogRelMsgReturn(!(pGstCtx->XState.Hdr.bmXState & ~pGstCtx->fXStateMask),
                                           ("bmXState=%#RX64 fXStateMask=%#RX64\n",
-                                           pGstCtx->pXStateR3->Hdr.bmXState, pGstCtx->fXStateMask),
+                                           pGstCtx->XState.Hdr.bmXState, pGstCtx->fXStateMask),
                                           VERR_CPUM_INVALID_XSAVE_HDR);
                 }
                 if (pGstCtx->fXStateMask & XSAVE_C_YMM)
@@ -3048,7 +3043,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 /*
                  * Pre XSAVE saved state.
                  */
-                SSMR3GetStructEx(pSSM, &pGstCtx->pXStateR3->x87, sizeof(pGstCtx->pXStateR3->x87),
+                SSMR3GetStructEx(pSSM, &pGstCtx->XState.x87, sizeof(pGstCtx->XState.x87),
                                  fLoad | SSMSTRUCT_FLAGS_NO_TAIL_MARKER, paCpumCtx1Fields, NULL);
                 SSMR3GetStructEx(pSSM, pGstCtx, sizeof(*pGstCtx), fLoad | SSMSTRUCT_FLAGS_NO_LEAD_MARKER, paCpumCtx2Fields, NULL);
             }
@@ -3438,9 +3433,8 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             pHlp->pfnPrintf(pHlp, "%sxcr=%016RX64 %sxcr1=%016RX64 %sxss=%016RX64 (fXStateMask=%016RX64)\n",
                             pszPrefix, pCtx->aXcr[0], pszPrefix, pCtx->aXcr[1],
                             pszPrefix, UINT64_C(0) /** @todo XSS */, pCtx->fXStateMask);
-            if (pCtx->CTX_SUFF(pXState))
             {
-                PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
+                PX86FXSTATE pFpuCtx = &pCtx->XState.x87;
                 pHlp->pfnPrintf(pHlp,
                     "%sFCW=%04x %sFSW=%04x %sFTW=%04x %sFOP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
                     "%sFPUIP=%08x %sCS=%04x %sRsrvd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"

@@ -172,7 +172,7 @@ SEH64_END_PROLOGUE
         stmxcsr [pXState + X86FXSTATE.MXCSR]
 
         ; Load the guest XMM register values we already saved in HMR0VMXStartVMWrapXMM.
-        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateR0]
+        lea     pXState, [pCpumCpu + CPUMCPU.Guest.XState]
         movdqa  xmm0,  [pXState + X86FXSTATE.xmm0]
         movdqa  xmm1,  [pXState + X86FXSTATE.xmm1]
         movdqa  xmm2,  [pXState + X86FXSTATE.xmm2]
@@ -255,13 +255,7 @@ SEH64_END_PROLOGUE
  %elifdef RT_ARCH_X86
         mov     xCX, dword [ebp + 8]
  %endif
- %ifdef IN_RING0
-        mov     xCX, [xCX + CPUMCPU.Guest.pXStateR0]
- %elifdef IN_RC
-        mov     xCX, [xCX + CPUMCPU.Guest.pXStateRC]
- %else
-  %error "Invalid context!"
- %endif
+        lea     xCX, [xCX + CPUMCPU.Guest.XState]
 
  %ifdef IN_RC
         ; Temporarily grant access to the SSE state. xDX must be preserved until CR0 is restored!
@@ -335,13 +329,7 @@ SEH64_END_PROLOGUE
 %elifdef RT_ARCH_X86
         mov     xCX, dword [ebp + 8]
 %endif
-%ifdef IN_RING0
-        mov     xCX, [xCX + CPUMCPU.Guest.pXStateR0]
-%elifdef IN_RC
-        mov     xCX, [xCX + CPUMCPU.Guest.pXStateRC]
-%else
- %error "Invalid context!"
-%endif
+        lea     xCX, [xCX + CPUMCPU.Guest.XState]
 
 %ifdef IN_RC
         ; Temporarily grant access to the SSE state. xBX must be preserved until CR0 is restored!

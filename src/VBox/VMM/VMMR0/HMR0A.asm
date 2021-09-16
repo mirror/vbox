@@ -774,7 +774,7 @@ BEGINPROC RT_CONCAT(hmR0VmxStartVm,%1)
         stmxcsr [rbp + frm_saved_mxcsr]
 
         ; Load the guest state related to the above non-volatile and volatile SSE registers. Trashes rcx, eax and edx.
-        mov     rcx, [rdi + CPUMCTX.pXStateR0]
+        lea     rcx, [rdi + CPUMCTX.XState]
   %if %4 = 1 ; manual
         movdqa  xmm0,  [rcx + XMM_OFF_IN_X86FXSTATE + 000h]
         movdqa  xmm1,  [rcx + XMM_OFF_IN_X86FXSTATE + 010h]
@@ -943,7 +943,7 @@ GLOBALNAME RT_CONCAT(hmR0VmxStartVmHostRIP,%1)
         mov     r11d, eax               ; save the return code.
 
         ; Save the guest SSE state related to non-volatile and volatile SSE registers.
-        mov     rcx, [r8 + CPUMCTX.pXStateR0]
+        lea     rcx, [r8 + CPUMCTX.XState]
   %if %4 = 1 ; manual
         stmxcsr [rcx + X86FXSTATE.MXCSR]
         movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
@@ -1238,7 +1238,7 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
         stmxcsr [rbp + frm_saved_mxcsr]
 
         ; Load the guest state related to the above non-volatile and volatile SSE registers. Trashes rcx, eax and edx.
-        mov     rcx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.pXStateR0]
+        lea     rcx, [rsi + VMCPU.cpum.GstCtx + CPUMCTX.XState]
   %if %4 = 1 ; manual
         movdqa  xmm0,  [rcx + XMM_OFF_IN_X86FXSTATE + 000h]
         movdqa  xmm1,  [rcx + XMM_OFF_IN_X86FXSTATE + 010h]
@@ -1401,7 +1401,7 @@ BEGINPROC RT_CONCAT(hmR0SvmVmRun,%1)
 
  %if %4 != 0
         ; Save the guest SSE state related to non-volatile and volatile SSE registers.
-        mov     rcx, [r8 + CPUMCTX.pXStateR0]
+        lea     rcx, [r8 + CPUMCTX.XState]
   %if %4 = 1 ; manual
         stmxcsr [rcx + X86FXSTATE.MXCSR]
         movdqa  [rcx + XMM_OFF_IN_X86FXSTATE + 000h], xmm0

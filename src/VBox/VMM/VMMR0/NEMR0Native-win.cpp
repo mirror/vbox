@@ -917,64 +917,64 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx0;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[0].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[0].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[0].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[0].au64[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx1;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[1].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[1].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[1].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[1].au64[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx2;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[2].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[2].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[2].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[2].au64[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx3;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[3].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[3].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[3].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[3].au64[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx4;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[4].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[4].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[4].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[4].au64[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx5;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[5].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[5].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[5].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[5].au64[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx6;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[6].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[6].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[6].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[6].au64[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                      = HvX64RegisterFpMmx7;
-        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->pXStateR0->x87.aRegs[7].au64[0];
-        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->pXStateR0->x87.aRegs[7].au64[1];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.Low64  = pCtx->XState.x87.aRegs[7].au64[0];
+        pInput->Elements[iReg].Value.Fp.AsUINT128.High64 = pCtx->XState.x87.aRegs[7].au64[1];
         iReg++;
 
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                            = HvX64RegisterFpControlStatus;
-        pInput->Elements[iReg].Value.FpControlStatus.FpControl = pCtx->pXStateR0->x87.FCW;
-        pInput->Elements[iReg].Value.FpControlStatus.FpStatus  = pCtx->pXStateR0->x87.FSW;
-        pInput->Elements[iReg].Value.FpControlStatus.FpTag     = pCtx->pXStateR0->x87.FTW;
-        pInput->Elements[iReg].Value.FpControlStatus.Reserved  = pCtx->pXStateR0->x87.FTW >> 8;
-        pInput->Elements[iReg].Value.FpControlStatus.LastFpOp  = pCtx->pXStateR0->x87.FOP;
-        pInput->Elements[iReg].Value.FpControlStatus.LastFpRip = (pCtx->pXStateR0->x87.FPUIP)
-                                                               | ((uint64_t)pCtx->pXStateR0->x87.CS << 32)
-                                                               | ((uint64_t)pCtx->pXStateR0->x87.Rsrvd1 << 48);
+        pInput->Elements[iReg].Value.FpControlStatus.FpControl = pCtx->XState.x87.FCW;
+        pInput->Elements[iReg].Value.FpControlStatus.FpStatus  = pCtx->XState.x87.FSW;
+        pInput->Elements[iReg].Value.FpControlStatus.FpTag     = pCtx->XState.x87.FTW;
+        pInput->Elements[iReg].Value.FpControlStatus.Reserved  = pCtx->XState.x87.FTW >> 8;
+        pInput->Elements[iReg].Value.FpControlStatus.LastFpOp  = pCtx->XState.x87.FOP;
+        pInput->Elements[iReg].Value.FpControlStatus.LastFpRip = (pCtx->XState.x87.FPUIP)
+                                                               | ((uint64_t)pCtx->XState.x87.CS << 32)
+                                                               | ((uint64_t)pCtx->XState.x87.Rsrvd1 << 48);
         iReg++;
 /** @todo we've got trouble if if we try write just SSE w/o X87.  */
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                                        = HvX64RegisterXmmControlStatus;
-        pInput->Elements[iReg].Value.XmmControlStatus.LastFpRdp            = (pCtx->pXStateR0->x87.FPUDP)
-                                                                           | ((uint64_t)pCtx->pXStateR0->x87.DS << 32)
-                                                                           | ((uint64_t)pCtx->pXStateR0->x87.Rsrvd2 << 48);
-        pInput->Elements[iReg].Value.XmmControlStatus.XmmStatusControl     = pCtx->pXStateR0->x87.MXCSR;
-        pInput->Elements[iReg].Value.XmmControlStatus.XmmStatusControlMask = pCtx->pXStateR0->x87.MXCSR_MASK; /** @todo ??? (Isn't this an output field?) */
+        pInput->Elements[iReg].Value.XmmControlStatus.LastFpRdp            = (pCtx->XState.x87.FPUDP)
+                                                                           | ((uint64_t)pCtx->XState.x87.DS << 32)
+                                                                           | ((uint64_t)pCtx->XState.x87.Rsrvd2 << 48);
+        pInput->Elements[iReg].Value.XmmControlStatus.XmmStatusControl     = pCtx->XState.x87.MXCSR;
+        pInput->Elements[iReg].Value.XmmControlStatus.XmmStatusControlMask = pCtx->XState.x87.MXCSR_MASK; /** @todo ??? (Isn't this an output field?) */
         iReg++;
     }
 
@@ -983,83 +983,83 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm0;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[0].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[0].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[0].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[0].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm1;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[1].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[1].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[1].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[1].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm2;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[2].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[2].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[2].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[2].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm3;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[3].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[3].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[3].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[3].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm4;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[4].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[4].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[4].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[4].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm5;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[5].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[5].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[5].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[5].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm6;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[6].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[6].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[6].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[6].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm7;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[7].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[7].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[7].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[7].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm8;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[8].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[8].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[8].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[8].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm9;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[9].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[9].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[9].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[9].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm10;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[10].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[10].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[10].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[10].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm11;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[11].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[11].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[11].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[11].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm12;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[12].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[12].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[12].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[12].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm13;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[13].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[13].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[13].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[13].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm14;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[14].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[14].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[14].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[14].uXmm.s.Hi;
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterXmm15;
-        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->pXStateR0->x87.aXMM[15].uXmm.s.Lo;
-        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->pXStateR0->x87.aXMM[15].uXmm.s.Hi;
+        pInput->Elements[iReg].Value.Reg128.Low64   = pCtx->XState.x87.aXMM[15].uXmm.s.Lo;
+        pInput->Elements[iReg].Value.Reg128.High64  = pCtx->XState.x87.aXMM[15].uXmm.s.Hi;
         iReg++;
     }
 
@@ -1817,40 +1817,40 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         Assert(pInput->Names[iReg] == HvX64RegisterFpMmx0);
         Assert(pInput->Names[iReg + 7] == HvX64RegisterFpMmx7);
-        pCtx->pXStateR0->x87.aRegs[0].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[0].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[0].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[0].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aRegs[1].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[1].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[1].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[1].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aRegs[2].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[2].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[2].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[2].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aRegs[3].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[3].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[3].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[3].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aRegs[4].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[4].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[4].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[4].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aRegs[5].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[5].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[5].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[5].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aRegs[6].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[6].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[6].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[6].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aRegs[7].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
-        pCtx->pXStateR0->x87.aRegs[7].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
+        pCtx->XState.x87.aRegs[7].au64[0] = paValues[iReg].Fp.AsUINT128.Low64;
+        pCtx->XState.x87.aRegs[7].au64[1] = paValues[iReg].Fp.AsUINT128.High64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterFpControlStatus);
-        pCtx->pXStateR0->x87.FCW        = paValues[iReg].FpControlStatus.FpControl;
-        pCtx->pXStateR0->x87.FSW        = paValues[iReg].FpControlStatus.FpStatus;
-        pCtx->pXStateR0->x87.FTW        = paValues[iReg].FpControlStatus.FpTag
+        pCtx->XState.x87.FCW        = paValues[iReg].FpControlStatus.FpControl;
+        pCtx->XState.x87.FSW        = paValues[iReg].FpControlStatus.FpStatus;
+        pCtx->XState.x87.FTW        = paValues[iReg].FpControlStatus.FpTag
                                         /*| (paValues[iReg].FpControlStatus.Reserved << 8)*/;
-        pCtx->pXStateR0->x87.FOP        = paValues[iReg].FpControlStatus.LastFpOp;
-        pCtx->pXStateR0->x87.FPUIP      = (uint32_t)paValues[iReg].FpControlStatus.LastFpRip;
-        pCtx->pXStateR0->x87.CS         = (uint16_t)(paValues[iReg].FpControlStatus.LastFpRip >> 32);
-        pCtx->pXStateR0->x87.Rsrvd1     = (uint16_t)(paValues[iReg].FpControlStatus.LastFpRip >> 48);
+        pCtx->XState.x87.FOP        = paValues[iReg].FpControlStatus.LastFpOp;
+        pCtx->XState.x87.FPUIP      = (uint32_t)paValues[iReg].FpControlStatus.LastFpRip;
+        pCtx->XState.x87.CS         = (uint16_t)(paValues[iReg].FpControlStatus.LastFpRip >> 32);
+        pCtx->XState.x87.Rsrvd1     = (uint16_t)(paValues[iReg].FpControlStatus.LastFpRip >> 48);
         iReg++;
     }
 
@@ -1859,12 +1859,12 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         Assert(pInput->Names[iReg] == HvX64RegisterXmmControlStatus);
         if (fWhat & CPUMCTX_EXTRN_X87)
         {
-            pCtx->pXStateR0->x87.FPUDP  = (uint32_t)paValues[iReg].XmmControlStatus.LastFpRdp;
-            pCtx->pXStateR0->x87.DS     = (uint16_t)(paValues[iReg].XmmControlStatus.LastFpRdp >> 32);
-            pCtx->pXStateR0->x87.Rsrvd2 = (uint16_t)(paValues[iReg].XmmControlStatus.LastFpRdp >> 48);
+            pCtx->XState.x87.FPUDP  = (uint32_t)paValues[iReg].XmmControlStatus.LastFpRdp;
+            pCtx->XState.x87.DS     = (uint16_t)(paValues[iReg].XmmControlStatus.LastFpRdp >> 32);
+            pCtx->XState.x87.Rsrvd2 = (uint16_t)(paValues[iReg].XmmControlStatus.LastFpRdp >> 48);
         }
-        pCtx->pXStateR0->x87.MXCSR      = paValues[iReg].XmmControlStatus.XmmStatusControl;
-        pCtx->pXStateR0->x87.MXCSR_MASK = paValues[iReg].XmmControlStatus.XmmStatusControlMask; /** @todo ??? (Isn't this an output field?) */
+        pCtx->XState.x87.MXCSR      = paValues[iReg].XmmControlStatus.XmmStatusControl;
+        pCtx->XState.x87.MXCSR_MASK = paValues[iReg].XmmControlStatus.XmmStatusControlMask; /** @todo ??? (Isn't this an output field?) */
         iReg++;
     }
 
@@ -1873,53 +1873,53 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         Assert(pInput->Names[iReg] == HvX64RegisterXmm0);
         Assert(pInput->Names[iReg+15] == HvX64RegisterXmm15);
-        pCtx->pXStateR0->x87.aXMM[0].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[0].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[0].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[0].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[1].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[1].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[1].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[1].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[2].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[2].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[2].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[2].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[3].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[3].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[3].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[3].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[4].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[4].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[4].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[4].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[5].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[5].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[5].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[5].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[6].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[6].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[6].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[6].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[7].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[7].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[7].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[7].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[8].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[8].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[8].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[8].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[9].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[9].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[9].uXmm.s.Lo  = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[9].uXmm.s.Hi  = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[10].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[10].uXmm.s.Hi = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[10].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[10].uXmm.s.Hi = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[11].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[11].uXmm.s.Hi = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[11].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[11].uXmm.s.Hi = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[12].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[12].uXmm.s.Hi = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[12].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[12].uXmm.s.Hi = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[13].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[13].uXmm.s.Hi = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[13].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[13].uXmm.s.Hi = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[14].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[14].uXmm.s.Hi = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[14].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[14].uXmm.s.Hi = paValues[iReg].Reg128.High64;
         iReg++;
-        pCtx->pXStateR0->x87.aXMM[15].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
-        pCtx->pXStateR0->x87.aXMM[15].uXmm.s.Hi = paValues[iReg].Reg128.High64;
+        pCtx->XState.x87.aXMM[15].uXmm.s.Lo = paValues[iReg].Reg128.Low64;
+        pCtx->XState.x87.aXMM[15].uXmm.s.Hi = paValues[iReg].Reg128.High64;
         iReg++;
     }
 

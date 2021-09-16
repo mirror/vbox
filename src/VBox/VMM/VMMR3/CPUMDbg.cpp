@@ -110,7 +110,7 @@ static DECLCALLBACK(int) cpumR3RegSet_Generic(void *pvUser, PCDBGFREGDESC pDesc,
 static DECLCALLBACK(int) cpumR3RegGet_XStateGeneric(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum.s.Guest.pXStateR3 + pDesc->offRegister;
+    void const *pv      = (uint8_t const *)&pVCpu->cpum.s.Guest.XState + pDesc->offRegister;
 
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -133,7 +133,7 @@ static DECLCALLBACK(int) cpumR3RegGet_XStateGeneric(void *pvUser, PCDBGFREGDESC 
 static DECLCALLBACK(int) cpumR3RegSet_XStateGeneric(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     PVMCPU      pVCpu = (PVMCPU)pvUser;
-    void       *pv    = (uint8_t *)&pVCpu->cpum.s.Guest.pXStateR3 + pDesc->offRegister;
+    void       *pv    = (uint8_t *)&pVCpu->cpum.s.Guest.XState + pDesc->offRegister;
 
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -377,8 +377,8 @@ static DECLCALLBACK(int) cpumR3RegGet_ymm(void *pvUser, PCDBGFREGDESC pDesc, PDB
 
     if (iReg < 16)
     {
-        pValue->u256.DQWords.dqw0 = pVCpu->cpum.s.Guest.pXStateR3->x87.aXMM[iReg].uXmm;
-        pValue->u256.DQWords.dqw1 = pVCpu->cpum.s.Guest.pXStateR3->u.YmmHi.aYmmHi[iReg].uXmm;
+        pValue->u256.DQWords.dqw0 = pVCpu->cpum.s.Guest.XState.x87.aXMM[iReg].uXmm;
+        pValue->u256.DQWords.dqw1 = pVCpu->cpum.s.Guest.XState.u.YmmHi.aYmmHi[iReg].uXmm;
         return VINF_SUCCESS;
     }
     return VERR_NOT_IMPLEMENTED;
@@ -399,9 +399,9 @@ static DECLCALLBACK(int) cpumR3RegSet_ymm(void *pvUser, PCDBGFREGDESC pDesc, PCD
     if (iReg < 16)
     {
         RTUINT128U Val;
-        RTUInt128AssignAnd(&pVCpu->cpum.s.Guest.pXStateR3->x87.aXMM[iReg].uXmm,
+        RTUInt128AssignAnd(&pVCpu->cpum.s.Guest.XState.x87.aXMM[iReg].uXmm,
                            RTUInt128AssignBitwiseNot(RTUInt128Assign(&Val, &pfMask->u256.DQWords.dqw0)));
-        RTUInt128AssignOr(&pVCpu->cpum.s.Guest.pXStateR3->u.YmmHi.aYmmHi[iReg].uXmm,
+        RTUInt128AssignOr(&pVCpu->cpum.s.Guest.XState.u.YmmHi.aYmmHi[iReg].uXmm,
                           RTUInt128AssignAnd(RTUInt128Assign(&Val, &pValue->u128), &pfMask->u128));
 
     }
@@ -665,7 +665,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pDesc->enmType == DBGFREGVALTYPE_R80);
 
-    PX86FXSTATE pFpuCtx = &pVCpu->cpum.s.Guest.CTX_SUFF(pXState)->x87;
+    PX86FXSTATE pFpuCtx = &pVCpu->cpum.s.Guest.XState.x87;
     unsigned iReg = (pFpuCtx->FSW >> 11) & 7;
     iReg += pDesc->offRegister;
     iReg &= 7;

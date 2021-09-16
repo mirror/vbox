@@ -39,6 +39,7 @@ s/[[:space:]][[:space:]]*/ /g
 /^[[:alpha:]_][[:alnum:]_]*_size EQU \$ - .*$/b struct_equ
 /<gap>/b member
 /^\.[[:alpha:]_][[:alnum:]_.:]* res.*$/b member_two
+/^\.[[:alpha:]_][[:alnum:]_.:]* EQU .*$/b member_two
 /^\.[[:alpha:]_][[:alnum:]_.:]*:$/b member_alias
 b error
 b member_two
@@ -78,6 +79,7 @@ b end
 #
 :member_two
 s/[:]*  *res[bwdtq] .*$//
+s/[:]*  *EQU .*$//
 s/$/ /
 /^\.[[:alnum:]_.]* *$/!t error
 G
