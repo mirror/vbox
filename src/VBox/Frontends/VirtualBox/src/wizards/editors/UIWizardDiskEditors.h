@@ -52,16 +52,16 @@ class UIMediumSizeEditor;
 #include "CMediumFormat.h"
 
 /** A set of static utility functions used by several wizard in the context of virtual media. */
-namespace SHARED_LIBRARY_STUFF UIDiskEditorGroupBox
+namespace UIDiskEditorGroupBox
 {
-    QString appendExtension(const QString &strName, const QString &strExtension);
-    QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
-    bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
-    QString openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
+    SHARED_LIBRARY_STUFF QString appendExtension(const QString &strName, const QString &strExtension);
+    SHARED_LIBRARY_STUFF QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
+    SHARED_LIBRARY_STUFF bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
+    SHARED_LIBRARY_STUFF QString openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
                                              KDeviceType enmDeviceType, QWidget *pParent);
     /** Attempts to find a file extention for the device type @p enmDeviceType within the extensions
       * returned by CMediumFormat::DescribeFileExtensions(..). */
-    QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
+    SHARED_LIBRARY_STUFF  QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
 };
 
 class SHARED_LIBRARY_STUFF UIDiskVariantWidget : public QIWithRetranslateUI<QWidget>
