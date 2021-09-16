@@ -507,27 +507,33 @@ typedef struct CPUMCTX
                  * HMPHYSCPU while executing the nested-guest using hardware-assisted SVM.
                  * This one is just used for caching the bitmap from guest physical memory. */
                 uint8_t                 abMsrBitmap[0x2000];
+                /** 0x7000 - The IOPM (IO Permission bitmap).
+                 *
+                 * This need not be physically contiguous pages because we re-use the ring-0
+                 * allocated IOPM while executing the nested-guest using hardware-assisted SVM
+                 * because it's identical (we trap all IO accesses).
+                 *
+                 * This one is just used for caching the IOPM from guest physical memory in
+                 * case the guest hypervisor allows direct access to some IO ports. */
+                uint8_t                 abIoBitmap[0x3000];
 
-                /** 0x300 - MSR holding physical address of the Guest's Host-state. */
+                /** 0xa000 - MSR holding physical address of the Guest's Host-state. */
                 uint64_t                uMsrHSavePa;
-                /** 0x308 - Guest physical address of the nested-guest VMCB. */
+                /** 0xa008 - Guest physical address of the nested-guest VMCB. */
                 RTGCPHYS                GCPhysVmcb;
-                /** 0x320 - Guest's host-state save area. */
+                /** 0xa010 - Guest's host-state save area. */
                 SVMHOSTSTATE            HostState;
-                /** 0x3d8 - Guest TSC time-stamp of when the previous PAUSE instr. was executed. */
+                /** 0xa0c8 - Guest TSC time-stamp of when the previous PAUSE instr. was
+                 *  executed. */
                 uint64_t                uPrevPauseTick;
-                /** 0x3e0 - Pause filter count. */
+                /** 0xa0d0 - Pause filter count. */
                 uint16_t                cPauseFilter;
-                /** 0x3e2 - Pause filter threshold. */
+                /** 0xa0d2 - Pause filter threshold. */
                 uint16_t                cPauseFilterThreshold;
-                /** 0x3e4 - Whether the injected event is subject to event intercepts. */
+                /** 0xa0d4 - Whether the injected event is subject to event intercepts. */
                 bool                    fInterceptEvents;
-                /** 0x3e5 - Padding. */
+                /** 0xa0d5 - Padding. */
                 bool                    afPadding[3];
-                /** 0x3f8 - IO permission bitmap - R0 ptr. */
-                R0PTRTYPE(void *)       pvIoBitmapR0;
-                /** 0x400 - IO permission bitmap - R3 ptr. */
-                R3PTRTYPE(void *)       pvIoBitmapR3;
             } svm;
 
             struct
@@ -630,7 +636,7 @@ typedef struct CPUMCTX
         uint32_t                fPadding;
 #endif
         /** 0x530 - Pad to 64 byte boundary. */
-        uint8_t                 abPadding0[8];
+        uint8_t                 abPadding0[8+16];
     } hwvirt;
 } CPUMCTX;
 #pragma pack()
@@ -838,7 +844,7 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 # endif
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.Vmcb,                  4096);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abMsrBitmap,           4096);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,          8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            4096);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,               8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,         8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,      8);

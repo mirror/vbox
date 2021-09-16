@@ -304,7 +304,7 @@ typedef struct VMCPU
          * others.  The rest will use the function based CPUM API. */
         CPUMCTX             GstCtx;
 #endif
-        uint8_t             padding[49152];      /* multiple of 4096 */
+        uint8_t             padding[61440];      /* multiple of 4096 */
     } cpum;
 
     /** EM part. */

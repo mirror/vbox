@@ -264,8 +264,9 @@ struc CPUMCTX
     .XState             EQU     .abXState
 
     alignb 4096
-    .hwvirt.svm.Vmcb                   resb          4096
-    .hwvirt.svm.abMsrBitmap            resb          8192
+    .hwvirt.svm.Vmcb                    resb        4096
+    .hwvirt.svm.abMsrBitmap             resb        8192
+    .hwvirt.svm.abIoBitmap              resb        12288
     .hwvirt.svm.uMsrHSavePa            resq          1
     .hwvirt.svm.GCPhysVmcb             resq          1
     alignb 8
@@ -274,10 +275,7 @@ struc CPUMCTX
     .hwvirt.svm.cPauseFilter           resw          1
     .hwvirt.svm.cPauseFilterThreshold  resw          1
     .hwvirt.svm.fInterceptEvents       resb          1
-    alignb 8
-    .hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES   1
-    alignb 8
-    .hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES   1
+    ;.unnamed_padding.1 resb 0
     alignb 8
     .hwvirt.enmHwvirt                  resd          1
     .hwvirt.fGif                       resb          1

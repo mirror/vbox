@@ -562,9 +562,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
         /*
          * Copy the IO permission bitmap into the cache.
          */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvIoBitmap));
-        rc = PGMPhysSimpleReadGCPhys(pVM, pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvIoBitmap), GCPhysIOBitmap,
-                                     SVM_IOPM_PAGES * X86_PAGE_4K_SIZE);
+        AssertCompile(sizeof(pVCpu->cpum.GstCtx.hwvirt.svm.abIoBitmap) == SVM_IOPM_PAGES * X86_PAGE_4K_SIZE);
+        rc = PGMPhysSimpleReadGCPhys(pVM, pVCpu->cpum.GstCtx.hwvirt.svm.abIoBitmap, GCPhysIOBitmap,
+                                     sizeof(pVCpu->cpum.GstCtx.hwvirt.svm.abIoBitmap));
         if (RT_FAILURE(rc))
         {
             Log(("iemSvmVmrun: Failed reading the IO permission bitmap at %#RGp. rc=%Rrc\n", GCPhysIOBitmap, rc));
@@ -988,9 +988,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port
     Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u)\n", u16Port, u16Port));
 
     SVMIOIOEXITINFO IoExitInfo;
-    void *pvIoBitmap = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvIoBitmap);
-    bool const fIntercept = CPUMIsSvmIoInterceptSet(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep,
-                                                    fStrIo, &IoExitInfo);
+    bool const fIntercept = CPUMIsSvmIoInterceptSet(pVCpu->cpum.GstCtx.hwvirt.svm.abMsrBitmap, u16Port, enmIoType, cbReg,
+                                                    cAddrSizeBits, iEffSeg, fRep, fStrIo, &IoExitInfo);
     if (fIntercept)
     {
         Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u) -> #VMEXIT\n", u16Port, u16Port));
