@@ -30,6 +30,7 @@ s/^ *//g
 /^\.text$/d
 /^\.data$/d
 /^\.bss$/d
+/ *\.unnamed_padding\./d
 s/[[:space:]][[:space:]]*/ /g
 
 #

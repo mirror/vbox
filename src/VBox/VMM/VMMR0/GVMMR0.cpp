@@ -1966,6 +1966,24 @@ GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByGVMandEMT(PGVM pGVM, RTNATIVETHREAD hEMT)
 
 
 /**
+ * Converts a pointer with the GVM structure to a host physical address.
+ *
+ * @returns Host physical address.
+ * @param   pGVM    The global (ring-0) VM structure.
+ * @param   pv      The address to convert.
+ * @thread  EMT
+ */
+GVMMR0DECL(RTHCPHYS) GVMMR0ConvertGVMPtr2HCPhys(PGVM pGVM, void *pv)
+{
+    AssertPtr(pGVM);
+    Assert(pGVM->u32Magic == GVM_MAGIC);
+    uintptr_t const off = (uintptr_t)pv - (uintptr_t)pGVM;
+    Assert(off < RT_UOFFSETOF_DYN(GVM, aCpus[pGVM->cCpus]));
+    return RTR0MemObjGetPagePhysAddr(pGVM->gvmm.s.VMMemObj, off >> PAGE_SHIFT) | ((uintptr_t)pv & PAGE_OFFSET_MASK);
+}
+
+
+/**
  * This is will wake up expired and soon-to-be expired VMs.
  *
  * @returns Number of VMs that has been woken up.

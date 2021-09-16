@@ -1820,7 +1820,7 @@ DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
      */
 #ifndef IN_RC
     if (   pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM
-        || !(pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN))
+        || !(pCtx->hwvirt.svm.Vmcb.ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN))
         return false;
     return true;
 #else
@@ -1894,11 +1894,9 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     uint64_t u64Intercepts;
     if (!HMGetGuestSvmCtrlIntercepts(pVCpu, &u64Intercepts))
-        u64Intercepts = pVmcb->ctrl.u64InterceptCtrl;
+        u64Intercepts = pCtx->hwvirt.svm.Vmcb.ctrl.u64InterceptCtrl;
     return RT_BOOL(u64Intercepts & fIntercept);
 }
 
@@ -1915,11 +1913,9 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx
     Assert(uCr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     uint16_t u16Intercepts;
     if (!HMGetGuestSvmReadCRxIntercepts(pVCpu, &u16Intercepts))
-        u16Intercepts = pVmcb->ctrl.u16InterceptRdCRx;
+        u16Intercepts = pCtx->hwvirt.svm.Vmcb.ctrl.u16InterceptRdCRx;
     return RT_BOOL(u16Intercepts & (UINT16_C(1) << uCr));
 }
 
@@ -1936,11 +1932,9 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCt
     Assert(uCr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     uint16_t u16Intercepts;
     if (!HMGetGuestSvmWriteCRxIntercepts(pVCpu, &u16Intercepts))
-        u16Intercepts = pVmcb->ctrl.u16InterceptWrCRx;
+        u16Intercepts = pCtx->hwvirt.svm.Vmcb.ctrl.u16InterceptWrCRx;
     return RT_BOOL(u16Intercepts & (UINT16_C(1) << uCr));
 }
 
@@ -1957,11 +1951,9 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx
     Assert(uDr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     uint16_t u16Intercepts;
     if (!HMGetGuestSvmReadDRxIntercepts(pVCpu, &u16Intercepts))
-        u16Intercepts = pVmcb->ctrl.u16InterceptRdDRx;
+        u16Intercepts = pCtx->hwvirt.svm.Vmcb.ctrl.u16InterceptRdDRx;
     return RT_BOOL(u16Intercepts & (UINT16_C(1) << uDr));
 }
 
@@ -1978,11 +1970,9 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCt
     Assert(uDr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     uint16_t u16Intercepts;
     if (!HMGetGuestSvmWriteDRxIntercepts(pVCpu, &u16Intercepts))
-        u16Intercepts = pVmcb->ctrl.u16InterceptWrDRx;
+        u16Intercepts = pCtx->hwvirt.svm.Vmcb.ctrl.u16InterceptWrDRx;
     return RT_BOOL(u16Intercepts & (UINT16_C(1) << uDr));
 }
 
@@ -1999,11 +1989,9 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
     Assert(uVector <= X86_XCPT_LAST);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     uint32_t u32Intercepts;
     if (!HMGetGuestSvmXcptIntercepts(pVCpu, &u32Intercepts))
-        u32Intercepts = pVmcb->ctrl.u32InterceptXcpt;
+        u32Intercepts = pCtx->hwvirt.svm.Vmcb.ctrl.u32InterceptXcpt;
     return RT_BOOL(u32Intercepts & RT_BIT(uVector));
 }
 
@@ -2020,11 +2008,9 @@ DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     bool fVIntrMasking;
     if (!HMGetGuestSvmVirtIntrMasking(pVCpu, &fVIntrMasking))
-        fVIntrMasking = pVmcb->ctrl.IntCtrl.n.u1VIntrMasking;
+        fVIntrMasking = pCtx->hwvirt.svm.Vmcb.ctrl.IntCtrl.n.u1VIntrMasking;
     return fVIntrMasking;
 }
 
@@ -2041,11 +2027,9 @@ DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     bool fNestedPaging;
     if (!HMGetGuestSvmNestedPaging(pVCpu, &fNestedPaging))
-        fNestedPaging = pVmcb->ctrl.NestedPagingCtrl.n.u1NestedPaging;
+        fNestedPaging = pCtx->hwvirt.svm.Vmcb.ctrl.NestedPagingCtrl.n.u1NestedPaging;
     return fNestedPaging;
 }
 
@@ -2062,11 +2046,9 @@ DECLINLINE(uint16_t) CPUMGetGuestSvmPauseFilterCount(PCVMCPU pVCpu, PCCPUMCTX pC
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
-    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
     uint16_t u16PauseFilterCount;
     if (!HMGetGuestSvmPauseFilterCount(pVCpu, &u16PauseFilterCount))
-        u16PauseFilterCount = pVmcb->ctrl.u16PauseFilterCount;
+        u16PauseFilterCount = pCtx->hwvirt.svm.Vmcb.ctrl.u16PauseFilterCount;
     return u16PauseFilterCount;
 }
 
@@ -2079,13 +2061,11 @@ DECLINLINE(uint16_t) CPUMGetGuestSvmPauseFilterCount(PCVMCPU pVCpu, PCCPUMCTX pC
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
  */
-DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cbInstr)
+DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr)
 {
     RT_NOREF(pVCpu);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_SVM);
-    PSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcb);
-    pVmcb->ctrl.u64NextRIP = pCtx->rip + cbInstr;
+    pCtx->hwvirt.svm.Vmcb.ctrl.u64NextRIP = pCtx->rip + cbInstr;
 }
 
 /**

@@ -149,7 +149,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_
          */
         PSVMVMCB       pVmcbMem;
         PGMPAGEMAPLOCK PgLockMem;
-        PSVMVMCBCTRL   pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+        PSVMVMCBCTRL   pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl;
         rcStrict = iemMemPageMap(pVCpu, pVCpu->cpum.GstCtx.hwvirt.svm.GCPhysVmcb, IEM_ACCESS_DATA_RW, (void **)&pVmcbMem,
                                  &PgLockMem);
         if (rcStrict == VINF_SUCCESS)
@@ -379,7 +379,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
      * Read the guest VMCB.
      */
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = PGMPhysSimpleReadGCPhys(pVM, pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb), GCPhysVmcb, sizeof(SVMVMCB));
+    int rc = PGMPhysSimpleReadGCPhys(pVM, &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb, GCPhysVmcb, sizeof(SVMVMCB));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -394,8 +394,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
          * unexpected & undesired results. Hence, we zero out unrecognized fields here as we
          * typically enter hardware-assisted SVM soon anyway, see @bugref{7243#c113}.
          */
-        PSVMVMCBCTRL      pVmcbCtrl   = &pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-        PSVMVMCBSTATESAVE pVmcbNstGst = &pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->guest;
+        PSVMVMCBCTRL      pVmcbCtrl   = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl;
+        PSVMVMCBSTATESAVE pVmcbNstGst = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.guest;
 
         RT_ZERO(pVmcbCtrl->u8Reserved0);
         RT_ZERO(pVmcbCtrl->u8Reserved1);
@@ -915,7 +915,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vec
             && u8Vector == X86_XCPT_PF
             && !(uErr & X86_TRAP_PF_ID))
         {
-            PSVMVMCBCTRL  pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+            PSVMVMCBCTRL  pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl;
 # ifdef IEM_WITH_CODE_TLB
             uint8_t const *pbInstrBuf = pVCpu->iem.s.pbInstrBuf;
             uint8_t const  cbInstrBuf = pVCpu->iem.s.cbInstrBuf;
@@ -933,7 +933,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vec
         if (u8Vector == X86_XCPT_BR)
             IEM_SVM_UPDATE_NRIP(pVCpu);
         Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept u32InterceptXcpt=%#RX32 u8Vector=%#x "
-              "uExitInfo1=%#RX64 uExitInfo2=%#RX64 -> #VMEXIT\n", pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->ctrl.u32InterceptXcpt,
+              "uExitInfo1=%#RX64 uExitInfo2=%#RX64 -> #VMEXIT\n", pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl.u32InterceptXcpt,
               u8Vector, uExitInfo1, uExitInfo2));
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_XCPT_0 + u8Vector, uExitInfo1, uExitInfo2);
     }

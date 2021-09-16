@@ -499,14 +499,13 @@ typedef struct CPUMCTX
         {
             struct
             {
+                /** 0x4000 - Cache of the nested-guest VMCB. */
+                SVMVMCB                 Vmcb;
+
                 /** 0x300 - MSR holding physical address of the Guest's Host-state. */
                 uint64_t                uMsrHSavePa;
                 /** 0x308 - Guest physical address of the nested-guest VMCB. */
                 RTGCPHYS                GCPhysVmcb;
-                /** 0x310 - Cache of the nested-guest VMCB - R0 ptr. */
-                R0PTRTYPE(PSVMVMCB)     pVmcbR0;
-                /** 0x318 - Cache of the nested-guest VMCB - R3 ptr. */
-                R3PTRTYPE(PSVMVMCB)     pVmcbR3;
                 /** 0x320 - Guest's host-state save area. */
                 SVMHOSTSTATE            HostState;
                 /** 0x3d8 - Guest TSC time-stamp of when the previous PAUSE instr. was executed. */
@@ -527,10 +526,6 @@ typedef struct CPUMCTX
                 R0PTRTYPE(void *)       pvIoBitmapR0;
                 /** 0x400 - IO permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvIoBitmapR3;
-                /** 0x408 - Host physical address of the nested-guest VMCB.  */
-                RTHCPHYS                HCPhysVmcb;
-                /** 0x410 - Padding. */
-                uint8_t                 abPadding0[272];
             } svm;
 
             struct
@@ -633,12 +628,15 @@ typedef struct CPUMCTX
         uint32_t                fPadding;
 #endif
         /** 0x530 - Pad to 64 byte boundary. */
-        uint8_t                 abPadding0[16];
+        uint8_t                 abPadding0[8+16+32];
     } hwvirt;
 } CPUMCTX;
 #pragma pack()
 
 #ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSizeAlignment(CPUMCTX, 8);
+AssertCompileSizeAlignment(CPUMCTX, 16);
+AssertCompileSizeAlignment(CPUMCTX, 32);
 AssertCompileSizeAlignment(CPUMCTX, 64);
 AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rax,   0);
 AssertCompileMemberOffset(CPUMCTX, CPUM_UNION_NM(g.) CPUM_STRUCT_NM(qw.) rcx,   8);
@@ -836,7 +834,7 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) ds,   CPUMC
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) fs,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_FS]);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_GS]);
 # endif
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,               8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.Vmcb,                  4096);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,         8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,          8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,               8);

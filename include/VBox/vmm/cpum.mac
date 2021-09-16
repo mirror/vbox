@@ -264,11 +264,9 @@ struc CPUMCTX
     .XState             EQU     .abXState
 
     alignb 4096
+    .hwvirt.svm.Vmcb                   resb          4096
     .hwvirt.svm.uMsrHSavePa            resq          1
     .hwvirt.svm.GCPhysVmcb             resq          1
-    .hwvirt.svm.pVmcbR0                RTR0PTR_RES   1
-    alignb 8
-    .hwvirt.svm.pVmcbR3                RTR3PTR_RES   1
     alignb 8
     .hwvirt.svm.HostState              resb        184
     .hwvirt.svm.uPrevPauseTick         resq          1
@@ -284,8 +282,6 @@ struc CPUMCTX
     alignb 8
     .hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES   1
     alignb 8
-    .hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES  1
-    .hwvirt.svm.abPadding0             resb        272
     .hwvirt.enmHwvirt                  resd          1
     .hwvirt.fGif                       resb          1
     alignb 8

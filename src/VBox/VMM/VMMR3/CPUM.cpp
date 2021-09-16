@@ -1020,12 +1020,6 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[i];
-        if (pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3)
-        {
-            SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3, SVM_VMCB_PAGES);
-            pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3 = NULL;
-        }
-        pVCpu->cpum.s.Guest.hwvirt.svm.HCPhysVmcb = NIL_RTHCPHYS;
 
         if (pVCpu->cpum.s.Guest.hwvirt.svm.pvMsrBitmapR3)
         {
@@ -1060,23 +1054,7 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
         PVMCPU pVCpu = pVM->apCpusR3[i];
         pVCpu->cpum.s.Guest.hwvirt.enmHwvirt = CPUMHWVIRT_SVM;
 
-        /*
-         * Allocate the nested-guest VMCB.
-         */
-        SUPPAGE SupNstGstVmcbPage;
-        RT_ZERO(SupNstGstVmcbPage);
-        SupNstGstVmcbPage.Phys = NIL_RTHCPHYS;
-        Assert(SVM_VMCB_PAGES == 1);
-        Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
-        rc = SUPR3PageAllocEx(SVM_VMCB_PAGES, 0 /* fFlags */, (void **)&pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3,
-                              &pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR0, &SupNstGstVmcbPage);
-        if (RT_FAILURE(rc))
-        {
-            Assert(!pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3);
-            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMCB\n", pVCpu->idCpu, SVM_VMCB_PAGES));
-            break;
-        }
-        pVCpu->cpum.s.Guest.hwvirt.svm.HCPhysVmcb = SupNstGstVmcbPage.Phys;
+        AssertCompile(SVM_VMCB_PAGES * PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.Vmcb));
 
         /*
          * Allocate the MSRPM (MSR Permission bitmap).
@@ -1135,9 +1113,8 @@ DECLINLINE(void) cpumR3ResetSvmHwVirtState(PVMCPU pVCpu)
 {
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_SVM);
-    Assert(pCtx->hwvirt.svm.CTX_SUFF(pVmcb));
 
-    memset(pCtx->hwvirt.svm.CTX_SUFF(pVmcb), 0, SVM_VMCB_PAGES << PAGE_SHIFT);
+    RT_ZERO(pCtx->hwvirt.svm.Vmcb);
     pCtx->hwvirt.svm.uMsrHSavePa    = 0;
     pCtx->hwvirt.svm.uPrevPauseTick = 0;
 }
@@ -2666,7 +2643,6 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutU64(pSSM, pGstCtx->aPaePdpes[3].u);
         if (pVM->cpum.s.GuestFeatures.fSvm)
         {
-            Assert(pGstCtx->hwvirt.svm.CTX_SUFF(pVmcb));
             SSMR3PutU64(pSSM,    pGstCtx->hwvirt.svm.uMsrHSavePa);
             SSMR3PutGCPhys(pSSM, pGstCtx->hwvirt.svm.GCPhysVmcb);
             SSMR3PutU64(pSSM,    pGstCtx->hwvirt.svm.uPrevPauseTick);
@@ -2675,7 +2651,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutBool(pSSM,   pGstCtx->hwvirt.svm.fInterceptEvents);
             SSMR3PutStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState), 0 /* fFlags */,
                              g_aSvmHwvirtHostState, NULL /* pvUser */);
-            SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pVmcbR3,       SVM_VMCB_PAGES  << X86_PAGE_4K_SHIFT);
+            SSMR3PutMem(pSSM,   &pGstCtx->hwvirt.svm.Vmcb,          sizeof(pGstCtx->hwvirt.svm.Vmcb));
             SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
             SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pvIoBitmapR3,  SVM_IOPM_PAGES  << X86_PAGE_4K_SHIFT);
             SSMR3PutU32(pSSM,    pGstCtx->hwvirt.fLocalForcedActions);
@@ -2953,7 +2929,6 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 {
                     if (pVM->cpum.s.GuestFeatures.fSvm)
                     {
-                        Assert(pGstCtx->hwvirt.svm.CTX_SUFF(pVmcb));
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.svm.uMsrHSavePa);
                         SSMR3GetGCPhys(pSSM,   &pGstCtx->hwvirt.svm.GCPhysVmcb);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.svm.uPrevPauseTick);
@@ -2962,7 +2937,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.svm.fInterceptEvents);
                         SSMR3GetStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState),
                                          0 /* fFlags */, g_aSvmHwvirtHostState, NULL /* pvUser */);
-                        SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pVmcbR3,       SVM_VMCB_PAGES  << X86_PAGE_4K_SHIFT);
+                        SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.svm.Vmcb,          sizeof(pGstCtx->hwvirt.svm.Vmcb));
                         SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
                         SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pvIoBitmapR3,  SVM_IOPM_PAGES  << X86_PAGE_4K_SHIFT);
                         SSMR3GetU32(pSSM,      &pGstCtx->hwvirt.fLocalForcedActions);
@@ -4150,9 +4125,9 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  uMsrHSavePa                = %#RX64\n",    pCtx->hwvirt.svm.uMsrHSavePa);
         pHlp->pfnPrintf(pHlp, "  GCPhysVmcb                 = %#RGp\n",     pCtx->hwvirt.svm.GCPhysVmcb);
         pHlp->pfnPrintf(pHlp, "  VmcbCtrl:\n");
-        cpumR3InfoSvmVmcbCtrl(pHlp, &pCtx->hwvirt.svm.pVmcbR3->ctrl,       "    " /* pszPrefix */);
+        cpumR3InfoSvmVmcbCtrl(pHlp, &pCtx->hwvirt.svm.Vmcb.ctrl,       "    " /* pszPrefix */);
         pHlp->pfnPrintf(pHlp, "  VmcbStateSave:\n");
-        cpumR3InfoSvmVmcbStateSave(pHlp, &pCtx->hwvirt.svm.pVmcbR3->guest, "    " /* pszPrefix */);
+        cpumR3InfoSvmVmcbStateSave(pHlp, &pCtx->hwvirt.svm.Vmcb.guest, "    " /* pszPrefix */);
         pHlp->pfnPrintf(pHlp, "  HostState:\n");
         pHlp->pfnPrintf(pHlp, "    uEferMsr                   = %#RX64\n",  pCtx->hwvirt.svm.HostState.uEferMsr);
         pHlp->pfnPrintf(pHlp, "    uCr0                       = %#RX64\n",  pCtx->hwvirt.svm.HostState.uCr0);

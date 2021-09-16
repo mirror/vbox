@@ -5561,7 +5561,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
             {
-                PCSVMVMCBCTRL pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+                PCSVMVMCBCTRL pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl;
                 if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, IEM_GET_CTX(pVCpu)))
                 {
                     crX = pVmcbCtrl->IntCtrl.n.u8VTPR & 0xf;
@@ -6097,8 +6097,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                     IEM_SVM_CRX_VMEXIT_RET(pVCpu, SVM_EXIT_WRITE_CR8, enmAccessCrX, iGReg);
                 }
 
-                PSVMVMCBCTRL pVmcbCtrl = &pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-                pVmcbCtrl->IntCtrl.n.u8VTPR = uNewCrX;
+                pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb.ctrl.IntCtrl.n.u8VTPR = uNewCrX;
                 if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, IEM_GET_CTX(pVCpu)))
                 {
                     rcStrict = VINF_SUCCESS;

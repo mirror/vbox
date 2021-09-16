@@ -1218,7 +1218,7 @@ DECLINLINE(PSVMVMCB) hmR0SvmGetCurrentVmcb(PVMCPUCC pVCpu)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-        return pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
+        return &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb;
 #endif
     return pVCpu->hmr0.s.svm.pVmcb;
 }
@@ -2232,7 +2232,7 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
 {
     PVMCC        pVM             = pVCpu->CTX_SUFF(pVM);
     PCSVMVMCB    pVmcb           = pVCpu->hmr0.s.svm.pVmcb;
-    PSVMVMCB     pVmcbNstGst     = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCB     pVmcbNstGst     = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb;
     PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
 
     /* Merge the guest's CR intercepts into the nested-guest VMCB. */
@@ -2541,7 +2541,7 @@ static bool hmR0SvmCacheVmcbNested(PVMCPUCC pVCpu)
     bool const fWasCached = pVmcbNstGstCache->fCacheValid;
     if (!fWasCached)
     {
-        PCSVMVMCB      pVmcbNstGst    = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
+        PCSVMVMCB      pVmcbNstGst    = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb;
         PCSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
         pVmcbNstGstCache->u16InterceptRdCRx       = pVmcbNstGstCtrl->u16InterceptRdCRx;
         pVmcbNstGstCache->u16InterceptWrCRx       = pVmcbNstGstCtrl->u16InterceptWrCRx;
@@ -2574,7 +2574,7 @@ static bool hmR0SvmCacheVmcbNested(PVMCPUCC pVCpu)
  */
 static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
 {
-    PSVMVMCB     pVmcbNstGst     = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCB     pVmcbNstGst     = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb;
     PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
 
     HMSVM_ASSERT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
@@ -4673,11 +4673,12 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
     Assert(pcLoops);
     Assert(*pcLoops <= pVCpu->CTX_SUFF(pVM)->hmr0.s.cMaxResumeLoops);
+    RTHCPHYS const HCPhysVmcb = GVMMR0ConvertGVMPtr2HCPhys(pVCpu->pGVM, &pCtx->hwvirt.svm.Vmcb);
 
     SVMTRANSIENT SvmTransient;
     RT_ZERO(SvmTransient);
     SvmTransient.fUpdateTscOffsetting = true;
-    SvmTransient.pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    SvmTransient.pVmcb = &pCtx->hwvirt.svm.Vmcb;
     SvmTransient.fIsNestedGuest = true;
 
     VBOXSTRICTRC rc = VERR_INTERNAL_ERROR_4;
@@ -4702,7 +4703,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
          */
         hmR0SvmPreRunGuestCommitted(pVCpu, &SvmTransient);
 
-        rc = hmR0SvmRunGuest(pVCpu, pCtx->hwvirt.svm.HCPhysVmcb);
+        rc = hmR0SvmRunGuest(pVCpu, HCPhysVmcb);
 
         /* Restore any residual host-state and save any bits shared between host and guest
            into the guest-CPU state.  Re-enables interrupts! */
@@ -4727,7 +4728,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         /* Handle the #VMEXIT. */
         HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
-        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pCtx->hwvirt.svm.CTX_SUFF(pVmcb));
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, &pCtx->hwvirt.svm.Vmcb);
         rc = hmR0SvmHandleExitNested(pVCpu, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitHandling, x);
         if (rc == VINF_SUCCESS)
@@ -4871,7 +4872,7 @@ static VBOXSTRICTRC hmR0SvmHandleExitNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTr
      * For all the #VMEXITs here we primarily figure out if the #VMEXIT is expected by the
      * nested-guest. If it isn't, it should be handled by the (outer) guest.
      */
-    PSVMVMCB       pVmcbNstGst     = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCB       pVmcbNstGst     = &pVCpu->cpum.GstCtx.hwvirt.svm.Vmcb;
     PCCPUMCTX      pCtx            = &pVCpu->cpum.GstCtx;
     PSVMVMCBCTRL   pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
     uint64_t const uExitCode       = pVmcbNstGstCtrl->u64ExitCode;

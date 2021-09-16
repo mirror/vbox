@@ -2096,7 +2096,7 @@ VMM_INT_DECL(bool) CPUMIsGuestSvmVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
     RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
-    PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.Vmcb.ctrl;
     PCSVMINTCTRL  pVmcbIntCtrl = &pVmcbCtrl->IntCtrl;
     Assert(!pVmcbIntCtrl->n.u1VGifEnable);      /* We don't support passing virtual-GIF feature to the guest yet. */
     if (   !pVmcbIntCtrl->n.u1IgnoreTPR
@@ -2115,8 +2115,7 @@ VMM_INT_DECL(bool) CPUMIsGuestSvmVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
  */
 VMM_INT_DECL(uint8_t) CPUMGetGuestSvmVirtIntrVector(PCCPUMCTX pCtx)
 {
-    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-    return pVmcbCtrl->IntCtrl.n.u8VIntrVector;
+    return pCtx->hwvirt.svm.Vmcb.ctrl.IntCtrl.n.u8VIntrVector;
 }
 
 
@@ -2211,11 +2210,7 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTs
     {
         uint64_t offTsc;
         if (!HMGetGuestSvmTscOffset(pVCpu, &offTsc))
-        {
-            PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-            Assert(pVmcb);
-            offTsc = pVmcb->ctrl.u64TSCOffset;
-        }
+            offTsc = pCtx->hwvirt.svm.Vmcb.ctrl.u64TSCOffset;
         return uTscValue + offTsc;
     }
     return uTscValue;
@@ -2250,11 +2245,7 @@ VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uT
     {
         uint64_t offTsc;
         if (!HMGetGuestSvmTscOffset(pVCpu, &offTsc))
-        {
-            PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-            Assert(pVmcb);
-            offTsc = pVmcb->ctrl.u64TSCOffset;
-        }
+            offTsc = pCtx->hwvirt.svm.Vmcb.ctrl.u64TSCOffset;
         return uTscValue - offTsc;
     }
     return uTscValue;

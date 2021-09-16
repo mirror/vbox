@@ -230,11 +230,9 @@ struc CPUMCPU
     .Guest.XState             EQU     .Guest.abXState
 
     alignb 4096
+    .Guest.hwvirt.svm.Vmcb                  resb            4096
     .Guest.hwvirt.svm.uMsrHSavePa            resq         1
     .Guest.hwvirt.svm.GCPhysVmcb             resq         1
-    .Guest.hwvirt.svm.pVmcbR0                RTR0PTR_RES  1
-    alignb 8
-    .Guest.hwvirt.svm.pVmcbR3                RTR3PTR_RES  1
     alignb 8
     .Guest.hwvirt.svm.HostState              resb         184
     .Guest.hwvirt.svm.uPrevPauseTick         resq         1
@@ -249,9 +247,9 @@ struc CPUMCPU
     .Guest.hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES  1
     alignb 8
     .Guest.hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES  1
+
+    ;.unnamed_padding.1 resb 0
     alignb 8
-    .Guest.hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES 1
-    .Guest.hwvirt.svm.abPadding0             resb       272
     .Guest.hwvirt.enmHwvirt                  resd         1
     .Guest.hwvirt.fGif                       resb         1
     alignb 8
