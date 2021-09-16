@@ -614,26 +614,8 @@ typedef struct CPUMCTX
                 uint8_t                 abPadding0[5];
                 /** 0x3f0 - Guest VMX MSRs. */
                 VMXMSRS                 Msrs;
-                /** 0x4d0 - Host physical address of the VMCS. */
-                RTHCPHYS                HCPhysVmcs;
-                /** 0x4d8 - Host physical address of the shadow VMCS. */
-                RTHCPHYS                HCPhysShadowVmcs;
                 /** 0x4e0 - Host physical address of the virtual-APIC page. */
                 RTHCPHYS                HCPhysVirtApicPage;
-                /** 0x4e8 - Host physical address of the VMREAD bitmap. */
-                RTHCPHYS                HCPhysVmreadBitmap;
-                /** 0x4f0 - Host physical address of the VMWRITE bitmap. */
-                RTHCPHYS                HCPhysVmwriteBitmap;
-                /** 0x4f8 - Host physical address of the VM-entry MSR-load area. */
-                RTHCPHYS                HCPhysEntryMsrLoadArea;
-                /** 0x500 - Host physical address of the VM-exit MSR-store area. */
-                RTHCPHYS                HCPhysExitMsrStoreArea;
-                /** 0x508 - Host physical address of the VM-exit MSR-load area. */
-                RTHCPHYS                HCPhysExitMsrLoadArea;
-                /** 0x510 - Host physical address of the MSR bitmap. */
-                RTHCPHYS                HCPhysMsrBitmap;
-                /** 0x518 - Host physical address of the I/O bitmap. */
-                RTHCPHYS                HCPhysIoBitmap;
             } vmx;
         } CPUM_UNION_NM(s);
 

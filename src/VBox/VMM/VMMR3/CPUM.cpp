@@ -1236,9 +1236,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         /*
          * Allocate the nested-guest current VMCS.
          */
-        pCtx->hwvirt.vmx.pVmcsR3 = (PVMXVVMCS)SUPR3ContAlloc(VMX_V_VMCS_PAGES,
-                                                             &pCtx->hwvirt.vmx.pVmcsR0,
-                                                             &pCtx->hwvirt.vmx.HCPhysVmcs);
+        pCtx->hwvirt.vmx.pVmcsR3 = (PVMXVVMCS)SUPR3ContAlloc(VMX_V_VMCS_PAGES, &pCtx->hwvirt.vmx.pVmcsR0, NULL);
         if (pCtx->hwvirt.vmx.pVmcsR3)
         { /* likely */ }
         else
@@ -1250,9 +1248,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         /*
          * Allocate the nested-guest shadow VMCS.
          */
-        pCtx->hwvirt.vmx.pShadowVmcsR3 = (PVMXVVMCS)SUPR3ContAlloc(VMX_V_VMCS_PAGES,
-                                                                   &pCtx->hwvirt.vmx.pShadowVmcsR0,
-                                                                   &pCtx->hwvirt.vmx.HCPhysShadowVmcs);
+        pCtx->hwvirt.vmx.pShadowVmcsR3 = (PVMXVVMCS)SUPR3ContAlloc(VMX_V_VMCS_PAGES, &pCtx->hwvirt.vmx.pShadowVmcsR0, NULL);
         if (pCtx->hwvirt.vmx.pShadowVmcsR3)
         { /* likely */ }
         else
@@ -1280,8 +1276,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Allocate the VMREAD-bitmap.
          */
         pCtx->hwvirt.vmx.pvVmreadBitmapR3 = SUPR3ContAlloc(VMX_V_VMREAD_VMWRITE_BITMAP_PAGES,
-                                                           &pCtx->hwvirt.vmx.pvVmreadBitmapR0,
-                                                           &pCtx->hwvirt.vmx.HCPhysVmreadBitmap);
+                                                           &pCtx->hwvirt.vmx.pvVmreadBitmapR0, NULL);
         if (pCtx->hwvirt.vmx.pvVmreadBitmapR3)
         { /* likely */ }
         else
@@ -1295,8 +1290,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Allocatge the VMWRITE-bitmap.
          */
         pCtx->hwvirt.vmx.pvVmwriteBitmapR3 = SUPR3ContAlloc(VMX_V_VMREAD_VMWRITE_BITMAP_PAGES,
-                                                            &pCtx->hwvirt.vmx.pvVmwriteBitmapR0,
-                                                            &pCtx->hwvirt.vmx.HCPhysVmwriteBitmap);
+                                                            &pCtx->hwvirt.vmx.pvVmwriteBitmapR0, NULL);
         if (pCtx->hwvirt.vmx.pvVmwriteBitmapR3)
         { /* likely */ }
         else
@@ -1310,8 +1304,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Allocate the VM-entry MSR-load area.
          */
         pCtx->hwvirt.vmx.pEntryMsrLoadAreaR3 = (PVMXAUTOMSR)SUPR3ContAlloc(VMX_V_AUTOMSR_AREA_PAGES,
-                                                                           &pCtx->hwvirt.vmx.pEntryMsrLoadAreaR0,
-                                                                           &pCtx->hwvirt.vmx.HCPhysEntryMsrLoadArea);
+                                                                           &pCtx->hwvirt.vmx.pEntryMsrLoadAreaR0, NULL);
         if (pCtx->hwvirt.vmx.pEntryMsrLoadAreaR3)
         { /* likely */ }
         else
@@ -1325,8 +1318,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Allocate the VM-exit MSR-store area.
          */
         pCtx->hwvirt.vmx.pExitMsrStoreAreaR3 = (PVMXAUTOMSR)SUPR3ContAlloc(VMX_V_AUTOMSR_AREA_PAGES,
-                                                                           &pCtx->hwvirt.vmx.pExitMsrStoreAreaR0,
-                                                                           &pCtx->hwvirt.vmx.HCPhysExitMsrStoreArea);
+                                                                           &pCtx->hwvirt.vmx.pExitMsrStoreAreaR0, NULL);
         if (pCtx->hwvirt.vmx.pExitMsrStoreAreaR3)
         { /* likely */ }
         else
@@ -1340,8 +1332,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Allocate the VM-exit MSR-load area.
          */
         pCtx->hwvirt.vmx.pExitMsrLoadAreaR3 = (PVMXAUTOMSR)SUPR3ContAlloc(VMX_V_AUTOMSR_AREA_PAGES,
-                                                                          &pCtx->hwvirt.vmx.pExitMsrLoadAreaR0,
-                                                                          &pCtx->hwvirt.vmx.HCPhysExitMsrLoadArea);
+                                                                          &pCtx->hwvirt.vmx.pExitMsrLoadAreaR0, NULL);
         if (pCtx->hwvirt.vmx.pExitMsrLoadAreaR3)
         { /* likely */ }
         else
@@ -1354,9 +1345,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         /*
          * Allocate the MSR bitmap.
          */
-        pCtx->hwvirt.vmx.pvMsrBitmapR3 = SUPR3ContAlloc(VMX_V_MSR_BITMAP_PAGES,
-                                                        &pCtx->hwvirt.vmx.pvMsrBitmapR0,
-                                                        &pCtx->hwvirt.vmx.HCPhysMsrBitmap);
+        pCtx->hwvirt.vmx.pvMsrBitmapR3 = SUPR3ContAlloc(VMX_V_MSR_BITMAP_PAGES, &pCtx->hwvirt.vmx.pvMsrBitmapR0, NULL);
         if (pCtx->hwvirt.vmx.pvMsrBitmapR3)
         { /* likely */ }
         else
@@ -1370,8 +1359,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Allocate the I/O bitmaps (A and B).
          */
         pCtx->hwvirt.vmx.pvIoBitmapR3 = SUPR3ContAlloc(VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES,
-                                                       &pCtx->hwvirt.vmx.pvIoBitmapR0,
-                                                       &pCtx->hwvirt.vmx.HCPhysIoBitmap);
+                                                       &pCtx->hwvirt.vmx.pvIoBitmapR0, NULL);
         if (pCtx->hwvirt.vmx.pvIoBitmapR3)
         { /* likely */ }
         else
