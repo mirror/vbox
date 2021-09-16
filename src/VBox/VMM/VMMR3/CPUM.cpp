@@ -2782,7 +2782,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     /*
      * Validate version.
      */
-    if (    uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2
+    if (    uVersion != CPUM_SAVED_STATE_VERSION_PAE_PDPES
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX_2
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_VMX
         &&  uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_SVM
         &&  uVersion != CPUM_SAVED_STATE_VERSION_XSAVE
