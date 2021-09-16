@@ -106,24 +106,22 @@ void UIWizardNewVDSizeLocationPage::initializePage()
 
     QString strExtension = UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
     QString strMediumFilePath;
-    printf("%s %s\n", qPrintable(m_strDefaultPath), qPrintable(m_pMediumSizePathGroup->mediumPath()));
+    /* Initialize the medium file path with default name and path if user has not exclusively modified them yet: */
     if (!m_userModifiedParameters.contains("MediumPath"))
         strMediumFilePath =
             UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_strDefaultName,
                                                                                                  strExtension), m_strDefaultPath);
+    /* Initialize the medium file path with file path and file name from the location editor. This part is to update the 
+     * file extention correctly in case user has gone back and changed the file format after modifying medium file path: */
     else
         strMediumFilePath =
             UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_pMediumSizePathGroup->mediumName(),
                                                                                                  strExtension), m_pMediumSizePathGroup->mediumPath());
+    m_pMediumSizePathGroup->blockSignals(true);
+    m_pMediumSizePathGroup->setMediumFilePath(strMediumFilePath);
+    m_pMediumSizePathGroup->blockSignals(false);
+    pWizard->setMediumPath(m_pMediumSizePathGroup->mediumFilePath());
 
-
-    {
-
-        m_pMediumSizePathGroup->blockSignals(true);
-        m_pMediumSizePathGroup->setMediumFilePath(strMediumFilePath);
-        m_pMediumSizePathGroup->blockSignals(false);
-        pWizard->setMediumPath(m_pMediumSizePathGroup->mediumFilePath());
-    }
     if (!m_userModifiedParameters.contains("MediumSize"))
     {
         m_pMediumSizePathGroup->blockSignals(true);
