@@ -2315,10 +2315,13 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
     PCCPUMFEATURES pGuestFeatures = &pVM->cpum.s.GuestFeatures;
     uint64_t fMask = X86_CR4_VME | X86_CR4_PVI
                    | X86_CR4_TSD | X86_CR4_DE
-                   | X86_CR4_PSE | X86_CR4_PAE /** @todo r=bird: PAE isn't a given either, we must check features. See als PAEmode. */
-                   | X86_CR4_MCE | X86_CR4_PGE
-                   | X86_CR4_PCE
-                   | X86_CR4_OSXMMEEXCPT;  /** @todo r=ramshankar: Introduced in Pentium III along with SSE. Check fSse here? */
+                   | X86_CR4_MCE | X86_CR4_PCE;
+    if (pGuestFeatures->fPae)
+        fMask |= X86_CR4_PAE;
+    if (pGuestFeatures->fPge)
+        fMask |= X86_CR4_PGE;
+    if (pGuestFeatures->fPse)
+        fMask |= X86_CR4_PSE;
     if (pGuestFeatures->fFxSaveRstor)
         fMask |= X86_CR4_OSFXSR;
     if (pGuestFeatures->fVmx)
@@ -2329,6 +2332,8 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
         fMask |= X86_CR4_PCIDE;
     if (pGuestFeatures->fFsGsBase)
         fMask |= X86_CR4_FSGSBASE;
+    if (pGuestFeatures->fSse)
+        fMask |= X86_CR4_OSXMMEEXCPT;
     return fMask;
 }
 

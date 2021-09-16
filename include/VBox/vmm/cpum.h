@@ -1036,6 +1036,8 @@ typedef struct CPUMFEATURES
     uint32_t        fPse36 : 1;
     /** Supports physical address extension (PAE). */
     uint32_t        fPae : 1;
+    /** Supports page-global extension (PGE). */
+    uint32_t        fPge : 1;
     /** Page attribute table (PAT) support (page level cache control). */
     uint32_t        fPat : 1;
     /** Supports the FXSAVE and FXRSTOR instructions. */
@@ -1158,7 +1160,7 @@ typedef struct CPUMFEATURES
     uint32_t        fArchMdsNo : 1;
 
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 8;
+    uint32_t        fPadding : 7;
 
     /** SVM: Supports Nested-paging. */
     uint32_t        fSvmNestedPaging : 1;
