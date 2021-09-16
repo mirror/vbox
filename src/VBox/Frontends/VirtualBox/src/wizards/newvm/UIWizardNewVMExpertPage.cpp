@@ -690,7 +690,7 @@ void UIWizardNewVMExpertPage::sltMediumLocationButtonClicked()
         UIDiskEditorGroupBox::appendExtension(strSelectedPath,
                                               UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
-    m_pSizeAndLocationGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
+    m_pSizeAndLocationGroup->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
 
 void UIWizardNewVMExpertPage::sltMediumVariantChanged(qulonglong uVariant)
@@ -813,9 +813,9 @@ void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()
             UIDiskEditorGroupBox::constructMediumFilePath(UIDiskEditorGroupBox::appendExtension(strDiskFileName,
                                                                                       strExtension), strMediumPath);
         m_pSizeAndLocationGroup->blockSignals(true);
-        m_pSizeAndLocationGroup->setMediumPath(strMediumFilePath);
+        m_pSizeAndLocationGroup->setMediumFilePath(strMediumFilePath);
         m_pSizeAndLocationGroup->blockSignals(false);
-        pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumPath());
+        pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumFilePath());
     }
 }
 
@@ -835,7 +835,7 @@ void UIWizardNewVMExpertPage::updateDiskWidgetsAfterMediumFormatChange()
     m_pSizeAndLocationGroup->updateMediumPath(comMediumFormat, m_pFormatComboBox->formatExtensions(), KDeviceType_HardDisk);
     m_pSizeAndLocationGroup->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
-    pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumPath());
+    pWizard->setMediumPath(m_pSizeAndLocationGroup->mediumFilePath());
     pWizard->setMediumVariant(m_pDiskVariantGroupBox->mediumVariant());
 }
 

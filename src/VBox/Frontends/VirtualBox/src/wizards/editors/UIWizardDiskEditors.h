@@ -126,8 +126,13 @@ signals:
 public:
 
     UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidget *pParent, qulonglong uMinimumMediumSize);
+    /** Returns name of the medium file without extension and path. */
+    QString mediumName() const;
+    /** Returns the file pat of the medium file including file name and extension. */
+    QString mediumFilePath() const;
+    void setMediumFilePath(const QString &strMediumPath);
+    /** Returns path of the medium file without the file name. */
     QString mediumPath() const;
-    void setMediumPath(const QString &strMediumPath);
     /** Checks if the file extension is correct. Fixs it if necessary. */
     void updateMediumPath(const CMediumFormat &mediumFormat, const QStringList &formatExtensions, KDeviceType enmDeviceType);
     qulonglong mediumSize() const;

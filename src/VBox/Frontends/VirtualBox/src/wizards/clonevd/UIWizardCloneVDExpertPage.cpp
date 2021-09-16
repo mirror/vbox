@@ -94,7 +94,7 @@ void UIWizardCloneVDExpertPage::sltSelectLocationButtonClicked()
         UIDiskEditorGroupBox::appendExtension(strSelectedPath,
                                               UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     QFileInfo mediumPath(strMediumPath);
-    m_pMediumSizePathGroupBox->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
+    m_pMediumSizePathGroupBox->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
 
 void UIWizardCloneVDExpertPage::sltMediumVariantChanged(qulonglong uVariant)
@@ -147,7 +147,7 @@ void UIWizardCloneVDExpertPage::initializePage()
     QString strMediumFilePath =
         UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(strDiskName,
                                                                                              strExtension), strSourceDiskPath);
-    m_pMediumSizePathGroupBox->setMediumPath(strMediumFilePath);
+    m_pMediumSizePathGroupBox->setMediumFilePath(strMediumFilePath);
     pWizard->setMediumPath(strMediumFilePath);
     m_pMediumSizePathGroupBox->blockSignals(false);
 
@@ -199,6 +199,6 @@ void UIWizardCloneVDExpertPage::updateDiskWidgetsAfterMediumFormatChange()
     m_pMediumSizePathGroupBox->updateMediumPath(comMediumFormat, m_pFormatGroupBox->formatExtensions(), m_enmDeviceType);
     m_pMediumSizePathGroupBox->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
-    pWizard->setMediumPath(m_pMediumSizePathGroupBox->mediumPath());
+    pWizard->setMediumPath(m_pMediumSizePathGroupBox->mediumFilePath());
     pWizard->setMediumVariant(m_pVariantGroupBox->mediumVariant());
 }

@@ -71,7 +71,7 @@ void UIWizardNewVDSizeLocationPage::sltSelectLocationButtonClicked()
         UIDiskEditorGroupBox::appendExtension(strSelectedPath,
                                               UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
-    m_pMediumSizePathGroup->setMediumPath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
+    m_pMediumSizePathGroup->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
 
 void UIWizardNewVDSizeLocationPage::sltMediumSizeChanged(qulonglong uSize)
@@ -104,16 +104,25 @@ void UIWizardNewVDSizeLocationPage::initializePage()
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pMediumSizePathGroup);
 
+    QString strExtension = UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
+    QString strMediumFilePath;
+    printf("%s %s\n", qPrintable(m_strDefaultPath), qPrintable(m_pMediumSizePathGroup->mediumPath()));
     if (!m_userModifiedParameters.contains("MediumPath"))
-    {
-        QString strExtension = UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
-        QString strMediumFilePath =
+        strMediumFilePath =
             UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_strDefaultName,
-                                                                                                    strExtension), m_strDefaultPath);
+                                                                                                 strExtension), m_strDefaultPath);
+    else
+        strMediumFilePath =
+            UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(m_pMediumSizePathGroup->mediumName(),
+                                                                                                 strExtension), m_pMediumSizePathGroup->mediumPath());
+
+
+    {
+
         m_pMediumSizePathGroup->blockSignals(true);
-        m_pMediumSizePathGroup->setMediumPath(strMediumFilePath);
+        m_pMediumSizePathGroup->setMediumFilePath(strMediumFilePath);
         m_pMediumSizePathGroup->blockSignals(false);
-        pWizard->setMediumPath(m_pMediumSizePathGroup->mediumPath());
+        pWizard->setMediumPath(m_pMediumSizePathGroup->mediumFilePath());
     }
     if (!m_userModifiedParameters.contains("MediumSize"))
     {

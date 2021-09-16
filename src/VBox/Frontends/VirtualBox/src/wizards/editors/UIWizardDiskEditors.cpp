@@ -316,7 +316,7 @@ UIMediumSizeAndPathGroupBox::UIMediumSizeAndPathGroupBox(bool fExpertMode, QWidg
 
 bool UIMediumSizeAndPathGroupBox::isComplete() const
 {
-    if (QFileInfo(mediumPath()).exists())
+    if (QFileInfo(mediumFilePath()).exists())
     {
         m_pLocationEditor->mark(true, tr("Disk file name is not unique"));
         return false;
@@ -387,14 +387,21 @@ void UIMediumSizeAndPathGroupBox::retranslateUi()
                                                 "that a virtual machine will be able to store on the hard disk."));
 }
 
-QString UIMediumSizeAndPathGroupBox::mediumPath() const
+QString UIMediumSizeAndPathGroupBox::mediumName() const
 {
-    if (m_pLocationEditor)
-        return m_pLocationEditor->text();
-    return QString();
+    if (!m_pLocationEditor)
+        return QString();
+    return QFileInfo(m_pLocationEditor->text()).completeBaseName();
 }
 
-void UIMediumSizeAndPathGroupBox::setMediumPath(const QString &strMediumPath)
+QString UIMediumSizeAndPathGroupBox::mediumFilePath() const
+{
+    if (!m_pLocationEditor)
+        return QString();
+    return m_pLocationEditor->text();
+}
+
+void UIMediumSizeAndPathGroupBox::setMediumFilePath(const QString &strMediumPath)
 {
     if (!m_pLocationEditor)
         return;
@@ -416,9 +423,16 @@ void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFo
                                   QString("%1.%2").
                                   arg(stripFormatExtension(fileInfo.fileName(), formatExtensions)).
                                   arg(strDefaultExtension));
-            setMediumPath(newFileInfo.absoluteFilePath());
+            setMediumFilePath(newFileInfo.absoluteFilePath());
         }
     }
+}
+
+QString UIMediumSizeAndPathGroupBox::mediumPath() const
+{
+    if (!m_pLocationEditor)
+        return QString();
+    return QDir::toNativeSeparators(QFileInfo(m_pLocationEditor->text()).absolutePath());
 }
 
 qulonglong UIMediumSizeAndPathGroupBox::mediumSize() const
