@@ -167,36 +167,34 @@ QString UIDiskEditorGroupBox::defaultExtension(const CMediumFormat &mediumFormat
 
 
 /*********************************************************************************************************************************
-*   UIDiskVariantGroupBox implementation.                                                                                   *
+*   UIDiskVariantWidget implementation.                                                                                   *
 *********************************************************************************************************************************/
 
 
-UIDiskVariantGroupBox::UIDiskVariantGroupBox(bool fExpertMode, QWidget *pParent /* = 0 */)
-    : UIDiskEditorGroupBox(fExpertMode, pParent)
+UIDiskVariantWidget::UIDiskVariantWidget(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pFixedCheckBox(0)
     , m_pSplitBox(0)
 {
     prepare();
 }
 
-void UIDiskVariantGroupBox::prepare()
+void UIDiskVariantWidget::prepare()
 {
     QVBoxLayout *pVariantLayout = new QVBoxLayout(this);
     AssertReturnVoid(pVariantLayout);
     m_pFixedCheckBox = new QCheckBox;
     m_pSplitBox = new QCheckBox;
-    connect(m_pFixedCheckBox, &QCheckBox::toggled, this, &UIDiskVariantGroupBox::sltVariantChanged);
-    connect(m_pSplitBox, &QCheckBox::toggled, this, &UIDiskVariantGroupBox::sltVariantChanged);
+    connect(m_pFixedCheckBox, &QCheckBox::toggled, this, &UIDiskVariantWidget::sltVariantChanged);
+    connect(m_pSplitBox, &QCheckBox::toggled, this, &UIDiskVariantWidget::sltVariantChanged);
     pVariantLayout->addWidget(m_pFixedCheckBox);
     pVariantLayout->addWidget(m_pSplitBox);
     pVariantLayout->addStretch();
     retranslateUi();
 }
 
-void UIDiskVariantGroupBox::retranslateUi()
+void UIDiskVariantWidget::retranslateUi()
 {
-    if (m_fExpertMode)
-        setTitle(tr("Storage on Physical Hard Disk"));
     if (m_pFixedCheckBox)
     {
         m_pFixedCheckBox->setText(tr("Pre-allocate &Full Size"));
@@ -209,7 +207,7 @@ void UIDiskVariantGroupBox::retranslateUi()
     }
 }
 
-qulonglong UIDiskVariantGroupBox::mediumVariant() const
+qulonglong UIDiskVariantWidget::mediumVariant() const
 {
     /* Initial value: */
     qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
@@ -228,7 +226,7 @@ qulonglong UIDiskVariantGroupBox::mediumVariant() const
     return uMediumVariant;
 }
 
-void UIDiskVariantGroupBox::setMediumVariant(qulonglong uMediumVariant)
+void UIDiskVariantWidget::setMediumVariant(qulonglong uMediumVariant)
 {
     /* Exclusive options: */
     if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
@@ -241,7 +239,7 @@ void UIDiskVariantGroupBox::setMediumVariant(qulonglong uMediumVariant)
     m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
 }
 
-void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
+void UIDiskVariantWidget::updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat)
 {
     AssertReturnVoid(m_pFixedCheckBox && m_pSplitBox);
     ULONG uCapabilities = 0;
@@ -272,28 +270,28 @@ void UIDiskVariantGroupBox::updateMediumVariantWidgetsAfterFormatChange(const CM
     emit sigMediumVariantChanged(mediumVariant());
 }
 
-bool UIDiskVariantGroupBox::isComplete() const
+bool UIDiskVariantWidget::isComplete() const
 {
     /* Make sure medium variant is correct: */
     return mediumVariant() != (qulonglong)KMediumVariant_Max;
 }
 
-bool UIDiskVariantGroupBox::isCreateDynamicPossible() const
+bool UIDiskVariantWidget::isCreateDynamicPossible() const
 {
     return m_fIsCreateDynamicPossible;
 }
 
-bool UIDiskVariantGroupBox::isCreateFixedPossible() const
+bool UIDiskVariantWidget::isCreateFixedPossible() const
 {
     return m_fIsCreateFixedPossible;
 }
 
-bool UIDiskVariantGroupBox::isCreateSplitPossible() const
+bool UIDiskVariantWidget::isCreateSplitPossible() const
 {
     return m_fIsCreateSplitPossible;
 }
 
-void UIDiskVariantGroupBox::sltVariantChanged()
+void UIDiskVariantWidget::sltVariantChanged()
 {
     emit sigMediumVariantChanged(mediumVariant());
 }

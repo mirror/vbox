@@ -32,7 +32,7 @@ UIWizardCloneVDVariantPage::UIWizardCloneVDVariantPage()
     , m_pDynamicLabel(0)
     , m_pFixedLabel(0)
     , m_pSplitLabel(0)
-    , m_pVariantGroupBox(0)
+    , m_pVariantWidget(0)
 {
     prepare();
 }
@@ -57,11 +57,11 @@ void UIWizardCloneVDVariantPage::prepare()
     if (m_pSplitLabel)
         pMainLayout->addWidget(m_pSplitLabel);
 
-    m_pVariantGroupBox = new UIDiskVariantGroupBox(false /* expert mode */, 0);
-    if (m_pVariantGroupBox)
+    m_pVariantWidget = new UIDiskVariantWidget(0);
+    if (m_pVariantWidget)
     {
-        pMainLayout->addWidget(m_pVariantGroupBox);
-        connect(m_pVariantGroupBox, &UIDiskVariantGroupBox::sigMediumVariantChanged,
+        pMainLayout->addWidget(m_pVariantWidget);
+        connect(m_pVariantWidget, &UIDiskVariantWidget::sigMediumVariantChanged,
                 this, &UIWizardCloneVDVariantPage::sltMediumVariantChanged);
 
     }
@@ -95,28 +95,28 @@ void UIWizardCloneVDVariantPage::initializePage()
     retranslateUi();
 
     setWidgetVisibility(wizardWindow<UIWizardCloneVD>()->mediumFormat());
-    if (m_pVariantGroupBox)
-        wizardWindow<UIWizardCloneVD>()->setMediumVariant(m_pVariantGroupBox->mediumVariant());
+    if (m_pVariantWidget)
+        wizardWindow<UIWizardCloneVD>()->setMediumVariant(m_pVariantWidget->mediumVariant());
 }
 
 bool UIWizardCloneVDVariantPage::isComplete() const
 {
-    AssertReturn(m_pVariantGroupBox, false);
-    return m_pVariantGroupBox->isComplete();
+    AssertReturn(m_pVariantWidget, false);
+    return m_pVariantWidget->isComplete();
 }
 
 void UIWizardCloneVDVariantPage::setWidgetVisibility(const CMediumFormat &mediumFormat)
 {
-    AssertReturnVoid(m_pVariantGroupBox);
+    AssertReturnVoid(m_pVariantWidget);
 
-    m_pVariantGroupBox->updateMediumVariantWidgetsAfterFormatChange(mediumFormat);
+    m_pVariantWidget->updateMediumVariantWidgetsAfterFormatChange(mediumFormat);
 
     if (m_pDynamicLabel)
-        m_pDynamicLabel->setHidden(!m_pVariantGroupBox->isCreateDynamicPossible());
+        m_pDynamicLabel->setHidden(!m_pVariantWidget->isCreateDynamicPossible());
     if (m_pFixedLabel)
-        m_pFixedLabel->setHidden(!m_pVariantGroupBox->isCreateFixedPossible());
+        m_pFixedLabel->setHidden(!m_pVariantWidget->isCreateFixedPossible());
     if (m_pSplitLabel)
-        m_pSplitLabel->setHidden(!m_pVariantGroupBox->isCreateSplitPossible());
+        m_pSplitLabel->setHidden(!m_pVariantWidget->isCreateSplitPossible());
 }
 
 void UIWizardCloneVDVariantPage::sltMediumVariantChanged(qulonglong uVariant)

@@ -29,7 +29,7 @@
 
 /* Forward declarations: */
 class UIDiskFormatsGroupBox;
-class UIDiskVariantGroupBox;
+class UIDiskVariantWidget;
 class UIMediumSizeAndPathGroupBox;
 
 /** Expert page of the Clone Virtual Disk Image wizard: */
@@ -76,7 +76,7 @@ private:
     void updateDiskWidgetsAfterMediumFormatChange();
 
     UIDiskFormatsGroupBox *m_pFormatGroupBox;
-    UIDiskVariantGroupBox *m_pVariantGroupBox;
+    UIDiskVariantWidget *m_pVariantWidget;
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
     KDeviceType m_enmDeviceType;
 };

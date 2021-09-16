@@ -27,7 +27,7 @@
 /* Forward declarations: */
 class CMediumFormat;
 class QIRichTextLabel;
-class UIDiskVariantGroupBox;
+class UIDiskVariantWidget;
 
 class SHARED_LIBRARY_STUFF UIWizardNewVDVariantPage : public UINativeWizardPage
 {
@@ -53,7 +53,7 @@ private:
     QIRichTextLabel *m_pDynamicLabel;
     QIRichTextLabel *m_pFixedLabel;
     QIRichTextLabel *m_pSplitLabel;
-    UIDiskVariantGroupBox *m_pVariantGroupBox;
+    UIDiskVariantWidget *m_pVariantWidget;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDVariantPage_h */

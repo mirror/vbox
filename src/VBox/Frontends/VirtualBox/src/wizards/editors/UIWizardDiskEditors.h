@@ -75,7 +75,7 @@ protected:
 };
 
 
-class SHARED_LIBRARY_STUFF UIDiskVariantGroupBox : public UIDiskEditorGroupBox
+class SHARED_LIBRARY_STUFF UIDiskVariantWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -85,7 +85,7 @@ signals:
 
 public:
 
-    UIDiskVariantGroupBox(bool fExpertMode, QWidget *pParent = 0);
+    UIDiskVariantWidget(QWidget *pParent = 0);
     /** Enable/disable medium variant radio button depending on the capabilities of the medium format. */
     void updateMediumVariantWidgetsAfterFormatChange(const CMediumFormat &mediumFormat);
     qulonglong mediumVariant() const;

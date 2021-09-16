@@ -27,7 +27,7 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 class CMediumFormat;
-class UIDiskVariantGroupBox;
+class UIDiskVariantWidget;
 
 class UIWizardCloneVDVariantPage : public UINativeWizardPage
 {
@@ -63,7 +63,7 @@ private:
     QIRichTextLabel *m_pFixedLabel;
     /** Holds the 'Split to 2GB files' description label instance. */
     QIRichTextLabel *m_pSplitLabel;
-    UIDiskVariantGroupBox *m_pVariantGroupBox;
+    UIDiskVariantWidget *m_pVariantWidget;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDVariantPage_h */

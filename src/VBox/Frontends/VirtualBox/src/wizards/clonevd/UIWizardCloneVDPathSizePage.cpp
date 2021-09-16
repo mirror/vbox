@@ -78,8 +78,8 @@ void UIWizardCloneVDPathSizePage::initializePage()
         QString strDiskName = QString("%1_%2").arg(QFileInfo(pWizard->sourceDiskName()).completeBaseName()).arg(tr("copy"));
 
         QString strMediumFilePath =
-            UIDiskEditorGroupBox::constructMediumFilePath(UIDiskVariantGroupBox::appendExtension(strDiskName,
-                                                                                                 strExtension), strSourceDiskPath);
+            UIDiskEditorGroupBox::constructMediumFilePath(UIDiskEditorGroupBox::appendExtension(strDiskName,
+                                                                                                strExtension), strSourceDiskPath);
         m_pMediumSizePathGroupBox->setMediumFilePath(strMediumFilePath);
         pWizard->setMediumPath(strMediumFilePath);
     }

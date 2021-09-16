@@ -35,7 +35,7 @@ class QRadioButton;
 class QIToolButton;
 class UIAdditionalUnattendedOptions;
 class UIDiskFormatsComboBox;
-class UIDiskVariantGroupBox;
+class UIDiskVariantWidget;
 class UIMediumSizeAndPathGroupBox;
 class UIGAInstallationGroupBox;
 class UIMediaComboBox;
@@ -125,7 +125,7 @@ private:
     /** @name Variables
       * @{ */
         UIToolBox  *m_pToolBox;
-        UIDiskVariantGroupBox *m_pDiskVariantGroupBox;
+        UIDiskVariantWidget *m_pDiskVariantWidget;
         UIDiskFormatsComboBox *m_pFormatComboBox;
         UIMediumSizeAndPathGroupBox *m_pSizeAndLocationGroup;
         UINameAndSystemEditor *m_pNameAndSystemEditor;
