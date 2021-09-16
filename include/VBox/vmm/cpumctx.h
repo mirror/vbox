@@ -479,7 +479,7 @@ typedef struct CPUMCTX
     /* ---- Start of members not zeroed at reset. ---- */
 
     /** 0x280 - State component offsets into pXState, UINT16_MAX if not present.
-     * @note Everything before this member will be memset to zero during reset. */ 
+     * @note Everything before this member will be memset to zero during reset. */
     uint16_t            aoffXState[64];
     /** 0x300 - The extended state (FPU/SSE/AVX/AVX-2/XXXX).
      * Aligned on 256 byte boundrary (min req is currently 64 bytes). */
