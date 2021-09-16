@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,31 +50,33 @@ public:
 
     /** Constructs export appliance wizard passing @a pParent to the base-class.
       * @param  selectedVMNames  Brings the names of VMs to be exported. */
-    UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames = QStringList(), bool fFastTraverToExportOCI = false);
-
-    /** Exports full appliance. */
-    bool exportAppliance();
+    UIWizardExportApp(QWidget *pParent,
+                      const QStringList &selectedVMNames = QStringList(),
+                      bool fFastTraverToExportOCI = false);
 
     /** Composes universal resource identifier.
       * @param  fWithFile  Brings whether uri should include file name as well. */
     QString uri(bool fWithFile = true) const;
 
+    /** Exports Appliance. */
+    bool exportAppliance();
+
 protected slots:
 
     /** Handles page change to @a iId. */
-    virtual void sltCurrentIdChanged(int iId) /* override */;
+    virtual void sltCurrentIdChanged(int iId) /* override final */;
 
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Prepares all. */
-    virtual void prepare() /* override */;
+    virtual void prepare() /* override final */;
 
 private:
 
-    /** Exports @a comAppliance VMs. */
+    /** Exports VMs enumerated in @a comAppliance. */
     bool exportVMs(CAppliance &comAppliance);
 
     /** Holds the names of VMs to be exported. */

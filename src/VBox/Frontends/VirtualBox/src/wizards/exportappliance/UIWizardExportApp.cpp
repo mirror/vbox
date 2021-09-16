@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -53,6 +53,27 @@ UIWizardExportApp::UIWizardExportApp(QWidget *pParent,
     /* Assign background image: */
     assignBackground(":/wizard_ovf_export_bg.png");
 #endif
+}
+
+QString UIWizardExportApp::uri(bool fWithFile) const
+{
+    /* For Cloud formats: */
+    if (field("isFormatCloudOne").toBool())
+        return QString("%1://").arg(field("providerShortName").toString());
+    else
+    {
+        /* Prepare storage path: */
+        QString strPath = field("path").toString();
+        /* Append file name if requested: */
+        if (!fWithFile)
+        {
+            QFileInfo fi(strPath);
+            strPath = fi.path();
+        }
+
+        /* Just path by default: */
+        return strPath;
+    }
 }
 
 bool UIWizardExportApp::exportAppliance()
@@ -149,27 +170,6 @@ bool UIWizardExportApp::exportAppliance()
 
         /* Export the VMs, on success we are finished: */
         return exportVMs(comAppliance);
-    }
-}
-
-QString UIWizardExportApp::uri(bool fWithFile) const
-{
-    /* For Cloud formats: */
-    if (field("isFormatCloudOne").toBool())
-        return QString("%1://").arg(field("providerShortName").toString());
-    else
-    {
-        /* Prepare storage path: */
-        QString strPath = field("path").toString();
-        /* Append file name if requested: */
-        if (!fWithFile)
-        {
-            QFileInfo fi(strPath);
-            strPath = fi.path();
-        }
-
-        /* Just path by default: */
-        return strPath;
     }
 }
 
