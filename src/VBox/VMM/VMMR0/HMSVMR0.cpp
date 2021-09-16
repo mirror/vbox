@@ -3994,7 +3994,6 @@ static void hmR0SvmReportWorldSwitchError(PVMCPUCC pVCpu, int rcVMRun)
 static VBOXSTRICTRC hmR0SvmCheckForceFlags(PVMCPUCC pVCpu)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
     /* Could happen as a result of longjump. */
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))

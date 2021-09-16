@@ -3553,12 +3553,6 @@ typedef struct PGMCPU
     R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
     /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
     RTGCPHYS                        aGCPhysGstPaePDs[4];
-    /** The values of the 4 PDPE CPU registers (PAE).
-     * @todo Not really maintained by PGM atm, only by VT-x in EPT mode. Should
-     *       load on cr3 load and use instead of guest memory version like real
-     *       HW.  We probably should move these to the CPUMCTX and treat them
-     *       like the rest of the register wrt exporting to VT-x and import back. */
-    X86PDPE                         aGstPaePdpeRegs[4];
     /** The physical addresses of the monitored guest page directories (PAE). */
     RTGCPHYS                        aGCPhysGstPaePDsMonitored[4];
     /** Mask containing the MBZ PTE bits. */

@@ -1538,6 +1538,7 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestTscAux(PVMCPUCC pVCpu);
 VMM_INT_DECL(void)     CPUMSetGuestSpecCtrl(PVMCPUCC pVCpu, uint64_t uValue);
 VMM_INT_DECL(uint64_t) CPUMGetGuestSpecCtrl(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM);
+VMM_INT_DECL(void)     CPUMSetGuestPaePdpes(PVMCPU pVCpu, PCX86PDPE paPaePdpes);
 /** @} */
 
 

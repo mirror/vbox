@@ -112,7 +112,6 @@ VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMMDECL(bool)                   HMCanExecuteGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVMCC pVM);
-VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVMCC pVM, PVMCPUCC pVCpu, bool fEnable);
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);

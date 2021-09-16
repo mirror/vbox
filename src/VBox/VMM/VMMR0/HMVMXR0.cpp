@@ -5897,12 +5897,10 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
                 /* If the guest is in PAE mode, pass the PDPEs to VT-x using the VMCS fields. */
                 if (CPUMIsGuestInPAEModeEx(pCtx))
                 {
-                    rc  = PGMGstGetPaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-                    AssertRC(rc);
-                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, pVCpu->hm.s.aPdpes[0].u);     AssertRC(rc);
-                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, pVCpu->hm.s.aPdpes[1].u);     AssertRC(rc);
-                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, pVCpu->hm.s.aPdpes[2].u);     AssertRC(rc);
-                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, pVCpu->hm.s.aPdpes[3].u);     AssertRC(rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, pCtx->aPaePdpes[0].u);     AssertRC(rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, pCtx->aPaePdpes[1].u);     AssertRC(rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, pCtx->aPaePdpes[2].u);     AssertRC(rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, pCtx->aPaePdpes[3].u);     AssertRC(rc);
                 }
 
                 /*
@@ -7963,15 +7961,23 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                             VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
                         }
 
-                        /* If the guest is in PAE mode, sync back the PDPE's into the guest state.
-                           Note: CR4.PAE, CR0.PG, EFER MSR changes are always intercepted, so they're up to date. */
+                        /*
+                         * If the guest is in PAE mode, sync back the PDPE's into the guest state.
+                         * CR4.PAE, CR0.PG, EFER MSR changes are always intercepted, so they're up to date.
+                         */
                         if (CPUMIsGuestInPAEModeEx(pCtx))
                         {
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, &pVCpu->hm.s.aPdpes[0].u);     AssertRC(rc);
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &pVCpu->hm.s.aPdpes[1].u);     AssertRC(rc);
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &pVCpu->hm.s.aPdpes[2].u);     AssertRC(rc);
-                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &pVCpu->hm.s.aPdpes[3].u);     AssertRC(rc);
-                            VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
+                            X86PDPE aPaePdpes[4];
+                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, &aPaePdpes[0].u);     AssertRC(rc);
+                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &aPaePdpes[1].u);     AssertRC(rc);
+                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &aPaePdpes[2].u);     AssertRC(rc);
+                            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &aPaePdpes[3].u);     AssertRC(rc);
+                            if (memcmp(&aPaePdpes[0], &pCtx->aPaePdpes[0], sizeof(aPaePdpes)))
+                            {
+                                memcpy(&pCtx->aPaePdpes[0], &aPaePdpes[0], sizeof(aPaePdpes));
+                                /* PGM now updates PAE PDPTEs while updating CR3. */
+                                VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
+                            }
                         }
                     }
                 }
@@ -8043,12 +8049,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
             Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
             PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
         }
-
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
-            PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
     }
 
     return VINF_SUCCESS;
@@ -10901,11 +10902,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
                         ("%Rrc\n", rc2), RT_FAILURE_NP(rc2) ? rc2 : VERR_IPE_UNEXPECTED_INFO_STATUS);
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
     }
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
-    {
-        PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
-    }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Paranoia. */
@@ -11278,9 +11274,7 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
         if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
         {
             VMMRZCallRing3Enable(pVCpu);
-
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
 #ifdef HMVMX_ALWAYS_SAVE_RO_GUEST_STATE
             hmR0VmxReadAllRoFieldsVmcs(pVmxTransient);
@@ -15638,6 +15632,12 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
          */
         case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
         {
+            /*
+             * When PAE paging is used, the CPU will reload PAE PDPTEs from CR3 when the guest
+             * changes certain bits even in CR0, CR4 (and not just CR3). We are currently fine
+             * since IEM_CPUMCTX_EXTRN_MUST_MASK (used below) includes CR3 which will import
+             * PAE PDPTEs as well.
+             */
             int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
             AssertRCReturn(rc, rc);
 

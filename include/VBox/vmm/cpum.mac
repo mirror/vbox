@@ -256,6 +256,7 @@ struc CPUMCTX
     .fUsedFpuGuest      resb    1
     alignb 8
     .fExtrn             resq    1
+    .aPaePdpes          resq    4
     alignb 8
     .hwvirt.svm.uMsrHSavePa            resq          1
     .hwvirt.svm.GCPhysVmcb             resq          1

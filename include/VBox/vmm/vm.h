@@ -484,13 +484,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 11
 #define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_64(VMCPU_FF_HM_UPDATE_CR3_BIT)
 #define VMCPU_FF_HM_UPDATE_CR3_BIT          12
-/** This action forces the VM to service any pending updates to PAE PDPEs (used
- *  only by HM)
- * @todo r=bird: This description is very unhelpful.  From the looks of things,
- *       when this flag is set the actual PDPE values live in HMCPU::aPdpes
- *       and PGM should fetch them from there before use. */
-#define VMCPU_FF_HM_UPDATE_PAE_PDPES        RT_BIT_64(VMCPU_FF_HM_UPDATE_PAE_PDPES_BIT)
-#define VMCPU_FF_HM_UPDATE_PAE_PDPES_BIT    13
+/* Bit 13 used to be VMCPU_FF_HM_UPDATE_PAE_PDPES. */
 /** This action forces the VM to resync the page tables before going
  * back to execute guest code. (GLOBAL FLUSH) */
 #define VMCPU_FF_PGM_SYNC_CR3               RT_BIT_64(VMCPU_FF_PGM_SYNC_CR3_BIT)
@@ -581,9 +575,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 /** High priority post-execution actions. */
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (  VM_FF_PGM_NO_MEMORY )
 /** High priority post-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT \
-                                                 | VMCPU_FF_HM_UPDATE_CR3  | VMCPU_FF_HM_UPDATE_PAE_PDPES \
-                                                 | VMCPU_FF_IEM | VMCPU_FF_IOM )
+#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_IEM | VMCPU_FF_IOM )
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \

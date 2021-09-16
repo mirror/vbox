@@ -223,6 +223,7 @@ struc CPUMCPU
     .Guest.fUsedFpuGuest      resb    1
     alignb 8
     .Guest.fExtrn             resq    1
+    .Guest.aPaePdpes          resq    4
     alignb 8
     .Guest.hwvirt.svm.uMsrHSavePa            resq         1
     .Guest.hwvirt.svm.GCPhysVmcb             resq         1

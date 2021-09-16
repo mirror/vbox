@@ -732,18 +732,6 @@ VMM_INT_DECL(bool) HMHasPendingIrq(PVMCC pVM)
 
 
 /**
- * Return the PAE PDPE entries.
- *
- * @returns Pointer to the PAE PDPE array.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMM_INT_DECL(PX86PDPE) HMGetPaePdpes(PVMCPU pVCpu)
-{
-    return &pVCpu->hm.s.aPdpes[0];
-}
-
-
-/**
  * Sets or clears the single instruction flag.
  *
  * When set, HM will try its best to return to ring-3 after executing a single

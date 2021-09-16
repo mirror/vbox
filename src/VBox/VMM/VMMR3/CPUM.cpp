@@ -2684,6 +2684,10 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             PCX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_16HI_BIT, PCX86XSAVEZMM16HI);
             SSMR3PutStructEx(pSSM, pZmm16Hi, sizeof(*pZmm16Hi), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmm16HiFields, NULL);
         }
+        SSMR3PutU64(pSSM, pGstCtx->aPaePdpes[0].u);
+        SSMR3PutU64(pSSM, pGstCtx->aPaePdpes[1].u);
+        SSMR3PutU64(pSSM, pGstCtx->aPaePdpes[2].u);
+        SSMR3PutU64(pSSM, pGstCtx->aPaePdpes[3].u);
         if (pVM->cpum.s.GuestFeatures.fSvm)
         {
             Assert(pGstCtx->hwvirt.svm.CTX_SUFF(pVmcb));
@@ -2960,6 +2964,13 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 {
                     PX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_16HI_BIT, PX86XSAVEZMM16HI);
                     SSMR3GetStructEx(pSSM, pZmm16Hi, sizeof(*pZmm16Hi), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmm16HiFields, NULL);
+                }
+                if (uVersion >= CPUM_SAVED_STATE_VERSION_PAE_PDPES)
+                {
+                    SSMR3GetU64(pSSM, &pGstCtx->aPaePdpes[0].u);
+                    SSMR3GetU64(pSSM, &pGstCtx->aPaePdpes[1].u);
+                    SSMR3GetU64(pSSM, &pGstCtx->aPaePdpes[2].u);
+                    SSMR3GetU64(pSSM, &pGstCtx->aPaePdpes[3].u);
                 }
                 if (uVersion >= CPUM_SAVED_STATE_VERSION_HWVIRT_SVM)
                 {
@@ -3588,6 +3599,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 pszPrefix, pCtx->msrLSTAR,
                 pszPrefix, pCtx->msrSFMASK,
                 pszPrefix, pCtx->msrKERNELGSBASE);
+
+            if (CPUMIsGuestInPAEModeEx(pCtx))
+                for (unsigned i = 0; i < RT_ELEMENTS(pCtx->aPaePdpes); i++)
+                    pHlp->pfnPrintf(pHlp, "%sPAE PDPTE %u  =%016RX64\n", pszPrefix, i, pCtx->aPaePdpes[i]);
             break;
     }
 }

@@ -2334,6 +2334,21 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
 
 
 /**
+ * Sets the PAE PDPTEs for the guest.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
+ * @param   pPaePdes    The PAE PDPTEs to set.
+ */
+VMM_INT_DECL(void) CPUMSetGuestPaePdpes(PVMCPU pVCpu, PCX86PDPE paPaePdpes)
+{
+    Assert(paPaePdpes);
+    for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->cpum.s.Guest.aPaePdpes); i++)
+        pVCpu->cpum.s.Guest.aPaePdpes[i].u = paPaePdpes[i].u;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_CR3;
+}
+
+
+/**
  * Starts a VMX-preemption timer to expire as specified by the nested hypervisor.
  *
  * @returns VBox status code.

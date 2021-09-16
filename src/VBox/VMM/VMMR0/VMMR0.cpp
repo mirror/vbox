@@ -731,7 +731,7 @@ static int vmmR0DoHalt(PGVM pGVM, PGVMCPU pGVCpu)
                            | VM_FF_PGM_NO_MEMORY              | VM_FF_DEBUG_SUSPEND;
     uint64_t const fCpuFFs = VMCPU_FF_TIMER                   | VMCPU_FF_PDM_CRITSECT         | VMCPU_FF_IEM
                            | VMCPU_FF_REQUEST                 | VMCPU_FF_DBGF                 | VMCPU_FF_HM_UPDATE_CR3
-                           | VMCPU_FF_HM_UPDATE_PAE_PDPES     | VMCPU_FF_PGM_SYNC_CR3         | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                           | VMCPU_FF_PGM_SYNC_CR3            | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                            | VMCPU_FF_TO_R3                   | VMCPU_FF_IOM;
 
     /*

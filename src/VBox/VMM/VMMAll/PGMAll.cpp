@@ -2362,58 +2362,6 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
 
 
 /**
- * Gets the PAE PDPEs values cached by the CPU.
- *
- * @returns VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   paPdpes             Where to return the four PDPEs. The array
- *                              pointed to must have 4 entries.
- */
-VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPUCC pVCpu, PX86PDPE paPdpes)
-{
-    Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
-
-    paPdpes[0] = pVCpu->pgm.s.aGstPaePdpeRegs[0];
-    paPdpes[1] = pVCpu->pgm.s.aGstPaePdpeRegs[1];
-    paPdpes[2] = pVCpu->pgm.s.aGstPaePdpeRegs[2];
-    paPdpes[3] = pVCpu->pgm.s.aGstPaePdpeRegs[3];
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Sets the PAE PDPEs values cached by the CPU.
- *
- * @remarks This must be called *AFTER* PGMUpdateCR3.
- *
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   paPdpes             The four PDPE values. The array pointed to must
- *                              have exactly 4 entries.
- *
- * @remarks No-long-jump zone!!!
- */
-VMM_INT_DECL(void) PGMGstUpdatePaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPdpes)
-{
-    Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.aGstPaePdpeRegs); i++)
-    {
-        if (pVCpu->pgm.s.aGstPaePdpeRegs[i].u != paPdpes[i].u)
-        {
-            pVCpu->pgm.s.aGstPaePdpeRegs[i] = paPdpes[i];
-
-            /* Force lazy remapping if it changed in any way. */
-            pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
-            pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
-            pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
-        }
-    }
-
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
-}
-
-
-/**
  * Gets the current CR3 register value for the shadow memory context.
  * @returns CR3 value.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -2423,6 +2371,22 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
     PPGMPOOLPAGE pPoolPage = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
     AssertPtrReturn(pPoolPage, NIL_RTHCPHYS);
     return pPoolPage->Core.Key;
+}
+
+
+/**
+ * Forces lazy remapping of the guest's PAE page-directory structures.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+static void pgmGstUpdatePaePdpes(PVMCPU pVCpu)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.aGCPhysGstPaePDs); i++)
+    {
+        pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
+        pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
+        pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
+    }
 }
 
 
@@ -2527,6 +2491,12 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
             STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBSameCR3Global));
         else
             STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBSameCR3));
+
+        /*
+         * Update PAE PDPTEs.
+         */
+        if (PGMMODE_IS_PAE(pVCpu->pgm.s.enmGuestMode))
+            pgmGstUpdatePaePdpes(pVCpu);
     }
 
     IEMTlbInvalidateAll(pVCpu, false /*fVmm*/);
@@ -2594,6 +2564,11 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
 
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */ /** @todo this isn't true for the mac, but we need hw to test/fix this. */
     }
+    /*
+     * Update PAE PDPTEs.
+     */
+    else if (PGMMODE_IS_PAE(pVCpu->pgm.s.enmGuestMode))
+        pgmGstUpdatePaePdpes(pVCpu);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
     return rc;

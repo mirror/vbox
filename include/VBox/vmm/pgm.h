@@ -297,6 +297,12 @@ typedef enum PGMMODE
                                      || (enmMode) == PGMMODE_NESTED_PAE \
                                      || (enmMode) == PGMMODE_NESTED_AMD64)
 
+/** Macro for checking if it's one of the PAE modes.
+ * @param enmMode   PGMMODE_*.
+ */
+#define PGMMODE_IS_PAE(enmMode)     (   (enmMode) == PGMMODE_PAE \
+                                     || (enmMode) == PGMMODE_PAE_NX)
+
 /**
  * Is the ROM mapped (true) or is the shadow RAM mapped (false).
  *
@@ -347,8 +353,6 @@ VMMDECL(int)        PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFla
 VMMDECL(bool)       PGMGstIsPagePresent(PVMCPUCC pVCpu, RTGCPTR GCPtr);
 VMMDECL(int)        PGMGstSetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-VMM_INT_DECL(int)   PGMGstGetPaePdpes(PVMCPUCC pVCpu, PX86PDPE paPdpes);
-VMM_INT_DECL(void)  PGMGstUpdatePaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPdpes);
 
 VMMDECL(int)        PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
 VMMDECL(int)        PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal);
