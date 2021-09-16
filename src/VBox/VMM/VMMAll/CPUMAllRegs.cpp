@@ -2337,7 +2337,7 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
  * Sets the PAE PDPTEs for the guest.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
- * @param   pPaePdes    The PAE PDPTEs to set.
+ * @param   paPaePdpes  The PAE PDPTEs to set.
  */
 VMM_INT_DECL(void) CPUMSetGuestPaePdpes(PVMCPU pVCpu, PCX86PDPE paPaePdpes)
 {
