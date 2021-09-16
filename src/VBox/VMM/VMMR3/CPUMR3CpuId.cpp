@@ -4923,26 +4923,6 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
             break;
 
         /*
-         * Set the page attribute table bit.  This is alternative page level
-         * cache control that doesn't much matter when everything is
-         * virtualized, though it may when passing thru device memory.
-         */
-        case CPUMCPUIDFEATURE_PAT:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
-            if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAT;
-
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
-            if (   pLeaf
-                && (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
-                    || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAT;
-
-            pVM->cpum.s.GuestFeatures.fPat = 1;
-            LogRel(("CPUM: SetGuestCpuIdFeature: Enabled PAT\n"));
-            break;
-
-        /*
          * Set the RDTSCP support bit.
          * Assumes the caller knows what it's doing! (host must support this)
          */
@@ -4972,25 +4952,6 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_HVP;
             pVM->cpum.s.GuestFeatures.fHypervisorPresent = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled Hypervisor Present bit\n"));
-            break;
-
-        /*
-         * Set the MWAIT Extensions Present bit in the MWAIT/MONITOR leaf.
-         * This currently includes the Present bit and MWAITBREAK bit as well.
-         */
-        case CPUMCPUIDFEATURE_MWAIT_EXTS:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005));
-            if (   !pLeaf
-                || !pVM->cpum.s.HostFeatures.fMWaitExtensions)
-            {
-                LogRel(("CPUM: WARNING! Can't turn on MWAIT Extensions when the host doesn't support it!\n"));
-                return;
-            }
-
-            /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdPatmStd[5].uEcx = pLeaf->uEcx |= X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0;
-            pVM->cpum.s.GuestFeatures.fMWaitExtensions = 1;
-            LogRel(("CPUM: SetGuestCpuIdFeature: Enabled MWAIT Extensions.\n"));
             break;
 
         /*
@@ -5120,12 +5081,9 @@ VMMR3_INT_DECL(bool) CPUMR3GetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
         case CPUMCPUIDFEATURE_NX:           return pVM->cpum.s.GuestFeatures.fNoExecute;
         case CPUMCPUIDFEATURE_LAHF:         return pVM->cpum.s.GuestFeatures.fLahfSahf;
         case CPUMCPUIDFEATURE_LONG_MODE:    return pVM->cpum.s.GuestFeatures.fLongMode;
-        case CPUMCPUIDFEATURE_PAT:          return pVM->cpum.s.GuestFeatures.fPat;
         case CPUMCPUIDFEATURE_RDTSCP:       return pVM->cpum.s.GuestFeatures.fRdTscP;
         case CPUMCPUIDFEATURE_HVP:          return pVM->cpum.s.GuestFeatures.fHypervisorPresent;
-        case CPUMCPUIDFEATURE_MWAIT_EXTS:   return pVM->cpum.s.GuestFeatures.fMWaitExtensions;
         case CPUMCPUIDFEATURE_SPEC_CTRL:    return pVM->cpum.s.GuestFeatures.fSpeculationControl;
-
         case CPUMCPUIDFEATURE_INVALID:
         case CPUMCPUIDFEATURE_32BIT_HACK:
             break;
@@ -5187,21 +5145,6 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled PAE!\n"));
             break;
 
-        case CPUMCPUIDFEATURE_PAT:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
-            if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_PAT;
-
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
-            if (   pLeaf
-                && (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
-                    || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAT;
-
-            pVM->cpum.s.GuestFeatures.fPat = 0;
-            Log(("CPUM: ClearGuestCpuIdFeature: Disabled PAT!\n"));
-            break;
-
         case CPUMCPUIDFEATURE_LONG_MODE:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (pLeaf)
@@ -5236,14 +5179,6 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_HVP;
             pVM->cpum.s.GuestFeatures.fHypervisorPresent = 0;
-            break;
-
-        case CPUMCPUIDFEATURE_MWAIT_EXTS:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005));
-            if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[5].uEcx = pLeaf->uEcx &= ~(X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0);
-            pVM->cpum.s.GuestFeatures.fMWaitExtensions = 0;
-            Log(("CPUM: ClearGuestCpuIdFeature: Disabled MWAIT Extensions!\n"));
             break;
 
         case CPUMCPUIDFEATURE_SPEC_CTRL:

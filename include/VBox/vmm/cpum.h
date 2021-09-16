@@ -70,16 +70,12 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_LAHF,
     /** The LONG MODE feature bit. (Ext) */
     CPUMCPUIDFEATURE_LONG_MODE,
-    /** The PAT feature bit. (Std+Ext) */
-    CPUMCPUIDFEATURE_PAT,
     /** The x2APIC  feature bit. (Std) */
     CPUMCPUIDFEATURE_X2APIC,
     /** The RDTSCP feature bit. (Ext) */
     CPUMCPUIDFEATURE_RDTSCP,
     /** The Hypervisor Present bit. (Std) */
     CPUMCPUIDFEATURE_HVP,
-    /** The MWait Extensions bits (Std) */
-    CPUMCPUIDFEATURE_MWAIT_EXTS,
     /** The speculation control feature bits. (StExt) */
     CPUMCPUIDFEATURE_SPEC_CTRL,
     /** 32bit hackishness. */
