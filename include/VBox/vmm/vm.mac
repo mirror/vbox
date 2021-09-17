@@ -90,7 +90,7 @@ struc VMCPU
     alignb 4096
     .pgm                    resb 4096+28672
     alignb 4096
-    .cpum                   resb 90112
+    .cpum                   resb 98304
 %define VMCPU.cpum.GstCtx   VMCPU.cpum
     alignb 4096
     .em                     resb 40960

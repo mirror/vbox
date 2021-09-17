@@ -554,6 +554,8 @@ typedef struct CPUMCTX
                 VMXAUTOMSR              aExitMsrLoadArea[VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR)];
                 /** 0xe000 - The MSR permission bitmap. */
                 uint8_t                 abMsrBitmap[VMX_V_MSR_BITMAP_SIZE];
+                /** 0x10000 - The I/O permission bitmap. */
+                uint8_t                 abIoBitmap[VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE];
 
                 /** 0x300 - Guest physical address of the VMXON region. */
                 RTGCPHYS                GCPhysVmxon;
@@ -583,10 +585,6 @@ typedef struct CPUMCTX
                 R0PTRTYPE(void *)       pvVirtApicPageR0;
                 /** 0x358 - The virtual-APIC page - R3 ptr. */
                 R3PTRTYPE(void *)       pvVirtApicPageR3;
-                /** 0x3c0 - The I/O bitmap - R0 ptr. */
-                R0PTRTYPE(void *)       pvIoBitmapR0;
-                /** 0x3c8 - The I/O bitmap - R3 ptr. */
-                R3PTRTYPE(void *)       pvIoBitmapR3;
                 /** 0x3d0 - Guest TSC timestamp of the first PAUSE instruction that is considered to
                  *  be the first in a loop. */
                 uint64_t                uFirstPauseLoopTick;
@@ -621,7 +619,7 @@ typedef struct CPUMCTX
         uint32_t                fPadding;
 #endif
         /** 0x530 - Pad to 64 byte boundary. */
-        uint8_t                 abPadding0[8+16];
+        uint8_t                 abPadding0[8+32];
     } hwvirt;
 } CPUMCTX;
 #pragma pack()
@@ -838,7 +836,7 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aEntryMsrLoad
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrStoreArea,     X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrLoadArea,      X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abMsrBitmap,           X86_PAGE_SIZE);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvIoBitmapR0,          8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abIoBitmap,            X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,                  8);
 
 /**

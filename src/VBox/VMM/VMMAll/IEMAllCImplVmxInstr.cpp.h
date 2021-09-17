@@ -6662,8 +6662,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
     {
         /* Read the IO bitmap A. */
         RTGCPHYS const GCPhysIoBitmapA = pVmcs->u64AddrIoBitmapA.u;
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap),
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.abIoBitmap[0],
                                          GCPhysIoBitmapA, VMX_V_IO_BITMAP_A_SIZE);
         if (RT_SUCCESS(rc))
         { /* likely */ }
@@ -6672,8 +6671,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
 
         /* Read the IO bitmap B. */
         RTGCPHYS const GCPhysIoBitmapB = pVmcs->u64AddrIoBitmapB.u;
-        uint8_t *pbIoBitmapB = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
-        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pbIoBitmapB, GCPhysIoBitmapB, VMX_V_IO_BITMAP_B_SIZE);
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.abIoBitmap[VMX_V_IO_BITMAP_A_SIZE],
+                                     GCPhysIoBitmapB, VMX_V_IO_BITMAP_B_SIZE);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else

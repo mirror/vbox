@@ -1066,11 +1066,6 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
             SUPR3ContFree(pCtx->hwvirt.vmx.pvVirtApicPageR3, VMX_V_VIRT_APIC_PAGES);
             pCtx->hwvirt.vmx.pvVirtApicPageR3 = NULL;
         }
-        if (pCtx->hwvirt.vmx.pvIoBitmapR3)
-        {
-            SUPR3ContFree(pCtx->hwvirt.vmx.pvIoBitmapR3, VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES);
-            pCtx->hwvirt.vmx.pvIoBitmapR3 = NULL;
-        }
     }
 }
 
@@ -1114,6 +1109,8 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         AssertCompile(sizeof(pCtx->hwvirt.vmx.aExitMsrLoadArea) == VMX_V_AUTOMSR_AREA_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abMsrBitmap) == VMX_V_MSR_BITMAP_PAGES * X86_PAGE_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abMsrBitmap) == VMX_V_MSR_BITMAP_SIZE);
+        AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == (VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES) * X86_PAGE_SIZE);
+        AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
 
         /*
          * Allocate the virtual-APIC page.
@@ -1131,23 +1128,9 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         }
 
         /*
-         * Allocate the I/O bitmaps (A and B).
-         */
-        pCtx->hwvirt.vmx.pvIoBitmapR3 = SUPR3ContAlloc(VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES,
-                                                       &pCtx->hwvirt.vmx.pvIoBitmapR0, NULL);
-        if (pCtx->hwvirt.vmx.pvIoBitmapR3)
-        { /* likely */ }
-        else
-        {
-            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's I/O bitmaps\n", pVCpu->idCpu,
-                    VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES));
-            break;
-        }
-
-        /*
          * Zero out all allocated pages (should compress well for saved-state).
          */
-        /** @todo this is and always was unnecessary - they are already zeroed. */
+        /** @todo r=bird: this is and always was unnecessary - they are already zeroed. */
         RT_ZERO(pCtx->hwvirt.vmx.Vmcs);
         RT_ZERO(pCtx->hwvirt.vmx.ShadowVmcs);
         RT_ZERO(pCtx->hwvirt.vmx.abVmreadBitmap);
@@ -1156,7 +1139,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         RT_ZERO(pCtx->hwvirt.vmx.aExitMsrStoreArea);
         RT_ZERO(pCtx->hwvirt.vmx.aExitMsrLoadArea);
         RT_ZERO(pCtx->hwvirt.vmx.abMsrBitmap);
-        memset(pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap),          0, VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
+        RT_ZERO(pCtx->hwvirt.vmx.abIoBitmap);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVirtApicPage),      0, VMX_V_VIRT_APIC_SIZE);
     }
 
@@ -2470,7 +2453,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutMem(pSSM,     &pGstCtx->hwvirt.vmx.aExitMsrStoreArea[0], sizeof(pGstCtx->hwvirt.vmx.aExitMsrStoreArea));
             SSMR3PutMem(pSSM,     &pGstCtx->hwvirt.vmx.aExitMsrLoadArea[0],  sizeof(pGstCtx->hwvirt.vmx.aExitMsrLoadArea));
             SSMR3PutMem(pSSM,     &pGstCtx->hwvirt.vmx.abMsrBitmap[0],       sizeof(pGstCtx->hwvirt.vmx.abMsrBitmap));
-            SSMR3PutMem(pSSM,      pGstCtx->hwvirt.vmx.pvIoBitmapR3, VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
+            SSMR3PutMem(pSSM,     &pGstCtx->hwvirt.vmx.abIoBitmap[0],        sizeof(pGstCtx->hwvirt.vmx.abIoBitmap));
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.uFirstPauseLoopTick);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.uPrevPauseTick);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.uEntryTick);
@@ -2760,7 +2743,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.vmx.aExitMsrStoreArea[0], sizeof(pGstCtx->hwvirt.vmx.aExitMsrStoreArea));
                         SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.vmx.aExitMsrLoadArea[0],  sizeof(pGstCtx->hwvirt.vmx.aExitMsrLoadArea));
                         SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.vmx.abMsrBitmap[0],       sizeof(pGstCtx->hwvirt.vmx.abMsrBitmap));
-                        SSMR3GetMem(pSSM,       pGstCtx->hwvirt.vmx.pvIoBitmapR3, VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
+                        SSMR3GetMem(pSSM,      &pGstCtx->hwvirt.vmx.abIoBitmap[0],        sizeof(pGstCtx->hwvirt.vmx.abIoBitmap));
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.uFirstPauseLoopTick);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.uPrevPauseTick);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.uEntryTick);

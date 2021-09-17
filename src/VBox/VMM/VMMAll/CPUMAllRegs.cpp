@@ -2477,11 +2477,11 @@ VMM_INT_DECL(uint32_t) CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t
  * to see if causes a VM-exit.
  *
  * @returns @c true if the I/O port access must cause a VM-exit, @c false otherwise.
- * @param   pvIoBitmap  Pointer to I/O bitmap.
+ * @param   pbIoBitmap  Pointer to I/O bitmap.
  * @param   uPort       The I/O port being accessed.
  * @param   cbAccess    e size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-static bool cpumGetVmxIoBitmapPermission(void const *pvIoBitmap, uint16_t uPort, uint8_t cbAccess)
+static bool cpumGetVmxIoBitmapPermission(uint8_t const *pbIoBitmap, uint16_t uPort, uint8_t cbAccess)
 {
     Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
 
@@ -2503,7 +2503,6 @@ static bool cpumGetVmxIoBitmapPermission(void const *pvIoBitmap, uint16_t uPort,
     /*
      * If any bit corresponding to the I/O access is set, we must cause a VM-exit.
      */
-    uint8_t const *pbIoBitmap = (uint8_t const *)pvIoBitmap;
     uint16_t const offPerm    = uPort >> 3;                         /* Byte offset of the port. */
     uint16_t const idxPermBit = uPort - (offPerm << 3);             /* Bit offset within byte. */
     Assert(idxPermBit < 8);
@@ -2512,9 +2511,9 @@ static bool cpumGetVmxIoBitmapPermission(void const *pvIoBitmap, uint16_t uPort,
 
     /* Fetch 8 or 16-bits depending on whether the access spans 8-bit boundary. */
     RTUINT16U uPerm;
-    uPerm.s.Lo = *(pbIoBitmap + offPerm);
+    uPerm.s.Lo = pbIoBitmap[offPerm];
     if (idxPermBit + cbAccess > 8)
-        uPerm.s.Hi = *(pbIoBitmap + 1 + offPerm);
+        uPerm.s.Hi = pbIoBitmap[offPerm + 1];
     else
         uPerm.s.Hi = 0;
 
@@ -2801,11 +2800,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port,
         return true;
 
     if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_USE_IO_BITMAPS))
-    {
-        uint8_t const *pbIoBitmap = (uint8_t const *)pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap);
-        Assert(pbIoBitmap);
-        return cpumGetVmxIoBitmapPermission(pbIoBitmap, u16Port, cbAccess);
-    }
+        return cpumGetVmxIoBitmapPermission(pCtx->hwvirt.vmx.abIoBitmap, u16Port, cbAccess);
 
     return false;
 }

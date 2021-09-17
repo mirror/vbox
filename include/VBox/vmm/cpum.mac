@@ -288,6 +288,7 @@ struc CPUMCTX
     .hwvirt.vmx.aExitMsrStoreArea       resb        0x2000
     .hwvirt.vmx.aExitMsrLoadArea        resb        0x2000
     .hwvirt.vmx.abMsrBitmap             resb        0x1000
+    .hwvirt.vmx.abIoBitmap              resb        0x1000+0x1000
     alignb 8
     .hwvirt.vmx.GCPhysVmxon             resq        1
     .hwvirt.vmx.GCPhysVmcs              resq        1
@@ -302,8 +303,6 @@ struc CPUMCTX
     .hwvirt.vmx.fNmiUnblockingIret      resb        1
     .hwvirt.vmx.pvVirtApicPageR0        resq        1
     .hwvirt.vmx.pvVirtApicPageR3        resq        1
-    .hwvirt.vmx.pvIoBitmapR0            resq        1
-    .hwvirt.vmx.pvIoBitmapR3            resq        1
     .hwvirt.vmx.uFirstPauseLoopTick     resq        1
     .hwvirt.vmx.uPrevPauseTick          resq        1
     .hwvirt.vmx.uEntryTick              resq        1
