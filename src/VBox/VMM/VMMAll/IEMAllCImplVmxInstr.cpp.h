@@ -6753,9 +6753,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
     {
         /* Read the MSR bitmap. */
         RTGCPHYS const GCPhysMsrBitmap = pVmcs->u64AddrMsrBitmap.u;
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap),
-                                         GCPhysMsrBitmap, VMX_V_MSR_BITMAP_SIZE);
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap[0],
+                                         GCPhysMsrBitmap, sizeof(pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap));
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -7446,8 +7445,7 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PCVMCPU pVCpu, uint32_t uExitReas
     Assert(pVmcs);
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
-        uint32_t const fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr);
+        uint32_t const fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap, idMsr);
         if (uExitReason == VMX_EXIT_RDMSR)
             return RT_BOOL(fMsrpm & VMXMSRPM_EXIT_RD);
         return RT_BOOL(fMsrpm & VMXMSRPM_EXIT_WR);

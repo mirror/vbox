@@ -2126,14 +2126,12 @@ static void hmR0VmxStructsInit(PVMCC pVM)
  * Returns whether an MSR at the given MSR-bitmap offset is intercepted or not.
  *
  * @returns @c true if the MSR is intercepted, @c false otherwise.
- * @param   pvMsrBitmap     The MSR bitmap.
+ * @param   pbMsrBitmap     The MSR bitmap.
  * @param   offMsr          The MSR byte offset.
  * @param   iBit            The bit offset from the byte offset.
  */
-DECLINLINE(bool) hmR0VmxIsMsrBitSet(const void *pvMsrBitmap, uint16_t offMsr, int32_t iBit)
+DECLINLINE(bool) hmR0VmxIsMsrBitSet(uint8_t const *pbMsrBitmap, uint16_t offMsr, int32_t iBit)
 {
-    uint8_t const * const pbMsrBitmap = (uint8_t const * const)pvMsrBitmap;
-    Assert(pbMsrBitmap);
     Assert(offMsr + (iBit >> 3) <= X86_PAGE_4K_SIZE);
     return ASMBitTest(pbMsrBitmap + offMsr, iBit);
 }
@@ -2203,7 +2201,7 @@ static void hmR0VmxSetMsrPermission(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool
     {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         bool const fClear = !fIsNstGstVmcs ? true
-                          : !hmR0VmxIsMsrBitSet(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), offMsrRead, iBit);
+                          : !hmR0VmxIsMsrBitSet(pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap, offMsrRead, iBit);
 #else
         RT_NOREF2(pVCpu, fIsNstGstVmcs);
         bool const fClear = true;
@@ -2223,7 +2221,7 @@ static void hmR0VmxSetMsrPermission(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool
     {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         bool const fClear = !fIsNstGstVmcs ? true
-                          : !hmR0VmxIsMsrBitSet(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), offMsrWrite, iBit);
+                          : !hmR0VmxIsMsrBitSet(pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap, offMsrWrite, iBit);
 #else
         RT_NOREF2(pVCpu, fIsNstGstVmcs);
         bool const fClear = true;
@@ -2839,7 +2837,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInf
                      * Check if the nested-guest MSR bitmap allows passthrough, and if so, assert that we
                      * allow passthrough too.
                      */
-                    void const *pvMsrBitmapNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap);
+                    void const *pvMsrBitmapNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap;
                     Assert(pvMsrBitmapNstGst);
                     uint32_t const fMsrpmNstGst = CPUMGetVmxMsrPermission(pvMsrBitmapNstGst, pGuestMsrLoad->u32Msr);
                     AssertMsgReturnVoid(fMsrpm == fMsrpmNstGst,
@@ -10421,7 +10419,7 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
     PCVMXVVMCS const pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     if (pVmcsNstGst->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
-        uint64_t const *pu64MsrBitmapNstGst = (uint64_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap);
+        uint64_t const *pu64MsrBitmapNstGst = (uint64_t const *)&pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap[0];
         uint64_t const *pu64MsrBitmapGst    = (uint64_t const *)pVmcsInfoGst->pvMsrBitmap;
         Assert(pu64MsrBitmapNstGst);
         Assert(pu64MsrBitmapGst);
@@ -17324,7 +17322,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsrNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
 
     uint32_t fMsrpm;
     if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
-        fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
+        fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap, pVCpu->cpum.GstCtx.ecx);
     else
         fMsrpm = VMXMSRPM_EXIT_RD;
 
@@ -17346,7 +17344,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsrNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
 
     uint32_t fMsrpm;
     if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
-        fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
+        fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.abMsrBitmap, pVCpu->cpum.GstCtx.ecx);
     else
         fMsrpm = VMXMSRPM_EXIT_WR;
 

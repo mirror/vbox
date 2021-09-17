@@ -149,8 +149,6 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fNmiUnblockingIret);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVirtApicPageR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvVirtApicPageR3);
-    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvMsrBitmapR0);
-    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvMsrBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvIoBitmapR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pvIoBitmapR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.uFirstPauseLoopTick);
