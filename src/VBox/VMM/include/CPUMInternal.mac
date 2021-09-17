@@ -113,121 +113,121 @@ struc CPUMCPU
     ; Guest context state
     ; (Identical to the .Hyper chunk below and to CPUMCTX in cpum.mac.)
     ;
-    .Guest                    resq    0
-    .Guest.eax                resq    1
-    .Guest.ecx                resq    1
-    .Guest.edx                resq    1
-    .Guest.ebx                resq    1
-    .Guest.esp                resq    1
-    .Guest.ebp                resq    1
-    .Guest.esi                resq    1
-    .Guest.edi                resq    1
-    .Guest.r8                 resq    1
-    .Guest.r9                 resq    1
-    .Guest.r10                resq    1
-    .Guest.r11                resq    1
-    .Guest.r12                resq    1
-    .Guest.r13                resq    1
-    .Guest.r14                resq    1
-    .Guest.r15                resq    1
-    .Guest.es.Sel             resw    1
-    .Guest.es.PaddingSel      resw    1
-    .Guest.es.ValidSel        resw    1
-    .Guest.es.fFlags          resw    1
-    .Guest.es.u64Base         resq    1
-    .Guest.es.u32Limit        resd    1
-    .Guest.es.Attr            resd    1
-    .Guest.cs.Sel             resw    1
-    .Guest.cs.PaddingSel      resw    1
-    .Guest.cs.ValidSel        resw    1
-    .Guest.cs.fFlags          resw    1
-    .Guest.cs.u64Base         resq    1
-    .Guest.cs.u32Limit        resd    1
-    .Guest.cs.Attr            resd    1
-    .Guest.ss.Sel             resw    1
-    .Guest.ss.PaddingSel      resw    1
-    .Guest.ss.ValidSel        resw    1
-    .Guest.ss.fFlags          resw    1
-    .Guest.ss.u64Base         resq    1
-    .Guest.ss.u32Limit        resd    1
-    .Guest.ss.Attr            resd    1
-    .Guest.ds.Sel             resw    1
-    .Guest.ds.PaddingSel      resw    1
-    .Guest.ds.ValidSel        resw    1
-    .Guest.ds.fFlags          resw    1
-    .Guest.ds.u64Base         resq    1
-    .Guest.ds.u32Limit        resd    1
-    .Guest.ds.Attr            resd    1
-    .Guest.fs.Sel             resw    1
-    .Guest.fs.PaddingSel      resw    1
-    .Guest.fs.ValidSel        resw    1
-    .Guest.fs.fFlags          resw    1
-    .Guest.fs.u64Base         resq    1
-    .Guest.fs.u32Limit        resd    1
-    .Guest.fs.Attr            resd    1
-    .Guest.gs.Sel             resw    1
-    .Guest.gs.PaddingSel      resw    1
-    .Guest.gs.ValidSel        resw    1
-    .Guest.gs.fFlags          resw    1
-    .Guest.gs.u64Base         resq    1
-    .Guest.gs.u32Limit        resd    1
-    .Guest.gs.Attr            resd    1
-    .Guest.eip                resq    1
-    .Guest.eflags             resq    1
-    .Guest.cr0                resq    1
-    .Guest.cr2                resq    1
-    .Guest.cr3                resq    1
-    .Guest.cr4                resq    1
-    .Guest.dr                 resq    8
-    .Guest.gdtrPadding        resw    3
-    .Guest.gdtr               resw    0
-    .Guest.gdtr.cbGdt         resw    1
-    .Guest.gdtr.pGdt          resq    1
-    .Guest.idtrPadding        resw    3
-    .Guest.idtr               resw    0
-    .Guest.idtr.cbIdt         resw    1
-    .Guest.idtr.pIdt          resq    1
-    .Guest.ldtr.Sel           resw    1
-    .Guest.ldtr.PaddingSel    resw    1
-    .Guest.ldtr.ValidSel      resw    1
-    .Guest.ldtr.fFlags        resw    1
-    .Guest.ldtr.u64Base       resq    1
-    .Guest.ldtr.u32Limit      resd    1
-    .Guest.ldtr.Attr          resd    1
-    .Guest.tr.Sel             resw    1
-    .Guest.tr.PaddingSel      resw    1
-    .Guest.tr.ValidSel        resw    1
-    .Guest.tr.fFlags          resw    1
-    .Guest.tr.u64Base         resq    1
-    .Guest.tr.u32Limit        resd    1
-    .Guest.tr.Attr            resd    1
-    .Guest.SysEnter.cs        resb    8
-    .Guest.SysEnter.eip       resb    8
-    .Guest.SysEnter.esp       resb    8
-    .Guest.msrEFER            resb    8
-    .Guest.msrSTAR            resb    8
-    .Guest.msrPAT             resb    8
-    .Guest.msrLSTAR           resb    8
-    .Guest.msrCSTAR           resb    8
-    .Guest.msrSFMASK          resb    8
-    .Guest.msrKERNELGSBASE    resb    8
-    .Guest.uMsrPadding0       resb    8
+    .Guest                      resq    0
+    .Guest.eax                  resq    1
+    .Guest.ecx                  resq    1
+    .Guest.edx                  resq    1
+    .Guest.ebx                  resq    1
+    .Guest.esp                  resq    1
+    .Guest.ebp                  resq    1
+    .Guest.esi                  resq    1
+    .Guest.edi                  resq    1
+    .Guest.r8                   resq    1
+    .Guest.r9                   resq    1
+    .Guest.r10                  resq    1
+    .Guest.r11                  resq    1
+    .Guest.r12                  resq    1
+    .Guest.r13                  resq    1
+    .Guest.r14                  resq    1
+    .Guest.r15                  resq    1
+    .Guest.es.Sel               resw    1
+    .Guest.es.PaddingSel        resw    1
+    .Guest.es.ValidSel          resw    1
+    .Guest.es.fFlags            resw    1
+    .Guest.es.u64Base           resq    1
+    .Guest.es.u32Limit          resd    1
+    .Guest.es.Attr              resd    1
+    .Guest.cs.Sel               resw    1
+    .Guest.cs.PaddingSel        resw    1
+    .Guest.cs.ValidSel          resw    1
+    .Guest.cs.fFlags            resw    1
+    .Guest.cs.u64Base           resq    1
+    .Guest.cs.u32Limit          resd    1
+    .Guest.cs.Attr              resd    1
+    .Guest.ss.Sel               resw    1
+    .Guest.ss.PaddingSel        resw    1
+    .Guest.ss.ValidSel          resw    1
+    .Guest.ss.fFlags            resw    1
+    .Guest.ss.u64Base           resq    1
+    .Guest.ss.u32Limit          resd    1
+    .Guest.ss.Attr              resd    1
+    .Guest.ds.Sel               resw    1
+    .Guest.ds.PaddingSel        resw    1
+    .Guest.ds.ValidSel          resw    1
+    .Guest.ds.fFlags            resw    1
+    .Guest.ds.u64Base           resq    1
+    .Guest.ds.u32Limit          resd    1
+    .Guest.ds.Attr              resd    1
+    .Guest.fs.Sel               resw    1
+    .Guest.fs.PaddingSel        resw    1
+    .Guest.fs.ValidSel          resw    1
+    .Guest.fs.fFlags            resw    1
+    .Guest.fs.u64Base           resq    1
+    .Guest.fs.u32Limit          resd    1
+    .Guest.fs.Attr              resd    1
+    .Guest.gs.Sel               resw    1
+    .Guest.gs.PaddingSel        resw    1
+    .Guest.gs.ValidSel          resw    1
+    .Guest.gs.fFlags            resw    1
+    .Guest.gs.u64Base           resq    1
+    .Guest.gs.u32Limit          resd    1
+    .Guest.gs.Attr              resd    1
+    .Guest.eip                  resq    1
+    .Guest.eflags               resq    1
+    .Guest.cr0                  resq    1
+    .Guest.cr2                  resq    1
+    .Guest.cr3                  resq    1
+    .Guest.cr4                  resq    1
+    .Guest.dr                   resq    8
+    .Guest.gdtrPadding          resw    3
+    .Guest.gdtr                 resw    0
+    .Guest.gdtr.cbGdt           resw    1
+    .Guest.gdtr.pGdt            resq    1
+    .Guest.idtrPadding          resw    3
+    .Guest.idtr                 resw    0
+    .Guest.idtr.cbIdt           resw    1
+    .Guest.idtr.pIdt            resq    1
+    .Guest.ldtr.Sel             resw    1
+    .Guest.ldtr.PaddingSel      resw    1
+    .Guest.ldtr.ValidSel        resw    1
+    .Guest.ldtr.fFlags          resw    1
+    .Guest.ldtr.u64Base         resq    1
+    .Guest.ldtr.u32Limit        resd    1
+    .Guest.ldtr.Attr            resd    1
+    .Guest.tr.Sel               resw    1
+    .Guest.tr.PaddingSel        resw    1
+    .Guest.tr.ValidSel          resw    1
+    .Guest.tr.fFlags            resw    1
+    .Guest.tr.u64Base           resq    1
+    .Guest.tr.u32Limit          resd    1
+    .Guest.tr.Attr              resd    1
+    .Guest.SysEnter.cs          resb    8
+    .Guest.SysEnter.eip         resb    8
+    .Guest.SysEnter.esp         resb    8
+    .Guest.msrEFER              resb    8
+    .Guest.msrSTAR              resb    8
+    .Guest.msrPAT               resb    8
+    .Guest.msrLSTAR             resb    8
+    .Guest.msrCSTAR             resb    8
+    .Guest.msrSFMASK            resb    8
+    .Guest.msrKERNELGSBASE      resb    8
+    .Guest.uMsrPadding0         resb    8
 
     alignb 8
-    .Guest.fExtrn             resq    1
+    .Guest.fExtrn               resq    1
 
     alignb 32
-    .Guest.aPaePdpes          resq    4
+    .Guest.aPaePdpes            resq    4
 
     alignb 8
-    .Guest.aXcr               resq    2
-    .Guest.fXStateMask        resq    1
-    .Guest.fUsedFpuGuest      resb    1
+    .Guest.aXcr                 resq    2
+    .Guest.fXStateMask          resq    1
+    .Guest.fUsedFpuGuest        resb    1
     alignb 8
-    .Guest.aoffXState         resw    64
+    .Guest.aoffXState           resw    64
     alignb 256
-    .Guest.abXState           resb    0x4000-0x300
-    .Guest.XState             EQU     .Guest.abXState
+    .Guest.abXState             resb    0x4000-0x300
+    .Guest.XState               EQU     .Guest.abXState
 
     alignb 4096
     .Guest.hwvirt                           resb        0
@@ -237,44 +237,44 @@ struc CPUMCPU
     .Guest.hwvirt.svm.Vmcb                  resb        4096
     .Guest.hwvirt.svm.abMsrBitmap           resb        8192
     .Guest.hwvirt.svm.abIoBitmap            resb        12288
-    .Guest.hwvirt.svm.uMsrHSavePa            resq         1
-    .Guest.hwvirt.svm.GCPhysVmcb             resq         1
+    .Guest.hwvirt.svm.uMsrHSavePa           resq        1
+    .Guest.hwvirt.svm.GCPhysVmcb            resq        1
     alignb 8
-    .Guest.hwvirt.svm.HostState              resb         184
-    .Guest.hwvirt.svm.uPrevPauseTick         resq         1
-    .Guest.hwvirt.svm.cPauseFilter           resw         1
-    .Guest.hwvirt.svm.cPauseFilterThreshold  resw         1
-    .Guest.hwvirt.svm.fInterceptEvents       resb         1
+    .Guest.hwvirt.svm.HostState             resb        184
+    .Guest.hwvirt.svm.uPrevPauseTick        resq        1
+    .Guest.hwvirt.svm.cPauseFilter          resw        1
+    .Guest.hwvirt.svm.cPauseFilterThreshold resw        1
+    .Guest.hwvirt.svm.fInterceptEvents      resb        1
 
-    .Guest.hwvirt.vmx.Vmcs                  EQU (.Guest.hwvirt.vmx )
-    .Guest.hwvirt.vmx.ShadowVmcs            EQU (.Guest.hwvirt.vmx + 0x1000)
+    .Guest.hwvirt.vmx.Vmcs                  EQU         (.Guest.hwvirt.vmx )
+    .Guest.hwvirt.vmx.ShadowVmcs            EQU         (.Guest.hwvirt.vmx + 0x1000)
 
     ;.unnamed_padding.1 resb 0
     alignb 8
-    .Guest.hwvirt.enmHwvirt                  resd         1
-    .Guest.hwvirt.fGif                       resb         1
+    .Guest.hwvirt.enmHwvirt                 resd        1
+    .Guest.hwvirt.fGif                      resb        1
     alignb 8
-    .Guest.hwvirt.fLocalForcedActions        resd         1
+    .Guest.hwvirt.fLocalForcedActions       resd        1
     alignb 64
 
-    .GuestMsrs                resq    0
-    .GuestMsrs.au64           resq    64
+    .GuestMsrs                  resq    0
+    .GuestMsrs.au64             resq    64
 
     ;
     ; Other stuff.
     ;
-    .hNestedVmxPreemptTimer   resq    1
+    .hNestedVmxPreemptTimer     resq    1
 
-    .fUseFlags            resd    1
-    .fChanged             resd    1
-    .u32RetCode           resd    1
+    .fUseFlags                  resd    1
+    .fChanged                   resd    1
+    .u32RetCode                 resd    1
 
 %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    .fApicDisVectors      resd    1
-    .pvApicBase           RTR0PTR_RES 1
-    .fX2Apic              resb    1
+    .fApicDisVectors            resd    1
+    .pvApicBase                 RTR0PTR_RES 1
+    .fX2Apic                    resb    1
 %else
-    .abPadding3           resb    (4 + RTR0PTR_CB + 1)
+    .abPadding3                 resb    (4 + RTR0PTR_CB + 1)
 %endif
 
     .fCpuIdApicFeatureVisible   resb    1
@@ -283,85 +283,85 @@ struc CPUMCPU
     ; Host context state
     ;
     alignb 64
-    .Host                resb    0
-    .Host.abXState          resb    0x4000-0x300
-    .Host.XState            EQU     .Host.abXState
-    ;.Host.rax            resq    1 - scratch
-    .Host.rbx            resq    1
-    ;.Host.rcx            resq    1 - scratch
-    ;.Host.rdx            resq    1 - scratch
-    .Host.rdi            resq    1
-    .Host.rsi            resq    1
-    .Host.rbp            resq    1
-    .Host.rsp            resq    1
-    ;.Host.r8             resq    1 - scratch
-    ;.Host.r9             resq    1 - scratch
-    .Host.r10            resq    1
-    .Host.r11            resq    1
-    .Host.r12            resq    1
-    .Host.r13            resq    1
-    .Host.r14            resq    1
-    .Host.r15            resq    1
-    ;.Host.rip            resd    1 - scratch
-    .Host.rflags         resq    1
-    .Host.ss             resw    1
-    .Host.ssPadding      resw    1
-    .Host.gs             resw    1
-    .Host.gsPadding      resw    1
-    .Host.fs             resw    1
-    .Host.fsPadding      resw    1
-    .Host.es             resw    1
-    .Host.esPadding      resw    1
-    .Host.ds             resw    1
-    .Host.dsPadding      resw    1
-    .Host.cs             resw    1
-    .Host.csPadding      resw    1
+    .Host                       resb    0
+    .Host.abXState              resb    0x4000-0x300
+    .Host.XState                EQU     .Host.abXState
+    ;.Host.rax                   resq    1 - scratch
+    .Host.rbx                   resq    1
+    ;.Host.rcx                   resq    1 - scratch
+    ;.Host.rdx                   resq    1 - scratch
+    .Host.rdi                   resq    1
+    .Host.rsi                   resq    1
+    .Host.rbp                   resq    1
+    .Host.rsp                   resq    1
+    ;.Host.r8                    resq    1 - scratch
+    ;.Host.r9                    resq    1 - scratch
+    .Host.r10                   resq    1
+    .Host.r11                   resq    1
+    .Host.r12                   resq    1
+    .Host.r13                   resq    1
+    .Host.r14                   resq    1
+    .Host.r15                   resq    1
+    ;.Host.rip                   resd    1 - scratch
+    .Host.rflags                resq    1
+    .Host.ss                    resw    1
+    .Host.ssPadding             resw    1
+    .Host.gs                    resw    1
+    .Host.gsPadding             resw    1
+    .Host.fs                    resw    1
+    .Host.fsPadding             resw    1
+    .Host.es                    resw    1
+    .Host.esPadding             resw    1
+    .Host.ds                    resw    1
+    .Host.dsPadding             resw    1
+    .Host.cs                    resw    1
+    .Host.csPadding             resw    1
 
     .Host.cr0Fpu:
-    .Host.cr0            resq    1
-    ;.Host.cr2            resq    1 - scratch
-    .Host.cr3            resq    1
-    .Host.cr4            resq    1
-    .Host.cr8            resq    1
+    .Host.cr0                   resq    1
+    ;.Host.cr2                   resq    1 - scratch
+    .Host.cr3                   resq    1
+    .Host.cr4                   resq    1
+    .Host.cr8                   resq    1
 
-    .Host.dr0            resq    1
-    .Host.dr1            resq    1
-    .Host.dr2            resq    1
-    .Host.dr3            resq    1
-    .Host.dr6            resq    1
-    .Host.dr7            resq    1
+    .Host.dr0                   resq    1
+    .Host.dr1                   resq    1
+    .Host.dr2                   resq    1
+    .Host.dr3                   resq    1
+    .Host.dr6                   resq    1
+    .Host.dr7                   resq    1
 
-    .Host.gdtr           resb    10         ; GDT limit + linear address
-    .Host.gdtrPadding    resw    1
-    .Host.idtr           resb    10         ; IDT limit + linear address
-    .Host.idtrPadding    resw    1
-    .Host.ldtr           resw    1
-    .Host.ldtrPadding    resw    1
-    .Host.tr             resw    1
-    .Host.trPadding      resw    1
+    .Host.gdtr                  resb    10         ; GDT limit + linear address
+    .Host.gdtrPadding           resw    1
+    .Host.idtr                  resb    10         ; IDT limit + linear address
+    .Host.idtrPadding           resw    1
+    .Host.ldtr                  resw    1
+    .Host.ldtrPadding           resw    1
+    .Host.tr                    resw    1
+    .Host.trPadding             resw    1
 
-    .Host.SysEnter.cs    resq    1
-    .Host.SysEnter.eip   resq    1
-    .Host.SysEnter.esp   resq    1
-    .Host.FSbase         resq    1
-    .Host.GSbase         resq    1
-    .Host.efer           resq    1
+    .Host.SysEnter.cs           resq    1
+    .Host.SysEnter.eip          resq    1
+    .Host.SysEnter.esp          resq    1
+    .Host.FSbase                resq    1
+    .Host.GSbase                resq    1
+    .Host.efer                  resq    1
     alignb 8
-    .Host.xcr0           resq    1
-    .Host.fXStateMask    resq    1
+    .Host.xcr0                  resq    1
+    .Host.fXStateMask           resq    1
 
     ;
     ; Hypervisor Context.
     ;
     alignb 64
-    .Hyper                    resq    0
-    .Hyper.dr                 resq    8
-    .Hyper.cr3                resq    1
+    .Hyper                      resq    0
+    .Hyper.dr                   resq    8
+    .Hyper.cr3                  resq    1
     alignb 64
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    .aMagic              resb    56
-    .uMagic              resq    1
+    .aMagic                     resb    56
+    .uMagic                     resq    1
 %endif
 endstruc
 

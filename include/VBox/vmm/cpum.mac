@@ -270,24 +270,24 @@ struc CPUMCTX
     .hwvirt.svm.Vmcb                    resb        4096
     .hwvirt.svm.abMsrBitmap             resb        8192
     .hwvirt.svm.abIoBitmap              resb        12288
-    .hwvirt.svm.uMsrHSavePa            resq          1
-    .hwvirt.svm.GCPhysVmcb             resq          1
+    .hwvirt.svm.uMsrHSavePa             resq        1
+    .hwvirt.svm.GCPhysVmcb              resq        1
     alignb 8
-    .hwvirt.svm.HostState              resb        184
-    .hwvirt.svm.uPrevPauseTick         resq          1
-    .hwvirt.svm.cPauseFilter           resw          1
-    .hwvirt.svm.cPauseFilterThreshold  resw          1
-    .hwvirt.svm.fInterceptEvents       resb          1
+    .hwvirt.svm.HostState               resb        184
+    .hwvirt.svm.uPrevPauseTick          resq        1
+    .hwvirt.svm.cPauseFilter            resw        1
+    .hwvirt.svm.cPauseFilterThreshold   resw        1
+    .hwvirt.svm.fInterceptEvents        resb        1
     ;.unnamed_padding.1 resb 0
 
-    .hwvirt.vmx.Vmcs                    EQU (.hwvirt.vmx )
-    .hwvirt.vmx.ShadowVmcs              EQU (.hwvirt.vmx + 0x1000)
+    .hwvirt.vmx.Vmcs                    EQU         (.hwvirt.vmx )
+    .hwvirt.vmx.ShadowVmcs              EQU         (.hwvirt.vmx + 0x1000)
 
     alignb 8
-    .hwvirt.enmHwvirt                  resd          1
-    .hwvirt.fGif                       resb          1
+    .hwvirt.enmHwvirt                   resd        1
+    .hwvirt.fGif                        resb        1
     alignb 8
-    .hwvirt.fLocalForcedActions        resd          1
+    .hwvirt.fLocalForcedActions         resd        1
     alignb 64
 endstruc
 
