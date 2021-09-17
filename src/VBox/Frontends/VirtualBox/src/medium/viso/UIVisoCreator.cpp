@@ -26,6 +26,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UIMessageCenter.h"
 #include "QIToolBar.h"
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
@@ -323,9 +324,15 @@ void UIVisoCreator::prepareWidgets()
     m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pMainLayout->addWidget(m_pButtonBox, 4, 3, 1, 5, Qt::AlignRight);
+
+        connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
+                &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
+        m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
+
+        uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "viso");
     }
 }
 
