@@ -1010,28 +1010,14 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
 
 
 /**
- * Frees memory allocated for the SVM hardware virtualization state.
+ * Initialize SVM hardware virtualization state (used to allocate it).
  *
  * @param   pVM     The cross context VM structure.
  */
-static void cpumR3FreeSvmHwVirtState(PVM pVM)
-{
-    Assert(pVM->cpum.s.GuestFeatures.fSvm);
-    RT_NOREF(pVM);
-}
-
-
-/**
- * Allocates memory for the SVM hardware virtualization state.
- *
- * @returns VBox status code.
- * @param   pVM     The cross context VM structure.
- */
-static int cpumR3AllocSvmHwVirtState(PVM pVM)
+static void cpumR3InitSvmHwVirtState(PVM pVM)
 {
     Assert(pVM->cpum.s.GuestFeatures.fSvm);
 
-    int rc = VINF_SUCCESS;
     LogRel(("CPUM: Allocating %u pages for the nested-guest SVM MSR and IO permission bitmaps\n",
             pVM->cCpus * (SVM_MSRPM_PAGES + SVM_IOPM_PAGES)));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -1043,12 +1029,6 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
         AssertCompile(SVM_MSRPM_PAGES * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abMsrBitmap));
         AssertCompile(SVM_IOPM_PAGES  * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abIoBitmap));
     }
-
-    /* On any failure, cleanup. */
-    if (RT_FAILURE(rc))
-        cpumR3FreeSvmHwVirtState(pVM);
-
-    return rc;
 }
 
 
@@ -2266,7 +2246,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     if (pVM->cpum.s.GuestFeatures.fVmx)
         rc = cpumR3AllocVmxHwVirtState(pVM);
     else if (pVM->cpum.s.GuestFeatures.fSvm)
-        rc = cpumR3AllocSvmHwVirtState(pVM);
+        cpumR3InitSvmHwVirtState(pVM);
     else
         Assert(pVM->apCpusR3[0]->cpum.s.Guest.hwvirt.enmHwvirt == CPUMHWVIRT_NONE);
     if (RT_FAILURE(rc))
@@ -2327,8 +2307,6 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
 
         cpumR3FreeVmxHwVirtState(pVM);
     }
-    else if (pVM->cpum.s.GuestFeatures.fSvm)
-        cpumR3FreeSvmHwVirtState(pVM);
     return VINF_SUCCESS;
 }
 
