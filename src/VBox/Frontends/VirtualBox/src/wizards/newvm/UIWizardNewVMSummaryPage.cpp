@@ -492,7 +492,7 @@ bool UIWizardNewVMSummaryPage::validatePage()
             return fResult;
         }
         /* Check FAT size limitation of the host hard drive: */
-        fResult = UIDiskEditorGroupBox::checkFATSizeLimitation(pWizard->mediumVariant(),
+        fResult = UIWizardDiskEditors::checkFATSizeLimitation(pWizard->mediumVariant(),
                                                                 strMediumPath,
                                                                 pWizard->mediumSize());
         if (!fResult)

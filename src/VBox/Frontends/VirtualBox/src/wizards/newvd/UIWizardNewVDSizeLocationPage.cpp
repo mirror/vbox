@@ -62,14 +62,14 @@ void UIWizardNewVDSizeLocationPage::sltSelectLocationButtonClicked()
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
     QString strSelectedPath =
-        UIDiskEditorGroupBox::openFileDialogForDiskFile(pWizard->mediumPath(), pWizard->mediumFormat(),
+        UIWizardDiskEditors::openFileDialogForDiskFile(pWizard->mediumPath(), pWizard->mediumFormat(),
                                                                 KDeviceType_HardDisk, pWizard);
 
     if (strSelectedPath.isEmpty())
         return;
     QString strMediumPath =
-        UIDiskEditorGroupBox::appendExtension(strSelectedPath,
-                                              UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+        UIWizardDiskEditors::appendExtension(strSelectedPath,
+                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
     m_pMediumSizePathGroup->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
@@ -88,8 +88,8 @@ void UIWizardNewVDSizeLocationPage::sltMediumPathChanged(const QString &strPath)
     AssertReturnVoid(pWizard);
     m_userModifiedParameters << "MediumPath";
     QString strMediumPath =
-        UIDiskEditorGroupBox::appendExtension(strPath,
-                                              UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+        UIWizardDiskEditors::appendExtension(strPath,
+                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
@@ -104,18 +104,18 @@ void UIWizardNewVDSizeLocationPage::initializePage()
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard && m_pMediumSizePathGroup);
 
-    QString strExtension = UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
+    QString strExtension = UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
     QString strMediumFilePath;
     /* Initialize the medium file path with default name and path if user has not exclusively modified them yet: */
     if (!m_userModifiedParameters.contains("MediumPath"))
         strMediumFilePath =
-            UIDiskEditorGroupBox::constructMediumFilePath(UIDiskEditorGroupBox::appendExtension(m_strDefaultName,
+            UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(m_strDefaultName,
                                                                                                 strExtension), m_strDefaultPath);
     /* Initialize the medium file path with file path and file name from the location editor. This part is to update the
      * file extention correctly in case user has gone back and changed the file format after modifying medium file path: */
     else
         strMediumFilePath =
-            UIDiskEditorGroupBox::constructMediumFilePath(UIDiskEditorGroupBox::appendExtension(m_pMediumSizePathGroup->mediumName(),
+            UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(m_pMediumSizePathGroup->mediumName(),
                                                                                                 strExtension), m_pMediumSizePathGroup->mediumPath());
     m_pMediumSizePathGroup->blockSignals(true);
     m_pMediumSizePathGroup->setMediumFilePath(strMediumFilePath);
@@ -158,7 +158,7 @@ bool UIWizardNewVDSizeLocationPage::validatePage()
     }
 
     /* Make sure we are passing FAT size limitation: */
-    fResult = UIDiskEditorGroupBox::checkFATSizeLimitation(pWizard->mediumVariant(),
+    fResult = UIWizardDiskEditors::checkFATSizeLimitation(pWizard->mediumVariant(),
                                      pWizard->mediumPath(),
                                      pWizard->mediumSize());
     if (!fResult)

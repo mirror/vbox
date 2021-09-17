@@ -295,13 +295,13 @@ void UIWizardNewVMDiskPage::initializePage()
             AssertMsgFailed(("No medium format corresponding to VDI could be found!"));
         setWidgetVisibility(pWizard->mediumFormat());
     }
-    QString strDefaultExtension =  UIDiskEditorGroupBox::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
+    QString strDefaultExtension =  UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
 
     /* We set the medium name and path according to machine name/path and do not allow user change these in the guided mode: */
     QString strDefaultName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
     const QString &strMachineFolder = pWizard->machineFolder();
     QString strMediumPath =
-        UIDiskEditorGroupBox::constructMediumFilePath(UIDiskEditorGroupBox::appendExtension(strDefaultName,
+        UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(strDefaultName,
                                                                                   strDefaultExtension), strMachineFolder);
     pWizard->setMediumPath(strMediumPath);
 

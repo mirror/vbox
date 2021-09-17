@@ -46,11 +46,10 @@
 
 
 /*********************************************************************************************************************************
-*   UIDiskEditorGroupBox implementation.                                                                                   *
+*   UIWizardDiskEditors implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-/* static */
-QString UIDiskEditorGroupBox::appendExtension(const QString &strName, const QString &strExtension)
+QString UIWizardDiskEditors::appendExtension(const QString &strName, const QString &strExtension)
 {
     /* Convert passed name to native separators: */
     QString strFileName = QDir::toNativeSeparators(strName);
@@ -68,8 +67,7 @@ QString UIDiskEditorGroupBox::appendExtension(const QString &strName, const QStr
     return strFileName;
 }
 
-/* static */
-QString UIDiskEditorGroupBox::constructMediumFilePath(const QString &strFileName, const QString &strPath)
+QString UIWizardDiskEditors::constructMediumFilePath(const QString &strFileName, const QString &strPath)
 {
     /* Wrap file-info around received file name: */
     QFileInfo fileInfo(strFileName);
@@ -83,8 +81,7 @@ QString UIDiskEditorGroupBox::constructMediumFilePath(const QString &strFileName
     return QDir::toNativeSeparators(fileInfo.absoluteFilePath());
 }
 
-/* static */
-bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
+bool UIWizardDiskEditors::checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize)
 {
     /* If the hard disk is split into 2GB parts then no need to make further checks: */
     if (uVariant & KMediumVariant_VmdkSplit2G)
@@ -104,8 +101,7 @@ bool UIDiskEditorGroupBox::checkFATSizeLimitation(const qulonglong uVariant, con
     return true;
 }
 
-/* static */
-QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
+QString UIWizardDiskEditors::openFileDialogForDiskFile(const QString &strInitialPath, const CMediumFormat &comMediumFormat,
                                                         KDeviceType enmDeviceType, QWidget *pParent)
 {
     QString strChosenFilePath;
@@ -139,8 +135,7 @@ QString UIDiskEditorGroupBox::openFileDialogForDiskFile(const QString &strInitia
     return strChosenFilePath;
 }
 
-/* static */
-QString UIDiskEditorGroupBox::defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType)
+QString UIWizardDiskEditors::defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType)
 {
     if (!mediumFormatRef.isNull())
     {
@@ -155,6 +150,23 @@ QString UIDiskEditorGroupBox::defaultExtension(const CMediumFormat &mediumFormat
     }
     AssertMsgFailed(("Extension can't be NULL!\n"));
     return QString();
+}
+
+QString UIWizardDiskEditors::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
+{
+    QString result(strFileName);
+    foreach (const QString &strExtension, formatExtensions)
+    {
+        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
+        {
+            /* Add the dot to extenstion: */
+            QString strExtensionWithDot(strExtension);
+            strExtensionWithDot.prepend('.');
+            int iIndex = strFileName.lastIndexOf(strExtensionWithDot, -1, Qt::CaseInsensitive);
+            result.remove(iIndex, strExtensionWithDot.length());
+        }
+    }
+    return result;
 }
 
 
@@ -402,7 +414,7 @@ void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFo
                                                    KDeviceType enmDeviceType)
 {
     /* Compose virtual-disk extension: */
-    QString strDefaultExtension = UIDiskEditorGroupBox::defaultExtension(mediumFormat, enmDeviceType);
+    QString strDefaultExtension = UIWizardDiskEditors::defaultExtension(mediumFormat, enmDeviceType);
     /* Update m_pLocationEditor's text if necessary: */
     if (!m_pLocationEditor->text().isEmpty() && !strDefaultExtension.isEmpty())
     {
@@ -411,7 +423,7 @@ void UIMediumSizeAndPathGroupBox::updateMediumPath(const CMediumFormat &mediumFo
         {
             QFileInfo newFileInfo(QDir(fileInfo.absolutePath()),
                                   QString("%1.%2").
-                                  arg(stripFormatExtension(fileInfo.fileName(), formatExtensions)).
+                                  arg(UIWizardDiskEditors::stripFormatExtension(fileInfo.fileName(), formatExtensions)).
                                   arg(strDefaultExtension));
             setMediumFilePath(newFileInfo.absoluteFilePath());
         }
@@ -436,24 +448,6 @@ void UIMediumSizeAndPathGroupBox::setMediumSize(qulonglong uSize)
 {
     if (m_pMediumSizeEditor)
         return m_pMediumSizeEditor->setMediumSize(uSize);
-}
-
-/* static */
-QString UIMediumSizeAndPathGroupBox::stripFormatExtension(const QString &strFileName, const QStringList &formatExtensions)
-{
-    QString result(strFileName);
-    foreach (const QString &strExtension, formatExtensions)
-    {
-        if (strFileName.endsWith(strExtension, Qt::CaseInsensitive))
-        {
-            /* Add the dot to extenstion: */
-            QString strExtensionWithDot(strExtension);
-            strExtensionWithDot.prepend('.');
-            int iIndex = strFileName.lastIndexOf(strExtensionWithDot, -1, Qt::CaseInsensitive);
-            result.remove(iIndex, strExtensionWithDot.length());
-        }
-    }
-    return result;
 }
 
 /*********************************************************************************************************************************
@@ -530,7 +524,7 @@ void UIDiskFormatBase::addFormat(CMediumFormat medFormat, bool fPreferred /* = f
     medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     if (!deviceTypes.contains(m_enmDeviceType))
         return;
-    m_formatList << Format(medFormat, UIDiskEditorGroupBox::defaultExtension(medFormat, m_enmDeviceType), fPreferred);
+    m_formatList << Format(medFormat, UIWizardDiskEditors::defaultExtension(medFormat, m_enmDeviceType), fPreferred);
 }
 
 QStringList UIDiskFormatBase::formatExtensions() const

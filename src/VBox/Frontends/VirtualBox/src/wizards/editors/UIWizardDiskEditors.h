@@ -52,8 +52,9 @@ class UIMediumSizeEditor;
 #include "CMediumFormat.h"
 
 /** A set of static utility functions used by several wizard in the context of virtual media. */
-namespace UIDiskEditorGroupBox
+namespace UIWizardDiskEditors
 {
+    /** Makes sure that @strFileName is suffixed witht the @strExtension. */
     SHARED_LIBRARY_STUFF QString appendExtension(const QString &strName, const QString &strExtension);
     SHARED_LIBRARY_STUFF QString constructMediumFilePath(const QString &strFileName, const QString &strPath);
     SHARED_LIBRARY_STUFF bool checkFATSizeLimitation(const qulonglong uVariant, const QString &strMediumPath, const qulonglong uSize);
@@ -62,6 +63,9 @@ namespace UIDiskEditorGroupBox
     /** Attempts to find a file extention for the device type @p enmDeviceType within the extensions
       * returned by CMediumFormat::DescribeFileExtensions(..). */
     SHARED_LIBRARY_STUFF  QString defaultExtension(const CMediumFormat &mediumFormatRef, KDeviceType enmDeviceType);
+    /** Removes the file extension from @strFileName if @p formatExtensions contains it. */
+    SHARED_LIBRARY_STUFF QString stripFormatExtension(const QString &strFileName,
+                                                      const QStringList &formatExtensions);
 };
 
 class SHARED_LIBRARY_STUFF UIDiskVariantWidget : public QIWithRetranslateUI<QWidget>
@@ -133,8 +137,6 @@ private:
 
     void prepare(qulonglong uMinimumMediumSize);
     virtual void retranslateUi() /* override final */;
-    static QString stripFormatExtension(const QString &strFileName,
-                                        const QStringList &formatExtensions);
 
     QILineEdit *m_pLocationEditor;
     QIToolButton *m_pLocationOpenButton;
