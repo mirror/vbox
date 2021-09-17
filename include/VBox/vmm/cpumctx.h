@@ -538,6 +538,9 @@ typedef struct CPUMCTX
 
             struct
             {
+                /** 0x4000 - The current VMCS. */
+                VMXVVMCS                Vmcs;
+
                 /** 0x300 - Guest physical address of the VMXON region. */
                 RTGCPHYS                GCPhysVmxon;
                 /** 0x308 - Guest physical address of the current VMCS pointer. */
@@ -562,10 +565,6 @@ typedef struct CPUMCTX
                 /** 0x32f - Whether blocking of NMI (or virtual-NMIs) was in effect in VMX non-root
                  *  mode before execution of IRET. */
                 bool                    fNmiUnblockingIret;
-                /** 0x330 - The current VMCS - R0 ptr. */
-                R0PTRTYPE(PVMXVVMCS)    pVmcsR0;
-                /** 0x338 - The curent VMCS - R3 ptr. */
-                R3PTRTYPE(PVMXVVMCS)    pVmcsR3;
                 /** 0X340 - The shadow VMCS - R0 ptr. */
                 R0PTRTYPE(PVMXVVMCS)    pShadowVmcsR0;
                 /** 0x348 - The shadow VMCS - R3 ptr. */
@@ -845,7 +844,7 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.Vmcb,                  X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abMsrBitmap,           X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            X86_PAGE_SIZE);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,               8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Vmcs,                  X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,         8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,      8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0,     8);

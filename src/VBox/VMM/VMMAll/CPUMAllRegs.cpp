@@ -2199,10 +2199,8 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTs
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
     {
-        PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
-        Assert(pVmcs);
         if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
-            return uTscValue + pVmcs->u64TscOffset.u;
+            return uTscValue + pCtx->hwvirt.vmx.Vmcs.u64TscOffset.u;
         return uTscValue;
     }
 
@@ -2233,11 +2231,7 @@ VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uT
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
     {
         if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
-        {
-            PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
-            Assert(pVmcs);
-            return uTscValue - pVmcs->u64TscOffset.u;
-        }
+            return uTscValue - pCtx->hwvirt.vmx.Vmcs.u64TscOffset.u;
         return uTscValue;
     }
 
@@ -2832,11 +2826,10 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNe
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    PCCPUMCTX  pCtx  = &pVCpu->cpum.s.Guest;
-    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    PCCPUMCTX const pCtx = &pVCpu->cpum.s.Guest;
     if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_CR3_LOAD_EXIT))
     {
-        uint32_t const uCr3TargetCount = pVmcs->u32Cr3TargetCount;
+        uint32_t const uCr3TargetCount = pCtx->hwvirt.vmx.Vmcs.u32Cr3TargetCount;
         Assert(uCr3TargetCount <= VMX_V_CR3_TARGET_COUNT);
 
         /* If the CR3-target count is 0, cause a VM-exit. */
@@ -2845,10 +2838,10 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNe
 
         /* If the CR3 being written doesn't match any of the target values, cause a VM-exit. */
         AssertCompile(VMX_V_CR3_TARGET_COUNT == 4);
-        if (   uNewCr3 != pVmcs->u64Cr3Target0.u
-            && uNewCr3 != pVmcs->u64Cr3Target1.u
-            && uNewCr3 != pVmcs->u64Cr3Target2.u
-            && uNewCr3 != pVmcs->u64Cr3Target3.u)
+        if (   uNewCr3 != pCtx->hwvirt.vmx.Vmcs.u64Cr3Target0.u
+            && uNewCr3 != pCtx->hwvirt.vmx.Vmcs.u64Cr3Target1.u
+            && uNewCr3 != pCtx->hwvirt.vmx.Vmcs.u64Cr3Target2.u
+            && uNewCr3 != pCtx->hwvirt.vmx.Vmcs.u64Cr3Target3.u)
             return true;
     }
     return false;

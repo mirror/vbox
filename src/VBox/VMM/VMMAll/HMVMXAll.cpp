@@ -844,8 +844,8 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
                 (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Guest##a_Seg##Base.u, (a_pVmcs)->u32Guest##a_Seg##Limit)); \
     } while (0)
 
-    PCCPUMCTX  pCtx  = &pVCpu->cpum.GstCtx;
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PCCPUMCTX  const pCtx  = &pVCpu->cpum.GstCtx;
+    PCVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     if (!pVmcs)
     {
         LogRel(("Virtual VMCS not allocated\n"));

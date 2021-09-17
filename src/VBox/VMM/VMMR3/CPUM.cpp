@@ -1061,11 +1061,6 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
         PVMCPU   pVCpu = pVM->apCpusR3[i];
         PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
 
-        if (pCtx->hwvirt.vmx.pVmcsR3)
-        {
-            SUPR3ContFree(pCtx->hwvirt.vmx.pVmcsR3, VMX_V_VMCS_PAGES);
-            pCtx->hwvirt.vmx.pVmcsR3 = NULL;
-        }
         if (pCtx->hwvirt.vmx.pShadowVmcsR3)
         {
             SUPR3ContFree(pCtx->hwvirt.vmx.pShadowVmcsR3, VMX_V_VMCS_PAGES);
@@ -1138,17 +1133,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
         pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_VMX;
 
-        /*
-         * Allocate the nested-guest current VMCS.
-         */
-        pCtx->hwvirt.vmx.pVmcsR3 = (PVMXVVMCS)SUPR3ContAlloc(VMX_V_VMCS_PAGES, &pCtx->hwvirt.vmx.pVmcsR0, NULL);
-        if (pCtx->hwvirt.vmx.pVmcsR3)
-        { /* likely */ }
-        else
-        {
-            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's VMCS\n", pVCpu->idCpu, VMX_V_VMCS_PAGES));
-            break;
-        }
+        AssertCompile(sizeof(pCtx->hwvirt.vmx.Vmcs) == VMX_V_VMCS_PAGES * X86_PAGE_SIZE);
 
         /*
          * Allocate the nested-guest shadow VMCS.
@@ -1277,7 +1262,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         /*
          * Zero out all allocated pages (should compress well for saved-state).
          */
-        memset(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs),               0, VMX_V_VMCS_SIZE);
+        RT_ZERO(pCtx->hwvirt.vmx.Vmcs);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs),         0, VMX_V_SHADOW_VMCS_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVirtApicPage),      0, VMX_V_VIRT_APIC_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVmreadBitmap),      0, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
@@ -1306,10 +1291,9 @@ DECLINLINE(void) cpumR3ResetVmxHwVirtState(PVMCPU pVCpu)
 {
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs));
 
-    memset(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs),       0, VMX_V_VMCS_SIZE);
+    RT_ZERO(pCtx->hwvirt.vmx.Vmcs);
     memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs), 0, VMX_V_SHADOW_VMCS_SIZE);
     pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
     pCtx->hwvirt.vmx.GCPhysShadowVmcs  = NIL_RTGCPHYS;
@@ -2585,7 +2569,6 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         }
         if (pVM->cpum.s.GuestFeatures.fVmx)
         {
-            Assert(pGstCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
             SSMR3PutGCPhys(pSSM,   pGstCtx->hwvirt.vmx.GCPhysVmxon);
             SSMR3PutGCPhys(pSSM,   pGstCtx->hwvirt.vmx.GCPhysVmcs);
             SSMR3PutGCPhys(pSSM,   pGstCtx->hwvirt.vmx.GCPhysShadowVmcs);
@@ -2593,7 +2576,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fInVmxNonRootMode);
             SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fInterceptEvents);
             SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fNmiUnblockingIret);
-            SSMR3PutStructEx(pSSM, pGstCtx->hwvirt.vmx.pVmcsR3, sizeof(VMXVVMCS), 0, g_aVmxHwvirtVmcs, NULL);
+            SSMR3PutStructEx(pSSM, &pGstCtx->hwvirt.vmx.Vmcs, sizeof(pGstCtx->hwvirt.vmx.Vmcs), 0, g_aVmxHwvirtVmcs, NULL);
             SSMR3PutStructEx(pSSM, pGstCtx->hwvirt.vmx.pShadowVmcsR3, sizeof(VMXVVMCS), 0, g_aVmxHwvirtVmcs, NULL);
             SSMR3PutMem(pSSM,      pGstCtx->hwvirt.vmx.pvVmreadBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
             SSMR3PutMem(pSSM,      pGstCtx->hwvirt.vmx.pvVmwriteBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
@@ -2874,7 +2857,6 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 {
                     if (pVM->cpum.s.GuestFeatures.fVmx)
                     {
-                        Assert(pGstCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
                         SSMR3GetGCPhys(pSSM,   &pGstCtx->hwvirt.vmx.GCPhysVmxon);
                         SSMR3GetGCPhys(pSSM,   &pGstCtx->hwvirt.vmx.GCPhysVmcs);
                         SSMR3GetGCPhys(pSSM,   &pGstCtx->hwvirt.vmx.GCPhysShadowVmcs);
@@ -2882,7 +2864,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fInVmxNonRootMode);
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fInterceptEvents);
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fNmiUnblockingIret);
-                        SSMR3GetStructEx(pSSM,  pGstCtx->hwvirt.vmx.pVmcsR3, sizeof(VMXVVMCS), 0, g_aVmxHwvirtVmcs, NULL);
+                        SSMR3GetStructEx(pSSM, &pGstCtx->hwvirt.vmx.Vmcs, sizeof(pGstCtx->hwvirt.vmx.Vmcs),
+                                         0, g_aVmxHwvirtVmcs, NULL);
                         SSMR3GetStructEx(pSSM,  pGstCtx->hwvirt.vmx.pShadowVmcsR3, sizeof(VMXVVMCS), 0, g_aVmxHwvirtVmcs, NULL);
                         SSMR3GetMem(pSSM,       pGstCtx->hwvirt.vmx.pvVmreadBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
                         SSMR3GetMem(pSSM,       pGstCtx->hwvirt.vmx.pvVmwriteBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
@@ -4103,7 +4086,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite);
         pHlp->pfnPrintf(pHlp, "  fVirtNmiBlocking           = %RTbool\n",   pCtx->hwvirt.vmx.fVirtNmiBlocking);
         pHlp->pfnPrintf(pHlp, "  VMCS cache:\n");
-        cpumR3InfoVmxVmcs(pVCpu, pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
+        cpumR3InfoVmxVmcs(pVCpu, pHlp, &pCtx->hwvirt.vmx.Vmcs, "  " /* pszPrefix */);
     }
     else
         pHlp->pfnPrintf(pHlp, "Hwvirt state disabled.\n");

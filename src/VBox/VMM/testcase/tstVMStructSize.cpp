@@ -251,6 +251,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.svm.Vmcb, 4096);
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.svm.abMsrBitmap, 4096);
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.svm.abIoBitmap, 4096);
+    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.Vmcs, 4096);
 
     PVM pVM = NULL; NOREF(pVM);
 

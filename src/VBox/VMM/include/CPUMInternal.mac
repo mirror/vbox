@@ -242,6 +242,8 @@ struc CPUMCPU
     .Guest.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Guest.hwvirt.svm.fInterceptEvents       resb         1
 
+    .Guest.hwvirt.vmx.Vmcs EQU .Guest.hwvirt.svm.Vmcb
+
     ;.unnamed_padding.1 resb 0
     alignb 8
     .Guest.hwvirt.enmHwvirt                  resd         1

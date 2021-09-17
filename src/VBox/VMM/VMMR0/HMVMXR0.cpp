@@ -1185,10 +1185,7 @@ static int hmR0VmxRemoveXcptInterceptMask(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTra
         if (!pVmxTransient->fIsNestedGuest)
         { /* likely */ }
         else
-        {
-            PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-            uXcptMask &= ~pVmcsNstGst->u32XcptBitmap;
-        }
+            uXcptMask &= ~pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32XcptBitmap;
 #endif
 #ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         uXcptMask &= ~(  RT_BIT(X86_XCPT_BP)
@@ -5443,8 +5440,8 @@ static void hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransien
  */
 static int hmR0VmxCopyNstGstToShadowVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PVMCC      const pVM         = pVCpu->CTX_SUFF(pVM);
+    PCVMXVVMCS const pVmcsNstGst = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
 
     /*
      * Disable interrupts so we don't get preempted while the shadow VMCS is the
@@ -5513,8 +5510,8 @@ static int hmR0VmxCopyNstGstToShadowVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxCopyShadowToNstGstVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    PVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PVMCC const     pVM         = pVCpu->CTX_SUFF(pVM);
+    PVMXVVMCS const pVmcsNstGst = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
 
     int rc = hmR0VmxLoadShadowVmcs(pVmcsInfo);
     if (RT_SUCCESS(rc))
@@ -7902,8 +7899,8 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                          * the nested-guest using hardware-assisted VMX. Accordingly we need to
                          * re-construct CR0. See @bugref{9180#c95} for details.
                          */
-                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-                        PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+                        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
+                        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
                         u64Cr0 = (u64Cr0                     & ~pVmcsInfo->u64Cr0Mask)
                                | (pVmcsNstGst->u64GuestCr0.u &  pVmcsNstGst->u64Cr0Mask.u)
                                | (u64Shadow                  & (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
@@ -7936,8 +7933,8 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                          * the nested-guest using hardware-assisted VMX. Accordingly we need to
                          * re-construct CR4. See @bugref{9180#c95} for details.
                          */
-                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-                        PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+                        PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
+                        PVMXVVMCS const     pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
                         u64Cr4 = (u64Cr4                     & ~pVmcsInfo->u64Cr4Mask)
                                | (pVmcsNstGst->u64GuestCr4.u &  pVmcsNstGst->u64Cr4Mask.u)
                                | (u64Shadow                  & (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
@@ -10421,7 +10418,7 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
      *       each of its VM-entry, hence initializing it once per-VM while setting
      *       up the nested-guest VMCS is not sufficient.
      */
-    PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PCVMXVVMCS const pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     if (pVmcsNstGst->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         uint64_t const *pu64MsrBitmapNstGst = (uint64_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap);
@@ -10455,10 +10452,9 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
  */
 static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
 {
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
-    PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcsNstGst);
+    PVMCC const         pVM          = pVCpu->CTX_SUFF(pVM);
+    PCVMXVMCSINFO const pVmcsInfoGst = &pVCpu->hmr0.s.vmx.VmcsInfo;
+    PCVMXVVMCS const    pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
 
     /*
      * Merge the controls with the requirements of the guest VMCS.
@@ -17174,10 +17170,9 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 
         case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
         {
-            PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-            Assert(pVmcsNstGst);
-            uint64_t const uGstHostMask = pVmcsNstGst->u64Cr0Mask.u;
-            uint64_t const uReadShadow  = pVmcsNstGst->u64Cr0ReadShadow.u;
+            PCVMXVVMCS const pVmcsNstGst  = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+            uint64_t const   uGstHostMask = pVmcsNstGst->u64Cr0Mask.u;
+            uint64_t const   uReadShadow  = pVmcsNstGst->u64Cr0ReadShadow.u;
             if (   (uGstHostMask & X86_CR0_TS)
                 && (uReadShadow  & X86_CR0_TS))
             {

@@ -5583,13 +5583,11 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
-        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-        Assert(pVmcs);
         switch (iCrReg)
         {
             /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
-            case 0: crX = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVmcs->u64Cr0Mask.u); break;
-            case 4: crX = CPUMGetGuestVmxMaskedCr4(&pVCpu->cpum.GstCtx, pVmcs->u64Cr4Mask.u); break;
+            case 0: crX = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr0Mask.u); break;
+            case 4: crX = CPUMGetGuestVmxMaskedCr4(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr4Mask.u); break;
 
             case 3:
             {
@@ -5628,11 +5626,7 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
     if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         u64MaskedCr0 = pVCpu->cpum.GstCtx.cr0;
     else
-    {
-        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-        Assert(pVmcs);
-        u64MaskedCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVmcs->u64Cr0Mask.u);
-    }
+        u64MaskedCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr0Mask.u);
     uint64_t const u64GuestCr0 = u64MaskedCr0;
 #else
     uint64_t const u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
@@ -5681,11 +5675,7 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
     if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         u64MaskedCr0 = pVCpu->cpum.GstCtx.cr0;
     else
-    {
-        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-        Assert(pVmcs);
-        u64MaskedCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVmcs->u64Cr0Mask.u);
-    }
+        u64MaskedCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64Cr0Mask.u);
     uint64_t const u64GuestCr0 = u64MaskedCr0;
 #else
     uint64_t const u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
