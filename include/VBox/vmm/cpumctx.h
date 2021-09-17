@@ -540,6 +540,8 @@ typedef struct CPUMCTX
             {
                 /** 0x4000 - The current VMCS. */
                 VMXVVMCS                Vmcs;
+                /** 0X5000 - The shadow VMCS. */
+                VMXVVMCS                ShadowVmcs;
 
                 /** 0x300 - Guest physical address of the VMXON region. */
                 RTGCPHYS                GCPhysVmxon;
@@ -565,10 +567,6 @@ typedef struct CPUMCTX
                 /** 0x32f - Whether blocking of NMI (or virtual-NMIs) was in effect in VMX non-root
                  *  mode before execution of IRET. */
                 bool                    fNmiUnblockingIret;
-                /** 0X340 - The shadow VMCS - R0 ptr. */
-                R0PTRTYPE(PVMXVVMCS)    pShadowVmcsR0;
-                /** 0x348 - The shadow VMCS - R3 ptr. */
-                R3PTRTYPE(PVMXVVMCS)    pShadowVmcsR3;
                 /** 0x350 - The virtual-APIC page - R0 ptr. */
                 R0PTRTYPE(void *)       pvVirtApicPageR0;
                 /** 0x358 - The virtual-APIC page - R3 ptr. */
@@ -845,7 +843,7 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.Vmcb,        
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abMsrBitmap,           X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Vmcs,                  X86_PAGE_SIZE);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,         8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.ShadowVmcs,            X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,      8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0,     8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pEntryMsrLoadAreaR0,   8);

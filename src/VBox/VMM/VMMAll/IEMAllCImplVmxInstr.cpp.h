@@ -6718,9 +6718,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
     {
         /* Read the VMCS-link pointer from guest memory. */
         RTGCPHYS const GCPhysShadowVmcs = pVmcs->u64VmcsLinkPtr.u;
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs),
-                                         GCPhysShadowVmcs, VMX_V_SHADOW_VMCS_SIZE);
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs,
+                                         GCPhysShadowVmcs, sizeof(pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs));
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -6730,7 +6729,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
         }
 
         /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.u31RevisionId == VMX_V_VMCS_REVISION_ID)
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs.u32VmcsRevId.n.u31RevisionId == VMX_V_VMCS_REVISION_ID)
         { /* likely */ }
         else
         {
@@ -6740,7 +6739,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
 
         /* Verify the shadow bit is set if VMCS shadowing is enabled . */
         if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
-            || pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.fIsShadowVmcs)
+            || pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs.u32VmcsRevId.n.fIsShadowVmcs)
         { /* likely */ }
         else
         {
@@ -7591,8 +7590,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPUCC pVCpu, uint8_t cbInstr, uint
      */
     PCVMXVVMCS pVmcs = !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
                      ? &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs
-                     : pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    Assert(pVmcs);
+                     : &pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs;
     iemVmxVmreadNoCheck(pVmcs, pu64Dst, u64VmcsField);
     return VINF_SUCCESS;
 }
@@ -7861,8 +7859,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
     bool const fInVmxNonRootMode = IEM_VMX_IS_NON_ROOT_MODE(pVCpu);
     PVMXVVMCS pVmcs = !fInVmxNonRootMode
                     ? &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs
-                    : pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    Assert(pVmcs);
+                    : &pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs;
     iemVmxVmwriteNoCheck(pVmcs, u64Val, u64VmcsField);
 
     /* Notify HM that the VMCS content might have changed. */

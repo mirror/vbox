@@ -230,6 +230,10 @@ struc CPUMCPU
     .Guest.XState             EQU     .Guest.abXState
 
     alignb 4096
+    .Guest.hwvirt                           resb        0
+    .Guest.hwvirt.svm                       resb        0
+    .Guest.hwvirt.vmx                       resb        0
+
     .Guest.hwvirt.svm.Vmcb                  resb        4096
     .Guest.hwvirt.svm.abMsrBitmap           resb        8192
     .Guest.hwvirt.svm.abIoBitmap            resb        12288
@@ -242,7 +246,8 @@ struc CPUMCPU
     .Guest.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Guest.hwvirt.svm.fInterceptEvents       resb         1
 
-    .Guest.hwvirt.vmx.Vmcs EQU .Guest.hwvirt.svm.Vmcb
+    .Guest.hwvirt.vmx.Vmcs                  EQU (.Guest.hwvirt.vmx )
+    .Guest.hwvirt.vmx.ShadowVmcs            EQU (.Guest.hwvirt.vmx + 0x1000)
 
     ;.unnamed_padding.1 resb 0
     alignb 8
