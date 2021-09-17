@@ -196,20 +196,20 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
 }
 
 void UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor,
-                                                         UIWizardNewVM *pWizard)
+                                                           UIWizardNewVM *pWizard)
 {
     if (!pNameAndSystemEditor || !pWizard)
         return;
     if (pNameAndSystemEditor->name().isEmpty() || pNameAndSystemEditor->path().isEmpty())
         return;
-     /* Get VBox: */
+    /* Get VBox: */
     CVirtualBox vbox = uiCommon().virtualBox();
 
     /* Compose machine filename: */
     pWizard->setMachineFilePath(vbox.ComposeMachineFilename(pNameAndSystemEditor->name(),
-                                                                 pWizard->machineGroup(),
-                                                                 QString(),
-                                                                 pNameAndSystemEditor->path()));
+                                                            pWizard->machineGroup(),
+                                                            QString(),
+                                                            pNameAndSystemEditor->path()));
     /* Compose machine folder/basename: */
     const QFileInfo fileInfo(pWizard->machineFilePath());
     pWizard->setMachineFolder(fileInfo.absolutePath());
@@ -217,8 +217,8 @@ void UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(UINameAndSystemEditor
 }
 
 bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
-                                                      UINativeWizardPage *pCaller,
-                                                      UIWizardNewVM *pWizard)
+                                                        UINativeWizardPage *pCaller,
+                                                        UIWizardNewVM *pWizard)
 {
     if (!pNameAndSystemEditor || !pWizard)
         return false;
@@ -448,7 +448,7 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     UIWizardNewVMNameOSTypeCommon::determineOSType(strPath, pWizard);
 
     if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
-            UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+        UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
     pWizard->setISOFilePath(strPath);
 
     /* Update the global recent ISO path: */

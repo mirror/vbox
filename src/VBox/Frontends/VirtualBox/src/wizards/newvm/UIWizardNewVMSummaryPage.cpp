@@ -32,7 +32,7 @@
 #include "UIWizardNewVM.h"
 
 /*********************************************************************************************************************************
-*   UIWizardNewVMSummaryItem definition.                                                                                  *
+ *   UIWizardNewVMSummaryItem definition.                                                                                  *
 *********************************************************************************************************************************/
 
 class UIWizardNewVMSummaryItem : public QITreeViewItem
@@ -76,8 +76,8 @@ private:
 };
 
 /*********************************************************************************************************************************
-*   UIWizardNewVMSummaryModel definition.                                                                                  *
-*********************************************************************************************************************************/
+ *   UIWizardNewVMSummaryModel definition.                                                                                  *
+ *********************************************************************************************************************************/
 
 class UIWizardNewVMSummaryModel : public QAbstractItemModel
 {
@@ -259,21 +259,21 @@ QVariant UIWizardNewVMSummaryModel::data(const QModelIndex &index, int role /* =
 
 QModelIndex UIWizardNewVMSummaryModel::index(int row, int column, const QModelIndex &parent /* = QModelIndex() */) const
 {
-     if (!hasIndex(row, column, parent))
-          return QModelIndex();
+    if (!hasIndex(row, column, parent))
+        return QModelIndex();
 
-     UIWizardNewVMSummaryItem *pParentItem;
+    UIWizardNewVMSummaryItem *pParentItem;
 
-     if (!parent.isValid())
-         pParentItem = m_pRootItem;
-     else
-         pParentItem = static_cast<UIWizardNewVMSummaryItem*>(parent.internalPointer());
+    if (!parent.isValid())
+        pParentItem = m_pRootItem;
+    else
+        pParentItem = static_cast<UIWizardNewVMSummaryItem*>(parent.internalPointer());
 
-     UIWizardNewVMSummaryItem *pChildItem = pParentItem->childItem(row);
-     if (pChildItem)
-         return createIndex(row, column, pChildItem);
-     else
-         return QModelIndex();
+    UIWizardNewVMSummaryItem *pChildItem = pParentItem->childItem(row);
+    if (pChildItem)
+        return createIndex(row, column, pChildItem);
+    else
+        return QModelIndex();
 }
 
 QModelIndex UIWizardNewVMSummaryModel::parent(const QModelIndex &index) const
@@ -441,9 +441,9 @@ void UIWizardNewVMSummaryPage::retranslateUi()
     setTitle(UIWizardNewVM::tr("Summary"));
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("The following table summarizes the configuration you have"
-                                          " chosen for the new virtual machine. When you are happy with the configuration"
-                                          " press Finish to create the virtual machine. Alternatively you can go back"
-                                          " and modify the configuration."));
+                                            " chosen for the new virtual machine. When you are happy with the configuration"
+                                            " press Finish to create the virtual machine. Alternatively you can go back"
+                                            " and modify the configuration."));
 }
 
 void UIWizardNewVMSummaryPage::initializePage()
@@ -493,8 +493,8 @@ bool UIWizardNewVMSummaryPage::validatePage()
         }
         /* Check FAT size limitation of the host hard drive: */
         fResult = UIWizardDiskEditors::checkFATSizeLimitation(pWizard->mediumVariant(),
-                                                                strMediumPath,
-                                                                pWizard->mediumSize());
+                                                              strMediumPath,
+                                                              pWizard->mediumSize());
         if (!fResult)
         {
             msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);

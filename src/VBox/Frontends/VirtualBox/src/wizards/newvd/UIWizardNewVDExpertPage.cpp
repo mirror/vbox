@@ -86,7 +86,7 @@ void UIWizardNewVDExpertPage::sltMediumPathChanged(const QString &strPath)
     AssertReturnVoid(pWizard);
     QString strMediumPath =
         UIWizardDiskEditors::appendExtension(strPath,
-                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                             UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
@@ -114,12 +114,12 @@ void UIWizardNewVDExpertPage::sltSelectLocationButtonClicked()
     CMediumFormat comMediumFormat(pWizard->mediumFormat());
     QString strSelectedPath =
         UIWizardDiskEditors::openFileDialogForDiskFile(pWizard->mediumPath(), comMediumFormat,
-                                                        KDeviceType_HardDisk, pWizard);
+                                                       KDeviceType_HardDisk, pWizard);
     if (strSelectedPath.isEmpty())
         return;
     QString strMediumPath =
         UIWizardDiskEditors::appendExtension(strSelectedPath,
-                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                             UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
     m_pSizeAndPathGroup->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
     emit completeChanged();
@@ -144,7 +144,7 @@ void UIWizardNewVDExpertPage::initializePage()
     QString strExtension = UIWizardDiskEditors::defaultExtension(comMediumFormat, KDeviceType_HardDisk);
     QString strMediumFilePath =
         UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(m_strDefaultName,
-                                                                                            strExtension), m_strDefaultPath);
+                                                                                          strExtension), m_strDefaultPath);
     m_pSizeAndPathGroup->blockSignals(true);
     m_pSizeAndPathGroup->setMediumFilePath(strMediumFilePath);
     m_pSizeAndPathGroup->blockSignals(false);
@@ -195,8 +195,8 @@ bool UIWizardNewVDExpertPage::validatePage()
 
     /* Make sure we are passing FAT size limitation: */
     fResult = UIWizardDiskEditors::checkFATSizeLimitation(pWizard->mediumVariant(),
-                                     pWizard->mediumPath(),
-                                     pWizard->mediumSize());
+                                                          pWizard->mediumPath(),
+                                                          pWizard->mediumSize());
     if (!fResult)
     {
         msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);

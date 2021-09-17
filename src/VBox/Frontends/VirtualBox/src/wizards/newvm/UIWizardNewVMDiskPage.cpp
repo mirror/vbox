@@ -302,7 +302,7 @@ void UIWizardNewVMDiskPage::initializePage()
     const QString &strMachineFolder = pWizard->machineFolder();
     QString strMediumPath =
         UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(strDefaultName,
-                                                                                  strDefaultExtension), strMachineFolder);
+                                                                                          strDefaultExtension), strMachineFolder);
     pWizard->setMediumPath(strMediumPath);
 
     /* Set the recommended disk size if user has already not done so: */

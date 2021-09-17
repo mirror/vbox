@@ -92,7 +92,7 @@ void UIWizardCloneVDExpertPage::sltSelectLocationButtonClicked()
         return;
     QString strMediumPath =
         UIWizardDiskEditors::appendExtension(strSelectedPath,
-                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
+                                             UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     QFileInfo mediumPath(strMediumPath);
     m_pMediumSizePathGroupBox->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
@@ -117,7 +117,7 @@ void UIWizardCloneVDExpertPage::sltMediumPathChanged(const QString &strPath)
     AssertReturnVoid(pWizard);
     QString strMediumPath =
         UIWizardDiskEditors::appendExtension(strPath,
-                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
+                                             UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), pWizard->deviceType()));
     pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
@@ -146,7 +146,7 @@ void UIWizardCloneVDExpertPage::initializePage()
     QString strDiskName = QString("%1_%2").arg(QFileInfo(pWizard->sourceDiskName()).completeBaseName()).arg(tr("copy"));
     QString strMediumFilePath =
         UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(strDiskName,
-                                                                                            strExtension), strSourceDiskPath);
+                                                                                          strExtension), strSourceDiskPath);
     m_pMediumSizePathGroupBox->setMediumFilePath(strMediumFilePath);
     pWizard->setMediumPath(strMediumFilePath);
     m_pMediumSizePathGroupBox->blockSignals(false);
@@ -166,7 +166,7 @@ bool UIWizardCloneVDExpertPage::isComplete() const
     if (m_pMediumSizePathGroupBox)
         fResult =  m_pMediumSizePathGroupBox->isComplete();
 
-   return fResult;
+    return fResult;
 }
 
 bool UIWizardCloneVDExpertPage::validatePage()

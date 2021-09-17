@@ -146,7 +146,7 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
     UIWizardNewVMNameOSTypeCommon::determineOSType(strISOPath, pWizard);
 
     if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
-            UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+        UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
     pWizard->setISOFilePath(strISOPath);
 
     /* Update the global recent ISO path: */
@@ -275,7 +275,7 @@ void UIWizardNewVMExpertPage::createConnections()
 
     if (m_pSkipUnattendedCheckBox)
         connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled,
-        this, &UIWizardNewVMExpertPage::sltSkipUnattendedCheckBoxChecked);
+                this, &UIWizardNewVMExpertPage::sltSkipUnattendedCheckBoxChecked);
 
     if (m_pSizeAndLocationGroup)
     {
@@ -362,7 +362,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
 void UIWizardNewVMExpertPage::initializePage()
 {
     /* We need not to check existence of parameter within m_userModifiedParameters since initializePage() runs
-        once the page loads before user has a chance to modify parameters explicitly: */
+       once the page loads before user has a chance to modify parameters explicitly: */
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     /* Initialize wizard properties: */
@@ -699,7 +699,7 @@ void UIWizardNewVMExpertPage::sltMediumLocationButtonClicked()
         return;
     QString strMediumPath =
         UIWizardDiskEditors::appendExtension(strSelectedPath,
-                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+                                             UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
     m_pSizeAndLocationGroup->setMediumFilePath(QDir::toNativeSeparators(mediumPath.absoluteFilePath()));
 }
@@ -822,7 +822,7 @@ void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()
     {
         QString strMediumFilePath =
             UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(strDiskFileName,
-                                                                                      strExtension), strMediumPath);
+                                                                                              strExtension), strMediumPath);
         m_pSizeAndLocationGroup->blockSignals(true);
         m_pSizeAndLocationGroup->setMediumFilePath(strMediumFilePath);
         m_pSizeAndLocationGroup->blockSignals(false);
