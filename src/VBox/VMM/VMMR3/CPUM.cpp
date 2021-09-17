@@ -1039,9 +1039,9 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
         PVMCPU pVCpu = pVM->apCpusR3[i];
         pVCpu->cpum.s.Guest.hwvirt.enmHwvirt = CPUMHWVIRT_SVM;
 
-        AssertCompile(SVM_VMCB_PAGES * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.Vmcb));
+        AssertCompile(SVM_VMCB_PAGES  * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.Vmcb));
         AssertCompile(SVM_MSRPM_PAGES * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abMsrBitmap));
-        AssertCompile(SVM_IOPM_PAGES * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abIoBitmap));
+        AssertCompile(SVM_IOPM_PAGES  * X86_PAGE_SIZE == sizeof(pVCpu->cpum.s.Guest.hwvirt.svm.abIoBitmap));
     }
 
     /* On any failure, cleanup. */

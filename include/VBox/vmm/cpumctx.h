@@ -506,7 +506,7 @@ typedef struct CPUMCTX
                  * This need not be physically contiguous pages because we use the one from
                  * HMPHYSCPU while executing the nested-guest using hardware-assisted SVM.
                  * This one is just used for caching the bitmap from guest physical memory. */
-                uint8_t                 abMsrBitmap[0x2000];
+                uint8_t                 abMsrBitmap[SVM_MSRPM_PAGES * X86_PAGE_SIZE];
                 /** 0x7000 - The IOPM (IO Permission bitmap).
                  *
                  * This need not be physically contiguous pages because we re-use the ring-0
@@ -515,7 +515,7 @@ typedef struct CPUMCTX
                  *
                  * This one is just used for caching the IOPM from guest physical memory in
                  * case the guest hypervisor allows direct access to some IO ports. */
-                uint8_t                 abIoBitmap[0x3000];
+                uint8_t                 abIoBitmap[SVM_IOPM_PAGES * X86_PAGE_SIZE];
 
                 /** 0xa000 - MSR holding physical address of the Guest's Host-state. */
                 uint64_t                uMsrHSavePa;
@@ -842,9 +842,9 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) ds,   CPUMC
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) fs,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_FS]);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMCTX, CPUM_UNION_NM(s.) aSRegs[X86_SREG_GS]);
 # endif
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.Vmcb,                  4096);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abMsrBitmap,           4096);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            4096);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.Vmcb,                  X86_PAGE_SIZE);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abMsrBitmap,           X86_PAGE_SIZE);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,               8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,         8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,      8);
