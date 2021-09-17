@@ -949,7 +949,7 @@ typedef struct CPUMMSRRANGE
     /** The offset of the 64-bit MSR value relative to the start of CPUMCPU.
      * UINT16_MAX if not used by the read and write functions.  [12] */
     uint32_t    offCpumCpu : 24;
-    /** Reserved for future hacks. [14] */
+    /** Reserved for future hacks. [15] */
     uint32_t    fReserved : 8;
     /** The init/read value. [16]
      * When enmRdFn is kCpumMsrRdFn_INIT_VALUE, this is the value returned on RDMSR.
