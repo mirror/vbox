@@ -542,6 +542,16 @@ typedef struct CPUMCTX
                 VMXVVMCS                Vmcs;
                 /** 0X5000 - The shadow VMCS. */
                 VMXVVMCS                ShadowVmcs;
+                /** 0x6000 - The VMREAD bitmap. */
+                uint8_t                 abVmreadBitmap[VMX_V_VMREAD_VMWRITE_BITMAP_SIZE];
+                /** 0x7000 - The VMWRITE bitmap. */
+                uint8_t                 abVmwriteBitmap[VMX_V_VMREAD_VMWRITE_BITMAP_SIZE];
+                /** 0x8000 - The VM-entry MSR-load area. */
+                VMXAUTOMSR              aEntryMsrLoadArea[VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR)];
+                /** 0xa000 - The VM-exit MSR-store area. */
+                VMXAUTOMSR              aExitMsrStoreArea[VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR)];
+                /** 0xc000 - The VM-exit MSR-load area. */
+                VMXAUTOMSR              aExitMsrLoadArea[VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR)];
 
                 /** 0x300 - Guest physical address of the VMXON region. */
                 RTGCPHYS                GCPhysVmxon;
@@ -571,26 +581,6 @@ typedef struct CPUMCTX
                 R0PTRTYPE(void *)       pvVirtApicPageR0;
                 /** 0x358 - The virtual-APIC page - R3 ptr. */
                 R3PTRTYPE(void *)       pvVirtApicPageR3;
-                /** 0x360 - The VMREAD bitmap - R0 ptr. */
-                R0PTRTYPE(void *)       pvVmreadBitmapR0;
-                /** 0x368 - The VMREAD bitmap - R3 ptr. */
-                R3PTRTYPE(void *)       pvVmreadBitmapR3;
-                /** 0x370 - The VMWRITE bitmap - R0 ptr. */
-                R0PTRTYPE(void *)       pvVmwriteBitmapR0;
-                /** 0x378 - The VMWRITE bitmap - R3 ptr. */
-                R3PTRTYPE(void *)       pvVmwriteBitmapR3;
-                /** 0x380 - The VM-entry MSR-load area - R0 ptr. */
-                R0PTRTYPE(PVMXAUTOMSR)  pEntryMsrLoadAreaR0;
-                /** 0x388 - The VM-entry MSR-load area - R3 ptr. */
-                R3PTRTYPE(PVMXAUTOMSR)  pEntryMsrLoadAreaR3;
-                /** 0x390 - The VM-exit MSR-store area - R0 ptr. */
-                R0PTRTYPE(PVMXAUTOMSR)  pExitMsrStoreAreaR0;
-                /** 0x398 - The VM-exit MSR-store area - R3 ptr. */
-                R3PTRTYPE(PVMXAUTOMSR)  pExitMsrStoreAreaR3;
-                /** 0x3a0 - The VM-exit MSR-load area - R0 ptr. */
-                R0PTRTYPE(PVMXAUTOMSR)  pExitMsrLoadAreaR0;
-                /** 0x3a8 - The VM-exit MSR-load area - R3 ptr. */
-                R3PTRTYPE(PVMXAUTOMSR)  pExitMsrLoadAreaR3;
                 /** 0x3b0 - MSR bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvMsrBitmapR0;
                 /** 0x3b8 - The MSR bitmap - R3 ptr. */
@@ -633,7 +623,7 @@ typedef struct CPUMCTX
         uint32_t                fPadding;
 #endif
         /** 0x530 - Pad to 64 byte boundary. */
-        uint8_t                 abPadding0[8+16];
+        uint8_t                 abPadding0[8];
     } hwvirt;
 } CPUMCTX;
 #pragma pack()
@@ -844,11 +834,11 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abMsrBitmap, 
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.abIoBitmap,            X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Vmcs,                  X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.ShadowVmcs,            X86_PAGE_SIZE);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,      8);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0,     8);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pEntryMsrLoadAreaR0,   8);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pExitMsrStoreAreaR0,   8);
-AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pExitMsrLoadAreaR0,    8);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abVmreadBitmap,        X86_PAGE_SIZE);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abVmwriteBitmap,       X86_PAGE_SIZE);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aEntryMsrLoadArea,     X86_PAGE_SIZE);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrStoreArea,     X86_PAGE_SIZE);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrLoadArea,      X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvMsrBitmapR0,         8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvIoBitmapR0,          8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,                  8);

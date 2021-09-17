@@ -267,21 +267,52 @@ struc CPUMCTX
     .hwvirt                             resb        0
     .hwvirt.svm                         resb        0
     .hwvirt.vmx                         resb        0
-    .hwvirt.svm.Vmcb                    resb        4096
-    .hwvirt.svm.abMsrBitmap             resb        8192
-    .hwvirt.svm.abIoBitmap              resb        12288
-    .hwvirt.svm.uMsrHSavePa             resq        1
-    .hwvirt.svm.GCPhysVmcb              resq        1
-    alignb 8
-    .hwvirt.svm.HostState               resb        184
-    .hwvirt.svm.uPrevPauseTick          resq        1
-    .hwvirt.svm.cPauseFilter            resw        1
-    .hwvirt.svm.cPauseFilterThreshold   resw        1
-    .hwvirt.svm.fInterceptEvents        resb        1
-    ;.unnamed_padding.1 resb 0
 
-    .hwvirt.vmx.Vmcs                    EQU         (.hwvirt.vmx )
-    .hwvirt.vmx.ShadowVmcs              EQU         (.hwvirt.vmx + 0x1000)
+    .hwvirt.svm.Vmcb                    EQU         .hwvirt.svm
+    .hwvirt.svm.abMsrBitmap             EQU         (.hwvirt.svm.Vmcb                   + 0x1000)
+    .hwvirt.svm.abIoBitmap              EQU         (.hwvirt.svm.abMsrBitmap            + 0x2000)
+    .hwvirt.svm.uMsrHSavePa             EQU         (.hwvirt.svm.abIoBitmap             + 0x3000)   ; resq        1
+    .hwvirt.svm.GCPhysVmcb              EQU         (.hwvirt.svm.uMsrHSavePa            + 8)        ; resq        1
+    alignb 8
+    .hwvirt.svm.HostState               EQU         (.hwvirt.svm.GCPhysVmcb             + 8)        ; resb        184
+    .hwvirt.svm.uPrevPauseTick          EQU         (.hwvirt.svm.HostState              + 184)      ; resq        1
+    .hwvirt.svm.cPauseFilter            EQU         (.hwvirt.svm.uPrevPauseTick         + 8)        ; resw        1
+    .hwvirt.svm.cPauseFilterThreshold   EQU         (.hwvirt.svm.cPauseFilter           + 2)        ; resw        1
+    .hwvirt.svm.fInterceptEvents        EQU         (.hwvirt.svm.cPauseFilterThreshold  + 2)        ; resb        1
+
+    .hwvirt.vmx.Vmcs                    resb        0x1000
+    .hwvirt.vmx.ShadowVmcs              resb        0x1000
+    .hwvirt.vmx.abVmreadBitmap          resb        0x1000
+    .hwvirt.vmx.abVmwriteBitmap         resb        0x1000
+    .hwvirt.vmx.aEntryMsrLoadArea       resb        0x2000
+    .hwvirt.vmx.aExitMsrStoreArea       resb        0x2000
+    .hwvirt.vmx.aExitMsrLoadArea        resb        0x2000
+    alignb 8
+    .hwvirt.vmx.GCPhysVmxon             resq        1
+    .hwvirt.vmx.GCPhysVmcs              resq        1
+    .hwvirt.vmx.GCPhysShadowVmcs        resq        1
+    .hwvirt.vmx.enmDiag                 resd        1
+    .hwvirt.vmx.enmAbort                resd        1
+    .hwvirt.vmx.uDiagAux                resq        1
+    .hwvirt.vmx.uAbortAux               resd        1
+    .hwvirt.vmx.fInVmxRootMode          resb        1
+    .hwvirt.vmx.fInVmxNonRootMode       resb        1
+    .hwvirt.vmx.fInterceptEvents        resb        1
+    .hwvirt.vmx.fNmiUnblockingIret      resb        1
+    .hwvirt.vmx.pvVirtApicPageR0        resq        1
+    .hwvirt.vmx.pvVirtApicPageR3        resq        1
+    .hwvirt.vmx.pvMsrBitmapR0           resq        1
+    .hwvirt.vmx.pvMsrBitmapR3           resq        1
+    .hwvirt.vmx.pvIoBitmapR0            resq        1
+    .hwvirt.vmx.pvIoBitmapR3            resq        1
+    .hwvirt.vmx.uFirstPauseLoopTick     resq        1
+    .hwvirt.vmx.uPrevPauseTick          resq        1
+    .hwvirt.vmx.uEntryTick              resq        1
+    .hwvirt.vmx.offVirtApicWrite        resw        1
+    .hwvirt.vmx.fVirtNmiBlocking        resb        1
+    alignb 8
+    .hwvirt.vmx.Msrs                    resb        224
+    .hwvirt.vmx.HCPhysVirtApicPage      resq        1
 
     alignb 8
     .hwvirt.enmHwvirt                   resd        1

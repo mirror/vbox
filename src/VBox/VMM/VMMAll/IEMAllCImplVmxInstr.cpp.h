@@ -1575,7 +1575,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReaso
      * VM-exit MSR-store count is 0. If this is the case, bail early without reading it.
      * See Intel spec. 24.7.2 "VM-Exit Controls for MSRs".
      */
-    uint32_t const cMsrs = pVmcs->u32ExitMsrStoreCount;
+    uint32_t const cMsrs = RT_MIN(pVmcs->u32ExitMsrStoreCount, RT_ELEMENTS(pVCpu->cpum.GstCtx.hwvirt.vmx.aExitMsrStoreArea));
     if (!cMsrs)
         return VINF_SUCCESS;
 
@@ -1598,13 +1598,13 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReaso
     RTGCPHYS const GCPhysVmEntryMsrLoadArea = pVmcs->u64AddrEntryMsrLoad.u;
     RTGCPHYS const GCPhysVmExitMsrStoreArea = pVmcs->u64AddrExitMsrStore.u;
     if (GCPhysVmEntryMsrLoadArea == GCPhysVmExitMsrStoreArea)
-        pMsrArea = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea);
+        pMsrArea = pVCpu->cpum.GstCtx.hwvirt.vmx.aEntryMsrLoadArea;
     else
     {
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea),
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.aExitMsrStoreArea[0],
                                          GCPhysVmExitMsrStoreArea, cMsrs * sizeof(VMXAUTOMSR));
         if (RT_SUCCESS(rc))
-            pMsrArea = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea);
+            pMsrArea = pVCpu->cpum.GstCtx.hwvirt.vmx.aExitMsrStoreArea;
         else
         {
             AssertMsgFailed(("VM-exit: Failed to read MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysVmExitMsrStoreArea, rc));
@@ -1616,7 +1616,6 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReaso
      * Update VM-exit MSR store area.
      */
     PVMXAUTOMSR pMsr = pMsrArea;
-    Assert(pMsr);
     for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
     {
         if (   !pMsr->u32Reserved
@@ -1952,7 +1951,7 @@ IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReason
      * VM-exit MSR load count is 0. If this is the case, bail early without reading it.
      * See Intel spec. 24.7.2 "VM-Exit Controls for MSRs".
      */
-    uint32_t const cMsrs = pVmcs->u32ExitMsrLoadCount;
+    uint32_t const cMsrs = RT_MIN(pVmcs->u32ExitMsrLoadCount, RT_ELEMENTS(pVCpu->cpum.GstCtx.hwvirt.vmx.aExitMsrLoadArea));
     if (!cMsrs)
         return VINF_SUCCESS;
 
@@ -1968,12 +1967,11 @@ IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReason
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadCount);
 
     RTGCPHYS const GCPhysVmExitMsrLoadArea = pVmcs->u64AddrExitMsrLoad.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrLoadArea),
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.aExitMsrLoadArea[0],
                                      GCPhysVmExitMsrLoadArea, cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     {
-        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrLoadArea);
-        Assert(pMsr);
+        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.aExitMsrLoadArea;
         for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
         {
             if (   !pMsr->u32Reserved
@@ -6458,7 +6456,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPUCC pVCpu, const char *pszIns
      * VM-entry MSR load count is 0. If this is the case, bail early without reading it.
      * See Intel spec. 24.8.2 "VM-Entry Controls for MSRs".
      */
-    uint32_t const cMsrs = pVmcs->u32EntryMsrLoadCount;
+    uint32_t const cMsrs = RT_MIN(pVmcs->u32EntryMsrLoadCount, RT_ELEMENTS(pVCpu->cpum.GstCtx.hwvirt.vmx.aEntryMsrLoadArea));
     if (!cMsrs)
         return VINF_SUCCESS;
 
@@ -6477,12 +6475,11 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPUCC pVCpu, const char *pszIns
     }
 
     RTGCPHYS const GCPhysVmEntryMsrLoadArea = pVmcs->u64AddrEntryMsrLoad.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea),
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.aEntryMsrLoadArea[0],
                                      GCPhysVmEntryMsrLoadArea, cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     {
-        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea);
-        Assert(pMsr);
+        PCVMXAUTOMSR pMsr = &pVCpu->cpum.GstCtx.hwvirt.vmx.aEntryMsrLoadArea[0];
         for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
         {
             if (   !pMsr->u32Reserved
@@ -6641,9 +6638,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
     {
         /* Read the VMREAD-bitmap. */
         RTGCPHYS const GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap),
-                                         GCPhysVmreadBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.abVmreadBitmap[0],
+                                         GCPhysVmreadBitmap, sizeof(pVCpu->cpum.GstCtx.hwvirt.vmx.abVmreadBitmap));
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -6651,9 +6647,8 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
 
         /* Read the VMWRITE-bitmap. */
         RTGCPHYS const GCPhysVmwriteBitmap = pVmcs->u64AddrVmwriteBitmap.u;
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap));
-        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap),
-                                     GCPhysVmwriteBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.GstCtx.hwvirt.vmx.abVmwriteBitmap[0],
+                                     GCPhysVmwriteBitmap, sizeof(pVCpu->cpum.GstCtx.hwvirt.vmx.abVmwriteBitmap));
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else

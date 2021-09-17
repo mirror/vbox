@@ -229,27 +229,58 @@ struc CPUMCPU
     .Guest.abXState             resb    0x4000-0x300
     .Guest.XState               EQU     .Guest.abXState
 
+;;
     alignb 4096
     .Guest.hwvirt                           resb        0
     .Guest.hwvirt.svm                       resb        0
     .Guest.hwvirt.vmx                       resb        0
 
-    .Guest.hwvirt.svm.Vmcb                  resb        4096
-    .Guest.hwvirt.svm.abMsrBitmap           resb        8192
-    .Guest.hwvirt.svm.abIoBitmap            resb        12288
-    .Guest.hwvirt.svm.uMsrHSavePa           resq        1
-    .Guest.hwvirt.svm.GCPhysVmcb            resq        1
+    .Guest.hwvirt.svm.Vmcb                  EQU         .Guest.hwvirt.svm
+    .Guest.hwvirt.svm.abMsrBitmap           EQU         (.Guest.hwvirt.svm.Vmcb                   + 0x1000)
+    .Guest.hwvirt.svm.abIoBitmap            EQU         (.Guest.hwvirt.svm.abMsrBitmap            + 0x2000)
+    .Guest.hwvirt.svm.uMsrHSavePa           EQU         (.Guest.hwvirt.svm.abIoBitmap             + 0x3000)   ; resq        1
+    .Guest.hwvirt.svm.GCPhysVmcb            EQU         (.Guest.hwvirt.svm.uMsrHSavePa            + 8)        ; resq        1
     alignb 8
-    .Guest.hwvirt.svm.HostState             resb        184
-    .Guest.hwvirt.svm.uPrevPauseTick        resq        1
-    .Guest.hwvirt.svm.cPauseFilter          resw        1
-    .Guest.hwvirt.svm.cPauseFilterThreshold resw        1
-    .Guest.hwvirt.svm.fInterceptEvents      resb        1
+    .Guest.hwvirt.svm.HostState             EQU         (.Guest.hwvirt.svm.GCPhysVmcb             + 8)        ; resb        184
+    .Guest.hwvirt.svm.uPrevPauseTick        EQU         (.Guest.hwvirt.svm.HostState              + 184)      ; resq        1
+    .Guest.hwvirt.svm.cPauseFilter          EQU         (.Guest.hwvirt.svm.uPrevPauseTick         + 8)        ; resw        1
+    .Guest.hwvirt.svm.cPauseFilterThreshold EQU         (.Guest.hwvirt.svm.cPauseFilter           + 2)        ; resw        1
+    .Guest.hwvirt.svm.fInterceptEvents      EQU         (.Guest.hwvirt.svm.cPauseFilterThreshold  + 2)        ; resb        1
 
-    .Guest.hwvirt.vmx.Vmcs                  EQU         (.Guest.hwvirt.vmx )
-    .Guest.hwvirt.vmx.ShadowVmcs            EQU         (.Guest.hwvirt.vmx + 0x1000)
+    .Guest.hwvirt.vmx.Vmcs                  resb        0x1000
+    .Guest.hwvirt.vmx.ShadowVmcs            resb        0x1000
+    .Guest.hwvirt.vmx.abVmreadBitmap        resb        0x1000
+    .Guest.hwvirt.vmx.abVmwriteBitmap       resb        0x1000
+    .Guest.hwvirt.vmx.aEntryMsrLoadArea     resb        0x2000
+    .Guest.hwvirt.vmx.aExitMsrStoreArea     resb        0x2000
+    .Guest.hwvirt.vmx.aExitMsrLoadArea      resb        0x2000
+    alignb 8
+    .Guest.hwvirt.vmx.GCPhysVmxon           resq        1
+    .Guest.hwvirt.vmx.GCPhysVmcs            resq        1
+    .Guest.hwvirt.vmx.GCPhysShadowVmcs      resq        1
+    .Guest.hwvirt.vmx.enmDiag               resd        1
+    .Guest.hwvirt.vmx.enmAbort              resd        1
+    .Guest.hwvirt.vmx.uDiagAux              resq        1
+    .Guest.hwvirt.vmx.uAbortAux             resd        1
+    .Guest.hwvirt.vmx.fInVmxRootMode        resb        1
+    .Guest.hwvirt.vmx.fInVmxNonRootMode     resb        1
+    .Guest.hwvirt.vmx.fInterceptEvents      resb        1
+    .Guest.hwvirt.vmx.fNmiUnblockingIret    resb        1
+    .Guest.hwvirt.vmx.pvVirtApicPageR0      resq        1
+    .Guest.hwvirt.vmx.pvVirtApicPageR3      resq        1
+    .Guest.hwvirt.vmx.pvMsrBitmapR0         resq        1
+    .Guest.hwvirt.vmx.pvMsrBitmapR3         resq        1
+    .Guest.hwvirt.vmx.pvIoBitmapR0          resq        1
+    .Guest.hwvirt.vmx.pvIoBitmapR3          resq        1
+    .Guest.hwvirt.vmx.uFirstPauseLoopTick   resq        1
+    .Guest.hwvirt.vmx.uPrevPauseTick        resq        1
+    .Guest.hwvirt.vmx.uEntryTick            resq        1
+    .Guest.hwvirt.vmx.offVirtApicWrite      resw        1
+    .Guest.hwvirt.vmx.fVirtNmiBlocking      resb        1
+    alignb 8
+    .Guest.hwvirt.vmx.Msrs                  resb        224
+    .Guest.hwvirt.vmx.HCPhysVirtApicPage    resq        1
 
-    ;.unnamed_padding.1 resb 0
     alignb 8
     .Guest.hwvirt.enmHwvirt                 resd        1
     .Guest.hwvirt.fGif                      resb        1

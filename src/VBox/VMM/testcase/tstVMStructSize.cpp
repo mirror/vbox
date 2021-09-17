@@ -253,6 +253,11 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.svm.abIoBitmap, 4096);
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.Vmcs, 4096);
     CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.ShadowVmcs, 4096);
+    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.abVmreadBitmap, 4096);
+    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.abVmwriteBitmap, 4096);
+    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.aEntryMsrLoadArea, 4096);
+    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.aExitMsrStoreArea, 4096);
+    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum.s.Guest.hwvirt.vmx.aExitMsrLoadArea, 4096);
 
     PVM pVM = NULL; NOREF(pVM);
 
