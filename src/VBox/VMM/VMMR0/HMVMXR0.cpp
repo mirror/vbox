@@ -1971,8 +1971,8 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
         }
         else
         {
-            pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(&pVCpu->cpum.GstCtx, &pVmcsInfo->HCPhysVirtApic);
-            Assert(pVmcsInfo->pbVirtApic);
+            pVmcsInfo->pbVirtApic     = &pVCpu->cpum.GstCtx.hwvirt.vmx.abVirtApicPage[0];
+            pVmcsInfo->HCPhysVirtApic = GVMMR0ConvertGVMPtr2HCPhys(pVM, pVmcsInfo->pbVirtApic);
             Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
         }
     }

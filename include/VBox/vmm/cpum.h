@@ -2440,22 +2440,6 @@ DECLINLINE(bool) CPUMIsGuestVmxCurrentVmcsValid(PCCPUMCTX pCtx)
     return RT_BOOL(GCPhysVmcs != NIL_RTGCPHYS);
 }
 
-/**
- * Gets the nested-guest virtual-APIC page.
- *
- * @returns The virtual-APIC page.
- * @param   pCtx        Pointer to the context.
- * @param   pHCPhys     Where to store the host-physical address of the virtual-APIC
- *                      page.
- */
-DECLINLINE(void *) CPUMGetGuestVmxVirtApicPage(PCCPUMCTX pCtx, PRTHCPHYS pHCPhysVirtApicPage)
-{
-    Assert(pHCPhysVirtApicPage);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    *pHCPhysVirtApicPage = pCtx->hwvirt.vmx.HCPhysVirtApicPage;
-    return pCtx->hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-}
-
 # endif /* !IN_RC */
 
 /**

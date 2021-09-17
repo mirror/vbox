@@ -1018,8 +1018,7 @@ static void cpumR3InitSvmHwVirtState(PVM pVM)
 {
     Assert(pVM->cpum.s.GuestFeatures.fSvm);
 
-    LogRel(("CPUM: Allocating %u pages for the nested-guest SVM MSR and IO permission bitmaps\n",
-            pVM->cCpus * (SVM_MSRPM_PAGES + SVM_IOPM_PAGES)));
+    LogRel(("CPUM: AMD-V nested-guest init\n"));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[i];
@@ -1049,48 +1048,18 @@ DECLINLINE(void) cpumR3ResetSvmHwVirtState(PVMCPU pVCpu)
 
 
 /**
- * Frees memory allocated for the VMX hardware virtualization state.
- *
- * @param   pVM     The cross context VM structure.
- */
-static void cpumR3FreeVmxHwVirtState(PVM pVM)
-{
-    Assert(pVM->cpum.s.GuestFeatures.fVmx);
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU   pVCpu = pVM->apCpusR3[i];
-        PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
-
-        if (pCtx->hwvirt.vmx.pvVirtApicPageR3)
-        {
-            SUPR3ContFree(pCtx->hwvirt.vmx.pvVirtApicPageR3, VMX_V_VIRT_APIC_PAGES);
-            pCtx->hwvirt.vmx.pvVirtApicPageR3 = NULL;
-        }
-    }
-}
-
-
-/**
  * Allocates memory for the VMX hardware virtualization state.
  *
- * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
-static int cpumR3AllocVmxHwVirtState(PVM pVM)
+static void cpumR3InitVmxHwVirtState(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
-    uint32_t const cPages = VMX_V_VMCS_PAGES
-                          + VMX_V_SHADOW_VMCS_PAGES
-                          + VMX_V_VIRT_APIC_PAGES
-                          + (2 * VMX_V_VMREAD_VMWRITE_BITMAP_PAGES)
-                          + (3 * VMX_V_AUTOMSR_AREA_PAGES)
-                          + VMX_V_MSR_BITMAP_PAGES
-                          + (VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES);
-    LogRel(("CPUM: Allocating %u pages for the nested-guest VMCS and related structures\n", pVM->cCpus * cPages));
+    LogRel(("CPUM: VT-x nested-guest init\n"));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = pVM->apCpusR3[i];
         PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
+
         pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_VMX;
 
         AssertCompile(sizeof(pCtx->hwvirt.vmx.Vmcs) == VMX_V_VMCS_PAGES * X86_PAGE_SIZE);
@@ -1111,21 +1080,8 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abMsrBitmap) == VMX_V_MSR_BITMAP_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == (VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES) * X86_PAGE_SIZE);
         AssertCompile(sizeof(pCtx->hwvirt.vmx.abIoBitmap) == VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
-
-        /*
-         * Allocate the virtual-APIC page.
-         */
-        pCtx->hwvirt.vmx.pvVirtApicPageR3 = SUPR3ContAlloc(VMX_V_VIRT_APIC_PAGES,
-                                                           &pCtx->hwvirt.vmx.pvVirtApicPageR0,
-                                                           &pCtx->hwvirt.vmx.HCPhysVirtApicPage);
-        if (pCtx->hwvirt.vmx.pvVirtApicPageR3)
-        { /* likely */ }
-        else
-        {
-            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's virtual-APIC page\n", pVCpu->idCpu,
-                    VMX_V_VIRT_APIC_PAGES));
-            break;
-        }
+        AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_PAGES * X86_PAGE_SIZE);
+        AssertCompile(sizeof(pCtx->hwvirt.vmx.abVirtApicPage) == VMX_V_VIRT_APIC_SIZE);
 
         /*
          * Zero out all allocated pages (should compress well for saved-state).
@@ -1140,14 +1096,8 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         RT_ZERO(pCtx->hwvirt.vmx.aExitMsrLoadArea);
         RT_ZERO(pCtx->hwvirt.vmx.abMsrBitmap);
         RT_ZERO(pCtx->hwvirt.vmx.abIoBitmap);
-        memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVirtApicPage),      0, VMX_V_VIRT_APIC_SIZE);
+        RT_ZERO(pCtx->hwvirt.vmx.abVirtApicPage);
     }
-
-    /* On any failure, cleanup. */
-    if (RT_FAILURE(rc))
-        cpumR3FreeVmxHwVirtState(pVM);
-
-    return rc;
 }
 
 
@@ -2088,7 +2038,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         return rc;
 
     /*
-     * Allocate memory required by the guest hardware-virtualization structures.
+     * Init the VMX/SVM state.
+     *
      * This must be done after initializing CPUID/MSR features as we access the
      * the VMX/SVM guest features below.
      *
@@ -2096,13 +2047,11 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
      * VMX preemption timers.
      */
     if (pVM->cpum.s.GuestFeatures.fVmx)
-        rc = cpumR3AllocVmxHwVirtState(pVM);
+        cpumR3InitVmxHwVirtState(pVM);
     else if (pVM->cpum.s.GuestFeatures.fSvm)
         cpumR3InitSvmHwVirtState(pVM);
     else
         Assert(pVM->apCpusR3[0]->cpum.s.Guest.hwvirt.enmHwvirt == CPUMHWVIRT_NONE);
-    if (RT_FAILURE(rc))
-        return rc;
 
     CPUMR3Reset(pVM);
     return VINF_SUCCESS;
@@ -2156,8 +2105,6 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
                 pVCpu->cpum.s.hNestedVmxPreemptTimer = NIL_TMTIMERHANDLE;
             }
         }
-
-        cpumR3FreeVmxHwVirtState(pVM);
     }
     return VINF_SUCCESS;
 }

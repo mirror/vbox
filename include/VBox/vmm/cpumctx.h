@@ -556,6 +556,9 @@ typedef struct CPUMCTX
                 uint8_t                 abMsrBitmap[VMX_V_MSR_BITMAP_SIZE];
                 /** 0x10000 - The I/O permission bitmap. */
                 uint8_t                 abIoBitmap[VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE];
+                /** 0x12000 - The virtual-APIC page.
+                 * @note This is used by VT-x hardware... */
+                uint8_t                 abVirtApicPage[VMX_V_VIRT_APIC_SIZE];
 
                 /** 0x300 - Guest physical address of the VMXON region. */
                 RTGCPHYS                GCPhysVmxon;
@@ -581,10 +584,6 @@ typedef struct CPUMCTX
                 /** 0x32f - Whether blocking of NMI (or virtual-NMIs) was in effect in VMX non-root
                  *  mode before execution of IRET. */
                 bool                    fNmiUnblockingIret;
-                /** 0x350 - The virtual-APIC page - R0 ptr. */
-                R0PTRTYPE(void *)       pvVirtApicPageR0;
-                /** 0x358 - The virtual-APIC page - R3 ptr. */
-                R3PTRTYPE(void *)       pvVirtApicPageR3;
                 /** 0x3d0 - Guest TSC timestamp of the first PAUSE instruction that is considered to
                  *  be the first in a loop. */
                 uint64_t                uFirstPauseLoopTick;
@@ -600,8 +599,6 @@ typedef struct CPUMCTX
                 uint8_t                 abPadding0[5];
                 /** 0x3f0 - Guest VMX MSRs. */
                 VMXMSRS                 Msrs;
-                /** 0x4e0 - Host physical address of the virtual-APIC page. */
-                RTHCPHYS                HCPhysVirtApicPage;
             } vmx;
         } CPUM_UNION_NM(s);
 
@@ -618,8 +615,10 @@ typedef struct CPUMCTX
         uint32_t                fLocalForcedActions;
         uint32_t                fPadding;
 #endif
+#if 0
         /** 0x530 - Pad to 64 byte boundary. */
-        uint8_t                 abPadding0[8+32];
+        uint8_t                 abPadding0[8+16+32];
+#endif
     } hwvirt;
 } CPUMCTX;
 #pragma pack()
@@ -837,6 +836,7 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrStore
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.aExitMsrLoadArea,      X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abMsrBitmap,           X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abIoBitmap,            X86_PAGE_SIZE);
+AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.abVirtApicPage,        X86_PAGE_SIZE);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,                  8);
 
 /**
