@@ -2489,8 +2489,8 @@ static int hmR0SvmExportGuestState(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
     return VINF_SUCCESS;
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+
 /**
  * Merges the guest and nested-guest MSR permission bitmap.
  *
@@ -2604,10 +2604,10 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
          */
         pVCpu->hmr0.s.svm.fSyncVTpr = false;
 
-#ifdef DEBUG_ramshankar
+# ifdef DEBUG_ramshankar
         /* For debugging purposes - copy the LBR info. from outer guest VMCB. */
         pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt = pVmcb->ctrl.LbrVirt.n.u1LbrVirt;
-#endif
+# endif
 
         /*
          * If we don't expose Virtualized-VMSAVE/VMLOAD feature to the outer guest, we
@@ -2639,8 +2639,8 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPagingCfg == pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
     }
 }
-#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 /**
  * Exports the state shared between the host and guest (or nested-guest) into

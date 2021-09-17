@@ -505,7 +505,13 @@ typedef struct CPUMCTX
                  *
                  * This need not be physically contiguous pages because we use the one from
                  * HMPHYSCPU while executing the nested-guest using hardware-assisted SVM.
-                 * This one is just used for caching the bitmap from guest physical memory. */
+                 * This one is just used for caching the bitmap from guest physical memory.
+                 *
+                 * @todo r=bird: This is not used directly by AMD-V hardware, so it doesn't
+                 *       really need to even be page aligned.
+                 *
+                 *       Also, couldn't we just access the guest page directly when we need to,
+                 *       or do we have to use a cached copy of it? */
                 uint8_t                 abMsrBitmap[SVM_MSRPM_PAGES * X86_PAGE_SIZE];
                 /** 0x7000 - The IOPM (IO Permission bitmap).
                  *
@@ -514,7 +520,13 @@ typedef struct CPUMCTX
                  * because it's identical (we trap all IO accesses).
                  *
                  * This one is just used for caching the IOPM from guest physical memory in
-                 * case the guest hypervisor allows direct access to some IO ports. */
+                 * case the guest hypervisor allows direct access to some IO ports.
+                 *
+                 * @todo r=bird: This is not used directly by AMD-V hardware, so it doesn't
+                 *       really need to even be page aligned.
+                 *
+                 *       Also, couldn't we just access the guest page directly when we need to,
+                 *       or do we have to use a cached copy of it? */
                 uint8_t                 abIoBitmap[SVM_IOPM_PAGES * X86_PAGE_SIZE];
 
                 /** 0xa000 - MSR holding physical address of the Guest's Host-state. */
@@ -542,9 +554,13 @@ typedef struct CPUMCTX
                 VMXVVMCS                Vmcs;
                 /** 0X5000 - The shadow VMCS. */
                 VMXVVMCS                ShadowVmcs;
-                /** 0x6000 - The VMREAD bitmap. */
+                /** 0x6000 - The VMREAD bitmap.
+                 * @todo r=bird: Do we really need to keep copies for these?  Couldn't we just
+                 *       access the guest memory directly as needed?   */
                 uint8_t                 abVmreadBitmap[VMX_V_VMREAD_VMWRITE_BITMAP_SIZE];
-                /** 0x7000 - The VMWRITE bitmap. */
+                /** 0x7000 - The VMWRITE bitmap.
+                 * @todo r=bird: Do we really need to keep copies for these?  Couldn't we just
+                 *       access the guest memory directly as needed?  */
                 uint8_t                 abVmwriteBitmap[VMX_V_VMREAD_VMWRITE_BITMAP_SIZE];
                 /** 0x8000 - The VM-entry MSR-load area. */
                 VMXAUTOMSR              aEntryMsrLoadArea[VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR)];
@@ -552,9 +568,13 @@ typedef struct CPUMCTX
                 VMXAUTOMSR              aExitMsrStoreArea[VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR)];
                 /** 0xc000 - The VM-exit MSR-load area. */
                 VMXAUTOMSR              aExitMsrLoadArea[VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR)];
-                /** 0xe000 - The MSR permission bitmap. */
+                /** 0xe000 - The MSR permission bitmap.
+                 * @todo r=bird: Do we really need to keep copies for these?  Couldn't we just
+                 *       access the guest memory directly as needed?  */
                 uint8_t                 abMsrBitmap[VMX_V_MSR_BITMAP_SIZE];
-                /** 0xf000 - The I/O permission bitmap. */
+                /** 0xf000 - The I/O permission bitmap.
+                 * @todo r=bird: Do we really need to keep copies for these?  Couldn't we just
+                 *       access the guest memory directly as needed? */
                 uint8_t                 abIoBitmap[VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE];
                 /** 0x11000 - The virtual-APIC page.
                  * @note This is used by VT-x hardware... */
