@@ -2253,6 +2253,62 @@ typedef struct PDMIPCIRAWCONNECTOR
 /** PDMIPCIRAWCONNECTOR interface ID. */
 #define PDMIPCIRAWCONNECTOR_IID                 "14aa9c6c-8869-4782-9dfc-910071a6aebf"
 
+
+/** Pointer to a VFS connector interface. */
+typedef struct PDMIVFSCONNECTOR *PPDMIVFSCONNECTOR;
+/**
+ * VFS connector interface (up).
+ */
+typedef struct PDMIVFSCONNECTOR
+{
+    /**
+     * Queries the size of the given path.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if the path is not available.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pszNamespace        The namespace for the path (usually driver/device name) or NULL for default namespace.
+     * @param   pszPath             The path to query the size for.
+     * @param   pcb                 Where to store the size of the path in bytes on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQuerySize, (PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
+                                             uint64_t *pcb));
+
+    /**
+     * Reads everything from the given path and stores the data into the supplied buffer.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if the path is not available.
+     * @retval  VERR_BUFFER_OVERFLOW if the supplied buffer is too small to read everything.
+     * @retval  VINF_BUFFER_UNDERFLOW if the supplied buffer is too large.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pszNamespace        The namespace for the path (usually driver/device name) or NULL for default namespace.
+     * @param   pszPath             The path to read everything for.
+     * @param   pvBuf               Where to store the data.
+     * @param   cbRead              How much to read.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReadAll, (PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
+                                           void *pvBuf, size_t cbRead));
+
+    /**
+     * Writes the supplied data to the given path, overwriting any previously existing data.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pszNamespace        The namespace for the path (usually driver/device name) or NULL for default namespace.
+     * @param   pszPath             The path to write everything to.
+     * @param   pvBuf               The data to store.
+     * @param   cbWrite             How many bytes to write.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWriteAll, (PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
+                                            const void *pvBuf, size_t cbWrite));
+
+    /** @todo Add standard open/read/write/close callbacks when the need arises. */
+
+} PDMIVFSCONNECTOR;
+/** PDMIVFSCONNECTOR interface ID. */
+#define PDMIVFSCONNECTOR_IID               "a1fc51e0-414a-4e78-8388-8053b9dc6521"
+
 /** @} */
 
 RT_C_DECLS_END
