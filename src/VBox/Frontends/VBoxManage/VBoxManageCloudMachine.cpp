@@ -71,8 +71,14 @@ static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
 
 static RTEXITCODE handleCloudMachineStart(HandlerArg *a, int iFirst,
                                           const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE handleCloudMachineReboot(HandlerArg *a, int iFirst,
+                                           const ComPtr<ICloudClient> &pClient);
 static RTEXITCODE handleCloudMachineShutdown(HandlerArg *a, int iFirst,
                                              const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE handleCloudMachinePowerdown(HandlerArg *a, int iFirst,
+                                              const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE handleCloudMachineTerminate(HandlerArg *a, int iFirst,
+                                              const ComPtr<ICloudClient> &pClient);
 
 static RTEXITCODE handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
                                                    const ComPtr<ICloudClient> &pClient);
@@ -612,19 +618,25 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
         kMachine_ConsoleHistory,
         kMachine_Info,
         kMachine_List,
+        kMachine_Powerdown,
+        kMachine_Reboot,
         kMachine_Shutdown,
         kMachine_Start,
+        kMachine_Terminate,
     };
 
     // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE);
     static const RTGETOPTDEF s_aOptions[] =
-        {
+    {
         { "console-history",    kMachine_ConsoleHistory,    RTGETOPT_REQ_NOTHING },
         { "consolehistory",     kMachine_ConsoleHistory,    RTGETOPT_REQ_NOTHING },
         { "info",               kMachine_Info,              RTGETOPT_REQ_NOTHING },
         { "list",               kMachine_List,              RTGETOPT_REQ_NOTHING },
+        { "powerdown",          kMachine_Powerdown,         RTGETOPT_REQ_NOTHING },
+        { "reboot",             kMachine_Reboot,            RTGETOPT_REQ_NOTHING },
         { "shutdown",           kMachine_Shutdown,          RTGETOPT_REQ_NOTHING },
         { "start",              kMachine_Start,             RTGETOPT_REQ_NOTHING },
+        { "terminate",          kMachine_Terminate,         RTGETOPT_REQ_NOTHING },
         CLOUD_MACHINE_RTGETOPTDEF_HELP
     };
 
@@ -650,11 +662,20 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
             case kMachine_List:
                 return listCloudMachinesImpl(a, OptState.iNext, pClient);
 
+            case kMachine_Powerdown:
+                return handleCloudMachinePowerdown(a, OptState.iNext, pClient);
+
+            case kMachine_Reboot:
+                return handleCloudMachineReboot(a, OptState.iNext, pClient);
+
             case kMachine_Shutdown:
                 return handleCloudMachineShutdown(a, OptState.iNext, pClient);
 
             case kMachine_Start:
                 return handleCloudMachineStart(a, OptState.iNext, pClient);
+
+            case kMachine_Terminate:
+                return handleCloudMachineTerminate(a, OptState.iNext, pClient);
 
 
             case 'h':           /* --help */
@@ -1253,7 +1274,37 @@ handleCloudMachineStart(HandlerArg *a, int iFirst,
 
 
 /*
+ * cloud machine reboot "id"
+ *     "Press" ACPI power button, then power the instance back up.
+ */
+static RTEXITCODE
+handleCloudMachineReboot(HandlerArg *a, int iFirst,
+                         const ComPtr<ICloudClient> &pClient)
+{
+    ComPtr<ICloudMachine> pMachine;
+    HRESULT hrc;
+
+    RTEXITCODE status
+        = getMachineFromArgs(pMachine,
+              /* HELP_SCOPE_CLOUD_MACHINE_REBOOT */ 0,
+              a, iFirst, pClient);
+    if (status != RTEXITCODE_SUCCESS)
+        return status;
+
+
+    ComPtr<IProgress> pProgress;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        Reboot(pProgress.asOutParam()),
+            RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/*
  * cloud machine shutdown "id"
+ *     "Press" ACPI power button.
  */
 static RTEXITCODE
 handleCloudMachineShutdown(HandlerArg *a, int iFirst,
@@ -1273,6 +1324,64 @@ handleCloudMachineShutdown(HandlerArg *a, int iFirst,
     ComPtr<IProgress> pProgress;
     CHECK_ERROR2_RET(hrc, pMachine,
         Shutdown(pProgress.asOutParam()),
+            RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/*
+ * cloud machine powerdown "id"
+ *     Yank the power cord.
+ */
+static RTEXITCODE
+handleCloudMachinePowerdown(HandlerArg *a, int iFirst,
+                            const ComPtr<ICloudClient> &pClient)
+{
+    ComPtr<ICloudMachine> pMachine;
+    HRESULT hrc;
+
+    RTEXITCODE status
+        = getMachineFromArgs(pMachine,
+              /* HELP_SCOPE_CLOUD_MACHINE_POWERDOWN */ 0,
+              a, iFirst, pClient);
+    if (status != RTEXITCODE_SUCCESS)
+        return status;
+
+
+    ComPtr<IProgress> pProgress;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        PowerDown(pProgress.asOutParam()),
+            RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/*
+ * cloud machine terminate "id"
+ *     Discard the instance running this machine.
+ */
+static RTEXITCODE
+handleCloudMachineTerminate(HandlerArg *a, int iFirst,
+                            const ComPtr<ICloudClient> &pClient)
+{
+    ComPtr<ICloudMachine> pMachine;
+    HRESULT hrc;
+
+    RTEXITCODE status
+        = getMachineFromArgs(pMachine,
+              /* HELP_SCOPE_CLOUD_MACHINE_TERMINATE */ 0,
+              a, iFirst, pClient);
+    if (status != RTEXITCODE_SUCCESS)
+        return status;
+
+
+    ComPtr<IProgress> pProgress;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        Terminate(pProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
     hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);
