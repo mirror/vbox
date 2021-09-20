@@ -64,7 +64,7 @@ static DECLCALLBACK(void) freeThreadCache(void *pvValue) RT_NOTHROW_DEF
 
 
 VirtualBoxTranslator::VirtualBoxTranslator()
-    : util::RWLockHandle(util::VBoxLockingClass::LOCKCLASS_TRANSLATOR)
+    : util::RWLockHandle(util::LOCKCLASS_TRANSLATOR)
     , m_cInstanceRefs(0)
     , m_pDefaultComponent(NULL)
     , m_strLanguage("C")
