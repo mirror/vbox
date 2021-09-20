@@ -1252,7 +1252,10 @@ endif
 if defined(VBOX_WITH_MAIN_NLS) || defined(VBOX_WITH_PUEL_NLS)
  VBOX_WITH_NLS := 1
 endif
-ifdef VBOX_ONLY_SDK
+#
+# Additions does not use NLS support yet
+#
+if defined(VBOX_ONLY_SDK) || defined(VBOX_ONLY_ADDITIONS)
  override VBOX_WITH_NLS :=
 endif
 ifndef VBOX_WITH_NLS # (We test again to account for 'override VBOX_WITH_NLS :=')
