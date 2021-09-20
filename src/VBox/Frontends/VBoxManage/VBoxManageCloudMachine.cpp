@@ -69,8 +69,14 @@ static HRESULT getMachineBySpec(ComPtr<ICloudMachine> &pMachineOut,
 static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
                                          const ComPtr<ICloudClient> &pClient);
 
+static RTEXITCODE handleCloudMachineStart(HandlerArg *a, int iFirst,
+                                          const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE handleCloudMachineShutdown(HandlerArg *a, int iFirst,
+                                             const ComPtr<ICloudClient> &pClient);
+
 static RTEXITCODE handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
                                                    const ComPtr<ICloudClient> &pClient);
+
 static RTEXITCODE listCloudMachinesImpl(HandlerArg *a, int iFirst,
                                         const ComPtr<ICloudClient> &pClient);
 static RTEXITCODE handleCloudMachineInfo(HandlerArg *a, int iFirst,
@@ -606,6 +612,8 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
         kMachine_ConsoleHistory,
         kMachine_Info,
         kMachine_List,
+        kMachine_Shutdown,
+        kMachine_Start,
     };
 
     // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE);
@@ -615,6 +623,8 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
         { "consolehistory",     kMachine_ConsoleHistory,    RTGETOPT_REQ_NOTHING },
         { "info",               kMachine_Info,              RTGETOPT_REQ_NOTHING },
         { "list",               kMachine_List,              RTGETOPT_REQ_NOTHING },
+        { "shutdown",           kMachine_Shutdown,          RTGETOPT_REQ_NOTHING },
+        { "start",              kMachine_Start,             RTGETOPT_REQ_NOTHING },
         CLOUD_MACHINE_RTGETOPTDEF_HELP
     };
 
@@ -639,6 +649,12 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
 
             case kMachine_List:
                 return listCloudMachinesImpl(a, OptState.iNext, pClient);
+
+            case kMachine_Shutdown:
+                return handleCloudMachineShutdown(a, OptState.iNext, pClient);
+
+            case kMachine_Start:
+                return handleCloudMachineStart(a, OptState.iNext, pClient);
 
 
             case 'h':           /* --help */
@@ -908,6 +924,8 @@ handleCloudMachineInfo(HandlerArg *a, int iFirst,
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
+    /* end of boilerplate */
+
 
     hrc = printMachineInfo(pMachine);
     if (FAILED(hrc))
@@ -1147,18 +1165,23 @@ printFormValue(const ComPtr<IFormValue> &pValue)
 
 
 /*
- * cloud machine console-history "id"
+ * Boilerplate code to get machine by name/id from the arguments.
+ * Shared by action subcommands b/c they currently don't have any
+ * extra options (but we can't use this for e.g. "info" that has
+ * --details).
  */
 static RTEXITCODE
-handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
-                                 const ComPtr<ICloudClient> &pClient)
+getMachineFromArgs(ComPtr<ICloudMachine> &pMachine,
+                   uint64_t fCurSubcommandScope,
+                   HandlerArg *a, int iFirst,
+                   const ComPtr<ICloudClient> &pClient)
 {
     MachineSpec machineSpec;
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
     int rc;
 
-    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_CONSOLEHISTORY);
+    RT_NOREF(fCurSubcommandScope); /// @todo scopes not in the manual yet
+    // setCurrentSubcommand(fCurSubcommandScope);
     static const RTGETOPTDEF s_aOptions[] =
     {
         CLOUD_MACHINE_RTGETOPTDEF_MACHINE,
@@ -1196,6 +1219,83 @@ handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
     hrc = getMachineBySpec(pMachine, pClient, machineSpec);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/*
+ * cloud machine start "id"
+ */
+static RTEXITCODE
+handleCloudMachineStart(HandlerArg *a, int iFirst,
+                        const ComPtr<ICloudClient> &pClient)
+{
+    ComPtr<ICloudMachine> pMachine;
+    HRESULT hrc;
+
+    RTEXITCODE status
+        = getMachineFromArgs(pMachine,
+              /* HELP_SCOPE_CLOUD_MACHINE_START */ 0,
+              a, iFirst, pClient);
+    if (status != RTEXITCODE_SUCCESS)
+        return status;
+
+
+    ComPtr<IProgress> pProgress;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        PowerUp(pProgress.asOutParam()),
+            RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/*
+ * cloud machine shutdown "id"
+ */
+static RTEXITCODE
+handleCloudMachineShutdown(HandlerArg *a, int iFirst,
+                           const ComPtr<ICloudClient> &pClient)
+{
+    ComPtr<ICloudMachine> pMachine;
+    HRESULT hrc;
+
+    RTEXITCODE status
+        = getMachineFromArgs(pMachine,
+              /* HELP_SCOPE_CLOUD_MACHINE_SHUTDOWN */ 0,
+              a, iFirst, pClient);
+    if (status != RTEXITCODE_SUCCESS)
+        return status;
+
+
+    ComPtr<IProgress> pProgress;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        Shutdown(pProgress.asOutParam()),
+            RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress, SHOW_PROGRESS_NONE);
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/*
+ * cloud machine console-history "id"
+ */
+static RTEXITCODE
+handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
+                                 const ComPtr<ICloudClient> &pClient)
+{
+    ComPtr<ICloudMachine> pMachine;
+    HRESULT hrc;
+
+    RTEXITCODE status
+        = getMachineFromArgs(pMachine,
+              /* HELP_SCOPE_CLOUD_MACHINE_CONSOLEHISTORY */ 0,
+              a, iFirst, pClient);
+    if (status != RTEXITCODE_SUCCESS)
+        return status;
 
 
     ComPtr<IDataStream> pHistoryStream;
