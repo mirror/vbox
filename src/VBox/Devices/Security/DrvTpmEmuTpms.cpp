@@ -67,6 +67,8 @@ typedef struct DRVTPMEMU
     PDMITPMCONNECTOR    ITpmConnector;
     /** Pointer to the driver instance. */
     PPDMDRVINS          pDrvIns;
+    /** The VFS interface of the driver below for NVRAM/TPM state loading and storing. */
+    PPDMIVFSCONNECTOR   pDrvVfs;
 
     /** The TPM version we are emulating. */
     TPMVERSION          enmVersion;
@@ -259,6 +261,75 @@ static int drvTpmEmuTpmsNvramStore(PDRVTPMEMU pThis)
 
     return rc;
 }
+
+
+/**
+ * Tries to load the NVRAM from the VFS driver below.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The emulator driver instance data.
+ */
+static int drvTpmEmuTpmsNvramLoadFromVfs(PDRVTPMEMU pThis)
+{
+    uint64_t cbState = 0;
+    int rc = pThis->pDrvVfs->pfnQuerySize(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_PERMANENT_ALL_NAME, &cbState);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pvNvPermall = RTMemAllocZ(cbState);
+        if (pThis->pvNvPermall)
+        {
+            pThis->cbNvPermall = (size_t)cbState;
+            rc = pThis->pDrvVfs->pfnReadAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_PERMANENT_ALL_NAME,
+                                            pThis->pvNvPermall, pThis->cbNvPermall);
+            if (RT_SUCCESS(rc))
+            {
+                /* Load the volatile state if existing. */
+                rc = pThis->pDrvVfs->pfnQuerySize(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_VOLATILESTATE_NAME, &cbState);
+                if (RT_SUCCESS(rc))
+                {
+                    pThis->pvNvVolatile = RTMemAllocZ(cbState);
+                    if (pThis->pvNvVolatile)
+                    {
+                        pThis->cbNvVolatile = (size_t)cbState;
+                        rc = pThis->pDrvVfs->pfnReadAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_VOLATILESTATE_NAME,
+                                                        pThis->pvNvVolatile, pThis->cbNvVolatile);
+                    }
+                }
+                else if (rc == VERR_NOT_FOUND)
+                    rc = VINF_SUCCESS; /* This is fine if there is no volatile state. */
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else if (rc == VERR_NOT_FOUND)
+        rc = VINF_SUCCESS; /* This is fine for the first start of a new VM. */
+
+    return rc;
+}
+
+
+/**
+ * Stores the NVRAM content using the VFS driver below.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The emulator driver instance data.
+ */
+static int drvTpmEmuTpmsNvramStoreToVfs(PDRVTPMEMU pThis)
+{
+    AssertPtr(pThis->pvNvPermall);
+    int rc = pThis->pDrvVfs->pfnWriteAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_PERMANENT_ALL_NAME,
+                                         pThis->pvNvPermall, pThis->cbNvPermall);
+    if (   RT_SUCCESS(rc)
+        && pThis->pvNvVolatile)
+        rc = pThis->pDrvVfs->pfnWriteAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_VOLATILESTATE_NAME,
+                                         pThis->pvNvVolatile, pThis->cbNvVolatile);
+
+    return rc;
+}
+
+
+/* -=-=-=-=- PDMITPMCONNECTOR interface callabcks. -=-=-=-=- */
 
 
 /** @interface_method_impl{PDMITPMCONNECTOR,pfnGetVersion} */
@@ -689,7 +760,11 @@ static DECLCALLBACK(void) drvTpmEmuTpmsDestruct(PPDMDRVINS pDrvIns)
 
     if (!pThis->fSsmCalled)
     {
-        int rc = drvTpmEmuTpmsNvramStore(pThis);
+        int rc;
+        if (pThis->pDrvVfs)
+            rc = drvTpmEmuTpmsNvramStoreToVfs(pThis);
+        else
+            rc = drvTpmEmuTpmsNvramStore(pThis);
         AssertRC(rc);
     }
 
@@ -753,15 +828,38 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     TPMLIB_SetDebugFD(STDERR_FILENO);
     TPMLIB_SetDebugLevel(~0);
 
-    int rc = CFGMR3QueryStringAlloc(pCfg, "NvramPath", &pThis->pszNvramPath);
-    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+    /*
+     * Try attach the VFS driver below and query it's VFS interface.
+     */
+    PPDMIBASE pBase = NULL;
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
+    if (RT_FAILURE(rc) && rc != VERR_PDM_NO_ATTACHED_DRIVER)
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Configuration error: querying \"NvramPath\" resulted in %Rrc"), rc);
+                                   N_("Failed to attach driver below us! %Rrc"), rc);
+    if (pBase)
+    {
+        pThis->pDrvVfs = PDMIBASE_QUERY_INTERFACE(pBase, PDMIVFSCONNECTOR);
+        if (!pThis->pDrvVfs)
+            return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
+                                    N_("No VFS interface below"));
 
-    rc = drvTpmEmuTpmsNvramLoad(pThis);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Failed to load TPM NVRAM data with %Rrc"), rc);
+        rc = drvTpmEmuTpmsNvramLoadFromVfs(pThis);
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Failed to load TPM NVRAM data with %Rrc"), rc);
+    }
+    else
+    {
+        rc = CFGMR3QueryStringAlloc(pCfg, "NvramPath", &pThis->pszNvramPath);
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: querying \"NvramPath\" resulted in %Rrc"), rc);
+
+        rc = drvTpmEmuTpmsNvramLoad(pThis);
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Failed to load TPM NVRAM data with %Rrc"), rc);
+    }
 
     TPMLIB_TPMVersion enmVersion = TPMLIB_TPM_VERSION_2;
     uint32_t uTpmVersion = 0;
