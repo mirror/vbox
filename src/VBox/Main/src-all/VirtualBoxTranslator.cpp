@@ -25,6 +25,8 @@
 #include <iprt/thread.h>
 #include <iprt/strcache.h>
 
+#include <VBox/com/AutoLock.h>
+
 #include "Global.h"
 #include "VirtualBoxBase.h"
 #include "QMTranslator.h"
