@@ -197,21 +197,26 @@ HRESULT VirtualBoxClient::init()
             throw setError(VBOX_E_IPRT_ERROR, tr("Failed to create translator instance"));
 
         char szNlsPath[RTPATH_MAX];
-        rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
-        if (RT_SUCCESS(rc))
-            rc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VirtualBoxAPI");
+        vrc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+        if (RT_SUCCESS(vrc))
+            vrc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VirtualBoxAPI");
 
-        vrc = mData.m_pVBoxTranslator->registerTranslation(szNlsPath, true, &mData.m_pTrComponent);
         if (RT_SUCCESS(vrc))
         {
-            rc = i_reloadApiLanguage();
-            if (SUCCEEDED(rc))
-                i_registerEventListener(); /* for updates */
+            vrc = mData.m_pVBoxTranslator->registerTranslation(szNlsPath, true, &mData.m_pTrComponent);
+            if (RT_SUCCESS(vrc))
+            {
+                rc = i_reloadApiLanguage();
+                if (SUCCEEDED(rc))
+                    i_registerEventListener(); /* for updates */
+                else
+                    LogRelFunc(("i_reloadApiLanguage failed: %Rhrc\n", rc));
+            }
             else
-                LogRelFunc(("i_reloadApiLanguage failed: %Rhrc\n", rc));
+                LogRelFunc(("Register translation failed: %Rrc\n", vrc));
         }
         else
-            LogRelFunc(("Register translation failed: %Rrc\n", vrc));
+            LogRelFunc(("Path constructing failed: %Rrc\n", vrc));
 #endif
         /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it
          * is not considered important enough to cause any sort of visible

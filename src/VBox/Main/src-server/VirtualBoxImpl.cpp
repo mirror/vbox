@@ -598,27 +598,38 @@ HRESULT VirtualBox::init()
         {
 
             char szNlsPath[RTPATH_MAX];
-            rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
-            if (RT_SUCCESS(rc))
-                rc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VirtualBoxAPI");
+            int vrc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+            if (RT_SUCCESS(vrc))
+                vrc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VirtualBoxAPI");
 
-            int vrc = m->pVBoxTranslator->registerTranslation(szNlsPath, true, &m->pTrComponent);
             if (RT_SUCCESS(vrc))
             {
-                com::Utf8Str strLocale;
-                HRESULT hrc = m->pSystemProperties->getLanguageId(strLocale);
-                if (SUCCEEDED(hrc))
+                vrc = m->pVBoxTranslator->registerTranslation(szNlsPath, true, &m->pTrComponent);
+                if (RT_SUCCESS(vrc))
                 {
-                    vrc = m->pVBoxTranslator->i_loadLanguage(strLocale.c_str());
-                    if (RT_FAILURE(vrc))
+                    com::Utf8Str strLocale;
+                    HRESULT hrc = m->pSystemProperties->getLanguageId(strLocale);
+                    if (SUCCEEDED(hrc))
                     {
-                        hrc = Global::vboxStatusCodeToCOM(vrc);
-                        LogRel(("Load language failed (%Rhrc).\n", hrc));
+                        vrc = m->pVBoxTranslator->i_loadLanguage(strLocale.c_str());
+                        if (RT_FAILURE(vrc))
+                        {
+                            hrc = Global::vboxStatusCodeToCOM(vrc);
+                            LogRel(("Load language failed (%Rhrc).\n", hrc));
+                        }
+                    }
+                    else
+                    {
+                        LogRel(("Getting language settings failed (%Rhrc).\n", hrc));
+                        m->pVBoxTranslator->release();
+                        m->pVBoxTranslator = NULL;
+                        m->pTrComponent = NULL;
                     }
                 }
                 else
                 {
-                    LogRel(("Getting language settings failed (%Rhrc).\n", hrc));
+                    HRESULT hrc = Global::vboxStatusCodeToCOM(vrc);
+                    LogRel(("Register translation failed (%Rhrc).\n", hrc));
                     m->pVBoxTranslator->release();
                     m->pVBoxTranslator = NULL;
                     m->pTrComponent = NULL;
@@ -627,7 +638,7 @@ HRESULT VirtualBox::init()
             else
             {
                 HRESULT hrc = Global::vboxStatusCodeToCOM(vrc);
-                LogRel(("Register translation failed (%Rhrc).\n", hrc));
+                LogRel(("Path constructing failed (%Rhrc).\n", hrc));
                 m->pVBoxTranslator->release();
                 m->pVBoxTranslator = NULL;
                 m->pTrComponent = NULL;
