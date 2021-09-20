@@ -62,7 +62,7 @@ typedef struct
 // The private class
 /////////////////////////////////////////////////////////////////////////////
 
-struct MachineCloneVMPrivate : public VirtualBoxTranslatable
+struct MachineCloneVMPrivate
 {
     MachineCloneVMPrivate(MachineCloneVM *a_q, ComObjPtr<Machine> &a_pSrcMachine, ComObjPtr<Machine> &a_pTrgMachine,
                           CloneMode_T a_mode, const RTCList<CloneOptions_T> &opts)

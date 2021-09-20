@@ -27,7 +27,7 @@
 /* Forward declaration of the d-pointer. */
 struct MachineCloneVMPrivate;
 
-class MachineCloneVM : public VirtualBoxTranslatable
+class MachineCloneVM
 {
 public:
     DECLARE_TRANSLATE_METHODS(MachineCloneVM)

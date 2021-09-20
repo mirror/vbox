@@ -42,8 +42,7 @@ namespace settings
  * Base class for the USB Proxy service.
  */
 class USBProxyService
-    : public VirtualBoxTranslatable
-    , public Lockable
+    : public Lockable
 {
 public:
     DECLARE_TRANSLATE_METHODS(USBProxyService)

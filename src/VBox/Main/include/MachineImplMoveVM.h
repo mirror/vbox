@@ -63,7 +63,7 @@ typedef struct
 
 struct fileList_t;
 
-class MachineMoveVM : public ThreadTask, public VirtualBoxTranslatable
+class MachineMoveVM : public ThreadTask
 {
     std::vector<ComObjPtr<Machine> >        machineList;
     RTCList<MEDIUMTASKCHAINMOVE>            m_llMedias;

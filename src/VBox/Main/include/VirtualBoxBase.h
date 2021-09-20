@@ -363,7 +363,7 @@ public:
         if (RT_LIKELY((arg) != NULL)) \
         { /* likely */ }\
         else \
-            return setError(E_INVALIDARG, tr("Argument %s is NULL"), #arg); \
+            return setError(E_INVALIDARG, VirtualBoxBase::tr("Argument %s is NULL"), #arg); \
     } while (0)
 
 /**
@@ -376,7 +376,8 @@ public:
         if (RT_LIKELY(RT_VALID_PTR(arg) || (arg) == NULL)) \
         { /* likely */ }\
         else \
-            return setError(E_INVALIDARG, tr("Argument %s is an invalid pointer"), #arg); \
+            return setError(E_INVALIDARG, \
+                            VirtualBoxBase::tr("Argument %s is an invalid pointer"), #arg); \
     } while (0)
 
 /**
@@ -390,7 +391,7 @@ public:
         { /* likely */ }\
         else \
             return setError(E_POINTER, \
-                tr("Argument %s points to invalid memory location (%p)"), \
+                VirtualBoxBase::tr("Argument %s points to invalid memory location (%p)"), \
                 #arg, (void *)(arg)); \
     } while (0)
 
@@ -404,7 +405,8 @@ public:
         if (RT_LIKELY(!ComSafeArrayInIsNull(arg))) \
         { /* likely */ }\
         else \
-            return setError(E_INVALIDARG, tr("Argument %s is NULL"), #arg); \
+            return setError(E_INVALIDARG, \
+                            VirtualBoxBase::tr("Argument %s is NULL"), #arg); \
     } while (0)
 
 /**
@@ -418,7 +420,8 @@ public:
         if (RT_LIKELY(RT_VALID_PTR(bstrInCheck))) \
         { /* likely */ }\
         else \
-            return setError(E_INVALIDARG, tr("Argument %s is an invalid pointer"), #a_bstrIn); \
+            return setError(E_INVALIDARG, \
+                            VirtualBoxBase::tr("Argument %s is an invalid pointer"), #a_bstrIn); \
     } while (0)
 /**
  * Checks that the string argument is not a NULL, a invalid pointer or an empty
@@ -431,7 +434,9 @@ public:
         if (RT_LIKELY(RT_VALID_PTR(bstrInCheck) && *(bstrInCheck) != '\0')) \
         { /* likely */ }\
         else \
-            return setError(E_INVALIDARG, tr("Argument %s is empty or an invalid pointer"), #a_bstrIn); \
+            return setError(E_INVALIDARG, \
+                            VirtualBoxBase::tr("Argument %s is empty or an invalid pointer"), \
+                            #a_bstrIn); \
     } while (0)
 
 /**
@@ -449,7 +454,8 @@ public:
         { /* likely */ }\
         else \
             return setError(E_INVALIDARG, \
-                tr("GUID argument %s is not valid (\"%ls\")"), #a_Arg, Bstr(a_Arg).raw()); \
+                            VirtualBoxBase::tr("GUID argument %s is not valid (\"%ls\")"), \
+                            #a_Arg, Bstr(a_Arg).raw()); \
     } while (0)
 
 /**
@@ -464,7 +470,8 @@ public:
         { /* likely */ }\
         else \
             return setError(E_INVALIDARG, \
-                tr("Argument %s is invalid (must be %s)"), #arg, #expr); \
+                            VirtualBoxBase::tr("Argument %s is invalid (must be %s)"), \
+                            #arg, #expr); \
     } while (0)
 
 /**
@@ -481,7 +488,7 @@ public:
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ }\
         else \
-            return setError(E_INVALIDARG, tr("Argument %s %s"), \
+            return setError(E_INVALIDARG, VirtualBoxBase::tr("Argument %s %s"), \
                             #arg, Utf8StrFmt msg .c_str()); \
     } while (0)
 
@@ -496,8 +503,8 @@ public:
         { /* likely */ }\
         else \
             return setError(E_POINTER, \
-                tr("Output argument %s points to invalid memory location (%p)"), \
-                #arg, (void *)(arg)); \
+                            VirtualBoxBase::tr("Output argument %s points to invalid memory location (%p)"), \
+                            #arg, (void *)(arg)); \
     } while (0)
 
 /**
@@ -511,7 +518,7 @@ public:
         { /* likely */ }\
         else \
             return setError(E_POINTER, \
-                            tr("Output argument %s points to invalid memory location (%p)"), \
+                            VirtualBoxBase::tr("Output argument %s points to invalid memory location (%p)"), \
                             #arg, (void*)(arg)); \
     } while (0)
 
@@ -520,7 +527,7 @@ public:
  */
 #define ReturnComNotImplemented() \
     do { \
-        return setError(E_NOTIMPL, tr("Method %s is not implemented"), __FUNCTION__); \
+        return setError(E_NOTIMPL, VirtualBoxBase::tr("Method %s is not implemented"), __FUNCTION__); \
     } while (0)
 
 /**
@@ -561,56 +568,6 @@ public:
 # define DebugBreakThrow(a) throw (a)
 #endif
 
-/**
- * Parent class of VirtualBoxBase which enables translation support (which
- * Main doesn't have yet, but this provides the tr() function which will one
- * day provide translations).
- *
- * This class sits in between Lockable and VirtualBoxBase only for the one
- * reason that the USBProxyService wants translation support but is not
- * implemented as a COM object, which VirtualBoxBase implies.
- */
-class ATL_NO_VTABLE VirtualBoxTranslatable
-{
-public:
-    /**
-     * Returns translated text.
-     *
-     * @param aComponent    Translation context e.g. class name
-     * @param aSourceText   String to translate.
-     * @param aComment      Comment to the string to resolve possible ambiguities
-     *                      (NULL means no comment). Used by translation tool only.
-     * @param aNum          Number used to define plural form of the translation.
-     *
-     * @return Translated text.
-     */
-    static const char *translate(const char *aComponent,
-                                 const char *aSourceText,
-                                 const char *aComment = NULL,
-                                 const int   aNum = -1)
-    {
-#ifdef VBOX_WITH_MAIN_NLS
-        return VirtualBoxTranslator::translate(aComponent, aSourceText, aComment, aNum);
-#else
-        RT_NOREF(aComponent, aComment, aNum);
-        return aSourceText;
-#endif
-    }
-
-    /**
-     * Returns source text stored in the cache if exists.
-     * Otherwise, the @a aTranslation itself returned.
-     */
-    static const char *trSource(const char *aTranslation)
-    {
-#ifdef VBOX_WITH_MAIN_NLS
-        return VirtualBoxTranslator::trSource(aTranslation);
-#else
-        return aTranslation;
-#endif
-    }
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // VirtualBoxBase
@@ -623,7 +580,7 @@ public:
                                  const char *aComment = NULL, \
                                  const int   aNum = -1) \
     { \
-        return VirtualBoxTranslatable::translate(#cls, aSourceText, aComment, aNum); \
+        return VirtualBoxTranslator::translate(NULL, #cls, aSourceText, aComment, aNum); \
     }
 #else
 # define DECLARE_TRANSLATE_METHODS(cls) \
@@ -717,8 +674,7 @@ public:
  * The object state logic is documented in ObjectState.h.
  */
 class ATL_NO_VTABLE VirtualBoxBase
-    : public VirtualBoxTranslatable
-    , public Lockable
+    : public Lockable
     , public ATL::CComObjectRootEx<ATL::CComMultiThreadModel>
 #if !defined (VBOX_WITH_XPCOM)
     , public ISupportErrorInfo
@@ -872,8 +828,8 @@ extern void APIDumpComponentFactoryStats();
 /**
  * Dummy macro that is used to shut down Qt's lupdate tool warnings in some
  * situations. This macro needs to be present inside (better at the very
- * beginning) of the declaration of the class that inherits from
- * VirtualBoxTranslatable, to make lupdate happy.
+ * beginning) of the declaration of the class that uses translation, to make
+ * lupdate happy.
  */
 #define Q_OBJECT
 

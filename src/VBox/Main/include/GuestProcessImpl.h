@@ -213,7 +213,7 @@ struct GuestProcessToolErrorInfo
  * This class essentially helps to wrap all the gory details like process creation,
  * information extraction and maintaining the overall status.
  */
-class GuestProcessTool : public VirtualBoxTranslatable
+class GuestProcessTool
 {
 public:
     DECLARE_TRANSLATE_METHODS(GuestProcessTool)

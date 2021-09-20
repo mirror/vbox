@@ -26,6 +26,7 @@
 #include <iprt/cpp/lock.h>
 #include <VBox/com/AutoLock.h>
 
+typedef void *TRCOMPONENT;
 
 class QMTranslator;
 
@@ -45,12 +46,35 @@ public:
     HRESULT loadLanguage(ComPtr<IVirtualBox> aVirtualBox);
 
     /**
-     * Translates @a aSourceText to user language.
+     * Adds path containing translation files into list of known paths.
+     * Path should include translation file prefix.
      *
-     * @returns Translated string or @a aSourceText.  The returned string is
-     *          valid only during lifetime of the this translator instance.
+     * @returns VBox status code
+     * @param aTranslationPath   Path to translation files including file prefix
+     * @param aDefault           Use as default translation component, i.e.
+     *                           Use this path for translation if component
+     *                           is NULL
+     * @param aComponent         Where is the pointer to component returned
      */
-    static const char *translate(const char *aContext,
+    static int registerTranslation(const char *aTranslationPath,
+                                   bool aDefault,
+                                   TRCOMPONENT *aComponent);
+
+    /**
+     * Removes the path from list of known paths.
+     * Does not remove already loaded translation from string cache.
+     */
+    static int unregisterTranslation(TRCOMPONENT aComponent);
+
+    /**
+     * Translates @a aSourceText to user language.
+     * Uses component marked as default if @a aTranslationComponent is NULL
+     *
+     * @returns Translated string or @a aSourceText. The returned string is
+     *          valid only during lifetime of the translator instance.
+     */
+    static const char *translate(TRCOMPONENT aComponent,
+                                 const char *aContext,
                                  const char *aSourceText,
                                  const char *aComment = NULL,
                                  const int   aNum = -1);
@@ -63,9 +87,6 @@ public:
 
     /* Convenience function used by VirtualBox::init */
     int i_loadLanguage(const char *pszLang);
-    int i_setLanguageFile(const char *aFileName);
-    com::Utf8Str i_languageFile();
-
 
     static int32_t initCritSect();
 
@@ -75,8 +96,22 @@ private:
 
     uint32_t m_cInstanceRefs;
 
-    com::Utf8Str  m_strLangFileName;
-    QMTranslator *m_pTranslator;
+    struct TranslatorComponent
+    {
+        QMTranslator *pTranslator;
+        /* Path to translation files. It includes file prefix, i.e
+         * /path/to/folder/file_prefix */
+        com::Utf8Str  strPath;
+
+        TranslatorComponent() : pTranslator(NULL) {}
+    };
+    typedef std::list<TranslatorComponent> TranslatorList;
+    TranslatorList  m_lTranslators;
+    TranslatorComponent *m_pDefaultComponent;
+
+    /* keep the language code for registration */
+    com::Utf8Str m_strLanguage;
+
     /** String cache that all translation strings are stored in.
      * This is a add-only cache, which allows translate() to return C-strings w/o
      * needing to think about racing loadLanguage() wrt string lifetime. */
@@ -86,11 +121,21 @@ private:
 
     VirtualBoxTranslator();
 
-    const char *i_translate(const char *aContext,
+    int i_loadLanguageForComponent(TranslatorComponent *aComponent, const char *aLang);
+
+    int i_setLanguageFile(TranslatorComponent *aComponent, const char *aFileName);
+
+    int i_registerTranslation(const char *aTranslationPath,
+                              bool aDefault,
+                              TRCOMPONENT *aComponent);
+
+    int i_unregisterTranslation(TRCOMPONENT aComponent);
+
+    const char *i_translate(TRCOMPONENT aComponent,
+                            const char *aContext,
                             const char *aSourceText,
                             const char *aComment = NULL,
                             const int   aNum = -1);
-
 };
 
 #endif /* !MAIN_INCLUDED_VirtualBoxTranslator_h */

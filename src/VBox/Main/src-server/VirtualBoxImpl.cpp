@@ -298,6 +298,7 @@ struct VirtualBox::Data
         , fSettingsCipherKeySet(false)
 #ifdef VBOX_WITH_MAIN_NLS
         , pVBoxTranslator(NULL)
+        , pTrComponent(NULL)
 #endif
 #if defined(RT_OS_WINDOWS) && defined(VBOXSVC_WITH_CLIENT_WATCHER)
         , fWatcherIsReliable(RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
@@ -409,6 +410,7 @@ struct VirtualBox::Data
     uint8_t                             SettingsCipherKey[RTSHA512_HASH_SIZE];
 #ifdef VBOX_WITH_MAIN_NLS
     VirtualBoxTranslator               *pVBoxTranslator;
+    TRCOMPONENT                         pTrComponent;
 #endif
 #if defined(RT_OS_WINDOWS) && defined(VBOXSVC_WITH_CLIENT_WATCHER)
     /** Critical section protecting WatchedProcesses. */
@@ -580,18 +582,6 @@ HRESULT VirtualBox::init()
          */
         unconst(m->pAutostartDb) = new AutostartDb;
 
-#ifdef VBOX_WITH_EXTPACK
-        /*
-         * Initialize extension pack manager before system properties because
-         * it is required for the VD plugins.
-         */
-        rc = unconst(m->ptrExtPackManager).createObject();
-        if (SUCCEEDED(rc))
-            rc = m->ptrExtPackManager->initExtPackManager(this, VBOXEXTPACKCTX_PER_USER_DAEMON);
-        if (FAILED(rc))
-            throw rc;
-#endif
-
         /* create the system properties object, someone may need it too */
         rc = unconst(m->pSystemProperties).createObject();
         if (SUCCEEDED(rc))
@@ -606,26 +596,57 @@ HRESULT VirtualBox::init()
          * Just do not use translation. */
         if (m->pVBoxTranslator)
         {
-            com::Utf8Str strLocale;
-            HRESULT hrc = m->pSystemProperties->getLanguageId(strLocale);
-            if (SUCCEEDED(hrc))
+
+            char szNlsPath[RTPATH_MAX];
+            rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+            if (RT_SUCCESS(rc))
+                rc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VirtualBoxAPI");
+
+            int vrc = m->pVBoxTranslator->registerTranslation(szNlsPath, true, &m->pTrComponent);
+            if (RT_SUCCESS(vrc))
             {
-                int vrc = m->pVBoxTranslator->i_loadLanguage(strLocale.c_str());
-                if (RT_FAILURE(vrc))
+                com::Utf8Str strLocale;
+                HRESULT hrc = m->pSystemProperties->getLanguageId(strLocale);
+                if (SUCCEEDED(hrc))
                 {
-                    hrc = Global::vboxStatusCodeToCOM(vrc);
-                    LogRel(("Load language failed (%Rhrc).\n", hrc));
+                    vrc = m->pVBoxTranslator->i_loadLanguage(strLocale.c_str());
+                    if (RT_FAILURE(vrc))
+                    {
+                        hrc = Global::vboxStatusCodeToCOM(vrc);
+                        LogRel(("Load language failed (%Rhrc).\n", hrc));
+                    }
+                }
+                else
+                {
+                    LogRel(("Getting language settings failed (%Rhrc).\n", hrc));
+                    m->pVBoxTranslator->release();
+                    m->pVBoxTranslator = NULL;
+                    m->pTrComponent = NULL;
                 }
             }
             else
             {
-                LogRel(("Getting language settings failed (%Rhrc).\n", hrc));
+                HRESULT hrc = Global::vboxStatusCodeToCOM(vrc);
+                LogRel(("Register translation failed (%Rhrc).\n", hrc));
                 m->pVBoxTranslator->release();
                 m->pVBoxTranslator = NULL;
+                m->pTrComponent = NULL;
             }
         }
         else
             LogRel(("Translator creation failed.\n"));
+#endif
+
+#ifdef VBOX_WITH_EXTPACK
+        /*
+         * Initialize extension pack manager before system properties because
+         * it is required for the VD plugins.
+         */
+        rc = unconst(m->ptrExtPackManager).createObject();
+        if (SUCCEEDED(rc))
+            rc = m->ptrExtPackManager->initExtPackManager(this, VBOXEXTPACKCTX_PER_USER_DAEMON);
+        if (FAILED(rc))
+            throw rc;
 #endif
         /* guest OS type objects, needed by machines */
         for (size_t i = 0; i < Global::cOSTypes; ++i)

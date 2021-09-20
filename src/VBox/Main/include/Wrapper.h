@@ -39,7 +39,10 @@
         { /* likely */ }\
         else \
             throw setError(E_POINTER, \
-                tr("Output argument %s points to invalid memory location (%p)"), \
+                /* Had to define VirtualBoxBase as context switcher for translation. \
+                 * Otherwise, lupdate complains about unknown context and doesn't \
+                 * include the string into translation file */ \
+                VirtualBoxBase::tr("Output argument %s points to invalid memory location (%p)"), \
                 #arg, (void *)(arg)); \
     } while (0)
 

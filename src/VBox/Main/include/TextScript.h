@@ -33,7 +33,6 @@
  */
 class AbstractScript
     : public RTCNonCopyable
-    , public VirtualBoxTranslatable
 {
 protected:
     /** For setting errors.

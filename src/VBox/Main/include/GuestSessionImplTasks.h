@@ -155,7 +155,6 @@ typedef std::vector<FsList *> FsLists;
  */
 class GuestSessionTask
     : public ThreadTask
-    , public VirtualBoxTranslatable
 {
 public:
     DECLARE_TRANSLATE_METHODS(GuestSessionTask)

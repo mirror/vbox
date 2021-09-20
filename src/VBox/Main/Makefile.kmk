@@ -1320,6 +1320,12 @@ ifeq ($(KBUILD_TARGET).$(VBOX_VCC_CRT_TYPE),win.d)
  endif
 endif
 
+# define qt5 tools for translation even if VBOX_ONLY_EXTPACKS is enabled
+ifdef VBOX_WITH_NLS
+ USES += qt5
+endif
+
+
 endif # !VBOX_ONLY_SDK
 
 
@@ -1415,59 +1421,21 @@ ifdef VBOX_WITH_MAIN_NLS
 #
 # NLS stuff.
 #
-PROGRAMS += VirtualBoxAPI
-VirtualBoxAPI_TEMPLATE = VBOXQTGUIEXE
-VirtualBoxAPI_INSTTYPE = none
-VirtualBoxAPI_LRCFLAGS = -silent
-VirtualBoxAPI_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
-VirtualBoxAPI_APPROVED_LANGUAGES = \
-	bg \
-	ca \
-	ca_VA \
-	cs \
-	da \
-	de \
-	el \
-	en \
-	es \
-	eu \
-	fa \
-	fi \
-	fr \
-	gl \
-	he \
-	hr_HR \
-	hu \
-	id \
-	it \
-	ja \
-	km_KH \
-	ko \
-	lt \
-	nl \
-	pl \
-	pt \
-	pt_BR \
-	ro \
-	ru \
-	sk \
-	sl \
-	sr \
-	sv \
-	th \
-	tr \
-	uk \
-	zh_CN \
-	zh_TW
 
+#
+# Include the language lists.
+#
+include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
+
+PROGRAMS += VirtualBoxAPI
+VirtualBoxAPI_TEMPLATE = VBoxNLS
+VirtualBoxAPI_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
 VirtualBoxAPI_QT_TRANSLATIONS = \
 	$(filter \
 		$(addsuffix .ts, $(addprefix $(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_, \
-			$(VirtualBoxAPI_APPROVED_LANGUAGES))), \
+			$(VBOX_APPROVED_MAIN_LANGUAGES))), \
 		$(wildcard $(VBOX_PATH_MAIN_SRC)/nls/*.ts))
 
-VirtualBoxAPI_SOURCES = \
-	nls/dummy.c
 VirtualBoxAPI_VBOX_ALL_NLS_SOURCES = $(wildcard \
 	$(VBOX_PATH_MAIN_SRC)/include/*.h\
 	$(VBOX_PATH_MAIN_SRC)/src-all/*.cpp \
@@ -1487,16 +1455,16 @@ makeallnls:: $(VirtualBoxAPI_VBOX_ALL_NLS_SOURCES)
 		$(filter-out nls/VirtualBoxAPI_en.ts, $(VirtualBoxAPI_QT_TRANSLATIONS)) \
 		$(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_xx_YY.ts
 
-fake-main-nls:
-	$(foreach file, $(VirtualBoxAPI_QT_TRANSLATIONS) \
-	,$(NLTAB)$(SED) -i \
-       	-e '/<source>.*<\/source>/h' \
-       	-e '/<source>.*<\/source>/p' \
-       	-e '/<translation type="unfinished"><\/translation>/{' \
-       		-e 'x' \
-       		-e 's/<source>\(.*\)<\/source>/<translation type="unfinished">$(notdir $(file)): \1<\/translation>/' \
-       	-e '}' \
-		$(file) )
+#fake-main-nls:
+#	$(foreach file, $(VirtualBoxAPI_QT_TRANSLATIONS) \
+#	,$(NLTAB)$(SED) -i \
+#       	-e '/<source>.*<\/source>/h' \
+#       	-e '/<source>.*<\/source>/p' \
+#       	-e '/<translation type="unfinished"><\/translation>/{' \
+#       		-e 'x' \
+#       		-e 's/<source>\(.*\)<\/source>/<translation type="unfinished">$(notdir $(file)): \1<\/translation>/' \
+#       	-e '}' \
+#		$(file) )
 
 
 # Create the English translation file. This is something special cause it will

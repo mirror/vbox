@@ -66,7 +66,8 @@ static DECLCALLBACK(void) freeThreadCache(void *pvValue) RT_NOTHROW_DEF
 VirtualBoxTranslator::VirtualBoxTranslator()
     : util::RWLockHandle(VBoxLockingClass::LOCKCLASS_TRANSLATOR)
     , m_cInstanceRefs(0)
-    , m_pTranslator(NULL)
+    , m_pDefaultComponent(NULL)
+    , m_strLanguage("C")
     , m_hStrCache(NIL_RTSTRCACHE)
 {
     RTTlsAllocEx(&g_idxTls, &freeThreadCache);
@@ -91,10 +92,16 @@ VirtualBoxTranslator::~VirtualBoxTranslator()
         RTTlsFree(g_idxTls);
         g_idxTls = NIL_RTTLS;
     }
-    if (m_pTranslator)
+
+    m_pDefaultComponent = NULL;
+
+    for (TranslatorList::iterator it = m_lTranslators.begin();
+         it != m_lTranslators.end();
+         ++it)
     {
-        delete m_pTranslator;
-        m_pTranslator = NULL;
+        if (it->pTranslator != NULL)
+            delete it->pTranslator;
+        it->pTranslator = NULL;
     }
     if (m_hStrCache != NIL_RTSTRCACHE)
     {
@@ -163,7 +170,7 @@ VirtualBoxTranslator *VirtualBoxTranslator::tryInstance()
 
 /**
  * Release translator reference previous obtained via instance() or
- * i_instance().
+ * tryinstance().
  */
 void VirtualBoxTranslator::release()
 {
@@ -233,52 +240,66 @@ int VirtualBoxTranslator::i_loadLanguage(const char *pszLang)
     }
     if (RT_SUCCESS(rc))
     {
-        if (strcmp(pszLang, "C") != 0)
-        {
-            /* Construct the base filename for the translations: */
-            char szNlsPath[RTPATH_MAX];
-            rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
-            if (RT_SUCCESS(rc))
-                rc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VirtualBoxAPI_");
-            if (RT_SUCCESS(rc))
-            {
-                size_t const cchNlsBase = strlen(szNlsPath);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-                /* Try load language file on form 'VirtualBoxAPI_ll_CC.qm' if it exists
-                   where 'll_CC' could for example be 'en_US' or 'de_CH': */
-                ssize_t cchOkay = RTStrPrintf2(&szNlsPath[cchNlsBase], sizeof(szNlsPath) - cchNlsBase, "%s.qm", pszLang);
-                if (cchOkay > 0)
-                    rc = i_setLanguageFile(szNlsPath);
-                else
-                    rc = VERR_FILENAME_TOO_LONG;
-                if (RT_FAILURE(rc))
-                {
-                    /* No luck, drop the country part, i.e. 'VirtualBoxAPI_de.qm' or 'VirtualBoxAPI_en.qm': */
-                    const char *pszDash = strchr(pszLang, '_');
-                    if (pszDash && pszDash != pszLang)
-                    {
-                        cchOkay = RTStrPrintf2(&szNlsPath[cchNlsBase], sizeof(szNlsPath) - cchNlsBase, "%.*s.qm",
-                                               pszDash - pszLang, pszLang);
-                        if (cchOkay > 0)
-                            rc = i_setLanguageFile(szNlsPath);
-                    }
-                }
-            }
-        }
-        else
+        m_strLanguage = pszLang;
+
+        for (TranslatorList::iterator it = m_lTranslators.begin();
+             it != m_lTranslators.end();
+             ++it)
         {
-            /* No translator needed for 'C': */
-            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            delete m_pTranslator;
-            m_pTranslator = NULL;
+            /* ignore errors from particular translator allowing the use of others */
+            i_loadLanguageForComponent(&(*it), pszLang);
         }
     }
     return rc;
 }
 
 
-int VirtualBoxTranslator::i_setLanguageFile(const char *aFileName)
+int VirtualBoxTranslator::i_loadLanguageForComponent(TranslatorComponent *aComponent, const char *aLang)
 {
+    AssertReturn(aComponent, VERR_INVALID_PARAMETER);
+    int rc;
+    if (strcmp(aLang, "C") != 0)
+    {
+        /* Construct the base filename for the translations: */
+        char szNlsPath[RTPATH_MAX];
+        /* Try load language file on form 'VirtualBoxAPI_ll_CC.qm' if it exists
+           where 'll_CC' could for example be 'en_US' or 'de_CH': */
+        ssize_t cchOkay = RTStrPrintf2(szNlsPath, sizeof(szNlsPath), "%s_%s.qm",
+                                       aComponent->strPath.c_str(), aLang);
+        if (cchOkay > 0)
+            rc = i_setLanguageFile(aComponent, szNlsPath);
+        else
+            rc = VERR_FILENAME_TOO_LONG;
+        if (RT_FAILURE(rc))
+        {
+            /* No luck, drop the country part, i.e. 'VirtualBoxAPI_de.qm' or 'VirtualBoxAPI_en.qm': */
+            const char *pszDash = strchr(aLang, '_');
+            if (pszDash && pszDash != aLang)
+            {
+                cchOkay = RTStrPrintf2(szNlsPath, sizeof(szNlsPath), "%s_%.*s.qm",
+                                       aComponent->strPath.c_str(), pszDash - aLang, aLang);
+                if (cchOkay > 0)
+                    rc = i_setLanguageFile(aComponent, szNlsPath);
+            }
+        }
+    }
+    else
+    {
+        /* No translator needed for 'C' */
+        delete aComponent->pTranslator;
+        aComponent->pTranslator = NULL;
+        rc = VINF_SUCCESS;
+    }
+    return rc;
+}
+
+
+int VirtualBoxTranslator::i_setLanguageFile(TranslatorComponent *aComponent, const char *aFileName)
+{
+    AssertReturn(aComponent, VERR_INVALID_PARAMETER);
+
     int rc = m_rcCache;
     if (m_hStrCache != NIL_RTSTRCACHE)
     {
@@ -290,12 +311,9 @@ int VirtualBoxTranslator::i_setLanguageFile(const char *aFileName)
             rc = pNewTranslator->load(aFileName, m_hStrCache);
             if (RT_SUCCESS(rc))
             {
-                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-                if (m_pTranslator)
-                    delete m_pTranslator;
-                m_pTranslator     = pNewTranslator;
-                m_strLangFileName = aFileName;
+                if (aComponent->pTranslator)
+                    delete aComponent->pTranslator;
+                aComponent->pTranslator = pNewTranslator;
             }
             else
                 delete pNewTranslator;
@@ -309,14 +327,102 @@ int VirtualBoxTranslator::i_setLanguageFile(const char *aFileName)
 }
 
 
-com::Utf8Str VirtualBoxTranslator::i_languageFile()
+int VirtualBoxTranslator::registerTranslation(const char *aTranslationPath,
+                                              bool aDefault,
+                                              TRCOMPONENT *aComponent)
 {
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m_strLangFileName;
+    VirtualBoxTranslator *pCurrInstance = VirtualBoxTranslator::tryInstance();
+    int rc = VERR_GENERAL_FAILURE;
+    if (pCurrInstance != NULL)
+    {
+        rc = pCurrInstance->i_registerTranslation(aTranslationPath, aDefault, aComponent);
+        pCurrInstance->release();
+    }
+    return rc;
 }
 
 
-const char *VirtualBoxTranslator::translate(const char *aContext,
+int VirtualBoxTranslator::i_registerTranslation(const char *aTranslationPath,
+                                                bool aDefault,
+                                                TRCOMPONENT *aComponent)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    TranslatorComponent *pComponent;
+    for (TranslatorList::iterator it = m_lTranslators.begin();
+         it != m_lTranslators.end();
+         ++it)
+    {
+        if (it->strPath == aTranslationPath)
+        {
+            pComponent = &(*it);
+            if (aDefault)
+                m_pDefaultComponent = pComponent;
+            *aComponent = (TRCOMPONENT)pComponent;
+            return VINF_SUCCESS;
+        }
+    }
+
+    try
+    {
+        m_lTranslators.push_back(TranslatorComponent());
+        pComponent = &m_lTranslators.back();
+    }
+    catch(std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
+
+    pComponent->strPath = aTranslationPath;
+    if (aDefault)
+        m_pDefaultComponent = pComponent;
+    *aComponent = (TRCOMPONENT)pComponent;
+    /* ignore the error during loading because path
+     * could contain no translation for current language */
+    i_loadLanguageForComponent(pComponent, m_strLanguage.c_str());
+    return VINF_SUCCESS;
+}
+
+
+int VirtualBoxTranslator::unregisterTranslation(TRCOMPONENT aComponent)
+{
+    VirtualBoxTranslator *pCurrInstance = VirtualBoxTranslator::tryInstance();
+    int rc = VERR_GENERAL_FAILURE;
+    if (pCurrInstance != NULL)
+    {
+        rc = pCurrInstance->i_unregisterTranslation(aComponent);
+        pCurrInstance->release();
+    }
+    return rc;
+}
+
+
+int VirtualBoxTranslator::i_unregisterTranslation(TRCOMPONENT aComponent)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    TranslatorComponent *pComponent = (TranslatorComponent *)aComponent;
+
+    if (pComponent == m_pDefaultComponent)
+        m_pDefaultComponent = NULL;
+
+    for (TranslatorList::iterator it = m_lTranslators.begin();
+         it != m_lTranslators.end();
+         ++it)
+    {
+        if (&(*it) == pComponent)
+        {
+            delete pComponent->pTranslator;
+            m_lTranslators.erase(it);
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+
+const char *VirtualBoxTranslator::translate(TRCOMPONENT aComponent,
+                                            const char *aContext,
                                             const char *aSourceText,
                                             const char *aComment,
                                             const int   aNum)
@@ -325,7 +431,8 @@ const char *VirtualBoxTranslator::translate(const char *aContext,
     const char *pszTranslation = aSourceText;
     if (pCurrInstance != NULL)
     {
-        pszTranslation = pCurrInstance->i_translate(aContext, aSourceText, aComment, aNum);
+        pszTranslation = pCurrInstance->i_translate(aComponent, aContext,
+                                                    aSourceText, aComment, aNum);
         pCurrInstance->release();
     }
     return pszTranslation;
@@ -358,22 +465,31 @@ static LastTranslation *getTlsEntry() RT_NOEXCEPT
 }
 
 
-const char *VirtualBoxTranslator::i_translate(const char *aContext,
+const char *VirtualBoxTranslator::i_translate(TRCOMPONENT aComponent,
+                                              const char *aContext,
                                               const char *aSourceText,
                                               const char *aComment,
                                               const int   aNum)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (!m_pTranslator)
+
+    TranslatorComponent *pComponent = (TranslatorComponent *)aComponent;
+    if (pComponent == NULL)
+        pComponent = m_pDefaultComponent;
+
+    if (   pComponent == NULL
+        || pComponent->pTranslator == NULL)
         return aSourceText;
-    const char *pszTranslation = m_pTranslator->translate(aContext, aSourceText, aComment, aNum);
-    alock.release();
+
+    const char *pszTranslation = pComponent->pTranslator->translate(aContext, aSourceText, aComment, aNum);
 
     LastTranslation *pEntry = getTlsEntry();
     if (pEntry)
     {
         pEntry->first = pszTranslation;
-        pEntry->second = aSourceText;
+        pEntry->second = m_hStrCache != NIL_RTSTRCACHE ?
+                            RTStrCacheEnter(m_hStrCache, aSourceText) :
+                            aSourceText;
     }
 
     return pszTranslation;

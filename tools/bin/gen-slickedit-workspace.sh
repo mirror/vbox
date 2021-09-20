@@ -631,7 +631,7 @@ my_generate_usercpp_h()
                                  const char *aComment = NULL, \
                                  const int   aNum = -1) \
     { \
-        return VirtualBoxTranslatable::translate(#cls, aSourceText, aComment, aNum); \
+        return VirtualBoxTranslator::translate(#cls, aSourceText, aComment, aNum); \
     }
 #define DECLARE_COMMON_CLASS_METHODS(cls) \
     DECLARE_EMPTY_CTOR_DTOR(cls) \

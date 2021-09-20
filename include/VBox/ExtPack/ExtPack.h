@@ -326,6 +326,28 @@ typedef struct VBOXEXTPACKHLP
                                                        /* VBoxEventType_T */ uint32_t aType,
                                                        VBOXEXTPACK_IF_CS(IVetoEvent) **ppEventOut));
 
+    /**
+     * Translate the string using registered translation files.
+     *
+     * Translation files are excluded from translation engine. Although
+     * the already loaded translation remains in the translation cache the new
+     * translation will not be loaded after returning from the function if the
+     * user changes the language.
+     *
+     * @returns Translated string on success the pszSourceText otherwise.
+     * @param   pHlp                      Pointer to this helper structure.
+     * @param   aComponent                Translation context e.g. class name
+     * @param   pszSourceText             String to translate
+     * @param   pszComment                Comment to the string to resolve possible ambiguities
+     *                                    (NULL means no comment).
+     * @param   iNum                      Number used to define plural form of the translation
+     */
+    DECLR3CALLBACKMEMBER(const char *, pfnTranslate,(PCVBOXEXTPACKHLP pHlp,
+                                                     const char *pszComponent,
+                                                     const char *pszSourceText,
+                                                     const char *pszComment,
+                                                     const int   iNum));
+
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
@@ -337,7 +359,7 @@ typedef struct VBOXEXTPACKHLP
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKHLP;
 /** Current version of the VBOXEXTPACKHLP structure.  */
-#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(4, 0)
+#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(5, 0)
 
 
 /** Pointer to the extension pack callback table. */
@@ -356,6 +378,8 @@ typedef struct VBOXEXTPACKREG
     uint32_t                    u32Version;
     /** The VirtualBox version this extension pack was built against.  */
     uint32_t                    uVBoxVersion;
+    /** Translation files base name. */
+    const char                 *pszNlsBaseName;
 
     /**
      * Hook for doing setups after the extension pack was installed.
@@ -438,7 +462,7 @@ typedef struct VBOXEXTPACKREG
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKREG;
 /** Current version of the VBOXEXTPACKREG structure.  */
-#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(2, 0)
+#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(3, 0)
 
 
 /**
@@ -481,6 +505,8 @@ typedef struct VBOXEXTPACKVMREG
     uint32_t                    u32Version;
     /** The VirtualBox version this extension pack was built against.  */
     uint32_t                    uVBoxVersion;
+    /** Translation files base name. */
+    const char                 *pszNlsBaseName;
 
     /**
      * Hook for doing work after the Console object is ready.
@@ -551,7 +577,7 @@ typedef struct VBOXEXTPACKVMREG
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKVMREG;
 /** Current version of the VBOXEXTPACKVMREG structure.  */
-#define VBOXEXTPACKVMREG_VERSION      RT_MAKE_U32(2, 0)
+#define VBOXEXTPACKVMREG_VERSION      RT_MAKE_U32(3, 0)
 
 
 /**

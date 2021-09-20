@@ -35,7 +35,7 @@ class BaseTextScript;
  * The class is intended to service a new VM that this VM will be able to
  * execute an unattended installation
  */
-class UnattendedInstaller : public RTCNonCopyable, public VirtualBoxTranslatable
+class UnattendedInstaller : public RTCNonCopyable
 {
 /*data*/
 protected:

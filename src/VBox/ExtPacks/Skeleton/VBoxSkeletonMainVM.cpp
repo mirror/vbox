@@ -83,6 +83,7 @@ static const VBOXEXTPACKVMREG g_vboxSkeletonExtPackVMReg =
 {
     VBOXEXTPACKVMREG_VERSION,
     /* .uVBoxFullVersion =  */  VBOX_FULL_VERSION,
+    /* .pszNlsBaseName =    */  NULL,
     /* .pfnConsoleReady =   */  NULL,
     /* .pfnUnload =         */  NULL,
     /* .pfnVMConfigureVMM = */  NULL,

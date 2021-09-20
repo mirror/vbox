@@ -60,7 +60,7 @@ typedef struct _VRDPInputSynch
 } VRDPInputSynch;
 
 /* Member of Console. Helper class for VRDP server management. Not a COM class. */
-class ConsoleVRDPServer : public VirtualBoxTranslatable
+class ConsoleVRDPServer
 {
 public:
     DECLARE_TRANSLATE_METHODS(ConsoleVRDPServer)

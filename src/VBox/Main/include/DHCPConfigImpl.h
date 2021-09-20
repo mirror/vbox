@@ -40,7 +40,7 @@ class DHCPGroupConfig;
  * wasn't even attempted.  Instead, we have a hack for passing a pointer that we
  * can call setError and such on.
  */
-class DHCPConfig : public VirtualBoxTranslatable
+class DHCPConfig
 {
 protected:
     /** Config scope (global, group, vm+nic, mac).  */

@@ -275,6 +275,7 @@ VBOX_PRODUCT      = Oracle VM VirtualBox
 #	src/VBox/Installer/linux/virtualbox.desktop
 #	src/VBox/Additions/WINNT/Installer/ISO/ReadmeDrivers.txt
 #	src/VBox/Main/nls/*.ts
+#	src/VBox/ExtPacks/Puel/nls/*.ts
 #	*/*.inf, */*.rc
 
 # Maybe we want set this manually.
@@ -669,6 +670,8 @@ endif
 VBOX_WITH_MAIN_USB_ID_DATABASE = 1
 # Whether to enable error message translation in Main.
 #VBOX_WITH_MAIN_NLS = 1
+# Whether to enable error message translation in Extension VM Pack.
+#VBOX_WITH_PUEL_NLS = 1
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
 if1of ($(KBUILD_TARGET), linux solaris)
@@ -1243,12 +1246,19 @@ ifdef VBOX_BRANDING_CFG
 endif
 
 #
-# Disable NLS support for only SDK builds
+# VBOX_WITH_NLS controls all NLS (except the GUI at the moment).
+# We disable NLS for SDK-only builds.
 #
-ifdef VBOX_ONLY_SDK
- VBOX_WITH_MAIN_NLS =
+if defined(VBOX_WITH_MAIN_NLS) || defined(VBOX_WITH_PUEL_NLS)
+ VBOX_WITH_NLS := 1
 endif
-
+ifdef VBOX_ONLY_SDK
+ override VBOX_WITH_NLS :=
+endif
+ifndef VBOX_WITH_NLS # (We test again to account for 'override VBOX_WITH_NLS :=')
+ VBOX_WITH_MAIN_NLS :=
+ VBOX_WITH_PUEL_NLS :=
+endif
 
 #
 # Bitch about old settings.
@@ -6984,7 +6994,8 @@ endif # VBOX_WITH_EXTPACK
 # Qt
 # Qt
 #
-ifdef VBOX_WITH_QTGUI
+
+if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
 
  # Guess VBOX_WITH_ORACLE_QT
  ifndef VBOX_WITH_ORACLE_QT
@@ -7082,257 +7093,283 @@ ifdef VBOX_WITH_QTGUI
  # a long, but this have to end.  Instead we can pass both includes manually.
  TOOL_QT5_MOCFLAGS.darwin    += --include qconfig.h --include qglobal.h
 
- #
- # Template for building Qt GUI executables.
- #
- TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
- TEMPLATE_VBOXQTGUIEXE_USES = qt5
- TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_UICTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_SDKS = QT5
- TEMPLATE_VBOXQTGUIEXE_QT_INFIX = $(VBOX_QT_INFIX)
- TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)
- TEMPLATE_VBOXQTGUIEXE_RCDEFS = $(TEMPLATE_VBOXR3EXE_RCDEFS)
+ ifdef VBOX_WITH_QTGUI
+  #
+  # Template for building Qt GUI executables.
+  #
+  TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
+  TEMPLATE_VBOXQTGUIEXE_USES = qt5
+  TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT5
+  TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT5
+  TEMPLATE_VBOXQTGUIEXE_UICTOOL = QT5
+  TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT5
+  TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT5
+  TEMPLATE_VBOXQTGUIEXE_SDKS = QT5
+  TEMPLATE_VBOXQTGUIEXE_QT_INFIX = $(VBOX_QT_INFIX)
+  TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)
+  TEMPLATE_VBOXQTGUIEXE_RCDEFS = $(TEMPLATE_VBOXR3EXE_RCDEFS)
 
- ifeq ($(KBUILD_TARGET),win)
-  # Note! No use of VBOX_VCC_CRT_TYPE here yet as it requires a /MDd build of Qt as well.
-  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_VCC_TOOL)
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-   TEMPLATE_VBOXQTGUIEXE_SDKS = WINSDK10-UCRT
-  endif
-  TEMPLATE_VBOXQTGUIEXE_DEFS += \
-     _WIN32_WINNT=0x0500 UNICODE _UNICODE \
-     QT_DLL _CRT_SECURE_NO_DEPRECATE \
-     $(QMAKE_PRL_DEFINES)
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t-
-  #    -wd4481: nonstandard extension used: override specifier 'override'
-  #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
-  #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
-  #    -wd4640: qmetatype.h(2210): warning C4640: 'f' : construction of local static object is not thread-safe [too bad]
-  #    -wd4350: behavior change: 'int QStringList::indexOf(const QRegExp &,int) const' called instead of 'int QStringList::indexOf(QRegExp &,int) const'
-  #    -wd4121: UIActionPool.h(393) : warning C4121: 'UIActionPool::PointerToFunction' : alignment of a member was sensitive to packing
-  #    -wd4718: qmap.h(222) : warning C4718: 'QMapNode<enum DetailsElementType,bool>::destroySubTree' : recursive call has no side effects, deleting
-  #    -wd5204: pplwin.h(78): warning C5204: 'Concurrency::details::_DefaultPPLTaskScheduler': class has virtual functions
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 -wd4350 -wd4371 -wd4121 -wd4718 -wd5204 $(VBOX_VCC_WERR)
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
-   #   -wd4619: qvectro.h(305 : warning C4619: #pragma warning : there is no warning number '4345'
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4619
-  endif
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-   #   -wd4774: string(530): warning C4774: '_scprintf' : format string expected in argument 1 is not a string literal
-   #   -wd4456: UICommon.cpp(1471): warning C4456: declaration of '_container_' hides previous local declaration  [nested foreach]
-   #   -wd4458: UISettingsDialogSpecific.cpp(416): warning C4458: declaration of 'data' hides class member
-   #            qwidget.h(730): note: see declaration of 'QWidget::data'
-   #   -wd4946: qmap.h(213): warning C4946: reinterpret_cast used between related classes: 'QMapNodeBase' and 'QMapNode<Key,T>'
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458 -wd4946
-  endif
-  ifdef VBOX_WITH_MSC_ANALYZE_THIS
-   TEMPLATE_VBOXR0DRV_CXXFLAGS += /analyze
-  endif
+  ifeq ($(KBUILD_TARGET),win)
+   # Note! No use of VBOX_VCC_CRT_TYPE here yet as it requires a /MDd build of Qt as well.
+   TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_VCC_TOOL)
+   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
+    TEMPLATE_VBOXQTGUIEXE_SDKS = WINSDK10-UCRT
+   endif
+   TEMPLATE_VBOXQTGUIEXE_DEFS += \
+      _WIN32_WINNT=0x0500 UNICODE _UNICODE \
+      QT_DLL _CRT_SECURE_NO_DEPRECATE \
+      $(QMAKE_PRL_DEFINES)
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t-
+   #    -wd4481: nonstandard extension used: override specifier 'override'
+   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
+   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
+   #    -wd4640: qmetatype.h(2210): warning C4640: 'f' : construction of local static object is not thread-safe [too bad]
+   #    -wd4350: behavior change: 'int QStringList::indexOf(const QRegExp &,int) const' called instead of 'int QStringList::indexOf(QRegExp &,int) const'
+   #    -wd4121: UIActionPool.h(393) : warning C4121: 'UIActionPool::PointerToFunction' : alignment of a member was sensitive to packing
+   #    -wd4718: qmap.h(222) : warning C4718: 'QMapNode<enum DetailsElementType,bool>::destroySubTree' : recursive call has no side effects, deleting
+   #    -wd5204: pplwin.h(78): warning C5204: 'Concurrency::details::_DefaultPPLTaskScheduler': class has virtual functions
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_VCC_WARN_ALL) -wd4481 -wd4625 -wd4626 -wd4640 -wd4350 -wd4371 -wd4121 -wd4718 -wd5204 $(VBOX_VCC_WERR)
+   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
+    #   -wd4619: qvectro.h(305 : warning C4619: #pragma warning : there is no warning number '4345'
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4619
+   endif
+   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
+    #   -wd4774: string(530): warning C4774: '_scprintf' : format string expected in argument 1 is not a string literal
+    #   -wd4456: UICommon.cpp(1471): warning C4456: declaration of '_container_' hides previous local declaration  [nested foreach]
+    #   -wd4458: UISettingsDialogSpecific.cpp(416): warning C4458: declaration of 'data' hides class member
+    #            qwidget.h(730): note: see declaration of 'QWidget::data'
+    #   -wd4946: qmap.h(213): warning C4946: reinterpret_cast used between related classes: 'QMapNodeBase' and 'QMapNode<Key,T>'
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458 -wd4946
+   endif
+   ifdef VBOX_WITH_MSC_ANALYZE_THIS
+    TEMPLATE_VBOXR0DRV_CXXFLAGS += /analyze
+   endif
 
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt = $(NO_SUCH_VARIABLE)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS        = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.debug  = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.dbgopt = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt)
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \
-	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
-	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
-	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
-  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -IntegrityCheck
-  endif
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = -RTCsu
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt = $(NO_SUCH_VARIABLE)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS        = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.debug  = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.dbgopt = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt)
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \
+		/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
+		/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+		/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
+   if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
+    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -IntegrityCheck
+   endif
 
-  TEMPLATE_VBOXQTGUIEXE_SDKS += $(VBOX_WINPSDK)
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
-   TEMPLATE_VBOXQTGUIEXE_LIBS = \
-   	$(VBOX_LIBS_QT) \
-   	$(LIB_RUNTIME) \
-   	$(VBOX_LIB_VMM_LAZY) \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/vcruntime.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
-  else
-   TEMPLATE_VBOXQTGUIEXE_LIBS = \
-   	$(VBOX_LIBS_QT) \
-   	$(LIB_RUNTIME) \
-   	$(VBOX_LIB_VMM_LAZY) \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
-   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
-  endif
-  TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
+   TEMPLATE_VBOXQTGUIEXE_SDKS += $(VBOX_WINPSDK)
+   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
+    TEMPLATE_VBOXQTGUIEXE_LIBS = \
+   	 $(VBOX_LIBS_QT) \
+   	 $(LIB_RUNTIME) \
+   	 $(VBOX_LIB_VMM_LAZY) \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/vcruntime.lib \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+   else
+    TEMPLATE_VBOXQTGUIEXE_LIBS = \
+   	 $(VBOX_LIBS_QT) \
+   	 $(LIB_RUNTIME) \
+   	 $(VBOX_LIB_VMM_LAZY) \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
+   	 $(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+   endif
+   TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
- else # the gcc guys:
-  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
-  if $(VBOX_GCC_VERSION_CC) < 30400
-   TEMPLATE_VBOXQTGUIEXE_DEFS += RT_WITHOUT_PRAGMA_ONCE
-  endif
-  TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
-  TEMPLATE_VBOXQTGUIEXE_DEFS.solaris = _REENTRANT
+  else # the gcc guys:
+   TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
+   if $(VBOX_GCC_VERSION_CC) < 30400
+    TEMPLATE_VBOXQTGUIEXE_DEFS += RT_WITHOUT_PRAGMA_ONCE
+   endif
+   TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
+   TEMPLATE_VBOXQTGUIEXE_DEFS.solaris = _REENTRANT
 
-  ## @todo Use VBOX_GCC_PEDANTIC_CXX?
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
+   ## @todo Use VBOX_GCC_PEDANTIC_CXX?
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = \
 	-g $(VBOX_GCC_pipe) $(filter-out -Wno-unused $(VBOX_GCC_Wno-unused-parameter),$(VBOX_GCC_WARN)) -frtti -fno-exceptions \
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_Wno-multistatement-macros) $(VBOX_GCC_Wno-ignored-qualifiers) \
 	$(VBOX_GCC_Wno-return-type-c-linkage) $(VBOX_GCC_std) $(VBOX_GCC_IPRT_FMT_CHECK) $(VBOX_GCC_SANITIZER_FLAGS)
-  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_GCC_WERR)
-  endif
-  ifn1of ($(USERNAME),dsen serkan) # Bunch of stuff deprecated after 5.6.*. These guys knows how to deal with it. :)
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_GCC_Wno-deprecated-declarations)
-  endif
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS       = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.x86   = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.linux = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.debug = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug)
-  TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.dbgopt = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt)
-  TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) -fno-exceptions $(VBOX_GCC_IPRT_FMT_CHECK)
-  TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.x86 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
-  TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
-  TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS = \
+   ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_GCC_WERR)
+   endif
+   ifn1of ($(USERNAME),dsen serkan) # Bunch of stuff deprecated after 5.6.*. These guys knows how to deal with it. :)
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_GCC_Wno-deprecated-declarations)
+   endif
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS       = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.x86   = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.linux = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.debug = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug)
+   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.dbgopt = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt)
+   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) -fno-exceptions $(VBOX_GCC_IPRT_FMT_CHECK)
+   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.x86 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
+   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
+   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS = \
 	-g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) \
 	-frtti -fno-exceptions $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
-  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
-   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS += $(VBOX_GCC_WERR)
-  endif
-  TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.x86 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
-  TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS = $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS)
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
-  TEMPLATE_VBOXQTGUIEXE_LIBS = \
+   ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
+    TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS += $(VBOX_GCC_WERR)
+   endif
+   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.x86 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
+   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = $(VBOX_GCC_SANITIZER_FLAGS) $(VBOX_GCC_SANITIZER_LDFLAGS)
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
+   TEMPLATE_VBOXQTGUIEXE_LIBS = \
 	$(VBOX_LIBS_QT) \
 	$(LIB_RUNTIME) \
 	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
 	$(VBOX_LIB_VMM_LAZY)
 
-  ifeq ($(KBUILD_TARGET),linux)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
-   TEMPLATE_VBOXQTGUIEXE_LIBS += \
-     $(VBOX_XCURSOR_LIBS) \
-	Xext \
-	X11
-    TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
-	$(VBOX_LIBPATH_X11)
-  else ifeq ($(KBUILD_TARGET),darwin)
-   TEMPLATE_VBOXQTGUIEXE_SDKS.darwin        += $(VBOX_DARWIN_DEF_SDK_SDKS)
-   TEMPLATE_VBOXQTGUIEXE_DEFS.darwin        += $(VBOX_DARWIN_DEF_SDK_DEFS)
-   TEMPLATE_VBOXQTGUIEXE_CFLAGS.darwin      += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.darwin    += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
-   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.darwin    += $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.darwin)
-   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.darwin   += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
-   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.darwin += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS) $(VBOX_GCC_std)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin     += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -bind_at_load -Wl,-headerpad_max_install_names
-   TEMPLATE_VBOXQTGUIEXE_LIBS +=
-   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
-  else
-   TEMPLATE_VBOXQTGUIEXE_INCS += \
-	$(VBOX_XCURSOR_INCS)
-   TEMPLATE_VBOXQTGUIEXE_LIBS += \
-     $(VBOX_XCURSOR_LIBS) \
-	Xext \
-	X11 \
-	m \
-	$(LIB_PTHREAD)
-   TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
-	$(VBOX_LIBPATH_X11)
-   ifeq ($(KBUILD_TARGET),freebsd)
-    TEMPLATE_VBOXQTGUIEXE_INCS += \
-	/usr/include \
-	/usr/X11R6/include \
-	/usr/local/include
-    TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
-	/usr/lib \
-	/usr/X11R6/lib \
-	/usr/local/lib
-   endif
-   ifeq ($(KBUILD_TARGET),solaris)
-    TEMPLATE_VBOXQTGUIEXE_LDFLAGS.solaris = -Wl,-z,ignore # Same as VBOX_LD_as_needed.
+   ifeq ($(KBUILD_TARGET),linux)
+    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
     TEMPLATE_VBOXQTGUIEXE_LIBS += \
+		$(VBOX_XCURSOR_LIBS) \
+		Xext \
+		X11
+    TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
+		$(VBOX_LIBPATH_X11)
+   else ifeq ($(KBUILD_TARGET),darwin)
+    TEMPLATE_VBOXQTGUIEXE_SDKS.darwin        += $(VBOX_DARWIN_DEF_SDK_SDKS)
+    TEMPLATE_VBOXQTGUIEXE_DEFS.darwin        += $(VBOX_DARWIN_DEF_SDK_DEFS)
+    TEMPLATE_VBOXQTGUIEXE_CFLAGS.darwin      += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.darwin    += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
+    TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.darwin    += $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.darwin)
+    TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.darwin   += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
+    TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.darwin += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS) $(VBOX_GCC_std)
+    TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin     += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -bind_at_load -Wl,-headerpad_max_install_names
+    TEMPLATE_VBOXQTGUIEXE_LIBS +=
+    TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
+   else
+    TEMPLATE_VBOXQTGUIEXE_INCS += \
+		$(VBOX_XCURSOR_INCS)
+    TEMPLATE_VBOXQTGUIEXE_LIBS += \
+		$(VBOX_XCURSOR_LIBS) \
+		Xext \
+		X11 \
+		m \
+		$(LIB_PTHREAD)
+    TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
+		$(VBOX_LIBPATH_X11)
+    ifeq ($(KBUILD_TARGET),freebsd)
+     TEMPLATE_VBOXQTGUIEXE_INCS += \
+		/usr/include \
+		/usr/X11R6/include \
+		/usr/local/include
+     TEMPLATE_VBOXQTGUIEXE_LIBPATH += \
+		/usr/lib \
+		/usr/X11R6/lib \
+		/usr/local/lib
+    endif
+    ifeq ($(KBUILD_TARGET),solaris)
+     TEMPLATE_VBOXQTGUIEXE_LDFLAGS.solaris = -Wl,-z,ignore # Same as VBOX_LD_as_needed.
+     TEMPLATE_VBOXQTGUIEXE_LIBS += \
          rt socket nsl
+    endif
    endif
-  endif
-  # Assume the Qt shared objects are in the same directory as the executable, on Solaris too.
-  ifdef VBOX_WITH_RUNPATH
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
-  else ifdef VBOX_WITH_RELATIVE_RUNPATH
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)'
+   # Assume the Qt shared objects are in the same directory as the executable, on Solaris too.
+   ifdef VBOX_WITH_RUNPATH
+    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+   else ifdef VBOX_WITH_RELATIVE_RUNPATH
+    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)'
+   endif
+
   endif
 
- endif
-
- # Add COM/XPCOM stuff
- TEMPLATE_VBOXQTGUIEXE_LIBS += \
-	$(PATH_STAGE_LIB)/VBoxCOM$(if-expr defined(VBOX_WITH_DEBUG_VCC_CRT) && $(KBUILD_TARGET) == win,-GUI,)$(VBOX_SUFF_LIB)
- ifdef VBOX_WITH_XPCOM
-  ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
-  TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM
-  ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-   TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-  endif
-  TEMPLATE_VBOXQTGUIEXE_INCS += \
-	$(VBOX_XPCOM_INCS)
+  # Add COM/XPCOM stuff
   TEMPLATE_VBOXQTGUIEXE_LIBS += \
+	$(PATH_STAGE_LIB)/VBoxCOM$(if-expr defined(VBOX_WITH_DEBUG_VCC_CRT) && $(KBUILD_TARGET) == win,-GUI,)$(VBOX_SUFF_LIB)
+  ifdef VBOX_WITH_XPCOM
+   ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
+   TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM
+   ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+    TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+   endif
+   TEMPLATE_VBOXQTGUIEXE_INCS += \
+	$(VBOX_XPCOM_INCS)
+   TEMPLATE_VBOXQTGUIEXE_LIBS += \
 	$(LIB_XPCOM)
-  TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
+   TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
- else  # COM
-  TEMPLATE_VBOXQTGUIEXE_INCS += \
+  else  # COM
+   TEMPLATE_VBOXQTGUIEXE_INCS += \
 	$(VBOX_PATH_SDK)/bindings/mscom/include
-  TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
+   TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
- endif # COM
+  endif # COM
 
- ifn1of ($(KBUILD_TARGET), darwin os2 win)
-   TEMPLATE_VBOXQTGUIEXE_DEFS     += PIC
-   TEMPLATE_VBOXQTGUIEXE_CFLAGS   += -fPIC
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -fPIC
-   # Needed for GCC 9. Even system's Qt 5.12.4 (on Ubuntu 19.10) did not have this fixed yet.
-   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -Wno-deprecated-copy $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS  += -fPIC
- endif # not darwin, os2 or win
+  ifn1of ($(KBUILD_TARGET), darwin os2 win)
+    TEMPLATE_VBOXQTGUIEXE_DEFS     += PIC
+    TEMPLATE_VBOXQTGUIEXE_CFLAGS   += -fPIC
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -fPIC
+    # Needed for GCC 9. Even system's Qt 5.12.4 (on Ubuntu 19.10) did not have this fixed yet.
+    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -Wno-deprecated-copy $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
+    TEMPLATE_VBOXQTGUIEXE_LDFLAGS  += -fPIC
+  endif # not darwin, os2 or win
 
- ifeq ($(KBUILD_TARGET),darwin)
-  TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+  ifeq ($(KBUILD_TARGET),darwin)
+   TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
 	$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT5)/, \
 		-change "$(prefix)$(qtmod).framework/Versions/5/$(qtmod)" \
 			"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) "$(out)"
- endif
+  endif
 
- #
- # Template for building Qt GUI components.
- #
- TEMPLATE_VBOXQTGUI = VBox Qt GUI Components
- TEMPLATE_VBOXQTGUI_EXTENDS = VBOXQTGUIEXE
- TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
- ifeq ($(KBUILD_TARGET),darwin)
-  TEMPLATE_VBOXQTGUI_LDFLAGS.darwin += $(filter-out -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin)) \
+  #
+  # Template for building Qt GUI components.
+  #
+  TEMPLATE_VBOXQTGUI = VBox Qt GUI Components
+  TEMPLATE_VBOXQTGUI_EXTENDS = VBOXQTGUIEXE
+  TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
+  ifeq ($(KBUILD_TARGET),darwin)
+   TEMPLATE_VBOXQTGUI_LDFLAGS.darwin += $(filter-out -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin)) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
- endif
- ifn1of ($(KBUILD_TARGET), darwin os2 win)
-   TEMPLATE_VBOXQTGUI_DEFS     = PIC $(TEMPLATE_VBOXQTGUIEXE_DEFS)
-   TEMPLATE_VBOXQTGUI_CFLAGS   = -fPIC $(TEMPLATE_VBOXQTGUIEXE_CFLAGS)
-   TEMPLATE_VBOXQTGUI_CXXFLAGS = -fPIC $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
-   TEMPLATE_VBOXQTGUI_PCHFLAGS = $(TEMPLATE_VBOXQTGUI_CXXFLAGS)
-   TEMPLATE_VBOXQTGUI_LDFLAGS  = -fPIC $(TEMPLATE_VBOXQTGUIEXE_LDFLAGS)
- endif
+  endif
+  ifn1of ($(KBUILD_TARGET), darwin os2 win)
+    TEMPLATE_VBOXQTGUI_DEFS     = PIC $(TEMPLATE_VBOXQTGUIEXE_DEFS)
+    TEMPLATE_VBOXQTGUI_CFLAGS   = -fPIC $(TEMPLATE_VBOXQTGUIEXE_CFLAGS)
+    TEMPLATE_VBOXQTGUI_CXXFLAGS = -fPIC $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
+    TEMPLATE_VBOXQTGUI_PCHFLAGS = $(TEMPLATE_VBOXQTGUI_CXXFLAGS)
+    TEMPLATE_VBOXQTGUI_LDFLAGS  = -fPIC $(TEMPLATE_VBOXQTGUIEXE_LDFLAGS)
+  endif
+ endif # VBOX_WITH_QTGUI
 
-endif # VBOX_WITH_QTGUI
+ ifdef VBOX_WITH_NLS
+  #
+  # Template for translation compilation.
+  # Made as simple program without installing itself.
+  # To archive it, the dummy code without runtime is used,
+  # i.e. only compiler and system standard libs are linked.
+  #
+  TEMPLATE_VBoxNLS = VBox NLS template for installing translation files
+  TEMPLATE_VBoxNLS_EXTENDS = VBoxR3Static
+  TEMPLATE_VBoxNLS_USES = qt5
+  TEMPLATE_VBoxNLS_QTTOOL = QT5
+  TEMPLATE_VBoxNLS_QT_INFIX = $(VBOX_QT_INFIX)
+  TEMPLATE_VBoxNLS_INSTTYPE = none
+  TEMPLATE_VBoxNLS_LRCFLAGS += -silent
+  TEMPLATE_VBoxNLS_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
+  TEMPLATE_VBoxNLS_SOURCES = \
+	$(PATH_ROOT)/src/VBox/Main/nls/dummy.c
+  TEMPLATE_VBoxNLS_LIBS =\
+	$(filter-out \
+		$(VBOX_LIB_RUNTIME_STATIC) \
+		$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
+		$(TEMPLATE_VBoxR3Static_LIBS))
 
+ endif # !VBOX_WITH_NLS
+
+endif # VBOX_WITH_QTGUI || VBOX_WITH_NLS
 
 #
 # Template for installing symbol files that we wish to ship.

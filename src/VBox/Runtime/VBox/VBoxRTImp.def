@@ -1300,6 +1300,7 @@ EXPORTS
     RTLogWriteStdErr
     RTLogWriteStdOut
     RTLogWriteUser
+    RTLocaleQueryNormalizedBaseLocaleName
     RTManifestCreate
     RTManifestDup
     RTManifestEntryAdd
@@ -2055,6 +2056,7 @@ EXPORTS
     RTTlsSet
     RTUniFree
     RTUriParse
+    RTUtf16BigToUtf8ExTag
     RTUtf16CalcLatin1Len
     RTUtf16CalcLatin1LenEx
     RTUtf16CalcUtf8Len

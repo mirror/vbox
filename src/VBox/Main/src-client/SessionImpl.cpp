@@ -37,7 +37,7 @@
 #define CHECK_OPEN() \
     do { \
         if (mState != SessionState_Locked) \
-            return setError(E_UNEXPECTED, tr ("The session is not locked (session state: %s)"), \
+            return setError(E_UNEXPECTED, Session::tr("The session is not locked (session state: %s)"), \
                             Global::stringifySessionState(mState)); \
     } while (0)
 

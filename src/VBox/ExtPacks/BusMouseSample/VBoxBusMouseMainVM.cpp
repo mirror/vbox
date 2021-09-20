@@ -127,6 +127,7 @@ static const VBOXEXTPACKVMREG g_vboxBusMouseExtPackVMReg =
 {
     VBOXEXTPACKVMREG_VERSION,
     /* .uVBoxFullVersion =  */  VBOX_FULL_VERSION,
+    /* .pszNlsBaseName =    */  NULL,
     /* .pfnConsoleReady =   */  NULL,
     /* .pfnUnload =         */  NULL,
     /* .pfnVMConfigureVMM = */  vboxBusMouseExtPackVM_VMConfigureVMM,

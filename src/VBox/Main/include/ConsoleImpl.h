@@ -101,7 +101,7 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 #define CHECK_CONSOLE_DRV(drv) \
     do { \
         if (!!(drv)) {} \
-        else return setError(E_ACCESSDENIED, tr("The console is not powered up (%Rfn)"), __FUNCTION__); \
+        else return setError(E_ACCESSDENIED, Console::tr("The console is not powered up (%Rfn)"), __FUNCTION__); \
     } while (0)
 
 // Console

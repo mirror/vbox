@@ -28,6 +28,7 @@
 #include <iprt/asm.h>
 #include <iprt/thread.h>
 #include <iprt/critsect.h>
+#include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/utf16.h>
@@ -188,21 +189,34 @@ HRESULT VirtualBoxClient::init()
         s_cUnnecessaryAtlModuleLocks++;
         AssertMsg(s_cUnnecessaryAtlModuleLocks == 1, ("%d\n", s_cUnnecessaryAtlModuleLocks));
 
+        int vrc;
 #ifdef VBOX_WITH_MAIN_NLS
         /* Create the translator singelton (must work) and try load translations (non-fatal). */
         mData.m_pVBoxTranslator = VirtualBoxTranslator::instance();
         if (mData.m_pVBoxTranslator == NULL)
             throw setError(VBOX_E_IPRT_ERROR, tr("Failed to create translator instance"));
-        rc = i_reloadApiLanguage();
-        if (SUCCEEDED(rc))
-            i_registerEventListener(); /* for updates */
+
+        char szNlsPath[RTPATH_MAX];
+        rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VirtualBoxAPI");
+
+        vrc = mData.m_pVBoxTranslator->registerTranslation(szNlsPath, true, &mData.m_pTrComponent);
+        if (RT_SUCCESS(vrc))
+        {
+            rc = i_reloadApiLanguage();
+            if (SUCCEEDED(rc))
+                i_registerEventListener(); /* for updates */
+            else
+                LogRelFunc(("i_reloadApiLanguage failed: %Rhrc\n", rc));
+        }
         else
-            LogRelFunc(("i_reloadApiLanguage failed: %Rhrc\n", rc));
+            LogRelFunc(("Register translation failed: %Rrc\n", vrc));
 #endif
         /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it
          * is not considered important enough to cause any sort of visible
          * failure. The monitoring will not be done, but that's all. */
-        int vrc = RTSemEventCreate(&mData.m_SemEvWatcher);
+        vrc = RTSemEventCreate(&mData.m_SemEvWatcher);
         if (RT_FAILURE(vrc))
         {
             mData.m_SemEvWatcher = NIL_RTSEMEVENT;
@@ -562,6 +576,7 @@ void VirtualBoxClient::uninit()
     {
         mData.m_pVBoxTranslator->release();
         mData.m_pVBoxTranslator = NULL;
+        mData.m_pTrComponent = NULL;
     }
 #endif
     mData.m_pToken.setNull();

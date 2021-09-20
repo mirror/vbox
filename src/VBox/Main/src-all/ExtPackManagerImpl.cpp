@@ -30,6 +30,7 @@
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/ldr.h>
+#include <iprt/locale.h>
 #include <iprt/manifest.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -147,6 +148,9 @@ public:
     /** Pointer to the VirtualBox object so we can create a progress object. */
     VirtualBox         *pVirtualBox;
 #endif
+#ifdef VBOX_WITH_MAIN_NLS
+    TRCOMPONENT         pTrComponent;
+#endif
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
@@ -193,6 +197,8 @@ public:
     explicit ExtPackInstallTask() : ThreadTask("ExtPackInst") { }
     ~ExtPackInstallTask() { }
 
+    DECLARE_TRANSLATE_METHODS(ExtPackInstallTask)
+
     void handler()
     {
         HRESULT hrc = ptrExtPackMgr->i_doInstall(ptrExtPackFile, fReplace, &strDisplayInfo);
@@ -210,7 +216,7 @@ public:
         HRESULT hrc = ptrProgress.createObject();
         if (SUCCEEDED(hrc))
         {
-            Bstr bstrDescription("Installing extension pack");
+            Bstr bstrDescription(tr("Installing extension pack"));
             hrc = ptrProgress->init(ptrExtPackFile->m->pVirtualBox,
                                     static_cast<IExtPackFile *>(ptrExtPackFile),
                                     bstrDescription.raw(),
@@ -241,6 +247,7 @@ class ExtPackUninstallTask : public ThreadTask
 public:
     explicit ExtPackUninstallTask() : ThreadTask("ExtPackUninst") { }
     ~ExtPackUninstallTask() { }
+    DECLARE_TRANSLATE_METHODS(ExtPackUninstallTask)
 
     void handler()
     {
@@ -259,7 +266,7 @@ public:
         HRESULT hrc = ptrProgress.createObject();
         if (SUCCEEDED(hrc))
         {
-            Bstr bstrDescription("Uninstalling extension pack");
+            Bstr bstrDescription(tr("Uninstalling extension pack"));
             hrc = ptrProgress->init(ptrExtPackMgr->m->pVirtualBox,
                                     static_cast<IExtPackManager *>(ptrExtPackMgr),
                                     bstrDescription.raw(),
@@ -364,7 +371,7 @@ HRESULT ExtPackFile::initWithFile(const char *a_pszFile, const char *a_pszDigest
     vrc = VBoxExtPackValidateTarball(m->hExtPackFile, NULL /*pszExtPackName*/, a_pszFile, a_pszDigest,
                                      szError, sizeof(szError), &m->hOurManifest, &hXmlFile, &m->strDigest);
     if (RT_FAILURE(vrc))
-        return initFailed(tr("%s"), szError);
+        return initFailed("%s", szError);
 
     /*
      * Parse the XML.
@@ -757,6 +764,7 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
         /* pfnCompleteProgress  = */ ExtPack::i_hlpCompleteProgress,
         /* pfnCreateEvent       = */ ExtPack::i_hlpCreateEvent,
         /* pfnCreateVetoEvent   = */ ExtPack::i_hlpCreateVetoEvent,
+        /* pfnTranslate         = */ ExtPack::i_hlpTranslate,
         /* pfnReserved1         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved2         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved3         = */ ExtPack::i_hlpReservedN,
@@ -792,7 +800,9 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
 #else
     RT_NOREF(a_pVirtualBox);
 #endif
-
+#ifdef VBOX_WITH_MAIN_NLS
+    m->pTrComponent                 = NULL;
+#endif
     /*
      * Make sure the SUPR3Hardened API works (ignoring errors for now).
      */
@@ -804,6 +814,23 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
      * Probe the extension pack (this code is shared with refresh()).
      */
     i_probeAndLoad();
+
+#ifdef VBOX_WITH_MAIN_NLS
+    /* register language files if exist */
+    if (m->pReg->pszNlsBaseName != NULL)
+    {
+        char szPath[RTPATH_MAX];
+        ssize_t cchOkay = RTStrPrintf2(szPath, sizeof(szPath), "%s%s%s", a_pszDir,
+                                       RTPATH_SLASH_STR "nls" RTPATH_SLASH_STR,
+                                       m->pReg->pszNlsBaseName);
+        if (cchOkay > 0)
+        {
+            rc = VirtualBoxTranslator::registerTranslation(szPath, false, &m->pTrComponent);
+            if (RT_FAILURE(rc))
+                m->pTrComponent = NULL;
+        }
+    }
+#endif
 
     autoInitSpan.setSucceeded();
     return S_OK;
@@ -840,6 +867,10 @@ void ExtPack::uninit()
 
         VBoxExtPackFreeDesc(&m->Desc);
 
+#ifdef VBOX_WITH_MAIN_NLS
+        if (m->pTrComponent != NULL)
+            VirtualBoxTranslator::unregisterTranslation(m->pTrComponent);
+#endif
         delete m;
         m = NULL;
     }
@@ -1974,6 +2005,33 @@ ExtPack::i_hlpCreateVetoEvent(PCVBOXEXTPACKHLP pHlp,
         return hrc;
 
     return pEvent.queryInterfaceTo(ppEventOut);
+}
+
+
+/*static*/ DECLCALLBACK(const char *)
+ExtPack::i_hlpTranslate(PCVBOXEXTPACKHLP pHlp,
+                        const char *pszComponent,
+                        const char *pszSourceText,
+                        const char *pszComment /* = NULL */,
+                        const int   iNum /* = -1 */)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pHlp, pszSourceText);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, pszSourceText);
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(m, pszSourceText);
+
+#ifdef VBOX_WITH_MAIN_NLS
+    return VirtualBoxTranslator::translate(m->pTrComponent, pszComponent,
+                                           pszSourceText,  pszComment, iNum);
+#else
+    NOREF(pszComponent);
+    NOREF(pszComment);
+    NOREF(iNum);
+    return pszSourceText;
+#endif
 }
 
 
