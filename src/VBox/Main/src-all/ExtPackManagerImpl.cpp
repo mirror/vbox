@@ -566,7 +566,7 @@ HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const co
      * be marked so because of bad license files).
      */
     if (!m->fUsable)
-        hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
     else
     {
         /*
@@ -649,7 +649,7 @@ HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const co
                 RTVfsFsStrmRelease(hTarFss);
             }
             else
-                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s"), szError);
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, "%s", szError);
         }
         else
             hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in '%s'"),
@@ -817,7 +817,7 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
 
 #ifdef VBOX_WITH_MAIN_NLS
     /* register language files if exist */
-    if (m->pReg->pszNlsBaseName != NULL)
+    if (m->pReg != NULL && m->pReg->pszNlsBaseName != NULL)
     {
         char szPath[RTPATH_MAX];
         ssize_t cchOkay = RTStrPrintf2(szPath, sizeof(szPath), "%s%s%s", a_pszDir,
