@@ -594,6 +594,13 @@ endif
 
   VBoxDD_SOURCES.win += \
   	Security/DrvTpmHost.cpp
+
+  if defined(VBOX_WITH_LIBTPMS)
+   VBoxDD_SDKS          += VBOX_TPMS
+   VBoxDD_DEFS          += VBOX_WITH_LIBTPMS
+   VBoxDD_SOURCES += \
+   	Security/DrvTpmEmuTpms.cpp
+  endif
  endif
 
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION

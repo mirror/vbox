@@ -421,6 +421,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 # endif
+
+# ifdef VBOX_WITH_LIBTPMS
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvTpmEmuTpms);
+    if (RT_FAILURE(rc))
+        return rc;
+# endif
 #endif
 
     return VINF_SUCCESS;

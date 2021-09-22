@@ -201,6 +201,9 @@ extern const PDMDRVREG g_DrvTpmEmu;
 # ifdef RT_OS_LINUX
 extern const PDMDRVREG g_DrvTpmHost;
 # endif
+# ifdef VBOX_WITH_LIBTPMS
+extern const PDMDRVREG g_DrvTpmEmuTpms;
+# endif
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
