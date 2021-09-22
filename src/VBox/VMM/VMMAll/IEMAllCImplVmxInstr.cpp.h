@@ -8494,7 +8494,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEf
         }
 
         /* Feature control MSR's LOCK and VMXON bits. */
-        uint64_t const uMsrFeatCtl = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64FeatCtrl;
+        uint64_t const uMsrFeatCtl = CPUMGetGuestIa32FeatCtrl(pVCpu);
         if ((uMsrFeatCtl & (MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON))
                         == (MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON))
         { /* likely */ }

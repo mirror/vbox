@@ -1196,8 +1196,6 @@ typedef const VMXCTLSMSR *PCVMXCTLSMSR;
  */
 typedef struct VMXMSRS
 {
-    /** VMX/SMX Feature control. */
-    uint64_t        u64FeatCtrl;
     /** Basic information. */
     uint64_t        u64Basic;
     /** Pin-based VM-execution controls. */
@@ -1237,7 +1235,7 @@ typedef struct VMXMSRS
     /** Tertiary processor-based VM-execution controls. */
     uint64_t        u64ProcCtls3;
     /** Reserved for future. */
-    uint64_t        a_u64Reserved[8];
+    uint64_t        a_u64Reserved[9];
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
 AssertCompileSize(VMXMSRS, 224);

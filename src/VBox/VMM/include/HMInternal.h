@@ -544,6 +544,8 @@ typedef struct HM
             uint64_t                    u64HostSmmMonitorCtl;
             /** Host EFER value (set by ring-0 VMX init, for logging and guest NX). */
             uint64_t                    u64HostMsrEfer;
+            /** Host IA32_FEATURE_CONTROL MSR (set by ring-0 VMX init, for logging). */
+            uint64_t                    u64HostFeatCtrl;
 
             /** The first valid host LBR branch-from-IP stack range. */
             uint32_t                    idLbrFromIpMsrFirst;

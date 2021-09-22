@@ -1051,7 +1051,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
         && !pVM->hm.s.svm.fSupported)
     {
         LogRel(("HM: Failed to initialize VT-x / AMD-V: %Rrc\n", pVM->hm.s.ForR3.rcInit));
-        LogRel(("HM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hm.s.ForR3.vmx.Msrs.u64FeatCtrl));
+        LogRel(("HM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hm.s.ForR3.vmx.u64HostFeatCtrl));
         switch (pVM->hm.s.ForR3.rcInit)
         {
             case VERR_VMX_IN_VMX_ROOT_MODE:
@@ -1492,15 +1492,15 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     int rc;
 
     LogFunc(("pVM->hm.s.vmx.fSupported = %d\n", pVM->hm.s.vmx.fSupported));
-    AssertLogRelReturn(pVM->hm.s.ForR3.vmx.Msrs.u64FeatCtrl != 0, VERR_HM_IPE_4);
+    AssertLogRelReturn(pVM->hm.s.ForR3.vmx.u64HostFeatCtrl != 0, VERR_HM_IPE_4);
 
     LogRel(("HM: Using VT-x implementation 3.0\n"));
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
     LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostCr4));
-    LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostMsrEfer));
+    LogRel(("HM: MSR_IA32_EFER                     = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostMsrEfer));
     LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostSmmMonitorCtl));
 
-    hmR3VmxReportFeatCtlMsr(pVM->hm.s.ForR3.vmx.Msrs.u64FeatCtrl);
+    hmR3VmxReportFeatCtlMsr(pVM->hm.s.ForR3.vmx.u64HostFeatCtrl);
     hmR3VmxReportBasicMsr(pVM->hm.s.ForR3.vmx.Msrs.u64Basic);
 
     hmR3VmxReportPinBasedCtlsMsr(&pVM->hm.s.ForR3.vmx.Msrs.PinCtls);

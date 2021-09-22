@@ -235,12 +235,26 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPUCC pVCpu, uint32_
     return APICSetBaseMsr(pVCpu, uValue);
 }
 
+/**
+ * Get IA32_FEATURE_CONTROL value for IEM, NEM and cpumMsrRd_Ia32FeatureControl.
+ *
+ * @returns IA32_FEATURE_CONTROL value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32FeatCtrl(PCVMCPUCC pVCpu)
+{
+    uint64_t uFeatCtrlMsr = MSR_IA32_FEATURE_CONTROL_LOCK;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        uFeatCtrlMsr |= MSR_IA32_FEATURE_CONTROL_VMXON;
+    return uFeatCtrlMsr;
+}
+
 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FeatureControl(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64FeatCtrl;
+    *puValue = CPUMGetGuestIa32FeatCtrl(pVCpu);
     return VINF_SUCCESS;
 }
 
