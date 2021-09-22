@@ -691,7 +691,17 @@ static DECLCALLBACK(int) rtVfsMemFile_QuerySize(void *pvThis, uint64_t *pcbFile)
  */
 static DECLCALLBACK(int) rtVfsMemFile_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
 {
-    NOREF(pvThis); NOREF(cbFile); NOREF(fFlags);
+    AssertReturn(RTVFSFILE_SIZE_F_IS_VALID(fFlags), VERR_INVALID_PARAMETER);
+
+    PRTVFSMEMFILE pThis = (PRTVFSMEMFILE)pvThis;
+    if (   (fFlags & RTVFSFILE_SIZE_F_ACTION_MASK) == RTVFSFILE_SIZE_F_NORMAL
+        && (RTFOFF)cbFile >= pThis->Base.ObjInfo.cbObject)
+    {
+        /* Growing is just a matter of increasing the size of the object. */
+        pThis->Base.ObjInfo.cbObject = cbFile;
+        return VINF_SUCCESS;
+    }
+
     AssertMsgFailed(("Lucky you! You get to implement this (or bug bird about it).\n"));
     return VERR_NOT_IMPLEMENTED;
 }
