@@ -56,16 +56,16 @@ void UIWizardNewCloudVMPage1::populateProviders(QIComboBox *pCombo)
     QWidget *pParent = pCombo->window();
     AssertPtrReturnVoid(pParent);
 
-    /* Block signals while updating: */
-    pCombo->blockSignals(true);
-
     /* Remember current item data to be able to restore it: */
     QString strOldData;
     if (pCombo->currentIndex() != -1)
-        strOldData = pCombo->itemData(pCombo->currentIndex(), ProviderData_ShortName).toString();
+        strOldData = pCombo->currentData(ProviderData_ShortName).toString();
     /* Otherwise "OCI" should be the default one: */
     else
         strOldData = "OCI";
+
+    /* Block signals while updating: */
+    pCombo->blockSignals(true);
 
     /* Clear combo initially: */
     pCombo->clear();
@@ -119,15 +119,15 @@ void UIWizardNewCloudVMPage1::populateProfiles(QIComboBox *pCombo,
     CCloudProvider comProvider = cloudProviderByShortName(strProviderShortName, pParent);
     AssertReturnVoid(comProvider.isNotNull());
 
-    /* Block signals while updating: */
-    pCombo->blockSignals(true);
-
     /* Remember current item data to be able to restore it: */
     QString strOldData;
     if (pCombo->currentIndex() != -1)
-        strOldData = pCombo->itemData(pCombo->currentIndex(), ProfileData_Name).toString();
+        strOldData = pCombo->currentData(ProfileData_Name).toString();
     else if (!strProfileName.isEmpty())
         strOldData = strProfileName;
+
+    /* Block signals while updating: */
+    pCombo->blockSignals(true);
 
     /* Clear combo initially: */
     pCombo->clear();
