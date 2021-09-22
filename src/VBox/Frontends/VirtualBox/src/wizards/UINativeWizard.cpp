@@ -294,7 +294,8 @@ void UINativeWizard::sltCompleteChanged()
 {
     /* Make sure sender is current widget: */
     QWidget *pSender = qobject_cast<QWidget*>(sender());
-    AssertReturnVoid(m_pWidgetStack->currentWidget() == pSender);
+    if (pSender != m_pWidgetStack->currentWidget())
+        return;
 
     /* Allow Next button only if current page is complete: */
     UINativeWizardPage *pPage = qobject_cast<UINativeWizardPage*>(pSender);
