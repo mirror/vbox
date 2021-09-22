@@ -63,7 +63,6 @@
 #if defined(RT_OS_DARWIN) && ARCH_BITS == 32
 # include <sys/types.h>
 # include <sys/sysctl.h>
-# undef PVM
 #endif
 
 #ifdef RT_OS_LINUX

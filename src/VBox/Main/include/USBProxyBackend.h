@@ -140,6 +140,7 @@ protected:
 #  define OSType Carbon_OSType
 #  include <Carbon/Carbon.h>
 #  undef OSType
+#  undef PVM
 
 /**
  * The Darwin hosted USB Proxy Backend.
