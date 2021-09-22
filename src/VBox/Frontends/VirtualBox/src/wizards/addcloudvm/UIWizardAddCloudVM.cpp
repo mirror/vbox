@@ -31,7 +31,6 @@
 UIWizardAddCloudVM::UIWizardAddCloudVM(QWidget *pParent,
                                        const QString &strFullGroupName /* = QString() */)
     : UINativeWizard(pParent, WizardType_AddCloudVM, WizardMode_Auto)
-    , m_strFullGroupName(strFullGroupName)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -40,6 +39,15 @@ UIWizardAddCloudVM::UIWizardAddCloudVM(QWidget *pParent,
     /* Assign background image: */
     setPixmapName(":/wizard_new_cloud_vm_bg.png");
 #endif
+
+    /* Parse passed full group name: */
+    const QString strProviderShortName = strFullGroupName.section('/', 1, 1);
+    const QString strProfileName = strFullGroupName.section('/', 2, 2);
+    if (!strProviderShortName.isEmpty() && !strProfileName.isEmpty())
+    {
+        m_strProviderShortName = strProviderShortName;
+        m_strProfileName = strProfileName;
+    }
 }
 
 bool UIWizardAddCloudVM::addCloudVMs()

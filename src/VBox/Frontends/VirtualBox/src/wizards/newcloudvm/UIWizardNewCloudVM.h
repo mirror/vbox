@@ -50,9 +50,6 @@ public:
     /** Sets whether the final step is @a fPrevented. */
     void setFinalStepPrevented(bool fPrevented) { m_fFinalStepPrevented = fPrevented; }
 
-    /** Returns full group name. */
-    QString fullGroupName() const { return m_strFullGroupName; }
-
     /** Defines @a strProviderShortName. */
     void setProviderShortName(const QString &strProviderShortName) { m_strProviderShortName = strProviderShortName; }
     /** Returns provider short name. */
@@ -103,8 +100,6 @@ private slots:
 
 private:
 
-    /** Holds the full group name (/provider/profile) to add VM to. */
-    QString                        m_strFullGroupName;
     /** Holds the short provider name. */
     QString                        m_strProviderShortName;
     /** Holds the profile name. */

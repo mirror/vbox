@@ -103,14 +103,18 @@ void UIWizardAddCloudVMPage1::populateProviders(QIComboBox *pCombo)
     pCombo->blockSignals(false);
 }
 
-void UIWizardAddCloudVMPage1::populateProfiles(QIComboBox *pCombo, const CCloudProvider &comProvider)
+void UIWizardAddCloudVMPage1::populateProfiles(QIComboBox *pCombo,
+                                               const QString &strProviderShortName,
+                                               const QString &strProfileName)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
-    AssertReturnVoid(comProvider.isNotNull());
     /* We need top-level parent as well: */
     QWidget *pParent = pCombo->window();
     AssertPtrReturnVoid(pParent);
+    /* Acquire provider: */
+    CCloudProvider comProvider = cloudProviderByShortName(strProviderShortName, pParent);
+    AssertReturnVoid(comProvider.isNotNull());
 
     /* Block signals while updating: */
     pCombo->blockSignals(true);
@@ -119,16 +123,8 @@ void UIWizardAddCloudVMPage1::populateProfiles(QIComboBox *pCombo, const CCloudP
     QString strOldData;
     if (pCombo->currentIndex() != -1)
         strOldData = pCombo->itemData(pCombo->currentIndex(), ProfileData_Name).toString();
-    else
-    {
-        /* Try to fetch "old" profile name from wizard full group name: */
-        UIWizardAddCloudVM *pWizard = qobject_cast<UIWizardAddCloudVM*>(pParent);
-        AssertPtrReturnVoid(pWizard);
-        const QString strFullGroupName = pWizard->fullGroupName();
-        const QString strProfileName = strFullGroupName.section('/', 2, 2);
-        if (!strProfileName.isEmpty())
-            strOldData = strProfileName;
-    }
+    else if (!strProfileName.isEmpty())
+        strOldData = strProfileName;
 
     /* Clear combo initially: */
     pCombo->clear();
@@ -139,14 +135,14 @@ void UIWizardAddCloudVMPage1::populateProfiles(QIComboBox *pCombo, const CCloudP
         /* Skip if we have nothing to populate (wtf happened?): */
         if (comProfile.isNull())
             continue;
-        /* Acquire profile name: */
-        QString strProfileName;
-        if (!cloudProfileName(comProfile, strProfileName, pParent))
+        /* Acquire current profile name: */
+        QString strCurrentProfileName;
+        if (!cloudProfileName(comProfile, strCurrentProfileName, pParent))
             continue;
 
         /* Compose item, fill the data: */
-        pCombo->addItem(strProfileName);
-        pCombo->setItemData(pCombo->count() - 1, strProfileName, ProfileData_Name);
+        pCombo->addItem(strCurrentProfileName);
+        pCombo->setItemData(pCombo->count() - 1, strCurrentProfileName, ProfileData_Name);
     }
 
     /* Set previous/default item if possible: */
@@ -524,8 +520,7 @@ void UIWizardAddCloudVMPageSource::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
     setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    CCloudProvider comCloudProvider = cloudProviderByShortName(providerShortName(), wizard());
-    populateProfiles(m_pProfileComboBox, comCloudProvider);
+    populateProfiles(m_pProfileComboBox, providerShortName(), profileName());
     updateProfile();
 }
 

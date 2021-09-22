@@ -268,8 +268,7 @@ void UIWizardAddCloudVMPageExpert::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
     setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    CCloudProvider comCloudProvider = cloudProviderByShortName(providerShortName(), wizard());
-    populateProfiles(m_pProfileComboBox, comCloudProvider);
+    populateProfiles(m_pProfileComboBox, providerShortName(), profileName());
     updateProfile();
 }
 

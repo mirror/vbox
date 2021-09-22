@@ -58,8 +58,10 @@ namespace UIWizardNewCloudVMPage1
 {
     /** Populates @a pCombo with known providers. */
     void populateProviders(QIComboBox *pCombo);
-    /** Populates @a pCombo with known profiles of @a comProvider specified. */
-    void populateProfiles(QIComboBox *pCombo, const CCloudProvider &comProvider);
+    /** Populates @a pCombo with known profiles.
+      * @param  strProviderShortName  Brings the short name of provider profiles related to.
+      * @param  strProfileName        Brings the name of profile to be chosen by default. */
+    void populateProfiles(QIComboBox *pCombo, const QString &strProviderShortName, const QString &strProfileName);
     /** Populates @a pList with source images from tab of @a pTabBar available in @a comClient. */
     void populateSourceImages(QListWidget *pList, QTabBar *pTabBar, const CCloudClient &comClient);
     /** Populates @a comVSD with form property suitable for tab of @a pTabBar with @a strImageId value. */
