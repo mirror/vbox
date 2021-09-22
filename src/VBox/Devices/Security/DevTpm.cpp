@@ -1686,7 +1686,7 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"RevisionId\" value"));
 
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Crb", &pThis->fCrb, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Crb", &pThis->fCrb, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"Crb\" value"));
 
