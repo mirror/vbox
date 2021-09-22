@@ -208,6 +208,8 @@ typedef struct DEVEFIR3
         PDMIBASE            IBase;
         /** The NVRAM driver base interface. */
         PPDMIBASE           pDrvBase;
+        /** The VFS interface of the driver below for NVRAM state loading and storing. */
+        PPDMIVFSCONNECTOR   pDrvVfs;
     } Lun0;
 } DEVEFIR3;
 /** Pointer to the ring-3 EFI state. */
@@ -1008,8 +1010,22 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) efiPowerOff(PPDMDEVINS pDevIns)
 {
-    PDEVEFIR3  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
-    RT_NOREF(pThisCC);
+    PDEVEFI   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+
+    if (pThisCC->Lun0.pDrvVfs)
+    {
+        int rc = flashR3SaveToVfs(&pThis->Flash, pDevIns, pThisCC->Lun0.pDrvVfs,
+                                  pDevIns->pReg->szName, "nvram");
+        if (RT_FAILURE(rc))
+            LogRel(("EFI: Failed to save flash file to NVRAM store: %Rrc\n", rc));
+    }
+    else if (pThisCC->pszNvramFile)
+    {
+        int rc = flashR3SaveToFile(&pThis->Flash, pDevIns, pThisCC->pszNvramFile);
+        if (RT_FAILURE(rc))
+            LogRel(("EFI: Failed to save flash file to '%s': %Rrc\n", pThisCC->pszNvramFile, rc));
+    }
 }
 
 
@@ -1027,13 +1043,6 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PDEVEFI   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
     PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
-
-    if (pThisCC->pszNvramFile)
-    {
-        int rc = flashR3SaveToFile(&pThis->Flash, pDevIns, pThisCC->pszNvramFile);
-        if (RT_FAILURE(rc))
-            LogRel(("EFI: Failed to save flash file to '%s': %Rrc\n", pThisCC->pszNvramFile, rc));
-    }
 
     flashR3Destruct(&pThis->Flash, pDevIns);
 
@@ -1155,13 +1164,28 @@ static int efiParseFirmware(PPDMDEVINS pDevIns, PDEVEFI pThis, PDEVEFIR3 pThisCC
     if (RT_FAILURE(rc))
         return rc;
 
-    /* If the file does not exist we initialize the NVRAM from the loaded ROM file. */
-    if (!pThisCC->pszNvramFile || !RTPathExists(pThisCC->pszNvramFile))
-        rc = flashR3LoadFromBuf(&pThis->Flash, pThisCC->pu8EfiRom, pThisCC->cbNvram);
+    if (pThisCC->Lun0.pDrvVfs)
+    {
+        rc = flashR3LoadFromVfs(&pThis->Flash, pDevIns, pThisCC->Lun0.pDrvVfs,
+                                pDevIns->pReg->szName, "nvram");
+        if (rc == VERR_NOT_FOUND)
+        {
+            /* Initialize the NVRAM content from the loaded ROM file as the NVRAM wasn't initialized yet. */
+            rc = flashR3LoadFromBuf(&pThis->Flash, pThisCC->pu8EfiRom, pThisCC->cbNvram);
+        }
+        else if (RT_FAILURE(rc))
+            return rc;
+    }
     else
-        rc = flashR3LoadFromFile(&pThis->Flash, pDevIns, pThisCC->pszNvramFile);
-    if (RT_FAILURE(rc))
-        return rc;
+    {
+        /* If the file does not exist we initialize the NVRAM from the loaded ROM file. */
+        if (!pThisCC->pszNvramFile || !RTPathExists(pThisCC->pszNvramFile))
+            rc = flashR3LoadFromBuf(&pThis->Flash, pThisCC->pu8EfiRom, pThisCC->cbNvram);
+        else
+            rc = flashR3LoadFromFile(&pThis->Flash, pDevIns, pThisCC->pszNvramFile);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     pThisCC->GCLoadAddress = pThisCC->GCPhysNvram + pThisCC->cbNvram;
 
@@ -1570,7 +1594,9 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->Lun0.IBase, &pThisCC->Lun0.pDrvBase, "NvramStorage");
     if (RT_SUCCESS(rc))
     {
-        /** @todo */
+        pThisCC->Lun0.pDrvVfs = PDMIBASE_QUERY_INTERFACE(pThisCC->Lun0.pDrvBase, PDMIVFSCONNECTOR);
+        if (!pThisCC->Lun0.pDrvVfs)
+            return PDMDevHlpVMSetError(pDevIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("NVRAM storage driver is missing VFS interface below"));
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         rc = VINF_SUCCESS; /* Missing driver is no error condition. */

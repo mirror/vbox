@@ -469,6 +469,32 @@ DECLHIDDEN(int) flashR3LoadFromBuf(PFLASHCORE pThis, void const *pvBuf, size_t c
 }
 
 /**
+ * Loads the flash content using the PDM VFS interface.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pDevIns             The owning device instance.
+ * @param   pDrvVfs             Pointer to the VFS interface.
+ * @param   pszNamespace        The namespace to load from.
+ * @param   pszPath             The path to the flash content to load.
+ */
+DECLHIDDEN(int) flashR3LoadFromVfs(PFLASHCORE pThis, PPDMDEVINS pDevIns, PPDMIVFSCONNECTOR pDrvVfs,
+                                   const char *pszNamespace, const char *pszPath)
+{
+    uint64_t cbFlash = 0;
+    int rc = pDrvVfs->pfnQuerySize(pDrvVfs, pszNamespace, pszPath, &cbFlash);
+    if (RT_SUCCESS(rc))
+    {
+        if (cbFlash == pThis->cbFlashSize)
+            rc = pDrvVfs->pfnReadAll(pDrvVfs, pszNamespace, pszPath, pThis->pbFlash, pThis->cbFlashSize);
+        else
+            return PDMDEV_SET_ERROR(pDevIns, VERR_MISMATCH, N_("Size of the flash device and the content to load doesn't match"));
+    }
+
+    return rc;
+}
+
+/**
  * Saves the flash content to the given file.
  *
  * @returns VBox status code.
@@ -506,6 +532,23 @@ DECLHIDDEN(int) flashR3SaveToBuf(PFLASHCORE pThis, void *pvBuf, size_t cbBuf)
 
     memcpy(pvBuf, pThis->pbFlash, RT_MIN(cbBuf, pThis->cbFlashSize));
     return VINF_SUCCESS;
+}
+
+/**
+ * Saves the flash content using the given PDM VFS interface.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pDevIns             The owning device instance.
+ * @param   pDrvVfs             Pointer to the VFS interface.
+ * @param   pszNamespace        The namespace to store to.
+ * @param   pszPath             The path to store the flash content under.
+ */
+DECLHIDDEN(int) flashR3SaveToVfs(PFLASHCORE pThis, PPDMDEVINS pDevIns, PPDMIVFSCONNECTOR pDrvVfs,
+                                 const char *pszNamespace, const char *pszPath)
+{
+    RT_NOREF(pDevIns);
+    return pDrvVfs->pfnWriteAll(pDrvVfs, pszNamespace, pszPath, pThis->pbFlash, pThis->cbFlashSize);
 }
 
 /**
