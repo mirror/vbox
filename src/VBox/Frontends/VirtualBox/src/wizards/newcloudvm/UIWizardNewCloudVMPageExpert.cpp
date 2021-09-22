@@ -355,14 +355,14 @@ void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageExpert::setShortProviderName(const QString &strProviderShortName)
+void UIWizardNewCloudVMPageExpert::setProviderShortName(const QString &strProviderShortName)
 {
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setShortProviderName(strProviderShortName);
+    qobject_cast<UIWizardNewCloudVM*>(wizard())->setProviderShortName(strProviderShortName);
 }
 
-QString UIWizardNewCloudVMPageExpert::shortProviderName() const
+QString UIWizardNewCloudVMPageExpert::providerShortName() const
 {
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->shortProviderName();
+    return qobject_cast<UIWizardNewCloudVM*>(wizard())->providerShortName();
 }
 
 void UIWizardNewCloudVMPageExpert::setProfileName(const QString &strProfileName)
@@ -408,8 +408,8 @@ CVirtualSystemDescriptionForm UIWizardNewCloudVMPageExpert::vsdForm() const
 void UIWizardNewCloudVMPageExpert::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
-    setShortProviderName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    CCloudProvider comCloudProvider = cloudProviderByShortName(shortProviderName(), wizard());
+    setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
+    CCloudProvider comCloudProvider = cloudProviderByShortName(providerShortName(), wizard());
     populateProfiles(m_pProfileComboBox, comCloudProvider);
     updateProfile();
 }
@@ -417,7 +417,7 @@ void UIWizardNewCloudVMPageExpert::updateProvider()
 void UIWizardNewCloudVMPageExpert::updateProfile()
 {
     setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    setClient(cloudClientByName(shortProviderName(), profileName(), wizard()));
+    setClient(cloudClientByName(providerShortName(), profileName(), wizard()));
     updateSource();
 }
 

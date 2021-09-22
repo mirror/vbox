@@ -61,7 +61,7 @@ bool UIWizardAddCloudVM::addCloudVMs()
         UINotificationProgressCloudMachineAdd *pNotification = new UINotificationProgressCloudMachineAdd(comClient,
                                                                                                          comMachine,
                                                                                                          strInstanceName,
-                                                                                                         shortProviderName(),
+                                                                                                         providerShortName(),
                                                                                                          profileName());
         connect(pNotification, &UINotificationProgressCloudMachineAdd::sigCloudMachineAdded,
                 &uiCommon(), &UICommon::sltHandleCloudMachineAdded);

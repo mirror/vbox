@@ -54,9 +54,9 @@ public:
     QString fullGroupName() const { return m_strFullGroupName; }
 
     /** Defines @a strProviderShortName. */
-    void setShortProviderName(const QString &strProviderShortName) { m_strProviderShortName = strProviderShortName; }
-    /** Returns short provider name. */
-    QString shortProviderName() const { return m_strProviderShortName; }
+    void setProviderShortName(const QString &strProviderShortName) { m_strProviderShortName = strProviderShortName; }
+    /** Returns provider short name. */
+    QString providerShortName() const { return m_strProviderShortName; }
 
     /** Defines @a strProfileName. */
     void setProfileName(const QString &strProfileName) { m_strProfileName = strProfileName; }
