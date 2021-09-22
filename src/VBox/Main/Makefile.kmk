@@ -551,6 +551,7 @@ VBoxSVC_SOURCES = \
 	src-all/GlobalStatusConversion.cpp \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
+	src-all/NvramStoreImpl.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
 	src-all/SecretKeyStore.cpp \
@@ -1006,6 +1007,7 @@ VBoxC_SOURCES += \
 	src-all/GlobalStatusConversion.cpp \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
+	src-all/NvramStoreImpl.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
 	src-all/SecretKeyStore.cpp \

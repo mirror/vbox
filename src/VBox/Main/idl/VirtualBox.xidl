@@ -5337,7 +5337,7 @@
 
   <interface
     name="IBIOSSettings" extends="$unknown"
-    uuid="73af4152-7e67-4144-bf34-41c38e8b4cc7"
+    uuid="a0a7f210-b857-4468-be26-c29f36a84345"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="8"
     >
@@ -5399,13 +5399,6 @@
       <desc>
         PXE debug logging flag. If set, VirtualBox will write extensive
         PXE trace information to the release log.
-      </desc>
-    </attribute>
-
-    <attribute name="nonVolatileStorageFile" type="wstring" readonly="yes">
-      <desc>
-        The location of the file storing the non-volatile memory content when
-        the VM is powered off.  The file does not always exist.
       </desc>
     </attribute>
 
@@ -5889,6 +5882,26 @@
 
   </interface>
 
+  <interface
+    name="INvramStore" extends="$unknown"
+    uuid="31283924-604c-44f5-b9d7-ac082531ffb7"
+    wsmap="managed"
+    >
+
+    <desc>
+      Provides access to the NVRAM store collecting all permanent states from different sources
+      (UEFI, TPM, etc.).
+    </desc>
+
+    <attribute name="nonVolatileStorageFile" type="wstring" readonly="yes">
+      <desc>
+        The location of the file storing the non-volatile memory content when
+        the VM is powered off.  The file does not always exist.
+      </desc>
+    </attribute>
+
+  </interface>
+
   <enum
     name="GraphicsControllerType"
     uuid="3e009bb0-2b57-4283-a39b-4c363d4f0808"
@@ -6066,7 +6079,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="9764b032-9f0f-4b3f-a6a3-e1630c8384bd"
+    uuid="8d2e6ace-0162-4985-9424-37d17fd87657"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -6327,6 +6340,10 @@
 
     <attribute name="TrustedPlatformModule" type="ITrustedPlatformModule" readonly="yes">
       <desc>Object containing all TPM settings.</desc>
+    </attribute>
+
+    <attribute name="nonVolatileStore" type="INvramStore" readonly="yes">
+      <desc>Object to manipulate data in the non volatile storage file.</desc>
     </attribute>
 
     <attribute name="recordingSettings" type="IRecordingSettings" readonly="yes">

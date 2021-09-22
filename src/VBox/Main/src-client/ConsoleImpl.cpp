@@ -76,6 +76,7 @@
 #include "BusAssignmentManager.h"
 #include "PCIDeviceAttachmentImpl.h"
 #include "EmulatedUSBImpl.h"
+#include "NvramStoreImpl.h"
 
 #include "VBoxEvents.h"
 #include "AutoCaller.h"
@@ -546,6 +547,18 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         rc = mEmulatedUSB->init(this);
         AssertComRCReturnRC(rc);
 
+        /* Init the NVRAM store. */
+        ComPtr<INvramStore> pNvramStore;
+        rc = aMachine->COMGETTER(NonVolatileStore)(pNvramStore.asOutParam());
+        AssertComRCReturnRC(rc);
+
+        Bstr strNonVolatilePath;
+        pNvramStore->COMGETTER(NonVolatileStorageFile)(strNonVolatilePath.asOutParam());
+
+        unconst(mptrNvramStore).createObject();
+        rc = mptrNvramStore->init(this, strNonVolatilePath);
+        AssertComRCReturnRC(rc);
+
         /* Grab global and machine shared folder lists */
 
         rc = i_fetchSharedFolders(true /* aGlobal */);
@@ -802,6 +815,12 @@ void Console::uninit()
     {
         delete mConsoleVRDPServer;
         unconst(mConsoleVRDPServer) = NULL;
+    }
+
+    if (mptrNvramStore)
+    {
+        mptrNvramStore->uninit();
+        unconst(mptrNvramStore).setNull();
     }
 
     unconst(mVRDEServer).setNull();
@@ -10746,6 +10765,12 @@ Console::i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTU
     {
         IDisplay *pIDisplay = pConsole->mDisplay;
         return pIDisplay;
+    }
+
+    if (UuidCopy == COM_IIDOF(INvramStore))
+    {
+        NvramStore *pNvramStore = static_cast<NvramStore *>(pConsole->mptrNvramStore);
+        return pNvramStore;
     }
 
     if (UuidCopy == VMMDEV_OID)

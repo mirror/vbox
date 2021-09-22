@@ -536,6 +536,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_NATNETWORK,
     /** Main group, INetworkAdapter. */
     LOG_GROUP_MAIN_NETWORKADAPTER,
+    /** Main group, INvramStore. */
+    LOG_GROUP_MAIN_NVRAMSTORE,
     /** Main group, IParallelPort. */
     LOG_GROUP_MAIN_PARALLELPORT,
     /** Main group, IPCIAddress. */
@@ -1036,6 +1038,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_NATENGINE", \
     "MAIN_NATNETWORK", \
     "MAIN_NETWORKADAPTER", \
+    "MAIN_NVRAMSTORE", \
     "MAIN_PARALLELPORT", \
     "MAIN_PCIADDRESS", \
     "MAIN_PCIDEVICEATTACHMENT", \

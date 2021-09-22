@@ -57,9 +57,6 @@ public:
     void i_copyFrom(BIOSSettings *aThat);
     void i_applyDefaults(GuestOSType *aOsType);
 
-    com::Utf8Str i_getNonVolatileStorageFile();
-    void i_updateNonVolatileStorageFile(const com::Utf8Str &aNonVolatileStorageFile);
-
 private:
 
     // wrapped IBIOSettings properties
@@ -83,7 +80,6 @@ private:
     HRESULT setTimeOffset(LONG64 offset);
     HRESULT getPXEDebugEnabled(BOOL *enabled);
     HRESULT setPXEDebugEnabled(BOOL enable);
-    HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
     HRESULT getSMBIOSUuidLittleEndian(BOOL *enabled);
     HRESULT setSMBIOSUuidLittleEndian(BOOL enable);
 

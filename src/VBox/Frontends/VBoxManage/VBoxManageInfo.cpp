@@ -876,6 +876,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     ComPtr<IBIOSSettings> biosSettings;
     CHECK_ERROR2I_RET(machine, COMGETTER(BIOSSettings)(biosSettings.asOutParam()), hrcCheck);
 
+    ComPtr<INvramStore> nvramStore;
+    CHECK_ERROR2I_RET(machine, COMGETTER(NonVolatileStore)(nvramStore.asOutParam()), hrcCheck);
+
     BIOSBootMenuMode_T bootMenuMode;
     CHECK_ERROR2I_RET(biosSettings, COMGETTER(BootMenuMode)(&bootMenuMode), hrcCheck);
     const char *pszBootMenu;
@@ -953,7 +956,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
     SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset:",  "ms");
     Bstr bstrNVRAMFile;
-    CHECK_ERROR2I_RET(biosSettings, COMGETTER(NonVolatileStorageFile)(bstrNVRAMFile.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(nvramStore, COMGETTER(NonVolatileStorageFile)(bstrNVRAMFile.asOutParam()), hrcCheck);
     if (bstrNVRAMFile.isNotEmpty())
         SHOW_BSTR_STRING("BIOS NVRAM File", "BIOS NVRAM File:", bstrNVRAMFile);
     SHOW_BOOLEAN_PROP_EX(machine,   RTCUseUTC,                  "rtcuseutc",            "RTC:",         "UTC", "local time");

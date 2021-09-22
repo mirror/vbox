@@ -1261,8 +1261,8 @@ void MachineMoveVM::updatePathsToNVRAMFiles(const Utf8Str &sourcePath, const Utf
     if (SUCCEEDED(rc) && !pSnapshot.isNull())
         pSnapshot->i_updateNVRAMPaths(sourcePath.c_str(),
                                       targetPath.c_str());
-    ComObjPtr<BIOSSettings> pBIOSSettings(m_pMachine->mBIOSSettings);
-    const Utf8Str NVRAMFile(pBIOSSettings->i_getNonVolatileStorageFile());
+    ComObjPtr<NvramStore> pNvramStore(m_pMachine->mNvramStore);
+    const Utf8Str NVRAMFile(pNvramStore->i_getNonVolatileStorageFile());
     if (NVRAMFile.isNotEmpty())
     {
         Utf8Str newNVRAMFile;
@@ -1270,7 +1270,7 @@ void MachineMoveVM::updatePathsToNVRAMFiles(const Utf8Str &sourcePath, const Utf
             newNVRAMFile = Utf8StrFmt("%s%s", targetPath.c_str(), NVRAMFile.c_str() + sourcePath.length());
         else
             newNVRAMFile = Utf8StrFmt("%s%c%s", targetPath.c_str(), RTPATH_DELIMITER, RTPathFilename(newNVRAMFile.c_str()));
-        pBIOSSettings->i_updateNonVolatileStorageFile(newNVRAMFile);
+        pNvramStore->i_updateNonVolatileStorageFile(newNVRAMFile);
     }
 }
 
@@ -1582,11 +1582,11 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
 
 HRESULT MachineMoveVM::addNVRAM(const ComObjPtr<Machine> &machine)
 {
-    ComPtr<IBIOSSettings> pBIOSSettings;
-    HRESULT rc = machine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
+    ComPtr<INvramStore> pNvramStore;
+    HRESULT rc = machine->COMGETTER(NonVolatileStore)(pNvramStore.asOutParam());
     if (FAILED(rc)) return rc;
     Bstr bstrSrcNVRAMPath;
-    rc = pBIOSSettings->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
+    rc = pNvramStore->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
     if (FAILED(rc)) return rc;
     Utf8Str strSrcNVRAMPath(bstrSrcNVRAMPath);
     if (!strSrcNVRAMPath.isEmpty() && RTFileExists(strSrcNVRAMPath.c_str()))

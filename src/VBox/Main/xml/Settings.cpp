@@ -2583,8 +2583,7 @@ bool BIOSSettings::areDefaultSettings() const
         && biosBootMenuMode == BIOSBootMenuMode_MessageAndMenu
         && apicMode == APICMode_APIC
         && llTimeOffset == 0
-        && strLogoImagePath.isEmpty()
-        && strNVRAMPath.isEmpty();
+        && strLogoImagePath.isEmpty();
 }
 
 /**
@@ -2605,8 +2604,7 @@ bool BIOSSettings::operator==(const BIOSSettings &d) const
             && biosBootMenuMode        == d.biosBootMenuMode
             && apicMode                == d.apicMode
             && llTimeOffset            == d.llTimeOffset
-            && strLogoImagePath        == d.strLogoImagePath
-            && strNVRAMPath            == d.strNVRAMPath);
+            && strLogoImagePath        == d.strLogoImagePath);
 }
 
 RecordingScreenSettings::RecordingScreenSettings(void)
@@ -2854,6 +2852,33 @@ bool TpmSettings::operator==(const TpmSettings &g) const
         || (   tpmType         == g.tpmType
             && strLocation     == g.strLocation);
 }
+
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
+NvramSettings::NvramSettings()
+{
+}
+
+/**
+ * Check if all settings have default values.
+ */
+bool NvramSettings::areDefaultSettings() const
+{
+    return strNvramPath.isEmpty();
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool NvramSettings::operator==(const NvramSettings &g) const
+{
+    return (this == &g)
+        || (strNvramPath    == g.strNvramPath);
+}
+
 
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
@@ -3530,6 +3555,7 @@ bool Hardware::operator==(const Hardware& h) const
             && fEmulatedUSBCardReader         == h.fEmulatedUSBCardReader
             && vrdeSettings                   == h.vrdeSettings
             && biosSettings                   == h.biosSettings
+            && nvramSettings                  == h.nvramSettings
             && graphicsAdapter                == h.graphicsAdapter
             && usbSettings                    == h.usbSettings
             && tpmSettings                    == h.tpmSettings
@@ -4923,7 +4949,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmBIOSChild = pelmHwChild->findChildElement("TimeOffset")))
                 pelmBIOSChild->getAttributeValue("value", hw.biosSettings.llTimeOffset);
             if ((pelmBIOSChild = pelmHwChild->findChildElement("NVRAM")))
-                pelmBIOSChild->getAttributeValue("path", hw.biosSettings.strNVRAMPath);
+                pelmBIOSChild->getAttributeValue("path", hw.nvramSettings.strNvramPath);
             if ((pelmBIOSChild = pelmHwChild->findChildElement("SmbiosUuidLittleEndian")))
                 pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fSmbiosUuidLittleEndian);
             else
@@ -6442,8 +6468,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmBIOS->createChild("TimeOffset")->setAttribute("value", hw.biosSettings.llTimeOffset);
         if (hw.biosSettings.fPXEDebugEnabled)
             pelmBIOS->createChild("PXEDebug")->setAttribute("enabled", hw.biosSettings.fPXEDebugEnabled);
-        if (!hw.biosSettings.strNVRAMPath.isEmpty())
-            pelmBIOS->createChild("NVRAM")->setAttribute("path", hw.biosSettings.strNVRAMPath);
+        if (!hw.nvramSettings.strNvramPath.isEmpty())
+            pelmBIOS->createChild("NVRAM")->setAttribute("path", hw.nvramSettings.strNvramPath);
         if (hw.biosSettings.fSmbiosUuidLittleEndian)
             pelmBIOS->createChild("SmbiosUuidLittleEndian")->setAttribute("enabled", hw.biosSettings.fSmbiosUuidLittleEndian);
     }
@@ -7780,7 +7806,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
     if (m->sv < SettingsVersion_v1_18)
     {
-        if (!hardwareMachine.biosSettings.strNVRAMPath.isEmpty())
+        if (!hardwareMachine.nvramSettings.strNvramPath.isEmpty())
         {
             m->sv = SettingsVersion_v1_18;
             return;

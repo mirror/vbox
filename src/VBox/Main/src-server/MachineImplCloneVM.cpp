@@ -243,10 +243,10 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, b
 HRESULT MachineCloneVMPrivate::addNVRAM(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight)
 {
     Bstr bstrSrcNVRAMPath;
-    ComPtr<IBIOSSettings> pBIOSSettings;
-    HRESULT rc = machine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
+    ComPtr<INvramStore> pNvramStore;
+    HRESULT rc = machine->COMGETTER(NonVolatileStore)(pNvramStore.asOutParam());
     if (FAILED(rc)) return rc;
-    rc = pBIOSSettings->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
+    rc = pNvramStore->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
     if (FAILED(rc)) return rc;
     if (!bstrSrcNVRAMPath.isEmpty())
     {
@@ -754,7 +754,7 @@ void MachineCloneVMPrivate::updateNVRAMFile(settings::SnapshotsList &snl, const 
     for (it = snl.begin(); it != snl.end(); ++it)
     {
         if (it->uuid == id)
-            it->hardware.biosSettings.strNVRAMPath = strFile;
+            it->hardware.nvramSettings.strNvramPath = strFile;
         else if (!it->llChildSnapshots.empty())
             updateNVRAMFile(it->llChildSnapshots, id, strFile);
     }
@@ -1554,7 +1554,7 @@ HRESULT MachineCloneVM::run()
             /* Update the path in the configuration either for the current
              * machine state or the snapshots. */
             if (!fct.snapshotUuid.isValid() || fct.snapshotUuid.isZero())
-                trgMCF.hardwareMachine.biosSettings.strNVRAMPath = strTrgNVRAM;
+                trgMCF.hardwareMachine.nvramSettings.strNvramPath = strTrgNVRAM;
             else
                 d->updateNVRAMFile(trgMCF.llFirstSnapshot, fct.snapshotUuid, strTrgNVRAM);
         }

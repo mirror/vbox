@@ -748,7 +748,7 @@ void Snapshot::i_updateNVRAMPathsImpl(const Utf8Str &strOldPath,
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    const Utf8Str path = m->pMachine->mBIOSSettings->i_getNonVolatileStorageFile();
+    const Utf8Str path = m->pMachine->mNvramStore->i_getNonVolatileStorageFile();
     LogFlowThisFunc(("Snap[%s].nvramPath={%s}\n", m->strName.c_str(), path.c_str()));
 
     /* NVRAM filename may be empty */
@@ -756,10 +756,10 @@ void Snapshot::i_updateNVRAMPathsImpl(const Utf8Str &strOldPath,
          && RTPathStartsWith(path.c_str(), strOldPath.c_str())
        )
     {
-        m->pMachine->mBIOSSettings->i_updateNonVolatileStorageFile(Utf8StrFmt("%s%s",
+        m->pMachine->mNvramStore->i_updateNonVolatileStorageFile(Utf8StrFmt("%s%s",
                                                                               strNewPath.c_str(),
                                                                               path.c_str() + strOldPath.length()));
-        LogFlowThisFunc(("-> updated: {%s}\n", m->pMachine->mBIOSSettings->i_getNonVolatileStorageFile().c_str()));
+        LogFlowThisFunc(("-> updated: {%s}\n", m->pMachine->mNvramStore->i_getNonVolatileStorageFile().c_str()));
     }
 
     for (SnapshotsList::const_iterator it = m->llChildren.begin();
@@ -920,7 +920,7 @@ HRESULT Snapshot::i_uninitOne(AutoWriteLock &writeLock,
             llFilenames.push_back(m->pMachine->mSSData->strStateFilePath);
     }
 
-    Utf8Str strNVRAMFile = m->pMachine->mBIOSSettings->i_getNonVolatileStorageFile();
+    Utf8Str strNVRAMFile = m->pMachine->mNvramStore->i_getNonVolatileStorageFile();
     if (strNVRAMFile.isNotEmpty() && RTFileExists(strNVRAMFile.c_str()))
         llFilenames.push_back(strNVRAMFile);
 
@@ -1152,6 +1152,10 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     rc = mTrustedPlatformModule->initCopy(this, pMachine->mTrustedPlatformModule);
     if (FAILED(rc)) return rc;
 
+    unconst(mNvramStore).createObject();
+    rc = mNvramStore->initCopy(this, pMachine->mNvramStore);
+    if (FAILED(rc)) return rc;
+
     unconst(mRecordingSettings).createObject();
     rc = mRecordingSettings->initCopy(this, pMachine->mRecordingSettings);
     if (FAILED(rc)) return rc;
@@ -1284,6 +1288,9 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     unconst(mTrustedPlatformModule).createObject();
     mTrustedPlatformModule->init(this);
+
+    unconst(mNvramStore).createObject();
+    mNvramStore->init(this);
 
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this);
@@ -1866,7 +1873,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         }
 
         // Handle NVRAM file snapshotting
-        Utf8Str strNVRAM = mBIOSSettings->i_getNonVolatileStorageFile();
+        Utf8Str strNVRAM = mNvramStore->i_getNonVolatileStorageFile();
         Utf8Str strNVRAMSnap = pSnapshotMachine->i_getSnapshotNVRAMFilename();
         if (strNVRAM.isNotEmpty() && strNVRAMSnap.isNotEmpty() && RTFileExists(strNVRAM.c_str()))
         {
@@ -1880,7 +1887,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                 throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                    tr("Could not copy NVRAM file '%s' to '%s' (%Rrc)"),
                                    strNVRAM.c_str(), strNVRAMSnapAbs.c_str(), vrc);
-            pSnapshotMachine->mBIOSSettings->i_updateNonVolatileStorageFile(strNVRAMSnap);
+            pSnapshotMachine->mNvramStore->i_updateNonVolatileStorageFile(strNVRAMSnap);
         }
 
         // store parent of newly created diffs before commit for notify
@@ -2375,8 +2382,8 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
                 // online snapshot: then share the state file
                 mSSData->strStateFilePath = strSnapshotStateFile;
 
-            const Utf8Str srcNVRAM(pSnapshotMachine->mBIOSSettings->i_getNonVolatileStorageFile());
-            const Utf8Str dstNVRAM(mBIOSSettings->i_getNonVolatileStorageFile());
+            const Utf8Str srcNVRAM(pSnapshotMachine->mNvramStore->i_getNonVolatileStorageFile());
+            const Utf8Str dstNVRAM(mNvramStore->i_getNonVolatileStorageFile());
             if (dstNVRAM.isNotEmpty() && RTFileExists(dstNVRAM.c_str()))
                 RTFileDelete(dstNVRAM.c_str());
             if (srcNVRAM.isNotEmpty() && dstNVRAM.isNotEmpty() && RTFileExists(srcNVRAM.c_str()))
@@ -3499,7 +3506,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
 
         /* 3a: delete NVRAM file if present. */
         {
-            Utf8Str NVRAMPath = pSnapMachine->mBIOSSettings->i_getNonVolatileStorageFile();
+            Utf8Str NVRAMPath = pSnapMachine->mNvramStore->i_getNonVolatileStorageFile();
             if (NVRAMPath.isNotEmpty() && RTFileExists(NVRAMPath.c_str()))
                 RTFileDelete(NVRAMPath.c_str());
         }

@@ -1144,7 +1144,7 @@ HRESULT Machine::setFirmwareType(FirmwareType_T aFirmwareType)
     Utf8Str strNVRAM = i_getDefaultNVRAMFilename();
     alock.release();
 
-    mBIOSSettings->i_updateNonVolatileStorageFile(strNVRAM);
+    mNvramStore->i_updateNonVolatileStorageFile(strNVRAM);
 
     return S_OK;
 }
@@ -1851,6 +1851,14 @@ HRESULT Machine::getTrustedPlatformModule(ComPtr<ITrustedPlatformModule> &aTrust
 {
     /* mTrustedPlatformModule is constant during life time, no need to lock */
     aTrustedPlatformModule = mTrustedPlatformModule;
+
+    return S_OK;
+}
+
+HRESULT Machine::getNonVolatileStore(ComPtr<INvramStore> &aNvramStore)
+{
+    /* mNvramStore is constant during life time, no need to lock */
+    aNvramStore = mNvramStore;
 
     return S_OK;
 }
@@ -4941,7 +4949,7 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
     if (!mSSData->strStateFilePath.isEmpty())
         mData->llFilesToDelete.push_back(mSSData->strStateFilePath);
 
-    Utf8Str strNVRAMFile = mBIOSSettings->i_getNonVolatileStorageFile();
+    Utf8Str strNVRAMFile = mNvramStore->i_getNonVolatileStorageFile();
     if (!strNVRAMFile.isEmpty() && RTFileExists(strNVRAMFile.c_str()))
         mData->llFilesToDelete.push_back(strNVRAMFile);
 
@@ -8174,6 +8182,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mTrustedPlatformModule).createObject();
     mTrustedPlatformModule->init(this);
 
+    /* create associated NVRAM store object */
+    unconst(mNvramStore).createObject();
+    mNvramStore->init(this);
+
     /* create associated record settings object */
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this);
@@ -8309,6 +8321,12 @@ void Machine::uninitDataAndChildObjects()
     {
         mTrustedPlatformModule->uninit();
         unconst(mTrustedPlatformModule).setNull();
+    }
+
+    if (mNvramStore)
+    {
+        mNvramStore->uninit();
+        unconst(mNvramStore).setNull();
     }
 
     if (mRecordingSettings)
@@ -8838,6 +8856,9 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
 
         /* Trusted Platform Module */
         rc = mTrustedPlatformModule->i_loadSettings(data.tpmSettings);
+        if (FAILED(rc)) return rc;
+
+        rc = mNvramStore->i_loadSettings(data.nvramSettings);
         if (FAILED(rc)) return rc;
 
         /* Recording settings */
@@ -9697,7 +9718,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                     newConfigFilePrev = newConfigFile;
                     newConfigFilePrev += "-prev";
                     RTFileRename(configFilePrev.c_str(), newConfigFilePrev.c_str(), 0);
-                    NVRAMFile = mBIOSSettings->i_getNonVolatileStorageFile();
+                    NVRAMFile = mNvramStore->i_getNonVolatileStorageFile();
                     if (NVRAMFile.isNotEmpty())
                     {
                         // in the NVRAM file path, replace the old directory with the new directory
@@ -9737,7 +9758,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 mSSData->strStateFilePath = newConfigDir + strStateFileName;
             }
             if (newNVRAMFile.isNotEmpty())
-                mBIOSSettings->i_updateNonVolatileStorageFile(newNVRAMFile);
+                mNvramStore->i_updateNonVolatileStorageFile(newNVRAMFile);
 
             // and do the same thing for the saved state file paths of all the online snapshots and NVRAM files of all snapshots
             if (mData->mFirstSnapshot)
@@ -10189,6 +10210,10 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 
         /* Trusted Platform Module settings (required) */
         rc = mTrustedPlatformModule->i_saveSettings(data.tpmSettings);
+        if (FAILED(rc)) throw rc;
+
+        /* NVRAM settings (required) */
+        rc = mNvramStore->i_saveSettings(data.nvramSettings);
         if (FAILED(rc)) throw rc;
 
         /* Recording settings (required) */
@@ -11708,6 +11733,9 @@ void Machine::i_rollback(bool aNotify)
     if (mTrustedPlatformModule)
         mTrustedPlatformModule->i_rollback();
 
+    if (mNvramStore)
+        mNvramStore->i_rollback();
+
     if (mRecordingSettings && (mData->flModifications & IsModified_Recording))
         mRecordingSettings->i_rollback();
 
@@ -11834,6 +11862,7 @@ void Machine::i_commit()
 
     mBIOSSettings->i_commit();
     mTrustedPlatformModule->i_commit();
+    mNvramStore->i_commit();
     mRecordingSettings->i_commit();
     mGraphicsAdapter->i_commit();
     mVRDEServer->i_commit();
@@ -12089,6 +12118,7 @@ void Machine::i_copyFrom(Machine *aThat)
 
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
     mTrustedPlatformModule->i_copyFrom(aThat->mTrustedPlatformModule);
+    mNvramStore->i_copyFrom(aThat->mNvramStore);
     mRecordingSettings->i_copyFrom(aThat->mRecordingSettings);
     mGraphicsAdapter->i_copyFrom(aThat->mGraphicsAdapter);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
@@ -12467,6 +12497,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
     unconst(mTrustedPlatformModule).createObject();
     mTrustedPlatformModule->init(this, aMachine->mTrustedPlatformModule);
+
+    unconst(mNvramStore).createObject();
+    mNvramStore->init(this, aMachine->mNvramStore);
 
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this, aMachine->mRecordingSettings);

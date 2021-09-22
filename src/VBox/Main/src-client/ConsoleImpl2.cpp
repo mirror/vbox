@@ -35,6 +35,7 @@
 
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
+#include "NvramStoreImpl.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "GuestImpl.h"
 # include "GuestDnDPrivate.h"
@@ -807,6 +808,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
     ComPtr<IBIOSSettings> biosSettings;
     hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());                     H();
+
+    ComPtr<INvramStore> nvramStore;
+    hrc = pMachine->COMGETTER(NonVolatileStore)(nvramStore.asOutParam());                   H();
 
     hrc = pMachine->COMGETTER(HardwareUUID)(bstr.asOutParam());                             H();
     RTUUID HardwareUuid;
@@ -1933,8 +1937,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiDeviceProps", &deviceProps);
 
             /* Get NVRAM file name */
-            Bstr bstrNVRAM;
-            hrc = biosSettings->COMGETTER(NonVolatileStorageFile)(bstrNVRAM.asOutParam());  H();
+            Utf8Str strNvram = mptrNvramStore->i_getNonVolatileStorageFile();
 
             BOOL fUuidLe;
             hrc = biosSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
@@ -2003,7 +2006,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "UuidLe",      fUuidLe);
             InsertConfigInteger(pCfg,  "64BitEntry",  f64BitEntry); /* boolean */
-            InsertConfigString(pCfg,   "NvramFile",   bstrNVRAM);
+            InsertConfigString(pCfg,   "NvramFile",   strNvram);
             if (u32GraphicsMode != UINT32_MAX)
                 InsertConfigInteger(pCfg,  "GraphicsMode",  u32GraphicsMode);
             if (!strResolution.isEmpty())
@@ -2015,6 +2018,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigInteger(pCfg, "DmiUseHostInfo", 1);
                 InsertConfigInteger(pCfg, "DmiExposeMemoryTable", 1);
             }
+
+            /* Attach the NVRAM storage driver. */
+            InsertConfigNode(pInst,    "LUN#0",     &pLunL0);
+            InsertConfigString(pLunL0, "Driver",    "NvramStore");
         }
 
         /*
@@ -3419,6 +3426,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigString(pLunL0, "Driver",               "TpmEmuTpms");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
                     InsertConfigInteger(pCfg, "TpmVersion", enmTpmType == TpmType_v1_2 ? 1 : 2);
+                    InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
+                    InsertConfigString(pLunL1, "Driver", "NvramStore");
                     break;
                 }
                 case TpmType_Host:

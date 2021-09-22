@@ -542,7 +542,6 @@ struct BIOSSettings
     APICMode_T      apicMode;           // requires settings version 1.16 (VirtualBox 5.1)
     int64_t         llTimeOffset;
     com::Utf8Str    strLogoImagePath;
-    com::Utf8Str    strNVRAMPath;
 };
 
 /**
@@ -560,6 +559,22 @@ struct TpmSettings
 
     TpmType_T       tpmType;
     com::Utf8Str    strLocation;
+};
+
+/**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
+struct NvramSettings
+{
+    NvramSettings();
+
+    bool areDefaultSettings() const;
+
+    bool operator==(const NvramSettings &d) const;
+
+    com::Utf8Str    strNvramPath;
 };
 
 /** List for keeping a recording feature list. */
@@ -1170,6 +1185,7 @@ struct Hardware
     VRDESettings        vrdeSettings;
 
     BIOSSettings        biosSettings;
+    NvramSettings       nvramSettings;
     RecordingSettings   recordingSettings;
     GraphicsAdapter     graphicsAdapter;
     USB                 usbSettings;

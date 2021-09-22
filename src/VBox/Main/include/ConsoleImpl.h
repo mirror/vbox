@@ -63,6 +63,7 @@ class VMMDevMouseInterface;
 class DisplayMouseInterface;
 class VMPowerUpTask;
 class VMPowerDownTask;
+class NvramStore;
 
 #include <iprt/uuid.h>
 #include <iprt/memsafer.h>
@@ -934,6 +935,7 @@ private:
     const ComObjPtr<ExtPackManager> mptrExtPackManager;
 #endif
     const ComObjPtr<EmulatedUSB> mEmulatedUSB;
+    const ComObjPtr<NvramStore> mptrNvramStore;
 
     USBDeviceList mUSBDevices;
     RemoteUSBDeviceList mRemoteUSBDevices;
