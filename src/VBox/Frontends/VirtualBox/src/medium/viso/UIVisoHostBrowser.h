@@ -26,7 +26,7 @@
 
 /* Forward declarations: */
 class QItemSelection;
-class QTableView;
+class QITableView;
 class UIVisoHostBrowserModel;
 
 /** A UIVisoBrowserBase extension to view host file system. Uses QFileSystemModel. */
@@ -71,7 +71,7 @@ private:
     /** We have two file system models (one for each item view) since we set different filters on each of these models. */
     UIVisoHostBrowserModel *m_pTreeModel;
     UIVisoHostBrowserModel *m_pTableModel;
-    QTableView             *m_pTableView;
+    QITableView            *m_pTableView;
 };
 
 

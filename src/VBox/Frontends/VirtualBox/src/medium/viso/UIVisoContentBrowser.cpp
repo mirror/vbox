@@ -22,20 +22,20 @@
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QMimeData>
-#include <QTableView>
 #include <QTreeView>
 
 /* GUI includes: */
 #include "UICustomFileSystemModel.h"
 #include "UIPathOperations.h"
 #include "UIVisoContentBrowser.h"
+#include "QITableView.h"
 
 /*********************************************************************************************************************************
 *   UIVisoContentTableView definition.                                                                                      *
 *********************************************************************************************************************************/
 
 /** An QTableView extension mainly used to handle dropeed file objects from the host browser. */
-class UIVisoContentTableView : public QTableView
+class UIVisoContentTableView : public QITableView
 {
     Q_OBJECT;
 
@@ -76,7 +76,7 @@ protected:
 *   UIVisoContentTableView implementation.                                                                                       *
 *********************************************************************************************************************************/
 UIVisoContentTableView::UIVisoContentTableView(QWidget *pParent /* = 0 */)
-    :QTableView(pParent)
+    :QITableView(pParent)
 {
 }
 
@@ -480,9 +480,9 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
     }
     else
     {
-        QItemSelectionModel *selectionModel = m_pTreeView->selectionModel();
-        if (selectionModel)
+        if (m_pTreeView && m_pTreeView->selectionModel())
         {
+            QItemSelectionModel *selectionModel = m_pTreeView->selectionModel();
             if (!selectionModel->selectedIndexes().isEmpty())
             {
                 QModelIndex treeIndex = selectionModel->selectedIndexes().at(0);
@@ -578,8 +578,9 @@ QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &in
         return index;
     else if (index.model() == m_pModel)
         return m_pTableProxyModel->mapFromSource(index);
-    /* else if (index.model() == m_pTreeProxyModel): */
-    return m_pTableProxyModel->mapFromSource(m_pTreeProxyModel->mapToSource(index));
+    else if (index.model() == m_pTreeProxyModel)
+        return m_pTableProxyModel->mapFromSource(m_pTreeProxyModel->mapToSource(index));
+    return QModelIndex();
 }
 
 QModelIndex UIVisoContentBrowser::convertIndexToTreeIndex(const QModelIndex &index)
@@ -591,8 +592,9 @@ QModelIndex UIVisoContentBrowser::convertIndexToTreeIndex(const QModelIndex &ind
         return index;
     else if (index.model() == m_pModel)
         return m_pTreeProxyModel->mapFromSource(index);
-    /* else if (index.model() == m_pTableProxyModel): */
-    return m_pTreeProxyModel->mapFromSource(m_pTableProxyModel->mapToSource(index));
+    else if (index.model() == m_pTableProxyModel)
+        return m_pTreeProxyModel->mapFromSource(m_pTableProxyModel->mapToSource(index));
+    return QModelIndex();
 }
 
 void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryItem)
