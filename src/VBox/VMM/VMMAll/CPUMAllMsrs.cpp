@@ -235,8 +235,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPUCC pVCpu, uint32_
     return APICSetBaseMsr(pVCpu, uValue);
 }
 
+
 /**
- * Get IA32_FEATURE_CONTROL value for IEM, NEM and cpumMsrRd_Ia32FeatureControl.
+ * Gets IA32_FEATURE_CONTROL value for IEM, NEM and cpumMsrRd_Ia32FeatureControl.
  *
  * @returns IA32_FEATURE_CONTROL value.
  * @param   pVCpu           The cross context per CPU structure.
