@@ -27,66 +27,54 @@
 #include <vector>
 
 
+struct CMachineHandlerArg
+  : public HandlerArg
+{
+    ComPtr<ICloudClient> pClient;
+
+    const char *pcszSpec;   /* RTGETOPTUNION::psz, points inside argv */
+    enum { GUESS, ID, NAME } enmSpecKind;
+    ComPtr<ICloudMachine> pMachine;
+
+    explicit CMachineHandlerArg(const HandlerArg &a)
+      : HandlerArg(a), pcszSpec(NULL), enmSpecKind(GUESS) {}
+};
+
+
 static int selectCloudProvider(ComPtr<ICloudProvider> &pProvider,
                                const ComPtr<IVirtualBox> &pVirtualBox,
                                const char *pszProviderName);
 static int selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
                               const ComPtr<ICloudProvider> &pProvider,
                               const char *pszProviderName);
-static int getCloudClient(ComPtr<ICloudClient> &aClient,
-                          HandlerArg *a,
+static int getCloudClient(CMachineHandlerArg &a,
                           const char *pcszProviderName,
                           const char *pcszProfileName);
 
 static HRESULT getMachineList(com::SafeIfaceArray<ICloudMachine> &aMachines,
                               const ComPtr<ICloudClient> &pClient);
 
-static HRESULT getMachineById(ComPtr<ICloudMachine> &pMachineOut,
-                              const ComPtr<ICloudClient> &pClient,
-                              const char *pcszId);
-static HRESULT getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
-                                const ComPtr<ICloudClient> &pClient,
-                                const char *pcszName);
-static HRESULT getMachineByGuess(ComPtr<ICloudMachine> &pMachineOut,
-                                 const ComPtr<ICloudClient> &pClient,
-                                 const char *pcszWhatever);
+static HRESULT getMachineBySpec(CMachineHandlerArg *a);
+static HRESULT getMachineById(CMachineHandlerArg *a);
+static HRESULT getMachineByName(CMachineHandlerArg *a);
+static HRESULT getMachineByGuess(CMachineHandlerArg *a);
 
-struct MachineSpec {
-    const char *pcszSpec;
-    enum { GUESS, ID, NAME } enmKind;
-
-    MachineSpec()
-      : pcszSpec(NULL), enmKind(GUESS) {}
-};
-
-static int checkMachineSpecArgument(MachineSpec &aMachineSpec,
+static int checkMachineSpecArgument(CMachineHandlerArg *a,
                                     int ch, const RTGETOPTUNION &Val);
-static HRESULT getMachineBySpec(ComPtr<ICloudMachine> &pMachineOut,
-                                const ComPtr<ICloudClient> &pClient,
-                                const MachineSpec &aMachineSpec);
 
 
-static RTEXITCODE handleCloudMachineImpl(HandlerArg *a, int iFirst,
-                                         const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst);
 
-static RTEXITCODE handleCloudMachineStart(HandlerArg *a, int iFirst,
-                                          const ComPtr<ICloudClient> &pClient);
-static RTEXITCODE handleCloudMachineReboot(HandlerArg *a, int iFirst,
-                                           const ComPtr<ICloudClient> &pClient);
-static RTEXITCODE handleCloudMachineShutdown(HandlerArg *a, int iFirst,
-                                             const ComPtr<ICloudClient> &pClient);
-static RTEXITCODE handleCloudMachinePowerdown(HandlerArg *a, int iFirst,
-                                              const ComPtr<ICloudClient> &pClient);
-static RTEXITCODE handleCloudMachineTerminate(HandlerArg *a, int iFirst,
-                                              const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE handleCloudMachineStart(CMachineHandlerArg *a, int iFirst);
+static RTEXITCODE handleCloudMachineReboot(CMachineHandlerArg *a, int iFirst);
+static RTEXITCODE handleCloudMachineShutdown(CMachineHandlerArg *a, int iFirst);
+static RTEXITCODE handleCloudMachinePowerdown(CMachineHandlerArg *a, int iFirst);
+static RTEXITCODE handleCloudMachineTerminate(CMachineHandlerArg *a, int iFirst);
 
-static RTEXITCODE handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
-                                                   const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE handleCloudMachineConsoleHistory(CMachineHandlerArg *a, int iFirst);
 
-static RTEXITCODE listCloudMachinesImpl(HandlerArg *a, int iFirst,
-                                        const ComPtr<ICloudClient> &pClient);
-static RTEXITCODE handleCloudMachineInfo(HandlerArg *a, int iFirst,
-                                          const ComPtr<ICloudClient> &pClient);
+static RTEXITCODE listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst);
+static RTEXITCODE handleCloudMachineInfo(CMachineHandlerArg *a, int iFirst);
 
 static HRESULT printMachineInfo(const ComPtr<ICloudMachine> &pMachine);
 static HRESULT printFormValue(const ComPtr<IFormValue> &pValue);
@@ -118,12 +106,12 @@ handleCloudMachine(HandlerArg *a, int iFirst,
                    const char *pcszProviderName,
                    const char *pcszProfileName)
 {
-    ComPtr<ICloudClient> pClient;
-    int rc = getCloudClient(pClient, a, pcszProviderName, pcszProfileName);
+    CMachineHandlerArg handlerArg(*a);
+    int rc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    return handleCloudMachineImpl(a, iFirst, pClient);
+    return handleCloudMachineImpl(&handlerArg, iFirst);
 }
 
 
@@ -256,8 +244,7 @@ selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
 
 
 static int
-getCloudClient(ComPtr<ICloudClient> &aCloudClient,
-                HandlerArg *a,
+getCloudClient(CMachineHandlerArg &a,
                 const char *pcszProviderName,
                 const char *pcszProfileName)
 {
@@ -265,7 +252,7 @@ getCloudClient(ComPtr<ICloudClient> &aCloudClient,
     int rc;
 
     ComPtr<ICloudProvider> pProvider;
-    rc = selectCloudProvider(pProvider, a->virtualBox, pcszProviderName);
+    rc = selectCloudProvider(pProvider, a.virtualBox, pcszProviderName);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -279,7 +266,7 @@ getCloudClient(ComPtr<ICloudClient> &aCloudClient,
         CreateCloudClient(pCloudClient.asOutParam()),
             VERR_GENERAL_FAILURE);
 
-    aCloudClient = pCloudClient;
+    a.pClient = pCloudClient;
     return VINF_SUCCESS;
 }
 
@@ -308,15 +295,13 @@ getMachineList(com::SafeIfaceArray<ICloudMachine> &aMachines,
 
 
 static HRESULT
-getMachineById(ComPtr<ICloudMachine> &pMachineOut,
-               const ComPtr<ICloudClient> &pClient,
-               const char *pcszId)
+getMachineById(CMachineHandlerArg *a)
 {
     HRESULT hrc;
 
     ComPtr<ICloudMachine> pMachine;
-    CHECK_ERROR2_RET(hrc, pClient,
-        GetCloudMachine(com::Bstr(pcszId).raw(),
+    CHECK_ERROR2_RET(hrc, a->pClient,
+        GetCloudMachine(com::Bstr(a->pcszSpec).raw(),
                         pMachine.asOutParam()), hrc);
 
     ComPtr<IProgress> pRefreshProgress;
@@ -327,20 +312,18 @@ getMachineById(ComPtr<ICloudMachine> &pMachineOut,
     if (FAILED(hrc))
         return hrc;
 
-    pMachineOut = pMachine;
+    a->pMachine = pMachine;
     return S_OK;
 }
 
 
 static HRESULT
-getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
-                 const ComPtr<ICloudClient> &pClient,
-                 const char *pcszName)
+getMachineByName(CMachineHandlerArg *a)
 {
     HRESULT hrc;
 
     com::SafeIfaceArray<ICloudMachine> aMachines;
-    hrc = getMachineList(aMachines, pClient);
+    hrc = getMachineList(aMachines, a->pClient);
     if (FAILED(hrc))
         return hrc;
 
@@ -358,7 +341,7 @@ getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
             COMGETTER(Name)(bstrName.asOutParam()),
                 hrc);
 
-        if (!bstrName.equals(pcszName))
+        if (!bstrName.equals(a->pcszSpec))
             continue;
 
         if (pMachineFound.isNull())
@@ -383,7 +366,7 @@ getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
     if (pMachineFound.isNull())
         return VBOX_E_OBJECT_NOT_FOUND;
 
-    pMachineOut = pMachineFound;
+    a->pMachine = pMachineFound;
     return S_OK;
 }
 
@@ -397,25 +380,20 @@ getMachineByName(ComPtr<ICloudMachine> &pMachineOut,
  * explicit --id/--name options instead.
  */
 static HRESULT
-getMachineByGuess(ComPtr<ICloudMachine> &pMachineOut,
-                  const ComPtr<ICloudClient> &pClient,
-                  const char *pcszWhatever)
+getMachineByGuess(CMachineHandlerArg *a)
 {
-    ComPtr<ICloudMachine> pMachine;
-
     HRESULT hrc;
 
     RTUUID Uuid;
-    int rc = RTUuidFromStr(&Uuid, pcszWhatever);
+    int rc = RTUuidFromStr(&Uuid, a->pcszSpec);
     if (RT_SUCCESS(rc))
-        hrc = getMachineById(pMachine, pClient, pcszWhatever);
+        hrc = getMachineById(a);
     else
-        hrc = getMachineByName(pMachine, pClient, pcszWhatever);
+        hrc = getMachineByName(a);
 
     if (FAILED(hrc))
         return hrc;
 
-    pMachineOut = pMachine;
     return S_OK;
 }
 
@@ -455,7 +433,7 @@ errThereCanBeOnlyOne()
  * Other IPRT errors - RTEXITCODE_FAILURE
  */
 static int
-checkMachineSpecArgument(MachineSpec &aMachineSpec,
+checkMachineSpecArgument(CMachineHandlerArg *a,
                          int ch, const RTGETOPTUNION &Val)
 {
     int rc;
@@ -474,7 +452,7 @@ checkMachineSpecArgument(MachineSpec &aMachineSpec,
         {
             const char *pcszId = Val.psz;
 
-            if (aMachineSpec.pcszSpec != NULL)
+            if (a->pcszSpec != NULL)
             {
                 errThereCanBeOnlyOne();
                 return VERR_PARSE_ERROR;
@@ -488,8 +466,8 @@ checkMachineSpecArgument(MachineSpec &aMachineSpec,
                 return VERR_PARSE_ERROR;
             }
 
-            aMachineSpec.pcszSpec = pcszId;
-            aMachineSpec.enmKind = MachineSpec::ID;
+            a->pcszSpec = pcszId;
+            a->enmSpecKind = CMachineHandlerArg::ID;
             return VINF_SUCCESS;
         }
 
@@ -497,14 +475,14 @@ checkMachineSpecArgument(MachineSpec &aMachineSpec,
         {
             const char *pcszName = Val.psz;
 
-            if (aMachineSpec.pcszSpec != NULL)
+            if (a->pcszSpec != NULL)
             {
                 errThereCanBeOnlyOne();
                 return VERR_PARSE_ERROR;
             }
 
-            aMachineSpec.pcszSpec = pcszName;
-            aMachineSpec.enmKind = MachineSpec::NAME;
+            a->pcszSpec = pcszName;
+            a->enmSpecKind = CMachineHandlerArg::NAME;
             return VINF_SUCCESS;
         }
 
@@ -516,14 +494,14 @@ checkMachineSpecArgument(MachineSpec &aMachineSpec,
         {
             const char *pcszNameOrId = Val.psz;
 
-            if (aMachineSpec.pcszSpec != NULL)
+            if (a->pcszSpec != NULL)
             {
                 errThereCanBeOnlyOne();
                 return VERR_PARSE_ERROR;
             }
 
-            aMachineSpec.pcszSpec = pcszNameOrId;
-            aMachineSpec.enmKind = MachineSpec::GUESS;
+            a->pcszSpec = pcszNameOrId;
+            a->enmSpecKind = CMachineHandlerArg::GUESS;
             return VINF_SUCCESS;
         }
 
@@ -541,52 +519,50 @@ checkMachineSpecArgument(MachineSpec &aMachineSpec,
 
 
 static HRESULT
-getMachineBySpec(ComPtr<ICloudMachine> &pMachineOut,
-                 const ComPtr<ICloudClient> &pClient,
-                 const MachineSpec &aMachineSpec)
+getMachineBySpec(CMachineHandlerArg *a)
 {
     HRESULT hrc = E_FAIL;
 
-    if (aMachineSpec.pcszSpec == NULL)
+    if (a->pcszSpec == NULL)
     {
         RTMsgErrorExit(RTEXITCODE_SYNTAX, "machine not specified");
         return E_FAIL;
     }
 
-    if (aMachineSpec.pcszSpec[0] == '\0')
+    if (a->pcszSpec[0] == '\0')
     {
         RTMsgError("machine name is empty");
         return E_FAIL;
     }
 
-    switch (aMachineSpec.enmKind)
+    switch (a->enmSpecKind)
     {
-        case MachineSpec::ID:
-            hrc = getMachineById(pMachineOut, pClient, aMachineSpec.pcszSpec);
+        case CMachineHandlerArg::ID:
+            hrc = getMachineById(a);
             if (FAILED(hrc))
             {
                 if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-                    RTMsgError("unable to find machine with id %s", aMachineSpec.pcszSpec);
+                    RTMsgError("unable to find machine with id %s", a->pcszSpec);
                 return hrc;
             }
             break;
 
-        case MachineSpec::NAME:
-            hrc = getMachineByName(pMachineOut, pClient, aMachineSpec.pcszSpec);
+        case CMachineHandlerArg::NAME:
+            hrc = getMachineByName(a);
             if (FAILED(hrc))
             {
                 if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-                    RTMsgError("unable to find machine with name %s", aMachineSpec.pcszSpec);
+                    RTMsgError("unable to find machine with name %s", a->pcszSpec);
                 return hrc;
             }
             break;
 
-        case MachineSpec::GUESS:
-            hrc = getMachineByGuess(pMachineOut, pClient, aMachineSpec.pcszSpec);
+        case CMachineHandlerArg::GUESS:
+            hrc = getMachineByGuess(a);
             if (FAILED(hrc))
             {
                 if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-                    RTMsgError("unable to find machine %s", aMachineSpec.pcszSpec);
+                    RTMsgError("unable to find machine %s", a->pcszSpec);
                 return hrc;
             }
             break;
@@ -601,14 +577,26 @@ getMachineBySpec(ComPtr<ICloudMachine> &pMachineOut,
 
 
 /*
- * cloud machine ...
+ * cloud machine [--id id | --name name] command ...
  *
- * The "cloud" prefix handling is in VBoxManageCloud.cpp, so this
- * function is not static.
+ * We allow machine to be specified after "machine" but only with an
+ * explicit option for the obvious reason.  We will also check for
+ * these options and machine spec as a plain words argument after the
+ * command word, so user can use either of:
+ *
+ *   cloud machine --name foo start
+ *   cloud machine start --name foo
+ *   cloud machine start foo
+ *
+ * This will accept e.g.  cloud machine --name foo list ... b/c we
+ * don't yet know that it's "list" that is coming, so commands that
+ * don't take machine argument check that separately when called.  One
+ * side effect of this is that specifying several machines or using a
+ * syntactically invalid id will be reported as such, not as an
+ * unknown option, but that's a relatively minor nit.
  */
 static RTEXITCODE
-handleCloudMachineImpl(HandlerArg *a, int iFirst,
-                       const ComPtr<ICloudClient> &pClient)
+handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
 {
     int rc;
 
@@ -637,6 +625,7 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
         { "shutdown",           kMachine_Shutdown,          RTGETOPT_REQ_NOTHING },
         { "start",              kMachine_Start,             RTGETOPT_REQ_NOTHING },
         { "terminate",          kMachine_Terminate,         RTGETOPT_REQ_NOTHING },
+        CLOUD_MACHINE_RTGETOPTDEF_MACHINE,
         CLOUD_MACHINE_RTGETOPTDEF_HELP
     };
 
@@ -651,44 +640,62 @@ handleCloudMachineImpl(HandlerArg *a, int iFirst,
     RTGETOPTUNION Val;
     while ((ch = RTGetOpt(&OptState, &Val)) != 0)
     {
+        if (RT_FAILURE(ch))
+            return RTGetOptPrintError(ch, &Val);
+
+        /*
+         * Check for an unknown word first: checkMachineSpecArgument()
+         * would try to interpret that as a machine id/name.
+         */
+        if (ch == VINF_GETOPT_NOT_OPTION)
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+                       "Invalid sub-command: %s", Val.psz);
+
+        /*
+         * Allow --id/--name after "machine", before the command.
+         * Also handles --help.
+         */
+        rc = checkMachineSpecArgument(a, ch, Val);
+        if (rc == VINF_SUCCESS)
+            continue;
+        else if (rc == VINF_CALLBACK_RETURN)
+            return RTEXITCODE_SUCCESS;
+        else if (rc == VERR_PARSE_ERROR)
+            return RTEXITCODE_SYNTAX;
+
+        /*
+         * Dispatch to command implementation ([ab]use getopt to do
+         * string comparisons for us).
+         */
         switch (ch)
         {
             case kMachine_ConsoleHistory:
-                return handleCloudMachineConsoleHistory(a, OptState.iNext, pClient);
+                return handleCloudMachineConsoleHistory(a, OptState.iNext);
 
             case kMachine_Info:
-                return handleCloudMachineInfo(a, OptState.iNext, pClient);
+                return handleCloudMachineInfo(a, OptState.iNext);
 
             case kMachine_List:
-                return listCloudMachinesImpl(a, OptState.iNext, pClient);
+                return listCloudMachinesImpl(a, OptState.iNext);
 
             case kMachine_Powerdown:
-                return handleCloudMachinePowerdown(a, OptState.iNext, pClient);
+                return handleCloudMachinePowerdown(a, OptState.iNext);
 
             case kMachine_Reboot:
-                return handleCloudMachineReboot(a, OptState.iNext, pClient);
+                return handleCloudMachineReboot(a, OptState.iNext);
 
             case kMachine_Shutdown:
-                return handleCloudMachineShutdown(a, OptState.iNext, pClient);
+                return handleCloudMachineShutdown(a, OptState.iNext);
 
             case kMachine_Start:
-                return handleCloudMachineStart(a, OptState.iNext, pClient);
+                return handleCloudMachineStart(a, OptState.iNext);
 
             case kMachine_Terminate:
-                return handleCloudMachineTerminate(a, OptState.iNext, pClient);
+                return handleCloudMachineTerminate(a, OptState.iNext);
 
-
-            case 'h':           /* --help */
-                printHelp(g_pStdOut);
-                return RTEXITCODE_SUCCESS;
-
-
-            case VINF_GETOPT_NOT_OPTION:
-                return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                           "Invalid sub-command: %s", Val.psz);
-
-            default:
-                return RTGetOptPrintError(ch, &Val);
+            default:            /* should never happen */
+                return RTMsgErrorExit(RTEXITCODE_INIT,
+                           "cloud machine: internal error: %d", ch);
         }
     }
 
@@ -710,14 +717,12 @@ listCloudMachines(HandlerArg *a, int iFirst,
                   const char *pcszProviderName,
                   const char *pcszProfileName)
 {
-    int rc;
-
-    ComPtr<ICloudClient> pClient;
-    rc = getCloudClient(pClient, a, pcszProviderName, pcszProfileName);
+    CMachineHandlerArg handlerArg(*a);
+    int rc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    return listCloudMachinesImpl(a, iFirst, pClient);
+    return listCloudMachinesImpl(&handlerArg, iFirst);
 }
 
 
@@ -726,8 +731,7 @@ listCloudMachines(HandlerArg *a, int iFirst,
  * cloud list machines  # see above
  */
 static RTEXITCODE
-listCloudMachinesImpl(HandlerArg *a, int iFirst,
-                      const ComPtr<ICloudClient> &pClient)
+listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst)
 {
     HRESULT hrc;
     int rc;
@@ -745,6 +749,11 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
 
     enum kSortOrderEnum { kSortOrder_None, kSortOrder_Name, kSortOrder_Id };
     kSortOrderEnum enmSortOrder = kSortOrder_None;
+
+    if (a->pcszSpec != NULL)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX,
+                   "cloud machine list: unexpected machine argument");
+
 
     RTGETOPTSTATE OptState;
     rc = RTGetOptInit(&OptState, a->argc, a->argv,
@@ -783,7 +792,7 @@ listCloudMachinesImpl(HandlerArg *a, int iFirst,
     }
 
     com::SafeIfaceArray<ICloudMachine> aMachines;
-    hrc = getMachineList(aMachines, pClient);
+    hrc = getMachineList(aMachines, a->pClient);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
@@ -874,14 +883,12 @@ handleCloudShowVMInfo(HandlerArg *a, int iFirst,
                       const char *pcszProviderName,
                       const char *pcszProfileName)
 {
-    int rc;
-
-    ComPtr<ICloudClient> pClient;
-    rc = getCloudClient(pClient, a, pcszProviderName, pcszProfileName);
+    CMachineHandlerArg handlerArg(*a);
+    int rc = getCloudClient(handlerArg, pcszProviderName, pcszProfileName);
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
-    return handleCloudMachineInfo(a, iFirst, pClient);
+    return handleCloudMachineInfo(&handlerArg, iFirst);
 }
 
 
@@ -889,11 +896,8 @@ handleCloudShowVMInfo(HandlerArg *a, int iFirst,
  * cloud machine info "id" ...
  */
 static RTEXITCODE
-handleCloudMachineInfo(HandlerArg *a, int iFirst,
-                       const ComPtr<ICloudClient> &pClient)
+handleCloudMachineInfo(CMachineHandlerArg *a, int iFirst)
 {
-    MachineSpec machineSpec;
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
     int rc;
 
@@ -922,7 +926,7 @@ handleCloudMachineInfo(HandlerArg *a, int iFirst,
     RTGETOPTUNION Val;
     while ((ch = RTGetOpt(&OptState, &Val)) != 0)
     {
-        rc = checkMachineSpecArgument(machineSpec, ch, Val);
+        rc = checkMachineSpecArgument(a, ch, Val);
         if (rc == VINF_SUCCESS)
             continue;
         else if (rc == VINF_CALLBACK_RETURN)
@@ -941,14 +945,14 @@ handleCloudMachineInfo(HandlerArg *a, int iFirst,
         }
     }
 
-    hrc = getMachineBySpec(pMachine, pClient, machineSpec);
+    hrc = getMachineBySpec(a);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
     /* end of boilerplate */
 
 
-    hrc = printMachineInfo(pMachine);
+    hrc = printMachineInfo(a->pMachine);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
@@ -1192,17 +1196,11 @@ printFormValue(const ComPtr<IFormValue> &pValue)
  * --details).
  */
 static RTEXITCODE
-getMachineFromArgs(ComPtr<ICloudMachine> &pMachine,
-                   uint64_t fCurSubcommandScope,
-                   HandlerArg *a, int iFirst,
-                   const ComPtr<ICloudClient> &pClient)
+getMachineFromArgs(CMachineHandlerArg *a, int iFirst)
 {
-    MachineSpec machineSpec;
     HRESULT hrc;
     int rc;
 
-    RT_NOREF(fCurSubcommandScope); /// @todo scopes not in the manual yet
-    // setCurrentSubcommand(fCurSubcommandScope);
     static const RTGETOPTDEF s_aOptions[] =
     {
         CLOUD_MACHINE_RTGETOPTDEF_MACHINE,
@@ -1221,7 +1219,7 @@ getMachineFromArgs(ComPtr<ICloudMachine> &pMachine,
     RTGETOPTUNION Val;
     while ((ch = RTGetOpt(&OptState, &Val)) != 0)
     {
-        rc = checkMachineSpecArgument(machineSpec, ch, Val);
+        rc = checkMachineSpecArgument(a, ch, Val);
         if (rc == VINF_SUCCESS)
             continue;
         else if (rc == VINF_CALLBACK_RETURN)
@@ -1237,7 +1235,7 @@ getMachineFromArgs(ComPtr<ICloudMachine> &pMachine,
         }
     }
 
-    hrc = getMachineBySpec(pMachine, pClient, machineSpec);
+    hrc = getMachineBySpec(a);
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
@@ -1249,22 +1247,18 @@ getMachineFromArgs(ComPtr<ICloudMachine> &pMachine,
  * cloud machine start "id"
  */
 static RTEXITCODE
-handleCloudMachineStart(HandlerArg *a, int iFirst,
-                        const ComPtr<ICloudClient> &pClient)
+handleCloudMachineStart(CMachineHandlerArg *a, int iFirst)
 {
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
 
-    RTEXITCODE status
-        = getMachineFromArgs(pMachine,
-              /* HELP_SCOPE_CLOUD_MACHINE_START */ 0,
-              a, iFirst, pClient);
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_START);
+    RTEXITCODE status = getMachineFromArgs(a, iFirst);
     if (status != RTEXITCODE_SUCCESS)
         return status;
 
 
     ComPtr<IProgress> pProgress;
-    CHECK_ERROR2_RET(hrc, pMachine,
+    CHECK_ERROR2_RET(hrc, a->pMachine,
         PowerUp(pProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
@@ -1278,22 +1272,18 @@ handleCloudMachineStart(HandlerArg *a, int iFirst,
  *     "Press" ACPI power button, then power the instance back up.
  */
 static RTEXITCODE
-handleCloudMachineReboot(HandlerArg *a, int iFirst,
-                         const ComPtr<ICloudClient> &pClient)
+handleCloudMachineReboot(CMachineHandlerArg *a, int iFirst)
 {
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
 
-    RTEXITCODE status
-        = getMachineFromArgs(pMachine,
-              /* HELP_SCOPE_CLOUD_MACHINE_REBOOT */ 0,
-              a, iFirst, pClient);
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_REBOOT);
+    RTEXITCODE status = getMachineFromArgs(a, iFirst);
     if (status != RTEXITCODE_SUCCESS)
         return status;
 
 
     ComPtr<IProgress> pProgress;
-    CHECK_ERROR2_RET(hrc, pMachine,
+    CHECK_ERROR2_RET(hrc, a->pMachine,
         Reboot(pProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
@@ -1307,22 +1297,18 @@ handleCloudMachineReboot(HandlerArg *a, int iFirst,
  *     "Press" ACPI power button.
  */
 static RTEXITCODE
-handleCloudMachineShutdown(HandlerArg *a, int iFirst,
-                           const ComPtr<ICloudClient> &pClient)
+handleCloudMachineShutdown(CMachineHandlerArg *a, int iFirst)
 {
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
 
-    RTEXITCODE status
-        = getMachineFromArgs(pMachine,
-              /* HELP_SCOPE_CLOUD_MACHINE_SHUTDOWN */ 0,
-              a, iFirst, pClient);
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_SHUTDOWN);
+    RTEXITCODE status = getMachineFromArgs(a, iFirst);
     if (status != RTEXITCODE_SUCCESS)
         return status;
 
 
     ComPtr<IProgress> pProgress;
-    CHECK_ERROR2_RET(hrc, pMachine,
+    CHECK_ERROR2_RET(hrc, a->pMachine,
         Shutdown(pProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
@@ -1336,22 +1322,18 @@ handleCloudMachineShutdown(HandlerArg *a, int iFirst,
  *     Yank the power cord.
  */
 static RTEXITCODE
-handleCloudMachinePowerdown(HandlerArg *a, int iFirst,
-                            const ComPtr<ICloudClient> &pClient)
+handleCloudMachinePowerdown(CMachineHandlerArg *a, int iFirst)
 {
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
 
-    RTEXITCODE status
-        = getMachineFromArgs(pMachine,
-              /* HELP_SCOPE_CLOUD_MACHINE_POWERDOWN */ 0,
-              a, iFirst, pClient);
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_POWERDOWN);
+    RTEXITCODE status = getMachineFromArgs(a, iFirst);
     if (status != RTEXITCODE_SUCCESS)
         return status;
 
 
     ComPtr<IProgress> pProgress;
-    CHECK_ERROR2_RET(hrc, pMachine,
+    CHECK_ERROR2_RET(hrc, a->pMachine,
         PowerDown(pProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
@@ -1365,22 +1347,18 @@ handleCloudMachinePowerdown(HandlerArg *a, int iFirst,
  *     Discard the instance running this machine.
  */
 static RTEXITCODE
-handleCloudMachineTerminate(HandlerArg *a, int iFirst,
-                            const ComPtr<ICloudClient> &pClient)
+handleCloudMachineTerminate(CMachineHandlerArg *a, int iFirst)
 {
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
 
-    RTEXITCODE status
-        = getMachineFromArgs(pMachine,
-              /* HELP_SCOPE_CLOUD_MACHINE_TERMINATE */ 0,
-              a, iFirst, pClient);
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_TERMINATE);
+    RTEXITCODE status = getMachineFromArgs(a, iFirst);
     if (status != RTEXITCODE_SUCCESS)
         return status;
 
 
     ComPtr<IProgress> pProgress;
-    CHECK_ERROR2_RET(hrc, pMachine,
+    CHECK_ERROR2_RET(hrc, a->pMachine,
         Terminate(pProgress.asOutParam()),
             RTEXITCODE_FAILURE);
 
@@ -1393,23 +1371,19 @@ handleCloudMachineTerminate(HandlerArg *a, int iFirst,
  * cloud machine console-history "id"
  */
 static RTEXITCODE
-handleCloudMachineConsoleHistory(HandlerArg *a, int iFirst,
-                                 const ComPtr<ICloudClient> &pClient)
+handleCloudMachineConsoleHistory(CMachineHandlerArg *a, int iFirst)
 {
-    ComPtr<ICloudMachine> pMachine;
     HRESULT hrc;
 
-    RTEXITCODE status
-        = getMachineFromArgs(pMachine,
-              /* HELP_SCOPE_CLOUD_MACHINE_CONSOLEHISTORY */ 0,
-              a, iFirst, pClient);
+    // setCurrentSubcommand(HELP_SCOPE_CLOUD_MACHINE_CONSOLEHISTORY);
+    RTEXITCODE status = getMachineFromArgs(a, iFirst);
     if (status != RTEXITCODE_SUCCESS)
         return status;
 
 
     ComPtr<IDataStream> pHistoryStream;
     ComPtr<IProgress> pHistoryProgress;
-    CHECK_ERROR2_RET(hrc, pMachine,
+    CHECK_ERROR2_RET(hrc, a->pMachine,
         GetConsoleHistory(pHistoryStream.asOutParam(),
                           pHistoryProgress.asOutParam()),
             RTEXITCODE_FAILURE);
