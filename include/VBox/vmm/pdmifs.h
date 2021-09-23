@@ -2303,6 +2303,16 @@ typedef struct PDMIVFSCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnWriteAll, (PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
                                             const void *pvBuf, size_t cbWrite));
 
+    /**
+     * Deletes the given path.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_FOUND if the path is not available.
+     * @param   pszNamespace        The namespace for the path (usually driver/device name) or NULL for default namespace.
+     * @param   pszPath             The path to delete.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDelete, (PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath));
+
     /** @todo Add standard open/read/write/close callbacks when the need arises. */
 
 } PDMIVFSCONNECTOR;

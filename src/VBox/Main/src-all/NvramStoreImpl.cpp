@@ -692,6 +692,7 @@ void NvramStore::i_updateNonVolatileStorageFile(const Utf8Str &aNonVolatileStora
 //
 // private methods
 //
+/*static*/
 DECLCALLBACK(int) NvramStore::i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
                                                     uint64_t *pcb)
 {
@@ -709,6 +710,7 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface
 }
 
 
+/*static*/
 DECLCALLBACK(int) NvramStore::i_nvramStoreReadAll(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
                                                   void *pvBuf, size_t cbRead)
 {
@@ -730,6 +732,7 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreReadAll(PPDMIVFSCONNECTOR pInterface, 
 }
 
 
+/*static*/
 DECLCALLBACK(int) NvramStore::i_nvramStoreWriteAll(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
                                                    const void *pvBuf, size_t cbWrite)
 {
@@ -759,6 +762,25 @@ DECLCALLBACK(int) NvramStore::i_nvramStoreWriteAll(PPDMIVFSCONNECTOR pInterface,
     }
 
     return rc;
+}
+
+
+/*static*/
+DECLCALLBACK(int) NvramStore::i_nvramStoreDelete(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath)
+{
+    PDRVMAINNVRAMSTORE pThis = RT_FROM_MEMBER(pInterface, DRVMAINNVRAMSTORE, IVfs);
+
+    AutoWriteLock wlock(pThis->pNvramStore COMMA_LOCKVAL_SRC_POS);
+    NvramStoreIter it = pThis->pNvramStore->m->bd->mapNvram.find(Utf8StrFmt("%s/%s", pszNamespace, pszPath));
+    if (it != pThis->pNvramStore->m->bd->mapNvram.end())
+    {
+        RTVFSFILE hVfsFile = it->second;
+        pThis->pNvramStore->m->bd->mapNvram.erase(it);
+        RTVfsFileRelease(hVfsFile);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
 }
 
 
@@ -829,6 +851,7 @@ DECLCALLBACK(int) NvramStore::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IVfs.pfnQuerySize            = NvramStore::i_nvramStoreQuerySize;
     pThis->IVfs.pfnReadAll              = NvramStore::i_nvramStoreReadAll;
     pThis->IVfs.pfnWriteAll             = NvramStore::i_nvramStoreWriteAll;
+    pThis->IVfs.pfnDelete               = NvramStore::i_nvramStoreDelete;
 
     /*
      * Get the NVRAM store object pointer.
