@@ -87,6 +87,11 @@ void UIWizardNewVD::setMediumSize(qulonglong uMediumSize)
     m_uMediumSize = uMediumSize;
 }
 
+QUuid UIWizardNewVD::mediumId() const
+{
+    return m_uMediumId;
+}
+
 void UIWizardNewVD::populatePages()
 {
     switch (mode())
@@ -142,6 +147,9 @@ bool UIWizardNewVD::createVirtualDisk()
                                                                                                variants);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
             &uiCommon(), &UICommon::sltHandleMediumCreated);
+
+    m_uMediumId = comVirtualDisk.GetId();
+
     gpNotificationCenter->append(pNotification);
 
     /* Positive: */

@@ -55,6 +55,8 @@ public:
 
        qulonglong mediumSize() const;
        void setMediumSize(qulonglong mediumSize);
+
+       QUuid mediumId() const;
     /** @} */
 
 protected:
@@ -74,6 +76,7 @@ private:
     QString     m_strDefaultPath;
     qulonglong  m_uDefaultSize;
     int m_iMediumVariantPageIndex;
+    QUuid m_uMediumId;
 };
 
 typedef QPointer<UIWizardNewVD> UISafePointerWizardNewVD;

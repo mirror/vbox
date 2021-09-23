@@ -423,11 +423,12 @@ public:
           * @param  strMachineName           Passes the name of the machine,
           * @param  strMachineFolder         Passes the machine folder,
           * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
-          * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog. */
-        void openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                     const QString &strMachineFolder = QString(),
-                                     const QString &strMachineName = QString(),
-                                     const QString &strMachineGuestOSTypeId = QString());
+          * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
+          * returns QUuid of the new medium */
+        QUuid openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                      const QString &strMachineFolder = QString(),
+                                      const QString &strMachineName = QString(),
+                                      const QString &strMachineGuestOSTypeId = QString());
 
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.
@@ -621,11 +622,12 @@ private:
           * @param  pParent                   Passes the parent of the wizard,
           * @param  strMachineFolder          Passes the machine folder,
           * @param  strMachineName            Passes the name of the machine,
-          * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID. */
-        void createVDWithWizard(QWidget *pParent,
-                                const QString &strMachineFolder = QString(),
-                                const QString &strMachineName = QString(),
-                                const QString &strMachineGuestOSTypeId = QString());
+          * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID,
+          * returns QUuid of the created medium. */
+        QUuid createVDWithWizard(QWidget *pParent,
+                                 const QString &strMachineFolder = QString(),
+                                 const QString &strMachineName = QString(),
+                                 const QString &strMachineGuestOSTypeId = QString());
     /** @} */
 
     /** @name Process arguments stuff.

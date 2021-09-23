@@ -1712,7 +1712,7 @@ DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
 }
 
 
-void UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enmMediumType,
+QUuid UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enmMediumType,
                                        const QString &strDefaultFolder /* = QString() */,
                                        const QString &strMachineName /* = QString() */,
                                        const QString &strMachineGuestOSTypeId /*= QString() */)
@@ -1722,7 +1722,7 @@ void UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enmM
     switch (enmMediumType)
     {
         case UIMediumDeviceType_HardDisk:
-            createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
+            uMediumId = createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
             break;
         case UIMediumDeviceType_DVD:
             uMediumId = createVisoMediumWithVisoCreator(pParent, strDefaultFolder, strMachineName);
@@ -1734,11 +1734,12 @@ void UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enmM
             break;
     }
     if (uMediumId.isNull())
-        return;
+        return QUuid();
 
     /* Update the recent medium list only if the medium type is DVD or floppy: */
     if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy)
         updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
+    return uMediumId;
 }
 
 QUuid UICommon::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder /* = QString */,
@@ -1888,10 +1889,10 @@ int UICommon::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enm
     return static_cast<int>(returnCode);
 }
 
-void UICommon::createVDWithWizard(QWidget *pParent,
-                                  const QString &strMachineFolder /* = QString() */,
-                                  const QString &strMachineName /* = QString() */,
-                                  const QString &strMachineGuestOSTypeId  /* = QString() */)
+QUuid UICommon::createVDWithWizard(QWidget *pParent,
+                                   const QString &strMachineFolder /* = QString() */,
+                                   const QString &strMachineName /* = QString() */,
+                                   const QString &strMachineGuestOSTypeId  /* = QString() */)
 {
     /* Initialize variables: */
     QString strDefaultFolder = strMachineFolder;
@@ -1912,11 +1913,13 @@ void UICommon::createVDWithWizard(QWidget *pParent,
                                                          strDefaultFolder,
                                                          comGuestOSType.GetRecommendedHDD());
     if (!pWizard)
-        return;
+        return QUuid();
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     windowManager().registerNewParent(pWizard, pDialogParent);
+    QUuid mediumId = pWizard->mediumId();
     pWizard->exec();
     delete pWizard;
+    return mediumId;
 }
 
 void UICommon::prepareStorageMenu(QMenu &menu,
