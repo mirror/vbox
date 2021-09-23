@@ -67,6 +67,7 @@ private slots:
 
     /** Handles signal about @a comMedium was created. */
     void sltHandleMediumCreated(const CMedium &comMedium);
+    void sltPathChanged(const QString &strPath);
 
 private:
 
@@ -85,6 +86,8 @@ private:
 
     /** Returns default file-path. */
     QString getDefaultFilePath() const;
+    /** Returns false if the file is already exists. */
+    bool checkFilePath(const QString &strPath) const;
 
     /** Holds the default folder. */
     QString  m_strDefaultFolder;

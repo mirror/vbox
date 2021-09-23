@@ -109,7 +109,7 @@ void UIFDCreationDialog::retranslateUi()
     if (m_pSizeLabel)
         m_pSizeLabel->setText(tr("Size:"));
     if (m_pButtonBox)
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Create");
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText("C&reate");
     if (m_pCheckBoxFormat)
         m_pCheckBoxFormat->setText(tr("Format disk as FAT12"));
     if (m_pComboSize)
@@ -120,6 +120,20 @@ void UIFDCreationDialog::retranslateUi()
         m_pComboSize->setItemText(FDSize_720K, tr("720K"));
         m_pComboSize->setItemText(FDSize_360K, tr("360K"));
     }
+}
+
+void UIFDCreationDialog::sltPathChanged(const QString &strPath)
+{
+    bool fIsFileUnique = checkFilePath(strPath);
+    m_pFilePathSelector->mark(!fIsFileUnique, tr("File already exists"));
+
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fIsFileUnique);
+}
+
+bool UIFDCreationDialog::checkFilePath(const QString &strPath) const
+{
+    return !QFileInfo(strPath).exists();
 }
 
 void UIFDCreationDialog::sltHandleMediumCreated(const CMedium &comMedium)
@@ -161,6 +175,8 @@ void UIFDCreationDialog::prepare()
             m_pFilePathSelector->setPath(strFilePath);
 
             pLayoutMain->addWidget(m_pFilePathSelector, 0, 1, 1, 3);
+            connect(m_pFilePathSelector, &UIFilePathSelector::pathChanged,
+                    this, &UIFDCreationDialog::sltPathChanged);
         }
 
         /* Prepare size label: */
