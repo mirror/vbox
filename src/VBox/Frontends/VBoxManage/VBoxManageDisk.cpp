@@ -1929,6 +1929,14 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
         }
         else if (!RTStrICmp(pszAction, "get"))
         {
+            /*
+             * Trigger a call to Medium::i_queryInfo()->VDOpen()->pfnOpen() to
+             * open the virtual device and populate its properties for
+             * Medium::getProperty() to retrieve.
+             */
+            MediumState_T state;
+            CHECK_ERROR(pMedium, RefreshState(&state));
+
             Bstr strVal;
             CHECK_ERROR(pMedium, GetProperty(Bstr(pszProperty).raw(), strVal.asOutParam()));
             if (SUCCEEDED(rc))
