@@ -965,6 +965,13 @@ printMachineInfo(const ComPtr<ICloudMachine> &pMachine)
 {
     HRESULT hrc;
 
+    com::Bstr bstrId;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        COMGETTER(Id)(bstrId.asOutParam()),
+            hrc);
+    RTPrintf("UUID: %ls\n", bstrId.raw());
+
+
     /*
      * Check if the machine is accessible and print the error
      * message if not.
@@ -999,6 +1006,51 @@ printMachineInfo(const ComPtr<ICloudMachine> &pMachine)
     /*
      * The machine seems to be ok, print its details.
      */
+    CloudMachineState_T enmState;
+    CHECK_ERROR2_RET(hrc, pMachine,
+        COMGETTER(State)(&enmState),
+            hrc);
+    switch (enmState) {
+        case CloudMachineState_Invalid:
+            RTPrintf("State: Invalid (%RU32)\n", CloudMachineState_Invalid);
+            break;
+
+        case CloudMachineState_Provisioning:
+            RTPrintf("State: Provisioning (%RU32)\n", CloudMachineState_Provisioning);
+            break;
+
+        case CloudMachineState_Running:
+            RTPrintf("State: Running (%RU32)\n", CloudMachineState_Running);
+            break;
+
+        case CloudMachineState_Starting:
+            RTPrintf("State: Starting (%RU32)\n", CloudMachineState_Starting);
+            break;
+
+        case CloudMachineState_Stopping:
+            RTPrintf("State: Stopping (%RU32)\n", CloudMachineState_Stopping);
+            break;
+
+        case CloudMachineState_Stopped:
+            RTPrintf("State: Stopped (%RU32)\n", CloudMachineState_Stopped);
+            break;
+
+        case CloudMachineState_CreatingImage:
+            RTPrintf("State: CreatingImage (%RU32)\n", CloudMachineState_CreatingImage);
+            break;
+
+        case CloudMachineState_Terminating:
+            RTPrintf("State: Terminating (%RU32)\n", CloudMachineState_Terminating);
+            break;
+
+        case CloudMachineState_Terminated:
+            RTPrintf("State: Terminated (%RU32)\n", CloudMachineState_Terminated);
+            break;
+
+        default:
+            RTPrintf("State: Unknown state (%RU32)\n", enmState);
+    }
+
     ComPtr<IForm> pDetails;
     CHECK_ERROR2_RET(hrc, pMachine,
         GetDetailsForm(pDetails.asOutParam()), hrc);
