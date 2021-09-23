@@ -66,6 +66,7 @@ UIChooserModel::UIChooserModel(UIChooser *pParent, UIActionPool *pActionPool)
     , m_iCurrentSearchResultIndex(-1)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
+    , m_iGlobalItemHeightHint(0)
     , m_pTimerCloudProfileUpdate(0)
 {
     prepare();
@@ -1074,18 +1075,9 @@ void UIChooserModel::updateLayout()
 
 void UIChooserModel::setGlobalItemHeightHint(int iHint)
 {
-    /* Walk thrugh all the items of navigation list: */
-    foreach (UIChooserItem *pItem, navigationItems())
-    {
-        /* And for each global item: */
-        if (pItem->type() == UIChooserNodeType_Global)
-        {
-            /* Apply the height hint we have: */
-            UIChooserItemGlobal *pGlobalItem = pItem->toGlobalItem();
-            if (pGlobalItem)
-                pGlobalItem->setHeightHint(iHint);
-        }
-    }
+    /* Save and apply global item height hint: */
+    m_iGlobalItemHeightHint = iHint;
+    applyGlobalItemHeightHint();
 }
 
 void UIChooserModel::sltHandleViewResized()
@@ -1812,6 +1804,9 @@ void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
     /* Update tree for main root: */
     updateTreeForMainRoot();
 
+    /* Apply current global item height hint: */
+    applyGlobalItemHeightHint();
+
     /* Restore all selected items if requested: */
     if (fPreserveSelection)
     {
@@ -1992,4 +1987,24 @@ bool UIChooserModel::processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent)
 
     /* Pass event: */
     return false;
+}
+
+void UIChooserModel::applyGlobalItemHeightHint()
+{
+    /* Make sure there is something to apply: */
+    if (m_iGlobalItemHeightHint == 0)
+        return;
+
+    /* Walk thrugh all the items of navigation list: */
+    foreach (UIChooserItem *pItem, navigationItems())
+    {
+        /* And for each global item: */
+        if (pItem->type() == UIChooserNodeType_Global)
+        {
+            /* Apply the height hint we have: */
+            UIChooserItemGlobal *pGlobalItem = pItem->toGlobalItem();
+            if (pGlobalItem)
+                pGlobalItem->setHeightHint(m_iGlobalItemHeightHint);
+        }
+    }
 }
