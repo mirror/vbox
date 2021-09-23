@@ -1267,6 +1267,7 @@ static void hmR3VmxReportProcBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDTSC_EXIT",         VMX_PROC_CTLS_RDTSC_EXIT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_LOAD_EXIT",      VMX_PROC_CTLS_CR3_LOAD_EXIT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_STORE_EXIT",     VMX_PROC_CTLS_CR3_STORE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TERTIARY_CTLS",  VMX_PROC_CTLS_USE_TERTIARY_CTLS);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_LOAD_EXIT",      VMX_PROC_CTLS_CR8_LOAD_EXIT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_STORE_EXIT",     VMX_PROC_CTLS_CR8_STORE_EXIT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TPR_SHADOW",     VMX_PROC_CTLS_USE_TPR_SHADOW);
@@ -1354,6 +1355,8 @@ static void hmR3VmxReportEntryCtlsMsr(PCVMXCTLSMSR pVmxMsr)
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_BNDCFGS_MSR",    VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_VMX_FROM_PT", VMX_ENTRY_CTLS_CONCEAL_VMX_FROM_PT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_RTIT_CTL_MSR",   VMX_ENTRY_CTLS_LOAD_RTIT_CTL_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_CET_STATE",      VMX_ENTRY_CTLS_LOAD_CET_STATE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PKRS_MSR",       VMX_ENTRY_CTLS_LOAD_PKRS_MSR);
 }
 
 
@@ -1379,6 +1382,8 @@ static void hmR3VmxReportExitCtlsMsr(PCVMXCTLSMSR pVmxMsr)
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CLEAR_BNDCFGS_MSR",    VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_VMX_FROM_PT",  VMX_EXIT_CTLS_CONCEAL_VMX_FROM_PT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CLEAR_RTIT_CTL_MSR",   VMX_EXIT_CTLS_CLEAR_RTIT_CTL_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_CET_STATE",       VMX_EXIT_CTLS_LOAD_CET_STATE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PKRS_MSR",        VMX_EXIT_CTLS_LOAD_PKRS_MSR);
 }
 
 
@@ -1497,7 +1502,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: Using VT-x implementation 3.0\n"));
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
     LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostCr4));
-    LogRel(("HM: MSR_IA32_EFER                     = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostMsrEfer));
+    LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostMsrEfer));
     LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.ForR3.vmx.u64HostSmmMonitorCtl));
 
     hmR3VmxReportFeatCtlMsr(pVM->hm.s.ForR3.vmx.u64HostFeatCtrl);
@@ -1635,7 +1640,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     }
 
     LogRel((pVM->hm.s.fAllow64BitGuestsCfg ? "HM: Guest support: 32-bit and 64-bit\n"
-                                          : "HM: Guest support: 32-bit only\n"));
+                                           : "HM: Guest support: 32-bit only\n"));
 
     /*
      * Call ring-0 to set up the VM.
