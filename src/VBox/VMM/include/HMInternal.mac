@@ -53,6 +53,7 @@ struc VMXVMCSINFO
     .u32PinCtls                     resd    1
     .u32ProcCtls                    resd    1
     .u32ProcCtls2                   resd    1
+    .u64ProcCtls3                   resq    1
     .u32EntryCtls                   resd    1
     .u32ExitCtls                    resd    1
     .u32XcptBitmap                  resd    1

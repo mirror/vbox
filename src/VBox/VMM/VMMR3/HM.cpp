@@ -500,13 +500,13 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /** @cfgm{/HM/LovelyMesaDrvWorkaround,bool}
      * Workaround for mesa vmsvga 3d driver making incorrect assumptions about
      * the hypervisor it is running under. */
-    bool f;
-    rc = CFGMR3QueryBoolDef(pCfgHm, "LovelyMesaDrvWorkaround", &f, false);
+    bool fMesaWorkaround;
+    rc = CFGMR3QueryBoolDef(pCfgHm, "LovelyMesaDrvWorkaround", &fMesaWorkaround, false);
     AssertLogRelRCReturn(rc, rc);
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-        pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv = f;
+        pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv = fMesaWorkaround;
     }
 
     /*
@@ -590,12 +590,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             switch (rc)
             {
                 case VERR_UNSUPPORTED_CPU:          pszMsg = "Unknown CPU, VT-x or AMD-v features cannot be ascertained"; break;
-                case VERR_VMX_NO_VMX:               pszMsg = "VT-x is not available"; break;
-                case VERR_VMX_MSR_VMX_DISABLED:     pszMsg = "VT-x is disabled in the BIOS"; break;
-                case VERR_VMX_MSR_ALL_VMX_DISABLED: pszMsg = "VT-x is disabled in the BIOS for all CPU modes"; break;
-                case VERR_VMX_MSR_LOCKING_FAILED:   pszMsg = "Failed to enable and lock VT-x features"; break;
-                case VERR_SVM_NO_SVM:               pszMsg = "AMD-V is not available"; break;
-                case VERR_SVM_DISABLED:             pszMsg = "AMD-V is disabled in the BIOS (or by the host OS)"; break;
+                case VERR_VMX_NO_VMX:               pszMsg = "VT-x is not available";                                     break;
+                case VERR_VMX_MSR_VMX_DISABLED:     pszMsg = "VT-x is disabled in the BIOS";                              break;
+                case VERR_VMX_MSR_ALL_VMX_DISABLED: pszMsg = "VT-x is disabled in the BIOS for all CPU modes";            break;
+                case VERR_VMX_MSR_LOCKING_FAILED:   pszMsg = "Failed to enable and lock VT-x features";                   break;
+                case VERR_SVM_NO_SVM:               pszMsg = "AMD-V is not available";                                    break;
+                case VERR_SVM_DISABLED:             pszMsg = "AMD-V is disabled in the BIOS (or by the host OS)";         break;
                 default:
                     return VMSetError(pVM, rc, RT_SRC_POS, "SUPR3QueryVTCaps failed with %Rrc", rc);
             }

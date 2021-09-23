@@ -2660,28 +2660,28 @@ static int hmR0VmxCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, b
     int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);
     AssertRC(rc);
     AssertMsgReturnStmt(pVmcsInfo->u32EntryCtls == u32Val,
-                        ("%s controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32EntryCtls, u32Val),
+                        ("%s entry controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32EntryCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_ENTRY,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT, &u32Val);
     AssertRC(rc);
     AssertMsgReturnStmt(pVmcsInfo->u32ExitCtls == u32Val,
-                        ("%s controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ExitCtls, u32Val),
+                        ("%s exit controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ExitCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_EXIT,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, &u32Val);
     AssertRC(rc);
     AssertMsgReturnStmt(pVmcsInfo->u32PinCtls == u32Val,
-                        ("%s controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32PinCtls, u32Val),
+                        ("%s pin controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32PinCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PIN_EXEC,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
     AssertRC(rc);
     AssertMsgReturnStmt(pVmcsInfo->u32ProcCtls == u32Val,
-                        ("%s controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ProcCtls, u32Val),
+                        ("%s proc controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ProcCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PROC_EXEC,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
@@ -2690,8 +2690,19 @@ static int hmR0VmxCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, b
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);
         AssertRC(rc);
         AssertMsgReturnStmt(pVmcsInfo->u32ProcCtls2 == u32Val,
-                            ("%s controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ProcCtls2, u32Val),
+                            ("%s proc2 controls mismatch: Cache=%#RX32 VMCS=%#RX32\n", pcszVmcs, pVmcsInfo->u32ProcCtls2, u32Val),
                             pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PROC_EXEC2,
+                            VERR_VMX_VMCS_FIELD_CACHE_INVALID);
+    }
+
+    uint64_t u64Val;
+    if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TERTIARY_CTLS)
+    {
+        rc = VMXReadVmcs64(VMX_VMCS64_CTRL_PROC_EXEC3_FULL, &u64Val);
+        AssertRC(rc);
+        AssertMsgReturnStmt(pVmcsInfo->u64ProcCtls3 == u64Val,
+                            ("%s proc3 controls mismatch: Cache=%#RX32 VMCS=%#RX64\n", pcszVmcs, pVmcsInfo->u64ProcCtls3, u64Val),
+                            pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PROC_EXEC3,
                             VERR_VMX_VMCS_FIELD_CACHE_INVALID);
     }
 
@@ -2702,7 +2713,6 @@ static int hmR0VmxCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, b
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_XCPT_BITMAP,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
-    uint64_t u64Val;
     rc = VMXReadVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, &u64Val);
     AssertRC(rc);
     AssertMsgReturnStmt(pVmcsInfo->u64TscOffset == u64Val,

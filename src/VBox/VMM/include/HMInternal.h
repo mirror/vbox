@@ -908,6 +908,8 @@ typedef struct VMXVMCSINFO
     uint32_t                    u32ProcCtls;
     /** Secondary processor-based VM-execution controls. */
     uint32_t                    u32ProcCtls2;
+    /** Tertiary processor-based VM-execution controls. */
+    uint64_t                    u64ProcCtls3;
     /** VM-entry controls. */
     uint32_t                    u32EntryCtls;
     /** VM-exit controls. */
