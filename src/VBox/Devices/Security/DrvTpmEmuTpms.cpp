@@ -48,9 +48,6 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-/** The TPMS saved state version. */
-#define TPMS_SAVED_STATE_VERSION                        1
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -76,18 +73,6 @@ typedef struct DRVTPMEMU
     uint32_t            cbBuffer;
     /** Currently set locality. */
     uint8_t             bLoc;
-    /** Flag whether the TPM state was saved in  save state operation (skips writing the state to the NVRAM file). */
-    bool                fSsmCalled;
-
-    /** NVRAM file path. */
-    char                *pszNvramPath;
-
-    void                *pvNvPermall;
-    size_t              cbNvPermall;
-
-    void                *pvNvVolatile;
-    size_t              cbNvVolatile;
-
 } DRVTPMEMU;
 /** Pointer to the TPM emulator instance data. */
 typedef DRVTPMEMU *PDRVTPMEMU;
@@ -106,228 +91,6 @@ static PDRVTPMEMU g_pDrvTpmEmuTpms = NULL;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-
-/**
- * Tries to load the NVRAM.
- *
- * @returns VBox status code.
- * @param   pThis               The emulator driver instance data.
- */
-static int drvTpmEmuTpmsNvramLoad(PDRVTPMEMU pThis)
-{
-    RTVFSIOSTREAM   hVfsIos;
-    uint32_t        offError = 0;
-    RTERRINFOSTATIC ErrInfo;
-    int rc = RTVfsChainOpenIoStream(pThis->pszNvramPath, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN,
-                                    &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
-    if (RT_FAILURE(rc))
-    {
-        if (rc == VERR_FILE_NOT_FOUND) /* First run. */
-            rc = VINF_SUCCESS;
-
-        return rc;
-    }
-
-    RTVFSFSSTREAM hVfsFss = NIL_RTVFSFSSTREAM;
-    rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, &hVfsFss);
-    RTVfsIoStrmRelease(hVfsIos);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Process the stream.
-         */
-        for (;;)
-        {
-            /*
-             * Retrieve the next object.
-             */
-            char       *pszName;
-            RTVFSOBJ    hVfsObj;
-            rc = RTVfsFsStrmNext(hVfsFss, &pszName, NULL, &hVfsObj);
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_EOF)
-                    rc = VINF_SUCCESS;
-                break;
-            }
-
-            RTFSOBJINFO UnixInfo;
-            rc = RTVfsObjQueryInfo(hVfsObj, &UnixInfo, RTFSOBJATTRADD_UNIX);
-            if (RT_SUCCESS(rc))
-            {
-                switch (UnixInfo.Attr.fMode & RTFS_TYPE_MASK)
-                {
-                    case RTFS_TYPE_FILE:
-                    {
-                        void **ppvDataPtr = NULL;
-                        size_t *pcbData = NULL;
-                        if (!RTStrCmp(pszName, TPM_PERMANENT_ALL_NAME))
-                        {
-                            ppvDataPtr = &pThis->pvNvPermall;
-                            pcbData    = &pThis->cbNvPermall;
-                        }
-                        else if (!RTStrCmp(pszName, TPM_VOLATILESTATE_NAME))
-                        {
-                            ppvDataPtr = &pThis->pvNvVolatile;
-                            pcbData    = &pThis->cbNvVolatile;
-                        }
-                        else
-                            rc = VERR_NOT_FOUND;
-
-                        if (RT_SUCCESS(rc))
-                        {
-                            *ppvDataPtr = RTMemAllocZ(UnixInfo.cbObject);
-                            if (*ppvDataPtr)
-                            {
-                                RTVFSIOSTREAM hVfsIosData = RTVfsObjToIoStream(hVfsObj);
-
-                                rc = RTVfsIoStrmRead(hVfsIosData, *ppvDataPtr, UnixInfo.cbObject, true /*fBlocking*/, NULL);
-                                *pcbData = UnixInfo.cbObject;
-                                RTVfsIoStrmRelease(hVfsIosData);
-                            }
-                            else
-                                rc = VERR_NO_MEMORY;
-                        }
-                        break;
-                    }
-                    default:
-                        rc = VERR_NOT_SUPPORTED;
-                        break;
-                }
-            }
-
-            /*
-             * Release the current object and string.
-             */
-            RTVfsObjRelease(hVfsObj);
-            RTStrFree(pszName);
-
-            if (RT_FAILURE(rc))
-                break;
-        }
-    }
-
-    return rc;
-}
-
-
-static int drvTpmEmuTpmsNvramStoreEntity(RTVFSFSSTREAM hVfsFss, const char *pszName, const void *pvData, size_t cbData)
-{
-    RTVFSIOSTREAM hVfsIosData;
-
-    int rc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pvData, cbData, &hVfsIosData);
-    if (RT_SUCCESS(rc))
-    {
-        RTVFSOBJ hVfsObj = RTVfsObjFromIoStream(hVfsIosData);
-        rc = RTVfsFsStrmAdd(hVfsFss, pszName, hVfsObj, 0 /*fFlags*/);
-        RTVfsObjRelease(hVfsObj);
-
-        RTVfsIoStrmRelease(hVfsIosData);
-    }
-
-    return rc;
-}
-
-
-/**
- * Stores the NVRAM content.
- *
- * @returns VBox status code.
- * @param   pThis               The emulator driver instance data.
- */
-static int drvTpmEmuTpmsNvramStore(PDRVTPMEMU pThis)
-{
-    uint32_t        offError = 0;
-    RTERRINFOSTATIC ErrInfo;
-    RTVFSIOSTREAM   hVfsIos;
-
-    int rc = RTVfsChainOpenIoStream(pThis->pszNvramPath, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                    &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
-    if (RT_SUCCESS(rc))
-    {
-        RTVFSFSSTREAM hVfsFss;
-        rc = RTZipTarFsStreamToIoStream(hVfsIos, RTZIPTARFORMAT_GNU, 0 /*fFlags*/, &hVfsFss);
-        if (RT_SUCCESS(rc))
-        {
-            rc = drvTpmEmuTpmsNvramStoreEntity(hVfsFss, TPM_PERMANENT_ALL_NAME, pThis->pvNvPermall, pThis->cbNvPermall);
-            if (RT_SUCCESS(rc) && pThis->pvNvVolatile)
-                rc = drvTpmEmuTpmsNvramStoreEntity(hVfsFss, TPM_VOLATILESTATE_NAME, pThis->pvNvVolatile, pThis->cbNvVolatile);
-
-            RTVfsFsStrmRelease(hVfsFss);
-        }
-
-        RTVfsIoStrmRelease(hVfsIos);
-    }
-
-    return rc;
-}
-
-
-/**
- * Tries to load the NVRAM from the VFS driver below.
- *
- * @returns VBox status code.
- * @param   pThis               The emulator driver instance data.
- */
-static int drvTpmEmuTpmsNvramLoadFromVfs(PDRVTPMEMU pThis)
-{
-    uint64_t cbState = 0;
-    int rc = pThis->pDrvVfs->pfnQuerySize(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_PERMANENT_ALL_NAME, &cbState);
-    if (RT_SUCCESS(rc))
-    {
-        pThis->pvNvPermall = RTMemAllocZ(cbState);
-        if (pThis->pvNvPermall)
-        {
-            pThis->cbNvPermall = (size_t)cbState;
-            rc = pThis->pDrvVfs->pfnReadAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_PERMANENT_ALL_NAME,
-                                            pThis->pvNvPermall, pThis->cbNvPermall);
-            if (RT_SUCCESS(rc))
-            {
-                /* Load the volatile state if existing. */
-                rc = pThis->pDrvVfs->pfnQuerySize(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_VOLATILESTATE_NAME, &cbState);
-                if (RT_SUCCESS(rc))
-                {
-                    pThis->pvNvVolatile = RTMemAllocZ(cbState);
-                    if (pThis->pvNvVolatile)
-                    {
-                        pThis->cbNvVolatile = (size_t)cbState;
-                        rc = pThis->pDrvVfs->pfnReadAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_VOLATILESTATE_NAME,
-                                                        pThis->pvNvVolatile, pThis->cbNvVolatile);
-                    }
-                }
-                else if (rc == VERR_NOT_FOUND)
-                    rc = VINF_SUCCESS; /* This is fine if there is no volatile state. */
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else if (rc == VERR_NOT_FOUND)
-        rc = VINF_SUCCESS; /* This is fine for the first start of a new VM. */
-
-    return rc;
-}
-
-
-/**
- * Stores the NVRAM content using the VFS driver below.
- *
- * @returns VBox status code.
- * @param   pThis               The emulator driver instance data.
- */
-static int drvTpmEmuTpmsNvramStoreToVfs(PDRVTPMEMU pThis)
-{
-    AssertPtr(pThis->pvNvPermall);
-    int rc = pThis->pDrvVfs->pfnWriteAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_PERMANENT_ALL_NAME,
-                                         pThis->pvNvPermall, pThis->cbNvPermall);
-    if (   RT_SUCCESS(rc)
-        && pThis->pvNvVolatile)
-        rc = pThis->pDrvVfs->pfnWriteAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, TPM_VOLATILESTATE_NAME,
-                                         pThis->pvNvVolatile, pThis->cbNvVolatile);
-
-    return rc;
-}
-
 
 /* -=-=-=-=- PDMITPMCONNECTOR interface callabcks. -=-=-=-=- */
 
@@ -458,35 +221,30 @@ static DECLCALLBACK(TPM_RESULT) drvTpmEmuTpmsCbkNvRamLoadData(uint8_t **ppvData,
 
     AssertReturn(idTpm == 0, TPM_FAIL);
 
-    void *pvDataPtr = NULL;
-    size_t cbData = 0;
-    if (!RTStrCmp(pszName, TPM_PERMANENT_ALL_NAME))
+    uint64_t cbState = 0;
+    int rc = pThis->pDrvVfs->pfnQuerySize(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, pszName, &cbState);
+    if (   RT_SUCCESS(rc)
+        && cbState == (uint32_t)cbState)
     {
-        pvDataPtr = pThis->pvNvPermall;
-        cbData    = pThis->cbNvPermall;
-    }
-    else if (!RTStrCmp(pszName, TPM_VOLATILESTATE_NAME))
-    {
-        pvDataPtr = pThis->pvNvVolatile;
-        cbData    = pThis->cbNvVolatile;
-    }
-    else
-        return TPM_FAIL;
-
-    if (pvDataPtr)
-    {
-        *ppvData = (uint8_t *)malloc(cbData);
-        if (*ppvData)
+        void *pvData = malloc(cbState);
+        if (RT_LIKELY(pvData))
         {
-            memcpy(*ppvData, pvDataPtr, cbData);
-            *pcbLength = (uint32_t)cbData;
-            return TPM_SUCCESS;
+            rc = pThis->pDrvVfs->pfnReadAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, pszName,
+                                            pvData, cbState);
+            if (RT_SUCCESS(rc))
+            {
+                *ppvData = (uint8_t *)pvData;
+                *pcbLength = (uint32_t)cbState;
+                return VINF_SUCCESS;
+            }
+
+            free(pvData);
         }
-
-        return TPM_FAIL;
     }
+    else if (rc == VERR_NOT_FOUND)
+        return TPM_RETRY; /* This is fine for the first start of a new VM. */
 
-    return TPM_RETRY;
+    return TPM_FAIL;
 }
 
 
@@ -497,39 +255,10 @@ static DECLCALLBACK(TPM_RESULT) drvTpmEmuTpmsCbkNvRamStoreData(const uint8_t *pv
 
     AssertReturn(idTpm == 0, TPM_FAIL);
 
-    void **ppvDataPtr = NULL;
-    size_t *pcbData = NULL;
-    if (!RTStrCmp(pszName, TPM_PERMANENT_ALL_NAME))
-    {
-        ppvDataPtr = &pThis->pvNvPermall;
-        pcbData    = &pThis->cbNvPermall;
-    }
-    else if (!RTStrCmp(pszName, TPM_VOLATILESTATE_NAME))
-    {
-        ppvDataPtr = &pThis->pvNvVolatile;
-        pcbData    = &pThis->cbNvVolatile;
-    }
-    else
-        return TPM_FAIL;
-
-    if (   *ppvDataPtr
-        && *pcbData == cbLength)
-    {
-        memcpy(*ppvDataPtr, pvData, cbLength);
+    int rc = pThis->pDrvVfs->pfnWriteAll(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, pszName,
+                                         pvData, cbLength);
+    if (RT_SUCCESS(rc))
         return TPM_SUCCESS;
-    }
-    else
-    {
-        if (*ppvDataPtr)
-            RTMemFree(*ppvDataPtr);
-
-        *ppvDataPtr = RTMemDup(pvData, cbLength);
-        if (*ppvDataPtr)
-        {
-            *pcbData = cbLength;
-            return TPM_SUCCESS;
-        }
-    }
 
     return TPM_FAIL;
 }
@@ -541,31 +270,13 @@ static DECLCALLBACK(TPM_RESULT) drvTpmEmuTpmsCbkNvRamDeleteName(uint32_t idTpm, 
 
     AssertReturn(idTpm == 0, TPM_FAIL);
 
-    void **ppvDataPtr = NULL;
-    size_t *pcbData = NULL;
-    if (!RTStrCmp(pszName, TPM_PERMANENT_ALL_NAME))
-    {
-        ppvDataPtr = &pThis->pvNvPermall;
-        pcbData    = &pThis->cbNvPermall;
-    }
-    else if (!RTStrCmp(pszName, TPM_VOLATILESTATE_NAME))
-    {
-        ppvDataPtr = &pThis->pvNvVolatile;
-        pcbData    = &pThis->cbNvVolatile;
-    }
-    else
+    int rc = pThis->pDrvVfs->pfnDelete(pThis->pDrvVfs, pThis->pDrvIns->pReg->szName, pszName);
+    if (   RT_SUCCESS(rc)
+        || (   rc == VERR_NOT_FOUND
+            && !fMustExist))
         return TPM_SUCCESS;
 
-    if (*ppvDataPtr)
-    {
-        RTMemFree(*ppvDataPtr);
-        *ppvDataPtr = NULL;
-        *pcbData    = 0;
-    }
-    else if (fMustExist)
-        return TPM_FAIL;
-
-    return TPM_SUCCESS;
+    return TPM_FAIL;
 }
 
 
@@ -595,131 +306,6 @@ static DECLCALLBACK(TPM_RESULT) drvTpmEmuTpmsCbkIoGetPhysicalPresence(TPM_BOOL *
 }
 
 
-/* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
-
-/**
- * @callback_method_impl{FNSSMDEVSAVEEXEC}
- */
-static DECLCALLBACK(int) drvTpmEmuTpmsSaveExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
-{
-    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
-    uint8_t *pbTpmStatePerm = NULL;
-    uint32_t cbTpmStatePerm = 0;
-    uint8_t *pbTpmStateVol = NULL;
-    uint32_t cbTpmStateVol = 0;
-
-    TPM_RESULT rcTpm = TPMLIB_GetState(TPMLIB_STATE_PERMANENT, &pbTpmStatePerm, &cbTpmStatePerm);
-    if (rcTpm == TPM_SUCCESS)
-        rcTpm = TPMLIB_GetState(TPMLIB_STATE_VOLATILE, &pbTpmStateVol, &cbTpmStateVol);
-    if (rcTpm == TPM_SUCCESS)
-    {
-        SSMR3PutU32(pSSM, cbTpmStatePerm);
-        int rc = SSMR3PutU32(pSSM, cbTpmStateVol);
-        AssertRCReturn(rc, rc);
-
-        SSMR3PutMem(pSSM, pbTpmStatePerm, cbTpmStatePerm);
-        SSMR3PutMem(pSSM, pbTpmStateVol, cbTpmStateVol);
-
-        free(pbTpmStatePerm);
-        free(pbTpmStateVol);
-        rc = SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
-        if (RT_SUCCESS(rc))
-            pThis->fSsmCalled = true;
-        return rc;
-    }
-
-    if (pbTpmStatePerm)
-        free(pbTpmStatePerm);
-
-    return VERR_NO_MEMORY;
-}
-
-
-/**
- * @callback_method_impl{FNSSMDEVLOADEXEC}
- */
-static DECLCALLBACK(int) drvTpmEmuTpmsLoadExec(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
-{
-    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
-
-    Assert(uPass == SSM_PASS_FINAL); RT_NOREF(uPass);
-    AssertMsgReturn(uVersion == TPMS_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-
-    uint8_t *pbTpmStatePerm = NULL;
-    uint32_t cbTpmStatePerm = 0;
-    uint8_t *pbTpmStateVol = NULL;
-    uint32_t cbTpmStateVol = 0;
-
-    int rc = SSMR3GetU32(pSSM, &cbTpmStatePerm);
-    AssertRCReturn(rc, rc);
-
-    rc = SSMR3GetU32(pSSM, &cbTpmStateVol);
-    AssertRCReturn(rc, rc);
-
-    pbTpmStatePerm = (uint8_t *)RTMemAllocZ(cbTpmStatePerm);
-    if (pbTpmStatePerm)
-    {
-        pbTpmStateVol = (uint8_t *)RTMemAllocZ(cbTpmStateVol);
-        if (pbTpmStateVol)
-        {
-            rc = SSMR3GetMem(pSSM, pbTpmStatePerm, cbTpmStatePerm);
-            if (RT_SUCCESS(rc))
-                rc = SSMR3GetMem(pSSM, pbTpmStateVol, cbTpmStateVol);
-
-            if (RT_SUCCESS(rc))
-            {
-                TPM_RESULT rcTpm = TPMLIB_SetState(TPMLIB_STATE_PERMANENT, pbTpmStatePerm, cbTpmStatePerm);
-                if (rcTpm == TPM_SUCCESS)
-                {
-                    rcTpm = TPMLIB_SetState(TPMLIB_STATE_VOLATILE, pbTpmStateVol, cbTpmStateVol);
-                    if (rcTpm == TPM_SUCCESS)
-                    {
-                        uint32_t u32 = 0;
-
-                        /* The marker. */
-                        rc = SSMR3GetU32(pSSM, &u32);
-                        AssertRCReturn(rc, rc);
-                        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-
-                        pThis->fSsmCalled = true;
-                    }
-                    else
-                        rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                    rc = VERR_INVALID_PARAMETER;
-            }
-
-            RTMemFree(pbTpmStateVol);
-        }
-
-        RTMemFree(pbTpmStatePerm);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-
-/**
- * @callback_method_impl{FNSSMDEVLOADDONE}
- */
-static DECLCALLBACK(int) drvTpmEmuTpmsLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
-{
-    PDRVTPMEMU    pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
-    RT_NOREF(pSSM);
-
-    if (!pThis->fSsmCalled)
-    {
-        /* Issue a warning as restoring a saved state without loading the TPM state will most likely cause issues in the guest. */
-    }
-
-    pThis->fSsmCalled = false;
-    return VINF_SUCCESS;
-}
-
-
 /* -=-=-=-=- PDMDRVREG -=-=-=-=- */
 
 /**
@@ -746,46 +332,7 @@ static DECLCALLBACK(void) drvTpmEmuTpmsPowerOff(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
-
     TPMLIB_Terminate();
-
-    int rc;
-    if (pThis->pDrvVfs)
-        rc = drvTpmEmuTpmsNvramStoreToVfs(pThis);
-    else
-        rc = drvTpmEmuTpmsNvramStore(pThis);
-    AssertRC(rc);
-}
-
-
-/** @copydoc FNPDMDRVDESTRUCT */
-static DECLCALLBACK(void) drvTpmEmuTpmsDestruct(PPDMDRVINS pDrvIns)
-{
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-
-    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
-    LogFlow(("%s\n", __FUNCTION__));
-
-    if (pThis->pvNvPermall)
-    {
-        RTMemFree(pThis->pvNvPermall);
-        pThis->pvNvPermall = NULL;
-    }
-
-    if (pThis->pvNvVolatile)
-    {
-        RTMemFree(pThis->pvNvVolatile);
-        pThis->pvNvVolatile = NULL;
-    }
-
-#if 0
-    if (pThis->pszNvramPath)
-    {
-        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszNvramPath);
-        pThisCC->pszNvramPath = NULL;
-    }
-#endif
 }
 
 
@@ -802,11 +349,6 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->pDrvIns                                  = pDrvIns;
     pThis->enmVersion                               = TPMVERSION_UNKNOWN;
     pThis->bLoc                                     = TPM_NO_LOCALITY_SELECTED;
-    pThis->fSsmCalled                               = false;
-    pThis->pvNvPermall                              = NULL;
-    pThis->cbNvPermall                              = 0;
-    pThis->pvNvVolatile                             = NULL;
-    pThis->cbNvVolatile                             = 0;
 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvTpmEmuTpmsQueryInterface;
@@ -822,7 +364,7 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Validate and read the configuration.
      */
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "TpmVersion|BufferSize|NvramPath", "");
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "TpmVersion|BufferSize", "");
 
     TPMLIB_SetDebugFD(STDERR_FILENO);
     TPMLIB_SetDebugLevel(~0);
@@ -832,33 +374,13 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     PPDMIBASE pBase = NULL;
     int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
-    if (RT_FAILURE(rc) && rc != VERR_PDM_NO_ATTACHED_DRIVER)
+    if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to attach driver below us! %Rrc"), rc);
-    if (pBase)
-    {
-        pThis->pDrvVfs = PDMIBASE_QUERY_INTERFACE(pBase, PDMIVFSCONNECTOR);
-        if (!pThis->pDrvVfs)
-            return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
-                                    N_("No VFS interface below"));
-
-        rc = drvTpmEmuTpmsNvramLoadFromVfs(pThis);
-        if (RT_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                       N_("Failed to load TPM NVRAM data with %Rrc"), rc);
-    }
-    else
-    {
-        rc = CFGMR3QueryStringAlloc(pCfg, "NvramPath", &pThis->pszNvramPath);
-        if (RT_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                       N_("Configuration error: querying \"NvramPath\" resulted in %Rrc"), rc);
-
-        rc = drvTpmEmuTpmsNvramLoad(pThis);
-        if (RT_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                       N_("Failed to load TPM NVRAM data with %Rrc"), rc);
-    }
+    pThis->pDrvVfs = PDMIBASE_QUERY_INTERFACE(pBase, PDMIVFSCONNECTOR);
+    if (!pThis->pDrvVfs)
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
+                                N_("No VFS interface below"));
 
     TPMLIB_TPMVersion enmVersion = TPMLIB_TPM_VERSION_2;
     uint32_t uTpmVersion = 0;
@@ -920,14 +442,6 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
                                    N_("Failed to register callbacks with the TPM emulation: %u"),
                                    rcTpm);
 
-    rc = PDMDrvHlpSSMRegisterEx(pDrvIns, TPMS_SAVED_STATE_VERSION, 0 /*cbGuess*/,
-                                NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveVote*/,
-                                NULL /*pfnSavePrep*/, drvTpmEmuTpmsSaveExec, NULL /*pfnSaveDone*/,
-                                NULL /*pfnLoadPrep*/, drvTpmEmuTpmsLoadExec, drvTpmEmuTpmsLoadDone);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Failed to register saved state handlers"));
-
     /* We can only have one instance of the TPM emulation and require the global variable for the callbacks unfortunately. */
     g_pDrvTpmEmuTpms = pThis;
     return VINF_SUCCESS;
@@ -960,7 +474,7 @@ const PDMDRVREG g_DrvTpmEmuTpms =
     /* pfnConstruct */
     drvTpmEmuTpmsConstruct,
     /* pfnDestruct */
-    drvTpmEmuTpmsDestruct,
+    NULL,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
