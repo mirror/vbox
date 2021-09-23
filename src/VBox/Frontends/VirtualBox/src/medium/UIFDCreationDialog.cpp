@@ -43,11 +43,11 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent,
     : QIWithRetranslateUI<QDialog>(pParent)
     , m_strDefaultFolder(strDefaultFolder)
     , m_strMachineName(strMachineName)
-    , m_pLabelPath(0)
+    , m_pPathLabel(0)
     , m_pFilePathSelector(0)
     , m_pSizeLabel(0)
-    , m_pComboSize(0)
-    , m_pCheckBoxFormat(0)
+    , m_pSizeCombo(0)
+    , m_pFormatCheckBox(0)
     , m_pButtonBox(0)
 {
     prepare();
@@ -85,12 +85,12 @@ void UIFDCreationDialog::accept()
     /* Compose medium storage variants: */
     QVector<KMediumVariant> variants(1, KMediumVariant_Fixed);
     /* Decide if disk formatting is required: */
-    if (m_pCheckBoxFormat && m_pCheckBoxFormat->checkState() == Qt::Checked)
+    if (m_pFormatCheckBox && m_pFormatCheckBox->checkState() == Qt::Checked)
         variants.push_back(KMediumVariant_Formatted);
 
     /* Create medium storage, asynchronously: */
     UINotificationProgressMediumCreate *pNotification =
-        new UINotificationProgressMediumCreate(comMedium, m_pComboSize->currentData().toLongLong(), variants);
+        new UINotificationProgressMediumCreate(comMedium, m_pSizeCombo->currentData().toLongLong(), variants);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
             &uiCommon(), &UICommon::sltHandleMediumCreated);
     connect(pNotification, &UINotificationProgressMediumCreate::sigMediumCreated,
@@ -104,21 +104,27 @@ void UIFDCreationDialog::retranslateUi()
         setWindowTitle(QString("%1").arg(tr("Floppy Disk Creator")));
     else
         setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Floppy Disk Creator")));
-    if (m_pLabelPath)
-        m_pLabelPath->setText(tr("File Path:"));
+    if (m_pPathLabel)
+        m_pPathLabel->setText(tr("File &Path:"));
     if (m_pSizeLabel)
-        m_pSizeLabel->setText(tr("Size:"));
+    {
+        m_pSizeLabel->setText(tr("&Size:"));
+        m_pSizeLabel->setToolTip(tr("Sets the size of the floppy disk."));
+    }
     if (m_pButtonBox)
         m_pButtonBox->button(QDialogButtonBox::Ok)->setText("C&reate");
-    if (m_pCheckBoxFormat)
-        m_pCheckBoxFormat->setText(tr("Format disk as FAT12"));
-    if (m_pComboSize)
+    if (m_pFormatCheckBox)
     {
-        //m_pComboSize->setItemText(FDSize_2_88M, tr("2.88M"));
-        m_pComboSize->setItemText(FDSize_1_44M, tr("1.44M"));
-        m_pComboSize->setItemText(FDSize_1_2M, tr("1.2M"));
-        m_pComboSize->setItemText(FDSize_720K, tr("720K"));
-        m_pComboSize->setItemText(FDSize_360K, tr("360K"));
+        m_pFormatCheckBox->setText(tr("&Format disk as FAT12"));
+        m_pFormatCheckBox->setToolTip(tr("Formats the floppy disk as FAT12."));
+    }
+    if (m_pSizeCombo)
+    {
+        //m_pSizeCombo->setItemText(FDSize_2_88M, tr("2.88M"));
+        m_pSizeCombo->setItemText(FDSize_1_44M, tr("1.44M"));
+        m_pSizeCombo->setItemText(FDSize_1_2M, tr("1.2M"));
+        m_pSizeCombo->setItemText(FDSize_720K, tr("720K"));
+        m_pSizeCombo->setItemText(FDSize_360K, tr("360K"));
     }
 }
 
@@ -159,11 +165,11 @@ void UIFDCreationDialog::prepare()
     if (pLayoutMain)
     {
         /* Prepare path label: */
-        m_pLabelPath = new QLabel(this);
-        if (m_pLabelPath)
+        m_pPathLabel = new QLabel(this);
+        if (m_pPathLabel)
         {
-            m_pLabelPath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelPath, 0, 0);
+            m_pPathLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayoutMain->addWidget(m_pPathLabel, 0, 0);
         }
         /* Prepare file path selector: */
         m_pFilePathSelector = new UIFilePathSelector(this);
@@ -177,6 +183,8 @@ void UIFDCreationDialog::prepare()
             pLayoutMain->addWidget(m_pFilePathSelector, 0, 1, 1, 3);
             connect(m_pFilePathSelector, &UIFilePathSelector::pathChanged,
                     this, &UIFDCreationDialog::sltPathChanged);
+            if (m_pPathLabel)
+                m_pPathLabel->setBuddy(m_pFilePathSelector);
         }
 
         /* Prepare size label: */
@@ -187,25 +195,28 @@ void UIFDCreationDialog::prepare()
             pLayoutMain->addWidget(m_pSizeLabel, 1, 0);
         }
         /* Prepare size combo: */
-        m_pComboSize = new QComboBox(this);
-        if (m_pComboSize)
+        m_pSizeCombo = new QComboBox(this);
+        if (m_pSizeCombo)
         {
-            //m_pComboSize->insertItem(FDSize_2_88M, "2.88M", 2949120);
-            m_pComboSize->insertItem(FDSize_1_44M, "1.44M", 1474560);
-            m_pComboSize->insertItem(FDSize_1_2M, "1.2M", 1228800);
-            m_pComboSize->insertItem(FDSize_720K, "720K", 737280);
-            m_pComboSize->insertItem(FDSize_360K, "360K", 368640);
-            m_pComboSize->setCurrentIndex(FDSize_1_44M);
+            //m_pSizeCombo->insertItem(FDSize_2_88M, "2.88M", 2949120);
+            m_pSizeCombo->insertItem(FDSize_1_44M, "1.44M", 1474560);
+            m_pSizeCombo->insertItem(FDSize_1_2M, "1.2M", 1228800);
+            m_pSizeCombo->insertItem(FDSize_720K, "720K", 737280);
+            m_pSizeCombo->insertItem(FDSize_360K, "360K", 368640);
+            m_pSizeCombo->setCurrentIndex(FDSize_1_44M);
 
-            pLayoutMain->addWidget(m_pComboSize, 1, 1);
+            pLayoutMain->addWidget(m_pSizeCombo, 1, 1);
+
+            if (m_pSizeLabel)
+                m_pSizeLabel->setBuddy(m_pSizeCombo);
         }
 
         /* Prepare format check-box: */
-        m_pCheckBoxFormat = new QCheckBox;
-        if (m_pCheckBoxFormat)
+        m_pFormatCheckBox = new QCheckBox;
+        if (m_pFormatCheckBox)
         {
-            m_pCheckBoxFormat->setCheckState(Qt::Checked);
-            pLayoutMain->addWidget(m_pCheckBoxFormat, 2, 1, 1, 2);
+            m_pFormatCheckBox->setCheckState(Qt::Checked);
+            pLayoutMain->addWidget(m_pFormatCheckBox, 2, 1, 1, 2);
         }
 
         /* Prepare button-box: */
