@@ -121,9 +121,8 @@ struc VM
     .uStructVersion         resd 1
     .bMainExecutionEngine   resb 1
     .fHMEnabled             resb 1
-    .fUseLargePages         resb 1
 
-    .uPadding1              resb 5
+    .uPadding1              resb 6
 
     .hTraceBufR3            RTR3PTR_RES 1
     .hTraceBufR0            RTR0PTR_RES 1

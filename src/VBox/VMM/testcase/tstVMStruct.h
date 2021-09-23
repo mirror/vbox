@@ -628,6 +628,7 @@
     GEN_CHECK_SIZE(PGM);
     GEN_CHECK_OFF(PGM, offVM);
     GEN_CHECK_OFF(PGM, fRamPreAlloc);
+    GEN_CHECK_OFF(PGM, fUseLargePages);
     GEN_CHECK_OFF(PGM, paDynPageMap32BitPTEsGC);
     GEN_CHECK_OFF(PGM, paDynPageMapPaePTEsGC);
     GEN_CHECK_OFF(PGM, enmHostMode);
@@ -1376,7 +1377,6 @@
     GEN_CHECK_OFF(VM, cbSelf);
     GEN_CHECK_OFF(VM, bMainExecutionEngine);
     GEN_CHECK_OFF(VM, fHMEnabled);
-    GEN_CHECK_OFF(VM, fUseLargePages);
     GEN_CHECK_OFF(VM, hTraceBufR3);
     GEN_CHECK_OFF(VM, hTraceBufR0);
     GEN_CHECK_OFF(VM, cpum);

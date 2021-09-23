@@ -1214,15 +1214,10 @@ typedef struct VM
      * This is placed here for performance reasons.
      * @todo obsoleted by bMainExecutionEngine, eliminate. */
     bool                        fHMEnabled;
-
-    /** Large page enabled flag.
-     * @todo This doesn't need to be here, PGM should store it in it's own
-     *       structures instead. */
-    bool                        fUseLargePages;
     /** @} */
 
     /** Alignment padding. */
-    uint8_t                     uPadding1[5];
+    uint8_t                     uPadding1[6];
 
     /** @name Debugging
      * @{ */

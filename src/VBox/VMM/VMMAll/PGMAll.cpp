@@ -3415,7 +3415,7 @@ VMMDECL(int) PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-    pVM->fUseLargePages = fUseLargePages;
+    pVM->pgm.s.fUseLargePages = fUseLargePages;
     return VINF_SUCCESS;
 }
 

@@ -656,7 +656,7 @@ VMMDECL(int)        PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages);
  * @returns 0 - disabled, 1 - enabled
  * @param   pVM         The cross context VM structure.
  */
-#define PGMIsUsingLargePages(pVM)   ((pVM)->fUseLargePages)
+#define PGMIsUsingLargePages(pVM)   ((pVM)->pgm.s.fUseLargePages)
 
 
 #ifdef IN_RING0

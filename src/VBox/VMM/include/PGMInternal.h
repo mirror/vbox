@@ -2952,8 +2952,10 @@ typedef struct PGM
     bool                            fRestoreRomPagesOnReset;
     /** Whether to automatically clear all RAM pages on reset. */
     bool                            fZeroRamPagesOnReset;
+    /** Large page enabled flag. */
+    bool                            fUseLargePages;
     /** Alignment padding. */
-    bool                            afAlignment3[7];
+    bool                            afAlignment3[6];
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */
