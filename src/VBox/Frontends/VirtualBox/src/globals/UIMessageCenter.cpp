@@ -1270,7 +1270,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
             {
                 if (medium.state() == KMediumState_Inaccessible)
                     strMessage += tr("<p>As this hard disk is inaccessible its image file"
-                                     " can not be deleted.</p>");
+                                     " cannot be deleted.</p>");
             }
             break;
         }
