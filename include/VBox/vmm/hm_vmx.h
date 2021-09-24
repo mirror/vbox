@@ -1664,9 +1664,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 /** Supports page-walk length of 5. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_5            RT_BIT_64(7)
 /** Supports EPT paging-structure memory type to be uncacheable. */
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC                        RT_BIT_64(8)
+#define MSR_IA32_VMX_EPT_VPID_CAP_MEMTYPE_UC                    RT_BIT_64(8)
 /** Supports EPT paging structure memory type to be write-back. */
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB                        RT_BIT_64(14)
+#define MSR_IA32_VMX_EPT_VPID_CAP_MEMTYPE_WB                    RT_BIT_64(14)
 /** Supports EPT PDE to map a 2 MB page. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M                        RT_BIT_64(16)
 /** Supports EPT PDPTE to map a 1 GB page. */
@@ -1674,9 +1674,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 /** Supports INVEPT instruction. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT                        RT_BIT_64(20)
 /** Supports accessed and dirty flags for EPT. */
-#define MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY              RT_BIT_64(21)
+#define MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY                  RT_BIT_64(21)
 /** Supports advanced VM-exit info. for EPT violations. */
-#define MSR_IA32_VMX_EPT_VPID_CAP_ADVEXITINFO_EPT               RT_BIT_64(22)
+#define MSR_IA32_VMX_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION     RT_BIT_64(22)
 /** Supports supervisor shadow-stack control. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_SUPER_SHW_STACK               RT_BIT_64(23)
 /** Supports single-context INVEPT type. */
@@ -1703,12 +1703,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4_MASK             UINT64_C(0x0000000000000040)
 #define VMX_BF_EPT_VPID_CAP_RSVD_7_SHIFT                        7
 #define VMX_BF_EPT_VPID_CAP_RSVD_7_MASK                         UINT64_C(0x0000000000000080)
-#define VMX_BF_EPT_VPID_CAP_EMT_UC_SHIFT                        8
-#define VMX_BF_EPT_VPID_CAP_EMT_UC_MASK                         UINT64_C(0x0000000000000100)
+#define VMX_BF_EPT_VPID_CAP_MEMTYPE_UC_SHIFT                    8
+#define VMX_BF_EPT_VPID_CAP_MEMTYPE_UC_MASK                     UINT64_C(0x0000000000000100)
 #define VMX_BF_EPT_VPID_CAP_RSVD_9_13_SHIFT                     9
 #define VMX_BF_EPT_VPID_CAP_RSVD_9_13_MASK                      UINT64_C(0x0000000000003e00)
-#define VMX_BF_EPT_VPID_CAP_EMT_WB_SHIFT                        14
-#define VMX_BF_EPT_VPID_CAP_EMT_WB_MASK                         UINT64_C(0x0000000000004000)
+#define VMX_BF_EPT_VPID_CAP_MEMTYPE_WB_SHIFT                    14
+#define VMX_BF_EPT_VPID_CAP_MEMTYPE_WB_MASK                     UINT64_C(0x0000000000004000)
 #define VMX_BF_EPT_VPID_CAP_RSVD_15_SHIFT                       15
 #define VMX_BF_EPT_VPID_CAP_RSVD_15_MASK                        UINT64_C(0x0000000000008000)
 #define VMX_BF_EPT_VPID_CAP_PDE_2M_SHIFT                        16
@@ -1719,10 +1719,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_EPT_VPID_CAP_RSVD_18_19_MASK                     UINT64_C(0x00000000000c0000)
 #define VMX_BF_EPT_VPID_CAP_INVEPT_SHIFT                        20
 #define VMX_BF_EPT_VPID_CAP_INVEPT_MASK                         UINT64_C(0x0000000000100000)
-#define VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY_SHIFT              21
-#define VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY_MASK               UINT64_C(0x0000000000200000)
-#define VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_SHIFT               22
-#define VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_MASK                UINT64_C(0x0000000000400000)
+#define VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY_SHIFT                  21
+#define VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY_MASK                   UINT64_C(0x0000000000200000)
+#define VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION_SHIFT     22
+#define VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION_MASK      UINT64_C(0x0000000000400000)
 #define VMX_BF_EPT_VPID_CAP_SUPER_SHW_STACK_SHIFT               23
 #define VMX_BF_EPT_VPID_CAP_SUPER_SHW_STACK_MASK                UINT64_C(0x0000000000800000)
 #define VMX_BF_EPT_VPID_CAP_RSVD_24_SHIFT                       24
@@ -1748,8 +1748,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_EPT_VPID_CAP_RSVD_44_63_SHIFT                    44
 #define VMX_BF_EPT_VPID_CAP_RSVD_44_63_MASK                     UINT64_C(0xfffff00000000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
-                            (RWX_X_ONLY, RSVD_1_5, PAGE_WALK_LENGTH_4, RSVD_7, EMT_UC, RSVD_9_13, EMT_WB, RSVD_15, PDE_2M,
-                             PDPTE_1G, RSVD_18_19, INVEPT, EPT_ACCESS_DIRTY, ADVEXITINFO_EPT, SUPER_SHW_STACK, RSVD_24,
+                            (RWX_X_ONLY, RSVD_1_5, PAGE_WALK_LENGTH_4, RSVD_7, MEMTYPE_UC, RSVD_9_13, MEMTYPE_WB, RSVD_15, PDE_2M,
+                             PDPTE_1G, RSVD_18_19, INVEPT, ACCESS_DIRTY, ADVEXITINFO_EPT_VIOLATION, SUPER_SHW_STACK, RSVD_24,
                              INVEPT_SINGLE_CTX, INVEPT_ALL_CTX, RSVD_27_31, INVVPID, RSVD_33_39, INVVPID_INDIV_ADDR,
                              INVVPID_SINGLE_CTX, INVVPID_ALL_CTX, INVVPID_SINGLE_CTX_RETAIN_GLOBALS, RSVD_44_63));
 /** @} */

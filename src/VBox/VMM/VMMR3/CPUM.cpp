@@ -1461,12 +1461,12 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
 
         uint8_t const  fExecOnly         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_RWX_X_ONLY);
         uint8_t const  fPml4             = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4);
-        uint8_t const  fEptMemUc         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_EMT_UC);
-        uint8_t const  fEptMemWb         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_EMT_WB);
+        uint8_t const  fMemTypeUc        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_MEMTYPE_UC);
+        uint8_t const  fMemTypeWb        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_MEMTYPE_WB);
         uint8_t const  f2MPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDE_2M);
         uint8_t const  f1GPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDPTE_1G);
         uint8_t const  fInvept           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT);
-        uint8_t const  fEptAccDirty      = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY);
+        uint8_t const  fAccessDirty      = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY);
         uint8_t const  fEptSingle        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX);
         uint8_t const  fEptAll           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX);
         uint8_t const  fVpidIndiv        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
@@ -1475,13 +1475,13 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         uint8_t const  fVpidSingleGlobal = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS);
         pGuestVmxMsrs->u64EptVpidCaps = RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_RWX_X_ONLY,                        fExecOnly)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4,                fPml4)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_EMT_UC,                            fEptMemUc)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_EMT_WB,                            fEptMemWb)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_MEMTYPE_UC,                        fMemTypeUc)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_MEMTYPE_WB,                        fMemTypeWb)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDE_2M,                            f2MPage)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDPTE_1G,                          f1GPage)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT,                            fInvept)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY,                  fEptAccDirty)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT,                   0)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY,                      fAccessDirty)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION,         0)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_SUPER_SHW_STACK,                   0)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX,                 fEptSingle)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX,                    fEptAll)

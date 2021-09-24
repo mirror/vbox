@@ -3336,7 +3336,7 @@ static int hmR0VmxSetupTaggedTlb(PVMCC pVM)
             }
 
             /* Make sure the write-back cacheable memory type for EPT is supported. */
-            if (RT_UNLIKELY(!(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB)))
+            if (RT_UNLIKELY(!(g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_MEMTYPE_WB)))
             {
                 pVM->hmr0.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 VMCC_GET_CPU_0(pVM)->hm.s.u32HMError = VMX_UFC_EPT_MEM_TYPE_NOT_WB;
@@ -5888,7 +5888,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
                       && ((pVmcsInfo->HCPhysEPTP >> 7) & 0x1f) == 0,     /* Bits 7:11 MBZ. */
                          ("EPTP %#RX64\n", pVmcsInfo->HCPhysEPTP));
             AssertMsg(  !((pVmcsInfo->HCPhysEPTP >> 6) & 0x01)           /* Bit 6 (EPT accessed & dirty bit). */
-                      || (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY),
+                      || (g_HmMsrs.u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY),
                          ("EPTP accessed/dirty bit not supported by CPU but set %#RX64\n", pVmcsInfo->HCPhysEPTP));
 
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVmcsInfo->HCPhysEPTP);
