@@ -2742,7 +2742,7 @@ static DECLCALLBACK(int) vmsvga3dBackContextDestroy(PVGASTATECC pThisCC, uint32_
                 AssertRC(rc);
 
                 rc = vmsvga3dSurfaceDefine(pThisCC, sid, surfaceFlags, format, multisampleCount, autogenFilter,
-                                           cMipLevels, &pMipLevelSize[0]);
+                                           cMipLevels, &pMipLevelSize[0], /* fAllocMipLevels = */ true);
                 AssertRC(rc);
 
                 Assert(!pSurface->u.pSurface);

@@ -152,7 +152,7 @@ int vmsvga3dDXBindContext(PVGASTATECC pThisCC, uint32_t cid, SVGADXContextMobFor
 }
 
 
-int vmsvga3dDXReadbackContext(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXReadbackContext(PVGASTATECC pThisCC, uint32_t idDXContext, SVGADXContextMobFormat *pSvgaDXContext)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -165,6 +165,8 @@ int vmsvga3dDXReadbackContext(PVGASTATECC pThisCC, uint32_t idDXContext)
     AssertRCReturn(rc, rc);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXReadbackContext(pThisCC, pDXContext);
+    if (RT_SUCCESS(rc))
+        memcpy(pSvgaDXContext, &pDXContext->svgaDXContext, sizeof(*pSvgaDXContext));
     return rc;
 }
 
@@ -291,7 +293,11 @@ int vmsvga3dDXSetSamplers(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDX
     ASSERT_GUEST_RETURN(pCmd->type >= SVGA3D_SHADERTYPE_MIN && pCmd->type < SVGA3D_SHADERTYPE_MAX, VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(pDXContext->cot.paSampler, VERR_INVALID_STATE);
     for (uint32_t i = 0; i < cSamplerId; ++i)
-        ASSERT_GUEST_RETURN(paSamplerId[i] < pDXContext->cot.cSampler, VERR_INVALID_PARAMETER);
+    {
+        SVGA3dSamplerId const samplerId = paSamplerId[i];
+        ASSERT_GUEST_RETURN(   samplerId < pDXContext->cot.cSampler
+                            || samplerId == SVGA_ID_INVALID, VERR_INVALID_PARAMETER);
+    }
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     rc = pSvgaR3State->pFuncsDX->pfnDXSetSamplers(pThisCC, pDXContext, pCmd->startSampler, pCmd->type, cSamplerId, paSamplerId);
@@ -319,11 +325,11 @@ int vmsvga3dDXDraw(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDraw co
     image.face = 0;
     image.mipmap = 0;
     VMSVGA3D_MAPPED_SURFACE map;
-    int rc2 = pSvgaR3State->pFuncsMap->pfnSurfaceMap(pThisCC, idDXContext, &image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
+    int rc2 = vmsvga3dSurfaceMap(pThisCC, &image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
     if (RT_SUCCESS(rc2))
     {
         vmsvga3dMapWriteBmpFile(&map, "rt-");
-        pSvgaR3State->pFuncsMap->pfnSurfaceUnmap(pThisCC, &image, &map, /* fWritten =  */ false);
+        vmsvga3dSurfaceUnmap(pThisCC, &image, &map, /* fWritten =  */ false);
     }
 #endif
     return rc;
@@ -347,7 +353,7 @@ int vmsvga3dDXDrawIndexed(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDX
 }
 
 
-int vmsvga3dDXDrawInstanced(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDrawInstanced(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawInstanced const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -359,12 +365,13 @@ int vmsvga3dDXDrawInstanced(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDrawInstanced(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnDXDrawInstanced(pThisCC, pDXContext,
+             pCmd->vertexCountPerInstance, pCmd->instanceCount, pCmd->startVertexLocation, pCmd->startInstanceLocation);
     return rc;
 }
 
 
-int vmsvga3dDXDrawIndexedInstanced(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDrawIndexedInstanced(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexedInstanced const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -376,7 +383,8 @@ int vmsvga3dDXDrawIndexedInstanced(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDrawIndexedInstanced(pThisCC, pDXContext);
+    rc = pSvgaR3State->pFuncsDX->pfnDXDrawIndexedInstanced(pThisCC, pDXContext,
+             pCmd->indexCountPerInstance, pCmd->instanceCount, pCmd->startIndexLocation, pCmd->baseVertexLocation, pCmd->startInstanceLocation);
     return rc;
 }
 
@@ -826,6 +834,8 @@ int vmsvga3dDXPredCopyRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
+    /** @todo Memcpy if both resources do not have the hardware resource. */
+
     rc = pSvgaR3State->pFuncsDX->pfnDXPredCopyRegion(pThisCC, pDXContext, pCmd->dstSid, pCmd->dstSubResource, pCmd->srcSid, pCmd->srcSubResource, &pCmd->box);
     return rc;
 }
@@ -884,57 +894,6 @@ int vmsvga3dDXGenMips(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXGenM
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     rc = pSvgaR3State->pFuncsDX->pfnDXGenMips(pThisCC, pDXContext, shaderResourceViewId);
-    return rc;
-}
-
-
-int vmsvga3dDXUpdateSubResource(PVGASTATECC pThisCC, uint32_t idDXContext)
-{
-    int rc;
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXUpdateSubResource, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
-
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
-    AssertRCReturn(rc, rc);
-
-    rc = pSvgaR3State->pFuncsDX->pfnDXUpdateSubResource(pThisCC, pDXContext);
-    return rc;
-}
-
-
-int vmsvga3dDXReadbackSubResource(PVGASTATECC pThisCC, uint32_t idDXContext)
-{
-    int rc;
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXReadbackSubResource, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
-
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
-    AssertRCReturn(rc, rc);
-
-    rc = pSvgaR3State->pFuncsDX->pfnDXReadbackSubResource(pThisCC, pDXContext);
-    return rc;
-}
-
-
-int vmsvga3dDXInvalidateSubResource(PVGASTATECC pThisCC, uint32_t idDXContext)
-{
-    int rc;
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXInvalidateSubResource, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
-
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
-    AssertRCReturn(rc, rc);
-
-    rc = pSvgaR3State->pFuncsDX->pfnDXInvalidateSubResource(pThisCC, pDXContext);
     return rc;
 }
 
@@ -1399,6 +1358,8 @@ int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
+    AssertReturn(pDXContext->paShader, VERR_INVALID_STATE);
+
     SVGA3dShaderId const shaderId = pCmd->shaderId;
 
     ASSERT_GUEST_RETURN(pDXContext->cot.paShader, VERR_INVALID_STATE);
@@ -1413,14 +1374,15 @@ int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
     pEntry->offsetInBytes = 0;
     pEntry->mobid         = SVGA_ID_INVALID;
 
-    if (!pDXContext->paShader)
-    {
-        /* Create host array for information abput shaders. */
-        pDXContext->paShader = (PVMSVGA3DSHADER)RTMemAllocZ(pDXContext->cot.cShader * sizeof(VMSVGA3DSHADER));
-        AssertReturn(pDXContext->paShader, VERR_NO_MEMORY);
-        for (uint32_t i = 0; i < pDXContext->cot.cShader; ++i)
-            pDXContext->paShader[i].id = SVGA_ID_INVALID;
-    }
+    /** @todo Remove from here. */
+//    if (!pDXContext->paShader)
+//    {
+//        /* Create host array for information about shaders. */
+//        pDXContext->paShader = (PVMSVGA3DSHADER)RTMemAllocZ(pDXContext->cot.cShader * sizeof(VMSVGA3DSHADER));
+//        AssertReturn(pDXContext->paShader, VERR_NO_MEMORY);
+//        for (uint32_t i = 0; i < pDXContext->cot.cShader; ++i)
+//            pDXContext->paShader[i].id = SVGA_ID_INVALID;
+//    }
 
     PVMSVGA3DSHADER pShader = &pDXContext->paShader[shaderId];
     if (pShader->id != SVGA_ID_INVALID)
@@ -1437,7 +1399,7 @@ int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
     pShader->pShaderProgram    = NULL;
     pShader->u.pvBackendShader = NULL;
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDefineShader(pThisCC, pDXContext, pShader);
+    rc = pSvgaR3State->pFuncsDX->pfnDXDefineShader(pThisCC, pDXContext, shaderId, pEntry);
     return rc;
 }
 
@@ -1667,6 +1629,7 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
     }
 
     uint32_t cEntries = 0;
+    uint32_t cValidEntries = 0;
     if (RT_SUCCESS(rc))
     {
         static uint32_t const s_acbEntry[SVGA_COTABLE_MAX] =
@@ -1686,9 +1649,7 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
         };
 
         cEntries = cbCOT / s_acbEntry[pCmd->type];
-        uint32_t const cValidEntries = validSizeInBytes / s_acbEntry[pCmd->type];
-
-        rc = pSvgaR3State->pFuncsDX->pfnDXSetCOTable(pThisCC, pDXContext, pCmd->type, cEntries, cValidEntries);
+        cValidEntries = validSizeInBytes / s_acbEntry[pCmd->type];
     }
 
     if (RT_SUCCESS(rc))
@@ -1741,6 +1702,18 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
             case SVGA_COTABLE_DXSHADER:
                 pDXContext->cot.paShader          = (SVGACOTableDXShaderEntry *)pvCOT;
                 pDXContext->cot.cShader           = cEntries;
+
+                /* Create host array for information about shaders. */
+                RTMemFree(pDXContext->paShader);
+                pDXContext->paShader = NULL;
+
+                if (pDXContext->cot.cShader)
+                {
+                    pDXContext->paShader = (PVMSVGA3DSHADER)RTMemAllocZ(pDXContext->cot.cShader * sizeof(VMSVGA3DSHADER));
+                    AssertReturn(pDXContext->paShader, VERR_NO_MEMORY);
+                    for (uint32_t i = 0; i < pDXContext->cot.cShader; ++i)
+                        pDXContext->paShader[i].id = SVGA_ID_INVALID;
+                }
                 break;
             case SVGA_COTABLE_UAVIEW:
                 pDXContext->cot.paUAView          = (SVGACOTableDXUAViewEntry *)pvCOT;
@@ -1751,6 +1724,10 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
     }
     else
         vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pMob);
+
+    /* Notify the backend. */
+    if (RT_SUCCESS(rc))
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetCOTable(pThisCC, pDXContext, pCmd->type, cValidEntries);
 
     return rc;
 }
@@ -1791,23 +1768,6 @@ int vmsvga3dDXBufferCopy(PVGASTATECC pThisCC, uint32_t idDXContext)
     AssertRCReturn(rc, rc);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXBufferCopy(pThisCC, pDXContext);
-    return rc;
-}
-
-
-int vmsvga3dDXTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idDXContext)
-{
-    int rc;
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXTransferFromBuffer, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
-
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
-    AssertRCReturn(rc, rc);
-
-    rc = pSvgaR3State->pFuncsDX->pfnDXTransferFromBuffer(pThisCC, pDXContext);
     return rc;
 }
 
@@ -1876,23 +1836,6 @@ int vmsvga3dDXReadbackAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
     AssertRCReturn(rc, rc);
 
     rc = pSvgaR3State->pFuncsDX->pfnDXReadbackAllQuery(pThisCC, pDXContext);
-    return rc;
-}
-
-
-int vmsvga3dDXPredTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idDXContext)
-{
-    int rc;
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXPredTransferFromBuffer, VERR_INVALID_STATE);
-    PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
-    AssertReturn(p3dState, VERR_INVALID_STATE);
-
-    PVMSVGA3DDXCONTEXT pDXContext;
-    rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
-    AssertRCReturn(rc, rc);
-
-    rc = pSvgaR3State->pFuncsDX->pfnDXPredTransferFromBuffer(pThisCC, pDXContext);
     return rc;
 }
 

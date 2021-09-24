@@ -3323,6 +3323,22 @@ static void vmsvgaR3CmdBufSubmit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATEC
         int rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhysCB, &pCmdBuf->hdr, sizeof(pCmdBuf->hdr));
         if (RT_SUCCESS(rc))
         {
+            LogFunc(("status %RX32 errorOffset %RX32 id %RX64 flags %RX32 length %RX32 ptr %RX64 offset %RX32 dxContext %RX32 (%RX32 %RX32 %RX32 %RX32 %RX32 %RX32)\n",
+                     pCmdBuf->hdr.status,
+                     pCmdBuf->hdr.errorOffset,
+                     pCmdBuf->hdr.id,
+                     pCmdBuf->hdr.flags,
+                     pCmdBuf->hdr.length,
+                     pCmdBuf->hdr.ptr.pa,
+                     pCmdBuf->hdr.offset,
+                     pCmdBuf->hdr.dxContext,
+                     pCmdBuf->hdr.mustBeZero[0],
+                     pCmdBuf->hdr.mustBeZero[1],
+                     pCmdBuf->hdr.mustBeZero[2],
+                     pCmdBuf->hdr.mustBeZero[3],
+                     pCmdBuf->hdr.mustBeZero[4],
+                     pCmdBuf->hdr.mustBeZero[5]));
+
             /* Verify the command buffer header. */
             if (RT_LIKELY(   pCmdBuf->hdr.status == SVGA_CB_STATUS_NONE
                           && (pCmdBuf->hdr.flags & ~(SVGA_CB_FLAG_NO_IRQ | SVGA_CB_FLAG_DX_CONTEXT)) == 0 /* No unexpected flags. */
@@ -5826,7 +5842,7 @@ typedef struct VMSVGA3DINTERFACE
 } VMSVGA3DINTERFACE;
 
 extern VMSVGA3DBACKENDDESC const g_BackendLegacy;
-#ifdef VMSVGA3D_DX
+#if defined(VMSVGA3D_DX_BACKEND)
 extern VMSVGA3DBACKENDDESC const g_BackendDX;
 #endif
 
@@ -5856,7 +5872,7 @@ static int vmsvgaR3Init3dInterfaces(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
 #undef ENTRY_3D_INTERFACE
 
     VMSVGA3DBACKENDDESC const *pBackend = NULL;
-#ifdef VMSVGA3D_DX
+#if defined(VMSVGA3D_DX_BACKEND)
     if (pThis->fVMSVGA10)
         pBackend = &g_BackendDX;
     else

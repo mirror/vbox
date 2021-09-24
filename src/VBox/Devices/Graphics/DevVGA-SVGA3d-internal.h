@@ -546,7 +546,7 @@ typedef struct VMSVGA3DSURFACE
 
     uint32_t                id; /** @todo sid */
     /* Which context created the corresponding resource.
-     * SVGA_ID_INVALID means that resource has not been created yet, or has been created by the shared context.
+     * SVGA_ID_INVALID means that resource has not been created yet.
      * A resource has been created if VMSVGA3DSURFACE_HAS_HW_SURFACE is true.
      *
      */
@@ -1314,8 +1314,6 @@ DECLINLINE(int) vmsvga3dContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMS
 DECLINLINE(int) vmsvga3dDXContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMSVGA3DDXCONTEXT *ppDXContext)
 {
     *ppDXContext = NULL;
-    if (cid == SVGA_ID_INVALID)
-        return VERR_INVALID_STATE;
     AssertReturn(cid < pState->cDXContexts, VERR_INVALID_PARAMETER);
     PVMSVGA3DDXCONTEXT const pDXContext = pState->papDXContexts[cid];
     if (RT_LIKELY(pDXContext && pDXContext->cid == cid))
