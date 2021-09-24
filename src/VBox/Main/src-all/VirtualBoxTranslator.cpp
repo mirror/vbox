@@ -28,7 +28,7 @@
 #include "Global.h"
 #include "VirtualBoxBase.h"
 #include "QMTranslator.h"
-#include <VBox/VirtualBoxTranslator.h>
+#include "VirtualBoxTranslator.h"
 
 #define TRANSLATOR_CACHE_SIZE 32
 

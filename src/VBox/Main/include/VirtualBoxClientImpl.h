@@ -23,7 +23,7 @@
 
 #include "VirtualBoxClientWrap.h"
 #include "EventImpl.h"
-#include <VBox/VirtualBoxTranslator.h>
+#include "VirtualBoxTranslator.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"

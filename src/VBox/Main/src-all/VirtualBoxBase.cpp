@@ -33,13 +33,12 @@
 #include "VirtualBoxBase.h"
 #include "AutoCaller.h"
 #include "VirtualBoxErrorInfoImpl.h"
+#include "VirtualBoxTranslator.h"
 #include "Global.h"
 #include "LoggingNew.h"
 
 #include "VBox/com/ErrorInfo.h"
 #include "VBox/com/MultiResult.h"
-#include <VBox/VirtualBoxTranslator.h>
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //

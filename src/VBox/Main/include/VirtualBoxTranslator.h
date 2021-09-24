@@ -21,45 +21,13 @@
 # pragma once
 #endif
 
-#include <iprt/cdefs.h>
-#include <iprt/thread.h>
-
-#include <VBox/com/defs.h>
-#include <VBox/com/ptr.h>
-#include <VBox/com/Guid.h>
-#include <VBox/com/string.h>
-
-#include <VBox/com/AutoLock.h>
+#include <list>
 
 #include <iprt/cpp/lock.h>
-
-#ifdef VBOX_WITH_MAIN_NLS
-#define DECLARE_TRANSLATION_CONTEXT(ctx) \
-struct ctx \
-{\
-   static const char *tr(const char *pszSource, const char *pszComment = NULL, const int iNum = -1) \
-   { \
-       return VirtualBoxTranslator::translate(NULL, #ctx, pszSource, pszComment, iNum); \
-   } \
-};
-#else
-#define DECLARE_TRANSLATION_CONTEXT(ctx) \
-struct ctx \
-{\
-   static const char *tr(const char *pszSource, const char *pszComment = NULL, const int iNum = -1) \
-   { \
-       NOREF(pszComment); \
-       NOREF(iNum);       \
-       return pszSource;  \
-   } \
-};
-#endif
+#include <VBox/com/AutoLock.h>
 
 typedef void *TRCOMPONENT;
 
-#ifdef VBOX_WITH_MAIN_NLS
-
-COM_STRUCT_OR_CLASS(IVirtualBox);
 class QMTranslator;
 
 class VirtualBoxTranslator
@@ -169,8 +137,6 @@ private:
                             const char *aComment = NULL,
                             const int   aNum = -1);
 };
-
-#endif /* !VBOX_WITH_MAIN_NLS */
 
 #endif /* !MAIN_INCLUDED_VirtualBoxTranslator_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
