@@ -1451,7 +1451,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
          * and emulate any INVVPID flush type. However, it only makes sense to expose the types
          * when INVVPID instruction is supported just to be more compatible with guest
          * hypervisors that may make assumptions by only looking at this MSR even though they
-         * are technically supposed to refer to bit 37 of MSR_IA32_VMX_PROC_CTLS2 first.
+         * are technically supposed to refer to VMX_PROC_CTLS2_VPID first.
          *
          * See Intel spec. 25.1.2 "Instructions That Cause VM Exits Unconditionally".
          * See Intel spec. 30.3 "VMX Instructions".
@@ -1676,7 +1676,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxDescTableExit         = 1;
     EmuFeat.fVmxRdtscp                = 1;
     EmuFeat.fVmxVirtX2ApicMode        = 0;
-    EmuFeat.fVmxVpid                  = EmuFeat.fVmxEpt;
+    EmuFeat.fVmxVpid                  = 0;
     EmuFeat.fVmxWbinvdExit            = 1;
     EmuFeat.fVmxUnrestrictedGuest     = pVM->cpum.s.fNestedVmxUnrestrictedGuest;
     EmuFeat.fVmxApicRegVirt           = 0;
