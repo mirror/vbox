@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,48 +25,45 @@
 #include <QUuid>
 
 /* GUI includes: */
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
 class QListWidget;
 class QIRichTextLabel;
+class UIWizardExportApp;
 
-
-/** UIWizardPageBase extension for 1st page of the Export Appliance wizard. */
-class UIWizardExportAppPage1 : public UIWizardPageBase
+/** Namespace for 1st basic page of the Export Appliance wizard. */
+namespace UIWizardExportAppPage1
 {
-protected:
+    /** Populates @a pVMSelector with items on the basis of passed @a selectedVMNames. */
+    void populateVMItems(QListWidget *pVMSelector, const QStringList &selectedVMNames);
 
-    /** Constructs 1st page base. */
-    UIWizardExportAppPage1();
+    /** Refresh a list of saved machines selected in @a pVMSelector. */
+    void refreshSavedMachines(QStringList &savedMachines, QListWidget *pVMSelector);
 
-    /** Populates VM selector items on the basis of passed @a selectedVMNames. */
-    void populateVMSelectorItems(const QStringList &selectedVMNames);
+    /** Returns a list of machine names selected in @a pVMSelector. */
+    QStringList machineNames(QListWidget *pVMSelector);
+    /** Returns a list of machine IDs selected in @a pVMSelector. */
+    QList<QUuid> machineIDs(QListWidget *pVMSelector);
+}
 
-    /** Returns a list of selected machine names. */
-    QStringList machineNames() const;
-    /** Returns a list of selected machine IDs. */
-    QList<QUuid> machineIDs() const;
-
-    /** Holds the VM selector instance. */
-    QListWidget *m_pVMSelector;
-};
-
-
-/** UIWizardPage extension for 1st page of the Export Appliance wizard, extends UIWizardExportAppPage1 as well. */
-class UIWizardExportAppPageBasic1 : public UIWizardPage, public UIWizardExportAppPage1
+/** UINativeWizardPage extension for 1st basic page of the Export Appliance wizard,
+  * based on UIWizardAddCloudVMPage1 namespace functions. */
+class UIWizardExportAppPageBasic1 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(QStringList machineNames READ machineNames);
-    Q_PROPERTY(QList<QUuid> machineIDs READ machineIDs);
 
 public:
 
     /** Constructs 1st basic page.
-      * @param  selectedVMNames  Brings the list of selected VM names. */
-    UIWizardExportAppPageBasic1(const QStringList &selectedVMNames);
+      * @param  selectedVMNames        Brings the list of selected VM names.
+      * @param  fFastTravelToNextPage  Brings whether we should fast-travel to next page. */
+    UIWizardExportAppPageBasic1(const QStringList &selectedVMNames, bool fFastTravelToNextPage);
 
-private:
+protected:
+
+    /** Returns wizard this page belongs to. */
+    UIWizardExportApp *wizard() const;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -80,10 +77,25 @@ private:
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
+private slots:
+
+    /** Handles VM item selection change. */
+    void sltHandleVMItemSelectionChanged();
+
 private:
 
-    /** Holds the label instance. */
-    QIRichTextLabel *m_pLabel;
+    /** Updates machines. */
+    void updateMachines();
+
+    /** Holds the list of selected VM names. */
+    const QStringList  m_selectedVMNames;
+    /** Holds whether we should fast travel to next page. */
+    bool               m_fFastTravelToNextPage;
+
+    /** Holds the main label instance. */
+    QIRichTextLabel *m_pLabelMain;
+    /** Holds the VM selector instance. */
+    QListWidget     *m_pVMSelector;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic1_h */

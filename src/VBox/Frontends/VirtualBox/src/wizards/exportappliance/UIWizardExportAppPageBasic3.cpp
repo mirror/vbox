@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,7 @@
 #include "QIRichTextLabel.h"
 #include "UIApplianceExportEditorWidget.h"
 #include "UICommon.h"
+#include "UIFormEditorWidget.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppPageBasic3.h"
@@ -32,34 +33,36 @@
 #include "CMachine.h"
 #include "CVirtualSystemDescriptionForm.h"
 
+/* Namespaces: */
+using namespace UIWizardExportAppPage3;
+
 
 /*********************************************************************************************************************************
 *   Class UIWizardExportAppPage3 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPage3::UIWizardExportAppPage3()
-    : m_pSettingsCntLayout(0)
-    , m_pApplianceWidget(0)
+void UIWizardExportAppPage3::refreshStackedLayout(QStackedLayout *pStackedLayout,
+                                                  bool fIsFormatCloudOne)
 {
+    /* Update stack appearance according to chosen format: */
+    pStackedLayout->setCurrentIndex((int)fIsFormatCloudOne);
 }
 
-void UIWizardExportAppPage3::updatePageAppearance()
+void UIWizardExportAppPage3::refreshApplianceSettingsWidget(UIApplianceExportEditorWidget *pApplianceWidget,
+                                                            const QList<QUuid> &machineIDs,
+                                                            const QString &strUri,
+                                                            bool fIsFormatCloudOne)
 {
-    /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = fieldImp("isFormatCloudOne").toBool();
-    /* Update page appearance according to chosen source: */
-    m_pSettingsCntLayout->setCurrentIndex((int)fIsFormatCloudOne);
-}
+    /* Nothing for cloud case? */
+    if (fIsFormatCloudOne)
+        return;
 
-void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
-{
     /* Acquire appliance: */
-    CAppliance *pAppliance = m_pApplianceWidget->init();
+    CAppliance *pAppliance = pApplianceWidget->init();
     if (pAppliance->isOk())
     {
         /* Iterate over all the selected machine uuids: */
-        const QList<QUuid> uuids = fieldImp("machineIDs").value<QList<QUuid> >();
-        foreach (const QUuid &uMachineId, uuids)
+        foreach (const QUuid &uMachineId, machineIDs)
         {
             /* Get the machine with the uMachineId: */
             CVirtualBox comVBox = uiCommon().virtualBox();
@@ -67,7 +70,7 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
             if (comVBox.isOk() && comMachine.isNotNull())
             {
                 /* Add the export description to our appliance object: */
-                CVirtualSystemDescription comVsd = comMachine.ExportTo(*pAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
+                CVirtualSystemDescription comVsd = comMachine.ExportTo(*pAppliance, strUri);
                 if (comMachine.isOk() && comVsd.isNotNull())
                 {
                     /* Add some additional fields the user may change: */
@@ -79,29 +82,27 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
                     comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
                 }
                 else
-                    return msgCenter().cannotExportAppliance(comMachine, pAppliance->GetPath(), thisImp());
+                    return msgCenter().cannotExportAppliance(comMachine, pAppliance->GetPath());
             }
             else
                 return msgCenter().cannotFindMachineById(comVBox, uMachineId);
         }
         /* Make sure the settings widget get the new descriptions: */
-        m_pApplianceWidget->populate();
+        pApplianceWidget->populate();
     }
 }
 
-void UIWizardExportAppPage3::refreshFormPropertiesTable()
+void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
+                                                        const CVirtualSystemDescriptionForm &comVsdExportForm,
+                                                        bool fIsFormatCloudOne)
 {
-    /* Acquire VSD form: */
-    CVirtualSystemDescriptionForm comForm = fieldImp("vsdExportForm").value<CVirtualSystemDescriptionForm>();
-    /* Make sure the properties table get the new description form: */
-    if (comForm.isNotNull())
-        m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
-}
+    /* Nothing for local case? */
+    if (!fIsFormatCloudOne)
+        return;
 
-CAppliance UIWizardExportAppPage3::localAppliance() const
-{
-    CAppliance *pAppliance = m_pApplianceWidget->appliance();
-    return pAppliance ? *pAppliance : CAppliance();
+    /* Make sure the properties table get the new description form: */
+    if (comVsdExportForm.isNotNull())
+        pFormEditor->setVirtualSystemDescriptionForm(comVsdExportForm);
 }
 
 
@@ -116,16 +117,13 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     if (pMainLayout)
     {
         /* Create label: */
-        m_pLabel = new QIRichTextLabel;
+        m_pLabel = new QIRichTextLabel(this);
         if (m_pLabel)
-        {
-            /* Add into layout: */
             pMainLayout->addWidget(m_pLabel);
-        }
 
         /* Create settings container layout: */
-        m_pSettingsCntLayout = new QStackedLayout;
-        if (m_pSettingsCntLayout)
+        m_pSettingsLayout = new QStackedLayout(this);
+        if (m_pSettingsLayout)
         {
             /* Create appliance widget container: */
             QWidget *pApplianceWidgetCnt = new QWidget(this);
@@ -138,18 +136,16 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
 
                     /* Create appliance widget: */
-                    m_pApplianceWidget = new UIApplianceExportEditorWidget;
+                    m_pApplianceWidget = new UIApplianceExportEditorWidget(pApplianceWidgetCnt);
                     if (m_pApplianceWidget)
                     {
                         m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-
-                        /* Add into layout: */
                         pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
                     }
                 }
 
                 /* Add into layout: */
-                m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
+                m_pSettingsLayout->addWidget(pApplianceWidgetCnt);
             }
 
             /* Create form editor container: */
@@ -165,23 +161,22 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     /* Create form editor widget: */
                     m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
                     if (m_pFormEditor)
-                    {
-                        /* Add into layout: */
                         pFormEditorLayout->addWidget(m_pFormEditor);
-                    }
                 }
 
                 /* Add into layout: */
-                m_pSettingsCntLayout->addWidget(pFormEditorCnt);
+                m_pSettingsLayout->addWidget(pFormEditorCnt);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pSettingsCntLayout);
+            pMainLayout->addLayout(m_pSettingsLayout);
         }
     }
+}
 
-    /* Register fields: */
-    registerField("localAppliance", this, "localAppliance");
+UIWizardExportApp *UIWizardExportAppPageBasic3::wizard() const
+{
+    return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
 void UIWizardExportAppPageBasic3::retranslateUi()
@@ -189,8 +184,14 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardExportApp::tr("Virtual system settings"));
 
-    /* Update page appearance: */
-    updatePageAppearance();
+    /* Translate label: */
+    if (wizard()->isFormatCloudOne())
+        m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be used to determine settings "
+                                                "for a cloud storage your VM being exported to.  You can change it by double "
+                                                "clicking on individual lines."));
+    else
+        m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be added to the virtual "
+                                                "appliance.  You can change it by double clicking on individual lines."));
 }
 
 void UIWizardExportAppPageBasic3::initializePage()
@@ -198,27 +199,17 @@ void UIWizardExportAppPageBasic3::initializePage()
     /* Translate page: */
     retranslateUi();
 
-    /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
-        refreshFormPropertiesTable();
+    /* Refresh settings layout state: */
+    refreshStackedLayout(m_pSettingsLayout, wizard()->isFormatCloudOne());
+    /* Refresh corresponding widgets: */
+    refreshApplianceSettingsWidget(m_pApplianceWidget, wizard()->machineIDs(), wizard()->uri(), wizard()->isFormatCloudOne());
+    refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdExportForm(), wizard()->isFormatCloudOne());
+
+    /* Choose initially focused widget: */
+    if (wizard()->isFormatCloudOne())
+        m_pFormEditor->setFocus();
     else
-        refreshApplianceSettingsWidget();
-
-    /* Listen for custom button clicks: */
-    connect(wizard(), &UIWizard::customButtonClicked,
-            this, &UIWizardExportAppPageBasic3::sltHandleCustomButtonClicked,
-            Qt::UniqueConnection);
-}
-
-void UIWizardExportAppPageBasic3::cleanupPage()
-{
-    /* Call to base-class: */
-    UIWizardPage::cleanupPage();
-
-    /* Stop listen for custom button clicks: */
-    disconnect(wizard(), &UIWizard::customButtonClicked,
-               this, &UIWizardExportAppPageBasic3::sltHandleCustomButtonClicked);
+        m_pApplianceWidget->setFocus();
 }
 
 bool UIWizardExportAppPageBasic3::validatePage()
@@ -226,18 +217,14 @@ bool UIWizardExportAppPageBasic3::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
-
     /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = fieldImp("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
+    if (wizard()->isFormatCloudOne())
     {
         /* Make sure table has own data committed: */
         m_pFormEditor->makeSureEditorDataCommitted();
 
         /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = fieldImp("vsdExportForm").value<CVirtualSystemDescriptionForm>();
+        CVirtualSystemDescriptionForm comForm = wizard()->vsdExportForm();
         fResult = comForm.isNotNull();
         Assert(fResult);
 
@@ -255,47 +242,13 @@ bool UIWizardExportAppPageBasic3::validatePage()
     {
         /* Prepare export: */
         m_pApplianceWidget->prepareExport();
+        wizard()->setLocalAppliance(*m_pApplianceWidget->appliance());
     }
 
     /* Try to export appliance: */
     if (fResult)
-        fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
-
-    /* Unlock finish button: */
-    endProcessing();
+        fResult = wizard()->exportAppliance();
 
     /* Return result: */
     return fResult;
-}
-
-void UIWizardExportAppPageBasic3::updatePageAppearance()
-{
-    /* Call to base-class: */
-    UIWizardExportAppPage3::updatePageAppearance();
-
-    /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
-    {
-        m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be used to determine settings "
-                                                "for a cloud storage your VM being exported to.  You can change it by double "
-                                                "clicking on individual lines."));
-        m_pFormEditor->setFocus();
-    }
-    else
-    {
-        m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be added to the virtual "
-                                                "appliance.  You can change it by double clicking on individual lines."));
-        m_pApplianceWidget->setFocus();
-    }
-}
-
-void UIWizardExportAppPageBasic3::sltHandleCustomButtonClicked(int iId)
-{
-    /* Handle 2nd button: */
-    if (iId == QWizard::CustomButton2)
-    {
-        /* Reset widget to default: */
-        m_pApplianceWidget->restoreDefaults();
-    }
 }

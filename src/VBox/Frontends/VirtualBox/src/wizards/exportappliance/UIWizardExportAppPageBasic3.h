@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,57 +23,44 @@
 
 /* Qt includes: */
 #include <QList>
-#include <QVariant>
 
 /* GUI includes: */
-#include "UIExtraDataDefs.h"
-#include "UIFormEditorWidget.h"
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
 
 /* COM includes: */
+#include "COMEnums.h"
 #include "CAppliance.h"
 
 /* Forward declarations: */
 class QStackedLayout;
 class QIRichTextLabel;
 class UIApplianceExportEditorWidget;
+class UIFormEditorWidget;
 class UIWizardExportApp;
 
-
-/** UIWizardPageBase extension for 3rd page of the Export Appliance wizard. */
-class UIWizardExportAppPage3 : public UIWizardPageBase
+/** Namespace for 3rd basic page of the Export Appliance wizard. */
+namespace UIWizardExportAppPage3
 {
-protected:
-
-    /** Constructs 3rd page base. */
-    UIWizardExportAppPage3();
-
-    /** Updates page appearance. */
-    virtual void updatePageAppearance();
+    /** Refresh stacked layout. */
+    void refreshStackedLayout(QStackedLayout *pStackedLayout,
+                              bool fIsFormatCloudOne);
 
     /** Refreshes appliance settings widget. */
-    void refreshApplianceSettingsWidget();
+    void refreshApplianceSettingsWidget(UIApplianceExportEditorWidget *pApplianceWidget,
+                                        const QList<QUuid> &machineIDs,
+                                        const QString &strUri,
+                                        bool fIsFormatCloudOne);
     /** Refreshes form properties table. */
-    void refreshFormPropertiesTable();
+    void refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
+                                    const CVirtualSystemDescriptionForm &comVsdExportForm,
+                                    bool fIsFormatCloudOne);
+}
 
-    /** Returns Local Appliance object. */
-    CAppliance localAppliance() const;
-
-    /** Holds the settings container layout instance. */
-    QStackedLayout *m_pSettingsCntLayout;
-
-    /** Holds the appliance widget reference. */
-    UIApplianceExportEditorWidget *m_pApplianceWidget;
-    /** Holds the Form Editor widget instance. */
-    UIFormEditorWidgetPointer      m_pFormEditor;
-};
-
-
-/** UIWizardPage extension for 3rd page of the Export Appliance wizard, extends UIWizardExportAppPage3 as well. */
-class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAppPage3
+/** UINativeWizardPage extension for 3rd basic page of the Export Appliance wizard,
+  * based on UIWizardAddCloudVMPage3 namespace functions. */
+class UIWizardExportAppPageBasic3 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(CAppliance localAppliance READ localAppliance);
 
 public:
 
@@ -82,37 +69,30 @@ public:
 
 protected:
 
-    /** Allows access wizard from base part. */
-    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
-    /** Allows access page from base part. */
-    UIWizardPage* thisImp() { return this; }
-    /** Allows access wizard-field from base part. */
-    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+    /** Returns wizard this page belongs to. */
+    UIWizardExportApp *wizard() const;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
     /** Performs page initialization. */
     virtual void initializePage() /* override */;
-    /** Performs page cleanup. */
-    virtual void cleanupPage() /* override */;
 
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
-
-    /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override */;
-
-private slots:
-
-    /** Handles custom button clicked.
-      * @param  iId  Brings clicked button id. */
-    void sltHandleCustomButtonClicked(int iId);
 
 private:
 
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
+
+    /** Holds the settings container layout instance. */
+    QStackedLayout *m_pSettingsLayout;
+
+    /** Holds the appliance widget reference. */
+    UIApplianceExportEditorWidget *m_pApplianceWidget;
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidget            *m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h */

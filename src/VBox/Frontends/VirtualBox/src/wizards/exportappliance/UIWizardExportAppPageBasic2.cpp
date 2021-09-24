@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,23 +16,21 @@
  */
 
 /* Qt includes: */
+#include <QButtonGroup>
 #include <QCheckBox>
-#include <QComboBox>
 #include <QDir>
 #include <QGridLayout>
-#include <QHeaderView>
 #include <QLabel>
 #include <QRadioButton>
 #include <QStackedWidget>
-#include <QTableWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
-#include "UIConverter.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -45,39 +43,40 @@
 #include "CMachine.h"
 #include "CSystemProperties.h"
 
+/* Namespaces: */
+using namespace UIWizardExportAppPage2;
+
 
 /*********************************************************************************************************************************
 *   Class UIWizardExportAppPage2 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPage2::UIWizardExportAppPage2(bool fExportToOCIByDefault)
-    : m_fExportToOCIByDefault(fExportToOCIByDefault)
-    , m_pFormatLayout(0)
-    , m_pSettingsLayout1(0)
-    , m_pSettingsLayout2(0)
-    , m_pFormatComboBoxLabel(0)
-    , m_pFormatComboBox(0)
-    , m_pSettingsWidget(0)
-    , m_pFileSelectorLabel(0)
-    , m_pFileSelector(0)
-    , m_pMACComboBoxLabel(0)
-    , m_pMACComboBox(0)
-    , m_pAdditionalLabel(0)
-    , m_pManifestCheckbox(0)
-    , m_pIncludeISOsCheckbox(0)
-    , m_pProfileLabel(0)
-    , m_pProfileComboBox(0)
-    , m_pProfileToolButton(0)
-    , m_pMachineLabel(0)
-    , m_pRadioDoNotAsk(0)
-    , m_pRadioAskThenExport(0)
-    , m_pRadioExportThenAsk(0)
+void UIWizardExportAppPage2::populateFormats(QIComboBox *pCombo, bool fExportToOCIByDefault)
 {
-}
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+    /* We need top-level parent as well: */
+    QWidget *pParent = pCombo->window();
+    AssertPtrReturnVoid(pParent);
 
-void UIWizardExportAppPage2::populateFormats()
-{
-    AssertReturnVoid(m_pFormatComboBox->count() == 0);
+    /* Remember current item data to be able to restore it: */
+    QString strOldData;
+    if (pCombo->currentIndex() != -1)
+        strOldData = pCombo->currentData(FormatData_ShortName).toString();
+    else
+    {
+        /* Otherwise "OCI" or "ovf-1.0" should be the default one: */
+        if (fExportToOCIByDefault)
+            strOldData = "OCI";
+        else
+            strOldData = "ovf-1.0";
+    }
+
+    /* Block signals while updating: */
+    pCombo->blockSignals(true);
+
+    /* Clear combo initially: */
+    pCombo->clear();
 
     /* Compose hardcoded format list: */
     QStringList formats;
@@ -88,460 +87,465 @@ void UIWizardExportAppPage2::populateFormats()
     foreach (const QString &strShortName, formats)
     {
         /* Compose empty item, fill it's data: */
-        m_pFormatComboBox->addItem(QString());
-        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, strShortName, FormatData_ShortName);
+        pCombo->addItem(QString());
+        pCombo->setItemData(pCombo->count() - 1, strShortName, FormatData_ShortName);
     }
 
-    /* Initialize Cloud Provider Manager: */
-    bool fOCIPresent = false;
-    m_comCloudProviderManager = cloudProviderManager(wizardImp());
-    if (m_comCloudProviderManager.isNotNull())
+    /* Iterate through existing providers: */
+    foreach (const CCloudProvider &comProvider, listCloudProviders(pParent))
     {
-        /* Iterate through existing providers: */
-        foreach (const CCloudProvider &comProvider, listCloudProviders(wizardImp()))
-        {
-            /* Skip if we have nothing to populate (file missing?): */
-            if (comProvider.isNull())
-                continue;
+        /* Skip if we have nothing to populate (file missing?): */
+        if (comProvider.isNull())
+            continue;
+        /* Acquire provider name: */
+        QString strProviderName;
+        if (!cloudProviderName(comProvider, strProviderName, pParent))
+            continue;
+        /* Acquire provider short name: */
+        QString strProviderShortName;
+        if (!cloudProviderShortName(comProvider, strProviderShortName, pParent))
+            continue;
 
-            /* Compose empty item, fill it's data: */
-            m_pFormatComboBox->addItem(QString());
-            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetId(),        FormatData_ID);
-            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetName(),      FormatData_Name);
-            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetShortName(), FormatData_ShortName);
-            m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, true,                       FormatData_IsItCloudFormat);
-            if (m_pFormatComboBox->itemData(m_pFormatComboBox->count() - 1, FormatData_ShortName).toString() == "OCI")
-                fOCIPresent = true;
-        }
+        /* Compose empty item, fill it's data: */
+        pCombo->addItem(QString());
+        pCombo->setItemData(pCombo->count() - 1, strProviderName,      FormatData_Name);
+        pCombo->setItemData(pCombo->count() - 1, strProviderShortName, FormatData_ShortName);
+        pCombo->setItemData(pCombo->count() - 1, true,                 FormatData_IsItCloudFormat);
     }
 
-    /* Set default: */
-    if (m_fExportToOCIByDefault && fOCIPresent)
-        setFormat("OCI");
-    else
-        setFormat("ovf-1.0");
+    /* Set previous/default item if possible: */
+    int iNewIndex = -1;
+    if (   iNewIndex == -1
+        && !strOldData.isNull())
+        iNewIndex = pCombo->findData(strOldData, FormatData_ShortName);
+    if (   iNewIndex == -1
+        && pCombo->count() > 0)
+        iNewIndex = 0;
+    if (iNewIndex != -1)
+        pCombo->setCurrentIndex(iNewIndex);
+
+    /* Unblock signals after update: */
+    pCombo->blockSignals(false);
 }
 
-void UIWizardExportAppPage2::populateMACAddressPolicies()
+void UIWizardExportAppPage2::populateMACAddressPolicies(QIComboBox *pCombo)
 {
-    AssertReturnVoid(m_pMACComboBox->count() == 0);
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+    /* We need top-level parent as well: */
+    QWidget *pParent = pCombo->window();
+    AssertPtrReturnVoid(pParent);
 
     /* Map known export options to known MAC address export policies: */
     QMap<KExportOptions, MACAddressExportPolicy> knownOptions;
     knownOptions[KExportOptions_StripAllMACs] = MACAddressExportPolicy_StripAllMACs;
     knownOptions[KExportOptions_StripAllNonNATMACs] = MACAddressExportPolicy_StripAllNonNATMACs;
-
     /* Load currently supported export options: */
-    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-    const QVector<KExportOptions> supportedOptions = comProperties.GetSupportedExportOptions();
-
+    const QVector<KExportOptions> supportedOptions =
+        uiCommon().virtualBox().GetSystemProperties().GetSupportedExportOptions();
     /* Check which of supported options/policies are known: */
     QList<MACAddressExportPolicy> supportedPolicies;
     foreach (const KExportOptions &enmOption, supportedOptions)
         if (knownOptions.contains(enmOption))
             supportedPolicies << knownOptions.value(enmOption);
 
-    /* Add supported policies first: */
-    foreach (const MACAddressExportPolicy &enmPolicy, supportedPolicies)
-        m_pMACComboBox->addItem(QString(), QVariant::fromValue(enmPolicy));
-
-    /* Add hardcoded policy finally: */
-    m_pMACComboBox->addItem(QString(), QVariant::fromValue(MACAddressExportPolicy_KeepAllMACs));
-
-    /* Set default: */
-    if (supportedPolicies.contains(MACAddressExportPolicy_StripAllNonNATMACs))
-        setMACAddressExportPolicy(MACAddressExportPolicy_StripAllNonNATMACs);
-    else
-        setMACAddressExportPolicy(MACAddressExportPolicy_KeepAllMACs);
-}
-
-void UIWizardExportAppPage2::populateProfiles()
-{
-    /* Block signals while updating: */
-    m_pProfileComboBox->blockSignals(true);
-
     /* Remember current item data to be able to restore it: */
-    QString strOldData;
-    if (m_pProfileComboBox->currentIndex() != -1)
-        strOldData = m_pProfileComboBox->itemData(m_pProfileComboBox->currentIndex(), ProfileData_Name).toString();
+    MACAddressExportPolicy enmOldData = MACAddressExportPolicy_MAX;
+    if (pCombo->currentIndex() != -1)
+        enmOldData = pCombo->currentData().value<MACAddressExportPolicy>();
+    else
+    {
+        if (supportedPolicies.contains(MACAddressExportPolicy_StripAllNonNATMACs))
+            enmOldData = MACAddressExportPolicy_StripAllNonNATMACs;
+        else
+            enmOldData = MACAddressExportPolicy_KeepAllMACs;
+    }
+
+    /* Block signals while updating: */
+    pCombo->blockSignals(true);
 
     /* Clear combo initially: */
-    m_pProfileComboBox->clear();
-    /* Clear Cloud Provider: */
-    m_comCloudProvider = CCloudProvider();
+    pCombo->clear();
 
-    /* If provider chosen: */
-    if (!providerId().isNull())
+    /* Add supported policies first: */
+    foreach (const MACAddressExportPolicy &enmPolicy, supportedPolicies)
+        pCombo->addItem(QString(), QVariant::fromValue(enmPolicy));
+
+    /* Add hardcoded policy finally: */
+    pCombo->addItem(QString(), QVariant::fromValue(MACAddressExportPolicy_KeepAllMACs));
+
+    /* Set previous/default item if possible: */
+    int iNewIndex = -1;
+    if (   iNewIndex == -1
+        && enmOldData != MACAddressExportPolicy_MAX)
+        iNewIndex = pCombo->findData(QVariant::fromValue(enmOldData));
+    if (   iNewIndex == -1
+        && pCombo->count() > 0)
+        iNewIndex = 0;
+    if (iNewIndex != -1)
+        pCombo->setCurrentIndex(iNewIndex);
+
+    /* Unblock signals after update: */
+    pCombo->blockSignals(false);
+}
+
+QString UIWizardExportAppPage2::format(QIComboBox *pCombo)
+{
+    return pCombo->currentData(FormatData_ShortName).toString();
+}
+
+bool UIWizardExportAppPage2::isFormatCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
+{
+    /* Sanity check: */
+    AssertPtrReturn(pCombo, false);
+
+    /* Handle special case, -1 means "current one": */
+    if (iIndex == -1)
+        iIndex = pCombo->currentIndex();
+
+    /* Give the actual result: */
+    return pCombo->itemData(iIndex, FormatData_IsItCloudFormat).toBool();
+}
+
+void UIWizardExportAppPage2::refreshStackedWidget(QStackedWidget *pStackedWidget, bool fIsFormatCloudOne)
+{
+    /* Update stack appearance according to chosen format: */
+    pStackedWidget->setCurrentIndex((int)fIsFormatCloudOne);
+}
+
+void UIWizardExportAppPage2::refreshFileSelectorName(QString &strFileSelectorName,
+                                                     const QStringList &machineNames,
+                                                     const QString &strDefaultApplianceName,
+                                                     bool fIsFormatCloudOne)
+{
+    /* If format is cloud one: */
+    if (fIsFormatCloudOne)
     {
-        /* (Re)initialize Cloud Provider: */
-        m_comCloudProvider = cloudProviderById(providerId(), wizardImp());
-        if (m_comCloudProvider.isNotNull())
+        /* We use no name: */
+        strFileSelectorName.clear();
+    }
+    /* If format is local one: */
+    else
+    {
+        /* If it's one VM only, we use the VM name as file-name: */
+        if (machineNames.size() == 1)
+            strFileSelectorName = machineNames.first();
+        /* Otherwise => we use the default file-name: */
+        else
+            strFileSelectorName = strDefaultApplianceName;
+    }
+}
+
+void UIWizardExportAppPage2::refreshFileSelectorExtension(QString &strFileSelectorExt,
+                                                          UIEmptyFilePathSelector *pFileSelector,
+                                                          bool fIsFormatCloudOne)
+{
+    /* If format is cloud one: */
+    if (fIsFormatCloudOne)
+    {
+        /* We use no extension: */
+        strFileSelectorExt.clear();
+
+        /* Update file chooser accordingly: */
+        pFileSelector->setFileFilters(QString());
+    }
+    /* If format is local one: */
+    else
+    {
+        /* We use the default (.ova) extension: */
+        strFileSelectorExt = ".ova";
+
+        /* Update file chooser accordingly: */
+        pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
+                                      UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
+    }
+}
+
+void UIWizardExportAppPage2::refreshFileSelectorPath(UIEmptyFilePathSelector *pFileSelector,
+                                                     const QString &strFileSelectorName,
+                                                     const QString &strFileSelectorExt,
+                                                     bool fIsFormatCloudOne)
+{
+    /* If format is cloud one: */
+    if (fIsFormatCloudOne)
+    {
+        /* Clear file selector path: */
+        pFileSelector->setPath(QString());
+    }
+    /* If format is local one: */
+    else
+    {
+        /* Compose file selector path: */
+        const QString strPath = QDir::toNativeSeparators(QString("%1/%2")
+                                                         .arg(uiCommon().documentsPath())
+                                                         .arg(strFileSelectorName + strFileSelectorExt));
+        pFileSelector->setPath(strPath);
+    }
+}
+
+void UIWizardExportAppPage2::refreshManifestCheckBoxAccess(QCheckBox *pCheckBox,
+                                                           bool fIsFormatCloudOne)
+{
+    /* If format is cloud one: */
+    if (fIsFormatCloudOne)
+    {
+        /* Disable manifest check-box: */
+        pCheckBox->setChecked(false);
+        pCheckBox->setEnabled(false);
+    }
+    /* If format is local one: */
+    else
+    {
+        /* Enable and select manifest check-box: */
+        pCheckBox->setChecked(true);
+        pCheckBox->setEnabled(true);
+    }
+}
+
+void UIWizardExportAppPage2::refreshIncludeISOsCheckBoxAccess(QCheckBox *pCheckBox,
+                                                              bool fIsFormatCloudOne)
+{
+    /* If format is cloud one: */
+    if (fIsFormatCloudOne)
+    {
+        /* Disable include ISO check-box: */
+        pCheckBox->setChecked(false);
+        pCheckBox->setEnabled(false);
+    }
+    /* If format is local one: */
+    else
+    {
+        /* Enable include ISO check-box: */
+        pCheckBox->setEnabled(true);
+    }
+}
+
+void UIWizardExportAppPage2::refreshProfileCombo(QIComboBox *pCombo,
+                                                 const QString &strFormat,
+                                                 bool fIsFormatCloudOne)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+
+    /* If format is cloud one: */
+    if (fIsFormatCloudOne)
+    {
+        /* We need top-level parent as well: */
+        QWidget *pParent = pCombo->window();
+        AssertPtrReturnVoid(pParent);
+        /* Acquire provider: */
+        CCloudProvider comProvider = cloudProviderByShortName(strFormat, pParent);
+        AssertReturnVoid(comProvider.isNotNull());
+
+        /* Remember current item data to be able to restore it: */
+        QString strOldData;
+        if (pCombo->currentIndex() != -1)
+            strOldData = pCombo->currentData(ProfileData_Name).toString();
+
+        /* Block signals while updating: */
+        pCombo->blockSignals(true);
+
+        /* Clear combo initially: */
+        pCombo->clear();
+
+        /* Iterate through existing profile names: */
+        foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pParent))
         {
-            /* Iterate through existing profile names: */
-            foreach (const CCloudProfile &comProfile, listCloudProfiles(m_comCloudProvider, wizardImp()))
-            {
-                /* Acquire profile name: */
-                QString strProfileName;
-                if (cloudProfileName(comProfile, strProfileName, wizardImp()))
-                {
-                    /* Compose item, fill it's data: */
-                    m_pProfileComboBox->addItem(strProfileName);
-                    m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
-                }
-            }
+            /* Skip if we have nothing to populate (wtf happened?): */
+            if (comProfile.isNull())
+                continue;
+            /* Acquire profile name: */
+            QString strProfileName;
+            if (!cloudProfileName(comProfile, strProfileName, pParent))
+                continue;
+
+            /* Compose item, fill it's data: */
+            pCombo->addItem(strProfileName);
+            pCombo->setItemData(pCombo->count() - 1, strProfileName, ProfileData_Name);
         }
 
         /* Set previous/default item if possible: */
         int iNewIndex = -1;
         if (   iNewIndex == -1
             && !strOldData.isNull())
-            iNewIndex = m_pProfileComboBox->findData(strOldData, ProfileData_Name);
+            iNewIndex = pCombo->findData(strOldData, ProfileData_Name);
         if (   iNewIndex == -1
-            && m_pProfileComboBox->count() > 0)
+            && pCombo->count() > 0)
             iNewIndex = 0;
         if (iNewIndex != -1)
-            m_pProfileComboBox->setCurrentIndex(iNewIndex);
+            pCombo->setCurrentIndex(iNewIndex);
+
+        /* Unblock signals after update: */
+        pCombo->blockSignals(false);
     }
-
-    /* Unblock signals after update: */
-    m_pProfileComboBox->blockSignals(false);
-}
-
-void UIWizardExportAppPage2::populateProfile()
-{
-    /* Clear Cloud Profile: */
-    m_comCloudProfile = CCloudProfile();
-
-    /* If both provider and profile chosen: */
-    if (!providerShortName().isNull() && !profileName().isNull())
-    {
-        /* Acquire Cloud Profile: */
-        m_comCloudProfile = cloudProfileByName(providerShortName(), profileName(), wizardImp());
-    }
-}
-
-void UIWizardExportAppPage2::populateFormProperties()
-{
-    /* Clear appliance: */
-    m_comAppliance = CAppliance();
-    /* Clear cloud client: */
-    m_comClient = CCloudClient();
-    /* Clear description: */
-    m_comVSD = CVirtualSystemDescription();
-    /* Clear description form: */
-    m_comVSDExportForm = CVirtualSystemDescriptionForm();
-
-    /* If profile chosen: */
-    if (m_comCloudProfile.isNotNull())
-    {
-        /* Main API request sequence, can be interrupted after any step: */
-        do
-        {
-            /* Perform cloud export procedure for first uuid only: */
-            const QList<QUuid> uuids = fieldImp("machineIDs").value<QList<QUuid> >();
-            AssertReturnVoid(!uuids.isEmpty());
-            const QUuid uMachineId = uuids.first();
-
-            /* Get the machine with the uMachineId: */
-            CVirtualBox comVBox = uiCommon().virtualBox();
-            CMachine comMachine = comVBox.FindMachine(uMachineId.toString());
-            if (!comVBox.isOk())
-            {
-                msgCenter().cannotFindMachineById(comVBox, uMachineId);
-                break;
-            }
-
-            /* Create appliance: */
-            CAppliance comAppliance = comVBox.CreateAppliance();
-            if (!comVBox.isOk())
-            {
-                msgCenter().cannotCreateAppliance(comVBox);
-                break;
-            }
-
-            /* Remember appliance: */
-            m_comAppliance = comAppliance;
-
-            /* Add the export virtual system description to our appliance object: */
-            CVirtualSystemDescription comVSD = comMachine.ExportTo(m_comAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
-            if (!comMachine.isOk())
-            {
-                msgCenter().cannotExportAppliance(comMachine, m_comAppliance.GetPath(), thisImp());
-                break;
-            }
-
-            /* Remember description: */
-            m_comVSD = comVSD;
-
-            /* Add Launch Instance flag to virtual system description: */
-            switch (cloudExportMode())
-            {
-                case CloudExportMode_AskThenExport:
-                case CloudExportMode_ExportThenAsk:
-                    m_comVSD.AddDescription(KVirtualSystemDescriptionType_CloudLaunchInstance, "true", QString());
-                    break;
-                default:
-                    m_comVSD.AddDescription(KVirtualSystemDescriptionType_CloudLaunchInstance, "false", QString());
-                    break;
-            }
-            if (!m_comVSD.isOk())
-            {
-                msgCenter().cannotAddVirtualSystemDescriptionValue(m_comVSD);
-                break;
-            }
-
-            /* Create Cloud Client: */
-            CCloudClient comClient = cloudClient(m_comCloudProfile);
-            if (comClient.isNull())
-                break;
-
-            /* Remember client: */
-            m_comClient = comClient;
-
-            /* Read Cloud Client Export description form: */
-            CVirtualSystemDescriptionForm comExportForm;
-            bool fResult = exportDescriptionForm(m_comClient, m_comVSD, comExportForm, wizardImp());
-            if (!fResult)
-                break;
-
-            /* Remember description form: */
-            m_comVSDExportForm = comExportForm;
-        }
-        while (0);
-    }
-}
-
-void UIWizardExportAppPage2::updatePageAppearance()
-{
-    /* Update page appearance according to chosen format: */
-    m_pSettingsWidget->setCurrentIndex((int)isFormatCloudOne());
-}
-
-void UIWizardExportAppPage2::refreshFileSelectorName()
-{
-    /* If it's one VM only, we use the VM name as file-name: */
-    if (fieldImp("machineNames").toStringList().size() == 1)
-        m_strFileSelectorName = fieldImp("machineNames").toStringList()[0];
-    /* Otherwise => we use the default file-name: */
-    else
-        m_strFileSelectorName = m_strDefaultApplianceName;
-
-    /* Cascade update for file selector path: */
-    refreshFileSelectorPath();
-}
-
-void UIWizardExportAppPage2::refreshFileSelectorExtension()
-{
-    /* Save old extension to compare afterwards: */
-    const QString strOldExtension = m_strFileSelectorExt;
-
-    /* If format is cloud one: */
-    if (isFormatCloudOne())
-    {
-        /* We use no extension: */
-        m_strFileSelectorExt.clear();
-
-        /* Update file chooser accordingly: */
-        m_pFileSelector->setFileFilters(QString());
-    }
-    /* Otherwise: */
+    /* If format is local one: */
     else
     {
-        /* We use the default (.ova) extension: */
-        m_strFileSelectorExt = ".ova";
+        /* Block signals while updating: */
+        pCombo->blockSignals(true);
 
-        /* Update file chooser accordingly: */
-        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
-                                        UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
+        /* Clear combo initially: */
+        pCombo->clear();
+
+        /* Unblock signals after update: */
+        pCombo->blockSignals(false);
     }
-
-    /* Cascade update for file selector path if necessary: */
-    if (m_strFileSelectorExt != strOldExtension)
-        refreshFileSelectorPath();
 }
 
-void UIWizardExportAppPage2::refreshFileSelectorPath()
+void UIWizardExportAppPage2::refreshCloudProfile(CCloudProfile &comCloudProfile,
+                                                 const QString &strShortProviderName,
+                                                 const QString &strProfileName,
+                                                 bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
-    if (isFormatCloudOne())
-    {
-        /* Clear file selector path: */
-        m_pFileSelector->setPath(QString());
-    }
+    if (fIsFormatCloudOne)
+        comCloudProfile = cloudProfileByName(strShortProviderName, strProfileName);
+    /* If format is local one: */
     else
-    {
-        /* Compose file selector path: */
-        const QString strPath = QDir::toNativeSeparators(QString("%1/%2")
-                                                         .arg(uiCommon().documentsPath())
-                                                         .arg(m_strFileSelectorName + m_strFileSelectorExt));
-        m_pFileSelector->setPath(strPath);
-    }
+        comCloudProfile = CCloudProfile();
 }
 
-void UIWizardExportAppPage2::refreshManifestCheckBoxAccess()
+void UIWizardExportAppPage2::refreshCloudExportMode(const QMap<CloudExportMode, QAbstractButton*> &radios,
+                                                    bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
-    if (isFormatCloudOne())
+    if (fIsFormatCloudOne)
     {
-        /* Disable manifest check-box: */
-        m_pManifestCheckbox->setChecked(false);
-        m_pManifestCheckbox->setEnabled(false);
+        /* Check if something already chosen: */
+        bool fSomethingChosen = false;
+        foreach (QAbstractButton *pButton, radios.values())
+            if (pButton->isChecked())
+                fSomethingChosen = true;
+        /* Choose default cloud export option: */
+        if (!fSomethingChosen)
+            radios.value(CloudExportMode_ExportThenAsk)->setChecked(true);
     }
-    /* Otherwise: */
+    /* If format is local one: */
     else
     {
-        /* Enable manifest check-box: */
-        m_pManifestCheckbox->setChecked(true);
-        m_pManifestCheckbox->setEnabled(true);
+        /* Make sure nothing chosen: */
+        foreach (QAbstractButton *pButton, radios.values())
+            pButton->setChecked(false);
     }
 }
 
-void UIWizardExportAppPage2::refreshIncludeISOsCheckBoxAccess()
+void UIWizardExportAppPage2::refreshCloudStuff(CAppliance &comCloudAppliance,
+                                               CCloudClient &comCloudClient,
+                                               CVirtualSystemDescription &comCloudVsd,
+                                               CVirtualSystemDescriptionForm &comCloudVsdExportForm,
+                                               const CCloudProfile &comCloudProfile,
+                                               const QList<QUuid> &machineIDs,
+                                               const QString &strUri,
+                                               const CloudExportMode enmCloudExportMode)
 {
-    /* If format is cloud one: */
-    if (isFormatCloudOne())
+    /* Clear stuff: */
+    comCloudAppliance = CAppliance();
+    comCloudClient = CCloudClient();
+    comCloudVsd = CVirtualSystemDescription();
+    comCloudVsdExportForm = CVirtualSystemDescriptionForm();
+
+    /* Sanity check: */
+    if (comCloudProfile.isNull())
+        return;
+    if (machineIDs.isEmpty())
+        return;
+
+    /* Perform cloud export procedure for first uuid only: */
+    const QUuid uMachineId = machineIDs.first();
+
+    /* Get the machine with the uMachineId: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CMachine comMachine = comVBox.FindMachine(uMachineId.toString());
+    if (!comVBox.isOk())
     {
-        /* Disable include ISO check-box: */
-        m_pIncludeISOsCheckbox->setChecked(false);
-        m_pIncludeISOsCheckbox->setEnabled(false);
+        msgCenter().cannotFindMachineById(comVBox, uMachineId);
+        return;
     }
-    /* Otherwise: */
-    else
+
+    /* Create appliance: */
+    CAppliance comAppliance = comVBox.CreateAppliance();
+    if (!comVBox.isOk())
     {
-        /* Enable include ISO check-box: */
-        m_pIncludeISOsCheckbox->setEnabled(true);
+        msgCenter().cannotCreateAppliance(comVBox);
+        return;
     }
+
+    /* Remember appliance: */
+    comCloudAppliance = comAppliance;
+
+    /* Add the export virtual system description to our appliance object: */
+    CVirtualSystemDescription comVsd = comMachine.ExportTo(comCloudAppliance, strUri);
+    if (!comMachine.isOk())
+    {
+        msgCenter().cannotExportAppliance(comMachine, comCloudAppliance.GetPath());
+        return;
+    }
+
+    /* Remember description: */
+    comCloudVsd = comVsd;
+
+    /* Add Launch Instance flag to virtual system description: */
+    switch (enmCloudExportMode)
+    {
+        case CloudExportMode_AskThenExport:
+        case CloudExportMode_ExportThenAsk:
+            comCloudVsd.AddDescription(KVirtualSystemDescriptionType_CloudLaunchInstance, "true", QString());
+            break;
+        default:
+            comCloudVsd.AddDescription(KVirtualSystemDescriptionType_CloudLaunchInstance, "false", QString());
+            break;
+    }
+    if (!comCloudVsd.isOk())
+    {
+        msgCenter().cannotAddVirtualSystemDescriptionValue(comCloudVsd);
+        return;
+    }
+
+    /* Create Cloud Client: */
+    CCloudClient comClient = cloudClient(comCloudProfile);
+    if (comClient.isNull())
+        return;
+
+    /* Remember client: */
+    comCloudClient = comClient;
+
+    /* Read Cloud Client Export description form: */
+    CVirtualSystemDescriptionForm comVsdExportForm;
+    bool fResult = exportDescriptionForm(comCloudClient, comCloudVsd, comVsdExportForm);
+    if (!fResult)
+        return;
+
+    /* Remember export description form: */
+    comCloudVsdExportForm = comVsdExportForm;
 }
 
-void UIWizardExportAppPage2::updateFormatComboToolTip()
+QString UIWizardExportAppPage2::profileName(QIComboBox *pCombo)
 {
-    const int iCurrentIndex = m_pFormatComboBox->currentIndex();
-    const QString strCurrentToolTip = m_pFormatComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-    m_pFormatComboBox->setToolTip(strCurrentToolTip);
+    return pCombo->currentData(ProfileData_Name).toString();
 }
 
-void UIWizardExportAppPage2::updateMACAddressExportPolicyComboToolTip()
+void UIWizardExportAppPage2::updateFormatComboToolTip(QIComboBox *pCombo)
 {
-    const QString strCurrentToolTip = m_pMACComboBox->currentData(Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-    m_pMACComboBox->setToolTip(strCurrentToolTip);
+    AssertPtrReturnVoid(pCombo);
+    QString strCurrentToolTip;
+    if (pCombo->count() != 0)
+    {
+        strCurrentToolTip = pCombo->currentData(Qt::ToolTipRole).toString();
+        AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    }
+    pCombo->setToolTip(strCurrentToolTip);
 }
 
-void UIWizardExportAppPage2::setFormat(const QString &strFormat)
+void UIWizardExportAppPage2::updateMACAddressExportPolicyComboToolTip(QIComboBox *pCombo)
 {
-    const int iIndex = m_pFormatComboBox->findData(strFormat, FormatData_ShortName);
-    AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pFormatComboBox->setCurrentIndex(iIndex);
-}
-
-QString UIWizardExportAppPage2::format() const
-{
-    const int iIndex = m_pFormatComboBox->currentIndex();
-    return m_pFormatComboBox->itemData(iIndex, FormatData_ShortName).toString();
-}
-
-bool UIWizardExportAppPage2::isFormatCloudOne(int iIndex /* = -1 */) const
-{
-    if (iIndex == -1)
-        iIndex = m_pFormatComboBox->currentIndex();
-    return m_pFormatComboBox->itemData(iIndex, FormatData_IsItCloudFormat).toBool();
-}
-
-void UIWizardExportAppPage2::setPath(const QString &strPath)
-{
-    m_pFileSelector->setPath(strPath);
-}
-
-QString UIWizardExportAppPage2::path() const
-{
-    return m_pFileSelector->path();
-}
-
-void UIWizardExportAppPage2::setMACAddressExportPolicy(MACAddressExportPolicy enmMACAddressExportPolicy)
-{
-    const int iIndex = m_pMACComboBox->findData(enmMACAddressExportPolicy);
-    AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pMACComboBox->setCurrentIndex(iIndex);
-}
-
-MACAddressExportPolicy UIWizardExportAppPage2::macAddressExportPolicy() const
-{
-    return m_pMACComboBox->currentData().value<MACAddressExportPolicy>();
-}
-
-void UIWizardExportAppPage2::setManifestSelected(bool fChecked)
-{
-    m_pManifestCheckbox->setChecked(fChecked);
-}
-
-bool UIWizardExportAppPage2::isManifestSelected() const
-{
-    return m_pManifestCheckbox->isChecked();
-}
-
-void UIWizardExportAppPage2::setIncludeISOsSelected(bool fChecked)
-{
-    m_pIncludeISOsCheckbox->setChecked(fChecked);
-}
-
-bool UIWizardExportAppPage2::isIncludeISOsSelected() const
-{
-    return m_pIncludeISOsCheckbox->isChecked();
-}
-
-void UIWizardExportAppPage2::setProviderById(const QUuid &uId)
-{
-    const int iIndex = m_pFormatComboBox->findData(uId, FormatData_ID);
-    AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pFormatComboBox->setCurrentIndex(iIndex);
-}
-
-QUuid UIWizardExportAppPage2::providerId() const
-{
-    const int iIndex = m_pFormatComboBox->currentIndex();
-    return m_pFormatComboBox->itemData(iIndex, FormatData_ID).toUuid();
-}
-
-QString UIWizardExportAppPage2::providerShortName() const
-{
-    const int iIndex = m_pFormatComboBox->currentIndex();
-    return m_pFormatComboBox->itemData(iIndex, FormatData_ShortName).toString();
-}
-
-QString UIWizardExportAppPage2::profileName() const
-{
-    const int iIndex = m_pProfileComboBox->currentIndex();
-    return m_pProfileComboBox->itemData(iIndex, ProfileData_Name).toString();
-}
-
-CAppliance UIWizardExportAppPage2::cloudAppliance() const
-{
-    return m_comAppliance;
-}
-
-CCloudClient UIWizardExportAppPage2::client() const
-{
-    return m_comClient;
-}
-
-CVirtualSystemDescription UIWizardExportAppPage2::vsd() const
-{
-    return m_comVSD;
-}
-
-CVirtualSystemDescriptionForm UIWizardExportAppPage2::vsdExportForm() const
-{
-    return m_comVSDExportForm;
-}
-
-CloudExportMode UIWizardExportAppPage2::cloudExportMode() const
-{
-    if (m_pRadioAskThenExport->isChecked())
-        return CloudExportMode_AskThenExport;
-    else if (m_pRadioExportThenAsk->isChecked())
-        return CloudExportMode_ExportThenAsk;
-    return CloudExportMode_DoNotAsk;
+    AssertPtrReturnVoid(pCombo);
+    QString strCurrentToolTip;
+    if (pCombo->count() != 0)
+    {
+        strCurrentToolTip = pCombo->currentData(Qt::ToolTipRole).toString();
+        AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    }
+    pCombo->setToolTip(strCurrentToolTip);
 }
 
 
@@ -550,21 +554,36 @@ CloudExportMode UIWizardExportAppPage2::cloudExportMode() const
 *********************************************************************************************************************************/
 
 UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefault)
-    : UIWizardExportAppPage2(fExportToOCIByDefault)
+    : m_fExportToOCIByDefault(fExportToOCIByDefault)
     , m_pLabelFormat(0)
     , m_pLabelSettings(0)
+    , m_pFormatLayout(0)
+    , m_pFormatComboBoxLabel(0)
+    , m_pFormatComboBox(0)
+    , m_pSettingsWidget(0)
+    , m_pSettingsLayout1(0)
+    , m_pFileSelectorLabel(0)
+    , m_pFileSelector(0)
+    , m_pMACComboBoxLabel(0)
+    , m_pMACComboBox(0)
+    , m_pAdditionalLabel(0)
+    , m_pManifestCheckbox(0)
+    , m_pIncludeISOsCheckbox(0)
+    , m_pSettingsLayout2(0)
+    , m_pProfileLabel(0)
+    , m_pProfileComboBox(0)
+    , m_pProfileToolButton(0)
+    , m_pExportModeLabel(0)
+    , m_pExportModeButtonGroup(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
         /* Create format label: */
-        m_pLabelFormat = new QIRichTextLabel;
+        m_pLabelFormat = new QIRichTextLabel(this);
         if (m_pLabelFormat)
-        {
-            /* Add into layout: */
             pMainLayout->addWidget(m_pLabelFormat);
-        }
 
         /* Create format layout: */
         m_pFormatLayout = new QGridLayout;
@@ -580,22 +599,19 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
             m_pFormatLayout->setColumnStretch(0, 0);
             m_pFormatLayout->setColumnStretch(1, 1);
 
-            /* Create format combo-box: */
-            m_pFormatComboBox = new QComboBox;
-            if (m_pFormatComboBox)
-            {
-                /* Add into layout: */
-                m_pFormatLayout->addWidget(m_pFormatComboBox, 0, 1);
-            }
             /* Create format combo-box label: */
-            m_pFormatComboBoxLabel = new QLabel;
+            m_pFormatComboBoxLabel = new QLabel(this);
             if (m_pFormatComboBoxLabel)
             {
                 m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
-
-                /* Add into layout: */
                 m_pFormatLayout->addWidget(m_pFormatComboBoxLabel, 0, 0);
+            }
+            /* Create format combo-box: */
+            m_pFormatComboBox = new QIComboBox(this);
+            if (m_pFormatComboBox)
+            {
+                m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+                m_pFormatLayout->addWidget(m_pFormatComboBox, 0, 1);
             }
 
             /* Add into layout: */
@@ -603,19 +619,16 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
         }
 
         /* Create settings label: */
-        m_pLabelSettings = new QIRichTextLabel;
+        m_pLabelSettings = new QIRichTextLabel(this);
         if (m_pLabelSettings)
-        {
-            /* Add into layout: */
             pMainLayout->addWidget(m_pLabelSettings);
-        }
 
         /* Create settings layout: */
-        m_pSettingsWidget = new QStackedWidget;
+        m_pSettingsWidget = new QStackedWidget(this);
         if (m_pSettingsWidget)
         {
             /* Create settings pane 1: */
-            QWidget *pSettingsPane1 = new QWidget;
+            QWidget *pSettingsPane1 = new QWidget(m_pSettingsWidget);
             if (pSettingsPane1)
             {
                 /* Create settings layout 1: */
@@ -633,77 +646,57 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                     m_pSettingsLayout1->setColumnStretch(1, 1);
 
                     /* Create file selector: */
-                    m_pFileSelector = new UIEmptyFilePathSelector;
+                    m_pFileSelector = new UIEmptyFilePathSelector(pSettingsPane1);
                     if (m_pFileSelector)
                     {
                         m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
                         m_pFileSelector->setEditable(true);
                         m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                         m_pFileSelector->setDefaultSaveExt("ova");
-
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
                     }
                     /* Create file selector label: */
-                    m_pFileSelectorLabel = new QLabel;
+                    m_pFileSelectorLabel = new QLabel(pSettingsPane1);
                     if (m_pFileSelectorLabel)
                     {
                         m_pFileSelectorLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                         m_pFileSelectorLabel->setBuddy(m_pFileSelector);
-
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
                     }
 
                     /* Create MAC policy combo-box: */
-                    m_pMACComboBox = new QComboBox;
+                    m_pMACComboBox = new QIComboBox(pSettingsPane1);
                     if (m_pMACComboBox)
-                    {
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(m_pMACComboBox, 1, 1, 1, 2);
-                    }
                     /* Create format combo-box label: */
-                    m_pMACComboBoxLabel = new QLabel;
+                    m_pMACComboBoxLabel = new QLabel(pSettingsPane1);
                     if (m_pMACComboBoxLabel)
                     {
                         m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                         m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
-
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 1, 0);
                     }
 
                     /* Create advanced label: */
-                    m_pAdditionalLabel = new QLabel;
+                    m_pAdditionalLabel = new QLabel(pSettingsPane1);
                     if (m_pAdditionalLabel)
                     {
                         m_pAdditionalLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(m_pAdditionalLabel, 2, 0);
                     }
                     /* Create manifest check-box: */
-                    m_pManifestCheckbox = new QCheckBox;
+                    m_pManifestCheckbox = new QCheckBox(pSettingsPane1);
                     if (m_pManifestCheckbox)
-                    {
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
-                    }
                     /* Create include ISOs check-box: */
-                    m_pIncludeISOsCheckbox = new QCheckBox;
+                    m_pIncludeISOsCheckbox = new QCheckBox(pSettingsPane1);
                     if (m_pIncludeISOsCheckbox)
-                    {
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 3, 1);
-                    }
 
                     /* Create placeholder: */
-                    QWidget *pPlaceholder = new QWidget;
+                    QWidget *pPlaceholder = new QWidget(pSettingsPane1);
                     if (pPlaceholder)
-                    {
-                        /* Add into layout: */
                         m_pSettingsLayout1->addWidget(pPlaceholder, 4, 0, 1, 3);
-                    }
                 }
 
                 /* Add into layout: */
@@ -711,7 +704,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
             }
 
             /* Create settings pane 2: */
-            QWidget *pSettingsPane2 = new QWidget;
+            QWidget *pSettingsPane2 = new QWidget(m_pSettingsWidget);
             if (pSettingsPane2)
             {
                 /* Create settings layout 2: */
@@ -731,12 +724,10 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                     m_pSettingsLayout2->setRowStretch(4, 1);
 
                     /* Create profile label: */
-                    m_pProfileLabel = new QLabel;
+                    m_pProfileLabel = new QLabel(pSettingsPane2);
                     if (m_pProfileLabel)
                     {
                         m_pProfileLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-
-                        /* Add into layout: */
                         m_pSettingsLayout2->addWidget(m_pProfileLabel, 0, 0);
                     }
                     /* Create sub-layout: */
@@ -747,22 +738,18 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                         pSubLayout->setSpacing(1);
 
                         /* Create profile combo-box: */
-                        m_pProfileComboBox = new QComboBox;
+                        m_pProfileComboBox = new QIComboBox(pSettingsPane2);
                         if (m_pProfileComboBox)
                         {
                             m_pProfileLabel->setBuddy(m_pProfileComboBox);
-
-                            /* Add into layout: */
                             pSubLayout->addWidget(m_pProfileComboBox);
                         }
                         /* Create profile tool-button: */
-                        m_pProfileToolButton = new QIToolButton;
+                        m_pProfileToolButton = new QIToolButton(pSettingsPane2);
                         if (m_pProfileToolButton)
                         {
                             m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                               ":/cloud_profile_manager_disabled_16px.png"));
-
-                            /* Add into layout: */
                             pSubLayout->addWidget(m_pProfileToolButton);
                         }
 
@@ -771,34 +758,38 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                     }
 
                     /* Create profile label: */
-                    m_pMachineLabel = new QLabel;
-                    if (m_pMachineLabel)
+                    m_pExportModeLabel = new QLabel(pSettingsPane2);
+                    if (m_pExportModeLabel)
                     {
-                        m_pMachineLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                        m_pExportModeLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                        m_pSettingsLayout2->addWidget(m_pExportModeLabel, 1, 0);
+                    }
 
-                        /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pMachineLabel, 1, 0);
-                    }
-                    /* Create Do Not Ask button: */
-                    m_pRadioDoNotAsk = new QRadioButton;
-                    if (m_pRadioDoNotAsk)
+                    /* Create button-group: */
+                    m_pExportModeButtonGroup = new QButtonGroup(pSettingsPane2);
+                    if (m_pExportModeButtonGroup)
                     {
-                        /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 1, 1);
-                    }
-                    /* Create Ask Then Export button: */
-                    m_pRadioAskThenExport = new QRadioButton;
-                    if (m_pRadioAskThenExport)
-                    {
-                        /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 2, 1);
-                    }
-                    /* Create Export Then Ask button: */
-                    m_pRadioExportThenAsk = new QRadioButton;
-                    if (m_pRadioExportThenAsk)
-                    {
-                        /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 3, 1);
+                        /* Create Do Not Ask button: */
+                        m_exportModeButtons[CloudExportMode_DoNotAsk] = new QRadioButton(pSettingsPane2);
+                        if (m_exportModeButtons.value(CloudExportMode_DoNotAsk))
+                        {
+                            m_pExportModeButtonGroup->addButton(m_exportModeButtons.value(CloudExportMode_DoNotAsk));
+                            m_pSettingsLayout2->addWidget(m_exportModeButtons.value(CloudExportMode_DoNotAsk), 1, 1);
+                        }
+                        /* Create Ask Then Export button: */
+                        m_exportModeButtons[CloudExportMode_AskThenExport] = new QRadioButton(pSettingsPane2);
+                        if (m_exportModeButtons.value(CloudExportMode_AskThenExport))
+                        {
+                            m_pExportModeButtonGroup->addButton(m_exportModeButtons.value(CloudExportMode_AskThenExport));
+                            m_pSettingsLayout2->addWidget(m_exportModeButtons.value(CloudExportMode_AskThenExport), 2, 1);
+                        }
+                        /* Create Export Then Ask button: */
+                        m_exportModeButtons[CloudExportMode_ExportThenAsk] = new QRadioButton(pSettingsPane2);
+                        if (m_exportModeButtons.value(CloudExportMode_ExportThenAsk))
+                        {
+                            m_pExportModeButtonGroup->addButton(m_exportModeButtons.value(CloudExportMode_ExportThenAsk));
+                            m_pSettingsLayout2->addWidget(m_exportModeButtons.value(CloudExportMode_ExportThenAsk), 3, 1);
+                        }
                     }
                 }
 
@@ -811,15 +802,6 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
         }
     }
 
-    /* Populate formats: */
-    populateFormats();
-    /* Populate MAC address policies: */
-    populateMACAddressPolicies();
-    /* Populate profiles: */
-    populateProfiles();
-    /* Populate profile: */
-    populateProfile();
-
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
             this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
@@ -827,28 +809,25 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
             this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageBasic2::sltHandleFileSelectorChange);
-    connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pFormatComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
-    connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pMACComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange);
-    connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pManifestCheckbox, &QCheckBox::stateChanged,
+            this, &UIWizardExportAppPageBasic2::sltHandleManifestCheckBoxChange);
+    connect(m_pIncludeISOsCheckbox, &QCheckBox::stateChanged,
+            this, &UIWizardExportAppPageBasic2::sltHandleIncludeISOsCheckBoxChange);
+    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleProfileComboChange);
+    connect(m_pExportModeButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*, bool)>(&QButtonGroup::buttonToggled),
+            this, &UIWizardExportAppPageBasic2::sltHandleRadioButtonToggled);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardExportAppPageBasic2::sltHandleProfileButtonClick);
+}
 
-    /* Register fields: */
-    registerField("format", this, "format");
-    registerField("isFormatCloudOne", this, "isFormatCloudOne");
-    registerField("path", this, "path");
-    registerField("macAddressExportPolicy", this, "macAddressExportPolicy");
-    registerField("manifestSelected", this, "manifestSelected");
-    registerField("includeISOsSelected", this, "includeISOsSelected");
-    registerField("providerShortName", this, "providerShortName");
-    registerField("cloudAppliance", this, "cloudAppliance");
-    registerField("client", this, "client");
-    registerField("vsd", this, "vsd");
-    registerField("vsdExportForm", this, "vsdExportForm");
-    registerField("cloudExportMode", this, "cloudExportMode");
+UIWizardExportApp *UIWizardExportAppPageBasic2::wizard() const
+{
+    return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
 void UIWizardExportAppPageBasic2::retranslateUi()
@@ -858,6 +837,8 @@ void UIWizardExportAppPageBasic2::retranslateUi()
 
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
+    refreshFileSelectorName(m_strFileSelectorName, wizard()->machineNames(), m_strDefaultApplianceName, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
 
     /* Translate format label: */
     m_pLabelFormat->setText(UIWizardExportApp::
@@ -868,6 +849,18 @@ void UIWizardExportAppPageBasic2::retranslateUi()
                                "Virtualization Format archive.</p>"
                                "<p>The <b>Oracle Cloud Infrastructure</b> format supports exporting to remote cloud servers only. "
                                "Main virtual disk of each selected machine will be uploaded to remote server.</p>"));
+
+    /* Translate settings label: */
+    if (wizard()->isFormatCloudOne())
+        m_pLabelSettings->setText(UIWizardExportApp::
+                                  tr("<p>Please choose one of cloud service profiles you have registered to export virtual "
+                                     "machines to. It will be used to establish network connection required to upload your "
+                                     "virtual machine files to a remote cloud facility.</p>"));
+    else
+        m_pLabelSettings->setText(UIWizardExportApp::
+                                  tr("<p>Please choose a filename to export the virtual appliance to. Besides that you can "
+                                     "specify a certain amount of options which affects the size and content of resulting "
+                                     "archive.</p>"));
 
     /* Translate file selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
@@ -886,7 +879,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     /* Translate received values of Format combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pFormatComboBox->count(); ++i)
-        if (isFormatCloudOne(i))
+        if (isFormatCloudOne(m_pFormatComboBox, i))
         {
             m_pFormatComboBox->setItemText(i, m_pFormatComboBox->itemData(i, FormatData_Name).toString());
             m_pFormatComboBox->setItemData(i, UIWizardExportApp::tr("Export to cloud service provider."), Qt::ToolTipRole);
@@ -902,19 +895,22 @@ void UIWizardExportAppPageBasic2::retranslateUi()
             case MACAddressExportPolicy_KeepAllMACs:
             {
                 m_pMACComboBox->setItemText(i, UIWizardExportApp::tr("Include all network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include all network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
+                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include all network adapter MAC addresses in exported "
+                                                                     "appliance archive."), Qt::ToolTipRole);
                 break;
             }
             case MACAddressExportPolicy_StripAllNonNATMACs:
             {
                 m_pMACComboBox->setItemText(i, UIWizardExportApp::tr("Include only NAT network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
+                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in exported "
+                                                                     "appliance archive."), Qt::ToolTipRole);
                 break;
             }
             case MACAddressExportPolicy_StripAllMACs:
             {
                 m_pMACComboBox->setItemText(i, UIWizardExportApp::tr("Strip all network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported appliance archive."), Qt::ToolTipRole);
+                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported "
+                                                                     "appliance archive."), Qt::ToolTipRole);
                 break;
             }
             default:
@@ -926,7 +922,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("&Write Manifest file"));
-    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files in exported VM archive."));
+    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
     /* Translate profile stuff: */
@@ -934,10 +930,10 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pProfileToolButton->setToolTip(UIWizardExportApp::tr("Open Cloud Profile Manager..."));
 
     /* Translate option label: */
-    m_pMachineLabel->setText(UIWizardExportApp::tr("Machine Creation:"));
-    m_pRadioDoNotAsk->setText(UIWizardExportApp::tr("Do not ask me about it, leave custom &image for future usage"));
-    m_pRadioAskThenExport->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
-    m_pRadioExportThenAsk->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
+    m_pExportModeLabel->setText(UIWizardExportApp::tr("Machine Creation:"));
+    m_exportModeButtons.value(CloudExportMode_DoNotAsk)->setText(UIWizardExportApp::tr("Do not ask me about it, leave custom &image for future usage"));
+    m_exportModeButtons.value(CloudExportMode_AskThenExport)->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
+    m_exportModeButtons.value(CloudExportMode_ExportThenAsk)->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
@@ -946,7 +942,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     labels << m_pMACComboBoxLabel;
     labels << m_pAdditionalLabel;
     labels << m_pProfileLabel;
-    labels << m_pMachineLabel;
+    labels << m_pExportModeLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
@@ -954,33 +950,28 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pSettingsLayout1->setColumnMinimumWidth(0, iMaxWidth);
     m_pSettingsLayout2->setColumnMinimumWidth(0, iMaxWidth);
 
-    /* Refresh file selector name: */
-    refreshFileSelectorName();
-
-    /* Update page appearance: */
-    updatePageAppearance();
-
     /* Update tool-tips: */
-    updateFormatComboToolTip();
-    updateMACAddressExportPolicyComboToolTip();
+    updateFormatComboToolTip(m_pFormatComboBox);
+    updateMACAddressExportPolicyComboToolTip(m_pMACComboBox);
 }
 
 void UIWizardExportAppPageBasic2::initializePage()
 {
+    /* Populate formats: */
+    populateFormats(m_pFormatComboBox, m_fExportToOCIByDefault);
+    /* Populate MAC address policies: */
+    populateMACAddressPolicies(m_pMACComboBox);
     /* Translate page: */
     retranslateUi();
 
-    /* Refresh file selector name: */
-    // refreshFileSelectorName(); already called from retranslateUi();
-    /* Refresh file selector extension: */
-    refreshFileSelectorExtension();
-    /* Refresh manifest check-box access: */
-    refreshManifestCheckBoxAccess();
-    /* Refresh include ISOs check-box access: */
-    refreshIncludeISOsCheckBoxAccess();
+    /* Choose initially focused widget: */
+    if (wizard()->isFormatCloudOne())
+        m_pProfileComboBox->setFocus();
+    else
+        m_pFileSelector->setFocus();
 
-    /* Choose default cloud export option: */
-    m_pRadioExportThenAsk->setChecked(true);
+    /* Fetch it, asynchronously: */
+    QMetaObject::invokeMethod(this, "sltHandleFormatComboChange", Qt::QueuedConnection);
 }
 
 bool UIWizardExportAppPageBasic2::isComplete() const
@@ -989,10 +980,10 @@ bool UIWizardExportAppPageBasic2::isComplete() const
     bool fResult = true;
 
     /* Check whether there was cloud target selected: */
-    if (isFormatCloudOne())
+    if (wizard()->isFormatCloudOne())
         fResult = m_comCloudProfile.isNotNull();
     else
-        fResult = UICommon::hasAllowedExtension(path().toLower(), OVFFileExts);
+        fResult = UICommon::hasAllowedExtension(wizard()->path().toLower(), OVFFileExts);
 
     /* Return result: */
     return fResult;
@@ -1004,80 +995,72 @@ bool UIWizardExportAppPageBasic2::validatePage()
     bool fResult = true;
 
     /* Check whether there was cloud target selected: */
-    if (isFormatCloudOne())
+    if (wizard()->isFormatCloudOne())
     {
-        /* Create appliance and populate form properties: */
-        populateFormProperties();
-        /* Which are required to continue to the next page: */
-        fResult =    field("cloudAppliance").value<CAppliance>().isNotNull()
-                  && field("client").value<CCloudClient>().isNotNull()
-                  && field("vsd").value<CVirtualSystemDescription>().isNotNull()
-                  && field("vsdExportForm").value<CVirtualSystemDescriptionForm>().isNotNull();
+        /* Update cloud stuff: */
+        updateCloudStuff();
+        /* Which is required to continue to the next page: */
+        fResult =    wizard()->cloudAppliance().isNotNull()
+                  && wizard()->cloudClient().isNotNull()
+                  && wizard()->vsd().isNotNull()
+                  && wizard()->vsdExportForm().isNotNull();
     }
 
     /* Return result: */
     return fResult;
 }
 
-void UIWizardExportAppPageBasic2::updatePageAppearance()
-{
-    /* Call to base-class: */
-    UIWizardExportAppPage2::updatePageAppearance();
-
-    /* Update page appearance according to chosen storage-type: */
-    if (isFormatCloudOne())
-    {
-        m_pLabelSettings->setText(UIWizardExportApp::
-                                  tr("<p>Please choose one of cloud service profiles you have registered to export virtual "
-                                     "machines to. It will be used to establish network connection required to upload your "
-                                     "virtual machine files to a remote cloud facility.</p>"));
-        m_pProfileComboBox->setFocus();
-    }
-    else
-    {
-        m_pLabelSettings->setText(UIWizardExportApp::
-                                  tr("<p>Please choose a filename to export the virtual appliance to. Besides that you can "
-                                     "specify a certain amount of options which affects the size and content of resulting "
-                                     "archive.</p>"));
-        m_pFileSelector->setFocus();
-    }
-}
-
 void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
 {
-    /* Update tool-tip: */
-    updateFormatComboToolTip();
-
-    /* Refresh required settings: */
-    updatePageAppearance();
-    refreshFileSelectorExtension();
-    refreshManifestCheckBoxAccess();
-    refreshIncludeISOsCheckBoxAccess();
-    populateProfiles();
-    populateProfile();
+    updateFormat();
     emit completeChanged();
 }
 
 void UIWizardExportAppPageBasic2::sltHandleFileSelectorChange()
 {
-    /* Remember changed name, except empty one: */
-    if (!m_pFileSelector->path().isEmpty())
-        m_strFileSelectorName = QFileInfo(m_pFileSelector->path()).completeBaseName();
+    /* Skip empty paths: */
+    if (m_pFileSelector->path().isEmpty())
+        return;
 
-    /* Refresh required settings: */
+    m_strFileSelectorName = QFileInfo(m_pFileSelector->path()).completeBaseName();
+    wizard()->setPath(m_pFileSelector->path());
     emit completeChanged();
 }
 
 void UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange()
 {
-    /* Update tool-tip: */
-    updateMACAddressExportPolicyComboToolTip();
+    updateMACAddressExportPolicyComboToolTip(m_pMACComboBox);
+    wizard()->setMACAddressExportPolicy(m_pMACComboBox->currentData().value<MACAddressExportPolicy>());
+    emit completeChanged();
+}
+
+void UIWizardExportAppPageBasic2::sltHandleManifestCheckBoxChange()
+{
+    wizard()->setManifestSelected(m_pManifestCheckbox->isChecked());
+    emit completeChanged();
+}
+
+void UIWizardExportAppPageBasic2::sltHandleIncludeISOsCheckBoxChange()
+{
+    wizard()->setIncludeISOsSelected(m_pIncludeISOsCheckbox->isChecked());
+    emit completeChanged();
 }
 
 void UIWizardExportAppPageBasic2::sltHandleProfileComboChange()
 {
-    /* Refresh required settings: */
-    populateProfile();
+    updateProfile();
+    emit completeChanged();
+}
+
+void UIWizardExportAppPageBasic2::sltHandleRadioButtonToggled(QAbstractButton *pButton, bool fToggled)
+{
+    /* Handle checked buttons only: */
+    if (!fToggled)
+        return;
+
+    /* Update cloud export mode field value: */
+    wizard()->setCloudExportMode(m_exportModeButtons.key(pButton));
+    emit completeChanged();
 }
 
 void UIWizardExportAppPageBasic2::sltHandleProfileButtonClick()
@@ -1085,4 +1068,61 @@ void UIWizardExportAppPageBasic2::sltHandleProfileButtonClick()
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
+}
+
+void UIWizardExportAppPageBasic2::updateFormat()
+{
+    /* Update combo tool-tip: */
+    updateFormatComboToolTip(m_pFormatComboBox);
+
+    /* Update wizard fields: */
+    wizard()->setFormat(format(m_pFormatComboBox));
+    wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
+
+    /* Refresh settings widget state: */
+    refreshStackedWidget(m_pSettingsWidget, wizard()->isFormatCloudOne());
+
+    /* Update export settings: */
+    refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
+    refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
+    refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
+    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
+    refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
+
+    /* Update profile: */
+    updateProfile();
+}
+
+void UIWizardExportAppPageBasic2::updateProfile()
+{
+    /* Update wizard fields: */
+    wizard()->setProfileName(profileName(m_pProfileComboBox));
+
+    /* Update export settings: */
+    refreshCloudProfile(m_comCloudProfile,
+                        wizard()->format(),
+                        wizard()->profileName(),
+                        wizard()->isFormatCloudOne());
+}
+
+void UIWizardExportAppPageBasic2::updateCloudStuff()
+{
+    /* Create appliance, client, VSD and VSD export form: */
+    CAppliance comAppliance;
+    CCloudClient comClient;
+    CVirtualSystemDescription comDescription;
+    CVirtualSystemDescriptionForm comForm;
+    refreshCloudStuff(comAppliance,
+                      comClient,
+                      comDescription,
+                      comForm,
+                      m_comCloudProfile,
+                      wizard()->machineIDs(),
+                      wizard()->uri(),
+                      wizard()->cloudExportMode());
+    wizard()->setCloudAppliance(comAppliance);
+    wizard()->setCloudClient(comClient);
+    wizard()->setVsd(comDescription);
+    wizard()->setVsdExportForm(comForm);
 }

@@ -16,8 +16,8 @@
  */
 
 /* Qt includes: */
-#include <QAbstractButton>
 #include <QFileInfo>
+#include <QPushButton>
 #include <QVariant>
 
 /* GUI includes: */
@@ -34,36 +34,191 @@
 
 /* COM includes: */
 #include "CAppliance.h"
-
-/* COM includes: */
 #include "CVFSExplorer.h"
 
 
 UIWizardExportApp::UIWizardExportApp(QWidget *pParent,
-                                     const QStringList &selectedVMNames /* = QStringList() */,
+                                     const QStringList &predefinedMachineNames /* = QStringList() */,
                                      bool fFastTraverToExportOCI /* = false */)
-    : UIWizard(pParent, WizardType_ExportAppliance)
-    , m_selectedVMNames(selectedVMNames)
+    : UINativeWizard(pParent, WizardType_ExportAppliance, WizardMode_Auto,
+                     fFastTraverToExportOCI ? "cloud-export-oci" : "ovf")
+    , m_predefinedMachineNames(predefinedMachineNames)
     , m_fFastTraverToExportOCI(fFastTraverToExportOCI)
+    , m_fFormatCloudOne(false)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/wizard_ovf_export.png");
+    setPixmapName(":/wizard_ovf_export.png");
 #else
     /* Assign background image: */
-    assignBackground(":/wizard_ovf_export_bg.png");
+    setPixmapName(":/wizard_ovf_export_bg.png");
 #endif
+}
+
+QStringList UIWizardExportApp::machineNames() const
+{
+    return m_machineNames;
+}
+
+void UIWizardExportApp::setMachineNames(const QStringList &names)
+{
+    m_machineNames = names;
+}
+
+QList<QUuid> UIWizardExportApp::machineIDs() const
+{
+    return m_machineIDs;
+}
+
+void UIWizardExportApp::setMachineIDs(const QList<QUuid> &ids)
+{
+    m_machineIDs = ids;
+}
+
+QString UIWizardExportApp::format() const
+{
+    return m_strFormat;
+}
+
+void UIWizardExportApp::setFormat(const QString &strFormat)
+{
+    m_strFormat = strFormat;
+}
+
+bool UIWizardExportApp::isFormatCloudOne() const
+{
+    return m_fFormatCloudOne;
+}
+
+void UIWizardExportApp::setFormatCloudOne(bool fCloudOne)
+{
+    m_fFormatCloudOne = fCloudOne;
+}
+
+QString UIWizardExportApp::path() const
+{
+    return m_strPath;
+}
+
+void UIWizardExportApp::setPath(const QString &strPath)
+{
+    m_strPath = strPath;
+}
+
+MACAddressExportPolicy UIWizardExportApp::macAddressExportPolicy() const
+{
+    return m_enmMACAddressExportPolicy;
+}
+
+void UIWizardExportApp::setMACAddressExportPolicy(MACAddressExportPolicy enmPolicy)
+{
+    m_enmMACAddressExportPolicy = enmPolicy;
+}
+
+bool UIWizardExportApp::isManifestSelected() const
+{
+    return m_fManifestSelected;
+}
+
+void UIWizardExportApp::setManifestSelected(bool fSelected)
+{
+    m_fManifestSelected = fSelected;
+}
+
+bool UIWizardExportApp::isIncludeISOsSelected() const
+{
+    return m_fIncludeISOsSelected;
+}
+
+void UIWizardExportApp::setIncludeISOsSelected(bool fSelected)
+{
+    m_fIncludeISOsSelected = fSelected;
+}
+
+CAppliance UIWizardExportApp::localAppliance()
+{
+    return m_comLocalAppliance;
+}
+
+void UIWizardExportApp::setLocalAppliance(const CAppliance &comAppliance)
+{
+    m_comLocalAppliance = comAppliance;
+}
+
+QString UIWizardExportApp::profileName() const
+{
+    return m_strProfileName;
+}
+
+void UIWizardExportApp::setProfileName(const QString &strName)
+{
+    m_strProfileName = strName;
+}
+
+CAppliance UIWizardExportApp::cloudAppliance()
+{
+    return m_comCloudAppliance;
+}
+
+void UIWizardExportApp::setCloudAppliance(const CAppliance &comAppliance)
+{
+    m_comCloudAppliance = comAppliance;
+}
+
+CCloudClient UIWizardExportApp::cloudClient()
+{
+    return m_comCloudClient;
+}
+
+void UIWizardExportApp::setCloudClient(const CCloudClient &comClient)
+{
+    m_comCloudClient = comClient;
+}
+
+CVirtualSystemDescription UIWizardExportApp::vsd()
+{
+    return m_comVsd;
+}
+
+void UIWizardExportApp::setVsd(const CVirtualSystemDescription &comDescription)
+{
+    m_comVsd = comDescription;
+}
+
+CVirtualSystemDescriptionForm UIWizardExportApp::vsdExportForm()
+{
+    return m_comVsdExportForm;
+}
+
+void UIWizardExportApp::setVsdExportForm(const CVirtualSystemDescriptionForm &comForm)
+{
+    m_comVsdExportForm = comForm;
+}
+
+CloudExportMode UIWizardExportApp::cloudExportMode() const
+{
+    return m_enmCloudExportMode;
+}
+
+void UIWizardExportApp::setCloudExportMode(const CloudExportMode &enmMode)
+{
+    m_enmCloudExportMode = enmMode;
+}
+
+void UIWizardExportApp::goForward()
+{
+    wizardButton(WizardButtonType_Next)->click();
 }
 
 QString UIWizardExportApp::uri(bool fWithFile) const
 {
     /* For Cloud formats: */
-    if (field("isFormatCloudOne").toBool())
-        return QString("%1://").arg(field("providerShortName").toString());
+    if (isFormatCloudOne())
+        return QString("%1://").arg(format());
     else
     {
         /* Prepare storage path: */
-        QString strPath = field("path").toString();
+        QString strPath = path();
         /* Append file name if requested: */
         if (!fWithFile)
         {
@@ -79,11 +234,10 @@ QString UIWizardExportApp::uri(bool fWithFile) const
 bool UIWizardExportApp::exportAppliance()
 {
     /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
+    if (isFormatCloudOne())
     {
         /* Get appliance: */
-        CAppliance comAppliance = field("cloudAppliance").value<CAppliance>();
+        CAppliance comAppliance = cloudAppliance();
         AssertReturn(comAppliance.isNotNull(), false);
 
         /* Export the VMs, on success we are finished: */
@@ -92,7 +246,7 @@ bool UIWizardExportApp::exportAppliance()
     else
     {
         /* Get appliance: */
-        CAppliance comAppliance = field("localAppliance").value<CAppliance>();
+        CAppliance comAppliance = localAppliance();
         AssertReturn(comAppliance.isNotNull(), false);
 
         /* We need to know every filename which will be created, so that we can ask the user for confirmation of overwriting.
@@ -100,7 +254,7 @@ bool UIWizardExportApp::exportAppliance()
          * manifest file to the check. In the .ova case only the target file itself get checked. */
 
         /* Compose a list of all required files: */
-        QFileInfo fi(field("path").toString());
+        QFileInfo fi(path());
         QVector<QString> files;
 
         /* Add arhive itself: */
@@ -110,7 +264,7 @@ bool UIWizardExportApp::exportAppliance()
         if (fi.suffix().toLower() == "ovf")
         {
             /* Add manifest file if requested: */
-            if (field("manifestSelected").toBool())
+            if (isManifestSelected())
                 files << fi.baseName() + ".mf";
 
             /* Add all hard disk images: */
@@ -173,42 +327,21 @@ bool UIWizardExportApp::exportAppliance()
     }
 }
 
-void UIWizardExportApp::sltCurrentIdChanged(int iId)
-{
-    /* Call to base-class: */
-    UIWizard::sltCurrentIdChanged(iId);
-
-    /* Enable 2nd button (Reset to Defaults) for 3rd and Expert pages only! */
-    setOption(QWizard::HaveCustomButton2,    (mode() == WizardMode_Basic && iId == Page3)
-                                          || (mode() == WizardMode_Expert && iId == PageExpert));
-}
-
-void UIWizardExportApp::retranslateUi()
-{
-    /* Call to base-class: */
-    UIWizard::retranslateUi();
-
-    /* Translate wizard: */
-    setWindowTitle(tr("Export Virtual Appliance"));
-    setButtonText(QWizard::CustomButton2, tr("Restore Defaults"));
-    setButtonText(QWizard::FinishButton, tr("Export"));
-}
-
-void UIWizardExportApp::prepare()
+void UIWizardExportApp::populatePages()
 {
     /* Create corresponding pages: */
     switch (mode())
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardExportAppPageBasic1(m_selectedVMNames));
-            setPage(Page2, new UIWizardExportAppPageBasic2(m_fFastTraverToExportOCI));
-            setPage(Page3, new UIWizardExportAppPageBasic3);
+            addPage(new UIWizardExportAppPageBasic1(m_predefinedMachineNames, m_fFastTraverToExportOCI));
+            addPage(new UIWizardExportAppPageBasic2(m_fFastTraverToExportOCI));
+            addPage(new UIWizardExportAppPageBasic3);
             break;
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardExportAppPageExpert(m_selectedVMNames, m_fFastTraverToExportOCI));
+            addPage(new UIWizardExportAppPageExpert(m_predefinedMachineNames, m_fFastTraverToExportOCI));
             break;
         }
         default:
@@ -217,20 +350,17 @@ void UIWizardExportApp::prepare()
             break;
         }
     }
+}
 
-    if (!m_fFastTraverToExportOCI)
-        enableHelpButton("ovf");
-    else
-        enableHelpButton("cloud-export-oci");
-
+void UIWizardExportApp::retranslateUi()
+{
     /* Call to base-class: */
-    UIWizard::prepare();
+    UINativeWizard::retranslateUi();
 
-    /* Now, when we are ready, we can
-     * fast traver to page 2 if requested: */
-    if (   mode() == WizardMode_Basic
-        && m_fFastTraverToExportOCI)
-        button(QWizard::NextButton)->click();
+    /* Translate wizard: */
+    setWindowTitle(tr("Export Virtual Appliance"));
+    /// @todo implement this?
+    //setButtonText(QWizard::FinishButton, tr("Export"));
 }
 
 bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
@@ -289,33 +419,36 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
 
         /* Prepare export options: */
         QVector<KExportOptions> options;
-        switch (field("macAddressExportPolicy").value<MACAddressExportPolicy>())
+        switch (macAddressExportPolicy())
         {
             case MACAddressExportPolicy_StripAllNonNATMACs: options.append(KExportOptions_StripAllNonNATMACs); break;
             case MACAddressExportPolicy_StripAllMACs: options.append(KExportOptions_StripAllMACs); break;
             default: break;
         }
-        if (field("manifestSelected").toBool())
+        if (isManifestSelected())
             options.append(KExportOptions_CreateManifest);
-        if (field("includeISOsSelected").toBool())
+        if (isIncludeISOsSelected())
             options.append(KExportOptions_ExportDVDImages);
 
         /* Is this VM being exported to cloud? */
-        if (field("isFormatCloudOne").toBool())
+        if (isFormatCloudOne())
         {
             /* We can have wizard and it's result
              * should be distinguishable: */
             int iWizardResult = -1;
 
-            switch (field("cloudExportMode").value<CloudExportMode>())
+            switch (cloudExportMode())
             {
                 case CloudExportMode_AskThenExport:
                 {
                     /* Get the required parameters to init short wizard mode: */
-                    CCloudClient comClient = field("client").value<CCloudClient>();
-                    CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
+                    CCloudClient comClient = cloudClient();
+                    CVirtualSystemDescription comDescription = vsd();
                     /* Create and run wizard as modal dialog, but prevent final step: */
-                    pNewCloudVMWizard = new UIWizardNewCloudVM(this, QString() /** @todo pass proper full group name! */, comClient, comDescription, mode());
+                    QWidget *pWizardParent = windowManager().realParentWindow(this);
+                    const QString strGroupName = QString("/%1/%2").arg(format(), profileName());
+                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, strGroupName, comClient, comDescription, mode());
+                    windowManager().registerNewParent(pNewCloudVMWizard, pWizardParent);
                     pNewCloudVMWizard->setFinalStepPrevented(true);
                     iWizardResult = pNewCloudVMWizard->exec();
                     break;
@@ -330,7 +463,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
                 break;
 
             /* Prepare Export VM progress: */
-            CProgress comProgress = comAppliance.Write(field("format").toString(), options, uri());
+            CProgress comProgress = comAppliance.Write(format(), options, uri());
             if (!comAppliance.isOk())
             {
                 msgCenter().cannotExportAppliance(comAppliance, this);
@@ -352,7 +485,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
              * should be distinguishable: */
             iWizardResult = -1;
 
-            switch (field("cloudExportMode").value<CloudExportMode>())
+            switch (cloudExportMode())
             {
                 case CloudExportMode_AskThenExport:
                 {
@@ -367,11 +500,12 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
                 case CloudExportMode_ExportThenAsk:
                 {
                     /* Get the required parameters to init short wizard mode: */
-                    CCloudClient comClient = field("client").value<CCloudClient>();
-                    CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
+                    CCloudClient comClient = cloudClient();
+                    CVirtualSystemDescription comDescription = vsd();
                     /* Create and run short wizard mode as modal dialog: */
                     QWidget *pWizardParent = windowManager().realParentWindow(this);
-                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, QString() /** @todo pass proper full group name! */, comClient, comDescription, mode());
+                    const QString strGroupName = QString("/%1/%2").arg(format(), profileName());
+                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, strGroupName, comClient, comDescription, mode());
                     windowManager().registerNewParent(pNewCloudVMWizard, pWizardParent);
                     iWizardResult = pNewCloudVMWizard->exec();
                     break;
@@ -390,7 +524,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
         {
             /* Export appliance: */
             UINotificationProgressApplianceExport *pNotification = new UINotificationProgressApplianceExport(comAppliance,
-                                                                                                             field("format").toString(),
+                                                                                                             format(),
                                                                                                              options,
                                                                                                              uri());
             gpNotificationCenter->append(pNotification);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QButtonGroup>
 #include <QCheckBox>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -30,17 +31,27 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIComboBox.h"
 #include "QIToolButton.h"
 #include "UICommon.h"
 #include "UIApplianceExportEditorWidget.h"
 #include "UIConverter.h"
 #include "UIEmptyFilePathSelector.h"
+#include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardExportApp.h"
+#include "UIWizardExportAppPageBasic1.h"
+#include "UIWizardExportAppPageBasic2.h"
+#include "UIWizardExportAppPageBasic3.h"
 #include "UIWizardExportAppPageExpert.h"
+
+/* Namespaces: */
+using namespace UIWizardExportAppPage1;
+using namespace UIWizardExportAppPage2;
+using namespace UIWizardExportAppPage3;
 
 
 /*********************************************************************************************************************************
@@ -48,11 +59,33 @@
 *********************************************************************************************************************************/
 
 UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &selectedVMNames, bool fExportToOCIByDefault)
-    : UIWizardExportAppPage2(fExportToOCIByDefault)
-    , m_fPolished(false)
+    : m_selectedVMNames(selectedVMNames)
+    , m_fExportToOCIByDefault(fExportToOCIByDefault)
     , m_pSelectorCnt(0)
+    , m_pVMSelector(0)
     , m_pApplianceCnt(0)
+    , m_pSettingsLayout(0)
+    , m_pApplianceWidget(0)
+    , m_pFormEditor(0)
     , m_pSettingsCnt(0)
+    , m_pFormatLayout(0)
+    , m_pFormatComboBoxLabel(0)
+    , m_pFormatComboBox(0)
+    , m_pSettingsWidget(0)
+    , m_pSettingsLayout1(0)
+    , m_pFileSelectorLabel(0)
+    , m_pFileSelector(0)
+    , m_pMACComboBoxLabel(0)
+    , m_pMACComboBox(0)
+    , m_pAdditionalLabel(0)
+    , m_pManifestCheckbox(0)
+    , m_pIncludeISOsCheckbox(0)
+    , m_pSettingsLayout2(0)
+    , m_pProfileLabel(0)
+    , m_pProfileComboBox(0)
+    , m_pProfileToolButton(0)
+    , m_pExportModeLabel(0)
+    , m_pExportModeButtonGroup(0)
 {
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
@@ -61,7 +94,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
         pMainLayout->setRowStretch(0, 1);
 
         /* Create VM selector container: */
-        m_pSelectorCnt = new QGroupBox;
+        m_pSelectorCnt = new QGroupBox(this);
         if (m_pSelectorCnt)
         {
             /* Create VM selector container layout: */
@@ -69,13 +102,11 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             if (pSelectorCntLayout)
             {
                 /* Create VM selector: */
-                m_pVMSelector = new QListWidget;
+                m_pVMSelector = new QListWidget(m_pSelectorCnt);
                 if (m_pVMSelector)
                 {
                     m_pVMSelector->setAlternatingRowColors(true);
                     m_pVMSelector->setSelectionMode(QAbstractItemView::ExtendedSelection);
-
-                    /* Add into layout: */
                     pSelectorCntLayout->addWidget(m_pVMSelector);
                 }
             }
@@ -85,7 +116,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
         }
 
         /* Create appliance widget container: */
-        m_pApplianceCnt = new QGroupBox;
+        m_pApplianceCnt = new QGroupBox(this);
         if (m_pApplianceCnt)
         {
             /* Create appliance widget container layout: */
@@ -93,8 +124,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             if (pApplianceCntLayout)
             {
                 /* Create settings container layout: */
-                m_pSettingsCntLayout = new QStackedLayout;
-                if (m_pSettingsCntLayout)
+                m_pSettingsLayout = new QStackedLayout;
+                if (m_pSettingsLayout)
                 {
                     /* Create appliance widget container: */
                     QWidget *pApplianceWidgetCnt = new QWidget(this);
@@ -107,19 +138,17 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
 
                             /* Create appliance widget: */
-                            m_pApplianceWidget = new UIApplianceExportEditorWidget;
+                            m_pApplianceWidget = new UIApplianceExportEditorWidget(pApplianceWidgetCnt);
                             if (m_pApplianceWidget)
                             {
                                 m_pApplianceWidget->setMinimumHeight(250);
                                 m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-
-                                /* Add into layout: */
                                 pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
                             }
                         }
 
                         /* Add into layout: */
-                        m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
+                        m_pSettingsLayout->addWidget(pApplianceWidgetCnt);
                     }
 
                     /* Create form editor container: */
@@ -135,18 +164,15 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             /* Create form editor widget: */
                             m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
                             if (m_pFormEditor)
-                            {
-                                /* Add into layout: */
                                 pFormEditorLayout->addWidget(m_pFormEditor);
-                            }
                         }
 
                         /* Add into layout: */
-                        m_pSettingsCntLayout->addWidget(pFormEditorCnt);
+                        m_pSettingsLayout->addWidget(pFormEditorCnt);
                     }
 
                     /* Add into layout: */
-                    pApplianceCntLayout->addLayout(m_pSettingsCntLayout);
+                    pApplianceCntLayout->addLayout(m_pSettingsLayout);
                 }
             }
 
@@ -155,7 +181,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
         }
 
         /* Create settings widget container: */
-        m_pSettingsCnt = new QGroupBox;
+        m_pSettingsCnt = new QGroupBox(this);
         if (m_pSettingsCnt)
         {
             /* Create settings widget container layout: */
@@ -178,20 +204,15 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     m_pFormatLayout->setColumnStretch(1, 1);
 
                     /* Create format combo-box: */
-                    m_pFormatComboBox = new QComboBox;
+                    m_pFormatComboBox = new QIComboBox(m_pSettingsCnt);
                     if (m_pFormatComboBox)
-                    {
-                        /* Add into layout: */
                         m_pFormatLayout->addWidget(m_pFormatComboBox, 0, 1);
-                    }
                     /* Create format combo-box label: */
-                    m_pFormatComboBoxLabel = new QLabel;
+                    m_pFormatComboBoxLabel = new QLabel(m_pSettingsCnt);
                     if (m_pFormatComboBoxLabel)
                     {
                         m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
                         m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
-
-                        /* Add into layout: */
                         m_pFormatLayout->addWidget(m_pFormatComboBoxLabel, 0, 0);
                     }
 
@@ -204,7 +225,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                 if (m_pSettingsWidget)
                 {
                     /* Create settings pane 1: */
-                    QWidget *pSettingsPane1 = new QWidget;
+                    QWidget *pSettingsPane1 = new QWidget(m_pSettingsWidget);
                     if (pSettingsPane1)
                     {
                         /* Create settings layout 1: */
@@ -242,7 +263,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             }
 
                             /* Create MAC policy combo-box: */
-                            m_pMACComboBox = new QComboBox;
+                            m_pMACComboBox = new QIComboBox;
                             if (m_pMACComboBox)
                             {
                                 /* Add into layout: */
@@ -297,7 +318,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     }
 
                     /* Create settings pane 2: */
-                    QWidget *pSettingsPane2 = new QWidget;
+                    QWidget *pSettingsPane2 = new QWidget(m_pSettingsWidget);
                     if (pSettingsPane2)
                     {
                         /* Create settings layout 2: */
@@ -312,12 +333,10 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pSettingsLayout2->setColumnStretch(1, 1);
 
                             /* Create profile label: */
-                            m_pProfileLabel = new QLabel;
+                            m_pProfileLabel = new QLabel(pSettingsPane2);
                             if (m_pProfileLabel)
                             {
                                 m_pProfileLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-                                /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pProfileLabel, 0, 0);
                             }
                             /* Create sub-layout: */
@@ -328,22 +347,18 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 pSubLayout->setSpacing(1);
 
                                 /* Create profile combo-box: */
-                                m_pProfileComboBox = new QComboBox;
+                                m_pProfileComboBox = new QIComboBox(pSettingsPane2);
                                 if (m_pProfileComboBox)
                                 {
                                     m_pProfileLabel->setBuddy(m_pProfileComboBox);
-
-                                    /* Add into layout: */
                                     pSubLayout->addWidget(m_pProfileComboBox);
                                 }
                                 /* Create profile tool-button: */
-                                m_pProfileToolButton = new QIToolButton;
+                                m_pProfileToolButton = new QIToolButton(pSettingsPane2);
                                 if (m_pProfileToolButton)
                                 {
                                     m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                                       ":/cloud_profile_manager_disabled_16px.png"));
-
-                                    /* Add into layout: */
                                     pSubLayout->addWidget(m_pProfileToolButton);
                                 }
 
@@ -352,34 +367,38 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             }
 
                             /* Create profile label: */
-                            m_pMachineLabel = new QLabel;
-                            if (m_pMachineLabel)
+                            m_pExportModeLabel = new QLabel(pSettingsPane2);
+                            if (m_pExportModeLabel)
                             {
-                                m_pMachineLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                                m_pExportModeLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                                m_pSettingsLayout2->addWidget(m_pExportModeLabel, 1, 0);
+                            }
 
-                                /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pMachineLabel, 1, 0);
-                            }
-                            /* Create Do Not Ask button: */
-                            m_pRadioDoNotAsk = new QRadioButton;
-                            if (m_pRadioDoNotAsk)
+                            /* Create button-group: */
+                            m_pExportModeButtonGroup = new QButtonGroup(pSettingsPane2);
+                            if (m_pExportModeButtonGroup)
                             {
-                                /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 1, 1);
-                            }
-                            /* Create Ask Then Export button: */
-                            m_pRadioAskThenExport = new QRadioButton;
-                            if (m_pRadioAskThenExport)
-                            {
-                                /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 2, 1);
-                            }
-                            /* Create Export Then Ask button: */
-                            m_pRadioExportThenAsk = new QRadioButton;
-                            if (m_pRadioExportThenAsk)
-                            {
-                                /* Add into layout: */
-                                m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 3, 1);
+                                /* Create Do Not Ask button: */
+                                m_exportModeButtons[CloudExportMode_DoNotAsk] = new QRadioButton(pSettingsPane2);
+                                if (m_exportModeButtons.value(CloudExportMode_DoNotAsk))
+                                {
+                                    m_pExportModeButtonGroup->addButton(m_exportModeButtons.value(CloudExportMode_DoNotAsk));
+                                    m_pSettingsLayout2->addWidget(m_exportModeButtons.value(CloudExportMode_DoNotAsk), 1, 1);
+                                }
+                                /* Create Ask Then Export button: */
+                                m_exportModeButtons[CloudExportMode_AskThenExport] = new QRadioButton(pSettingsPane2);
+                                if (m_exportModeButtons.value(CloudExportMode_AskThenExport))
+                                {
+                                    m_pExportModeButtonGroup->addButton(m_exportModeButtons.value(CloudExportMode_AskThenExport));
+                                    m_pSettingsLayout2->addWidget(m_exportModeButtons.value(CloudExportMode_AskThenExport), 2, 1);
+                                }
+                                /* Create Export Then Ask button: */
+                                m_exportModeButtons[CloudExportMode_ExportThenAsk] = new QRadioButton(pSettingsPane2);
+                                if (m_exportModeButtons.value(CloudExportMode_ExportThenAsk))
+                                {
+                                    m_pExportModeButtonGroup->addButton(m_exportModeButtons.value(CloudExportMode_ExportThenAsk));
+                                    m_pSettingsLayout2->addWidget(m_exportModeButtons.value(CloudExportMode_ExportThenAsk), 3, 1);
+                                }
                             }
                         }
 
@@ -397,52 +416,42 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
         }
     }
 
-    /* Populate VM selector items: */
-    populateVMSelectorItems(selectedVMNames);
-    /* Populate formats: */
-    populateFormats();
-    /* Populate MAC address policies: */
-    populateMACAddressPolicies();
-
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
-    connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
+    connect(m_pVMSelector, &QListWidget::itemSelectionChanged,
+            this, &UIWizardExportAppPageExpert::sltHandleVMItemSelectionChanged);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFileSelectorChange);
-    connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pFormatComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
-    connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pMACComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleMACAddressExportPolicyComboChange);
-    connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pManifestCheckbox, &QCheckBox::stateChanged,
+            this, &UIWizardExportAppPageExpert::sltHandleManifestCheckBoxChange);
+    connect(m_pIncludeISOsCheckbox, &QCheckBox::stateChanged,
+            this, &UIWizardExportAppPageExpert::sltHandleIncludeISOsCheckBoxChange);
+    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleProfileComboChange);
+    connect(m_pExportModeButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*, bool)>(&QButtonGroup::buttonToggled),
+            this, &UIWizardExportAppPageExpert::sltHandleRadioButtonToggled);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardExportAppPageExpert::sltHandleProfileButtonClick);
+}
 
-    /* Register fields: */
-    registerField("machineNames", this, "machineNames");
-    registerField("machineIDs", this, "machineIDs");
-    registerField("format", this, "format");
-    registerField("isFormatCloudOne", this, "isFormatCloudOne");
-    registerField("path", this, "path");
-    registerField("macAddressExportPolicy", this, "macAddressExportPolicy");
-    registerField("manifestSelected", this, "manifestSelected");
-    registerField("includeISOsSelected", this, "includeISOsSelected");
-    registerField("providerShortName", this, "providerShortName");
-    registerField("cloudAppliance", this, "cloudAppliance");
-    registerField("client", this, "client");
-    registerField("vsd", this, "vsd");
-    registerField("vsdExportForm", this, "vsdExportForm");
-    registerField("cloudExportMode", this, "cloudExportMode");
-    registerField("localAppliance", this, "localAppliance");
+UIWizardExportApp *UIWizardExportAppPageExpert::wizard() const
+{
+    return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
 void UIWizardExportAppPageExpert::retranslateUi()
 {
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
+    refreshFileSelectorName(m_strFileSelectorName, wizard()->machineNames(), m_strDefaultApplianceName, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
 
     /* Translate group-boxes: */
     m_pSelectorCnt->setTitle(UIWizardExportApp::tr("Virtual &machines to export"));
@@ -466,7 +475,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     /* Translate received values of Format combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pFormatComboBox->count(); ++i)
-        if (isFormatCloudOne(i))
+        if (isFormatCloudOne(m_pFormatComboBox, i))
         {
             m_pFormatComboBox->setItemText(i, m_pFormatComboBox->itemData(i, FormatData_Name).toString());
             m_pFormatComboBox->setItemData(i, UIWizardExportApp::tr("Export to cloud service provider."), Qt::ToolTipRole);
@@ -482,19 +491,22 @@ void UIWizardExportAppPageExpert::retranslateUi()
             case MACAddressExportPolicy_KeepAllMACs:
             {
                 m_pMACComboBox->setItemText(i, UIWizardExportApp::tr("Include all network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include all network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
+                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include all network adapter MAC addresses in exported "
+                                                                     "appliance archive."), Qt::ToolTipRole);
                 break;
             }
             case MACAddressExportPolicy_StripAllNonNATMACs:
             {
                 m_pMACComboBox->setItemText(i, UIWizardExportApp::tr("Include only NAT network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
+                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in exported "
+                                                                     "appliance archive."), Qt::ToolTipRole);
                 break;
             }
             case MACAddressExportPolicy_StripAllMACs:
             {
                 m_pMACComboBox->setItemText(i, UIWizardExportApp::tr("Strip all network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported appliance archive."), Qt::ToolTipRole);
+                m_pMACComboBox->setItemData(i, UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported "
+                                                                     "appliance archive."), Qt::ToolTipRole);
                 break;
             }
             default:
@@ -504,20 +516,20 @@ void UIWizardExportAppPageExpert::retranslateUi()
 
     /* Translate addtional stuff: */
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
-    m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Creates a manifest file for automatic data integrity checks on import."));
+    m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("&Write Manifest file"));
-    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Includes ISO image files into exported VM archive."));
+    m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files into exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
     /* Translate profile stuff: */
     m_pProfileLabel->setText(UIWizardExportApp::tr("&Profile:"));
-    m_pProfileToolButton->setToolTip(UIWizardExportApp::tr("Opens Cloud Profile Manager..."));
+    m_pProfileToolButton->setToolTip(UIWizardExportApp::tr("Open Cloud Profile Manager..."));
 
     /* Translate option label: */
-    m_pMachineLabel->setText(UIWizardExportApp::tr("Machine Creation:"));
-    m_pRadioDoNotAsk->setText(UIWizardExportApp::tr("Do not ask me about it, leave custom &image for future usage"));
-    m_pRadioAskThenExport->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
-    m_pRadioExportThenAsk->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
+    m_pExportModeLabel->setText(UIWizardExportApp::tr("Machine Creation:"));
+    m_exportModeButtons.value(CloudExportMode_DoNotAsk)->setText(UIWizardExportApp::tr("Do not ask me about it, leave custom &image for future usage"));
+    m_exportModeButtons.value(CloudExportMode_AskThenExport)->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
+    m_exportModeButtons.value(CloudExportMode_ExportThenAsk)->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
@@ -526,7 +538,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     labels << m_pMACComboBoxLabel;
     labels << m_pAdditionalLabel;
     labels << m_pProfileLabel;
-    labels << m_pMachineLabel;
+    labels << m_pExportModeLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
@@ -534,69 +546,53 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pSettingsLayout1->setColumnMinimumWidth(0, iMaxWidth);
     m_pSettingsLayout2->setColumnMinimumWidth(0, iMaxWidth);
 
-    /* Refresh file selector name: */
-    refreshFileSelectorName();
-
     /* Update tool-tips: */
-    updateFormatComboToolTip();
-    updateMACAddressExportPolicyComboToolTip();
+    updateFormatComboToolTip(m_pFormatComboBox);
+    updateMACAddressExportPolicyComboToolTip(m_pMACComboBox);
 }
 
 void UIWizardExportAppPageExpert::initializePage()
 {
-    /* If wasn't polished yet: */
-    if (!m_fPolished)
-    {
-        QMetaObject::invokeMethod(this, "sltHandleFormatComboChange", Qt::QueuedConnection);
-        m_fPolished = true;
-    }
-
+    /* Populate VM items: */
+    populateVMItems(m_pVMSelector, m_selectedVMNames);
+    /* Populate formats: */
+    populateFormats(m_pFormatComboBox, m_fExportToOCIByDefault);
+    /* Populate MAC address policies: */
+    populateMACAddressPolicies(m_pMACComboBox);
     /* Translate page: */
     retranslateUi();
 
-    /* Choose default cloud export option: */
-    m_pRadioExportThenAsk->setChecked(true);
-
-    /* Listen for custom button clicks: */
-    connect(wizard(), &UIWizard::customButtonClicked,
-            this, &UIWizardExportAppPageExpert::sltHandleCustomButtonClicked,
-            Qt::UniqueConnection);
-}
-
-void UIWizardExportAppPageExpert::cleanupPage()
-{
-    /* Do not pass call to base-class, we don't want field values to be reseted. */
-
-    /* Stop listen for custom button clicks: */
-    disconnect(wizard(), &UIWizard::customButtonClicked,
-               this, &UIWizardExportAppPageExpert::sltHandleCustomButtonClicked);
+    /* Fetch it, asynchronously: */
+    QMetaObject::invokeMethod(this, "sltHandleFormatComboChange", Qt::QueuedConnection);
 }
 
 bool UIWizardExportAppPageExpert::isComplete() const
 {
+    /* Initial result: */
     bool fResult = true;
 
     /* There should be at least one vm selected: */
     if (fResult)
-        fResult = (m_pVMSelector->selectedItems().size() > 0);
+        fResult = wizard()->machineNames().size() > 0;
 
     /* Check appliance settings: */
     if (fResult)
     {
-        const bool fOVF =    field("format").toString() == "ovf-0.9"
-                          || field("format").toString() == "ovf-1.0"
-                          || field("format").toString() == "ovf-2.0";
-        const bool fCSP =    field("isFormatCloudOne").toBool();
+        const bool fOVF =    wizard()->format() == "ovf-0.9"
+                          || wizard()->format() == "ovf-1.0"
+                          || wizard()->format() == "ovf-2.0";
+        const bool fCSP =    wizard()->isFormatCloudOne();
 
         fResult =    (   fOVF
-                      && UICommon::hasAllowedExtension(path().toLower(), OVFFileExts))
+                      && UICommon::hasAllowedExtension(wizard()->path().toLower(), OVFFileExts))
                   || (   fCSP
-                      && field("cloudAppliance").value<CAppliance>().isNotNull()
-                      && field("client").value<CCloudClient>().isNotNull()
-                      && field("vsd").value<CVirtualSystemDescription>().isNotNull()
-                      && field("vsdExportForm").value<CVirtualSystemDescriptionForm>().isNotNull());
+                      && wizard()->cloudAppliance().isNotNull()
+                      && wizard()->cloudClient().isNotNull()
+                      && wizard()->vsd().isNotNull()
+                      && wizard()->vsdExportForm().isNotNull());
     }
 
+    /* Return result: */
     return fResult;
 }
 
@@ -605,18 +601,14 @@ bool UIWizardExportAppPageExpert::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
-
     /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = fieldImp("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
+    if (wizard()->isFormatCloudOne())
     {
         /* Make sure table has own data committed: */
         m_pFormEditor->makeSureEditorDataCommitted();
 
         /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = fieldImp("vsdExportForm").value<CVirtualSystemDescriptionForm>();
+        CVirtualSystemDescriptionForm comForm = wizard()->vsdExportForm();
         fResult = comForm.isNotNull();
         Assert(fResult);
 
@@ -632,104 +624,84 @@ bool UIWizardExportAppPageExpert::validatePage()
     /* Otherwise if there was local target selected: */
     else
     {
+        /* Ask user about machines which are in Saved state currently: */
+        QStringList savedMachines;
+        refreshSavedMachines(savedMachines, m_pVMSelector);
+        if (!savedMachines.isEmpty())
+            fResult = msgCenter().confirmExportMachinesInSaveState(savedMachines, this);
+
         /* Prepare export: */
-        m_pApplianceWidget->prepareExport();
+        if (fResult)
+        {
+            m_pApplianceWidget->prepareExport();
+            wizard()->setLocalAppliance(*m_pApplianceWidget->appliance());
+        }
     }
 
     /* Try to export appliance: */
     if (fResult)
-        fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
-
-    /* Unlock finish button: */
-    endProcessing();
+        fResult = wizard()->exportAppliance();
 
     /* Return result: */
     return fResult;
 }
 
-void UIWizardExportAppPageExpert::sltVMSelectionChangeHandler()
+void UIWizardExportAppPageExpert::sltHandleVMItemSelectionChanged()
 {
-    /* Refresh required settings: */
-    refreshFileSelectorName();
-    populateFormProperties();
-
-    /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
-        refreshFormPropertiesTable();
-    else
-        refreshApplianceSettingsWidget();
-
-    /* Broadcast complete-change: */
+    updateMachines();
     emit completeChanged();
 }
 
 void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
 {
-    /* Update tool-tip: */
-    updateFormatComboToolTip();
-
-    /* Refresh required settings: */
-    UIWizardExportAppPage2::updatePageAppearance();
-    UIWizardExportAppPage3::updatePageAppearance();
-    refreshFileSelectorExtension();
-    refreshManifestCheckBoxAccess();
-    refreshIncludeISOsCheckBoxAccess();
-    populateProfiles();
-    populateProfile();
-    populateFormProperties();
-
-    /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
-        refreshFormPropertiesTable();
-    else
-        refreshApplianceSettingsWidget();
-
-    /* Broadcast complete-change: */
+    updateFormat();
     emit completeChanged();
 }
 
 void UIWizardExportAppPageExpert::sltHandleFileSelectorChange()
 {
-    /* Remember changed name, except empty one: */
-    if (!m_pFileSelector->path().isEmpty())
-        m_strFileSelectorName = QFileInfo(m_pFileSelector->path()).completeBaseName();
+    /* Skip empty paths: */
+    if (m_pFileSelector->path().isEmpty())
+        return;
 
-    /* Broadcast complete-change: */
+    m_strFileSelectorName = QFileInfo(m_pFileSelector->path()).completeBaseName();
+    wizard()->setPath(m_pFileSelector->path());
     emit completeChanged();
 }
 
 void UIWizardExportAppPageExpert::sltHandleMACAddressExportPolicyComboChange()
 {
-    /* Update tool-tip: */
-    updateMACAddressExportPolicyComboToolTip();
+    updateMACAddressExportPolicyComboToolTip(m_pMACComboBox);
+    wizard()->setMACAddressExportPolicy(m_pMACComboBox->currentData().value<MACAddressExportPolicy>());
+    emit completeChanged();
 }
 
-void UIWizardExportAppPageExpert::sltHandleCustomButtonClicked(int iId)
+void UIWizardExportAppPageExpert::sltHandleManifestCheckBoxChange()
 {
-    /* Handle 2nd button: */
-    if (iId == QWizard::CustomButton2)
-    {
-        /* Reset widget to default: */
-        m_pApplianceWidget->restoreDefaults();
-    }
+    wizard()->setManifestSelected(m_pManifestCheckbox->isChecked());
+    emit completeChanged();
+}
+
+void UIWizardExportAppPageExpert::sltHandleIncludeISOsCheckBoxChange()
+{
+    wizard()->setIncludeISOsSelected(m_pIncludeISOsCheckbox->isChecked());
+    emit completeChanged();
 }
 
 void UIWizardExportAppPageExpert::sltHandleProfileComboChange()
 {
-    /* Refresh required settings: */
-    populateProfile();
-    populateFormProperties();
+    updateProfile();
+    emit completeChanged();
+}
 
-    /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
-        refreshFormPropertiesTable();
-    else
-        refreshApplianceSettingsWidget();
+void UIWizardExportAppPageExpert::sltHandleRadioButtonToggled(QAbstractButton *pButton, bool fToggled)
+{
+    /* Handle checked buttons only: */
+    if (!fToggled)
+        return;
 
-    /* Broadcast complete-change: */
+    /* Update cloud export mode field value: */
+    wizard()->setCloudExportMode(m_exportModeButtons.key(pButton));
     emit completeChanged();
 }
 
@@ -738,4 +710,83 @@ void UIWizardExportAppPageExpert::sltHandleProfileButtonClick()
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
+}
+
+void UIWizardExportAppPageExpert::updateMachines()
+{
+    /* Update wizard fields: */
+    wizard()->setMachineNames(machineNames(m_pVMSelector));
+    wizard()->setMachineIDs(machineIDs(m_pVMSelector));
+
+    /* Refresh required settings: */
+    refreshFileSelectorName(m_strFileSelectorName, wizard()->machineNames(), m_strDefaultApplianceName, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
+
+    /* Update cloud stuff: */
+    updateCloudStuff();
+}
+
+void UIWizardExportAppPageExpert::updateFormat()
+{
+    /* Update combo tool-tip: */
+    updateFormatComboToolTip(m_pFormatComboBox);
+
+    /* Update wizard fields: */
+    wizard()->setFormat(format(m_pFormatComboBox));
+    wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
+
+    /* Refresh settings widget state: */
+    refreshStackedWidget(m_pSettingsWidget, wizard()->isFormatCloudOne());
+    refreshStackedLayout(m_pSettingsLayout, wizard()->isFormatCloudOne());
+
+    /* Update export settings: */
+    refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
+    refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
+    refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
+    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
+    refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
+
+    /* Update profile: */
+    updateProfile();
+}
+
+void UIWizardExportAppPageExpert::updateProfile()
+{
+    /* Update wizard fields: */
+    wizard()->setProfileName(profileName(m_pProfileComboBox));
+
+    /* Update export settings: */
+    refreshCloudProfile(m_comCloudProfile,
+                        wizard()->format(),
+                        wizard()->profileName(),
+                        wizard()->isFormatCloudOne());
+
+    /* Update cloud stuff: */
+    updateCloudStuff();
+}
+
+void UIWizardExportAppPageExpert::updateCloudStuff()
+{
+    /* Create appliance, client, VSD and VSD export form: */
+    CAppliance comAppliance;
+    CCloudClient comClient;
+    CVirtualSystemDescription comDescription;
+    CVirtualSystemDescriptionForm comForm;
+    refreshCloudStuff(comAppliance,
+                      comClient,
+                      comDescription,
+                      comForm,
+                      m_comCloudProfile,
+                      wizard()->machineIDs(),
+                      wizard()->uri(),
+                      wizard()->cloudExportMode());
+    wizard()->setCloudAppliance(comAppliance);
+    wizard()->setCloudClient(comClient);
+    wizard()->setVsd(comDescription);
+    wizard()->setVsdExportForm(comForm);
+
+    /* Refresh corresponding widgets: */
+    refreshApplianceSettingsWidget(m_pApplianceWidget, wizard()->machineIDs(), wizard()->uri(), wizard()->isFormatCloudOne());
+    refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdExportForm(), wizard()->isFormatCloudOne());
 }

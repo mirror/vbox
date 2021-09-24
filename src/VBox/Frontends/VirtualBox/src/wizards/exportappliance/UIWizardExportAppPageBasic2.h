@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,54 +21,36 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QVariant>
-
 /* GUI includes: */
-#include "UIApplianceEditorWidget.h"
-#include "UIWizardPage.h"
+#include "UINativeWizardPage.h"
+#include "UIWizardExportApp.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CAppliance.h"
 #include "CCloudClient.h"
 #include "CCloudProfile.h"
-#include "CCloudProvider.h"
-#include "CCloudProviderManager.h"
 #include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
+class QAbstractButton;
+class QButtonGroup;
 class QCheckBox;
-class QComboBox;
 class QGridLayout;
 class QLabel;
-class QLineEdit;
-class QRadioButton;
 class QStackedWidget;
-class QTableWidget;
+class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 class UIEmptyFilePathSelector;
 
-
-/** MAC address export policies. */
-enum MACAddressExportPolicy
-{
-    MACAddressExportPolicy_KeepAllMACs,
-    MACAddressExportPolicy_StripAllNonNATMACs,
-    MACAddressExportPolicy_StripAllMACs,
-    MACAddressExportPolicy_MAX
-};
-Q_DECLARE_METATYPE(MACAddressExportPolicy);
-
 /** Format combo data fields. */
 enum
 {
-    FormatData_ID              = Qt::UserRole + 1,
-    FormatData_Name            = Qt::UserRole + 2,
-    FormatData_ShortName       = Qt::UserRole + 3,
-    FormatData_IsItCloudFormat = Qt::UserRole + 4
+    FormatData_Name            = Qt::UserRole + 1,
+    FormatData_ShortName       = Qt::UserRole + 2,
+    FormatData_IsItCloudFormat = Qt::UserRole + 3
 };
 
 /** Profile combo data fields. */
@@ -77,193 +59,82 @@ enum
     ProfileData_Name = Qt::UserRole + 1
 };
 
-/** Cloud export option modes. */
-enum CloudExportMode
+/** Namespace for 2nd basic page of the Export Appliance wizard. */
+namespace UIWizardExportAppPage2
 {
-    CloudExportMode_Invalid,
-    CloudExportMode_AskThenExport,
-    CloudExportMode_ExportThenAsk,
-    CloudExportMode_DoNotAsk
-};
-Q_DECLARE_METATYPE(CloudExportMode);
-
-
-/** UIWizardPageBase extension for 2nd page of the Export Appliance wizard. */
-class UIWizardExportAppPage2 : public UIWizardPageBase
-{
-protected:
-
-    /** Constructs 2nd page base. */
-    UIWizardExportAppPage2(bool fExportToOCIByDefault);
-
     /** Populates formats. */
-    void populateFormats();
+    void populateFormats(QIComboBox *pCombo, bool fExportToOCIByDefault);
     /** Populates MAC address policies. */
-    void populateMACAddressPolicies();
-    /** Populates profiles. */
-    void populateProfiles();
-    /** Populates profile. */
-    void populateProfile();
-    /** Populates form properties. */
-    void populateFormProperties();
+    void populateMACAddressPolicies(QIComboBox *pCombo);
 
-    /** Updates page appearance. */
-    virtual void updatePageAppearance();
+    /** Returns current format of @a pCombo specified. */
+    QString format(QIComboBox *pCombo);
+    /** Returns whether format under certain @a iIndex is cloud one. */
+    bool isFormatCloudOne(QIComboBox *pCombo, int iIndex = -1);
+
+    /** Refresh stacked widget. */
+    void refreshStackedWidget(QStackedWidget *pStackedWidget,
+                              bool fIsFormatCloudOne);
 
     /** Refresh file selector name. */
-    void refreshFileSelectorName();
+    void refreshFileSelectorName(QString &strFileSelectorName,
+                                 const QStringList &machineNames,
+                                 const QString &strDefaultApplianceName,
+                                 bool fIsFormatCloudOne);
     /** Refresh file selector extension. */
-    void refreshFileSelectorExtension();
+    void refreshFileSelectorExtension(QString &strFileSelectorExt,
+                                      UIEmptyFilePathSelector *pFileSelector,
+                                      bool fIsFormatCloudOne);
     /** Refresh file selector path. */
-    void refreshFileSelectorPath();
+    void refreshFileSelectorPath(UIEmptyFilePathSelector *pFileSelector,
+                                 const QString &strFileSelectorName,
+                                 const QString &strFileSelectorExt,
+                                 bool fIsFormatCloudOne);
     /** Refresh Manifest check-box access. */
-    void refreshManifestCheckBoxAccess();
+    void refreshManifestCheckBoxAccess(QCheckBox *pCheckBox,
+                                       bool fIsFormatCloudOne);
     /** Refresh Include ISOs check-box access. */
-    void refreshIncludeISOsCheckBoxAccess();
+    void refreshIncludeISOsCheckBoxAccess(QCheckBox *pCheckBox,
+                                          bool fIsFormatCloudOne);
+
+    /** Refresh profile combo. */
+    void refreshProfileCombo(QIComboBox *pCombo,
+                             const QString &strFormat,
+                             bool fIsFormatCloudOne);
+    /** Refresh cloud profile. */
+    void refreshCloudProfile(CCloudProfile &comCloudProfile,
+                             const QString &strShortProviderName,
+                             const QString &strProfileName,
+                             bool fIsFormatCloudOne);
+    /** Refresh cloud export mode. */
+    void refreshCloudExportMode(const QMap<CloudExportMode, QAbstractButton*> &radios,
+                                bool fIsFormatCloudOne);
+    /** Refresh cloud stuff. */
+    void refreshCloudStuff(CAppliance &comCloudAppliance,
+                           CCloudClient &comCloudClient,
+                           CVirtualSystemDescription &comCloudVsd,
+                           CVirtualSystemDescriptionForm &comCloudVsdExportForm,
+                           const CCloudProfile &comCloudProfile,
+                           const QList<QUuid> &machineIDs,
+                           const QString &strUri,
+                           const CloudExportMode enmCloudExportMode);
+
+    /** Returns current profile name of @a pCombo specified. */
+    QString profileName(QIComboBox *pCombo);
+    /** Returns current cloud export mode chosen in @a radioButtons specified. */
+    CloudExportMode cloudExportMode(const QMap<CloudExportMode, QAbstractButton*> &radioButtons);
 
     /** Updates format combo tool-tips. */
-    void updateFormatComboToolTip();
+    void updateFormatComboToolTip(QIComboBox *pCombo);
     /** Updates MAC address export policy combo tool-tips. */
-    void updateMACAddressExportPolicyComboToolTip();
+    void updateMACAddressExportPolicyComboToolTip(QIComboBox *pCombo);
+}
 
-    /** Defines @a strFormat. */
-    void setFormat(const QString &strFormat);
-    /** Returns format. */
-    QString format() const;
-    /** Returns whether format under certain @a iIndex is cloud one. */
-    bool isFormatCloudOne(int iIndex = -1) const;
-
-    /** Defines @a strPath. */
-    void setPath(const QString &strPath);
-    /** Returns path. */
-    QString path() const;
-
-    /** Defines @a enmMACAddressExportPolicy. */
-    void setMACAddressExportPolicy(MACAddressExportPolicy enmMACAddressExportPolicy);
-    /** Returns MAC address export policy. */
-    MACAddressExportPolicy macAddressExportPolicy() const;
-
-    /** Defines whether manifest @a fSelected. */
-    void setManifestSelected(bool fChecked);
-    /** Returns whether manifest selected. */
-    bool isManifestSelected() const;
-
-    /** Defines whether include ISOs @a fSelected. */
-    void setIncludeISOsSelected(bool fChecked);
-    /** Returns whether include ISOs selected. */
-    bool isIncludeISOsSelected() const;
-
-    /** Defines provider by @a uId. */
-    void setProviderById(const QUuid &uId);
-    /** Returns provider ID. */
-    QUuid providerId() const;
-    /** Returns provider short name. */
-    QString providerShortName() const;
-    /** Returns profile name. */
-    QString profileName() const;
-    /** Returns Cloud Appliance object. */
-    CAppliance cloudAppliance() const;
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
-    /** Returns Virtual System Description object. */
-    CVirtualSystemDescription vsd() const;
-    /** Returns Virtual System Description Export Form object. */
-    CVirtualSystemDescriptionForm vsdExportForm() const;
-    /** Returns cloud export mode. */
-    CloudExportMode cloudExportMode() const;
-
-    /** Holds whether default format should be Export to OCI. */
-    bool  m_fExportToOCIByDefault;
-
-    /** Holds the Cloud Provider Manager reference. */
-    CCloudProviderManager          m_comCloudProviderManager;
-    /** Holds the Cloud Provider object reference. */
-    CCloudProvider                 m_comCloudProvider;
-    /** Holds the Cloud Profile object reference. */
-    CCloudProfile                  m_comCloudProfile;
-    /** Holds the Appliance object reference. */
-    CAppliance                     m_comAppliance;
-    /** Holds the Cloud Client object reference. */
-    CCloudClient                   m_comClient;
-    /** Holds the Virtual System Description object reference. */
-    CVirtualSystemDescription      m_comVSD;
-    /** Holds the Virtual System Description Export Form object reference. */
-    CVirtualSystemDescriptionForm  m_comVSDExportForm;
-
-    /** Holds the default appliance name. */
-    QString  m_strDefaultApplianceName;
-
-    /** Holds the file selector name. */
-    QString  m_strFileSelectorName;
-    /** Holds the file selector ext. */
-    QString  m_strFileSelectorExt;
-
-    /** Holds the format layout. */
-    QGridLayout *m_pFormatLayout;
-    /** Holds the settings layout 1. */
-    QGridLayout *m_pSettingsLayout1;
-    /** Holds the settings layout 2. */
-    QGridLayout *m_pSettingsLayout2;
-
-    /** Holds the format combo-box label instance. */
-    QLabel    *m_pFormatComboBoxLabel;
-    /** Holds the format combo-box instance. */
-    QComboBox *m_pFormatComboBox;
-
-    /** Holds the settings widget instance. */
-    QStackedWidget *m_pSettingsWidget;
-
-    /** Holds the file selector label instance. */
-    QLabel                  *m_pFileSelectorLabel;
-    /** Holds the file selector instance. */
-    UIEmptyFilePathSelector *m_pFileSelector;
-
-    /** Holds the MAC address policy combo-box label instance. */
-    QLabel    *m_pMACComboBoxLabel;
-    /** Holds the MAC address policy check-box instance. */
-    QComboBox *m_pMACComboBox;
-
-    /** Holds the additional label instance. */
-    QLabel    *m_pAdditionalLabel;
-    /** Holds the manifest check-box instance. */
-    QCheckBox *m_pManifestCheckbox;
-    /** Holds the include ISOs check-box instance. */
-    QCheckBox *m_pIncludeISOsCheckbox;
-
-    /** Holds the profile label instance. */
-    QLabel       *m_pProfileLabel;
-    /** Holds the profile combo-box instance. */
-    QComboBox    *m_pProfileComboBox;
-    /** Holds the profile management tool-button instance. */
-    QIToolButton *m_pProfileToolButton;
-
-    /** Holds the machine label instance. */
-    QLabel       *m_pMachineLabel;
-    /** Holds the don't ask radio button instance. */
-    QRadioButton *m_pRadioDoNotAsk;
-    /** Holds the ask then export radio button instance. */
-    QRadioButton *m_pRadioAskThenExport;
-    /** Holds the export then ask radio button instance. */
-    QRadioButton *m_pRadioExportThenAsk;
-};
-
-
-/** UIWizardPage extension for 2nd page of the Export Appliance wizard, extends UIWizardExportAppPage2 as well. */
-class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAppPage2
+/** UINativeWizardPage extension for 2nd basic page of the Export Appliance wizard,
+  * based on UIWizardAddCloudVMPage2 namespace functions. */
+class UIWizardExportAppPageBasic2 : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(QString format READ format WRITE setFormat);
-    Q_PROPERTY(bool isFormatCloudOne READ isFormatCloudOne);
-    Q_PROPERTY(QString path READ path WRITE setPath);
-    Q_PROPERTY(MACAddressExportPolicy macAddressExportPolicy READ macAddressExportPolicy WRITE setMACAddressExportPolicy);
-    Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
-    Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
-    Q_PROPERTY(QString providerShortName READ providerShortName);
-    Q_PROPERTY(CAppliance cloudAppliance READ cloudAppliance);
-    Q_PROPERTY(CCloudClient client READ client);
-    Q_PROPERTY(CVirtualSystemDescription vsd READ vsd);
-    Q_PROPERTY(CVirtualSystemDescriptionForm vsdExportForm READ vsdExportForm);
-    Q_PROPERTY(CloudExportMode cloudExportMode READ cloudExportMode);
 
 public:
 
@@ -272,12 +143,8 @@ public:
 
 protected:
 
-    /** Allows access wizard from base part. */
-    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
-    /** Allows access page from base part. */
-    UIWizardPage* thisImp() { return this; }
-    /** Allows access wizard-field from base part. */
-    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+    /** Returns wizard this page belongs to. */
+    UIWizardExportApp *wizard() const;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -291,9 +158,6 @@ protected:
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
-    /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override */;
-
 private slots:
 
     /** Handles change in format combo-box. */
@@ -305,19 +169,91 @@ private slots:
     /** Handles change in MAC address export policy combo-box. */
     void sltHandleMACAddressExportPolicyComboChange();
 
+    /** Handles change in manifest check-box. */
+    void sltHandleManifestCheckBoxChange();
+
+    /** Handles change in include ISOs check-box. */
+    void sltHandleIncludeISOsCheckBoxChange();
+
     /** Handles change in profile combo-box. */
     void sltHandleProfileComboChange();
+
+    /** Handles cloud export radio-button clicked. */
+    void sltHandleRadioButtonToggled(QAbstractButton *pButton, bool fToggled);
 
     /** Handles profile tool-button click. */
     void sltHandleProfileButtonClick();
 
 private:
 
+    /** Updates format. */
+    void updateFormat();
+    /** Updates profile. */
+    void updateProfile();
+    /** Updates cloud stuff. */
+    void updateCloudStuff();
+
+    /** Holds whether default format should be Export to OCI. */
+    bool  m_fExportToOCIByDefault;
+
+    /** Holds the default appliance name. */
+    QString  m_strDefaultApplianceName;
+    /** Holds the file selector name. */
+    QString  m_strFileSelectorName;
+    /** Holds the file selector ext. */
+    QString  m_strFileSelectorExt;
+
+    /** Holds the Cloud Profile object instance. */
+    CCloudProfile  m_comCloudProfile;
+
+
     /** Holds the format label instance. */
     QIRichTextLabel *m_pLabelFormat;
-
     /** Holds the settings label instance. */
     QIRichTextLabel *m_pLabelSettings;
+
+    /** Holds the format layout. */
+    QGridLayout *m_pFormatLayout;
+    /** Holds the format combo-box label instance. */
+    QLabel      *m_pFormatComboBoxLabel;
+    /** Holds the format combo-box instance. */
+    QIComboBox  *m_pFormatComboBox;
+
+    /** Holds the settings widget instance. */
+    QStackedWidget *m_pSettingsWidget;
+
+    /** Holds the settings layout 1. */
+    QGridLayout             *m_pSettingsLayout1;
+    /** Holds the file selector label instance. */
+    QLabel                  *m_pFileSelectorLabel;
+    /** Holds the file selector instance. */
+    UIEmptyFilePathSelector *m_pFileSelector;
+    /** Holds the MAC address policy combo-box label instance. */
+    QLabel                  *m_pMACComboBoxLabel;
+    /** Holds the MAC address policy check-box instance. */
+    QIComboBox              *m_pMACComboBox;
+    /** Holds the additional label instance. */
+    QLabel                  *m_pAdditionalLabel;
+    /** Holds the manifest check-box instance. */
+    QCheckBox               *m_pManifestCheckbox;
+    /** Holds the include ISOs check-box instance. */
+    QCheckBox               *m_pIncludeISOsCheckbox;
+
+    /** Holds the settings layout 2. */
+    QGridLayout   *m_pSettingsLayout2;
+    /** Holds the profile label instance. */
+    QLabel        *m_pProfileLabel;
+    /** Holds the profile combo-box instance. */
+    QIComboBox    *m_pProfileComboBox;
+    /** Holds the profile management tool-button instance. */
+    QIToolButton  *m_pProfileToolButton;
+
+    /** Holds the export mode label instance. */
+    QLabel                                  *m_pExportModeLabel;
+    /** Holds the export mode button group instance. */
+    QButtonGroup                            *m_pExportModeButtonGroup;
+    /** Holds the map of export mode button instances. */
+    QMap<CloudExportMode, QAbstractButton*>  m_exportModeButtons;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic2_h */
