@@ -1778,10 +1778,17 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 #define VMX_BF_EPTP_SUPER_SHW_STACK_MASK                        UINT64_C(0x0000000000000080)
 #define VMX_BF_EPTP_RSVD_8_11_SHIFT                             8
 #define VMX_BF_EPTP_RSVD_8_11_MASK                              UINT64_C(0x0000000000000f00)
-#define VMX_BF_EPTP_PML4_ADDR_SHIFT                             12
-#define VMX_BF_EPTP_PML4_ADDR_MASK                              UINT64_C(0xfffffffffffff000)
+#define VMX_BF_EPTP_PML4_TABLE_ADDR_SHIFT                       12
+#define VMX_BF_EPTP_PML4_TABLE_ADDR_MASK                        UINT64_C(0xfffffffffffff000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
-                            (MEMTYPE, PAGE_WALK_LENGTH, ACCESS_DIRTY, SUPER_SHW_STACK, RSVD_8_11, PML4_ADDR));
+                            (MEMTYPE, PAGE_WALK_LENGTH, ACCESS_DIRTY, SUPER_SHW_STACK, RSVD_8_11, PML4_TABLE_ADDR));
+
+/* Mask of valid EPTP bits sans physically non-addressable bits. */
+#define VMX_EPTP_VALID_MASK                                     (  VMX_BF_EPTP_MEMTYPE_MASK          \
+                                                                 | VMX_BF_EPTP_PAGE_WALK_LENGTH_MASK \
+                                                                 | VMX_BF_EPTP_ACCESS_DIRTY_MASK     \
+                                                                 | VMX_BF_EPTP_SUPER_SHW_STACK_MASK  \
+                                                                 | VMX_BF_EPTP_PML4_TABLE_ADDR_MASK)
 /** @} */
 
 
@@ -4147,6 +4154,10 @@ typedef enum
     kVmxVDiag_Vmentry_EntryIntInfoErrCodeVec,
     kVmxVDiag_Vmentry_EntryIntInfoTypeVecRsvd,
     kVmxVDiag_Vmentry_EntryXcptErrCodeRsvd,
+    kVmxVDiag_Vmentry_EptpAccessDirty,
+    kVmxVDiag_Vmentry_EptpPageWalkLength,
+    kVmxVDiag_Vmentry_EptpMemType,
+    kVmxVDiag_Vmentry_EptpRsvd,
     kVmxVDiag_Vmentry_ExitCtlsAllowed1,
     kVmxVDiag_Vmentry_ExitCtlsDisallowed0,
     kVmxVDiag_Vmentry_GuestActStateHlt,
