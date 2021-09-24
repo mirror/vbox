@@ -1756,19 +1756,32 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name Extended Page Table Pointer (EPTP)
+ * In accordance with the VT-x spec.
+ * See Intel spec. 23.6.11 "Extended-Page-Table Pointer (EPTP)".
  * @{
  */
-/** Uncachable EPT paging structure memory type. */
-#define VMX_EPT_MEMTYPE_UC                                      0
-/** Write-back EPT paging structure memory type. */
-#define VMX_EPT_MEMTYPE_WB                                      6
-/** Shift value to get the EPT page walk length (bits 5-3) */
-#define VMX_EPT_PAGE_WALK_LENGTH_SHIFT                          3
-/** Mask value to get the EPT page walk length (bits 5-3) */
-#define VMX_EPT_PAGE_WALK_LENGTH_MASK                           7
-/** Default EPT page-walk length (1 less than the actual EPT page-walk
- *  length) */
-#define VMX_EPT_PAGE_WALK_LENGTH_DEFAULT                        3
+/** EPTP memory type: Uncachable. */
+#define VMX_EPTP_MEMTYPE_UC                                     0
+/** EPTP memory type: Write Back. */
+#define VMX_EPTP_MEMTYPE_WB                                     6
+/** Page-walk length for PML4 (4-level paging). */
+#define VMX_EPTP_PAGE_WALK_LENGTH_4                             3
+
+/** Bit fields for EPTP. */
+#define VMX_BF_EPTP_MEMTYPE_SHIFT                               0
+#define VMX_BF_EPTP_MEMTYPE_MASK                                UINT64_C(0x0000000000000007)
+#define VMX_BF_EPTP_PAGE_WALK_LENGTH_SHIFT                      3
+#define VMX_BF_EPTP_PAGE_WALK_LENGTH_MASK                       UINT64_C(0x0000000000000038)
+#define VMX_BF_EPTP_ACCESS_DIRTY_SHIFT                          6
+#define VMX_BF_EPTP_ACCESS_DIRTY_MASK                           UINT64_C(0x0000000000000040)
+#define VMX_BF_EPTP_SUPER_SHW_STACK_SHIFT                       7
+#define VMX_BF_EPTP_SUPER_SHW_STACK_MASK                        UINT64_C(0x0000000000000080)
+#define VMX_BF_EPTP_RSVD_8_11_SHIFT                             8
+#define VMX_BF_EPTP_RSVD_8_11_MASK                              UINT64_C(0x0000000000000f00)
+#define VMX_BF_EPTP_PML4_ADDR_SHIFT                             12
+#define VMX_BF_EPTP_PML4_ADDR_MASK                              UINT64_C(0xfffffffffffff000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
+                            (MEMTYPE, PAGE_WALK_LENGTH, ACCESS_DIRTY, SUPER_SHW_STACK, RSVD_8_11, PML4_ADDR));
 /** @} */
 
 
