@@ -52,7 +52,7 @@
 #endif /* VBOX_WS_MAC */
 
 
-UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName,
+UIMediumSelector::UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDeviceType enmMediumType, const QString &machineName,
                                    const QString &machineSettingsFilePath, const QString &strMachineGuestOSTypeId,
                                    const QUuid &uMachineID, QWidget *pParent)
     :QIWithRetranslateUI<QIMainDialog>(pParent)
@@ -84,6 +84,7 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
         uiCommon().enumerateMedia();
     configure();
     finalize();
+    selectMedium(uCurrentMediumId);
 }
 
 void UIMediumSelector::setEnableCreateAction(bool fEnable)
@@ -553,7 +554,7 @@ void UIMediumSelector::sltHandleTreeCollapseAllSignal()
 
 void UIMediumSelector::selectMedium(const QUuid &uMediumID)
 {
-    if (!m_pTreeWidget)
+    if (!m_pTreeWidget || uMediumID.isNull())
         return;
     UIMediumItem *pMediumItem = searchItem(0, uMediumID);
     if (pMediumItem)
@@ -617,6 +618,9 @@ void UIMediumSelector::showEvent(QShowEvent *pEvent)
 
     if (m_pParent)
         UIDesktopWidgetWatchdog::centerWidget(this, m_pParent, false);
+
+    if (m_pTreeWidget)
+        m_pTreeWidget->setFocus();
 }
 
 void UIMediumSelector::repopulateTreeWidget()

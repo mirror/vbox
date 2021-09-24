@@ -50,7 +50,7 @@ signals:
 
 public:
 
-    UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName,
+    UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDeviceType enmMediumType, const QString &machineName,
                      const QString &machineSettingsFilePath, const QString &strMachineGuestOSTypeId,
                      const QUuid &uMachineID, QWidget *pParent);
     /** Disables/enables the create action and controls its visibility. */

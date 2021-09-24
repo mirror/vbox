@@ -4002,7 +4002,10 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QUuid uMediumId;
-    int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId,
+    if (m_pMediumIdHolder)
+        uMediumId = m_pMediumIdHolder->id();
+
+    int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId /* in/out parameter */,
                                                       strMachineFolder, m_strMachineName,
                                                       m_strMachineGuestOSTypeId,
                                                       true /* enable create action: */, m_uMachineId);
