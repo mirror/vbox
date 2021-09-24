@@ -1469,6 +1469,7 @@ void UISnapshotPane::updateActionStates()
                                         || enmState == KMachineState_PoweredOff
                                         || enmState == KMachineState_Saved
                                         || enmState == KMachineState_Aborted
+                                        || enmState == KMachineState_AbortedSaved
                                         || enmState == KMachineState_Running
                                         || enmState == KMachineState_Paused;
 

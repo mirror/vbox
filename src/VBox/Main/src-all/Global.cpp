@@ -589,6 +589,7 @@ Global::stringifyMachineState(MachineState_T aState)
         case MachineState_Saved:                return "Saved";
         case MachineState_Teleported:           return "Teleported";
         case MachineState_Aborted:              return "Aborted";
+        case MachineState_AbortedSaved:         return "Aborted-Saved";
         case MachineState_Running:              return "Running";
         case MachineState_Paused:               return "Paused";
         case MachineState_Stuck:                return "GuruMeditation";

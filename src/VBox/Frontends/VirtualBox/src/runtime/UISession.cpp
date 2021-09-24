@@ -174,6 +174,7 @@ bool UISession::initialize()
     if (   isFirstTimeStarted()
         && !((   m_machineState == KMachineState_PoweredOff
               || m_machineState == KMachineState_Aborted
+              || m_machineState == KMachineState_AbortedSaved
               || m_machineState == KMachineState_Teleported)
              && machine().GetTeleporterEnabled()))
     {

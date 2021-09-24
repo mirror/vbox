@@ -516,6 +516,7 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Saved:
         case KMachineState_Teleported:
         case KMachineState_Aborted:
+        case KMachineState_AbortedSaved:
         {
             /* If not in 'manual-override' mode: */
             if (!uisession()->isManualOverrideMode())

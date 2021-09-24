@@ -244,7 +244,7 @@ HRESULT MachineMoveVM::init()
     if (FAILED(hrc))
         return hrc;
 
-    if (machineState == MachineState_Saved)
+    if (machineState == MachineState_Saved || machineState == MachineState_AbortedSaved)
     {
         m_pMachine->COMGETTER(StateFilePath)(bstr_stateFilePath.asOutParam());
         strStateFilePath = bstr_stateFilePath;

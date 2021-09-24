@@ -479,8 +479,9 @@ public:
 
                 if (     machineState == MachineState_Aborted
                          ||   machineState == MachineState_Teleported
-                         ||  (machineState == MachineState_Saved      && !m_fIgnorePowerOffEvents)
-                         ||  (machineState == MachineState_PoweredOff && !m_fIgnorePowerOffEvents)
+                         ||  (machineState == MachineState_Saved        && !m_fIgnorePowerOffEvents)
+                         ||  (machineState == MachineState_AbortedSaved && !m_fIgnorePowerOffEvents)
+                         ||  (machineState == MachineState_PoweredOff   && !m_fIgnorePowerOffEvents)
                          )
                 {
                     /*
@@ -614,6 +615,7 @@ public:
             case MachineState_Saved:                return "Saved";
             case MachineState_Teleported:           return "Teleported";
             case MachineState_Aborted:              return "Aborted";
+            case MachineState_AbortedSaved:         return "Aborted-Saved";
             case MachineState_Running:              return "Running";
             case MachineState_Teleporting:          return "Teleporting";
             case MachineState_LiveSnapshotting:     return "LiveSnapshotting";
@@ -1891,7 +1893,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          */
         MachineState_T machineState;
         gpMachine->COMGETTER(State)(&machineState);
-        if (machineState == MachineState_Saved)
+        if (machineState == MachineState_Saved || machineState == MachineState_AbortedSaved)
         {
             CHECK_ERROR(gpMachine, DiscardSavedState(true /* fDeleteFile */));
         }
@@ -3078,7 +3080,8 @@ leave:
      * not be flushed to the permanent configuration
      */
     if (   gpMachine
-        && machineState != MachineState_Saved)
+        && machineState != MachineState_Saved
+        && machineState != MachineState_AbortedSaved)
     {
         rc = gpMachine->DiscardSettings();
         AssertMsg(SUCCEEDED(rc), ("DiscardSettings %Rhrc, machineState %d\n", rc, machineState));

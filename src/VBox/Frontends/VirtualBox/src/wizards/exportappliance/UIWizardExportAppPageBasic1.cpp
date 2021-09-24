@@ -94,7 +94,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
             strName = machine.GetName();
             uUuid = machine.GetId();
             fEnabled = machine.GetSessionState() == KSessionState_Unlocked;
-            fInSaveState = machine.GetState() == KMachineState_Saved;
+            fInSaveState = machine.GetState() == KMachineState_Saved || machine.GetState() == KMachineState_AbortedSaved;
         }
         else
         {

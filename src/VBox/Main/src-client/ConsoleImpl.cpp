@@ -1580,7 +1580,7 @@ inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterT
  */
 HRESULT Console::i_loadDataFromSavedState()
 {
-    if (mMachineState != MachineState_Saved || mSavedStateDataLoaded)
+    if ((mMachineState != MachineState_Saved && mMachineState != MachineState_AbortedSaved) || mSavedStateDataLoaded)
         return S_OK;
 
     Bstr savedStateFile;
@@ -2181,6 +2181,7 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
 
         /* extra nice error message for a common case */
         case MachineState_Saved:
+        case MachineState_AbortedSaved:
             return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down a saved virtual machine"));
         case MachineState_Stopping:
             return setError(VBOX_E_INVALID_VM_STATE, tr("The virtual machine is being powered down"));
@@ -2964,9 +2965,10 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo see @todo in AttachUSBDevice() about the Paused state
-    if (mMachineState == MachineState_Saved)
+    if (mMachineState == MachineState_Saved || mMachineState == MachineState_AbortedSaved)
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot create a transient shared folder on the machine in the saved state"));
+                        tr("Cannot create a transient shared folder on a machine in a saved state (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
     if (   mMachineState != MachineState_PoweredOff
         && mMachineState != MachineState_Teleported
         && mMachineState != MachineState_Aborted
@@ -3035,9 +3037,10 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo see @todo in AttachUSBDevice() about the Paused state
-    if (mMachineState == MachineState_Saved)
+    if (mMachineState == MachineState_Saved || mMachineState == MachineState_AbortedSaved)
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot remove a transient shared folder from the machine in the saved state"));
+                        tr("Cannot remove a transient shared folder from a machine in a saved state (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));;
     if (   mMachineState != MachineState_PoweredOff
         && mMachineState != MachineState_Teleported
         && mMachineState != MachineState_Aborted
@@ -7704,7 +7707,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
          * failure information to the API caller */
         pPowerupProgress.createObject();
         Bstr progressDesc;
-        if (mMachineState == MachineState_Saved)
+        if (mMachineState == MachineState_Saved || mMachineState == MachineState_AbortedSaved)
             progressDesc = tr("Restoring virtual machine");
         else if (fTeleporterEnabled)
             progressDesc = tr("Teleporting virtual machine");
@@ -7716,7 +7719,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
         /*
          * Saved VMs will have to prove that their saved states seem kosher.
          */
-        if (mMachineState == MachineState_Saved)
+        if (mMachineState == MachineState_Saved || mMachineState == MachineState_AbortedSaved)
         {
             rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
             if (FAILED(rc))
@@ -7783,7 +7786,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
         task->mConfigConstructor = i_configConstructor;
         task->mSharedFolders = sharedFolders;
         task->mStartPaused = aPaused;
-        if (mMachineState == MachineState_Saved)
+        if (mMachineState == MachineState_Saved || mMachineState == MachineState_AbortedSaved)
             try { task->mSavedStateFile = savedStateFile; }
             catch (std::bad_alloc &) { throw rc = E_OUTOFMEMORY; }
         task->mTeleporterEnabled = fTeleporterEnabled;
@@ -7927,6 +7930,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             AssertComRCReturnRC(rc);
         }
         else if (   mMachineState == MachineState_Saved
+                 || mMachineState == MachineState_AbortedSaved
                  || !fTeleporterEnabled)
         {
             rc = pPowerupProgress->init(static_cast<IConsole *>(this),
@@ -8041,7 +8045,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
         /* finally, set the state: no right to fail in this method afterwards
          * since we've already started the thread and it is now responsible for
          * any error reporting and appropriate state change! */
-        if (mMachineState == MachineState_Saved)
+        if (mMachineState == MachineState_Saved || mMachineState == MachineState_AbortedSaved)
             i_setMachineState(MachineState_Restoring);
         else if (fTeleporterEnabled)
             i_setMachineState(MachineState_TeleportingIn);
@@ -8963,8 +8967,8 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                     break;
                 case MachineState_Restoring:
                     /* failed to load the saved state file, but be patient: set
-                     * back to Saved (to preserve the saved state file) */
-                    that->i_setMachineState(MachineState_Saved);
+                     * to AbortedSaved (to preserve the saved state file) */
+                    that->i_setMachineState(MachineState_AbortedSaved);
                     break;
                 case MachineState_TeleportingIn:
                     /* Teleportation failed or was canceled.  Back to powered off. */

@@ -444,7 +444,7 @@ void UIMediumManagerWidget::sltHandleMachineStateChange(const QUuid &uId, const 
     if (!pCurrentItem->isMediumAttachedTo(uId))
         return;
     bool fMediumIsModifiable = true;
-    if (state != KMachineState_Aborted && state != KMachineState_PoweredOff)
+    if (state != KMachineState_Aborted && state != KMachineState_PoweredOff && state != KMachineState_AbortedSaved)
         fMediumIsModifiable = false;
     m_pDetailsWidget->enableDisableMediumModificationWidgets(fMediumIsModifiable);
 }

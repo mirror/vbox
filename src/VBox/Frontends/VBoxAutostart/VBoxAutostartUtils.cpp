@@ -47,6 +47,8 @@ DECLHIDDEN(const char *) machineStateToName(MachineState_T machineState, bool fS
             return "teleported";
         case MachineState_Aborted:
             return "aborted";
+        case MachineState_AbortedSaved:
+            return "aborted-saved";
         case MachineState_Running:
             return "running";
         case MachineState_Paused:

@@ -395,7 +395,7 @@ void UIMachineWindowNormal::loadSettings()
             UIDesktopWidgetWatchdog::setTopLevelGeometry(this, m_geometry);
 
             /* If previous machine-state was NOT SAVED => normalize window to the optimal-size: */
-            if (machine().GetState() != KMachineState_Saved)
+            if (machine().GetState() != KMachineState_Saved && machine().GetState() != KMachineState_AbortedSaved)
                 normalizeGeometry(false /* adjust position */, shouldResizeToGuestDisplay());
 
             /* Maximize window (if necessary): */

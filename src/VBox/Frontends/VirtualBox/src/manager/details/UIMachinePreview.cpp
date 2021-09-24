@@ -245,6 +245,7 @@ void UIMachinePreview::sltRecreatePreview()
             {
                 /* If machine is in SAVED/RESTORING state: */
                 case KMachineState_Saved:
+                case KMachineState_AbortedSaved:
                 case KMachineState_Restoring:
                 {
                     /* Use the screenshot from saved-state if possible: */

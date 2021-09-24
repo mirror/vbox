@@ -8095,6 +8095,7 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
                     || (   mData->mMachineState != MachineState_Aborted
                         && mData->mMachineState != MachineState_Teleported
                         && mData->mMachineState != MachineState_Saved
+                        && mData->mMachineState != MachineState_AbortedSaved
                         && mData->mMachineState != MachineState_PoweredOff
                        )
                    )
@@ -8127,6 +8128,7 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
                     || (   mData->mMachineState != MachineState_Aborted
                         && mData->mMachineState != MachineState_Teleported
                         && mData->mMachineState != MachineState_Saved
+                        && mData->mMachineState != MachineState_AbortedSaved
                         && mData->mMachineState != MachineState_PoweredOff
                         && !Global::IsOnline(mData->mMachineState)
                        )
@@ -8635,8 +8637,13 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
      *  blocked by i_checkStateDependency(MutableStateDep).
      */
 
-    /* set the machine state to Aborted or Saved when appropriate */
-    if (config.fAborted)
+    /* set the machine state to either Aborted-Saved, Aborted, or Saved if appropriate */
+    if (config.fAborted && !mSSData->strStateFilePath.isEmpty())
+    {
+        /* no need to use i_setMachineState() during init() */
+        mData->mMachineState = MachineState_AbortedSaved;
+    }
+    else if (config.fAborted)
     {
         mSSData->strStateFilePath.setNull();
 
@@ -10000,6 +10007,7 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.machineUserData = mUserData->s;
 
     if (    mData->mMachineState == MachineState_Saved
+         || mData->mMachineState == MachineState_AbortedSaved
          || mData->mMachineState == MachineState_Restoring
             // when doing certain snapshot operations we may or may not have
             // a saved state in the current state, so keep everything as is
@@ -10026,7 +10034,7 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
         config.uuidCurrentSnapshot.clear();
 
     config.timeLastStateChange = mData->mLastStateChange;
-    config.fAborted = (mData->mMachineState == MachineState_Aborted);
+    config.fAborted = (mData->mMachineState == MachineState_Aborted || mData->mMachineState == MachineState_AbortedSaved);
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
 
     HRESULT rc = i_saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
@@ -10543,7 +10551,8 @@ HRESULT Machine::i_saveStateSettings(int aFlags)
 
             mData->pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
 
-            mData->pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
+            mData->pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted
+                                                || mData->mMachineState == MachineState_AbortedSaved);
 /// @todo live migration             mData->pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
         }
 
@@ -12663,8 +12672,17 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     {
         Log1WarningThisFunc(("ABNORMAL client termination! (wasBusy=%d)\n", Global::IsOnlineOrTransient(lastState)));
 
-        /* reset the state to Aborted */
-        if (mData->mMachineState != MachineState_Aborted)
+        /*
+         * Move the VM to the 'Aborted' machine state unless we are restoring a
+         * VM that was in the 'Saved' machine state.  In that case, if the VM
+         * fails before reaching either the 'Restoring' machine state or the
+         * 'Running' machine state then we set the machine state to
+         * 'AbortedSaved' in order to preserve the saved state file so that the
+         * VM can be restored in the future.
+         */
+        if (mData->mMachineState == MachineState_Saved || mData->mMachineState == MachineState_Restoring)
+            i_setMachineState(MachineState_AbortedSaved);
+        else if (mData->mMachineState != MachineState_Aborted)
             i_setMachineState(MachineState_Aborted);
     }
 
@@ -13089,9 +13107,10 @@ HRESULT SessionMachine::discardSavedState(BOOL aFRemoveFile)
     HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
-    if (mData->mMachineState != MachineState_Saved)
+    if (   mData->mMachineState != MachineState_Saved
+        && mData->mMachineState != MachineState_AbortedSaved)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot delete the machine state as the machine is not in the saved state (machine state: %s)"),
+            tr("Cannot discard the saved state as the machine is not in the Saved or Aborted-Saved state (machine state: %s)"),
             Global::stringifyMachineState(mData->mMachineState));
 
     mRemoveSavedState = RT_BOOL(aFRemoveFile);
@@ -14614,7 +14633,6 @@ HRESULT SessionMachine::i_unlockMedia()
 HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aMachineState=%s\n", Global::stringifyMachineState(aMachineState) ));
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -14635,8 +14653,11 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
 
     /* detect some state transitions */
 
-    if (   (   oldMachineState == MachineState_Saved
-            && aMachineState   == MachineState_Restoring)
+    if (   (   (   oldMachineState == MachineState_Saved
+                || oldMachineState == MachineState_AbortedSaved
+               )
+                && aMachineState   == MachineState_Restoring
+            )
         || (   (   oldMachineState == MachineState_PoweredOff
                 || oldMachineState == MachineState_Teleported
                 || oldMachineState == MachineState_Aborted
@@ -14671,6 +14692,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
                  || aMachineState == MachineState_Saved
                  || aMachineState == MachineState_Teleported
                  || aMachineState == MachineState_Aborted
+                 || aMachineState == MachineState_AbortedSaved
                 )
             )
     {
@@ -14684,12 +14706,12 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
 
     if (oldMachineState == MachineState_Restoring)
     {
-        if (aMachineState != MachineState_Saved)
+        if (aMachineState != MachineState_Saved && aMachineState != MachineState_AbortedSaved)
         {
             /*
              *  delete the saved state file once the machine has finished
              *  restoring from it (note that Console sets the state from
-             *  Restoring to Saved if the VM couldn't restore successfully,
+             *  Restoring to AbortedSaved if the VM couldn't restore successfully,
              *  to give the user an ability to fix an error and retry --
              *  we keep the saved state file in this case)
              */
@@ -14698,31 +14720,17 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
     }
     else if (   oldMachineState == MachineState_Saved
              && (   aMachineState == MachineState_PoweredOff
-                 || aMachineState == MachineState_Aborted
                  || aMachineState == MachineState_Teleported
                 )
             )
     {
-        /*
-         *  delete the saved state after SessionMachine::ForgetSavedState() is called
-         *  or if the VM process (owning a direct VM session) crashed while the
-         *  VM was Saved
-         */
-
-        /// @todo (dmik)
-        //      Not sure that deleting the saved state file just because of the
-        //      client death before it attempted to restore the VM is a good
-        //      thing. But when it crashes we need to go to the Aborted state
-        //      which cannot have the saved state file associated... The only
-        //      way to fix this is to make the Aborted condition not a VM state
-        //      but a bool flag: i.e., when a crash occurs, set it to true and
-        //      change the state to PoweredOff or Saved depending on the
-        //      saved state presence.
-
+        /* delete the saved state after SessionMachine::ForgetSavedState() is called */
         deleteSavedState = true;
         mData->mCurrentStateModified = TRUE;
         stsFlags |= SaveSTS_CurStateModified;
     }
+    /* failure to reach the restoring state should always go to MachineState_AbortedSaved */
+    Assert(!(oldMachineState == MachineState_Saved && aMachineState == MachineState_Aborted));
 
     if (   aMachineState == MachineState_Starting
         || aMachineState == MachineState_Restoring
@@ -14764,6 +14772,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
         && (   aMachineState == MachineState_PoweredOff
             || aMachineState == MachineState_Teleported
             || aMachineState == MachineState_Aborted
+            || aMachineState == MachineState_AbortedSaved
             || aMachineState == MachineState_Saved))
     {
         /* the machine has stopped execution

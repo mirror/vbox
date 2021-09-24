@@ -1300,6 +1300,7 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
                   || enmState == KMachineState_Saved
                   || enmState == KMachineState_Teleported
                   || enmState == KMachineState_Aborted
+                  || enmState == KMachineState_AbortedSaved
                   , ("Machine must be PoweredOff/Saved/Teleported/Aborted (%d)", enmState));
     }
 

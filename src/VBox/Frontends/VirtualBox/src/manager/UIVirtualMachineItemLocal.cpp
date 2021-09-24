@@ -96,6 +96,7 @@ void UIVirtualMachineItemLocal::recache()
             || m_enmMachineState == KMachineState_Saved
             || m_enmMachineState == KMachineState_Teleported
             || m_enmMachineState == KMachineState_Aborted
+            || m_enmMachineState == KMachineState_AbortedSaved
            )
         {
             m_pid = (ULONG) ~0;
@@ -183,7 +184,8 @@ bool UIVirtualMachineItemLocal::isItemRemovable() const
 bool UIVirtualMachineItemLocal::isItemSaved() const
 {
     return    accessible()
-           && machineState() == KMachineState_Saved;
+           && (   machineState() == KMachineState_Saved
+               || machineState() == KMachineState_AbortedSaved);
 }
 
 bool UIVirtualMachineItemLocal::isItemPoweredOff() const
@@ -192,7 +194,8 @@ bool UIVirtualMachineItemLocal::isItemPoweredOff() const
            && (   machineState() == KMachineState_PoweredOff
                || machineState() == KMachineState_Saved
                || machineState() == KMachineState_Teleported
-               || machineState() == KMachineState_Aborted);
+               || machineState() == KMachineState_Aborted
+               || machineState() == KMachineState_AbortedSaved);
 }
 
 bool UIVirtualMachineItemLocal::isItemStarted() const

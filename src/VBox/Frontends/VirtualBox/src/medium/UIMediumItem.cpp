@@ -145,7 +145,8 @@ bool UIMediumItem::isMediumModifiable() const
         if (comMachine.isNull())
             continue;
         if (comMachine.GetState() != KMachineState_PoweredOff &&
-            comMachine.GetState() != KMachineState_Aborted)
+            comMachine.GetState() != KMachineState_Aborted &&
+            comMachine.GetState() != KMachineState_AbortedSaved)
             return false;
     }
     return true;

@@ -652,9 +652,13 @@
             V                                             |
     +-&gt; PoweredOff --+--&gt;[powerUp()]--&gt; Starting --+      | +-----[resume()]-----+
     |                |                             |      | V                    |
-    |   Aborted -----+                             +--&gt; Running --[pause()]--&gt; Paused
+    |   Aborted &lt;----+                             +--&gt; Running --[pause()]--&gt; Paused
     |                                              |      ^ |                   ^ |
-    |   Saved -----------[powerUp()]--&gt; Restoring -+      | |                   | |
+    |  AbortedSaved &lt;-----------[failure]-----&lt;----+      | |                   | |
+    |       |                                      |      | |                   | |
+    |       +-------------+                        |      | |                   | |
+    |                     V                        |      | |                   | |
+    |   Saved --------[powerUp()]-----&gt; Restoring -+      | |                   | |
     |     ^                                               | |                   | |
     |     |     +-----------------------------------------+-|-------------------+ +
     |     |     |                                           |                     |
@@ -665,14 +669,14 @@
     +-------------- Stopping -------[powerDown()]&lt;----------+---------------------+
       </pre>
 
-      Note that states to the right from PoweredOff, Aborted and Saved in the
-      above diagram are called <i>online VM states</i>. These states
-      represent the virtual machine which is being executed in a dedicated
-      process (usually with a GUI window attached to it where you can see the
-      activity of the virtual machine and interact with it). There are two
-      special pseudo-states, FirstOnline and LastOnline, that can be used in
-      relational expressions to detect if the given machine state is online or
-      not:
+      Note that states to the right of PoweredOff, Aborted, AbortedSaved, and
+      Saved in the above diagram are called <i>online VM states</i>. These
+      states represent the virtual machine which is being executed in a
+      dedicated process (usually with a GUI window attached to it where you can
+      see the activity of the virtual machine and interact with it). There are
+      two special pseudo-states, FirstOnline and LastOnline, that can be used
+      in relational expressions to detect if the given machine state is online
+      or not:
 
       <pre>
         if (machine.GetState() &gt;= MachineState_FirstOnline &amp;&amp;
@@ -707,7 +711,7 @@
       There are also a few additional state diagrams that do not deal with
       virtual machine execution and therefore are shown separately. The states
       shown on these diagrams are called <i>offline VM states</i> (this includes
-      PoweredOff, Aborted and Saved too).
+      PoweredOff, Aborted, AbortedSaved and Saved too).
 
       The first diagram shows what happens when a lengthy setup operation is
       being executed (such as <link to="IMachine::attachDevice"/>).
@@ -784,7 +788,16 @@
         the VM process has been terminated externally.
       </desc>
     </const>
-    <const name="Running"                   value="5">
+    <const name="AbortedSaved"              value="5">
+      <desc>
+        A machine in the @c Saved stated has terminated abnormally before
+        reaching the @c Running state. Similar to the @c Aborted state,
+        this may indicate a crash of the VM process in host execution
+        context, or the VM process has been terminated externally.
+      </desc>
+    </const>
+
+    <const name="Running"                   value="6">
       <desc>
         The machine is currently being executed.
         <note internal="yes">
@@ -796,7 +809,7 @@
         </note>
       </desc>
     </const>
-    <const name="Paused"                    value="6">
+    <const name="Paused"                    value="7">
       <desc>
         Execution of the machine has been paused.
         <note internal="yes">
@@ -808,7 +821,7 @@
         </note>
       </desc>
     </const>
-    <const name="Stuck"                     value="7">
+    <const name="Stuck"                     value="8">
       <desc>
         Execution of the machine has reached the "Guru Meditation"
         condition. This indicates a severe error in the hypervisor itself.
@@ -819,7 +832,7 @@
         </note>
       </desc>
     </const>
-    <const name="Teleporting"               value="8">
+    <const name="Teleporting"               value="9">
       <desc>
         The machine is about to be teleported to a different host or process.
         It is possible to pause a machine in this state, but it will go to the
@@ -827,7 +840,7 @@
         possible to resume it again unless the teleportation fails.
       </desc>
     </const>
-    <const name="LiveSnapshotting"          value="9">
+    <const name="LiveSnapshotting"          value="10">
       <desc>
         A live snapshot is being taken. The machine is running normally, but
         some of the runtime configuration options are inaccessible. Also, if
@@ -836,99 +849,100 @@
         execution until the snapshot operation has completed.
       </desc>
     </const>
-    <const name="Starting"                  value="10">
+    <const name="Starting"                  value="11">
       <desc>
         Machine is being started after powering it on from a
         zero execution state.
       </desc>
     </const>
-    <const name="Stopping"                  value="11">
+    <const name="Stopping"                  value="12">
       <desc>
         Machine is being normally stopped powering it off, or after the guest OS
         has initiated a shutdown sequence.
       </desc>
     </const>
-    <const name="Saving"                    value="12">
+    <const name="Saving"                    value="13">
       <desc>
         Machine is saving its execution state to a file.
       </desc>
     </const>
-    <const name="Restoring"                 value="13">
+    <const name="Restoring"                 value="14">
       <desc>
         Execution state of the machine is being restored from a file
-        after powering it on from the saved execution state.
+        after powering it on from either the @c Saved or @c AbortedSaved
+        execution state.
       </desc>
     </const>
-    <const name="TeleportingPausedVM"       value="14">
+    <const name="TeleportingPausedVM"       value="15">
       <desc>
         The machine is being teleported to another host or process, but it is
         not running. This is the paused variant of the
         @c Teleporting state.
       </desc>
     </const>
-    <const name="TeleportingIn"             value="15">
+    <const name="TeleportingIn"             value="16">
       <desc>
         Teleporting the machine state in from another host or process.
       </desc>
     </const>
-    <const name="DeletingSnapshotOnline"    value="16">
+    <const name="DeletingSnapshotOnline"    value="17">
       <desc>
         Like @c DeletingSnapshot, but the merging of media is ongoing in
         the background while the machine is running.
       </desc>
     </const>
-    <const name="DeletingSnapshotPaused"    value="17">
+    <const name="DeletingSnapshotPaused"    value="18">
       <desc>
         Like @c DeletingSnapshotOnline, but the machine was paused when the
         merging of differencing media was started.
       </desc>
     </const>
-    <const name="OnlineSnapshotting"        value="18">
+    <const name="OnlineSnapshotting"        value="19">
       <desc>
         Like @c LiveSnapshotting, but the machine was paused when the
         merging of differencing media was started.
       </desc>
     </const>
-    <const name="RestoringSnapshot"         value="19">
+    <const name="RestoringSnapshot"         value="20">
       <desc>
         A machine snapshot is being restored; this typically does not take long.
       </desc>
     </const>
-    <const name="DeletingSnapshot"          value="20">
+    <const name="DeletingSnapshot"          value="21">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
         may require merging differencing media. This value indicates that the
         machine is not running while the snapshot is being deleted.
       </desc>
     </const>
-    <const name="SettingUp"                 value="21">
+    <const name="SettingUp"                 value="22">
       <desc>
         Lengthy setup operation is in progress.
       </desc>
     </const>
-    <const name="Snapshotting"              value="22">
+    <const name="Snapshotting"              value="23">
       <desc>
         Taking an (offline) snapshot.
       </desc>
     </const>
 
-    <const name="FirstOnline" value="5" wsmap="suppress"> <!-- Running -->
+    <const name="FirstOnline" value="6" wsmap="suppress"> <!-- Running -->
       <desc>
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline" value="18" wsmap="suppress"> <!-- OnlineSnapshotting -->
+    <const name="LastOnline" value="19" wsmap="suppress"> <!-- OnlineSnapshotting -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
     </const>
 
-    <const name="FirstTransient" value="8" wsmap="suppress"> <!-- Teleporting -->
+    <const name="FirstTransient" value="9" wsmap="suppress"> <!-- Teleporting -->
       <desc>
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient" value="22" wsmap="suppress"> <!-- Snapshotting -->
+    <const name="LastTransient" value="23" wsmap="suppress"> <!-- Snapshotting -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>
@@ -6533,10 +6547,11 @@
     <attribute name="stateFilePath" type="wstring" readonly="yes">
       <desc>
         Full path to the file that stores the execution state of
-        the machine when it is in the <link to="MachineState_Saved"/> state.
+        the machine when it is in either the <link to="MachineState_Saved"/>
+        or <link to="MachineState_AbortedSaved"/> state.
         <note>
-          When the machine is not in the Saved state, this attribute is
-          an empty string.
+          When the machine is not in the Saved or AbortedSaved state, this
+          attribute is an empty string.
         </note>
       </desc>
     </attribute>
@@ -8425,11 +8440,10 @@
 
         <ul>
           <li>With "UnregisterOnly", the machine will only be unregistered, but no additional
-            cleanup will be performed. The call will fail if the machine is in "Saved" state
-            or has any snapshots or any media attached (see <link to="IMediumAttachment" />).
-            It is the responsibility of the caller to delete all such configuration in this mode.
-            In this mode, the API behaves like the former @c IVirtualBox::unregisterMachine() API
-            which it replaces.</li>
+            cleanup will be performed. The call will fail if the machine has any snapshots or
+            any media attached (see <link to="IMediumAttachment" />).  It is the responsibility
+            of the caller to delete all such configuration in this mode.  In this mode, the API
+            behaves like the former @c IVirtualBox::unregisterMachine() API which it replaces.</li>
           <li>With "DetachAllReturnNone", the call will succeed even if the machine is in "Saved"
             state or if it has snapshots or media attached. All media attached to the current machine
             state or in snapshots will be detached. No medium objects will be returned;
@@ -8507,8 +8521,8 @@
         <ul>
           <li>If <link to="#unregister" /> had been previously called with a @a cleanupMode
             argument other than "UnregisterOnly", this will delete all saved state files that
-            the machine had in use; possibly one if the machine was in "Saved" state and one
-            for each online snapshot that the machine had.</li>
+            the machine had in use; possibly one if the machine was in either the "Saved" or
+            "AbortedSaved" state and one for each online snapshot that the machine had.</li>
           <li>On each medium object passed in the @a aMedia array, this will call
             <link to="IMedium::close" />. If that succeeds, this will attempt to delete the
             medium's storage on disk. Since the <link to="IMedium::close"/> call will fail if the medium is still
@@ -9179,7 +9193,7 @@
         and stops its execution.
 
         After this operation completes, the machine will go to the
-        Saved state. Next time it is powered up, this state will
+        Saved state. The next time it is powered up this state will
         be restored and the machine will continue its execution from
         the place where it was saved.
 
@@ -9221,8 +9235,8 @@
       <desc>
         Associates the given saved state file to the virtual machine.
 
-        On success, the machine will go to the Saved state. Next time it is
-        powered up, it will be restored from the adopted saved state and
+        On success, the machine will go to the Saved state. The next time it is
+        powered up it will be restored from the adopted saved state and
         continue execution from the place where the saved state file was
         created.
 
@@ -9249,8 +9263,9 @@
     <method name="discardSavedState">
       <desc>
         Forcibly resets the machine to "Powered Off" state if it is
-        currently in the "Saved" state (previously created by <link to="#saveState"/>).
-        Next time the machine is powered up, a clean boot will occur.
+        currently in the "Saved" state previously created by <link to="#saveState"/>)
+        or in the "AbortedSaved" state.  The next time the machine is powered up
+        a clean boot will occur.
         <note>
           This operation is equivalent to resetting or powering off
           the machine without doing a proper shutdown of the guest
@@ -9264,7 +9279,7 @@
         The location of the file can be found in the
         <link to="#stateFilePath" /> attribute.
         <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine not in state Saved.
+          Virtual machine not in either the Saved or AbortedSaved state.
         </result>
       </desc>
       <param name="fRemoveFile" type="boolean" dir="in" >
@@ -9280,7 +9295,7 @@
         See <link to="ISnapshot" /> for an introduction to snapshots.
 
         This method can be called for a PoweredOff, Saved (see
-        <link to="#saveState"/>), Running or
+        <link to="#saveState"/>), AbortedSaved, Running or
         Paused virtual machine. When the machine is PoweredOff, an
         offline snapshot is created. When the machine is Running a live
         snapshot is created, and an online snapshot is created when Paused.
@@ -9473,7 +9488,7 @@
         media are created for all normal media of the machine.
 
         If the given snapshot is an online snapshot, the machine will go to
-        the <link to="MachineState_Saved">saved state</link>, so that the
+        the <link to="MachineState_Saved">Saved</link> state, so that the
         next time it is powered on, the execution state will be restored
         from the state of the snapshot.
 
@@ -9482,8 +9497,8 @@
         </note>
 
         <note>
-          If the machine state is <link to="MachineState_Saved">Saved</link>
-          prior to this operation, the saved state file will be implicitly
+          If the machine is in the <link to="MachineState_Saved">Saved</link>
+          state prior to this operation, the saved state file will be implicitly
           deleted (as if <link to="IMachine::discardSavedState"/> were
           called).
         </note>
@@ -9853,9 +9868,9 @@
         start from the beginning (as if the real hardware were just
         powered on).
 
-        If the machine is in the <link to="MachineState_Saved"/> state,
-        it will continue its execution the point where the state has
-        been saved.
+        If the machine is in the <link to="MachineState_Saved"/> state or the
+        <link to="MachineState_AbortedSaved"/> state it will continue its
+        execution from the point where the state was saved.
 
         If the machine <link to="IMachine::teleporterEnabled"/> property is
         enabled on the machine being powered up, the machine will wait for an
@@ -10116,7 +10131,7 @@
         <link to="ISharedFolder"/> to read more about logical names.
 
         <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine in Saved state or currently changing state.
+          Virtual machine is in the Saved or AbortedSaved state or currently changing state.
         </result>
         <result name="VBOX_E_FILE_ERROR">
           Shared folder already exists or not accessible.
@@ -10149,7 +10164,7 @@
         created by <link to="#createSharedFolder"/> from the collection of
         shared folders and stops sharing it.
         <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine in Saved state or currently changing state.
+          Virtual machine is in the Saved or AbortedSaved state or currently changing state.
         </result>
         <result name="VBOX_E_FILE_ERROR">
           Shared folder does not exists.
@@ -16376,9 +16391,9 @@
       when a VM's state is saved). The snapshot is then said to be <i>online</i>
       because when restoring it, the VM will be running.
 
-      If the machine was in <link to="MachineState_Saved">saved</link> saved,
-      the snapshot receives a copy of the execution state file
-      (<link to="IMachine::stateFilePath"/>).
+      If the machine was in the <link to="MachineState_Saved">Saved</link> or
+      <link to="MachineState_AbortedSaved">AbortedSaved</link> state, the snapshot
+      receives a copy of the execution state file (<link to="IMachine::stateFilePath"/>).
 
       Otherwise, if the machine was not running (<link to="MachineState_PoweredOff"/>
       or <link to="MachineState_Aborted"/>), the snapshot is <i>offline</i>;

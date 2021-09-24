@@ -99,7 +99,8 @@ bool UIChooserItemMachine::isLockedMachine() const
     return    enmState != KMachineState_PoweredOff
            && enmState != KMachineState_Saved
            && enmState != KMachineState_Teleported
-           && enmState != KMachineState_Aborted;
+           && enmState != KMachineState_Aborted
+           && enmState != KMachineState_AbortedSaved;
 }
 
 bool UIChooserItemMachine::isToolButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const

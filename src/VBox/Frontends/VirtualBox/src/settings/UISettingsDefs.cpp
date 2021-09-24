@@ -32,6 +32,7 @@ ConfigurationAccessLevel UISettingsDefs::configurationAccessLevel(KSessionState 
         case KMachineState_Aborted:    return enmSessionState == KSessionState_Unlocked ?
                                               ConfigurationAccessLevel_Full :
                                               ConfigurationAccessLevel_Partial_PoweredOff;
+        case KMachineState_AbortedSaved:
         case KMachineState_Saved:      return ConfigurationAccessLevel_Partial_Saved;
         case KMachineState_Running:
         case KMachineState_Paused:     return ConfigurationAccessLevel_Partial_Running;

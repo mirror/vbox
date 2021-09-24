@@ -98,8 +98,9 @@ template<> QColor toColor(const KMachineState &state)
     {
         case KMachineState_PoweredOff:             return QColor(Qt::gray);
         case KMachineState_Saved:                  return QColor(Qt::yellow);
-        case KMachineState_Aborted:                return QColor(Qt::darkRed);
         case KMachineState_Teleported:             return QColor(Qt::red);
+        case KMachineState_Aborted:                return QColor(Qt::darkRed);
+        case KMachineState_AbortedSaved:           return QColor(Qt::yellow);
         case KMachineState_Running:                return QColor(Qt::green);
         case KMachineState_Paused:                 return QColor(Qt::darkGreen);
         case KMachineState_Stuck:                  return QColor(Qt::darkMagenta);
@@ -134,8 +135,9 @@ template<> QIcon toIcon(const KMachineState &state)
     {
         case KMachineState_PoweredOff:             return UIIconPool::iconSet(":/state_powered_off_16px.png");
         case KMachineState_Saved:                  return UIIconPool::iconSet(":/state_saved_16px.png");
-        case KMachineState_Aborted:                return UIIconPool::iconSet(":/state_aborted_16px.png");
         case KMachineState_Teleported:             return UIIconPool::iconSet(":/state_saved_16px.png");
+        case KMachineState_Aborted:                return UIIconPool::iconSet(":/state_aborted_16px.png");
+        case KMachineState_AbortedSaved:           return UIIconPool::iconSet(":/state_saved_16px.png");
         case KMachineState_Running:                return UIIconPool::iconSet(":/state_running_16px.png");
         case KMachineState_Paused:                 return UIIconPool::iconSet(":/state_paused_16px.png");
         case KMachineState_Stuck:                  return UIIconPool::iconSet(":/state_stuck_16px.png");
@@ -170,8 +172,9 @@ template<> QString toString(const KMachineState &state)
     {
         case KMachineState_PoweredOff:             return QApplication::translate("UICommon", "Powered Off", "MachineState");
         case KMachineState_Saved:                  return QApplication::translate("UICommon", "Saved", "MachineState");
-        case KMachineState_Aborted:                return QApplication::translate("UICommon", "Aborted", "MachineState");
         case KMachineState_Teleported:             return QApplication::translate("UICommon", "Teleported", "MachineState");
+        case KMachineState_Aborted:                return QApplication::translate("UICommon", "Aborted", "MachineState");
+        case KMachineState_AbortedSaved:           return QApplication::translate("UICommon", "Aborted-Saved", "MachineState");
         case KMachineState_Running:                return QApplication::translate("UICommon", "Running", "MachineState");
         case KMachineState_Paused:                 return QApplication::translate("UICommon", "Paused", "MachineState");
         case KMachineState_Stuck:                  return QApplication::translate("UICommon", "Guru Meditation", "MachineState");

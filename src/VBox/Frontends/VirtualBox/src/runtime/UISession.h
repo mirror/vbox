@@ -161,11 +161,13 @@ public:
     /** Returns requested visual-state to be entered when possible. */
     UIVisualStateType requestedVisualState() const;
 
-    bool isSaved() const { return machineState() == KMachineState_Saved; }
+    bool isSaved() const { return machineState() == KMachineState_Saved ||
+                                  machineState() == KMachineState_AbortedSaved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
                                       machineState() == KMachineState_Saved ||
                                       machineState() == KMachineState_Teleported ||
-                                      machineState() == KMachineState_Aborted; }
+                                      machineState() == KMachineState_Aborted ||
+                                      machineState() == KMachineState_AbortedSaved; }
     bool isPaused() const { return machineState() == KMachineState_Paused ||
                                    machineState() == KMachineState_TeleportingPausedVM; }
     bool isRunning() const { return machineState() == KMachineState_Running ||
