@@ -21,7 +21,7 @@
 # pragma once
 #endif
 
-#include <list>
+//#include <list>
 
 #include <iprt/cpp/lock.h>
 
@@ -57,7 +57,7 @@ typedef void *TRCOMPONENT;
 
 #ifdef VBOX_WITH_MAIN_NLS
 
-struct IVirtualBox;
+COM_STRUCT_OR_CLASS(IVirtualBox);
 class QMTranslator;
 
 class VirtualBoxTranslator
