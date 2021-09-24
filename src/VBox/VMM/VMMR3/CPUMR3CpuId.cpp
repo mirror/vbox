@@ -4216,11 +4216,12 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
         {
             /** @cfgm{/CPUM/NestedVmxPreemptTimer, bool, true}
              * Whether to expose the VMX-preemption timer feature to the guest (if also
-             * supported by the host hardware). The default is true, and when disabled will
-             * prevent exposing the VMX-preemption timer feature to the guest even if the host
-             * supports it.
+             * supported by the host hardware). When disabled will prevent exposing the
+             * VMX-preemption timer feature to the guest even if the host supports it.
+             *
+             * @todo Currently disabled, see @bugref{9180#c108}.
              */
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxPreemptTimer", &pVM->cpum.s.fNestedVmxPreemptTimer, true);
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxPreemptTimer", &pVM->cpum.s.fNestedVmxPreemptTimer, false);
             AssertLogRelRCReturn(rc, rc);
 
             /** @cfgm{/CPUM/NestedVmxEpt, bool, true}
