@@ -35,7 +35,7 @@
 
 #include "VBox/com/VirtualBox.h"
 
-#include "VirtualBoxTranslator.h"
+#include <VBox/VirtualBoxTranslator.h>
 
 // avoid including VBox/settings.h and VBox/xml.h; only declare the classes
 namespace xml

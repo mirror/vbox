@@ -27,7 +27,7 @@
 #include "Global.h"
 #include "LoggingNew.h"
 #include "AutostartDb.h"
-#include "VirtualBoxTranslator.h"
+#include <VBox/VirtualBoxTranslator.h>
 
 // generated header
 #include "SchemaDefs.h"
