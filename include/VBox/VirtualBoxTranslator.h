@@ -21,13 +21,17 @@
 # pragma once
 #endif
 
-#include <iprt/cpp/lock.h>
+#include <iprt/cdefs.h>
+#include <iprt/thread.h>
+
+#include <VBox/com/defs.h>
+#include <VBox/com/ptr.h>
+#include <VBox/com/Guid.h>
+#include <VBox/com/string.h>
 
 #include <VBox/com/AutoLock.h>
-#include <VBox/com/defs.h>
-#include <VBox/com/Guid.h>
-#include <VBox/com/ptr.h>
-#include <VBox/com/string.h>
+
+#include <iprt/cpp/lock.h>
 
 #ifdef VBOX_WITH_MAIN_NLS
 #define DECLARE_TRANSLATION_CONTEXT(ctx) \
