@@ -903,7 +903,6 @@ static int dxTrackRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-//ASMBreakpoint();
     for (int i = 0; i < RT_ELEMENTS(pDXContext->svgaDXContext.renderState.renderTargetViewIds); ++i)
     {
         uint32_t const renderTargetViewId = pDXContext->svgaDXContext.renderState.renderTargetViewIds[i];
@@ -1600,7 +1599,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         Assert(pSurface->cFaces == 6);
         Assert(cWidth == cHeight);
         Assert(cDepth == 1);
-//ASMBreakpoint();
+//DEBUG_BREAKPOINT_TEST();
         D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
         D3D11_SUBRESOURCE_DATA aInitialData[6 * SVGA3D_MAX_MIP_LEVELS];
         if (pSurface->paMipmapLevels[0].pSurfaceData)
@@ -2228,7 +2227,7 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
         }
         Log6Func(("Load D3DDisassemble: %Rrc\n", rc2));
     }
-//ASMBreakpoint();
+//DEBUG_BREAKPOINT_TEST();
     return rc;
 }
 
@@ -4050,7 +4049,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTAT
             vmsvga3dBackSurfaceUnmap(pThisCC, &image, &map, /* fWritten = */ true);
         }
 #if 0
-//ASMBreakpoint();
+            //DEBUG_BREAKPOINT_TEST();
             rc = vmsvga3dBackSurfaceMap(pThisCC, &image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
             if (RT_SUCCESS(rc))
             {

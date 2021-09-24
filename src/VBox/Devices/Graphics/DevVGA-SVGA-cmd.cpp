@@ -633,7 +633,7 @@ static int vmsvgaR3GboTransfer(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo,
                                uint32_t off, void *pvData, uint32_t cbData,
                                VMSVGAGboTransferDirection enmDirection)
 {
-// ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     int rc = VINF_SUCCESS;
     uint8_t *pu8CurrentHost  = (uint8_t *)pvData;
 
@@ -1287,7 +1287,7 @@ static void vmsvga3dCmdDefineSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineSurface
 /* SVGA_3D_CMD_DEFINE_GB_MOB 1093 */
 static void vmsvga3dCmdDefineGBMob(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob const *pCmd)
 {
-    ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     ASSERT_GUEST_RETURN_VOID(pCmd->mobid != SVGA_ID_INVALID); /* The guest should not use this id. */
@@ -1312,7 +1312,7 @@ static void vmsvga3dCmdDefineGBMob(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob con
 /* SVGA_3D_CMD_DESTROY_GB_MOB 1094 */
 static void vmsvga3dCmdDestroyGBMob(PVGASTATECC pThisCC, SVGA3dCmdDestroyGBMob const *pCmd)
 {
-//    ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     ASSERT_GUEST_RETURN_VOID(pCmd->mobid != SVGA_ID_INVALID); /* The guest should not use this id. */
@@ -1330,7 +1330,7 @@ static void vmsvga3dCmdDestroyGBMob(PVGASTATECC pThisCC, SVGA3dCmdDestroyGBMob c
 /* SVGA_3D_CMD_DEFINE_GB_SURFACE 1097 */
 static void vmsvga3dCmdDefineGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface const *pCmd)
 {
-//     ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
@@ -1360,7 +1360,7 @@ static void vmsvga3dCmdDefineGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSur
 /* SVGA_3D_CMD_DESTROY_GB_SURFACE 1098 */
 static void vmsvga3dCmdDestroyGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDestroyGBSurface const *pCmd)
 {
-//     ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
@@ -1377,7 +1377,7 @@ static void vmsvga3dCmdDestroyGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDestroyGBS
 /* SVGA_3D_CMD_BIND_GB_SURFACE 1099 */
 static void vmsvga3dCmdBindGBSurface(PVGASTATECC pThisCC, SVGA3dCmdBindGBSurface const *pCmd)
 {
-//     ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* Assign the mobid to the surface. */
@@ -1523,7 +1523,7 @@ static int vmsvgaR3TransferSurfaceLevel(PVGASTATECC pThisCC,
 /* SVGA_3D_CMD_UPDATE_GB_IMAGE 1101 */
 static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage const *pCmd)
 {
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     LogFlowFunc(("sid=%u @%u,%u,%u %ux%ux%u\n",
@@ -1565,7 +1565,7 @@ static void vmsvga3dCmdUpdateGBImage(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBImage
 /* SVGA_3D_CMD_UPDATE_GB_SURFACE 1102 */
 static void vmsvga3dCmdUpdateGBSurface(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBSurface const *pCmd)
 {
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     LogFlowFunc(("sid=%u\n",
@@ -1604,7 +1604,7 @@ static void vmsvga3dCmdUpdateGBSurface(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBSur
 /* SVGA_3D_CMD_READBACK_GB_IMAGE 1103 */
 static void vmsvga3dCmdReadbackGBImage(PVGASTATECC pThisCC, SVGA3dCmdReadbackGBImage const *pCmd)
 {
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     LogFlowFunc(("sid=%u, face=%u, mipmap=%u\n",
@@ -1629,7 +1629,7 @@ static void vmsvga3dCmdReadbackGBImage(PVGASTATECC pThisCC, SVGA3dCmdReadbackGBI
 /* SVGA_3D_CMD_READBACK_GB_SURFACE 1104 */
 static void vmsvga3dCmdReadbackGBSurface(PVGASTATECC pThisCC, SVGA3dCmdReadbackGBSurface const *pCmd)
 {
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     LogFlowFunc(("sid=%u\n",
@@ -1668,7 +1668,7 @@ static void vmsvga3dCmdReadbackGBSurface(PVGASTATECC pThisCC, SVGA3dCmdReadbackG
 /* SVGA_3D_CMD_INVALIDATE_GB_IMAGE 1105 */
 static void vmsvga3dCmdInvalidateGBImage(PVGASTATECC pThisCC, SVGA3dCmdInvalidateGBImage const *pCmd)
 {
-// ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     vmsvga3dSurfaceInvalidate(pThisCC, pCmd->image.sid, pCmd->image.face, pCmd->image.mipmap);
 }
 
@@ -1676,7 +1676,7 @@ static void vmsvga3dCmdInvalidateGBImage(PVGASTATECC pThisCC, SVGA3dCmdInvalidat
 /* SVGA_3D_CMD_INVALIDATE_GB_SURFACE 1106 */
 static void vmsvga3dCmdInvalidateGBSurface(PVGASTATECC pThisCC, SVGA3dCmdInvalidateGBSurface const *pCmd)
 {
-// ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     vmsvga3dSurfaceInvalidate(pThisCC, pCmd->sid, SVGA_ID_INVALID, SVGA_ID_INVALID);
 }
 
@@ -1714,7 +1714,7 @@ static void vmsvga3dCmdSetOTableBase64(PVGASTATECC pThisCC, SVGA3dCmdSetOTableBa
 /* SVGA_3D_CMD_DEFINE_GB_SCREENTARGET 1124 */
 static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dCmdDefineGBScreenTarget const *pCmd)
 {
-//     ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     ASSERT_GUEST_RETURN_VOID(pCmd->stid < RT_ELEMENTS(pSvgaR3State->aScreens));
@@ -1774,7 +1774,7 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
 /* SVGA_3D_CMD_DESTROY_GB_SCREENTARGET 1125 */
 static void vmsvga3dCmdDestroyGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC, SVGA3dCmdDestroyGBScreenTarget const *pCmd)
 {
-//    ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     ASSERT_GUEST_RETURN_VOID(pCmd->stid < RT_ELEMENTS(pSvgaR3State->aScreens));
@@ -1808,7 +1808,7 @@ static void vmsvga3dCmdDestroyGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisC
 /* SVGA_3D_CMD_BIND_GB_SCREENTARGET 1126 */
 static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBScreenTarget const *pCmd)
 {
-//     ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* "Binding a surface to a Screen Target the same as flipping" */
@@ -1846,7 +1846,7 @@ static void vmsvga3dCmdBindGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdBindGBSc
 /* SVGA_3D_CMD_UPDATE_GB_SCREENTARGET 1127 */
 static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBScreenTarget const *pCmd)
 {
-//     ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* Update the screen target from its backing surface. */
@@ -1919,7 +1919,7 @@ static void vmsvga3dCmdUpdateGBScreenTarget(PVGASTATECC pThisCC, SVGA3dCmdUpdate
 /* SVGA_3D_CMD_DEFINE_GB_SURFACE_V2 1134 */
 static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSurface_v2 const *pCmd)
 {
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /* Update the entry in the pSvgaR3State->pGboOTableSurface. */
@@ -1951,7 +1951,7 @@ static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGB
 /* SVGA_3D_CMD_DEFINE_GB_MOB64 1135 */
 static void vmsvga3dCmdDefineGBMob64(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob64 const *pCmd)
 {
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     ASSERT_GUEST_RETURN_VOID(pCmd->mobid != SVGA_ID_INVALID); /* The guest should not use this id. */
@@ -1975,7 +1975,7 @@ static void vmsvga3dCmdDefineGBMob64(PVGASTATECC pThisCC, SVGA3dCmdDefineGBMob64
 static int vmsvga3dCmdDXDefineContext(PVGASTATECC pThisCC, SVGA3dCmdDXDefineContext const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
 
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2005,7 +2005,7 @@ static int vmsvga3dCmdDXDefineContext(PVGASTATECC pThisCC, SVGA3dCmdDXDefineCont
 static int vmsvga3dCmdDXDestroyContext(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyContext const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
 
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2028,7 +2028,7 @@ static int vmsvga3dCmdDXDestroyContext(PVGASTATECC pThisCC, SVGA3dCmdDXDestroyCo
 static int vmsvga3dCmdDXBindContext(PVGASTATECC pThisCC, SVGA3dCmdDXBindContext const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
 
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2112,7 +2112,7 @@ static int vmsvga3dCmdDXBindContext(PVGASTATECC pThisCC, SVGA3dCmdDXBindContext 
 static int vmsvga3dCmdDXReadbackContext(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackContext const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
 
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -2156,7 +2156,7 @@ static int vmsvga3dCmdDXReadbackContext(PVGASTATECC pThisCC, SVGA3dCmdDXReadback
 static int vmsvga3dCmdDXInvalidateContext(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXInvalidateContext const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXInvalidateContext(pThisCC, idDXContext);
@@ -2171,7 +2171,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetSingleConstantBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetSingleConstantBuffer const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetSingleConstantBuffer(pThisCC, idDXContext, pCmd);
 #else
@@ -2185,7 +2185,7 @@ static int vmsvga3dCmdDXSetSingleConstantBuffer(PVGASTATECC pThisCC, uint32_t id
 static int vmsvga3dCmdDXSetShaderResources(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetShaderResources const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     SVGA3dShaderResourceViewId const *paShaderResourceViewId = (SVGA3dShaderResourceViewId *)&pCmd[1];
     uint32_t const cShaderResourceViewId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dShaderResourceViewId);
     return vmsvga3dDXSetShaderResources(pThisCC, idDXContext, pCmd, cShaderResourceViewId, paShaderResourceViewId);
@@ -2200,7 +2200,7 @@ static int vmsvga3dCmdDXSetShaderResources(PVGASTATECC pThisCC, uint32_t idDXCon
 static int vmsvga3dCmdDXSetShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetShader const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetShader(pThisCC, idDXContext, pCmd);
 #else
@@ -2214,7 +2214,7 @@ static int vmsvga3dCmdDXSetShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVG
 static int vmsvga3dCmdDXSetSamplers(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetSamplers const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     SVGA3dSamplerId const *paSamplerId = (SVGA3dSamplerId *)&pCmd[1];
     uint32_t const cSamplerId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSamplerId);
     return vmsvga3dDXSetSamplers(pThisCC, idDXContext, pCmd, cSamplerId, paSamplerId);
@@ -2229,7 +2229,7 @@ static int vmsvga3dCmdDXSetSamplers(PVGASTATECC pThisCC, uint32_t idDXContext, S
 static int vmsvga3dCmdDXDraw(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDraw const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDraw(pThisCC, idDXContext, pCmd);
 #else
@@ -2243,7 +2243,7 @@ static int vmsvga3dCmdDXDraw(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCm
 static int vmsvga3dCmdDXDrawIndexed(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexed const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDrawIndexed(pThisCC, idDXContext, pCmd);
 #else
@@ -2257,7 +2257,7 @@ static int vmsvga3dCmdDXDrawIndexed(PVGASTATECC pThisCC, uint32_t idDXContext, S
 static int vmsvga3dCmdDXDrawInstanced(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawInstanced const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDrawInstanced(pThisCC, idDXContext, pCmd);
 #else
@@ -2271,7 +2271,7 @@ static int vmsvga3dCmdDXDrawInstanced(PVGASTATECC pThisCC, uint32_t idDXContext,
 static int vmsvga3dCmdDXDrawIndexedInstanced(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexedInstanced const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDrawIndexedInstanced(pThisCC, idDXContext, pCmd);
 #else
@@ -2285,7 +2285,7 @@ static int vmsvga3dCmdDXDrawIndexedInstanced(PVGASTATECC pThisCC, uint32_t idDXC
 static int vmsvga3dCmdDXDrawAuto(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawAuto const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDrawAuto(pThisCC, idDXContext);
@@ -2300,7 +2300,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetInputLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetInputLayout const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetInputLayout(pThisCC, idDXContext, pCmd->elementLayoutId);
 #else
@@ -2314,7 +2314,7 @@ static int vmsvga3dCmdDXSetInputLayout(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDXSetVertexBuffers(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetVertexBuffers const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     SVGA3dVertexBuffer const *paVertexBuffer = (SVGA3dVertexBuffer *)&pCmd[1];
     uint32_t const cVertexBuffer = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dVertexBuffer);
     return vmsvga3dDXSetVertexBuffers(pThisCC, idDXContext, pCmd->startBuffer, cVertexBuffer, paVertexBuffer);
@@ -2329,7 +2329,7 @@ static int vmsvga3dCmdDXSetVertexBuffers(PVGASTATECC pThisCC, uint32_t idDXConte
 static int vmsvga3dCmdDXSetIndexBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetIndexBuffer const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetIndexBuffer(pThisCC, idDXContext, pCmd);
 #else
@@ -2343,7 +2343,7 @@ static int vmsvga3dCmdDXSetIndexBuffer(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDXSetTopology(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetTopology const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetTopology(pThisCC, idDXContext, pCmd->topology);
 #else
@@ -2357,7 +2357,7 @@ static int vmsvga3dCmdDXSetTopology(PVGASTATECC pThisCC, uint32_t idDXContext, S
 static int vmsvga3dCmdDXSetRenderTargets(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetRenderTargets const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     SVGA3dRenderTargetViewId const *paRenderTargetViewId = (SVGA3dRenderTargetViewId *)&pCmd[1];
     uint32_t const cRenderTargetViewId = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dRenderTargetViewId);
     return vmsvga3dDXSetRenderTargets(pThisCC, idDXContext, pCmd->depthStencilViewId, cRenderTargetViewId, paRenderTargetViewId);
@@ -2372,7 +2372,7 @@ static int vmsvga3dCmdDXSetRenderTargets(PVGASTATECC pThisCC, uint32_t idDXConte
 static int vmsvga3dCmdDXSetBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetBlendState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetBlendState(pThisCC, idDXContext, pCmd);
 #else
@@ -2386,7 +2386,7 @@ static int vmsvga3dCmdDXSetBlendState(PVGASTATECC pThisCC, uint32_t idDXContext,
 static int vmsvga3dCmdDXSetDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetDepthStencilState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetDepthStencilState(pThisCC, idDXContext, pCmd);
 #else
@@ -2400,7 +2400,7 @@ static int vmsvga3dCmdDXSetDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXC
 static int vmsvga3dCmdDXSetRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetRasterizerState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXSetRasterizerState(pThisCC, idDXContext, pCmd->rasterizerId);
 #else
@@ -2414,7 +2414,7 @@ static int vmsvga3dCmdDXSetRasterizerState(PVGASTATECC pThisCC, uint32_t idDXCon
 static int vmsvga3dCmdDXDefineQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDefineQuery(pThisCC, idDXContext);
@@ -2429,7 +2429,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDestroyQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyQuery(pThisCC, idDXContext);
@@ -2444,7 +2444,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBindQuery(pThisCC, idDXContext);
@@ -2459,7 +2459,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetQueryOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetQueryOffset(pThisCC, idDXContext);
@@ -2474,7 +2474,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBeginQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBeginQuery(pThisCC, idDXContext);
@@ -2489,7 +2489,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXEndQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXEndQuery(pThisCC, idDXContext);
@@ -2504,7 +2504,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXReadbackQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXReadbackQuery(pThisCC, idDXContext);
@@ -2519,7 +2519,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPredication const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetPredication(pThisCC, idDXContext);
@@ -2534,7 +2534,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetSOTargets const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetSOTargets(pThisCC, idDXContext);
@@ -2549,7 +2549,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetViewports(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetViewports const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     SVGA3dViewport const *paViewport = (SVGA3dViewport *)&pCmd[1];
     uint32_t const cViewport = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dViewport);
     return vmsvga3dDXSetViewports(pThisCC, idDXContext, cViewport, paViewport);
@@ -2564,7 +2564,7 @@ static int vmsvga3dCmdDXSetViewports(PVGASTATECC pThisCC, uint32_t idDXContext, 
 static int vmsvga3dCmdDXSetScissorRects(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetScissorRects const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     SVGASignedRect const *paRect = (SVGASignedRect *)&pCmd[1];
     uint32_t const cRect = (cbCmd - sizeof(*pCmd)) / sizeof(SVGASignedRect);
     return vmsvga3dDXSetScissorRects(pThisCC, idDXContext, cRect, paRect);
@@ -2579,7 +2579,7 @@ static int vmsvga3dCmdDXSetScissorRects(PVGASTATECC pThisCC, uint32_t idDXContex
 static int vmsvga3dCmdDXClearRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearRenderTargetView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXClearRenderTargetView(pThisCC, idDXContext, pCmd);
 #else
@@ -2593,7 +2593,7 @@ static int vmsvga3dCmdDXClearRenderTargetView(PVGASTATECC pThisCC, uint32_t idDX
 static int vmsvga3dCmdDXClearDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearDepthStencilView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXClearDepthStencilView(pThisCC, idDXContext, pCmd);
 #else
@@ -2607,7 +2607,7 @@ static int vmsvga3dCmdDXClearDepthStencilView(PVGASTATECC pThisCC, uint32_t idDX
 static int vmsvga3dCmdDXPredCopyRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredCopyRegion const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXPredCopyRegion(pThisCC, idDXContext, pCmd);
 #else
@@ -2621,7 +2621,7 @@ static int vmsvga3dCmdDXPredCopyRegion(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDXPredCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredCopy const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXPredCopy(pThisCC, idDXContext);
@@ -2636,7 +2636,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXPresentBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPresentBlt const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXPresentBlt(pThisCC, idDXContext);
@@ -2651,7 +2651,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXGenMips(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXGenMips const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXGenMips(pThisCC, idDXContext, pCmd);
 #else
@@ -2665,7 +2665,7 @@ static int vmsvga3dCmdDXGenMips(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3
 static int vmsvga3dCmdDXUpdateSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXUpdateSubResource const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(cbCmd);
 
@@ -2710,7 +2710,7 @@ static int vmsvga3dCmdDXUpdateSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXUpdate
 static int vmsvga3dCmdDXReadbackSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXReadbackSubResource const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(cbCmd);
 
@@ -2754,7 +2754,7 @@ static int vmsvga3dCmdDXReadbackSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXRead
 static int vmsvga3dCmdDXInvalidateSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXInvalidateSubResource const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(cbCmd);
 
@@ -2785,7 +2785,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineShaderResourceView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineShaderResourceView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineShaderResourceView(pThisCC, idDXContext, pCmd);
 #else
@@ -2799,7 +2799,7 @@ static int vmsvga3dCmdDXDefineShaderResourceView(PVGASTATECC pThisCC, uint32_t i
 static int vmsvga3dCmdDXDestroyShaderResourceView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyShaderResourceView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroyShaderResourceView(pThisCC, idDXContext, pCmd);
 #else
@@ -2813,7 +2813,7 @@ static int vmsvga3dCmdDXDestroyShaderResourceView(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXDefineRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRenderTargetView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineRenderTargetView(pThisCC, idDXContext, pCmd);
 #else
@@ -2827,7 +2827,7 @@ static int vmsvga3dCmdDXDefineRenderTargetView(PVGASTATECC pThisCC, uint32_t idD
 static int vmsvga3dCmdDXDestroyRenderTargetView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyRenderTargetView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroyRenderTargetView(pThisCC, idDXContext, pCmd);
 #else
@@ -2841,7 +2841,7 @@ static int vmsvga3dCmdDXDestroyRenderTargetView(PVGASTATECC pThisCC, uint32_t id
 static int vmsvga3dCmdDXDefineDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     SVGA3dCmdDXDefineDepthStencilView_v2 cmd;
     cmd.depthStencilViewId = pCmd->depthStencilViewId;
@@ -2864,7 +2864,7 @@ static int vmsvga3dCmdDXDefineDepthStencilView(PVGASTATECC pThisCC, uint32_t idD
 static int vmsvga3dCmdDXDestroyDepthStencilView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyDepthStencilView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDestroyDepthStencilView(pThisCC, idDXContext, pCmd);
 #else
@@ -2878,7 +2878,7 @@ static int vmsvga3dCmdDXDestroyDepthStencilView(PVGASTATECC pThisCC, uint32_t id
 static int vmsvga3dCmdDXDefineElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineElementLayout const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     SVGA3dInputElementDesc const *paDesc = (SVGA3dInputElementDesc *)&pCmd[1];
     uint32_t const cDesc = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dInputElementDesc);
     return vmsvga3dDXDefineElementLayout(pThisCC, idDXContext, pCmd->elementLayoutId, cDesc, paDesc);
@@ -2893,7 +2893,7 @@ static int vmsvga3dCmdDXDefineElementLayout(PVGASTATECC pThisCC, uint32_t idDXCo
 static int vmsvga3dCmdDXDestroyElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyElementLayout const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyElementLayout(pThisCC, idDXContext);
@@ -2908,7 +2908,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineBlendState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineBlendState(pThisCC, idDXContext, pCmd);
 #else
@@ -2922,7 +2922,7 @@ static int vmsvga3dCmdDXDefineBlendState(PVGASTATECC pThisCC, uint32_t idDXConte
 static int vmsvga3dCmdDXDestroyBlendState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyBlendState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyBlendState(pThisCC, idDXContext);
@@ -2937,7 +2937,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineDepthStencilState(pThisCC, idDXContext, pCmd);
 #else
@@ -2951,7 +2951,7 @@ static int vmsvga3dCmdDXDefineDepthStencilState(PVGASTATECC pThisCC, uint32_t id
 static int vmsvga3dCmdDXDestroyDepthStencilState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyDepthStencilState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyDepthStencilState(pThisCC, idDXContext);
@@ -2966,7 +2966,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineRasterizerState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineRasterizerState(pThisCC, idDXContext, pCmd);
 #else
@@ -2980,7 +2980,7 @@ static int vmsvga3dCmdDXDefineRasterizerState(PVGASTATECC pThisCC, uint32_t idDX
 static int vmsvga3dCmdDXDestroyRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyRasterizerState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyRasterizerState(pThisCC, idDXContext);
@@ -2995,7 +2995,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineSamplerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineSamplerState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineSamplerState(pThisCC, idDXContext, pCmd);
 #else
@@ -3009,7 +3009,7 @@ static int vmsvga3dCmdDXDefineSamplerState(PVGASTATECC pThisCC, uint32_t idDXCon
 static int vmsvga3dCmdDXDestroySamplerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroySamplerState const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroySamplerState(pThisCC, idDXContext);
@@ -3024,7 +3024,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineShader const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineShader(pThisCC, idDXContext, pCmd);
 #else
@@ -3038,7 +3038,7 @@ static int vmsvga3dCmdDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, 
 static int vmsvga3dCmdDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyShader const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyShader(pThisCC, idDXContext);
@@ -3053,7 +3053,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBindShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindShader const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(idDXContext, cbCmd);
     /* This returns NULL if mob does not exist. If the guest sends a wrong mob id, the current mob will be unbound. */
@@ -3070,7 +3070,7 @@ static int vmsvga3dCmdDXBindShader(PVGASTATECC pThisCC, uint32_t idDXContext, SV
 static int vmsvga3dCmdDXDefineStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutput const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDefineStreamOutput(pThisCC, idDXContext);
@@ -3085,7 +3085,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDestroyStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyStreamOutput const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyStreamOutput(pThisCC, idDXContext);
@@ -3100,7 +3100,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetStreamOutput const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetStreamOutput(pThisCC, idDXContext);
@@ -3115,7 +3115,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     /* This returns NULL if mob does not exist. If the guest sends a wrong mob id, the current mob will be unbound. */
@@ -3132,7 +3132,7 @@ static int vmsvga3dCmdDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable co
 static int vmsvga3dCmdDXReadbackCOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackCOTable const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(idDXContext, cbCmd);
     return vmsvga3dDXReadbackCOTable(pThisCC, pCmd);
 #else
@@ -3146,7 +3146,7 @@ static int vmsvga3dCmdDXReadbackCOTable(PVGASTATECC pThisCC, uint32_t idDXContex
 static int vmsvga3dCmdDXBufferCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBufferCopy const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBufferCopy(pThisCC, idDXContext);
@@ -3161,7 +3161,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTransferFromBuffer const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
 
     /* Plan:
@@ -3256,7 +3256,7 @@ static int vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTrans
 static int vmsvga3dCmdDXSurfaceCopyAndReadback(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSurfaceCopyAndReadback const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSurfaceCopyAndReadback(pThisCC, idDXContext);
@@ -3271,7 +3271,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXMoveQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXMoveQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXMoveQuery(pThisCC, idDXContext);
@@ -3286,7 +3286,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBindAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindAllQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBindAllQuery(pThisCC, idDXContext);
@@ -3301,7 +3301,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXReadbackAllQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXReadbackAllQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXReadbackAllQuery(pThisCC, idDXContext);
@@ -3316,7 +3316,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXPredTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredTransferFromBuffer const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(idDXContext, cbCmd);
 
     /* This command is executed in a context: "The context is implied from the command buffer header."
@@ -3342,7 +3342,7 @@ static int vmsvga3dCmdDXPredTransferFromBuffer(PVGASTATECC pThisCC, uint32_t idD
 static int vmsvga3dCmdDXMobFence64(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXMobFence64 const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXMobFence64(pThisCC, idDXContext);
@@ -3357,7 +3357,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBindAllShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindAllShader const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBindAllShader(pThisCC, idDXContext);
@@ -3372,7 +3372,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXHint(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXHint const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXHint(pThisCC, idDXContext);
@@ -3387,7 +3387,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBufferUpdate(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBufferUpdate const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBufferUpdate(pThisCC, idDXContext);
@@ -3402,7 +3402,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetVSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetVSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetVSConstantBufferOffset(pThisCC, idDXContext);
@@ -3417,7 +3417,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetPSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetPSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetPSConstantBufferOffset(pThisCC, idDXContext);
@@ -3432,7 +3432,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetGSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetGSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetGSConstantBufferOffset(pThisCC, idDXContext);
@@ -3447,7 +3447,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetHSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetHSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetHSConstantBufferOffset(pThisCC, idDXContext);
@@ -3462,7 +3462,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetDSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetDSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetDSConstantBufferOffset(pThisCC, idDXContext);
@@ -3477,7 +3477,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetCSConstantBufferOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetCSConstantBufferOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetCSConstantBufferOffset(pThisCC, idDXContext);
@@ -3492,7 +3492,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXCondBindAllShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXCondBindAllShader const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXCondBindAllShader(pThisCC, idDXContext);
@@ -3507,7 +3507,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdScreenCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdScreenCopy const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dScreenCopy(pThisCC, idDXContext);
@@ -3522,7 +3522,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdGrowOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdGrowOTable const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dGrowOTable(pThisCC, idDXContext);
@@ -3537,7 +3537,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXGrowCOTable(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXGrowCOTable const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXGrowCOTable(pThisCC, idDXContext);
@@ -3552,7 +3552,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdIntraSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdIntraSurfaceCopy const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dIntraSurfaceCopy(pThisCC, idDXContext);
@@ -3567,7 +3567,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDefineGBSurface_v3(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDefineGBSurface_v3 const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDefineGBSurface_v3(pThisCC, idDXContext);
@@ -3582,7 +3582,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXResolveCopy const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXResolveCopy(pThisCC, idDXContext);
@@ -3597,7 +3597,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXPredResolveCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredResolveCopy const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXPredResolveCopy(pThisCC, idDXContext);
@@ -3612,7 +3612,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXPredConvertRegion(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredConvertRegion const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXPredConvertRegion(pThisCC, idDXContext);
@@ -3627,7 +3627,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXPredConvert(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXPredConvert const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXPredConvert(pThisCC, idDXContext);
@@ -3642,7 +3642,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdWholeSurfaceCopy(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdWholeSurfaceCopy const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dWholeSurfaceCopy(pThisCC, idDXContext);
@@ -3657,7 +3657,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineUAView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineUAView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDefineUAView(pThisCC, idDXContext);
@@ -3672,7 +3672,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDestroyUAView(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyUAView const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDestroyUAView(pThisCC, idDXContext);
@@ -3687,7 +3687,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXClearUAViewUint(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearUAViewUint const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXClearUAViewUint(pThisCC, idDXContext);
@@ -3702,7 +3702,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXClearUAViewFloat(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXClearUAViewFloat const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXClearUAViewFloat(pThisCC, idDXContext);
@@ -3717,7 +3717,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXCopyStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXCopyStructureCount const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXCopyStructureCount(pThisCC, idDXContext);
@@ -3732,7 +3732,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetUAViews const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetUAViews(pThisCC, idDXContext);
@@ -3747,7 +3747,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDrawIndexedInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawIndexedInstancedIndirect const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDrawIndexedInstancedIndirect(pThisCC, idDXContext);
@@ -3762,7 +3762,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDrawInstancedIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDrawInstancedIndirect const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDrawInstancedIndirect(pThisCC, idDXContext);
@@ -3777,7 +3777,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDispatch(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDispatch const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDispatch(pThisCC, idDXContext);
@@ -3792,7 +3792,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDispatchIndirect(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDispatchIndirect const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDispatchIndirect(pThisCC, idDXContext);
@@ -3807,7 +3807,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdWriteZeroSurface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdWriteZeroSurface const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dWriteZeroSurface(pThisCC, idDXContext);
@@ -3822,7 +3822,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdHintZeroSurface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdHintZeroSurface const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dHintZeroSurface(pThisCC, idDXContext);
@@ -3837,7 +3837,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXTransferToBuffer(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXTransferToBuffer const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXTransferToBuffer(pThisCC, idDXContext);
@@ -3852,7 +3852,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetStructureCount(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetStructureCount const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetStructureCount(pThisCC, idDXContext);
@@ -3867,7 +3867,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdLogicOpsBitBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsBitBlt const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dLogicOpsBitBlt(pThisCC, idDXContext);
@@ -3882,7 +3882,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdLogicOpsTransBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsTransBlt const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dLogicOpsTransBlt(pThisCC, idDXContext);
@@ -3897,7 +3897,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdLogicOpsStretchBlt(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsStretchBlt const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dLogicOpsStretchBlt(pThisCC, idDXContext);
@@ -3912,7 +3912,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdLogicOpsColorFill(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsColorFill const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dLogicOpsColorFill(pThisCC, idDXContext);
@@ -3927,7 +3927,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdLogicOpsAlphaBlend(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsAlphaBlend const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dLogicOpsAlphaBlend(pThisCC, idDXContext);
@@ -3942,7 +3942,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdLogicOpsClearTypeBlend(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdLogicOpsClearTypeBlend const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dLogicOpsClearTypeBlend(pThisCC, idDXContext);
@@ -3957,7 +3957,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDefineGBSurface_v4(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDefineGBSurface_v4 const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDefineGBSurface_v4(pThisCC, idDXContext);
@@ -3972,7 +3972,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetCSUAViews(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetCSUAViews const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetCSUAViews(pThisCC, idDXContext);
@@ -3987,7 +3987,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetMinLOD(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetMinLOD const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetMinLOD(pThisCC, idDXContext);
@@ -4002,7 +4002,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXDefineDepthStencilView_v2(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineDepthStencilView_v2 const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-//ASMBreakpoint();
+    //DEBUG_BREAKPOINT_TEST();
     RT_NOREF(cbCmd);
     return vmsvga3dDXDefineDepthStencilView(pThisCC, idDXContext, pCmd);
 #else
@@ -4016,7 +4016,7 @@ static int vmsvga3dCmdDXDefineDepthStencilView_v2(PVGASTATECC pThisCC, uint32_t 
 static int vmsvga3dCmdDXDefineStreamOutputWithMob(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutputWithMob const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXDefineStreamOutputWithMob(pThisCC, idDXContext);
@@ -4031,7 +4031,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXSetShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetShaderIface const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXSetShaderIface(pThisCC, idDXContext);
@@ -4046,7 +4046,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindStreamOutput const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBindStreamOutput(pThisCC, idDXContext);
@@ -4061,7 +4061,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdSurfaceStretchBltNonMSToMS(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdSurfaceStretchBltNonMSToMS const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dSurfaceStretchBltNonMSToMS(pThisCC, idDXContext);
@@ -4076,7 +4076,7 @@ ASMBreakpoint();
 static int vmsvga3dCmdDXBindShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindShaderIface const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-ASMBreakpoint();
+    DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
     RT_NOREF(pSvgaR3State, pCmd, cbCmd);
     return vmsvga3dDXBindShaderIface(pThisCC, idDXContext);
