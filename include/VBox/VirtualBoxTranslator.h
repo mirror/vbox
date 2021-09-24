@@ -21,8 +21,6 @@
 # pragma once
 #endif
 
-//#include <list>
-
 #include <iprt/cpp/lock.h>
 
 #include <VBox/com/AutoLock.h>
