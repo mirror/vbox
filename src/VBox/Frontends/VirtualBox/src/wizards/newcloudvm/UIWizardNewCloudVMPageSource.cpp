@@ -429,6 +429,11 @@ UIWizardNewCloudVMPageSource::UIWizardNewCloudVMPageSource()
             this, &UIWizardNewCloudVMPageSource::sltHandleSourceImageChange);
 }
 
+UIWizardNewCloudVM *UIWizardNewCloudVMPageSource::wizard() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(UINativeWizardPage::wizard());
+}
+
 void UIWizardNewCloudVMPageSource::retranslateUi()
 {
     /* Translate page: */
@@ -496,7 +501,7 @@ bool UIWizardNewCloudVMPageSource::isComplete() const
     bool fResult = true;
 
     /* Check cloud settings: */
-    fResult =    client().isNotNull()
+    fResult =    wizard()->client().isNotNull()
               && !m_strSourceImageId.isNull();
 
     /* Return result: */
@@ -509,13 +514,13 @@ bool UIWizardNewCloudVMPageSource::validatePage()
     bool fResult = true;
 
     /* Populate vsd and form properties: */
-    setVSD(createVirtualSystemDescription(wizard()));
-    populateFormProperties(vsd(), m_pSourceTabBar, m_strSourceImageId);
+    wizard()->setVSD(createVirtualSystemDescription(wizard()));
+    populateFormProperties(wizard()->vsd(), m_pSourceTabBar, m_strSourceImageId);
     qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
 
     /* And make sure they are not NULL: */
-    fResult =    vsd().isNotNull()
-              && vsdForm().isNotNull();
+    fResult =    wizard()->vsd().isNotNull()
+              && wizard()->vsdForm().isNotNull();
 
     /* Return result: */
     return fResult;
@@ -551,69 +556,24 @@ void UIWizardNewCloudVMPageSource::sltHandleSourceImageChange()
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageSource::setProviderShortName(const QString &strProviderShortName)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setProviderShortName(strProviderShortName);
-}
-
-QString UIWizardNewCloudVMPageSource::providerShortName() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->providerShortName();
-}
-
-void UIWizardNewCloudVMPageSource::setProfileName(const QString &strProfileName)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setProfileName(strProfileName);
-}
-
-QString UIWizardNewCloudVMPageSource::profileName() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->profileName();
-}
-
-void UIWizardNewCloudVMPageSource::setClient(const CCloudClient &comClient)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setClient(comClient);
-}
-
-CCloudClient UIWizardNewCloudVMPageSource::client() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->client();
-}
-
-void UIWizardNewCloudVMPageSource::setVSD(const CVirtualSystemDescription &comDescription)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSD(comDescription);
-}
-
-CVirtualSystemDescription UIWizardNewCloudVMPageSource::vsd() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsd();
-}
-
-CVirtualSystemDescriptionForm UIWizardNewCloudVMPageSource::vsdForm() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsdForm();
-}
-
 void UIWizardNewCloudVMPageSource::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
-    setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    populateProfiles(m_pProfileComboBox, providerShortName(), profileName());
+    wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
+    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
     updateProfile();
 }
 
 void UIWizardNewCloudVMPageSource::updateProfile()
 {
-    setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    setClient(cloudClientByName(providerShortName(), profileName(), wizard()));
+    wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
+    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
     updateSource();
 }
 
 void UIWizardNewCloudVMPageSource::updateSource()
 {
-    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, client());
+    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->client());
     updateSourceImage();
 }
 

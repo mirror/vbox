@@ -26,6 +26,7 @@
 
 /* Forward declarations: */
 class QGroupBox;
+class UIWizardAddCloudVM;
 
 /** UINativeWizardPage extension for Expert page of the Add Cloud VM wizard,
   * based on UIWizardAddCloudVMPage1 namespace functions. */
@@ -39,6 +40,9 @@ public:
     UIWizardAddCloudVMPageExpert();
 
 protected:
+
+    /** Returns wizard this page belongs to. */
+    UIWizardAddCloudVM *wizard() const;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override final */;
@@ -66,26 +70,6 @@ private slots:
     void sltHandleSourceInstanceChange();
 
 private:
-
-    /** Defines provider short name. */
-    void setProviderShortName(const QString &strProviderShortName);
-    /** Returns provider short name. */
-    QString providerShortName() const;
-
-    /** Defines profile name. */
-    void setProfileName(const QString &strProfileName);
-    /** Returns profile name. */
-    QString profileName() const;
-
-    /** Defines Cloud @a comClient object. */
-    void setClient(const CCloudClient &comClient);
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
-
-    /** Defines @a instanceIds. */
-    void setInstanceIds(const QStringList &instanceIds);
-    /** Returns instance IDs. */
-    QStringList instanceIds() const;
 
     /** Updates provider. */
     void updateProvider();

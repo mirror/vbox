@@ -27,6 +27,7 @@
 
 /* Forward declarations: */
 class QGroupBox;
+class UIWizardNewCloudVM;
 
 /** UINativeWizardPage extension for Expert page of the New Cloud VM wizard,
   * based on UIWizardNewCloudVMPage1 & UIWizardNewCloudVMPage2 namespace functions. */
@@ -40,6 +41,9 @@ public:
     UIWizardNewCloudVMPageExpert(bool fFullWizard);
 
 protected:
+
+    /** Returns wizard this page belongs to. */
+    UIWizardNewCloudVM *wizard() const;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override final */;
@@ -73,31 +77,6 @@ private slots:
     void sltInitShortWizardForm();
 
 private:
-
-    /** Defines provider short name. */
-    void setProviderShortName(const QString &strProviderShortName);
-    /** Returns provider short name. */
-    QString providerShortName() const;
-
-    /** Defines profile name. */
-    void setProfileName(const QString &strProfileName);
-    /** Returns profile name. */
-    QString profileName() const;
-
-    /** Defines Cloud @a comClient object. */
-    void setClient(const CCloudClient &comClient);
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
-
-    /** Defines Virtual System @a comDescription object. */
-    void setVSD(const CVirtualSystemDescription &comDescription);
-    /** Returns Virtual System Description object. */
-    CVirtualSystemDescription vsd() const;
-
-    /** Defines Virtual System Description @a comForm object. */
-    void setVSDForm(const CVirtualSystemDescriptionForm &comForm);
-    /** Returns Virtual System Description Form object. */
-    CVirtualSystemDescriptionForm vsdForm() const;
 
     /** Updates provider. */
     void updateProvider();

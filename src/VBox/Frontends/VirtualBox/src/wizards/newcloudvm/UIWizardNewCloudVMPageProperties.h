@@ -33,6 +33,7 @@
 
 /* Forward declarations: */
 class QIRichTextLabel;
+class UIWizardNewCloudVM;
 
 /** Namespace for 2nd page of the New Cloud VM wizard. */
 namespace UIWizardNewCloudVMPage2
@@ -54,6 +55,9 @@ public:
 
 protected:
 
+    /** Returns wizard this page belongs to. */
+    UIWizardNewCloudVM *wizard() const;
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override final */;
 
@@ -72,16 +76,6 @@ private slots:
     void sltInitShortWizardForm();
 
 private:
-
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
-    /** Returns Virtual System Description object. */
-    CVirtualSystemDescription vsd() const;
-
-    /** Defines Virtual System Description @a comForm object. */
-    void setVSDForm(const CVirtualSystemDescriptionForm &comForm);
-    /** Returns Virtual System Description Form object. */
-    CVirtualSystemDescriptionForm vsdForm() const;
 
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;

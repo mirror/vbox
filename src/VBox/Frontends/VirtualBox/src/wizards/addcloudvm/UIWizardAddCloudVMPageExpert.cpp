@@ -142,6 +142,11 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
             this, &UIWizardAddCloudVMPageExpert::completeChanged);
 }
 
+UIWizardAddCloudVM *UIWizardAddCloudVMPageExpert::wizard() const
+{
+    return qobject_cast<UIWizardAddCloudVM*>(UINativeWizardPage::wizard());
+}
+
 void UIWizardAddCloudVMPageExpert::retranslateUi()
 {
     /* Translate source container: */
@@ -181,8 +186,8 @@ bool UIWizardAddCloudVMPageExpert::isComplete() const
 
     /* Make sure client is not NULL and
      * at least one instance is selected: */
-    fResult =    client().isNotNull()
-              && !instanceIds().isEmpty();
+    fResult =    wizard()->client().isNotNull()
+              && !wizard()->instanceIds().isEmpty();
 
     /* Return result: */
     return fResult;
@@ -224,63 +229,23 @@ void UIWizardAddCloudVMPageExpert::sltHandleSourceInstanceChange()
     emit completeChanged();
 }
 
-void UIWizardAddCloudVMPageExpert::setProviderShortName(const QString &strProviderShortName)
-{
-    qobject_cast<UIWizardAddCloudVM*>(wizard())->setProviderShortName(strProviderShortName);
-}
-
-QString UIWizardAddCloudVMPageExpert::providerShortName() const
-{
-    return qobject_cast<UIWizardAddCloudVM*>(wizard())->providerShortName();
-}
-
-void UIWizardAddCloudVMPageExpert::setProfileName(const QString &strProfileName)
-{
-    qobject_cast<UIWizardAddCloudVM*>(wizard())->setProfileName(strProfileName);
-}
-
-QString UIWizardAddCloudVMPageExpert::profileName() const
-{
-    return qobject_cast<UIWizardAddCloudVM*>(wizard())->profileName();
-}
-
-void UIWizardAddCloudVMPageExpert::setClient(const CCloudClient &comClient)
-{
-    qobject_cast<UIWizardAddCloudVM*>(wizard())->setClient(comClient);
-}
-
-CCloudClient UIWizardAddCloudVMPageExpert::client() const
-{
-    return qobject_cast<UIWizardAddCloudVM*>(wizard())->client();
-}
-
-void UIWizardAddCloudVMPageExpert::setInstanceIds(const QStringList &instanceIds)
-{
-    qobject_cast<UIWizardAddCloudVM*>(wizard())->setInstanceIds(instanceIds);
-}
-
-QStringList UIWizardAddCloudVMPageExpert::instanceIds() const
-{
-    return qobject_cast<UIWizardAddCloudVM*>(wizard())->instanceIds();
-}
-
 void UIWizardAddCloudVMPageExpert::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
-    setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    populateProfiles(m_pProfileComboBox, providerShortName(), profileName());
+    wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
+    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
     updateProfile();
 }
 
 void UIWizardAddCloudVMPageExpert::updateProfile()
 {
-    setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    setClient(cloudClientByName(providerShortName(), profileName(), wizard()));
-    populateProfileInstances(m_pSourceInstanceList, client());
+    wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
+    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
+    populateProfileInstances(m_pSourceInstanceList, wizard()->client());
     updateSourceInstance();
 }
 
 void UIWizardAddCloudVMPageExpert::updateSourceInstance()
 {
-    setInstanceIds(currentListWidgetData(m_pSourceInstanceList));
+    wizard()->setInstanceIds(currentListWidgetData(m_pSourceInstanceList));
 }

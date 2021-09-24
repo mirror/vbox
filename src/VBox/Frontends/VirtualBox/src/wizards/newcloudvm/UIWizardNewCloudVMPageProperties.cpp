@@ -84,6 +84,11 @@ UIWizardNewCloudVMPageProperties::UIWizardNewCloudVMPageProperties()
     }
 }
 
+UIWizardNewCloudVM *UIWizardNewCloudVMPageProperties::wizard() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(UINativeWizardPage::wizard());
+}
+
 void UIWizardNewCloudVMPageProperties::retranslateUi()
 {
     /* Translate page: */
@@ -108,8 +113,8 @@ bool UIWizardNewCloudVMPageProperties::isComplete() const
     bool fResult = true;
 
     /* Check cloud settings: */
-    fResult =    client().isNotNull()
-              && vsd().isNotNull();
+    fResult =    wizard()->client().isNotNull()
+              && wizard()->vsd().isNotNull();
 
     /* Return result: */
     return fResult;
@@ -124,7 +129,7 @@ bool UIWizardNewCloudVMPageProperties::validatePage()
     m_pFormEditor->makeSureEditorDataCommitted();
 
     /* Check whether we have proper VSD form: */
-    CVirtualSystemDescriptionForm comForm = vsdForm();
+    CVirtualSystemDescriptionForm comForm = wizard()->vsdForm();
     /* Give changed VSD back: */
     if (comForm.isNotNull())
     {
@@ -143,7 +148,7 @@ bool UIWizardNewCloudVMPageProperties::validatePage()
          * sugest user more valid form this time: */
         if (!fResult)
         {
-            setVSDForm(CVirtualSystemDescriptionForm());
+            wizard()->setVSDForm(CVirtualSystemDescriptionForm());
             sltInitShortWizardForm();
         }
     }
@@ -155,30 +160,10 @@ bool UIWizardNewCloudVMPageProperties::validatePage()
 void UIWizardNewCloudVMPageProperties::sltInitShortWizardForm()
 {
     /* Create Virtual System Description Form: */
-    if (vsdForm().isNull())
+    if (wizard()->vsdForm().isNull())
         qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
 
     /* Refresh form properties table: */
-    refreshFormPropertiesTable(m_pFormEditor, vsdForm());
+    refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdForm());
     emit completeChanged();
-}
-
-CCloudClient UIWizardNewCloudVMPageProperties::client() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->client();
-}
-
-CVirtualSystemDescription UIWizardNewCloudVMPageProperties::vsd() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsd();
-}
-
-void UIWizardNewCloudVMPageProperties::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSDForm(comForm);
-}
-
-CVirtualSystemDescriptionForm UIWizardNewCloudVMPageProperties::vsdForm() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsdForm();
 }

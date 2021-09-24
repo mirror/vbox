@@ -38,6 +38,7 @@ class QTabBar;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
+class UIWizardNewCloudVM;
 class CCloudProvider;
 
 /** Provider combo data fields. */
@@ -87,6 +88,9 @@ public:
 
 protected:
 
+    /** Returns wizard this page belongs to. */
+    UIWizardNewCloudVM *wizard() const;
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override final */;
 
@@ -116,29 +120,6 @@ private slots:
     void sltHandleSourceImageChange();
 
 private:
-
-    /** Defines provider short name. */
-    void setProviderShortName(const QString &strProviderShortName);
-    /** Returns provider short name. */
-    QString providerShortName() const;
-
-    /** Defines profile name. */
-    void setProfileName(const QString &strProfileName);
-    /** Returns profile name. */
-    QString profileName() const;
-
-    /** Defines Cloud @a comClient object. */
-    void setClient(const CCloudClient &comClient);
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
-
-    /** Defines Virtual System @a comDescription object. */
-    void setVSD(const CVirtualSystemDescription &comDescription);
-    /** Returns Virtual System Description object. */
-    CVirtualSystemDescription vsd() const;
-
-    /** Returns Virtual System Description Form object. */
-    CVirtualSystemDescriptionForm vsdForm() const;
 
     /** Updates provider. */
     void updateProvider();

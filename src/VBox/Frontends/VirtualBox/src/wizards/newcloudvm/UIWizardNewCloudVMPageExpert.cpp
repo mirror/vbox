@@ -217,6 +217,11 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             this, &UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange);
 }
 
+UIWizardNewCloudVM *UIWizardNewCloudVMPageExpert::wizard() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(UINativeWizardPage::wizard());
+}
+
 void UIWizardNewCloudVMPageExpert::retranslateUi()
 {
     /* Translate location container: */
@@ -273,8 +278,8 @@ bool UIWizardNewCloudVMPageExpert::isComplete() const
     bool fResult = true;
 
     /* Check cloud settings: */
-    fResult =    client().isNotNull()
-              && vsd().isNotNull();
+    fResult =    wizard()->client().isNotNull()
+              && wizard()->vsd().isNotNull();
 
     /* Return result: */
     return fResult;
@@ -289,7 +294,7 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
     m_pFormEditor->makeSureEditorDataCommitted();
 
     /* Check whether we have proper VSD form: */
-    CVirtualSystemDescriptionForm comForm = vsdForm();
+    CVirtualSystemDescriptionForm comForm = wizard()->vsdForm();
     /* Give changed VSD back: */
     if (comForm.isNotNull())
     {
@@ -308,7 +313,7 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
          * sugest user more valid form this time: */
         if (!fResult)
         {
-            setVSDForm(CVirtualSystemDescriptionForm());
+            wizard()->setVSDForm(CVirtualSystemDescriptionForm());
             sltInitShortWizardForm();
         }
     }
@@ -349,80 +354,30 @@ void UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange()
 
 void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
 {
-    if (vsdForm().isNull())
+    if (wizard()->vsdForm().isNull())
         qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
     updatePropertiesTable();
     emit completeChanged();
 }
 
-void UIWizardNewCloudVMPageExpert::setProviderShortName(const QString &strProviderShortName)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setProviderShortName(strProviderShortName);
-}
-
-QString UIWizardNewCloudVMPageExpert::providerShortName() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->providerShortName();
-}
-
-void UIWizardNewCloudVMPageExpert::setProfileName(const QString &strProfileName)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setProfileName(strProfileName);
-}
-
-QString UIWizardNewCloudVMPageExpert::profileName() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->profileName();
-}
-
-void UIWizardNewCloudVMPageExpert::setClient(const CCloudClient &comClient)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setClient(comClient);
-}
-
-CCloudClient UIWizardNewCloudVMPageExpert::client() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->client();
-}
-
-void UIWizardNewCloudVMPageExpert::setVSD(const CVirtualSystemDescription &comDescription)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSD(comDescription);
-}
-
-CVirtualSystemDescription UIWizardNewCloudVMPageExpert::vsd() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsd();
-}
-
-void UIWizardNewCloudVMPageExpert::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
-{
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->setVSDForm(comForm);
-}
-
-CVirtualSystemDescriptionForm UIWizardNewCloudVMPageExpert::vsdForm() const
-{
-    return qobject_cast<UIWizardNewCloudVM*>(wizard())->vsdForm();
-}
-
 void UIWizardNewCloudVMPageExpert::updateProvider()
 {
     updateComboToolTip(m_pProviderComboBox);
-    setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    populateProfiles(m_pProfileComboBox, providerShortName(), profileName());
+    wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
+    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
     updateProfile();
 }
 
 void UIWizardNewCloudVMPageExpert::updateProfile()
 {
-    setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    setClient(cloudClientByName(providerShortName(), profileName(), wizard()));
+    wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
+    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
     updateSource();
 }
 
 void UIWizardNewCloudVMPageExpert::updateSource()
 {
-    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, client());
+    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->client());
     updateSourceImage();
 }
 
@@ -434,13 +389,13 @@ void UIWizardNewCloudVMPageExpert::updateSourceImage()
 
 void UIWizardNewCloudVMPageExpert::updateVSDForm()
 {
-    setVSD(createVirtualSystemDescription(wizard()));
-    populateFormProperties(vsd(), m_pSourceTabBar, m_strSourceImageId);
+    wizard()->setVSD(createVirtualSystemDescription(wizard()));
+    populateFormProperties(wizard()->vsd(), m_pSourceTabBar, m_strSourceImageId);
     qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
     updatePropertiesTable();
 }
 
 void UIWizardNewCloudVMPageExpert::updatePropertiesTable()
 {
-    refreshFormPropertiesTable(m_pFormEditor, vsdForm());
+    refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdForm());
 }
