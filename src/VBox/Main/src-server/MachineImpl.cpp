@@ -12682,7 +12682,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
          */
         if (mData->mMachineState == MachineState_Saved || mData->mMachineState == MachineState_Restoring)
             i_setMachineState(MachineState_AbortedSaved);
-        else if (mData->mMachineState != MachineState_Aborted)
+        else if (mData->mMachineState != MachineState_Aborted && mData->mMachineState != MachineState_AbortedSaved)
             i_setMachineState(MachineState_Aborted);
     }
 
