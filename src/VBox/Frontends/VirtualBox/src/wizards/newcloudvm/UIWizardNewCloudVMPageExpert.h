@@ -113,9 +113,9 @@ private:
     QListWidget  *m_pSourceImageList;
 
     /** Holds the settings container instance. */
-    QGroupBox                 *m_pSettingsCnt;
+    QGroupBox          *m_pSettingsCnt;
     /** Holds the Form Editor widget instance. */
-    UIFormEditorWidgetPointer  m_pFormEditor;
+    UIFormEditorWidget *m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageExpert_h */

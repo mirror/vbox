@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
+#include "UIFormEditorWidget.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageProperties.h"
@@ -33,11 +34,11 @@ using namespace UIWizardNewCloudVMProperties;
 *   Namespace UIWizardNewCloudVMProperties implementation.                                                                       *
 *********************************************************************************************************************************/
 
-void UIWizardNewCloudVMProperties::refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor,
+void UIWizardNewCloudVMProperties::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
                                                               const CVirtualSystemDescriptionForm &comForm)
 {
     /* Sanity check: */
-    AssertPtrReturnVoid(pFormEditor.data());
+    AssertPtrReturnVoid(pFormEditor);
     AssertReturnVoid(comForm.isNotNull());
 
     /* Make sure the properties table get the new description form: */
@@ -50,6 +51,8 @@ void UIWizardNewCloudVMProperties::refreshFormPropertiesTable(UIFormEditorWidget
 *********************************************************************************************************************************/
 
 UIWizardNewCloudVMPageProperties::UIWizardNewCloudVMPageProperties()
+    : m_pLabel(0)
+    , m_pFormEditor(0)
 {
     /* Prepare main layout: */
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
@@ -70,18 +73,19 @@ UIWizardNewCloudVMPageProperties::UIWizardNewCloudVMPageProperties()
                                             : 0;
             if (iDefaultSectionHeight > 0)
                 m_pFormEditor->setMinimumHeight(8 * iDefaultSectionHeight);
-            /* Setup connections: */
-            connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
-                    this, &UIWizardNewCloudVMPageProperties::sigProgressStarted);
-            connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
-                    this, &UIWizardNewCloudVMPageProperties::sigProgressChange);
-            connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
-                    this, &UIWizardNewCloudVMPageProperties::sigProgressFinished);
 
             /* Add into layout: */
             pLayoutMain->addWidget(m_pFormEditor);
         }
     }
+
+    /* Setup connections: */
+    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
+            this, &UIWizardNewCloudVMPageProperties::sigProgressStarted);
+    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
+            this, &UIWizardNewCloudVMPageProperties::sigProgressChange);
+    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
+            this, &UIWizardNewCloudVMPageProperties::sigProgressFinished);
 }
 
 UIWizardNewCloudVM *UIWizardNewCloudVMPageProperties::wizard() const

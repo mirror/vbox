@@ -22,24 +22,21 @@
 #endif
 
 /* GUI includes: */
-#include "UIFormEditorWidget.h"
 #include "UINativeWizardPage.h"
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CCloudClient.h"
-#include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
 class QIRichTextLabel;
+class UIFormEditorWidget;
 class UIWizardNewCloudVM;
 
 /** Namespace for properties page of the New Cloud VM wizard. */
 namespace UIWizardNewCloudVMProperties
 {
     /** Refreshes @a pFormEditor on the basis of comForm specified. */
-    void refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor, const CVirtualSystemDescriptionForm &comForm);
+    void refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor, const CVirtualSystemDescriptionForm &comForm);
 }
 
 /** UINativeWizardPage extension for properties page of the New Cloud VM wizard,
@@ -81,7 +78,7 @@ private:
     QIRichTextLabel *m_pLabel;
 
     /** Holds the Form Editor widget instance. */
-    UIFormEditorWidgetPointer  m_pFormEditor;
+    UIFormEditorWidget *m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageProperties_h */

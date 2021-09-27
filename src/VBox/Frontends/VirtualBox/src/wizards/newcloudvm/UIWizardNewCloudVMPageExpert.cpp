@@ -26,6 +26,7 @@
 #include "QIComboBox.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
+#include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -48,6 +49,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
     , m_pSourceTabBar(0)
     , m_pSourceImageList(0)
     , m_pSettingsCnt(0)
+    , m_pFormEditor(0)
 {
     /* Prepare main layout: */
     QGridLayout *pLayoutMain = new QGridLayout(this);
@@ -182,13 +184,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
                                              : fm.height();
                     const int iTotalHeight = 8 * iSectionHeight;
                     m_pFormEditor->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                    /* Setup connections: */
-                    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
-                            this, &UIWizardNewCloudVMPageExpert::sigProgressStarted);
-                    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
-                            this, &UIWizardNewCloudVMPageExpert::sigProgressChange);
-                    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
-                            this, &UIWizardNewCloudVMPageExpert::sigProgressFinished);
 
                     /* Add into layout: */
                     pSettingsLayout->addWidget(m_pFormEditor);
@@ -215,6 +210,12 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
             this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
     connect(m_pSourceImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange);
+    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
+            this, &UIWizardNewCloudVMPageExpert::sigProgressStarted);
+    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
+            this, &UIWizardNewCloudVMPageExpert::sigProgressChange);
+    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
+            this, &UIWizardNewCloudVMPageExpert::sigProgressFinished);
 }
 
 UIWizardNewCloudVM *UIWizardNewCloudVMPageExpert::wizard() const
