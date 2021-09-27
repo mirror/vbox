@@ -21,6 +21,8 @@
 # pragma once
 #endif
 
+#include <iprt/cdefs.h>
+
 RT_C_DECLS_BEGIN
 
 extern const unsigned char g_abUefiMicrosoftKek[];
