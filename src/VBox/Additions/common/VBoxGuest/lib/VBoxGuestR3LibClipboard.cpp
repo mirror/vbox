@@ -100,7 +100,6 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
     pCtx->idClient              = 0;
     pCtx->fGuestFeatures        = fGuestFeatures;
     pCtx->fHostFeatures         = 0;
-    pCtx->fGuestFeatures        = VBOX_SHCL_GF_NONE;
     pCtx->fUseLegacyProtocol    = true;
     pCtx->cParmsRecived         = 0;
     pCtx->idContext             = 0;
