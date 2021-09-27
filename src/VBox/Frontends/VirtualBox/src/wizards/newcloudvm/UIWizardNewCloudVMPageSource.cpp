@@ -516,7 +516,7 @@ bool UIWizardNewCloudVMPageSource::validatePage()
     /* Populate vsd and form properties: */
     wizard()->setVSD(createVirtualSystemDescription(wizard()));
     populateFormProperties(wizard()->vsd(), m_pSourceTabBar, m_strSourceImageId);
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
+    wizard()->createVSDForm();
 
     /* And make sure they are not NULL: */
     fResult =    wizard()->vsd().isNotNull()

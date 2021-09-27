@@ -451,7 +451,7 @@ bool UIWizardAddCloudVMPageSource::validatePage()
     bool fResult = true;
 
     /* Try to add cloud VMs: */
-    fResult = qobject_cast<UIWizardAddCloudVM*>(wizard())->addCloudVMs();
+    fResult = wizard()->addCloudVMs();
 
     /* Return result: */
     return fResult;

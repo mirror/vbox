@@ -307,7 +307,7 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
     /* Try to create cloud VM: */
     if (fResult)
     {
-        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->createCloudVM();
+        fResult = wizard()->createCloudVM();
 
         /* If the final step failed we could try
          * sugest user more valid form this time: */
@@ -355,7 +355,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange()
 void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
 {
     if (wizard()->vsdForm().isNull())
-        qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
+        wizard()->createVSDForm();
     updatePropertiesTable();
     emit completeChanged();
 }
@@ -391,7 +391,7 @@ void UIWizardNewCloudVMPageExpert::updateVSDForm()
 {
     wizard()->setVSD(createVirtualSystemDescription(wizard()));
     populateFormProperties(wizard()->vsd(), m_pSourceTabBar, m_strSourceImageId);
-    qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
+    wizard()->createVSDForm();
     updatePropertiesTable();
 }
 

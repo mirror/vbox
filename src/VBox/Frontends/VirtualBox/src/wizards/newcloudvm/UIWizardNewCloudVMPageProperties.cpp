@@ -142,7 +142,7 @@ bool UIWizardNewCloudVMPageProperties::validatePage()
     /* Try to create cloud VM: */
     if (fResult)
     {
-        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->createCloudVM();
+        fResult = wizard()->createCloudVM();
 
         /* If the final step failed we could try
          * sugest user more valid form this time: */
@@ -161,7 +161,7 @@ void UIWizardNewCloudVMPageProperties::sltInitShortWizardForm()
 {
     /* Create Virtual System Description Form: */
     if (wizard()->vsdForm().isNull())
-        qobject_cast<UIWizardNewCloudVM*>(wizard())->createVSDForm();
+        wizard()->createVSDForm();
 
     /* Refresh form properties table: */
     refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdForm());
