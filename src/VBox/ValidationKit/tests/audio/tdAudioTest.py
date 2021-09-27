@@ -143,8 +143,8 @@ class tdAudioTest(vbox.TestDriver):
                     if s not in self.asTestsDef:
                         raise base.InvalidOption('The "--audio-tests" value "%s" is not valid; valid values are: %s'
                                                     % (s, ' '.join(self.asTestsDef)));
-        elif    asArgs[iArg] == 'audio-test-count' \
-             or asArgs[iArg] == 'audio-test-tone-duration':
+        elif    asArgs[iArg] == '--audio-test-count' \
+             or asArgs[iArg] == '--audio-test-tone-duration':
             # Strip the "--audio-test-" prefix and keep the options as defined in VKAT,
             # e.g. "--audio-test-count" -> "--count". That way we don't
             # need to do any special argument translation and whatnot.
