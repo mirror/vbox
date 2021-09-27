@@ -820,14 +820,16 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
     if (m->pReg != NULL && m->pReg->pszNlsBaseName != NULL)
     {
         char szPath[RTPATH_MAX];
-        ssize_t cchOkay = RTStrPrintf2(szPath, sizeof(szPath), "%s%s%s", a_pszDir,
-                                       RTPATH_SLASH_STR "nls" RTPATH_SLASH_STR,
-                                       m->pReg->pszNlsBaseName);
-        if (cchOkay > 0)
+        rc = RTPathJoin(szPath, sizeof(szPath), a_pszDir, "nls");
+        if (RT_SUCCESS(rc))
         {
-            rc = VirtualBoxTranslator::registerTranslation(szPath, false, &m->pTrComponent);
-            if (RT_FAILURE(rc))
-                m->pTrComponent = NULL;
+            rc = RTPathAppend(szPath, sizeof(szPath), m->pReg->pszNlsBaseName);
+            if (RT_SUCCESS(rc))
+            {
+                rc = VirtualBoxTranslator::registerTranslation(szPath, false, &m->pTrComponent);
+                if (RT_FAILURE(rc))
+                    m->pTrComponent = NULL;
+            }
         }
     }
 #endif
