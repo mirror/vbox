@@ -4001,23 +4001,24 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
 {
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
-    QUuid uMediumId;
-    if (m_pMediumIdHolder)
-        uMediumId = m_pMediumIdHolder->id();
 
-    int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId /* in/out parameter */,
+    QUuid uCurrentMediumId;
+    if (m_pMediumIdHolder)
+        uCurrentMediumId = m_pMediumIdHolder->id();
+    QUuid uSelectedMediumId;
+    int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uCurrentMediumId, uSelectedMediumId,
                                                       strMachineFolder, m_strMachineName,
                                                       m_strMachineGuestOSTypeId,
                                                       true /* enable create action: */, m_uMachineId);
 
     if (iResult == UIMediumSelector::ReturnCode_Rejected ||
-        (iResult == UIMediumSelector::ReturnCode_Accepted && uMediumId.isNull()))
+        (iResult == UIMediumSelector::ReturnCode_Accepted && uSelectedMediumId.isNull()))
         return;
     if (iResult == static_cast<int>(UIMediumSelector::ReturnCode_LeftEmpty) &&
         (m_pMediumIdHolder->type() != UIMediumDeviceType_DVD && m_pMediumIdHolder->type() != UIMediumDeviceType_Floppy))
         return;
 
-    m_pMediumIdHolder->setId(uMediumId);
+    m_pMediumIdHolder->setId(uSelectedMediumId);
 }
 
 void UIMachineSettingsStorage::sltChooseDiskFile()
@@ -5217,7 +5218,8 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QUuid uMediumId;
-    int iResult = uiCommon().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType), uMediumId,
+    int iResult = uiCommon().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType),
+                                                      QUuid() /* current medium Id */, uMediumId,
                                                       strMachineFolder, m_strMachineName,
                                                       m_strMachineGuestOSTypeId,
                                                       true /* enable cr1eate action: */, m_uMachineId);

@@ -40,7 +40,8 @@ void UIWizardFirstRunPage::onOpenMediumWithFileOpenDialog()
 {
     /* Get opened vboxMedium id: */
     QUuid uMediumId;
-    uiCommon().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_DVD, uMediumId, "", "", "", true);
+    uiCommon().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_DVD, QUuid() /* current medium Id */,
+                                        uMediumId, "", "", "", true, QUuid() /* Machinie Id */);
     /* Update medium-combo if necessary: */
     if (!uMediumId.isNull())
         m_pMediaSelector->setCurrentItem(uMediumId);

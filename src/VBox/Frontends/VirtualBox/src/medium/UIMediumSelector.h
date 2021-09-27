@@ -121,7 +121,6 @@ private slots:
     /** Remember the default foreground brush of the tree so that we can reset tree items' foreground later */
     void          saveDefaultForeground();
     void          selectMedium(const QUuid &uMediumID);
-    void          scrollToItem(UIMediumItem* pItem);
     void          setTitle();
     QWidget              *m_pCentralWidget;
     QVBoxLayout          *m_pMainLayout;
@@ -153,6 +152,7 @@ private slots:
     QString               m_strMachineName;
     QString               m_strMachineGuestOSTypeId;
     QUuid                 m_uMachineID;
+    QUuid          m_uCurrentMediumId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumSelector_h */

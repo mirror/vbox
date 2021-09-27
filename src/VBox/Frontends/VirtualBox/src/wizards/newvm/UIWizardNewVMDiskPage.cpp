@@ -47,11 +47,13 @@ QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,
 {
     QUuid uMediumId;
     int returnCode = uiCommon().openMediumSelectorDialog(pCaller, UIMediumDeviceType_HardDisk,
+                                                         QUuid() /* current medium id */,
                                                          uMediumId,
                                                          strMachineFolder,
                                                          strMachineBaseName,
                                                          strOSTypeID,
-                                                         false /* don't show/enable the create action: */);
+                                                         false /* don't show/enable the create action: */,
+                                                         QUuid() /* Machinie Id */);
     if (returnCode != static_cast<int>(UIMediumSelector::ReturnCode_Accepted))
         return QUuid();
     return uMediumId;

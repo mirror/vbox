@@ -558,7 +558,12 @@ void UIMediumSelector::selectMedium(const QUuid &uMediumID)
         return;
     UIMediumItem *pMediumItem = searchItem(0, uMediumID);
     if (pMediumItem)
+    {
         m_pTreeWidget->setCurrentItem(pMediumItem);
+        QModelIndex itemIndex = m_pTreeWidget->itemIndex(pMediumItem);
+        if (itemIndex.isValid())
+            m_pTreeWidget->scrollTo(itemIndex, QAbstractItemView::EnsureVisible);
+    }
 }
 
 void UIMediumSelector::updateChooseButton()
@@ -716,34 +721,13 @@ UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const
         if (mediumItem)
         {
             if (mediumItem->id() == mediumId)
-            {
                 return mediumItem;
-            }
         }
         UIMediumItem *pResult = searchItem(pChild, mediumId);
         if (pResult)
             return pResult;
     }
     return 0;
-}
-
-void UIMediumSelector::scrollToItem(UIMediumItem* pItem)
-{
-    if (!pItem)
-        return;
-
-    QModelIndex itemIndex = m_pTreeWidget->itemIndex(pItem);
-    for (int i = 0; i < m_mediumItemList.size(); ++i)
-    {
-        QFont font = m_mediumItemList[i]->font(0);
-        font.setBold(false);
-        m_mediumItemList[i]->setFont(0, font);
-    }
-    QFont font = pItem->font(0);
-    font.setBold(true);
-    pItem->setFont(0, font);
-
-    m_pTreeWidget->scrollTo(itemIndex);
 }
 
 void UIMediumSelector::setTitle()
