@@ -42,8 +42,19 @@ public:
     /* Load language based on settings in the VirtualBox config */
     HRESULT loadLanguage(ComPtr<IVirtualBox> aVirtualBox);
 
+private:
+    /** Translator component. */
+    struct TranslatorComponent
+    {
+        QMTranslator *pTranslator;
+        /** Path to translation files. It includes file prefix, i.e '/path/to/folder/file_prefix'. */
+        com::Utf8Str  strPath;
+
+        TranslatorComponent() : pTranslator(NULL) {}
+    };
+public:
     /** Pointer to a translator component. */
-    typedef struct TranslatorComponent *PTRCOMPONENT;
+    typedef TranslatorComponent *PTRCOMPONENT;
 
     /**
      * Registers the translation for a component.
@@ -101,15 +112,6 @@ private:
 
     uint32_t m_cInstanceRefs;
 
-    /** Translator component. */
-    struct TranslatorComponent
-    {
-        QMTranslator *pTranslator;
-        /** Path to translation files. It includes file prefix, i.e '/path/to/folder/file_prefix'. */
-        com::Utf8Str  strPath;
-
-        TranslatorComponent() : pTranslator(NULL) {}
-    };
     typedef std::list<TranslatorComponent> TranslatorList;
     TranslatorList  m_lTranslators;
     TranslatorComponent *m_pDefaultComponent;

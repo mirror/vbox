@@ -407,18 +407,16 @@ int VirtualBoxTranslator::i_unregisterTranslation(PTRCOMPONENT aComponent)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    TranslatorComponent *pComponent = (TranslatorComponent *)aComponent;
-
-    if (pComponent == m_pDefaultComponent)
+    if (aComponent == m_pDefaultComponent)
         m_pDefaultComponent = NULL;
 
     for (TranslatorList::iterator it = m_lTranslators.begin();
          it != m_lTranslators.end();
          ++it)
     {
-        if (&(*it) == pComponent)
+        if (&(*it) == aComponent)
         {
-            delete pComponent->pTranslator;
+            delete aComponent->pTranslator;
             m_lTranslators.erase(it);
             return VINF_SUCCESS;
         }
@@ -480,23 +478,22 @@ const char *VirtualBoxTranslator::i_translate(PTRCOMPONENT aComponent,
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    TranslatorComponent *pComponent = (TranslatorComponent *)aComponent;
-    if (pComponent == NULL)
-        pComponent = m_pDefaultComponent;
+    if (aComponent == NULL)
+        aComponent = m_pDefaultComponent;
 
-    if (   pComponent == NULL
-        || pComponent->pTranslator == NULL)
+    if (   aComponent == NULL
+        || aComponent->pTranslator == NULL)
         return aSourceText;
 
-    const char *pszTranslation = pComponent->pTranslator->translate(aContext, aSourceText, aComment, aNum);
+    const char *pszTranslation = aComponent->pTranslator->translate(aContext, aSourceText, aComment, aNum);
 
     LastTranslation *pEntry = getTlsEntry();
     if (pEntry)
     {
         pEntry->first = pszTranslation;
-        pEntry->second = m_hStrCache != NIL_RTSTRCACHE ?
-                            RTStrCacheEnter(m_hStrCache, aSourceText) :
-                            aSourceText;
+        /** @todo r=bird: This is not technically threadsafe.  Move this down to the
+         *        above translator call. */
+        pEntry->second = m_hStrCache != NIL_RTSTRCACHE ? RTStrCacheEnter(m_hStrCache, aSourceText) : aSourceText;
     }
 
     return pszTranslation;
