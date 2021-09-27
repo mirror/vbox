@@ -1049,6 +1049,16 @@ typedef union
         uint32_t    iReg2           : 4;
     } VmreadVmwrite;
 
+    struct
+    {
+        uint32_t    u2Undef0        : 3;
+        /** First XMM register operand. */
+        uint32_t    u4XmmReg1       : 4;
+        uint32_t    u23Undef1       : 21;
+        /** Second XMM register operand. */
+        uint32_t    u4XmmReg2       : 4;
+    } LoadIwkey;
+
     /** This is a combination field of all instruction information. Note! Not all field
      *  combinations are valid (e.g., iReg1 is undefined for memory operands) and
      *  specialized fields are overwritten by their generic counterparts (e.g. no
