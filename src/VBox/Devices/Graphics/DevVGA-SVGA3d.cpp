@@ -1534,14 +1534,17 @@ int vmsvga3dGetBoxDimensions(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pI
         clipBox.d = pMipLevel->mipmapSize.depth;
     }
 
+    uint32_t const cBlocksX = (clipBox.w + pSurface->cxBlock - 1) / pSurface->cxBlock;
+    uint32_t const cBlocksY = (clipBox.h + pSurface->cyBlock - 1) / pSurface->cyBlock;
+
     /** @todo Calculate offSubresource here, when pSurface will have cbArraySlice field. */
     pResult->offSubresource = vmsvga3dCalcSubresourceOffset(pThisCC, pImage);
     pResult->offBox   = (clipBox.x / pSurface->cxBlock) * pSurface->cbBlock
                       + (clipBox.y / pSurface->cyBlock) * pMipLevel->cbSurfacePitch
                       + clipBox.z * pMipLevel->cbSurfacePlane;
-    pResult->cbRow    = (clipBox.w / pSurface->cxBlock) * pSurface->cbBlock;
+    pResult->cbRow    = cBlocksX * pSurface->cbBlock;
     pResult->cbPitch  = pMipLevel->cbSurfacePitch;
-    pResult->cyBlocks = clipBox.h / pSurface->cyBlock;
+    pResult->cyBlocks = cBlocksY;
     pResult->cDepth   = clipBox.d;
 
     return VINF_SUCCESS;

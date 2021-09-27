@@ -954,7 +954,7 @@ int vmsvgaR3UpdateGBSurface(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pIm
         if (pMob)
         {
             VMSVGA3D_MAPPED_SURFACE map;
-            rc = vmsvga3dSurfaceMap(pThisCC, pImageId, pBox, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            rc = vmsvga3dSurfaceMap(pThisCC, pImageId, pBox, VMSVGA3D_SURFACE_MAP_WRITE, &map);
             if (RT_SUCCESS(rc))
             {
                 /* Copy MOB -> mapped surface. */
@@ -1003,7 +1003,7 @@ int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *p
         if (pMob)
         {
             VMSVGA3D_MAPPED_SURFACE map;
-            rc = vmsvga3dSurfaceMap(pThisCC, pImageId, pBoxDst, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &map);
+            rc = vmsvga3dSurfaceMap(pThisCC, pImageId, pBoxDst, VMSVGA3D_SURFACE_MAP_WRITE, &map);
             if (RT_SUCCESS(rc))
             {
                 /* Copy MOB -> mapped surface. */
@@ -1477,7 +1477,9 @@ static int vmsvgaR3TransferSurfaceLevel(PVGASTATECC pThisCC,
 
     VMSVGA3D_SURFACE_MAP enmMapType;
     if (enmTransfer == SVGA3D_WRITE_HOST_VRAM)
-        enmMapType = VMSVGA3D_SURFACE_MAP_WRITE_DISCARD;
+        enmMapType = pBox
+                   ? VMSVGA3D_SURFACE_MAP_WRITE
+                   : VMSVGA3D_SURFACE_MAP_WRITE_DISCARD;
     else if (enmTransfer == SVGA3D_READ_HOST_VRAM)
         enmMapType = VMSVGA3D_SURFACE_MAP_READ;
     else
@@ -1935,6 +1937,9 @@ static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGB
     entry.arraySize = pCmd->arraySize;
     // entry.mobPitch = 0;
     // ...
+Assert(   pCmd->arraySize == 0
+       || pCmd->arraySize == 1
+       || (pCmd->arraySize == 6 && (pCmd->surfaceFlags & SVGA3D_SURFACE_CUBEMAP)));
     int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                  pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
     if (RT_SUCCESS(rc))
@@ -2534,10 +2539,10 @@ static int vmsvga3dCmdDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetSOTargets const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetSOTargets(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    SVGA3dSoTarget const *paSoTarget = (SVGA3dSoTarget *)&pCmd[1];
+    uint32_t const cSoTarget = (cbCmd - sizeof(*pCmd)) / sizeof(SVGA3dSoTarget);
+    return vmsvga3dDXSetSOTargets(pThisCC, idDXContext, cSoTarget, paSoTarget);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3038,10 +3043,9 @@ static int vmsvga3dCmdDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, 
 static int vmsvga3dCmdDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyShader const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyShader(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyShader(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3071,9 +3075,8 @@ static int vmsvga3dCmdDXDefineStreamOutput(PVGASTATECC pThisCC, uint32_t idDXCon
 {
 #ifdef VMSVGA3D_DX
     DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDefineStreamOutput(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineStreamOutput(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3086,9 +3089,8 @@ static int vmsvga3dCmdDXDestroyStreamOutput(PVGASTATECC pThisCC, uint32_t idDXCo
 {
 #ifdef VMSVGA3D_DX
     DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyStreamOutput(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyStreamOutput(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -3193,7 +3195,7 @@ static int vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTrans
          * Map the surface.
          */
         VMSVGA3D_MAPPED_SURFACE mapSurface;
-        rc = vmsvga3dSurfaceMap(pThisCC, &imageSurface, &pCmd->destBox, VMSVGA3D_SURFACE_MAP_WRITE_DISCARD, &mapSurface);
+        rc = vmsvga3dSurfaceMap(pThisCC, &imageSurface, &pCmd->destBox, VMSVGA3D_SURFACE_MAP_WRITE, &mapSurface);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -3206,7 +3208,7 @@ static int vmsvga3dCmdDXTransferFromBuffer(PVGASTATECC pThisCC, SVGA3dCmdDXTrans
             {
                 RT_UNTRUSTED_VALIDATED_FENCE();
                 uint8_t const *pu8BufferBegin = pu8Buffer;
-                uint8_t const *pu8BufferEnd = pu8Buffer + (cbBuffer - pCmd->srcOffset);
+                uint8_t const *pu8BufferEnd = pu8Buffer + cbBuffer;
 
                 pu8Buffer += pCmd->srcOffset;
 

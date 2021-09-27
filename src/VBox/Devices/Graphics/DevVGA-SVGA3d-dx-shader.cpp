@@ -1628,8 +1628,28 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
                 ASSERT_GUEST_RETURN(   opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE32
                                     || opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE64,
                                     VERR_NOT_SUPPORTED);
-                pSignatureEntry->registerIndex = opcode.aValOperand[0].aOperandIndex[0].iOperandImmediate;
-                pSignatureEntry->semanticName  = opcode.semanticName;
+
+                uint32_t const indexDimension = opcode.aValOperand[0].indexDimension;
+                if (indexDimension == VGPU10_OPERAND_INDEX_0D)
+                {
+                    if (opcode.aValOperand[0].operandType == VGPU10_OPERAND_TYPE_INPUT_PRIMITIVEID)
+                    {
+                        pSignatureEntry->registerIndex = 0;
+                        pSignatureEntry->semanticName  = SVGADX_SIGNATURE_SEMANTIC_NAME_PRIMITIVE_ID;
+                    }
+                    else
+                        ASSERT_GUEST_FAILED_RETURN(VERR_NOT_SUPPORTED);
+                }
+                else
+                {
+                    ASSERT_GUEST_RETURN(   indexDimension == VGPU10_OPERAND_INDEX_1D
+                                        || indexDimension == VGPU10_OPERAND_INDEX_2D
+                                        || indexDimension == VGPU10_OPERAND_INDEX_3D,
+                                        VERR_NOT_SUPPORTED);
+                    /* The register index seems to be in the highest dimension. */
+                    pSignatureEntry->registerIndex = opcode.aValOperand[0].aOperandIndex[indexDimension - VGPU10_OPERAND_INDEX_1D].iOperandImmediate;
+                    pSignatureEntry->semanticName  = opcode.semanticName;
+                }
                 pSignatureEntry->mask          = opcode.aValOperand[0].mask;
                 pSignatureEntry->componentType = SVGADX_SIGNATURE_REGISTER_COMPONENT_UNKNOWN; /// @todo Proper value? Seems that it is not important.
                 pSignatureEntry->minPrecision  = SVGADX_SIGNATURE_MIN_PRECISION_DEFAULT;

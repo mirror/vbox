@@ -725,7 +725,7 @@ int vmsvga3dDXSetPredication(PVGASTATECC pThisCC, uint32_t idDXContext)
 }
 
 
-int vmsvga3dDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext, uint32_t cSoTarget, SVGA3dSoTarget const *paSoTarget)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -737,7 +737,9 @@ int vmsvga3dDXSetSOTargets(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXSetSOTargets(pThisCC, pDXContext);
+    ASSERT_GUEST_RETURN(cSoTarget < SVGA3D_DX_MAX_SOTARGETS, VERR_INVALID_PARAMETER);
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXSetSOTargets(pThisCC, pDXContext, cSoTarget, paSoTarget);
     return rc;
 }
 
@@ -1374,21 +1376,11 @@ int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
     pEntry->offsetInBytes = 0;
     pEntry->mobid         = SVGA_ID_INVALID;
 
-    /** @todo Remove from here. */
-//    if (!pDXContext->paShader)
-//    {
-//        /* Create host array for information about shaders. */
-//        pDXContext->paShader = (PVMSVGA3DSHADER)RTMemAllocZ(pDXContext->cot.cShader * sizeof(VMSVGA3DSHADER));
-//        AssertReturn(pDXContext->paShader, VERR_NO_MEMORY);
-//        for (uint32_t i = 0; i < pDXContext->cot.cShader; ++i)
-//            pDXContext->paShader[i].id = SVGA_ID_INVALID;
-//    }
-
     PVMSVGA3DSHADER pShader = &pDXContext->paShader[shaderId];
     if (pShader->id != SVGA_ID_INVALID)
     {
-        /** @todo Cleanup current shader. */
-        pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext);
+        /* Cleanup the current shader. */
+        pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext, shaderId);
         RTMemFree(pShader->pShaderProgram);
     }
 
@@ -1404,7 +1396,7 @@ int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
 }
 
 
-int vmsvga3dDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyShader const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1416,7 +1408,32 @@ int vmsvga3dDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext);
+    AssertReturn(pDXContext->paShader, VERR_INVALID_STATE);
+
+    SVGA3dShaderId const shaderId = pCmd->shaderId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paShader, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(shaderId < pDXContext->cot.cShader, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext, shaderId);
+
+    /* Cleanup COTable entries.*/
+    SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[shaderId];
+    pEntry->type          = SVGA3D_SHADERTYPE_INVALID;
+    pEntry->sizeInBytes   = 0;
+    pEntry->offsetInBytes = 0;
+    pEntry->mobid         = SVGA_ID_INVALID;
+
+    PVMSVGA3DSHADER pShader = &pDXContext->paShader[shaderId];
+    pShader->id                = SVGA_ID_INVALID;
+    pShader->cid               = SVGA_ID_INVALID;
+    pShader->type              = SVGA3D_SHADERTYPE_INVALID;
+    pShader->cbData            = 0;
+    RTMemFree(pShader->pShaderProgram);
+    pShader->pShaderProgram    = NULL;
+    pShader->u.pvBackendShader = NULL;
+
     return rc;
 }
 
@@ -1448,6 +1465,7 @@ static int dxBindShader(PVMSVGA3DSHADER pShader, PVMSVGAMOB pMob, SVGACOTableDXS
             SVGA3dDXSignatureHeader const *pSignatureHeader = (SVGA3dDXSignatureHeader *)((uint8_t *)pvShaderBytecode + pShader->cbData);
             if (pSignatureHeader->headerVersion == SVGADX_SIGNATURE_HEADER_VERSION_0)
             {
+                DEBUG_BREAKPOINT_TEST();
                 ASSERT_GUEST_RETURN(   pSignatureHeader->numInputSignatures <= RT_ELEMENTS(pShader->shaderInfo.aInputSignature)
                                     && pSignatureHeader->numOutputSignatures <= RT_ELEMENTS(pShader->shaderInfo.aOutputSignature)
                                     && pSignatureHeader->numPatchConstantSignatures <= RT_ELEMENTS(pShader->shaderInfo.aPatchConstantSignature),
@@ -1539,7 +1557,7 @@ int vmsvga3dDXBindShader(PVGASTATECC pThisCC, SVGA3dCmdDXBindShader const *pCmd,
 }
 
 
-int vmsvga3dDXDefineStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDefineStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineStreamOutput const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1551,12 +1569,32 @@ int vmsvga3dDXDefineStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDefineStreamOutput(pThisCC, pDXContext);
+    SVGA3dStreamOutputId const soid = pCmd->soid;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paStreamOutput, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(soid < pDXContext->cot.cStreamOutput, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(pCmd->numOutputStreamEntries < SVGA3D_MAX_DX10_STREAMOUT_DECLS, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXStreamOutputEntry *pEntry = &pDXContext->cot.paStreamOutput[soid];
+    pEntry->numOutputStreamEntries = pCmd->numOutputStreamEntries;
+    memcpy(pEntry->decl, pCmd->decl, sizeof(pEntry->decl));
+    memcpy(pEntry->streamOutputStrideInBytes, pCmd->streamOutputStrideInBytes, sizeof(pEntry->streamOutputStrideInBytes));
+    pEntry->rasterizedStream = pCmd->rasterizedStream;
+    pEntry->numOutputStreamStrides;
+    pEntry->mobid = SVGA_ID_INVALID;
+    pEntry->offsetInBytes = 0;
+    pEntry->usesMob = 0;
+    pEntry->pad0 = 0;
+    pEntry->pad1 = 0;
+    RT_ZERO(pEntry->pad2);
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXDefineStreamOutput(pThisCC, pDXContext, soid, pEntry);
     return rc;
 }
 
 
-int vmsvga3dDXDestroyStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDestroyStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyStreamOutput const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1568,7 +1606,18 @@ int vmsvga3dDXDestroyStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDestroyStreamOutput(pThisCC, pDXContext);
+    SVGA3dStreamOutputId const soid = pCmd->soid;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paStreamOutput, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(soid < pDXContext->cot.cStreamOutput, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXDestroyStreamOutput(pThisCC, pDXContext, soid);
+
+    SVGACOTableDXStreamOutputEntry *pEntry = &pDXContext->cot.paStreamOutput[soid];
+    RT_ZERO(*pEntry);
+    pEntry->mobid = SVGA_ID_INVALID;
+
     return rc;
 }
 
