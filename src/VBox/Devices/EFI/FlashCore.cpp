@@ -485,10 +485,10 @@ DECLHIDDEN(int) flashR3LoadFromVfs(PFLASHCORE pThis, PPDMDEVINS pDevIns, PPDMIVF
     int rc = pDrvVfs->pfnQuerySize(pDrvVfs, pszNamespace, pszPath, &cbFlash);
     if (RT_SUCCESS(rc))
     {
-        if (cbFlash == pThis->cbFlashSize)
+        if (cbFlash <= pThis->cbFlashSize)
             rc = pDrvVfs->pfnReadAll(pDrvVfs, pszNamespace, pszPath, pThis->pbFlash, pThis->cbFlashSize);
         else
-            return PDMDEV_SET_ERROR(pDevIns, VERR_MISMATCH, N_("Size of the flash device and the content to load doesn't match"));
+            return PDMDEV_SET_ERROR(pDevIns, VERR_BUFFER_OVERFLOW, N_("Configured flash size is too small to fit the saved NVRAM content"));
     }
 
     return rc;
