@@ -414,7 +414,7 @@ public:
                           const char *pszSource,
                           const char *pszDisamb,
                           const int   aNum,
-                          const char **ppszSafeSource) const
+                          const char **ppszSafeSource) const RT_NOEXCEPT
     {
         QMHashSetConstIter lowerIter, upperIter;
 
