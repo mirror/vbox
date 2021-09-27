@@ -588,6 +588,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_TOKEN,
     /** Main group, ITrustedPlatformModule. */
     LOG_GROUP_MAIN_TRUSTEDPLATFORMMODULE,
+    /** Main group, IUefiVariableStore. */
+    LOG_GROUP_MAIN_UEFIVARIABLESTORE,
     /** Main group, IUnattended. */
     LOG_GROUP_MAIN_UNATTENDED,
     /** Main group, IUSBController. */
@@ -1064,6 +1066,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_THREAD_TASK", \
     "MAIN_TOKEN", \
     "MAIN_TRUSTEDPLATFORMMODULE", \
+    "MAIN_UEFIVARIABLESTORE", \
     "MAIN_UNATTENDED", \
     "MAIN_USBCONTROLLER", \
     "MAIN_USBDEVICE", \

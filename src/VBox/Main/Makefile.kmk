@@ -403,6 +403,37 @@ testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
 #
+# Trust anchors and certificates -> .cpp
+#
+VBOX_SVC_CERTS_FILE = $(VBoxSVC_0_OUTDIR)/TrustAnchorsAndCerts.cpp
+VBOX_SVC_CERTS := \
+       UefiMicrosoftKek=MicCorKEKCA2011_2011-06-24.crt \
+       UefiMicrosoftCa=MicCorUEFCA2011_2011-06-27.crt \
+       UefiMicrosoftProPca=MicWinProPCA2011_2011-10-19.crt
+
+VBOX_SVC_CERT_NAMES := $(foreach cert,$(VBOX_SVC_CERTS),$(firstword $(subst =,$(SPACE) ,$(cert))))
+VBOX_SVC_PATH_CERTIFICATES := $(PATH_SUB_CURRENT)/Certificates
+
+$$(VBOX_SVC_CERTS_FILE): $(MAKEFILE_CURRENT) \
+		$(foreach cert,$(VBOX_SVC_CERTS),$(VBOX_SVC_PATH_CERTIFICATES)/$(lastword $(subst =,$(SPACE) ,$(cert)))) \
+		$(VBOX_BIN2C) \
+		| $$(dir $$@)
+	$(QUIET)$(RM) -f -- $@
+	$(QUIET)$(APPEND) -n "$@" \
+       	'' \
+       	'#include "TrustAnchorsAndCerts.h"' \
+               ''
+	$(foreach cert,$(VBOX_SVC_CERTS), $(NLTAB)$(VBOX_BIN2C) -ascii --append \
+		"$(firstword $(subst =,$(SP) ,$(cert)))" \
+		"$(VBOX_SVC_PATH_CERTIFICATES)/$(lastword $(subst =,$(SP) ,$(cert)))" \
+		"$@")
+
+OTHER_CLEAN += $(VBOX_SVC_CERTS_FILE)
+
+tst-main-certificates: $(VBOX_SVC_CERTS_FILE)
+
+
+#
 # VBoxSDS executable
 #
 if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
@@ -541,6 +572,7 @@ VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 
 VBoxSVC_SOURCES = \
+	$(VBOX_SVC_CERTS_FILE) \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	src-all/AuthLibrary.cpp \
 	src-all/DisplayPNGUtil.cpp \
@@ -614,6 +646,7 @@ VBoxSVC_SOURCES = \
 	src-server/SystemPropertiesImpl.cpp \
 	src-server/TokenImpl.cpp \
 	src-server/TrustedPlatformModuleImpl.cpp \
+	src-server/UefiVariableStoreImpl.cpp \
 	$(if $(VBOX_WITH_UNATTENDED), \
 	src-server/UnattendedImpl.cpp \
 	src-server/UnattendedInstaller.cpp \

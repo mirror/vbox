@@ -79,9 +79,10 @@ private:
 
     // Wrapped NVRAM store properties
     HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
+    HRESULT getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarStore);
 
     // Wrapped NVRAM store members
-    /** @todo */
+    HRESULT initUefiVariableStore(ULONG aSize);
 
 #ifdef VBOX_COM_INPROC
     static DECLCALLBACK(int)    i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,

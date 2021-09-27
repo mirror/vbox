@@ -5896,6 +5896,161 @@
 
   </interface>
 
+   <enum
+    name="SignatureType"
+    uuid="6f6e67ef-9a32-4084-af84-5702679f882a"
+    >
+    <desc>
+      UEFI signature type enumeration.
+    </desc>
+
+    <const name="X509"                  value="0">
+      <desc>X.509 certificate.</desc>
+    </const>
+    <const name="Sha256"                value="1">
+      <desc>SHA256 hash.</desc>
+    </const>
+  </enum>
+
+  <interface
+    name="IUefiVariableStore" extends="$unknown"
+    uuid="f39d5888-9009-4e77-94b5-9cdcfc1859c3"
+    wsmap="managed"
+    reservedMethods="10" reservedAttributes="5"
+    >
+    <desc>
+        The IUefiVariableStore interface allows inspecting and manipulating the content
+        of an existing UEFI variable store in a NVRAM file. This is used only in the
+        <link to="INvramStore::uefiVariableStore" /> attribute.
+    </desc>
+
+    <method name="addVariable">
+      <desc>Adds a new variable to the non volatile storage area.</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the variable.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the variable owner.</desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>The variable data.</desc>
+      </param>
+    </method>
+
+    <method name="deleteVariable">
+      <desc>Deletes the given variable from the non volatile storage area.</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the variable.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the variable owner.</desc>
+      </param>
+    </method>
+
+    <method name="changeVariable">
+      <desc>Changes the data of the given variable.</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the variable.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the variable owner.</desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>The new variable data.</desc>
+      </param>
+    </method>
+
+    <method name="queryVariableByName">
+      <desc>Queries the variable content variable by the given name.</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the variable to look for.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="out">
+        <desc>UUID of the variable owner returned on success.</desc>
+      </param>
+      <param name="data" type="octet" dir="out" safearray="yes">
+        <desc>The variable data returned on success.</desc>
+      </param>
+    </method>
+
+    <method name="queryVariables">
+      <desc>
+        Queries all variables in the non volatile storage and returns their names.
+      </desc>
+      <param name="names" type="wstring" dir="out" safearray="yes">
+        <desc>The variable names returned on success.</desc>
+      </param>
+      <param name="owners" type="uuid" mod="string" dir="out" safearray="yes">
+        <desc>UUID of the variable owners returned on success.</desc>
+      </param>
+    </method>
+
+    <method name="enrollPlatformKey">
+      <desc>
+        Convenience method to enroll a new platform key (PK) for enabling Secure Boot.
+      </desc>
+      <param name="platformKey" type="octet" safearray="yes" dir="in">
+        <desc>The platform key (PK) to enroll.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the PK owner.</desc>
+      </param>
+    </method>
+
+    <method name="addKek">
+      <desc>
+        Convenience method to add a new Key Encryption Key (KEK) for Secure Boot.
+      </desc>
+      <param name="keyEncryptionKey" type="octet" safearray="yes" dir="in">
+        <desc>The Key Encryption Key (KEK) to add.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the KEK owner.</desc>
+      </param>
+      <param name="signatureType" type="SignatureType" dir="in">
+        <desc>Type of the signature.</desc>
+      </param>
+    </method>
+
+    <method name="addSignatureToDb">
+      <desc>
+        Convenience method to add a new entry to the signature database.
+      </desc>
+      <param name="signature" type="octet" safearray="yes" dir="in">
+        <desc>The signature to add.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the signature owner.</desc>
+      </param>
+      <param name="signatureType" type="SignatureType" dir="in">
+        <desc>Type of the signature.</desc>
+      </param>
+    </method>
+
+    <method name="addSignatureToDbx">
+      <desc>
+        Convenience method to add a new entry to the forbidden signature database.
+      </desc>
+      <param name="signature" type="octet" safearray="yes" dir="in">
+        <desc>The signature to add.</desc>
+      </param>
+      <param name="owner" type="uuid" mod="string" dir="in">
+        <desc>UUID of the signature owner.</desc>
+      </param>
+      <param name="signatureType" type="SignatureType" dir="in">
+        <desc>Type of the signature.</desc>
+      </param>
+    </method>
+
+    <method name="enrollDefaultMsSignatures">
+      <desc>
+        Convenience method to enroll the standard Microsoft KEK and signatures
+        in the signature databases.
+      </desc>
+    </method>
+
+  </interface>
+
   <interface
     name="INvramStore" extends="$unknown"
     uuid="31283924-604c-44f5-b9d7-ac082531ffb7"
@@ -5913,6 +6068,20 @@
         the VM is powered off.  The file does not always exist.
       </desc>
     </attribute>
+
+    <attribute name="uefiVariableStore" type="IUefiVariableStore" readonly="yes">
+      <desc>Object to manipulate the data in an existing UEFI variable store.</desc>
+    </attribute>
+
+    <method name="initUefiVariableStore">
+      <desc>Initializes the UEFI variable store.</desc>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>
+          Size in bytes of the UEFI variable store. Must be 0 for now to initialize to the
+          default size.
+        </desc>
+      </param>
+    </method>
 
   </interface>
 

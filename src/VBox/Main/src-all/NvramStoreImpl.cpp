@@ -23,7 +23,9 @@
 # include "ConsoleImpl.h"
 #else
 # include "MachineImpl.h"
+# include "AutoStateDep.h"
 #endif
+#include "UefiVariableStoreImpl.h"
 
 #include "AutoCaller.h"
 
@@ -93,9 +95,11 @@ struct NvramStore::Data
     volatile uint32_t       cRefs;
 #else
     /** The Machine object owning this NVRAM store. */
-    Machine * const         pParent;
+    Machine * const                    pParent;
     /** The peer NVRAM store object. */
-    ComObjPtr<NvramStore>   pPeer;
+    ComObjPtr<NvramStore>              pPeer;
+    /** The UEFI variable store. */
+    const ComObjPtr<UefiVariableStore> pUefiVarStore;
 #endif
 
     Backupable<BackupableNvramStoreData> bd;
@@ -298,6 +302,68 @@ HRESULT NvramStore::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageF
 #endif
 
     return S_OK;
+}
+
+
+HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarStore)
+{
+#ifndef VBOX_COM_INPROC
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    /* We need a write lock because of the lazy initialization. */
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Check if we have to create the UEFI variabel store object */
+    HRESULT hrc = S_OK;
+    if (!m->pUefiVarStore)
+    {
+        /* Load the NVRAM file first if it isn't already. */
+        if (!m->bd->mapNvram.size())
+        {
+            int vrc = i_loadStore();
+            if (RT_FAILURE(vrc))
+                hrc = setError(E_FAIL, tr("Loading the NVRAM store failed (%Rrc)\n"), vrc);
+        }
+
+        if (SUCCEEDED(hrc))
+        {
+            NvramStoreIter it = m->bd->mapNvram.find("efi/nvram");
+            if (it != m->bd->mapNvram.end())
+            {
+                RTVFSFILE hVfsFileNvram = it->second;
+                RTVFS hVfsEfiVarStore;
+                int vrc = RTEfiVarStoreOpenAsVfs(hVfsFileNvram, 0 /*fMntFlags*/, 0 /*fVarStoreFlags*/, &hVfsEfiVarStore,
+                                                 NULL /*pErrInfo*/);
+                if (RT_SUCCESS(vrc))
+                {
+                    unconst(m->pUefiVarStore).createObject();
+                    m->pUefiVarStore->init(this, m->pParent, hVfsEfiVarStore);
+                }
+                else
+                    hrc = setError(E_FAIL, tr("Opening the UEFI variable store failed (%Rrc)."), vrc);
+            }
+            else
+                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The UEFI NVRAM file is not existing for this machine."));
+        }
+    }
+
+    if (SUCCEEDED(hrc))
+        m->pUefiVarStore.queryInterfaceTo(aUefiVarStore.asOutParam());
+
+    return hrc;
+#else
+    NOREF(aUefiVarStore);
+    return E_NOTIMPL;
+#endif
+}
+
+
+HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
+{
+    NOREF(aSize);
+    return E_NOTIMPL;
 }
 
 
