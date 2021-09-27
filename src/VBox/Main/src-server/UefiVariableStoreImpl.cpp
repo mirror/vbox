@@ -382,19 +382,19 @@ HRESULT UefiVariableStore::i_uefiSigDbAddSig(RTEFISIGDB hEfiSigDb, const void *p
 HRESULT UefiVariableStore::i_uefiVarStoreAddSignatureToDb(PCEFI_GUID pGuid, const char *pszDb, const void *pvData, size_t cbData,
                                                           const com::Guid &aOwnerUuid, SignatureType_T enmSignatureType)
 {
-    HRESULT hrc = S_OK;
     RTVFSFILE hVfsFileSigDb = NIL_RTVFSFILE;
 
-    int vrc = i_uefiVarStoreAddVar(pGuid, pszDb,
+    HRESULT hrc = i_uefiVarStoreAddVar(pGuid, pszDb,
                                      EFI_VAR_HEADER_ATTR_NON_VOLATILE
                                    | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
                                    | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS
                                    | EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS,
                                    &hVfsFileSigDb);
-    if (RT_SUCCESS(vrc))
+    if (SUCCEEDED(hrc))
     {
         RTEFISIGDB hEfiSigDb;
-        vrc = RTEfiSigDbCreate(&hEfiSigDb);
+
+        int vrc = RTEfiSigDbCreate(&hEfiSigDb);
         if (RT_SUCCESS(vrc))
         {
             vrc = RTEfiSigDbAddFromExistingDb(hEfiSigDb, hVfsFileSigDb);
@@ -421,8 +421,6 @@ HRESULT UefiVariableStore::i_uefiVarStoreAddSignatureToDb(PCEFI_GUID pGuid, cons
 
         RTVfsFileRelease(hVfsFileSigDb);
     }
-    else
-        hrc = setError(E_FAIL, tr("Opening signature database '%s' failed: %Rrc"), pszDb, vrc);
 
     return hrc;
 }
