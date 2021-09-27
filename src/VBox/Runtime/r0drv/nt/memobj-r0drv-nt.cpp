@@ -546,6 +546,11 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         }
     }
 
+    /** @todo
+     * For large page allocations use MM_ALLOCATE_FAST_LARGE_PAGES ...
+     * MM_ALLOCATE_REQUIRE_CONTIGUOUS_CHUNKS
+     */
+
     return rtR0MemObjNativeAllocContEx(ppMem, cb, false, PhysHighest, uAlignment);
 }
 
