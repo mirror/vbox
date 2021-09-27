@@ -26,6 +26,7 @@
 #include <iprt/cpp/lock.h>
 #include <VBox/com/AutoLock.h>
 
+COM_STRUCT_OR_CLASS(IVirtualBox);
 class QMTranslator;
 
 class VirtualBoxTranslator
