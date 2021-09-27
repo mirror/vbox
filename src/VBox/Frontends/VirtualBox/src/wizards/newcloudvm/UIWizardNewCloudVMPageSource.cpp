@@ -41,14 +41,14 @@
 #include "CStringArray.h"
 
 /* Namespaces: */
-using namespace UIWizardNewCloudVMPage1;
+using namespace UIWizardNewCloudVMSource;
 
 
 /*********************************************************************************************************************************
-*   Namespace UIWizardNewCloudVMPage1 implementation.                                                                            *
+*   Namespace UIWizardNewCloudVMSource implementation.                                                                           *
 *********************************************************************************************************************************/
 
-void UIWizardNewCloudVMPage1::populateProviders(QIComboBox *pCombo)
+void UIWizardNewCloudVMSource::populateProviders(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -106,9 +106,9 @@ void UIWizardNewCloudVMPage1::populateProviders(QIComboBox *pCombo)
     pCombo->blockSignals(false);
 }
 
-void UIWizardNewCloudVMPage1::populateProfiles(QIComboBox *pCombo,
-                                               const QString &strProviderShortName,
-                                               const QString &strProfileName)
+void UIWizardNewCloudVMSource::populateProfiles(QIComboBox *pCombo,
+                                                const QString &strProviderShortName,
+                                                const QString &strProfileName)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -163,7 +163,7 @@ void UIWizardNewCloudVMPage1::populateProfiles(QIComboBox *pCombo,
     pCombo->blockSignals(false);
 }
 
-void UIWizardNewCloudVMPage1::populateSourceImages(QListWidget *pList, QTabBar *pTabBar, const CCloudClient &comClient)
+void UIWizardNewCloudVMSource::populateSourceImages(QListWidget *pList, QTabBar *pTabBar, const CCloudClient &comClient)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pList);
@@ -216,7 +216,7 @@ void UIWizardNewCloudVMPage1::populateSourceImages(QListWidget *pList, QTabBar *
     pList->blockSignals(false);
 }
 
-void UIWizardNewCloudVMPage1::populateFormProperties(CVirtualSystemDescription comVSD, QTabBar *pTabBar, const QString &strImageId)
+void UIWizardNewCloudVMSource::populateFormProperties(CVirtualSystemDescription comVSD, QTabBar *pTabBar, const QString &strImageId)
 {
     /* Sanity check: */
     AssertReturnVoid(comVSD.isNotNull());
@@ -235,7 +235,7 @@ void UIWizardNewCloudVMPage1::populateFormProperties(CVirtualSystemDescription c
         msgCenter().cannotAddVirtualSystemDescriptionValue(comVSD);
 }
 
-void UIWizardNewCloudVMPage1::updateComboToolTip(QIComboBox *pCombo)
+void UIWizardNewCloudVMSource::updateComboToolTip(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -249,7 +249,7 @@ void UIWizardNewCloudVMPage1::updateComboToolTip(QIComboBox *pCombo)
     }
 }
 
-QString UIWizardNewCloudVMPage1::currentListWidgetData(QListWidget *pList)
+QString UIWizardNewCloudVMSource::currentListWidgetData(QListWidget *pList)
 {
     /* Sanity check: */
     AssertPtrReturn(pList, QString());

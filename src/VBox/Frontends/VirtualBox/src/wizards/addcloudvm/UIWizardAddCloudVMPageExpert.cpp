@@ -34,7 +34,7 @@
 #include "UIWizardAddCloudVMPageExpert.h"
 
 /* Namespaces: */
-using namespace UIWizardAddCloudVMPage1;
+using namespace UIWizardAddCloudVMSource;
 
 
 UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()

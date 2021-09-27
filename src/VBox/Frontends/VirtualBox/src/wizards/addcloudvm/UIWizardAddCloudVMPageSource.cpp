@@ -38,14 +38,14 @@
 #include "CStringArray.h"
 
 /* Namespaces: */
-using namespace UIWizardAddCloudVMPage1;
+using namespace UIWizardAddCloudVMSource;
 
 
 /*********************************************************************************************************************************
-*   Namespace UIWizardAddCloudVMPage1 implementation.                                                                            *
+*   Namespace UIWizardAddCloudVMSource implementation.                                                                           *
 *********************************************************************************************************************************/
 
-void UIWizardAddCloudVMPage1::populateProviders(QIComboBox *pCombo)
+void UIWizardAddCloudVMSource::populateProviders(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -103,9 +103,9 @@ void UIWizardAddCloudVMPage1::populateProviders(QIComboBox *pCombo)
     pCombo->blockSignals(false);
 }
 
-void UIWizardAddCloudVMPage1::populateProfiles(QIComboBox *pCombo,
-                                               const QString &strProviderShortName,
-                                               const QString &strProfileName)
+void UIWizardAddCloudVMSource::populateProfiles(QIComboBox *pCombo,
+                                                const QString &strProviderShortName,
+                                                const QString &strProfileName)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -160,7 +160,7 @@ void UIWizardAddCloudVMPage1::populateProfiles(QIComboBox *pCombo,
     pCombo->blockSignals(false);
 }
 
-void UIWizardAddCloudVMPage1::populateProfileInstances(QListWidget *pList, const CCloudClient &comClient)
+void UIWizardAddCloudVMSource::populateProfileInstances(QListWidget *pList, const CCloudClient &comClient)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pList);
@@ -203,7 +203,7 @@ void UIWizardAddCloudVMPage1::populateProfileInstances(QListWidget *pList, const
     pList->blockSignals(false);
 }
 
-void UIWizardAddCloudVMPage1::updateComboToolTip(QIComboBox *pCombo)
+void UIWizardAddCloudVMSource::updateComboToolTip(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -217,7 +217,7 @@ void UIWizardAddCloudVMPage1::updateComboToolTip(QIComboBox *pCombo)
     }
 }
 
-QStringList UIWizardAddCloudVMPage1::currentListWidgetData(QListWidget *pList)
+QStringList UIWizardAddCloudVMSource::currentListWidgetData(QListWidget *pList)
 {
     QStringList result;
     foreach (QListWidgetItem *pItem, pList->selectedItems())

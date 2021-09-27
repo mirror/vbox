@@ -54,8 +54,8 @@ enum
     ProfileData_Name = Qt::UserRole + 1
 };
 
-/** Namespace for 1st page of the New Cloud VM wizard. */
-namespace UIWizardNewCloudVMPage1
+/** Namespace for source page of the New Cloud VM wizard. */
+namespace UIWizardNewCloudVMSource
 {
     /** Populates @a pCombo with known providers. */
     void populateProviders(QIComboBox *pCombo);
@@ -75,15 +75,15 @@ namespace UIWizardNewCloudVMPage1
     QString currentListWidgetData(QListWidget *pList);
 }
 
-/** UINativeWizardPage extension for 1st page of the New Cloud VM wizard,
-  * based on UIWizardNewCloudVMPage1 namespace functions. */
+/** UINativeWizardPage extension for source page of the New Cloud VM wizard,
+  * based on UIWizardNewCloudVMSource namespace functions. */
 class UIWizardNewCloudVMPageSource : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 1st basic page. */
+    /** Constructs source basic page. */
     UIWizardNewCloudVMPageSource();
 
 protected:

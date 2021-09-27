@@ -35,22 +35,22 @@
 class QIRichTextLabel;
 class UIWizardNewCloudVM;
 
-/** Namespace for 2nd page of the New Cloud VM wizard. */
-namespace UIWizardNewCloudVMPage2
+/** Namespace for properties page of the New Cloud VM wizard. */
+namespace UIWizardNewCloudVMProperties
 {
     /** Refreshes @a pFormEditor on the basis of comForm specified. */
     void refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor, const CVirtualSystemDescriptionForm &comForm);
 }
 
-/** UINativeWizardPage extension for 2nd page of the New Cloud VM wizard,
-  * based on UIWizardNewCloudVMPage2 namespace functions. */
+/** UINativeWizardPage extension for properties page of the New Cloud VM wizard,
+  * based on UIWizardNewCloudVMProperties namespace functions. */
 class UIWizardNewCloudVMPageProperties : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 2nd basic page. */
+    /** Constructs properties basic page. */
     UIWizardNewCloudVMPageProperties();
 
 protected:

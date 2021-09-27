@@ -26,15 +26,15 @@
 #include "UIWizardNewCloudVMPageProperties.h"
 
 /* Namespaces: */
-using namespace UIWizardNewCloudVMPage2;
+using namespace UIWizardNewCloudVMProperties;
 
 
 /*********************************************************************************************************************************
-*   Namespace UIWizardNewCloudVMPage2 implementation.                                                                            *
+*   Namespace UIWizardNewCloudVMProperties implementation.                                                                       *
 *********************************************************************************************************************************/
 
-void UIWizardNewCloudVMPage2::refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor,
-                                                         const CVirtualSystemDescriptionForm &comForm)
+void UIWizardNewCloudVMProperties::refreshFormPropertiesTable(UIFormEditorWidgetPointer pFormEditor,
+                                                              const CVirtualSystemDescriptionForm &comForm)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pFormEditor.data());

@@ -34,8 +34,8 @@
 #include "UIWizardNewCloudVMPageExpert.h"
 
 /* Namespaces: */
-using namespace UIWizardNewCloudVMPage1;
-using namespace UIWizardNewCloudVMPage2;
+using namespace UIWizardNewCloudVMSource;
+using namespace UIWizardNewCloudVMProperties;
 
 
 UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
