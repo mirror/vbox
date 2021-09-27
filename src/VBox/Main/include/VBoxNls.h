@@ -36,6 +36,7 @@
 #include <VBox/com/string.h>
 #include "VirtualBoxTranslator.h"
 
+
 # define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
 {\
@@ -56,8 +57,6 @@ struct ctx \
    } \
 };
 #endif
-
-/** @} */
 
 #endif /* !VBOX_INCLUDED_VBoxNls_h */
 
