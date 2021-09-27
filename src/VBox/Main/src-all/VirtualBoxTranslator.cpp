@@ -329,7 +329,7 @@ int VirtualBoxTranslator::i_setLanguageFile(TranslatorComponent *aComponent, con
 
 int VirtualBoxTranslator::registerTranslation(const char *aTranslationPath,
                                               bool aDefault,
-                                              TRCOMPONENT *aComponent)
+                                              PTRCOMPONENT *aComponent)
 {
     VirtualBoxTranslator *pCurrInstance = VirtualBoxTranslator::tryInstance();
     int rc = VERR_GENERAL_FAILURE;
@@ -344,7 +344,7 @@ int VirtualBoxTranslator::registerTranslation(const char *aTranslationPath,
 
 int VirtualBoxTranslator::i_registerTranslation(const char *aTranslationPath,
                                                 bool aDefault,
-                                                TRCOMPONENT *aComponent)
+                                                PTRCOMPONENT *aComponent)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     TranslatorComponent *pComponent;
@@ -357,7 +357,7 @@ int VirtualBoxTranslator::i_registerTranslation(const char *aTranslationPath,
             pComponent = &(*it);
             if (aDefault)
                 m_pDefaultComponent = pComponent;
-            *aComponent = (TRCOMPONENT)pComponent;
+            *aComponent = (PTRCOMPONENT)pComponent;
             return VINF_SUCCESS;
         }
     }
@@ -375,7 +375,7 @@ int VirtualBoxTranslator::i_registerTranslation(const char *aTranslationPath,
     pComponent->strPath = aTranslationPath;
     if (aDefault)
         m_pDefaultComponent = pComponent;
-    *aComponent = (TRCOMPONENT)pComponent;
+    *aComponent = (PTRCOMPONENT)pComponent;
     /* ignore the error during loading because path
      * could contain no translation for current language */
     i_loadLanguageForComponent(pComponent, m_strLanguage.c_str());
@@ -383,20 +383,27 @@ int VirtualBoxTranslator::i_registerTranslation(const char *aTranslationPath,
 }
 
 
-int VirtualBoxTranslator::unregisterTranslation(TRCOMPONENT aComponent)
+int VirtualBoxTranslator::unregisterTranslation(PTRCOMPONENT aComponent)
 {
-    VirtualBoxTranslator *pCurrInstance = VirtualBoxTranslator::tryInstance();
-    int rc = VERR_GENERAL_FAILURE;
-    if (pCurrInstance != NULL)
+    int rc;
+    if (aComponent != NULL)
     {
-        rc = pCurrInstance->i_unregisterTranslation(aComponent);
-        pCurrInstance->release();
+        VirtualBoxTranslator *pCurrInstance = VirtualBoxTranslator::tryInstance();
+        if (pCurrInstance != NULL)
+        {
+            rc = pCurrInstance->i_unregisterTranslation(aComponent);
+            pCurrInstance->release();
+        }
+        else
+            rc = VERR_GENERAL_FAILURE;
     }
+    else
+        rc = VWRN_NOT_FOUND;
     return rc;
 }
 
 
-int VirtualBoxTranslator::i_unregisterTranslation(TRCOMPONENT aComponent)
+int VirtualBoxTranslator::i_unregisterTranslation(PTRCOMPONENT aComponent)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -421,7 +428,7 @@ int VirtualBoxTranslator::i_unregisterTranslation(TRCOMPONENT aComponent)
 }
 
 
-const char *VirtualBoxTranslator::translate(TRCOMPONENT aComponent,
+const char *VirtualBoxTranslator::translate(PTRCOMPONENT aComponent,
                                             const char *aContext,
                                             const char *aSourceText,
                                             const char *aComment,
@@ -465,7 +472,7 @@ static LastTranslation *getTlsEntry() RT_NOEXCEPT
 }
 
 
-const char *VirtualBoxTranslator::i_translate(TRCOMPONENT aComponent,
+const char *VirtualBoxTranslator::i_translate(PTRCOMPONENT aComponent,
                                               const char *aContext,
                                               const char *aSourceText,
                                               const char *aComment,

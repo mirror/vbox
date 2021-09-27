@@ -149,7 +149,7 @@ public:
     VirtualBox         *pVirtualBox;
 #endif
 #ifdef VBOX_WITH_MAIN_NLS
-    TRCOMPONENT         pTrComponent;
+    PTRCOMPONENT        pTrComponent;
 #endif
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();

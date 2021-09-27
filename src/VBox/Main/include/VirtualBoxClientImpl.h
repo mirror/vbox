@@ -105,7 +105,7 @@ private:
         RTSEMEVENT m_SemEvWatcher;
 #ifdef VBOX_WITH_MAIN_NLS
         VirtualBoxTranslator *m_pVBoxTranslator;
-        TRCOMPONENT           m_pTrComponent;
+        PTRCOMPONENT          m_pTrComponent;
 #endif
     };
 
