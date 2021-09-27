@@ -235,6 +235,9 @@ typedef struct AUDIOTESTENV
     /** Number of iterations for *all* tests specified.
      *  When set to 0 (default), a random value (see specific test) will be chosen. */
     uint32_t                cIterations;
+    /** Duration (in ms) to play / record test tone.
+     *  When set to 0 (default), a random value (see specific test) will be chosen. */
+    uint32_t                cMsToneDuration;
     /** Output path for storing the test environment's final test files. */
     char                    szTag[AUDIOTEST_TAG_MAX];
     /** Output path for storing the test environment's final test files. */

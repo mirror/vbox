@@ -113,6 +113,8 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
         reporter.log('  --audio-test-count <number>');
         reporter.log('      Default: 0 (means random)');
+        reporter.log('  --audio-test-tone-duration <ms>');
+        reporter.log('      Default: 0 (means random)');
         reporter.log('  --audio-verify-max-diff-count <number>');
         reporter.log('      Default: 0 (strict)');
         reporter.log('  --audio-verify-max-diff-percent <0-100>');
@@ -141,7 +143,8 @@ class tdAudioTest(vbox.TestDriver):
                     if s not in self.asTestsDef:
                         raise base.InvalidOption('The "--audio-tests" value "%s" is not valid; valid values are: %s'
                                                     % (s, ' '.join(self.asTestsDef)));
-        elif    asArgs[iArg] == '--audio-test-count':
+        elif    asArgs[iArg] == 'audio-test-count' \
+             or asArgs[iArg] == 'audio-test-tone-duration':
             # Strip the "--audio-test-" prefix and keep the options as defined in VKAT,
             # e.g. "--audio-test-count" -> "--count". That way we don't
             # need to do any special argument translation and whatnot.

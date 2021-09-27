@@ -118,6 +118,7 @@ enum
 {
     VKAT_TEST_OPT_COUNT = 900,
     VKAT_TEST_OPT_DEV,
+    VKAT_TEST_OPT_TONE_DURATION_MS,
     VKAT_TEST_OPT_GUEST_ATS_ADDR,
     VKAT_TEST_OPT_GUEST_ATS_PORT,
     VKAT_TEST_OPT_HOST_ATS_ADDR,
@@ -194,7 +195,8 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--tcp-bind-addr",     VKAT_TEST_OPT_TCP_BIND_ADDRESS,    RTGETOPT_REQ_STRING  },
     { "--tcp-bind-port",     VKAT_TEST_OPT_TCP_BIND_PORT,       RTGETOPT_REQ_UINT16  },
     { "--tcp-connect-addr",  VKAT_TEST_OPT_TCP_CONNECT_ADDRESS, RTGETOPT_REQ_STRING  },
-    { "--tcp-connect-port",  VKAT_TEST_OPT_TCP_CONNECT_PORT,    RTGETOPT_REQ_UINT16  }
+    { "--tcp-connect-port",  VKAT_TEST_OPT_TCP_CONNECT_PORT,    RTGETOPT_REQ_UINT16  },
+    { "--tone-duration",     VKAT_TEST_OPT_TONE_DURATION_MS,    RTGETOPT_REQ_UINT32  }
 };
 
 /**
@@ -279,7 +281,7 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     pToneParms->Props          = pTstParmsAcq->Props;
     pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
     pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
-    pToneParms->msDuration     = RTRandU32Ex(200, RT_MS_30SEC); /** @todo Probably a bit too long, but let's see. */
+    pToneParms->msDuration     = pTstEnv->cMsToneDuration == 0 ? RTRandU32Ex(200, RT_MS_30SEC) : pTstEnv->cMsToneDuration;
     pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
     pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
 
@@ -386,7 +388,7 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
     pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
     pToneParms->Props          = pTstParmsAcq->Props;
-    pToneParms->msDuration     = RTRandU32Ex(200 /* ms */, RT_MS_30SEC); /** @todo Record even longer? */
+    pToneParms->msDuration     = pTstEnv->cMsToneDuration == 0 ? RTRandU32Ex(200, RT_MS_30SEC) : pTstEnv->cMsToneDuration;
     pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
     pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
 
@@ -709,6 +711,8 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
                                                        "    Default: random number";
         case VKAT_TEST_OPT_DEV:                 return "Name of the input/output device to use\n"
                                                        "    Default: default device";
+        case VKAT_TEST_OPT_TONE_DURATION_MS:    return "Duration (in ms) of test tone to play / record for selected tests\n"
+                                                       "    Default: random number";
         case VKAT_TEST_OPT_GUEST_ATS_ADDR:      return "Address of guest ATS to connect to\n"
                                                        "    Default: " ATS_TCP_DEF_CONNECT_GUEST_STR;
         case VKAT_TEST_OPT_GUEST_ATS_PORT:      return "Port of guest ATS to connect to (needs NAT port forwarding)\n"
@@ -837,6 +841,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 rc = RTStrCopy(TstEnv.szDev, sizeof(TstEnv.szDev), ValueUnion.psz);
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExitFailure("Failed to copy out device: %Rrc", rc);
+                break;
+
+            case VKAT_TEST_OPT_TONE_DURATION_MS:
+                TstEnv.cMsToneDuration = ValueUnion.u32;
                 break;
 
             case VKAT_TEST_OPT_PAUSE:
