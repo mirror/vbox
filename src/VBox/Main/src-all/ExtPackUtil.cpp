@@ -37,9 +37,9 @@
 
 #include <VBox/log.h>
 
-#include <VBox/VBoxNls.h>
+#include "../include/VBoxNls.h"
 
-DECLARE_TRANSLATION_CONTEXT(ExtPackUtil)
+DECLARE_TRANSLATION_CONTEXT(ExtPackUtil);
 
 
 /**
