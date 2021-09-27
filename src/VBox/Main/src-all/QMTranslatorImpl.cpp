@@ -413,7 +413,8 @@ public:
     const char *translate(const char *pszContext,
                           const char *pszSource,
                           const char *pszDisamb,
-                          const int   aNum) const
+                          const int   aNum,
+                          const char **ppszSafeSource) const
     {
         QMHashSetConstIter lowerIter, upperIter;
 
@@ -441,6 +442,7 @@ public:
                     && (!apszCtx[i]     || !*apszCtx[i]     || RTStrCmp(message.pszContext, apszCtx[i]) == 0)
                     && (!apszDisabm[i]  || !*apszDisabm[i]  || RTStrCmp(message.pszComment, apszDisabm[i]) == 0 ))
                 {
+                    *ppszSafeSource = message.pszSource;
                     const std::vector<const char *> &vecTranslations = m_messageArray[iter->offset].vecTranslations;
                     size_t const idxPlural = plural(aNum);
                     return vecTranslations[RT_MIN(idxPlural, vecTranslations.size() - 1)];
@@ -448,6 +450,7 @@ public:
             }
         }
 
+        *ppszSafeSource = NULL;
         return pszSource;
     }
 
@@ -607,10 +610,11 @@ QMTranslator::QMTranslator() : m_impl(new QMTranslator_Impl) {}
 
 QMTranslator::~QMTranslator() { delete m_impl; }
 
-const char *QMTranslator::translate(const char *pszContext, const char *pszSource,
-                                    const char *pszDisamb, const int aNum) const RT_NOEXCEPT
+const char *QMTranslator::translate(const char *pszContext, const char *pszSource, const char **ppszSafeSource,
+                                    const char *pszDisamb /*== NULL*/, const int aNum /*= -1*/) const RT_NOEXCEPT
+
 {
-    return m_impl->translate(pszContext, pszSource, pszDisamb, aNum);
+    return m_impl->translate(pszContext, pszSource, pszDisamb, aNum, ppszSafeSource);
 }
 
 int QMTranslator::load(const char *pszFilename, RTSTRCACHE hStrCache) RT_NOEXCEPT

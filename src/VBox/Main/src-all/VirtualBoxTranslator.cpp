@@ -436,8 +436,7 @@ const char *VirtualBoxTranslator::translate(PTRCOMPONENT aComponent,
     const char *pszTranslation = aSourceText;
     if (pCurrInstance != NULL)
     {
-        pszTranslation = pCurrInstance->i_translate(aComponent, aContext,
-                                                    aSourceText, aComment, aNum);
+        pszTranslation = pCurrInstance->i_translate(aComponent, aContext, aSourceText, aComment, aNum);
         pCurrInstance->release();
     }
     return pszTranslation;
@@ -485,15 +484,16 @@ const char *VirtualBoxTranslator::i_translate(PTRCOMPONENT aComponent,
         || aComponent->pTranslator == NULL)
         return aSourceText;
 
-    const char *pszTranslation = aComponent->pTranslator->translate(aContext, aSourceText, aComment, aNum);
-
-    LastTranslation *pEntry = getTlsEntry();
-    if (pEntry)
+    const char *pszSafeSource  = NULL;
+    const char *pszTranslation = aComponent->pTranslator->translate(aContext, aSourceText, &pszSafeSource, aComment, aNum);
+    if (pszSafeSource)
     {
-        pEntry->first = pszTranslation;
-        /** @todo r=bird: This is not technically threadsafe.  Move this down to the
-         *        above translator call. */
-        pEntry->second = m_hStrCache != NIL_RTSTRCACHE ? RTStrCacheEnter(m_hStrCache, aSourceText) : aSourceText;
+        LastTranslation *pEntry = getTlsEntry();
+        if (pEntry)
+        {
+            pEntry->first = pszTranslation;
+            pEntry->second = pszSafeSource;
+        }
     }
 
     return pszTranslation;

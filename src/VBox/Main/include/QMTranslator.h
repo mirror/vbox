@@ -32,14 +32,17 @@ public:
     /**
      * Gets translation from loaded QM file
      *
-     * @param   pszContext  QM context to look for translation
-     * @param   pszSource   Source string in one-byte encoding
-     * @param   pszDisamb   Disambiguationg comment, empty by default
-     * @param   iNum        Plural form indicator.
+     * @param   pszContext      QM context to look for translation
+     * @param   pszSource       Source string in one-byte encoding
+     * @param   ppszSafeSource  Where to return pointer to a safe copy of @a
+     *                          pszSource for the purpose of reverse translation.
+     *                          Will be set to NULL if @a pszSource is returned.
+     * @param   pszDisamb       Disambiguationg comment, empty by default
+     * @param   iNum            Plural form indicator.
      *
      * @returns Pointer to a translation (UTF-8 encoding), source string on failure.
      */
-    const char *translate(const char *pszContext, const char *pszSource,
+    const char *translate(const char *pszContext, const char *pszSource, const char **ppszSafeSource,
                           const char *pszDisamb = NULL, const int iNum = -1) const RT_NOEXCEPT;
 
     /**
