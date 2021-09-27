@@ -37,7 +37,7 @@ struct ctx \
    { \
        return VirtualBoxTranslator::translate(NULL, #ctx, pszSource, pszComment, iNum); \
    } \
-};
+}
 #else
 # define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
@@ -48,7 +48,7 @@ struct ctx \
        NOREF(iNum);       \
        return pszSource;  \
    } \
-};
+}
 #endif
 
 #endif /* !MAIN_INCLUDED_VBoxNls_h */
