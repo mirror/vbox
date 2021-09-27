@@ -3737,13 +3737,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
     uint8_t const fSupportsAccessDirty = fCaps & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY;
 
-    uint8_t const fDataRead   = ((fAccess & IEM_ACCESS_DATA_R)  == IEM_ACCESS_DATA_R)  | fSupportsAccessDirty;
-    uint8_t const fDataWrite  = ((fAccess & IEM_ACCESS_DATA_RW) == IEM_ACCESS_DATA_RW) | fSupportsAccessDirty;
-    uint8_t const fInstrFetch = (fAccess & IEM_ACCESS_INSTRUCTION) == IEM_ACCESS_INSTRUCTION;
-    uint8_t const fEptRead    = fEptAccess & EPT_E_READ;
-    uint8_t const fEptWrite   = fEptAccess & EPT_E_WRITE;
-    uint8_t const fEptExec    = fEptAccess & EPT_E_EXECUTE;
-    bool const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+    uint8_t const fDataRead    = ((fAccess & IEM_ACCESS_DATA_R)  == IEM_ACCESS_DATA_R)  | fSupportsAccessDirty;
+    uint8_t const fDataWrite   = ((fAccess & IEM_ACCESS_DATA_RW) == IEM_ACCESS_DATA_RW) | fSupportsAccessDirty;
+    uint8_t const fInstrFetch  = (fAccess & IEM_ACCESS_INSTRUCTION) == IEM_ACCESS_INSTRUCTION;
+    bool const fEptRead        = RT_BOOL(fEptAccess & EPT_E_READ);
+    bool const fEptWrite       = RT_BOOL(fEptAccess & EPT_E_WRITE);
+    bool const fEptExec        = RT_BOOL(fEptAccess & EPT_E_EXECUTE);
+    bool const fNmiUnblocking  = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
 
     uint64_t const u64ExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_READ,        fDataRead)
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_WRITE,       fDataWrite)
