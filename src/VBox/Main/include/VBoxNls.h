@@ -36,7 +36,7 @@
 #include <VBox/com/string.h>
 #include "VirtualBoxTranslator.h"
 
-#define DECLARE_TRANSLATION_CONTEXT(ctx) \
+# define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
 {\
    static const char *tr(const char *pszSource, const char *pszComment = NULL, const int iNum = -1) \
@@ -45,7 +45,7 @@ struct ctx \
    } \
 };
 #else
-#define DECLARE_TRANSLATION_CONTEXT(ctx) \
+# define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
 {\
    static const char *tr(const char *pszSource, const char *pszComment = NULL, const int iNum = -1) \
