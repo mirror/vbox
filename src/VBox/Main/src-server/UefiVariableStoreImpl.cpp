@@ -87,6 +87,7 @@ void UefiVariableStore::FinalRelease()
  *
  * @returns COM result indicator.
  * @param   aParent                     The NVRAM store owning the UEFI NVRAM content.
+ * @param   pMachine
  * @param   hVfsUefiVarStore            The UEFI variable store VFS handle.
  */
 HRESULT UefiVariableStore::init(NvramStore *aParent, Machine *pMachine, RTVFS hVfsUefiVarStore)
