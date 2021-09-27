@@ -378,7 +378,7 @@ typedef struct VBOXEXTPACKREG
     uint32_t                    u32Version;
     /** The VirtualBox version this extension pack was built against.  */
     uint32_t                    uVBoxVersion;
-    /** Translation files base name. */
+    /** Translation files base name. Set to NULL if no translation files. */
     const char                 *pszNlsBaseName;
 
     /**
@@ -505,7 +505,7 @@ typedef struct VBOXEXTPACKVMREG
     uint32_t                    u32Version;
     /** The VirtualBox version this extension pack was built against.  */
     uint32_t                    uVBoxVersion;
-    /** Translation files base name. */
+    /** Translation files base name.  Set to NULL if no translation files.  */
     const char                 *pszNlsBaseName;
 
     /**
