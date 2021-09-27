@@ -1423,21 +1423,11 @@ ifdef VBOX_WITH_MAIN_NLS
 #
 # NLS stuff.
 #
-
-#
-# Include the language lists.
-#
 include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 
 PROGRAMS += VirtualBoxAPI
 VirtualBoxAPI_TEMPLATE = VBoxNLS
-VirtualBoxAPI_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
-VirtualBoxAPI_QT_TRANSLATIONS = \
-	$(filter \
-		$(addsuffix .ts, $(addprefix $(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_, \
-			$(VBOX_APPROVED_MAIN_LANGUAGES))), \
-		$(wildcard $(VBOX_PATH_MAIN_SRC)/nls/*.ts))
-
+VirtualBoxAPI_QT_TRANSLATIONS = $(addsuffix .ts,$(addprefix $(VBOX_PATH_MAIN_SRC)/nls/VirtualBoxAPI_,$(VBOX_APPROVED_MAIN_LANGUAGES)))
 VirtualBoxAPI_VBOX_ALL_NLS_SOURCES = $(wildcard \
 	$(VBOX_PATH_MAIN_SRC)/include/*.h\
 	$(VBOX_PATH_MAIN_SRC)/src-all/*.cpp \
