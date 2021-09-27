@@ -37,13 +37,10 @@
     do { \
         if (RT_LIKELY(RT_VALID_PTR(arg))) \
         { /* likely */ }\
-        else \
-            throw setError(E_POINTER, \
-                /* Had to define VirtualBoxBase as context switcher for translation. \
-                 * Otherwise, lupdate complains about unknown context and doesn't \
-                 * include the string into translation file */ \
-                VirtualBoxBase::tr("Output argument %s points to invalid memory location (%p)"), \
-                #arg, (void *)(arg)); \
+        /* Have use use VirtualBoxBase::tr here or lupdate won't be able to figure out the context, \
+           as it is picking it up right here rather than in the places where the macro is actually used. */ \
+        else throw setError(E_POINTER, VirtualBoxBase::tr("Output argument %s points to invalid memory location (%p)"), \
+                            #arg, (void *)(arg)); \
     } while (0)
 
 
