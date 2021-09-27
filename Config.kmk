@@ -556,7 +556,7 @@ VBOX_WITH_INTEL_PXE =
 # Enable EFI support
 VBOX_WITH_EFI = 1
 # Enable Secure Boot in the EFI firmware.
-VBOX_WITH_EFI_SECURE_BOOT =
+VBOX_WITH_EFI_SECURE_BOOT = 1
 # Enable TPM support in the EFI firmware.
 VBOX_WITH_EFI_TPM = 1
 # Embed the EFI firmwares in VBoxDD2.dll/dylib/so.
