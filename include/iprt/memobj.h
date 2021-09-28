@@ -171,7 +171,6 @@ RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
  *                          architecture to architecture and the paging mode
  *                          used by the OS.
  * @param   fFlags          Flags, RTMEMOBJ_ALLOC_LARGE_F_XXX.
- * @param   pszTag          Allocation tag used for statistics and such.
  *
  * @note    The implicit kernel mapping of this allocation does not necessarily
  *          have to be aligned on a @a cbLargePage boundrary.
