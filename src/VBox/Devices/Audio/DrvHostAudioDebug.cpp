@@ -344,10 +344,6 @@ static DECLCALLBACK(int) drvHstAudDebugConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->IHostAudio.pfnStreamGetReadable          = drvHstAudDebugHA_StreamGetReadable;
     pThis->IHostAudio.pfnStreamCapture              = drvHstAudDebugHA_StreamCapture;
 
-#ifdef VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH
-    RTFileDelete(VBOX_AUDIO_DEBUG_DUMP_PCM_DATA_PATH "AudioDebugOutput.pcm");
-#endif
-
     return VINF_SUCCESS;
 }
 
@@ -401,4 +397,3 @@ const PDMDRVREG g_DrvHostDebugAudio =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-
