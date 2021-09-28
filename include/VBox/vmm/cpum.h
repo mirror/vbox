@@ -1763,6 +1763,33 @@ DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCCPUMCTX pCtx)
             && !(pCtx->msrEFER & MSR_K6_EFER_LMA));
 }
 
+
+/**
+ * Tests if PAE PDPE ("PDPTE" in Intel nomenclature) entries are valid.
+ *
+ * @returns @c true if all PDPEs are valid, @c false otherwise.
+ * @param   paPdpes         Pointer to the 4 PAE PDPEs.
+ * @param   pidxInvalid     Where to store the index of the first invalid PDPE.
+ *                          Optional, can be NULL. Mainly used for diagnostics.
+ */
+DECLINLINE(bool) CPUMArePaePdpesValid(PCX86PDPE paPdpes, uint8_t *pidxInvalid)
+{
+    for (unsigned idx = 0; idx < X86_PG_PAE_PDPE_ENTRIES; idx++)
+    {
+        if (   !(paPdpes[idx].u & X86_PDPE_P)
+            || !(paPdpes[idx].u & X86_PDPE_PAE_MBZ_MASK))
+        { /* likely */ }
+        else
+        {
+            if (pidxInvalid)
+                *pidxInvalid = idx;
+            return false;
+        }
+    }
+    return true;
+}
+
+
 /**
  * Tests if the guest has AMD SVM enabled or not.
  *
