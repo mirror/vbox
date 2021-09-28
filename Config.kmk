@@ -847,7 +847,12 @@ VBOX_WITH_DHCPD = 1
 VBOX_WITH_CLOUD_NET = 1
 # Use Mac OS X VMNET API instead of network kernel extensions
 ifeq ($(KBUILD_TARGET),darwin)
-#VBOX_WITH_VMNET = 1
+VBOX_WITH_VMNET = 1
+ ifdef VBOX_WITH_VMNET
+  # Use newer Xcode and SDK 10.15
+  VBOX_WITH_EVEN_NEWER_XCODE=1
+  VBOX_DEF_MACOSX_VERSION_MIN=10.15# Catalina
+ endif
 endif
 ## @}
 
