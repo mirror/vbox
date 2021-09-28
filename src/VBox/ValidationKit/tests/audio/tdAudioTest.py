@@ -38,6 +38,7 @@ import os
 import sys
 import signal
 import subprocess
+import time
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -278,6 +279,8 @@ class tdAudioTest(vbox.TestDriver):
         if oProcess:
             for line in iter(oProcess.stdout.readline, b''):
                 reporter.log('[' + sWhat + '] ' + line.decode('utf-8'));
+                self.processPendingEvents();
+                time.sleep(0.01); # Don't hog the CPU too much.
             oProcess.communicate();
             if oProcess.returncode == 0:
                 fRc = True;
