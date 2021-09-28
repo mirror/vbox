@@ -305,6 +305,20 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(PRTR0MEMOBJINTERNAL pMem);
 DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable);
 
 /**
+ * Worker for RTR0MemObjAllocLargeTag.
+ *
+ * @returns IPRT status code.
+ * @param   ppMem           Where to store the ring-0 memory object handle.
+ * @param   cb              Number of bytes to allocate, aligned to @a
+ *                          cbLargePage.
+ * @param   cbLargePage     The large page size.
+ * @param   fFlags          RTMEMOBJ_ALLOC_LARGE_F_XXX, validated.
+ * @param   pszTag          The allocation tag.
+ */
+DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, size_t cbLargePage, uint32_t fFlags,
+                                           const char *pszTag);
+
+/**
  * Allocates page aligned virtual kernel memory with physical backing below 4GB.
  *
  * The physical memory backing the allocation is fixed.
@@ -484,6 +498,8 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
 
 DECLHIDDEN(PRTR0MEMOBJINTERNAL) rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb);
 DECLHIDDEN(void) rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem);
+DECLHIDDEN(int) rtR0MemObjFallbackAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, size_t cbLargePage, uint32_t fFlags,
+                                             const char *pszTag);
 
 /** @} */
 

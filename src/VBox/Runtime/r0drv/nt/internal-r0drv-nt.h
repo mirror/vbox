@@ -90,6 +90,7 @@ extern decltype(KeInitializeTimerEx)          *g_pfnrtKeInitializeTimerEx;
 extern PFNKESHOULDYIELDPROCESSOR               g_pfnrtKeShouldYieldProcessor;
 extern decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
 extern decltype(MmAllocatePagesForMdl)        *g_pfnrtMmAllocatePagesForMdl;
+extern decltype(MmAllocatePagesForMdlEx)      *g_pfnrtMmAllocatePagesForMdlEx;
 extern decltype(MmFreePagesFromMdl)           *g_pfnrtMmFreePagesFromMdl;
 extern decltype(MmMapLockedPagesSpecifyCache) *g_pfnrtMmMapLockedPagesSpecifyCache;
 extern decltype(MmAllocateContiguousMemorySpecifyCache) *g_pfnrtMmAllocateContiguousMemorySpecifyCache;

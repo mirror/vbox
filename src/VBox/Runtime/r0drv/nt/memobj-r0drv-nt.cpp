@@ -56,6 +56,14 @@
 # define MAX_LOCK_MEM_SIZE   (24*1024*1024) /* 24MB */
 #endif
 
+/* Newer WDK constants: */
+#ifndef MM_ALLOCATE_REQUIRE_CONTIGUOUS_CHUNKS
+# define MM_ALLOCATE_REQUIRE_CONTIGUOUS_CHUNKS 0x20
+#endif
+#ifndef MM_ALLOCATE_FAST_LARGE_PAGES
+# define MM_ALLOCATE_FAST_LARGE_PAGES 0x40
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -336,6 +344,132 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         ExFreePool(pv);
     }
     return rc;
+}
+
+
+/**
+ * Helper for rtR0MemObjNativeAllocLarge that verifies the result.
+ */
+static bool rtR0MemObjNtVerifyLargePageAlloc(PMDL pMdl, size_t cb, size_t cbLargePage)
+{
+    if (MmGetMdlByteCount(pMdl) >= cb)
+    {
+        PPFN_NUMBER const paPfns             = MmGetMdlPfnArray(pMdl);
+        size_t const      cPagesPerLargePage = cbLargePage >> PAGE_SHIFT;
+        size_t const      cLargePages        = cb / cbLargePage;
+        size_t            iPage              = 0;
+        for (size_t iLargePage = 0; iLargePage < cLargePages; iLargePage++)
+        {
+            PFN_NUMBER Pfn = paPfns[iPage];
+            if (!(Pfn & (cbLargePage >> PAGE_SHIFT) - 1U))
+            {
+                for (size_t iSubPage = 1; iSubPage < cPagesPerLargePage; iSubPage++)
+                {
+                    iPage++;
+                    Pfn++;
+                    if (paPfns[iPage] == Pfn)
+                    { /* likely */ }
+                    else
+                    {
+                        Log(("rtR0MemObjNativeAllocLarge: Subpage %#zu in large page #%zu is not contiguous: %#x, expected %#x\n",
+                             iSubPage, iLargePage, paPfns[iPage], Pfn));
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                Log(("rtR0MemObjNativeAllocLarge: Large page #%zu is misaligned: %#x, cbLargePage=%#zx\n",
+                     iLargePage, Pfn, cbLargePage));
+                return false;
+            }
+        }
+        return true;
+    }
+    Log(("rtR0MemObjNativeAllocLarge: Got back too few pages: %#zx, requested %#zx\n", MmGetMdlByteCount(pMdl), cb));
+    return false;
+}
+
+
+DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, size_t cbLargePage, uint32_t fFlags,
+                                           const char *pszTag)
+{
+    /*
+     * Need the MmAllocatePagesForMdlEx function so we can specify flags.
+     */
+    if (   g_uRtNtVersion >= RTNT_MAKE_VERSION(6,1) /* Windows 7+ */
+        && g_pfnrtMmAllocatePagesForMdlEx
+        && g_pfnrtMmFreePagesFromMdl
+        && g_pfnrtMmMapLockedPagesSpecifyCache)
+    {
+        ULONG fNtFlags = MM_ALLOCATE_FULLY_REQUIRED             /* W7+: Make it fail if we don't get all we ask for.*/
+                       | MM_ALLOCATE_REQUIRE_CONTIGUOUS_CHUNKS; /* W7+: The SkipBytes chunks must be physcially contiguous. */
+        if ((fFlags & RTMEMOBJ_ALLOC_LARGE_F_FAST) && g_uRtNtVersion >= RTNT_MAKE_VERSION(6, 2))
+            fNtFlags  |= MM_ALLOCATE_FAST_LARGE_PAGES;          /* W8+: Don't try too hard, just fail if not enough handy. */
+
+        PHYSICAL_ADDRESS Zero;
+        Zero.QuadPart = 0;
+
+        PHYSICAL_ADDRESS HighAddr;
+        HighAddr.QuadPart = MAXLONGLONG;
+
+        PHYSICAL_ADDRESS Skip;
+        Skip.QuadPart = cbLargePage;
+
+        int        rc;
+        PMDL const pMdl = g_pfnrtMmAllocatePagesForMdlEx(Zero, HighAddr, Skip, cb, MmCached, fNtFlags);
+        if (pMdl)
+        {
+            /* Verify the result. */
+            if (rtR0MemObjNtVerifyLargePageAlloc(pMdl, cb, cbLargePage))
+            {
+                /*
+                 * Map the allocation into kernel space.  Unless the memory is already mapped
+                 * somewhere (seems to be actually), I guess it's unlikely that we'll get a
+                 * large page aligned mapping back here...
+                 */
+                __try
+                {
+                    void *pv = g_pfnrtMmMapLockedPagesSpecifyCache(pMdl, KernelMode, MmCached, NULL /* no base address */,
+                                                                   FALSE /* no bug check on failure */, NormalPagePriority);
+                    if (pv)
+                    {
+                        /*
+                         * Create the memory object.
+                         */
+                        PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PAGE, pv, cb);
+                        if (pMemNt)
+                        {
+                            pMemNt->fAllocatedPagesForMdl = true;
+                            pMemNt->cMdls = 1;
+                            pMemNt->apMdls[0] = pMdl;
+                            *ppMem = &pMemNt->Core;
+                            return VINF_SUCCESS;
+                        }
+
+                        MmUnmapLockedPages(pv, pMdl);
+                    }
+                }
+                __except(EXCEPTION_EXECUTE_HANDLER)
+                {
+#ifdef LOG_ENABLED
+                    NTSTATUS rcNt = GetExceptionCode();
+                    Log(("rtR0MemObjNativeAllocLarge: Exception Code %#x\n", rcNt));
+#endif
+                    /* nothing */
+                }
+            }
+
+            g_pfnrtMmFreePagesFromMdl(pMdl);
+            ExFreePool(pMdl);
+            rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = fFlags & RTMEMOBJ_ALLOC_LARGE_F_FAST ? VERR_TRY_AGAIN : VERR_NO_MEMORY;
+        return rc;
+    }
+
+    return rtR0MemObjFallbackAllocLarge(ppMem, cb, cbLargePage, fFlags, pszTag);
 }
 
 

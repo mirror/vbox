@@ -1842,6 +1842,7 @@
 # define RTR0MemKernelCopyFrom                          RT_MANGLER(RTR0MemKernelCopyFrom)      /* r0drv */
 # define RTR0MemKernelCopyTo                            RT_MANGLER(RTR0MemKernelCopyTo)        /* r0drv */
 # define RTR0MemObjAllocContTag                         RT_MANGLER(RTR0MemObjAllocContTag)     /* r0drv */
+# define RTR0MemObjAllocLargeTag                        RT_MANGLER(RTR0MemObjAllocLargeTag)    /* r0drv */
 # define RTR0MemObjAllocLowTag                          RT_MANGLER(RTR0MemObjAllocLowTag)      /* r0drv */
 # define RTR0MemObjAllocPageTag                         RT_MANGLER(RTR0MemObjAllocPageTag)     /* r0drv */
 # define RTR0MemObjAllocPhysExTag                       RT_MANGLER(RTR0MemObjAllocPhysExTag)   /* r0drv */

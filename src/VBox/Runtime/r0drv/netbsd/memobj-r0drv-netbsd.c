@@ -229,6 +229,7 @@ static int rtR0MemObjNetBSDAllocHelper(PRTR0MEMOBJNETBSD pMemNetBSD, size_t cb, 
     return VINF_SUCCESS;
 }
 
+
 DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
     PRTR0MEMOBJNETBSD pMemNetBSD = (PRTR0MEMOBJNETBSD)rtR0MemObjNew(sizeof(*pMemNetBSD),
@@ -251,6 +252,13 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     pMemNetBSD->Core.pv = pvMem;
     *ppMem = &pMemNetBSD->Core;
     return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, size_t cbLargePage, uint32_t fFlags,
+                                           const char *pszTag)
+{
+    return rtR0MemObjFallbackAllocLarge(ppMem, cb, cbLargePage, fFlags, pszTag);
 }
 
 

@@ -438,6 +438,45 @@ RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
 RT_EXPORT_SYMBOL(RTR0MemObjAllocPageTag);
 
 
+RTR0DECL(int) RTR0MemObjAllocLargeTag(PRTR0MEMOBJ pMemObj, size_t cb, size_t cbLargePage, uint32_t fFlags, const char *pszTag)
+{
+    /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, cbLargePage);
+    AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
+    *pMemObj = NIL_RTR0MEMOBJ;
+#ifdef RT_ARCH_AMD64
+    AssertReturn(cbLargePage == _2M || cbLargePage == _1G, VERR_OUT_OF_RANGE);
+#elif defined(RT_ARCH_X86)
+    AssertReturn(cbLargePage == _2M || cbLargePage == _4M, VERR_OUT_OF_RANGE);
+#else
+    AssertReturn(RT_IS_POWER_OF_TWO(cbLargePage), VERR_NOT_POWER_OF_TWO);
+    AssertReturn(cbLargePage > PAGE_SIZE, VERR_OUT_OF_RANGE);
+#endif
+    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTMEMOBJ_ALLOC_LARGE_F_VALID_MASK), VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
+
+    /* do the allocation. */
+    return rtR0MemObjNativeAllocLarge(pMemObj, cbAligned, cbLargePage, fFlags, pszTag);
+}
+RT_EXPORT_SYMBOL(RTR0MemObjAllocLargeTag);
+
+
+/**
+ * Fallback implementation of rtR0MemObjNativeAllocLarge and implements single
+ * page allocation using rtR0MemObjNativeAllocPhys.
+ */
+DECLHIDDEN(int) rtR0MemObjFallbackAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, size_t cbLargePage, uint32_t fFlags,
+                                             const char *pszTag)
+{
+    RT_NOREF(pszTag, fFlags);
+    if (cb == cbLargePage)
+        return rtR0MemObjNativeAllocPhys(ppMem, cb, NIL_RTHCPHYS, cbLargePage);
+    return VERR_NOT_SUPPORTED;
+}
+
+
 RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag)
 {
     /* sanity checks. */

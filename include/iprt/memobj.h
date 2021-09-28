@@ -152,6 +152,73 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings);
 RTR0DECL(int) RTR0MemObjAllocPageTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag);
 
 /**
+ * Allocates large page aligned virtual kernel memory (default tag).
+ *
+ * Each large page in the allocation is backed by a contiguous chunk of physical
+ * memory aligned to the page size.  The memory is taken from a non paged (=
+ * fixed physical memory backing) pool.
+ *
+ * On some hosts we only support allocating a single large page at a time, they
+ * will return VERR_NOT_SUPPORTED if @a cb is larger than @a cbLargePage.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_TRY_AGAIN instead of VERR_NO_MEMORY when
+ *          RTMEMOBJ_ALLOC_LARGE_F_FAST is set and supported.
+ * @param   pMemObj         Where to store the ring-0 memory object handle.
+ * @param   cb              Number of bytes to allocate. This is rounded up to
+ *                          nearest large page.
+ * @param   cbLargePage     The large page size.  The allowed values varies from
+ *                          architecture to architecture and the paging mode
+ *                          used by the OS.
+ * @param   fFlags          Flags, RTMEMOBJ_ALLOC_LARGE_F_XXX.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ *
+ * @note    The implicit kernel mapping of this allocation does not necessarily
+ *          have to be aligned on a @a cbLargePage boundrary.
+ */
+#define RTR0MemObjAllocLarge(pMemObj, cb, cbLargePage, fFlags) \
+    RTR0MemObjAllocLargeTag((pMemObj), (cb), (cbLargePage), (fFlags), RTMEM_TAG)
+
+/**
+ * Allocates large page aligned virtual kernel memory (custom tag).
+ *
+ * Each large page in the allocation is backed by a contiguous chunk of physical
+ * memory aligned to the page size.  The memory is taken from a non paged (=
+ * fixed physical memory backing) pool.
+ *
+ * On some hosts we only support allocating a single large page at a time, they
+ * will return VERR_NOT_SUPPORTED if @a cb is larger than @a cbLargePage.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_TRY_AGAIN instead of VERR_NO_MEMORY when
+ *          RTMEMOBJ_ALLOC_LARGE_F_FAST is set and supported.
+ * @param   pMemObj         Where to store the ring-0 memory object handle.
+ * @param   cb              Number of bytes to allocate. This is rounded up to
+ *                          nearest large page.
+ * @param   cbLargePage     The large page size.  The allowed values varies from
+ *                          architecture to architecture and the paging mode
+ *                          used by the OS.
+ * @param   fFlags          Flags, RTMEMOBJ_ALLOC_LARGE_F_XXX.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ *
+ * @note    The implicit kernel mapping of this allocation does not necessarily
+ *          have to be aligned on a @a cbLargePage boundrary.
+ */
+RTR0DECL(int) RTR0MemObjAllocLargeTag(PRTR0MEMOBJ pMemObj, size_t cb, size_t cbLargePage, uint32_t fFlags, const char *pszTag);
+
+/** @name RTMEMOBJ_ALLOC_LARGE_F_XXX
+ * @{ */
+/** Indicates that it is okay to fail if there aren't enough large pages handy,
+ * cancelling any expensive search and reshuffling of memory (when supported).
+ * @note This flag can't be realized on all OSes.  (Those who do support it
+ *       will return VERR_TRY_AGAIN instead of VERR_NO_MEMORY if they
+ *       cannot satisfy the request.) */
+#define RTMEMOBJ_ALLOC_LARGE_F_FAST         RT_BIT_32(0)
+/** Mask with valid bits.   */
+#define RTMEMOBJ_ALLOC_LARGE_F_VALID_MASK   UINT32_C(0x00000001)
+/** @} */
+
+/**
  * Allocates page aligned virtual kernel memory with physical backing below 4GB
  * (default tag).
  *
