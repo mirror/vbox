@@ -1774,7 +1774,7 @@ DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCCPUMCTX pCtx)
  */
 DECLINLINE(bool) CPUMArePaePdpesValid(PCX86PDPE paPdpes, uint8_t *pidxInvalid)
 {
-    for (unsigned idx = 0; idx < X86_PG_PAE_PDPE_ENTRIES; idx++)
+    for (uint8_t idx = 0; idx < X86_PG_PAE_PDPE_ENTRIES; idx++)
     {
         if (   !(paPdpes[idx].u & X86_PDPE_P)
             || !(paPdpes[idx].u & X86_PDPE_PAE_MBZ_MASK))
