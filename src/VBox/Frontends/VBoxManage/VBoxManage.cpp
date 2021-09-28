@@ -165,7 +165,8 @@ static const VBMGCMD g_aCommands[] =
     { "usbdevsource",       USAGE_USBDEVSOURCE,     VBMG_CMD_TODO, handleUSBDevSource,         0 },
     { "cloudprofile",       USAGE_S_NEWCMD,      HELP_CMD_CLOUDPROFILE, handleCloudProfile,         0 },
     { "cloud",              USAGE_S_NEWCMD,         HELP_CMD_CLOUD, handleCloud,               0 },
-    { "updatecheck",        USAGE_S_NEWCMD,   HELP_CMD_UPDATECHECK, handleUpdateCheck,         0 }
+    { "updatecheck",        USAGE_S_NEWCMD,   HELP_CMD_UPDATECHECK, handleUpdateCheck,         0 },
+    { "modifynvram",        USAGE_S_NEWCMD,         VBMG_CMD_TODO, handleModifyNvram,          0 },
 };
 
 /**

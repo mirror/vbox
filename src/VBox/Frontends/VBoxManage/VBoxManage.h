@@ -363,6 +363,9 @@ RTEXITCODE handleCloudShowVMInfo(HandlerArg *a, int iFirst,
 /* VBoxManageUpdateCheck.cpp */
 RTEXITCODE handleUpdateCheck(HandlerArg *a);
 
+/* VBoxManageModifyNvram.cpp */
+RTEXITCODE handleModifyNvram(HandlerArg *a);
+
 #endif /* !VBOX_ONLY_DOCS */
 
 #endif /* !VBOX_INCLUDED_SRC_VBoxManage_VBoxManage_h */
