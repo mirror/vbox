@@ -432,7 +432,8 @@ RTDECL(int) RTEfiSigDbAddFromExistingDb(RTEFISIGDB hEfiSigDb, RTVFSFILE hVfsFile
 
     uint64_t cbFile;
     int rc = RTVfsFileQuerySize(hVfsFileIn, &cbFile);
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && cbFile)
     {
         do
         {
