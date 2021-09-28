@@ -264,6 +264,9 @@ void NvramStore::uninit()
         return;
 
     unconst(m->pParent) = NULL;
+#ifndef VBOX_COM_INPROC
+    unconst(m->pUefiVarStore) = NULL;
+#endif
 
     /* Delete the NVRAM content. */
     NvramStoreIter it = m->bd->mapNvram.begin();
@@ -312,17 +315,20 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
     AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
+    Utf8Str strPath;
+    NvramStore::getNonVolatileStorageFile(strPath);
+
     /* We need a write lock because of the lazy initialization. */
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Check if we have to create the UEFI variabel store object */
+    /* Check if we have to create the UEFI variable store object */
     HRESULT hrc = S_OK;
     if (!m->pUefiVarStore)
     {
         /* Load the NVRAM file first if it isn't already. */
         if (!m->bd->mapNvram.size())
         {
-            int vrc = i_loadStore();
+            int vrc = i_loadStore(strPath.c_str());
             if (RT_FAILURE(vrc))
                 hrc = setError(E_FAIL, tr("Loading the NVRAM store failed (%Rrc)\n"), vrc);
         }
@@ -350,7 +356,12 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
     }
 
     if (SUCCEEDED(hrc))
+    {
         m->pUefiVarStore.queryInterfaceTo(aUefiVarStore.asOutParam());
+
+        /* Mark the NVRAM store as potentially modified. */
+        m->pParent->i_setModified(Machine::IsModified_NvramStore);
+    }
 
     return hrc;
 #else
@@ -362,8 +373,69 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
 
 HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
 {
+#ifndef VBOX_COM_INPROC
+    if (aSize != 0)
+        return setError(E_NOTIMPL, tr("Supporting another NVRAM size apart from the default one is not supported right now"));
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    Utf8Str strPath;
+    NvramStore::getNonVolatileStorageFile(strPath);
+
+    /* We need a write lock because of the lazy initialization. */
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Load the NVRAM file first if it isn't already. */
+    HRESULT hrc = S_OK;
+    if (!m->bd->mapNvram.size())
+    {
+        int vrc = i_loadStore(strPath.c_str());
+        if (RT_FAILURE(vrc))
+            hrc = setError(E_FAIL, tr("Loading the NVRAM store failed (%Rrc)\n"), vrc);
+    }
+
+    if (SUCCEEDED(hrc))
+    {
+        int vrc = VINF_SUCCESS;
+        RTVFSFILE hVfsUefiVarStore = NIL_RTVFSFILE;
+        NvramStoreIter it = m->bd->mapNvram.find("efi/nvram");
+        if (it != m->bd->mapNvram.end())
+            hVfsUefiVarStore = it->second;
+        else
+        {
+            /* Create a new file. */
+            vrc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, 0 /*cbEstimate*/, &hVfsUefiVarStore);
+            if (RT_SUCCESS(vrc))
+            {
+                /** @todo The size is hardcoded to match what the firmware image uses right now which is a gross hack... */
+                vrc = RTVfsFileSetSize(hVfsUefiVarStore, 546816, RTVFSFILE_SIZE_F_NORMAL);
+                if (RT_SUCCESS(vrc))
+                    m->bd->mapNvram["efi/nvram"] = hVfsUefiVarStore;
+                else
+                    RTVfsFileRelease(hVfsUefiVarStore);
+            }
+        }
+
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTEfiVarStoreCreate(hVfsUefiVarStore, 0 /*offStore*/, 0 /*cbStore*/, RTEFIVARSTORE_CREATE_F_DEFAULT, 0 /*cbBlock*/,
+                                      NULL /*pErrInfo*/);
+            if (RT_FAILURE(vrc))
+                return setError(E_FAIL, tr("Failed to initialize the UEFI variable store (%Rrc)"), vrc);
+        }
+        else
+            return setError(E_FAIL, tr("Failed to initialize the UEFI variable store (%Rrc)"), vrc);
+
+        m->pParent->i_setModified(Machine::IsModified_NvramStore);
+    }
+
+    return hrc;
+#else
     NOREF(aSize);
     return E_NOTIMPL;
+#endif
 }
 
 
@@ -454,10 +526,10 @@ int NvramStore::i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar)
  *
  * @returns IPRT status code.
  */
-int NvramStore::i_loadStore(void)
+int NvramStore::i_loadStore(const char *pszPath)
 {
     uint64_t cbStore = 0;
-    int rc = RTFileQuerySizeByPath(m->bd->strNvramPath.c_str(), &cbStore);
+    int rc = RTFileQuerySizeByPath(pszPath, &cbStore);
     if (RT_SUCCESS(rc))
     {
         if (cbStore <= _1M) /* Arbitrary limit to fend off bogus files because the file will be read into memory completely. */
@@ -472,7 +544,7 @@ int NvramStore::i_loadStore(void)
              * the plain EFI variable store file.
              */
             RTVFSIOSTREAM hVfsIosNvram;
-            rc = RTVfsIoStrmOpenNormal(m->bd->strNvramPath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
+            rc = RTVfsIoStrmOpenNormal(pszPath, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE,
                                        &hVfsIosNvram);
             if (RT_SUCCESS(rc))
             {
@@ -516,21 +588,21 @@ int NvramStore::i_loadStore(void)
                             LogRel(("The given NVRAM file is neither a raw UEFI variable store nor a tar archive (opening failed with %Rrc)\n", rc));
                     }
                     else
-                        LogRel(("Opening the UEFI variable store '%s' failed with %Rrc\n", m->bd->strNvramPath.c_str(), rc));
+                        LogRel(("Opening the UEFI variable store '%s' failed with %Rrc\n", pszPath, rc));
 
                     RTVfsFileRelease(hVfsFileNvram);
                 }
                 else
-                    LogRel(("Failed to memorize NVRAM store '%s' with %Rrc\n", m->bd->strNvramPath.c_str(), rc));
+                    LogRel(("Failed to memorize NVRAM store '%s' with %Rrc\n", pszPath, rc));
 
                 RTVfsIoStrmRelease(hVfsIosNvram);
             }
             else
-                LogRelMax(10, ("NVRAM store '%s' couldn't be opened with %Rrc\n", m->bd->strNvramPath.c_str(), rc));
+                LogRelMax(10, ("NVRAM store '%s' couldn't be opened with %Rrc\n", pszPath, rc));
         }
         else
             LogRelMax(10, ("NVRAM store '%s' exceeds limit of %u bytes, actual size is %u\n",
-                           m->bd->strNvramPath.c_str(), _1M, cbStore));
+                           pszPath, _1M, cbStore));
     }
     else if (rc == VERR_FILE_NOT_FOUND) /* Valid for the first run where no NVRAM file is there. */
         rc = VINF_SUCCESS;
@@ -607,8 +679,11 @@ int NvramStore::i_saveStore(void)
         rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
         AssertRC(rc); RT_NOREF(rc);
 
+        Utf8Str strTmp;
+        NvramStore::getNonVolatileStorageFile(strTmp);
+
         RTVFSIOSTREAM hVfsIosDst;
-        rc = RTVfsIoStrmOpenNormal(m->bd->strNvramPath.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
+        rc = RTVfsIoStrmOpenNormal(strTmp.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
                                    &hVfsIosDst);
         if (RT_SUCCESS(rc))
         {
@@ -663,16 +738,22 @@ HRESULT NvramStore::i_loadSettings(const settings::NvramSettings &data)
  *
  *  @param data Configuration settings.
  *
- *  @note Locks this object for reading.
+ *  @note Locks this object for writing.
  */
 HRESULT NvramStore::i_saveSettings(settings::NvramSettings &data)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     data.strNvramPath = m->bd->strNvramPath;
+
+    unconst(m->pUefiVarStore) = NULL;
+
+    int vrc = i_saveStore();
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, tr("Failed to save the NVRAM content to disk (%Rrc)"), vrc);
 
     return S_OK;
 }
@@ -933,7 +1014,7 @@ DECLCALLBACK(int) NvramStore::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     uint32_t cRefs = ASMAtomicIncU32(&pThis->pNvramStore->m->cRefs);
     if (cRefs == 1)
     {
-        int rc = pThis->pNvramStore->i_loadStore();
+        int rc = pThis->pNvramStore->i_loadStore(pThis->pNvramStore->m->bd->strNvramPath.c_str());
         if (RT_FAILURE(rc))
         {
             ASMAtomicDecU32(&pThis->pNvramStore->m->cRefs);
