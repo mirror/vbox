@@ -1908,16 +1908,14 @@ IEM_STATIC int iemVmxVmexitCheckHostPdptes(PVMCPUCC pVCpu, uint32_t uExitReason)
         int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdptes[0], uHostCr3, sizeof(aPdptes));
         if (RT_SUCCESS(rc))
         {
-            for (unsigned iPdpte = 0; iPdpte < RT_ELEMENTS(aPdptes); iPdpte++)
+            uint8_t idxInvalid;
+            bool const fValid = CPUMArePaePdpesValid(&aPdptes[0], &idxInvalid);
+            if (fValid)
+            { /* likely */ }
+            else
             {
-                if (   !(aPdptes[iPdpte].u & X86_PDPE_P)
-                    || !(aPdptes[iPdpte].u & X86_PDPE_PAE_MBZ_MASK))
-                { /* likely */ }
-                else
-                {
-                    VMXVDIAG const enmDiag = iemVmxGetDiagVmexitPdpteRsvd(iPdpte);
-                    IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
-                }
+                VMXVDIAG const enmDiag = iemVmxGetDiagVmexitPdpteRsvd(idxInvalid);
+                IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
             }
         }
         else
@@ -5645,20 +5643,20 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInst
         && (pVmcs->u64GuestCr0.u & X86_CR0_PG))
     {
         /* Get the PDPTEs. */
-        X86PDPE aPdpes[X86_PG_PAE_PDPE_ENTRIES];
+        X86PDPE aPdptes[X86_PG_PAE_PDPE_ENTRIES];
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
         {
-            aPdpes[0].u = pVmcs->u64GuestPdpte0.u;
-            aPdpes[1].u = pVmcs->u64GuestPdpte1.u;
-            aPdpes[2].u = pVmcs->u64GuestPdpte2.u;
-            aPdpes[3].u = pVmcs->u64GuestPdpte3.u;
+            aPdptes[0].u = pVmcs->u64GuestPdpte0.u;
+            aPdptes[1].u = pVmcs->u64GuestPdpte1.u;
+            aPdptes[2].u = pVmcs->u64GuestPdpte2.u;
+            aPdptes[3].u = pVmcs->u64GuestPdpte3.u;
         }
         else
 #endif
         {
             uint64_t const uGuestCr3 = pVmcs->u64GuestCr3.u & X86_CR3_PAE_PAGE_MASK;
-            int const rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdpes[0], uGuestCr3, sizeof(aPdpes));
+            int const rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdptes[0], uGuestCr3, sizeof(aPdptes));
             if (RT_FAILURE(rc))
             {
                 iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
@@ -5667,17 +5665,15 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInst
         }
 
         /* Check validity of the PDPTEs. */
-        for (unsigned idx = 0; idx < RT_ELEMENTS(aPdpes); idx++)
+        uint8_t idxInvalid;
+        bool const fValid = CPUMArePaePdpesValid(&aPdptes[0], &idxInvalid);
+        if (fValid)
+        { /* likely */ }
+        else
         {
-            if (   !(aPdpes[idx].u & X86_PDPE_P)
-                || !(aPdpes[idx].u & X86_PDPE_PAE_MBZ_MASK))
-            { /* likely */ }
-            else
-            {
-                VMXVDIAG const enmDiag = iemVmxGetDiagVmentryPdpteRsvd(idx);
-                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
-            }
+            VMXVDIAG const enmDiag = iemVmxGetDiagVmentryPdpteRsvd(idxInvalid);
+            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
         }
     }
 
