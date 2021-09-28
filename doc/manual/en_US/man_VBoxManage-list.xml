@@ -352,7 +352,7 @@
       </cmdsynopsis>
       <para>
         The <command>VBoxManage list hostonlynets</command> command
-        lists the host-only networks that have been configured. A 
+        lists the host-only networks that have been configured. A
         host-only network provides connectivity between the host and
         local VMs. See <xref linkend="networkingdetails"/>.
       </para>
