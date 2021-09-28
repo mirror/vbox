@@ -321,7 +321,7 @@ private:
     HRESULT getNATNetworks(std::vector<ComPtr<INATNetwork> > &aNATNetworks);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
     HRESULT getExtensionPackManager(ComPtr<IExtPackManager> &aExtensionPackManager);
-    HRESULT getHostOnlyNetworks(std::vector<ComPtr<IHostOnlyNetwork>> &aHostOnlyNetworks);
+    HRESULT getHostOnlyNetworks(std::vector<ComPtr<IHostOnlyNetwork> > &aHostOnlyNetworks);
     HRESULT getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetworks);
     HRESULT getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGenericNetworkDrivers);
     HRESULT getCloudNetworks(std::vector<ComPtr<ICloudNetwork> > &aCloudNetworks);
