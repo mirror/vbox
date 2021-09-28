@@ -33,6 +33,7 @@
 #include "QILineEdit.h"
 #include "QIToolButton.h"
 #include "UICommon.h"
+#include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIFilePathSelector.h"
 
@@ -64,6 +65,7 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     , m_fMouseAwaited(false)
     , m_fToolTipOverriden(false)
     , m_pCopyAction(new QAction(this))
+    , m_enmRecentMediaListType(UIMediumDeviceType_Invalid)
 {
 #ifdef VBOX_WS_WIN
     // WORKAROUND:
@@ -97,6 +99,7 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     /* Setup connections: */
     connect(this, static_cast<void(UIFilePathSelector::*)(int)>(&UIFilePathSelector::activated), this, &UIFilePathSelector::onActivated);
     connect(m_pCopyAction, &QAction::triggered, this, &UIFilePathSelector::copyToClipboard);
+    connect(&uiCommon(), &UICommon::sigRecentMediaListUpdated, this, &UIFilePathSelector::sltRecentMediaListUpdated);
 
     /* Editable by default: */
     setEditable(true);
@@ -193,16 +196,15 @@ const QString& UIFilePathSelector::defaultPath() const
     return m_strDefaultPath;
 }
 
-void UIFilePathSelector::setRecentPathList(const QStringList &recentPathList)
+void UIFilePathSelector::setRecentMediaListType(UIMediumDeviceType enmMediumType)
 {
-    while (count() >= static_cast<int>(RecentListSeparator))
-    {
-        removeItem(count() - 1);
-    }
-    insertSeparator(RecentListSeparator);
+    m_enmRecentMediaListType = enmMediumType;
+    sltRecentMediaListUpdated(enmMediumType);
+}
 
-    foreach (const QString strPath, recentPathList)
-        addItem(strPath);
+UIMediumDeviceType UIFilePathSelector::recentMediaListType() const
+{
+    return m_enmRecentMediaListType;
 }
 
 void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = true */)
@@ -546,7 +548,7 @@ void UIFilePathSelector::refreshText()
         /* In editable mode there should be no any icon
          * and text have be corresponding real stored path
          * which can be absolute or relative. */
-        //if (lineEdit()->text() != m_strPath)
+        if (lineEdit()->text() != m_strPath)
             setItemText(PathId, m_strPath);
         setItemIcon(PathId, QIcon());
 
@@ -605,4 +607,41 @@ void UIFilePathSelector::refreshText()
             QIComboBox::setToolTip(fullPath());
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
     }
+}
+
+void UIFilePathSelector::sltRecentMediaListUpdated(UIMediumDeviceType enmMediumType)
+{
+    /* Remove the recent media list from the end of the combo: */
+    while (count() >= static_cast<int>(RecentListSeparator))
+    {
+        removeItem(count() - 1);
+    }
+
+
+    if (enmMediumType != m_enmRecentMediaListType)
+        return;
+    QStringList recentMedia;
+
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_DVD:
+            recentMedia = gEDataManager->recentListOfOpticalDisks();
+            break;
+        case UIMediumDeviceType_Floppy:
+            recentMedia = gEDataManager->recentListOfFloppyDisks();
+            break;
+        case UIMediumDeviceType_HardDisk:
+            recentMedia = gEDataManager->recentListOfHardDrives();
+            break;
+        default:
+            break;
+    }
+
+    if (recentMedia.isEmpty())
+        return;
+
+    insertSeparator(RecentListSeparator);
+    foreach (const QString strPath, recentMedia)
+        addItem(strPath);
+
 }

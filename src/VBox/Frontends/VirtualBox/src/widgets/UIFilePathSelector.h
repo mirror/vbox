@@ -25,6 +25,7 @@
 #include "QIComboBox.h"
 #include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
+#include "UIMediumDefs.h"
 
 /* Forward declarations: */
 class QAction;
@@ -121,7 +122,8 @@ public:
     void setDefaultPath(const QString &strDefaultPath);
     const QString& defaultPath() const;
 
-    void setRecentPathList(const QStringList &recentPathList);
+    void setRecentMediaListType(UIMediumDeviceType enmMediumType);
+    UIMediumDeviceType recentMediaListType() const;
 
 public slots:
 
@@ -160,6 +162,8 @@ private slots:
 
     /** Refreshes combo-box text according to chosen path. */
     void refreshText();
+
+    void sltRecentMediaListUpdated(UIMediumDeviceType enmMediumType);
 
 private:
 
@@ -218,6 +222,9 @@ private:
 
     /** Path is set to m_strDefaultPath when it is reset. */
     QString m_strDefaultPath;
+
+    /** Holds whether medium type for recent media list. If it is UIMediumDeviceType_Invalid the recent list is not shown. */
+    UIMediumDeviceType  m_enmRecentMediaListType;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIFilePathSelector_h */

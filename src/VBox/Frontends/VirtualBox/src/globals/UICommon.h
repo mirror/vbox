@@ -119,6 +119,8 @@ signals:
         void sigMediumEnumerated(const QUuid &uMediumID);
         /** Notifies listeners about medium-enumeration finished. */
         void sigMediumEnumerationFinished();
+        /** Notifies listeners about update of recently media list. */
+        void sigRecentMediaListUpdated(UIMediumDeviceType enmMediumType);
     /** @} */
 
 public:

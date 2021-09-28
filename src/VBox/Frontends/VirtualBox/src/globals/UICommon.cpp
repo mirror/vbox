@@ -2341,6 +2341,7 @@ void UICommon::updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediu
         case UIMediumDeviceType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
         default: break;
     }
+    emit sigRecentMediaListUpdated(enmMediumType);
 }
 
 QString UICommon::defaultFolderPathForType(UIMediumDeviceType enmMediumType)
