@@ -5625,84 +5625,65 @@ DECLINLINE(int) iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *
 
 
 /**
- * Checks if the PDPTEs referenced by the nested-guest CR3 are valid as part of
- * VM-entry.
- *
- * @returns @c true if all PDPTEs are valid, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pszInstr    The VMX instruction name (for logging purposes).
- * @param   pVmcs       Pointer to the virtual VMCS.
- */
-IEM_STATIC int iemVmxVmentryCheckGuestPdptesForCr3(PVMCPUCC pVCpu, const char *pszInstr, PVMXVVMCS pVmcs)
-{
-    /*
-     * Check PDPTEs.
-     * See Intel spec. 4.4.1 "PDPTE Registers".
-     */
-    uint64_t const uGuestCr3 = pVmcs->u64GuestCr3.u & X86_CR3_PAE_PAGE_MASK;
-    const char *const pszFailure = "VM-exit";
-
-    X86PDPE aPdptes[X86_PG_PAE_PDPE_ENTRIES];
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdptes[0], uGuestCr3, sizeof(aPdptes));
-    if (RT_SUCCESS(rc))
-    {
-        for (unsigned iPdpte = 0; iPdpte < RT_ELEMENTS(aPdptes); iPdpte++)
-        {
-            if (   !(aPdptes[iPdpte].u & X86_PDPE_P)
-                || !(aPdptes[iPdpte].u & X86_PDPE_PAE_MBZ_MASK))
-            { /* likely */ }
-            else
-            {
-                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-                VMXVDIAG const enmDiag = iemVmxGetDiagVmentryPdpteRsvd(iPdpte);
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
-            }
-        }
-    }
-    else
-    {
-        iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpteCr3ReadPhys);
-    }
-
-    NOREF(pszFailure);
-    NOREF(pszInstr);
-    return rc;
-}
-
-
-/**
  * Checks guest PDPTEs as part of VM-entry.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-DECLINLINE(int) iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr)
 {
     /*
      * Guest PDPTEs.
      * See Intel spec. 26.3.1.5 "Checks on Guest Page-Directory-Pointer-Table Entries".
      */
     PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-    bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+    const char * const pszFailure = "VM-exit";
 
-    /* Check PDPTes if the VM-entry is to a guest using PAE paging. */
-    int rc;
+    bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
     if (   !fGstInLongMode
         && (pVmcs->u64GuestCr4.u & X86_CR4_PAE)
         && (pVmcs->u64GuestCr0.u & X86_CR0_PG))
     {
-        /*
-         * We don't support nested-paging for nested-guests yet.
-         *
-         * Without nested-paging for nested-guests, PDPTEs in the VMCS are not used,
-         * rather we need to check the PDPTEs referenced by the guest CR3.
-         */
-        rc = iemVmxVmentryCheckGuestPdptesForCr3(pVCpu, pszInstr, pVmcs);
+        /* Get the PDPTEs. */
+        X86PDPE aPdpes[X86_PG_PAE_PDPE_ENTRIES];
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+        {
+            aPdpes[0].u = pVmcs->u64GuestPdpte0.u;
+            aPdpes[1].u = pVmcs->u64GuestPdpte1.u;
+            aPdpes[2].u = pVmcs->u64GuestPdpte2.u;
+            aPdpes[3].u = pVmcs->u64GuestPdpte3.u;
+        }
+        else
+#endif
+        {
+            uint64_t const uGuestCr3 = pVmcs->u64GuestCr3.u & X86_CR3_PAE_PAGE_MASK;
+            int const rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdpes[0], uGuestCr3, sizeof(aPdpes));
+            if (RT_FAILURE(rc))
+            {
+                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpteCr3ReadPhys);
+            }
+        }
+
+        /* Check validity of the PDPTEs. */
+        for (unsigned idx = 0; idx < RT_ELEMENTS(aPdpes); idx++)
+        {
+            if (   !(aPdpes[idx].u & X86_PDPE_P)
+                || !(aPdpes[idx].u & X86_PDPE_PAE_MBZ_MASK))
+            { /* likely */ }
+            else
+            {
+                VMXVDIAG const enmDiag = iemVmxGetDiagVmentryPdpteRsvd(idx);
+                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
+            }
+        }
     }
-    else
-        rc = VINF_SUCCESS;
-    return rc;
+
+    NOREF(pszInstr);
+    NOREF(pszFailure);
+    return VINF_SUCCESS;
 }
 
 
