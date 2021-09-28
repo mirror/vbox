@@ -303,6 +303,12 @@ void QIComboBox::mark(bool fError, const QString &strErrorMessage /* = QString()
         pLineEdit->mark(fError, strErrorMessage);
 }
 
+void QIComboBox::insertSeparator(int iIndex)
+{
+    AssertPtrReturnVoid(m_pComboBox);
+    m_pComboBox->insertSeparator(iIndex);
+}
+
 void QIComboBox::clear()
 {
     /* Redirect to combo-box: */

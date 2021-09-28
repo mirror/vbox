@@ -121,6 +121,8 @@ public:
     /** Marks the line edit of the combobox. Refer to QILineEdit::mark(..). */
     void mark(bool fError, const QString &strErrorMessage = QString());
 
+    void insertSeparator(int iIndex);
+
 public slots:
 
     /** Clears the combobox, removing all items. */

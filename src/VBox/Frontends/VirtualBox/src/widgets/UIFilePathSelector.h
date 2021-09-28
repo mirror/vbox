@@ -64,7 +64,8 @@ public:
     {
         PathId = 0,
         SelectId,
-        ResetId
+        ResetId,
+        RecentListSeparator
     };
 
     /** Constructs file-path selector passing @a pParent to QIComboBox base-class. */
@@ -119,6 +120,8 @@ public:
 
     void setDefaultPath(const QString &strDefaultPath);
     const QString& defaultPath() const;
+
+    void setRecentPathList(const QStringList &recentPathList);
 
 public slots:
 
