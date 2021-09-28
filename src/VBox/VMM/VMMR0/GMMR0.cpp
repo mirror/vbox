@@ -3166,10 +3166,10 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PGVM pGVM, VMCPUID idCpu, PGMMALLOCATEPAGES
  * @returns VBox status code:
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_OWNER if the caller is not an EMT.
- * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
  * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
+ * @retval  VERR_TRY_AGAIN if the host is temporarily out of large pages.
  * @returns see GMMR0AllocatePages.
  *
  * @param   pGVM        The global (ring-0) VM structure.
@@ -3227,7 +3227,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
         gmmR0MutexRelease(pGMM);
 
         RTR0MEMOBJ hMemObj;
-        rc = RTR0MemObjAllocPhysEx(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS, GMM_CHUNK_SIZE);
+        rc = RTR0MemObjAllocLarge(&hMemObj, GMM_CHUNK_SIZE, GMM_CHUNK_SIZE, RTMEMOBJ_ALLOC_LARGE_F_FAST);
         if (RT_SUCCESS(rc))
         {
             PGMMCHUNKFREESET pSet = pGMM->fBoundMemoryMode ? &pGVM->gmm.s.Private : &pGMM->PrivateX;

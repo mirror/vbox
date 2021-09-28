@@ -960,7 +960,8 @@ int pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys)
             /* If we fail once, it most likely means the host's memory is too
                fragmented; don't bother trying again. */
             LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
-            PGMSetLargePageUsage(pVM, false);
+            if (rc != VERR_TRY_AGAIN)
+                PGMSetLargePageUsage(pVM, false);
             return rc;
         }
     }
