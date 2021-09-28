@@ -182,6 +182,7 @@ static DECLCALLBACK(int) drvVMNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATT
     PDRVVMNET pThis = RT_FROM_MEMBER(pInterface, DRVVMNET, INetworkUp);
     LogFlow(("drvVMNetUp_FreeBuf: %p\n", pSgBuf));
     Assert(RTCritSectIsOwner(&pThis->XmitLock));
+    RT_NOREF(pThis);
     if (pSgBuf)
     {
         Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_MAGIC_MASK) == PDMSCATTERGATHER_FLAGS_MAGIC);
@@ -291,7 +292,7 @@ static DECLCALLBACK(void) drvVMNetUp_EndXmit(PPDMINETWORKUP pInterface)
  */
 static DECLCALLBACK(void) drvVMNetUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
-    RT_NOREF(pInterface);
+    RT_NOREF(pInterface, fPromiscuous);
     LogFlow(("drvVMNetUp_SetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     // PDRVVMNET pThis = RT_FROM_MEMBER(pInterface, DRVVMNET, INetworkUp);
 }
@@ -302,7 +303,7 @@ static DECLCALLBACK(void) drvVMNetUp_SetPromiscuousMode(PPDMINETWORKUP pInterfac
  */
 static DECLCALLBACK(void) drvVMNetUp_NotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    RT_NOREF(pInterface);
+    RT_NOREF(pInterface, enmLinkState);
     LogFlow(("drvVMNetUp_NotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
     // PDRVVMNET pThis = RT_FROM_MEMBER(pInterface, DRVVMNET, INetworkUp);
 }
@@ -439,6 +440,7 @@ static int drvVMNetDetach(PDRVVMNET pThis)
     if (pThis->Interface)
     {
         vmnet_stop_interface(pThis->Interface, pThis->InterfaceQueue, ^(vmnet_return_t status){
+            RT_NOREF(status);
             Log(("VMNET interface has been stopped. Status = %d.\n", status));
         });
         pThis->Interface = 0;
