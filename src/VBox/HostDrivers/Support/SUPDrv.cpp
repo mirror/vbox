@@ -373,6 +373,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemObjAddress",                      (void *)(uintptr_t)RTR0MemObjAddress },
     { "RTR0MemObjAddressR3",                    (void *)(uintptr_t)RTR0MemObjAddressR3 },
     { "RTR0MemObjAllocContTag",                 (void *)(uintptr_t)RTR0MemObjAllocContTag },
+    { "RTR0MemObjAllocLargeTag",                (void *)(uintptr_t)RTR0MemObjAllocLargeTag },
     { "RTR0MemObjAllocLowTag",                  (void *)(uintptr_t)RTR0MemObjAllocLowTag },
     { "RTR0MemObjAllocPageTag",                 (void *)(uintptr_t)RTR0MemObjAllocPageTag },
     { "RTR0MemObjAllocPhysExTag",               (void *)(uintptr_t)RTR0MemObjAllocPhysExTag },
