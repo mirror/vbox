@@ -43,8 +43,8 @@
 #include <sys/uio.h>
 #import <vmnet/vmnet.h>
 
-#define VMNET_MAX_HOST_INTERFACE_NAME_LENGTH 16 /* TODO: Are you sure? */
-#define VMNET_MAX_IP_ADDRESS_STRING_LENGTH 48
+#define VMNET_MAX_HOST_INTERFACE_NAME_LENGTH 16
+#define VMNET_MAX_IP_ADDRESS_STRING_LENGTH   48
 
 /* Force release logging for debug builds */
 #if 0
@@ -79,11 +79,11 @@ typedef struct DRVVMNET
     PPDMDRVINS              pDrvIns;
     /** For when we're the leaf driver. */
     RTCRITSECT              XmitLock;
-    /** TODO */
+    /** VMNET interface queue handle. */
     dispatch_queue_t        InterfaceQueue;
-    /** TODO */
+    /** VMNET interface handle. */
     interface_ref           Interface;
-    /** TODO */
+    /** The unique id for this network. */
     uuid_t                  uuid;
     /** The operation mode: bridged or host. */
     uint32_t                uMode;

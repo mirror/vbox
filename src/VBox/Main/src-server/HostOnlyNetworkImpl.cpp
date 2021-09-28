@@ -218,7 +218,6 @@ HRESULT HostOnlyNetwork::getLowerIP(com::Utf8Str &aLowerIP)
 
 HRESULT HostOnlyNetwork::setLowerIP(const com::Utf8Str &aLowerIP)
 {
-    /// @TODO: Validation?
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (aLowerIP == m->s.strIPLower)
@@ -241,7 +240,6 @@ HRESULT HostOnlyNetwork::getUpperIP(com::Utf8Str &aUpperIP)
 
 HRESULT HostOnlyNetwork::setUpperIP(const com::Utf8Str &aUpperIP)
 {
-    /// @TODO: Validation?
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (aUpperIP == m->s.strIPUpper)
