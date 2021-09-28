@@ -74,7 +74,7 @@
     /** The usual 32-bit type blowup. */
     VMNETSTATE_32BIT_HACK = 0x7fffffff
 } VMNETSTATE;
- 
+
 /**
  * VMNET driver instance data.
  *
@@ -546,12 +546,6 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
             * Get the network mask.
             */
             rc = CFGMR3QueryString(pCfg, "NetworkMask", pThis->szNetworkMask, sizeof(pThis->szNetworkMask));
-#if 0
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            {
-                LogRel(("No network mask specified for \"%s\", 255.255.255.0 assumed.\n", pThis->szNetwork))
-            }
-#endif
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
                                         N_("Configuration error: Failed to get the \"NetworkMask\" value"));
