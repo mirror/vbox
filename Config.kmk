@@ -846,7 +846,9 @@ VBOX_WITH_DHCPD = 1
 # Experimental suport for cloud network integration
 VBOX_WITH_CLOUD_NET = 1
 # Use Mac OS X VMNET API instead of network kernel extensions
+ifeq ($(KBUILD_TARGET),darwin)
 #VBOX_WITH_VMNET = 1
+endif
 ## @}
 
 

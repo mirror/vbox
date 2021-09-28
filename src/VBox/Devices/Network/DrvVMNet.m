@@ -63,6 +63,19 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
+ * VMNET driver states.
+ */
+ typedef enum VMNETSTATE
+{
+    /** The driver is suspended. */
+    VMNETSTATE_SUSPENDED = 1,
+    /** The driver is running. */
+    VMNETSTATE_RUNNING,
+    /** The usual 32-bit type blowup. */
+    VMNETSTATE_32BIT_HACK = 0x7fffffff
+} VMNETSTATE;
+ 
+/**
  * VMNET driver instance data.
  *
  * @implements  PDMINETWORKUP
@@ -88,6 +101,8 @@ typedef struct DRVVMNET
     uuid_t                  uuid;
     /** The operation mode: bridged or host. */
     uint32_t                uMode;
+    /** The operational state: suspended or running. */
+    VMNETSTATE volatile     enmState;
     /** The host interface name for bridge mode. */
     char                    szHostInterface[VMNET_MAX_HOST_INTERFACE_NAME_LENGTH];
     /** The network mask for host mode. */
@@ -179,6 +194,12 @@ static DECLCALLBACK(int) drvVMNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATT
 
 static int drvVMNetReceive(PDRVVMNET pThis, const uint8_t *pbFrame, uint32_t cbFrame)
 {
+    if (pThis->enmState != VMNETSTATE_RUNNING)
+    {
+        Log(("drvVMNetReceive: Ignoring incoming packet (%d bytes) in suspended state\n", cbFrame));
+        return VINF_SUCCESS;
+    }
+
     Log(("drvVMNetReceive: Incoming packet: %RTmac <= %RTmac (%d bytes)\n", pbFrame, pbFrame + 6, cbFrame));
     Log2(("%.*Rhxd\n", cbFrame, pbFrame));
     if (pThis->pIAboveNet && pThis->pIAboveNet->pfnReceive)
@@ -189,6 +210,12 @@ static int drvVMNetReceive(PDRVVMNET pThis, const uint8_t *pbFrame, uint32_t cbF
 
 static int drvVMNetSend(PDRVVMNET pThis, const uint8_t *pbFrame, uint32_t cbFrame)
 {
+    if (pThis->enmState != VMNETSTATE_RUNNING)
+    {
+        Log(("drvVMNetReceive: Ignoring outgoing packet (%d bytes) in suspended state\n", cbFrame));
+        return VINF_SUCCESS;
+    }
+
     Log(("drvVMNetSend: Outgoing packet (%d bytes)\n", cbFrame));
     Log2(("%.*Rhxd\n", cbFrame, pbFrame));
 
@@ -345,15 +372,18 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
             if (RT_FAILURE(rc))
                 Log(("drvVMNetAttachBridged: Failed to convert '%s' to MAC address (%Rrc)\n", pcszMacAddress ? pcszMacAddress : "(null)", rc));
 #endif
+#ifdef LOG_ENABLED
             max_packet_size = xpc_dictionary_get_uint64(interface_param, vmnet_max_packet_size_key);
             // Log(("MAC address: %s\n", xpc_dictionary_get_string(interface_param, vmnet_mac_address_key)));
             Log(("Max packet size: %zu\n", max_packet_size));
             Log(("MTU size: %llu\n", xpc_dictionary_get_uint64(interface_param, vmnet_mtu_key)));
             Log(("Avaliable keys:\n"));
             xpc_dictionary_apply(interface_param, ^bool(const char * _Nonnull key, xpc_object_t  _Nonnull value) {
-                Log(("%s=%s\n", key, value));
+                RT_NOREF(value);
+                Log(("%s\n", key));
                 return true;
             });
+#endif /* LOG_ENABLED */
         }
         dispatch_semaphore_signal(operation_done);
     });
@@ -407,11 +437,17 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
 static int drvVMNetDetach(PDRVVMNET pThis)
 {
     if (pThis->Interface)
+    {
         vmnet_stop_interface(pThis->Interface, pThis->InterfaceQueue, ^(vmnet_return_t status){
             Log(("VMNET interface has been stopped. Status = %d.\n", status));
         });
+        pThis->Interface = 0;
+    }
     if (pThis->InterfaceQueue)
+    {
         dispatch_release(pThis->InterfaceQueue);
+        pThis->InterfaceQueue = 0;
+    }
 
     return 0;
 }
@@ -457,6 +493,9 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->INetworkUp.pfnEndXmit                    = drvVMNetUp_EndXmit;
     pThis->INetworkUp.pfnSetPromiscuousMode         = drvVMNetUp_SetPromiscuousMode;
     pThis->INetworkUp.pfnNotifyLinkChanged          = drvVMNetUp_NotifyLinkChanged;
+
+    /* Initialize the state. */
+    pThis->enmState = VMNETSTATE_SUSPENDED;
 
     /*
      * Create the locks.
@@ -590,6 +629,45 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
 }
 
 
+/**
+ * Power On notification.
+ *
+ * @param   pDrvIns     The driver instance.
+ */
+static DECLCALLBACK(void) drvVMNetPowerOn(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("drvVMNetPowerOn\n"));
+    PDRVVMNET pThis = PDMINS_2_DATA(pDrvIns, PDRVVMNET);
+    ASMAtomicXchgSize(&pThis->enmState, VMNETSTATE_RUNNING);
+}
+
+
+/**
+ * Suspend notification.
+ *
+ * @param   pDrvIns     The driver instance.
+ */
+static DECLCALLBACK(void) drvVMNetSuspend(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("drvVMNetSuspend\n"));
+    PDRVVMNET pThis = PDMINS_2_DATA(pDrvIns, PDRVVMNET);
+    ASMAtomicXchgSize(&pThis->enmState, VMNETSTATE_SUSPENDED);
+}
+
+
+/**
+ * Resume notification.
+ *
+ * @param   pDrvIns     The driver instance.
+ */
+static DECLCALLBACK(void) drvVMNetResume(PPDMDRVINS pDrvIns)
+{
+    LogFlow(("drvVMNetResume\n"));
+    PDRVVMNET pThis = PDMINS_2_DATA(pDrvIns, PDRVVMNET);
+    ASMAtomicXchgSize(&pThis->enmState, VMNETSTATE_RUNNING);
+}
+
+
 
 /**
  * Network sniffer filter driver registration record.
@@ -623,13 +701,13 @@ const PDMDRVREG g_DrvVMNet =
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    NULL,
+    drvVMNetPowerOn,
     /* pfnReset */
     NULL,
     /* pfnSuspend */
-    NULL,
+    drvVMNetSuspend,
     /* pfnResume */
-    NULL,
+    drvVMNetResume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
