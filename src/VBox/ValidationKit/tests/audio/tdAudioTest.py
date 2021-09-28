@@ -38,7 +38,6 @@ import os
 import sys
 import signal
 import subprocess
-import time
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -270,22 +269,22 @@ class tdAudioTest(vbox.TestDriver):
         and utils.getHostOs() != 'win':
             oProcess = utils.sudoProcessPopen(asArgs,
                                               env = asEnvTmp,
-                                              stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False,
+                                              stdout = sys.stdout, stderr = sys.stdout,
                                               close_fds = False);
         else:
             oProcess = utils.processPopenSafe(asArgs,
                                               env = asEnvTmp,
-                                              stdout = subprocess.PIPE, stderr = subprocess.PIPE);
+                                              stdout = sys.stdout, stderr = sys.stdout);
         if oProcess:
-            for line in iter(oProcess.stdout.readline, b''):
-                reporter.log('[' + sWhat + '] ' + line.decode('utf-8'));
-                self.processPendingEvents();
-                time.sleep(0.01); # Don't hog the CPU too much.
-            oProcess.communicate();
-            if oProcess.returncode == 0:
+            self.pidFileAdd(oProcess.pid, sWhat, fSudo = fAsAdmin);
+            iRc = oProcess.wait();
+            self.pidFileRemove(oProcess.pid);
+
+            if iRc == 0:
+                reporter.log('*** %s: exit code %d' % (sWhat, iRc));
                 fRc = True;
             else:
-                reporter.log2('Executing \"%s\" on host returned exit code error %d' % (sWhat, oProcess.returncode));
+                reporter.log('!*! %s: exit code %d' % (sWhat, iRc));
 
         return fRc;
 
@@ -301,6 +300,11 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('Executing \"%s\" on host (as admin = %s, async = %s)' % (sWhat, fAsAdmin, fAsync));
 
         reporter.testStart(sWhat);
+
+        try:    sys.stdout.flush();
+        except: pass;
+        try:    sys.stderr.flush();
+        except: pass;
 
         fRc = self.executeHstLoop(sWhat, asArgs, asEnv);
         if fRc:
