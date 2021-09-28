@@ -102,7 +102,7 @@ decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
 /** MmAllocatePagesForMdl - Introduced in Windows 2000. */
 decltype(MmAllocatePagesForMdl)        *g_pfnrtMmAllocatePagesForMdl;
 /** MmAllocatePagesForMdlEx - Introduced in Windows Server 2003 SP1. */
-decltype(MmAllocatePagesForMdlEx)      *g_pfnrtMmAllocatePagesForMdlEx;
+PFNMMALLOCATEPAGESFORMDLEX              g_pfnrtMmAllocatePagesForMdlEx;
 /** MmFreePagesFromMdl - Introduced in Windows 2000. */
 decltype(MmFreePagesFromMdl)           *g_pfnrtMmFreePagesFromMdl;
 /** MmMapLockedPagesSpecifyCache - Introduced in Windows NT4 SP4. */

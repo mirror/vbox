@@ -50,6 +50,8 @@ typedef VOID (__stdcall *PFNRTKEQUERYSYSTEMTIME)(PLARGE_INTEGER pTime);
 #endif
 typedef ULONG64 (__stdcall *PFNRTKEQUERYINTERRUPTTIMEPRECISE)(PULONG64 pQpcTS);
 typedef VOID (__stdcall *PFNRTKEQUERYSYSTEMTIMEPRECISE)(PLARGE_INTEGER pTime);
+typedef PMDL (__stdcall *PFNMMALLOCATEPAGESFORMDLEX)(PHYSICAL_ADDRESS, PHYSICAL_ADDRESS, PHYSICAL_ADDRESS,
+                                                     SIZE_T, MEMORY_CACHING_TYPE, ULONG);
 
 
 /*******************************************************************************
@@ -90,7 +92,7 @@ extern decltype(KeInitializeTimerEx)          *g_pfnrtKeInitializeTimerEx;
 extern PFNKESHOULDYIELDPROCESSOR               g_pfnrtKeShouldYieldProcessor;
 extern decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
 extern decltype(MmAllocatePagesForMdl)        *g_pfnrtMmAllocatePagesForMdl;
-extern decltype(MmAllocatePagesForMdlEx)      *g_pfnrtMmAllocatePagesForMdlEx;
+extern PFNMMALLOCATEPAGESFORMDLEX              g_pfnrtMmAllocatePagesForMdlEx;
 extern decltype(MmFreePagesFromMdl)           *g_pfnrtMmFreePagesFromMdl;
 extern decltype(MmMapLockedPagesSpecifyCache) *g_pfnrtMmMapLockedPagesSpecifyCache;
 extern decltype(MmAllocateContiguousMemorySpecifyCache) *g_pfnrtMmAllocateContiguousMemorySpecifyCache;
