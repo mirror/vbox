@@ -7727,9 +7727,21 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
             int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
             if (RT_FAILURE(vrc))
-                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
-                                   tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
-                                   savedStateFile.raw(), vrc);
+            {
+                Utf8Str errMsg;
+                switch (vrc)
+                {
+                    case VERR_FILE_NOT_FOUND:
+                        errMsg = Utf8StrFmt(tr("VM failed to start because the saved state file '%ls' does not exist."),
+                                               savedStateFile.raw());
+                        break;
+                    default:
+                        errMsg = Utf8StrFmt(tr("VM failed to start because the saved state file '%ls' is invalid (%Rrc). "
+                                               "Delete the saved state prior to starting the VM."), savedStateFile.raw(), vrc);
+                        break;
+                }
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc, errMsg.c_str());
+            }
         }
 
         /* Read console data, including console shared folders, stored in the
