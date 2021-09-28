@@ -47,5 +47,6 @@ typedef struct DXShaderInfo
 
 int DXShaderParse(void const *pvCode, uint32_t cbCode, DXShaderInfo *pInfo);
 int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void const *pvShader, uint32_t cbShader, void **ppvDXBC, uint32_t *pcbDXBC);
+char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_dx_shader_h */
