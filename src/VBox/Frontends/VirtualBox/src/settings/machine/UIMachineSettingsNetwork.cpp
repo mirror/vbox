@@ -74,6 +74,9 @@ struct UIDataSettingsMachineNetworkAdapter
 #ifdef VBOX_WITH_CLOUD_NET
         , m_strCloudNetworkName(QString())
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+        , m_strHostOnlyNetworkName(QString())
+#endif /* VBOX_WITH_VMNET */
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
     {}
@@ -96,6 +99,9 @@ struct UIDataSettingsMachineNetworkAdapter
 #ifdef VBOX_WITH_CLOUD_NET
                && (m_strCloudNetworkName == other.m_strCloudNetworkName)
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+               && (m_strHostOnlyNetworkName == other.m_strHostOnlyNetworkName)
+#endif /* VBOX_WITH_VMNET */
                && (m_strMACAddress == other.m_strMACAddress)
                && (m_fCableConnected == other.m_fCableConnected)
                ;
@@ -132,6 +138,10 @@ struct UIDataSettingsMachineNetworkAdapter
     /** Holds the cloud network name. */
     QString                           m_strCloudNetworkName;
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+    /** Holds the host-only network name. */
+    QString                           m_strHostOnlyNetworkName;
+#endif /* VBOX_WITH_VMNET */
     /** Holds the network adapter MAC address. */
     QString                           m_strMACAddress;
     /** Holds whether the network adapter is connected. */
@@ -326,6 +336,9 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
 #ifdef VBOX_WITH_CLOUD_NET
     m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_Cloud, wipedOutString(oldAdapterData.m_strCloudNetworkName));
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+    m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_HostOnlyNetwork, wipedOutString(oldAdapterData.m_strHostOnlyNetworkName));
+#endif /* VBOX_WITH_VMNET */
     /* Handle attachment type change: */
     sltHandleAttachmentTypeChange();
 
@@ -388,6 +401,11 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
             newAdapterData.m_strCloudNetworkName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_Cloud);
             break;
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+        case KNetworkAttachmentType_HostOnlyNetwork:
+            newAdapterData.m_strHostOnlyNetworkName = m_pEditorAttachmentType->valueName(KNetworkAttachmentType_HostOnlyNetwork);
+            break;
+#endif /* VBOX_WITH_VMNET */
         default:
             break;
     }
@@ -444,6 +462,7 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
             }
             break;
         }
+#ifndef VBOX_WITH_VMNET
         case KNetworkAttachmentType_HostOnly:
         {
             if (alternativeName().isNull())
@@ -453,6 +472,14 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
             }
             break;
         }
+#else /* VBOX_WITH_VMNET */
+        case KNetworkAttachmentType_HostOnly:
+        {
+            message.second << tr("Host-only adapters are no longer supported, use host-only networks instead.");
+            fPass = false;
+            break;
+        }
+#endif /* VBOX_WITH_VMNET */
         case KNetworkAttachmentType_Generic:
         {
             if (alternativeName().isNull())
@@ -482,6 +509,17 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
             break;
         }
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+        case KNetworkAttachmentType_HostOnlyNetwork:
+        {
+            if (alternativeName().isNull())
+            {
+                message.second << tr("No host-only network name is currently specified.");
+                fPass = false;
+            }
+            break;
+        }
+#endif /* VBOX_WITH_VMNET */
         default:
             break;
     }
@@ -589,6 +627,9 @@ void UIMachineSettingsNetwork::reloadAlternatives()
 #ifdef VBOX_WITH_CLOUD_NET
     m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_Cloud, m_pParent->cloudNetworkList());
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+    m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, m_pParent->hostOnlyNetworkList());
+#endif /* VBOX_WITH_VMNET */
 }
 
 void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
@@ -1044,6 +1085,9 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
 #ifdef VBOX_WITH_CLOUD_NET
     refreshCloudNetworkList();
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+    refreshHostOnlyNetworkList();
+#endif /* VBOX_WITH_VMNET */
 
     /* Prepare old network data: */
     UIDataSettingsMachineNetwork oldNetworkData;
@@ -1070,6 +1114,9 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
 #ifdef VBOX_WITH_CLOUD_NET
             oldAdapterData.m_strCloudNetworkName = wipedOutString(comAdapter.GetCloudNetwork());
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+            oldAdapterData.m_strHostOnlyNetworkName = wipedOutString(comAdapter.GetHostOnlyNetwork());
+#endif /* VBOX_WITH_VMNET */
             oldAdapterData.m_adapterType = comAdapter.GetAdapterType();
             oldAdapterData.m_promiscuousMode = comAdapter.GetPromiscModePolicy();
             oldAdapterData.m_strMACAddress = comAdapter.GetMACAddress();
@@ -1340,6 +1387,14 @@ void UIMachineSettingsNetworkPage::refreshCloudNetworkList()
 }
 #endif /* VBOX_WITH_CLOUD_NET */
 
+#ifdef VBOX_WITH_VMNET
+void UIMachineSettingsNetworkPage::refreshHostOnlyNetworkList()
+{
+    /* Reload host-only network list: */
+    m_hostOnlyNetworkList = UINetworkAttachmentEditor::hostOnlyNetworks();
+}
+#endif /* VBOX_WITH_VMNET */
+
 void UIMachineSettingsNetworkPage::refreshHostInterfaceList()
 {
     /* Reload host interfaces: */
@@ -1563,6 +1618,17 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
                     break;
                 }
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+                case KNetworkAttachmentType_HostOnlyNetwork:
+                {
+                    if (fSuccess && newAdapterData.m_strHostOnlyNetworkName != oldAdapterData.m_strHostOnlyNetworkName)
+                    {
+                        comAdapter.SetHostOnlyNetwork(newAdapterData.m_strHostOnlyNetworkName);
+                        fSuccess = comAdapter.isOk();
+                    }
+                    break;
+                }
+#endif /* VBOX_WITH_VMNET */
                 default:
                     break;
             }

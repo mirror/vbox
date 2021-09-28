@@ -321,6 +321,7 @@ private:
     HRESULT getNATNetworks(std::vector<ComPtr<INATNetwork> > &aNATNetworks);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
     HRESULT getExtensionPackManager(ComPtr<IExtPackManager> &aExtensionPackManager);
+    HRESULT getHostOnlyNetworks(std::vector<ComPtr<IHostOnlyNetwork>> &aHostOnlyNetworks);
     HRESULT getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetworks);
     HRESULT getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGenericNetworkDrivers);
     HRESULT getCloudNetworks(std::vector<ComPtr<ICloudNetwork> > &aCloudNetworks);
@@ -383,6 +384,13 @@ private:
     HRESULT findNATNetworkByName(const com::Utf8Str &aNetworkName,
                                  ComPtr<INATNetwork> &aNetwork);
     HRESULT removeNATNetwork(const ComPtr<INATNetwork> &aNetwork);
+    HRESULT createHostOnlyNetwork(const com::Utf8Str &aNetworkName,
+                                  ComPtr<IHostOnlyNetwork> &aNetwork);
+    HRESULT findHostOnlyNetworkByName(const com::Utf8Str &aNetworkName,
+                                     ComPtr<IHostOnlyNetwork> &aNetwork);
+    HRESULT findHostOnlyNetworkById(const com::Guid &aId,
+                                   ComPtr<IHostOnlyNetwork> &aNetwork);
+    HRESULT removeHostOnlyNetwork(const ComPtr<IHostOnlyNetwork> &aNetwork);
     HRESULT createCloudNetwork(const com::Utf8Str &aNetworkName,
                                ComPtr<ICloudNetwork> &aNetwork);
     HRESULT findCloudNetworkByName(const com::Utf8Str &aNetworkName,

@@ -279,6 +279,7 @@ time on documenting it. -->
           <arg choice="plain">bridged</arg>
           <arg choice="plain">intnet</arg>
           <arg choice="plain">hostonly</arg>
+          <arg choice="plain">hostonlynet</arg>
           <arg choice="plain">generic</arg>
           <arg choice="plain">natnetwork</arg>
         </group></arg>
@@ -319,6 +320,7 @@ time on documenting it. -->
           <arg choice="plain">none</arg>
           <arg choice="plain"><replaceable>device-name</replaceable></arg>
         </group></arg>
+      <arg>--hostonlynet<replaceable>N</replaceable>=<replaceable>network-name</replaceable></arg>
       <arg>--intnet<replaceable>N</replaceable>=<replaceable>network-name</replaceable></arg>
       <arg>--nat-network<replaceable>N</replaceable>=<replaceable>network-name</replaceable></arg>
       <arg>--nicgenericdrv<replaceable>N</replaceable>=<replaceable>driver-name</replaceable></arg>

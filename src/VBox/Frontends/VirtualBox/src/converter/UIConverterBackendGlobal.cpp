@@ -1196,6 +1196,9 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeN
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = QApplication::translate("UICommon", "Bridget Adapter"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = QApplication::translate("UICommon", "Internal Network"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = QApplication::translate("UICommon", "Host Only Adapter"); break;
+#ifdef VBOX_WITH_VMNET
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork: strResult = QApplication::translate("UICommon", "Host Only Network"); break;
+#endif /* VBOX_WITH_VMNET */
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = QApplication::translate("UICommon", "Generic Driver"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork:      strResult = QApplication::translate("UICommon", "NAT Network"); break;
 #ifdef VBOX_WITH_CLOUD_NET
@@ -1221,6 +1224,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = "BridgetAdapter"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = "InternalNetwork"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = "HostOnlyAdapter"; break;
+#ifdef VBOX_WITH_VMNET
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork: strResult = "HostOnlyNetwork"; break;
+#endif /* VBOX_WITH_VMNET */
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = "GenericDriver"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork:      strResult = "NATNetwork"; break;
 #ifdef VBOX_WITH_CLOUD_NET
@@ -1246,6 +1252,9 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fromInternalStri
     keys << "BridgetAdapter";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
     keys << "InternalNetwork"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
     keys << "HostOnlyAdapter"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
+#ifdef VBOX_WITH_VMNET
+    keys << "HostOnlyNetwork"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork;
+#endif /* VBOX_WITH_VMNET */
     keys << "GenericDriver";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
     keys << "NATNetwork";      values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
 #ifdef VBOX_WITH_CLOUD_NET

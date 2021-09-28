@@ -552,6 +552,13 @@ endif
  	Network/DrvNetShaper.cpp
  endif
 
+ ifdef VBOX_WITH_VMNET
+  VBoxDD_DEFS           += VBOX_WITH_VMNET
+  VBoxDD_SOURCES        += \
+ 	Network/DrvVMNet.m
+  VBoxDD_LDFLAGS += -framework vmnet
+ endif
+
  # --- Storage bits. ---
 
  ifdef VBOX_WITH_AHCI

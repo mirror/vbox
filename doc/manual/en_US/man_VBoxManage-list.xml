@@ -59,6 +59,7 @@
         <arg choice="plain">hostfloppies</arg>
         <arg choice="plain">hostinfo</arg>
         <arg choice="plain">hostonlyifs</arg>
+        <arg choice="plain">hostonlynets</arg>
         <arg choice="plain">intnets</arg>
         <arg choice="plain">natnets</arg>
         <arg choice="plain">ostypes</arg>
@@ -341,6 +342,19 @@
         the host-only network interfaces that are currently available on
         the host system. The output shows detailed configuration
         information about each interface. See <xref linkend="networkingdetails"/>.
+      </para>
+    </refsect2>
+    <refsect2 id="vboxmanage-list-hostonlynets">
+      <title>List Host-Only Networks</title>
+      <cmdsynopsis id="synopsis-vboxmanage-list-hostonlynets">
+        <command>VBoxManage list</command>
+        <arg choice="plain">hostonlynets</arg>
+      </cmdsynopsis>
+      <para>
+        The <command>VBoxManage list hostonlynets</command> command
+        lists the host-only networks that have been configured. A 
+        host-only network provides connectivity between the host and
+        local VMs. See <xref linkend="networkingdetails"/>.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-list-intnets">

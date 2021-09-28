@@ -254,6 +254,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DRV_VBOXHDD,
     /** VBox HDD container media driver group. */
     LOG_GROUP_DRV_VD,
+    /** The VMNET networking driver group. */
+    LOG_GROUP_DRV_VMNET,
     /** VRDE audio driver group. */
     LOG_GROUP_DRV_VRDE_AUDIO,
     /** Virtual Switch transport driver group */
@@ -498,6 +500,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_HOSTDRIVEPARTITION,
     /** Main group, IHostNetworkInterface. */
     LOG_GROUP_MAIN_HOSTNETWORKINTERFACE,
+    /** Main group, IHostOnlyNetwork. */
+    LOG_GROUP_MAIN_HOSTONLYNETWORK,
     /** Main group, IHostUpdate. */
     LOG_GROUP_MAIN_HOSTUPDATE,
     /** Main group, IHostUSBDevice. */
@@ -899,6 +903,7 @@ typedef enum VBOXLOGGROUP
     "DRV_USBPROXY", \
     "DRV_VBOXHDD", \
     "DRV_VD", \
+    "DRV_VMNET", \
     "DRV_VRDE_AUDIO", \
     "DRV_VSWITCH", \
     "DRV_VUSB", \
@@ -1021,6 +1026,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_HOSTDRIVELIST", \
     "MAIN_HOSTDRIVEPARTITION", \
     "MAIN_HOSTNETWORKINTERFACE", \
+    "MAIN_HOSTONLYNETWORK", \
     "MAIN_HOSTUPDATE", \
     "MAIN_HOSTUSBDEVICE", \
     "MAIN_HOSTUSBDEVICEFILTER", \

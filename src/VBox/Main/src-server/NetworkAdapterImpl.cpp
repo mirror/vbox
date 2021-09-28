@@ -593,6 +593,65 @@ HRESULT NetworkAdapter::setHostOnlyInterface(const com::Utf8Str &aHostOnlyInterf
 }
 
 
+HRESULT NetworkAdapter::getHostOnlyNetwork(com::Utf8Str &aHostOnlyNetwork)
+{
+#ifdef VBOX_WITH_VMNET
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aHostOnlyNetwork = mData->strHostOnlyNetworkName;
+
+    return S_OK;
+#else /* !VBOX_WITH_VMNET */
+    NOREF(aHostOnlyNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_VMNET */
+}
+
+HRESULT NetworkAdapter::setHostOnlyNetwork(const com::Utf8Str &aHostOnlyNetwork)
+{
+#ifdef VBOX_WITH_VMNET
+    /* the machine needs to be mutable */
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->strHostOnlyNetworkName != aHostOnlyNetwork)
+    {
+        /* if an empty/null string is to be set, host only Network must be
+         * turned off */
+        if (   aHostOnlyNetwork.isEmpty()
+            && mData->fEnabled
+            && mData->mode == NetworkAttachmentType_HostOnly)
+        {
+            return setError(E_FAIL,
+                            tr("Empty or null host only Network name is not valid"));
+        }
+
+        mData.backup();
+        mData->strHostOnlyNetworkName = aHostOnlyNetwork;
+
+        // leave the lock before informing callbacks
+        alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        /* When changing the host adapter, adapt the CFGM logic to make this
+         * change immediately effect and to notify the guest that the network
+         * might have changed, therefore changeAdapter=TRUE. */
+        mParent->i_onNetworkAdapterChange(this, TRUE);
+    }
+
+    return S_OK;
+#else /* !VBOX_WITH_VMNET */
+    NOREF(aHostOnlyNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_VMNET */
+}
+
+
 HRESULT NetworkAdapter::getInternalNetwork(com::Utf8Str &aInternalNetwork)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

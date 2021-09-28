@@ -70,6 +70,9 @@
 #include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
 #include "NATNetworkImpl.h"
+#ifdef VBOX_WITH_VMNET
+#include "HostOnlyNetworkImpl.h"
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
 #include "CloudNetworkImpl.h"
 #endif /* VBOX_WITH_CLOUD_NET */
@@ -254,6 +257,9 @@ typedef ObjectsList<GuestOSType> GuestOSTypesOList;
 typedef ObjectsList<SharedFolder> SharedFoldersOList;
 typedef ObjectsList<DHCPServer> DHCPServersOList;
 typedef ObjectsList<NATNetwork> NATNetworksOList;
+#ifdef VBOX_WITH_VMNET
+typedef ObjectsList<HostOnlyNetwork> HostOnlyNetworksOList;
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
 typedef ObjectsList<CloudNetwork> CloudNetworksOList;
 #endif /* VBOX_WITH_CLOUD_NET */
@@ -286,6 +292,10 @@ struct VirtualBox::Data
         , allDHCPServers(lockDHCPServers)
         , lockNATNetworks(LOCKCLASS_LISTOFOTHEROBJECTS)
         , allNATNetworks(lockNATNetworks)
+#ifdef VBOX_WITH_VMNET
+        , lockHostOnlyNetworks(LOCKCLASS_LISTOFOTHEROBJECTS)
+        , allHostOnlyNetworks(lockHostOnlyNetworks)
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
         , lockCloudNetworks(LOCKCLASS_LISTOFOTHEROBJECTS)
         , allCloudNetworks(lockCloudNetworks)
@@ -379,6 +389,11 @@ struct VirtualBox::Data
 
     RWLockHandle                        lockNATNetworks;
     NATNetworksOList                    allNATNetworks;
+
+#ifdef VBOX_WITH_VMNET
+    RWLockHandle                        lockHostOnlyNetworks;
+    HostOnlyNetworksOList               allHostOnlyNetworks;
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
     RWLockHandle                        lockCloudNetworks;
     CloudNetworksOList                  allCloudNetworks;
@@ -721,6 +736,24 @@ HRESULT VirtualBox::init()
             rc = i_registerNATNetwork(pNATNetwork, false /* aSaveRegistry */);
             AssertComRCThrowRC(rc);
         }
+
+#ifdef VBOX_WITH_VMNET
+        /* host-only networks */
+        for (settings::HostOnlyNetworksList::const_iterator it = m->pMainConfigFile->llHostOnlyNetworks.begin();
+             it != m->pMainConfigFile->llHostOnlyNetworks.end();
+             ++it)
+        {
+            ComObjPtr<HostOnlyNetwork> pHostOnlyNetwork;
+            rc = pHostOnlyNetwork.createObject();
+            AssertComRCThrowRC(rc);
+            rc = pHostOnlyNetwork->init(this, "TODO???");
+            AssertComRCThrowRC(rc);
+            rc = pHostOnlyNetwork->i_loadSettings(*it);
+            AssertComRCThrowRC(rc);
+            m->allHostOnlyNetworks.addChild(pHostOnlyNetwork);
+            AssertComRCThrowRC(rc);
+        }
+#endif /* VBOX_WITH_VMNET */
 
 #ifdef VBOX_WITH_CLOUD_NET
         /* net services - cloud networks */
@@ -1423,6 +1456,139 @@ HRESULT VirtualBox::getExtensionPackManager(ComPtr<IExtPackManager> &aExtensionP
 #endif
     return hrc;
 }
+
+/**
+ * Host Only Network
+ */
+HRESULT VirtualBox::createHostOnlyNetwork(const com::Utf8Str &aNetworkName,
+                                       ComPtr<IHostOnlyNetwork> &aNetwork)
+{
+#ifdef VBOX_WITH_VMNET
+    ComObjPtr<HostOnlyNetwork> HostOnlyNetwork;
+    HostOnlyNetwork.createObject();
+    HRESULT rc = HostOnlyNetwork->init(this, aNetworkName);
+    if (FAILED(rc)) return rc;
+
+    m->allHostOnlyNetworks.addChild(HostOnlyNetwork);
+
+    HostOnlyNetwork.queryInterfaceTo(aNetwork.asOutParam());
+
+    return rc;
+#else /* !VBOX_WITH_VMNET */
+    NOREF(aNetworkName);
+    NOREF(aNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_VMNET */
+}
+
+HRESULT VirtualBox::findHostOnlyNetworkByName(const com::Utf8Str &aNetworkName,
+                                           ComPtr<IHostOnlyNetwork> &aNetwork)
+{
+#ifdef VBOX_WITH_VMNET
+    Bstr bstrNameToFind(aNetworkName);
+
+    AutoReadLock alock(m->allHostOnlyNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    for (HostOnlyNetworksOList::const_iterator it = m->allHostOnlyNetworks.begin();
+         it != m->allHostOnlyNetworks.end();
+         ++it)
+    {
+        Bstr bstrHostOnlyNetworkName;
+        HRESULT hrc = (*it)->COMGETTER(NetworkName)(bstrHostOnlyNetworkName.asOutParam());
+        if (FAILED(hrc)) return hrc;
+
+        if (bstrHostOnlyNetworkName == bstrNameToFind)
+        {
+            it->queryInterfaceTo(aNetwork.asOutParam());
+            return S_OK;
+        }
+    }
+    return VBOX_E_OBJECT_NOT_FOUND;
+#else /* !VBOX_WITH_VMNET */
+    NOREF(aNetworkName);
+    NOREF(aNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_VMNET */
+}
+
+HRESULT VirtualBox::findHostOnlyNetworkById(const com::Guid &aId,
+                                           ComPtr<IHostOnlyNetwork> &aNetwork)
+{
+#ifdef VBOX_WITH_VMNET
+    ComObjPtr<HostOnlyNetwork> network;
+    AutoReadLock alock(m->allHostOnlyNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    for (HostOnlyNetworksOList::const_iterator it = m->allHostOnlyNetworks.begin();
+         it != m->allHostOnlyNetworks.end();
+         ++it)
+    {
+        Bstr bstrHostOnlyNetworkId;
+        HRESULT hrc = (*it)->COMGETTER(Id)(bstrHostOnlyNetworkId.asOutParam());
+        if (FAILED(hrc)) return hrc;
+
+        if (Guid(bstrHostOnlyNetworkId) == aId)
+        {
+            it->queryInterfaceTo(aNetwork.asOutParam());;
+            return S_OK;
+        }
+    }
+    return VBOX_E_OBJECT_NOT_FOUND;
+#else /* !VBOX_WITH_VMNET */
+    NOREF(aId);
+    NOREF(aNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_VMNET */
+}
+
+HRESULT VirtualBox::removeHostOnlyNetwork(const ComPtr<IHostOnlyNetwork> &aNetwork)
+{
+#ifdef VBOX_WITH_VMNET
+    Bstr name;
+    HRESULT rc = aNetwork->COMGETTER(NetworkName)(name.asOutParam());
+    if (FAILED(rc))
+        return rc;
+    IHostOnlyNetwork *p = aNetwork;
+    HostOnlyNetwork *network = static_cast<HostOnlyNetwork *>(p);
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoCaller HostOnlyNetworkCaller(network);
+    AssertComRCReturnRC(HostOnlyNetworkCaller.rc());
+
+    m->allHostOnlyNetworks.removeChild(network);
+
+    {
+        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
+        rc = i_saveSettings();
+        vboxLock.release();
+
+        if (FAILED(rc))
+            m->allHostOnlyNetworks.addChild(network);
+    }
+    return rc;
+#else /* !VBOX_WITH_VMNET */
+    NOREF(aNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_VMNET */
+}
+
+HRESULT VirtualBox::getHostOnlyNetworks(std::vector<ComPtr<IHostOnlyNetwork> > &aHostOnlyNetworks)
+{
+#ifdef VBOX_WITH_VMNET
+    AutoReadLock al(m->allHostOnlyNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+    aHostOnlyNetworks.resize(m->allHostOnlyNetworks.size());
+    size_t i = 0;
+    for (HostOnlyNetworksOList::const_iterator it = m->allHostOnlyNetworks.begin();
+         it != m->allHostOnlyNetworks.end(); ++it)
+         (*it).queryInterfaceTo(aHostOnlyNetworks[i++].asOutParam());
+    return S_OK;
+#else /* !VBOX_WITH_VMNET */
+    NOREF(aHostOnlyNetworks);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_VMNET */
+}
+
 
 HRESULT VirtualBox::getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetworks)
 {
@@ -4735,6 +4901,22 @@ HRESULT VirtualBox::i_saveSettings()
             }
         }
 #endif
+
+#ifdef VBOX_WITH_VMNET
+        m->pMainConfigFile->llHostOnlyNetworks.clear();
+        {
+            AutoReadLock hostOnlyNetworkLock(m->allHostOnlyNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+            for (HostOnlyNetworksOList::const_iterator it = m->allHostOnlyNetworks.begin();
+                 it != m->allHostOnlyNetworks.end();
+                 ++it)
+            {
+                settings::HostOnlyNetwork n;
+                rc = (*it)->i_saveSettings(n);
+                if (FAILED(rc)) throw rc;
+                m->pMainConfigFile->llHostOnlyNetworks.push_back(n);
+            }
+        }
+#endif /* VBOX_WITH_VMNET */
 
 #ifdef VBOX_WITH_CLOUD_NET
         m->pMainConfigFile->llCloudNetworks.clear();

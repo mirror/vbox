@@ -435,6 +435,25 @@ struct NATNetwork
 
 typedef std::list<NATNetwork> NATNetworksList;
 
+#ifdef VBOX_WITH_VMNET
+/**
+ * HostOnly Networking settings.
+ */
+struct HostOnlyNetwork
+{
+    HostOnlyNetwork();
+
+    com::Guid    uuid;
+    com::Utf8Str strNetworkName;
+    com::Utf8Str strNetworkMask;
+    com::Utf8Str strIPLower;
+    com::Utf8Str strIPUpper;
+    bool         fEnabled;
+};
+
+typedef std::list<HostOnlyNetwork> HostOnlyNetworksList;
+#endif /* VBOX_WITH_VMNET */
+
 #ifdef VBOX_WITH_CLOUD_NET
 /**
  * Cloud Networking settings.
@@ -461,6 +480,9 @@ public:
 
     void readMachineRegistry(const xml::ElementNode &elmMachineRegistry);
     void readNATNetworks(const xml::ElementNode &elmNATNetworks);
+#ifdef VBOX_WITH_VMNET
+    void readHostOnlyNetworks(const xml::ElementNode &elmHostOnlyNetworks);
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
     void readCloudNetworks(const xml::ElementNode &elmCloudNetworks);
 #endif /* VBOX_WITH_CLOUD_NET */
@@ -473,6 +495,9 @@ public:
     MachinesRegistry        llMachines;
     DHCPServersList         llDhcpServers;
     NATNetworksList         llNATNetworks;
+#ifdef VBOX_WITH_VMNET
+    HostOnlyNetworksList    llHostOnlyNetworks;
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
     CloudNetworksList       llCloudNetworks;
 #endif /* VBOX_WITH_CLOUD_NET */
@@ -801,6 +826,9 @@ struct NetworkAdapter
     NAT                                 nat;
     com::Utf8Str                        strBridgedName;
     com::Utf8Str                        strHostOnlyName;
+#ifdef VBOX_WITH_VMNET
+    com::Utf8Str                        strHostOnlyNetworkName;
+#endif /* VBOX_WITH_VMNET */
     com::Utf8Str                        strInternalNetworkName;
     com::Utf8Str                        strGenericDriver;
     StringsMap                          genericProperties;

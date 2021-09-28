@@ -730,6 +730,23 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
                 }
                 break;
             }
+#ifdef VBOX_WITH_VMNET
+            case KNetworkAttachmentType_HostOnlyNetwork:
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork)
+                {
+                    const QString strName = comAdapter.GetHostOnlyNetwork();
+                    strAttachmentType = strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_HostOnly)
+                                            .arg(strName)
+                                            .arg(QApplication::translate("UIDetails", "Host-only Network, '%1'", "details (network)")
+                                                 .arg(strName));
+                }
+                break;
+            }
+#endif /* VBOX_WITH_VMNET */
             case KNetworkAttachmentType_Generic:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver)

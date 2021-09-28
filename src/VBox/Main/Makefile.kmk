@@ -122,6 +122,9 @@ endif
 ifdef VBOX_WITH_NETFLT
 VBOX_MAIN_DEFS += VBOX_WITH_NETFLT
 endif
+ifdef VBOX_WITH_VMNET
+VBOX_MAIN_DEFS += VBOX_WITH_VMNET
+endif
 ifdef VBOX_WITH_CLOUD_NET
 VBOX_MAIN_DEFS += VBOX_WITH_CLOUD_NET
 endif
@@ -614,6 +617,9 @@ VBoxSVC_SOURCES = \
 	../NetworkServices/Dhcpd/DhcpOptions.cpp \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \
+	$(if $(VBOX_WITH_VMNET), \
+	src-server/HostOnlyNetworkImpl.cpp \
+	,) \
 	$(if $(VBOX_WITH_CLOUD_NET), \
 	src-server/CloudNetworkImpl.cpp \
 	,) \

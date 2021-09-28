@@ -332,6 +332,9 @@ RTEXITCODE handleUSBDevSource(HandlerArg *a);
 
 /* VBoxManageHostonly.cpp */
 RTEXITCODE handleHostonlyIf(HandlerArg *a);
+#ifdef VBOX_WITH_VMNET
+RTEXITCODE handleHostonlyNet(HandlerArg *a);
+#endif /* VBOX_WITH_VMNET */
 
 /* VBoxManageDHCPServer.cpp */
 RTEXITCODE handleDHCPServer(HandlerArg *a);

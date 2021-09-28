@@ -5857,6 +5857,12 @@ int Console::i_configNetwork(const char *pszDevice,
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
 
+# if defined(RT_OS_DARWIN) && defined(VBOX_WITH_VMNET)
+                InsertConfigString(pLunL0, "Driver", "VMNet");
+                InsertConfigNode(pLunL0, "Config", &pCfg);
+                InsertConfigString(pCfg, "Trunk", pszTrunk);
+                InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
+# else
                 InsertConfigString(pLunL0, "Driver", "IntNet");
                 InsertConfigNode(pLunL0, "Config", &pCfg);
                 InsertConfigString(pCfg, "Trunk", pszTrunk);
@@ -5865,16 +5871,16 @@ int Console::i_configNetwork(const char *pszDevice,
                 InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
                 char szNetwork[INTNET_MAX_NETWORK_NAME];
 
-# if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
+#  if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
                 /*
                  * 'pszTrunk' contains just the interface name required in ring-0, while 'pszBridgedIfName' contains
                  * interface name + optional description. We must not pass any description to the VM as it can differ
                  * for the same interface name, eg: "nge0 - ethernet" (GUI) vs "nge0" (VBoxManage).
                  */
                 RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszTrunk);
-# else
+#  else
                 RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszBridgedIfName);
-# endif
+#  endif
                 InsertConfigString(pCfg, "Network", szNetwork);
                 networkName = Bstr(szNetwork);
                 trunkName = Bstr(pszTrunk);
@@ -5893,14 +5899,15 @@ int Console::i_configNetwork(const char *pszDevice,
                     Log(("Set SharedMacOnWire\n"));
                 }
 
-# if defined(RT_OS_SOLARIS)
-#  if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */
+#  if defined(RT_OS_SOLARIS)
+#   if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */
                 /* Zone access restriction, don't allow snooping the global zone. */
                 zoneid_t ZoneId = getzoneid();
                 if (ZoneId != GLOBAL_ZONEID)
                 {
                     InsertConfigInteger(pCfg, "IgnoreAllPromisc", true);
                 }
+#   endif
 #  endif
 # endif
 
@@ -5947,6 +5954,150 @@ int Console::i_configNetwork(const char *pszDevice,
 
                 Utf8Str HostOnlyNameUtf8(HostOnlyName);
                 const char *pszHostOnlyName = HostOnlyNameUtf8.c_str();
+#ifdef VBOX_WITH_VMNET
+                /* Check if the matching host-only network has already been created. */
+                Bstr bstrLowerIP, bstrUpperIP, bstrNetworkMask;
+                BstrFmt bstrNetworkName("Legacy %s Network", pszHostOnlyName);
+                ComPtr<IHostOnlyNetwork> hostOnlyNetwork;
+                hrc = virtualBox->FindHostOnlyNetworkByName(bstrNetworkName.raw(), hostOnlyNetwork.asOutParam());
+                if (FAILED(hrc))
+                {
+                    /*
+                    * With VMNET there is no VBoxNetAdp to create vboxnetX adapters,
+                    * which means that the Host object won't be able to re-create
+                    * them from extra data. Go through existing DHCP/adapter config
+                    * to derive the parameters for the new network.
+                    */
+                    BstrFmt bstrOldNetworkName("HostInterfaceNetworking-%s", pszHostOnlyName);
+                    ComPtr<IDHCPServer> dhcpServer;
+                    hrc = virtualBox->FindDHCPServerByNetworkName(bstrOldNetworkName.raw(),
+                                                                dhcpServer.asOutParam());
+                    if (SUCCEEDED(hrc))
+                    {
+                        /* There is a DHCP server available for this network. */
+                        hrc = dhcpServer->COMGETTER(LowerIP)(bstrLowerIP.asOutParam());
+                        if (FAILED(hrc))
+                        {
+                            LogRel(("Console::i_configNetwork: COMGETTER(LowerIP) failed, hrc (%Rhrc)\n", hrc));
+                            H();
+                        }
+                        hrc = dhcpServer->COMGETTER(UpperIP)(bstrUpperIP.asOutParam());
+                        if (FAILED(hrc))
+                        {
+                            LogRel(("Console::i_configNetwork: COMGETTER(UpperIP) failed, hrc (%Rhrc)\n", hrc));
+                            H();
+                        }
+                        hrc = dhcpServer->COMGETTER(NetworkMask)(bstrNetworkMask.asOutParam());
+                        if (FAILED(hrc))
+                        {
+                            LogRel(("Console::i_configNetwork: COMGETTER(NetworkMask) failed, hrc (%Rhrc)\n", hrc));
+                            H();
+                        }
+                    }
+                    else
+                    {
+                        /* No DHCP server for this hostonly interface, let's look at extra data */
+                        hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPAddress",
+                                                            pszHostOnlyName).raw(),
+                                                            bstrLowerIP.asOutParam());
+                        if (SUCCEEDED(hrc) && !bstrLowerIP.isEmpty())
+                            hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPNetMask",
+                                                                pszHostOnlyName).raw(),
+                                                                bstrNetworkMask.asOutParam());
+
+                    }
+                    RTNETADDRIPV4 ipAddr, ipMask;
+                    rc = bstrLowerIP.isEmpty() ? VERR_MISSING : RTNetStrToIPv4Addr(Utf8Str(bstrLowerIP).c_str(), &ipAddr);
+                    if (RT_FAILURE(rc))
+                    {
+                        /* We failed to locate any valid config of this vboxnetX interface, assume defaults. */
+                        LogRel(("NetworkAttachmentType_HostOnly: Invalid or missing lower IP '%ls', using '%ls' instead.\n",
+                                bstrLowerIP.raw(), getDefaultIPv4Address(Bstr(pszHostOnlyName)).raw()));
+                        bstrLowerIP = getDefaultIPv4Address(Bstr(pszHostOnlyName));
+                        bstrNetworkMask.setNull();
+                        bstrUpperIP.setNull();
+                        rc = RTNetStrToIPv4Addr(Utf8Str(bstrLowerIP).c_str(), &ipAddr);
+                        AssertLogRelMsgReturn(RT_SUCCESS(rc), ("RTNetStrToIPv4Addr(%ls) failed, rc=%Rrc\n", bstrLowerIP.raw(), rc),
+                                              VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR);
+                    }
+                    rc = bstrNetworkMask.isEmpty() ? VERR_MISSING : RTNetStrToIPv4Addr(Utf8Str(bstrNetworkMask).c_str(), &ipMask);
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: Invalid or missing network mask '%ls', using '%s' instead.\n",
+                                bstrNetworkMask.raw(), VBOXNET_IPV4MASK_DEFAULT));
+                        bstrNetworkMask = VBOXNET_IPV4MASK_DEFAULT;
+                        rc = RTNetStrToIPv4Addr(Utf8Str(bstrNetworkMask).c_str(), &ipMask);
+                        AssertLogRelMsgReturn(RT_SUCCESS(rc), ("RTNetStrToIPv4Addr(%ls) failed, rc=%Rrc\n", bstrNetworkMask.raw(), rc),
+                                              VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR);
+                    }
+                    rc = bstrUpperIP.isEmpty() ? VERR_MISSING : RTNetStrToIPv4Addr(Utf8Str(bstrUpperIP).c_str(), &ipAddr);
+                    if (RT_FAILURE(rc))
+                    {
+                        ipAddr.au32[0] = RT_H2N_U32((RT_N2H_U32(ipAddr.au32[0]) | ~RT_N2H_U32(ipMask.au32[0])) - 1); /* Do we need to exlude the last IP? */
+                        LogRel(("NetworkAttachmentType_HostOnly: Invalid or missing upper IP '%ls', using '%RTnaipv4' instead.\n",
+                                bstrUpperIP.raw(), ipAddr));
+                        bstrUpperIP = BstrFmt("%RTnaipv4", ipAddr);
+                    }
+
+                    /* All parameters are set, create the new network. */
+                    hrc = virtualBox->CreateHostOnlyNetwork(bstrNetworkName.raw(), hostOnlyNetwork.asOutParam());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: failed to create host-only network, hrc (0x%x)\n", hrc));
+                        H();
+                    }
+                    hrc = hostOnlyNetwork->COMSETTER(NetworkMask)(bstrNetworkMask.raw());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMSETTER(NetworkMask) failed, hrc (0x%x)\n", hrc));
+                        H();
+                    }
+                    hrc = hostOnlyNetwork->COMSETTER(LowerIP)(bstrLowerIP.raw());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMSETTER(LowerIP) failed, hrc (0x%x)\n", hrc));
+                        H();
+                    }
+                    hrc = hostOnlyNetwork->COMSETTER(UpperIP)(bstrUpperIP.raw());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMSETTER(UpperIP) failed, hrc (0x%x)\n", hrc));
+                        H();
+                    }
+                    LogRel(("Console: created host-only network '%ls' with mask '%ls' and range '%ls'-'%ls'\n",
+                            bstrNetworkName.raw(), bstrNetworkMask.raw(), bstrLowerIP.raw(), bstrUpperIP.raw()));
+                }
+                else
+                {
+                    /* The matching host-only network already exists. Tell the user to switch to it. */
+                    hrc = hostOnlyNetwork->COMGETTER(NetworkMask)(bstrNetworkMask.asOutParam());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(NetworkMask) failed, hrc (0x%x)\n", hrc));
+                        H();
+                    }
+                    hrc = hostOnlyNetwork->COMGETTER(LowerIP)(bstrLowerIP.asOutParam());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(LowerIP) failed, hrc (0x%x)\n", hrc));
+                        H();
+                    }
+                    hrc = hostOnlyNetwork->COMGETTER(UpperIP)(bstrUpperIP.asOutParam());
+                    if (FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(UpperIP) failed, hrc (0x%x)\n", hrc));
+                        H();
+                    }
+                }
+                return VMSetError(VMR3GetVM(mpUVM), VERR_NOT_FOUND, RT_SRC_POS,
+                                  N_("Host-only adapters are no longer supported!\n"
+                                     "For your convenience a host-only network named '%ls' has been "
+                                     "created with network mask '%ls' and IP address range '%ls' - '%ls'.\n"
+                                     "To fix this problem, switch to 'Host-only Network' "
+                                     "attachment type in the VM settings.\n"),
+                                  bstrNetworkName.raw(), bstrNetworkMask.raw(),
+                                  bstrLowerIP.raw(), bstrUpperIP.raw());
+#endif /* VBOX_WITH_VMNET */
                 ComPtr<IHostNetworkInterface> hostInterface;
                 rc = host->FindHostNetworkInterfaceByName(HostOnlyName.raw(),
                                                           hostInterface.asOutParam());
@@ -6235,6 +6386,43 @@ int Console::i_configNetwork(const char *pszDevice,
             }
 #endif /* VBOX_WITH_CLOUD_NET */
 
+#ifdef VBOX_WITH_VMNET
+            case NetworkAttachmentType_HostOnlyNetwork:
+            {
+                Bstr bstrId, bstrNetMask, bstrLowerIP, bstrUpperIP;
+                ComPtr<IHostOnlyNetwork> network;
+                hrc = aNetworkAdapter->COMGETTER(HostOnlyNetwork)(bstr.asOutParam());            H();
+                hrc = virtualBox->FindHostOnlyNetworkByName(bstr.raw(), network.asOutParam());
+                if (FAILED(hrc))
+                {
+                    LogRel(("NetworkAttachmentType_HostOnlyNetwork: FindByName failed, hrc (0x%x)\n", hrc));
+                    return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                      N_("Nonexistent host-only network '%ls'"),
+                                      bstr.raw());
+                }
+                hrc = network->COMGETTER(Id)(bstrId.asOutParam());                               H();
+                hrc = network->COMGETTER(NetworkMask)(bstrNetMask.asOutParam());                 H();
+                hrc = network->COMGETTER(LowerIP)(bstrLowerIP.asOutParam());                     H();
+                hrc = network->COMGETTER(UpperIP)(bstrUpperIP.asOutParam());                     H();
+                if (!bstr.isEmpty())
+                {
+                    InsertConfigString(pLunL0, "Driver", "VMNet");
+                    InsertConfigNode(pLunL0, "Config", &pCfg);
+                    // InsertConfigString(pCfg, "Trunk", Utf8Str(bstr).c_str());
+                    // InsertConfigString(pCfg, "Network", BstrFmt("HostOnlyNetworking-%ls", bstr.raw()));
+                    InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
+                    InsertConfigString(pCfg, "Id", Utf8Str(bstrId).c_str());
+                    InsertConfigString(pCfg, "NetworkMask", Utf8Str(bstrNetMask).c_str());
+                    InsertConfigString(pCfg, "LowerIP", Utf8Str(bstrLowerIP).c_str());
+                    InsertConfigString(pCfg, "UpperIP", Utf8Str(bstrUpperIP).c_str());
+                    // InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
+                    networkName.setNull(); // We do not want DHCP server on our network!
+                    // trunkType = Bstr(TRUNKTYPE_WHATEVER);
+                }
+                break;
+            }
+#endif /* VBOX_WITH_VMNET */
+
             default:
                 AssertMsgFailed(("should not get here!\n"));
                 break;
@@ -6251,6 +6439,9 @@ int Console::i_configNetwork(const char *pszDevice,
             case NetworkAttachmentType_Bridged:
             case NetworkAttachmentType_Internal:
             case NetworkAttachmentType_HostOnly:
+#ifdef VBOX_WITH_VMNET
+            case NetworkAttachmentType_HostOnlyNetwork:
+#endif /* VBOX_WITH_VMNET */
             case NetworkAttachmentType_NAT:
             case NetworkAttachmentType_Generic:
             case NetworkAttachmentType_NATNetwork:

@@ -615,8 +615,15 @@
           Machine changes: IOMMU device.
       -->
     </const>
+    <const name="v1_20" value="22">
+      <desc>Settings version "1.20", written by VirtualBox 7.0.x.</desc>
+      <!--
+          VirtualBox.xml additions: HostOnlyNetworks in NetserviceRegistry
+          NetworkAdapter changes: HostOnlyNetwork mode.
+      -->
+    </const>
     <const name="Future" value="99999">
-      <desc>Settings version greater than "1.19", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.20", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -2004,6 +2011,55 @@
   </interface>
 
   <!--
+  // IHostOnlyNetwork
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface name="IHostOnlyNetwork" extends="$unknown"
+    uuid="6eb5de7d-9a67-4fde-83be-f768084d03b5"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+
+    <attribute name="networkName" type="wstring">
+      <desc>
+        TBD: User-friendly, descriptive name of host-only network. For example,
+        "Host-only network 192.168.56.0".
+      </desc>
+    </attribute>
+    <attribute name="enabled" type="boolean"/>
+    <attribute name="networkMask" type="wstring">
+      <desc>
+        specifies network mask
+      </desc>
+    </attribute>
+
+    <attribute name="hostIP" type="wstring" readonly="yes">
+      <desc>
+        host IP address, which usually is the lower IP address of DHCP range.
+      </desc>
+    </attribute>
+
+    <attribute name="lowerIP" type="wstring">
+      <desc>
+        specifies from IP address in DHCP address range
+      </desc>
+    </attribute>
+
+    <attribute name="upperIP" type="wstring">
+      <desc>
+        specifies to IP address in DHCP address range
+      </desc>
+    </attribute>
+
+    <attribute name="id" type="uuid" mod="string">
+      <desc>
+        Host-only network ID.
+      </desc>
+    </attribute>
+  </interface>
+
+  <!--
   // IDHCPServer and associates
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -2557,7 +2613,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="0efe109d-9b2e-48cf-9969-3fb7b711062e"
+    uuid="6c59f776-3693-4801-8ebf-17e005a62e0c"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     wrap-gen-hook="yes"
@@ -2769,6 +2825,12 @@
     <attribute name="internalNetworks" type="wstring" safearray="yes" readonly="yes">
       <desc>
         Names of all internal networks.
+      </desc>
+    </attribute>
+
+    <attribute name="hostOnlyNetworks" type="IHostOnlyNetwork" safearray="yes" readonly="yes">
+      <desc>
+        Names of all host-only networks.
       </desc>
     </attribute>
 
@@ -3521,6 +3583,47 @@
     -->
     <method name="removeNATNetwork">
       <param name="network" type="INATNetwork" dir="in"/>
+    </method>
+
+    <!-- bunch of methods to manage host-only networks -->
+    <method name="createHostOnlyNetwork">
+      <!-- Here we create a record in cloud network array with specified name.
+      -->
+      <param name="networkName" type="wstring" dir="in"/>
+      <param name="network" type="IHostOnlyNetwork" dir="return"/>
+    </method>
+
+    <!--
+          Returns the host-only network by name.
+    -->
+    <method name="findHostOnlyNetworkByName">
+      <param name="networkName" type="wstring" dir="in"/>
+      <param name="network" type="IHostOnlyNetwork" dir="return"/>
+    </method>
+    <!--
+          Returns the host-only network by id.
+    -->
+    <method name="findHostOnlyNetworkById">
+      <desc>
+        Searches through all host networks for one with
+        the given GUID.
+        <note>
+          The method returns an error if the given GUID does not
+          correspond to any host network.
+        </note>
+      </desc>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>GUID of the host-only network to search for.</desc>
+      </param>
+      <param name="network" type="IHostOnlyNetwork" dir="return">
+        <desc>Found host-only network object.</desc>
+      </param>
+    </method>
+    <!--
+        Deletes given host-only network.
+    -->
+    <method name="removeHostOnlyNetwork">
+      <param name="network" type="IHostOnlyNetwork" dir="in"/>
     </method>
 
     <!-- bunch of methods to manage cloud networks -->
@@ -20331,7 +20434,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAttachmentType"
-    uuid="524a8f9d-4b86-4b51-877d-1aa27c4ebeac"
+    uuid="cbfd17fa-fdc3-4d1c-97ec-4674da8d2a5d"
     >
     <desc>
       Network attachment type.
@@ -20347,6 +20450,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Generic"               value="5"/>
     <const name="NATNetwork"            value="6"/>
     <const name="Cloud"                 value="7"/>
+    <const name="HostOnlyNetwork"       value="8"/>
   </enum>
 
   <enum
@@ -20413,7 +20517,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INetworkAdapter" extends="$unknown"
-    uuid="e9a0c183-7071-4894-93d6-dcbec010fa91"
+    uuid="dcf47a1d-ed70-4db8-9a4b-2646bd166905"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -20478,6 +20582,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="hostOnlyInterface" type="wstring">
       <desc>
         Name of the host only network interface the VM is attached to.
+      </desc>
+    </attribute>
+
+    <attribute name="hostOnlyNetwork" type="wstring">
+      <desc>
+        Name of the host only network the VM is attached to.
       </desc>
     </attribute>
 

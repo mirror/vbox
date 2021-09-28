@@ -1624,6 +1624,9 @@ HRESULT SystemProperties::getSupportedNetworkAttachmentTypes(std::vector<Network
         NetworkAttachmentType_Bridged,
         NetworkAttachmentType_Internal,
         NetworkAttachmentType_HostOnly,
+#ifdef VBOX_WITH_VMNET
+        NetworkAttachmentType_HostOnlyNetwork,
+#endif /* VBOX_WITH_VMNET */
         NetworkAttachmentType_Generic,
         NetworkAttachmentType_NATNetwork,
 #ifdef VBOX_WITH_CLOUD_NET

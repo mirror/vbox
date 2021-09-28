@@ -751,6 +751,9 @@ public:
 #ifdef VBOX_WITH_CLOUD_NET
         DetailsElementOptionTypeNetwork_CloudNetwork    = RT_BIT(7),
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+        DetailsElementOptionTypeNetwork_HostOnlyNetwork = RT_BIT(8),
+#endif /* VBOX_WITH_VMNET */
         DetailsElementOptionTypeNetwork_Default         = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeNetwork);

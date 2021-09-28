@@ -78,6 +78,8 @@ private:
     HRESULT setBridgedInterface(const com::Utf8Str &aBridgedInterface);
     HRESULT getHostOnlyInterface(com::Utf8Str &aHostOnlyInterface);
     HRESULT setHostOnlyInterface(const com::Utf8Str &aHostOnlyInterface);
+    HRESULT getHostOnlyNetwork(com::Utf8Str &aHostOnlyNetwork);
+    HRESULT setHostOnlyNetwork(const com::Utf8Str &aHostOnlyNetwork);
     HRESULT getInternalNetwork(com::Utf8Str &aInternalNetwork);
     HRESULT setInternalNetwork(const com::Utf8Str &aInternalNetwork);
     HRESULT getNATNetwork(com::Utf8Str &aNATNetwork);

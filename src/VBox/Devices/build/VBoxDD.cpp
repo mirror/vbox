@@ -304,6 +304,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_VMNET
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVMNet);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif /* VBOX_WITH_VMNET */
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvAUDIO);
     if (RT_FAILURE(rc))
         return rc;

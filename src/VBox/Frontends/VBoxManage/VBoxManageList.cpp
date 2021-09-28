@@ -194,6 +194,52 @@ static HRESULT listNetworkInterfaces(const ComPtr<IVirtualBox> pVirtualBox,
 }
 
 
+#ifdef VBOX_WITH_VMNET
+/**
+ * List configured host-only networks.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
+ * @param   Reserved            Placeholder!
+ */
+static HRESULT listHostOnlyNetworks(const ComPtr<IVirtualBox> pVirtualBox)
+{
+    HRESULT rc;
+    com::SafeIfaceArray<IHostOnlyNetwork> hostOnlyNetworks;
+    CHECK_ERROR(pVirtualBox, COMGETTER(HostOnlyNetworks)(ComSafeArrayAsOutParam(hostOnlyNetworks)));
+    for (size_t i = 0; i < hostOnlyNetworks.size(); ++i)
+    {
+        ComPtr<IHostOnlyNetwork> hostOnlyNetwork = hostOnlyNetworks[i];
+        Bstr networkName;
+        hostOnlyNetwork->COMGETTER(NetworkName)(networkName.asOutParam());
+        RTPrintf("Name:            %ls\n", networkName.raw());
+        Bstr networkGuid;
+        hostOnlyNetwork->COMGETTER(Id)(networkGuid.asOutParam());
+        RTPrintf("GUID:            %ls\n\n", networkGuid.raw());
+        BOOL fEnabled = FALSE;
+        hostOnlyNetwork->COMGETTER(Enabled)(&fEnabled);
+        RTPrintf("State:           %s\n", fEnabled ? "Enabled" : "Disabled");
+
+        Bstr networkMask;
+        hostOnlyNetwork->COMGETTER(NetworkMask)(networkMask.asOutParam());
+        RTPrintf("NetworkMask:     %ls\n", networkMask.raw());
+        Bstr lowerIP;
+        hostOnlyNetwork->COMGETTER(LowerIP)(lowerIP.asOutParam());
+        RTPrintf("LowerIP:         %ls\n", lowerIP.raw());
+        Bstr upperIP;
+        hostOnlyNetwork->COMGETTER(UpperIP)(upperIP.asOutParam());
+        RTPrintf("UpperIP:         %ls\n", upperIP.raw());
+        // Bstr NetworkId;
+        // hostOnlyNetwork->COMGETTER(Id)(NetworkId.asOutParam());
+        // RTPrintf("NetworkId:       %ls\n", NetworkId.raw());
+        Bstr netName = BstrFmt("hostonly-%ls", networkName.raw());
+        RTPrintf("VBoxNetworkName: %ls\n\n", netName.raw());
+    }
+    return rc;
+}
+#endif /* VBOX_WITH_VMNET */
+
+
 #ifdef VBOX_WITH_CLOUD_NET
 /**
  * List configured cloud network attachments.
@@ -1813,6 +1859,9 @@ enum ListType_T
 #if defined(VBOX_WITH_NETFLT)
     kListHostOnlyInterfaces,
 #endif
+#if defined(VBOX_WITH_VMNET)
+    kListHostOnlyNetworks,
+#endif
 #if defined(VBOX_WITH_CLOUD_NET)
     kListCloudNetworks,
 #endif
@@ -2025,6 +2074,12 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
             rc = listNetworkInterfaces(pVirtualBox, enmCommand == kListBridgedInterfaces);
             break;
 
+#if defined(VBOX_WITH_VMNET)
+        case kListHostOnlyNetworks:
+            rc = listHostOnlyNetworks(pVirtualBox);
+            break;
+#endif
+
 #if defined(VBOX_WITH_CLOUD_NET)
         case kListCloudNetworks:
             rc = listCloudNetworks(pVirtualBox);
@@ -2232,6 +2287,9 @@ RTEXITCODE handleList(HandlerArg *a)
 #if defined(VBOX_WITH_NETFLT)
         { "hostonlyifs",        kListHostOnlyInterfaces, RTGETOPT_REQ_NOTHING },
 #endif
+#if defined(VBOX_WITH_VMNET)
+        { "hostonlynets",       kListHostOnlyNetworks,   RTGETOPT_REQ_NOTHING },
+#endif
 #if defined(VBOX_WITH_CLOUD_NET)
         { "cloudnets",          kListCloudNetworks,      RTGETOPT_REQ_NOTHING },
 #endif
@@ -2290,6 +2348,9 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListBridgedInterfaces:
 #if defined(VBOX_WITH_NETFLT)
             case kListHostOnlyInterfaces:
+#endif
+#if defined(VBOX_WITH_VMNET)
+            case kListHostOnlyNetworks:
 #endif
 #if defined(VBOX_WITH_CLOUD_NET)
             case kListCloudNetworks:

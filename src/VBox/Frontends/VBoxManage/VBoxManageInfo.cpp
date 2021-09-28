@@ -1502,6 +1502,22 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         break;
                     }
 
+#ifdef VBOX_WITH_VMNET
+                    case NetworkAttachmentType_HostOnlyNetwork:
+                    {
+                        Bstr strNetwork;
+                        nic->COMGETTER(HostOnlyNetwork)(strNetwork.asOutParam());
+                        if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("hostonly-network%d=\"%ls\"\n", currentNIC + 1, strNetwork.raw());
+                            strAttachment = "hostonlynetwork";
+                        }
+                        else
+                            strAttachment.printf("Host Only Network '%s'", Utf8Str(strNetwork).c_str());
+                        break;
+                    }
+#endif /* VBOX_WITH_VMNET */
+
 #ifdef VBOX_WITH_CLOUD_NET
                     case NetworkAttachmentType_Cloud:
                     {

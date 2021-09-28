@@ -1088,6 +1088,20 @@
       interface on the host can be intercepted.
     </para>
 
+    <note>
+      <para>
+        Hosts running recent Mac OS X versions do not support host-only
+        adapters. These adapters are replaced by host-only networks,
+        which definine a network mask and an IP address range, where the
+        host network interface receives the lowest address in the range.
+      </para>
+      <para>
+        The host network interface gets added and removed dynamically
+        by the operating system, whenever a host-only network is used
+        by virtual machines.
+      </para>
+    </note>
+
     <para>
       Host-only networking is particularly useful for preconfigured
       virtual appliances, where multiple virtual machines are shipped

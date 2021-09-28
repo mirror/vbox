@@ -412,7 +412,13 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const 
                 sv = SettingsVersion_v1_18;
             else if (uMinor == 19)
                 sv = SettingsVersion_v1_19;
+#ifndef VBOX_WITH_VMNET
             else if (uMinor > 19)
+#else /* VBOX_WITH_VMNET */
+            else if (uMinor == 20)
+                sv = SettingsVersion_v1_20;
+            else if (uMinor > 20)
+#endif /* VBOX_WITH_VMNET */
                 sv = SettingsVersion_Future;
         }
         else if (uMajor > 1)
@@ -1048,6 +1054,12 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.19";
             break;
 
+#ifdef VBOX_WITH_VMNET
+        case SettingsVersion_v1_20:
+            pcszVersion = "1.20";
+            break;
+#endif /* VBOX_WITH_VMNET */
+
         default:
             // catch human error: the assertion below will trigger in debug
             // or dbgopt builds, so hopefully this will get noticed sooner in
@@ -1070,8 +1082,13 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
                 // for "forgotten settings" this may not be the best choice,
                 // but as it's an omission of someone who changed this file
                 // it's the only generic possibility.
+#ifndef VBOX_WITH_VMNET
                 pcszVersion = "1.19";
                 m->sv = SettingsVersion_v1_19;
+#else /* VBOX_WITH_VMNET */
+                pcszVersion = "1.20";
+                m->sv = SettingsVersion_v1_20;
+#endif /* VBOX_WITH_VMNET */
             }
             break;
     }
@@ -1697,6 +1714,20 @@ NATNetwork::NATNetwork() :
 {
 }
 
+#ifdef VBOX_WITH_VMNET
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
+HostOnlyNetwork::HostOnlyNetwork() :
+    strNetworkMask("255.255.255.0"),
+    strIPLower("192.168.56.1"),
+    strIPUpper("192.168.56.199"),
+    fEnabled(true)
+{
+    uuid.create();
+}
+#endif /* VBOX_WITH_VMNET */
+
 #ifdef VBOX_WITH_CLOUD_NET
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
@@ -2022,6 +2053,38 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
     }
 }
 
+#ifdef VBOX_WITH_VMNET
+/**
+ * Reads in the \<HostOnlyNetworks\> chunk.
+ * @param elmHostOnlyNetworks
+ */
+void MainConfigFile::readHostOnlyNetworks(const xml::ElementNode &elmHostOnlyNetworks)
+{
+    xml::NodesLoop nl1(elmHostOnlyNetworks);
+    const xml::ElementNode *pelmNet;
+    while ((pelmNet = nl1.forAllNodes()))
+    {
+        if (pelmNet->nameEquals("HostOnlyNetwork"))
+        {
+            HostOnlyNetwork net;
+            Utf8Str strID;
+            if (   pelmNet->getAttributeValue("name", net.strNetworkName)
+                && pelmNet->getAttributeValue("mask", net.strNetworkMask)
+                && pelmNet->getAttributeValue("ipLower", net.strIPLower)
+                && pelmNet->getAttributeValue("ipUpper", net.strIPUpper)
+                && pelmNet->getAttributeValue("id", strID)
+                && pelmNet->getAttributeValue("enabled", net.fEnabled) )
+            {
+                parseUUID(net.uuid, strID, pelmNet);
+                llHostOnlyNetworks.push_back(net);
+            }
+            else
+                throw ConfigFileError(this, pelmNet, N_("Required HostOnlyNetwork/@name, @mask, @ipLower, @ipUpper, @id or @enabled attribute is missing"));
+        }
+    }
+}
+#endif /* VBOX_WITH_VMNET */
+
 #ifdef VBOX_WITH_CLOUD_NET
 /**
  * Reads in the \<CloudNetworks\> chunk.
@@ -2283,6 +2346,10 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                                 readDHCPServers(*pelmLevel4Child);
                             if (pelmLevel4Child->nameEquals("NATNetworks"))
                                 readNATNetworks(*pelmLevel4Child);
+#ifdef VBOX_WITH_VMNET
+                            if (pelmLevel4Child->nameEquals("HostOnlyNetworks"))
+                                readHostOnlyNetworks(*pelmLevel4Child);
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
                             if (pelmLevel4Child->nameEquals("CloudNetworks"))
                                 readCloudNetworks(*pelmLevel4Child);
@@ -2334,6 +2401,14 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 
 void MainConfigFile::bumpSettingsVersionIfNeeded()
 {
+#ifdef VBOX_WITH_VMNET
+    if (m->sv < SettingsVersion_v1_20)
+    {
+        // VirtualBox 7.0 adds support for host-only networks.
+        if (!llHostOnlyNetworks.empty())
+            m->sv = SettingsVersion_v1_20;
+    }
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
     if (m->sv < SettingsVersion_v1_18)
     {
@@ -2430,6 +2505,27 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         }
     }
 
+#ifdef VBOX_WITH_VMNET
+    xml::ElementNode *pelmHostOnlyNetworks;
+    /* don't create entry if no HostOnly networks are registered. */
+    if (!llHostOnlyNetworks.empty())
+    {
+        pelmHostOnlyNetworks = pelmNetServiceRegistry->createChild("HostOnlyNetworks");
+        for (HostOnlyNetworksList::const_iterator it = llHostOnlyNetworks.begin();
+             it != llHostOnlyNetworks.end();
+             ++it)
+        {
+            const HostOnlyNetwork &n = *it;
+            xml::ElementNode *pelmThis = pelmHostOnlyNetworks->createChild("HostOnlyNetwork");
+            pelmThis->setAttribute("name", n.strNetworkName);
+            pelmThis->setAttribute("mask", n.strNetworkMask);
+            pelmThis->setAttribute("ipLower", n.strIPLower);
+            pelmThis->setAttribute("ipUpper", n.strIPUpper);
+            pelmThis->setAttribute("id", n.uuid.toStringCurly());
+            pelmThis->setAttribute("enabled", (n.fEnabled) ? 1 : 0);        // too bad we chose 1 vs. 0 here
+        }
+    }
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
     xml::ElementNode *pelmCloudNetworks;
     /* don't create entry if no cloud networks are registered. */
@@ -3051,6 +3147,9 @@ bool NetworkAdapter::areDefaultSettings(SettingsVersion_T sv) const
         && nat.areDefaultSettings()
         && strBridgedName.isEmpty()
         && strInternalNetworkName.isEmpty()
+#ifdef VBOX_WITH_VMNET
+        && strHostOnlyNetworkName.isEmpty()
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
         && strCloudNetworkName.isEmpty()
 #endif /* VBOX_WITH_CLOUD_NET */
@@ -3067,6 +3166,9 @@ bool NetworkAdapter::areDisabledDefaultSettings() const
     return (mode != NetworkAttachmentType_NAT ? nat.areDefaultSettings() : true)
         && (mode != NetworkAttachmentType_Bridged ? strBridgedName.isEmpty() : true)
         && (mode != NetworkAttachmentType_Internal ? strInternalNetworkName.isEmpty() : true)
+#ifdef VBOX_WITH_VMNET
+        && (mode != NetworkAttachmentType_HostOnlyNetwork ? strHostOnlyNetworkName.isEmpty() : true)
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
         && (mode != NetworkAttachmentType_Cloud ? strCloudNetworkName.isEmpty() : true)
 #endif /* VBOX_WITH_CLOUD_NET */
@@ -3096,6 +3198,9 @@ bool NetworkAdapter::operator==(const NetworkAdapter &n) const
             && nat                   == n.nat
             && strBridgedName        == n.strBridgedName
             && strHostOnlyName       == n.strHostOnlyName
+#ifdef VBOX_WITH_VMNET
+            && strHostOnlyNetworkName == n.strHostOnlyNetworkName
+#endif /* VBOX_WITH_VMNET */
             && strInternalNetworkName == n.strInternalNetworkName
 #ifdef VBOX_WITH_CLOUD_NET
             && strCloudNetworkName   == n.strCloudNetworkName
@@ -4120,6 +4225,16 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         // settings which are saved before configuring the network name
         elmMode.getAttributeValue("name", nic.strHostOnlyName);
     }
+#ifdef VBOX_WITH_VMNET
+    else if (elmMode.nameEquals("HostOnlyNetwork"))
+    {
+        enmAttachmentType = NetworkAttachmentType_HostOnlyNetwork;
+
+        // optional network name, cannot be required or we have trouble with
+        // settings which are saved before configuring the network name
+        elmMode.getAttributeValue("name", nic.strHostOnlyNetworkName);
+    }
+#endif /* VBOX_WITH_VMNET */
     else if (elmMode.nameEquals("GenericInterface"))
     {
         enmAttachmentType = NetworkAttachmentType_Generic;
@@ -4161,6 +4276,16 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         nic.strGenericDriver = "VDE";
         nic.genericProperties["network"] = strVDEName;
     }
+#ifdef VBOX_WITH_VMNET
+    else if (elmMode.nameEquals("HostOnlyNetwork"))
+    {
+        enmAttachmentType = NetworkAttachmentType_HostOnly;
+
+        // optional network name, cannot be required or we have trouble with
+        // settings which are saved before configuring the network name
+        elmMode.getAttributeValue("name", nic.strHostOnlyNetworkName);
+    }
+#endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
     else if (elmMode.nameEquals("CloudNetwork"))
     {
@@ -6757,6 +6882,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                         if (nic.mode != NetworkAttachmentType_Cloud)
                             buildNetworkXML(NetworkAttachmentType_Cloud, false, *pelmDisabledNode, nic);
 #endif /* VBOX_WITH_CLOUD_NET */
+#ifdef VBOX_WITH_VMNET
+                        if (nic.mode != NetworkAttachmentType_HostOnlyNetwork)
+                            buildNetworkXML(NetworkAttachmentType_HostOnlyNetwork, false, *pelmDisabledNode, nic);
+#endif /* VBOX_WITH_VMNET */
                     }
                     buildNetworkXML(nic.mode, true, *pelmAdapter, nic);
                 }
@@ -7211,6 +7340,19 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                     pelmMode->setAttribute("name", nic.strHostOnlyName);
             }
             break;
+
+#ifdef VBOX_WITH_VMNET
+        case NetworkAttachmentType_HostOnlyNetwork:
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.strHostOnlyNetworkName.isEmpty())
+            {
+                xml::ElementNode *pelmMode = elmParent.createChild("HostOnlyNetwork");
+                if (!nic.strHostOnlyNetworkName.isEmpty())
+                    pelmMode->setAttribute("name", nic.strHostOnlyNetworkName);
+            }
+            break;
+#endif /* VBOX_WITH_VMNET */
 
         case NetworkAttachmentType_Generic:
             // For the currently active network attachment type we have to
@@ -7786,6 +7928,23 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+#ifdef VBOX_WITH_VMNET
+    if (m->sv < SettingsVersion_v1_20)
+    {
+        // VirtualBox 7.0 adds a host-only network attachment.
+        NetworkAdaptersList::const_iterator netit;
+        for (netit = hardwareMachine.llNetworkAdapters.begin();
+             netit != hardwareMachine.llNetworkAdapters.end();
+             ++netit)
+        {
+            if (netit->mode == NetworkAttachmentType_HostOnlyNetwork)
+            {
+                m->sv = SettingsVersion_v1_20;
+                break;
+            }
+        }
+    }
+#endif /* VBOX_WITH_VMNET */
     if (m->sv < SettingsVersion_v1_19)
     {
         // VirtualBox 6.2 adds iommu device.

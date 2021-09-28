@@ -131,6 +131,9 @@ extern const PDMDRVREG g_DrvNAT;
 #ifdef VBOX_WITH_NETSHAPER
 extern const PDMDRVREG g_DrvNetShaper;
 #endif /* VBOX_WITH_NETSHAPER */
+#ifdef VBOX_WITH_VMNET
+extern const PDMDRVREG g_DrvVMNet;
+#endif /* VBOX_WITH_VMNET */
 extern const PDMDRVREG g_DrvNetSniffer;
 extern const PDMDRVREG g_DrvAUDIO;
 #ifdef VBOX_WITH_AUDIO_DEBUG

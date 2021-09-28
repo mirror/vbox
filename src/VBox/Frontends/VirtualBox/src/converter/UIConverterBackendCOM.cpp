@@ -381,7 +381,12 @@ template<> QString toString(const KNetworkAttachmentType &type)
         case KNetworkAttachmentType_NAT:        return QApplication::translate("UICommon", "NAT", "NetworkAttachmentType");
         case KNetworkAttachmentType_Bridged:    return QApplication::translate("UICommon", "Bridged Adapter", "NetworkAttachmentType");
         case KNetworkAttachmentType_Internal:   return QApplication::translate("UICommon", "Internal Network", "NetworkAttachmentType");
+#ifndef VBOX_WITH_VMNET
         case KNetworkAttachmentType_HostOnly:   return QApplication::translate("UICommon", "Host-only Adapter", "NetworkAttachmentType");
+#else /* VBOX_WITH_VMNET */
+        case KNetworkAttachmentType_HostOnly:   return QApplication::translate("UICommon", "Host-only Adapter [DEPRECATED]", "NetworkAttachmentType");
+        case KNetworkAttachmentType_HostOnlyNetwork: return QApplication::translate("UICommon", "Host-only Network", "NetworkAttachmentType");
+#endif /* VBOX_WITH_VMNET */
         case KNetworkAttachmentType_Generic:    return QApplication::translate("UICommon", "Generic Driver", "NetworkAttachmentType");
         case KNetworkAttachmentType_NATNetwork: return QApplication::translate("UICommon", "NAT Network", "NetworkAttachmentType");
 #ifdef VBOX_WITH_CLOUD_NET

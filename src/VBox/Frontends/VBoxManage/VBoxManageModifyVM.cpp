@@ -135,6 +135,9 @@ enum
     MODIFYVM_CABLECONNECTED,
     MODIFYVM_BRIDGEADAPTER,
     MODIFYVM_HOSTONLYADAPTER,
+#ifdef VBOX_WITH_VMNET
+    MODIFYVM_HOSTONLYNET,
+#endif /* VBOX_WITH_VMNET */
     MODIFYVM_INTNET,
     MODIFYVM_GENERICDRV,
     MODIFYVM_NATNETWORKNAME,
@@ -337,6 +340,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--bridgeadapter",            MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--hostonlyadapter",          MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+#ifdef VBOX_WITH_VMNET
+    { "--hostonlynet",              MODIFYVM_HOSTONLYNET,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+#endif /* VBOX_WITH_VMNET */
     { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nicgenericdrv",            MODIFYVM_GENERICDRV,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nat-network",              MODIFYVM_NATNETWORKNAME,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -1688,6 +1694,14 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly));
                 }
+#ifdef VBOX_WITH_VMNET
+                else if (!RTStrICmp(ValueUnion.psz, "hostonlynet"))
+                {
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnlyNetwork));
+                }
+#endif /* VBOX_WITH_VMNET */
                 else if (!RTStrICmp(ValueUnion.psz, "generic"))
                 {
                     if (!fEnabled)
@@ -1766,6 +1780,29 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
+
+#ifdef VBOX_WITH_VMNET
+            case MODIFYVM_HOSTONLYNET:
+            {
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
+
+                ComPtr<INetworkAdapter> nic;
+                CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                /* remove it? */
+                if (!RTStrICmp(ValueUnion.psz, "none"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(HostOnlyNetwork)(Bstr().raw()));
+                }
+                else
+                {
+                    CHECK_ERROR(nic, COMSETTER(HostOnlyNetwork)(Bstr(ValueUnion.psz).raw()));
+                }
+                break;
+            }
+#endif /* VBOX_WITH_VMNET */
 
             case MODIFYVM_INTNET:
             {

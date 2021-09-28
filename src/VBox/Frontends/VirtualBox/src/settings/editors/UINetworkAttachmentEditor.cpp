@@ -31,6 +31,9 @@
 #ifdef VBOX_WITH_CLOUD_NET
 # include "CCloudNetwork.h"
 #endif
+#ifdef VBOX_WITH_VMNET
+# include "CHostOnlyNetwork.h"
+#endif
 #include "CHostNetworkInterface.h"
 #include "CNATNetwork.h"
 #include "CSystemProperties.h"
@@ -161,6 +164,17 @@ QStringList UINetworkAttachmentEditor::natNetworks()
         natNetworkList << comNetwork.GetNetworkName();
     return natNetworkList;
 }
+
+#ifdef VBOX_WITH_VMNET
+/* static */
+QStringList UINetworkAttachmentEditor::hostOnlyNetworks()
+{
+    QStringList hostOnlyNetworkList;
+    foreach (const CHostOnlyNetwork &comNetwork, uiCommon().virtualBox().GetHostOnlyNetworks())
+        hostOnlyNetworkList << comNetwork.GetNetworkName();
+    return hostOnlyNetworkList;
+}
+#endif /* VBOX_WITH_VMNET */
 
 #ifdef VBOX_WITH_CLOUD_NET
 /* static */
@@ -395,6 +409,9 @@ void UINetworkAttachmentEditor::populateNameCombo()
         {
             case KNetworkAttachmentType_Bridged:
             case KNetworkAttachmentType_HostOnly:
+#ifdef VBOX_WITH_VMNET
+            case KNetworkAttachmentType_HostOnlyNetwork:
+#endif /* VBOX_WITH_VMNET */
             case KNetworkAttachmentType_NATNetwork:
 #ifdef VBOX_WITH_CLOUD_NET
             case KNetworkAttachmentType_Cloud:
@@ -453,6 +470,14 @@ void UINetworkAttachmentEditor::retranslateNameDescription()
                                           "You can create and remove adapters using the global network "
                                           "settings in the virtual machine manager window."));
             break;
+#ifdef VBOX_WITH_VMNET
+        case KNetworkAttachmentType_HostOnlyNetwork:
+            m_pComboName->setWhatsThis(tr("Holds the name of the host-only network that this network card "
+                                          "will be connected to. You can add and remove host-only networks "
+                                          "using the global network settings in the virtual machine "
+                                          "manager window."));
+            break;
+#endif /* VBOX_WITH_VMNET */
         case KNetworkAttachmentType_Generic:
             m_pComboName->setWhatsThis(tr("Selects the driver to be used with this network card."));
             break;
@@ -484,6 +509,9 @@ void UINetworkAttachmentEditor::revalidate()
         case KNetworkAttachmentType_Bridged:
         case KNetworkAttachmentType_Internal:
         case KNetworkAttachmentType_HostOnly:
+#ifdef VBOX_WITH_VMNET
+        case KNetworkAttachmentType_HostOnlyNetwork:
+#endif /* VBOX_WITH_VMNET */
         case KNetworkAttachmentType_Generic:
         case KNetworkAttachmentType_NATNetwork:
 #ifdef VBOX_WITH_CLOUD_NET
@@ -507,6 +535,9 @@ UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork UINetworkAttachmentEditor::
         case KNetworkAttachmentType_Bridged:    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
         case KNetworkAttachmentType_Internal:   return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
         case KNetworkAttachmentType_HostOnly:   return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
+#ifdef VBOX_WITH_VMNET
+        case KNetworkAttachmentType_HostOnlyNetwork: return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork;
+#endif /* VBOX_WITH_VMNET */
         case KNetworkAttachmentType_Generic:    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
         case KNetworkAttachmentType_NATNetwork: return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
 #ifdef VBOX_WITH_CLOUD_NET
