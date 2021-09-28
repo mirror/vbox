@@ -1524,13 +1524,30 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitR
         && (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
         pVmcs->u32PreemptTimer = iemVmxCalcPreemptTimer(pVCpu);
 
-    /* PDPTEs. */
-    /* We don't support EPT yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
-    pVmcs->u64GuestPdpte0.u = 0;
-    pVmcs->u64GuestPdpte1.u = 0;
-    pVmcs->u64GuestPdpte2.u = 0;
-    pVmcs->u64GuestPdpte3.u = 0;
+    /*
+     * PAE PDPTEs.
+     *
+     * If EPT is enabled and PAE paging was used at the time of the VM-exit,
+     * the PDPTEs are saved from the VMCS. Otherwise they're undefined but
+     * we zero them for consistency.
+     */
+    if (    (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+        && !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
+        &&  (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
+        &&  (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG))
+    {
+        pVmcs->u64GuestPdpte0.u = pVCpu->cpum.GstCtx.aPaePdpes[0].u;
+        pVmcs->u64GuestPdpte1.u = pVCpu->cpum.GstCtx.aPaePdpes[1].u;
+        pVmcs->u64GuestPdpte2.u = pVCpu->cpum.GstCtx.aPaePdpes[2].u;
+        pVmcs->u64GuestPdpte3.u = pVCpu->cpum.GstCtx.aPaePdpes[3].u;
+    }
+    else
+    {
+        pVmcs->u64GuestPdpte0.u = 0;
+        pVmcs->u64GuestPdpte1.u = 0;
+        pVmcs->u64GuestPdpte2.u = 0;
+        pVmcs->u64GuestPdpte3.u = 0;
+    }
 }
 
 
@@ -5637,10 +5654,9 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInst
     PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     const char * const pszFailure = "VM-exit";
 
-    bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
-    if (   !fGstInLongMode
-        && (pVmcs->u64GuestCr4.u & X86_CR4_PAE)
-        && (pVmcs->u64GuestCr0.u & X86_CR0_PG))
+    if (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
+        &&  (pVmcs->u64GuestCr4.u & X86_CR4_PAE)
+        &&  (pVmcs->u64GuestCr0.u & X86_CR0_PG))
     {
         /* Get the PDPTEs. */
         X86PDPE aPdptes[X86_PG_PAE_PDPE_ENTRIES];
