@@ -73,10 +73,10 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strNATNetworkName(QString())
 #ifdef VBOX_WITH_CLOUD_NET
         , m_strCloudNetworkName(QString())
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
         , m_strHostOnlyNetworkName(QString())
-#endif /* VBOX_WITH_VMNET */
+#endif
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
     {}
@@ -98,10 +98,10 @@ struct UIDataSettingsMachineNetworkAdapter
                && (m_strNATNetworkName == other.m_strNATNetworkName)
 #ifdef VBOX_WITH_CLOUD_NET
                && (m_strCloudNetworkName == other.m_strCloudNetworkName)
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
                && (m_strHostOnlyNetworkName == other.m_strHostOnlyNetworkName)
-#endif /* VBOX_WITH_VMNET */
+#endif
                && (m_strMACAddress == other.m_strMACAddress)
                && (m_fCableConnected == other.m_fCableConnected)
                ;
@@ -137,11 +137,11 @@ struct UIDataSettingsMachineNetworkAdapter
 #ifdef VBOX_WITH_CLOUD_NET
     /** Holds the cloud network name. */
     QString                           m_strCloudNetworkName;
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     /** Holds the host-only network name. */
     QString                           m_strHostOnlyNetworkName;
-#endif /* VBOX_WITH_VMNET */
+#endif
     /** Holds the network adapter MAC address. */
     QString                           m_strMACAddress;
     /** Holds whether the network adapter is connected. */
@@ -335,10 +335,10 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_NATNetwork, wipedOutString(oldAdapterData.m_strNATNetworkName));
 #ifdef VBOX_WITH_CLOUD_NET
     m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_Cloud, wipedOutString(oldAdapterData.m_strCloudNetworkName));
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     m_pEditorAttachmentType->setValueName(KNetworkAttachmentType_HostOnlyNetwork, wipedOutString(oldAdapterData.m_strHostOnlyNetworkName));
-#endif /* VBOX_WITH_VMNET */
+#endif
     /* Handle attachment type change: */
     sltHandleAttachmentTypeChange();
 
@@ -626,10 +626,10 @@ void UIMachineSettingsNetwork::reloadAlternatives()
     m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_NATNetwork, m_pParent->natNetworkList());
 #ifdef VBOX_WITH_CLOUD_NET
     m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_Cloud, m_pParent->cloudNetworkList());
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     m_pEditorAttachmentType->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, m_pParent->hostOnlyNetworkList());
-#endif /* VBOX_WITH_VMNET */
+#endif
 }
 
 void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
@@ -1084,10 +1084,10 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     refreshNATNetworkList();
 #ifdef VBOX_WITH_CLOUD_NET
     refreshCloudNetworkList();
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     refreshHostOnlyNetworkList();
-#endif /* VBOX_WITH_VMNET */
+#endif
 
     /* Prepare old network data: */
     UIDataSettingsMachineNetwork oldNetworkData;
@@ -1113,10 +1113,10 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             oldAdapterData.m_strNATNetworkName = wipedOutString(comAdapter.GetNATNetwork());
 #ifdef VBOX_WITH_CLOUD_NET
             oldAdapterData.m_strCloudNetworkName = wipedOutString(comAdapter.GetCloudNetwork());
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
             oldAdapterData.m_strHostOnlyNetworkName = wipedOutString(comAdapter.GetHostOnlyNetwork());
-#endif /* VBOX_WITH_VMNET */
+#endif
             oldAdapterData.m_adapterType = comAdapter.GetAdapterType();
             oldAdapterData.m_promiscuousMode = comAdapter.GetPromiscModePolicy();
             oldAdapterData.m_strMACAddress = comAdapter.GetMACAddress();

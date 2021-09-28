@@ -87,11 +87,11 @@ public:
 #ifdef VBOX_WITH_CLOUD_NET
     /** Returns cloud network list. */
     static QStringList cloudNetworks();
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     /** Returns host-only network list. */
     static QStringList hostOnlyNetworks();
-#endif /* VBOX_WITH_VMNET */
+#endif
 
 protected:
 

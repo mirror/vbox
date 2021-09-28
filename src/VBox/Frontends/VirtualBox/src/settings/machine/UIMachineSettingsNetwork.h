@@ -58,11 +58,11 @@ public:
 #ifdef VBOX_WITH_CLOUD_NET
     /** Returns the cloud network list. */
     const QStringList &cloudNetworkList() const { return m_cloudNetworkList; }
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     /** Returns the host-only network list. */
     const QStringList &hostOnlyNetworkList() const { return m_hostOnlyNetworkList; }
-#endif /* VBOX_WITH_VMNET */
+#endif
 
  public slots:
 
@@ -122,11 +122,11 @@ private:
 #ifdef VBOX_WITH_CLOUD_NET
     /** Repopulates cloud network list. */
     void refreshCloudNetworkList();
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     /** Repopulates host-only network list. */
     void refreshHostOnlyNetworkList();
-#endif /* VBOX_WITH_VMNET */
+#endif
 
     /** Loads generic properties from passed @a adapter. */
     static QString loadGenericProperties(const CNetworkAdapter &adapter);
@@ -158,11 +158,11 @@ private:
 #ifdef VBOX_WITH_CLOUD_NET
     /** Holds the cloud network list. */
     QStringList  m_cloudNetworkList;
-#endif /* VBOX_WITH_CLOUD_NET */
+#endif
 #ifdef VBOX_WITH_VMNET
     /** Holds the host-only network list. */
     QStringList  m_hostOnlyNetworkList;
-#endif /* VBOX_WITH_VMNET */
+#endif
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineNetwork *m_pCache;
