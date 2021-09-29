@@ -105,6 +105,9 @@ AUDIOTESTBACKENDDESC const g_aBackends[] =
     {   &g_DrvHostDSound,             "dsound" },
     {   &g_DrvHostDSound,             "ds" },
 #endif
+#ifdef VBOX_WITH_AUDIO_DEBUG
+    {   &g_DrvHostDebugAudio,         "debug" },
+#endif
     {   &g_DrvHostValidationKitAudio, "valkit" }
 };
 AssertCompile(sizeof(g_aBackends) > 0 /* port me */);

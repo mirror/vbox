@@ -89,6 +89,13 @@ vkat_SOURCES  = \
 	$(VKAT_PATH_AUDIO)/AudioMixBuffer.cpp \
 	$(VKAT_PATH_AUDIO)/AudioHlp.cpp
 
+# Debug stuff.
+ifdef VBOX_WITH_AUDIO_DEBUG
+ vkat_DEFS    += VBOX_WITH_AUDIO_DEBUG
+ vkat_SOURCES += \
+ 	$(VKAT_PATH_AUDIO)/DrvHostAudioDebug.cpp
+endif
+
 # Self-test stuff.
 vkat_DEFS     += VBOX_WITH_AUDIO_VALIDATIONKIT
 vkat_SOURCES  += \
