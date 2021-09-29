@@ -354,7 +354,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
      if (cPages > 255)
      {
 # ifdef __GFP_REPEAT
-         /* Try hard to allocate the memory, but the allocation attempt might fail. */
+        /* Try hard to allocate the memory, but the allocation attempt might fail. */
         fFlagsLnx |= __GFP_REPEAT;
 # endif
 # ifdef __GFP_NOMEMALLOC
@@ -391,6 +391,9 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
 
     if (!fContiguous)
     {
+        /** @todo Try use alloc_pages_bulk_array when available, it should be faster
+         *        than a alloc_page loop.  Put it in #ifdefs similar to
+         *        IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC. */
         for (iPage = 0; iPage < cPages; iPage++)
         {
             pMemLnx->apPages[iPage] = alloc_page(fFlagsLnx | __GFP_NOWARN);
