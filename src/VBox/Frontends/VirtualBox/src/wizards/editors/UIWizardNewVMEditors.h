@@ -162,6 +162,7 @@ public:
     /** @name Wrappers for UIFilePathSelector
       * @{ */
         void setMemorySize(int size);
+        void setCPUCount(int iCount);
         void setEFIEnabled(bool fEnabled);
     /** @} */
 

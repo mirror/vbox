@@ -88,6 +88,11 @@ void UIWizardNewVMHardwarePage::initializePage()
                 ULONG recommendedRam = type.GetRecommendedRAM();
                 m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
             }
+            if (!m_userModifiedParameters.contains("CPUCount"))
+            {
+                ULONG recommendedCPUs = type.GetRecommendedCPUCount();
+                m_pHardwareWidgetContainer->setCPUCount(recommendedCPUs);
+            }
             if (!m_userModifiedParameters.contains("EFIEnabled"))
             {
                 KFirmwareType fwType = type.GetRecommendedFirmware();
@@ -113,6 +118,7 @@ void UIWizardNewVMHardwarePage::sltCPUCountChanged(int iCount)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     wizardWindow<UIWizardNewVM>()->setCPUCount(iCount);
+    m_userModifiedParameters << "CPUCount";
 }
 
 void UIWizardNewVMHardwarePage::sltEFIEnabledChanged(bool fEnabled)

@@ -359,6 +359,12 @@ void UINewVMHardwareContainer::setMemorySize(int iSize)
         m_pBaseMemoryEditor->setValue(iSize);
 }
 
+void UINewVMHardwareContainer::setCPUCount(int iCount)
+{
+    if (m_pVirtualCPUEditor)
+        m_pVirtualCPUEditor->setValue(iCount);
+}
+
 void UINewVMHardwareContainer::setEFIEnabled(bool fEnabled)
 {
     if (m_pEFICheckBox)
