@@ -137,25 +137,27 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     m_pFormatLayout->setColumnStretch(0, 0);
                     m_pFormatLayout->setColumnStretch(1, 1);
 
-                    /* Create format combo-box: */
-                    m_pFormatComboBox = new QIComboBox(m_pSettingsCnt);
-                    if (m_pFormatComboBox)
-                        m_pFormatLayout->addWidget(m_pFormatComboBox, 0, 1);
                     /* Create format combo-box label: */
                     m_pFormatComboBoxLabel = new QLabel(m_pSettingsCnt);
                     if (m_pFormatComboBoxLabel)
                     {
-                        m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-                        m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+                        m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                         m_pFormatLayout->addWidget(m_pFormatComboBoxLabel, 0, 0);
+                    }
+                    /* Create format combo-box: */
+                    m_pFormatComboBox = new QIComboBox(m_pSettingsCnt);
+                    if (m_pFormatComboBox)
+                    {
+                        m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+                        m_pFormatLayout->addWidget(m_pFormatComboBox, 0, 1);
                     }
 
                     /* Add into layout: */
                     pSettingsCntLayout->addLayout(m_pFormatLayout);
                 }
 
-                /* Create settings widget: */
-                m_pSettingsWidget1 = new QStackedWidget;
+                /* Create 1st settings widget: */
+                m_pSettingsWidget1 = new QStackedWidget(m_pSettingsCnt);
                 if (m_pSettingsWidget1)
                 {
                     /* Create settings pane 1: */
@@ -173,78 +175,60 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pSettingsLayout1->setColumnStretch(0, 0);
                             m_pSettingsLayout1->setColumnStretch(1, 1);
 
+                            /* Create file selector label: */
+                            m_pFileSelectorLabel = new QLabel(pSettingsPane1);
+                            if (m_pFileSelectorLabel)
+                            {
+                                m_pFileSelectorLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                                m_pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
+                            }
                             /* Create file selector: */
-                            m_pFileSelector = new UIEmptyFilePathSelector;
+                            m_pFileSelector = new UIEmptyFilePathSelector(pSettingsPane1);
                             if (m_pFileSelector)
                             {
+                                m_pFileSelectorLabel->setBuddy(m_pFileSelector);
                                 m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
                                 m_pFileSelector->setEditable(true);
                                 m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                                 m_pFileSelector->setDefaultSaveExt("ova");
-
-                                /* Add into layout: */
                                 m_pSettingsLayout1->addWidget(m_pFileSelector, 0, 1, 1, 2);
                             }
-                            /* Create file selector label: */
-                            m_pFileSelectorLabel = new QLabel;
-                            if (m_pFileSelectorLabel)
-                            {
-                                m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                                m_pFileSelectorLabel->setBuddy(m_pFileSelector);
 
-                                /* Add into layout: */
-                                m_pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
-                            }
-
-                            /* Create MAC policy combo-box: */
-                            m_pMACComboBox = new QIComboBox;
-                            if (m_pMACComboBox)
-                            {
-                                /* Add into layout: */
-                                m_pSettingsLayout1->addWidget(m_pMACComboBox, 1, 1, 1, 2);
-                            }
-                            /* Create format combo-box label: */
-                            m_pMACComboBoxLabel = new QLabel;
+                            /* Create MAC policy combo-box label: */
+                            m_pMACComboBoxLabel = new QLabel(pSettingsPane1);
                             if (m_pMACComboBoxLabel)
                             {
-                                m_pMACComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                                m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
-
-                                /* Add into layout: */
+                                m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                                 m_pSettingsLayout1->addWidget(m_pMACComboBoxLabel, 1, 0);
+                            }
+                            /* Create MAC policy combo-box: */
+                            m_pMACComboBox = new QIComboBox(pSettingsPane1);
+                            if (m_pMACComboBox)
+                            {
+                                m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
+                                m_pSettingsLayout1->addWidget(m_pMACComboBox, 1, 1, 1, 2);
                             }
 
                             /* Create advanced label: */
-                            m_pAdditionalLabel = new QLabel;
+                            m_pAdditionalLabel = new QLabel(pSettingsPane1);
                             if (m_pAdditionalLabel)
                             {
-                                m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-                                /* Add into layout: */
+                                m_pAdditionalLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                                 m_pSettingsLayout1->addWidget(m_pAdditionalLabel, 2, 0);
                             }
                             /* Create manifest check-box editor: */
-                            m_pManifestCheckbox = new QCheckBox;
+                            m_pManifestCheckbox = new QCheckBox(pSettingsPane1);
                             if (m_pManifestCheckbox)
-                            {
-                                /* Add into layout: */
                                 m_pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
-                            }
                             /* Create include ISOs check-box: */
-                            m_pIncludeISOsCheckbox = new QCheckBox;
+                            m_pIncludeISOsCheckbox = new QCheckBox(pSettingsPane1);
                             if (m_pIncludeISOsCheckbox)
-                            {
-                                /* Add into layout: */
                                 m_pSettingsLayout1->addWidget(m_pIncludeISOsCheckbox, 3, 1);
-                            }
 
                             /* Create placeholder: */
-                            QWidget *pPlaceholder = new QWidget;
+                            QWidget *pPlaceholder = new QWidget(pSettingsPane1);
                             if (pPlaceholder)
-                            {
-                                /* Add into layout: */
                                 m_pSettingsLayout1->addWidget(pPlaceholder, 4, 0, 1, 3);
-                            }
                         }
 
                         /* Add into layout: */
@@ -270,7 +254,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pProfileLabel = new QLabel(pSettingsPane2);
                             if (m_pProfileLabel)
                             {
-                                m_pProfileLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                                m_pProfileLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                                 m_pSettingsLayout2->addWidget(m_pProfileLabel, 0, 0);
                             }
                             /* Create sub-layout: */
@@ -304,10 +288,9 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pExportModeLabel = new QLabel(pSettingsPane2);
                             if (m_pExportModeLabel)
                             {
-                                m_pExportModeLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                                m_pExportModeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                                 m_pSettingsLayout2->addWidget(m_pExportModeLabel, 1, 0);
                             }
-
                             /* Create button-group: */
                             m_pExportModeButtonGroup = new QButtonGroup(pSettingsPane2);
                             if (m_pExportModeButtonGroup)
@@ -334,6 +317,11 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                     m_pSettingsLayout2->addWidget(m_exportModeButtons.value(CloudExportMode_ExportThenAsk), 3, 1);
                                 }
                             }
+
+                            /* Create placeholder: */
+                            QWidget *pPlaceholder = new QWidget(pSettingsPane2);
+                            if (pPlaceholder)
+                                m_pSettingsLayout2->addWidget(pPlaceholder, 4, 0, 1, 3);
                         }
 
                         /* Add into layout: */
