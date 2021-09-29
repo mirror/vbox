@@ -47,6 +47,7 @@ class QIToolButton;
 class UIApplianceExportEditorWidget;
 class UIEmptyFilePathSelector;
 class UIFormEditorWidget;
+class UIToolBox;
 class UIWizardExportApp;
 
 /** UIWizardPage extension for UIWizardExportAppPage1, UIWizardExportAppPage2 and UIWizardExportAppPage3. */
@@ -133,15 +134,13 @@ private:
     CCloudProfile  m_comCloudProfile;
 
 
-    /** Holds the VM selector container instance. */
-    QGroupBox   *m_pSelectorCnt;
+    /** Holds the tool-box instance. */
+    UIToolBox *m_pToolBox;
+
 
     /** Holds the VM selector instance. */
     QListWidget *m_pVMSelector;
 
-
-    /** Holds the settings widget container reference. */
-    QGroupBox *m_pSettingsCnt;
 
     /** Holds the format layout. */
     QGridLayout *m_pFormatLayout;
@@ -186,9 +185,6 @@ private:
     /** Holds the map of export mode button instances. */
     QMap<CloudExportMode, QAbstractButton*>  m_exportModeButtons;
 
-
-    /** Holds the appliance widget container reference. */
-    QGroupBox   *m_pApplianceCnt;
 
     /** Holds the settings widget 2 instance. */
     QStackedWidget *m_pSettingsWidget2;
