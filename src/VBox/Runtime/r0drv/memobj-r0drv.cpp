@@ -745,14 +745,12 @@ RTR0DECL(int) RTR0MemObjMapKernelExTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToM
     AssertReturn((!offSub && !cbSub) || (offSub + cbSub) <= pMemToMap->cb, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
-    RT_NOREF_PV(pszTag);
-
     /* adjust the request to simplify the native code. */
     if (offSub == 0 && cbSub == pMemToMap->cb)
         cbSub = 0;
 
     /* do the mapping. */
-    rc = rtR0MemObjNativeMapKernel(&pNew, pMemToMap, pvFixed, uAlignment, fProt, offSub, cbSub);
+    rc = rtR0MemObjNativeMapKernel(&pNew, pMemToMap, pvFixed, uAlignment, fProt, offSub, cbSub, pszTag);
     if (RT_SUCCESS(rc))
     {
         /* link it. */
@@ -814,14 +812,12 @@ RTR0DECL(int) RTR0MemObjMapUserExTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap
         R0Process = RTR0ProcHandleSelf();
     RT_ASSERT_PREEMPTIBLE();
 
-    RT_NOREF_PV(pszTag);
-
     /* adjust the request to simplify the native code. */
     if (offSub == 0 && cbSub == pMemToMap->cb)
         cbSub = 0;
 
     /* do the mapping. */
-    rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process, offSub, cbSub);
+    rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process, offSub, cbSub, pszTag);
     if (RT_SUCCESS(rc))
     {
         /* link it. */

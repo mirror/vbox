@@ -405,7 +405,7 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
 
 
 int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
-                              unsigned fProt, size_t offSub, size_t cbSub)
+                              unsigned fProt, size_t offSub, size_t cbSub, const char *pszTag)
 {
     PRTR0MEMOBJHAIKU pMemToMapHaiku = (PRTR0MEMOBJHAIKU)pMemToMap;
     PRTR0MEMOBJHAIKU pMemHaiku;
@@ -464,7 +464,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     {
         /* Create the object. */
         pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), RTR0MEMOBJTYPE_MAPPING, pvMap,
-                                                    pMemToMapHaiku->Core.cb, NULL);
+                                                    pMemToMapHaiku->Core.cb, pszTag);
         if (RT_UNLIKELY(!pMemHaiku))
             return VERR_NO_MEMORY;
 
@@ -484,7 +484,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 
 
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
-                            unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
+                            unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub, const char *pszTag)
 {
 #if 0
     /*
@@ -572,10 +572,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
         /*
          * Create a mapping object for it.
          */
-        PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU),
-                                                                     RTR0MEMOBJTYPE_MAPPING,
-                                                                     (void *)AddrR3,
-                                                                     pMemToMap->cb);
+        PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), RTR0MEMOBJTYPE_MAPPING,
+                                                                     (void *)AddrR3, pMemToMap->cb, pszTag);
         if (pMemHaiku)
         {
             Assert((vm_offset_t)pMemHaiku->Core.pv == AddrR3);
@@ -587,6 +585,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
         rc = vm_map_remove(pProcMap, ((vm_offset_t)AddrR3), ((vm_offset_t)AddrR3) + pMemToMap->cb);
         AssertMsg(rc == KERN_SUCCESS, ("Deleting mapping failed\n"));
     }
+#else
+    RT_NOREF(ppMem, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process, offSub, cbSub, pszTag);
 #endif
     return VERR_NOT_SUPPORTED;
 }

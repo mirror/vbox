@@ -450,9 +450,10 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR 
  * @param   cbSub           The size of the part of the object to be mapped. If
  *                          zero the entire object is mapped. The value must be
  *                          page aligned.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
 DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
-                                          unsigned fProt, size_t offSub, size_t cbSub);
+                                          unsigned fProt, size_t offSub, size_t cbSub, const char *pszTag);
 
 /**
  * Maps a memory object into user virtual address space in the current process.
@@ -470,9 +471,11 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
  * @param   cbSub           The size of the part of the object to be mapped. If
  *                          zero the entire object is mapped. The value must be
  *                          page aligned.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
 DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed,
-                                        size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub);
+                                        size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub,
+                                        const char *pszTag);
 
 /**
  * Change the page level protection of one or more pages in a memory object.

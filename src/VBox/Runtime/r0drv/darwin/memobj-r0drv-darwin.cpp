@@ -1103,7 +1103,7 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR 
 
 
 DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
-                                          unsigned fProt, size_t offSub, size_t cbSub)
+                                          unsigned fProt, size_t offSub, size_t cbSub, const char *pszTag)
 {
     RT_NOREF(fProt);
     AssertReturn(pvFixed == (void *)-1, VERR_NOT_SUPPORTED);
@@ -1199,7 +1199,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
                          * Create the IPRT memory object.
                          */
                         PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
-                                                                                        pv, cbSub ? cbSub : pMemToMap->cb, NULL);
+                                                                                        pv, cbSub ? cbSub : pMemToMap->cb, pszTag);
                         if (pMemDarwin)
                         {
                             pMemDarwin->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
@@ -1237,7 +1237,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
 
 
 DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
-                                        unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
+                                        unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub, const char *pszTag)
 {
     RT_NOREF(fProt);
 
@@ -1291,7 +1291,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                  * Create the IPRT memory object.
                  */
                 PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
-                                                                                pv, cbSub ? cbSub : pMemToMap->cb, NULL);
+                                                                                pv, cbSub ? cbSub : pMemToMap->cb, pszTag);
                 if (pMemDarwin)
                 {
                     pMemDarwin->Core.u.Mapping.R0Process = R0Process;
