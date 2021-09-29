@@ -93,6 +93,9 @@ private:
     UIApplianceExportEditorWidget *m_pApplianceWidget;
     /** Holds the Form Editor widget instance. */
     UIFormEditorWidget            *m_pFormEditor;
+
+    /** Holds whether cloud exporting is at launching stage. */
+    bool  m_fLaunching;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h */

@@ -115,6 +115,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     , m_pSettingsWidget2(0)
     , m_pApplianceWidget(0)
     , m_pFormEditor(0)
+    , m_fLaunching(false)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -227,18 +228,65 @@ bool UIWizardExportAppPageBasic3::validatePage()
         /* Make sure table has own data committed: */
         m_pFormEditor->makeSureEditorDataCommitted();
 
+        /* Init VSD form: */
+        CVirtualSystemDescriptionForm comForm;
         /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = wizard()->vsdExportForm();
-        fResult = comForm.isNotNull();
-        Assert(fResult);
-
-        /* Give changed VSD back to appliance: */
+        if (!m_fLaunching)
+        {
+            /* We are going to upload image: */
+            comForm = wizard()->vsdExportForm();
+            fResult = comForm.isNotNull();
+        }
+        else
+        {
+            /* We are going to launch VM: */
+            comForm = wizard()->vsdLaunchForm();
+            fResult = comForm.isNotNull();
+        }
+        /* Give changed VSD back: */
         if (fResult)
         {
             comForm.GetVirtualSystemDescription();
             fResult = comForm.isOk();
             if (!fResult)
                 msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+        }
+
+        /* Final stage? */
+        if (fResult)
+        {
+            if (!m_fLaunching)
+            {
+                /* For modes other than AskThenExport, try to export appliance first: */
+                if (wizard()->cloudExportMode() != CloudExportMode_AskThenExport)
+                    fResult = wizard()->exportAppliance();
+
+                /* For modes other than DoNotAsk, switch from uploading image to launching VM: */
+                if (   fResult
+                    && wizard()->cloudExportMode() != CloudExportMode_DoNotAsk)
+                {
+                    /* Invert flags: */
+                    fResult = false;
+                    m_fLaunching = true;
+
+                    /* Disable wizard buttons: */
+                    wizard()->disableButtons();
+
+                    /* Refresh corresponding widgets: */
+                    wizard()->createVsdLaunchForm();
+                    refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdLaunchForm(), wizard()->isFormatCloudOne());
+                }
+            }
+            else
+            {
+                /* For AskThenExport mode, try to export appliance in the end: */
+                if (wizard()->cloudExportMode() == CloudExportMode_AskThenExport)
+                    fResult = wizard()->exportAppliance();
+
+                /* Try to create cloud VM: */
+                if (fResult)
+                    fResult = wizard()->createCloudVM();
+            }
         }
     }
     /* Otherwise if there was local target selected: */
@@ -247,11 +295,11 @@ bool UIWizardExportAppPageBasic3::validatePage()
         /* Prepare export: */
         m_pApplianceWidget->prepareExport();
         wizard()->setLocalAppliance(*m_pApplianceWidget->appliance());
-    }
 
-    /* Try to export appliance: */
-    if (fResult)
-        fResult = wizard()->exportAppliance();
+        /* Try to export appliance: */
+        if (fResult)
+            fResult = wizard()->exportAppliance();
+    }
 
     /* Return result: */
     return fResult;

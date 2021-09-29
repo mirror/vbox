@@ -25,12 +25,12 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
+#include "UIProgressObject.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppPageBasic1.h"
 #include "UIWizardExportAppPageBasic2.h"
 #include "UIWizardExportAppPageBasic3.h"
 #include "UIWizardExportAppPageExpert.h"
-#include "UIWizardNewCloudVM.h"
 
 /* COM includes: */
 #include "CAppliance.h"
@@ -199,6 +199,16 @@ void UIWizardExportApp::setVsdExportForm(const CVirtualSystemDescriptionForm &co
     m_comVsdExportForm = comForm;
 }
 
+CVirtualSystemDescriptionForm UIWizardExportApp::vsdLaunchForm()
+{
+    return m_comVsdLaunchForm;
+}
+
+void UIWizardExportApp::setVsdLaunchForm(const CVirtualSystemDescriptionForm &comForm)
+{
+    m_comVsdLaunchForm = comForm;
+}
+
 CloudExportMode UIWizardExportApp::cloudExportMode() const
 {
     return m_enmCloudExportMode;
@@ -212,6 +222,13 @@ void UIWizardExportApp::setCloudExportMode(const CloudExportMode &enmMode)
 void UIWizardExportApp::goForward()
 {
     wizardButton(WizardButtonType_Next)->click();
+}
+
+void UIWizardExportApp::disableButtons()
+{
+    wizardButton(WizardButtonType_Expert)->setEnabled(false);
+    wizardButton(WizardButtonType_Back)->setEnabled(false);
+    wizardButton(WizardButtonType_Next)->setEnabled(false);
 }
 
 QString UIWizardExportApp::uri(bool fWithFile) const
@@ -331,6 +348,93 @@ bool UIWizardExportApp::exportAppliance()
     }
 }
 
+bool UIWizardExportApp::createVsdLaunchForm()
+{
+    /* Prepare result: */
+    bool fResult = false;
+
+    /* Acquire prepared client and description: */
+    CCloudClient comClient = cloudClient();
+    CVirtualSystemDescription comVSD = vsd();
+    AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
+
+    /* Get Launch description form: */
+    CVirtualSystemDescriptionForm comForm;
+    CProgress comProgress = comClient.GetLaunchDescriptionForm(comVSD, comForm);
+    /* Check for immediate errors: */
+    if (!comClient.isOk())
+        msgCenter().cannotAcquireCloudClientParameter(comClient);
+    else
+    {
+        /* Make sure progress initially valid: */
+        if (!comProgress.isNull() && !comProgress.GetCompleted())
+        {
+            /* Create take snapshot progress object: */
+            QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
+            if (pObject)
+            {
+                connect(pObject.data(), &UIProgressObject::sigProgressChange,
+                        this, &UIWizardExportApp::sltHandleProgressChange);
+                connect(pObject.data(), &UIProgressObject::sigProgressComplete,
+                        this, &UIWizardExportApp::sltHandleProgressFinished);
+                sltHandleProgressStarted();
+                pObject->exec();
+                if (pObject)
+                    delete pObject;
+                else
+                {
+                    // Premature application shutdown,
+                    // exit immediately:
+                    return fResult;
+                }
+            }
+        }
+
+        /* Check for progress errors: */
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAcquireCloudClientParameter(comProgress);
+        else
+        {
+            /* Check whether form really read: */
+            if (comForm.isNotNull())
+            {
+                /* Remember Virtual System Description Form: */
+                setVsdLaunchForm(comForm);
+
+                /* Finally, success: */
+                fResult = true;
+            }
+        }
+    }
+
+    /* Return result: */
+    return fResult;
+}
+
+bool UIWizardExportApp::createCloudVM()
+{
+    /* Acquire prepared client and description: */
+    CCloudClient comClient = cloudClient();
+    CVirtualSystemDescription comVSD = vsd();
+    AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
+
+    /* Initiate cloud VM creation procedure: */
+    CCloudMachine comMachine;
+
+    /* Create cloud VM: */
+    UINotificationProgressCloudMachineCreate *pNotification = new UINotificationProgressCloudMachineCreate(comClient,
+                                                                                                           comMachine,
+                                                                                                           comVSD,
+                                                                                                           format(),
+                                                                                                           profileName());
+    connect(pNotification, &UINotificationProgressCloudMachineCreate::sigCloudMachineCreated,
+            &uiCommon(), &UICommon::sltHandleCloudMachineAdded);
+    gpNotificationCenter->append(pNotification);
+
+    /* Return result: */
+    return true;
+}
+
 void UIWizardExportApp::populatePages()
 {
     /* Create corresponding pages: */
@@ -369,179 +473,93 @@ void UIWizardExportApp::retranslateUi()
 
 bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
 {
-    /* Prepare result: */
-    bool fResult = false;
+    /* Get the map of the password IDs: */
+    EncryptedMediumMap encryptedMedia;
+    foreach (const QString &strPasswordId, comAppliance.GetPasswordIds())
+        foreach (const QUuid &uMediumId, comAppliance.GetMediumIdsForPasswordId(strPasswordId))
+            encryptedMedia.insert(strPasswordId, uMediumId);
 
-    /* New Cloud VM wizard can be created
-     * in certain cases and should be cleaned up
-     * afterwards, thus this is a global variable: */
-    UISafePointerWizardNewCloudVM pNewCloudVMWizard;
-
-    /* Main API request sequence, can be interrupted after any step: */
-    do
+    /* Ask for the disk encryption passwords if necessary: */
+    if (!encryptedMedia.isEmpty())
     {
-        /* Get the map of the password IDs: */
-        EncryptedMediumMap encryptedMedia;
-        foreach (const QString &strPasswordId, comAppliance.GetPasswordIds())
-            foreach (const QUuid &uMediumId, comAppliance.GetMediumIdsForPasswordId(strPasswordId))
-                encryptedMedia.insert(strPasswordId, uMediumId);
+        /* Modal dialog can be destroyed in own event-loop as a part of application
+         * termination procedure. We have to make sure that the dialog pointer is
+         * always up to date. So we are wrapping created dialog with QPointer. */
+        QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+            new UIAddDiskEncryptionPasswordDialog(this,
+                                                  window()->windowTitle(),
+                                                  encryptedMedia);
 
-        /* Ask for the disk encryption passwords if necessary: */
-        if (!encryptedMedia.isEmpty())
+        /* Execute the dialog: */
+        if (pDlg->exec() != QDialog::Accepted)
         {
-            /* Modal dialog can be destroyed in own event-loop as a part of application
-             * termination procedure. We have to make sure that the dialog pointer is
-             * always up to date. So we are wrapping created dialog with QPointer. */
-            QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
-                new UIAddDiskEncryptionPasswordDialog(this,
-                                                      window()->windowTitle(),
-                                                      encryptedMedia);
-
-            /* Execute the dialog: */
-            if (pDlg->exec() != QDialog::Accepted)
-            {
-                /* Delete the dialog: */
-                delete pDlg;
-                break;
-            }
-
-            /* Acquire the passwords provided: */
-            const EncryptionPasswordMap encryptionPasswords = pDlg->encryptionPasswords();
-
             /* Delete the dialog: */
             delete pDlg;
-
-            /* Provide appliance with passwords if possible: */
-            comAppliance.AddPasswords(encryptionPasswords.keys().toVector(),
-                                      encryptionPasswords.values().toVector());
-            if (!comAppliance.isOk())
-            {
-                msgCenter().cannotAddDiskEncryptionPassword(comAppliance);
-                break;
-            }
+            return false;
         }
 
-        /* Prepare export options: */
-        QVector<KExportOptions> options;
-        switch (macAddressExportPolicy())
+        /* Acquire the passwords provided: */
+        const EncryptionPasswordMap encryptionPasswords = pDlg->encryptionPasswords();
+
+        /* Delete the dialog: */
+        delete pDlg;
+
+        /* Provide appliance with passwords if possible: */
+        comAppliance.AddPasswords(encryptionPasswords.keys().toVector(),
+                                  encryptionPasswords.values().toVector());
+        if (!comAppliance.isOk())
         {
-            case MACAddressExportPolicy_StripAllNonNATMACs: options.append(KExportOptions_StripAllNonNATMACs); break;
-            case MACAddressExportPolicy_StripAllMACs: options.append(KExportOptions_StripAllMACs); break;
-            default: break;
+            msgCenter().cannotAddDiskEncryptionPassword(comAppliance);
+            return false;
         }
-        if (isManifestSelected())
-            options.append(KExportOptions_CreateManifest);
-        if (isIncludeISOsSelected())
-            options.append(KExportOptions_ExportDVDImages);
-
-        /* Is this VM being exported to cloud? */
-        if (isFormatCloudOne())
-        {
-            /* We can have wizard and it's result
-             * should be distinguishable: */
-            int iWizardResult = -1;
-
-            switch (cloudExportMode())
-            {
-                case CloudExportMode_AskThenExport:
-                {
-                    /* Get the required parameters to init short wizard mode: */
-                    CCloudClient comClient = cloudClient();
-                    CVirtualSystemDescription comDescription = vsd();
-                    /* Create and run wizard as modal dialog, but prevent final step: */
-                    QWidget *pWizardParent = windowManager().realParentWindow(this);
-                    const QString strGroupName = QString("/%1/%2").arg(format(), profileName());
-                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, strGroupName, comClient, comDescription, mode());
-                    windowManager().registerNewParent(pNewCloudVMWizard, pWizardParent);
-                    pNewCloudVMWizard->setFinalStepPrevented(true);
-                    iWizardResult = pNewCloudVMWizard->exec();
-                    break;
-                }
-                default:
-                    break;
-            }
-
-            /* We should stop everything only if
-             * there was wizard and it was rejected: */
-            if (iWizardResult == QDialog::Rejected)
-                break;
-
-            /* Prepare Export VM progress: */
-            CProgress comProgress = comAppliance.Write(format(), options, uri());
-            if (!comAppliance.isOk())
-            {
-                msgCenter().cannotExportAppliance(comAppliance, this);
-                break;
-            }
-
-            /* Show Export VM progress: */
-            msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Exporting Appliance ..."),
-                                                ":/progress_export_90px.png", this);
-            if (comProgress.GetCanceled())
-                break;
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotExportAppliance(comProgress, comAppliance.GetPath(), this);
-                break;
-            }
-
-            /* We can have wizard and it's result
-             * should be distinguishable: */
-            iWizardResult = -1;
-
-            switch (cloudExportMode())
-            {
-                case CloudExportMode_AskThenExport:
-                {
-                    /* Run the wizard as modal dialog again,
-                     * moreover in auto-finish mode and
-                     * do not prevent final step. */
-                    pNewCloudVMWizard->setFinalStepPrevented(false);
-                    pNewCloudVMWizard->scheduleAutoFinish();
-                    iWizardResult = pNewCloudVMWizard->exec();
-                    break;
-                }
-                case CloudExportMode_ExportThenAsk:
-                {
-                    /* Get the required parameters to init short wizard mode: */
-                    CCloudClient comClient = cloudClient();
-                    CVirtualSystemDescription comDescription = vsd();
-                    /* Create and run short wizard mode as modal dialog: */
-                    QWidget *pWizardParent = windowManager().realParentWindow(this);
-                    const QString strGroupName = QString("/%1/%2").arg(format(), profileName());
-                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, strGroupName, comClient, comDescription, mode());
-                    windowManager().registerNewParent(pNewCloudVMWizard, pWizardParent);
-                    iWizardResult = pNewCloudVMWizard->exec();
-                    break;
-                }
-                default:
-                    break;
-            }
-
-            /* We should stop everything only if
-             * there was wizard and it was rejected: */
-            if (iWizardResult == QDialog::Rejected)
-                break;
-        }
-        /* Is this VM being exported locally? */
-        else
-        {
-            /* Export appliance: */
-            UINotificationProgressApplianceExport *pNotification = new UINotificationProgressApplianceExport(comAppliance,
-                                                                                                             format(),
-                                                                                                             options,
-                                                                                                             uri());
-            gpNotificationCenter->append(pNotification);
-        }
-
-        /* Success finally: */
-        fResult = true;
     }
-    while (0);
 
-    /* Cleanup New Cloud VM wizard if any: */
-    delete pNewCloudVMWizard;
+    /* Prepare export options: */
+    QVector<KExportOptions> options;
+    switch (macAddressExportPolicy())
+    {
+        case MACAddressExportPolicy_StripAllNonNATMACs: options.append(KExportOptions_StripAllNonNATMACs); break;
+        case MACAddressExportPolicy_StripAllMACs: options.append(KExportOptions_StripAllMACs); break;
+        default: break;
+    }
+    if (isManifestSelected())
+        options.append(KExportOptions_CreateManifest);
+    if (isIncludeISOsSelected())
+        options.append(KExportOptions_ExportDVDImages);
 
-    /* Return result: */
-    return fResult;
+    /* Is this VM being exported to cloud? */
+    if (isFormatCloudOne())
+    {
+        /* Prepare Export VM progress: */
+        CProgress comProgress = comAppliance.Write(format(), options, uri());
+        if (!comAppliance.isOk())
+        {
+            msgCenter().cannotExportAppliance(comAppliance, this);
+            return false;
+        }
+
+        /* Show Export VM progress: */
+        msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Exporting Appliance ..."),
+                                            ":/progress_export_90px.png", this);
+        if (comProgress.GetCanceled())
+            return false;
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            msgCenter().cannotExportAppliance(comProgress, comAppliance.GetPath(), this);
+            return false;
+        }
+    }
+    /* Is this VM being exported locally? */
+    else
+    {
+        /* Export appliance: */
+        UINotificationProgressApplianceExport *pNotification = new UINotificationProgressApplianceExport(comAppliance,
+                                                                                                         format(),
+                                                                                                         options,
+                                                                                                         uri());
+        gpNotificationCenter->append(pNotification);
+    }
+
+    /* Success finally: */
+    return true;
 }
