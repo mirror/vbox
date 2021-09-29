@@ -560,7 +560,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     , m_pFormatLayout(0)
     , m_pFormatComboBoxLabel(0)
     , m_pFormatComboBox(0)
-    , m_pSettingsWidget(0)
+    , m_pSettingsWidget1(0)
     , m_pSettingsLayout1(0)
     , m_pFileSelectorLabel(0)
     , m_pFileSelector(0)
@@ -623,12 +623,12 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
         if (m_pLabelSettings)
             pMainLayout->addWidget(m_pLabelSettings);
 
-        /* Create settings layout: */
-        m_pSettingsWidget = new QStackedWidget(this);
-        if (m_pSettingsWidget)
+        /* Create settings widget 1: */
+        m_pSettingsWidget1 = new QStackedWidget(this);
+        if (m_pSettingsWidget1)
         {
             /* Create settings pane 1: */
-            QWidget *pSettingsPane1 = new QWidget(m_pSettingsWidget);
+            QWidget *pSettingsPane1 = new QWidget(m_pSettingsWidget1);
             if (pSettingsPane1)
             {
                 /* Create settings layout 1: */
@@ -700,11 +700,11 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                 }
 
                 /* Add into layout: */
-                m_pSettingsWidget->addWidget(pSettingsPane1);
+                m_pSettingsWidget1->addWidget(pSettingsPane1);
             }
 
             /* Create settings pane 2: */
-            QWidget *pSettingsPane2 = new QWidget(m_pSettingsWidget);
+            QWidget *pSettingsPane2 = new QWidget(m_pSettingsWidget1);
             if (pSettingsPane2)
             {
                 /* Create settings layout 2: */
@@ -794,11 +794,11 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                 }
 
                 /* Add into layout: */
-                m_pSettingsWidget->addWidget(pSettingsPane2);
+                m_pSettingsWidget1->addWidget(pSettingsPane2);
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pSettingsWidget);
+            pMainLayout->addWidget(m_pSettingsWidget1);
         }
     }
 
@@ -1080,7 +1080,7 @@ void UIWizardExportAppPageBasic2::updateFormat()
     wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
 
     /* Refresh settings widget state: */
-    refreshStackedWidget(m_pSettingsWidget, wizard()->isFormatCloudOne());
+    refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
 
     /* Update export settings: */
     refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());

@@ -163,8 +163,8 @@ private:
     /** Holds the format combo-box instance. */
     QIComboBox  *m_pFormatComboBox;
 
-    /** Holds the settings widget instance. */
-    QStackedWidget *m_pSettingsWidget;
+    /** Holds the settings widget 1 instance. */
+    QStackedWidget *m_pSettingsWidget1;
 
     /** Holds the settings layout 1. */
     QGridLayout             *m_pSettingsLayout1;
