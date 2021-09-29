@@ -32,7 +32,7 @@
 #include "CAppliance.h"
 
 /* Forward declarations: */
-class QStackedLayout;
+class QStackedWidget;
 class QIRichTextLabel;
 class UIApplianceExportEditorWidget;
 class UIFormEditorWidget;
@@ -41,8 +41,8 @@ class UIWizardExportApp;
 /** Namespace for 3rd basic page of the Export Appliance wizard. */
 namespace UIWizardExportAppPage3
 {
-    /** Refresh stacked layout. */
-    void refreshStackedLayout(QStackedLayout *pStackedLayout,
+    /** Refresh stacked widget. */
+    void refreshStackedWidget(QStackedWidget *pStackedWidget,
                               bool fIsFormatCloudOne);
 
     /** Refreshes appliance settings widget. */
@@ -86,8 +86,8 @@ private:
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
 
-    /** Holds the settings container layout instance. */
-    QStackedLayout *m_pSettingsLayout;
+    /** Holds the settings widget 2 instance. */
+    QStackedWidget *m_pSettingsWidget2;
 
     /** Holds the appliance widget reference. */
     UIApplianceExportEditorWidget *m_pApplianceWidget;

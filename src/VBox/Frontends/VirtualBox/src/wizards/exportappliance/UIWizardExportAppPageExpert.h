@@ -41,7 +41,6 @@ class QGridLayout;
 class QGroupBox;
 class QLabel;
 class QListWidget;
-class QStackedLayout;
 class QStackedWidget;
 class QIComboBox;
 class QIToolButton;
@@ -144,8 +143,8 @@ private:
     /** Holds the appliance widget container reference. */
     QGroupBox   *m_pApplianceCnt;
 
-    /** Holds the settings container layout instance. */
-    QStackedLayout *m_pSettingsLayout;
+    /** Holds the settings widget 2 instance. */
+    QStackedWidget *m_pSettingsWidget2;
 
     /** Holds the appliance widget reference. */
     UIApplianceExportEditorWidget *m_pApplianceWidget;

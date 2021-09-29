@@ -25,7 +25,6 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QRadioButton>
-#include <QStackedLayout>
 #include <QStackedWidget>
 #include <QTableWidget>
 #include <QVBoxLayout>
@@ -64,7 +63,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     , m_pSelectorCnt(0)
     , m_pVMSelector(0)
     , m_pApplianceCnt(0)
-    , m_pSettingsLayout(0)
+    , m_pSettingsWidget2(0)
     , m_pApplianceWidget(0)
     , m_pFormEditor(0)
     , m_pSettingsCnt(0)
@@ -123,9 +122,9 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             QVBoxLayout *pApplianceCntLayout = new QVBoxLayout(m_pApplianceCnt);
             if (pApplianceCntLayout)
             {
-                /* Create settings container layout: */
-                m_pSettingsLayout = new QStackedLayout;
-                if (m_pSettingsLayout)
+                /* Create settings widget 2: */
+                m_pSettingsWidget2 = new QStackedWidget;
+                if (m_pSettingsWidget2)
                 {
                     /* Create appliance widget container: */
                     QWidget *pApplianceWidgetCnt = new QWidget(this);
@@ -148,7 +147,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                         }
 
                         /* Add into layout: */
-                        m_pSettingsLayout->addWidget(pApplianceWidgetCnt);
+                        m_pSettingsWidget2->addWidget(pApplianceWidgetCnt);
                     }
 
                     /* Create form editor container: */
@@ -168,11 +167,11 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                         }
 
                         /* Add into layout: */
-                        m_pSettingsLayout->addWidget(pFormEditorCnt);
+                        m_pSettingsWidget2->addWidget(pFormEditorCnt);
                     }
 
                     /* Add into layout: */
-                    pApplianceCntLayout->addLayout(m_pSettingsLayout);
+                    pApplianceCntLayout->addWidget(m_pSettingsWidget2);
                 }
             }
 
@@ -736,8 +735,8 @@ void UIWizardExportAppPageExpert::updateFormat()
     wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
 
     /* Refresh settings widget state: */
-    refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
-    refreshStackedLayout(m_pSettingsLayout, wizard()->isFormatCloudOne());
+    UIWizardExportAppPage2::refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
+    UIWizardExportAppPage3::refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());
 
     /* Update export settings: */
     refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());

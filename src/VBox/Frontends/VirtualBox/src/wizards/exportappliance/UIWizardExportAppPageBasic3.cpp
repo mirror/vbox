@@ -16,7 +16,7 @@
  */
 
 /* Qt includes: */
-#include <QStackedLayout>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -41,11 +41,11 @@ using namespace UIWizardExportAppPage3;
 *   Class UIWizardExportAppPage3 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-void UIWizardExportAppPage3::refreshStackedLayout(QStackedLayout *pStackedLayout,
+void UIWizardExportAppPage3::refreshStackedWidget(QStackedWidget *pStackedWidget,
                                                   bool fIsFormatCloudOne)
 {
     /* Update stack appearance according to chosen format: */
-    pStackedLayout->setCurrentIndex((int)fIsFormatCloudOne);
+    pStackedWidget->setCurrentIndex((int)fIsFormatCloudOne);
 }
 
 void UIWizardExportAppPage3::refreshApplianceSettingsWidget(UIApplianceExportEditorWidget *pApplianceWidget,
@@ -111,6 +111,10 @@ void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFor
 *********************************************************************************************************************************/
 
 UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
+    : m_pLabel(0)
+    , m_pSettingsWidget2(0)
+    , m_pApplianceWidget(0)
+    , m_pFormEditor(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -121,9 +125,9 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         if (m_pLabel)
             pMainLayout->addWidget(m_pLabel);
 
-        /* Create settings container layout: */
-        m_pSettingsLayout = new QStackedLayout(this);
-        if (m_pSettingsLayout)
+        /* Create settings widget 2: */
+        m_pSettingsWidget2 = new QStackedWidget(this);
+        if (m_pSettingsWidget2)
         {
             /* Create appliance widget container: */
             QWidget *pApplianceWidgetCnt = new QWidget(this);
@@ -145,7 +149,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 }
 
                 /* Add into layout: */
-                m_pSettingsLayout->addWidget(pApplianceWidgetCnt);
+                m_pSettingsWidget2->addWidget(pApplianceWidgetCnt);
             }
 
             /* Create form editor container: */
@@ -165,11 +169,11 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 }
 
                 /* Add into layout: */
-                m_pSettingsLayout->addWidget(pFormEditorCnt);
+                m_pSettingsWidget2->addWidget(pFormEditorCnt);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pSettingsLayout);
+            pMainLayout->addWidget(m_pSettingsWidget2);
         }
     }
 }
@@ -199,8 +203,8 @@ void UIWizardExportAppPageBasic3::initializePage()
     /* Translate page: */
     retranslateUi();
 
-    /* Refresh settings layout state: */
-    refreshStackedLayout(m_pSettingsLayout, wizard()->isFormatCloudOne());
+    /* Refresh settings widget state: */
+    refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());
     /* Refresh corresponding widgets: */
     refreshApplianceSettingsWidget(m_pApplianceWidget, wizard()->machineIDs(), wizard()->uri(), wizard()->isFormatCloudOne());
     refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdExportForm(), wizard()->isFormatCloudOne());
