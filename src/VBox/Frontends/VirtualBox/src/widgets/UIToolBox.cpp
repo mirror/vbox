@@ -411,8 +411,7 @@ QSize UIToolBox::minimumSizeHint() const
 
 void UIToolBox::setPageEnabled(int iIndex, bool fEnabled)
 {
-    Q_UNUSED(fEnabled);
-    Q_UNUSED(iIndex);
+    m_pages.value(iIndex)->setEnabled(fEnabled);
 }
 
 void UIToolBox::setPageTitle(int iIndex, const QString &strTitle)
