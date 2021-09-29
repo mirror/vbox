@@ -93,7 +93,7 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget(UIApplianceExportEdi
 }
 
 void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
-                                                        const CVirtualSystemDescriptionForm &comVsdExportForm,
+                                                        const CVirtualSystemDescriptionForm &comVsdForm,
                                                         bool fIsFormatCloudOne)
 {
     /* Nothing for local case? */
@@ -101,8 +101,8 @@ void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFor
         return;
 
     /* Make sure the properties table get the new description form: */
-    if (comVsdExportForm.isNotNull())
-        pFormEditor->setVirtualSystemDescriptionForm(comVsdExportForm);
+    if (comVsdForm.isNotNull())
+        pFormEditor->setVirtualSystemDescriptionForm(comVsdForm);
 }
 
 

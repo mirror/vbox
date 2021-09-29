@@ -52,7 +52,7 @@ namespace UIWizardExportAppPage3
                                         bool fIsFormatCloudOne);
     /** Refreshes form properties table. */
     void refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
-                                    const CVirtualSystemDescriptionForm &comVsdExportForm,
+                                    const CVirtualSystemDescriptionForm &comVsdForm,
                                     bool fIsFormatCloudOne);
 }
 
