@@ -140,10 +140,88 @@ void UefiVariableStore::uninit()
 }
 
 
-HRESULT UefiVariableStore::addVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid, const std::vector<BYTE> &aData)
+HRESULT UefiVariableStore::getSecureBootEnabled(BOOL *pfEnabled)
 {
-    RT_NOREF(aName, aOwnerUuid, aData);
-    return E_NOTIMPL;
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoReadLock rlock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = S_OK;
+    uint64_t cbVar = 0;
+    int vrc = i_uefiVarStoreQueryVarSz("PK", &cbVar);
+    if (RT_SUCCESS(vrc))
+    {
+        *pfEnabled = TRUE;
+
+        /* Check the SecureBootEnable variable for the override. */
+        vrc = i_uefiVarStoreQueryVarSz("SecureBootEnable", &cbVar);
+        if (RT_SUCCESS(vrc))
+        {
+            if (cbVar == sizeof(uint8_t))
+            {
+                uint8_t bVar = 0;
+                hrc = i_uefiVarStoreQueryVar("SecureBootEnable", &bVar, sizeof(bVar));
+                if (SUCCEEDED(hrc))
+                    *pfEnabled = bVar == 0x0 ? FALSE : TRUE;
+            }
+            else
+                hrc = setError(E_FAIL, tr("The 'SecureBootEnable' variable size is bogus (expected 1, got %llu)"), cbVar);
+        }
+        else if (vrc != VERR_FILE_NOT_FOUND)
+            hrc = setError(E_FAIL, tr("Failed to query the 'SecureBootEnable' variable size: %Rrc"), vrc);
+    }
+    else if (vrc == VERR_FILE_NOT_FOUND) /* No platform key means no secure boot. */
+        *pfEnabled = FALSE;
+    else
+        hrc = setError(E_FAIL, tr("Failed to query the platform key variable size: %Rrc"), vrc);
+
+    return hrc;
+}
+
+
+HRESULT UefiVariableStore::setSecureBootEnabled(BOOL fEnabled)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    EFI_GUID GuidSecureBootEnable = EFI_SECURE_BOOT_ENABLE_DISABLE_GUID;
+    uint64_t cbVar = 0;
+    int vrc = i_uefiVarStoreQueryVarSz("PK", &cbVar);
+    if (RT_SUCCESS(vrc))
+    {
+        uint8_t bVar = fEnabled ? 0x1 : 0x0;
+        return i_uefiVarStoreSetVar(&GuidSecureBootEnable, "SecureBootEnable",
+                                      EFI_VAR_HEADER_ATTR_NON_VOLATILE
+                                    | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
+                                    | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS,
+                                    &bVar, sizeof(bVar));
+    }
+    else if (vrc == VERR_FILE_NOT_FOUND) /* No platform key means no secure boot support. */
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("Secure boot is not available because the platform key (PK) is not enrolled"));
+
+    return setError(E_FAIL, tr("Failed to query the platform key variable size: %Rrc"), vrc);
+}
+
+
+HRESULT UefiVariableStore::addVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid,
+                                       const std::vector<UefiVariableAttributes_T> &aAttributes,
+                                       const std::vector<BYTE> &aData)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    uint32_t fAttr = i_uefiVarAttrToMask(aAttributes);
+    EFI_GUID OwnerGuid;
+    RTEfiGuidFromUuid(&OwnerGuid, aOwnerUuid.raw());
+    return i_uefiVarStoreSetVar(&OwnerGuid, aName.c_str(), fAttr, &aData.front(), aData.size());
 }
 
 
@@ -154,23 +232,99 @@ HRESULT UefiVariableStore::deleteVariable(const com::Utf8Str &aName, const com::
 }
 
 
-HRESULT UefiVariableStore::changeVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid, const std::vector<BYTE> &aData)
+HRESULT UefiVariableStore::changeVariable(const com::Utf8Str &aName, const std::vector<BYTE> &aData)
 {
-    RT_NOREF(aName, aOwnerUuid, aData);
+    RT_NOREF(aName, aData);
     return E_NOTIMPL;
 }
 
 
-HRESULT UefiVariableStore::queryVariableByName(const com::Utf8Str &aName, com::Guid &aOwnerUuid, std::vector<BYTE> &aData)
+HRESULT UefiVariableStore::queryVariableByName(const com::Utf8Str &aName, com::Guid &aOwnerUuid,
+                                               std::vector<UefiVariableAttributes_T> &aAttributes,
+                                               std::vector<BYTE> &aData)
 {
-    RT_NOREF(aName, aOwnerUuid, aData);
-    return E_NOTIMPL;
+    RT_NOREF(aName, aOwnerUuid, aAttributes, aData);
+
+    HRESULT hrc = S_OK;
+    uint32_t fAttr;
+    int vrc = i_uefiVarStoreQueryVarAttr(aName.c_str(), &fAttr);
+    if (RT_SUCCESS(vrc))
+    {
+        RTUUID OwnerUuid;
+        vrc = i_uefiVarStoreQueryVarOwnerUuid(aName.c_str(), &OwnerUuid);
+        if (RT_SUCCESS(vrc))
+        {
+            uint64_t cbVar = 0;
+            vrc = i_uefiVarStoreQueryVarSz(aName.c_str(), &cbVar);
+            if (RT_SUCCESS(vrc))
+            {
+                aData.resize(cbVar);
+                hrc = i_uefiVarStoreQueryVar(aName.c_str(), &aData.front(), aData.size());
+                if (SUCCEEDED(hrc))
+                {
+                    aOwnerUuid = com::Guid(OwnerUuid);
+                    i_uefiAttrMaskToVec(fAttr, aAttributes);
+                }
+            }
+            else
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to query the size of variable '%s': %Rrc"), aName.c_str(), vrc);
+        }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to query the owner UUID of variable '%s': %Rrc"), aName.c_str(), vrc);
+    }
+    else
+        hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to query the attributes of variable '%s': %Rrc"), aName.c_str(), vrc);
+
+    return hrc;
 }
 
 
-HRESULT UefiVariableStore::queryVariables(std::vector<com::Utf8Str> &aNames, std::vector<com::Guid> &aOwnerUuids)
+HRESULT UefiVariableStore::queryVariables(std::vector<com::Utf8Str> &aNames,
+                                          std::vector<com::Guid> &aOwnerUuids)
 {
-    RT_NOREF(aNames, aOwnerUuids);
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoReadLock rlock(this COMMA_LOCKVAL_SRC_POS);
+
+    RTVFSDIR hVfsDir = NIL_RTVFSDIR;
+    int vrc = RTVfsDirOpen(m->hVfsUefiVarStore, "by-name", 0 /*fFlags*/, &hVfsDir);
+    if (RT_SUCCESS(vrc))
+    {
+        RTDIRENTRYEX DirEntry;
+
+        vrc = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
+        for (;;)
+        {
+            RTUUID OwnerUuid;
+            vrc = i_uefiVarStoreQueryVarOwnerUuid(DirEntry.szName, &OwnerUuid);
+            if (RT_FAILURE(vrc))
+                break;
+
+            aNames.push_back(Utf8Str(DirEntry.szName));
+            aOwnerUuids.push_back(com::Guid(OwnerUuid));
+
+            vrc = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
+            if (RT_FAILURE(vrc))
+                break;
+        }
+
+        if (vrc == VERR_NO_MORE_FILES)
+            vrc = VINF_SUCCESS;
+
+        RTVfsDirRelease(hVfsDir);
+    }
+
+    if (RT_FAILURE(vrc))
+        return setError(VBOX_E_IPRT_ERROR, tr("Failed to query the variables: %Rrc"), vrc);
+
+    return S_OK;
+}
+
+
+HRESULT UefiVariableStore::enrollOraclePlatformKey(void)
+{
     return E_NOTIMPL;
 }
 
@@ -288,6 +442,138 @@ int UefiVariableStore::i_uefiVarStoreSetVarAttr(const char *pszVar, uint32_t fAt
 
 
 /**
+ * Queries the attributes for the given EFI variable store variable.
+ *
+ * @returns IPRT status code.
+ * @param   pszVar              The variable to query the attributes for.
+ * @param   pfAttr              Where to store the attributes on success.
+ */
+int UefiVariableStore::i_uefiVarStoreQueryVarAttr(const char *pszVar, uint32_t *pfAttr)
+{
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/raw/%s/attr", pszVar);
+    Assert(cch > 0); RT_NOREF(cch);
+
+    RTVFSFILE hVfsFileAttr = NIL_RTVFSFILE;
+    int vrc = RTVfsFileOpen(m->hVfsUefiVarStore, szVarPath,
+                           RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                           &hVfsFileAttr);
+    if (RT_SUCCESS(vrc))
+    {
+        uint32_t fAttrLe = 0;
+        vrc = RTVfsFileRead(hVfsFileAttr, &fAttrLe, sizeof(fAttrLe), NULL /*pcbRead*/);
+        RTVfsFileRelease(hVfsFileAttr);
+        if (RT_SUCCESS(vrc))
+            *pfAttr = RT_LE2H_U32(fAttrLe);
+    }
+
+    return vrc;
+}
+
+
+/**
+ * Queries the data size for the given variable.
+ *
+ * @returns IPRT status code.
+ * @param   pszVar              The variable to query the size for.
+ * @param   pcbVar              Where to store the size of the variable data on success.
+ */
+int UefiVariableStore::i_uefiVarStoreQueryVarSz(const char *pszVar, uint64_t *pcbVar)
+{
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/by-name/%s", pszVar);
+    Assert(cch > 0); RT_NOREF(cch);
+
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    int vrc = RTVfsFileOpen(m->hVfsUefiVarStore, szVarPath,
+                            RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                            &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTVfsFileQuerySize(hVfsFile, pcbVar);
+        RTVfsFileRelease(hVfsFile);
+    }
+    else if (vrc == VERR_PATH_NOT_FOUND)
+        vrc = VERR_FILE_NOT_FOUND;
+
+    return vrc;
+}
+
+
+/**
+ * Returns the owner UUID of the given variable.
+ *
+ * @returns IPRT status code.
+ * @param   pszVar              The variable to query the owner UUID for.
+ * @param   pUuid               Where to store the owner UUID on success.
+ */
+int UefiVariableStore::i_uefiVarStoreQueryVarOwnerUuid(const char *pszVar, PRTUUID pUuid)
+{
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/raw/%s/uuid", pszVar);
+    Assert(cch > 0); RT_NOREF(cch);
+
+    RTVFSFILE hVfsFileAttr = NIL_RTVFSFILE;
+    int vrc = RTVfsFileOpen(m->hVfsUefiVarStore, szVarPath,
+                           RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                           &hVfsFileAttr);
+    if (RT_SUCCESS(vrc))
+    {
+        EFI_GUID OwnerGuid;
+        vrc = RTVfsFileRead(hVfsFileAttr, &OwnerGuid, sizeof(OwnerGuid), NULL /*pcbRead*/);
+        RTVfsFileRelease(hVfsFileAttr);
+        if (RT_SUCCESS(vrc))
+            RTEfiGuidToUuid(pUuid, &OwnerGuid);
+    }
+
+    return vrc;
+}
+
+
+/**
+ * Converts the given vector of variables attributes to a bitmask used internally.
+ *
+ * @returns Mask of UEFI variable attributes.
+ * @param   vectAttributes      Vector of variable atttributes.
+ */
+uint32_t UefiVariableStore::i_uefiVarAttrToMask(const std::vector<UefiVariableAttributes_T> &vecAttributes)
+{
+    uint32_t fAttr = 0;
+
+    for (size_t i = 0; i < vecAttributes.size(); i++)
+        fAttr |= (ULONG)vecAttributes[i];
+
+    return fAttr;
+}
+
+
+/**
+ * Converts the given aatribute mask to the attribute vector used externally.
+ *
+ * @returns nothing.
+ * @param   fAttr               The attribute mask.
+ * @param   aAttributes         The vector to store the attibutes in.
+ */
+void UefiVariableStore::i_uefiAttrMaskToVec(uint32_t fAttr, std::vector<UefiVariableAttributes_T> &aAttributes)
+{
+    if (fAttr & EFI_VAR_HEADER_ATTR_NON_VOLATILE)
+        aAttributes.push_back(UefiVariableAttributes_NonVolatile);
+    if (fAttr & EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS)
+        aAttributes.push_back(UefiVariableAttributes_BootServiceAccess);
+    if (fAttr & EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS)
+        aAttributes.push_back(UefiVariableAttributes_RuntimeAccess);
+    if (fAttr & EFI_VAR_HEADER_ATTR_HW_ERROR_RECORD)
+        aAttributes.push_back(UefiVariableAttributes_HwErrorRecord);
+    if (fAttr & EFI_AUTH_VAR_HEADER_ATTR_AUTH_WRITE_ACCESS)
+        aAttributes.push_back(UefiVariableAttributes_AuthWriteAccess);
+    if (fAttr & EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS)
+        aAttributes.push_back(UefiVariableAttributes_AuthTimeBasedWriteAccess);
+    if (fAttr & EFI_AUTH_VAR_HEADER_ATTR_APPEND_WRITE)
+        aAttributes.push_back(UefiVariableAttributes_AuthAppendWrite);
+}
+
+
+/**
  * Adds the given variable to the variable store.
  *
  * @returns IPRT status code.
@@ -353,6 +639,50 @@ HRESULT UefiVariableStore::i_uefiVarStoreAddVar(PCEFI_GUID pGuid, const char *ps
 }
 
 
+HRESULT UefiVariableStore::i_uefiVarStoreSetVar(PCEFI_GUID pGuid, const char *pszVar, uint32_t fAttr, const void *pvData, size_t cbData)
+{
+    RTVFSFILE hVfsFileVar = NIL_RTVFSFILE;
+
+    HRESULT hrc = i_uefiVarStoreAddVar(pGuid, pszVar, fAttr, &hVfsFileVar);
+    if (SUCCEEDED(hrc))
+    {
+        int vrc = RTVfsFileWrite(hVfsFileVar, pvData, cbData, NULL /*pcbWritten*/);
+        if (RT_FAILURE(vrc))
+            hrc = setError(E_FAIL, tr("Setting the variable '%s' failed: %Rrc"), pszVar, vrc);
+
+        RTVfsFileRelease(hVfsFileVar);
+    }
+
+    return hrc;
+}
+
+
+HRESULT UefiVariableStore::i_uefiVarStoreQueryVar(const char *pszVar, void *pvData, size_t cbData)
+{
+    HRESULT hrc = S_OK;
+
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/by-name/%s", pszVar);
+    Assert(cch > 0); RT_NOREF(cch);
+
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    int vrc = RTVfsFileOpen(m->hVfsUefiVarStore, szVarPath,
+                            RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                            &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTVfsFileRead(hVfsFile, pvData, cbData, NULL /*pcbRead*/);
+        if (RT_FAILURE(vrc))
+            hrc = setError(E_FAIL, tr("Failed to read data of variable '%s': %Rrc"), pszVar, vrc);
+
+        RTVfsFileRelease(hVfsFile);
+    }
+    else
+        hrc = setError(E_FAIL, tr("Failed to open variable '%s' for reading: %Rrc"), pszVar, vrc);
+
+    return hrc;
+}
+
 HRESULT UefiVariableStore::i_uefiSigDbAddSig(RTEFISIGDB hEfiSigDb, const void *pvData, size_t cbData,
                                              const com::Guid &aOwnerUuid, SignatureType_T enmSignatureType)
 {
@@ -384,11 +714,11 @@ HRESULT UefiVariableStore::i_uefiVarStoreAddSignatureToDb(PCEFI_GUID pGuid, cons
     RTVFSFILE hVfsFileSigDb = NIL_RTVFSFILE;
 
     HRESULT hrc = i_uefiVarStoreAddVar(pGuid, pszDb,
-                                     EFI_VAR_HEADER_ATTR_NON_VOLATILE
-                                   | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
-                                   | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS
-                                   | EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS,
-                                   &hVfsFileSigDb);
+                                         EFI_VAR_HEADER_ATTR_NON_VOLATILE
+                                       | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
+                                       | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS
+                                       | EFI_AUTH_VAR_HEADER_ATTR_TIME_BASED_AUTH_WRITE_ACCESS,
+                                       &hVfsFileSigDb);
     if (SUCCEEDED(hrc))
     {
         RTEFISIGDB hEfiSigDb;

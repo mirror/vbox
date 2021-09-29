@@ -6015,9 +6015,44 @@
     </const>
   </enum>
 
+  <enum
+    name="UefiVariableAttributes"
+    uuid="cda505ec-b444-4aef-b55c-b687717bdac5"
+    >
+    <desc>
+      Possible variable attributes. More than one flag may be set.
+      <see><link to="IUefiVariableStore"/></see>
+    </desc>
+
+    <const name="None"                      value="0">
+      <desc>No attributes set.</desc>
+    </const>
+    <const name="NonVolatile"               value="0x01">
+      <desc>Variable is stored in non volatile storage.</desc>
+    </const>
+    <const name="BootServiceAccess"         value="0x02">
+      <desc>Variable can be accessed from the boot services.</desc>
+    </const>
+    <const name="RuntimeAccess"             value="0x04">
+      <desc>Variable can be accessed from the runtime.</desc>
+    </const>
+    <const name="HwErrorRecord"             value="0x08">
+      <desc>Variable contains a hardware error record.</desc>
+    </const>
+    <const name="AuthWriteAccess"           value="0x100">
+      <desc>Writing to this variable requires an authenticated source.</desc>
+    </const>
+    <const name="AuthTimeBasedWriteAccess"  value="0x200">
+      <desc>Variable was written with a time based authentication.</desc>
+    </const>
+    <const name="AuthAppendWrite"           value="0x400">
+      <desc>The variable can be appended only.</desc>
+    </const>
+  </enum>
+
   <interface
     name="IUefiVariableStore" extends="$unknown"
-    uuid="f39d5888-9009-4e77-94b5-9cdcfc1859c3"
+    uuid="d134c6b6-4479-430d-bb73-68a452ba3e67"
     wsmap="managed"
     reservedMethods="10" reservedAttributes="5"
     >
@@ -6027,6 +6062,10 @@
         <link to="INvramStore::uefiVariableStore" /> attribute.
     </desc>
 
+    <attribute name="secureBootEnabled" type="boolean">
+      <desc>Flag whether secure boot is currently enabled for the VM.</desc>
+    </attribute>
+
     <method name="addVariable">
       <desc>Adds a new variable to the non volatile storage area.</desc>
       <param name="name" type="wstring" dir="in">
@@ -6034,6 +6073,9 @@
       </param>
       <param name="owner" type="uuid" mod="string" dir="in">
         <desc>UUID of the variable owner.</desc>
+      </param>
+      <param name="attributes" type="UefiVariableAttributes" safearray="yes" dir="in">
+        <desc>Attributes of the variable.</desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
         <desc>The variable data.</desc>
@@ -6055,9 +6097,6 @@
       <param name="name" type="wstring" dir="in">
         <desc>Name of the variable.</desc>
       </param>
-      <param name="owner" type="uuid" mod="string" dir="in">
-        <desc>UUID of the variable owner.</desc>
-      </param>
       <param name="data" type="octet" dir="in" safearray="yes">
         <desc>The new variable data.</desc>
       </param>
@@ -6070,6 +6109,9 @@
       </param>
       <param name="owner" type="uuid" mod="string" dir="out">
         <desc>UUID of the variable owner returned on success.</desc>
+      </param>
+      <param name="attributes" type="UefiVariableAttributes" safearray="yes" dir="out">
+        <desc>Attributes of the variable.</desc>
       </param>
       <param name="data" type="octet" dir="out" safearray="yes">
         <desc>The variable data returned on success.</desc>
@@ -6086,6 +6128,12 @@
       <param name="owners" type="uuid" mod="string" dir="out" safearray="yes">
         <desc>UUID of the variable owners returned on success.</desc>
       </param>
+    </method>
+
+    <method name="enrollOraclePlatformKey">
+      <desc>
+        Enroll the default platform key from Oracle for enabling Secure Boot.
+      </desc>
     </method>
 
     <method name="enrollPlatformKey">

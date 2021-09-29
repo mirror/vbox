@@ -163,6 +163,113 @@ static RTEXITCODE handleModifyNvramEnrollPlatformKey(HandlerArg *a, ComPtr<INvra
 
 
 /**
+ * Handles the 'modifynvram myvm listvars' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   nvram           Reference to the NVRAM store interface.
+ */
+static RTEXITCODE handleModifyNvramListUefiVars(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
+{
+    RT_NOREF(a);
+
+    ComPtr<IUefiVariableStore> uefiVarStore;
+    CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
+
+    com::SafeArray<BSTR> aNames;
+    com::SafeArray<BSTR> aOwnerGuids;
+    CHECK_ERROR2I_RET(uefiVarStore, QueryVariables(ComSafeArrayAsOutParam(aNames), ComSafeArrayAsOutParam(aOwnerGuids)), RTEXITCODE_FAILURE);
+    for (size_t i = 0; i < aNames.size(); i++)
+    {
+        Bstr strName      = aNames[i];
+        Bstr strOwnerGuid = aOwnerGuids[i];
+
+        RTPrintf("%-32ls {%ls}\n", strName.raw(), strOwnerGuid.raw());
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Handles the 'modifynvram myvm queryvar' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   nvram           Reference to the NVRAM store interface.
+ */
+static RTEXITCODE handleModifyNvramQueryUefiVar(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
+{
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        /* common options */
+        { "--name",       'n', RTGETOPT_REQ_STRING },
+        { "--filename",   'f', RTGETOPT_REQ_STRING }
+    };
+
+    const char *pszVarName = NULL;
+    const char *pszVarDataFilename = NULL;
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc - 2, &a->argv[2], s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'n':
+                pszVarName = ValueUnion.psz;
+                break;
+            case 'f':
+                pszVarDataFilename = ValueUnion.psz;
+                break;
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (!pszVarName)
+        return errorSyntax("No variable name was given to \"queryvar\"");
+
+    ComPtr<IUefiVariableStore> uefiVarStore;
+    CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
+
+    Bstr strOwnerGuid;
+    com::SafeArray<UefiVariableAttributes_T> aVarAttrs;
+    com::SafeArray<BYTE> aData;
+    CHECK_ERROR2I_RET(uefiVarStore, QueryVariableByName(Bstr(pszVarName).raw(), strOwnerGuid.asOutParam(),
+                                                        ComSafeArrayAsOutParam(aVarAttrs), ComSafeArrayAsOutParam(aData)),
+                      RTEXITCODE_FAILURE);
+
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    if (!pszVarDataFilename)
+    {
+        RTPrintf("%s {%ls}:\n"
+                 "%.*Rhxd\n", pszVarName, strOwnerGuid.raw(), aData.size(), aData.raw());
+    }
+    else
+    {
+        /* Just write the data to the file. */
+        RTFILE hFile = NIL_RTFILE;
+        vrc = RTFileOpen(&hFile, pszVarDataFilename, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTFileWrite(hFile, aData.raw(), aData.size(), NULL /*pcbWritten*/);
+            if (RT_FAILURE(vrc))
+                rcExit = RTMsgErrorExitFailure("Error writing to '%s': %Rrc", pszVarDataFilename, vrc);
+
+            RTFileClose(hFile);
+        }
+        else
+           rcExit = RTMsgErrorExitFailure("Error opening '%s': %Rrc", pszVarDataFilename, vrc);
+    }
+
+    return rcExit;
+}
+
+
+/**
  * Handles the 'modifynvram' command.
  * @returns Exit code.
  * @param   a               The handler argument package.
@@ -194,6 +301,10 @@ RTEXITCODE handleModifyNvram(HandlerArg *a)
         rc = handleModifyNvramEnrollMsSignatures(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else if (!strcmp(a->argv[1], "enrollpk"))
         rc = handleModifyNvramEnrollPlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    else if (!strcmp(a->argv[1], "listvars"))
+        rc = handleModifyNvramListUefiVars(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    else if (!strcmp(a->argv[1], "queryvar"))
+        rc = handleModifyNvramQueryUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else
         return errorUnknownSubcommand(a->argv[0]);
 

@@ -48,13 +48,18 @@ public:
 private:
 
     // Wrapped NVRAM store properties
+    HRESULT getSecureBootEnabled(BOOL *pfEnabled);
+    HRESULT setSecureBootEnabled(BOOL fEnabled);
 
     // Wrapped NVRAM store members
-    HRESULT addVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid, const std::vector<BYTE> &aData);
+    HRESULT addVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid, const std::vector<UefiVariableAttributes_T> &aAttributes,
+                        const std::vector<BYTE> &aData);
     HRESULT deleteVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid);
-    HRESULT changeVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid, const std::vector<BYTE> &aData);
-    HRESULT queryVariableByName(const com::Utf8Str &aName, com::Guid &aOwnerUuid, std::vector<BYTE> &aData);
+    HRESULT changeVariable(const com::Utf8Str &aName, const std::vector<BYTE> &aData);
+    HRESULT queryVariableByName(const com::Utf8Str &aName, com::Guid &aOwnerUuid, std::vector<UefiVariableAttributes_T> &aAttributes,
+                                std::vector<BYTE> &aData);
     HRESULT queryVariables(std::vector<com::Utf8Str> &aNames, std::vector<com::Guid> &aOwnerUuids);
+    HRESULT enrollOraclePlatformKey(void);
     HRESULT enrollPlatformKey(const std::vector<BYTE> &aData, const com::Guid &aOwnerUuid);
     HRESULT addKek(const std::vector<BYTE> &aData, const com::Guid &aOwnerUuid, SignatureType_T enmSignatureType);
     HRESULT addSignatureToDb(const std::vector<BYTE> &aData, const com::Guid &aOwnerUuid, SignatureType_T enmSignatureType);
@@ -62,8 +67,15 @@ private:
     HRESULT enrollDefaultMsSignatures(void);
 
     int i_uefiVarStoreSetVarAttr(const char *pszVar, uint32_t fAttr);
+    int i_uefiVarStoreQueryVarAttr(const char *pszVar, uint32_t *pfAttr);
+    int i_uefiVarStoreQueryVarSz(const char *pszVar, uint64_t *pcbVar);
+    int i_uefiVarStoreQueryVarOwnerUuid(const char *pszVar, PRTUUID pUuid);
+    uint32_t i_uefiVarAttrToMask(const std::vector<UefiVariableAttributes_T> &aAttributes);
+    void i_uefiAttrMaskToVec(uint32_t fAttr, std::vector<UefiVariableAttributes_T> &aAttributes);
 
     HRESULT i_uefiVarStoreAddVar(PCEFI_GUID pGuid, const char *pszVar, uint32_t fAttr, PRTVFSFILE phVfsFile);
+    HRESULT i_uefiVarStoreSetVar(PCEFI_GUID pGuid, const char *pszVar, uint32_t fAttr, const void *pvData, size_t cbData);
+    HRESULT i_uefiVarStoreQueryVar(const char *pszVar, void *pvData, size_t cbData);
     HRESULT i_uefiSigDbAddSig(RTEFISIGDB hEfiSigDb, const void *pvData, size_t cbData, const com::Guid &aOwnerUuid, SignatureType_T enmSignatureType);
     HRESULT i_uefiVarStoreAddSignatureToDbVec(PCEFI_GUID pGuid, const char *pszDb, const std::vector<BYTE> &aData,
                                               const com::Guid &aOwnerUuid, SignatureType_T enmSignatureType);

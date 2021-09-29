@@ -385,7 +385,11 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
     NvramStore::getNonVolatileStorageFile(strPath);
 
     /* We need a write lock because of the lazy initialization. */
+    AutoReadLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->pParent->i_getFirmwareType() == FirmwareType_BIOS)
+        return setError(VBOX_E_NOT_SUPPORTED, tr("The selected firmware type doesn't support a UEFI variable store"));
 
     /* Load the NVRAM file first if it isn't already. */
     HRESULT hrc = S_OK;
