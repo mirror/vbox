@@ -1556,3 +1556,21 @@ int AudioTestMixStreamCapture(PAUDIOTESTDRVMIXSTREAM pMix, void *pvBuf, uint32_t
 
     return VINF_SUCCESS;
 }
+
+/**
+ * Sets the volume of a mixing stream.
+ *
+ * @param   pMix                Mixing stream to set volume for.
+ * @param   uVolumePercent      Volume to set (in percent, 0-100).
+ */
+void AudioTestMixStreamSetVolume(PAUDIOTESTDRVMIXSTREAM pMix, uint8_t uVolumePercent)
+{
+    AssertReturnVoid(pMix->fDoMixing);
+
+    PDMAUDIOVOLUME Vol;
+    RT_ZERO(Vol);
+    for (size_t i = 0; i < RT_ELEMENTS(Vol.auChannels); i++)
+        Vol.auChannels[i] = (PDMAUDIO_VOLUME_MAX / 100) * uVolumePercent;
+    AudioMixBufSetVolume(&pMix->MixBuf, &Vol);
+}
+
