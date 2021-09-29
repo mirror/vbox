@@ -73,6 +73,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp( "(Wi.*8.*32)|(W8.*32)",            Qt::CaseInsensitive), "Windows8" },
     { QRegExp( "(Wi.*10.*64)|(W10.*64)",          Qt::CaseInsensitive), "Windows10_64" },
     { QRegExp( "(Wi.*10.*32)|(W10.*32)",          Qt::CaseInsensitive), "Windows10" },
+    { QRegExp( "(Wi.*11)|(W11)",                  Qt::CaseInsensitive), "Windows11_64" },
     { QRegExp(  "Wi.*3.*1",                       Qt::CaseInsensitive), "Windows31" },
     /* Set Windows 7 as default for "Windows". */
     { QRegExp(  "Wi.*64",                         Qt::CaseInsensitive), "Windows7_64" },
