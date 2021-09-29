@@ -771,6 +771,7 @@ HRESULT ExtPack::initWithDir(VirtualBox *a_pVirtualBox, VBOXEXTPACKCTX a_enmCont
         /* pfnReserved4         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved5         = */ ExtPack::i_hlpReservedN,
         /* pfnReserved6         = */ ExtPack::i_hlpReservedN,
+        /* uReserved7           = */ 0,
         /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
     };
 
