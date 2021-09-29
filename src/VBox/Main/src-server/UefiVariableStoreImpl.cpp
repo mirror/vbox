@@ -534,7 +534,7 @@ int UefiVariableStore::i_uefiVarStoreQueryVarOwnerUuid(const char *pszVar, PRTUU
  * Converts the given vector of variables attributes to a bitmask used internally.
  *
  * @returns Mask of UEFI variable attributes.
- * @param   vectAttributes      Vector of variable atttributes.
+ * @param   vecAttributes       Vector of variable atttributes.
  */
 uint32_t UefiVariableStore::i_uefiVarAttrToMask(const std::vector<UefiVariableAttributes_T> &vecAttributes)
 {
