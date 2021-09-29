@@ -15187,6 +15187,9 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     rc = osType->COMGETTER(RecommendedRAM)(&mHWData->mMemorySize);
     if (FAILED(rc)) return rc;
 
+    rc = osType->COMGETTER(RecommendedCPUCount)(&mHWData->mCPUCount);
+    if (FAILED(rc)) return rc;
+
     /* Graphics stuff. */
     GraphicsControllerType_T graphicsController;
     rc = osType->COMGETTER(RecommendedGraphicsController)(&graphicsController);

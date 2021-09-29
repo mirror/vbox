@@ -28,6 +28,7 @@ GuestOSType::GuestOSType()
     : mOSType(VBOXOSTYPE_Unknown)
     , mOSHint(VBOXOSHINT_NONE)
     , mRAMSize(0)
+    , mCPUCount(1)
     , mGraphicsControllerType(GraphicsControllerType_Null)
     , mVRAMSize(0)
     , mHDDSize(0)
@@ -93,6 +94,7 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)
     unconst(mOSType)                    = ostype.osType;
     unconst(mOSHint)                    = ostype.osHint;
     unconst(mRAMSize)                   = ostype.recommendedRAM;
+    unconst(mCPUCount)                  = ostype.recommendedCPUCount;
     unconst(mGraphicsControllerType)    = ostype.graphicsControllerType;
     unconst(mVRAMSize)                  = ostype.recommendedVRAM;
     unconst(mHDDSize)                   = ostype.recommendedHDD;
@@ -414,6 +416,14 @@ HRESULT GuestOSType::getRecommendedX2APIC(BOOL *aRecommendedX2APIC)
 {
     /* mRecommendedX2APIC is constant during life time, no need to lock */
     *aRecommendedX2APIC = !!(mOSHint & VBOXOSHINT_X2APIC);
+
+    return S_OK;
+}
+
+HRESULT GuestOSType::getRecommendedCPUCount(ULONG *aRecommendedCPUCount)
+{
+    /* mRecommendedX2APIC is constant during life time, no need to lock */
+    *aRecommendedCPUCount = mCPUCount;
 
     return S_OK;
 }

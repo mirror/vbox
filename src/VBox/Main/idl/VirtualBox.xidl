@@ -12400,7 +12400,7 @@
     name="IGuestOSType" extends="$unknown"
     uuid="7d8ba014-4562-448a-9c1b-b454b35fc3dd"
     wsmap="struct"
-    reservedAttributes="16"
+    reservedAttributes="15"
     >
     <desc>
     </desc>
@@ -12535,6 +12535,10 @@
 
     <attribute name="recommendedX2APIC" type="boolean" readonly="yes">
       <desc>Returns @c true if X2APIC is recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedCPUCount" type="unsigned long" readonly="yes">
+      <desc>Number of vCPUs recommended for this OS type.</desc>
     </attribute>
 
   </interface>

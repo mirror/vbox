@@ -70,6 +70,7 @@ public:
         const char                    *description; /* utf-8 */
         const VBOXOSTYPE               osType;
         const uint32_t                 osHint;
+        const uint32_t                 recommendedCPUCount;
         const uint32_t                 recommendedRAM;
         const uint32_t                 recommendedVRAM;
         const uint64_t                 recommendedHDD;
