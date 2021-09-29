@@ -373,8 +373,8 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
             if (RT_FAILURE(rc))
                 Log(("drvVMNetAttachBridged: Failed to convert '%s' to MAC address (%Rrc)\n", pcszMacAddress ? pcszMacAddress : "(null)", rc));
 #endif
-#ifdef LOG_ENABLED
             max_packet_size = xpc_dictionary_get_uint64(interface_param, vmnet_max_packet_size_key);
+#ifdef LOG_ENABLED
             // Log(("MAC address: %s\n", xpc_dictionary_get_string(interface_param, vmnet_mac_address_key)));
             Log(("Max packet size: %zu\n", max_packet_size));
             Log(("MTU size: %llu\n", xpc_dictionary_get_uint64(interface_param, vmnet_mtu_key)));
@@ -399,6 +399,8 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
         return VMNET_FAILURE;
     }
 
+    LogRel(("VMNET: Max packet size is %zu\n", max_packet_size));
+
     vmnet_interface_set_event_callback(pThis->Interface, VMNET_INTERFACE_PACKETS_AVAILABLE, pThis->InterfaceQueue, ^(interface_event_t event_mask, xpc_object_t  _Nonnull event) {
         if (event_mask & VMNET_INTERFACE_PACKETS_AVAILABLE)
         {
@@ -419,7 +421,7 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
             packets.vm_flags = 0;
             rc = vmnet_read(pThis->Interface, &packets, &packet_count);
             if (rc != VMNET_SUCCESS)
-                Log(("Failed to read packets\n"));
+                Log(("Failed to read packets, rc=%d\n", rc));
             else
             {
                 Log3(("Successfully read %d packets:\n", packet_count));
@@ -569,7 +571,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                                         N_("Configuration error: Failed to get the \"UpperIP\" value"));
 
             pThis->uMode = VMNET_HOST_MODE;
-            LogRel(("VMNet: host network with mask %s (%s to %s)\n", pThis->szNetworkMask, pThis->szLowerIP, pThis->szUpperIP));
+            LogRel(("VMNet: Host network with mask %s (%s to %s)\n", pThis->szNetworkMask, pThis->szLowerIP, pThis->szUpperIP));
             break;
 
         case kIntNetTrunkType_NetFlt:
@@ -581,7 +583,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
                                         N_("Configuration error: Failed to get the \"Trunk\" value"));
             pThis->uMode = VMNET_BRIDGED_MODE;
-            LogRel(("VMNet: bridge to %s\n", pThis->szHostInterface));
+            LogRel(("VMNet: Bridge to %s\n", pThis->szHostInterface));
             break;
 
         default:

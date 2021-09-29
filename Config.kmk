@@ -846,20 +846,7 @@ VBOX_WITH_DHCPD = 1
 # Experimental suport for cloud network integration
 VBOX_WITH_CLOUD_NET = 1
 # Use Mac OS X VMNET API instead of network kernel extensions
-ifeq ($(KBUILD_TARGET),darwin)
- # Ignore VMNET for special builds
- if !defined(VBOX_ONLY_VALIDATIONKIT) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_EXTPACKS)
-  # VMNET can only be compiled with the newer Xcode
-  ifdef VBOX_WITH_EVEN_NEWER_XCODE
-   # Comment out VBOX_WITH_VMNET to use old-style network kernel extensions
-   VBOX_WITH_VMNET = 1
-   ifdef VBOX_WITH_VMNET
-    # Use SDK 10.15
-    VBOX_DEF_MACOSX_VERSION_MIN=10.15# Catalina
-   endif
-  endif
- endif
-endif
+VBOX_WITH_VMNET = 1
 ## @}
 
 
@@ -2401,6 +2388,23 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 # Good windows shell.
 VBOX_GOOD_COMSPEC = $(subst \,/,$(SystemRoot))/System32/cmd.exe
 VBOX_GOOD_COMSPEC_BS ?= $(subst /,\,$(VBOX_GOOD_COMSPEC))
+
+# Disable VMNET depending on platform / build / LocalConfig.kmk settings
+ifneq ($(KBUILD_TARGET),darwin)
+ VBOX_WITH_VMNET=
+endif
+# Disable VMNET for special builds
+if defined(VBOX_ONLY_VALIDATIONKIT) || defined(VBOX_ONLY_ADDITIONS) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_EXTPACKS)
+ VBOX_WITH_VMNET=
+endif
+# VMNET can only be compiled with the newer Xcode
+ifndef VBOX_WITH_EVEN_NEWER_XCODE
+ VBOX_WITH_VMNET=
+endif
+# Force SDK 10.15 for VMNET
+ifdef VBOX_WITH_VMNET
+ VBOX_DEF_MACOSX_VERSION_MIN=10.15# Catalina
+endif
 
 #
 # Macros dealing with the darwin version we're targeting.
