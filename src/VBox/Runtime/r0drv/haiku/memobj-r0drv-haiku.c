@@ -203,7 +203,7 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
     /* Create the object. */
     PRTR0MEMOBJHAIKU pMemHaiku;
-    pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), type, NULL, cb);
+    pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), type, NULL, cb, NULL);
     if (RT_UNLIKELY(!pMemHaiku))
         return VERR_NO_MEMORY;
 
@@ -289,7 +289,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
     LogFlowFunc(("ppMem=%p Phys=%08x cb=%u uCachePolicy=%x\n", ppMem, Phys,(unsigned)cb, uCachePolicy));
 
     /* Create the object. */
-    PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+    PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_PHYS, NULL, cb, NULL);
     if (!pMemHaiku)
         return VERR_NO_MEMORY;
 
@@ -327,7 +327,7 @@ static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvStart, 
                  fFlags));
 
     /* Create the object. */
-    PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_LOCK, pvStart, cb);
+    PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_LOCK, pvStart, cb, NULL);
     if (RT_UNLIKELY(!pMemHaiku))
         return VERR_NO_MEMORY;
 
@@ -464,7 +464,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     {
         /* Create the object. */
         pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), RTR0MEMOBJTYPE_MAPPING, pvMap,
-                                                    pMemToMapHaiku->Core.cb);
+                                                    pMemToMapHaiku->Core.cb, NULL);
         if (RT_UNLIKELY(!pMemHaiku))
             return VERR_NO_MEMORY;
 

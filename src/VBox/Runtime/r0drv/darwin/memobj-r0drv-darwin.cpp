@@ -737,7 +737,7 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                 /*
                  * Create the IPRT memory object.
                  */
-                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), enmType, pv, cb);
+                PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), enmType, pv, cb, NULL);
                 if (pMemDarwin)
                 {
                     if (fContiguous)
@@ -963,7 +963,7 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
             /*
              * Create the IPRT memory object.
              */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_PHYS, NULL, cb, NULL);
             if (pMemDarwin)
             {
                 pMemDarwin->Core.u.Phys.PhysBase = Phys;
@@ -1022,7 +1022,7 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
         /*
          * Create the IPRT memory object.
          */
-        PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
+        PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
         if (pMemDarwin)
         {
             pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
@@ -1052,7 +1052,7 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
             /*
              * Create the IPRT memory object.
              */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb);
+            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
             if (pMemDarwin)
             {
                 pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
@@ -1199,7 +1199,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
                          * Create the IPRT memory object.
                          */
                         PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
-                                                                                        pv, cbSub ? cbSub : pMemToMap->cb);
+                                                                                        pv, cbSub ? cbSub : pMemToMap->cb, NULL);
                         if (pMemDarwin)
                         {
                             pMemDarwin->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
@@ -1291,7 +1291,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                  * Create the IPRT memory object.
                  */
                 PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
-                                                                                pv, cbSub ? cbSub : pMemToMap->cb);
+                                                                                pv, cbSub ? cbSub : pMemToMap->cb, NULL);
                 if (pMemDarwin)
                 {
                     pMemDarwin->Core.u.Mapping.R0Process = R0Process;

@@ -142,7 +142,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     /* create the object. */
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
-                                                           RTR0MEMOBJTYPE_PAGE, NULL, cb);
+                                                           RTR0MEMOBJTYPE_PAGE, NULL, cb, NULL);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
@@ -179,7 +179,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
     /* create the object. */
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
-                                                           RTR0MEMOBJTYPE_LOW, NULL, cb);
+                                                           RTR0MEMOBJTYPE_LOW, NULL, cb, NULL);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
@@ -208,7 +208,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     NOREF(fExecutable);
 
     /* create the object. */
-    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_CONT, NULL, cb);
+    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_CONT, NULL, cb, NULL);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
@@ -236,7 +236,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         return VERR_NOT_SUPPORTED;
 
     /* create the object. */
-    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS, NULL, cb, NULL);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
@@ -268,7 +268,7 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
     AssertReturn(uCachePolicy == RTMEM_CACHE_POLICY_DONT_CARE, VERR_NOT_SUPPORTED);
 
     /* create the object. */
-    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+    PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS, NULL, cb, NULL);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
@@ -289,7 +289,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
     /* create the object. */
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
-                                                           RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb);
+                                                           RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb, NULL);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
@@ -316,7 +316,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
     /* create the object. */
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
-                                                           RTR0MEMOBJTYPE_LOCK, pv, cb);
+                                                           RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
     if (!pMemOs2)
         return VERR_NO_MEMORY;
 
@@ -422,7 +422,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
     if (!cbSub)
         cbSub = pMemToMapOs2->Core.cb - offSub;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_MAPPING,
-                                                           (uint8_t *)pvR0 + offSub, cbSub);
+                                                           (uint8_t *)pvR0 + offSub, cbSub, NULL);
     if (pMemOs2)
     {
         pMemOs2->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
@@ -512,7 +512,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
      * Create a mapping object for it.
      */
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_MAPPING,
-                                                           pvR3, pMemToMapOs2->Core.cb);
+                                                           pvR3, pMemToMapOs2->Core.cb, NULL);
     if (pMemOs2)
     {
         Assert(pMemOs2->Core.pv == pvR3);

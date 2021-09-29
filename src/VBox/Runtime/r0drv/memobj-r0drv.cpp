@@ -54,8 +54,9 @@
  * @param   enmType     The memory object type.
  * @param   pv          The memory object mapping.
  * @param   cb          The size of the memory object.
+ * @param   pszTag      The tag string.
  */
-DECLHIDDEN(PRTR0MEMOBJINTERNAL) rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb)
+DECLHIDDEN(PRTR0MEMOBJINTERNAL) rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmType, void *pv, size_t cb, const char *pszTag)
 {
     PRTR0MEMOBJINTERNAL pNew;
 
@@ -78,6 +79,11 @@ DECLHIDDEN(PRTR0MEMOBJINTERNAL) rtR0MemObjNew(size_t cbSelf, RTR0MEMOBJTYPE enmT
         pNew->fFlags    = 0;
         pNew->cb        = cb;
         pNew->pv        = pv;
+#ifdef DEBUG
+        pNew->pszTag    = pszTag;
+#else
+        RT_NOREF_PV(pszTag);
+#endif
     }
     return pNew;
 }
