@@ -45,6 +45,10 @@ UIWizardExportApp::UIWizardExportApp(QWidget *pParent,
     , m_predefinedMachineNames(predefinedMachineNames)
     , m_fFastTraverToExportOCI(fFastTraverToExportOCI)
     , m_fFormatCloudOne(false)
+    , m_enmMACAddressExportPolicy(MACAddressExportPolicy_KeepAllMACs)
+    , m_fManifestSelected(false)
+    , m_fIncludeISOsSelected(false)
+    , m_enmCloudExportMode(CloudExportMode_DoNotAsk)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
