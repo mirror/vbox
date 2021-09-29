@@ -456,7 +456,7 @@ void UINativeWizard::prepare()
             }
 
             /* Add to layout: */
-            pLayoutMain->addLayout(pLayoutUpper);
+            pLayoutMain->addLayout(pLayoutUpper, 1);
         }
 
         /* Prepare bottom widget: */
