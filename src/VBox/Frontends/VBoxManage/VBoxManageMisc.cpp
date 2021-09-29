@@ -1580,7 +1580,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     char    szAbsPath[RTPATH_MAX];
 
     /*
-     * Options.  We work directly on an IUnattended instace while parsing
+     * Options.  We work directly on an IUnattended instance while parsing
      * the options.  This saves a lot of extra clutter.
      */
     ComPtr<IUnattended> ptrUnattended;
@@ -1848,7 +1848,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     if (!fDryRun)
     {
         CHECK_ERROR2_RET(hrc, ptrUnattended, ConstructMedia(), RTEXITCODE_FAILURE);
-        CHECK_ERROR2_RET(hrc, ptrUnattended,ReconfigureVM(), RTEXITCODE_FAILURE);
+        CHECK_ERROR2_RET(hrc, ptrUnattended, ReconfigureVM(), RTEXITCODE_FAILURE);
     }
 
     /*
