@@ -535,7 +535,9 @@ static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
  */
 enum
 {
-    VKAT_PLAY_OPT_VOL = 900
+    VKAT_PLAY_OPT_TONE_DUR = 900,
+    VKAT_PLAY_OPT_TONE_FREQ,
+    VKAT_PLAY_OPT_VOL
 };
 
 
@@ -550,10 +552,12 @@ static const RTGETOPTDEF g_aCmdPlayOptions[] =
     { "--frequency",        'f',                          RTGETOPT_REQ_UINT32 },
     { "--sample-size",      'z',                          RTGETOPT_REQ_UINT8 },
     { "--test-tone",        't',                          RTGETOPT_REQ_NOTHING },
+    { "--tone-dur",         VKAT_PLAY_OPT_TONE_DUR,       RTGETOPT_REQ_UINT32 },
+    { "--tone-freq",        VKAT_PLAY_OPT_TONE_FREQ,      RTGETOPT_REQ_UINT32 },
     { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
     { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
-    { "--vol",              VKAT_PLAY_OPT_VOL,            RTGETOPT_REQ_UINT8 },
+    { "--vol",              VKAT_PLAY_OPT_VOL,            RTGETOPT_REQ_UINT8 }
 };
 
 
@@ -562,16 +566,18 @@ static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
 {
     switch (pOpt->iShort)
     {
-        case 'b':               return "The audio backend to use";
-        case 'c':               return "Number of backend output channels";
-        case 'd':               return "Go via DrvAudio instead of directly interfacing with the backend";
-        case 'f':               return "Output frequency (Hz)";
-        case 'z':               return "Output sample size (bits)";
-        case 't':               return "Plays a test tone. Can be specified multiple times";
-        case 'm':               return "Go via the mixer";
-        case 'o':               return "The ID of the output device to use";
-        case VKAT_PLAY_OPT_VOL: return "Volume (in percent, 0-100) to use";
-        default:                return NULL;
+        case 'b':                       return "The audio backend to use";
+        case 'c':                       return "Number of backend output channels";
+        case 'd':                       return "Go via DrvAudio instead of directly interfacing with the backend";
+        case 'f':                       return "Output frequency (Hz)";
+        case 'z':                       return "Output sample size (bits)";
+        case 't':                       return "Plays a test tone. Can be specified multiple times";
+        case 'm':                       return "Go via the mixer";
+        case 'o':                       return "The ID of the output device to use";
+        case VKAT_PLAY_OPT_TONE_DUR:    return "Test tone duration (ms)";
+        case VKAT_PLAY_OPT_TONE_FREQ:   return "Test tone frequency (Hz)";
+        case VKAT_PLAY_OPT_VOL:         return "Volume (in percent, 0-100) to use";
+        default:                        return NULL;
     }
 }
 
@@ -596,6 +602,12 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
     RT_ZERO(PlayOpts);
 
     PlayOpts.uVolumePercent = 100; /* Use maximum volume by default. */
+
+    AUDIOTESTTONEPARMS ToneParms;
+    RT_ZERO(ToneParms);
+
+    ToneParms.dbFreqHz   = AudioTestToneGetRandomFreq();
+    ToneParms.msDuration = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
 
     /* Argument processing loop: */
     int           ch;
@@ -638,6 +650,14 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 cbSample = ValueUnion.u8 / 8;
                 break;
 
+            case VKAT_PLAY_OPT_TONE_DUR:
+                ToneParms.msDuration = ValueUnion.u32;
+                break;
+
+            case VKAT_PLAY_OPT_TONE_FREQ:
+                ToneParms.dbFreqHz = ValueUnion.u32;
+                break;
+
             case VKAT_PLAY_OPT_VOL:
                 PlayOpts.uVolumePercent = ValueUnion.u8;
                 if (PlayOpts.uVolumePercent > 100)
@@ -669,22 +689,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
 
     while (cTestTones--)
     {
-        AUDIOTESTTONEPARMS ToneParms;
-        RT_ZERO(ToneParms);
-
         /* Use some sane defaults if no PCM props are set by the user. */
         PDMAudioPropsInit(&ToneParms.Props,
                           cbSample  ? cbSample  : 2 /* 16-bit */, true /* fSigned */,
                           cChannels ? cChannels : 2 /* Stereo */, uHz ? uHz : 44100);
 
-        ToneParms.dbFreqHz       = AudioTestToneGetRandomFreq();
-        ToneParms.msPrequel      = 0; /** @todo Implement analyzing this first! */
-#ifdef DEBUG_andy
-        ToneParms.msDuration     = RTRandU32Ex(50, 2500);
-#else
-        ToneParms.msDuration     = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
-#endif
-        ToneParms.msSequel       = 0;   /** @todo Implement analyzing this first! */
         ToneParms.uVolumePercent = PlayOpts.uVolumePercent;
 
         RTEXITCODE rcExit = audioTestPlayTestToneOne(&ToneParms, pDrvReg, pszDevId, &PlayOpts);
