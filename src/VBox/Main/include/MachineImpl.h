@@ -53,8 +53,6 @@
 
 #include "VBox/com/ErrorInfo.h"
 
-#include <iprt/file.h>
-#include <iprt/thread.h>
 #include <iprt/time.h>
 
 #include <list>

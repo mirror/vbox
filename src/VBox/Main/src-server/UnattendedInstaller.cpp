@@ -26,7 +26,6 @@
 #include "AutoCaller.h"
 #include <VBox/com/ErrorInfo.h>
 
-#include "MachineImpl.h"
 #include "UnattendedImpl.h"
 #include "UnattendedInstaller.h"
 #include "UnattendedScript.h"
@@ -36,6 +35,7 @@
 #include <iprt/fsisomaker.h>
 #include <iprt/fsvfs.h>
 #include <iprt/getopt.h>
+#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/vfs.h>
