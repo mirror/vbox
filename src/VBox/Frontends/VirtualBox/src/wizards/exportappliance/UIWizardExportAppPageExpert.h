@@ -140,18 +140,6 @@ private:
     QListWidget *m_pVMSelector;
 
 
-    /** Holds the appliance widget container reference. */
-    QGroupBox   *m_pApplianceCnt;
-
-    /** Holds the settings widget 2 instance. */
-    QStackedWidget *m_pSettingsWidget2;
-
-    /** Holds the appliance widget reference. */
-    UIApplianceExportEditorWidget *m_pApplianceWidget;
-    /** Holds the Form Editor widget instance. */
-    UIFormEditorWidget            *m_pFormEditor;
-
-
     /** Holds the settings widget container reference. */
     QGroupBox *m_pSettingsCnt;
 
@@ -197,6 +185,18 @@ private:
     QButtonGroup                            *m_pExportModeButtonGroup;
     /** Holds the map of export mode button instances. */
     QMap<CloudExportMode, QAbstractButton*>  m_exportModeButtons;
+
+
+    /** Holds the appliance widget container reference. */
+    QGroupBox   *m_pApplianceCnt;
+
+    /** Holds the settings widget 2 instance. */
+    QStackedWidget *m_pSettingsWidget2;
+
+    /** Holds the appliance widget reference. */
+    UIApplianceExportEditorWidget *m_pApplianceWidget;
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidget            *m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageExpert_h */

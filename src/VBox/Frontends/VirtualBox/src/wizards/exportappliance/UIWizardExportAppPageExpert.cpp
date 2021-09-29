@@ -62,10 +62,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     , m_fExportToOCIByDefault(fExportToOCIByDefault)
     , m_pSelectorCnt(0)
     , m_pVMSelector(0)
-    , m_pApplianceCnt(0)
-    , m_pSettingsWidget2(0)
-    , m_pApplianceWidget(0)
-    , m_pFormEditor(0)
     , m_pSettingsCnt(0)
     , m_pFormatLayout(0)
     , m_pFormatComboBoxLabel(0)
@@ -85,6 +81,10 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     , m_pProfileToolButton(0)
     , m_pExportModeLabel(0)
     , m_pExportModeButtonGroup(0)
+    , m_pApplianceCnt(0)
+    , m_pSettingsWidget2(0)
+    , m_pApplianceWidget(0)
+    , m_pFormEditor(0)
 {
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
@@ -112,71 +112,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
 
             /* Add into layout: */
             pMainLayout->addWidget(m_pSelectorCnt, 0, 0);
-        }
-
-        /* Create appliance widget container: */
-        m_pApplianceCnt = new QGroupBox(this);
-        if (m_pApplianceCnt)
-        {
-            /* Create appliance widget container layout: */
-            QVBoxLayout *pApplianceCntLayout = new QVBoxLayout(m_pApplianceCnt);
-            if (pApplianceCntLayout)
-            {
-                /* Create settings widget 2: */
-                m_pSettingsWidget2 = new QStackedWidget;
-                if (m_pSettingsWidget2)
-                {
-                    /* Create appliance widget container: */
-                    QWidget *pApplianceWidgetCnt = new QWidget(this);
-                    if (pApplianceWidgetCnt)
-                    {
-                        /* Create appliance widget layout: */
-                        QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
-                        if (pApplianceWidgetLayout)
-                        {
-                            pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
-
-                            /* Create appliance widget: */
-                            m_pApplianceWidget = new UIApplianceExportEditorWidget(pApplianceWidgetCnt);
-                            if (m_pApplianceWidget)
-                            {
-                                m_pApplianceWidget->setMinimumHeight(250);
-                                m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-                                pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
-                            }
-                        }
-
-                        /* Add into layout: */
-                        m_pSettingsWidget2->addWidget(pApplianceWidgetCnt);
-                    }
-
-                    /* Create form editor container: */
-                    QWidget *pFormEditorCnt = new QWidget(this);
-                    if (pFormEditorCnt)
-                    {
-                        /* Create form editor layout: */
-                        QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
-                        if (pFormEditorLayout)
-                        {
-                            pFormEditorLayout->setContentsMargins(0, 0, 0, 0);
-
-                            /* Create form editor widget: */
-                            m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
-                            if (m_pFormEditor)
-                                pFormEditorLayout->addWidget(m_pFormEditor);
-                        }
-
-                        /* Add into layout: */
-                        m_pSettingsWidget2->addWidget(pFormEditorCnt);
-                    }
-
-                    /* Add into layout: */
-                    pApplianceCntLayout->addWidget(m_pSettingsWidget2);
-                }
-            }
-
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pApplianceCnt, 0, 1);
         }
 
         /* Create settings widget container: */
@@ -412,6 +347,71 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
 
             /* Add into layout: */
             pMainLayout->addWidget(m_pSettingsCnt, 1, 0, 1, 2);
+        }
+
+        /* Create appliance widget container: */
+        m_pApplianceCnt = new QGroupBox(this);
+        if (m_pApplianceCnt)
+        {
+            /* Create appliance widget container layout: */
+            QVBoxLayout *pApplianceCntLayout = new QVBoxLayout(m_pApplianceCnt);
+            if (pApplianceCntLayout)
+            {
+                /* Create settings widget 2: */
+                m_pSettingsWidget2 = new QStackedWidget;
+                if (m_pSettingsWidget2)
+                {
+                    /* Create appliance widget container: */
+                    QWidget *pApplianceWidgetCnt = new QWidget(this);
+                    if (pApplianceWidgetCnt)
+                    {
+                        /* Create appliance widget layout: */
+                        QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
+                        if (pApplianceWidgetLayout)
+                        {
+                            pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
+
+                            /* Create appliance widget: */
+                            m_pApplianceWidget = new UIApplianceExportEditorWidget(pApplianceWidgetCnt);
+                            if (m_pApplianceWidget)
+                            {
+                                m_pApplianceWidget->setMinimumHeight(250);
+                                m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+                                pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
+                            }
+                        }
+
+                        /* Add into layout: */
+                        m_pSettingsWidget2->addWidget(pApplianceWidgetCnt);
+                    }
+
+                    /* Create form editor container: */
+                    QWidget *pFormEditorCnt = new QWidget(this);
+                    if (pFormEditorCnt)
+                    {
+                        /* Create form editor layout: */
+                        QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
+                        if (pFormEditorLayout)
+                        {
+                            pFormEditorLayout->setContentsMargins(0, 0, 0, 0);
+
+                            /* Create form editor widget: */
+                            m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
+                            if (m_pFormEditor)
+                                pFormEditorLayout->addWidget(m_pFormEditor);
+                        }
+
+                        /* Add into layout: */
+                        m_pSettingsWidget2->addWidget(pFormEditorCnt);
+                    }
+
+                    /* Add into layout: */
+                    pApplianceCntLayout->addWidget(m_pSettingsWidget2);
+                }
+            }
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pApplianceCnt, 0, 1);
         }
     }
 
