@@ -2023,10 +2023,9 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
         {
             if (cDiffs)
             {
-                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A [%RU64-%RU64] vs. B [%RU64-%RU64] (%RU64 bytes, %RU64ms)",
-                                                                                     pCmpA->offStart + offLastDiff, pCmpA->offStart + offCur,
-                                                                                     pCmpB->offStart + offLastDiff, pCmpB->offStart + offCur, offCur - offLastDiff,
-                                                                                     PDMAudioPropsBytesToMilli(&pToneParms->Props, offCur - offLastDiff));
+                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
+                                                                                     pCmpA->offStart, pCmpB->offStart, offLastDiff, offCur,
+                                                                                     offCur - offLastDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, offCur - offLastDiff));
                 AssertRC(rc2);
             }
             offLastDiff = 0;
@@ -2164,11 +2163,11 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     FileB.cbSize    = RT_MIN(audioTestToneFileFind(ObjB.File.hFile, false /* fFindSilence */, FileB.offStart, &ToneParmsB),
                              cbSizeB);
 
-    int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File A ('%s'): cbOff=%RU64  cbSize=%RU64, cbFileSize=%RU64\n",
+    int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File A ('%s'): uOff=%#x, cbSize=%RU64, cbFileSize=%RU64\n",
                                         ObjA.szName, FileA.offStart, FileA.cbSize, cbSizeA);
     AssertRC(rc2);
 
-    rc = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File B ('%s'): cbOff=%RU64, cbSize=%RU64, cbFileSize=%RU64\n",
+    rc = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File B ('%s'): uOff=%#x, cbSize=%RU64, cbFileSize=%RU64\n",
                                    ObjB.szName, FileB.offStart, FileB.cbSize, cbSizeB);
     AssertRC(rc2);
 
@@ -2177,7 +2176,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     if (cDiffs > pVerJob->Opts.cMaxDiff)
     {
         rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest,
-                                         "Files '%s' and '%s' have too many different chunks (%RU32 vs. %RU32)",
+                                         "Files '%s' and '%s' have too many different chunks (got %RU32, expected %RU32)",
                                          ObjA.szName, ObjB.szName, cDiffs, pVerJob->Opts.cMaxDiff);
         AssertRC(rc2);
     }
