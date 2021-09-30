@@ -412,7 +412,8 @@ VBOX_SVC_CERTS_FILE = $(VBoxSVC_0_OUTDIR)/TrustAnchorsAndCerts.cpp
 VBOX_SVC_CERTS := \
        UefiMicrosoftKek=MicCorKEKCA2011_2011-06-24.crt \
        UefiMicrosoftCa=MicCorUEFCA2011_2011-06-27.crt \
-       UefiMicrosoftProPca=MicWinProPCA2011_2011-10-19.crt
+       UefiMicrosoftProPca=MicWinProPCA2011_2011-10-19.crt \
+       UefiOracleDefPk=OrclUefiDefPk2021_2021-09-29.crt
 
 VBOX_SVC_CERT_NAMES := $(foreach cert,$(VBOX_SVC_CERTS),$(firstword $(subst =,$(SPACE) ,$(cert))))
 VBOX_SVC_PATH_CERTIFICATES := $(PATH_SUB_CURRENT)/Certificates
