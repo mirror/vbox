@@ -414,7 +414,7 @@ HRESULT NvramStore::initUefiVariableStore(ULONG aSize)
             if (RT_SUCCESS(vrc))
             {
                 /** @todo The size is hardcoded to match what the firmware image uses right now which is a gross hack... */
-                vrc = RTVfsFileSetSize(hVfsUefiVarStore, 546816, RTVFSFILE_SIZE_F_NORMAL);
+                vrc = RTVfsFileSetSize(hVfsUefiVarStore, 540672, RTVFSFILE_SIZE_F_NORMAL);
                 if (RT_SUCCESS(vrc))
                     m->bd->mapNvram["efi/nvram"] = hVfsUefiVarStore;
                 else
