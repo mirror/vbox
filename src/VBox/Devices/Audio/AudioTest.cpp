@@ -393,8 +393,8 @@ static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t 
     int rc = RTFileSeek(hFile, uOff, RTFILE_SEEK_BEGIN, NULL);
     AssertRCReturn(rc, 0);
 
-    uint64_t offFound       = 0;
-    int64_t  abSample[_16K];
+    uint64_t offFound = 0;
+    int64_t  abSample[_64K];
 
     size_t   cbRead;
     for (;;)
