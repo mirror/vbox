@@ -1638,6 +1638,12 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
                         pSignatureEntry->registerIndex = 0;
                         pSignatureEntry->semanticName  = SVGADX_SIGNATURE_SEMANTIC_NAME_PRIMITIVE_ID;
                     }
+                    else if (opcode.aValOperand[0].operandType == VGPU10_OPERAND_TYPE_OUTPUT_DEPTH)
+                    {
+                        /* oDepth is always last in the signature. Register index is equal to 0xFFFFFFFF. */
+                        pSignatureEntry->registerIndex = 0xFFFFFFFF;
+                        pSignatureEntry->semanticName  = SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED;
+                    }
                     else
                         ASSERT_GUEST_FAILED_RETURN(VERR_NOT_SUPPORTED);
                 }
@@ -1790,6 +1796,17 @@ static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint
     for (uint32_t i = 0; i < cSignature; ++i)
     {
         SVGA3dDXSignatureEntry const *src = &paSignature[i];
+        if (src->registerIndex == 0xFFFFFFFF)
+        {
+            /* oDepth for PS output. */
+            ASSERT_GUEST_RETURN(pInfo->enmProgramType == VGPU10_PIXEL_SHADER, VERR_INVALID_PARAMETER);
+
+            /* Must be placed last in the signature. */
+            ASSERT_GUEST_RETURN(aIdxSignature[cSignature - 1] == 0xFFFFFFFF, VERR_INVALID_PARAMETER);
+            aIdxSignature[cSignature - 1] = i;
+            continue;
+        }
+
         ASSERT_GUEST_RETURN(src->registerIndex < RT_ELEMENTS(aIdxSignature), VERR_INVALID_PARAMETER);
         ASSERT_GUEST_RETURN(aIdxSignature[src->registerIndex] == 0xFFFFFFFF, VERR_INVALID_PARAMETER);
         aIdxSignature[src->registerIndex] = i;
