@@ -505,14 +505,14 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
  */
 static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, vm_map_t pVmMap,
                                      vm_offset_t AddrStart, size_t cb, uint32_t fAccess,
-                                     RTR0PROCESS R0Process, int fFlags)
+                                     RTR0PROCESS R0Process, int fFlags, const char *pszTag)
 {
     int rc;
     NOREF(fAccess);
 
     /* create the object. */
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_LOCK,
-                                                                       (void *)AddrStart, cb, NULL);
+                                                                       (void *)AddrStart, cb, pszTag);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
@@ -535,7 +535,8 @@ static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, vm_map_t pVmMap
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
+DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
+                                         RTR0PROCESS R0Process, const char *pszTag)
 {
     return rtR0MemObjNativeLockInMap(ppMem,
                                      &((struct proc *)R0Process)->p_vmspace->vm_map,
@@ -543,11 +544,12 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                                      cb,
                                      fAccess,
                                      R0Process,
-                                     VM_MAP_WIRE_USER | VM_MAP_WIRE_NOHOLES);
+                                     VM_MAP_WIRE_USER | VM_MAP_WIRE_NOHOLES,
+                                     pszTag);
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
+DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, const char *pszTag)
 {
     return rtR0MemObjNativeLockInMap(ppMem,
                                      kernel_map,
@@ -555,7 +557,8 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
                                      cb,
                                      fAccess,
                                      NIL_RTR0PROCESS,
-                                     VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
+                                     VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES,
+                                     pszTag);
 }
 
 

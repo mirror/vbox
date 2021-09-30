@@ -367,9 +367,11 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
+DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
+                                         RTR0PROCESS R0Process, const char *pszTag)
 {
-    PRTR0MEMOBJNETBSD pMemNetBSD = (PRTR0MEMOBJNETBSD)rtR0MemObjNew(sizeof(*pMemNetBSD), RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb, NULL);
+    PRTR0MEMOBJNETBSD pMemNetBSD = (PRTR0MEMOBJNETBSD)rtR0MemObjNew(sizeof(*pMemNetBSD), RTR0MEMOBJTYPE_LOCK,
+                                                                    (void *)R3Ptr, cb, pszTag);
     if (!pMemNetBSD)
         return VERR_NO_MEMORY;
 
@@ -390,10 +392,10 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
+DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, const char *pszTag)
 {
     /* Kernel memory (always?) wired; all memory allocated by vbox code is? */
-    PRTR0MEMOBJNETBSD pMemNetBSD = (PRTR0MEMOBJNETBSD)rtR0MemObjNew(sizeof(*pMemNetBSD), RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
+    PRTR0MEMOBJNETBSD pMemNetBSD = (PRTR0MEMOBJNETBSD)rtR0MemObjNew(sizeof(*pMemNetBSD), RTR0MEMOBJTYPE_LOCK, pv, cb, pszTag);
     if (!pMemNetBSD)
         return VERR_NO_MEMORY;
 

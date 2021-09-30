@@ -758,8 +758,10 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  * @param   R0Process       The process \a pv and \a cb refers to.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
-static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
+static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process,
+                            const char *pszTag)
 {
     /*
      * Calc the number of MDLs we need and allocate the memory object structure.
@@ -770,7 +772,7 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uin
     if (cMdls >= UINT32_MAX)
         return VERR_OUT_OF_RANGE;
     PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJNT, apMdls[cMdls]),
-                                                        RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
+                                                        RTR0MEMOBJTYPE_LOCK, pv, cb, pszTag);
     if (!pMemNt)
         return VERR_NO_MEMORY;
 
@@ -870,17 +872,17 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uin
 
 
 DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
-                                         RTR0PROCESS R0Process)
+                                         RTR0PROCESS R0Process, const char *pszTag)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     /* (Can use MmProbeAndLockProcessPages if we need to mess with other processes later.) */
-    return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, fAccess, R0Process);
+    return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, fAccess, R0Process, pszTag);
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
+DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, const char *pszTag)
 {
-    return rtR0MemObjNtLock(ppMem, pv, cb, fAccess, NIL_RTR0PROCESS);
+    return rtR0MemObjNtLock(ppMem, pv, cb, fAccess, NIL_RTR0PROCESS, pszTag);
 }
 
 

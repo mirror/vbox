@@ -307,33 +307,33 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  * Worker locking the memory in either kernel or user maps.
  *
  * @returns IPRT status code.
- * @param   ppMem        Where to store the allocated memory object.
- * @param   pvStart      The starting address.
- * @param   cb           The size of the block.
- * @param   fAccess      The mapping protection to apply.
- * @param   R0Process    The process to map the memory to (use NIL_RTR0PROCESS
- *                       for the kernel)
- * @param   fFlags       Memory flags (B_READ_DEVICE indicates the memory is
- *                       intended to be written from a "device").
+ * @param   ppMem       Where to store the allocated memory object.
+ * @param   pvStart     The starting address.
+ * @param   cb          The size of the block.
+ * @param   fAccess     The mapping protection to apply.
+ * @param   R0Process   The process to map the memory to (use NIL_RTR0PROCESS
+ *                      for the kernel)
+ * @param   fFlags      Memory flags (B_READ_DEVICE indicates the memory is
+ *                      intended to be written from a "device").
+ * @param   pszTag      Allocation tag used for statistics and such.
  */
 static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvStart, size_t cb, uint32_t fAccess,
-                                     RTR0PROCESS R0Process, int fFlags)
+                                     RTR0PROCESS R0Process, int fFlags, const char *pszTag)
 {
     NOREF(fAccess);
-    int rc;
     team_id TeamId = B_SYSTEM_TEAM;
 
     LogFlowFunc(("ppMem=%p pvStart=%p cb=%u fAccess=%x R0Process=%d fFlags=%x\n", ppMem, pvStart, cb, fAccess, R0Process,
                  fFlags));
 
     /* Create the object. */
-    PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_LOCK, pvStart, cb, NULL);
+    PRTR0MEMOBJHAIKU pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(*pMemHaiku), RTR0MEMOBJTYPE_LOCK, pvStart, cb, pszTag);
     if (RT_UNLIKELY(!pMemHaiku))
         return VERR_NO_MEMORY;
 
     if (R0Process != NIL_RTR0PROCESS)
         TeamId = (team_id)R0Process;
-    rc = lock_memory_etc(TeamId, pvStart, cb, fFlags);
+    int rc = lock_memory_etc(TeamId, pvStart, cb, fFlags);
     if (rc == B_OK)
     {
         pMemHaiku->AreaId = -1;
@@ -346,15 +346,16 @@ static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvStart, 
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process,
+                             const char *pszTag)
 {
-    return rtR0MemObjNativeLockInMap(ppMem, (void *)R3Ptr, cb, fAccess, R0Process, B_READ_DEVICE);
+    return rtR0MemObjNativeLockInMap(ppMem, (void *)R3Ptr, cb, fAccess, R0Process, B_READ_DEVICE, pszTag);
 }
 
 
-int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
+int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, const char *pszTag)
 {
-    return rtR0MemObjNativeLockInMap(ppMem, pv, cb, fAccess, NIL_RTR0PROCESS, B_READ_DEVICE);
+    return rtR0MemObjNativeLockInMap(ppMem, pv, cb, fAccess, NIL_RTR0PROCESS, B_READ_DEVICE, pszTag);
 }
 
 

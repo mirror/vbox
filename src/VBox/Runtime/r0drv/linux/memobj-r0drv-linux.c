@@ -1194,7 +1194,8 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
 # define GET_USER_PAGES_API     LINUX_VERSION_CODE
 #endif
 
-DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
+DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
+                                         RTR0PROCESS R0Process, const char *pszTag)
 {
     IPRT_LINUX_SAVE_EFL_AC();
     const int cPages = cb >> PAGE_SHIFT;
@@ -1216,7 +1217,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
      * Allocate the memory object and a temporary buffer for the VMAs.
      */
     pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJLNX, apPages[cPages]), RTR0MEMOBJTYPE_LOCK,
-                                            (void *)R3Ptr, cb, NULL);
+                                            (void *)R3Ptr, cb, pszTag);
     if (!pMemLnx)
     {
         IPRT_LINUX_RESTORE_EFL_AC();
@@ -1352,7 +1353,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
+DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, const char *pszTag)
 {
     IPRT_LINUX_SAVE_EFL_AC();
     void           *pvLast = (uint8_t *)pv + cb - 1;
@@ -1385,7 +1386,8 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
     /*
      * Allocate the memory object.
      */
-    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJLNX, apPages[cPages]), RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
+    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJLNX, apPages[cPages]), RTR0MEMOBJTYPE_LOCK,
+                                            pv, cb, pszTag);
     if (!pMemLnx)
     {
         IPRT_LINUX_RESTORE_EFL_AC();

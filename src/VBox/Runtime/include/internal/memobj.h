@@ -356,8 +356,10 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  * @param   R0Process       The process to lock pages in.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
-DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process);
+DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
+                                         RTR0PROCESS R0Process, const char *pszTag);
 
 /**
  * Locks a range of kernel virtual memory.
@@ -368,8 +370,9 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
  * @param   cb              Number of bytes to lock, page aligned.
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
-DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess);
+DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, const char *pszTag);
 
 /**
  * Allocates contiguous page aligned physical memory without (necessarily) any

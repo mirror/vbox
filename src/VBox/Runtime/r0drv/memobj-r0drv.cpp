@@ -535,10 +535,8 @@ RTR0DECL(int) RTR0MemObjLockUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t c
     AssertReturn(fAccess, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
-    RT_NOREF_PV(pszTag);
-
     /* do the locking. */
-    return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, fAccess, R0Process);
+    return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, fAccess, R0Process, pszTag);
 }
 RT_EXPORT_SYMBOL(RTR0MemObjLockUserTag);
 
@@ -557,10 +555,8 @@ RTR0DECL(int) RTR0MemObjLockKernelTag(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, 
     AssertReturn(fAccess, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
-    RT_NOREF_PV(pszTag);
-
     /* do the allocation. */
-    return rtR0MemObjNativeLockKernel(pMemObj, pvAligned, cbAligned, fAccess);
+    return rtR0MemObjNativeLockKernel(pMemObj, pvAligned, cbAligned, fAccess, pszTag);
 }
 RT_EXPORT_SYMBOL(RTR0MemObjLockKernelTag);
 

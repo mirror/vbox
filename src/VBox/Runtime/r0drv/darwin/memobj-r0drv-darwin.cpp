@@ -910,7 +910,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (PhysHighest == NIL_RTHCPHYS)
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
                                          uAlignment <= PAGE_SIZE ? 0 : ~(mach_vm_address_t)(uAlignment - 1) /* PhysMask*/,
-                                         UINT64_MAX, RTR0MEMOBJTYPE_PHYS, uAlignment, NULL, false /*fOnKernelThread*/);
+                                         UINT64_MAX, RTR0MEMOBJTYPE_PHYS, uAlignment, pszTag, false /*fOnKernelThread*/);
     else
     {
         mach_vm_address_t PhysMask = 0;
@@ -922,7 +922,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
                                          PhysMask, PhysHighest,
-                                         RTR0MEMOBJTYPE_PHYS, uAlignment, NULL, false /*fOnKernelThread*/);
+                                         RTR0MEMOBJTYPE_PHYS, uAlignment, pszTag, false /*fOnKernelThread*/);
     }
 
     IPRT_DARWIN_RESTORE_EFL_AC();
@@ -1007,8 +1007,10 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  * @param   Task            The task \a pv and \a cb refers to.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
-static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, task_t Task)
+static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, task_t Task,
+                                const char *pszTag)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
     NOREF(fAccess);
@@ -1030,7 +1032,7 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
         /*
          * Create the IPRT memory object.
          */
-        PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
+        PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb, pszTag);
         if (pMemDarwin)
         {
             pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
@@ -1060,7 +1062,8 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
             /*
              * Create the IPRT memory object.
              */
-            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK, pv, cb, NULL);
+            PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_LOCK,
+                                                                            pv, cb, pszTag);
             if (pMemDarwin)
             {
                 pMemDarwin->Core.u.Lock.R0Process = (RTR0PROCESS)Task;
@@ -1084,15 +1087,16 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
+DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
+                                         RTR0PROCESS R0Process, const char *pszTag)
 {
-    return rtR0MemObjNativeLock(ppMem, (void *)R3Ptr, cb, fAccess, (task_t)R0Process);
+    return rtR0MemObjNativeLock(ppMem, (void *)R3Ptr, cb, fAccess, (task_t)R0Process, pszTag);
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
+DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, const char *pszTag)
 {
-    return rtR0MemObjNativeLock(ppMem, pv, cb, fAccess, kernel_task);
+    return rtR0MemObjNativeLock(ppMem, pv, cb, fAccess, kernel_task, pszTag);
 }
 
 
