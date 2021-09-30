@@ -151,8 +151,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 }
 
 
-static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
-                                     bool fExecutable, RTR0MEMOBJTYPE type, RTHCPHYS PhysHighest, size_t uAlignment)
+static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, RTR0MEMOBJTYPE enmType,
+                                     RTHCPHYS PhysHighest, size_t uAlignment, const char *pszTag)
 {
     NOREF(fExecutable);
 
@@ -161,10 +161,10 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     const char *pszName = NULL;
     uint32 addressSpec  = B_ANY_KERNEL_ADDRESS;
     uint32 fLock        = ~0U;
-    LogFlowFunc(("ppMem=%p cb=%u, fExecutable=%s, type=%08x, PhysHighest=%RX64 uAlignment=%u\n", ppMem,(unsigned)cb,
-                 fExecutable ? "true" : "false", type, PhysHighest,(unsigned)uAlignment));
+    LogFlowFunc(("ppMem=%p cb=%u, fExecutable=%s, enmType=%08x, PhysHighest=%RX64 uAlignment=%u\n", ppMem,(unsigned)cb,
+                 fExecutable ? "true" : "false", enmType, PhysHighest,(unsigned)uAlignment));
 
-    switch (type)
+    switch (enmType)
     {
         case RTR0MEMOBJTYPE_PAGE:
             pszName = "IPRT R0MemObj Alloc";
@@ -203,7 +203,7 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
     /* Create the object. */
     PRTR0MEMOBJHAIKU pMemHaiku;
-    pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), type, NULL, cb, NULL);
+    pMemHaiku = (PRTR0MEMOBJHAIKU)rtR0MemObjNew(sizeof(RTR0MEMOBJHAIKU), enmType, NULL, cb, pszTag);
     if (RT_UNLIKELY(!pMemHaiku))
         return VERR_NO_MEMORY;
 
@@ -212,7 +212,7 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     {
         physical_entry physMap[2];
         pMemHaiku->Core.pv = pvMap;   /* store start address */
-        switch (type)
+        switch (enmType)
         {
             case RTR0MEMOBJTYPE_CONT:
                 rc = get_memory_map(pvMap, cb, physMap, 2);
@@ -249,7 +249,7 @@ static int rtR0MemObjNativeAllocArea(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    return rtR0MemObjNativeAllocArea(ppMem, cb, fExecutable, RTR0MEMOBJTYPE_PAGE, 0 /* PhysHighest */, 0 /* uAlignment */);
+    return rtR0MemObjNativeAllocArea(ppMem, cb, fExecutable, RTR0MEMOBJTYPE_PAGE, 0 /* PhysHighest */, 0 /* uAlignment */, NULL);
 }
 
 
@@ -262,24 +262,24 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    return rtR0MemObjNativeAllocArea(ppMem, cb, fExecutable, RTR0MEMOBJTYPE_LOW, 0 /* PhysHighest */, 0 /* uAlignment */);
+    return rtR0MemObjNativeAllocArea(ppMem, cb, fExecutable, RTR0MEMOBJTYPE_LOW, 0 /* PhysHighest */, 0 /* uAlignment */, NULL);
 }
 
 
 int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    return rtR0MemObjNativeAllocArea(ppMem, cb, fExecutable, RTR0MEMOBJTYPE_CONT, 0 /* PhysHighest */, 0 /* uAlignment */);
+    return rtR0MemObjNativeAllocArea(ppMem, cb, fExecutable, RTR0MEMOBJTYPE_CONT, 0 /* PhysHighest */, 0 /* uAlignment */, NULL);
 }
 
-int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
+int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment, const char *pszTag)
 {
-    return rtR0MemObjNativeAllocArea(ppMem, cb, false, RTR0MEMOBJTYPE_PHYS, PhysHighest, uAlignment);
+    return rtR0MemObjNativeAllocArea(ppMem, cb, false, RTR0MEMOBJTYPE_PHYS, PhysHighest, uAlignment, pszTag);
 }
 
 
-int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
+int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, const char *pszTag)
 {
-    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest, PAGE_SIZE);
+    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest, PAGE_SIZE, pszTag);
 }
 
 

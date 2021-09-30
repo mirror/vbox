@@ -334,9 +334,11 @@ static void rtR0MemObjLinuxDoMunmap(void *pv, size_t cb, struct task_struct *pTa
  * @param   fContiguous Whether the allocation must be contiguous.
  * @param   fExecutable Whether the memory must be executable.
  * @param   rcNoMem     What to return when we're out of pages.
+ * @param   pszTag      Allocation tag used for statistics and such.
  */
 static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE enmType, size_t cb,
-                                     size_t uAlignment, gfp_t fFlagsLnx, bool fContiguous, bool fExecutable, int rcNoMem)
+                                     size_t uAlignment, gfp_t fFlagsLnx, bool fContiguous, bool fExecutable, int rcNoMem,
+                                     const char *pszTag)
 {
     size_t          iPage;
     size_t const    cPages = cb >> PAGE_SHIFT;
@@ -347,7 +349,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
      * the page pointer array.
      */
     PRTR0MEMOBJLNX  pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJLNX, apPages[cPages]), enmType,
-                                                            NULL, cb, NULL);
+                                                            NULL, cb, pszTag);
     if (!pMemLnx)
         return VERR_NO_MEMORY;
     pMemLnx->cPages = cPages;
@@ -805,10 +807,10 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
 #if RTLNX_VER_MIN(2,4,22)
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_PAGE, cb, PAGE_SIZE, GFP_HIGHUSER,
-                                   false /* non-contiguous */, fExecutable, VERR_NO_MEMORY);
+                                   false /* non-contiguous */, fExecutable, VERR_NO_MEMORY, NULL);
 #else
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_PAGE, cb, PAGE_SIZE, GFP_USER,
-                                   false /* non-contiguous */, fExecutable, VERR_NO_MEMORY);
+                                   false /* non-contiguous */, fExecutable, VERR_NO_MEMORY, NULL);
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -846,19 +848,19 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
 #if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     /* ZONE_DMA32: 0-4GB */
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_DMA32,
-                                   false /* non-contiguous */, fExecutable, VERR_NO_LOW_MEMORY);
+                                   false /* non-contiguous */, fExecutable, VERR_NO_LOW_MEMORY, NULL);
     if (RT_FAILURE(rc))
 #endif
 #ifdef RT_ARCH_AMD64
         /* ZONE_DMA: 0-16MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_DMA,
-                                       false /* non-contiguous */, fExecutable, VERR_NO_LOW_MEMORY);
+                                       false /* non-contiguous */, fExecutable, VERR_NO_LOW_MEMORY, NULL);
 #else
 # ifdef CONFIG_X86_PAE
 # endif
         /* ZONE_NORMAL: 0-896MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_USER,
-                                       false /* non-contiguous */, fExecutable, VERR_NO_LOW_MEMORY);
+                                       false /* non-contiguous */, fExecutable, VERR_NO_LOW_MEMORY, NULL);
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -888,17 +890,17 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 #if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     /* ZONE_DMA32: 0-4GB */
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA32,
-                                   true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY);
+                                   true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, NULL);
     if (RT_FAILURE(rc))
 #endif
 #ifdef RT_ARCH_AMD64
         /* ZONE_DMA: 0-16MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA,
-                                       true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY);
+                                       true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, NULL);
 #else
         /* ZONE_NORMAL (32-bit hosts): 0-896MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_USER,
-                                       true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY);
+                                       true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, NULL);
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -935,17 +937,16 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
  * @param   uAlignment  The alignment of the physical memory.
  *                      Only valid for fContiguous == true, ignored otherwise.
  * @param   PhysHighest See rtR0MemObjNativeAllocPhys.
+ * @param   pszTag      Allocation tag used for statistics and such.
  * @param   fGfp        The Linux GFP flags to use for the allocation.
  */
 static int rtR0MemObjLinuxAllocPhysSub2(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYPE enmType,
-                                        size_t cb, size_t uAlignment, RTHCPHYS PhysHighest, gfp_t fGfp)
+                                        size_t cb, size_t uAlignment, RTHCPHYS PhysHighest, const char *pszTag, gfp_t fGfp)
 {
     PRTR0MEMOBJLNX pMemLnx;
-    int rc;
-
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, enmType, cb, uAlignment, fGfp,
-                                   enmType == RTR0MEMOBJTYPE_PHYS /* contiguous / non-contiguous */,
-                                   false /*fExecutable*/, VERR_NO_PHYS_MEMORY);
+    int rc = rtR0MemObjLinuxAllocPages(&pMemLnx, enmType, cb, uAlignment, fGfp,
+                                       enmType == RTR0MEMOBJTYPE_PHYS /* contiguous / non-contiguous */,
+                                       false /*fExecutable*/, VERR_NO_PHYS_MEMORY, pszTag);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -987,9 +988,10 @@ static int rtR0MemObjLinuxAllocPhysSub2(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTY
  * @param   uAlignment  The alignment of the physical memory.
  *                      Only valid for enmType == RTR0MEMOBJTYPE_PHYS, ignored otherwise.
  * @param   PhysHighest See rtR0MemObjNativeAllocPhys.
+ * @param   pszTag      Allocation tag used for statistics and such.
  */
 static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYPE enmType,
-                                       size_t cb, size_t uAlignment, RTHCPHYS PhysHighest)
+                                       size_t cb, size_t uAlignment, RTHCPHYS PhysHighest, const char *pszTag)
 {
     int rc;
     IPRT_LINUX_SAVE_EFL_AC();
@@ -1006,27 +1008,27 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
      */
     if (PhysHighest == NIL_RTHCPHYS)
         /* ZONE_HIGHMEM: the whole physical memory */
-        rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, GFP_HIGHUSER);
+        rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, pszTag, GFP_HIGHUSER);
     else if (PhysHighest <= _1M * 16)
         /* ZONE_DMA: 0-16MB */
-        rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, GFP_DMA);
+        rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, pszTag, GFP_DMA);
     else
     {
         rc = VERR_NO_MEMORY;
         if (RT_FAILURE(rc))
             /* ZONE_HIGHMEM: the whole physical memory */
-            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, GFP_HIGHUSER);
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, pszTag, GFP_HIGHUSER);
         if (RT_FAILURE(rc))
             /* ZONE_NORMAL: 0-896MB */
-            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, GFP_USER);
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, pszTag, GFP_USER);
 #ifdef GFP_DMA32
         if (RT_FAILURE(rc))
             /* ZONE_DMA32: 0-4GB */
-            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, GFP_DMA32);
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, pszTag, GFP_DMA32);
 #endif
         if (RT_FAILURE(rc))
             /* ZONE_DMA: 0-16MB */
-            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, GFP_DMA);
+            rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, uAlignment, PhysHighest, pszTag, GFP_DMA);
     }
     IPRT_LINUX_RESTORE_EFL_AC();
     return rc;
@@ -1143,15 +1145,16 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
 RT_EXPORT_SYMBOL(rtR0MemObjLinuxVirtToPage);
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
+DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment,
+                                          const char *pszTag)
 {
-    return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, uAlignment, PhysHighest);
+    return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, uAlignment, PhysHighest, pszTag);
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
+DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, const char *pszTag)
 {
-    return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PAGE_SIZE, PhysHighest);
+    return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PAGE_SIZE, PhysHighest, pszTag);
 }
 
 

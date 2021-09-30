@@ -382,8 +382,10 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
  *                          NIL_RTHCPHYS if any address is acceptable.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are PAGE_SIZE, _2M, _4M and _1G.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
-DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment);
+DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment,
+                                          const char *pszTag);
 
 /**
  * Allocates non-contiguous page aligned physical memory without (necessarily) any kernel mapping.
@@ -395,8 +397,9 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
  * @param   cb              Number of bytes to allocate, page aligned.
  * @param   PhysHighest     The highest permitable address (inclusive).
  *                          NIL_RTHCPHYS if any address is acceptable.
+ * @param   pszTag          Allocation tag used for statistics and such.
  */
-DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest);
+DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, const char *pszTag);
 
 /**
  * Creates a page aligned, contiguous, physical memory object.
