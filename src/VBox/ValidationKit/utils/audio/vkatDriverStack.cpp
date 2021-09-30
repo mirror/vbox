@@ -1567,10 +1567,12 @@ void AudioTestMixStreamSetVolume(PAUDIOTESTDRVMIXSTREAM pMix, uint8_t uVolumePer
 {
     AssertReturnVoid(pMix->fDoMixing);
 
+    uint8_t const uVol = (PDMAUDIO_VOLUME_MAX / 100) * uVolumePercent;
+
     PDMAUDIOVOLUME Vol;
     RT_ZERO(Vol);
     for (size_t i = 0; i < RT_ELEMENTS(Vol.auChannels); i++)
-        Vol.auChannels[i] = (PDMAUDIO_VOLUME_MAX / 100) * uVolumePercent;
+        Vol.auChannels[i] = uVol;
     AudioMixBufSetVolume(&pMix->MixBuf, &Vol);
 }
 
