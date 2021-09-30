@@ -93,5 +93,29 @@ typedef EFI_FW_BLOCK_MAP *PEFI_FW_BLOCK_MAP;
 /** Pointer to a const firmware volume block map entry. */
 typedef const EFI_FW_BLOCK_MAP *PCEFI_FW_BLOCK_MAP;
 
+
+/**
+ * Fault tolerant working block header.
+ */
+typedef struct EFI_FTW_BLOCK_HEADER
+{
+    /** GUID identifying the FTW block header. */
+    EFI_GUID        GuidSignature;
+    /** The checksum. */
+    uint32_t        u32Chksum;
+    /** Flags marking the working block area as valid/invalid. */
+    uint32_t        fWorkingBlockValid;
+    /** Size of the write queue. */
+    uint64_t        cbWriteQueue;
+} EFI_FTW_BLOCK_HEADER;
+/** Pointer to a fault tolerant working block header. */
+typedef EFI_FTW_BLOCK_HEADER *PEFI_FTW_BLOCK_HEADER;
+/** Pointer to a const fault tolerant working block header. */
+typedef const EFI_FTW_BLOCK_HEADER *PCEFI_FTW_BLOCK_HEADER;
+
+/** The signature for the working block header. */
+#define EFI_WORKING_BLOCK_SIGNATURE_GUID \
+    { 0x9e58292b, 0x7c68, 0x497d, { 0xa0, 0xce, 0x65,  0x0, 0xfd, 0x9f, 0x1b, 0x95 }}
+
 #endif /* !IPRT_INCLUDED_formats_efi_fv_h */
 
