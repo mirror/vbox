@@ -2478,7 +2478,7 @@ RTDECL(int) RTEfiVarStoreCreate(RTVFSFILE hVfsFile, uint64_t offStore, uint64_t 
     aBlockMap[0].cBlocks     = RT_H2LE_U32(cBlocks);
 
     pu16 = (const uint16_t *)&aBlockMap[0];
-    while (pu16 < (const uint16_t *)&aBlockMap[0] + (sizeof(aBlockMap) / sizeof(uint16_t)))
+    while (pu16 < (const uint16_t *)&aBlockMap[0] + (sizeof(aBlockMap) / (sizeof(uint16_t))))
         u16Chksum += RT_LE2H_U16(*pu16++);
 
     FvHdr.u16Chksum          = RT_H2LE_U16(UINT16_MAX - u16Chksum + 1);
