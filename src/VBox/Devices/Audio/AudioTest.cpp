@@ -1998,7 +1998,7 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     AssertRC(rc);
 
     RT_NOREF(pToneParms);
-    uint32_t const cbChunkSize = 4; //PDMAudioPropsMilliToBytes(&pToneParms->Props, 5 /* ms */);
+    uint32_t const cbChunkSize = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
 
     uint64_t offCur      = 0;
     uint64_t offLastDiff = 0;
