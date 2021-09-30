@@ -163,6 +163,24 @@ static RTEXITCODE handleModifyNvramEnrollPlatformKey(HandlerArg *a, ComPtr<INvra
 
 
 /**
+ * Handles the 'modifynvram myvm enrollorclpk' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   nvram           Reference to the NVRAM store interface.
+ */
+static RTEXITCODE handleModifyNvramEnrollOraclePlatformKey(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
+{
+    RT_NOREF(a);
+
+    ComPtr<IUefiVariableStore> uefiVarStore;
+    CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
+
+    CHECK_ERROR2I_RET(uefiVarStore, EnrollOraclePlatformKey(), RTEXITCODE_FAILURE);
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
  * Handles the 'modifynvram myvm listvars' sub-command.
  * @returns Exit code.
  * @param   a               The handler argument package.
@@ -301,6 +319,8 @@ RTEXITCODE handleModifyNvram(HandlerArg *a)
         rc = handleModifyNvramEnrollMsSignatures(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else if (!strcmp(a->argv[1], "enrollpk"))
         rc = handleModifyNvramEnrollPlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    else if (!strcmp(a->argv[1], "enrollorclpk"))
+        rc = handleModifyNvramEnrollOraclePlatformKey(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else if (!strcmp(a->argv[1], "listvars"))
         rc = handleModifyNvramListUefiVars(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else if (!strcmp(a->argv[1], "queryvar"))
