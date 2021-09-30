@@ -28,7 +28,7 @@
 /** Maximum length in characters an audio test tag can have. */
 #define AUDIOTEST_TAG_MAX               64
 /** Maximum length in characters a single audio test error description can have. */
-#define AUDIOTEST_ERROR_DESC_MAX        128
+#define AUDIOTEST_ERROR_DESC_MAX        256
 /** Prefix for audio test (set) directories. */
 #define AUDIOTEST_PATH_PREFIX_STR       "vkat"
 
