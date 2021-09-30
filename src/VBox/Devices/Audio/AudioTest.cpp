@@ -404,9 +404,11 @@ static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t 
             || !cbRead)
             break;
 
-        Assert(PDMAudioPropsIsSizeAligned(&pToneParms->Props, (uint32_t)cbRead));
+        AssertReturn(PDMAudioPropsIsSizeAligned(&pToneParms->Props, (uint32_t)cbRead), 0);
 
         size_t const cbFrame = PDMAudioPropsFrameSize(&pToneParms->Props);
+        AssertReturn(cbFrame, 0);
+        AssertReturn(cbRead % cbFrame == 0, 0);
 
         for (size_t i = 0; i < cbRead / cbFrame; i += cbFrame) /** @todo Slow as heck, but works for now. */
         {
@@ -420,6 +422,7 @@ static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t 
         }
     }
 
+    AssertReturn(PDMAudioPropsIsSizeAligned(&pToneParms->Props, offFound), 0);
     return offFound;
 }
 
