@@ -829,12 +829,12 @@ static void rtR0MemObjNativeAllockWorkerOnKernelThread(void *pvUser0, void *pvUs
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
+DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
 
     int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */, 0 /* PhysMask */, UINT64_MAX,
-                                         RTR0MEMOBJTYPE_PAGE, PAGE_SIZE, NULL, false /*fOnKernelThread*/);
+                                         RTR0MEMOBJTYPE_PAGE, PAGE_SIZE, pszTag, false /*fOnKernelThread*/);
 
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
@@ -848,7 +848,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
+DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
 
@@ -860,23 +860,23 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
      * (See bug comment in the worker and IOBufferMemoryDescriptor::initWithPhysicalMask.)
      */
     int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */, ~(uint32_t)PAGE_OFFSET_MASK,
-                                         _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE, NULL, false /*fOnKernelThread*/);
+                                         _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE, pszTag, false /*fOnKernelThread*/);
     if (rc == VERR_ADDRESS_TOO_BIG)
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, false /* fContiguous */, 0 /* PhysMask */,
-                                         _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE, NULL, false /*fOnKernelThread*/);
+                                         _4G - PAGE_SIZE, RTR0MEMOBJTYPE_LOW, PAGE_SIZE, pszTag, false /*fOnKernelThread*/);
 
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
+DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
 {
     IPRT_DARWIN_SAVE_EFL_AC();
 
     int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, true /* fContiguous */,
                                          ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
-                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE, NULL, false /*fOnKernelThread*/);
+                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE, pszTag, false /*fOnKernelThread*/);
 
     /*
      * Workaround for bogus IOKernelAllocateContiguous behavior, just in case.
@@ -885,7 +885,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (RT_FAILURE(rc) && cb <= PAGE_SIZE)
         rc = rtR0MemObjNativeAllocWorker(ppMem, cb + PAGE_SIZE, fExecutable, true /* fContiguous */,
                                          ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
-                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE, NULL, false /*fOnKernelThread*/);
+                                         RTR0MEMOBJTYPE_CONT, PAGE_SIZE, pszTag, false /*fOnKernelThread*/);
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
 }
