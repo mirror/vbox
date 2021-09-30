@@ -26,9 +26,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CCloudClient.h"
 #include "CVirtualSystemDescription.h"
-#include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
 class QGridLayout;
@@ -39,6 +37,7 @@ class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 class UIWizardNewCloudVM;
+class CCloudClient;
 class CCloudProvider;
 
 /** Provider combo data fields. */

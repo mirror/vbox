@@ -39,9 +39,8 @@ using namespace UIWizardNewCloudVMSource;
 using namespace UIWizardNewCloudVMProperties;
 
 
-UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
-    : m_fFullWizard(fFullWizard)
-    , m_pCntLocation(0)
+UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
+    : m_pCntLocation(0)
     , m_pProviderComboBox(0)
     , m_pProfileComboBox(0)
     , m_pProfileToolButton(0)
@@ -62,10 +61,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
         m_pCntLocation = new QGroupBox(this);
         if (m_pCntLocation)
         {
-            /* There is no location container in short wizard form: */
-            if (!m_fFullWizard)
-                m_pCntLocation->setVisible(false);
-
             /* Prepare location layout: */
             QVBoxLayout *pLocationLayout = new QVBoxLayout(m_pCntLocation);
             if (pLocationLayout)
@@ -109,10 +104,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
         m_pCntSource = new QGroupBox(this);
         if (m_pCntSource)
         {
-            /* There is no source table in short wizard form: */
-            if (!m_fFullWizard)
-                m_pCntSource->setVisible(false);
-
             /* Prepare source layout: */
             QVBoxLayout *pSourceLayout = new QVBoxLayout(m_pCntSource);
             if (pSourceLayout)
@@ -255,22 +246,14 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
 
 void UIWizardNewCloudVMPageExpert::initializePage()
 {
-    if (m_fFullWizard)
-    {
-        /* Populate providers: */
-        populateProviders(m_pProviderComboBox);
-        /* Translate providers: */
-        retranslateUi();
-        /* Fetch it, asynchronously: */
-        QMetaObject::invokeMethod(this, "sltHandleProviderComboChange", Qt::QueuedConnection);
-        /* Make image list focused by default: */
-        m_pSourceImageList->setFocus();
-    }
-    else
-    {
-        /* Generate VSD form, asynchronously: */
-        QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
-    }
+    /* Populate providers: */
+    populateProviders(m_pProviderComboBox);
+    /* Translate providers: */
+    retranslateUi();
+    /* Make image list focused by default: */
+    m_pSourceImageList->setFocus();
+    /* Fetch it, asynchronously: */
+    QMetaObject::invokeMethod(this, "sltHandleProviderComboChange", Qt::QueuedConnection);
 }
 
 bool UIWizardNewCloudVMPageExpert::isComplete() const
@@ -315,7 +298,9 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
         if (!fResult)
         {
             wizard()->setVSDForm(CVirtualSystemDescriptionForm());
-            sltInitShortWizardForm();
+            wizard()->createVSDForm();
+            updatePropertiesTable();
+            emit completeChanged();
         }
     }
 
@@ -350,14 +335,6 @@ void UIWizardNewCloudVMPageExpert::sltHandleSourceChange()
 void UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange()
 {
     updateSourceImage();
-    emit completeChanged();
-}
-
-void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
-{
-    if (wizard()->vsdForm().isNull())
-        wizard()->createVSDForm();
-    updatePropertiesTable();
     emit completeChanged();
 }
 

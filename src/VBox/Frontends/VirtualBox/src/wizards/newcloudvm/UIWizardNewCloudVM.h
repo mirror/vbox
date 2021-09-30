@@ -38,17 +38,8 @@ class UIWizardNewCloudVM : public UINativeWizard
 public:
 
     /** Constructs New Cloud VM wizard passing @a pParent & @a enmMode to the base-class.
-      * @param  strFullGroupName  Brings full group name (/provider/profile) to create VM in.
-      * @param  comClient         Brings the Cloud Client object to work with.
-      * @param  comVSD            Brings the Virtual System Description object to use. */
-    UIWizardNewCloudVM(QWidget *pParent,
-                       const QString &strFullGroupName = QString(),
-                       const CCloudClient &comClient = CCloudClient(),
-                       const CVirtualSystemDescription &comVSD = CVirtualSystemDescription(),
-                       WizardMode enmMode = WizardMode_Auto);
-
-    /** Sets whether the final step is @a fPrevented. */
-    void setFinalStepPrevented(bool fPrevented) { m_fFinalStepPrevented = fPrevented; }
+      * @param  strFullGroupName  Brings full group name (/provider/profile) to create VM in. */
+    UIWizardNewCloudVM(QWidget *pParent, const QString &strFullGroupName);
 
     /** Defines @a strProviderShortName. */
     void setProviderShortName(const QString &strProviderShortName) { m_strProviderShortName = strProviderShortName; }
@@ -81,10 +72,6 @@ public:
     /** Creates New Cloud VM. */
     bool createCloudVM();
 
-    /** Schedules Finish button trigger for
-      * the next event-loop cicle. */
-    void scheduleAutoFinish();
-
 protected:
 
     /** Populates pages. */
@@ -92,11 +79,6 @@ protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override final */;
-
-private slots:
-
-    /** Triggers Finish button. */
-    void sltTriggerFinishButton();
 
 private:
 
@@ -110,11 +92,6 @@ private:
     CVirtualSystemDescription      m_comVSD;
     /** Holds the Virtual System Description Form object reference. */
     CVirtualSystemDescriptionForm  m_comVSDForm;
-
-    /** Holds whether we want full wizard form or short one. */
-    bool  m_fFullWizard;
-    /** Holds whether the final step is prevented. */
-    bool  m_fFinalStepPrevented;
 };
 
 /** Safe pointer to new cloud vm wizard. */

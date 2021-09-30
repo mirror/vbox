@@ -15,11 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Qt includes: */
-#include <QPushButton>
-
 /* GUI includes: */
-#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIProgressObject.h"
@@ -34,15 +30,8 @@
 
 
 UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent,
-                                       const QString &strFullGroupName /* = QString() */,
-                                       const CCloudClient &comClient /* = CCloudClient() */,
-                                       const CVirtualSystemDescription &comVSD /* = CVirtualSystemDescription() */,
-                                       WizardMode enmMode /* = WizardMode_Auto */)
-    : UINativeWizard(pParent, WizardType_NewCloudVM, enmMode)
-    , m_comClient(comClient)
-    , m_comVSD(comVSD)
-    , m_fFullWizard(m_comClient.isNull() || m_comVSD.isNull())
-    , m_fFinalStepPrevented(false)
+                                       const QString &strFullGroupName /* = QString() */)
+    : UINativeWizard(pParent, WizardType_NewCloudVM)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -130,13 +119,6 @@ bool UIWizardNewCloudVM::createCloudVM()
     /* Prepare result: */
     bool fResult = false;
 
-    /* Do nothing if prevented: */
-    if (m_fFinalStepPrevented)
-    {
-        fResult = true;
-        return fResult;
-    }
-
     /* Acquire prepared client and description: */
     CCloudClient comClient = client();
     CVirtualSystemDescription comVSD = vsd();
@@ -162,11 +144,6 @@ bool UIWizardNewCloudVM::createCloudVM()
     return fResult;
 }
 
-void UIWizardNewCloudVM::scheduleAutoFinish()
-{
-    QMetaObject::invokeMethod(this, "sltTriggerFinishButton", Qt::QueuedConnection);
-}
-
 void UIWizardNewCloudVM::populatePages()
 {
     /* Create corresponding pages: */
@@ -174,14 +151,13 @@ void UIWizardNewCloudVM::populatePages()
     {
         case WizardMode_Basic:
         {
-            if (m_fFullWizard)
-                addPage(new UIWizardNewCloudVMPageSource);
+            addPage(new UIWizardNewCloudVMPageSource);
             addPage(new UIWizardNewCloudVMPageProperties);
             break;
         }
         case WizardMode_Expert:
         {
-            addPage(new UIWizardNewCloudVMPageExpert(m_fFullWizard));
+            addPage(new UIWizardNewCloudVMPageExpert);
             break;
         }
         default:
@@ -201,9 +177,4 @@ void UIWizardNewCloudVM::retranslateUi()
     setWindowTitle(tr("Create Cloud Virtual Machine"));
     /// @todo implement this?
     //setButtonText(QWizard::FinishButton, tr("Create"));
-}
-
-void UIWizardNewCloudVM::sltTriggerFinishButton()
-{
-    wizardButton(WizardButtonType_Next)->click();
 }

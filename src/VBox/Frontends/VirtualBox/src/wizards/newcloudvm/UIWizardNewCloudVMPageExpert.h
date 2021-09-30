@@ -38,7 +38,7 @@ class UIWizardNewCloudVMPageExpert : public UINativeWizardPage
 public:
 
     /** Constructs expert page. */
-    UIWizardNewCloudVMPageExpert(bool fFullWizard);
+    UIWizardNewCloudVMPageExpert();
 
 protected:
 
@@ -72,9 +72,6 @@ private slots:
 
     /** Handles change in instance list. */
     void sltHandleSourceImageChange();
-
-    /** Initializes short wizard form. */
-    void sltInitShortWizardForm();
 
 private:
 

@@ -24,13 +24,11 @@
 /* GUI includes: */
 #include "UINativeWizardPage.h"
 
-/* COM includes: */
-#include "CVirtualSystemDescriptionForm.h"
-
 /* Forward declarations: */
 class QIRichTextLabel;
 class UIFormEditorWidget;
 class UIWizardNewCloudVM;
+class CVirtualSystemDescriptionForm;
 
 /** Namespace for properties page of the New Cloud VM wizard. */
 namespace UIWizardNewCloudVMProperties
