@@ -325,7 +325,23 @@ HRESULT UefiVariableStore::queryVariables(std::vector<com::Utf8Str> &aNames,
 
 HRESULT UefiVariableStore::enrollOraclePlatformKey(void)
 {
-    return E_NOTIMPL;
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    EFI_GUID GuidGlobalVar = EFI_GLOBAL_VARIABLE_GUID;
+
+    /** @todo This conversion from EFI GUID -> IPRT UUID -> Com GUID is nuts... */
+    EFI_GUID GuidOwnerVBox = EFI_SIGNATURE_OWNER_GUID_VBOX;
+    RTUUID   UuidVBox;
+    RTEfiGuidToUuid(&UuidVBox, &GuidOwnerVBox);
+
+    const com::Guid GuidVBox(UuidVBox);
+
+    return i_uefiVarStoreAddSignatureToDb(&GuidGlobalVar, "PK", g_abUefiOracleDefPk, g_cbUefiOracleDefPk,
+                                          GuidVBox, SignatureType_X509);
 }
 
 

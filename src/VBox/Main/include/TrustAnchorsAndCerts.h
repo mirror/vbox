@@ -34,6 +34,9 @@ extern const unsigned g_cbUefiMicrosoftCa;
 extern const unsigned char g_abUefiMicrosoftProPca[];
 extern const unsigned g_cbUefiMicrosoftProPca;
 
+extern const unsigned char g_abUefiOracleDefPk[];
+extern const unsigned g_cbUefiOracleDefPk;
+
 RT_C_DECLS_END
 
 #endif /* !MAIN_INCLUDED_TrustAnchorsAndCerts_h */
