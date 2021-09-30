@@ -506,6 +506,11 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     pszVersion = "2109";    // ??
                     *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("co_release")) == 0)
+                {
+                    pszVersion = "21H2";    // ??
+                    *penmOsType = VBOXOSTYPE_Win11_x64;
+                }
                 else
                     LogRel(("Unattended: sources/idwbinfo.txt: Unknown: BuildBranch=%s\n", pBuf->sz));
             }
@@ -739,8 +744,14 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
     }
 
     /** @todo look at the install.wim file too, extracting the XML (easy) and
-     *        figure out the available image numbers and such.   The format is
-     *        documented.  */
+     *        figure out the available image numbers and such. The format is
+     *        documented. It would also provide really accurate Windows
+     *        version information without the need to guess. The current
+     *        content of mStrDetectedOSVersion is mostly useful for human
+     *        consumption. Long term it should be possible to have version
+     *        conditionals (expr style, please) in the templates, which
+     *        would make them a lot easier to write and more flexible at the
+     *        same time. */
 
     return S_FALSE;
 }
@@ -1217,6 +1228,11 @@ HRESULT Unattended::prepare()
 
     BOOL fRtcUseUtc = FALSE;
     hrc = ptrMachine->COMGETTER(RTCUseUTC)(&fRtcUseUtc);
+    if (FAILED(hrc))
+        return hrc;
+
+    FirmwareType_T enmFirmware = FirmwareType_BIOS;
+    hrc = ptrMachine->COMGETTER(FirmwareType)(&enmFirmware);
     if (FAILED(hrc))
         return hrc;
 
@@ -2657,6 +2673,14 @@ Utf8Str const &Unattended::i_getPostInstallCommand() const
     return mStrPostInstallCommand;
 }
 
+Utf8Str const &Unattended::i_getAuxiliaryInstallDir() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    /* Only the installer knows, forward the call. */
+    AssertReturn(mpInstaller != NULL, Utf8Str::Empty);
+    return mpInstaller->getAuxiliaryInstallDir();
+}
+
 Utf8Str const &Unattended::i_getExtraInstallKernelParameters() const
 {
     Assert(isReadLockedOnCurrentThread());
@@ -2673,6 +2697,12 @@ bool Unattended::i_isGuestOs64Bit() const
 {
     Assert(isReadLockedOnCurrentThread());
     return mfGuestOs64Bit;
+}
+
+bool Unattended::i_isFirmwareEFI() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    return menmFirmwareType != FirmwareType_BIOS;
 }
 
 VBOXOSTYPE Unattended::i_getGuestOsType() const

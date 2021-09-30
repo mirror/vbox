@@ -370,6 +370,8 @@ HRESULT UnattendedScriptTemplate::getUnescapedReplacement(const char *pachPlaceh
         rValue = mpUnattended->i_getProductKey();
     else if (IS_PLACEHOLDER_MATCH("POST_INSTALL_COMMAND"))
         rValue = mpUnattended->i_getPostInstallCommand();
+    else if (IS_PLACEHOLDER_MATCH("AUXILIARY_INSTALL_DIR"))
+        rValue = mpUnattended->i_getAuxiliaryInstallDir();
     else if (IS_PLACEHOLDER_MATCH("IMAGE_INDEX"))
         rValue.printf("%u", mpUnattended->i_getImageIndex());
     else if (IS_PLACEHOLDER_MATCH("OS_ARCH"))
@@ -474,17 +476,22 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
     else if (IS_PLACEHOLDER_MATCH("HAS_POST_INSTALL_COMMAND"))
         *pfOutputting = mpUnattended->i_getPostInstallCommand().isNotEmpty();
     else if (IS_PLACEHOLDER_MATCH("HAS_NO_POST_INSTALL_COMMAND"))
-        *pfOutputting = !mpUnattended->i_getPostInstallCommand().isNotEmpty();
+        *pfOutputting = mpUnattended->i_getPostInstallCommand().isEmpty();
     /* Product key: */
     else if (IS_PLACEHOLDER_MATCH("HAS_PRODUCT_KEY"))
         *pfOutputting = mpUnattended->i_getProductKey().isNotEmpty();
     else if (IS_PLACEHOLDER_MATCH("HAS_NO_PRODUCT_KEY"))
-        *pfOutputting = !mpUnattended->i_getProductKey().isNotEmpty();
+        *pfOutputting = mpUnattended->i_getProductKey().isEmpty();
     /* Minimal installation: */
     else if (IS_PLACEHOLDER_MATCH("IS_MINIMAL_INSTALLATION"))
         *pfOutputting = mpUnattended->i_isMinimalInstallation();
     else if (IS_PLACEHOLDER_MATCH("IS_NOT_MINIMAL_INSTALLATION"))
         *pfOutputting = !mpUnattended->i_isMinimalInstallation();
+    /* Is firmware UEFI: */
+    else if (IS_PLACEHOLDER_MATCH("IS_FIRMWARE_UEFI"))
+        *pfOutputting = mpUnattended->i_isFirmwareEFI();
+    else if (IS_PLACEHOLDER_MATCH("IS_NOT_FIRMWARE_UEFI"))
+        *pfOutputting = !mpUnattended->i_isFirmwareEFI();
     /* Is RTC using UTC (i.e. set to UTC time on startup): */
     else if (IS_PLACEHOLDER_MATCH("IS_RTC_USING_UTC"))
         *pfOutputting = mpUnattended->i_isRtcUsingUtc();

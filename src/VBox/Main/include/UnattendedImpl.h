@@ -72,10 +72,14 @@ public:
     Utf8Str const &i_getScriptTemplatePath() const;
     Utf8Str const &i_getPostInstallScriptTemplatePath() const;
     Utf8Str const &i_getPostInstallCommand() const;
+    /** The directory where the unattended install config and script is
+     * located, from the perspective of the running unattended install. */
+    Utf8Str const &i_getAuxiliaryInstallDir() const;
     Utf8Str const &i_getExtraInstallKernelParameters() const;
 
     bool           i_isRtcUsingUtc() const;
     bool           i_isGuestOs64Bit() const;
+    bool           i_isFirmwareEFI() const;
     VBOXOSTYPE     i_getGuestOsType() const;
     Utf8Str const &i_getDetectedOSVersion();
 
@@ -88,6 +92,7 @@ private:
     Utf8Str         mStrGuestOsTypeId;      /**< Guest OS type ID (set by prepare). */
     bool            mfRtcUseUtc;            /**< Copy of IMachine::RTCUseUTC (locking reasons). */
     bool            mfGuestOs64Bit;         /**< 64-bit (true) or 32-bit guest OS (set by prepare). */
+    FirmwareType_T  menmFirmwareType;       /**< Firmware type BIOS/EFI (set by prepare). */
     VBOXOSTYPE      meGuestOsType;          /**< The guest OS type (set by prepare). */
     UnattendedInstaller *mpInstaller;       /**< The installer instance (set by prepare, deleted by done). */
 

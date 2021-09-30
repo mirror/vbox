@@ -64,6 +64,10 @@ protected:
      * This can be overridden by the extraInstallKernelParameters attribute of
      * IUnattended. */
     Utf8Str                     mStrDefaultExtraInstallKernelParameters;
+    /** The directory of the post install script in the unattended install
+     * environment, i.e. when it gets started by the unattended installer
+     * of the respective guest OS. */
+    Utf8Str                     mStrAuxiliaryInstallDir;
 
 private:
     UnattendedInstaller(); /* no default constructors */
@@ -178,6 +182,7 @@ public:
     const Utf8Str &getAuxiliaryIsoFilePath() const      { return mStrAuxiliaryIsoFilePath; }
     const Utf8Str &getAuxiliaryFloppyFilePath() const   { return mStrAuxiliaryFloppyFilePath; }
     const Utf8Str &getDefaultExtraInstallKernelParameters() const { return mStrDefaultExtraInstallKernelParameters; }
+    const Utf8Str &getAuxiliaryInstallDir() const       { return mStrAuxiliaryInstallDir; }
 
     /*
      * Setters
@@ -376,7 +381,10 @@ public:
         : UnattendedInstaller(pParent,
                               "win_nt5_unattended.sif", "win_postinstall.cmd",
                               "WINNT.SIF",              "VBOXPOST.CMD")
-    { Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso()); }
+    {
+        Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso());
+        mStrAuxiliaryInstallDir = "A:\\";
+    }
     ~UnattendedWindowsSifInstaller()        {}
 
     bool isAuxiliaryFloppyNeeded() const    { return true; }
@@ -396,10 +404,20 @@ public:
         : UnattendedInstaller(pParent,
                               "win_nt6_unattended.xml", "win_postinstall.cmd",
                               "autounattend.xml",       "VBOXPOST.CMD")
-    { Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso()); }
+    {
+        Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded() != isAuxiliaryIsoNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso());
+        if (isAuxiliaryFloppyNeeded())
+            mStrAuxiliaryInstallDir = "A:\\";
+        else if (bootFromAuxiliaryIso())
+            mStrAuxiliaryInstallDir = "D:\\";
+        else
+            mStrAuxiliaryInstallDir = "E:\\";
+    }
     ~UnattendedWindowsXmlInstaller()      {}
 
-    bool isAuxiliaryFloppyNeeded() const    { return true; }
+    bool isAuxiliaryFloppyNeeded() const    { return !mpParent->i_isFirmwareEFI(); }
+    bool isAuxiliaryIsoNeeded() const       { return mpParent->i_isFirmwareEFI(); }
+    bool isAuxiliaryIsoIsVISO() const       { return true; }
     bool bootFromAuxiliaryIso() const       { return false; }
 };
 
