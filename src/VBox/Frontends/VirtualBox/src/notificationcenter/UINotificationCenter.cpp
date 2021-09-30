@@ -174,14 +174,23 @@ void UINotificationCenter::invoke()
 
 QUuid UINotificationCenter::append(UINotificationObject *pObject)
 {
+    /* Sanity check: */
     AssertPtrReturn(m_pModel, QUuid());
+    AssertPtrReturn(pObject, QUuid());
+
+    /* Is object critical? */
+    const bool fCritical = pObject->isCritical();
+    /* Is object progress? */
+    const bool fProgress = pObject->inherits("UINotificationProgress");
+
+    /* Handle object. Be aware it can be deleted during handling! */
     const QUuid uId = m_pModel->appendObject(pObject);
 
     /* If object is critical and center isn't opened yet: */
-    if (!m_pOpenButton->isChecked() && pObject->isCritical())
+    if (!m_pOpenButton->isChecked() && fCritical)
     {
         /* We should delay progresses for a bit: */
-        const int iDelay = pObject->inherits("UINotificationProgress") ? 2000 : 0;
+        const int iDelay = fProgress ? 2000 : 0;
         /* We should issue an open request: */
         AssertPtrReturn(m_pTimerOpen, uId);
         m_uOpenObjectId = uId;
