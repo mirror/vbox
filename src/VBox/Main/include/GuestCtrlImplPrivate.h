@@ -1277,10 +1277,6 @@ public:
     int unregisterWaitEvent(GuestWaitEvent *pEvent);
     int waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, VBoxEventType_T *pType, IEvent **ppEvent);
 
-#ifndef VBOX_GUESTCTRL_TEST_CASE
-    HRESULT setErrorExternal(VirtualBoxBase *pInterface, const Utf8Str &strAction, const GuestErrorInfo &guestErrorInfo);
-#endif
-
 public:
 
     static FsObjType_T fileModeToFsObjType(RTFMODE fMode);

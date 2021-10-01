@@ -213,7 +213,8 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
         if (SUCCEEDED(hr))
         {
             if (RT_FAILURE(vrc))
-                hr = pVirtualBox->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, "Failed to get webcam list: %Rrc", vrc);
+                hr = pVirtualBox->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                               HostVideoInputDevice::tr("Failed to get webcam list: %Rrc"), vrc);
         }
     }
 

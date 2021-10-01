@@ -1784,10 +1784,12 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setErrorExternal(this, Utf8StrFmt("Reading %RU32 bytes from guest process handle %RU32 failed", aToRead, aHandle),
-                                      GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str()));
+            {
+                GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Reading %RU32 bytes from guest process handle %RU32 failed: %s"),
+                                       aToRead, aHandle, GuestBase::getErrorAsString(ge).c_str());
                 break;
-
+            }
             default:
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from guest process \"%s\" (PID %RU32) failed: %Rrc"),
                                   mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
@@ -1816,11 +1818,13 @@ HRESULT GuestProcess::terminate()
     {
         switch (vrc)
         {
-           case VERR_GSTCTL_GUEST_ERROR:
-                hr = setErrorExternal(this, "Terminating guest process failed",
-                                      GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str()));
+            case VERR_GSTCTL_GUEST_ERROR:
+            {
+                GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Terminating guest process failed: %s"),
+                                       GuestBase::getErrorAsString(ge).c_str());
                 break;
-
+            }
             case VERR_NOT_SUPPORTED:
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                   tr("Terminating guest process \"%s\" (PID %RU32) not supported by installed Guest Additions"),
@@ -1876,10 +1880,12 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResul
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setErrorExternal(this, Utf8StrFmt("Waiting for guest process (flags %#x) failed", aWaitFor),
-                                      GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str()));
+            {
+                GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Waiting for guest process (flags %#x) failed: %s"),
+                                       aWaitFor, GuestBase::getErrorAsString(ge).c_str());
                 break;
-
+            }
             case VERR_TIMEOUT:
                 *aReason = ProcessWaitResult_Timeout;
                 break;
@@ -1930,10 +1936,12 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setErrorExternal(this, Utf8StrFmt("Writing %RU32 bytes (flags %#x) to guest process failed", cbData, aFlags),
-                                      GuestErrorInfo(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str()));
+            {
+                GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Writing %RU32 bytes (flags %#x) to guest process failed: %s"),
+                                       cbData, aFlags, GuestBase::getErrorAsString(ge).c_str());
                 break;
-
+            }
             default:
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing to guest process \"%s\" (PID %RU32) failed: %Rrc"),
                                   mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);

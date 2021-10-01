@@ -45,9 +45,12 @@
 #include "HostNetworkInterfaceImpl.h"
 #include "ProgressImpl.h"
 #include "VirtualBoxImpl.h"
+#include "VBoxNls.h"
 #include "Global.h"
 #include "netif.h"
 #include "ThreadTask.h"
+
+DECLARE_TRANSLATION_CONTEXT(NetIfWin);
 
 #ifdef VBOX_WITH_NETFLT
 # include <Wbemidl.h>
@@ -1162,7 +1165,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
     if (SUCCEEDED(hrc))
     {
         hrc = progress->init(pVirtualBox, host,
-                             Bstr(_T("Creating host only network interface")).raw(),
+                             Bstr(NetIfWin::tr("Creating host only network interface")).raw(),
                              FALSE /* aCancelable */);
         if (SUCCEEDED(hrc))
         {
@@ -1210,7 +1213,7 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, const Guid &aId
     if (SUCCEEDED(hrc))
     {
         hrc = progress->init(pVirtualBox, host,
-                             Bstr(_T("Removing host network interface")).raw(),
+                             Bstr(NetIfWin::tr("Removing host network interface")).raw(),
                              FALSE /* aCancelable */);
         if (SUCCEEDED(hrc))
         {
@@ -1257,7 +1260,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *pVBox, HostNetworkInterface * pIf, ULO
 //            if (SUCCEEDED(rc))
             {
                 rc = progress->init(pVBox, (IHostNetworkInterface*)pIf,
-                                    Bstr("Enabling Dynamic Ip Configuration").raw(),
+                                    Bstr(NetIfWin::tr("Enabling Dynamic Ip Configuration")).raw(),
                                     FALSE /* aCancelable */);
                 if (SUCCEEDED(rc))
                 {
@@ -1315,7 +1318,7 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *pVBox, HostNetworkInterface * pIf, c
 //            if (SUCCEEDED(rc))
             {
                 rc = progress->init(pVBox, (IHostNetworkInterface*)pIf,
-                                    Bstr("Enabling Dynamic Ip Configuration").raw(),
+                                    Bstr(NetIfWin::tr("Enabling Dynamic Ip Configuration")).raw(),
                                     FALSE /* aCancelable */);
                 if (SUCCEEDED(rc))
                 {
@@ -1372,7 +1375,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox *pVBox, HostNetworkInterface * pIf)
 //            if (SUCCEEDED(rc))
             {
                 rc = progress->init(pVBox, (IHostNetworkInterface*)pIf,
-                                    Bstr("Enabling Dynamic Ip Configuration").raw(),
+                                    Bstr(NetIfWin::tr("Enabling Dynamic Ip Configuration")).raw(),
                                     FALSE /* aCancelable */);
                 if (SUCCEEDED(rc))
                 {
@@ -1427,7 +1430,7 @@ int NetIfDhcpRediscover(VirtualBox *pVBox, HostNetworkInterface * pIf)
 //            if (SUCCEEDED(rc))
             {
                 rc = progress->init(pVBox, (IHostNetworkInterface*)pIf,
-                                    Bstr("Enabling Dynamic Ip Configuration").raw(),
+                                    Bstr(NetIfWin::tr("Enabling Dynamic Ip Configuration")).raw(),
                                     FALSE /* aCancelable */);
                 if (SUCCEEDED(rc))
                 {

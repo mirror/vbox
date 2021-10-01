@@ -2225,7 +2225,7 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
             pTask = new VMPowerDownTask(this, ptrProgress);
             if (!pTask->isOk())
             {
-                hrc = setError(FAILED(pTask->rc()) ? pTask->rc() : E_FAIL, "Could not create VMPowerDownTask object\n");
+                hrc = setError(FAILED(pTask->rc()) ? pTask->rc() : E_FAIL, tr("Could not create VMPowerDownTask object\n"));
                 delete(pTask);
                 pTask = NULL;
             }
@@ -3394,7 +3394,7 @@ HRESULT Console::i_suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, b
                                      false /*aWarning*/,
                                      true /*aLogIt*/,
                                      0 /* aResultDetail */,
-                                     "Invalid state '%s' for changing medium",
+                                     tr("Invalid state '%s' for changing medium"),
                                      VMR3GetStateName(enmVMState));
     }
 
@@ -5507,7 +5507,7 @@ Utf8Str Console::VRDPServerErrorToMsg(int vrc)
         /* This means that the VRDE is not installed.
          * Not fatal if we start the VM, fatal if the VM is already running. */
         LogRel(("VRDE: VirtualBox Remote Desktop Extension is not available.\n"));
-        errMsg = Utf8Str("VirtualBox Remote Desktop Extension is not available");
+        errMsg = Utf8Str(tr("VirtualBox Remote Desktop Extension is not available"));
     }
     else if (RT_FAILURE(vrc))
     {
@@ -6450,7 +6450,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         i_resumeAfterConfigChange(ptrVM.rawUVM());
 
     if (RT_FAILURE(vrc))
-        return setErrorBoth(E_FAIL, vrc, tr("%Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, "%Rrc", vrc);
     if (FAILED(rc))
         return rc;
 
@@ -6496,7 +6496,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         i_resumeAfterConfigChange(ptrVM.rawUVM());
 
     if (RT_FAILURE(vrc))
-        return setErrorBoth(E_FAIL, vrc, tr("%Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, "%Rrc", vrc);
     if (FAILED(rc))
         return rc;
 
@@ -6578,7 +6578,7 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
                                    false /* fSetupMerge */, 0 /* uMergeSource */, 0 /* uMergeTarget */,
                                    pAttachment, mMachineState, &rc);
         if (RT_FAILURE(vrc))
-            throw setErrorBoth(E_FAIL, vrc, tr("%Rrc"), vrc);
+            throw setErrorBoth(E_FAIL, vrc, "%Rrc", vrc);
         if (FAILED(rc))
             throw rc;
 

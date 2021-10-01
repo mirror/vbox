@@ -274,7 +274,7 @@ public:
     ConfigError(const char *pcszFunction,
                 int vrc,
                 const char *pcszName)
-        : RTCError(Utf8StrFmt("%s failed: rc=%Rrc, pcszName=%s", pcszFunction, vrc, pcszName)),
+        : RTCError(Utf8StrFmt(Console::tr("%s failed: rc=%Rrc, pcszName=%s"), pcszFunction, vrc, pcszName)),
           m_vrc(vrc)
     {
         AssertMsgFailed(("%s\n", what())); // in strict mode, hit a breakpoint here
@@ -5071,8 +5071,8 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                     Bstr loc;
                     hrc = ptrMedium->COMGETTER(Location)(loc.asOutParam());                 H();
                     i_atVMRuntimeErrorCallbackF(0, "DvdOrFloppyImageInaccessible",
-                                                "The image file '%ls' is inaccessible and is being ignored. "
-                                                "Please select a different image file for the virtual %s drive.",
+                                                N_("The image file '%ls' is inaccessible and is being ignored. "
+                                                   "Please select a different image file for the virtual %s drive."),
                                                 loc.raw(),
                                                 enmType == DeviceType_DVD ? "DVD" : "floppy");
                     ptrMedium.setNull();

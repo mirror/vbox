@@ -938,7 +938,7 @@ RTVFSIOSTREAM Appliance::i_manifestSetupDigestCalculationForGivenIoStream(RTVFSI
     if (RT_SUCCESS(vrc))
         return hVfsIosPt;
 
-    setErrorVrc(vrc, "RTManifestEntryAddPassthruIoStream failed with rc=%Rrc", vrc);
+    setErrorVrc(vrc, tr("RTManifestEntryAddPassthruIoStream failed with rc=%Rrc"), vrc);
     return NIL_RTVFSIOSTREAM;
 }
 

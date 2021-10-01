@@ -416,7 +416,7 @@ HRESULT Certificate::queryInfo(LONG aWhat, com::Utf8Str &aResult)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     /* Insurance. */
     NOREF(aResult);
-    return setError(E_FAIL, "Unknown item %u", aWhat);
+    return setError(E_FAIL, tr("Unknown item %u"), aWhat);
 }
 
 /** @} */
@@ -567,11 +567,11 @@ HRESULT Certificate::i_getEncodedBytes(PRTASN1CORE a_pAsn1Obj, std::vector<BYTE>
             {
                 vrc = RTAsn1EncodeToBuffer(a_pAsn1Obj, 0, &a_rReturn.front(), a_rReturn.size(), NULL);
                 if (RT_FAILURE(vrc))
-                    hrc = setErrorVrc(vrc, "RTAsn1EncodeToBuffer failed with %Rrc", vrc);
+                    hrc = setErrorVrc(vrc, tr("RTAsn1EncodeToBuffer failed with %Rrc"), vrc);
             }
         }
         else
-            hrc = setErrorVrc(vrc, "RTAsn1EncodePrepare failed with %Rrc", vrc);
+            hrc = setErrorVrc(vrc, tr("RTAsn1EncodePrepare failed with %Rrc"), vrc);
     }
     return hrc;
 }

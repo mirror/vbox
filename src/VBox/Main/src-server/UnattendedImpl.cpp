@@ -1519,7 +1519,7 @@ HRESULT Unattended::i_innerReconfigureVM(AutoMultiWriteLock2 &rAutoLock, Storage
                                          ComPtr<IMachine> const &rPtrSessionMachine)
 {
     if (mpInstaller == NULL)
-        return setErrorBoth(E_FAIL, VERR_WRONG_ORDER, "prepare() not yet called");
+        return setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("prepare() not yet called"));
 
     // Fetch all available storage controllers
     com::SafeIfaceArray<IStorageController> arrayOfControllers;
@@ -2367,9 +2367,9 @@ HRESULT Unattended::getAuxiliaryBasePath(com::Utf8Str &aAuxiliaryBasePath)
 HRESULT Unattended::setAuxiliaryBasePath(const com::Utf8Str &aAuxiliaryBasePath)
 {
     if (aAuxiliaryBasePath.isEmpty())
-        return setError(E_INVALIDARG, "Empty base path is not allowed");
+        return setError(E_INVALIDARG, tr("Empty base path is not allowed"));
     if (!RTPathStartsWithRoot(aAuxiliaryBasePath.c_str()))
-        return setError(E_INVALIDARG, "Base path must be absolute");
+        return setError(E_INVALIDARG, tr("Base path must be absolute"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));

@@ -2268,7 +2268,7 @@ HRESULT Medium::lockRead(ComPtr<IToken> &aToken)
         {
             ++m->readers;
 
-            ComAssertMsgBreak(m->readers != 0, ("Counter overflow"), rc = E_FAIL);
+            ComAssertMsgBreak(m->readers != 0, (tr("Counter overflow")), rc = E_FAIL);
 
             /* Remember pre-lock state */
             if (m->state != MediumState_LockedRead)
@@ -2320,7 +2320,7 @@ HRESULT Medium::i_unlockRead(MediumState_T *aState)
     {
         case MediumState_LockedRead:
         {
-            ComAssertMsgBreak(m->readers != 0, ("Counter underflow"), rc = E_FAIL);
+            ComAssertMsgBreak(m->readers != 0, (tr("Counter underflow")), rc = E_FAIL);
             --m->readers;
 
             /* Reset the state after the last reader */
@@ -6993,7 +6993,7 @@ HRESULT Medium::i_preparationForMoving(const Utf8Str &aLocation)
 bool Medium::i_isMoveOperation(const ComObjPtr<Medium> &aTarget) const
 {
     RT_NOREF(aTarget);
-    return (m->fMoveThisMedium == true) ? true:false; /** @todo r=bird: this is not an obfuscation contest! */
+    return m->fMoveThisMedium;
 }
 
 bool Medium::i_resetMoveOperationData()
@@ -7761,12 +7761,12 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
                  * this */
 
                 ComAssertMsgRet(!m->formatObj->i_getFileExtensions().empty(),
-                                ("Must be at least one extension if it is MediumFormatCapabilities_File\n"),
+                                (tr("Must be at least one extension if it is MediumFormatCapabilities_File\n")),
                                 E_FAIL);
 
                 Utf8Str strExt = m->formatObj->i_getFileExtensions().front();
                 ComAssertMsgRet(!strExt.isEmpty(),
-                                ("Default extension must not be empty\n"),
+                                (tr("Default extension must not be empty\n")),
                                 E_FAIL);
 
                 id.create();

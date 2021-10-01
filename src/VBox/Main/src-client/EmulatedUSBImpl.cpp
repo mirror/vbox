@@ -212,7 +212,7 @@ HRESULT EUSBWEBCAM::Initialize(Console *pConsole,
     if (SUCCEEDED(hrc) && RT_FAILURE(vrc))
     {
         LogFlowThisFunc(("%Rrc\n", vrc));
-        hrc = pConsole->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, "Init emulated USB webcam (%Rrc)", vrc);
+        hrc = pConsole->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, EmulatedUSB::tr("Init emulated USB webcam (%Rrc)"), vrc);
     }
 
     return hrc;
@@ -311,7 +311,7 @@ HRESULT EUSBWEBCAM::Attach(Console *pConsole,
     if (SUCCEEDED(hrc) && RT_FAILURE(vrc))
     {
         LogFlowThisFunc(("%Rrc\n", vrc));
-        hrc = pConsole->setErrorBoth(VBOX_E_VM_ERROR, vrc, "Attach emulated USB webcam (%Rrc)", vrc);
+        hrc = pConsole->setErrorBoth(VBOX_E_VM_ERROR, vrc, EmulatedUSB::tr("Attach emulated USB webcam (%Rrc)"), vrc);
     }
 
     return hrc;
@@ -329,7 +329,7 @@ HRESULT EUSBWEBCAM::Detach(Console *pConsole,
     if (SUCCEEDED(hrc) && RT_FAILURE(vrc))
     {
         LogFlowThisFunc(("%Rrc\n", vrc));
-        hrc = pConsole->setErrorBoth(VBOX_E_VM_ERROR, vrc, "Detach emulated USB webcam (%Rrc)", vrc);
+        hrc = pConsole->setErrorBoth(VBOX_E_VM_ERROR, vrc, EmulatedUSB::tr("Detach emulated USB webcam (%Rrc)"), vrc);
     }
 
     return hrc;

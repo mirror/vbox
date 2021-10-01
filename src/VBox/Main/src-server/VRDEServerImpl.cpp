@@ -685,7 +685,7 @@ HRESULT VRDEServer::getAuthLibrary(com::Utf8Str &aLibrary)
         }
 
         if (FAILED(hrc))
-            return setError(hrc, "failed to query the library setting\n");
+            return setError(hrc, tr("failed to query the library setting\n"));
     }
 
     return S_OK;

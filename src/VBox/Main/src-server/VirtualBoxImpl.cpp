@@ -1393,7 +1393,7 @@ HRESULT VirtualBox::getSharedFolders(std::vector<ComPtr<ISharedFolder> > &aShare
 {
     NOREF(aSharedFolders);
 
-    return setError(E_NOTIMPL, "Not yet implemented");
+    return setError(E_NOTIMPL, tr("Not yet implemented"));
 }
 
 HRESULT VirtualBox::getPerformanceCollector(ComPtr<IPerformanceCollector> &aPerformanceCollector)
@@ -2440,7 +2440,7 @@ HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
         {
 
             if (format.isEmpty())
-                return setError(E_INVALIDARG, "Format must be Valid Type%s", format.c_str());
+                return setError(E_INVALIDARG, tr("Format must be Valid Type%s"), format.c_str());
 
             // enforce read-only for DVDs even if caller specified ReadWrite
             if (aDeviceType == DeviceType_DVD)
@@ -2456,7 +2456,7 @@ HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
          break;
 
          default:
-             return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy %d", aDeviceType);
+             return setError(E_INVALIDARG, tr("Device type must be HardDisk, DVD or Floppy %d"), aDeviceType);
     }
 
     if (SUCCEEDED(rc))
@@ -2513,7 +2513,7 @@ HRESULT VirtualBox::openMedium(const com::Utf8Str &aLocation,
         break;
 
         default:
-            return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy %d", aDeviceType);
+            return setError(E_INVALIDARG, tr("Device type must be HardDisk, DVD or Floppy %d"), aDeviceType);
     }
 
     bool fMediumRegistered = false;
@@ -2588,13 +2588,13 @@ HRESULT VirtualBox::createSharedFolder(const com::Utf8Str &aName,
     NOREF(aAutomount);
     NOREF(aAutoMountPoint);
 
-    return setError(E_NOTIMPL, "Not yet implemented");
+    return setError(E_NOTIMPL, tr("Not yet implemented"));
 }
 
 HRESULT VirtualBox::removeSharedFolder(const com::Utf8Str &aName)
 {
     NOREF(aName);
-    return setError(E_NOTIMPL, "Not yet implemented");
+    return setError(E_NOTIMPL, tr("Not yet implemented"));
 }
 
 /**
@@ -4222,10 +4222,10 @@ HRESULT VirtualBox::i_findDVDOrFloppyImage(DeviceType_T mediumType,
             {
                 if (mediumType == DeviceType_DVD)
                     return setError(E_INVALIDARG,
-                                    "Cannot mount DVD medium '%s' as floppy", strLocationFull.c_str());
+                                    tr("Cannot mount DVD medium '%s' as floppy"), strLocationFull.c_str());
                 else
                     return setError(E_INVALIDARG,
-                                    "Cannot mount floppy medium '%s' as DVD", strLocationFull.c_str());
+                                    tr("Cannot mount floppy medium '%s' as DVD"), strLocationFull.c_str());
             }
 
             if (aImage)

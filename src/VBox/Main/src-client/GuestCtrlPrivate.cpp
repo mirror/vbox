@@ -1378,22 +1378,6 @@ int GuestBase::waitForEvent(GuestWaitEvent *pWaitEvt, uint32_t msTimeout, VBoxEv
     return strErr;
 }
 
-/**
- * Sets a guest error as error info, needed for API clients.
- *
- * @returns HRESULT COM error.
- * @param   pInterface          Interface to set error for.
- * @param   strAction           What action was involved causing this error.
- * @param   guestErrorInfo      Guest error info to use.
- */
-/* static */ HRESULT GuestBase::setErrorExternal(VirtualBoxBase *pInterface,
-                                                 const Utf8Str &strAction, const GuestErrorInfo &guestErrorInfo)
-{
-    AssertPtrReturn(pInterface, E_POINTER);
-    return pInterface->setErrorBoth(VBOX_E_IPRT_ERROR,
-                                    guestErrorInfo.getRc(),
-                                    "%s", Utf8StrFmt("%s: %s", strAction.c_str(), GuestBase::getErrorAsString(guestErrorInfo).c_str()).c_str());
-}
 #endif /* VBOX_GUESTCTRL_TEST_CASE */
 
 /**

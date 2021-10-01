@@ -2960,7 +2960,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
 
     // get the client's IInternalSessionControl interface
     ComPtr<IInternalSessionControl> pSessionControl = aSession;
-    ComAssertMsgRet(!!pSessionControl, ("No IInternalSessionControl interface"),
+    ComAssertMsgRet(!!pSessionControl, (tr("No IInternalSessionControl interface")),
                     E_INVALIDARG);
 
     // session name (only used in some code paths)
@@ -3561,7 +3561,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
 
     ComObjPtr<Medium> medium = static_cast<Medium*>(aM);
     if (aMedium && medium.isNull())
-        return setError(E_INVALIDARG, "The given medium pointer is invalid");
+        return setError(E_INVALIDARG, tr("The given medium pointer is invalid"));
 
     AutoCaller mediumCaller(medium);
     if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
@@ -4449,7 +4449,7 @@ HRESULT Machine::setBandwidthGroupForDevice(const com::Utf8Str &aName, LONG aCon
     IBandwidthGroup *iB = aBandwidthGroup;
     ComObjPtr<BandwidthGroup> group = static_cast<BandwidthGroup*>(iB);
     if (aBandwidthGroup && group.isNull())
-        return setError(E_INVALIDARG, "The given bandwidth group pointer is invalid");
+        return setError(E_INVALIDARG, tr("The given bandwidth group pointer is invalid"));
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
 
@@ -4529,7 +4529,7 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
     IMedium *iM = aMedium;
     ComObjPtr<Medium> pMedium = static_cast<Medium*>(iM);
     if (aMedium && pMedium.isNull())
-        return setError(E_INVALIDARG, "The given medium pointer is invalid");
+        return setError(E_INVALIDARG, tr("The given medium pointer is invalid"));
 
     AutoCaller mediumCaller(pMedium);
     if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
@@ -5266,7 +5266,7 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
         IMedium *pIMedium(aMedia[i]);
         ComObjPtr<Medium> pMedium = static_cast<Medium*>(pIMedium);
         if (pMedium.isNull())
-            return setError(E_INVALIDARG, "The given medium pointer with index %d is invalid", i);
+            return setError(E_INVALIDARG, tr("The given medium pointer with index %d is invalid"), i);
         SafeArray<BSTR> ids;
         rc = pMedium->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(ids));
         if (FAILED(rc)) return rc;
@@ -13502,7 +13502,7 @@ HRESULT SessionMachine::onSessionEnd(const ComPtr<ISession> &aSession,
                 break;
             }
         }
-        ComAssertMsgRet(found, ("The session is not found in the session list!"),
+        ComAssertMsgRet(found, (tr("The session is not found in the session list!")),
                          E_INVALIDARG);
     }
 

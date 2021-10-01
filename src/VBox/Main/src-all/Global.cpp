@@ -23,6 +23,11 @@
 #include <iprt/string.h>
 #include <iprt/errcore.h>
 
+#include "VBoxNls.h"
+
+DECLARE_TRANSLATION_CONTEXT(GlobalCtx);
+
+
 /* static */
 const Global::OSType Global::sOSTypes[] =
 {
@@ -580,35 +585,35 @@ Global::stringifyMachineState(MachineState_T aState)
 {
     switch (aState)
     {
-        case MachineState_Null:                 return "Null";
-        case MachineState_PoweredOff:           return "PoweredOff";
-        case MachineState_Saved:                return "Saved";
-        case MachineState_Teleported:           return "Teleported";
-        case MachineState_Aborted:              return "Aborted";
-        case MachineState_AbortedSaved:         return "Aborted-Saved";
-        case MachineState_Running:              return "Running";
-        case MachineState_Paused:               return "Paused";
-        case MachineState_Stuck:                return "GuruMeditation";
-        case MachineState_Teleporting:          return "Teleporting";
-        case MachineState_LiveSnapshotting:     return "LiveSnapshotting";
-        case MachineState_Starting:             return "Starting";
-        case MachineState_Stopping:             return "Stopping";
-        case MachineState_Saving:               return "Saving";
-        case MachineState_Restoring:            return "Restoring";
-        case MachineState_TeleportingPausedVM:  return "TeleportingPausedVM";
-        case MachineState_TeleportingIn:        return "TeleportingIn";
-        case MachineState_DeletingSnapshotOnline: return "DeletingSnapshotOnline";
-        case MachineState_DeletingSnapshotPaused: return "DeletingSnapshotPaused";
-        case MachineState_OnlineSnapshotting:   return "OnlineSnapshotting";
-        case MachineState_RestoringSnapshot:    return "RestoringSnapshot";
-        case MachineState_DeletingSnapshot:     return "DeletingSnapshot";
-        case MachineState_SettingUp:            return "SettingUp";
-        case MachineState_Snapshotting:         return "Snapshotting";
+        case MachineState_Null:                 return GlobalCtx::tr("Null");
+        case MachineState_PoweredOff:           return GlobalCtx::tr("PoweredOff");
+        case MachineState_Saved:                return GlobalCtx::tr("Saved");
+        case MachineState_Teleported:           return GlobalCtx::tr("Teleported");
+        case MachineState_Aborted:              return GlobalCtx::tr("Aborted");
+        case MachineState_AbortedSaved:         return GlobalCtx::tr("Aborted-Saved");
+        case MachineState_Running:              return GlobalCtx::tr("Running");
+        case MachineState_Paused:               return GlobalCtx::tr("Paused");
+        case MachineState_Stuck:                return GlobalCtx::tr("GuruMeditation");
+        case MachineState_Teleporting:          return GlobalCtx::tr("Teleporting");
+        case MachineState_LiveSnapshotting:     return GlobalCtx::tr("LiveSnapshotting");
+        case MachineState_Starting:             return GlobalCtx::tr("Starting");
+        case MachineState_Stopping:             return GlobalCtx::tr("Stopping");
+        case MachineState_Saving:               return GlobalCtx::tr("Saving");
+        case MachineState_Restoring:            return GlobalCtx::tr("Restoring");
+        case MachineState_TeleportingPausedVM:  return GlobalCtx::tr("TeleportingPausedVM");
+        case MachineState_TeleportingIn:        return GlobalCtx::tr("TeleportingIn");
+        case MachineState_DeletingSnapshotOnline: return GlobalCtx::tr("DeletingSnapshotOnline");
+        case MachineState_DeletingSnapshotPaused: return GlobalCtx::tr("DeletingSnapshotPaused");
+        case MachineState_OnlineSnapshotting:   return GlobalCtx::tr("OnlineSnapshotting");
+        case MachineState_RestoringSnapshot:    return GlobalCtx::tr("RestoringSnapshot");
+        case MachineState_DeletingSnapshot:     return GlobalCtx::tr("DeletingSnapshot");
+        case MachineState_SettingUp:            return GlobalCtx::tr("SettingUp");
+        case MachineState_Snapshotting:         return GlobalCtx::tr("Snapshotting");
         default:
         {
             AssertMsgFailed(("%d (%#x)\n", aState, aState));
             static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidState-0x%08x\n", aState);
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("InvalidState-0x%08x\n"), aState);
             return s_szMsg;
         }
     }
@@ -619,16 +624,16 @@ Global::stringifySessionState(SessionState_T aState)
 {
     switch (aState)
     {
-        case SessionState_Null:         return "Null";
-        case SessionState_Unlocked:     return "Unlocked";
-        case SessionState_Locked:       return "Locked";
-        case SessionState_Spawning:     return "Spawning";
-        case SessionState_Unlocking:    return "Unlocking";
+        case SessionState_Null:         return GlobalCtx::tr("Null");
+        case SessionState_Unlocked:     return GlobalCtx::tr("Unlocked");
+        case SessionState_Locked:       return GlobalCtx::tr("Locked");
+        case SessionState_Spawning:     return GlobalCtx::tr("Spawning");
+        case SessionState_Unlocking:    return GlobalCtx::tr("Unlocking");
         default:
         {
             AssertMsgFailed(("%d (%#x)\n", aState, aState));
             static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidState-0x%08x\n", aState);
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("InvalidState-0x%08x\n"), aState);
             return s_szMsg;
         }
     }
@@ -639,18 +644,18 @@ Global::stringifyDeviceType(DeviceType_T aType)
 {
     switch (aType)
     {
-        case DeviceType_Null:         return "Null";
-        case DeviceType_Floppy:       return "Floppy";
-        case DeviceType_DVD:          return "DVD";
-        case DeviceType_HardDisk:     return "HardDisk";
-        case DeviceType_Network:      return "Network";
-        case DeviceType_USB:          return "USB";
-        case DeviceType_SharedFolder: return "ShardFolder";
+        case DeviceType_Null:         return GlobalCtx::tr("Null");
+        case DeviceType_Floppy:       return GlobalCtx::tr("Floppy");
+        case DeviceType_DVD:          return GlobalCtx::tr("DVD");
+        case DeviceType_HardDisk:     return GlobalCtx::tr("HardDisk");
+        case DeviceType_Network:      return GlobalCtx::tr("Network");
+        case DeviceType_USB:          return GlobalCtx::tr("USB");
+        case DeviceType_SharedFolder: return GlobalCtx::tr("ShardFolder");
         default:
         {
             AssertMsgFailed(("%d (%#x)\n", aType, aType));
             static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidType-0x%08x\n", aType);
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("InvalidType-0x%08x\n"), aType);
             return s_szMsg;
         }
     }
@@ -662,16 +667,16 @@ Global::stringifyReason(Reason_T aReason)
 {
     switch (aReason)
     {
-        case Reason_Unspecified:      return "unspecified";
-        case Reason_HostSuspend:      return "host suspend";
-        case Reason_HostResume:       return "host resume";
-        case Reason_HostBatteryLow:   return "host battery low";
-        case Reason_Snapshot:         return "snapshot";
+        case Reason_Unspecified:      return GlobalCtx::tr("unspecified");
+        case Reason_HostSuspend:      return GlobalCtx::tr("host suspend");
+        case Reason_HostResume:       return GlobalCtx::tr("host resume");
+        case Reason_HostBatteryLow:   return GlobalCtx::tr("host battery low");
+        case Reason_Snapshot:         return GlobalCtx::tr("snapshot");
         default:
         {
             AssertMsgFailed(("%d (%#x)\n", aReason, aReason));
             static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "invalid reason %#010x\n", aReason);
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("invalid reason %#010x\n"), aReason);
             return s_szMsg;
         }
     }

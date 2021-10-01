@@ -519,7 +519,7 @@ HRESULT Guest::shutdown(const std::vector<GuestShutdownFlag_T> &aFlags)
      * the guest with administrative rights.
      */
     GuestSessionStartupInfo startupInfo;
-    startupInfo.mName = strAction + " guest";
+    startupInfo.mName = (fFlags & GuestShutdownFlag_Reboot) ? tr("Rebooting guest") : tr("Shutting down guest");
 
     GuestCredentials guestCreds;
 

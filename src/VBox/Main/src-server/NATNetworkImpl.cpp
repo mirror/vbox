@@ -151,8 +151,8 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, com::Utf8Str aName)
 HRESULT NATNetwork::setErrorBusy()
 {
     return setError(E_FAIL,
-               "Unable to change settings"
-               " while NATNetwork instance is running");
+                    tr("Unable to change settings"
+                       " while NATNetwork instance is running"));
 }
 
 
@@ -286,7 +286,7 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
 
     rc = RTNetStrToIPv4Cidr(aIPv4NetworkCidr.c_str(), &Net, &iPrefix);
     if (RT_FAILURE(rc))
-        return setError(E_FAIL, "%s is not a valid IPv4 CIDR notation",
+        return setError(E_FAIL, tr("%s is not a valid IPv4 CIDR notation"),
                         aIPv4NetworkCidr.c_str());
 
     /*
@@ -296,7 +296,7 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
      * conversion.
      */
     if (iPrefix > 30)
-        return setError(E_FAIL, "%s network is too small", aIPv4NetworkCidr.c_str());
+        return setError(E_FAIL, tr("%s network is too small"), aIPv4NetworkCidr.c_str());
 
     rc = RTNetPrefixToMaskIPv4(iPrefix, &Mask);
     AssertRCReturn(rc, setError(E_FAIL,
@@ -305,7 +305,7 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
 
     if ((Net.u & ~Mask.u) != 0)
         return setError(E_FAIL,
-            "%s: the specified address is longer than the specified prefix",
+            tr("%s: the specified address is longer than the specified prefix"),
             aIPv4NetworkCidr.c_str());
 
     /* normalized CIDR notation */
@@ -441,7 +441,7 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
         rc = RTNetStrToIPv6Cidr(aIPv6Prefix.c_str(), &Net6, &iPrefixLength);
         if (RT_FAILURE(rc))
             return setError(E_INVALIDARG,
-                            "%s is not a valid IPv6 prefix",
+                            tr("%s is not a valid IPv6 prefix"),
                             aIPv6Prefix.c_str());
 
         /* Accept both addr:: and addr::/64 */
@@ -449,21 +449,21 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
             iPrefixLength = 64;     /*   take it to mean /64 which we require anyway */
         else if (iPrefixLength != 64)
             return setError(E_INVALIDARG,
-                            "Invalid IPv6 prefix length %d, must be 64",
+                            tr("Invalid IPv6 prefix length %d, must be 64"),
                             iPrefixLength);
 
         /* Verify the address is unicast. */
         if (   ((Net6.au8[0] & 0xe0) != 0x20)  /* global 2000::/3 */
             && ((Net6.au8[0] & 0xfe) != 0xfc)) /* local  fc00::/7 */
             return setError(E_INVALIDARG,
-                            "IPv6 prefix %RTnaipv6 is not unicast",
+                            tr("IPv6 prefix %RTnaipv6 is not unicast"),
                             &Net6);
 
         /* Verify the interfaces ID part is zero */
         if (Net6.au64[1] != 0)
             return setError(E_INVALIDARG,
-                            "Non-zero bits in the interface ID part"
-                            " of the IPv6 prefix %RTnaipv6/64",
+                            tr("Non-zero bits in the interface ID part"
+                               " of the IPv6 prefix %RTnaipv6/64"),
                             &Net6);
 
         rc = strNormalizedIPv6Prefix.printfNoThrow("%RTnaipv6/64", &Net6);
@@ -472,7 +472,7 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
             if (rc == VERR_NO_MEMORY)
                 return setError(E_OUTOFMEMORY);
             else
-                return setError(E_FAIL, "Internal error");
+                return setError(E_FAIL, tr("Internal error"));
         }
     }
 
@@ -488,7 +488,7 @@ HRESULT NATNetwork::setIPv6Prefix(const com::Utf8Str &aIPv6Prefix)
 
         /* only allow prefix to be empty if IPv6 is disabled */
         if (strNormalizedIPv6Prefix.isEmpty() && m->s.fIPv6Enabled)
-            return setError(E_FAIL, "Setting an empty IPv6 prefix when IPv6 is enabled");
+            return setError(E_FAIL, tr("Setting an empty IPv6 prefix when IPv6 is enabled"));
 
         /**
          * @todo

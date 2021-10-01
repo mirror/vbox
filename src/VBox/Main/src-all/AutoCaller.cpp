@@ -22,6 +22,10 @@
 #include "AutoCaller.h"
 #include "LoggingNew.h"
 
+#include "VBoxNls.h"
+
+
+DECLARE_TRANSLATION_CONTEXT(AutoCallerCtx);
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -200,7 +204,7 @@ HRESULT ObjectState::addCaller(bool aLimited /* = false */)
     if (FAILED(rc))
     {
         if (mState == Limited)
-            rc = mObj->setError(rc, "The object functionality is limited");
+            rc = mObj->setError(rc, AutoCallerCtx::tr("The object functionality is limited"));
         else if (FAILED(mFailedRC) && mFailedRC != E_ACCESSDENIED)
         {
             /* replay recorded error information */
@@ -209,7 +213,7 @@ HRESULT ObjectState::addCaller(bool aLimited /* = false */)
             rc = mFailedRC;
         }
         else
-            rc = mObj->setError(rc, "The object is not ready");
+            rc = mObj->setError(rc, AutoCallerCtx::tr("The object is not ready"));
     }
 
     return rc;

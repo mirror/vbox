@@ -3916,7 +3916,7 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
     if (!pDirEntry)
     {
         RTVfsDirRelease(hVfsDir);
-        return setError(E_OUTOFMEMORY, "Out of memory! (direntry buffer)");
+        return setError(E_OUTOFMEMORY, tr("Out of memory! (direntry buffer)"));
     }
 
     HRESULT hrc = S_OK;
@@ -3933,10 +3933,10 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
                 pDirEntry  = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
                 if (pDirEntry)
                     continue;
-                hrc = setError(E_OUTOFMEMORY, "Out of memory! (direntry buffer)");
+                hrc = setError(E_OUTOFMEMORY, tr("Out of memory! (direntry buffer)"));
             }
             else if (rc != VERR_NO_MORE_FILES)
-                hrc = setError(VBOX_E_IPRT_ERROR, "RTVfsDirReadEx failed: %Rrc", rc);
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsDirReadEx failed: %Rrc"), rc);
             break;
         }
         if (RTStrStartsWith(pDirEntry->szName, "PhysicalDrive"))
@@ -3950,11 +3950,11 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
             {
                 try
                 {
-                    aDriveList.push_back(std::pair<com::Utf8Str, com::Utf8Str>(szPhysicalDrive, "Unknown (Access denied)"));
+                    aDriveList.push_back(std::pair<com::Utf8Str, com::Utf8Str>(szPhysicalDrive, tr("Unknown (Access denied)")));
                 }
                 catch (std::bad_alloc &)
                 {
-                    hrc = setError(E_OUTOFMEMORY, "Out of memory");
+                    hrc = setError(E_OUTOFMEMORY, tr("Out of memory"));
                     break;
                 }
                 continue;
@@ -3999,7 +3999,7 @@ HRESULT Host::i_getFixedDrivesFromGlobalNamespace(std::list<std::pair<com::Utf8S
             }
             catch (std::bad_alloc &)
             {
-                hrc = setError(E_OUTOFMEMORY, "Out of memory");
+                hrc = setError(E_OUTOFMEMORY, tr("Out of memory"));
                 break;
             }
         }

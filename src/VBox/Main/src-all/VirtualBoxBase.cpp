@@ -230,7 +230,7 @@ HRESULT VirtualBoxBase::handleUnexpectedExceptions(VirtualBoxBase *const aThis, 
                                  false /* aWarning */,
                                  true /* aLogIt */,
                                  0 /* aResultDetail */,
-                                 tr("%s.\n%s[%d] (%s)"),
+                                 "%s.\n%s[%d] (%s)",
                                  err.what(), pszFile, iLine, pszFunction);
     }
     catch (const std::exception &err)
@@ -345,29 +345,29 @@ HRESULT VirtualBoxBase::setErrorInternalV(HRESULT aResultCode,
         /* Some default info */
         switch (aResultCode)
         {
-            case E_INVALIDARG:                 strText = "A parameter has an invalid value"; break;
-            case E_POINTER:                    strText = "A parameter is an invalid pointer"; break;
-            case E_UNEXPECTED:                 strText = "The result of the operation is unexpected"; break;
-            case E_ACCESSDENIED:               strText = "The access to an object is not allowed"; break;
-            case E_OUTOFMEMORY:                strText = "The allocation of new memory failed"; break;
-            case E_NOTIMPL:                    strText = "The requested operation is not implemented"; break;
-            case E_NOINTERFACE:                strText = "The requested interface is not implemented"; break;
-            case E_FAIL:                       strText = "A general error occurred"; break;
-            case E_ABORT:                      strText = "The operation was canceled"; break;
-            case VBOX_E_OBJECT_NOT_FOUND:      strText = "Object corresponding to the supplied arguments does not exist"; break;
-            case VBOX_E_INVALID_VM_STATE:      strText = "Current virtual machine state prevents the operation"; break;
-            case VBOX_E_VM_ERROR:              strText = "Virtual machine error occurred attempting the operation"; break;
-            case VBOX_E_FILE_ERROR:            strText = "File not accessible or erroneous file contents"; break;
-            case VBOX_E_IPRT_ERROR:            strText = "Runtime subsystem error"; break;
-            case VBOX_E_PDM_ERROR:             strText = "Pluggable Device Manager error"; break;
-            case VBOX_E_INVALID_OBJECT_STATE:  strText = "Current object state prohibits operation"; break;
-            case VBOX_E_HOST_ERROR:            strText = "Host operating system related error"; break;
-            case VBOX_E_NOT_SUPPORTED:         strText = "Requested operation is not supported"; break;
-            case VBOX_E_XML_ERROR:             strText = "Invalid XML found"; break;
-            case VBOX_E_INVALID_SESSION_STATE: strText = "Current session state prohibits operation"; break;
-            case VBOX_E_OBJECT_IN_USE:         strText = "Object being in use prohibits operation"; break;
-            case VBOX_E_PASSWORD_INCORRECT:    strText = "Incorrect password provided"; break;
-            default:                           strText = "Unknown error"; break;
+            case E_INVALIDARG:                 strText = tr("A parameter has an invalid value"); break;
+            case E_POINTER:                    strText = tr("A parameter is an invalid pointer"); break;
+            case E_UNEXPECTED:                 strText = tr("The result of the operation is unexpected"); break;
+            case E_ACCESSDENIED:               strText = tr("The access to an object is not allowed"); break;
+            case E_OUTOFMEMORY:                strText = tr("The allocation of new memory failed"); break;
+            case E_NOTIMPL:                    strText = tr("The requested operation is not implemented"); break;
+            case E_NOINTERFACE:                strText = tr("The requested interface is not implemented"); break;
+            case E_FAIL:                       strText = tr("A general error occurred"); break;
+            case E_ABORT:                      strText = tr("The operation was canceled"); break;
+            case VBOX_E_OBJECT_NOT_FOUND:      strText = tr("Object corresponding to the supplied arguments does not exist"); break;
+            case VBOX_E_INVALID_VM_STATE:      strText = tr("Current virtual machine state prevents the operation"); break;
+            case VBOX_E_VM_ERROR:              strText = tr("Virtual machine error occurred attempting the operation"); break;
+            case VBOX_E_FILE_ERROR:            strText = tr("File not accessible or erroneous file contents"); break;
+            case VBOX_E_IPRT_ERROR:            strText = tr("Runtime subsystem error"); break;
+            case VBOX_E_PDM_ERROR:             strText = tr("Pluggable Device Manager error"); break;
+            case VBOX_E_INVALID_OBJECT_STATE:  strText = tr("Current object state prohibits operation"); break;
+            case VBOX_E_HOST_ERROR:            strText = tr("Host operating system related error"); break;
+            case VBOX_E_NOT_SUPPORTED:         strText = tr("Requested operation is not supported"); break;
+            case VBOX_E_XML_ERROR:             strText = tr("Invalid XML found"); break;
+            case VBOX_E_INVALID_SESSION_STATE: strText = tr("Current session state prohibits operation"); break;
+            case VBOX_E_OBJECT_IN_USE:         strText = tr("Object being in use prohibits operation"); break;
+            case VBOX_E_PASSWORD_INCORRECT:    strText = tr("Incorrect password provided"); break;
+            default:                           strText = tr("Unknown error"); break;
         }
     }
     else

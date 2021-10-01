@@ -1159,9 +1159,9 @@ HRESULT MachineDebugger::unloadPlugIn(const com::Utf8Str &aName)
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else if (vrc == VERR_NOT_FOUND)
-                hrc = setErrorBoth(E_FAIL, vrc, "Plug-in '%s' was not found", aName.c_str());
+                hrc = setErrorBoth(E_FAIL, vrc, tr("Plug-in '%s' was not found"), aName.c_str());
             else
-                hrc = setErrorVrc(vrc, "Error unloading '%s': %Rrc", aName.c_str(), vrc);
+                hrc = setErrorVrc(vrc, tr("Error unloading '%s': %Rrc"), aName.c_str(), vrc);
         }
     }
     return hrc;
@@ -1236,7 +1236,7 @@ HRESULT MachineDebugger::queryOSKernelLog(ULONG aMaxMessages, com::Utf8Str &aDme
                 if (RT_SUCCESS(vrc))
                     aDmesg.jolt();
                 else if (vrc == VERR_BUFFER_OVERFLOW)
-                    hrc = setError(E_FAIL, "Too much log available, must use the maxMessages parameter to restrict.");
+                    hrc = setError(E_FAIL, tr("Too much log available, must use the maxMessages parameter to restrict."));
                 else
                     hrc = setErrorVrc(vrc);
             }
@@ -1244,7 +1244,7 @@ HRESULT MachineDebugger::queryOSKernelLog(ULONG aMaxMessages, com::Utf8Str &aDme
                 hrc = setErrorBoth(E_OUTOFMEMORY, vrc);
         }
         else
-            hrc = setError(E_FAIL, "The dmesg interface isn't implemented by guest OS digger, or detectOS() has not been called.");
+            hrc = setError(E_FAIL, tr("The dmesg interface isn't implemented by guest OS digger, or detectOS() has not been called."));
     }
     return hrc;
 }
@@ -1539,7 +1539,7 @@ HRESULT MachineDebugger::resetStats(const com::Utf8Str &aPattern)
     Console::SafeVMPtrQuiet ptrVM(mParent);
 
     if (!ptrVM.isOk())
-        return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
+        return setError(VBOX_E_INVALID_VM_STATE, tr("Machine is not running"));
 
     STAMR3Reset(ptrVM.rawUVM(), aPattern.c_str());
 
@@ -1557,7 +1557,7 @@ HRESULT MachineDebugger::dumpStats(const com::Utf8Str &aPattern)
     Console::SafeVMPtrQuiet ptrVM(mParent);
 
     if (!ptrVM.isOk())
-        return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
+        return setError(VBOX_E_INVALID_VM_STATE, tr("Machine is not running"));
 
     STAMR3Dump(ptrVM.rawUVM(), aPattern.c_str());
 
@@ -1576,7 +1576,7 @@ HRESULT MachineDebugger::getStats(const com::Utf8Str &aPattern, BOOL aWithDescri
 {
     Console::SafeVMPtrQuiet ptrVM(mParent);
     if (!ptrVM.isOk())
-        return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
+        return setError(VBOX_E_INVALID_VM_STATE, tr("Machine is not running"));
 
     char *pszSnapshot;
     int vrc = STAMR3Snapshot(ptrVM.rawUVM(), aPattern.c_str(), &pszSnapshot, NULL,
@@ -1620,7 +1620,7 @@ HRESULT MachineDebugger::getCPULoad(ULONG aCpuId, ULONG *aPctExecuting, ULONG *a
             hrc = setErrorVrc(vrc);
     }
     else
-        hrc = setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
+        hrc = setError(VBOX_E_INVALID_VM_STATE, tr("Machine is not running"));
     return hrc;
 }
 
@@ -1669,7 +1669,7 @@ HRESULT MachineDebugger::takeGuestSample(const com::Utf8Str &aFilename, ULONG aU
                 hrc = setErrorVrc(vrc);
         }
         else
-            hrc = setError(VBOX_E_INVALID_VM_STATE, "A sample report is already in progress");
+            hrc = setError(VBOX_E_INVALID_VM_STATE, tr("A sample report is already in progress"));
     }
 
     return hrc;

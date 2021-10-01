@@ -1298,7 +1298,7 @@ public:
     // IEventListener methods
     STDMETHOD(HandleEvent)(IEvent *)
     {
-        ComAssertMsgRet(false, ("HandleEvent() of wrapper shall never be called"),
+        ComAssertMsgRet(false, (tr("HandleEvent() of wrapper shall never be called")),
                         E_FAIL);
     }
 };
@@ -1442,7 +1442,7 @@ HRESULT EventSource::createListener(ComPtr<IEventListener> &aListener)
     ComObjPtr<PassiveEventListener> listener;
 
     HRESULT rc = listener.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create wrapper object (%Rhrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create wrapper object (%Rhrc)"), rc),
                     E_FAIL);
     listener.queryInterfaceTo(aListener.asOutParam());
     return S_OK;
@@ -1454,7 +1454,7 @@ HRESULT EventSource::createAggregator(const std::vector<ComPtr<IEventSource> > &
     ComObjPtr<EventSourceAggregator> agg;
 
     HRESULT rc = agg.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create aggregator (%Rhrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create aggregator (%Rhrc)"), rc),
                     E_FAIL);
 
     rc = agg->init(aSubordinates);
@@ -1473,10 +1473,10 @@ HRESULT EventSourceAggregator::init(const std::vector<ComPtr<IEventSource> >  aS
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     rc = mSource.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create source (%Rhrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create source (%Rhrc)"), rc),
                     E_FAIL);
     rc = mSource->init();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not init source (%Rhrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not init source (%Rhrc)"), rc),
                     E_FAIL);
 
     for (size_t i = 0; i < aSourcesIn.size(); i++)
@@ -1612,7 +1612,7 @@ HRESULT EventSourceAggregator::createProxyListener(IEventListener *aListener,
     ComObjPtr<ProxyEventListener> proxy;
 
     HRESULT rc = proxy.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create proxy (%Rhrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), (tr("Could not create proxy (%Rhrc)"), rc),
                     E_FAIL);
 
     rc = proxy->init(mSource);

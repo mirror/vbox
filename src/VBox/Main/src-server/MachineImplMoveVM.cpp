@@ -999,7 +999,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
                   Utf8Str(bstrMachineName.raw()).c_str(), Utf8Str(bstrOperationDescription.raw()).c_str()));
 
             for (ULONG i = operation + 1; i < operationCount - operation; ++i)
-                taskMoveVM->m_pProgress->SetNextOperation(BstrFmt("Skip the empty operation %d...", i + 1).raw(), 1);
+                taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(tr("Skip the empty operation %d..."), i + 1).raw(), 1);
 
             hrc = taskMoveVM->moveAllDisks(taskMoveVM->m_finalMediumsMap);
             if (FAILED(hrc))
@@ -1026,7 +1026,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
             if (RT_FAILURE(vrc))
             {
                 Log2(("Rollback scenario: can't delete new destination folder.\n"));
-                throw machine->setErrorVrc(vrc, "Rollback scenario: can't delete new destination folder.");
+                throw machine->setErrorVrc(vrc, tr("Rollback scenario: can't delete new destination folder."));
             }
 
             /* save all VM data */
@@ -1100,7 +1100,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
         hrc = taskMoveVM->m_pProgress->COMGETTER(Operation)(&operation);
 
         for (ULONG i = operation; i < operation + taskMoveVM->m_finalMediumsMap.size() - 1; ++i)
-            taskMoveVM->m_pProgress->SetNextOperation(BstrFmt("Skip the empty operation %d...", i).raw(), 1);
+            taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(tr("Skip the empty operation %d..."), i).raw(), 1);
 
         hrc = taskMoveVM->deleteFiles(originalFiles);
         if (FAILED(hrc))
@@ -1340,7 +1340,7 @@ HRESULT MachineMoveVM::deleteFiles(const RTCList<Utf8Str> &listOfFiles)
     for (size_t i = 0; i < listOfFiles.size(); ++i)
     {
         Log2(("Deleting file %s ...\n", listOfFiles.at(i).c_str()));
-        hrc = m_pProgress->SetNextOperation(BstrFmt("Deleting file %s...", listOfFiles.at(i).c_str()).raw(), 1);
+        hrc = m_pProgress->SetNextOperation(BstrFmt(tr("Deleting file %s..."), listOfFiles.at(i).c_str()).raw(), 1);
         if (FAILED(hrc)) return hrc;
 
         int vrc = RTFileDelete(listOfFiles.at(i).c_str());

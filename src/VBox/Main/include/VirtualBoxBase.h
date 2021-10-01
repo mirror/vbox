@@ -173,7 +173,7 @@ public:
         { \
             AssertMsgFailed(("%s\n", #expr)); \
             setError(E_FAIL, \
-                     "Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!", \
+                     VirtualBoxBase::tr("Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!"), \
                      #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         } \
     } while (0)
@@ -193,7 +193,7 @@ public:
     do { \
         AssertFailed(); \
         setError(E_FAIL, \
-                 "Assertion failed: at '%s' (%d) in %s.\nPlease contact the product vendor!", \
+                 VirtualBoxBase::tr("Assertion failed: at '%s' (%d) in %s.\nPlease contact the product vendor!"), \
                  __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     } while (0)
 
@@ -215,7 +215,7 @@ public:
             Utf8StrFmt MyAssertMsg a; /* may throw bad_alloc */ \
             AssertMsgFailed(("%s\n", MyAssertMsg.c_str())); \
             setError(E_FAIL, \
-                     "Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
+                     VirtualBoxBase::tr("Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!"), \
                      #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, MyAssertMsg.c_str()); \
         } \
     } while (0)
@@ -233,7 +233,7 @@ public:
         Utf8StrFmt MyAssertMsg a; /* may throw bad_alloc */ \
         AssertMsgFailed(("%s\n", MyAssertMsg.c_str())); \
         setError(E_FAIL, \
-                 "Assertion failed: at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
+                 VirtualBoxBase::tr("Assertion failed: at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!"), \
                  __FILE__, __LINE__, __PRETTY_FUNCTION__, MyAssertMsg.c_str()); \
     } while (0)
 

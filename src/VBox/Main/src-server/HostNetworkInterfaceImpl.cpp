@@ -619,7 +619,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
 #else
     if (aIPV6NetworkMaskPrefixLength > 128)
         return mVirtualBox->setErrorBoth(E_INVALIDARG, VERR_INVALID_PARAMETER,
-                   "Invalid IPv6 prefix length");
+                   tr("Invalid IPv6 prefix length"));
 
     int rc;
 
@@ -630,7 +630,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
     rc = RTNetStrToIPv6Addr(aIPV6Address.c_str(), &AddrNew, &pszZoneIgnored);
     if (RT_FAILURE(rc))
     {
-        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc, "Invalid IPv6 address");
+        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc, tr("Invalid IPv6 address"));
     }
 
     rc = RTNetStrToIPv6Addr(com::Utf8Str(m.realIPV6Address).c_str(), &AddrOld, &pszZoneIgnored);

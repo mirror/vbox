@@ -193,7 +193,7 @@ HRESULT BaseTextScript::save(const Utf8Str &rStrFilename, bool fOverwrite)
 
 HRESULT GeneralTextScript::parse()
 {
-//  AssertReturn(!mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, "parse called more than once"));
+//  AssertReturn(!mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("parse called more than once")));
 
     /*
      * Split the raw context into an array of lines.
@@ -214,7 +214,7 @@ HRESULT GeneralTextScript::parse()
 
 HRESULT GeneralTextScript::saveToString(Utf8Str &rStrDst)
 {
-    AssertReturn(mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, "saveToString() called before parse()"));
+    AssertReturn(mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("saveToString() called before parse()")));
 
     /*
      * Calc the required size first.
@@ -263,7 +263,7 @@ const RTCString &GeneralTextScript::getContentOfLine(size_t idxLine)
 HRESULT GeneralTextScript::setContentOfLine(size_t idxLine, const Utf8Str &rStrNewLine)
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
-                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, "attempting to set line %zu when there are only %zu lines",
+                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("attempting to set line %zu when there are only %zu lines"),
                                           idxLine, mScriptContentByLines.size()));
     try
     {
@@ -292,7 +292,7 @@ HRESULT GeneralTextScript::findAndReplace(size_t idxLine, const Utf8Str &rStrNee
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
                  mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE,
-                                          "attempting search&replace in line %zu when there are only %zu lines",
+                                          tr("attempting search&replace in line %zu when there are only %zu lines"),
                                           idxLine, mScriptContentByLines.size()));
 
     RTCString &rDstString = mScriptContentByLines[idxLine];
@@ -319,7 +319,7 @@ HRESULT GeneralTextScript::findAndReplace(size_t idxLine, const Utf8Str &rStrNee
 HRESULT GeneralTextScript::appendToLine(size_t idxLine, const Utf8Str &rStrToAppend)
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
-                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, "appending to line %zu when there are only %zu lines",
+                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("appending to line %zu when there are only %zu lines"),
                                           idxLine, mScriptContentByLines.size()));
 
     try
@@ -336,7 +336,7 @@ HRESULT GeneralTextScript::appendToLine(size_t idxLine, const Utf8Str &rStrToApp
 HRESULT GeneralTextScript::prependToLine(size_t idxLine, const Utf8Str &rStrToPrepend)
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
-                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, "prepending to line %zu when there are only %zu lines",
+                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("prepending to line %zu when there are only %zu lines"),
                                           idxLine, mScriptContentByLines.size()));
 
     RTCString &rDstString = mScriptContentByLines[idxLine];

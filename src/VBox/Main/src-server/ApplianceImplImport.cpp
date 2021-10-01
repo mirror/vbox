@@ -1325,7 +1325,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
      * excluded if they happen in error recovery code paths. */
     HRESULT hrc = S_OK;
     bool fKeepDownloadedObject = false;//in the future should be passed from the caller
-    Utf8Str strLastActualErrorDesc("No errors");
 
     /* Clear the list of imported machines, if any */
     m->llGuidsMachinesCreated.clear();
@@ -1532,11 +1531,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                               pProgress);
             if (FAILED(hrc))
             {
-                strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (cloud phase) failed. "
-                        "Used cloud instance is \'%s\'\n", __FUNCTION__, strInsId.c_str());
-
-                LogRel((strLastActualErrorDesc.c_str()));
-                hrc = setError(hrc, strLastActualErrorDesc.c_str());
+                LogRel(("%s: Cloud import (cloud phase) failed. "
+                        "Used cloud instance is \'%s\'\n", __FUNCTION__, strInsId.c_str()));
+                hrc = setError(hrc, tr("%s: Cloud import (cloud phase) failed. "
+                               "Used cloud instance is \'%s\'\n"), __FUNCTION__, strInsId.c_str());
                 break;
             }
 
@@ -1595,10 +1593,8 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
     if (FAILED(hrc))
     {
-        /** @todo r=bird: Using heap to keep a readonly C-string is a real wonderful
-         *        way to doing things. */
-        Utf8Str generalRollBackErrorMessage("Rollback action for Import Cloud operation failed. "
-                                            "Some leavings may exist on the local disk or in the Cloud.");
+        const char *pszGeneralRollBackErrorMessage = tr("Rollback action for Import Cloud operation failed. "
+                                                        "Some leavings may exist on the local disk or in the Cloud.");
         /*
          * Roll-back actions.
          * we finish here if:
@@ -1619,7 +1615,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                  * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
                 GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
                 if (aVBoxValues.size() == 0)
-                    hrc = setErrorVrc(VERR_NOT_FOUND, generalRollBackErrorMessage.c_str());
+                    hrc = setErrorVrc(VERR_NOT_FOUND, pszGeneralRollBackErrorMessage);
                 else
                 {
                     vsdData = aVBoxValues[0];
@@ -1630,7 +1626,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         vrc = RTFileDelete(vsdData.c_str());
                         if (RT_FAILURE(vrc))
                         {
-                            hrc = setErrorVrc(vrc, generalRollBackErrorMessage.c_str());
+                            hrc = setErrorVrc(vrc, pszGeneralRollBackErrorMessage);
                             LogRel(("%s: Rollback action - the object %s hasn't been deleted\n", __FUNCTION__, vsdData.c_str()));
                         }
                         else
@@ -1706,18 +1702,12 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             RTVFSIOSTREAM hVfsIosSrc;
             vrc = RTVfsIoStrmOpenNormal(strAbsSrcPath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsIosSrc);
             if (RT_FAILURE(vrc))
-            {
-                strLastActualErrorDesc = Utf8StrFmt("Error opening '%s' for reading (%Rrc)\n", strAbsSrcPath.c_str(), vrc);
-                throw setErrorVrc(vrc, strLastActualErrorDesc.c_str());
-            }
+                throw setErrorVrc(vrc, tr("Error opening '%s' for reading (%Rrc)\n"), strAbsSrcPath.c_str(), vrc);
 
             vrc = RTZipTarFsStreamFromIoStream(hVfsIosSrc, 0 /*fFlags*/, &hVfsFssObject);
             RTVfsIoStrmRelease(hVfsIosSrc);
             if (RT_FAILURE(vrc))
-            {
-                strLastActualErrorDesc = Utf8StrFmt("Error reading the downloaded file '%s' (%Rrc)", strAbsSrcPath.c_str(), vrc);
-                throw setErrorVrc(vrc, strLastActualErrorDesc.c_str());
-            }
+                throw setErrorVrc(vrc, tr("Error reading the downloaded file '%s' (%Rrc)"), strAbsSrcPath.c_str(), vrc);
 
             /* Create a new virtual system and work directly on the list copy. */
             m->pReader->m_llVirtualSystems.push_back(ovf::VirtualSystem());
@@ -1922,23 +1912,20 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         catch (HRESULT aRc)
                         {
                             hrc = aRc;
-                            strLastActualErrorDesc.printf("%s: Processing the downloaded object was failed. The exception (%Rhrc)\n",
-                                                          __FUNCTION__, hrc);
-                            LogRel((strLastActualErrorDesc.c_str()));
+                            LogRel(("%s: Processing the downloaded object was failed. The exception (%Rhrc)\n",
+                                    __FUNCTION__, hrc));
                         }
                         catch (int aRc)
                         {
                             hrc = setErrorVrc(aRc);
-                            strLastActualErrorDesc.printf("%s: Processing the downloaded object was failed. The exception (%Rrc/%Rhrc)\n",
-                                                          __FUNCTION__, aRc, hrc);
-                            LogRel((strLastActualErrorDesc.c_str()));
+                            LogRel(("%s: Processing the downloaded object was failed. The exception (%Rrc/%Rhrc)\n",
+                                    __FUNCTION__, aRc, hrc));
                         }
                         catch (...)
                         {
                             hrc = setErrorVrc(VERR_UNEXPECTED_EXCEPTION);
-                            strLastActualErrorDesc.printf("%s: Processing the downloaded object was failed. The exception (VERR_UNEXPECTED_EXCEPTION/%Rhrc)\n",
-                                                          __FUNCTION__, hrc);
-                            LogRel((strLastActualErrorDesc.c_str()));
+                            LogRel(("%s: Processing the downloaded object was failed. The exception (VERR_UNEXPECTED_EXCEPTION/%Rhrc)\n",
+                                    __FUNCTION__, hrc));
                         }
                     }
                     else
@@ -2072,23 +2059,20 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         catch (HRESULT aRc)
         {
             hrc = aRc;
-            strLastActualErrorDesc.printf("%s: Cloud import (local phase) failed. The exception (%Rhrc)\n",
-                                          __FUNCTION__, hrc);
-            LogRel((strLastActualErrorDesc.c_str()));
+            LogRel(("%s: Cloud import (local phase) failed. The exception (%Rhrc)\n",
+                    __FUNCTION__, hrc));
         }
         catch (int aRc)
         {
             hrc = setErrorVrc(aRc);
-            strLastActualErrorDesc.printf("%s: Cloud import (local phase) failed. The exception (%Rrc/%Rhrc)\n",
-                                          __FUNCTION__, aRc, hrc);
-            LogRel((strLastActualErrorDesc.c_str()));
+            LogRel(("%s: Cloud import (local phase) failed. The exception (%Rrc/%Rhrc)\n",
+                    __FUNCTION__, aRc, hrc));
         }
         catch (...)
         {
             hrc = setErrorVrc(VERR_UNRESOLVED_ERROR);
-            strLastActualErrorDesc.printf("%s: Cloud import (local phase) failed. The exception (VERR_UNRESOLVED_ERROR/%Rhrc)\n",
-                                          __FUNCTION__, hrc);
-            LogRel((strLastActualErrorDesc.c_str()));
+            LogRel(("%s: Cloud import (local phase) failed. The exception (VERR_UNRESOLVED_ERROR/%Rhrc)\n",
+                    __FUNCTION__, hrc));
         }
 
         LogRel(("%s: Cloud import (local phase) final result (%Rrc).\n", __FUNCTION__, hrc));
@@ -3236,7 +3220,7 @@ HRESULT Appliance::i_readTailProcessingVerifyIssuedOvfCert(TaskOVF *pTask, RTCRS
                                          pTask->locInfo.strPath.c_str(), vrc);
                     }
                     else
-                        hrc = setErrorVrc(vrc, "RTCrX509CertPathsSetValidTimeSpec failed: %Rrc", vrc);
+                        hrc = setErrorVrc(vrc, tr("RTCrX509CertPathsSetValidTimeSpec failed: %Rrc"), vrc);
                 }
                 else if (vrc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS)
                 {
@@ -3312,7 +3296,7 @@ HRESULT Appliance::i_readTailProcessingVerifyAnalyzeSignerInfo(void const *pvDat
     char szSignatureBuf[64];
     if (pSignedData->SignerInfos.cItems > 1)
     {
-        RTStrPrintf(szSignatureBuf, sizeof(szSignatureBuf), tr("%s #%u"), pszSignature, iSigner + 1);
+        RTStrPrintf(szSignatureBuf, sizeof(szSignatureBuf), "%s #%u", pszSignature, iSigner + 1);
         pszSignature = szSignatureBuf;
     }
 
@@ -4818,7 +4802,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (info.isFullAvailable())
                 throw setError(aRC, Utf8Str(info.getText()).c_str());
             else
-                throw setError(aRC, "Unknown error during OVF import");
+                throw setError(aRC, tr("Unknown error during OVF import"));
         }
     }
 
@@ -5087,7 +5071,7 @@ l_skipped:
             if (info.isFullAvailable())
                 throw setError(aRC, Utf8Str(info.getText()).c_str());
             else
-                throw setError(aRC, "Unknown error during OVF import");
+                throw setError(aRC, tr("Unknown error during OVF import"));
         }
     }
     LogFlowFuncLeave();

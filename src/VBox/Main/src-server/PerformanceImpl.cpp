@@ -380,7 +380,7 @@ HRESULT PerformanceCollector::setupMetrics(const std::vector<com::Utf8Str> &aMet
         rc = toIPerformanceMetric(*it, aAffectedMetrics[i++]);
 
     if (FAILED(rc))
-        return setError(E_FAIL, "Failed to setup metrics for '%s'",
+        return setError(E_FAIL, tr("Failed to setup metrics for '%s'"),
                         getFailedGuestName().c_str());
     return rc;
 }
@@ -416,7 +416,7 @@ HRESULT PerformanceCollector::enableMetrics(const std::vector<com::Utf8Str> &aMe
     LogFlowThisFuncLeave();
 
     if (FAILED(rc))
-        return setError(E_FAIL, "Failed to enable metrics for '%s'",
+        return setError(E_FAIL, tr("Failed to enable metrics for '%s'"),
                         getFailedGuestName().c_str());
     return rc;
 }
@@ -452,7 +452,7 @@ HRESULT PerformanceCollector::disableMetrics(const std::vector<com::Utf8Str> &aM
     LogFlowThisFuncLeave();
 
     if (FAILED(rc))
-        return setError(E_FAIL, "Failed to disable metrics for '%s'",
+        return setError(E_FAIL, tr("Failed to disable metrics for '%s'"),
                         getFailedGuestName().c_str());
     return rc;
 }

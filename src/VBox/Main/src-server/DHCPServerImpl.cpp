@@ -1016,14 +1016,14 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
                 LogThisFunc(("Retrying...\n"));
                 continue;
             }
-            return setErrorBoth(VBOX_E_FILE_ERROR, vrc, "Reading '%s' failed: %Rrc - %s",
+            return setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Reading '%s' failed: %Rrc - %s"),
                                 m->strLeasesFilename.c_str(), vrc, e.what());
         }
         catch (const RTCError &e)
         {
             if (e.what())
-                return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: %s", m->strLeasesFilename.c_str(), e.what());
-            return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: RTCError", m->strLeasesFilename.c_str());
+                return setError(VBOX_E_FILE_ERROR, tr("Reading '%s' failed: %s"), m->strLeasesFilename.c_str(), e.what());
+            return setError(VBOX_E_FILE_ERROR, tr("Reading '%s' failed: RTCError"), m->strLeasesFilename.c_str());
         }
         catch (std::bad_alloc &)
         {
