@@ -1079,6 +1079,7 @@ typedef struct DXBCTokenReader
 } DXBCTokenReader;
 
 
+#ifdef LOG_ENABLED
 DECLINLINE(uint32_t) dxbcTokenReaderByteOffset(DXBCTokenReader *r)
 {
     return (r->cToken - r->cRemainingToken) * 4;
@@ -1089,6 +1090,7 @@ DECLINLINE(uint32_t) dxbcTokenReaderRemaining(DXBCTokenReader *r)
 {
     return r->cRemainingToken;
 }
+#endif
 
 
 DECLINLINE(bool) dxbcTokenReaderCanRead(DXBCTokenReader *r, uint32_t cToken)
