@@ -82,8 +82,6 @@ public:
     VBoxUpdateData(const QString &strData = QString());
     /** Constructs update description on the basis of passed @a enmPeriodIndex and @a enmBranchIndex. */
     VBoxUpdateData(PeriodType enmPeriodIndex, BranchType enmBranchIndex);
-    /** Constructs update description on the basis of @a another one. */
-    VBoxUpdateData(const VBoxUpdateData &another);
 
     /** Returns whether there is no need to check. */
     bool isNoNeedToCheck() const;
