@@ -1269,7 +1269,6 @@ static int dxbcParseOperand(DXBCTokenReader *r, VGPUOperand *paOperand, uint32_t
         operand1.value = dxbcTokenReaderRead32(r);
     }
 
-    ASSERT_GUEST_RETURN(operand0.indexDimension <= VGPU10_OPERAND_INDEX_3D, VERR_INVALID_PARAMETER);
     ASSERT_GUEST_RETURN(operand0.operandType < VGPU10_NUM_OPERANDS, VERR_INVALID_PARAMETER);
 
     if (   operand0.operandType == VGPU10_OPERAND_TYPE_IMMEDIATE32
