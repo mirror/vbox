@@ -1084,8 +1084,10 @@ DECLINLINE(uint32_t) dxbcTokenReaderByteOffset(DXBCTokenReader *r)
 {
     return (r->cToken - r->cRemainingToken) * 4;
 }
+#endif
 
 
+#if 0 // Unused for now
 DECLINLINE(uint32_t) dxbcTokenReaderRemaining(DXBCTokenReader *r)
 {
     return r->cRemainingToken;
