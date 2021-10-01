@@ -203,7 +203,7 @@ bool UIWizardImportApp::importAppliance()
     if (fIsSourceCloudOne)
     {
         /* Acquire prepared appliance: */
-        CAppliance comAppliance = field("appliance").value<CAppliance>();
+        CAppliance comAppliance = field("cloudAppliance").value<CAppliance>();
         AssertReturn(!comAppliance.isNull(), false);
 
         /* No options for cloud VMs for now: */

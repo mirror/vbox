@@ -37,7 +37,7 @@ class UIWizardImportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
-    Q_PROPERTY(CAppliance appliance READ appliance);
+    Q_PROPERTY(CAppliance cloudAppliance READ cloudAppliance);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
     Q_PROPERTY(QString machineId READ machineId);
     Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
