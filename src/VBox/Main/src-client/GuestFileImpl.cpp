@@ -1390,7 +1390,7 @@ HRESULT GuestFile::close()
         {
             GuestErrorInfo ge(GuestErrorInfo::Type_File, rcGuest, mData.mOpenInfo.mFilename.c_str());
             return setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Closing guest file failed: %s"),
-                                     GuestBase::getErrorAsString(ge).c_str());
+                                GuestBase::getErrorAsString(ge).c_str());
         }
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Closing guest file \"%s\" failed with %Rrc\n"),
                             mData.mOpenInfo.mFilename.c_str(), vrc);
@@ -1433,7 +1433,7 @@ HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
         {
             GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, rcGuest, mData.mOpenInfo.mFilename.c_str());
             hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Querying guest file information failed: %s"),
-                                   GuestBase::getErrorAsString(ge).c_str());
+                              GuestBase::getErrorAsString(ge).c_str());
         }
         else
             hr = setErrorVrc(vrc,
@@ -1466,7 +1466,7 @@ HRESULT GuestFile::querySize(LONG64 *aSize)
         {
             GuestErrorInfo ge(GuestErrorInfo::Type_ToolStat, rcGuest, mData.mOpenInfo.mFilename.c_str());
             hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Querying guest file size failed: %s"),
-                                   GuestBase::getErrorAsString(ge).c_str());
+                              GuestBase::getErrorAsString(ge).c_str());
         }
         else
             hr = setErrorVrc(vrc, tr("Querying guest file size for \"%s\" failed: %Rrc"), mData.mOpenInfo.mFilename.c_str(), vrc);
