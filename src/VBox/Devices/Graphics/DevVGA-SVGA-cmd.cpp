@@ -36,10 +36,8 @@
 #endif
 #include "DevVGA-SVGA-internal.h"
 
-#ifdef DUMP_BITMAPS
-# include <iprt/formats/bmp.h>
-# include <stdio.h>
-#endif
+#include <iprt/formats/bmp.h>
+#include <stdio.h>
 
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)
 # define SVGA_CASE_ID2STR(idx) case idx: return #idx
@@ -1404,7 +1402,6 @@ static void vmsvga3dCmdBindGBSurface(PVGASTATECC pThisCC, SVGA3dCmdBindGBSurface
 }
 
 
-#ifdef DUMP_BITMAPS
 static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE const *pMap)
 {
     if (pMap->cbPixel != 4)
@@ -1464,7 +1461,6 @@ void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *ps
     Log(("WriteBmpFile %s %Rrc\n", pszFilename, rc)); RT_NOREF(rc);
     RTStrFree(pszFilename);
 }
-#endif /* DUMP_BITMAPS */
 
 
 static int vmsvgaR3TransferSurfaceLevel(PVGASTATECC pThisCC,

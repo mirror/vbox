@@ -61,9 +61,7 @@ typedef struct VMSVGA3D_MAPPED_SURFACE
 
 /* Write render targets to bitmaps. */
 //#define DUMP_BITMAPS
-#ifdef DUMP_BITMAPS
 void vmsvga3dMapWriteBmpFile(VMSVGA3D_MAPPED_SURFACE const *pMap, char const *pszPrefix);
-#endif
 
 /* DevVGA-SVGA.cpp: */
 void vmsvgaR33dSurfaceUpdateHeapBuffersOnFifoThread(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t sid);
