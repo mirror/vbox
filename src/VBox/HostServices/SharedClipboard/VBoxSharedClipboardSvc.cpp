@@ -1979,12 +1979,20 @@ static DECLCALLBACK(int) svcUnload(void *)
 
 static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvClient)
 {
-    RT_NOREF(u32ClientID);
-
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
+
+    /* In order to communicate with guest service, HGCM VRDP clipboard extension
+     * needs to know its connection client ID. Currently, in svcConnect() we always
+     * cache ID of the first ever connected client. When client disconnects,
+     * we need to forget its ID and let svcConnect() to pick up the next ID when a new
+     * connection will be requested by guest service (see #10115). */
+    if (g_ExtState.uClientID == u32ClientID)
+    {
+        g_ExtState.uClientID = 0;
+    }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     shClSvcClientTransfersReset(pClient);
