@@ -266,7 +266,19 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         AssertStmt(cbToPlayTotal, rc = VERR_INVALID_PARAMETER);
         uint32_t cbPlayedTotal  = 0;
 
+        /* We play a pre + post beacon before + after the actual test tone.
+         * Note that the beacon is *not* part of the written test object, so that we can detect differences between
+         * actual played back and serialized (written) data later. */
+        uint32_t const cbBeacon       = pTstEnv ? 1024 : 0; /* Only play a beacon if we're running in testing mode. */
+        uint32_t       cbBeaconToPlay = cbBeacon;
+        uint32_t       cbBeaconPlayed = 0;
+
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes total\n", cbToPlayTotal);
+        if (cbBeaconToPlay)
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing 2 x %RU32 bytes pre/post beacons\n", cbBeaconToPlay);
+            cbToPlayTotal += cbBeacon * 2 /* Pre + post beacon */;
+        }
 
         if (pTstEnv)
         {
@@ -312,8 +324,37 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Stream is writable with %RU32ms (%RU32 bytes)\n",
                                  PDMAudioPropsBytesToMilli(pMix->pProps, cbCanWrite), cbCanWrite);
 
-                uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbToPlayTotal - cbPlayedTotal, sizeof(abBuf)), cbCanWrite);
-                uint32_t       cbToPlay;
+                uint32_t cbToPlay;
+
+                /* Any beacon to play? */
+                if (   cbBeaconToPlay
+                    && cbBeaconPlayed < cbBeaconToPlay)
+                {
+                    /* Limit to exactly one beacon (pre or post). */
+                    cbToPlay = RT_MIN(sizeof(abBuf), RT_MIN(cbCanWrite, cbBeaconToPlay - cbBeaconPlayed));
+                    memset(abBuf, 0x42 /* Our actual beacon data, hopefully the answer to all ... */, cbToPlay);
+
+                    rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    cbBeaconPlayed += cbPlayed;
+                    cbPlayedTotal  += cbPlayed;
+                    continue;
+                }
+
+                /* Start playing the post beacon? */
+                if (cbPlayedTotal == cbToPlayTotal - cbBeaconToPlay)
+                {
+                    cbBeaconPlayed = 0;
+                    continue;
+                }
+
+                if (RT_FAILURE(rc))
+                    break;
+
+                uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbToPlayTotal - cbPlayedTotal - cbBeaconToPlay, sizeof(abBuf)),
+                                                     cbCanWrite);
                 rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbToPlay);
                 if (RT_SUCCESS(rc))
                 {
