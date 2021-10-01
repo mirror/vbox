@@ -499,13 +499,11 @@ Utf8Str GuestProcess::i_guestErrorToString(int rcGuest, const char *pcszWhat)
     AssertPtrReturn(pcszWhat, "");
 
     Utf8Str strErr;
-
-#define CASE_MSG(a_iRc, ...) \
-    case a_iRc: strErr = Utf8StrFmt( __VA_ARGS__); break;
-
-    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
     {
+#define CASE_MSG(a_iRc, ...) \
+        case a_iRc: strErr.printf(__VA_ARGS__); break;
+
         CASE_MSG(VERR_FILE_NOT_FOUND,                 tr("No such file or directory \"%s\" on guest"), pcszWhat); /* This is the most likely error. */
         CASE_MSG(VERR_PATH_NOT_FOUND,                 tr("No such file or directory \"%s\" on guest"), pcszWhat);
         CASE_MSG(VERR_INVALID_VM_HANDLE,              tr("VMM device is not available (is the VM running?)"));
@@ -518,15 +516,10 @@ Utf8Str GuestProcess::i_guestErrorToString(int rcGuest, const char *pcszWhat)
         CASE_MSG(VERR_GSTCTL_MAX_CID_OBJECTS_REACHED, tr("Maximum number of concurrent guest processes has been reached"));
         CASE_MSG(VERR_NOT_FOUND,                      tr("The guest execution service is not ready (yet)"));
         default:
-        {
-            char szDefine[80];
-            RTErrQueryDefine(rcGuest, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
-            strErr = Utf8StrFmt(tr("Error %s for guest process \"%s\" occurred\n"), szDefine, pcszWhat);
+            strErr.printf(tr("Error %Rrc for guest process \"%s\" occurred\n"), rcGuest, pcszWhat);
             break;
-        }
-    }
-
 #undef CASE_MSG
+    }
 
     return strErr;
 }
@@ -2610,7 +2603,7 @@ int GuestProcessTool::exitCodeToRc(const char *pszTool, int32_t iExitCode)
 }
 
 /* static */
-Utf8Str GuestProcessTool::guestErrorToString(const char *pszTool, const GuestErrorInfo& guestErrorInfo)
+Utf8Str GuestProcessTool::guestErrorToString(const char *pszTool, const GuestErrorInfo &guestErrorInfo)
 {
     Utf8Str strErr;
 
@@ -2618,55 +2611,54 @@ Utf8Str GuestProcessTool::guestErrorToString(const char *pszTool, const GuestErr
     switch (guestErrorInfo.getRc())
     {
         case VERR_ACCESS_DENIED:
-            strErr = Utf8StrFmt(tr("Access to \"%s\" denied"), guestErrorInfo.getWhat().c_str());
+            strErr.printf(tr("Access to \"%s\" denied"), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_FILE_NOT_FOUND: /* This is the most likely error. */
             RT_FALL_THROUGH();
         case VERR_PATH_NOT_FOUND:
-            strErr = Utf8StrFmt(tr("No such file or directory \"%s\""), guestErrorInfo.getWhat().c_str());
+            strErr.printf(tr("No such file or directory \"%s\""), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_INVALID_VM_HANDLE:
-            strErr = Utf8StrFmt(tr("VMM device is not available (is the VM running?)"));
+            strErr.printf(tr("VMM device is not available (is the VM running?)"));
             break;
 
         case VERR_HGCM_SERVICE_NOT_FOUND:
-            strErr = Utf8StrFmt(tr("The guest execution service is not available"));
+            strErr.printf(tr("The guest execution service is not available"));
             break;
 
         case VERR_BAD_EXE_FORMAT:
-            strErr = Utf8StrFmt(tr("The file \"%s\" is not an executable format"),
-                                guestErrorInfo.getWhat().c_str());
+            strErr.printf(tr("The file \"%s\" is not an executable format"), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_AUTHENTICATION_FAILURE:
-            strErr = Utf8StrFmt(tr("The user \"%s\" was not able to logon"), guestErrorInfo.getWhat().c_str());
+            strErr.printf(tr("The user \"%s\" was not able to logon"), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_INVALID_NAME:
-            strErr = Utf8StrFmt(tr("The file \"%s\" is an invalid name"), guestErrorInfo.getWhat().c_str());
+            strErr.printf(tr("The file \"%s\" is an invalid name"), guestErrorInfo.getWhat().c_str());
             break;
 
         case VERR_TIMEOUT:
-            strErr = Utf8StrFmt(tr("The guest did not respond within time"));
+            strErr.printf(tr("The guest did not respond within time"));
             break;
 
         case VERR_CANCELLED:
-            strErr = Utf8StrFmt(tr("The execution operation was canceled"));
+            strErr.printf(tr("The execution operation was canceled"));
             break;
 
         case VERR_GSTCTL_MAX_CID_OBJECTS_REACHED:
-            strErr = Utf8StrFmt(tr("Maximum number of concurrent guest processes has been reached"));
+            strErr.printf(tr("Maximum number of concurrent guest processes has been reached"));
             break;
 
         case VERR_NOT_FOUND:
-            strErr = Utf8StrFmt(tr("The guest execution service is not ready (yet)"));
+            strErr.printf(tr("The guest execution service is not ready (yet)"));
             break;
 
         default:
-            strErr = Utf8StrFmt(tr("Unhandled error %Rrc for \"%s\" occurred for tool \"%s\" on guest -- please file a bug report"),
-                                guestErrorInfo.getRc(), guestErrorInfo.getWhat().c_str(), pszTool);
+            strErr.printf(tr("Unhandled error %Rrc for \"%s\" occurred for tool \"%s\" on guest -- please file a bug report"),
+                          guestErrorInfo.getRc(), guestErrorInfo.getWhat().c_str(), pszTool);
             break;
     }
 

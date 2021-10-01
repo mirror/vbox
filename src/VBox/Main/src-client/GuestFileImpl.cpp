@@ -415,28 +415,20 @@ Utf8Str GuestFile::i_guestErrorToString(int rcGuest, const char *pcszWhat)
     AssertPtrReturn(pcszWhat, "");
 
     Utf8Str strErr;
-
-#define CASE_MSG(a_iRc, ...) \
-    case a_iRc: strErr = Utf8StrFmt(__VA_ARGS__); break;
-
-    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
     {
+#define CASE_MSG(a_iRc, ...) \
+        case a_iRc: strErr.printf(__VA_ARGS__); break;
         CASE_MSG(VERR_ACCESS_DENIED     , tr("Access to guest file \"%s\" denied"), pcszWhat);
         CASE_MSG(VERR_ALREADY_EXISTS    , tr("Guest file \"%s\" already exists"), pcszWhat);
         CASE_MSG(VERR_FILE_NOT_FOUND    , tr("Guest file \"%s\" not found"), pcszWhat);
         CASE_MSG(VERR_NET_HOST_NOT_FOUND, tr("Host name \"%s\", not found"), pcszWhat);
         CASE_MSG(VERR_SHARING_VIOLATION , tr("Sharing violation for guest file \"%s\""), pcszWhat);
         default:
-        {
-            char szDefine[80];
-            RTErrQueryDefine(rcGuest, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
-            strErr = Utf8StrFmt(tr("Error %s for guest file \"%s\" occurred\n"), szDefine, pcszWhat);
+            strErr.printf(tr("Error %Rrc for guest file \"%s\" occurred\n"), rcGuest, pcszWhat);
             break;
-        }
-    }
-
 #undef CASE_MSG
+    }
 
     return strErr;
 }

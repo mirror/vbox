@@ -82,7 +82,7 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
     {
         /* Start the directory process on the guest. */
         GuestProcessStartupInfo procInfo;
-        procInfo.mName      = Utf8StrFmt(tr("Opening directory \"%s\""), openInfo.mPath.c_str());
+        procInfo.mName.printf(tr("Opening directory \"%s\""), openInfo.mPath.c_str());
         procInfo.mTimeoutMS = 5 * 60 * 1000; /* 5 minutes timeout. */
         procInfo.mFlags     = ProcessCreateFlag_WaitForStdOut;
         procInfo.mExecutable= Utf8Str(VBOXSERVICE_TOOL_LS);
@@ -235,22 +235,15 @@ Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest, const char *pcszWhat)
     AssertPtrReturn(pcszWhat, "");
 
     Utf8Str strErr;
-
-#define CASE_MSG(a_iRc, ...) \
-    case a_iRc: strErr = Utf8StrFmt(__VA_ARGS__); break;
-
-    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
     {
+#define CASE_MSG(a_iRc, ...) \
+        case a_iRc: strErr.printf(__VA_ARGS__); break;
         CASE_MSG(VERR_CANT_CREATE  , tr("Access to guest directory \"%s\" is denied"), pcszWhat);
         CASE_MSG(VERR_DIR_NOT_EMPTY, tr("Guest directory \"%s\" is not empty"), pcszWhat);
         default:
-        {
-            char szDefine[80];
-            RTErrQueryDefine(rcGuest, szDefine, sizeof(szDefine), false /*fFailIfUnknown*/);
-            strErr = Utf8StrFmt(tr("Error %s for guest directory \"%s\" occurred\n"), szDefine, pcszWhat);
+            strErr.printf(tr("Error %Rrc for guest directory \"%s\" occurred\n"), rcGuest, pcszWhat);
             break;
-        }
     }
 
 #undef CASE_MSG
