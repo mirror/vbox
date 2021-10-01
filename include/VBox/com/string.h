@@ -1371,6 +1371,10 @@ protected:
  * @code
     Utf8StrFmt strName("program name = %s", argv[0]);
    @endcode
+ *
+ * @note    Do not use in assignments to Utf8Str variables.  Instead use
+ *          RTCString::printf directly on the variable!  This avoid an extra
+ *          temporary Utf8Str instance and assignment operation.
  */
 class Utf8StrFmt : public Utf8Str
 {
