@@ -450,7 +450,16 @@ HRESULT VRDEServer::getVRDEProperty(const com::Utf8Str &aKey, com::Utf8Str &aVal
     return S_OK;
 }
 
-#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+/*
+ * Work around clang being unhappy about PFNVRDESUPPORTEDPROPERTIES
+ * ("exception specifications are not allowed beyond a single level of
+ * indirection").  The original comment for 13.0 check said: "assuming
+ * this issue will be fixed eventually".  Well, 13.0 is now out, and
+ * it was not.
+ */
+#define CLANG_EXCEPTION_SPEC_HACK (RT_CLANG_PREREQ(11, 0) /* && !RT_CLANG_PREREQ(13, 0) */)
+
+#if CLANG_EXCEPTION_SPEC_HACK
 static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, void *ppfn)
 #else
 static int loadVRDELibrary(const char *pszLibraryName, RTLDRMOD *phmod, PFNVRDESUPPORTEDPROPERTIES *ppfn)
@@ -546,7 +555,7 @@ HRESULT VRDEServer::getVRDEProperties(std::vector<com::Utf8Str> &aProperties)
          */
         PFNVRDESUPPORTEDPROPERTIES pfn = NULL;
         RTLDRMOD hmod = NIL_RTLDRMOD;
-#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+#if CLANG_EXCEPTION_SPEC_HACK
         vrc = loadVRDELibrary(strVrdeLibrary.c_str(), &hmod, (void **)&pfn);
 #else
         vrc = loadVRDELibrary(strVrdeLibrary.c_str(), &hmod, &pfn);

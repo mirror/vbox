@@ -130,7 +130,17 @@ typedef DECLCALLBACKTYPE(int, FNVBOXHOSTWEBCAMLIST,(PFNVBOXHOSTWEBCAMADD pfnWebc
                                                     uint64_t *pu64WebcamAddResult));
 typedef FNVBOXHOSTWEBCAMLIST *PFNVBOXHOSTWEBCAMLIST;
 
-#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+
+/*
+ * Work around clang being unhappy about PFNVBOXHOSTWEBCAMLIST
+ * ("exception specifications are not allowed beyond a single level of
+ * indirection").  The original comment for 13.0 check said: "assuming
+ * this issue will be fixed eventually".  Well, 13.0 is now out, and
+ * it was not.
+ */
+#define CLANG_EXCEPTION_SPEC_HACK (RT_CLANG_PREREQ(11, 0) /* && !RT_CLANG_PREREQ(13, 0) */)
+
+#if CLANG_EXCEPTION_SPEC_HACK
 static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, void **ppfn)
 #else
 static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHOSTWEBCAMLIST *ppfn)
@@ -188,7 +198,7 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
     {
         PFNVBOXHOSTWEBCAMLIST pfn = NULL;
         RTLDRMOD hmod = NIL_RTLDRMOD;
-#if RT_CLANG_PREREQ(11, 0) && !RT_CLANG_PREREQ(13, 0) /*assuming this issue will be fixed eventually*/
+#if CLANG_EXCEPTION_SPEC_HACK
         int vrc = loadHostWebcamLibrary(strLibrary.c_str(), &hmod, (void **)&pfn);
 #else
         int vrc = loadHostWebcamLibrary(strLibrary.c_str(), &hmod, &pfn);
