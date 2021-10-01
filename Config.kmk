@@ -527,6 +527,10 @@ VBOX_WITH_VMSVGA = 1
 if1of ($(KBUILD_TARGET), darwin linux win)
  VBOX_WITH_VMSVGA3D = 1
 endif
+# Enable vmsvga (svga2) graphics device variant, 3D part, VGPU10 DX commands
+ifdef VBOX_WITH_VMSVGA3D
+ VBOX_WITH_VMSVGA3D_DX=1
+endif
 # Enable the generic 3D settings support if at least one 3D capable solution is enabled
 ifdef VBOX_WITH_VMSVGA3D
  VBOX_WITH_3D_ACCELERATION = 1
