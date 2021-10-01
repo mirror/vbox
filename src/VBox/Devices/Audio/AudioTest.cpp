@@ -2006,11 +2006,11 @@ static int audioTestObjGetTonePcmProps(PAUDIOTESTOBJINT pObj, PPDMAUDIOPCMPROPS 
 static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps, uint64_t cbSize,
                                      double dbNormalizePercent, RTFILE hFileDst, double *pdbRatio)
 {
-    int rc;
-
     if (   !pProps->fSigned
         ||  pProps->cbSampleX != 2) /* Fend-off non-supported stuff first. */
         return VERR_NOT_SUPPORTED;
+
+    int rc = VINF_SUCCESS; /* Shut up MSVC. */
 
     if (!cbSize)
     {
