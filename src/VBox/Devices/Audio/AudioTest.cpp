@@ -2081,7 +2081,7 @@ static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps,
             if ((-iMin) > iMax)
                 iMax = -iMin;
 
-            dbRatio = iMax == 0 ? 1 : ((double)INT16_MAX * dbNormalizePercent) / ((double)iMax * 100.0);
+            dbRatio = iMax == 0 ? 1.0 : ((double)INT16_MAX * dbNormalizePercent) / ((double)iMax * 100.0);
 
             while (cbToRead)
             {
@@ -2101,7 +2101,7 @@ static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps,
                     else if ((*pi16Src * dbRatio) < INT16_MIN)
                         *pi16Src = INT16_MIN;
                     else
-                        *pi16Src = *pi16Src * dbRatio;
+                        *pi16Src = (int16_t)(*pi16Src * dbRatio);
                     pi16Src++;
                 }
 
