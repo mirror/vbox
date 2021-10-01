@@ -1939,7 +1939,7 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
             {
                 GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Writing %RU32 bytes (flags %#x) to guest process failed: %s"),
-                                       cbData, aFlags, GuestBase::getErrorAsString(ge).c_str());
+                                  cbData, aFlags, GuestBase::getErrorAsString(ge).c_str());
                 break;
             }
             default:
