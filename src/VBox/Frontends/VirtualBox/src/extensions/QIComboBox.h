@@ -121,6 +121,7 @@ public:
     /** Marks the line edit of the combobox. Refer to QILineEdit::mark(..). */
     void mark(bool fError, const QString &strErrorMessage = QString());
 
+    /** Inserts separator at position with specified @a iIndex. */
     void insertSeparator(int iIndex);
 
 public slots:
