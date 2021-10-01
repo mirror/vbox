@@ -3318,34 +3318,41 @@ static int vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, .
         /*
          * Complain about it.
          */
+        const char * const pszStateCur = VMR3GetStateName(enmStateCur);
         if (cTransitions == 1)
         {
-            LogRel(("%s: %s -> %s failed, because the VM state is actually %s\n",
-                    pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
-            VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS,
-                       N_("%s failed because the VM state is %s instead of %s"),
-                       pszWho, VMR3GetStateName(enmStateCur), VMR3GetStateName(enmStateOld));
+            LogRel(("%s: %s -> %s failed, because the VM state is actually %s!\n",
+                    pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), pszStateCur));
+            VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS, N_("%s failed because the VM state is %s instead of %s"),
+                       pszWho, pszStateCur, VMR3GetStateName(enmStateOld));
             AssertMsgFailed(("%s: %s -> %s failed, because the VM state is actually %s\n",
-                             pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
+                             pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), pszStateCur));
         }
         else
         {
+            char   szTransitions[4096];
+            size_t cchTransitions = 0;
+            szTransitions[0] = '\0';
             va_end(va);
             va_start(va, cTransitions);
-            LogRel(("%s:\n", pszWho));
             for (unsigned i = 0; i < cTransitions; i++)
             {
                 enmStateNew = (VMSTATE)va_arg(va, /*VMSTATE*/int);
                 enmStateOld = (VMSTATE)va_arg(va, /*VMSTATE*/int);
-                LogRel(("%s%s -> %s",
-                        i ? ", " : " ", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)));
+                const char * const pszStateNew = VMR3GetStateName(enmStateNew);
+                const char * const pszStateOld = VMR3GetStateName(enmStateOld);
+                LogRel(("%s%s -> %s", i ? ", " : " ", pszStateOld, pszStateNew));
+                cchTransitions += RTStrPrintf(&szTransitions[cchTransitions], sizeof(szTransitions) - cchTransitions,
+                                              "%s%s -> %s", i ? ", " : " ", pszStateOld, pszStateNew);
             }
-            LogRel((" failed, because the VM state is actually %s\n", VMR3GetStateName(enmStateCur)));
+            Assert(cchTransitions < sizeof(szTransitions) - 64);
+
+            LogRel(("%s: %s failed, because the VM state is actually %s!\n", pszWho, szTransitions, pszStateCur));
             VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS,
-                       N_("%s failed because the current VM state, %s, was not found in the state transition table (old state %s)"),
-                       pszWho, VMR3GetStateName(enmStateCur), VMR3GetStateName(enmStateOld));
-            AssertMsgFailed(("%s - state=%s, see release log for full details. Check the cTransitions passed us.\n",
-                             pszWho, VMR3GetStateName(enmStateCur)));
+                       N_("%s failed because the current VM state, %s, was not found in the state transition table (%s)"),
+                       pszWho, pszStateCur, szTransitions);
+            AssertMsgFailed(("%s - state=%s, transitions: %s. Check the cTransitions passed us.\n",
+                             pszWho, pszStateCur, szTransitions));
         }
     }
 
