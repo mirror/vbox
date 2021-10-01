@@ -2003,7 +2003,7 @@ static int audioTestObjGetTonePcmProps(PAUDIOTESTOBJINT pObj, PPDMAUDIOPCMPROPS 
  *
  * @note    The source file handle must point at the beginning of the PCM audio data to normalize.
  */
-static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps, size_t cbSize,
+static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps, uint64_t cbSize,
                                      double dbNormalizePercent, RTFILE hFileDst, double *pdbRatio)
 {
     int rc;
@@ -2018,7 +2018,7 @@ static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps,
         AssertRCReturn(rc, rc);
     }
     else
-        AssertReturn(PDMAudioPropsIsSizeAligned(pProps, cbSize), VERR_INVALID_PARAMETER);
+        AssertReturn(PDMAudioPropsIsSizeAligned(pProps, (uint32_t)cbSize), VERR_INVALID_PARAMETER);
 
     uint64_t offStart = RTFileTell(hFileSrc);
     size_t   cbToRead = cbSize;
@@ -2038,7 +2038,7 @@ static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps,
             break;
         AssertRCBreak(rc);
 
-        AssertBreak(PDMAudioPropsIsSizeAligned(pProps, cbRead));
+        AssertBreak(PDMAudioPropsIsSizeAligned(pProps, (uint32_t)cbRead));
 
         switch (pProps->cbSampleX)
         {
@@ -2142,7 +2142,7 @@ static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps,
  * @note    The test set's file pointer must point to beginning of PCM data to normalize.
  */
 static int audioTestObjFileNormalizeEx(PAUDIOTESTVERIFYJOB pVerJob,
-                                       PAUDIOTESTOBJINT pObj, PPDMAUDIOPCMPROPS pProps, size_t cbSize, double dbNormalizePercent)
+                                       PAUDIOTESTOBJINT pObj, PPDMAUDIOPCMPROPS pProps, uint64_t cbSize, double dbNormalizePercent)
 {
     /* Store normalized file into a temporary file. */
     char szFileDst[RTPATH_MAX];
