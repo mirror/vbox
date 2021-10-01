@@ -76,8 +76,6 @@ public:
     PortData() : m_uValue(0) {}
     /** Constructs port data based on @a uValue. */
     PortData(ushort uValue) : m_uValue(uValue) {}
-    /** Constructs port data based on @a other port data value. */
-    PortData(const PortData &other) : m_uValue(other.value()) {}
 
     /** Returns whether this port data is equal to @a another. */
     bool operator==(const PortData &another) const { return m_uValue == another.m_uValue; }

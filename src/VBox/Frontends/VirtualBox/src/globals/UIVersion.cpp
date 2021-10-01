@@ -52,15 +52,6 @@ UIVersion::UIVersion(const QString &strFullVersionInfo)
         m_strPostfix = fullVersionInfo.at(1);
 }
 
-UIVersion &UIVersion::operator=(const UIVersion &another)
-{
-    m_x = another.x();
-    m_y = another.y();
-    m_z = another.z();
-    m_strPostfix = another.postfix();
-    return *this;
-}
-
 bool UIVersion::isValid() const
 {
     return    (m_x != -1)

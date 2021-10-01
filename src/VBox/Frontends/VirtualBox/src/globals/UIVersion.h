@@ -34,9 +34,6 @@ public:
     /** Constructs object based on parsed @a strFullVersionInfo. */
     UIVersion(const QString &strFullVersionInfo);
 
-    /** Assigns this object with value of @a another. */
-    UIVersion &operator=(const UIVersion &another);
-
     /** Returns whether this object is valid. */
     bool isValid() const;
 
