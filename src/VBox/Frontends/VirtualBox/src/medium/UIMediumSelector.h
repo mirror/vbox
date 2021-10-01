@@ -89,7 +89,7 @@ private slots:
     void sltHandleTreeExpandAllSignal();
     void sltHandleTreeCollapseAllSignal();
 
- private:
+private:
 
 
     /** @name Event-handling stuff.
@@ -152,7 +152,7 @@ private slots:
     QString               m_strMachineName;
     QString               m_strMachineGuestOSTypeId;
     QUuid                 m_uMachineID;
-    QUuid          m_uCurrentMediumId;
+    QUuid                 m_uCurrentMediumId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumSelector_h */
