@@ -115,8 +115,8 @@ protected:
     CCloudProfile                  m_comCloudProfile;
     /** Holds the Cloud Client object reference. */
     CCloudClient                   m_comCloudClient;
-    /** Holds the Appliance object reference. */
-    CAppliance                     m_comAppliance;
+    /** Holds the Cloud Appliance object reference. */
+    CAppliance                     m_comCloudAppliance;
     /** Holds the Virtual System Description Form object reference. */
     CVirtualSystemDescriptionForm  m_comVSDForm;
 

@@ -228,7 +228,7 @@ void UIWizardImportAppPage1::populateProfileInstances()
 void UIWizardImportAppPage1::populateFormProperties()
 {
     /* Clear appliance: */
-    m_comAppliance = CAppliance();
+    m_comCloudAppliance = CAppliance();
     /* Clear form properties: */
     m_comVSDForm = CVirtualSystemDescriptionForm();
 
@@ -248,13 +248,13 @@ void UIWizardImportAppPage1::populateFormProperties()
             }
 
             /* Remember appliance: */
-            m_comAppliance = comAppliance;
+            m_comCloudAppliance = comAppliance;
 
             /* Read cloud instance info: */
-            CProgress comReadProgress = m_comAppliance.Read(QString("OCI://%1/%2").arg(profileName(), machineId()));
-            if (!m_comAppliance.isOk())
+            CProgress comReadProgress = m_comCloudAppliance.Read(QString("OCI://%1/%2").arg(profileName(), machineId()));
+            if (!m_comCloudAppliance.isOk())
             {
-                msgCenter().cannotImportAppliance(m_comAppliance);
+                msgCenter().cannotImportAppliance(m_comCloudAppliance);
                 break;
             }
 
@@ -263,15 +263,15 @@ void UIWizardImportAppPage1::populateFormProperties()
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
             if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
             {
-                msgCenter().cannotImportAppliance(comReadProgress, m_comAppliance.GetPath());
+                msgCenter().cannotImportAppliance(comReadProgress, m_comCloudAppliance.GetPath());
                 break;
             }
 
             /* Acquire virtual system description: */
-            QVector<CVirtualSystemDescription> descriptions = m_comAppliance.GetVirtualSystemDescriptions();
-            if (!m_comAppliance.isOk())
+            QVector<CVirtualSystemDescription> descriptions = m_comCloudAppliance.GetVirtualSystemDescriptions();
+            if (!m_comCloudAppliance.isOk())
             {
-                msgCenter().cannotAcquireVirtualSystemDescription(m_comAppliance);
+                msgCenter().cannotAcquireVirtualSystemDescription(m_comCloudAppliance);
                 break;
             }
 
@@ -351,7 +351,7 @@ CCloudProfile UIWizardImportAppPage1::profile() const
 
 CAppliance UIWizardImportAppPage1::cloudAppliance() const
 {
-    return m_comAppliance;
+    return m_comCloudAppliance;
 }
 
 CVirtualSystemDescriptionForm UIWizardImportAppPage1::vsdForm() const
@@ -676,7 +676,7 @@ bool UIWizardImportAppPageBasic1::validatePage()
         /* Create appliance & populate form properties: */
         populateFormProperties();
         /* And make sure they are not null: */
-        return m_comAppliance.isNotNull() && m_comVSDForm.isNotNull();
+        return m_comCloudAppliance.isNotNull() && m_comVSDForm.isNotNull();
     }
     else
     {

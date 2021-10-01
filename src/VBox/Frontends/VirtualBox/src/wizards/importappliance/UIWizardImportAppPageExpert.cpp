@@ -327,7 +327,7 @@ bool UIWizardImportAppPageExpert::isComplete() const
                       && !m_comCloudProfile.isNull()
                       && !m_comCloudClient.isNull()
                       && !machineId().isNull()
-                      && !m_comAppliance.isNull()
+                      && !m_comCloudAppliance.isNull()
                       && !m_comVSDForm.isNull());
     }
 
