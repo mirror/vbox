@@ -252,6 +252,8 @@ typedef struct AUDIOTESTVERIFYOPTS
 {
     /** Flag indicating whether to keep going after an error has occurred. */
     bool                fKeepGoing;
+    /** Whether to perform audio normalization or not. */
+    bool                fNormalize;
     /** Threshold of file differences (number of chunks) at when we consider audio files
      *  as not matching. 0 means an exact match. */
     uint32_t            cMaxDiff;
@@ -261,6 +263,8 @@ typedef struct AUDIOTESTVERIFYOPTS
     /** Threshold of file size (+/-, in percent) at when we consider audio files
      *  as not matching. 0 means an exact match.*/
     uint8_t             uMaxSizePercent;
+    /** Search window (in ms) to use for treating / classifying audio data. */
+    uint32_t            msSearchWindow;
 } AUDIOTESTVERIFYOPTS;
 /** Pointer to audio test verification options. */
 typedef AUDIOTESTVERIFYOPTS *PAUDIOTESTVERIFYOPTS;

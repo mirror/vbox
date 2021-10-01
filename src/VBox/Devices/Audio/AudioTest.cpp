@@ -214,6 +214,7 @@ static const double s_aAudioTestToneFreqsHz[] =
 static int  audioTestObjClose(PAUDIOTESTOBJINT pObj);
 static void audioTestObjFinalize(PAUDIOTESTOBJINT pObj);
 static void audioTestObjInit(PAUDIOTESTOBJINT pObj);
+static bool audioTestObjIsOpen(PAUDIOTESTOBJINT pObj);
 
 
 /**
@@ -381,49 +382,52 @@ double AudioTestToneGetRandomFreq(void)
 /**
  * Finds the next audible *or* silent audio sample and returns its offset.
  *
- * @returns Offset (in bytes) of the next found sample.
+ * @returns Offset (in bytes) of the next found sample, or UINT64_MAX if not found / invalid parameters.
  * @param   hFile               File handle of file to search in.
  * @param   fFindSilence        Whether to search for a silent sample or not (i.e. audible).
  *                              What a silent sample is depends on \a pToneParms PCM parameters.
  * @param   uOff                Absolute offset (in bytes) to start searching from.
  * @param   pToneParms          Tone parameters to use.
+ * @param   cbWindow            Search window size (in bytes).
  */
-static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t uOff, PAUDIOTESTTONEPARMS pToneParms)
+static uint64_t audioTestToneFileFind(RTFILE hFile, bool fFindSilence, uint64_t uOff, PAUDIOTESTTONEPARMS pToneParms,
+                                      size_t cbWindow)
 {
     int rc = RTFileSeek(hFile, uOff, RTFILE_SEEK_BEGIN, NULL);
-    AssertRCReturn(rc, 0);
+    AssertRCReturn(rc, UINT64_MAX);
 
     uint64_t offFound = 0;
-    int64_t  abSample[_64K];
+    uint8_t  abBuf[_64K];
 
-    size_t   cbRead;
+    size_t const cbFrame  = PDMAudioPropsFrameSize(&pToneParms->Props);
+    AssertReturn(cbFrame, UINT64_MAX);
+
+    AssertReturn(PDMAudioPropsIsSizeAligned(&pToneParms->Props, (uint32_t)cbWindow), UINT64_MAX);
+
+    size_t cbRead;
     for (;;)
     {
-        rc = RTFileRead(hFile, &abSample, sizeof(abSample), &cbRead);
+        rc = RTFileRead(hFile, &abBuf, RT_MIN(cbWindow, sizeof(abBuf)), &cbRead);
         if (   RT_FAILURE(rc)
             || !cbRead)
             break;
 
-        AssertReturn(PDMAudioPropsIsSizeAligned(&pToneParms->Props, (uint32_t)cbRead), 0);
+        AssertReturn(PDMAudioPropsIsSizeAligned(&pToneParms->Props, (uint32_t)cbRead), UINT64_MAX);
+        AssertReturn(cbRead % cbFrame == 0, UINT64_MAX);
 
-        size_t const cbFrame = PDMAudioPropsFrameSize(&pToneParms->Props);
-        AssertReturn(cbFrame, 0);
-        AssertReturn(cbRead % cbFrame == 0, 0);
+        /** @todo Do we need to have a sliding window here? */
 
-        for (size_t i = 0; i < cbRead / cbFrame; i += cbFrame) /** @todo Slow as heck, but works for now. */
+        for (size_t i = 0; i < cbRead; i += cbWindow) /** @todo Slow as heck, but works for now. */
         {
-            bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pToneParms->Props, (const uint8_t *)abSample + i, cbFrame);
-            if (fIsSilence == fFindSilence)
-            {
-                offFound += cbFrame;
-            }
-            else
-                break;
+            bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pToneParms->Props, (const uint8_t *)abBuf + i, cbWindow);
+            if (fIsSilence != fFindSilence)
+                return offFound;
+            offFound += cbWindow;
         }
     }
 
     AssertReturn(PDMAudioPropsIsSizeAligned(&pToneParms->Props, offFound), 0);
-    return offFound;
+    return UINT64_MAX;
 }
 
 /**
@@ -1859,6 +1863,27 @@ static int audioTestVerifyValue(PAUDIOTESTVERIFYJOB pVerJob,
 }
 
 /**
+ * Opens a test object which is a regular file.
+ *
+ * @returns VBox status code.
+ * @param   pObj                Test object to open.
+ * @param   pszFile             Absolute file path of file to open.
+ */
+static int audioTestObjOpenFile(PAUDIOTESTOBJINT pObj, const char *pszFile)
+{
+    int rc = RTFileOpen(&pObj->File.hFile, pszFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = RTStrCopy(pObj->szName, sizeof(pObj->szName), pszFile);
+        AssertRC(rc2);
+
+        pObj->enmType = AUDIOTESTOBJTYPE_FILE;
+    }
+
+    return rc;
+}
+
+/**
  * Opens an existing audio test object.
  *
  * @returns VBox status code.
@@ -1877,15 +1902,7 @@ static int audioTestObjOpen(PAUDIOTESTOBJINT pObj)
         if (RT_SUCCESS(rc))
         {
             /** @todo Check "obj_type". */
-
-            rc = RTFileOpen(&pObj->File.hFile, szFilePath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-            if (RT_SUCCESS(rc))
-            {
-                int rc2 = RTStrCopy(pObj->szName, sizeof(pObj->szName), szFileName);
-                AssertRC(rc2);
-
-                pObj->enmType = AUDIOTESTOBJTYPE_FILE;
-            }
+            rc = audioTestObjOpenFile(pObj, szFilePath);
         }
     }
     return rc;
@@ -1899,10 +1916,12 @@ static int audioTestObjOpen(PAUDIOTESTOBJINT pObj)
  */
 static int audioTestObjClose(PAUDIOTESTOBJINT pObj)
 {
+    if (!audioTestObjIsOpen(pObj))
+        return VINF_SUCCESS;
+
     int rc;
 
     /** @todo Generalize this function more once we have more object types. */
-    AssertReturn(pObj->enmType == AUDIOTESTOBJTYPE_FILE, VERR_INVALID_PARAMETER);
 
     if (RTFileIsValid(pObj->File.hFile))
     {
@@ -1914,6 +1933,17 @@ static int audioTestObjClose(PAUDIOTESTOBJINT pObj)
         rc = VINF_SUCCESS;
 
     return rc;
+}
+
+/**
+ * Returns whether a test set object is in opened state or not.
+ *
+ * @returns \c true if open, or \c false if not.
+ * @param   pObj                Object to return status for.
+ */
+static bool audioTestObjIsOpen(PAUDIOTESTOBJINT pObj)
+{
+    return pObj->enmType != AUDIOTESTOBJTYPE_UNKNOWN;
 }
 
 /**
@@ -1959,6 +1989,216 @@ static int audioTestObjGetTonePcmProps(PAUDIOTESTOBJINT pObj, PPDMAUDIOPCMPROPS 
 }
 
 /**
+ * Normalizes PCM audio data.
+ * Only supports 16 bit stereo PCM data for now.
+ *
+ * @returns VBox status code.
+ * @param   hFileSrc            Source file handle of audio data to normalize.
+ * @param   pProps              PCM properties to use for normalization.
+ * @param   cbSize              Size (in bytes) of audio data to normalize.
+ * @param   dbNormalizePercent  Normalization (percent) to achieve.
+ * @param   hFileDst            Destiation file handle (must be open) where to write the normalized audio data to.
+ * @param   pdbRatio            Where to store the normalization ratio used on success. Optional and can be NULL.
+ *                              A ration of exactly 1 means no normalization.
+ *
+ * @note    The source file handle must point at the beginning of the PCM audio data to normalize.
+ */
+static int audioTestFileNormalizePCM(RTFILE hFileSrc, PCPDMAUDIOPCMPROPS pProps, size_t cbSize,
+                                     double dbNormalizePercent, RTFILE hFileDst, double *pdbRatio)
+{
+    int rc;
+
+    if (   !pProps->fSigned
+        ||  pProps->cbSampleX != 2) /* Fend-off non-supported stuff first. */
+        return VERR_NOT_SUPPORTED;
+
+    if (!cbSize)
+    {
+        rc = RTFileQuerySize(hFileSrc, &cbSize);
+        AssertRCReturn(rc, rc);
+    }
+    else
+        AssertReturn(PDMAudioPropsIsSizeAligned(pProps, cbSize), VERR_INVALID_PARAMETER);
+
+    uint64_t offStart = RTFileTell(hFileSrc);
+    size_t   cbToRead = cbSize;
+
+    /* Find minimum and maximum peaks. */
+    int16_t iMin    = 0;
+    int16_t iMax    = 0;
+    double  dbRatio = 0.0;
+
+    uint8_t auBuf[_64K];
+    while (cbToRead)
+    {
+        size_t const cbChunk = RT_MIN(cbToRead, sizeof(auBuf));
+        size_t       cbRead  = 0;
+        rc = RTFileRead(hFileSrc, auBuf, cbChunk, &cbRead);
+        if (rc == VERR_EOF)
+            break;
+        AssertRCBreak(rc);
+
+        AssertBreak(PDMAudioPropsIsSizeAligned(pProps, cbRead));
+
+        switch (pProps->cbSampleX)
+        {
+            case 2: /* 16 bit signed */
+            {
+                int16_t *pi16Src = (int16_t *)auBuf;
+                for (size_t i = 0; i < cbRead / pProps->cbSampleX; i += pProps->cbSampleX)
+                {
+                    if (*pi16Src < iMin)
+                        iMin = *pi16Src;
+                    if (*pi16Src > iMax)
+                        iMax = *pi16Src;
+                    pi16Src++;
+                }
+                break;
+            }
+
+            default:
+                AssertMsgFailedBreakStmt(("Invalid bytes per sample: %RU8\n", pProps->cbSampleX), rc = VERR_NOT_SUPPORTED);
+        }
+
+        Assert(cbToRead >= cbRead);
+        cbToRead -= cbRead;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Now rewind and do the actual gain / attenuation. */
+    rc = RTFileSeek(hFileSrc, offStart, RTFILE_SEEK_BEGIN, NULL /* poffActual */);
+    AssertRCReturn(rc, rc);
+    cbToRead = cbSize;
+
+    switch (pProps->cbSampleX)
+    {
+        case 2: /* 16 bit signed */
+        {
+            if (iMin == INT16_MIN)
+                iMin = INT16_MIN + 1;
+            if ((-iMin) > iMax)
+                iMax = -iMin;
+
+            dbRatio = iMax == 0 ? 1 : ((double)INT16_MAX * dbNormalizePercent) / ((double)iMax * 100.0);
+
+            while (cbToRead)
+            {
+                size_t const cbChunk = RT_MIN(cbToRead, sizeof(auBuf));
+                size_t       cbRead;
+                rc = RTFileRead(hFileSrc, auBuf, cbChunk, &cbRead);
+                if (rc == VERR_EOF)
+                    break;
+                AssertRCBreak(rc);
+
+                int16_t *pi16Src = (int16_t *)auBuf;
+                for (size_t i = 0; i < cbRead / pProps->cbSampleX; i += pProps->cbSampleX)
+                {
+                    /** @todo Optimize this -- use a lookup table for sample indices? */
+                    if ((*pi16Src * dbRatio) > INT16_MAX)
+                        *pi16Src = INT16_MAX;
+                    else if ((*pi16Src * dbRatio) < INT16_MIN)
+                        *pi16Src = INT16_MIN;
+                    else
+                        *pi16Src = *pi16Src * dbRatio;
+                    pi16Src++;
+                }
+
+                size_t cbWritten;
+                rc = RTFileWrite(hFileDst, auBuf, cbChunk, &cbWritten);
+                AssertRCBreak(rc);
+                Assert(cbWritten == cbChunk);
+
+                Assert(cbToRead >= cbRead);
+                cbToRead -= cbRead;
+            }
+            break;
+        }
+
+        default:
+            AssertMsgFailedBreakStmt(("Invalid bytes per sample: %RU8\n", pProps->cbSampleX), rc = VERR_NOT_SUPPORTED);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pdbRatio)
+            *pdbRatio = dbRatio;
+    }
+
+    return rc;
+}
+
+/**
+ * Normalizes a test set audio object's audio data, extended version.
+ *
+ * @returns VBox status code. On success the test set object will point to the (temporary) normalized file data.
+ * @param   pVerJob             Verification job that contains \a pObj.
+ * @param   pObj                Test set object to normalize.
+ * @param   pProps              PCM properties to use for normalization.
+ * @param   cbSize              Size (in bytes) of audio data to normalize.
+ * @param   dbNormalizePercent  Normalization to achieve (in percent).
+ *
+ * @note    The test set's file pointer must point to beginning of PCM data to normalize.
+ */
+static int audioTestObjFileNormalizeEx(PAUDIOTESTVERIFYJOB pVerJob,
+                                       PAUDIOTESTOBJINT pObj, PPDMAUDIOPCMPROPS pProps, size_t cbSize, double dbNormalizePercent)
+{
+    /* Store normalized file into a temporary file. */
+    char szFileDst[RTPATH_MAX];
+    int rc = RTPathTemp(szFileDst, sizeof(szFileDst));
+    AssertRCReturn(rc, rc);
+
+    rc = RTPathAppend(szFileDst, sizeof(szFileDst), "VBoxAudioTest-normalized-XXXXX.pcm");
+    AssertRCReturn(rc, rc);
+
+    rc = RTFileCreateTemp(szFileDst, 0600);
+    AssertRCReturn(rc, rc);
+
+    RTFILE hFileDst;
+    rc = RTFileOpen(&hFileDst, szFileDst, RTFILE_O_OPEN | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+    AssertRCReturn(rc, rc);
+
+    double dbRatio;
+    rc = audioTestFileNormalizePCM(pObj->File.hFile, pProps, cbSize, dbNormalizePercent, hFileDst, &dbRatio);
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Normalized '%s' (ratio is ~%RU64%%)\n", pObj->szName, dbRatio);
+        AssertRC(rc2);
+    }
+
+    int rc2 = RTFileClose(hFileDst);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Close the original test set object and use the (temporary) normalized file instead now. */
+        rc = audioTestObjClose(pObj);
+        if (RT_SUCCESS(rc))
+            rc = audioTestObjOpenFile(pObj, szFileDst);
+    }
+
+    return rc;
+}
+
+/**
+ * Normalizes a test set audio object's audio data.
+ *
+ * @returns VBox status code.
+ * @param   pVerJob             Verification job that contains \a pObj.
+ * @param   pObj                Test set object to normalize.
+ * @param   pProps              PCM properties to use for normalization.
+ *
+ * @note    The test set's file pointer must point to beginning of PCM data to normalize.
+ */
+static int audioTestObjFileNormalize(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOBJINT pObj, PPDMAUDIOPCMPROPS pProps)
+{
+    return audioTestObjFileNormalizeEx(pVerJob,
+                                       pObj, pProps, 0 /* cbSize, 0 means all */, 100.0 /* dbNormalizePercent */);
+}
+
+/**
  * Structure for keeping file comparison parameters for one file.
  */
 typedef struct AUDIOTESTFILECMPPARMS
@@ -2001,9 +2241,10 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     uint32_t const cbChunkSize = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
 
     uint64_t offCur      = 0;
-    uint64_t offLastDiff = 0;
+    uint64_t offLastDiff = UINT64_MAX;
     uint32_t cDiffs      = 0;
     uint64_t cbToCompare = RT_MIN(pCmpA->cbSize, pCmpB->cbSize);
+
     while (cbToCompare)
     {
         size_t cbReadA;
@@ -2016,7 +2257,7 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
 
         if (memcmp(auBufA, auBufB, RT_MIN(cbReadA, cbReadB)) != 0)
         {
-            if (offLastDiff == 0) /* No consequitive different chunk? Count as new then. */
+            if (offLastDiff == UINT64_MAX) /* No consequitive different chunk? Count as new then. */
             {
                 cDiffs++;
                 offLastDiff = offCur;
@@ -2031,12 +2272,22 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
                                                                                      offCur - offLastDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, offCur - offLastDiff));
                 AssertRC(rc2);
             }
-            offLastDiff = 0;
+            offLastDiff = UINT64_MAX;
         }
 
         AssertBreakStmt(cbToCompare >= cbReadA, VERR_INTERNAL_ERROR);
         cbToCompare -= cbReadA;
         offCur      += cbReadA;
+    }
+
+    /* If we didn't mention the last diff yet, do so now. */
+    if (   offLastDiff != UINT64_MAX
+        && cDiffs)
+    {
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
+                                                                             pCmpA->offStart, pCmpB->offStart, offLastDiff, offCur,
+                                                                             offCur - offLastDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, offCur - offLastDiff));
+        AssertRC(rc2);
     }
 
     return cDiffs;
@@ -2142,17 +2393,29 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
         }
     }
 
+    /* Do normalization first if enabled. */
+    if (pVerJob->Opts.fNormalize)
+    {
+        rc = audioTestObjFileNormalize(pVerJob, &ObjA, &pVerJob->PCMProps);
+        if (RT_SUCCESS(rc))
+            rc = audioTestObjFileNormalize(pVerJob, &ObjB, &pVerJob->PCMProps);
+    }
+
     /** @todo For now we only support comparison of data which do have identical PCM properties! */
 
     AUDIOTESTTONEPARMS ToneParmsA;
     RT_ZERO(ToneParmsA);
     ToneParmsA.Props = pVerJob->PCMProps;
 
+    size_t cbSearchWindow = PDMAudioPropsMilliToBytes(&ToneParmsA.Props, pVerJob->Opts.msSearchWindow);
+
     AUDIOTESTFILECMPPARMS FileA;
     RT_ZERO(FileA);
     FileA.hFile     = ObjA.File.hFile;
-    FileA.offStart  = audioTestToneFileFind(ObjA.File.hFile, true /* fFindSilence */, 0 /* uOff */, &ToneParmsA);
-    FileA.cbSize    = RT_MIN(audioTestToneFileFind(ObjA.File.hFile, false /* fFindSilence */, FileA.offStart, &ToneParmsA),
+    FileA.offStart  =        audioTestToneFileFind(ObjA.File.hFile,
+                                                   true /* fFindSilence */, 0 /* uOff */, &ToneParmsA, cbSearchWindow);
+    FileA.cbSize    = RT_MIN(audioTestToneFileFind(ObjA.File.hFile,
+                                                   false /* fFindSilence */, FileA.offStart, &ToneParmsA, cbSearchWindow),
                              cbSizeA);
 
     AUDIOTESTTONEPARMS ToneParmsB;
@@ -2162,16 +2425,18 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     AUDIOTESTFILECMPPARMS FileB;
     RT_ZERO(FileB);
     FileB.hFile     = ObjB.File.hFile;
-    FileB.offStart  = audioTestToneFileFind(ObjB.File.hFile, true /* fFindSilence */, 0 /* uOff */, &ToneParmsB);
-    FileB.cbSize    = RT_MIN(audioTestToneFileFind(ObjB.File.hFile, false /* fFindSilence */, FileB.offStart, &ToneParmsB),
+    FileB.offStart  =        audioTestToneFileFind(ObjB.File.hFile,
+                                                   true /* fFindSilence */, 0 /* uOff */, &ToneParmsB, cbSearchWindow);
+    FileB.cbSize    = RT_MIN(audioTestToneFileFind(ObjB.File.hFile,
+                                                   false /* fFindSilence */, FileB.offStart, &ToneParmsB, cbSearchWindow),
                              cbSizeB);
 
-    int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File A ('%s'): uOff=%#x, cbSize=%RU64, cbFileSize=%RU64\n",
-                                        ObjA.szName, FileA.offStart, FileA.cbSize, cbSizeA);
+    int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File A ('%s'): uOff=%RU64 (%#x), cbSize=%RU64 (%#x), cbFileSize=%RU64\n",
+                                        ObjA.szName, FileA.offStart, FileA.offStart, FileA.cbSize, FileA.cbSize, cbSizeA);
     AssertRC(rc2);
 
-    rc = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File B ('%s'): uOff=%#x, cbSize=%RU64, cbFileSize=%RU64\n",
-                                   ObjB.szName, FileB.offStart, FileB.cbSize, cbSizeB);
+    rc = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File B ('%s'): uOff=%RU64 (%#x), cbSize=%RU64 (%#x), cbFileSize=%RU64\n",
+                                   ObjB.szName, FileB.offStart, FileB.offStart, FileB.cbSize, FileB.cbSize, cbSizeB);
     AssertRC(rc2);
 
     uint32_t const cDiffs = audioTestFilesFindDiffsBinary(pVerJob, &FileA, &FileB, &ToneParmsA);
@@ -2390,8 +2655,13 @@ void AudioTestSetVerifyOptsInitStrict(PAUDIOTESTVERIFYOPTS pOpts)
     RT_BZERO(pOpts, sizeof(AUDIOTESTVERIFYOPTS));
 
     pOpts->fKeepGoing      = true;
+    pOpts->fNormalize      = true;
     pOpts->cMaxDiff        = 0; /* By default we're very strict and consider any diff as being erroneous. */
-    pOpts->uMaxSizePercent = 0; /* Ditto for size difference. */
+    pOpts->uMaxSizePercent = 1; /* 1% is okay for us; might be due to any buffering / setup phase. */
+
+    /* We use a search window of 10ms by default for finding (non-)silent parts. */
+    pOpts->msSearchWindow  = 10;
+
 }
 
 /**
