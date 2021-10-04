@@ -609,13 +609,13 @@ int NvramStore::i_loadStore(const char *pszPath)
 /**
  * Saves the NVRAM store as a tar archive.
  */
-int NvramStore::i_saveStoreAsTar(void)
+int NvramStore::i_saveStoreAsTar(const char *pszPath)
 {
     uint32_t        offError = 0;
     RTERRINFOSTATIC ErrInfo;
     RTVFSIOSTREAM   hVfsIos;
 
-    int rc = RTVfsChainOpenIoStream(m->bd->strNvramPath.c_str(), RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+    int rc = RTVfsChainOpenIoStream(pszPath, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
                                     &hVfsIos, &offError, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
@@ -665,6 +665,9 @@ int NvramStore::i_saveStore(void)
      */
     int rc = VINF_SUCCESS;
 
+    Utf8Str strTmp;
+    NvramStore::getNonVolatileStorageFile(strTmp);
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (   m->bd->mapNvram.size() == 1
         && m->bd->mapNvram.find(Utf8Str("efi/nvram")) != m->bd->mapNvram.end())
@@ -673,9 +676,6 @@ int NvramStore::i_saveStore(void)
 
         rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
         AssertRC(rc); RT_NOREF(rc);
-
-        Utf8Str strTmp;
-        NvramStore::getNonVolatileStorageFile(strTmp);
 
         RTVFSIOSTREAM hVfsIosDst;
         rc = RTVfsIoStrmOpenNormal(strTmp.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
@@ -692,7 +692,7 @@ int NvramStore::i_saveStore(void)
         }
     }
     else if (m->bd->mapNvram.size())
-        rc = i_saveStoreAsTar();
+        rc = i_saveStoreAsTar(strTmp.c_str());
     /* else: No NVRAM content to store so we are done here. */
 
     return rc;

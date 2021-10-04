@@ -88,7 +88,7 @@ private:
     HRESULT initUefiVariableStore(ULONG aSize);
 
     int i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar);
-    int i_saveStoreAsTar(void);
+    int i_saveStoreAsTar(const char *pszPath);
 
 #ifdef VBOX_COM_INPROC
     static DECLCALLBACK(int)    i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,
