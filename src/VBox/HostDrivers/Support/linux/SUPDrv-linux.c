@@ -518,7 +518,7 @@ static int vboxdrvLinuxCreateCommon(struct inode *pInode, struct file *pFilp, bo
     if (   fUnrestricted
         && vboxdrvLinuxEuidInNs() != 0 /* root */ )
     {
-        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuid()));
+        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuidInNs()));
         return -EPERM;
     }
 #endif /* VBOX_WITH_HARDENING */
