@@ -126,6 +126,7 @@
         <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
         <file alias="os_win10_64.png">images/os_win10_64.png</file>
         <file alias="os_win10.png">images/os_win10.png</file>
+        <file alias="os_win11_64.png">images/os_win11_64.png</file>
         <file alias="os_win2k12_64.png">images/os_win2k12_64.png</file>
         <file alias="os_win2k16_64.png">images/os_win2k16_64.png</file>
         <file alias="os_win2k19_64.png">images/os_win2k19_64.png</file>

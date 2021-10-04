@@ -129,6 +129,7 @@
         <file alias="os_ubuntu_x4.png">images/x4/os_ubuntu_x4.png</file>
         <file alias="os_win10_64_x4.png">images/x4/os_win10_64_x4.png</file>
         <file alias="os_win10_x4.png">images/x4/os_win10_x4.png</file>
+        <file alias="os_win11_64_x4.png">images/x4/os_win11_64_x4.png</file>
         <file alias="os_win2k12_64_x4.png">images/x4/os_win2k12_64_x4.png</file>
         <file alias="os_win2k16_64_x4.png">images/x4/os_win2k16_64_x4.png</file>
         <file alias="os_win2k19_64_x4.png">images/x4/os_win2k19_64_x4.png</file>
