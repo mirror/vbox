@@ -96,6 +96,10 @@ namespace UIWizardExportAppPage2
     /** Refresh Include ISOs check-box access. */
     void refreshIncludeISOsCheckBoxAccess(QCheckBox *pCheckBox,
                                           bool fIsFormatCloudOne);
+    /** Refresh local stuff. */
+    void refreshLocalStuff(CAppliance &comLocalAppliance,
+                           const QList<QUuid> &machineIDs,
+                           const QString &strUri);
 
     /** Refresh profile combo. */
     void refreshProfileCombo(QIComboBox *pCombo,
@@ -188,6 +192,10 @@ private:
 
     /** Updates format. */
     void updateFormat();
+
+    /** Update local stuff. */
+    void updateLocalStuff();
+
     /** Updates profile. */
     void updateProfile();
     /** Updates cloud stuff. */

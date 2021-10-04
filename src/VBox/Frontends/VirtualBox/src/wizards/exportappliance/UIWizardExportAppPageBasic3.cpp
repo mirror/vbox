@@ -49,47 +49,18 @@ void UIWizardExportAppPage3::refreshStackedWidget(QStackedWidget *pStackedWidget
 }
 
 void UIWizardExportAppPage3::refreshApplianceSettingsWidget(UIApplianceExportEditorWidget *pApplianceWidget,
-                                                            const QList<QUuid> &machineIDs,
-                                                            const QString &strUri,
+                                                            const CAppliance &comAppliance,
                                                             bool fIsFormatCloudOne)
 {
     /* Nothing for cloud case? */
     if (fIsFormatCloudOne)
         return;
 
-    /* Acquire appliance: */
-    CAppliance *pAppliance = pApplianceWidget->init();
-    if (pAppliance->isOk())
-    {
-        /* Iterate over all the selected machine uuids: */
-        foreach (const QUuid &uMachineId, machineIDs)
-        {
-            /* Get the machine with the uMachineId: */
-            CVirtualBox comVBox = uiCommon().virtualBox();
-            CMachine comMachine = comVBox.FindMachine(uMachineId.toString());
-            if (comVBox.isOk() && comMachine.isNotNull())
-            {
-                /* Add the export description to our appliance object: */
-                CVirtualSystemDescription comVsd = comMachine.ExportTo(*pAppliance, strUri);
-                if (comMachine.isOk() && comVsd.isNotNull())
-                {
-                    /* Add some additional fields the user may change: */
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
-                    comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
-                }
-                else
-                    return msgCenter().cannotExportAppliance(comMachine, pAppliance->GetPath());
-            }
-            else
-                return msgCenter().cannotFindMachineById(comVBox, uMachineId);
-        }
-        /* Make sure the settings widget get the new descriptions: */
-        pApplianceWidget->populate();
-    }
+    /* Sanity check: */
+    AssertReturnVoid(comAppliance.isNotNull());
+
+    /* Make sure the settings widget get the new appliance: */
+    pApplianceWidget->setAppliance(comAppliance);
 }
 
 void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
@@ -100,9 +71,11 @@ void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFor
     if (!fIsFormatCloudOne)
         return;
 
+    /* Sanity check: */
+    AssertReturnVoid(comVsdForm.isNotNull());
+
     /* Make sure the properties table get the new description form: */
-    if (comVsdForm.isNotNull())
-        pFormEditor->setVirtualSystemDescriptionForm(comVsdForm);
+    pFormEditor->setVirtualSystemDescriptionForm(comVsdForm);
 }
 
 
@@ -207,7 +180,7 @@ void UIWizardExportAppPageBasic3::initializePage()
     /* Refresh settings widget state: */
     refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());
     /* Refresh corresponding widgets: */
-    refreshApplianceSettingsWidget(m_pApplianceWidget, wizard()->machineIDs(), wizard()->uri(), wizard()->isFormatCloudOne());
+    refreshApplianceSettingsWidget(m_pApplianceWidget, wizard()->localAppliance(), wizard()->isFormatCloudOne());
     refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdExportForm(), wizard()->isFormatCloudOne());
 
     /* Choose initially focused widget: */
@@ -294,7 +267,6 @@ bool UIWizardExportAppPageBasic3::validatePage()
     {
         /* Prepare export: */
         m_pApplianceWidget->prepareExport();
-        wizard()->setLocalAppliance(*m_pApplianceWidget->appliance());
 
         /* Try to export appliance: */
         if (fResult)

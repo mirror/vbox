@@ -47,8 +47,7 @@ namespace UIWizardExportAppPage3
 
     /** Refreshes appliance settings widget. */
     void refreshApplianceSettingsWidget(UIApplianceExportEditorWidget *pApplianceWidget,
-                                        const QList<QUuid> &machineIDs,
-                                        const QString &strUri,
+                                        const CAppliance &comAppliance,
                                         bool fIsFormatCloudOne);
     /** Refreshes form properties table. */
     void refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,

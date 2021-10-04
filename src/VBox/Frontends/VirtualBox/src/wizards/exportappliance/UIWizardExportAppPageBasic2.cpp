@@ -320,6 +320,47 @@ void UIWizardExportAppPage2::refreshIncludeISOsCheckBoxAccess(QCheckBox *pCheckB
     }
 }
 
+void UIWizardExportAppPage2::refreshLocalStuff(CAppliance &comLocalAppliance,
+                                               const QList<QUuid> &machineIDs,
+                                               const QString &strUri)
+{
+    /* Clear stuff: */
+    comLocalAppliance = CAppliance();
+
+    /* Create appliance: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CAppliance comAppliance = comVBox.CreateAppliance();
+    if (!comVBox.isOk())
+    {
+        msgCenter().cannotCreateAppliance(comVBox);
+        return;
+    }
+
+    /* Remember appliance: */
+    comLocalAppliance = comAppliance;
+
+    /* Iterate over all the selected machine uuids: */
+    foreach (const QUuid &uMachineId, machineIDs)
+    {
+        /* Get the machine with the uMachineId: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+        CMachine comMachine = comVBox.FindMachine(uMachineId.toString());
+        if (!comVBox.isOk())
+            return msgCenter().cannotFindMachineById(comVBox, uMachineId);
+        /* Add the export description to our appliance object: */
+        CVirtualSystemDescription comVsd = comMachine.ExportTo(comLocalAppliance, strUri);
+        if (!comMachine.isOk())
+            return msgCenter().cannotExportAppliance(comMachine, comLocalAppliance.GetPath());
+        /* Add some additional fields the user may change: */
+        comVsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
+        comVsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
+        comVsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
+        comVsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
+        comVsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
+        comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
+    }
+}
+
 void UIWizardExportAppPage2::refreshProfileCombo(QIComboBox *pCombo,
                                                  const QString &strFormat,
                                                  bool fIsFormatCloudOne)
@@ -1005,6 +1046,13 @@ bool UIWizardExportAppPageBasic2::validatePage()
                   && wizard()->vsd().isNotNull()
                   && wizard()->vsdExportForm().isNotNull();
     }
+    else
+    {
+        /* Update local stuff: */
+        updateLocalStuff();
+        /* Which is required to continue to the next page: */
+        fResult = wizard()->localAppliance().isNotNull();
+    }
 
     /* Return result: */
     return fResult;
@@ -1092,6 +1140,14 @@ void UIWizardExportAppPageBasic2::updateFormat()
 
     /* Update profile: */
     updateProfile();
+}
+
+void UIWizardExportAppPageBasic2::updateLocalStuff()
+{
+    /* Create appliance: */
+    CAppliance comAppliance;
+    refreshLocalStuff(comAppliance, wizard()->machineIDs(), wizard()->uri());
+    wizard()->setLocalAppliance(comAppliance);
 }
 
 void UIWizardExportAppPageBasic2::updateProfile()

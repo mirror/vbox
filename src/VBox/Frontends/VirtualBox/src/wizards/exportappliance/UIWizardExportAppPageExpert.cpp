@@ -84,7 +84,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     , m_pSettingsWidget2(0)
     , m_pApplianceWidget(0)
     , m_pFormEditor(0)
-    , m_fLaunching(0)
+    , m_fLaunching(false)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -659,10 +659,7 @@ bool UIWizardExportAppPageExpert::validatePage()
 
         /* Prepare export: */
         if (fResult)
-        {
             m_pApplianceWidget->prepareExport();
-            wizard()->setLocalAppliance(*m_pApplianceWidget->appliance());
-        }
 
         /* Try to export appliance: */
         if (fResult)
@@ -749,6 +746,8 @@ void UIWizardExportAppPageExpert::updateMachines()
     refreshFileSelectorName(m_strFileSelectorName, wizard()->machineNames(), m_strDefaultApplianceName, wizard()->isFormatCloudOne());
     refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
 
+    /* Update local stuff: */
+    updateLocalStuff();
     /* Update cloud stuff: */
     updateCloudStuff();
 }
@@ -774,8 +773,18 @@ void UIWizardExportAppPageExpert::updateFormat()
     refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
     refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
 
+    /* Update local stuff: */
+    updateLocalStuff();
     /* Update profile: */
     updateProfile();
+}
+
+void UIWizardExportAppPageExpert::updateLocalStuff()
+{
+    /* Create appliance: */
+    CAppliance comAppliance;
+    refreshLocalStuff(comAppliance, wizard()->machineIDs(), wizard()->uri());
+    wizard()->setLocalAppliance(comAppliance);
 }
 
 void UIWizardExportAppPageExpert::updateProfile()
@@ -814,6 +823,6 @@ void UIWizardExportAppPageExpert::updateCloudStuff()
     wizard()->setVsdExportForm(comForm);
 
     /* Refresh corresponding widgets: */
-    refreshApplianceSettingsWidget(m_pApplianceWidget, wizard()->machineIDs(), wizard()->uri(), wizard()->isFormatCloudOne());
+    refreshApplianceSettingsWidget(m_pApplianceWidget, wizard()->localAppliance(), wizard()->isFormatCloudOne());
     refreshFormPropertiesTable(m_pFormEditor, wizard()->vsdExportForm(), wizard()->isFormatCloudOne());
 }

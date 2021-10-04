@@ -24,8 +24,8 @@
 /* GUI includes: */
 #include "UIApplianceEditorWidget.h"
 
-/* Forward declarations: */
-class CAppliance;
+/* COM includes: */
+#include "CAppliance.h"
 
 /** UIApplianceEditorWidget subclass for Export Appliance wizard. */
 class UIApplianceExportEditorWidget: public UIApplianceEditorWidget
@@ -37,14 +37,16 @@ public:
     /** Constructs widget passing @a pParent to the base-class. */
     UIApplianceExportEditorWidget(QWidget *pParent = 0);
 
-    /** Inits the widget by creating appliance instance. */
-    CAppliance *init();
-
-    /** Populates widget contents. */
-    void populate();
+    /** Assigns @a comAppliance and populates widget contents. */
+    void setAppliance(const CAppliance &comAppliance);
 
     /** Prepares export by pushing edited data back to appliance. */
     void prepareExport();
+
+private:
+
+    /** Holds the appliance wrapper instance. */
+    CAppliance  m_comAppliance;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIApplianceExportEditorWidget_h */

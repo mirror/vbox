@@ -21,11 +21,7 @@
 /* GUI includes: */
 #include "QITreeView.h"
 #include "UIApplianceExportEditorWidget.h"
-#include "UICommon.h"
 #include "UIMessageCenter.h"
-
-/* COM includes: */
-#include "CAppliance.h"
 
 
 /*********************************************************************************************************************************
@@ -66,24 +62,17 @@ UIApplianceExportEditorWidget::UIApplianceExportEditorWidget(QWidget *pParent /*
 {
 }
 
-CAppliance *UIApplianceExportEditorWidget::init()
+void UIApplianceExportEditorWidget::setAppliance(const CAppliance &comAppliance)
 {
-    if (m_pAppliance)
-        delete m_pAppliance;
-    CVirtualBox comVBox = uiCommon().virtualBox();
-    /* Create a appliance object: */
-    m_pAppliance = new CAppliance(comVBox.CreateAppliance());
-    return m_pAppliance;
-}
+    /* Cache newly passed appliance: */
+    m_comAppliance = comAppliance;
 
-void UIApplianceExportEditorWidget::populate()
-{
     /* Cleanup previous stuff: */
     if (m_pModel)
         delete m_pModel;
 
     /* Prepare model: */
-    QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
+    QVector<CVirtualSystemDescription> vsds = m_comAppliance.GetVirtualSystemDescriptions();
     m_pModel = new UIApplianceModel(vsds, m_pTreeViewSettings);
     if (m_pModel)
     {
@@ -113,7 +102,7 @@ void UIApplianceExportEditorWidget::populate()
     }
 
     /* Check for warnings & if there are one display them: */
-    const QVector<QString> warnings = m_pAppliance->GetWarnings();
+    const QVector<QString> warnings = m_comAppliance.GetWarnings();
     const bool fWarningsEnabled = warnings.size() > 0;
     foreach (const QString &strText, warnings)
         m_pTextEditWarning->append("- " + strText);
@@ -122,6 +111,6 @@ void UIApplianceExportEditorWidget::populate()
 
 void UIApplianceExportEditorWidget::prepareExport()
 {
-    if (m_pAppliance)
+    if (m_comAppliance.isNotNull())
         m_pModel->putBack();
 }
