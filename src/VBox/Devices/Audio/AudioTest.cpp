@@ -2709,8 +2709,10 @@ bool AudioTestSetVerifyOptsAreEqual(PAUDIOTESTVERIFYOPTS pOptsA, PAUDIOTESTVERIF
 
     return (   pOptsA->cMaxDiff        == pOptsB->cMaxDiff
             && pOptsA->fKeepGoing      == pOptsB->fKeepGoing
+            && pOptsA->fNormalize      == pOptsB->fNormalize
             && pOptsA->uMaxDiffPercent == pOptsB->uMaxDiffPercent
-            && pOptsA->uMaxSizePercent == pOptsB->uMaxSizePercent);
+            && pOptsA->uMaxSizePercent == pOptsB->uMaxSizePercent
+            && pOptsA->msSearchWindow  == pOptsB->msSearchWindow);
 }
 
 /**
