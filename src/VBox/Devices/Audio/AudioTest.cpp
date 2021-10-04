@@ -2238,13 +2238,16 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     rc = RTFileSeek(pCmpB->hFile, pCmpB->offStart, RTFILE_SEEK_BEGIN, NULL);
     AssertRC(rc);
 
+    uint32_t cDiffs  = 0;
+    uint64_t cbDiffs = 0;
+
     RT_NOREF(pToneParms);
     uint32_t const cbChunkSize = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
 
     uint64_t offCur      = 0;
     uint64_t offLastDiff = UINT64_MAX;
-    uint32_t cDiffs      = 0;
-    uint64_t cbToCompare = RT_MIN(pCmpA->cbSize, pCmpB->cbSize);
+    uint64_t cbSize      = RT_MIN(pCmpA->cbSize, pCmpB->cbSize);
+    uint64_t cbToCompare = cbSize;
 
     while (cbToCompare)
     {
@@ -2268,10 +2271,13 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
         {
             if (cDiffs)
             {
+                uint32_t const cbDiff = offCur - offLastDiff;
                 int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
                                                                                      pCmpA->offStart, pCmpB->offStart, offLastDiff, offCur,
-                                                                                     offCur - offLastDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, offCur - offLastDiff));
+                                                                                     cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
                 AssertRC(rc2);
+
+                cbDiffs += cbDiff;
             }
             offLastDiff = UINT64_MAX;
         }
@@ -2285,10 +2291,24 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     if (   offLastDiff != UINT64_MAX
         && cDiffs)
     {
+        uint32_t const cbDiff = offCur - offLastDiff;
         int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
                                                                              pCmpA->offStart, pCmpB->offStart, offLastDiff, offCur,
-                                                                             offCur - offLastDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, offCur - offLastDiff));
+                                                                             cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
         AssertRC(rc2);
+
+        cbDiffs += cbDiff;
+    }
+
+    if (cbDiffs)
+    {
+        uint8_t const uDiffPercent = (cbSize * 100) / cbDiffs;
+        if (uDiffPercent > pVerJob->Opts.uMaxDiffPercent)
+        {
+            int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Files binary-differ too much (expected maximum %RU8%%, got %RU8%%)",
+                                                                                 pVerJob->Opts.uMaxDiffPercent, uDiffPercent);
+            AssertRC(rc2);
+        }
     }
 
     return cDiffs;
