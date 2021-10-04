@@ -223,6 +223,8 @@ private:
     void prepareWidgets();
     /** Prepares connections. */
     void prepareConnections();
+    /** Prepares advanced settings widgets. */
+    void prepareAdvancedSettingsWidgets(QGridLayout *pLayout);
 
     /* Helping stuff: */
     void populateComboboxes();
@@ -248,6 +250,10 @@ private:
         QCheckBox                 *m_pCheckBoxAdapter;
         /** Holds the adapter settings widget instance. */
         QWidget                   *m_pWidgetAdapterSettings;
+        /** Holds the adapter settings layout instance. */
+        QGridLayout               *m_pLayoutAdapterSettings;
+        /** Holds the advanced settings container widget instance. */
+        QWidget                   *m_pWidgetAdvancedSettings;
         /** Holds the attachment type label instance. */
         QLabel                    *m_pLabelAttachmentType;
         /** Holds the adapter name label instance. */
@@ -293,6 +299,8 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     , m_enmAdapterType(KNetworkAdapterType_Null)
     , m_pCheckBoxAdapter(0)
     , m_pWidgetAdapterSettings(0)
+    , m_pLayoutAdapterSettings(0)
+    , m_pWidgetAdvancedSettings(0)
     , m_pLabelAttachmentType(0)
     , m_pLabelAdapterName(0)
     , m_pEditorAttachmentType(0)
@@ -645,24 +653,30 @@ void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
 
 void UIMachineSettingsNetwork::retranslateUi()
 {
+    int iFirstColumnWidth = 0;
     m_pCheckBoxAdapter->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "When checked, plugs this virtual "
                                                                    "network adapter into the virtual machine."));
     m_pCheckBoxAdapter->setText(QApplication::translate("UIMachineSettingsNetwork", "&Enable Network Adapter"));
     m_pLabelAttachmentType->setText(QApplication::translate("UIMachineSettingsNetwork", "&Attached to:"));
+    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAttachmentType->minimumSizeHint().width());
     m_pEditorAttachmentType->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Selects how this virtual adapter "
                                                                   "is attached to the real network of the Host OS."));
     m_pLabelAdapterName->setText(QApplication::translate("UIMachineSettingsNetwork", "&Name:"));
+    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAdapterName->minimumSizeHint().width());
     m_pButtonAdvanced->setText(QApplication::translate("UIMachineSettingsNetwork", "A&dvanced"));
     m_pButtonAdvanced->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Shows additional network adapter options."));
     m_pLabelAdapterType->setText(QApplication::translate("UIMachineSettingsNetwork", "Adapter &Type:"));
+    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAdapterType->minimumSizeHint().width());
     m_pComboAdapterType->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Selects the type of the virtual network "
                                                               "adapter. Depending on this value, VirtualBox will provide different "
                                                               "network hardware to the virtual machine."));
     m_pLabelPromiscuousMode->setText(QApplication::translate("UIMachineSettingsNetwork", "&Promiscuous Mode:"));
+    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelPromiscuousMode->minimumSizeHint().width());
     m_pComboPromiscuousMode->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Selects the promiscuous mode policy "
                                                                   "of the network adapter when attached to an internal network, "
                                                                   "host only network or a bridge."));
     m_pLabelMAC->setText(QApplication::translate("UIMachineSettingsNetwork", "&MAC Address:"));
+    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelMAC->minimumSizeHint().width());
     m_pEditorMAC->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Holds the MAC address of this adapter. It contains "
                                                        "exactly 12 characters chosen from {0-9,A-F}. Note that the second character "
                                                        "must be an even digit."));
@@ -684,6 +698,8 @@ void UIMachineSettingsNetwork::retranslateUi()
 
     /* Translate attachment info: */
     sltHandleAttachmentTypeChange();
+    /* Set the minimum width of the 1st column to size longest label to align all labels: */
+    m_pLayoutAdapterSettings->setColumnMinimumWidth(0, iFirstColumnWidth);
 }
 
 void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()
@@ -804,25 +820,25 @@ void UIMachineSettingsNetwork::prepareWidgets()
         if (m_pWidgetAdapterSettings)
         {
             /* Prepare adapter settings widget layout: */
-            QGridLayout *pLayoutAdapterSettings = new QGridLayout(m_pWidgetAdapterSettings);
-            if (pLayoutAdapterSettings)
+            m_pLayoutAdapterSettings = new QGridLayout(m_pWidgetAdapterSettings);
+            if (m_pLayoutAdapterSettings)
             {
-                pLayoutAdapterSettings->setContentsMargins(0, 0, 0, 0);
-                pLayoutAdapterSettings->setColumnStretch(2, 1);
+                m_pLayoutAdapterSettings->setContentsMargins(0, 0, 0, 0);
+                m_pLayoutAdapterSettings->setColumnStretch(2, 1);
 
                 /* Prepare attachment type label: */
                 m_pLabelAttachmentType = new QLabel(m_pWidgetAdapterSettings);
                 if (m_pLabelAttachmentType)
                 {
                     m_pLabelAttachmentType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutAdapterSettings->addWidget(m_pLabelAttachmentType, 0, 0);
+                    m_pLayoutAdapterSettings->addWidget(m_pLabelAttachmentType, 0, 0);
                 }
                 /* Prepare adapter name label: */
                 m_pLabelAdapterName = new QLabel(m_pWidgetAdapterSettings);
                 if (m_pLabelAdapterName)
                 {
                     m_pLabelAdapterName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutAdapterSettings->addWidget(m_pLabelAdapterName, 1, 0);
+                    m_pLayoutAdapterSettings->addWidget(m_pLabelAdapterName, 1, 0);
                 }
                 /* Prepare attachment type editor: */
                 m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings);
@@ -833,7 +849,7 @@ void UIMachineSettingsNetwork::prepareWidgets()
                     if (m_pLabelAdapterName)
                         m_pLabelAdapterName->setBuddy(m_pEditorAttachmentType->focusProxy2());
 
-                    pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType, 0, 1, 2, 3);
+                    m_pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType, 0, 1, 2, 3);
                 }
 
                 /* Prepare advanced arrow button: */
@@ -846,90 +862,16 @@ void UIMachineSettingsNetwork::prepareWidgets()
                     m_pButtonAdvanced->setIcons(UIIconPool::iconSet(":/arrow_right_10px.png"),
                                                UIIconPool::iconSet(":/arrow_down_10px.png"));
 
-                    pLayoutAdapterSettings->addWidget(m_pButtonAdvanced, 2, 0);
+                    m_pLayoutAdapterSettings->addWidget(m_pButtonAdvanced, 2, 0);
                 }
 
-                /* Prepare adapter type label: */
-                m_pLabelAdapterType = new QLabel(m_pWidgetAdapterSettings);
-                if (m_pLabelAdapterType)
-                {
-                    m_pLabelAdapterType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutAdapterSettings->addWidget(m_pLabelAdapterType, 3, 0);
-                }
-                /* Prepare adapter type combo: */
-                m_pComboAdapterType = new QComboBox(m_pWidgetAdapterSettings);
-                if (m_pComboAdapterType)
-                {
-                    if (m_pLabelAdapterType)
-                        m_pLabelAdapterType->setBuddy(m_pComboAdapterType);
-                    pLayoutAdapterSettings->addWidget(m_pComboAdapterType, 3, 1, 1, 3);
-                }
-
-                /* Prepare promiscuous mode label: */
-                m_pLabelPromiscuousMode = new QLabel(m_pWidgetAdapterSettings);
-                if (m_pLabelPromiscuousMode)
-                {
-                    m_pLabelPromiscuousMode->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutAdapterSettings->addWidget(m_pLabelPromiscuousMode, 4, 0);
-                }
-                /* Prepare promiscuous mode combo: */
-                m_pComboPromiscuousMode = new QComboBox(m_pWidgetAdapterSettings);
-                if (m_pComboPromiscuousMode)
-                {
-                    if (m_pLabelPromiscuousMode)
-                        m_pLabelPromiscuousMode->setBuddy(m_pComboPromiscuousMode);
-                    pLayoutAdapterSettings->addWidget(m_pComboPromiscuousMode, 4, 1, 1, 3);
-                }
-
-                /* Prepare MAC label: */
-                m_pLabelMAC = new QLabel(m_pWidgetAdapterSettings);
-                if (m_pLabelMAC)
-                {
-                    m_pLabelMAC->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    pLayoutAdapterSettings->addWidget(m_pLabelMAC, 5, 0);
-                }
-                /* Prepare MAC editor: */
-                m_pEditorMAC = new QILineEdit(m_pWidgetAdapterSettings);
-                if (m_pEditorMAC)
-                {
-                    if (m_pLabelMAC)
-                        m_pLabelMAC->setBuddy(m_pEditorMAC);
-                    m_pEditorMAC->setAllowToCopyContentsWhenDisabled(true);
-                    m_pEditorMAC->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f]{12}"), this));
-                    m_pEditorMAC->setMinimumWidthByText(QString().fill('0', 12));
-
-                    pLayoutAdapterSettings->addWidget(m_pEditorMAC, 5, 1, 1, 2);
-                }
-                /* Prepare MAC button: */
-                m_pButtonMAC = new QIToolButton(m_pWidgetAdapterSettings);
-                if (m_pButtonMAC)
-                {
-                    m_pButtonMAC->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
-                    pLayoutAdapterSettings->addWidget(m_pButtonMAC, 5, 3);
-                }
-
-                /* Prepare MAC label: */
-                m_pLabelGenericProperties = new QLabel(m_pWidgetAdapterSettings);
-                if (m_pLabelGenericProperties)
-                {
-                    m_pLabelGenericProperties->setAlignment(Qt::AlignRight | Qt::AlignTop);
-                    pLayoutAdapterSettings->addWidget(m_pLabelGenericProperties, 6, 0);
-                }
-                /* Prepare MAC editor: */
-                m_pEditorGenericProperties = new QTextEdit(m_pWidgetAdapterSettings);
-                if (m_pEditorGenericProperties)
-                    pLayoutAdapterSettings->addWidget(m_pEditorGenericProperties, 6, 1, 1, 3);
-
-                /* Prepare cable connected check-box: */
-                m_pCheckBoxCableConnected = new QCheckBox(m_pWidgetAdapterSettings);
-                if (m_pCheckBoxCableConnected)
-                    pLayoutAdapterSettings->addWidget(m_pCheckBoxCableConnected, 7, 1, 1, 2);
-
-                /* Prepare port forwarding button: */
-                m_pButtonPortForwarding = new QPushButton(m_pWidgetAdapterSettings);
-                if (m_pButtonPortForwarding)
-                    pLayoutAdapterSettings->addWidget(m_pButtonPortForwarding, 8, 1);
-            }
+                /* Create the container widget for advanced settings related widgets: */
+                m_pWidgetAdvancedSettings = new QWidget;
+                m_pLayoutAdapterSettings->addWidget(m_pWidgetAdvancedSettings, 3, 0, 4, 3, Qt::AlignLeft);
+                QGridLayout *pLayoutAdvancedSettings = new QGridLayout(m_pWidgetAdvancedSettings);
+                pLayoutAdvancedSettings->setContentsMargins(0, 0, 0, 0);
+                prepareAdvancedSettingsWidgets(pLayoutAdvancedSettings);
+           }
 
             pLayoutMain->addWidget(m_pWidgetAdapterSettings, 1, 1);
         }
@@ -948,6 +890,92 @@ void UIMachineSettingsNetwork::prepareConnections()
     connect(m_pButtonMAC, &QIToolButton::clicked, this, &UIMachineSettingsNetwork::sltGenerateMac);
     connect(m_pButtonPortForwarding, &QPushButton::clicked, this, &UIMachineSettingsNetwork::sltOpenPortForwardingDlg);
     connect(this, &UIMachineSettingsNetwork::sigTabUpdated, m_pParent, &UIMachineSettingsNetworkPage::sltHandleTabUpdate);
+}
+
+void UIMachineSettingsNetwork::prepareAdvancedSettingsWidgets(QGridLayout *pLayout)
+{
+    AssertPtrReturnVoid(pLayout);
+
+    /* Prepare adapter type label: */
+    m_pLabelAdapterType = new QLabel(m_pWidgetAdapterSettings);
+    if (m_pLabelAdapterType)
+    {
+        m_pLabelAdapterType->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        pLayout->addWidget(m_pLabelAdapterType, 0, 0);
+    }
+    /* Prepare adapter type combo: */
+    m_pComboAdapterType = new QComboBox(m_pWidgetAdapterSettings);
+    if (m_pComboAdapterType)
+    {
+        if (m_pLabelAdapterType)
+            m_pLabelAdapterType->setBuddy(m_pComboAdapterType);
+        pLayout->addWidget(m_pComboAdapterType, 0, 1, 1, 3);
+    }
+
+    /* Prepare promiscuous mode label: */
+    m_pLabelPromiscuousMode = new QLabel(m_pWidgetAdapterSettings);
+    if (m_pLabelPromiscuousMode)
+    {
+        m_pLabelPromiscuousMode->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        pLayout->addWidget(m_pLabelPromiscuousMode, 1, 0);
+    }
+    /* Prepare promiscuous mode combo: */
+    m_pComboPromiscuousMode = new QComboBox(m_pWidgetAdapterSettings);
+    if (m_pComboPromiscuousMode)
+    {
+        if (m_pLabelPromiscuousMode)
+            m_pLabelPromiscuousMode->setBuddy(m_pComboPromiscuousMode);
+        pLayout->addWidget(m_pComboPromiscuousMode, 1, 1, 1, 3);
+    }
+
+    /* Prepare MAC label: */
+    m_pLabelMAC = new QLabel(m_pWidgetAdapterSettings);
+    if (m_pLabelMAC)
+    {
+        m_pLabelMAC->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        pLayout->addWidget(m_pLabelMAC, 2, 0);
+    }
+    /* Prepare MAC editor: */
+    m_pEditorMAC = new QILineEdit(m_pWidgetAdapterSettings);
+    if (m_pEditorMAC)
+    {
+        if (m_pLabelMAC)
+            m_pLabelMAC->setBuddy(m_pEditorMAC);
+        m_pEditorMAC->setAllowToCopyContentsWhenDisabled(true);
+        m_pEditorMAC->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f]{12}"), this));
+        m_pEditorMAC->setMinimumWidthByText(QString().fill('0', 12));
+
+        pLayout->addWidget(m_pEditorMAC, 2, 1, 1, 2);
+    }
+    /* Prepare MAC button: */
+    m_pButtonMAC = new QIToolButton(m_pWidgetAdapterSettings);
+    if (m_pButtonMAC)
+    {
+        m_pButtonMAC->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
+        pLayout->addWidget(m_pButtonMAC, 2, 3);
+    }
+
+    /* Prepare MAC label: */
+    m_pLabelGenericProperties = new QLabel(m_pWidgetAdapterSettings);
+    if (m_pLabelGenericProperties)
+    {
+        m_pLabelGenericProperties->setAlignment(Qt::AlignRight | Qt::AlignTop);
+        pLayout->addWidget(m_pLabelGenericProperties, 3, 0);
+    }
+    /* Prepare MAC editor: */
+    m_pEditorGenericProperties = new QTextEdit(m_pWidgetAdapterSettings);
+    if (m_pEditorGenericProperties)
+        pLayout->addWidget(m_pEditorGenericProperties, 3, 1, 1, 3);
+
+    /* Prepare cable connected check-box: */
+    m_pCheckBoxCableConnected = new QCheckBox(m_pWidgetAdapterSettings);
+    if (m_pCheckBoxCableConnected)
+        pLayout->addWidget(m_pCheckBoxCableConnected, 4, 1, 1, 2);
+
+    /* Prepare port forwarding button: */
+    m_pButtonPortForwarding = new QPushButton(m_pWidgetAdapterSettings);
+    if (m_pButtonPortForwarding)
+        pLayout->addWidget(m_pButtonPortForwarding, 5, 1);
 }
 
 void UIMachineSettingsNetwork::populateComboboxes()
@@ -1015,19 +1043,7 @@ void UIMachineSettingsNetwork::populateComboboxes()
 void UIMachineSettingsNetwork::handleAdvancedButtonStateChange()
 {
     /* Update visibility of advanced options: */
-    m_pLabelAdapterType->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pComboAdapterType->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pLabelPromiscuousMode->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pComboPromiscuousMode->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pLabelGenericProperties->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
-                                          m_pButtonAdvanced->isExpanded());
-    m_pEditorGenericProperties->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
-                                             m_pButtonAdvanced->isExpanded());
-    m_pLabelMAC->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pEditorMAC->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pButtonMAC->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pCheckBoxCableConnected->setVisible(m_pButtonAdvanced->isExpanded());
-    m_pButtonPortForwarding->setVisible(m_pButtonAdvanced->isExpanded());
+    m_pWidgetAdvancedSettings->setVisible(m_pButtonAdvanced->isExpanded());
 }
 
 /* static */
