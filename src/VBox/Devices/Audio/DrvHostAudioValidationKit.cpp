@@ -859,7 +859,10 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf);
 
-    LogRel2(("ValKit: Playing stream '%s' ...\n", pStream->pStream->Cfg.szName));
+    LogRel2(("ValKit: Playing stream '%s' (%RU32 bytes / %RU64ms -- %RU64 bytes / %RU64ms total so far) ...\n",
+             pStream->pStream->Cfg.szName,
+             cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf),
+             pThis->cbPlayedTotal, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedTotal)));
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -881,8 +884,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     if (pTst == NULL) /* Empty list? */
     {
-        LogRel2(("ValKit: Warning: Guest is playing back audio (%RU32 bytes, %RU64ms) when no playback test is active\n",
-                 cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf)));
+        LogRel2(("ValKit: Warning: Guest is playing back audio when no playback test is active\n"));
 
         pThis->cbPlayedNoTest += cbBuf;
 
@@ -1011,7 +1013,10 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
     PVALKITAUDIOSTREAM  pStrmValKit = (PVALKITAUDIOSTREAM)pStream;
     PVALKITTESTDATA     pTst        = NULL;
 
-    LogRel2(("ValKit: Capturing stream '%s' ...\n", pStream->pStream->Cfg.szName));
+    LogRel2(("ValKit: Capturing stream '%s' (%RU32 bytes / %RU64ms -- %RU64 bytes / %RU64ms total so far) ...\n",
+             pStream->pStream->Cfg.szName,
+             cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf),
+             pThis->cbRecordedTotal, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbRecordedTotal)));
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -1033,8 +1038,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 
     if (pTst == NULL) /* Empty list? */
     {
-        LogRel(("ValKit: Warning: Guest is trying to record %RU32 bytes (%RU32ms) of audio data when no recording test is active (%RU32 bytes available)\n",
-                cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf), pStrmValKit->cbAvail));
+        LogRel(("ValKit: Warning: Guest is trying to record audio data when no recording test is active (%RU32 bytes available)\n",
+                pStrmValKit->cbAvail));
 
         /** @todo Not sure yet why this happens after all data has been captured sometimes,
          *        but the guest side just will record silence and the audio test verification

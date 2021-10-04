@@ -273,10 +273,10 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         uint32_t       cbBeaconToPlay = cbBeacon;
         uint32_t       cbBeaconPlayed = 0;
 
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing %RU32 bytes total\n", cbToPlayTotal);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing %RU32 bytes total\n", cbToPlayTotal);
         if (cbBeaconToPlay)
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Playing 2 x %RU32 bytes pre/post beacons\n", cbBeaconToPlay);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing 2 x %RU32 bytes pre/post beacons\n", cbBeaconToPlay);
             cbToPlayTotal += cbBeacon * 2 /* Pre + post beacon */;
         }
 
