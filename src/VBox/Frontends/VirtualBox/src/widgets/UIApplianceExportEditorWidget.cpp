@@ -28,14 +28,16 @@
 #include "CAppliance.h"
 
 
-////////////////////////////////////////////////////////////////////////////////
-// ExportSortProxyModel
+/*********************************************************************************************************************************
+*   Class ExportSortProxyModel implementation.                                                                                   *
+*********************************************************************************************************************************/
 
 class ExportSortProxyModel: public UIApplianceSortProxyModel
 {
 public:
-    ExportSortProxyModel(QObject *pParent = NULL)
-      : UIApplianceSortProxyModel(pParent)
+
+    ExportSortProxyModel(QObject *pParent = 0)
+        : UIApplianceSortProxyModel(pParent)
     {
         m_aFilteredList
             << KVirtualSystemDescriptionType_OS
@@ -54,62 +56,67 @@ public:
     }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// UIApplianceExportEditorWidget
 
-UIApplianceExportEditorWidget::UIApplianceExportEditorWidget(QWidget *pParent /* = NULL */)
-  : UIApplianceEditorWidget(pParent)
+/*********************************************************************************************************************************
+*   Class UIApplianceExportEditorWidget implementation.                                                                          *
+*********************************************************************************************************************************/
+
+UIApplianceExportEditorWidget::UIApplianceExportEditorWidget(QWidget *pParent /* = 0 */)
+    : UIApplianceEditorWidget(pParent)
 {
 }
 
-CAppliance* UIApplianceExportEditorWidget::init()
+CAppliance *UIApplianceExportEditorWidget::init()
 {
     if (m_pAppliance)
         delete m_pAppliance;
-    CVirtualBox vbox = uiCommon().virtualBox();
-    /* Create a appliance object */
-    m_pAppliance = new CAppliance(vbox.CreateAppliance());
-//    bool fResult = m_pAppliance->isOk();
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    /* Create a appliance object: */
+    m_pAppliance = new CAppliance(comVBox.CreateAppliance());
     return m_pAppliance;
 }
 
 void UIApplianceExportEditorWidget::populate()
 {
+    /* Cleanup previous stuff: */
     if (m_pModel)
         delete m_pModel;
 
+    /* Prepare model: */
     QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
-
     m_pModel = new UIApplianceModel(vsds, m_pTreeViewSettings);
-    m_pModel->setVsdHints(m_listVsdHints);
-
-    ExportSortProxyModel *pProxy = new ExportSortProxyModel(this);
-    pProxy->setSourceModel(m_pModel);
-    pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
-
-    UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy);
-
-    /* Set our own model */
-    m_pTreeViewSettings->setModel(pProxy);
-    /* Set our own delegate */
-    m_pTreeViewSettings->setItemDelegate(pDelegate);
-    /* For now we hide the original column. This data is displayed as tooltip
-       also. */
-    m_pTreeViewSettings->setColumnHidden(ApplianceViewSection_OriginalValue, true);
-    m_pTreeViewSettings->expandAll();
-    /* Set model root index and make it current: */
-    m_pTreeViewSettings->setRootIndex(pProxy->mapFromSource(m_pModel->root()));
-    m_pTreeViewSettings->setCurrentIndex(pProxy->mapFromSource(m_pModel->root()));
-
-    /* Check for warnings & if there are one display them. */
-    bool fWarningsEnabled = false;
-    QVector<QString> warnings = m_pAppliance->GetWarnings();
-    if (warnings.size() > 0)
+    if (m_pModel)
     {
-        foreach (const QString& text, warnings)
-            m_pTextEditWarning->append("- " + text);
-        fWarningsEnabled = true;
+        m_pModel->setVsdHints(m_listVsdHints);
+
+        /* Create proxy model: */
+        ExportSortProxyModel *pProxy = new ExportSortProxyModel(m_pModel);
+        if (pProxy)
+        {
+            pProxy->setSourceModel(m_pModel);
+            pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
+
+            /* Set our own model: */
+            m_pTreeViewSettings->setModel(pProxy);
+            /* Set our own delegate: */
+            UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy);
+            if (pDelegate)
+                m_pTreeViewSettings->setItemDelegate(pDelegate);
+
+            /* For now we hide the original column. This data is displayed as tooltip also. */
+            m_pTreeViewSettings->setColumnHidden(ApplianceViewSection_OriginalValue, true);
+            m_pTreeViewSettings->expandAll();
+            /* Set model root index and make it current: */
+            m_pTreeViewSettings->setRootIndex(pProxy->mapFromSource(m_pModel->root()));
+            m_pTreeViewSettings->setCurrentIndex(pProxy->mapFromSource(m_pModel->root()));
+        }
     }
+
+    /* Check for warnings & if there are one display them: */
+    const QVector<QString> warnings = m_pAppliance->GetWarnings();
+    const bool fWarningsEnabled = warnings.size() > 0;
+    foreach (const QString &strText, warnings)
+        m_pTextEditWarning->append("- " + strText);
     m_pPaneWarning->setVisible(fWarningsEnabled);
 }
 
@@ -118,4 +125,3 @@ void UIApplianceExportEditorWidget::prepareExport()
     if (m_pAppliance)
         m_pModel->putBack();
 }
-

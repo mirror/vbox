@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,18 +24,27 @@
 /* GUI includes: */
 #include "UIApplianceEditorWidget.h"
 
+/* Forward declarations: */
+class CAppliance;
+
+/** UIApplianceEditorWidget subclass for Export Appliance wizard. */
 class UIApplianceExportEditorWidget: public UIApplianceEditorWidget
 {
     Q_OBJECT;
 
 public:
-    UIApplianceExportEditorWidget(QWidget *pParent = NULL);
 
+    /** Constructs widget passing @a pParent to the base-class. */
+    UIApplianceExportEditorWidget(QWidget *pParent = 0);
+
+    /** Inits the widget by creating appliance instance. */
     CAppliance *init();
 
+    /** Populates widget contents. */
     void populate();
+
+    /** Prepares export by pushing edited data back to appliance. */
     void prepareExport();
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIApplianceExportEditorWidget_h */
-
