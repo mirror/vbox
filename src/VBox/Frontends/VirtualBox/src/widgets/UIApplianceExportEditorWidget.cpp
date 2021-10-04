@@ -24,14 +24,12 @@
 #include "UIMessageCenter.h"
 
 
-/*********************************************************************************************************************************
-*   Class ExportSortProxyModel implementation.                                                                                   *
-*********************************************************************************************************************************/
-
-class ExportSortProxyModel: public UIApplianceSortProxyModel
+/** UIApplianceSortProxyModel subclass for Export Appliance wizard. */
+class ExportSortProxyModel : public UIApplianceSortProxyModel
 {
 public:
 
+    /** Constructs proxy model passing @a pParent to the base-class. */
     ExportSortProxyModel(QObject *pParent = 0)
         : UIApplianceSortProxyModel(pParent)
     {
