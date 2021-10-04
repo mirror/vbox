@@ -35,6 +35,7 @@
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QListWidget;
 class QTableWidget;

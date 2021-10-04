@@ -56,7 +56,6 @@ public:
 
 UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
     : UIApplianceEditorWidget(pParent)
-    , m_pLayoutOptions(0)
     , m_pLabelExportingFilePath(0)
     , m_pEditorExportingFilePath(0)
     , m_pLabelMACExportPolicy(0)
@@ -268,17 +267,6 @@ void UIApplianceImportEditorWidget::retranslateUi()
     }
 
     m_pLabelAdditionalOptions->setText(tr("Additional Options:"));
-
-#if 0 /* this may be needed if contents became dinamical to avoid label jumping */
-    QList<QWidget*> labels;
-    labels << m_pLabelMACExportPolicy;
-    labels << m_pLabelAdditionalOptions;
-
-    int iMaxWidth = 0;
-    foreach (QWidget *pLabel, labels)
-        iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
-    m_pLayoutOptions->setColumnMinimumWidth(0, iMaxWidth);
-#endif /* this may be needed if contents became dinamical to avoid label jumping */
 }
 
 void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &strNewPath)
@@ -297,18 +285,18 @@ void UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyChange()
 void UIApplianceImportEditorWidget::prepare()
 {
     /* Prepare options layout: */
-    m_pLayoutOptions = new QGridLayout;
-    if (m_pLayoutOptions)
+    QGridLayout *pLayoutOptions = new QGridLayout;
+    if (pLayoutOptions)
     {
-        m_pLayoutOptions->setColumnStretch(0, 0);
-        m_pLayoutOptions->setColumnStretch(1, 1);
+        pLayoutOptions->setColumnStretch(0, 0);
+        pLayoutOptions->setColumnStretch(1, 1);
 
         /* Prepare path selector label: */
         m_pLabelExportingFilePath = new QLabel(this);
         if (m_pLabelExportingFilePath)
         {
             m_pLabelExportingFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutOptions->addWidget(m_pLabelExportingFilePath, 0, 0);
+            pLayoutOptions->addWidget(m_pLabelExportingFilePath, 0, 0);
         }
         /* Prepare path selector editor: */
         m_pEditorExportingFilePath = new UIFilePathSelector(this);
@@ -318,7 +306,7 @@ void UIApplianceImportEditorWidget::prepare()
             m_pEditorExportingFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
             m_pEditorExportingFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
             m_pLabelExportingFilePath->setBuddy(m_pEditorExportingFilePath);
-            m_pLayoutOptions->addWidget(m_pEditorExportingFilePath, 0, 1, 1, 2);
+            pLayoutOptions->addWidget(m_pEditorExportingFilePath, 0, 1, 1, 2);
         }
 
         /* Prepare MAC address policy label: */
@@ -326,7 +314,7 @@ void UIApplianceImportEditorWidget::prepare()
         if (m_pLabelMACExportPolicy)
         {
             m_pLabelMACExportPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutOptions->addWidget(m_pLabelMACExportPolicy, 1, 0);
+            pLayoutOptions->addWidget(m_pLabelMACExportPolicy, 1, 0);
         }
         /* Prepare MAC address policy combo: */
         m_pComboMACExportPolicy = new QComboBox(this);
@@ -334,7 +322,7 @@ void UIApplianceImportEditorWidget::prepare()
         {
             m_pComboMACExportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
             m_pLabelMACExportPolicy->setBuddy(m_pComboMACExportPolicy);
-            m_pLayoutOptions->addWidget(m_pComboMACExportPolicy, 1, 1, 1, 2);
+            pLayoutOptions->addWidget(m_pComboMACExportPolicy, 1, 1, 1, 2);
         }
 
         /* Prepare additional options label: */
@@ -342,17 +330,17 @@ void UIApplianceImportEditorWidget::prepare()
         if (m_pLabelAdditionalOptions)
         {
             m_pLabelAdditionalOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayoutOptions->addWidget(m_pLabelAdditionalOptions, 2, 0);
+            pLayoutOptions->addWidget(m_pLabelAdditionalOptions, 2, 0);
         }
         /* Prepare import HDs as VDIs checkbox: */
         m_pCheckboxImportHDsAsVDI = new QCheckBox(this);
         {
             m_pCheckboxImportHDsAsVDI->setCheckState(Qt::Checked);
-            m_pLayoutOptions->addWidget(m_pCheckboxImportHDsAsVDI, 2, 1);
+            pLayoutOptions->addWidget(m_pCheckboxImportHDsAsVDI, 2, 1);
         }
 
         /* Add into layout: */
-        m_pLayout->addLayout(m_pLayoutOptions);
+        m_pLayout->addLayout(pLayoutOptions);
     }
 
     /* Populate MAC address import combo: */
