@@ -173,7 +173,8 @@ typedef enum VGDRVNTVER
     VGDRVNTVER_WIN7,
     VGDRVNTVER_WIN8,
     VGDRVNTVER_WIN81,
-    VGDRVNTVER_WIN10
+    VGDRVNTVER_WIN10,
+    VGDRVNTVER_WIN11
 } VGDRVNTVER;
 
 
@@ -339,6 +340,9 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     NTSTATUS rcNt = STATUS_SUCCESS;
     switch (ulMajorVer)
     {
+        case 11: /* Windows 11 Preview builds starting with 22000. */
+            g_enmVGDrvNtVer = VGDRVNTVER_WIN11;
+            break;
         case 10: /* Windows 10 Preview builds starting with 9926. */
             g_enmVGDrvNtVer = VGDRVNTVER_WIN10;
             break;
@@ -538,6 +542,7 @@ static VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer)
         case VGDRVNTVER_WIN8:       enmOsType = VBOXOSTYPE_Win8; break;
         case VGDRVNTVER_WIN81:      enmOsType = VBOXOSTYPE_Win81; break;
         case VGDRVNTVER_WIN10:      enmOsType = VBOXOSTYPE_Win10; break;
+        case VGDRVNTVER_WIN11:      enmOsType = VBOXOSTYPE_Win11; break;
 
         default:
             /* We don't know, therefore NT family. */
