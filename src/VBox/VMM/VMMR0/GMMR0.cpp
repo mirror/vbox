@@ -2661,14 +2661,18 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
     /*
      * Check allocation limits.
      */
-    if (RT_UNLIKELY(pGMM->cAllocatedPages + cPages > pGMM->cMaxPages))
+    if (RT_LIKELY(pGMM->cAllocatedPages + cPages <= pGMM->cMaxPages))
+    { /* likely */ }
+    else
         return VERR_GMM_HIT_GLOBAL_LIMIT;
 
     switch (enmAccount)
     {
         case GMMACCOUNT_BASE:
-            if (RT_UNLIKELY(  pGVM->gmm.s.Stats.Allocated.cBasePages + pGVM->gmm.s.Stats.cBalloonedPages + cPages
-                            > pGVM->gmm.s.Stats.Reserved.cBasePages))
+            if (RT_LIKELY(   pGVM->gmm.s.Stats.Allocated.cBasePages + pGVM->gmm.s.Stats.cBalloonedPages + cPages
+                          <= pGVM->gmm.s.Stats.Reserved.cBasePages))
+            { /* likely */ }
+            else
             {
                 Log(("gmmR0AllocatePages:Base: Reserved=%#llx Allocated+Ballooned+Requested=%#llx+%#llx+%#x!\n",
                      pGVM->gmm.s.Stats.Reserved.cBasePages, pGVM->gmm.s.Stats.Allocated.cBasePages,
@@ -2677,7 +2681,9 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             }
             break;
         case GMMACCOUNT_SHADOW:
-            if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cShadowPages + cPages > pGVM->gmm.s.Stats.Reserved.cShadowPages))
+            if (RT_LIKELY(pGVM->gmm.s.Stats.Allocated.cShadowPages + cPages <= pGVM->gmm.s.Stats.Reserved.cShadowPages))
+            { /* likely */ }
+            else
             {
                 Log(("gmmR0AllocatePages:Shadow: Reserved=%#x Allocated+Requested=%#x+%#x!\n",
                      pGVM->gmm.s.Stats.Reserved.cShadowPages, pGVM->gmm.s.Stats.Allocated.cShadowPages, cPages));
@@ -2685,7 +2691,9 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             }
             break;
         case GMMACCOUNT_FIXED:
-            if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cFixedPages + cPages > pGVM->gmm.s.Stats.Reserved.cFixedPages))
+            if (RT_LIKELY(pGVM->gmm.s.Stats.Allocated.cFixedPages + cPages <= pGVM->gmm.s.Stats.Reserved.cFixedPages))
+            { /* likely */ }
+            else
             {
                 Log(("gmmR0AllocatePages:Fixed: Reserved=%#x Allocated+Requested=%#x+%#x!\n",
                      pGVM->gmm.s.Stats.Reserved.cFixedPages, pGVM->gmm.s.Stats.Allocated.cFixedPages, cPages));
@@ -2814,7 +2822,9 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
      * Clean up on failure.  Since this is bound to be a low-memory condition
      * we will give back any empty chunks that might be hanging around.
      */
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
     {
         /* Update the statistics. */
         pGVM->gmm.s.Stats.cPrivatePages -= cPages;
@@ -2919,8 +2929,8 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
         AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
                         /*||  paPages[iPage].idPage == NIL_GMM_PAGEID*/,
                         ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
-        AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
-                        /*||  paPages[iPage].idSharedPage == NIL_GMM_PAGEID*/,
+        AssertMsgReturn(   paPages[iPage].idSharedPage == NIL_GMM_PAGEID
+                        || paPages[iPage].idSharedPage <= GMM_PAGEID_LAST,
                         ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage), VERR_INVALID_PARAMETER);
     }
 
@@ -2987,7 +2997,9 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
                     }
                 }
 
-                if (paPages[iPage].idSharedPage != NIL_GMM_PAGEID)
+                if (paPages[iPage].idSharedPage == NIL_GMM_PAGEID)
+                { /* likely */ }
+                else
                 {
                     PGMMPAGE pPage = gmmR0GetPage(pGMM, paPages[iPage].idSharedPage);
                     if (RT_LIKELY(pPage))
