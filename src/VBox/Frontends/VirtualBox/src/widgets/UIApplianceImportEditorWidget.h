@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,44 +39,66 @@ enum MACAddressImportPolicy
 };
 Q_DECLARE_METATYPE(MACAddressImportPolicy);
 
+/** UIApplianceEditorWidget subclass for Import Appliance wizard. */
 class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
 {
     Q_OBJECT;
 
 public:
+
+    /** Constructs widget passing @a pParent to the base-class. */
     UIApplianceImportEditorWidget(QWidget *pParent);
 
+    /** Defines @a strFaile name. */
     bool setFile(const QString &strFile);
+
+    /** Prepares import by pushing edited data back to appliance. */
     void prepareImport();
+
+    /** Performs import. */
     bool import();
 
+    /** Returns a list of license agreement pairs. */
     QList<QPair<QString, QString> > licenseAgreements() const;
 
 protected:
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
 private slots:
 
-    void    sltHandlePathChanged(const QString &newPath);
+    /** Handles file path being changed to @a strNewPath. */
+    void sltHandlePathChanged(const QString &strNewPath);
+
+    /** Handles MAC address import policy changes. */
+    void sltHandleMACAddressImportPolicyChange();
 
 private:
 
-    void    prepareWidgets();
-    /** Populates MAC address policies. */
-    void    populateMACAddressImportPolicies();
-    void    setMACAddressImportPolicy(MACAddressImportPolicy enmMACAddressImportPolicy);
-    void    sltHandleMACAddressImportPolicyComboChange();
-    void    updateMACAddressImportPolicyComboToolTip();
+    /** Prepares all. */
+    void prepare();
 
-    QLabel             *m_pPathSelectorLabel;
-    UIFilePathSelector *m_pPathSelector;
-    /** Holds the checkbox that controls 'import HDs as VDI' behaviour. */
-    QCheckBox          *m_pImportHDsAsVDI;
-    QLabel             *m_pMACComboBoxLabel;
-    QComboBox          *m_pMACComboBox;
-    QGridLayout        *m_pOptionsLayout;
-    QLabel             *m_pAdditionalOptionsLabel;
+    /** Populates MAC address import policies. */
+    void populateMACAddressImportPolicies();
+
+    /** Defines MAC address import @a enmPolicy. */
+    void setMACAddressImportPolicy(MACAddressImportPolicy enmPolicy);
+
+    /** Holds the options layout instance. */
+    QGridLayout        *m_pLayoutOptions;
+    /** Holds the exporting file-path label instance. */
+    QLabel             *m_pLabelExportingFilePath;
+    /** Holds the exporting file-path editor instance. */
+    UIFilePathSelector *m_pEditorExportingFilePath;
+    /** Holds the MAC address label instance. */
+    QLabel             *m_pLabelMACExportPolicy;
+    /** Holds the MAC address combo instance. */
+    QComboBox          *m_pComboMACExportPolicy;
+    /** Holds the additional options label instance. */
+    QLabel             *m_pLabelAdditionalOptions;
+    /** Holds the 'import HDs as VDI' checkbox instance. */
+    QCheckBox          *m_pCheckboxImportHDsAsVDI;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIApplianceImportEditorWidget_h */

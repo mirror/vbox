@@ -36,121 +36,35 @@
 #include "CSystemProperties.h"
 
 
-////////////////////////////////////////////////////////////////////////////////
-// ImportSortProxyModel
-
+/** UIApplianceSortProxyModel subclass for Export Appliance wizard. */
 class ImportSortProxyModel: public UIApplianceSortProxyModel
 {
 public:
-    ImportSortProxyModel(QObject *pParent = NULL)
-      : UIApplianceSortProxyModel(pParent)
+
+    /** Constructs proxy model passing @a pParent to the base-class. */
+    ImportSortProxyModel(QObject *pParent = 0)
+        : UIApplianceSortProxyModel(pParent)
     {
         m_aFilteredList << KVirtualSystemDescriptionType_License;
     }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// UIApplianceImportEditorWidget
+
+/*********************************************************************************************************************************
+*   Class UIApplianceImportEditorWidget implementation.                                                                          *
+*********************************************************************************************************************************/
 
 UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
     : UIApplianceEditorWidget(pParent)
-    , m_pPathSelectorLabel(0)
-    , m_pPathSelector(0)
-    , m_pImportHDsAsVDI(0)
-    , m_pMACComboBoxLabel(0)
-    , m_pMACComboBox(0)
-    , m_pOptionsLayout(0)
-    , m_pAdditionalOptionsLabel(0)
+    , m_pLayoutOptions(0)
+    , m_pLabelExportingFilePath(0)
+    , m_pEditorExportingFilePath(0)
+    , m_pLabelMACExportPolicy(0)
+    , m_pComboMACExportPolicy(0)
+    , m_pLabelAdditionalOptions(0)
+    , m_pCheckboxImportHDsAsVDI(0)
 {
-    prepareWidgets();
-}
-
-void UIApplianceImportEditorWidget::prepareWidgets()
-{
-    /* Create options layout: */
-    m_pOptionsLayout = new QGridLayout;
-    if (m_pOptionsLayout)
-    {
-        m_pOptionsLayout->setColumnStretch(0, 0);
-        m_pOptionsLayout->setColumnStretch(1, 1);
-
-        /* Create path selector label: */
-        m_pPathSelectorLabel = new QLabel;
-        if (m_pPathSelectorLabel)
-        {
-            m_pPathSelectorLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-
-            /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pPathSelectorLabel, 0, 0);
-        }
-
-        /* Create path selector editor: */
-        m_pPathSelector = new UIFilePathSelector;
-        if (m_pPathSelector)
-        {
-            m_pPathSelector->setResetEnabled(true);
-            m_pPathSelector->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-            m_pPathSelector->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-            m_pPathSelectorLabel->setBuddy(m_pPathSelector);
-
-            /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pPathSelector, 0, 1, 1, 2);
-        }
-
-        /* Create MAC address policy label: */
-        m_pMACComboBoxLabel = new QLabel;
-        if (m_pMACComboBoxLabel)
-        {
-            m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-
-            /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pMACComboBoxLabel, 1, 0);
-        }
-
-        /* Create MAC address policy combo: */
-        m_pMACComboBox = new QComboBox;
-        if (m_pMACComboBox)
-        {
-            m_pMACComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-            m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
-
-            /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pMACComboBox, 1, 1, 1, 2);
-        }
-
-        /* Create additional options label: */
-        m_pAdditionalOptionsLabel = new QLabel;
-        if (m_pAdditionalOptionsLabel)
-        {
-            m_pAdditionalOptionsLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-
-            /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pAdditionalOptionsLabel, 2, 0);
-        }
-
-        /* Create import HDs as VDIs checkbox: */
-        m_pImportHDsAsVDI = new QCheckBox;
-        {
-            m_pImportHDsAsVDI->setCheckState(Qt::Checked);
-
-            /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pImportHDsAsVDI, 2, 1);
-        }
-
-        /* Add into layout: */
-        m_pLayout->addLayout(m_pOptionsLayout);
-    }
-
-    /* Populate MAC address import combo: */
-    populateMACAddressImportPolicies();
-    /* And connect signals afterwards: */
-    connect(m_pPathSelector, &UIFilePathSelector::pathChanged,
-            this, &UIApplianceImportEditorWidget::sltHandlePathChanged);
-    connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyComboChange);
-
-    /* Apply language settings: */
-    retranslateUi();
+    prepare();
 }
 
 bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
@@ -158,82 +72,89 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
     bool fResult = false;
     if (!strFile.isEmpty())
     {
-        CProgress progress;
-        CVirtualBox vbox = uiCommon().virtualBox();
-        /* Create a appliance object */
-        m_pAppliance = new CAppliance(vbox.CreateAppliance());
+        CProgress comProgress;
+
+        /* Create a appliance object: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+        m_pAppliance = new CAppliance(comVBox.CreateAppliance());
         fResult = m_pAppliance->isOk();
         if (fResult)
         {
-            /* Read the appliance */
-            progress = m_pAppliance->Read(strFile);
+            /* Read the appliance: */
+            comProgress = m_pAppliance->Read(strFile);
             fResult = m_pAppliance->isOk();
             if (fResult)
             {
-                /* Show some progress, so the user know whats going on */
-                msgCenter().showModalProgressDialog(progress, tr("Reading Appliance ..."), ":/progress_reading_appliance_90px.png", this);
-                if (!progress.isOk() || progress.GetResultCode() != 0)
+                /* Show some progress, so the user know whats going on: */
+                msgCenter().showModalProgressDialog(comProgress, tr("Reading Appliance ..."),
+                                                    ":/progress_reading_appliance_90px.png", this);
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                     fResult = false;
                 else
                 {
-                    /* Now we have to interpret that stuff */
+                    /* Now we have to interpret that stuff: */
                     m_pAppliance->Interpret();
                     fResult = m_pAppliance->isOk();
                     if (fResult)
                     {
+                        /* Cleanup previous stuff: */
                         if (m_pModel)
                             delete m_pModel;
 
+                        /* Prepare model: */
                         QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
-
                         m_pModel = new UIApplianceModel(vsds, m_pTreeViewSettings);
-
-                        ImportSortProxyModel *pProxy = new ImportSortProxyModel(this);
-                        pProxy->setSourceModel(m_pModel);
-                        pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
-
-                        UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy);
-
-                        /* Set our own model */
-                        m_pTreeViewSettings->setModel(pProxy);
-                        /* Set our own delegate */
-                        m_pTreeViewSettings->setItemDelegate(pDelegate);
-                        /* For now we hide the original column. This data is displayed as tooltip
-                           also. */
-                        m_pTreeViewSettings->setColumnHidden(ApplianceViewSection_OriginalValue, true);
-                        m_pTreeViewSettings->expandAll();
-                        /* Set model root index and make it current: */
-                        m_pTreeViewSettings->setRootIndex(pProxy->mapFromSource(m_pModel->root()));
-                        m_pTreeViewSettings->setCurrentIndex(pProxy->mapFromSource(m_pModel->root()));
-
-                        /* Check for warnings & if there are one display them. */
-                        bool fWarningsEnabled = false;
-                        QVector<QString> warnings = m_pAppliance->GetWarnings();
-                        if (warnings.size() > 0)
+                        if (m_pModel)
                         {
-                            foreach (const QString& text, warnings)
-                                m_pTextEditWarning->append("- " + text);
-                            fWarningsEnabled = true;
+                            /* Create proxy model: */
+                            ImportSortProxyModel *pProxy = new ImportSortProxyModel(m_pModel);
+                            if (pProxy)
+                            {
+                                pProxy->setSourceModel(m_pModel);
+                                pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
+
+                                /* Set our own model */
+                                m_pTreeViewSettings->setModel(pProxy);
+                                /* Set our own delegate */
+                                UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy);
+                                if (pDelegate)
+                                    m_pTreeViewSettings->setItemDelegate(pDelegate);
+
+                                /* For now we hide the original column. This data is displayed as tooltip also. */
+                                m_pTreeViewSettings->setColumnHidden(ApplianceViewSection_OriginalValue, true);
+                                m_pTreeViewSettings->expandAll();
+                                /* Set model root index and make it current: */
+                                m_pTreeViewSettings->setRootIndex(pProxy->mapFromSource(m_pModel->root()));
+                                m_pTreeViewSettings->setCurrentIndex(pProxy->mapFromSource(m_pModel->root()));
+                            }
                         }
+
+                        /* Check for warnings & if there are one display them: */
+                        const QVector<QString> warnings = m_pAppliance->GetWarnings();
+                        bool fWarningsEnabled = warnings.size() > 0;
+                        foreach (const QString &strText, warnings)
+                            m_pTextEditWarning->append("- " + strText);
                         m_pPaneWarning->setVisible(fWarningsEnabled);
                     }
                 }
             }
         }
+
         if (!fResult)
         {
             if (!m_pAppliance->isOk())
                 msgCenter().cannotImportAppliance(*m_pAppliance, this);
-            else if (!progress.isNull() && (!progress.isOk() || progress.GetResultCode() != 0))
-                msgCenter().cannotImportAppliance(progress, m_pAppliance->GetPath(), this);
-            /* Delete the appliance in a case of an error */
+            else if (!comProgress.isNull() && (!comProgress.isOk() || comProgress.GetResultCode() != 0))
+                msgCenter().cannotImportAppliance(comProgress, m_pAppliance->GetPath(), this);
+            /* Delete the appliance in a case of an error: */
             delete m_pAppliance;
-            m_pAppliance = NULL;
+            m_pAppliance = 0;
         }
     }
+
     /* Make sure we initialize model items with correct base folder path: */
-    if (m_pPathSelector)
-        sltHandlePathChanged(m_pPathSelector->path());
+    if (m_pEditorExportingFilePath)
+        sltHandlePathChanged(m_pEditorExportingFilePath->path());
 
     return fResult;
 }
@@ -250,9 +171,9 @@ bool UIApplianceImportEditorWidget::import()
     {
         /* Configure appliance importing: */
         QVector<KImportOptions> options;
-        if (m_pMACComboBox)
+        if (m_pComboMACExportPolicy)
         {
-            const MACAddressImportPolicy enmPolicy = m_pMACComboBox->currentData().value<MACAddressImportPolicy>();
+            const MACAddressImportPolicy enmPolicy = m_pComboMACExportPolicy->currentData().value<MACAddressImportPolicy>();
             switch (enmPolicy)
             {
                 case MACAddressImportPolicy_KeepAllMACs:
@@ -265,7 +186,7 @@ bool UIApplianceImportEditorWidget::import()
                     break;
             }
         }
-        if (m_pImportHDsAsVDI->isChecked())
+        if (m_pCheckboxImportHDsAsVDI->isChecked())
             options.append(KImportOptions_ImportToVDI);
 
         /* Import appliance: */
@@ -283,17 +204,16 @@ QList<QPair<QString, QString> > UIApplianceImportEditorWidget::licenseAgreements
 {
     QList<QPair<QString, QString> > list;
 
-    CVirtualSystemDescriptionVector vsds = m_pAppliance->GetVirtualSystemDescriptions();
-    for (int i = 0; i < vsds.size(); ++i)
+    foreach (CVirtualSystemDescription comVsd, m_pAppliance->GetVirtualSystemDescriptions())
     {
         QVector<QString> strLicense;
-        strLicense = vsds[i].GetValuesByType(KVirtualSystemDescriptionType_License,
-                                             KVirtualSystemDescriptionValueType_Original);
+        strLicense = comVsd.GetValuesByType(KVirtualSystemDescriptionType_License,
+                                            KVirtualSystemDescriptionValueType_Original);
         if (!strLicense.isEmpty())
         {
             QVector<QString> strName;
-            strName = vsds[i].GetValuesByType(KVirtualSystemDescriptionType_Name,
-                                              KVirtualSystemDescriptionValueType_Auto);
+            strName = comVsd.GetValuesByType(KVirtualSystemDescriptionType_Name,
+                                             KVirtualSystemDescriptionValueType_Auto);
             list << QPair<QString, QString>(strName.first(), strLicense.first());
         }
     }
@@ -303,38 +223,43 @@ QList<QPair<QString, QString> > UIApplianceImportEditorWidget::licenseAgreements
 
 void UIApplianceImportEditorWidget::retranslateUi()
 {
+    /* Call to base-class: */
     UIApplianceEditorWidget::retranslateUi();
-    if (m_pPathSelectorLabel)
-        m_pPathSelectorLabel->setText(tr("&Machine Base Folder:"));
-    if (m_pImportHDsAsVDI)
+
+    /* Translate path selector label: */
+    if (m_pLabelExportingFilePath)
+        m_pLabelExportingFilePath->setText(tr("&Machine Base Folder:"));
+
+    /* Translate check-box: */
+    if (m_pCheckboxImportHDsAsVDI)
     {
-        m_pImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
-        m_pImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
+        m_pCheckboxImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
+        m_pCheckboxImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
     }
 
     /* Translate MAC address policy combo-box: */
-    m_pMACComboBoxLabel->setText(tr("MAC Address &Policy:"));
-    for (int i = 0; i < m_pMACComboBox->count(); ++i)
+    m_pLabelMACExportPolicy->setText(tr("MAC Address &Policy:"));
+    for (int i = 0; i < m_pComboMACExportPolicy->count(); ++i)
     {
-        const MACAddressImportPolicy enmPolicy = m_pMACComboBox->itemData(i).value<MACAddressImportPolicy>();
+        const MACAddressImportPolicy enmPolicy = m_pComboMACExportPolicy->itemData(i).value<MACAddressImportPolicy>();
         switch (enmPolicy)
         {
             case MACAddressImportPolicy_KeepAllMACs:
             {
-                m_pMACComboBox->setItemText(i, tr("Include all network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, tr("Include all network adapter MAC addresses during importing."), Qt::ToolTipRole);
+                m_pComboMACExportPolicy->setItemText(i, tr("Include all network adapter MAC addresses"));
+                m_pComboMACExportPolicy->setItemData(i, tr("Include all network adapter MAC addresses during importing."), Qt::ToolTipRole);
                 break;
             }
             case MACAddressImportPolicy_KeepNATMACs:
             {
-                m_pMACComboBox->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
-                m_pMACComboBox->setItemData(i, tr("Include only NAT network adapter MAC addresses during importing."), Qt::ToolTipRole);
+                m_pComboMACExportPolicy->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
+                m_pComboMACExportPolicy->setItemData(i, tr("Include only NAT network adapter MAC addresses during importing."), Qt::ToolTipRole);
                 break;
             }
             case MACAddressImportPolicy_StripAllMACs:
             {
-                m_pMACComboBox->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
-                m_pMACComboBox->setItemData(i, tr("Generate new MAC addresses for all network adapters during importing."), Qt::ToolTipRole);
+                m_pComboMACExportPolicy->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
+                m_pComboMACExportPolicy->setItemData(i, tr("Generate new MAC addresses for all network adapters during importing."), Qt::ToolTipRole);
                 break;
             }
             default:
@@ -342,28 +267,110 @@ void UIApplianceImportEditorWidget::retranslateUi()
         }
     }
 
-    m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
+    m_pLabelAdditionalOptions->setText(tr("Additional Options:"));
 
 #if 0 /* this may be needed if contents became dinamical to avoid label jumping */
     QList<QWidget*> labels;
-    labels << m_pMACComboBoxLabel;
-    labels << m_pAdditionalOptionsLabel;
+    labels << m_pLabelMACExportPolicy;
+    labels << m_pLabelAdditionalOptions;
 
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
-    m_pOptionsLayout->setColumnMinimumWidth(0, iMaxWidth);
+    m_pLayoutOptions->setColumnMinimumWidth(0, iMaxWidth);
 #endif /* this may be needed if contents became dinamical to avoid label jumping */
 }
 
-void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &newPath)
+void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &strNewPath)
 {
-    setVirtualSystemBaseFolder(newPath);
+    setVirtualSystemBaseFolder(strNewPath);
+}
+
+void UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyChange()
+{
+    /* Update tool-tip: */
+    const QString strCurrentToolTip = m_pComboMACExportPolicy->currentData(Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    m_pComboMACExportPolicy->setToolTip(strCurrentToolTip);
+}
+
+void UIApplianceImportEditorWidget::prepare()
+{
+    /* Prepare options layout: */
+    m_pLayoutOptions = new QGridLayout;
+    if (m_pLayoutOptions)
+    {
+        m_pLayoutOptions->setColumnStretch(0, 0);
+        m_pLayoutOptions->setColumnStretch(1, 1);
+
+        /* Prepare path selector label: */
+        m_pLabelExportingFilePath = new QLabel(this);
+        if (m_pLabelExportingFilePath)
+        {
+            m_pLabelExportingFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutOptions->addWidget(m_pLabelExportingFilePath, 0, 0);
+        }
+        /* Prepare path selector editor: */
+        m_pEditorExportingFilePath = new UIFilePathSelector(this);
+        if (m_pEditorExportingFilePath)
+        {
+            m_pEditorExportingFilePath->setResetEnabled(true);
+            m_pEditorExportingFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+            m_pEditorExportingFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+            m_pLabelExportingFilePath->setBuddy(m_pEditorExportingFilePath);
+            m_pLayoutOptions->addWidget(m_pEditorExportingFilePath, 0, 1, 1, 2);
+        }
+
+        /* Prepare MAC address policy label: */
+        m_pLabelMACExportPolicy = new QLabel(this);
+        if (m_pLabelMACExportPolicy)
+        {
+            m_pLabelMACExportPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutOptions->addWidget(m_pLabelMACExportPolicy, 1, 0);
+        }
+        /* Prepare MAC address policy combo: */
+        m_pComboMACExportPolicy = new QComboBox(this);
+        if (m_pComboMACExportPolicy)
+        {
+            m_pComboMACExportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+            m_pLabelMACExportPolicy->setBuddy(m_pComboMACExportPolicy);
+            m_pLayoutOptions->addWidget(m_pComboMACExportPolicy, 1, 1, 1, 2);
+        }
+
+        /* Prepare additional options label: */
+        m_pLabelAdditionalOptions = new QLabel(this);
+        if (m_pLabelAdditionalOptions)
+        {
+            m_pLabelAdditionalOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayoutOptions->addWidget(m_pLabelAdditionalOptions, 2, 0);
+        }
+        /* Prepare import HDs as VDIs checkbox: */
+        m_pCheckboxImportHDsAsVDI = new QCheckBox(this);
+        {
+            m_pCheckboxImportHDsAsVDI->setCheckState(Qt::Checked);
+            m_pLayoutOptions->addWidget(m_pCheckboxImportHDsAsVDI, 2, 1);
+        }
+
+        /* Add into layout: */
+        m_pLayout->addLayout(m_pLayoutOptions);
+    }
+
+    /* Populate MAC address import combo: */
+    populateMACAddressImportPolicies();
+
+    /* And connect signals afterwards: */
+    connect(m_pEditorExportingFilePath, &UIFilePathSelector::pathChanged,
+            this, &UIApplianceImportEditorWidget::sltHandlePathChanged);
+    connect(m_pComboMACExportPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyChange);
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UIApplianceImportEditorWidget::populateMACAddressImportPolicies()
 {
-    AssertReturnVoid(m_pMACComboBox->count() == 0);
+    AssertReturnVoid(m_pComboMACExportPolicy->count() == 0);
 
     /* Map known import options to known MAC address import policies: */
     QMap<KImportOptions, MACAddressImportPolicy> knownOptions;
@@ -382,10 +389,10 @@ void UIApplianceImportEditorWidget::populateMACAddressImportPolicies()
 
     /* Add supported policies first: */
     foreach (const MACAddressImportPolicy &enmPolicy, supportedPolicies)
-        m_pMACComboBox->addItem(QString(), QVariant::fromValue(enmPolicy));
+        m_pComboMACExportPolicy->addItem(QString(), QVariant::fromValue(enmPolicy));
 
     /* Add hardcoded policy finally: */
-    m_pMACComboBox->addItem(QString(), QVariant::fromValue(MACAddressImportPolicy_StripAllMACs));
+    m_pComboMACExportPolicy->addItem(QString(), QVariant::fromValue(MACAddressImportPolicy_StripAllMACs));
 
     /* Set default: */
     if (supportedPolicies.contains(MACAddressImportPolicy_KeepNATMACs))
@@ -396,20 +403,7 @@ void UIApplianceImportEditorWidget::populateMACAddressImportPolicies()
 
 void UIApplianceImportEditorWidget::setMACAddressImportPolicy(MACAddressImportPolicy enmMACAddressImportPolicy)
 {
-    const int iIndex = m_pMACComboBox->findData(enmMACAddressImportPolicy);
+    const int iIndex = m_pComboMACExportPolicy->findData(enmMACAddressImportPolicy);
     AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pMACComboBox->setCurrentIndex(iIndex);
-}
-
-void UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyComboChange()
-{
-    /* Update tool-tip: */
-    updateMACAddressImportPolicyComboToolTip();
-}
-
-void UIApplianceImportEditorWidget::updateMACAddressImportPolicyComboToolTip()
-{
-    const QString strCurrentToolTip = m_pMACComboBox->currentData(Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-    m_pMACComboBox->setToolTip(strCurrentToolTip);
+    m_pComboMACExportPolicy->setCurrentIndex(iIndex);
 }
