@@ -296,11 +296,12 @@ static RTLISTANCHOR             g_supdrvLinuxWrapperModuleList;
 #endif
 
 
-DECLINLINE(RTUID) vboxdrvLinuxUid(void)
+/** Get the kernel UID for the current process. */
+DECLINLINE(RTUID) vboxdrvLinuxKernUid(void)
 {
 #if RTLNX_VER_MIN(2,6,29)
 # if RTLNX_VER_MIN(3,5,0)
-    return from_kuid(current_user_ns(), current->cred->uid);
+    return __kuid_val(current->cred->uid);
 # else
     return current->cred->uid;
 # endif
@@ -309,11 +310,13 @@ DECLINLINE(RTUID) vboxdrvLinuxUid(void)
 #endif
 }
 
-DECLINLINE(RTGID) vboxdrvLinuxGid(void)
+
+/** Get the kernel GID for the current process. */
+DECLINLINE(RTGID) vboxdrvLinuxKernGid(void)
 {
 #if RTLNX_VER_MIN(2,6,29)
 # if RTLNX_VER_MIN(3,5,0)
-    return from_kgid(current_user_ns(), current->cred->gid);
+    return __kgid_val(current->cred->gid);
 # else
     return current->cred->gid;
 # endif
@@ -322,18 +325,23 @@ DECLINLINE(RTGID) vboxdrvLinuxGid(void)
 #endif
 }
 
-DECLINLINE(RTUID) vboxdrvLinuxEuid(void)
+
+#ifdef VBOX_WITH_HARDENING
+/** Get the effective UID within the current user namespace. */
+DECLINLINE(RTUID) vboxdrvLinuxEuidInNs(void)
 {
-#if RTLNX_VER_MIN(2,6,29)
-# if RTLNX_VER_MIN(3,5,0)
+# if RTLNX_VER_MIN(2,6,29)
+#  if RTLNX_VER_MIN(3,5,0)
     return from_kuid(current_user_ns(), current->cred->euid);
-# else
+#  else
     return current->cred->euid;
-# endif
-#else
+#  endif
+# else
     return current->euid;
-#endif
+# endif
 }
+#endif
+
 
 /**
  * Initialize module.
@@ -508,7 +516,7 @@ static int vboxdrvLinuxCreateCommon(struct inode *pInode, struct file *pFilp, bo
      * Only root is allowed to access the unrestricted device, enforce it!
      */
     if (   fUnrestricted
-        && vboxdrvLinuxEuid() != 0 /* root */ )
+        && vboxdrvLinuxEuidInNs() != 0 /* root */ )
     {
         Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", vboxdrvLinuxEuid()));
         return -EPERM;
@@ -521,8 +529,8 @@ static int vboxdrvLinuxCreateCommon(struct inode *pInode, struct file *pFilp, bo
     rc = supdrvCreateSession(&g_DevExt, true /* fUser */, fUnrestricted, &pSession);
     if (!rc)
     {
-        pSession->Uid = vboxdrvLinuxUid();
-        pSession->Gid = vboxdrvLinuxGid();
+        pSession->Uid = vboxdrvLinuxKernUid();
+        pSession->Gid = vboxdrvLinuxKernGid();
     }
 
     pFilp->private_data = pSession;

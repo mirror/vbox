@@ -728,9 +728,11 @@ typedef struct SUPDRVSESSION
     /** List of generic usage records. (protected by SUPDRVDEVEXT::SpinLock) */
     PSUPDRVUSAGE volatile           pUsage;
 
-    /** The user id of the session. (Set by the OS part.) */
+    /** The user id of the session - set by the OS part or NIL_RTUID.
+     * This should be unique accross namespace/zones/whatever. */
     RTUID                           Uid;
-    /** The group id of the session. (Set by the OS part.) */
+    /** The group id of the session - set by the OS part or NIL_RTGID.
+     * This should be unique accross namespace/zones/whatever.  */
     RTGID                           Gid;
     /** Per session tracer specfic data. */
     uintptr_t                       uTracerData;
