@@ -542,7 +542,7 @@ static VBOXOSTYPE vgdrvNtVersionToOSType(VGDRVNTVER enmNtVer)
         case VGDRVNTVER_WIN8:       enmOsType = VBOXOSTYPE_Win8; break;
         case VGDRVNTVER_WIN81:      enmOsType = VBOXOSTYPE_Win81; break;
         case VGDRVNTVER_WIN10:      enmOsType = VBOXOSTYPE_Win10; break;
-        case VGDRVNTVER_WIN11:      enmOsType = VBOXOSTYPE_Win11; break;
+        case VGDRVNTVER_WIN11:      enmOsType = VBOXOSTYPE_Win11_x64; break;
 
         default:
             /* We don't know, therefore NT family. */
