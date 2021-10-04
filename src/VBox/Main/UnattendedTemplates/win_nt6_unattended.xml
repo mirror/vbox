@@ -164,6 +164,41 @@
             versionScope="nonSxS">
             <ComputerName>@@VBOX_INSERT_HOSTNAME_WITHOUT_DOMAIN_MAX_15@@</ComputerName>
         </component>
+
+        <component name="Microsoft-Windows-Deployment"
+            processorArchitecture="@@VBOX_INSERT_OS_ARCH_ATTRIB_DQ@@"
+            publicKeyToken="31bf3856ad364e35" language="neutral"
+            versionScope="nonSxS">
+
+            <!-- Apply registry tweaks in the final Windows install, skipping the checks in the Windows 11 setup program. This means upgrades started in this install will work without compatibility complaints. -->
+            <RunAsynchronous>
+                <RunAsynchronousCommand>
+                    <Order>1</Order>
+                    <Path>reg.exe add HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1</Path>
+                    <Description>Windows 11 disable CPU check</Description>
+                </RunAsynchronousCommand>
+                <RunAsynchronousCommand>
+                    <Order>2</Order>
+                    <Path>reg.exe add HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1</Path>
+                    <Description>Windows 11 disable RAM check</Description>
+                </RunAsynchronousCommand>
+                <RunAsynchronousCommand>
+                    <Order>3</Order>
+                    <Path>reg.exe add HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1</Path>
+                    <Description>Windows 11 disable Secure Boot check</Description>
+                </RunAsynchronousCommand>
+                <RunAsynchronousCommand>
+                    <Order>4</Order>
+                    <Path>reg.exe add HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1</Path>
+                    <Description>Windows 11 disable Storage check</Description>
+                </RunAsynchronousCommand>
+                <RunAsynchronousCommand>
+                    <Order>5</Order>
+                    <Path>reg.exe add HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1</Path>
+                    <Description>Windows 11 disable TPM check</Description>
+                </RunAsynchronousCommand>
+            </RunAsynchronous>
+        </component>
     </settings>
 
     <settings pass="oobeSystem">
