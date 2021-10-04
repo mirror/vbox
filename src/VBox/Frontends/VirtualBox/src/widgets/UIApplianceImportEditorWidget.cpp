@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -192,7 +192,7 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
                         pProxy->setSourceModel(m_pModel);
                         pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
 
-                        UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy, this);
+                        UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy);
 
                         /* Set our own model */
                         m_pTreeViewSettings->setModel(pProxy);

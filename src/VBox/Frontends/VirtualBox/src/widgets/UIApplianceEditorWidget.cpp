@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1558,8 +1558,8 @@ QVariant UIApplianceModel::getHint(KVirtualSystemDescriptionType enmType) const
 *   Class UIApplianceDelegate implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIApplianceDelegate::UIApplianceDelegate(QAbstractProxyModel *pProxy, QObject *pParent /* = 0 */)
-    : QItemDelegate(pParent)
+UIApplianceDelegate::UIApplianceDelegate(QAbstractProxyModel *pProxy)
+    : QItemDelegate(pProxy)
     , m_pProxy(pProxy)
 {
 }
