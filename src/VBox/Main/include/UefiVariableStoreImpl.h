@@ -40,7 +40,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(NvramStore *aParent, Machine *pMachine, RTVFS hVfsUefiVarStore);
+    HRESULT init(NvramStore *aParent, Machine *pMachine);
     void uninit();
 
     // public methods for internal purposes only
@@ -72,6 +72,9 @@ private:
     int i_uefiVarStoreQueryVarOwnerUuid(const char *pszVar, PRTUUID pUuid);
     uint32_t i_uefiVarAttrToMask(const std::vector<UefiVariableAttributes_T> &aAttributes);
     void i_uefiAttrMaskToVec(uint32_t fAttr, std::vector<UefiVariableAttributes_T> &aAttributes);
+
+    HRESULT i_retainUefiVariableStore(bool fReadonly);
+    HRESULT i_releaseUefiVariableStore(void);
 
     HRESULT i_uefiVarStoreAddVar(PCEFI_GUID pGuid, const char *pszVar, uint32_t fAttr, PRTVFSFILE phVfsFile);
     HRESULT i_uefiVarStoreSetVar(PCEFI_GUID pGuid, const char *pszVar, uint32_t fAttr, const void *pvData, size_t cbData);

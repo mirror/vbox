@@ -71,9 +71,12 @@ public:
     void i_updateNonVolatileStorageFile(const com::Utf8Str &aNonVolatileStorageFile);
 
     int i_loadStore(const char *pszPath);
-    int i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar);
     int i_saveStore(void);
-    int i_saveStoreAsTar(void);
+
+#ifndef VBOX_COM_INPROC
+    HRESULT i_retainUefiVarStore(PRTVFS phVfs, bool fReadonly);
+    HRESULT i_releaseUefiVarStore(RTVFS hVfs);
+#endif
 
 private:
 
@@ -83,6 +86,9 @@ private:
 
     // Wrapped NVRAM store members
     HRESULT initUefiVariableStore(ULONG aSize);
+
+    int i_loadStoreFromTar(RTVFSFSSTREAM hVfsFssTar);
+    int i_saveStoreAsTar(void);
 
 #ifdef VBOX_COM_INPROC
     static DECLCALLBACK(int)    i_nvramStoreQuerySize(PPDMIVFSCONNECTOR pInterface, const char *pszNamespace, const char *pszPath,

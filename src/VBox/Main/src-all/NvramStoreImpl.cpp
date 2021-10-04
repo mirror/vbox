@@ -338,17 +338,8 @@ HRESULT NvramStore::getUefiVariableStore(ComPtr<IUefiVariableStore> &aUefiVarSto
             NvramStoreIter it = m->bd->mapNvram.find("efi/nvram");
             if (it != m->bd->mapNvram.end())
             {
-                RTVFSFILE hVfsFileNvram = it->second;
-                RTVFS hVfsEfiVarStore;
-                int vrc = RTEfiVarStoreOpenAsVfs(hVfsFileNvram, 0 /*fMntFlags*/, 0 /*fVarStoreFlags*/, &hVfsEfiVarStore,
-                                                 NULL /*pErrInfo*/);
-                if (RT_SUCCESS(vrc))
-                {
-                    unconst(m->pUefiVarStore).createObject();
-                    m->pUefiVarStore->init(this, m->pParent, hVfsEfiVarStore);
-                }
-                else
-                    hrc = setError(E_FAIL, tr("Opening the UEFI variable store failed (%Rrc)."), vrc);
+                unconst(m->pUefiVarStore).createObject();
+                m->pUefiVarStore->init(this, m->pParent);
             }
             else
                 hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The UEFI NVRAM file is not existing for this machine."));
@@ -709,6 +700,47 @@ int NvramStore::i_saveStore(void)
 
 
 #ifndef VBOX_COM_INPROC
+HRESULT NvramStore::i_retainUefiVarStore(PRTVFS phVfs, bool fReadonly)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = S_OK;
+    NvramStoreIter it = m->bd->mapNvram.find("efi/nvram");
+    if (it != m->bd->mapNvram.end())
+    {
+        RTVFSFILE hVfsFileNvram = it->second;
+        RTVFS hVfsEfiVarStore;
+        uint32_t fMntFlags = fReadonly ? RTVFSMNT_F_READ_ONLY : 0;
+
+        int vrc = RTEfiVarStoreOpenAsVfs(hVfsFileNvram, fMntFlags, 0 /*fVarStoreFlags*/, &hVfsEfiVarStore,
+                                         NULL /*pErrInfo*/);
+        if (RT_SUCCESS(vrc))
+        {
+            *phVfs = hVfsEfiVarStore;
+            if (!fReadonly)
+                m->pParent->i_setModified(Machine::IsModified_NvramStore);
+        }
+        else
+            hrc = setError(E_FAIL, tr("Opening the UEFI variable store failed (%Rrc)."), vrc);
+    }
+    else
+        hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The UEFI NVRAM file is not existing for this machine."));
+
+    return hrc;
+}
+
+
+HRESULT NvramStore::i_releaseUefiVarStore(RTVFS hVfs)
+{
+    RTVfsRelease(hVfs);
+    return S_OK;
+}
+
+
 /**
  *  Loads settings from the given machine node.
  *  May be called once right after this object creation.
@@ -752,8 +784,6 @@ HRESULT NvramStore::i_saveSettings(settings::NvramSettings &data)
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     data.strNvramPath = m->bd->strNvramPath;
-
-    unconst(m->pUefiVarStore) = NULL;
 
     int vrc = i_saveStore();
     if (RT_FAILURE(vrc))

@@ -88,9 +88,8 @@ void UefiVariableStore::FinalRelease()
  * @returns COM result indicator.
  * @param   aParent                     The NVRAM store owning the UEFI NVRAM content.
  * @param   pMachine
- * @param   hVfsUefiVarStore            The UEFI variable store VFS handle.
  */
-HRESULT UefiVariableStore::init(NvramStore *aParent, Machine *pMachine, RTVFS hVfsUefiVarStore)
+HRESULT UefiVariableStore::init(NvramStore *aParent, Machine *pMachine)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));
@@ -104,9 +103,9 @@ HRESULT UefiVariableStore::init(NvramStore *aParent, Machine *pMachine, RTVFS hV
     m = new Data();
 
     /* share the parent weakly */
-    unconst(m->pParent) = aParent;
+    unconst(m->pParent)  = aParent;
     unconst(m->pMachine) = pMachine;
-    m->hVfsUefiVarStore = hVfsUefiVarStore;
+    m->hVfsUefiVarStore  = NIL_RTVFS;
 
     autoInitSpan.setSucceeded();
 
@@ -128,7 +127,7 @@ void UefiVariableStore::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    RTVfsRelease(m->hVfsUefiVarStore);
+    Assert(m->hVfsUefiVarStore == NIL_RTVFS);
 
     unconst(m->pParent) = NULL;
     unconst(m->pMachine) = NULL;
@@ -146,9 +145,11 @@ HRESULT UefiVariableStore::getSecureBootEnabled(BOOL *pfEnabled)
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(true /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoReadLock rlock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT hrc = S_OK;
     uint64_t cbVar = 0;
     int vrc = i_uefiVarStoreQueryVarSz("PK", &cbVar);
     if (RT_SUCCESS(vrc))
@@ -177,6 +178,7 @@ HRESULT UefiVariableStore::getSecureBootEnabled(BOOL *pfEnabled)
     else
         hrc = setError(E_FAIL, tr("Failed to query the platform key variable size: %Rrc"), vrc);
 
+    i_releaseUefiVariableStore();
     return hrc;
 }
 
@@ -187,6 +189,9 @@ HRESULT UefiVariableStore::setSecureBootEnabled(BOOL fEnabled)
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     EFI_GUID GuidSecureBootEnable = EFI_SECURE_BOOT_ENABLE_DISABLE_GUID;
@@ -195,16 +200,19 @@ HRESULT UefiVariableStore::setSecureBootEnabled(BOOL fEnabled)
     if (RT_SUCCESS(vrc))
     {
         uint8_t bVar = fEnabled ? 0x1 : 0x0;
-        return i_uefiVarStoreSetVar(&GuidSecureBootEnable, "SecureBootEnable",
-                                      EFI_VAR_HEADER_ATTR_NON_VOLATILE
-                                    | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
-                                    | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS,
-                                    &bVar, sizeof(bVar));
+        hrc = i_uefiVarStoreSetVar(&GuidSecureBootEnable, "SecureBootEnable",
+                                     EFI_VAR_HEADER_ATTR_NON_VOLATILE
+                                   | EFI_VAR_HEADER_ATTR_BOOTSERVICE_ACCESS
+                                   | EFI_VAR_HEADER_ATTR_RUNTIME_ACCESS,
+                                   &bVar, sizeof(bVar));
     }
     else if (vrc == VERR_FILE_NOT_FOUND) /* No platform key means no secure boot support. */
-        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("Secure boot is not available because the platform key (PK) is not enrolled"));
+        hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("Secure boot is not available because the platform key (PK) is not enrolled"));
+    else
+        hrc = setError(E_FAIL, tr("Failed to query the platform key variable size: %Rrc"), vrc);
 
-    return setError(E_FAIL, tr("Failed to query the platform key variable size: %Rrc"), vrc);
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -216,12 +224,18 @@ HRESULT UefiVariableStore::addVariable(const com::Utf8Str &aName, const com::Gui
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     uint32_t fAttr = i_uefiVarAttrToMask(aAttributes);
     EFI_GUID OwnerGuid;
     RTEfiGuidFromUuid(&OwnerGuid, aOwnerUuid.raw());
-    return i_uefiVarStoreSetVar(&OwnerGuid, aName.c_str(), fAttr, &aData.front(), aData.size());
+    hrc = i_uefiVarStoreSetVar(&OwnerGuid, aName.c_str(), fAttr, &aData.front(), aData.size());
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -243,9 +257,15 @@ HRESULT UefiVariableStore::queryVariableByName(const com::Utf8Str &aName, com::G
                                                std::vector<UefiVariableAttributes_T> &aAttributes,
                                                std::vector<BYTE> &aData)
 {
-    RT_NOREF(aName, aOwnerUuid, aAttributes, aData);
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
 
-    HRESULT hrc = S_OK;
+    HRESULT hrc = i_retainUefiVariableStore(true /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
+    AutoReadLock rlock(this COMMA_LOCKVAL_SRC_POS);
+
     uint32_t fAttr;
     int vrc = i_uefiVarStoreQueryVarAttr(aName.c_str(), &fAttr);
     if (RT_SUCCESS(vrc))
@@ -275,6 +295,7 @@ HRESULT UefiVariableStore::queryVariableByName(const com::Utf8Str &aName, com::G
     else
         hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to query the attributes of variable '%s': %Rrc"), aName.c_str(), vrc);
 
+    i_releaseUefiVariableStore();
     return hrc;
 }
 
@@ -285,6 +306,9 @@ HRESULT UefiVariableStore::queryVariables(std::vector<com::Utf8Str> &aNames,
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
+
+    HRESULT hrc = i_retainUefiVariableStore(true /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
 
     AutoReadLock rlock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -316,6 +340,8 @@ HRESULT UefiVariableStore::queryVariables(std::vector<com::Utf8Str> &aNames,
         RTVfsDirRelease(hVfsDir);
     }
 
+    i_releaseUefiVariableStore();
+
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR, tr("Failed to query the variables: %Rrc"), vrc);
 
@@ -329,6 +355,9 @@ HRESULT UefiVariableStore::enrollOraclePlatformKey(void)
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     EFI_GUID GuidGlobalVar = EFI_GLOBAL_VARIABLE_GUID;
@@ -340,8 +369,11 @@ HRESULT UefiVariableStore::enrollOraclePlatformKey(void)
 
     const com::Guid GuidVBox(UuidVBox);
 
-    return i_uefiVarStoreAddSignatureToDb(&GuidGlobalVar, "PK", g_abUefiOracleDefPk, g_cbUefiOracleDefPk,
-                                          GuidVBox, SignatureType_X509);
+    hrc = i_uefiVarStoreAddSignatureToDb(&GuidGlobalVar, "PK", g_abUefiOracleDefPk, g_cbUefiOracleDefPk,
+                                         GuidVBox, SignatureType_X509);
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -351,10 +383,16 @@ HRESULT UefiVariableStore::enrollPlatformKey(const std::vector<BYTE> &aData, con
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     EFI_GUID GuidGlobalVar = EFI_GLOBAL_VARIABLE_GUID;
-    return i_uefiVarStoreAddSignatureToDbVec(&GuidGlobalVar, "PK", aData, aOwnerUuid, SignatureType_X509);
+    hrc = i_uefiVarStoreAddSignatureToDbVec(&GuidGlobalVar, "PK", aData, aOwnerUuid, SignatureType_X509);
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -364,10 +402,16 @@ HRESULT UefiVariableStore::addKek(const std::vector<BYTE> &aData, const com::Gui
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     EFI_GUID GuidGlobalVar = EFI_GLOBAL_VARIABLE_GUID;
-    return i_uefiVarStoreAddSignatureToDbVec(&GuidGlobalVar, "KEK", aData, aOwnerUuid, enmSignatureType);
+    hrc = i_uefiVarStoreAddSignatureToDbVec(&GuidGlobalVar, "KEK", aData, aOwnerUuid, enmSignatureType);
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -377,10 +421,16 @@ HRESULT UefiVariableStore::addSignatureToDb(const std::vector<BYTE> &aData, cons
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     EFI_GUID GuidSecurityDb = EFI_GLOBAL_VARIABLE_GUID;
-    return i_uefiVarStoreAddSignatureToDbVec(&GuidSecurityDb, "db", aData, aOwnerUuid, enmSignatureType);
+    hrc = i_uefiVarStoreAddSignatureToDbVec(&GuidSecurityDb, "db", aData, aOwnerUuid, enmSignatureType);
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -390,10 +440,16 @@ HRESULT UefiVariableStore::addSignatureToDbx(const std::vector<BYTE> &aData, con
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
     EFI_GUID GuidSecurityDb = EFI_IMAGE_SECURITY_DATABASE_GUID;
-    return i_uefiVarStoreAddSignatureToDbVec(&GuidSecurityDb, "dbx", aData, aOwnerUuid, enmSignatureType);
+    hrc = i_uefiVarStoreAddSignatureToDbVec(&GuidSecurityDb, "dbx", aData, aOwnerUuid, enmSignatureType);
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -401,6 +457,9 @@ HRESULT UefiVariableStore::enrollDefaultMsSignatures(void)
 {
     AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
+
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
 
     AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -414,8 +473,8 @@ HRESULT UefiVariableStore::enrollDefaultMsSignatures(void)
 
     const com::Guid GuidMs(UuidMs);
 
-    HRESULT hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidGlobalVar, "KEK", g_abUefiMicrosoftKek, g_cbUefiMicrosoftKek,
-                                                 GuidMs, SignatureType_X509);
+    hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidGlobalVar, "KEK", g_abUefiMicrosoftKek, g_cbUefiMicrosoftKek,
+                                         GuidMs, SignatureType_X509);
     if (SUCCEEDED(hrc))
     {
         hrc = i_uefiVarStoreAddSignatureToDb(&EfiGuidSecurityDb, "db", g_abUefiMicrosoftCa, g_cbUefiMicrosoftCa,
@@ -425,6 +484,7 @@ HRESULT UefiVariableStore::enrollDefaultMsSignatures(void)
                                                  GuidMs, SignatureType_X509);
     }
 
+    i_releaseUefiVariableStore();
     return hrc;
 }
 
@@ -586,6 +646,33 @@ void UefiVariableStore::i_uefiAttrMaskToVec(uint32_t fAttr, std::vector<UefiVari
         aAttributes.push_back(UefiVariableAttributes_AuthTimeBasedWriteAccess);
     if (fAttr & EFI_AUTH_VAR_HEADER_ATTR_APPEND_WRITE)
         aAttributes.push_back(UefiVariableAttributes_AuthAppendWrite);
+}
+
+
+/**
+ * Retains the reference of the variable store from the parent.
+ *
+ * @returns COM status code.
+ * @param   fReadonly           Flag whether the access is readonly.
+ */
+HRESULT UefiVariableStore::i_retainUefiVariableStore(bool fReadonly)
+{
+    Assert(m->hVfsUefiVarStore = NIL_RTVFS);
+    return m->pParent->i_retainUefiVarStore(&m->hVfsUefiVarStore, fReadonly);
+}
+
+
+/**
+ * Releases the reference of the variable store from the parent.
+ *
+ * @returns COM status code.
+ */
+HRESULT UefiVariableStore::i_releaseUefiVariableStore(void)
+{
+    RTVFS hVfs = m->hVfsUefiVarStore;
+
+    m->hVfsUefiVarStore = NIL_RTVFS;
+    return m->pParent->i_releaseUefiVarStore(hVfs);
 }
 
 
