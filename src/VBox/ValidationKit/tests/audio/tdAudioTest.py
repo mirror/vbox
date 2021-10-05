@@ -50,6 +50,7 @@ sys.path.append(g_ksValidationKitDir);
 from testdriver import reporter
 from testdriver import base
 from testdriver import vbox
+from testdriver import vboxcon;
 from testdriver import vboxtestvms
 from common     import utils;
 
@@ -102,6 +103,10 @@ class tdAudioTest(vbox.TestDriver):
         # Name of the running VM to use for running the test driver. Optional, and None if not being used.
         self.sRunningVmName   = None;
 
+        # Audio controller type to use.
+        # If set to None, the OS' recommended controller type will be used (defined by Main).
+        self.enmAudioControllerType = None;
+
     def showUsage(self):
         """
         Shows the audio test driver-specific command line options.
@@ -112,6 +117,8 @@ class tdAudioTest(vbox.TestDriver):
         reporter.log('  --runningvmname <vmname>');
         reporter.log('  --audio-tests   <s1[:s2[:]]>');
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
+        reporter.log('  --audio-controller-type <HDA|AC97|SB16>');
+        reporter.log('      Default: recommended controller');
         reporter.log('  --audio-test-count <number>');
         reporter.log('      Default: 0 (means random)');
         reporter.log('  --audio-test-tone-duration <ms>');
@@ -144,6 +151,18 @@ class tdAudioTest(vbox.TestDriver):
                     if s not in self.asTestsDef:
                         raise base.InvalidOption('The "--audio-tests" value "%s" is not valid; valid values are: %s'
                                                     % (s, ' '.join(self.asTestsDef)));
+        elif asArgs[iArg] == '--audio-controller-type':
+            iArg += 1;
+            if not self.importVBoxApi(): # So we can use the constant below.
+                return iArg + 1; # Just skip stuff.
+            if   asArgs[iArg] == 'HDA':
+                self.enmAudioControllerType = vboxcon.AudioControllerType_HDA;
+            elif asArgs[iArg] == 'AC97':
+                self.enmAudioControllerType = vboxcon.AudioControllerType_AC97;
+            elif asArgs[iArg] == 'SB16':
+                self.enmAudioControllerType = vboxcon.AudioControllerType_SB16;
+            else:
+                raise base.InvalidOption('The "--audio-controller-type" value "%s" is not valid' % (asArgs[iArg]));
         elif    asArgs[iArg] == '--audio-test-count' \
              or asArgs[iArg] == '--audio-test-tone-duration':
             # Strip the "--audio-test-" prefix and keep the options as defined in VKAT,
@@ -697,10 +716,14 @@ class tdAudioTest(vbox.TestDriver):
 
             # Make sure that the VM's audio adapter is configured the way we need it to.
             if self.fpApiVer >= 4.0:
-                oOsType = oSession.getOsType();
-                ## @ŧdoo Make this configurable via driver opts (to use as a variant)?
-                oSession.setupAudio(oOsType.recommendedAudioController,
-                                    fEnable = True, fEnableIn = True, fEnableOut = True);
+                if self.enmAudioControllerType:
+                    reporter.log('Setting user-defined audio controller type to %d' % (self.enmAudioControllerType));
+                    oSession.setupAudio(self.enmAudioControllerType,
+                                        fEnable = True, fEnableIn = True, fEnableOut = True);
+                else:
+                    oOsType = oSession.getOsType();
+                    oSession.setupAudio(oOsType.recommendedAudioController,
+                                        fEnable = True, fEnableIn = True, fEnableOut = True);
 
             # Save the settings.
             fRc = fRc and oSession.saveSettings();
