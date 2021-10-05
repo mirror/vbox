@@ -44,42 +44,39 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     , m_pCntSource(0)
     , m_pSettingsCnt(0)
 {
-    /* Create main layout: */
+    /* Prepare main layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
     if (pMainLayout)
     {
-        /* Create source container: */
+        /* Prepare source container: */
         m_pCntSource = new QGroupBox(this);
         if (m_pCntSource)
         {
-            /* Create source layout: */
+            /* Prepare source layout: */
             m_pSourceLayout = new QGridLayout(m_pCntSource);
             if (m_pSourceLayout)
             {
-                /* Create source selector: */
+                /* Prepare source selector: */
                 m_pSourceComboBox = new QIComboBox(m_pCntSource);
                 if (m_pSourceComboBox)
-                {
-                    /* Add into layout: */
                     m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 0);
-                }
 
-                /* Create stacked layout: */
+                /* Prepare stacked layout: */
                 m_pStackedLayout = new QStackedLayout;
                 if (m_pStackedLayout)
                 {
-                    /* Create local container: */
+                    /* Prepare local container: */
                     QWidget *pLocalContainer = new QWidget(m_pCntSource);
                     if (pLocalContainer)
                     {
-                        /* Create local container layout: */
+                        /* Prepare local container layout: */
                         m_pLocalContainerLayout = new QGridLayout(pLocalContainer);
                         if (m_pLocalContainerLayout)
                         {
                             m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
                             m_pLocalContainerLayout->setRowStretch(1, 1);
 
-                            /* Create file-path selector: */
+                            /* Prepare file-path selector: */
                             m_pFileSelector = new UIEmptyFilePathSelector(pLocalContainer);
                             if (m_pFileSelector)
                             {
@@ -87,8 +84,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                 m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
                                 m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                                 m_pFileSelector->setEditable(true);
-
-                                /* Add into layout: */
                                 m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 0);
                             }
                         }
@@ -97,40 +92,35 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         m_pStackedLayout->addWidget(pLocalContainer);
                     }
 
-                    /* Create cloud container: */
+                    /* Prepare cloud container: */
                     QWidget *pCloudContainer = new QWidget(m_pCntSource);
                     if (pCloudContainer)
                     {
-                        /* Create cloud container layout: */
+                        /* Prepare cloud container layout: */
                         m_pCloudContainerLayout = new QGridLayout(pCloudContainer);
                         if (m_pCloudContainerLayout)
                         {
                             m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
                             m_pCloudContainerLayout->setRowStretch(1, 1);
 
-                            /* Create sub-layout: */
+                            /* Prepare sub-layout: */
                             QHBoxLayout *pSubLayout = new QHBoxLayout;
                             if (pSubLayout)
                             {
                                 pSubLayout->setContentsMargins(0, 0, 0, 0);
                                 pSubLayout->setSpacing(1);
 
-                                /* Create profile combo-box: */
+                                /* Prepare profile combo-box: */
                                 m_pProfileComboBox = new QIComboBox(pCloudContainer);
                                 if (m_pProfileComboBox)
-                                {
-                                    /* Add into layout: */
                                     pSubLayout->addWidget(m_pProfileComboBox);
-                                }
 
-                                /* Create profile tool-button: */
+                                /* Prepare profile tool-button: */
                                 m_pProfileToolButton = new QIToolButton(pCloudContainer);
                                 if (m_pProfileToolButton)
                                 {
                                     m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                                       ":/cloud_profile_manager_disabled_16px.png"));
-
-                                    /* Add into layout: */
                                     pSubLayout->addWidget(m_pProfileToolButton);
                                 }
 
@@ -150,8 +140,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                                 m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
 //                                m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
                                 m_pProfileInstanceList->setAlternatingRowColors(true);
-
-                                /* Add into layout: */
                                 m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 0);
                             }
                         }
@@ -169,30 +157,28 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
             pMainLayout->addWidget(m_pCntSource);
         }
 
-        /* Create settings container: */
+        /* Prepare settings container: */
         m_pSettingsCnt = new QGroupBox(this);
         if (m_pSettingsCnt)
         {
-            /* Create settings container layout: */
+            /* Prepare settings container layout: */
             m_pSettingsCntLayout = new QStackedLayout(m_pSettingsCnt);
             if (m_pSettingsCntLayout)
             {
-                /* Create appliance widget container: */
+                /* Prepare appliance widget container: */
                 QWidget *pApplianceWidgetCnt = new QWidget(m_pSettingsCnt);
                 if (pApplianceWidgetCnt)
                 {
-                    /* Create appliance widget layout: */
+                    /* Prepare appliance widget layout: */
                     QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
                     if (pApplianceWidgetLayout)
                     {
-                        /* Create appliance widget: */
+                        /* Prepare appliance widget: */
                         m_pApplianceWidget = new UIApplianceImportEditorWidget(pApplianceWidgetCnt);
                         if (m_pApplianceWidget)
                         {
                             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
                             m_pApplianceWidget->setFile(strFileName);
-
-                            /* Add into layout: */
                             pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
                         }
                     }
@@ -201,21 +187,18 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                     m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
                 }
 
-                /* Create form editor container: */
+                /* Prepare form editor container: */
                 QWidget *pFormEditorCnt = new QWidget(m_pSettingsCnt);
                 if (pFormEditorCnt)
                 {
-                    /* Create form editor layout: */
+                    /* Prepare form editor layout: */
                     QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
                     if (pFormEditorLayout)
                     {
-                        /* Create form editor widget: */
+                        /* Prepare form editor widget: */
                         m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
                         if (m_pFormEditor)
-                        {
-                            /* Add into layout: */
                             pFormEditorLayout->addWidget(m_pFormEditor);
-                        }
                     }
 
                     /* Add into layout: */

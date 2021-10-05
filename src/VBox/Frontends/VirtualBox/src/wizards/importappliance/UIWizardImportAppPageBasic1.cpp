@@ -369,19 +369,16 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
     , m_pLabelMain(0)
     , m_pLabelDescription(0)
 {
-    /* Create main layout: */
+    /* Prepare main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
-        /* Create main label: */
+        /* Prepare main label: */
         m_pLabelMain = new QIRichTextLabel(this);
         if (m_pLabelMain)
-        {
-            /* Add into layout: */
             pMainLayout->addWidget(m_pLabelMain);
-        }
 
-        /* Create source layout: */
+        /* Prepare source layout: */
         m_pSourceLayout = new QGridLayout;
         if (m_pSourceLayout)
         {
@@ -389,20 +386,15 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             m_pSourceLayout->setColumnStretch(0, 0);
             m_pSourceLayout->setColumnStretch(1, 1);
 
-            /* Create source label: */
+            /* Prepare source label: */
             m_pSourceLabel = new QLabel(this);
             if (m_pSourceLabel)
-            {
-                /* Add into layout: */
                 m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0, Qt::AlignRight);
-            }
-            /* Create source selector: */
+            /* Prepare source selector: */
             m_pSourceComboBox = new QIComboBox(this);
             if (m_pSourceComboBox)
             {
                 m_pSourceLabel->setBuddy(m_pSourceComboBox);
-
-                /* Add into layout: */
                 m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 1);
             }
 
@@ -410,23 +402,20 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             pMainLayout->addLayout(m_pSourceLayout);
         }
 
-        /* Create description label: */
+        /* Prepare description label: */
         m_pLabelDescription = new QIRichTextLabel(this);
         if (m_pLabelDescription)
-        {
-            /* Add into layout: */
             pMainLayout->addWidget(m_pLabelDescription);
-        }
 
-        /* Create stacked layout: */
+        /* Prepare stacked layout: */
         m_pStackedLayout = new QStackedLayout;
         if (m_pStackedLayout)
         {
-            /* Create local container: */
+            /* Prepare local container: */
             QWidget *pLocalContainer = new QWidget(this);
             if (pLocalContainer)
             {
-                /* Create local container layout: */
+                /* Prepare local container layout: */
                 m_pLocalContainerLayout = new QGridLayout(pLocalContainer);
                 if (m_pLocalContainerLayout)
                 {
@@ -435,16 +424,13 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pLocalContainerLayout->setColumnStretch(1, 1);
                     m_pLocalContainerLayout->setRowStretch(1, 1);
 
-                    /* Create file label: */
-                    m_pFileLabel = new QLabel;
+                    /* Prepare file label: */
+                    m_pFileLabel = new QLabel(pLocalContainer);
                     if (m_pFileLabel)
-                    {
-                        /* Add into layout: */
                         m_pLocalContainerLayout->addWidget(m_pFileLabel, 0, 0, Qt::AlignRight);
-                    }
 
-                    /* Create file-path selector: */
-                    m_pFileSelector = new UIEmptyFilePathSelector(this);
+                    /* Prepare file-path selector: */
+                    m_pFileSelector = new UIEmptyFilePathSelector(pLocalContainer);
                     if (m_pFileSelector)
                     {
                         m_pFileLabel->setBuddy(m_pFileSelector);
@@ -452,8 +438,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
                         m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                         m_pFileSelector->setEditable(true);
-
-                        /* Add into layout: */
                         m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 1);
                     }
                 }
@@ -462,11 +446,11 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                 m_pStackedLayout->addWidget(pLocalContainer);
             }
 
-            /* Create cloud container: */
+            /* Prepare cloud container: */
             QWidget *pCloudContainer = new QWidget(this);
             if (pCloudContainer)
             {
-                /* Create cloud container layout: */
+                /* Prepare cloud container layout: */
                 m_pCloudContainerLayout = new QGridLayout(pCloudContainer);
                 if (m_pCloudContainerLayout)
                 {
@@ -476,39 +460,32 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pCloudContainerLayout->setRowStretch(1, 0);
                     m_pCloudContainerLayout->setRowStretch(2, 1);
 
-                    /* Create profile label: */
-                    m_pProfileLabel = new QLabel;
+                    /* Prepare profile label: */
+                    m_pProfileLabel = new QLabel(pCloudContainer);
                     if (m_pProfileLabel)
-                    {
-                        /* Add into layout: */
                         m_pCloudContainerLayout->addWidget(m_pProfileLabel, 0, 0, Qt::AlignRight);
-                    }
 
-                    /* Create sub-layout: */
+                    /* Prepare sub-layout: */
                     QHBoxLayout *pSubLayout = new QHBoxLayout;
                     if (pSubLayout)
                     {
                         pSubLayout->setContentsMargins(0, 0, 0, 0);
                         pSubLayout->setSpacing(1);
 
-                        /* Create profile combo-box: */
-                        m_pProfileComboBox = new QIComboBox;
+                        /* Prepare profile combo-box: */
+                        m_pProfileComboBox = new QIComboBox(pCloudContainer);
                         if (m_pProfileComboBox)
                         {
                             m_pProfileLabel->setBuddy(m_pProfileComboBox);
-
-                            /* Add into layout: */
                             pSubLayout->addWidget(m_pProfileComboBox);
                         }
 
-                        /* Create profile tool-button: */
-                        m_pProfileToolButton = new QIToolButton;
+                        /* Prepare profile tool-button: */
+                        m_pProfileToolButton = new QIToolButton(pCloudContainer);
                         if (m_pProfileToolButton)
                         {
                             m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                               ":/cloud_profile_manager_disabled_16px.png"));
-
-                            /* Add into layout: */
                             pSubLayout->addWidget(m_pProfileToolButton);
                         }
 
@@ -516,16 +493,13 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         m_pCloudContainerLayout->addLayout(pSubLayout, 0, 1);
                     }
 
-                    /* Create profile instance label: */
-                    m_pProfileInstanceLabel = new QLabel;
+                    /* Prepare profile instance label: */
+                    m_pProfileInstanceLabel = new QLabel(pCloudContainer);
                     if (m_pProfileInstanceLabel)
-                    {
-                        /* Add into layout: */
                         m_pCloudContainerLayout->addWidget(m_pProfileInstanceLabel, 1, 0, Qt::AlignRight);
-                    }
 
-                    /* Create profile instances table: */
-                    m_pProfileInstanceList = new QListWidget;
+                    /* Prepare profile instances table: */
+                    m_pProfileInstanceList = new QListWidget(pCloudContainer);
                     if (m_pProfileInstanceList)
                     {
                         m_pProfileInstanceLabel->setBuddy(m_pProfileInstanceLabel);
@@ -537,8 +511,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
 //                        m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
                         m_pProfileInstanceList->setAlternatingRowColors(true);
-
-                        /* Add into layout: */
                         m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 1, 2, 1);
                     }
                 }
