@@ -722,7 +722,7 @@ class tdAudioTest(vbox.TestDriver):
                 if self.enmAudioControllerType is None:
                     oOsType = oSession.getOsType();
                     self.enmAudioControllerType = oOsType.recommendedAudioController;
-                else:
+
                 reporter.log('Setting user-defined audio controller type to %d' % (self.enmAudioControllerType));
                 oSession.setupAudio(self.enmAudioControllerType,
                                     fEnable = True, fEnableIn = True, fEnableOut = True);
