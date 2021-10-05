@@ -38,6 +38,7 @@ import os
 import sys
 import signal
 import subprocess
+import time
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -711,6 +712,9 @@ class tdAudioTest(vbox.TestDriver):
                                                                   cMsTimeout = 3 * 60 * 1000,
                                                                   sFileCdWait = '${OS/ARCH}/vkat${EXESUFF}');
         reporter.testDone();
+
+        reporter.log('Waiting for any OS startup sounds getting played (to skip those) ...');
+        time.sleep(90);
 
         if  oSession is not None:
             self.addTask(oTxsSession);
