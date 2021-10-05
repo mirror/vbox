@@ -153,6 +153,8 @@ class tdAudioTest(vbox.TestDriver):
                                                     % (s, ' '.join(self.asTestsDef)));
         elif asArgs[iArg] == '--audio-controller-type':
             iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
             if not self.importVBoxApi(): # So we can use the constant below.
                 return iArg + 1; # Just skip stuff.
             if   asArgs[iArg] == 'HDA':
@@ -716,14 +718,14 @@ class tdAudioTest(vbox.TestDriver):
 
             # Make sure that the VM's audio adapter is configured the way we need it to.
             if self.fpApiVer >= 4.0:
-                if self.enmAudioControllerType:
-                    reporter.log('Setting user-defined audio controller type to %d' % (self.enmAudioControllerType));
-                    oSession.setupAudio(self.enmAudioControllerType,
-                                        fEnable = True, fEnableIn = True, fEnableOut = True);
-                else:
+                if self.enmAudioControllerType is None:
                     oOsType = oSession.getOsType();
-                    oSession.setupAudio(oOsType.recommendedAudioController,
-                                        fEnable = True, fEnableIn = True, fEnableOut = True);
+                    self.enmAudioControllerType = oOsType.recommendedAudioController;
+                else:
+                    reporter.log('Setting user-defined audio controller type to %d' % (self.enmAudioControllerType));
+
+                oSession.setupAudio(self.enmAudioControllerType,
+                                    fEnable = True, fEnableIn = True, fEnableOut = True);
 
             # Save the settings.
             fRc = fRc and oSession.saveSettings();
