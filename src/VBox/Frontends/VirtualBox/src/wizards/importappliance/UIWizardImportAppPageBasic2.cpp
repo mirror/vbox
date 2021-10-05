@@ -141,7 +141,8 @@ bool UIWizardImportAppPage2::importHDsAsVDI() const
 *********************************************************************************************************************************/
 
 UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileName)
-    : m_enmCertText(kCertText_Uninitialized)
+    : m_strFileName(strFileName)
+    , m_enmCertText(kCertText_Uninitialized)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -173,7 +174,6 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
                     if (m_pApplianceWidget)
                     {
                         m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-                        m_pApplianceWidget->setFile(strFileName);
                         pApplianceWidgetLayout->addWidget(m_pApplianceWidget, 0, 0, 1, 3);
                     }
 
@@ -369,33 +369,39 @@ void UIWizardImportAppPageBasic2::initializePage()
 {
     /* Update widget visibility: */
     updatePageAppearance();
-    /* Populate MAC address import combo: */
-    populateMACAddressImportPolicies();
 
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
     if (fIsSourceCloudOne)
+    {
+        /* Refresh form properties table: */
         refreshFormPropertiesTable();
+    }
     else
     {
-        /* Acquire appliance: */
-        CAppliance *pAppliance = m_pApplianceWidget->appliance();
+        /* Populate MAC address import combo: */
+        populateMACAddressImportPolicies();
 
-        /* Check if pAppliance is alive. If not just return here.
-         * This prevents crashes when an invalid ova file is supllied: */
-        if (!pAppliance)
+        /* If we have file name passed,
+         * check if specified file contains valid appliance: */
+        if (   !m_strFileName.isEmpty()
+            && !qobject_cast<UIWizardImportApp*>(wizard())->setFile(m_strFileName))
         {
-            if (wizard())
-                wizard()->reject();
+            wizard()->reject();
             return;
         }
 
-        /* Make sure we initialize model items with correct base folder path: */
+        /* Acquire appliance: */
+        CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->appliance();
+
+        /* Initialize appliance widget: */
+        m_pApplianceWidget->setAppliance(comAppliance);
+        /* Make sure we initialize appliance widget model with correct base folder path: */
         if (m_pEditorImportFilePath)
             sltHandlePathChanged(m_pEditorImportFilePath->path());
 
         /* Acquire certificate: */
-        CCertificate comCertificate = pAppliance->GetCertificate();
+        CCertificate comCertificate = comAppliance.GetCertificate();
         if (comCertificate.isNull())
             m_enmCertText = kCertText_Unsigned;
         else
@@ -420,8 +426,8 @@ void UIWizardImportAppPageBasic2::initializePage()
                 retranslateUi();
 
                 /* Instantiate the dialog: */
-                QPointer<UIApplianceUnverifiedCertificateViewer> pDialog = new UIApplianceUnverifiedCertificateViewer(this, comCertificate);
-                AssertPtrReturnVoid(pDialog.data());
+                QPointer<UIApplianceUnverifiedCertificateViewer> pDialog =
+                    new UIApplianceUnverifiedCertificateViewer(this, comCertificate);
 
                 /* Show viewer in modal mode: */
                 const int iResultCode = pDialog->exec();
@@ -479,6 +485,11 @@ bool UIWizardImportAppPageBasic2::validatePage()
             if (!fResult)
                 msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
         }
+    }
+    else
+    {
+        /* Make sure widget has own data committed: */
+        m_pApplianceWidget->prepareImport();
     }
 
     /* Try to import appliance: */

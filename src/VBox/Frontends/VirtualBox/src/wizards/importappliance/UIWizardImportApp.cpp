@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -188,12 +188,63 @@ void UIWizardImportApp::prepare()
     UIWizard::prepare();
 }
 
+CAppliance UIWizardImportApp::appliance() const
+{
+    return m_comAppliance;
+}
+
+bool UIWizardImportApp::setFile(const QString &strFileName)
+{
+    /* Clear object: */
+    m_comAppliance = CAppliance();
+
+    if (strFileName.isEmpty())
+        return false;
+
+    /* Create an appliance object: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CAppliance comAppliance = comVBox.CreateAppliance();
+    if (!comVBox.isOk())
+    {
+        msgCenter().cannotCreateAppliance(comVBox, this);
+        return false;
+    }
+
+    /* Read the file to appliance: */
+    CProgress comProgress = comAppliance.Read(strFileName);
+    if (!comAppliance.isOk())
+    {
+        msgCenter().cannotImportAppliance(comAppliance, this);
+        return false;
+    }
+
+    /* Show Reading Appliance progress: */
+    msgCenter().showModalProgressDialog(comProgress, tr("Reading Appliance ..."),
+                                        ":/progress_reading_appliance_90px.png", this);
+    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+    {
+        msgCenter().cannotImportAppliance(comProgress, comAppliance.GetPath(), this);
+        return false;
+    }
+
+    /* Now we have to interpret that stuff: */
+    comAppliance.Interpret();
+    if (!comAppliance.isOk())
+    {
+        msgCenter().cannotImportAppliance(comAppliance, this);
+        return false;
+    }
+
+    /* Remember appliance: */
+    m_comAppliance = comAppliance;
+
+    /* Success finally: */
+    return true;
+}
+
 bool UIWizardImportApp::isValid() const
 {
-    bool fResult = false;
-    if (UIApplianceImportEditorWidget *pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>())
-        fResult = pImportApplianceWidget->isValid();
-    return fResult;
+    return m_comAppliance.isNotNull();
 }
 
 bool UIWizardImportApp::importAppliance()
@@ -219,18 +270,14 @@ bool UIWizardImportApp::importAppliance()
     }
     else
     {
-        /* Get import appliance widget: */
-        UIApplianceImportEditorWidget *pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
-        /* Make sure the final values are puted back: */
-        pImportApplianceWidget->prepareImport();
         /* Check if there are license agreements the user must confirm: */
-        QList < QPair <QString, QString> > licAgreements = pImportApplianceWidget->licenseAgreements();
+        QList < QPair <QString, QString> > licAgreements = licenseAgreements();
         if (!licAgreements.isEmpty())
         {
             UIImportLicenseViewer ilv(this);
             for (int i = 0; i < licAgreements.size(); ++ i)
             {
-                const QPair <QString, QString> &lic = licAgreements.at(i);
+                const QPair<QString, QString> &lic = licAgreements.at(i);
                 ilv.setContents(lic.first, lic.second);
                 if (ilv.exec() == QDialog::Rejected)
                     return false;
@@ -250,8 +297,13 @@ bool UIWizardImportApp::importAppliance()
         if (fImportHDsAsVDI)
             options.append(KImportOptions_ImportToVDI);
 
-        /* Now import all virtual systems: */
-        return pImportApplianceWidget->import(options);
+        /* Import appliance: */
+        UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(m_comAppliance,
+                                                                                                         options);
+        gpNotificationCenter->append(pNotification);
+
+        /* Positive: */
+        return true;
     }
 }
 
@@ -289,6 +341,27 @@ void UIWizardImportApp::sltCustomButtonClicked(int iId)
         /* Reset it to default: */
         pApplianceWidget->restoreDefaults();
     }
+}
+
+QList<QPair<QString, QString> > UIWizardImportApp::licenseAgreements() const
+{
+    QList<QPair<QString, QString> > list;
+
+    foreach (CVirtualSystemDescription comVsd, m_comAppliance.GetVirtualSystemDescriptions())
+    {
+        QVector<QString> strLicense;
+        strLicense = comVsd.GetValuesByType(KVirtualSystemDescriptionType_License,
+                                            KVirtualSystemDescriptionValueType_Original);
+        if (!strLicense.isEmpty())
+        {
+            QVector<QString> strName;
+            strName = comVsd.GetValuesByType(KVirtualSystemDescriptionType_Name,
+                                             KVirtualSystemDescriptionValueType_Auto);
+            list << QPair<QString, QString>(strName.first(), strLicense.first());
+        }
+    }
+
+    return list;
 }
 
 

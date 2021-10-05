@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,20 @@
 
 /* GUI includes: */
 #include "UIWizard.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CAppliance.h"
+
+/** MAC address policies. */
+enum MACAddressImportPolicy
+{
+    MACAddressImportPolicy_KeepAllMACs,
+    MACAddressImportPolicy_KeepNATMACs,
+    MACAddressImportPolicy_StripAllMACs,
+    MACAddressImportPolicy_MAX
+};
+Q_DECLARE_METATYPE(MACAddressImportPolicy);
 
 /** Import Appliance wizard. */
 class UIWizardImportApp : public UIWizard
@@ -51,6 +65,10 @@ public:
     /** Prepares all. */
     virtual void prepare() /* override */;
 
+    /** Returns appliance. */
+    CAppliance appliance() const;
+    /** Defines @a strFileName. */
+    bool setFile(const QString &strFileName);
     /** Returns whether appliance is valid. */
     bool isValid() const;
 
@@ -71,10 +89,16 @@ protected slots:
 
 private:
 
+    /** Returns a list of license agreement pairs. */
+    QList<QPair<QString, QString> > licenseAgreements() const;
+
     /** Holds whether default source should be Import from OCI. */
     bool     m_fImportFromOCIByDefault;
     /** Handles the appliance file name. */
     QString  m_strFileName;
+
+    /** Holds the appliance wrapper instance. */
+    CAppliance  m_comAppliance;
 };
 
 /** Safe pointer to appliance wizard. */

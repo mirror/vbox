@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "UIFormEditorWidget.h"
+#include "UIWizardImportApp.h"
 #include "UIWizardImportAppDefs.h"
 #include "UIWizardPage.h"
 
@@ -31,6 +32,7 @@ class QComboBox;
 class QLabel;
 class QStackedLayout;
 class QIRichTextLabel;
+class UIFilePathSelector;
 
 /** UIWizardPageBase extension for 2nd page of the Import Appliance wizard. */
 class UIWizardImportAppPage2 : public UIWizardPageBase
@@ -127,6 +129,9 @@ private slots:
     void sltHandleMACImportPolicyChange();
 
 private:
+
+    /** Handles the appliance file name. */
+    QString  m_strFileName;
 
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;

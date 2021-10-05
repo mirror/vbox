@@ -46,6 +46,7 @@
 
 UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName)
     : UIWizardImportAppPage1(fImportFromOCIByDefault)
+    , m_strFileName(strFileName)
     , m_pCntSource(0)
     , m_pSettingsCnt(0)
 {
@@ -183,7 +184,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         if (m_pApplianceWidget)
                         {
                             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-                            m_pApplianceWidget->setFile(strFileName);
                             pApplianceWidgetLayout->addWidget(m_pApplianceWidget, 0, 0, 1, 3);
                         }
 
@@ -407,6 +407,26 @@ void UIWizardImportAppPageExpert::initializePage()
 
     /* Translate page: */
     retranslateUi();
+
+    /* If we have file name passed,
+     * check if specified file contains valid appliance: */
+    if (   !m_strFileName.isEmpty()
+        && !qobject_cast<UIWizardImportApp*>(wizard())->setFile(m_strFileName))
+    {
+        wizard()->reject();
+        return;
+    }
+
+    /* Acquire appliance: */
+    CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->appliance();
+    if (comAppliance.isNotNull())
+    {
+        /* Initialize appliance widget: */
+        m_pApplianceWidget->setAppliance(comAppliance);
+        /* Make sure we initialize appliance widget model with correct base folder path: */
+        if (m_pEditorImportFilePath)
+            sltHandlePathChanged(m_pEditorImportFilePath->path());
+    }
 }
 
 bool UIWizardImportAppPageExpert::isComplete() const
@@ -422,7 +442,7 @@ bool UIWizardImportAppPageExpert::isComplete() const
         fResult =    (   fOVF
                       && UICommon::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
                       && QFile::exists(m_pFileSelector->path())
-                      && m_pApplianceWidget->isValid())
+                      && qobject_cast<UIWizardImportApp*>(wizard())->isValid())
                   || (   fCSP
                       && !m_comCloudProfile.isNull()
                       && !m_comCloudClient.isNull()
@@ -462,6 +482,11 @@ bool UIWizardImportAppPageExpert::validatePage()
             if (!fResult)
                 msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
         }
+    }
+    else
+    {
+        /* Make sure widget has own data committed: */
+        m_pApplianceWidget->prepareImport();
     }
 
     /* Try to import appliance: */
@@ -505,13 +530,20 @@ void UIWizardImportAppPageExpert::sltHandleSourceChange()
 
 void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
 {
-    /* Check if set file contains valid appliance: */
-    if (   QFile::exists(m_pFileSelector->path())
-        && m_pApplianceWidget->setFile(m_pFileSelector->path()))
-    {
-        /* Reset the modified bit if file was correctly set: */
-        m_pFileSelector->resetModified();
-    }
+    /* Check if specified file contains valid appliance: */
+    if (   !QFile::exists(m_pFileSelector->path())
+        || !qobject_cast<UIWizardImportApp*>(wizard())->setFile(m_pFileSelector->path()))
+        return;
+    /* Reset the modified bit afterwards: */
+    m_pFileSelector->resetModified();
+
+    /* Acquire appliance: */
+    CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->appliance();
+    /* Initialize appliance widget: */
+    m_pApplianceWidget->setAppliance(comAppliance);
+    /* Make sure we initialize appliance widget model with correct base folder path: */
+    if (m_pEditorImportFilePath)
+        sltHandlePathChanged(m_pEditorImportFilePath->path());
 
     emit completeChanged();
 }

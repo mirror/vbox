@@ -95,6 +95,9 @@ private slots:
 
 private:
 
+    /** Handles the appliance file name. */
+    QString  m_strFileName;
+
     /** Holds the source container instance. */
     QGroupBox *m_pCntSource;
     /** Holds the settings container instance. */

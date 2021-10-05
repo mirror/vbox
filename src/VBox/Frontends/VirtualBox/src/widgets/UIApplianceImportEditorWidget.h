@@ -24,19 +24,8 @@
 /* GUI includes: */
 #include "UIApplianceEditorWidget.h"
 
-/* Forward declarations: */
-class UIFilePathSelector;
-class QComboBox;
-
-/** MAC address policies. */
-enum MACAddressImportPolicy
-{
-    MACAddressImportPolicy_KeepAllMACs,
-    MACAddressImportPolicy_KeepNATMACs,
-    MACAddressImportPolicy_StripAllMACs,
-    MACAddressImportPolicy_MAX
-};
-Q_DECLARE_METATYPE(MACAddressImportPolicy);
+/* COM includes: */
+#include "CAppliance.h"
 
 /** UIApplianceEditorWidget subclass for Import Appliance wizard. */
 class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
@@ -46,19 +35,18 @@ class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
 public:
 
     /** Constructs widget passing @a pParent to the base-class. */
-    UIApplianceImportEditorWidget(QWidget *pParent);
+    UIApplianceImportEditorWidget(QWidget *pParent = 0);
 
-    /** Defines @a strFaile name. */
-    bool setFile(const QString &strFile);
+    /** Assigns @a comAppliance and populates widget contents. */
+    void setAppliance(const CAppliance &comAppliance);
 
     /** Prepares import by pushing edited data back to appliance. */
     void prepareImport();
 
-    /** Performs import. */
-    bool import(const QVector<KImportOptions> &options);
+private:
 
-    /** Returns a list of license agreement pairs. */
-    QList<QPair<QString, QString> > licenseAgreements() const;
+    /** Holds the appliance wrapper instance. */
+    CAppliance  m_comAppliance;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIApplianceImportEditorWidget_h */
