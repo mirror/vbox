@@ -1822,11 +1822,13 @@ extern "C" int main(void)
 }
 EOF
       [ -n "$INCTPMS" ] && I_INCTPMS=`prefix_I "$INCTPMS"`
-      if test_compile "$LIBTPMS $I_INCTPMS" libtpms libtpms; then
+      if test_compile "$LIBTPMS $I_INCTPMS" libtpms libtpms nofatal; then
         if test_execute; then
           cnf_append "SDK_VBOX_TPMS_INCS" "$INCTPMS"
           cnf_append "SDK_VBOX_TPMS_LIBS" "`strip_l "$LIBTPMS"`"
-          fi
+        fi
+      else
+        echo "not found -- building libtpms from in-tree code."
       fi
     fi
   fi
