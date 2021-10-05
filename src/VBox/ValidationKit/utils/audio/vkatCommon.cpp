@@ -31,6 +31,14 @@
 #define LOG_GROUP LOG_GROUP_AUDIO_TEST
 #include <iprt/log.h>
 
+#ifdef VBOX_WITH_AUDIO_ALSA
+# include "DrvHostAudioAlsaStubsMangling.h"
+# include <alsa/asoundlib.h>
+# include <alsa/control.h> /* For device enumeration. */
+# include <alsa/version.h>
+# include "DrvHostAudioAlsaStubs.h"
+#endif
+
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/errcore.h>
@@ -58,6 +66,81 @@
 static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream, PDMAUDIODIR enmDir, PCPDMAUDIOPCMPROPS pProps, bool fWithMixer, uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
 
+
+/*********************************************************************************************************************************
+*   Volume handling.                                                                                                             *
+*********************************************************************************************************************************/
+
+/**
+ * Sets the system's master volume, if available.
+ *
+ * @returns VBox status code. VERR_NOT_SUPPORTED if not supported.
+ * @param   uPercentVol         Volume (in percent) to set.
+ */
+int audioTestSetMasterVolume(unsigned uPercentVol)
+{
+#ifdef VBOX_WITH_AUDIO_ALSA
+    int rc = audioLoadAlsaLib();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    int          err;
+    snd_mixer_t *handle;
+
+# define ALSA_CHECK_RET(a_Exp, a_Text) \
+    if (!(a_Exp)) \
+    { \
+        AssertLogRelMsg(a_Exp, a_Text); \
+        if (handle) \
+            snd_mixer_close(handle); \
+        return VERR_GENERAL_FAILURE; \
+    }
+
+# define ALSA_CHECK_ERR_RET(a_Text) \
+    ALSA_CHECK_RET(err >= 0, a_Text)
+
+    err = snd_mixer_open(&handle, 0 /* Index */);
+    ALSA_CHECK_ERR_RET(("ALSA: Failed to open mixer: %s\n", snd_strerror(err)));
+    err = snd_mixer_attach(handle, "default");
+    ALSA_CHECK_ERR_RET(("ALSA: Failed to attach to default sink: %s\n", snd_strerror(err)));
+    err = snd_mixer_selem_register(handle, NULL, NULL);
+    ALSA_CHECK_ERR_RET(("ALSA: Failed to attach to default sink: %s\n", snd_strerror(err)));
+    err = snd_mixer_load(handle);
+    ALSA_CHECK_ERR_RET(("ALSA: Failed to load mixer: %s\n", snd_strerror(err)));
+
+    snd_mixer_selem_id_t *sid = NULL;
+    snd_mixer_selem_id_alloca(&sid);
+
+    snd_mixer_selem_id_set_index(sid, 0 /* Index */);
+    snd_mixer_selem_id_set_name(sid, "Master");
+
+    snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+    ALSA_CHECK_RET(elem != NULL, ("ALSA: Failed to find mixer element: %s\n", snd_strerror(err)));
+
+    long uVolMin, uVolMax;
+
+    snd_mixer_selem_get_playback_volume_range(elem, &uVolMin, &uVolMax);
+    ALSA_CHECK_ERR_RET(("ALSA: Failed to get playback volume range: %s\n", snd_strerror(err)));
+
+    long const uVol = RT_MIN(uPercentVol, 100) * uVolMax / 100;
+
+    err = snd_mixer_selem_set_playback_volume(elem, SND_MIXER_SCHN_FRONT_LEFT, uVol);
+    ALSA_CHECK_ERR_RET(("ALSA: Failed to set playback volume left: %s\n", snd_strerror(err)));
+    err = snd_mixer_selem_set_playback_volume(elem, SND_MIXER_SCHN_FRONT_RIGHT, uVol);
+    ALSA_CHECK_ERR_RET(("ALSA: Failed to set playback volume right: %s\n", snd_strerror(err)));
+
+    snd_mixer_close(handle);
+
+    return VINF_SUCCESS;
+
+# undef ALSA_CHECK_RET
+# undef ALSA_CHECK_ERR_RET
+
+#endif /* VBOX_WITH_AUDIO_ALSA */
+
+    /** @todo Port other platforms. */
+    return VERR_NOT_SUPPORTED;
+}
 
 /*********************************************************************************************************************************
 *   Device enumeration + handling.                                                                                               *
@@ -256,6 +339,20 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         AssertRCReturn(rc, rc);
     }
 
+    /* Try to crank up the system's master volume up to 100% so that we (hopefully) play the test tone always at the same leve.
+     * Not supported on all platforms yet, therefore not critical for overall testing (yet). */
+    unsigned const uVolPercent = 100;
+    int rc2 = audioTestSetMasterVolume(uVolPercent);
+    if (RT_FAILURE(rc2))
+    {
+        if (rc2 == VERR_NOT_SUPPORTED)
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Setting system's master volume is not supported on this platform, skipping\n");
+        else
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Setting system's master volume failed with %Rrc\n", rc2);
+    }
+    else
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Set system's master volume to %RU8%%\n", uVolPercent);
+
     rc = AudioTestMixStreamEnable(&pStream->Mix);
     if (   RT_SUCCESS(rc)
         && AudioTestMixStreamIsOkay(&pStream->Mix))
@@ -425,7 +522,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
 
     if (pTstEnv)
     {
-        int rc2 = AudioTestObjClose(Obj);
+        rc2 = AudioTestObjClose(Obj);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }

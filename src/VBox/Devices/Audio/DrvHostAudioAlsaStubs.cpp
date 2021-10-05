@@ -186,6 +186,49 @@ PROXY_STUB(snd_pcm_sw_params_set_start_threshold, int,
            (pcm, params, val))
 PROXY_STUB(snd_pcm_sw_params_sizeof, size_t, (void), ())
 
+/*
+ * Mixer
+ */
+
+PROXY_STUB(snd_mixer_selem_id_sizeof, size_t,
+           (void), ())
+PROXY_STUB(snd_mixer_open, int,
+           (snd_mixer_t **mixer, int mode),
+           (mixer, mode))
+PROXY_STUB(snd_mixer_attach, int,
+           (snd_mixer_t *mixer, const char *name),
+           (mixer, name))
+PROXY_STUB(snd_mixer_close, int,
+           (snd_mixer_t *mixer),
+           (mixer))
+PROXY_STUB(snd_mixer_selem_id_set_index, void,
+           (snd_mixer_selem_id_t *obj, unsigned int val),
+           (obj, val))
+PROXY_STUB(snd_mixer_selem_id_set_name, void,
+           (snd_mixer_selem_id_t *obj, const char *val),
+           (obj, val))
+PROXY_STUB(snd_mixer_selem_set_playback_volume, int,
+           (snd_mixer_elem_t *elem, snd_mixer_selem_channel_id_t channel, long value),
+           (elem, channel, value))
+PROXY_STUB(snd_mixer_selem_get_playback_volume_range, int,
+           (snd_mixer_elem_t *elem, long *min, long *max),
+           (elem, min, max))
+PROXY_STUB(snd_mixer_selem_set_capture_volume, int,
+           (snd_mixer_elem_t *elem, snd_mixer_selem_channel_id_t channel, long value),
+           (elem, channel, value))
+PROXY_STUB(snd_mixer_selem_get_capture_volume_range, int,
+           (snd_mixer_elem_t *elem, long *min, long *max),
+           (elem, min, max))
+PROXY_STUB(snd_mixer_selem_register, int,
+           (snd_mixer_t *mixer, snd_mixer_selem_regopt *options, snd_mixer_class_t **classp),
+           (mixer, options, classp))
+PROXY_STUB(snd_mixer_load, int,
+           (snd_mixer_t *mixer),
+           (mixer))
+PROXY_STUB(snd_mixer_find_selem, snd_mixer_elem_t *,
+           (snd_mixer_t *mixer, const snd_mixer_selem_id_t *id),
+           (mixer, id))
+
 typedef struct
 {
     const char *name;
@@ -244,6 +287,21 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(snd_pcm_sw_params_set_avail_min),
     ELEMENT(snd_pcm_sw_params_set_start_threshold),
     ELEMENT(snd_pcm_sw_params_sizeof),
+
+    ELEMENT(snd_mixer_selem_id_sizeof),
+    ELEMENT(snd_mixer_open),
+    ELEMENT(snd_mixer_attach),
+    ELEMENT(snd_mixer_close),
+    ELEMENT(snd_mixer_selem_id_set_index),
+    ELEMENT(snd_mixer_selem_id_set_name),
+    ELEMENT(snd_mixer_selem_set_playback_volume),
+    ELEMENT(snd_mixer_selem_get_playback_volume_range),
+    ELEMENT(snd_mixer_selem_set_capture_volume),
+    ELEMENT(snd_mixer_selem_get_capture_volume_range),
+    ELEMENT(snd_mixer_selem_register),
+    ELEMENT(snd_mixer_load),
+    ELEMENT(snd_mixer_find_selem),
+
 };
 #undef ELEMENT
 
