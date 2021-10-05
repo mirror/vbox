@@ -256,8 +256,8 @@ private:
         QWidget                   *m_pWidgetAdvancedSettings;
         /** Holds the attachment type label instance. */
         QLabel                    *m_pLabelAttachmentType;
-        /** Holds the adapter name label instance. */
-        QLabel                    *m_pLabelAdapterName;
+        /** Holds the network name label instance. */
+        QLabel                    *m_pLabelNetworkName;
         /** Holds the attachment type editor instance. */
         UINetworkAttachmentEditor *m_pEditorAttachmentType;
         /** Holds the advanced button instance. */
@@ -302,7 +302,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     , m_pLayoutAdapterSettings(0)
     , m_pWidgetAdvancedSettings(0)
     , m_pLabelAttachmentType(0)
-    , m_pLabelAdapterName(0)
+    , m_pLabelNetworkName(0)
     , m_pEditorAttachmentType(0)
     , m_pButtonAdvanced(0)
     , m_pLabelAdapterType(0)
@@ -596,7 +596,7 @@ void UIMachineSettingsNetwork::polishTab()
     m_pCheckBoxAdapter->setEnabled(m_pParent->isMachineOffline());
     m_pLabelAttachmentType->setEnabled(m_pParent->isMachineInValidMode());
     m_pEditorAttachmentType->setEnabled(m_pParent->isMachineInValidMode());
-    m_pLabelAdapterName->setEnabled(m_pParent->isMachineInValidMode() &&
+    m_pLabelNetworkName->setEnabled(m_pParent->isMachineInValidMode() &&
                                     attachmentType() != KNetworkAttachmentType_Null &&
                                     attachmentType() != KNetworkAttachmentType_NAT);
     m_pButtonAdvanced->setEnabled(m_pParent->isMachineInValidMode());
@@ -661,8 +661,8 @@ void UIMachineSettingsNetwork::retranslateUi()
     iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAttachmentType->minimumSizeHint().width());
     m_pEditorAttachmentType->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Selects how this virtual adapter "
                                                                   "is attached to the real network of the Host OS."));
-    m_pLabelAdapterName->setText(QApplication::translate("UIMachineSettingsNetwork", "&Name:"));
-    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAdapterName->minimumSizeHint().width());
+    m_pLabelNetworkName->setText(QApplication::translate("UIMachineSettingsNetwork", "&Name:"));
+    iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelNetworkName->minimumSizeHint().width());
     m_pButtonAdvanced->setText(QApplication::translate("UIMachineSettingsNetwork", "A&dvanced"));
     m_pButtonAdvanced->setWhatsThis(QApplication::translate("UIMachineSettingsNetwork", "Shows additional network adapter options."));
     m_pLabelAdapterType->setText(QApplication::translate("UIMachineSettingsNetwork", "Adapter &Type:"));
@@ -719,7 +719,7 @@ void UIMachineSettingsNetwork::sltHandleAdapterActivityChange()
 void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
 {
     /* Update alternative-name combo-box availability: */
-    m_pLabelAdapterName->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
+    m_pLabelNetworkName->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                     attachmentType() != KNetworkAttachmentType_NAT);
     /* Update promiscuous-mode combo-box availability: */
     m_pLabelPromiscuousMode->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
@@ -834,11 +834,11 @@ void UIMachineSettingsNetwork::prepareWidgets()
                     m_pLayoutAdapterSettings->addWidget(m_pLabelAttachmentType, 0, 0);
                 }
                 /* Prepare adapter name label: */
-                m_pLabelAdapterName = new QLabel(m_pWidgetAdapterSettings);
-                if (m_pLabelAdapterName)
+                m_pLabelNetworkName = new QLabel(m_pWidgetAdapterSettings);
+                if (m_pLabelNetworkName)
                 {
-                    m_pLabelAdapterName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                    m_pLayoutAdapterSettings->addWidget(m_pLabelAdapterName, 1, 0);
+                    m_pLabelNetworkName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                    m_pLayoutAdapterSettings->addWidget(m_pLabelNetworkName, 1, 0);
                 }
                 /* Prepare attachment type editor: */
                 m_pEditorAttachmentType = new UINetworkAttachmentEditor(m_pWidgetAdapterSettings);
@@ -846,8 +846,8 @@ void UIMachineSettingsNetwork::prepareWidgets()
                 {
                     if (m_pLabelAttachmentType)
                         m_pLabelAttachmentType->setBuddy(m_pEditorAttachmentType->focusProxy1());
-                    if (m_pLabelAdapterName)
-                        m_pLabelAdapterName->setBuddy(m_pEditorAttachmentType->focusProxy2());
+                    if (m_pLabelNetworkName)
+                        m_pLabelNetworkName->setBuddy(m_pEditorAttachmentType->focusProxy2());
 
                     m_pLayoutAdapterSettings->addWidget(m_pEditorAttachmentType, 0, 1, 2, 3);
                 }
