@@ -75,7 +75,7 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
  * Sets the system's master volume, if available.
  *
  * @returns VBox status code. VERR_NOT_SUPPORTED if not supported.
- * @param   uPercentVol         Volume (in percent) to set.
+ * @param   uVolPercent         Volume (in percent) to set.
  */
 int audioTestSetMasterVolume(unsigned uVolPercent)
 {
