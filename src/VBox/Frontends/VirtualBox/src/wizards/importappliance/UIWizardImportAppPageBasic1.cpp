@@ -558,47 +558,68 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     setTitle(UIWizardImportApp::tr("Appliance to import"));
 
     /* Translate main label: */
-    m_pLabelMain->setText(UIWizardImportApp::tr("Please choose the source to import appliance from.  This can be a "
-                                                "local file system to import OVF archive or one of known cloud "
-                                                "service providers to import cloud VM from."));
+    if (m_pLabelMain)
+        m_pLabelMain->setText(UIWizardImportApp::tr("Please choose the source to import appliance from.  This can be a "
+                                                    "local file system to import OVF archive or one of known cloud "
+                                                    "service providers to import cloud VM from."));
 
     /* Translate source label: */
-    m_pSourceLabel->setText(UIWizardImportApp::tr("&Source:"));
-    /* Translate hardcoded values of Source combo-box: */
-    m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
-    m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);
-    /* Translate received values of Source combo-box.
-     * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pSourceComboBox->count(); ++i)
-        if (isSourceCloudOne(i))
-        {
-            m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
-            m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
-        }
+    if (m_pSourceLabel)
+        m_pSourceLabel->setText(UIWizardImportApp::tr("&Source:"));
+    if (m_pSourceComboBox)
+    {
+        /* Translate hardcoded values of Source combo-box: */
+        m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
+        m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);
+
+        /* Translate received values of Source combo-box.
+         * We are enumerating starting from 0 for simplicity: */
+        for (int i = 0; i < m_pSourceComboBox->count(); ++i)
+            if (isSourceCloudOne(i))
+            {
+                m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
+                m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
+            }
+    }
 
     /* Translate local stuff: */
-    m_pFileLabel->setText(UIWizardImportApp::tr("&File:"));
-    m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
-    m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
-    m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+    if (m_pFileLabel)
+        m_pFileLabel->setText(UIWizardImportApp::tr("&File:"));
+    if (m_pFileSelector)
+    {
+        m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
+        m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
+        m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+    }
 
     /* Translate profile stuff: */
-    m_pProfileLabel->setText(UIWizardImportApp::tr("&Profile:"));
-    m_pProfileToolButton->setToolTip(UIWizardImportApp::tr("Open Cloud Profile Manager..."));
-    m_pProfileInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
+    if (m_pProfileLabel)
+        m_pProfileLabel->setText(UIWizardImportApp::tr("&Profile:"));
+    if (m_pProfileToolButton)
+        m_pProfileToolButton->setToolTip(UIWizardImportApp::tr("Open Cloud Profile Manager..."));
+    if (m_pProfileInstanceLabel)
+        m_pProfileInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
-    labels << m_pFileLabel;
-    labels << m_pSourceLabel;
-    labels << m_pProfileLabel;
-    labels << m_pProfileInstanceLabel;
+    if (m_pFileLabel)
+        labels << m_pFileLabel;
+    if (m_pSourceLabel)
+        labels << m_pSourceLabel;
+    if (m_pProfileLabel)
+        labels << m_pProfileLabel;
+    if (m_pProfileInstanceLabel)
+        labels << m_pProfileInstanceLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
-    m_pSourceLayout->setColumnMinimumWidth(0, iMaxWidth);
-    m_pLocalContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
-    m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
+    if (m_pSourceLayout)
+        m_pSourceLayout->setColumnMinimumWidth(0, iMaxWidth);
+    if (m_pLocalContainerLayout)
+    {
+        m_pLocalContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
+        m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
+    }
 
     /* Update page appearance: */
     updatePageAppearance();

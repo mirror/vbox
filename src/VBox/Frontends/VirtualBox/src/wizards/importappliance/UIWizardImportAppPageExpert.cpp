@@ -241,30 +241,39 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
 void UIWizardImportAppPageExpert::retranslateUi()
 {
     /* Translate appliance container: */
-    m_pCntSource->setTitle(UIWizardImportApp::tr("Source"));
+    if (m_pCntSource)
+        m_pCntSource->setTitle(UIWizardImportApp::tr("Source"));
 
     /* Translate hardcoded values of Source combo-box: */
-    m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
-    m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);
-    /* Translate received values of Source combo-box.
-     * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pSourceComboBox->count(); ++i)
-        if (isSourceCloudOne(i))
-        {
-            m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
-            m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
-        }
+    if (m_pSourceComboBox)
+    {
+        m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
+        m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);
+        /* Translate received values of Source combo-box.
+         * We are enumerating starting from 0 for simplicity: */
+        for (int i = 0; i < m_pSourceComboBox->count(); ++i)
+            if (isSourceCloudOne(i))
+            {
+                m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
+                m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
+            }
+    }
 
     /* Translate file selector: */
-    m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
-    m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
-    m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+    if (m_pFileSelector)
+    {
+        m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
+        m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
+        m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+    }
 
     /* Translate profile stuff: */
-    m_pProfileToolButton->setToolTip(UIWizardImportApp::tr("Open Cloud Profile Manager..."));
+    if (m_pProfileToolButton)
+        m_pProfileToolButton->setToolTip(UIWizardImportApp::tr("Open Cloud Profile Manager..."));
 
     /* Translate settings container: */
-    m_pSettingsCnt->setTitle(UIWizardImportApp::tr("Settings"));
+    if (m_pSettingsCnt)
+        m_pSettingsCnt->setTitle(UIWizardImportApp::tr("Settings"));
 
     /* Update page appearance: */
     updatePageAppearance();
