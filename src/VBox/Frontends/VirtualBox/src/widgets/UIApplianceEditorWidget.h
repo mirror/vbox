@@ -301,6 +301,9 @@ public:
     /** Returns the currently set appliance reference. */
     CAppliance *appliance() const { return m_pAppliance; }
 
+    /** Defines virtual system base folder @a strPath. */
+    void setVirtualSystemBaseFolder(const QString &strPath);
+
     /** Returns the minimum guest RAM. */
     static int minGuestRAM() { return m_minGuestRAM; }
     /** Returns the maximum guest RAM. */
@@ -319,8 +322,6 @@ protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
-
-    void setVirtualSystemBaseFolder(const QString& path);
 
     /** Holds the list of VSD hints. */
     AbstractVSDParameterList  m_listVsdHints;
