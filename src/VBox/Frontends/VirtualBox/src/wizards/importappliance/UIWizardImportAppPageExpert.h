@@ -34,7 +34,6 @@ class UIWizardImportAppPageExpert : public UIWizardPage,
                                     public UIWizardImportAppPage2
 {
     Q_OBJECT;
-    Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
     Q_PROPERTY(CAppliance cloudAppliance READ cloudAppliance);
@@ -50,6 +49,8 @@ public:
 
 protected:
 
+    /** Allows access wizard from base part. */
+    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
     /** Allows to access 'field()' from base part. */
     virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
 

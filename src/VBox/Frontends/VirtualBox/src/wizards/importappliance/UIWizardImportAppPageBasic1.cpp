@@ -67,8 +67,11 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
 
 void UIWizardImportAppPage1::populateSources()
 {
-    /* To be executed just once, so combo should be empty: */
-    AssertReturnVoid(m_pSourceComboBox->count() == 0);
+    /* Block signals while updating: */
+    m_pSourceComboBox->blockSignals(true);
+
+    /* Clear combo initially: */
+    m_pSourceComboBox->clear();
 
     /* Compose hardcoded sources list, there might be few of list items: */
     QStringList sources;
@@ -109,6 +112,9 @@ void UIWizardImportAppPage1::populateSources()
         setSource("OCI");
     else
         setSource("local");
+
+    /* Unblock signals after update: */
+    m_pSourceComboBox->blockSignals(false);
 }
 
 void UIWizardImportAppPage1::populateProfiles()
@@ -300,9 +306,7 @@ void UIWizardImportAppPage1::updatePageAppearance()
 
 void UIWizardImportAppPage1::updateSourceComboToolTip()
 {
-    const int iCurrentIndex = m_pSourceComboBox->currentIndex();
-    const QString strCurrentToolTip = m_pSourceComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    const QString strCurrentToolTip = m_pSourceComboBox->currentData(Qt::ToolTipRole).toString();
     m_pSourceComboBox->setToolTip(strCurrentToolTip);
 }
 
@@ -524,15 +528,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
         }
     }
 
-    /* Populate sources: */
-    populateSources();
-    /* Populate profiles: */
-    populateProfiles();
-    /* Populate profile: */
-    populateProfile();
-    /* Populate profile instances: */
-    populateProfileInstances();
-
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
             this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
@@ -550,7 +545,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageBasic1::completeChanged);
 
     /* Register fields: */
-    registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
     registerField("cloudAppliance", this, "cloudAppliance");
@@ -615,6 +609,15 @@ void UIWizardImportAppPageBasic1::retranslateUi()
 
 void UIWizardImportAppPageBasic1::initializePage()
 {
+    /* Populate sources: */
+    populateSources();
+    /* Populate profiles: */
+    populateProfiles();
+    /* Populate profile: */
+    populateProfile();
+    /* Populate profile instances: */
+    populateProfileInstances();
+
     /* Translate page: */
     retranslateUi();
 }

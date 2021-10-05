@@ -156,7 +156,6 @@ protected:
 class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAppPage1
 {
     Q_OBJECT;
-    Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
     Q_PROPERTY(CAppliance cloudAppliance READ cloudAppliance);

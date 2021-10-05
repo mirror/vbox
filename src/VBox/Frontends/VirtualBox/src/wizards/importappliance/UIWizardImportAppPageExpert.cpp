@@ -211,18 +211,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
         }
     }
 
-    /* Populate sources: */
-    populateSources();
-    /* Populate profiles: */
-    populateProfiles();
-    /* Populate profile: */
-    populateProfile();
-    /* Populate profile instances: */
-    populateProfileInstances();
-    /* Populate form properties: */
-    populateFormProperties();
-    refreshFormPropertiesTable();
-
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
             this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
@@ -242,7 +230,6 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     /* Register classes: */
     qRegisterMetaType<ImportAppliancePointer>();
     /* Register fields: */
-    registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
     registerField("appliance", this, "appliance");
@@ -288,6 +275,18 @@ void UIWizardImportAppPageExpert::retranslateUi()
 
 void UIWizardImportAppPageExpert::initializePage()
 {
+    /* Populate sources: */
+    populateSources();
+    /* Populate profiles: */
+    populateProfiles();
+    /* Populate profile: */
+    populateProfile();
+    /* Populate profile instances: */
+    populateProfileInstances();
+    /* Populate form properties: */
+    populateFormProperties();
+    refreshFormPropertiesTable();
+
     /* Translate page: */
     retranslateUi();
 }
