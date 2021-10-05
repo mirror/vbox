@@ -99,10 +99,12 @@ WITH_EXTPACK=1
 WITH_DOCS=1
 WITH_LIBVPX=1
 WITH_LIBOPUS=1
+WITH_LIBTPMS=1
 BUILD_LIBXML2=
 BUILD_LIBCURL=
 BUILD_LIBSSL=
 BUILD_LIBVPX=
+BUILD_LIBTPMS=
 PASSIVE_MESA=0
 CC="gcc"
 CC32=""
@@ -1797,6 +1799,41 @@ EOF
 
 
 #
+# Check for libtpms
+#
+check_libtpms()
+{
+  if [ -z "$BUILD_LIBTPMS" ]; then
+    test_header libtpms
+    if which_wrapper pkg-config > /dev/null; then
+      libtpms_ver=`pkg-config libtpms --modversion 2>> $LOG`
+      if [ $? -eq 0 ]; then
+        FLGTPMS=`pkg-config libtpms --cflags`
+        INCTPMS=`strip_I "$FLGTPMS"`
+        LIBTPMS=`pkg-config libtpms --libs`
+      fi
+      cat > $ODIR.tmp_src.cc << EOF
+#include <cstdio>
+#include <libtpms/tpm_library.h>
+extern "C" int main(void)
+{
+  TPMLIB_MainInit();
+  printf("found, OK.\n");
+}
+EOF
+      [ -n "$INCTPMS" ] && I_INCTPMS=`prefix_I "$INCTPMS"`
+      if test_compile "$LIBTPMS $I_INCTPMS" libtpms libtpms; then
+        if test_execute; then
+          cnf_append "SDK_VBOX_TPMS_INCS" "$INCTPMS"
+          cnf_append "SDK_VBOX_TPMS_LIBS" "`strip_l "$LIBTPMS"`"
+          fi
+      fi
+    fi
+  fi
+}
+
+
+#
 # Check whether static libstdc++ is installed. This library is required
 # for the Linux guest additions.
 #
@@ -2387,6 +2424,7 @@ EOF
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
 [ $WITH_LIBVPX  -eq 1 ] && echo "  --disable-libvpx         don't use libvpx for video capturing"
 [ $WITH_LIBOPUS -eq 1 ] && echo "  --disable-libopus        don't use libopus for audio capturing"
+[ $WITH_LIBTPMS -eq 1 ] && echo "  --disable-libtpms        don't use libtpms for TPM emulation"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
   --disable-udptunnel      disable UDP tunnel networking
@@ -2394,6 +2432,7 @@ cat << EOF
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
   --build-libssl           build openssl from sources
+  --build-libtpms          build libtpms from sources
 EOF
 [ $OSE -eq 0 ] && cat << EOF
   --build-libcurl          build libcurl from sources
@@ -2634,6 +2673,9 @@ for option in "$@"; do
     --disable-libopus)
       WITH_LIBOPUS=0
       ;;
+    --disable-libtpms)
+      WITH_LIBTPMS=0
+      ;;
     --disable-sdl)
       WITH_SDL=0
       ;;
@@ -2820,6 +2862,7 @@ fi
 [ $WITH_HARDENING -eq 0 ] && cnf_append "VBOX_WITHOUT_HARDENING" "1"
 [ $WITH_HARDENING -eq 2 ] && cnf_append "VBOX_WITH_HARDENING" "2"
 [ $WITH_VMMRAW    -eq 0 ] && cnf_append "VBOX_WITH_RAW_MODE" ""
+[ $WITH_LIBTPMS   -eq 0 ] && cnf_append "VBOX_WITH_TPM_LIBTPMS" ""
 if [ $WITH_LIBVPX -eq 0 ]; then
   cnf_append "VBOX_WITH_LIBVPX" ""
   cnf_append "VBOX_WITH_RECORDING" ""
@@ -2852,6 +2895,7 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   check_curl
   [ $WITH_LIBVPX -eq 1 ] && check_vpx
   [ $WITH_LIBOPUS -eq 1 ] && check_libopus
+  [ $WITH_LIBTPMS -eq 1 ] && check_libtpms
   [ "$OS" != "darwin"  ] && check_png
   [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
   if [ $WITH_SDL -eq 1 ]; then
