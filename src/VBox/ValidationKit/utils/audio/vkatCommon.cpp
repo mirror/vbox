@@ -266,10 +266,8 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         AssertStmt(cbToPlayTotal, rc = VERR_INVALID_PARAMETER);
         uint32_t cbPlayedTotal  = 0;
 
-        /* We play a pre + post beacon before + after the actual test tone.
-         * Note that the beacon is *not* part of the written test object, so that we can detect differences between
-         * actual played back and serialized (written) data later. */
-        uint32_t const cbBeacon       = pTstEnv ? 1024 : 0; /* Only play a beacon if we're running in testing mode. */
+        /* We play a pre + post beacon before + after the actual test tone with exactly 1024 audio frames. */
+        uint32_t const cbBeacon       = PDMAudioPropsFramesToBytes(&pStream->Cfg.Props, 1024);
         uint32_t       cbBeaconToPlay = cbBeacon;
         uint32_t       cbBeaconPlayed = 0;
 
