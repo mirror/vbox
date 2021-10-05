@@ -1764,7 +1764,6 @@ int UIApplianceEditorWidget::m_maxGuestCPUCount = -1;
 
 UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pAppliance(0)
     , m_pModel(0)
 {
     /* Make sure all static content is properly initialized */
@@ -1847,6 +1846,11 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
 
     /* Translate finally: */
     retranslateUi();
+}
+
+void UIApplianceEditorWidget::setAppliance(const CAppliance &comAppliance)
+{
+    m_comAppliance = comAppliance;
 }
 
 void UIApplianceEditorWidget::setVsdHints(const AbstractVSDParameterList &hints)

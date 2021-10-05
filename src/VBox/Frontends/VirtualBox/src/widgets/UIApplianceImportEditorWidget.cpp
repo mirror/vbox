@@ -49,8 +49,8 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent /*
 
 void UIApplianceImportEditorWidget::setAppliance(const CAppliance &comAppliance)
 {
-    /* Cache newly passed appliance: */
-    m_comAppliance = comAppliance;
+    /* Call to base-class: */
+    UIApplianceEditorWidget::setAppliance(comAppliance);
 
     /* Cleanup previous stuff: */
     if (m_pModel)

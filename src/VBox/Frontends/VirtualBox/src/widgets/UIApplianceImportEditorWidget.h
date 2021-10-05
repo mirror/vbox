@@ -38,15 +38,10 @@ public:
     UIApplianceImportEditorWidget(QWidget *pParent = 0);
 
     /** Assigns @a comAppliance and populates widget contents. */
-    void setAppliance(const CAppliance &comAppliance);
+    virtual void setAppliance(const CAppliance &comAppliance) /* override final */;
 
     /** Prepares import by pushing edited data back to appliance. */
     void prepareImport();
-
-private:
-
-    /** Holds the appliance wrapper instance. */
-    CAppliance  m_comAppliance;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIApplianceImportEditorWidget_h */
