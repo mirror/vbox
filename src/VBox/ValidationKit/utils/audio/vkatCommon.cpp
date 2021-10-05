@@ -77,7 +77,7 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
  * @returns VBox status code. VERR_NOT_SUPPORTED if not supported.
  * @param   uPercentVol         Volume (in percent) to set.
  */
-int audioTestSetMasterVolume(unsigned uPercentVol)
+int audioTestSetMasterVolume(unsigned uVolPercent)
 {
 #ifdef VBOX_WITH_AUDIO_ALSA
     int rc = audioLoadAlsaLib();
@@ -118,11 +118,10 @@ int audioTestSetMasterVolume(unsigned uPercentVol)
     ALSA_CHECK_RET(elem != NULL, ("ALSA: Failed to find mixer element: %s\n", snd_strerror(err)));
 
     long uVolMin, uVolMax;
-
     snd_mixer_selem_get_playback_volume_range(elem, &uVolMin, &uVolMax);
     ALSA_CHECK_ERR_RET(("ALSA: Failed to get playback volume range: %s\n", snd_strerror(err)));
 
-    long const uVol = RT_MIN(uPercentVol, 100) * uVolMax / 100;
+    long const uVol = RT_MIN(uVolPercent, 100) * uVolMax / 100;
 
     err = snd_mixer_selem_set_playback_volume(elem, SND_MIXER_SCHN_FRONT_LEFT, uVol);
     ALSA_CHECK_ERR_RET(("ALSA: Failed to set playback volume left: %s\n", snd_strerror(err)));
@@ -136,6 +135,8 @@ int audioTestSetMasterVolume(unsigned uPercentVol)
 # undef ALSA_CHECK_RET
 # undef ALSA_CHECK_ERR_RET
 
+#else  /* !VBOX_WITH_AUDIO_ALSA */
+    RT_NOREF(uVolPercent);
 #endif /* VBOX_WITH_AUDIO_ALSA */
 
     /** @todo Port other platforms. */
