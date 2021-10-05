@@ -88,6 +88,12 @@ if defined(VBOX_WITH_MAIN) \
   include $(PATH_SUB_CURRENT)/libopus-1.2.1/Makefile.kmk
  endif
 
+ # libtpms for supporting the in process TPM emulation.
+ if defined(VBOX_WITH_LIBTPMS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) && !defined(VBOX_ONLY_EXTPACKS) \
+   && ("$(SDK_VBOX_LIBTPMS_INCS)" == "$(SDK_VBOX_LIBTPMS_DEFAULT_INCS)")
+  include $(PATH_SUB_CURRENT)/libtpms-0.9.0/Makefile.kmk
+ endif
+
 endif
 
 if  !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
