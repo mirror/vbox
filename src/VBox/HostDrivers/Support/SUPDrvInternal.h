@@ -772,6 +772,10 @@ typedef struct SUPDRVSESSION
     /** Pointer to the process protection structure for this session. */
     struct SUPDRVNTPROTECT         *pNtProtect;
 # endif
+# if defined(RT_OS_WINDOWS)
+    /** Reference to the user ID structure corresponding to the Uid member. */
+    struct SUPDRVNTUSERID          *pNtUserId;
+# endif
 #endif /* !SUPDRV_AGNOSTIC */
 } SUPDRVSESSION;
 

@@ -89,6 +89,10 @@
 /** Enables the fast I/O control code path. */
 #define VBOXDRV_WITH_FAST_IO
 
+/** Enables generating UID from NT SIDs so the GMM can share free memory
+ *  among VMs running as the same user. */
+//#define VBOXDRV_WITH_SID_TO_UID_MAPPING
+
 /* Missing if we're compiling against older WDKs. */
 #ifndef NonPagedPoolNx
 # define NonPagedPoolNx     ((POOL_TYPE)512)
@@ -98,6 +102,31 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+/**
+ * SID to User ID mapping.
+ *
+ * This is used to generate a RTUID value for a NT security identifier.
+ * Normally, the UID is the hash of the SID string, but due to collisions it may
+ * differ.  See g_NtUserIdHashTree and g_NtUserIdUidTree.
+ */
+typedef struct SUPDRVNTUSERID
+{
+    /** Hash tree node, key: RTStrHash1 of szSid. */
+    AVLLU32NODECORE     HashCore;
+    /** UID three node, key: The UID. */
+    AVLU32NODECORE      UidCore;
+    /** Reference counter. */
+    uint32_t volatile   cRefs;
+    /** The length of the SID string. */
+    uint16_t            cchSid;
+    /** The SID string for the user. */
+    char                szSid[RT_FLEXIBLE_ARRAY];
+} SUPDRVNTUSERID;
+/** Pointer to a SID to UID mapping. */
+typedef SUPDRVNTUSERID *PSUPDRVNTUSERID;
+#endif
+
 /**
  * Device extension used by VBoxDrvU.
  */
@@ -403,6 +432,15 @@ static PFNKEGETPROCESSORINDEXFROMNUMBER g_pfnKeGetProcessorIndexFromNumber = NUL
 /** Pointer to KeGetProcessorNumberFromIndex. */
 static PFNKEGETPROCESSORNUMBERFROMINDEX g_pfnKeGetProcessorNumberFromIndex = NULL;
 
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+/** Spinlock protecting g_NtUserIdHashTree and g_NtUserIdUidTree. */
+static RTSPINLOCK                   g_hNtUserIdLock     = NIL_RTSPINLOCK;
+/** AVL tree of SUPDRVNTUSERID structures by hash value. */
+static PAVLLU32NODECORE             g_NtUserIdHashTree  = NULL;
+/** AVL tree of SUPDRVNTUSERID structures by UID. */
+static PAVLU32NODECORE              g_NtUserIdUidTree   = NULL;
+#endif
+
 #ifdef VBOX_WITH_HARDENING
 /** Pointer to the stub device instance. */
 static PDEVICE_OBJECT               g_pDevObjStub = NULL;
@@ -656,68 +694,88 @@ NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         if (NT_SUCCESS(rcNt))
 #endif
         {
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
             /*
-             * Create device.
-             * (That means creating a device object and a symbolic link so the DOS
-             * subsystems (OS/2, win32, ++) can access the device.)
+             * Create the spinlock for the SID -> UID mappings.
              */
-            rcNt = vboxdrvNtCreateDevices(pDrvObj);
-            if (NT_SUCCESS(rcNt))
+            vrc = RTSpinlockCreate(&g_hNtUserIdLock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "NtUserId");
+            if (RT_SUCCESS(vrc))
+#endif
             {
                 /*
-                 * Initialize the device extension.
+                 * Create device.
+                 * (That means creating a device object and a symbolic link so the DOS
+                 * subsystems (OS/2, win32, ++) can access the device.)
                  */
-                PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
-                memset(pDevExt, 0, sizeof(*pDevExt));
-
-                vrc = supdrvInitDevExt(pDevExt, sizeof(SUPDRVSESSION));
-                if (!vrc)
+                rcNt = vboxdrvNtCreateDevices(pDrvObj);
+                if (NT_SUCCESS(rcNt))
                 {
                     /*
-                     * Setup the driver entry points in pDrvObj.
+                     * Initialize the device extension.
                      */
-                    pDrvObj->DriverUnload                                   = VBoxDrvNtUnload;
-                    pDrvObj->MajorFunction[IRP_MJ_CREATE]                   = VBoxDrvNtCreate;
-                    pDrvObj->MajorFunction[IRP_MJ_CLEANUP]                  = VBoxDrvNtCleanup;
-                    pDrvObj->MajorFunction[IRP_MJ_CLOSE]                    = VBoxDrvNtClose;
-                    pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]           = VBoxDrvNtDeviceControl;
-                    pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL]  = VBoxDrvNtInternalDeviceControl;
-                    pDrvObj->MajorFunction[IRP_MJ_READ]                     = VBoxDrvNtRead;
-                    pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
+                    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)g_pDevObjSys->DeviceExtension;
+                    memset(pDevExt, 0, sizeof(*pDevExt));
+
+                    vrc = supdrvInitDevExt(pDevExt, sizeof(SUPDRVSESSION));
+                    if (!vrc)
+                    {
+                        /*
+                         * Setup the driver entry points in pDrvObj.
+                         */
+                        pDrvObj->DriverUnload                                   = VBoxDrvNtUnload;
+                        pDrvObj->MajorFunction[IRP_MJ_CREATE]                   = VBoxDrvNtCreate;
+                        pDrvObj->MajorFunction[IRP_MJ_CLEANUP]                  = VBoxDrvNtCleanup;
+                        pDrvObj->MajorFunction[IRP_MJ_CLOSE]                    = VBoxDrvNtClose;
+                        pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]           = VBoxDrvNtDeviceControl;
+                        pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL]  = VBoxDrvNtInternalDeviceControl;
+                        pDrvObj->MajorFunction[IRP_MJ_READ]                     = VBoxDrvNtRead;
+                        pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
 
 #ifdef VBOXDRV_WITH_FAST_IO
-                    /* Fast I/O to speed up guest execution roundtrips. */
-                    pDrvObj->FastIoDispatch = (PFAST_IO_DISPATCH)&g_VBoxDrvFastIoDispatch;
+                        /* Fast I/O to speed up guest execution roundtrips. */
+                        pDrvObj->FastIoDispatch = (PFAST_IO_DISPATCH)&g_VBoxDrvFastIoDispatch;
 #endif
 
+                        /*
+                         * Register ourselves for power state changes.  We don't
+                         * currently care if this fails.
+                         */
+                        UNICODE_STRING      CallbackName;
+                        RtlInitUnicodeString(&CallbackName, L"\\Callback\\PowerState");
+
+                        OBJECT_ATTRIBUTES   Attr;
+                        InitializeObjectAttributes(&Attr, &CallbackName, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+                        rcNt = ExCreateCallback(&pDevExt->pObjPowerCallback, &Attr, TRUE, TRUE);
+                        if (rcNt == STATUS_SUCCESS)
+                            pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback,
+                                                                         VBoxPowerDispatchCallback,
+                                                                         g_pDevObjSys);
+
+                        /*
+                         * Done! Returning success!
+                         */
+                        Log(("VBoxDrv::DriverEntry returning STATUS_SUCCESS\n"));
+                        return STATUS_SUCCESS;
+                    }
+
                     /*
-                     * Register ourselves for power state changes.  We don't
-                     * currently care if this fails.
+                     * Failed. Clean up.
                      */
-                    UNICODE_STRING      CallbackName;
-                    RtlInitUnicodeString(&CallbackName, L"\\Callback\\PowerState");
+                    Log(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
+                    rcNt = VBoxDrvNtErr2NtStatus(vrc);
 
-                    OBJECT_ATTRIBUTES   Attr;
-                    InitializeObjectAttributes(&Attr, &CallbackName, OBJ_CASE_INSENSITIVE, NULL, NULL);
-
-                    rcNt = ExCreateCallback(&pDevExt->pObjPowerCallback, &Attr, TRUE, TRUE);
-                    if (rcNt == STATUS_SUCCESS)
-                        pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback,
-                                                                     VBoxPowerDispatchCallback,
-                                                                     g_pDevObjSys);
-
-                    /*
-                     * Done! Returning success!
-                     */
-                    Log(("VBoxDrv::DriverEntry returning STATUS_SUCCESS\n"));
-                    return STATUS_SUCCESS;
+                    vboxdrvNtDestroyDevices();
                 }
-
-                Log(("supdrvInitDevExit failed with vrc=%d!\n", vrc));
-                rcNt = VBoxDrvNtErr2NtStatus(vrc);
-
-                vboxdrvNtDestroyDevices();
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+                RTSpinlockDestroy(g_hNtUserIdLock);
+                g_hNtUserIdLock = NIL_RTSPINLOCK;
+#endif
             }
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+            else
+                rcNt = VBoxDrvNtErr2NtStatus(vrc);
+#endif
 #ifdef VBOX_WITH_HARDENING
             supdrvNtProtectTerm();
 #endif
@@ -757,6 +815,10 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
      * We ASSUME that it's not possible to unload a driver with open handles.
      */
     supdrvDeleteDevExt(pDevExt);
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+    RTSpinlockDestroy(g_hNtUserIdLock);
+    g_hNtUserIdLock = NIL_RTSPINLOCK;
+#endif
 #ifdef VBOX_WITH_HARDENING
     supdrvNtProtectTerm();
 #endif
@@ -767,6 +829,177 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
     NOREF(pDrvObj);
 }
 
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+
+/**
+ * Worker for supdrvNtUserIdMakeForSession.
+ */
+static bool supdrvNtUserIdMakeUid(PSUPDRVNTUSERID pNtUserId)
+{
+    pNtUserId->UidCore.Key = pNtUserId->HashCore.Key;
+    for (uint32_t cTries = 0; cTries < _4K; cTries++)
+    {
+        bool fRc = RTAvlU32Insert(&g_NtUserIdUidTree, &pNtUserId->UidCore);
+        if (fRc)
+            return true;
+        pNtUserId->UidCore.Key += pNtUserId->cchSid | 1;
+    }
+    return false;
+}
+
+
+/**
+ * Try create a RTUID value for the session.
+ *
+ * @returns VBox status code.
+ * @param   pSession    The session to try set SUPDRVSESSION::Uid for.
+ */
+static int supdrvNtUserIdMakeForSession(PSUPDRVSESSION pSession)
+{
+    /*
+     * Get the current security context and query the User SID for it.
+     */
+    SECURITY_SUBJECT_CONTEXT Ctx = { NULL, SecurityIdentification, NULL, NULL };
+    SeCaptureSubjectContext(&Ctx);
+
+    int         rc;
+    TOKEN_USER *pTokenUser = NULL;
+    NTSTATUS    rcNt = SeQueryInformationToken(SeQuerySubjectContextToken(&Ctx) /* or always PrimaryToken?*/,
+                                               TokenUser, (PVOID *)&pTokenUser);
+    if (NT_SUCCESS(rcNt))
+    {
+        /*
+         * Convert the user SID to a string to make it easier to handle, then prepare
+         * a user ID entry for it as that way we can combine lookup and insertion and
+         * avoid needing to deal with races.
+         */
+        UNICODE_STRING UniStr = RTNT_NULL_UNISTR();
+        rcNt = RtlConvertSidToUnicodeString(&UniStr, &pTokenUser->User.Sid, TRUE /*AllocateDesitnationString*/);
+        if (NT_SUCCESS(rcNt))
+        {
+            size_t cchSid = 0;
+            rc = RTUtf16CalcUtf8LenEx(UniStr.Buffer, UniStr.Length / sizeof(RTUTF16), &cchSid);
+            if (RT_SUCCESS(rc))
+            {
+                PSUPDRVNTUSERID const pNtUserIdNew = (PSUPDRVNTUSERID)RTMemAlloc(RT_UOFFSETOF_DYN(SUPDRVNTUSERID, szSid[cchSid + 1]));
+                if (pNtUserIdNew)
+                {
+                    char *pszSid = pNtUserIdNew->szSid;
+                    rc = RTUtf16ToUtf8Ex(UniStr.Buffer, UniStr.Length / sizeof(RTUTF16), &pszSid, cchSid + 1, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pNtUserIdNew->HashCore.Key = RTStrHash1(pNtUserIdNew->szSid);
+                        pNtUserIdNew->cchSid       = (uint16_t)cchSid;
+                        pNtUserIdNew->cRefs        = 1;
+
+                        /*
+                         * Do the lookup / insert.
+                         */
+                        RTSpinlockAcquire(g_hNtUserIdLock);
+                        AssertCompileMemberOffset(SUPDRVNTUSERID, HashCore, 0);
+                        PSUPDRVNTUSERID pNtUserId = (PSUPDRVNTUSERID)RTAvllU32Get(&g_NtUserIdHashTree, pNtUserIdNew->HashCore.Key);
+                        if (pNtUserId)
+                        {
+                            /* Match the strings till we reach the end of the collision list. */
+                            PSUPDRVNTUSERID const pNtUserIdHead = pNtUserId;
+                            while (   pNtUserId
+                                   && (   pNtUserId->cchSid != cchSid
+                                       || memcmp(pNtUserId->szSid, pNtUserId->szSid, cchSid) != 0))
+                                pNtUserId = (PSUPDRVNTUSERID)pNtUserId->HashCore.pList;
+                            if (pNtUserId)
+                            {
+                                /* Found matching: Retain reference and free the new entry we prepared. */
+                                uint32_t cRefs = ASMAtomicIncU32(&pNtUserId->cRefs);
+                                Assert(cRefs < _16K);
+                                RTSpinlockRelease(g_hNtUserIdLock);
+                            }
+                            else
+                            {
+                                /* No match: Try insert prepared entry after the head node. */
+                                if (supdrvNtUserIdMakeUid(pNtUserIdNew))
+                                {
+                                    pNtUserIdNew->HashCore.pList  = pNtUserIdHead->HashCore.pList;
+                                    pNtUserIdHead->HashCore.pList = &pNtUserIdNew->HashCore;
+                                    pNtUserId = pNtUserIdNew;
+                                }
+                                RTSpinlockRelease(g_hNtUserIdLock);
+                            }
+                        }
+                        else
+                        {
+                            /* No matching hash: Try insert the prepared entry. */
+                            pNtUserIdNew->UidCore.Key = pNtUserIdNew->HashCore.Key;
+                            if (supdrvNtUserIdMakeUid(pNtUserIdNew))
+                            {
+                                RTAvllU32Insert(&g_NtUserIdHashTree, &pNtUserIdNew->HashCore);
+                                pNtUserId = pNtUserIdNew;
+                            }
+                            RTSpinlockRelease(g_hNtUserIdLock);
+                        }
+
+                        if (pNtUserId != pNtUserIdNew)
+                            RTMemFree(pNtUserIdNew);
+
+                        /*
+                         * Update the session info.
+                         */
+                        pSession->pNtUserId = pNtUserId;
+                        pSession->Uid       = pNtUserId ? (RTUID)pNtUserId->UidCore.Key : NIL_RTUID;
+                    }
+                    else
+                        RTMemFree(pNtUserIdNew);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+            RtlFreeUnicodeString(&UniStr);
+        }
+        else
+            rc = RTErrConvertFromNtStatus(rcNt);
+        ExFreePool(pTokenUser);
+    }
+    else
+        rc = RTErrConvertFromNtStatus(rcNt);
+
+    SeReleaseSubjectContext(&Ctx);
+    return rc;
+}
+
+
+/**
+ * Releases a reference to @a pNtUserId.
+ *
+ * @param   pNtUserId   The NT user ID entry to release.
+ */
+static void supdrvNtUserIdRelease(PSUPDRVNTUSERID pNtUserId)
+{
+    if (pNtUserId)
+    {
+        uint32_t cRefs = ASMAtomicDecU32(&pNtUserId->cRefs);
+        Assert(cRefs < _8K);
+        if (cRefs == 0)
+        {
+            RTSpinlockAcquire(g_hNtUserIdLock);
+            if (pNtUserId->cRefs == 0)
+            {
+                PAVLLU32NODECORE pAssert1 = RTAvllU32RemoveNode(&g_NtUserIdHashTree, &pNtUserId->HashCore);
+                PAVLU32NODECORE  pAssert2 = RTAvlU32Remove(&g_NtUserIdUidTree, pNtUserId->UidCore.Key);
+
+                RTSpinlockRelease(g_hNtUserIdLock);
+
+                Assert(pAssert1 == &pNtUserId->HashCore);
+                Assert(pAssert2 == &pNtUserId->UidCore);
+                RT_NOREF(pAssert1, pAssert2);
+
+                RTMemFree(pNtUserId);
+            }
+            else
+                RTSpinlockRelease(g_hNtUserIdLock);
+        }
+    }
+}
+
+#endif /* VBOXDRV_WITH_SID_TO_UID_MAPPING */
 
 /**
  * For simplifying request completion into a simple return statement, extended
@@ -911,7 +1144,11 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                                                      &pSession);
                             if (RT_SUCCESS(rc))
                             {
-                                rc = supdrvSessionHashTabInsert(pDevExt, pSession, (PSUPDRVSESSION *)&pFileObj->FsContext, NULL);
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+                                rc = supdrvNtUserIdMakeForSession(pSession);
+                                if (RT_SUCCESS(rc))
+#endif
+                                    rc = supdrvSessionHashTabInsert(pDevExt, pSession, (PSUPDRVSESSION *)&pFileObj->FsContext, NULL);
                                 supdrvSessionRelease(pSession);
                                 if (RT_SUCCESS(rc))
                                 {
@@ -956,7 +1193,11 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 rc = supdrvCreateSession(pDevExt, true /*fUser*/, false /*fUnrestricted*/, &pSession);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = supdrvSessionHashTabInsert(pDevExt, pSession, (PSUPDRVSESSION *)&pFileObj->FsContext, NULL);
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+                    rc = supdrvNtUserIdMakeForSession(pSession);
+                    if (RT_SUCCESS(rc))
+#endif
+                        rc = supdrvSessionHashTabInsert(pDevExt, pSession, (PSUPDRVSESSION *)&pFileObj->FsContext, NULL);
                     supdrvSessionRelease(pSession);
                     if (RT_SUCCESS(rc))
                     {
@@ -976,7 +1217,11 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             rc = supdrvCreateSession(pDevExt, true /*fUser*/, pDevObj == g_pDevObjSys /*fUnrestricted*/, &pSession);
             if (RT_SUCCESS(rc))
             {
-                rc = supdrvSessionHashTabInsert(pDevExt, pSession, (PSUPDRVSESSION *)&pFileObj->FsContext, NULL);
+# ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+                rc = supdrvNtUserIdMakeForSession(pSession);
+                if (RT_SUCCESS(rc))
+# endif
+                    rc = supdrvSessionHashTabInsert(pDevExt, pSession, (PSUPDRVSESSION *)&pFileObj->FsContext, NULL);
                 supdrvSessionRelease(pSession);
                 if (RT_SUCCESS(rc))
                     return supdrvNtCompleteRequestEx(STATUS_SUCCESS, FILE_OPENED, pIrp);
@@ -1723,6 +1968,13 @@ void VBOXCALL supdrvOSCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSess
     RT_NOREF1(pDevExt);
 #else
     RT_NOREF2(pDevExt, pSession);
+#endif
+#ifdef VBOXDRV_WITH_SID_TO_UID_MAPPING
+    if (pSession->pNtUserId)
+    {
+        supdrvNtUserIdRelease(pSession->pNtUserId);
+        pSession->pNtUserId = NULL;
+    }
 #endif
 }
 
