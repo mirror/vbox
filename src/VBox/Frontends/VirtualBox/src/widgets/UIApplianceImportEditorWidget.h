@@ -55,47 +55,10 @@ public:
     void prepareImport();
 
     /** Performs import. */
-    bool import();
+    bool import(const QVector<KImportOptions> &options);
 
     /** Returns a list of license agreement pairs. */
     QList<QPair<QString, QString> > licenseAgreements() const;
-
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
-private slots:
-
-    /** Handles file path being changed to @a strNewPath. */
-    void sltHandlePathChanged(const QString &strNewPath);
-
-    /** Handles MAC address import policy changes. */
-    void sltHandleMACAddressImportPolicyChange();
-
-private:
-
-    /** Prepares all. */
-    void prepare();
-
-    /** Populates MAC address import policies. */
-    void populateMACAddressImportPolicies();
-
-    /** Defines MAC address import @a enmPolicy. */
-    void setMACAddressImportPolicy(MACAddressImportPolicy enmPolicy);
-
-    /** Holds the exporting file-path label instance. */
-    QLabel             *m_pLabelExportingFilePath;
-    /** Holds the exporting file-path editor instance. */
-    UIFilePathSelector *m_pEditorExportingFilePath;
-    /** Holds the MAC address label instance. */
-    QLabel             *m_pLabelMACExportPolicy;
-    /** Holds the MAC address combo instance. */
-    QComboBox          *m_pComboMACExportPolicy;
-    /** Holds the additional options label instance. */
-    QLabel             *m_pLabelAdditionalOptions;
-    /** Holds the 'import HDs as VDI' checkbox instance. */
-    QCheckBox          *m_pCheckboxImportHDsAsVDI;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIApplianceImportEditorWidget_h */

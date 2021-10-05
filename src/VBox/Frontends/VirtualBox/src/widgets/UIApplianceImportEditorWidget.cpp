@@ -16,28 +16,22 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QGridLayout>
-#include <QLabel>
 #include <QTextEdit>
-#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QITreeView.h"
 #include "UIApplianceImportEditorWidget.h"
 #include "UICommon.h"
-#include "UIFilePathSelector.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIWizardImportApp.h"
 
 /* COM includes: */
 #include "CAppliance.h"
-#include "CSystemProperties.h"
 
 
 /** UIApplianceSortProxyModel subclass for Export Appliance wizard. */
-class ImportSortProxyModel: public UIApplianceSortProxyModel
+class ImportSortProxyModel : public UIApplianceSortProxyModel
 {
 public:
 
@@ -56,14 +50,7 @@ public:
 
 UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
     : UIApplianceEditorWidget(pParent)
-    , m_pLabelExportingFilePath(0)
-    , m_pEditorExportingFilePath(0)
-    , m_pLabelMACExportPolicy(0)
-    , m_pComboMACExportPolicy(0)
-    , m_pLabelAdditionalOptions(0)
-    , m_pCheckboxImportHDsAsVDI(0)
 {
-    prepare();
 }
 
 bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
@@ -151,10 +138,6 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
         }
     }
 
-    /* Make sure we initialize model items with correct base folder path: */
-    if (m_pEditorExportingFilePath)
-        sltHandlePathChanged(m_pEditorExportingFilePath->path());
-
     return fResult;
 }
 
@@ -164,30 +147,10 @@ void UIApplianceImportEditorWidget::prepareImport()
         m_pModel->putBack();
 }
 
-bool UIApplianceImportEditorWidget::import()
+bool UIApplianceImportEditorWidget::import(const QVector<KImportOptions> &options)
 {
     if (m_pAppliance)
     {
-        /* Configure appliance importing: */
-        QVector<KImportOptions> options;
-        if (m_pComboMACExportPolicy)
-        {
-            const MACAddressImportPolicy enmPolicy = m_pComboMACExportPolicy->currentData().value<MACAddressImportPolicy>();
-            switch (enmPolicy)
-            {
-                case MACAddressImportPolicy_KeepAllMACs:
-                    options.append(KImportOptions_KeepAllMACs);
-                    break;
-                case MACAddressImportPolicy_KeepNATMACs:
-                    options.append(KImportOptions_KeepNATMACs);
-                    break;
-                default:
-                    break;
-            }
-        }
-        if (m_pCheckboxImportHDsAsVDI->isChecked())
-            options.append(KImportOptions_ImportToVDI);
-
         /* Import appliance: */
         UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(*m_pAppliance,
                                                                                                          options);
@@ -218,180 +181,4 @@ QList<QPair<QString, QString> > UIApplianceImportEditorWidget::licenseAgreements
     }
 
     return list;
-}
-
-void UIApplianceImportEditorWidget::retranslateUi()
-{
-    /* Call to base-class: */
-    UIApplianceEditorWidget::retranslateUi();
-
-    /* Translate path selector label: */
-    if (m_pLabelExportingFilePath)
-        m_pLabelExportingFilePath->setText(tr("&Machine Base Folder:"));
-
-    /* Translate check-box: */
-    if (m_pCheckboxImportHDsAsVDI)
-    {
-        m_pCheckboxImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
-        m_pCheckboxImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
-    }
-
-    /* Translate MAC address policy combo-box: */
-    m_pLabelMACExportPolicy->setText(tr("MAC Address &Policy:"));
-    for (int i = 0; i < m_pComboMACExportPolicy->count(); ++i)
-    {
-        const MACAddressImportPolicy enmPolicy = m_pComboMACExportPolicy->itemData(i).value<MACAddressImportPolicy>();
-        switch (enmPolicy)
-        {
-            case MACAddressImportPolicy_KeepAllMACs:
-            {
-                m_pComboMACExportPolicy->setItemText(i, tr("Include all network adapter MAC addresses"));
-                m_pComboMACExportPolicy->setItemData(i, tr("Include all network adapter MAC addresses during importing."), Qt::ToolTipRole);
-                break;
-            }
-            case MACAddressImportPolicy_KeepNATMACs:
-            {
-                m_pComboMACExportPolicy->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
-                m_pComboMACExportPolicy->setItemData(i, tr("Include only NAT network adapter MAC addresses during importing."), Qt::ToolTipRole);
-                break;
-            }
-            case MACAddressImportPolicy_StripAllMACs:
-            {
-                m_pComboMACExportPolicy->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
-                m_pComboMACExportPolicy->setItemData(i, tr("Generate new MAC addresses for all network adapters during importing."), Qt::ToolTipRole);
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    m_pLabelAdditionalOptions->setText(tr("Additional Options:"));
-}
-
-void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &strNewPath)
-{
-    setVirtualSystemBaseFolder(strNewPath);
-}
-
-void UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyChange()
-{
-    /* Update tool-tip: */
-    const QString strCurrentToolTip = m_pComboMACExportPolicy->currentData(Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-    m_pComboMACExportPolicy->setToolTip(strCurrentToolTip);
-}
-
-void UIApplianceImportEditorWidget::prepare()
-{
-    /* Prepare options layout: */
-    QGridLayout *pLayoutOptions = new QGridLayout;
-    if (pLayoutOptions)
-    {
-        pLayoutOptions->setColumnStretch(0, 0);
-        pLayoutOptions->setColumnStretch(1, 1);
-
-        /* Prepare path selector label: */
-        m_pLabelExportingFilePath = new QLabel(this);
-        if (m_pLabelExportingFilePath)
-        {
-            m_pLabelExportingFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutOptions->addWidget(m_pLabelExportingFilePath, 0, 0);
-        }
-        /* Prepare path selector editor: */
-        m_pEditorExportingFilePath = new UIFilePathSelector(this);
-        if (m_pEditorExportingFilePath)
-        {
-            m_pEditorExportingFilePath->setResetEnabled(true);
-            m_pEditorExportingFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-            m_pEditorExportingFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-            m_pLabelExportingFilePath->setBuddy(m_pEditorExportingFilePath);
-            pLayoutOptions->addWidget(m_pEditorExportingFilePath, 0, 1, 1, 2);
-        }
-
-        /* Prepare MAC address policy label: */
-        m_pLabelMACExportPolicy = new QLabel(this);
-        if (m_pLabelMACExportPolicy)
-        {
-            m_pLabelMACExportPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutOptions->addWidget(m_pLabelMACExportPolicy, 1, 0);
-        }
-        /* Prepare MAC address policy combo: */
-        m_pComboMACExportPolicy = new QComboBox(this);
-        if (m_pComboMACExportPolicy)
-        {
-            m_pComboMACExportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-            m_pLabelMACExportPolicy->setBuddy(m_pComboMACExportPolicy);
-            pLayoutOptions->addWidget(m_pComboMACExportPolicy, 1, 1, 1, 2);
-        }
-
-        /* Prepare additional options label: */
-        m_pLabelAdditionalOptions = new QLabel(this);
-        if (m_pLabelAdditionalOptions)
-        {
-            m_pLabelAdditionalOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutOptions->addWidget(m_pLabelAdditionalOptions, 2, 0);
-        }
-        /* Prepare import HDs as VDIs checkbox: */
-        m_pCheckboxImportHDsAsVDI = new QCheckBox(this);
-        {
-            m_pCheckboxImportHDsAsVDI->setCheckState(Qt::Checked);
-            pLayoutOptions->addWidget(m_pCheckboxImportHDsAsVDI, 2, 1);
-        }
-
-        /* Add into layout: */
-        m_pLayout->addLayout(pLayoutOptions);
-    }
-
-    /* Populate MAC address import combo: */
-    populateMACAddressImportPolicies();
-
-    /* And connect signals afterwards: */
-    connect(m_pEditorExportingFilePath, &UIFilePathSelector::pathChanged,
-            this, &UIApplianceImportEditorWidget::sltHandlePathChanged);
-    connect(m_pComboMACExportPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyChange);
-
-    /* Apply language settings: */
-    retranslateUi();
-}
-
-void UIApplianceImportEditorWidget::populateMACAddressImportPolicies()
-{
-    AssertReturnVoid(m_pComboMACExportPolicy->count() == 0);
-
-    /* Map known import options to known MAC address import policies: */
-    QMap<KImportOptions, MACAddressImportPolicy> knownOptions;
-    knownOptions[KImportOptions_KeepAllMACs] = MACAddressImportPolicy_KeepAllMACs;
-    knownOptions[KImportOptions_KeepNATMACs] = MACAddressImportPolicy_KeepNATMACs;
-
-    /* Load currently supported import options: */
-    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-    const QVector<KImportOptions> supportedOptions = comProperties.GetSupportedImportOptions();
-
-    /* Check which of supported options/policies are known: */
-    QList<MACAddressImportPolicy> supportedPolicies;
-    foreach (const KImportOptions &enmOption, supportedOptions)
-        if (knownOptions.contains(enmOption))
-            supportedPolicies << knownOptions.value(enmOption);
-
-    /* Add supported policies first: */
-    foreach (const MACAddressImportPolicy &enmPolicy, supportedPolicies)
-        m_pComboMACExportPolicy->addItem(QString(), QVariant::fromValue(enmPolicy));
-
-    /* Add hardcoded policy finally: */
-    m_pComboMACExportPolicy->addItem(QString(), QVariant::fromValue(MACAddressImportPolicy_StripAllMACs));
-
-    /* Set default: */
-    if (supportedPolicies.contains(MACAddressImportPolicy_KeepNATMACs))
-        setMACAddressImportPolicy(MACAddressImportPolicy_KeepNATMACs);
-    else
-        setMACAddressImportPolicy(MACAddressImportPolicy_StripAllMACs);
-}
-
-void UIApplianceImportEditorWidget::setMACAddressImportPolicy(MACAddressImportPolicy enmMACAddressImportPolicy)
-{
-    const int iIndex = m_pComboMACExportPolicy->findData(enmMACAddressImportPolicy);
-    AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pComboMACExportPolicy->setCurrentIndex(iIndex);
 }

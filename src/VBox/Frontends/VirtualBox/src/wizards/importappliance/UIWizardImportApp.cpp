@@ -236,8 +236,22 @@ bool UIWizardImportApp::importAppliance()
                     return false;
             }
         }
+
+        /* Gather import options: */
+        QVector<KImportOptions> options;
+        const MACAddressImportPolicy enmPolicy = field("macAddressImportPolicy").value<MACAddressImportPolicy>();
+        switch (enmPolicy)
+        {
+            case MACAddressImportPolicy_KeepAllMACs: options.append(KImportOptions_KeepAllMACs); break;
+            case MACAddressImportPolicy_KeepNATMACs: options.append(KImportOptions_KeepNATMACs); break;
+            default: break;
+        }
+        bool fImportHDsAsVDI = field("importHDsAsVDI").toBool();
+        if (fImportHDsAsVDI)
+            options.append(KImportOptions_ImportToVDI);
+
         /* Now import all virtual systems: */
-        return pImportApplianceWidget->import();
+        return pImportApplianceWidget->import(options);
     }
 }
 

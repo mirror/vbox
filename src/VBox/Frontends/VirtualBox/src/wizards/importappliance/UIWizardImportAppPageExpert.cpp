@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QCheckBox>
 #include <QFileInfo>
 #include <QGroupBox>
 #include <QHeaderView>
@@ -28,15 +29,19 @@
 /* GUI includes: */
 #include "QIComboBox.h"
 #include "QIToolButton.h"
-#include "UICommon.h"
 #include "UIApplianceImportEditorWidget.h"
+#include "UICommon.h"
 #include "UIEmptyFilePathSelector.h"
+#include "UIFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageExpert.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 
 UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName)
@@ -170,7 +175,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                 if (pApplianceWidgetCnt)
                 {
                     /* Prepare appliance widget layout: */
-                    QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
+                    QGridLayout *pApplianceWidgetLayout = new QGridLayout(pApplianceWidgetCnt);
                     if (pApplianceWidgetLayout)
                     {
                         /* Prepare appliance widget: */
@@ -179,7 +184,55 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                         {
                             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
                             m_pApplianceWidget->setFile(strFileName);
-                            pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
+                            pApplianceWidgetLayout->addWidget(m_pApplianceWidget, 0, 0, 1, 3);
+                        }
+
+                        /* Prepare path selector label: */
+                        m_pLabelImportFilePath = new QLabel(pApplianceWidgetCnt);
+                        if (m_pLabelImportFilePath)
+                        {
+                            m_pLabelImportFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                            pApplianceWidgetLayout->addWidget(m_pLabelImportFilePath, 1, 0);
+                        }
+                        /* Prepare path selector editor: */
+                        m_pEditorImportFilePath = new UIFilePathSelector(pApplianceWidgetCnt);
+                        if (m_pEditorImportFilePath)
+                        {
+                            m_pEditorImportFilePath->setResetEnabled(true);
+                            m_pEditorImportFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+                            m_pEditorImportFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+                            m_pLabelImportFilePath->setBuddy(m_pEditorImportFilePath);
+                            pApplianceWidgetLayout->addWidget(m_pEditorImportFilePath, 1, 1, 1, 2);
+                        }
+
+                        /* Prepare MAC address policy label: */
+                        m_pLabelMACImportPolicy = new QLabel(pApplianceWidgetCnt);
+                        if (m_pLabelMACImportPolicy)
+                        {
+                            m_pLabelMACImportPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                            pApplianceWidgetLayout->addWidget(m_pLabelMACImportPolicy, 2, 0);
+                        }
+                        /* Prepare MAC address policy combo: */
+                        m_pComboMACImportPolicy = new QComboBox(pApplianceWidgetCnt);
+                        if (m_pComboMACImportPolicy)
+                        {
+                            m_pComboMACImportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+                            m_pLabelMACImportPolicy->setBuddy(m_pComboMACImportPolicy);
+                            pApplianceWidgetLayout->addWidget(m_pComboMACImportPolicy, 2, 1, 1, 2);
+                        }
+
+                        /* Prepare additional options label: */
+                        m_pLabelAdditionalOptions = new QLabel(pApplianceWidgetCnt);
+                        if (m_pLabelAdditionalOptions)
+                        {
+                            m_pLabelAdditionalOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                            pApplianceWidgetLayout->addWidget(m_pLabelAdditionalOptions, 3, 0);
+                        }
+                        /* Prepare import HDs as VDIs checkbox: */
+                        m_pCheckboxImportHDsAsVDI = new QCheckBox(pApplianceWidgetCnt);
+                        {
+                            m_pCheckboxImportHDsAsVDI->setCheckState(Qt::Checked);
+                            pApplianceWidgetLayout->addWidget(m_pCheckboxImportHDsAsVDI, 3, 1);
                         }
                     }
 
@@ -226,6 +279,10 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageExpert::sltHandleProfileButtonClick);
     connect(m_pProfileInstanceList, &QListWidget::currentRowChanged,
             this, &UIWizardImportAppPageExpert::sltHandleInstanceListChange);
+    connect(m_pEditorImportFilePath, &UIFilePathSelector::pathChanged,
+            this, &UIWizardImportAppPageExpert::sltHandlePathChanged);
+    connect(m_pComboMACImportPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardImportAppPageExpert::sltHandleMACImportPolicyChange);
 
     /* Register classes: */
     qRegisterMetaType<ImportAppliancePointer>();
@@ -236,6 +293,8 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     registerField("vsdForm", this, "vsdForm");
     registerField("machineId", this, "machineId");
     registerField("applianceWidget", this, "applianceWidget");
+    registerField("macAddressImportPolicy", this, "macAddressImportPolicy");
+    registerField("importHDsAsVDI", this, "importHDsAsVDI");
 }
 
 void UIWizardImportAppPageExpert::retranslateUi()
@@ -275,6 +334,53 @@ void UIWizardImportAppPageExpert::retranslateUi()
     if (m_pSettingsCnt)
         m_pSettingsCnt->setTitle(UIWizardImportApp::tr("Settings"));
 
+    /* Translate path selector label: */
+    if (m_pLabelImportFilePath)
+        m_pLabelImportFilePath->setText(tr("&Machine Base Folder:"));
+
+    /* Translate MAC address policy combo-box: */
+    if (m_pLabelMACImportPolicy)
+    {
+        m_pLabelMACImportPolicy->setText(tr("MAC Address &Policy:"));
+        for (int i = 0; i < m_pComboMACImportPolicy->count(); ++i)
+        {
+            const MACAddressImportPolicy enmPolicy = m_pComboMACImportPolicy->itemData(i).value<MACAddressImportPolicy>();
+            switch (enmPolicy)
+            {
+                case MACAddressImportPolicy_KeepAllMACs:
+                {
+                    m_pComboMACImportPolicy->setItemText(i, tr("Include all network adapter MAC addresses"));
+                    m_pComboMACImportPolicy->setItemData(i, tr("Include all network adapter MAC addresses during importing."), Qt::ToolTipRole);
+                    break;
+                }
+                case MACAddressImportPolicy_KeepNATMACs:
+                {
+                    m_pComboMACImportPolicy->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
+                    m_pComboMACImportPolicy->setItemData(i, tr("Include only NAT network adapter MAC addresses during importing."), Qt::ToolTipRole);
+                    break;
+                }
+                case MACAddressImportPolicy_StripAllMACs:
+                {
+                    m_pComboMACImportPolicy->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
+                    m_pComboMACImportPolicy->setItemData(i, tr("Generate new MAC addresses for all network adapters during importing."), Qt::ToolTipRole);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+    /* Translate additional options label: */
+    if (m_pLabelAdditionalOptions)
+        m_pLabelAdditionalOptions->setText(tr("Additional Options:"));
+    /* Translate additional option check-box: */
+    if (m_pCheckboxImportHDsAsVDI)
+    {
+        m_pCheckboxImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
+        m_pCheckboxImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
+    }
+
     /* Update page appearance: */
     updatePageAppearance();
 
@@ -295,6 +401,9 @@ void UIWizardImportAppPageExpert::initializePage()
     /* Populate form properties: */
     populateFormProperties();
     refreshFormPropertiesTable();
+
+    /* Populate MAC address import combo: */
+    populateMACAddressImportPolicies();
 
     /* Translate page: */
     retranslateUi();
@@ -429,4 +538,14 @@ void UIWizardImportAppPageExpert::sltHandleInstanceListChange()
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
+}
+
+void UIWizardImportAppPageExpert::sltHandlePathChanged(const QString &strNewPath)
+{
+    m_pApplianceWidget->setVirtualSystemBaseFolder(strNewPath);
+}
+
+void UIWizardImportAppPageExpert::sltHandleMACImportPolicyChange()
+{
+    updateMACImportPolicyComboToolTip();
 }

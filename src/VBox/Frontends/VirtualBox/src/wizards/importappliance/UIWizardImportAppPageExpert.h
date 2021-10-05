@@ -40,6 +40,8 @@ class UIWizardImportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
     Q_PROPERTY(QString machineId READ machineId);
     Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
+    Q_PROPERTY(MACAddressImportPolicy macAddressImportPolicy READ macAddressImportPolicy);
+    Q_PROPERTY(bool importHDsAsVDI READ importHDsAsVDI);
 
 public:
 
@@ -84,6 +86,12 @@ private slots:
 
     /** Handles change in instance list. */
     void sltHandleInstanceListChange();
+
+    /** Handles file path being changed to @a strNewPath. */
+    void sltHandlePathChanged(const QString &strNewPath);
+
+    /** Handles MAC address import policy changes. */
+    void sltHandleMACImportPolicyChange();
 
 private:
 

@@ -27,6 +27,7 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QLabel;
 class QStackedLayout;
 class QIRichTextLabel;
@@ -39,8 +40,14 @@ protected:
     /** Constructs 2nd page base. */
     UIWizardImportAppPage2();
 
+    /** Populates MAC address import policies. */
+    void populateMACAddressImportPolicies();
+
     /** Updates page appearance. */
     virtual void updatePageAppearance();
+
+    /** Updates MAC import policy combo tool-tips. */
+    void updateMACImportPolicyComboToolTip();
 
     /** Refreshes form properties table. */
     void refreshFormPropertiesTable();
@@ -48,11 +55,32 @@ protected:
     /** Returns appliance widget instance. */
     ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
+    /** Returns MAC address import policy. */
+    MACAddressImportPolicy macAddressImportPolicy() const;
+    /** Defines MAC address import @a enmPolicy. */
+    void setMACAddressImportPolicy(MACAddressImportPolicy enmPolicy);
+
+    /** Returns whether hard disks should be inported as VDIs. */
+    bool importHDsAsVDI() const;
+
     /** Holds the settings container layout instance. */
     QStackedLayout *m_pSettingsCntLayout;
 
     /** Holds the appliance widget instance. */
-    ImportAppliancePointer     m_pApplianceWidget;
+    ImportAppliancePointer  m_pApplianceWidget;
+    /** Holds the import file-path label instance. */
+    QLabel                 *m_pLabelImportFilePath;
+    /** Holds the import file-path editor instance. */
+    UIFilePathSelector     *m_pEditorImportFilePath;
+    /** Holds the MAC address label instance. */
+    QLabel                 *m_pLabelMACImportPolicy;
+    /** Holds the MAC address combo instance. */
+    QComboBox              *m_pComboMACImportPolicy;
+    /** Holds the additional options label instance. */
+    QLabel                 *m_pLabelAdditionalOptions;
+    /** Holds the 'import HDs as VDI' checkbox instance. */
+    QCheckBox              *m_pCheckboxImportHDsAsVDI;
+
     /** Holds the Form Editor widget instance. */
     UIFormEditorWidgetPointer  m_pFormEditor;
 };
@@ -62,6 +90,8 @@ class UIWizardImportAppPageBasic2 : public UIWizardPage, public UIWizardImportAp
 {
     Q_OBJECT;
     Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
+    Q_PROPERTY(MACAddressImportPolicy macAddressImportPolicy READ macAddressImportPolicy);
+    Q_PROPERTY(bool importHDsAsVDI READ importHDsAsVDI);
 
 public:
 
@@ -87,6 +117,14 @@ protected:
 
     /** Updates page appearance. */
     virtual void updatePageAppearance() /* override */;
+
+private slots:
+
+    /** Handles file path being changed to @a strNewPath. */
+    void sltHandlePathChanged(const QString &strNewPath);
+
+    /** Handles MAC address import policy changes. */
+    void sltHandleMACImportPolicyChange();
 
 private:
 
