@@ -47,10 +47,9 @@ class UIEmptyFilePathSelector;
 /** Source combo data fields. */
 enum
 {
-    SourceData_ID              = Qt::UserRole + 1,
-    SourceData_Name            = Qt::UserRole + 2,
-    SourceData_ShortName       = Qt::UserRole + 3,
-    SourceData_IsItCloudFormat = Qt::UserRole + 4
+    SourceData_Name            = Qt::UserRole + 1,
+    SourceData_ShortName       = Qt::UserRole + 2,
+    SourceData_IsItCloudFormat = Qt::UserRole + 3
 };
 
 /** Profile combo data fields. */
@@ -91,8 +90,6 @@ protected:
     /** Returns whether source under certain @a iIndex is cloud one. */
     bool isSourceCloudOne(int iIndex = -1) const;
 
-    /** Returns source ID. */
-    QUuid sourceId() const;
     /** Returns profile name. */
     QString profileName() const;
     /** Returns machine ID. */

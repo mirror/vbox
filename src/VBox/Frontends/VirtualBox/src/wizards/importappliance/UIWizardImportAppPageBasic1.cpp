@@ -99,7 +99,6 @@ void UIWizardImportAppPage1::populateSources()
 
             /* Compose empty item, fill it's data: */
             m_pSourceComboBox->addItem(QString());
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetId(),        SourceData_ID);
             m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetName(),      SourceData_Name);
             m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetShortName(), SourceData_ShortName);
             m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, true,                       SourceData_IsItCloudFormat);
@@ -133,11 +132,11 @@ void UIWizardImportAppPage1::populateProfiles()
     /* Clear Cloud Provider: */
     m_comCloudProvider = CCloudProvider();
 
-    /* If provider chosen: */
-    if (!sourceId().isNull())
+    /* If source is cloud one & provider chosen: */
+    if (isSourceCloudOne() && !source().isEmpty())
     {
         /* (Re)initialize Cloud Provider: */
-        m_comCloudProvider = cloudProviderById(sourceId(), wizardImp());
+        m_comCloudProvider = cloudProviderByShortName(source(), wizardImp());
         if (m_comCloudProvider.isNotNull())
         {
             /* Iterate through existing profile names: */
@@ -329,12 +328,6 @@ bool UIWizardImportAppPage1::isSourceCloudOne(int iIndex /* = -1 */) const
     if (iIndex == -1)
         iIndex = m_pSourceComboBox->currentIndex();
     return m_pSourceComboBox->itemData(iIndex, SourceData_IsItCloudFormat).toBool();
-}
-
-QUuid UIWizardImportAppPage1::sourceId() const
-{
-    const int iIndex = m_pSourceComboBox->currentIndex();
-    return m_pSourceComboBox->itemData(iIndex, SourceData_ID).toUuid();
 }
 
 QString UIWizardImportAppPage1::profileName() const
