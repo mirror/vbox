@@ -194,16 +194,26 @@ typedef const TPMRESPHDR *PCTPMRESPHDR;
 
 /** @name TPM status codes.
  * @{ */
+#ifndef TPM_SUCCESS
 /** Request executed successfully. */
-#define TPM_SUCCESS                         UINT32_C(0)
+# define TPM_SUCCESS                        UINT32_C(0)
+#endif
+#ifndef TPM_AUTHFAIL
 /** Authentication failed. */
-#define TPM_AUTHFAIL                        UINT32_C(1)
+# define TPM_AUTHFAIL                       UINT32_C(1)
+#endif
+#ifndef TPM_BADINDEX
 /** An index is malformed. */
-#define TPM_BADINDEX                        UINT32_C(2)
+# define TPM_BADINDEX                       UINT32_C(2)
+#endif
+#ifndef TPM_BAD_PARAMETER
 /** A request parameter is invalid. */
-#define TPM_BAD_PARAMETER                   UINT32_C(3)
+# define TPM_BAD_PARAMETER                  UINT32_C(3)
+#endif
+#ifndef TPM_FAIL
 /** The TPM failed to execute the request. */
-#define TPM_FAIL                            UINT32_C(9)
+# define TPM_FAIL                           UINT32_C(9)
+#endif
 /** @todo Extend as need arises. */
 /** @} */
 
