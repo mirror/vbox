@@ -641,7 +641,9 @@ VBOX_WITH_DBGF_TRACING = 1
 # Enable TPM device emulation support.
 VBOX_WITH_TPM = 1
 # Enable libtpms, required for the in process TPM emulation.
-#VBOX_WITH_LIBTPMS = 1
+if1of ($(KBUILD_TARGET), linux darwin win)
+ VBOX_WITH_LIBTPMS = 1
+endif
 ## @}
 
 # legacy
