@@ -272,7 +272,7 @@ typedef _Bool bool;
      typedef _Bool bool;
 #   endif
 #  else
-#   if (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)) && (defined(_STDBOOL_H) || defined(__STDBOOL_H))
+#   if (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU) || defined(RT_OS_LINUX)) && (defined(_STDBOOL_H) || defined(__STDBOOL_H))
 #    undef bool
 #   endif
 typedef _Bool bool;
