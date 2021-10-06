@@ -33,17 +33,11 @@ extern "C" {
  * OpenSSL was configured with the following options:
  */
 
-#ifndef OPENSSL_NO_CAMELLIA
-# define OPENSSL_NO_CAMELLIA
-#endif
 #ifndef OPENSSL_NO_CAST
 # define OPENSSL_NO_CAST
 #endif
 #ifndef OPENSSL_NO_COMP
 # define OPENSSL_NO_COMP
-#endif
-#ifndef OPENSSL_NO_DES
-# define OPENSSL_NO_DES
 #endif
 #ifndef OPENSSL_NO_IDEA
 # define OPENSSL_NO_IDEA
