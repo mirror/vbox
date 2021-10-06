@@ -42,7 +42,6 @@
 
 QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,
                                                      const QString &strMachineFolder,
-                                                     const QString &strMachineBaseName,
                                                      QWidget *pCaller)
 {
     QUuid uMediumId;
@@ -50,7 +49,7 @@ QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,
                                                          QUuid() /* current medium id */,
                                                          uMediumId,
                                                          strMachineFolder,
-                                                         strMachineBaseName,
+                                                         QString() /* strMachineName */,
                                                          strOSTypeID,
                                                          false /* don't show/enable the create action: */,
                                                          QUuid() /* Machinie Id */);
@@ -192,7 +191,6 @@ void UIWizardNewVMDiskPage::sltGetWithFileOpenDialog()
     AssertReturnVoid(!comOSType.isNull());
     QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(comOSType.GetId(),
                                                                      pWizard->machineFolder(),
-                                                                     pWizard->machineBaseName(),
                                                                      this);
     if (!uMediumId.isNull())
     {
@@ -300,7 +298,7 @@ void UIWizardNewVMDiskPage::initializePage()
     QString strDefaultExtension =  UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk);
 
     /* We set the medium name and path according to machine name/path and do not allow user change these in the guided mode: */
-    QString strDefaultName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
+    QString strDefaultName = pWizard->machineFileName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineFileName();
     const QString &strMachineFolder = pWizard->machineFolder();
     QString strMediumPath =
         UIWizardDiskEditors::constructMediumFilePath(UIWizardDiskEditors::appendExtension(strDefaultName,

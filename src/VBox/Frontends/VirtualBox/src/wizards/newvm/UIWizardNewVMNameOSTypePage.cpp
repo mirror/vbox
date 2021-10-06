@@ -214,7 +214,7 @@ void UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(UINameAndSystemEditor
     /* Compose machine folder/basename: */
     const QFileInfo fileInfo(pWizard->machineFilePath());
     pWizard->setMachineFolder(fileInfo.absolutePath());
-    pWizard->setMachineBaseName(fileInfo.completeBaseName());
+    pWizard->setMachineBaseName(pNameAndSystemEditor->name());
 }
 
 bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,

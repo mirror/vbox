@@ -91,6 +91,9 @@ public:
         const QString &machineFilePath() const;
         void setMachineFilePath(const QString &strMachineFilePath);
 
+        /* The name of the .vbox file. Obtained from machineFilePath(). Unlike machine base name it cannot have characters like / etc. */
+        QString machineFileName() const;
+
         const QString &machineFolder() const;
         void setMachineFolder(const QString &strMachineFolder);
 
@@ -210,7 +213,7 @@ private:
        QString m_strMachineFilePath;
        /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
        QString m_strMachineFolder;
-       /** Base name of the machine is generated from the m_strMachineFilePath. */
+       /** Base name of the machine. Can include characters / or \. */
        QString m_strMachineBaseName;
 
        /** Type Id od the OS detected from the ISO file by IUnattended. */

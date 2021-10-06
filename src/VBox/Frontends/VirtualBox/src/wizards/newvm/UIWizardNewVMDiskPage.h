@@ -46,7 +46,6 @@ namespace UIWizardNewVMDiskCommon
 {
     QUuid getWithFileOpenDialog(const QString &strOSTypeID,
                                 const QString &strMachineFolder,
-                                const QString &strMachineBaseName,
                                 QWidget *pCaller);
 }
 

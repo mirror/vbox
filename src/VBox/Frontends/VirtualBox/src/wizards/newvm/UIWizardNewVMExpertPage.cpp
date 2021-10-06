@@ -129,7 +129,6 @@ void UIWizardNewVMExpertPage::sltGetWithFileOpenDialog()
     AssertReturnVoid(!comOSType.isNull());
     QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(comOSType.GetId(),
                                                                      pWizard->machineFolder(),
-                                                                     pWizard->machineBaseName(),
                                                                      this);
     if (!uMediumId.isNull())
     {
@@ -682,9 +681,14 @@ void UIWizardNewVMExpertPage::sltMediumSizeChanged(qulonglong uSize)
 
 void UIWizardNewVMExpertPage::sltMediumPathChanged(const QString &strPath)
 {
-    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturnVoid(pWizard);
+    AssertReturnVoid(!strPath.isEmpty());
     m_userModifiedParameters << "MediumPath";
-    wizardWindow<UIWizardNewVM>()->setMediumPath(strPath);
+    QString strMediumPath =
+        UIWizardDiskEditors::appendExtension(strPath,
+                                             UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
+    pWizard->setMediumPath(strMediumPath);
     emit completeChanged();
 }
 
@@ -693,11 +697,15 @@ void UIWizardNewVMExpertPage::sltMediumLocationButtonClicked()
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
     CMediumFormat comMediumFormat(pWizard->mediumFormat());
+
+    QString strMediumPath =
+        UIWizardDiskEditors::appendExtension(m_pSizeAndLocationGroup->mediumFilePath(),
+                                             UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QString strSelectedPath =
-        UIWizardDiskEditors::openFileDialogForDiskFile(pWizard->mediumPath(), comMediumFormat, KDeviceType_HardDisk, pWizard);
+        UIWizardDiskEditors::openFileDialogForDiskFile(strMediumPath, comMediumFormat, KDeviceType_HardDisk, pWizard);
     if (strSelectedPath.isEmpty())
         return;
-    QString strMediumPath =
+    strMediumPath =
         UIWizardDiskEditors::appendExtension(strSelectedPath,
                                              UIWizardDiskEditors::defaultExtension(pWizard->mediumFormat(), KDeviceType_HardDisk));
     QFileInfo mediumPath(strMediumPath);
@@ -808,7 +816,7 @@ void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
-    QString strDiskFileName = pWizard->machineBaseName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineBaseName();
+    QString strDiskFileName = pWizard->machineFileName().isEmpty() ? QString("NewVirtualDisk1") : pWizard->machineFileName();
     QString strMediumPath = pWizard->machineFolder();
     if (strMediumPath.isEmpty())
     {

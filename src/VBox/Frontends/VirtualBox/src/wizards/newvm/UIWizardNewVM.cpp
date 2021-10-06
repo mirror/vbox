@@ -654,6 +654,11 @@ void UIWizardNewVM::setMachineFilePath(const QString &strMachineFilePath)
     m_strMachineFilePath = strMachineFilePath;
 }
 
+QString UIWizardNewVM::machineFileName() const
+{
+    return QFileInfo(machineFilePath()).completeBaseName();
+}
+
 const QString &UIWizardNewVM::machineFolder() const
 {
     return m_strMachineFolder;
