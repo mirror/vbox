@@ -38,6 +38,14 @@
 # include <alsa/version.h>
 # include "DrvHostAudioAlsaStubs.h"
 #endif
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h>
+# include <iprt/win/audioclient.h>
+# include <endpointvolume.h> /* For IAudioEndpointVolume. */
+# include <audiopolicy.h> /* For IAudioSessionManager. */
+# include <AudioSessionTypes.h>
+# include <Mmdeviceapi.h>
+#endif
 
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
@@ -135,29 +143,54 @@ int audioTestSetMasterVolume(unsigned uVolPercent)
 # undef ALSA_CHECK_RET
 # undef ALSA_CHECK_ERR_RET
 
-#else  /* !VBOX_WITH_AUDIO_ALSA */
+#elif defined(RT_OS_WINDOWS)
 
-#if 0
-    CoInitialize(NULL);
-    CLSID CLSID_const MMDeviceEnumerator =_uuidof(MMDeviceEnumerator);
-    IID IID_const IMMDeviceEnumerator = uuidof(IMMDeviceEnumerator);
-    IMMDeviceEnumerator* pEnumerator;
-    HRESULT hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator);
-    IMMDevice *pDevice;
-    hr = pEnumerator->GetDefaultAudioEndpoint(EDataFlow::eRender, ERole::eConsole, &pDevice);
-    IAudioSessionManager *pManager;
-    IID IID_const IMMAudioSessionManager = uuidof(IAudioSessionManager);
-    hr = pDevice->Activate(IID_IMMAudioSessionManager, CLSCTX_ALL, NULL, (void**)&pManager);
-    ISimpleAudioVolume *pSimpleAudioVolume;
-    hr = pManager->GetSimpleAudioVolume(NULL, true, &pSimpleAudioVolume);
-    pSimpleAudioVolume->SetMasterVolume(1.0);
-#endif
+    HRESULT hr;
+
+# define WASAPI_CHECK_HR_RET(a_Text) \
+    if (FAILED(hr)) \
+    { \
+        AssertLogRelMsgFailed(a_Text); \
+        return VERR_GENERAL_FAILURE; \
+    }
+
+    hr = CoInitialize(NULL);
+    IMMDeviceEnumerator* pIEnumerator = NULL;
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void **)&pIEnumerator);
+    WASAPI_CHECK_HR_RET(("WASAPI: Unable to create IMMDeviceEnumerator, hr=%Rhrc", hr));
+
+    IMMDevice *pIMMDevice = NULL;
+    hr = pIEnumerator->GetDefaultAudioEndpoint(EDataFlow::eRender, ERole::eConsole, &pIMMDevice);
+    WASAPI_CHECK_HR_RET(("WASAPI: Unable to get audio endpoint, hr=%Rhrc", hr));
+    pIEnumerator->Release();
+
+    IAudioEndpointVolume *pIAudioEndpointVolume = NULL;
+    hr = pIMMDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, (void **)&pIAudioEndpointVolume);
+    WASAPI_CHECK_HR_RET(("WASAPI: Unable to activate audio endpoint volume, hr=%Rhrc", hr));
+    pIMMDevice->Release();
+
+    float dbMin, dbMax, dbInc;
+    hr = pIAudioEndpointVolume->GetVolumeRange(&dbMin, &dbMax, &dbInc);
+    WASAPI_CHECK_HR_RET(("WASAPI: Unable to get volume range, hr=%Rhrc", hr));
+
+    float const dbSteps           = (dbMax - dbMin) / dbInc;
+    float const dbStepsPerPercent = (dbSteps * dbInc) / 100;
+    float const dbVol             = dbMin + (dbStepsPerPercent * (float(RT_MIN(uVolPercent, 100.0))));
+
+    hr = pIAudioEndpointVolume->SetMasterVolumeLevel(dbVol, NULL);
+    WASAPI_CHECK_HR_RET(("WASAPI: Unable to set master volume level, hr=%Rhrc", hr));
+    pIAudioEndpointVolume->Release();
+
+    return VINF_SUCCESS;
+
+# undef WASAPI_CHECK_HR_RET
+
+#else
 
     RT_NOREF(uVolPercent);
-#endif /* VBOX_WITH_AUDIO_ALSA */
-
     /** @todo Port other platforms. */
-    return VERR_NOT_SUPPORTED;
+   return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
