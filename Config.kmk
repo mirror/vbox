@@ -4524,7 +4524,7 @@ endif
 
 ifdef VBOX_WITH_LIBTPMS
  SDK_VBOX_TPMS               = .
- SDK_VBOX_TPMS_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libtpms-0.9.0
+ SDK_VBOX_TPMS_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libtpms-0.9.0/include
  SDK_VBOX_TPMS_INCS         ?= $(SDK_VBOX_TPMS_DEFAULT_INCS)
  SDK_VBOX_TPMS_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libtpms$(VBOX_SUFF_LIB)
 endif
