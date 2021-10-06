@@ -4200,16 +4200,15 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
         AssertLogRelRCReturn(rc, rc);
         if (pConfig->fNestedHWVirt)
         {
-            if (!fNestedPagingAndFullGuestExec)
-                return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
-                                  "Cannot enable nested VT-x/AMD-V without nested-paging and unresricted guest execution!\n");
-
             /** @todo Think about enabling this later with NEM/KVM. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
                 LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used!\n"));
                 pConfig->fNestedHWVirt = false;
             }
+            else if (!fNestedPagingAndFullGuestExec)
+                return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
+                                  "Cannot enable nested VT-x/AMD-V without nested-paging and unresricted guest execution!\n");
         }
 
         if (pConfig->fNestedHWVirt)
