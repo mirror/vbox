@@ -82,7 +82,13 @@ private:
 
     struct Data
     {
-        Data() : m_ThreadWatcher(NIL_RTTHREAD), m_SemEvWatcher(NIL_RTSEMEVENT)
+        Data()
+            : m_ThreadWatcher(NIL_RTTHREAD)
+            , m_SemEvWatcher(NIL_RTSEMEVENT)
+#ifdef VBOX_WITH_MAIN_NLS
+            , m_pVBoxTranslator(NULL)
+            , m_pTrComponent(NULL)
+#endif
         {}
 
         ~Data()
