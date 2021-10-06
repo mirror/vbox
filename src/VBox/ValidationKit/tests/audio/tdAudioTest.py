@@ -695,13 +695,13 @@ class tdAudioTest(vbox.TestDriver):
             reporter.log('Audio testing for non-trunk builds skipped.');
             fSkip = True;
 
-        sVkatExe = self.getBinTool('vkat');
-        asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
-        fRc      = self.executeHst("VKAT Host Audio Probing", asArgs);
-        if  not fSkip \
-        and not fRc:
-            reporter.log('Audio not available on host, skipping audio tests.');
-            fSkip = True;
+        if not fSkip:
+            sVkatExe = self.getBinTool('vkat');
+            asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
+            fRc      = self.executeHst("VKAT Host Audio Probing", asArgs);
+            if not fRc:
+                # Not fatal, as VBox then should fall back to the NULL audio backend (also worth having as a test case).
+                reporter.log('Warning: Backend probing on host failed, no audio available (pure server installation?)');
 
         if fSkip:
             reporter.testDone(fSkipped = True);
