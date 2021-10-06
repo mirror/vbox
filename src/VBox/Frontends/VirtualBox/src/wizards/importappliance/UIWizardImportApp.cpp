@@ -314,33 +314,7 @@ void UIWizardImportApp::retranslateUi()
 
     /* Translate wizard: */
     setWindowTitle(tr("Import Virtual Appliance"));
-    setButtonText(QWizard::CustomButton2, tr("Restore Defaults"));
     setButtonText(QWizard::FinishButton, tr("Import"));
-}
-
-void UIWizardImportApp::sltCurrentIdChanged(int iId)
-{
-    /* Call to base-class: */
-    UIWizard::sltCurrentIdChanged(iId);
-    /* Enable 2nd button (Reset to Defaults) for 2nd and Expert pages only! */
-    setOption(QWizard::HaveCustomButton2, (mode() == WizardMode_Basic && iId == Page2) ||
-                                          (mode() == WizardMode_Expert && iId == PageExpert));
-}
-
-void UIWizardImportApp::sltCustomButtonClicked(int iId)
-{
-    /* Call to base-class: */
-    UIWizard::sltCustomButtonClicked(iId);
-
-    /* Handle 2nd button: */
-    if (iId == CustomButton2)
-    {
-        /* Get appliance widget: */
-        ImportAppliancePointer pApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
-        AssertMsg(!pApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
-        /* Reset it to default: */
-        pApplianceWidget->restoreDefaults();
-    }
 }
 
 QList<QPair<QString, QString> > UIWizardImportApp::licenseAgreements() const

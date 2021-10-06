@@ -80,13 +80,6 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-protected slots:
-
-    /** Handles change for page with @a iId. */
-    virtual void sltCurrentIdChanged(int iId) /* override */;
-    /** Handles custom button 2 click  for page with @a iId. */
-    virtual void sltCustomButtonClicked(int iId) /* override */;
-
 private:
 
     /** Returns a list of license agreement pairs. */

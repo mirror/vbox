@@ -33,6 +33,7 @@
 #include "UICommon.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIFilePathSelector.h"
+#include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -284,15 +285,12 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     connect(m_pComboMACImportPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardImportAppPageExpert::sltHandleMACImportPolicyChange);
 
-    /* Register classes: */
-    qRegisterMetaType<ImportAppliancePointer>();
     /* Register fields: */
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
     registerField("appliance", this, "appliance");
     registerField("vsdForm", this, "vsdForm");
     registerField("machineId", this, "machineId");
-    registerField("applianceWidget", this, "applianceWidget");
     registerField("macAddressImportPolicy", this, "macAddressImportPolicy");
     registerField("importHDsAsVDI", this, "importHDsAsVDI");
 }

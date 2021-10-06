@@ -26,9 +26,11 @@
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
+#include "UIApplianceImportEditorWidget.h"
 #include "UIApplianceUnverifiedCertificateViewer.h"
 #include "UICommon.h"
 #include "UIFilePathSelector.h"
+#include "UIFormEditorWidget.h"
 #include "UIMessageCenter.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic2.h"
@@ -46,12 +48,14 @@
 
 UIWizardImportAppPage2::UIWizardImportAppPage2()
     : m_pSettingsCntLayout(0)
+    , m_pApplianceWidget(0)
     , m_pLabelImportFilePath(0)
     , m_pEditorImportFilePath(0)
     , m_pLabelMACImportPolicy(0)
     , m_pComboMACImportPolicy(0)
     , m_pLabelAdditionalOptions(0)
     , m_pCheckboxImportHDsAsVDI(0)
+    , m_pFormEditor(0)
 {
 }
 
@@ -266,10 +270,7 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
     connect(m_pComboMACImportPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardImportAppPageBasic2::sltHandleMACImportPolicyChange);
 
-    /* Register classes: */
-    qRegisterMetaType<ImportAppliancePointer>();
     /* Register fields: */
-    registerField("applianceWidget", this, "applianceWidget");
     registerField("macAddressImportPolicy", this, "macAddressImportPolicy");
     registerField("importHDsAsVDI", this, "importHDsAsVDI");
 }

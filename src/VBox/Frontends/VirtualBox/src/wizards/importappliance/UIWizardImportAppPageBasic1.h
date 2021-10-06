@@ -22,7 +22,6 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardImportAppDefs.h"
 #include "UIWizardPage.h"
 
 /* COM includes: */
