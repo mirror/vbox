@@ -3460,7 +3460,6 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, const 
  * @returns VBox status code suitable to scheduling.
  * @retval  VINF_SUCCESS if the read was performed successfully.
  * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
- * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtxCore    The context core.
@@ -3638,7 +3637,6 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, void 
  * @returns VBox status code suitable to scheduling.
  * @retval  VINF_SUCCESS if the read was performed successfully.
  * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
- * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtxCore    The context core.
@@ -3836,7 +3834,6 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxC
  * @returns VBox status code suitable to scheduling.
  * @retval  VINF_SUCCESS if the read was performed successfully.
  * @retval  VINF_EM_RAW_GUEST_TRAP if an exception was raised but not dispatched yet.
- * @retval  VINF_TRPM_XCPT_DISPATCHED if an exception was raised and dispatched.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtxCore    The context core.

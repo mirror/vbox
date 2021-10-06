@@ -1097,18 +1097,16 @@
 #define VERR_TRPM_DONT_PANIC                (-2403)
 /** Reason for leaving RC: Double Fault. */
 #define VERR_TRPM_PANIC                     (-2404)
-/** The exception was dispatched for raw-mode execution. */
-#define VINF_TRPM_XCPT_DISPATCHED           2405
 /** Bad TRPM_TRAP_IN_OP. */
-#define VERR_TRPM_BAD_TRAP_IN_OP            (-2406)
+#define VERR_TRPM_BAD_TRAP_IN_OP            (-2405)
 /** Internal processing error \#1 in TRPM. */
-#define VERR_TRPM_IPE_1                     (-2407)
+#define VERR_TRPM_IPE_1                     (-2406)
 /** Internal processing error \#2 in TRPM. */
-#define VERR_TRPM_IPE_2                     (-2408)
+#define VERR_TRPM_IPE_2                     (-2407)
 /** Internal processing error \#3 in TRPM. */
-#define VERR_TRPM_IPE_3                     (-2409)
+#define VERR_TRPM_IPE_3                     (-2408)
 /** Got into a part of TRPM that is not used when HM (VT-x/AMD-V) is enabled. */
-#define VERR_TRPM_HM_IPE                    (-2410)
+#define VERR_TRPM_HM_IPE                    (-2409)
 /** @} */
 
 
