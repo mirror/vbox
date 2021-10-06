@@ -265,7 +265,15 @@ static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEXW const *pOSInfoE
         else if (dwMajorVersion == 10)
         {
             if (dwMinorVersion == 0)
-                enmVer = bProductType != VER_NT_WORKSTATION ? kRTWinOSType_2016   : kRTWinOSType_10;
+            {
+                /* The version detection for server 2019, server 2022 and windows 11
+                   are by build number.  Stupid, stupid, Microsoft. */
+                if (bProductType == VER_NT_WORKSTATION)
+                    enmVer = dwBuildNumber >= 22000 ? kRTWinOSType_11 : kRTWinOSType_10;
+                else
+                    enmVer = dwBuildNumber >= 20348 ? kRTWinOSType_2022
+                           : dwBuildNumber >= 17763 ? kRTWinOSType_2019 : kRTWinOSType_2016;
+            }
             else
                 enmVer = kRTWinOSType_NT_UNKNOWN;
         }

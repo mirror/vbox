@@ -226,6 +226,9 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
                 case kRTWinOSType_2012R2:       strcpy(szTmp, "Windows 2012 R2"); break;
                 case kRTWinOSType_10:           strcpy(szTmp, "Windows 10"); break;
                 case kRTWinOSType_2016:         strcpy(szTmp, "Windows 2016"); break;
+                case kRTWinOSType_2019:         strcpy(szTmp, "Windows 2019"); break;
+                case kRTWinOSType_2022:         strcpy(szTmp, "Windows 2022"); break;
+                case kRTWinOSType_11:           strcpy(szTmp, "Windows 11"); break;
 
                 case kRTWinOSType_NT_UNKNOWN:
                     RTStrPrintf(szTmp, sizeof(szTmp), "Unknown NT v%u.%u",
