@@ -44,6 +44,7 @@
 # include <sys/ioctl.h>
 # include <sys/mman.h>
 # include <sys/soundcard.h>
+# include <unistd.h>
 #endif
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
