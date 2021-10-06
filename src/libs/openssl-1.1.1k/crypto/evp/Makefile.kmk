@@ -30,6 +30,7 @@ crypto_evp_SOURCES = \
 	e_aes_cbc_hmac_sha256.c \
 	e_aria.c \
 	e_bf.c \
+	e_camellia.c \
 	e_cast.c \
 	e_chacha20_poly1305.c \
 	e_des.c \
