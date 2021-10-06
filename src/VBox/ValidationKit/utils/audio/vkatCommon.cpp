@@ -155,6 +155,7 @@ int audioTestSetMasterVolume(unsigned uVolPercent)
     }
 
     hr = CoInitialize(NULL);
+    WASAPI_CHECK_HR_RET(("CoInitialize() failed, hr=%Rhrc", hr));
     IMMDeviceEnumerator* pIEnumerator = NULL;
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void **)&pIEnumerator);
     WASAPI_CHECK_HR_RET(("WASAPI: Unable to create IMMDeviceEnumerator, hr=%Rhrc", hr));
