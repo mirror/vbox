@@ -31,14 +31,16 @@
 #include <iprt/vfs.h>
 #include <iprt/zip.h>
 
-#include <iprt/formats/tpm.h>
-
 #include <libtpms/tpm_library.h>
 #include <libtpms/tpm_error.h>
 #include <libtpms/tpm_tis.h>
 #include <libtpms/tpm_nvfilename.h>
 
+#include <iprt/formats/tpm.h>
+
+#if 0
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 
 #include "VBoxDD.h"
@@ -162,7 +164,7 @@ static DECLCALLBACK(int) drvTpmEmuTpmsCmdExec(PPDMITPMCONNECTOR pInterface, uint
     uint8_t *pbRespBuf = NULL;
     uint32_t cbRespBuf = 0;
     uint32_t cbRespActual = 0;
-    TPM_RESULT rcTpm = TPMLIB_Process(&pbRespBuf, &cbRespActual, &cbRespBuf, (uint8_t *)pvCmd, cbCmd);
+    TPM_RESULT rcTpm = TPMLIB_Process(&pbRespBuf, &cbRespActual, &cbRespBuf, (uint8_t *)pvCmd, (uint32_t)cbCmd);
     if (RT_LIKELY(rcTpm == TPM_SUCCESS))
     {
         memcpy(pvResp, pbRespBuf, RT_MIN(cbResp, cbRespActual));
@@ -366,8 +368,10 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "TpmVersion|BufferSize", "");
 
+#if 0
     TPMLIB_SetDebugFD(STDERR_FILENO);
     TPMLIB_SetDebugLevel(~0);
+#endif
 
     /*
      * Try attach the VFS driver below and query it's VFS interface.
