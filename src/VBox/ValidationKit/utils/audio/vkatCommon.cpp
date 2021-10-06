@@ -39,6 +39,7 @@
 # include "DrvHostAudioAlsaStubs.h"
 #endif
 #ifdef VBOX_WITH_AUDIO_OSS
+# include <errno.h>
 # include <fcntl.h>
 # include <sys/ioctl.h>
 # include <sys/mman.h>
@@ -256,7 +257,7 @@ int audioTestSetMasterVolume(unsigned uVolPercent)
         return rc;
 #endif
 
-   RT_NOREF(uVolPercent);
+   RT_NOREF(rc, uVolPercent);
     /** @todo Port other platforms. */
    return VERR_NOT_SUPPORTED;
 }
