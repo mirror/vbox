@@ -38,6 +38,12 @@
 # include <alsa/version.h>
 # include "DrvHostAudioAlsaStubs.h"
 #endif
+#ifdef VBOX_WITH_AUDIO_OSS
+# include <fcntl.h>
+# include <sys/ioctl.h>
+# include <sys/mman.h>
+# include <sys/soundcard.h>
+#endif
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
 # include <iprt/win/audioclient.h>
@@ -79,15 +85,15 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
 *   Volume handling.                                                                                                             *
 *********************************************************************************************************************************/
 
+#ifdef VBOX_WITH_AUDIO_ALSA
 /**
- * Sets the system's master volume, if available.
+ * Sets the system's master volume via ALSA, if available.
  *
- * @returns VBox status code. VERR_NOT_SUPPORTED if not supported.
+ * @returns VBox status code.
  * @param   uVolPercent         Volume (in percent) to set.
  */
-int audioTestSetMasterVolume(unsigned uVolPercent)
+static int audioTestSetMasterVolumeALSA(unsigned uVolPercent)
 {
-#ifdef VBOX_WITH_AUDIO_ALSA
     int rc = audioLoadAlsaLib();
     if (RT_FAILURE(rc))
         return rc;
@@ -142,9 +148,42 @@ int audioTestSetMasterVolume(unsigned uVolPercent)
 
 # undef ALSA_CHECK_RET
 # undef ALSA_CHECK_ERR_RET
+}
+#endif /* VBOX_WITH_AUDIO_ALSA */
 
-#elif defined(RT_OS_WINDOWS)
+#ifdef VBOX_WITH_AUDIO_OSS
+/**
+ * Sets the system's master volume via OSS, if available.
+ *
+ * @returns VBox status code.
+ * @param   uVolPercent         Volume (in percent) to set.
+ */
+static int audioTestSetMasterVolumeOSS(unsigned uVolPercent)
+{
+    int hFile = open("/dev/dsp", O_WRONLY | O_NONBLOCK, 0);
+    if (hFile == -1)
+    {
+        /* Try opening the mixing device instead. */
+        hFile = open("/dev/mixer", O_RDONLY | O_NONBLOCK, 0);
+    }
 
+    if (hFile != -1)
+    {
+        /* OSS maps 0 (muted) - 100 (max), so just use uVolPercent unmodified here. */
+        uint16_t uVol = RT_MAKE_U16(uVolPercent, uVolPercent);
+        AssertLogRelMsgReturnStmt(ioctl(hFile, SOUND_MIXER_PCM /* SNDCTL_DSP_SETPLAYVOL */, &uVol) >= 0,
+                                  ("OSS: Failed to set DSP playback volume: %s (%d)\n",
+                                   strerror(errno), errno), close(hFile), RTErrConvertFromErrno(errno));
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_SUPPORTED;
+}
+#endif /* VBOX_WITH_AUDIO_OSS */
+
+#ifdef RT_OS_WINDOWS
+static int audioTestSetMasterVolumeWASAPI(unsigned uVolPercent)
+{
     HRESULT hr;
 
 # define WASAPI_CHECK_HR_RET(a_Text) \
@@ -185,13 +224,41 @@ int audioTestSetMasterVolume(unsigned uVolPercent)
     return VINF_SUCCESS;
 
 # undef WASAPI_CHECK_HR_RET
+}
+#endif /* RT_OS_WINDOWS */
 
-#else
+/**
+ * Sets the system's master volume, if available.
+ *
+ * @returns VBox status code. VERR_NOT_SUPPORTED if not supported.
+ * @param   uVolPercent         Volume (in percent) to set.
+ */
+int audioTestSetMasterVolume(unsigned uVolPercent)
+{
+    int rc = VINF_SUCCESS;
 
-    RT_NOREF(uVolPercent);
+#ifdef VBOX_WITH_AUDIO_ALSA
+    rc = audioTestSetMasterVolumeALSA(uVolPercent);
+    if (RT_SUCCESS(rc))
+        return rc;
+    /* else try OSS (if available) below. */
+#endif /* VBOX_WITH_AUDIO_ALSA */
+
+#ifdef VBOX_WITH_AUDIO_OSS
+    rc = audioTestSetMasterVolumeOSS(uVolPercent);
+    if (RT_SUCCESS(rc))
+        return rc;
+#endif /* VBOX_WITH_AUDIO_OSS */
+
+#ifdef RT_OS_WINDOWS
+    rc = audioTestSetMasterVolumeWASAPI(uVolPercent);
+    if (RT_SUCCESS(rc))
+        return rc;
+#endif
+
+   RT_NOREF(uVolPercent);
     /** @todo Port other platforms. */
    return VERR_NOT_SUPPORTED;
-#endif
 }
 
 
