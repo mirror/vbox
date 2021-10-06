@@ -52,7 +52,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t 
 #ifdef VBOX_STRICT
 PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
 #endif
-PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
+PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu);
 
 #ifdef IN_RING3
@@ -4294,12 +4294,14 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
  * @retval  VINF_SUCCESS.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   GCPhysCR3       The physical address in the CR3 register.  (A20
- *                          mask already applied.)
+ * @param   GCPhysCR3       The physical address in the CR3 register. (A20 mask
+ *                          already applied.)
+ * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
  */
-PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
+PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
+    int rc = VINF_SUCCESS;
 
     /* Update guest paging info. */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
@@ -4309,89 +4311,65 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     LogFlow(("MapCR3: %RGp\n", GCPhysCR3));
     PGM_A20_ASSERT_MASKED(pVCpu, GCPhysCR3);
 
-    /*
-     * Map the page CR3 points at.
-     */
-    RTHCPTR     HCPtrGuestCR3;
-    PGM_LOCK_VOID(pVM);
-    PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
-    AssertReturn(pPageCR3, VERR_PGM_INVALID_CR3_ADDR);
-    /** @todo this needs some reworking wrt. locking?  */
-    int rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCR3, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysCR3 masking isn't necessary. */
-    PGM_UNLOCK(pVM);
-    if (RT_SUCCESS(rc))
+# if PGM_GST_TYPE == PGM_TYPE_PAE
+    if (!fPdpesMapped)
+# else
+    NOREF(fPdpesMapped);
+#endif
     {
+        /*
+         * Map the page CR3 points at.
+         */
+        RTHCPTR     HCPtrGuestCR3;
+        PGM_LOCK_VOID(pVM);
+        PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
+        AssertReturnStmt(pPageCR3, PGM_UNLOCK(pVM), VERR_PGM_INVALID_CR3_ADDR);
+        /** @todo this needs some reworking wrt. locking?  */
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCR3, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysCR3 masking isn't necessary. */
+        PGM_UNLOCK(pVM);
+        if (RT_SUCCESS(rc))
+        {
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
 #  ifdef IN_RING3
-        pVCpu->pgm.s.pGst32BitPdR3 = (PX86PD)HCPtrGuestCR3;
-        pVCpu->pgm.s.pGst32BitPdR0 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGst32BitPdR3 = (PX86PD)HCPtrGuestCR3;
+            pVCpu->pgm.s.pGst32BitPdR0 = NIL_RTR0PTR;
 #  else
-        pVCpu->pgm.s.pGst32BitPdR3 = NIL_RTR3PTR;
-        pVCpu->pgm.s.pGst32BitPdR0 = (PX86PD)HCPtrGuestCR3;
+            pVCpu->pgm.s.pGst32BitPdR3 = NIL_RTR3PTR;
+            pVCpu->pgm.s.pGst32BitPdR0 = (PX86PD)HCPtrGuestCR3;
 #  endif
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
 #  ifdef IN_RING3
-        pVCpu->pgm.s.pGstPaePdptR3 = (PX86PDPT)HCPtrGuestCR3;
-        pVCpu->pgm.s.pGstPaePdptR0 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGstPaePdptR3 = (PX86PDPT)HCPtrGuestCR3;
+            pVCpu->pgm.s.pGstPaePdptR0 = NIL_RTR0PTR;
 #  else
-        pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
-        pVCpu->pgm.s.pGstPaePdptR0 = (PX86PDPT)HCPtrGuestCR3;
+            pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
+            pVCpu->pgm.s.pGstPaePdptR0 = (PX86PDPT)HCPtrGuestCR3;
 #  endif
 
-        /*
-         * Map the 4 PDs too.
-         */
-        X86PDPE aGstPaePdpes[X86_PG_PAE_PDPE_ENTRIES];
-        memcpy(&aGstPaePdpes, HCPtrGuestCR3, sizeof(aGstPaePdpes));
-        CPUMSetGuestPaePdpes(pVCpu, &aGstPaePdpes[0]);
-        for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
-        {
-            X86PDPE PaePdpe = aGstPaePdpes[i];
-            if (PaePdpe.u & X86_PDPE_P)
-            {
-                RTHCPTR     HCPtr;
-                RTGCPHYS    GCPhys = PGM_A20_APPLY(pVCpu, PaePdpe.u & X86_PDPE_PG_MASK);
-                PGM_LOCK_VOID(pVM);
-                PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
-                AssertReturn(pPage, VERR_PGM_INVALID_PDPE_ADDR);
-                int rc2 = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)&HCPtr);
-                PGM_UNLOCK(pVM);
-                if (RT_SUCCESS(rc2))
-                {
-#  ifdef IN_RING3
-                    pVCpu->pgm.s.apGstPaePDsR3[i]     = (PX86PDPAE)HCPtr;
-                    pVCpu->pgm.s.apGstPaePDsR0[i]     = NIL_RTR0PTR;
-#  else
-                    pVCpu->pgm.s.apGstPaePDsR3[i]     = NIL_RTR3PTR;
-                    pVCpu->pgm.s.apGstPaePDsR0[i]     = (PX86PDPAE)HCPtr;
-#  endif
-                    pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
-                    continue;
-                }
-                AssertMsgFailed(("pgmR3Gst32BitMapCR3: rc2=%d GCPhys=%RGp i=%d\n", rc2, GCPhys, i));
-            }
-
-            pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
-            pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
-            pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
-        }
+            /*
+             * Update CPUM and map the 4 PDs too.
+             */
+            X86PDPE aGstPaePdpes[X86_PG_PAE_PDPE_ENTRIES];
+            memcpy(&aGstPaePdpes, HCPtrGuestCR3, sizeof(aGstPaePdpes));
+            CPUMSetGuestPaePdpes(pVCpu, &aGstPaePdpes[0]);
+            PGMGstMapPaePdpes(pVCpu, &aGstPaePdpes[0]);
 
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
 #  ifdef IN_RING3
-        pVCpu->pgm.s.pGstAmd64Pml4R3 = (PX86PML4)HCPtrGuestCR3;
-        pVCpu->pgm.s.pGstAmd64Pml4R0 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGstAmd64Pml4R3 = (PX86PML4)HCPtrGuestCR3;
+            pVCpu->pgm.s.pGstAmd64Pml4R0 = NIL_RTR0PTR;
 #  else
-        pVCpu->pgm.s.pGstAmd64Pml4R3 = NIL_RTR3PTR;
-        pVCpu->pgm.s.pGstAmd64Pml4R0 = (PX86PML4)HCPtrGuestCR3;
+            pVCpu->pgm.s.pGstAmd64Pml4R3 = NIL_RTR3PTR;
+            pVCpu->pgm.s.pGstAmd64Pml4R0 = (PX86PML4)HCPtrGuestCR3;
 #  endif
 # endif
+        }
+        else
+            AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
     }
-    else
-        AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
-
 #else /* prot/real stub */
-    int rc = VINF_SUCCESS;
+    NOREF(fPdpesMapped);
 #endif
 
     /*
@@ -4421,11 +4399,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 # endif
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-    rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
-                      NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/,
-                      &pNewShwPageCR3);
-    AssertFatalRC(rc);
-    rc = VINF_SUCCESS;
+    int const rc2 = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE,
+                                 PGM_A20_IS_ENABLED(pVCpu), NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/, &pNewShwPageCR3);
+    AssertFatalRC(rc2);
 
     pVCpu->pgm.s.CTX_SUFF(pShwPageCR3) = pNewShwPageCR3;
 #  ifdef IN_RING0
@@ -4443,8 +4419,8 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL) || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
 #   endif
-    rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
-    AssertRCReturn(rc, rc);
+    int const rc3 = pgmMapActivateCR3(pVM, pNewShwPageCR3);
+    AssertRCReturn(rc3, rc3);
 #  endif
 
     /* Set the current hypervisor CR3. */

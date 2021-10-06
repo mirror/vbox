@@ -491,7 +491,10 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
         if (RT_SUCCESS(rc))
             return rc;
         if (rc == VERR_NEM_FLUSH_TLB)
-            return PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /*fGlobal*/);
+        {
+            rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /*fGlobal*/, false /*fPdpesMapped*/);
+            return rc;
+        }
         AssertLogRelRCReturn(rc, rc);
         return rc;
     }
@@ -1103,8 +1106,11 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
 
     if (fUpdateCr3)
     {
-        int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3);
-        AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
+        int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fPdpesMapped*/);
+        if (rc == VINF_SUCCESS)
+        { /* likely */ }
+        else
+            AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
     }
 
     return VINF_SUCCESS;

@@ -2342,7 +2342,7 @@ int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
     int       rc     = VINF_SUCCESS;
     uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData;
     if (   idxBth < RT_ELEMENTS(g_aPgmBothModeData)
-        && g_aPgmBothModeData[idxBth].pfnMapCR3)
+        && g_aPgmBothModeData[idxBth].pfnUnmapCR3)
     {
         rc = g_aPgmBothModeData[idxBth].pfnUnmapCR3(pVCpu);
         AssertRC(rc);

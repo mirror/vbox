@@ -2324,10 +2324,10 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
 
 
 /**
- * Sets the PAE PDPTEs for the guest.
+ * Sets the PAE PDPEs for the guest.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
- * @param   paPaePdpes  The PAE PDPTEs to set.
+ * @param   paPaePdpes  The PAE PDPEs to set.
  */
 VMM_INT_DECL(void) CPUMSetGuestPaePdpes(PVMCPU pVCpu, PCX86PDPE paPaePdpes)
 {
@@ -2335,6 +2335,21 @@ VMM_INT_DECL(void) CPUMSetGuestPaePdpes(PVMCPU pVCpu, PCX86PDPE paPaePdpes)
     for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->cpum.s.Guest.aPaePdpes); i++)
         pVCpu->cpum.s.Guest.aPaePdpes[i].u = paPaePdpes[i].u;
     pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_CR3;
+}
+
+
+/**
+ * Gets the PAE PDPTEs for the guest.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
+ * @param   paPaePdpes  Where to store the PAE PDPEs.
+ */
+VMM_INT_DECL(void) CPUMGetGuestPaePdpes(PVMCPU pVCpu, PX86PDPE paPaePdpes)
+{
+    Assert(paPaePdpes);
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR3);
+    for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->cpum.s.Guest.aPaePdpes); i++)
+        paPaePdpes[i].u = pVCpu->cpum.s.Guest.aPaePdpes[i].u;
 }
 
 

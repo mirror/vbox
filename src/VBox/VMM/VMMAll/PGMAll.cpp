@@ -2186,6 +2186,31 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_
 
 
 /**
+ * Checks whether the given PAE PDPEs are potentially valid for the guest.
+ *
+ * @returns @c true if the PDPE is valid, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   paPaePdpes  The PAE PDPEs to validate.
+ *
+ * @remarks This function -only- checks the reserved bits in the PDPE entries.
+ */
+VMM_INT_DECL(bool) PGMGstArePaePdpesValid(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
+{
+    Assert(paPaePdpes);
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        X86PDPE const PaePdpe = paPaePdpes[i];
+        if (   !(PaePdpe.u & X86_PDPE_P)
+            || !(PaePdpe.u & pVCpu->pgm.s.fGstPaeMbzPdpeMask))
+        { /* likely */ }
+        else
+            return false;
+    }
+    return true;
+}
+
+
+/**
  * Performs the lazy mapping of the 32-bit guest PD.
  *
  * @returns VBox status code.
@@ -2379,7 +2404,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
  *
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-static void pgmGstUpdatePaePdpes(PVMCPU pVCpu)
+static void pgmGstFlushPaePdpes(PVMCPU pVCpu)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.aGCPhysGstPaePDs); i++)
     {
@@ -2391,6 +2416,35 @@ static void pgmGstUpdatePaePdpes(PVMCPU pVCpu)
 
 
 /**
+ * Gets the PGM CR3 value masked according to the current guest mode.
+ *
+ * @returns The masked PGM CR3 value.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uCr3    The raw guest CR3 value.
+ */
+DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
+{
+    RTGCPHYS GCPhysCR3;
+    switch (pVCpu->pgm.s.enmGuestMode)
+    {
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
+            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_PAE_PAGE_MASK);
+            break;
+        case PGMMODE_AMD64:
+        case PGMMODE_AMD64_NX:
+            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_AMD64_PAGE_MASK);
+            break;
+        default:
+            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_PAGE_MASK);
+            break;
+    }
+    PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
+    return GCPhysCR3;
+}
+
+
+/**
  * Performs and schedules necessary updates following a CR3 load or reload.
  *
  * This will normally involve mapping the guest PD or nPDPT
@@ -2398,11 +2452,12 @@ static void pgmGstUpdatePaePdpes(PVMCPU pVCpu)
  * @returns VBox status code.
  * @retval  VINF_PGM_SYNC_CR3 if monitoring requires a CR3 sync. This can
  *          safely be ignored and overridden since the FF will be set too then.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   cr3         The new cr3.
- * @param   fGlobal     Indicates whether this is a global flush or not.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cr3             The new cr3.
+ * @param   fGlobal         Indicates whether this is a global flush or not.
+ * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
  */
-VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
+VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpesMapped)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLB), a);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
@@ -2422,24 +2477,8 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
      */
     int rc = VINF_SUCCESS;
-    RTGCPHYS GCPhysCR3;
-    switch (pVCpu->pgm.s.enmGuestMode)
-    {
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
-            break;
-        case PGMMODE_AMD64:
-        case PGMMODE_AMD64_NX:
-            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
-            break;
-        default:
-            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
-            break;
-    }
-    PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
-
     RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
+    RTGCPHYS const GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
     if (GCPhysOldCR3 != GCPhysCR3)
     {
         uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
@@ -2447,7 +2486,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
         AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
 
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fPdpesMapped);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             if (pgmMapAreMappingsFloating(pVM))
@@ -2493,10 +2532,10 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
             STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBSameCR3));
 
         /*
-         * Update PAE PDPTEs.
+         * Flush PAE PDPTEs.
          */
         if (PGMMODE_IS_PAE(pVCpu->pgm.s.enmGuestMode))
-            pgmGstUpdatePaePdpes(pVCpu);
+            pgmGstFlushPaePdpes(pVCpu);
     }
 
     IEMTlbInvalidateAll(pVCpu, false /*fVmm*/);
@@ -2519,10 +2558,11 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
  * @retval  VINF_PGM_SYNC_CR3 if monitoring requires a CR3 sync (not for nested
  *          paging modes).  This can safely be ignored and overridden since the
  *          FF will be set too then.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   cr3         The new cr3.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   cr3             The new CR3.
+ * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
  */
-VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
+VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fPdpesMapped)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
@@ -2536,23 +2576,7 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
      */
     int rc = VINF_SUCCESS;
-    RTGCPHYS GCPhysCR3;
-    switch (pVCpu->pgm.s.enmGuestMode)
-    {
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
-            break;
-        case PGMMODE_AMD64:
-        case PGMMODE_AMD64_NX:
-            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
-            break;
-        default:
-            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
-            break;
-    }
-    PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
-
+    RTGCPHYS const GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, cr3);
     if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
         uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
@@ -2560,15 +2584,15 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
         AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
 
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fPdpesMapped);
 
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */ /** @todo this isn't true for the mac, but we need hw to test/fix this. */
     }
     /*
-     * Update PAE PDPTEs.
+     * Flush PAE PDPTEs.
      */
     else if (PGMMODE_IS_PAE(pVCpu->pgm.s.enmGuestMode))
-        pgmGstUpdatePaePdpes(pVCpu);
+        pgmGstFlushPaePdpes(pVCpu);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
     return rc;
@@ -2635,31 +2659,15 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
     {
         pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MAP_CR3;
 
-        RTGCPHYS GCPhysCR3Old = pVCpu->pgm.s.GCPhysCR3; NOREF(GCPhysCR3Old);
-        RTGCPHYS GCPhysCR3;
-        switch (pVCpu->pgm.s.enmGuestMode)
-        {
-            case PGMMODE_PAE:
-            case PGMMODE_PAE_NX:
-                GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
-                break;
-            case PGMMODE_AMD64:
-            case PGMMODE_AMD64_NX:
-                GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_AMD64_PAGE_MASK);
-                break;
-            default:
-                GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
-                break;
-        }
-        PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
-
+        RTGCPHYS const GCPhysCR3Old = pVCpu->pgm.s.GCPhysCR3; NOREF(GCPhysCR3Old);
+        RTGCPHYS const GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
         if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
         {
             uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
             AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
             AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
             pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-            rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
+            rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, false /* fPdpesMapped */);
         }
 
         /* Make sure we check for pending pgm pool syncs as we clear VMCPU_FF_PGM_SYNC_CR3 later on! */
@@ -2723,6 +2731,132 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
     if (rc == VINF_SUCCESS)
         PGM_INVL_VCPU_TLBS(pVCpu);
     return rc;
+}
+
+
+/**
+ * Maps all the PAE PDPE entries.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   paPaePdpes  The new PAE PDPE values.
+ *
+ * @remarks This function may be invoked during the process of changing the guest
+ *          paging mode to PAE, hence the guest state (CR0, CR4 etc.) may not
+ *          reflect PAE paging just yet.
+ */
+VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
+{
+    Assert(paPaePdpes);
+    for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+    {
+        X86PDPE const PaePdpe = paPaePdpes[i];
+
+        /*
+         * In some cases (e.g. in SVM with nested paging) the validation of the PAE PDPEs
+         * are deferred.[1] Also, different situations require different handling of invalid
+         * PDPE entries. Here we assume the caller has already validated or doesn't require
+         * validation of the PDPEs.
+         *
+         * [1] -- See AMD spec. 15.25.10 "Legacy PAE Mode".
+         */
+        if ((PaePdpe.u & (pVCpu->pgm.s.fGstPaeMbzPdpeMask | X86_PDPE_P)) == X86_PDPE_P)
+        {
+            PVMCC   pVM = pVCpu->CTX_SUFF(pVM);
+            RTHCPTR HCPtr;
+            RTGCPHYS const GCPhys = PGM_A20_APPLY(pVCpu, PaePdpe.u & X86_PDPE_PG_MASK);
+
+            PGM_LOCK_VOID(pVM);
+            PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
+            AssertReturnStmt(pPage, PGM_UNLOCK(pVM), VERR_PGM_INVALID_PDPE_ADDR);
+            int const rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)&HCPtr);
+            PGM_UNLOCK(pVM);
+            if (RT_SUCCESS(rc))
+            {
+#  ifdef IN_RING3
+                pVCpu->pgm.s.apGstPaePDsR3[i]    = (PX86PDPAE)HCPtr;
+                pVCpu->pgm.s.apGstPaePDsR0[i]    = NIL_RTR0PTR;
+#  else
+                pVCpu->pgm.s.apGstPaePDsR3[i]    = NIL_RTR3PTR;
+                pVCpu->pgm.s.apGstPaePDsR0[i]    = (PX86PDPAE)HCPtr;
+#  endif
+                pVCpu->pgm.s.aGCPhysGstPaePDs[i] = GCPhys;
+                continue;
+            }
+            AssertMsgFailed(("PGMPhysMapPaePdpes: rc2=%d GCPhys=%RGp i=%d\n", rc, GCPhys, i));
+        }
+        pVCpu->pgm.s.apGstPaePDsR3[i]    = 0;
+        pVCpu->pgm.s.apGstPaePDsR0[i]    = 0;
+        pVCpu->pgm.s.aGCPhysGstPaePDs[i] = NIL_RTGCPHYS;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Validates and maps the PDPT and PAE PDPEs referenced by the given CR3.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   cr3     The guest CR3 value.
+ *
+ * @remarks This function may be invoked during the process of changing the guest
+ *          paging mode to PAE but the guest state (CR0, CR4 etc.) may not reflect
+ *          PAE paging just yet.
+ */
+VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
+{
+    /*
+     * Read the page-directory-pointer table (PDPT) at CR3.
+     */
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    RTGCPHYS GCPhysCR3 = (cr3 & X86_CR3_PAE_PAGE_MASK);
+    PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
+
+    PGM_LOCK_VOID(pVM);
+    PPGMPAGE pPageCR3  = pgmPhysGetPage(pVM, GCPhysCR3);
+    AssertReturnStmt(pPageCR3, PGM_UNLOCK(pVM), VERR_PGM_INVALID_CR3_ADDR);
+
+    X86PDPE aPaePdpes[X86_PG_PAE_PDPE_ENTRIES];
+    RTHCPTR HCPtrGuestCr3;
+    int rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCR3, GCPhysCR3, (void **)&HCPtrGuestCr3);
+    PGM_UNLOCK(pVM);
+    AssertRCReturn(rc, rc);
+    memcpy(&aPaePdpes[0], HCPtrGuestCr3, sizeof(aPaePdpes));
+
+    /*
+     * Validate the page-directory-pointer table entries (PDPE).
+     */
+    if (PGMGstArePaePdpesValid(pVCpu, &aPaePdpes[0]))
+    {
+        /*
+         * Map the PDPT.
+         * We deliberately don't update PGM's GCPhysCR3 here as it's expected
+         * that PGMFlushTLB will be called soon and only a change to CR3 then
+         * will cause the shadow page tables to be updated.
+         */
+#  ifdef IN_RING3
+        pVCpu->pgm.s.pGstPaePdptR3 = (PX86PDPT)HCPtrGuestCr3;
+        pVCpu->pgm.s.pGstPaePdptR0 = NIL_RTR0PTR;
+#  else
+        pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
+        pVCpu->pgm.s.pGstPaePdptR0 = (PX86PDPT)HCPtrGuestCr3;
+#  endif
+
+        /*
+         * Update CPUM.
+         * We do this prior to mapping the PDPEs to keep the order consistent
+         * with what's used in HM. In practice, it doesn't really matter.
+         */
+        CPUMSetGuestPaePdpes(pVCpu, &aPaePdpes[0]);
+
+        /*
+         * Map the PDPEs.
+         */
+        return PGMGstMapPaePdpes(pVCpu, &aPaePdpes[0]);
+    }
+    return VERR_PGM_PAE_PDPE_RSVD;
 }
 
 

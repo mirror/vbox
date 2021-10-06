@@ -1538,6 +1538,7 @@ VMM_INT_DECL(void)     CPUMSetGuestSpecCtrl(PVMCPUCC pVCpu, uint64_t uValue);
 VMM_INT_DECL(uint64_t) CPUMGetGuestSpecCtrl(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM);
 VMM_INT_DECL(void)     CPUMSetGuestPaePdpes(PVMCPU pVCpu, PCX86PDPE paPaePdpes);
+VMM_INT_DECL(void)     CPUMGetGuestPaePdpes(PVMCPU pVCpu, PX86PDPE paPaePdpes);
 /** @} */
 
 
@@ -1749,46 +1750,32 @@ DECLINLINE(bool) CPUMIsGuestPagingEnabledEx(PCCPUMCTX pCtx)
 }
 
 /**
+ * Tests if PAE paging is enabled given the relevant control registers.
+ *
+ * @returns @c true if in PAE mode, @c false otherwise.
+ * @param   uCr0        The CR0 value.
+ * @param   uCr4        The CR4 value.
+ * @param   uEferMsr    The EFER value.
+ */
+DECLINLINE(bool) CPUMIsPaePagingEnabled(uint64_t uCr0, uint64_t uCr4, uint64_t uEferMsr)
+{
+    /* Intel mentions EFER.LMA and EFER.LME in different parts of their spec. We shall use EFER.LMA rather
+       than EFER.LME as it reflects if the CPU has entered paging with EFER.LME set.  */
+    return (   (uCr4 & X86_CR4_PAE)
+            && (uCr0 & X86_CR0_PG)
+            && !(uEferMsr & MSR_K6_EFER_LMA));
+}
+
+/**
  * Tests if the guest is running in PAE mode or not.
  *
- * @returns true if in PAE mode, otherwise false.
+ * @returns @c true if in PAE mode, @c false otherwise.
  * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCCPUMCTX pCtx)
 {
-    /* Intel mentions EFER.LMA and EFER.LME in different parts of their spec. We shall use EFER.LMA rather
-       than EFER.LME as it reflects if the CPU has entered paging with EFER.LME set.  */
-    return (   (pCtx->cr4 & X86_CR4_PAE)
-            && CPUMIsGuestPagingEnabledEx(pCtx)
-            && !(pCtx->msrEFER & MSR_K6_EFER_LMA));
+    return CPUMIsPaePagingEnabled(pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
 }
-
-
-/**
- * Tests if PAE PDPE ("PDPTE" in Intel nomenclature) entries are valid.
- *
- * @returns @c true if all PDPEs are valid, @c false otherwise.
- * @param   paPdpes         Pointer to the 4 PAE PDPEs.
- * @param   pidxInvalid     Where to store the index of the first invalid PDPE.
- *                          Optional, can be NULL. Mainly used for diagnostics.
- */
-DECLINLINE(bool) CPUMArePaePdpesValid(PCX86PDPE paPdpes, uint8_t *pidxInvalid)
-{
-    for (uint8_t idx = 0; idx < X86_PG_PAE_PDPE_ENTRIES; idx++)
-    {
-        if (   !(paPdpes[idx].u & X86_PDPE_P)
-            || !(paPdpes[idx].u & X86_PDPE_PAE_MBZ_MASK))
-        { /* likely */ }
-        else
-        {
-            if (pidxInvalid)
-                *pidxInvalid = idx;
-            return false;
-        }
-    }
-    return true;
-}
-
 
 /**
  * Tests if the guest has AMD SVM enabled or not.

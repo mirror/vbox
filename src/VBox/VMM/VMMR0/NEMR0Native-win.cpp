@@ -2189,8 +2189,11 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         if (fCanUpdateCr3)
         {
             LogFlow(("nemR0WinImportState: -> PGMUpdateCR3!\n"));
-            rc = PGMUpdateCR3(pGVCpu, pCtx->cr3);
-            AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
+            rc = PGMUpdateCR3(pGVCpu, pCtx->cr3, false /*fPdpesMapped*/);
+            if (rc == VINF_SUCCESS)
+            { /* likely */ }
+            else
+                AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
         }
         else
         {

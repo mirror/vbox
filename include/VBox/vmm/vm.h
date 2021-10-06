@@ -482,6 +482,8 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 /** Hardware virtualized nested-guest interrupt pending. */
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_64(VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT)
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 11
+/** This action forces PGM to update changes to CR3 when the guest was in HM mode
+ *  (when using nested paging). */
 #define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_64(VMCPU_FF_HM_UPDATE_CR3_BIT)
 #define VMCPU_FF_HM_UPDATE_CR3_BIT          12
 /* Bit 13 used to be VMCPU_FF_HM_UPDATE_PAE_PDPES. */

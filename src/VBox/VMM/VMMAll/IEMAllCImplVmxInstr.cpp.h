@@ -1103,46 +1103,6 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmentrySegAttrTypeAcc(unsigned iSegReg)
 
 
 /**
- * Gets the instruction diagnostic for guest CR3 referenced PDPTE reserved bits
- * failure during VM-entry of a nested-guest.
- *
- * @param   iSegReg     The PDPTE entry index.
- */
-IEM_STATIC VMXVDIAG iemVmxGetDiagVmentryPdpteRsvd(unsigned iPdpte)
-{
-    Assert(iPdpte < X86_PG_PAE_PDPE_ENTRIES);
-    switch (iPdpte)
-    {
-        case 0: return kVmxVDiag_Vmentry_GuestPdpte0Rsvd;
-        case 1: return kVmxVDiag_Vmentry_GuestPdpte1Rsvd;
-        case 2: return kVmxVDiag_Vmentry_GuestPdpte2Rsvd;
-        case 3: return kVmxVDiag_Vmentry_GuestPdpte3Rsvd;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_11);
-    }
-}
-
-
-/**
- * Gets the instruction diagnostic for host CR3 referenced PDPTE reserved bits
- * failure during VM-exit of a nested-guest.
- *
- * @param   iSegReg     The PDPTE entry index.
- */
-IEM_STATIC VMXVDIAG iemVmxGetDiagVmexitPdpteRsvd(unsigned iPdpte)
-{
-    Assert(iPdpte < X86_PG_PAE_PDPE_ENTRIES);
-    switch (iPdpte)
-    {
-        case 0: return kVmxVDiag_Vmexit_HostPdpte0Rsvd;
-        case 1: return kVmxVDiag_Vmexit_HostPdpte1Rsvd;
-        case 2: return kVmxVDiag_Vmexit_HostPdpte2Rsvd;
-        case 3: return kVmxVDiag_Vmexit_HostPdpte3Rsvd;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET2(kVmxVDiag_Ipe_12);
-    }
-}
-
-
-/**
  * Saves the guest control registers, debug registers and some MSRs are part of
  * VM-exit.
  *
@@ -1253,11 +1213,12 @@ IEM_STATIC void iemVmxVmexitRestoreNmiBlockingFF(PVMCPUCC pVCpu)
 
 
 /**
- * Perform a VMX transition updated PGM, IEM and CPUM.
+ * Performs the VMX transition to/from VMX non-root mode.
  *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-IEM_STATIC int iemVmxWorldSwitch(PVMCPUCC pVCpu)
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   fPdpesMapped    Whether the PAE PDPTEs (and PDPT) have been mapped.
+*/
+IEM_STATIC int iemVmxTransition(PVMCPUCC pVCpu, bool fPdpesMapped)
 {
     /*
      * Inform PGM about paging mode changes.
@@ -1279,7 +1240,7 @@ IEM_STATIC int iemVmxWorldSwitch(PVMCPUCC pVCpu)
      */
     if (rc == VINF_SUCCESS)
     {
-        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true);
+        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* fGlobal */, fPdpesMapped);
         AssertRCReturn(rc, rc);
     }
 
@@ -1902,46 +1863,22 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPUCC pVCpu)
 
 
 /**
- * Checks host PDPTes as part of VM-exit.
+ * Checks the host PAE PDPTEs assuming we are switching to a PAE mode host.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uExitReason     The VM-exit reason (for logging purposes).
+ * @param   uExitReason     The VMX instruction name (for logging purposes).
+ *
+ * @remarks Caller must ensure the preconditions are met before calling this
+ *          function as failure here will trigger VMX aborts!
  */
 IEM_STATIC int iemVmxVmexitCheckHostPdptes(PVMCPUCC pVCpu, uint32_t uExitReason)
 {
-    /*
-     * Check host PDPTEs.
-     * See Intel spec. 27.5.4 "Checking and Loading Host Page-Directory-Pointer-Table Entries".
-     */
-    PCVMXVVMCS const    pVmcs           = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-    const char * const  pszFailure      = "VMX-abort";
-    bool const          fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
-
-    if (   (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
-        && !fHostInLongMode)
-    {
-        uint64_t const uHostCr3 = pVCpu->cpum.GstCtx.cr3 & X86_CR3_PAE_PAGE_MASK;
-        X86PDPE aPdptes[X86_PG_PAE_PDPE_ENTRIES];
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdptes[0], uHostCr3, sizeof(aPdptes));
-        if (RT_SUCCESS(rc))
-        {
-            uint8_t idxInvalid;
-            bool const fValid = CPUMArePaePdpesValid(&aPdptes[0], &idxInvalid);
-            if (fValid)
-            { /* likely */ }
-            else
-            {
-                VMXVDIAG const enmDiag = iemVmxGetDiagVmexitPdpteRsvd(idxInvalid);
-                IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, enmDiag);
-            }
-        }
-        else
-            IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_HostPdpteCr3ReadPhys);
-    }
-
-    NOREF(pszFailure);
-    NOREF(uExitReason);
-    return VINF_SUCCESS;
+    PCVMXVVMCS const   pVmcs      = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+    const char * const pszFailure = "VMX-abort";
+    int const rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcs->u64HostCr3.u);
+    if (RT_SUCCESS(rc))
+        return rc;
+    IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_HostPdpte);
 }
 
 
@@ -1949,8 +1886,8 @@ IEM_STATIC int iemVmxVmexitCheckHostPdptes(PVMCPUCC pVCpu, uint32_t uExitReason)
  * Loads the host MSRs from the VM-exit MSR-load area as part of VM-exit.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pszInstr    The VMX instruction name (for logging purposes).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReason)
 {
@@ -2053,6 +1990,27 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPUCC pVCpu, uint32_t uExit
         return iemVmxAbort(pVCpu, VMXABORT_HOST_NOT_IN_LONG_MODE);
     }
 
+    /*
+     * Check host PAE PDPTEs prior to loading the host state.
+     * See Intel spec. 26.5.4 "Checking and Loading Host Page-Directory-Pointer-Table Entries".
+     */
+    bool fPdpesMapped;
+    if (   (pVmcs->u64HostCr4.u & X86_CR4_PAE)
+        && !fHostInLongMode
+        && (   !CPUMIsGuestInPAEModeEx(&pVCpu->cpum.GstCtx)
+            || pVmcs->u64HostCr3.u != pVCpu->cpum.GstCtx.cr3))
+    {
+        int const rc = iemVmxVmexitCheckHostPdptes(pVCpu, uExitReason);
+        if (RT_FAILURE(rc))
+        {
+            Log(("VM-exit attempting to load invalid PDPTEs -> VMX-Abort\n"));
+            return iemVmxAbort(pVCpu, VMXBOART_HOST_PDPTE);
+        }
+        fPdpesMapped = true;
+    }
+    else
+        fPdpesMapped = false;
+
     iemVmxVmexitLoadHostControlRegsMsrs(pVCpu);
     iemVmxVmexitLoadHostSegRegs(pVCpu);
 
@@ -2068,27 +2026,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPUCC pVCpu, uint32_t uExit
     EMMonitorWaitClear(pVCpu);
 
     /* Perform the VMX transition (PGM updates). */
-    VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
+    VBOXSTRICTRC rcStrict = iemVmxTransition(pVCpu, fPdpesMapped);
     if (rcStrict == VINF_SUCCESS)
-    {
-        /* Check host PDPTEs (only when we've fully switched page tables_. */
-        /** @todo r=ramshankar: I don't know if PGM does this for us already or not... */
-        int rc = iemVmxVmexitCheckHostPdptes(pVCpu, uExitReason);
-        if (RT_FAILURE(rc))
-        {
-            Log(("VM-exit failed while restoring host PDPTEs -> VMX-Abort\n"));
-            return iemVmxAbort(pVCpu, VMXBOART_HOST_PDPTE);
-        }
-    }
+    { /* likely */ }
     else if (RT_SUCCESS(rcStrict))
     {
-        Log3(("VM-exit: iemVmxWorldSwitch returns %Rrc (uExitReason=%u) -> Setting passup status\n", VBOXSTRICTRC_VAL(rcStrict),
+        Log3(("VM-exit: iemVmxTransition returns %Rrc (uExitReason=%u) -> Setting passup status\n", VBOXSTRICTRC_VAL(rcStrict),
               uExitReason));
         rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
     }
     else
     {
-        Log3(("VM-exit: iemVmxWorldSwitch failed! rc=%Rrc (uExitReason=%u)\n", VBOXSTRICTRC_VAL(rcStrict), uExitReason));
+        Log3(("VM-exit: iemVmxTransition failed! rc=%Rrc (uExitReason=%u)\n", VBOXSTRICTRC_VAL(rcStrict), uExitReason));
         return VBOXSTRICTRC_VAL(rcStrict);
     }
 
@@ -5642,10 +5591,12 @@ DECLINLINE(int) iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *
 /**
  * Checks guest PDPTEs as part of VM-entry.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pszInstr    The VMX instruction name (for logging purposes).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pfPdpesMapped   Where to store whether PAE PDPTEs (and PDPT) have been
+ *                          mapped as part of checking guest state.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, bool *pfPdpesMapped, const char *pszInstr)
 {
     /*
      * Guest PDPTEs.
@@ -5653,43 +5604,43 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInst
      */
     PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     const char * const pszFailure = "VM-exit";
+    *pfPdpesMapped = false;
 
     if (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
         &&  (pVmcs->u64GuestCr4.u & X86_CR4_PAE)
         &&  (pVmcs->u64GuestCr0.u & X86_CR0_PG))
     {
-        /* Get the PDPTEs. */
-        X86PDPE aPdptes[X86_PG_PAE_PDPE_ENTRIES];
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
         {
-            aPdptes[0].u = pVmcs->u64GuestPdpte0.u;
-            aPdptes[1].u = pVmcs->u64GuestPdpte1.u;
-            aPdptes[2].u = pVmcs->u64GuestPdpte2.u;
-            aPdptes[3].u = pVmcs->u64GuestPdpte3.u;
+            /* Get PDPTEs from the VMCS. */
+            X86PDPE aPaePdptes[X86_PG_PAE_PDPE_ENTRIES];
+            aPaePdptes[0].u = pVmcs->u64GuestPdpte0.u;
+            aPaePdptes[1].u = pVmcs->u64GuestPdpte1.u;
+            aPaePdptes[2].u = pVmcs->u64GuestPdpte2.u;
+            aPaePdptes[3].u = pVmcs->u64GuestPdpte3.u;
+
+            /* Check validity of the PDPTEs. */
+            bool const fValid = PGMGstArePaePdpesValid(pVCpu, &aPaePdptes[0]);
+            if (fValid)
+            { /* likely */ }
+            else
+            {
+                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
+            }
         }
         else
 #endif
         {
-            uint64_t const uGuestCr3 = pVmcs->u64GuestCr3.u & X86_CR3_PAE_PAGE_MASK;
-            int const rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&aPdptes[0], uGuestCr3, sizeof(aPdptes));
-            if (RT_FAILURE(rc))
+            int const rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcs->u64GuestCr3.u);
+            if (rc == VINF_SUCCESS)
+                *pfPdpesMapped = true;
+            else
             {
                 iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpteCr3ReadPhys);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
             }
-        }
-
-        /* Check validity of the PDPTEs. */
-        uint8_t idxInvalid;
-        bool const fValid = CPUMArePaePdpesValid(&aPdptes[0], &idxInvalid);
-        if (fValid)
-        { /* likely */ }
-        else
-        {
-            VMXVDIAG const enmDiag = iemVmxGetDiagVmentryPdpteRsvd(idxInvalid);
-            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmDiag);
         }
     }
 
@@ -5703,10 +5654,12 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInst
  * Checks guest-state as part of VM-entry.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pszInstr    The VMX instruction name (for logging purposes).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pfPdpesMapped   Where to store whether PAE PDPTEs (and PDPT) have been
+ *                          mapped as part of checking guest state.
+ * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, bool *pfPdpesMapped, const char *pszInstr)
 {
     int rc = iemVmxVmentryCheckGuestControlRegsMsrs(pVCpu, pszInstr);
     if (RT_SUCCESS(rc))
@@ -5722,7 +5675,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, const char *pszInstr
                 {
                     rc = iemVmxVmentryCheckGuestNonRegState(pVCpu, pszInstr);
                     if (RT_SUCCESS(rc))
-                        return iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
+                        return iemVmxVmentryCheckGuestPdptes(pVCpu, pfPdpesMapped, pszInstr);
                 }
             }
         }
@@ -7418,7 +7371,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
              */
             iemVmxVmentrySaveNmiBlockingFF(pVCpu);
 
-            rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
+            bool fPdpesMapped;
+            rc = iemVmxVmentryCheckGuestState(pVCpu, &fPdpesMapped, pszInstr);
             if (RT_SUCCESS(rc))
             {
                 rc = iemVmxVmentryLoadGuestState(pVCpu, pszInstr);
@@ -7434,18 +7388,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
                             pVmcs->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
 
                         /* Perform the VMX transition (PGM updates). */
-                        VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
+                        VBOXSTRICTRC rcStrict = iemVmxTransition(pVCpu, fPdpesMapped);
                         if (rcStrict == VINF_SUCCESS)
                         { /* likely */ }
                         else if (RT_SUCCESS(rcStrict))
                         {
-                            Log3(("%s: iemVmxWorldSwitch returns %Rrc -> Setting passup status\n", pszInstr,
+                            Log3(("%s: iemVmxTransition returns %Rrc -> Setting passup status\n", pszInstr,
                                   VBOXSTRICTRC_VAL(rcStrict)));
                             rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                         }
                         else
                         {
-                            Log3(("%s: iemVmxWorldSwitch failed! rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
+                            Log3(("%s: iemVmxTransition failed! rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
                             return rcStrict;
                         }
 
@@ -8436,7 +8390,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
                     {
                         /* Invalidate mappings for the linear address tagged with VPID. */
                         /** @todo PGM support for VPID? Currently just flush everything. */
-                        PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                        PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */, false /* fPdpesMapped */);
                         iemVmxVmSucceed(pVCpu);
                     }
                     else
@@ -8463,7 +8417,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
                 {
                     /* Invalidate all mappings with VPID. */
                     /** @todo PGM support for VPID? Currently just flush everything. */
-                    PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                    PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */, false /* fPdpesMapped */);
                     iemVmxVmSucceed(pVCpu);
                 }
                 else
@@ -8480,7 +8434,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
             {
                 /* Invalidate all mappings with non-zero VPIDs. */
                 /** @todo PGM support for VPID? Currently just flush everything. */
-                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */, false /* fPdpesMapped */);
                 iemVmxVmSucceed(pVCpu);
                 break;
             }
@@ -8491,7 +8445,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
                 {
                     /* Invalidate all mappings with VPID except global translations. */
                     /** @todo PGM support for VPID? Currently just flush everything. */
-                    PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                    PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */, false /* fPdpesMapped */);
                     iemVmxVmSucceed(pVCpu);
                 }
                 else

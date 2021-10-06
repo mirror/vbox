@@ -81,9 +81,10 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
  * Performs an SVM world-switch (VMRUN, \#VMEXIT) updating PGM and IEM internals.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
  */
-DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu)
+DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu, bool fPdpesMapped)
 {
     /*
      * Inform PGM about paging mode changes.
@@ -105,7 +106,7 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu)
      */
     if (rc == VINF_SUCCESS)
     {
-        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true);
+        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* fGlobal */, fPdpesMapped);
         AssertRCReturn(rc, rc);
     }
 
@@ -306,29 +307,45 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_
             /** @todo ASID. */
 
             /*
-             * Reload the guest's "host state".
+             * If we are switching to PAE mode host, validate the PDPEs first.
+             * Any invalid PDPEs here causes a VCPU shutdown.
              */
-            CPUMSvmVmExitRestoreHostState(pVCpu, IEM_GET_CTX(pVCpu));
-
-            /*
-             * Update PGM, IEM and others of a world-switch.
-             */
-            rcStrict = iemSvmWorldSwitch(pVCpu);
-            if (rcStrict == VINF_SUCCESS)
-                rcStrict = VINF_SVM_VMEXIT;
-            else if (RT_SUCCESS(rcStrict))
+            PCSVMHOSTSTATE pHostState = &pVCpu->cpum.GstCtx.hwvirt.svm.HostState;
+            bool const fHostInPaeMode = CPUMIsPaePagingEnabled(pHostState->uCr0, pHostState->uCr4, pHostState->uEferMsr);
+            if (fHostInPaeMode)
+                rcStrict = PGMGstMapPaePdpesAtCr3(pVCpu, pHostState->uCr3);
+            if (RT_LIKELY(rcStrict == VINF_SUCCESS))
             {
-                LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-                iemSetPassUpStatus(pVCpu, rcStrict);
-                rcStrict = VINF_SVM_VMEXIT;
+                /*
+                 * Reload the host state.
+                 */
+                CPUMSvmVmExitRestoreHostState(pVCpu, IEM_GET_CTX(pVCpu));
+
+                /*
+                 * Update PGM, IEM and others of a world-switch.
+                 */
+                rcStrict = iemSvmWorldSwitch(pVCpu, fHostInPaeMode);
+                if (rcStrict == VINF_SUCCESS)
+                    rcStrict = VINF_SVM_VMEXIT;
+                else if (RT_SUCCESS(rcStrict))
+                {
+                    LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                    iemSetPassUpStatus(pVCpu, rcStrict);
+                    rcStrict = VINF_SVM_VMEXIT;
+                }
+                else
+                    LogFlow(("iemSvmVmexit: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             }
             else
-                LogFlow(("iemSvmVmexit: iemSvmWorldSwitch unexpected failure. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            {
+                Log(("iemSvmVmexit: PAE PDPEs invalid while restoring host state. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                rcStrict = VINF_EM_TRIPLE_FAULT;
+            }
         }
         else
         {
             AssertMsgFailed(("iemSvmVmexit: Mapping VMCB at %#RGp failed. rc=%Rrc\n", pVCpu->cpum.GstCtx.hwvirt.svm.GCPhysVmcb, VBOXSTRICTRC_VAL(rcStrict)));
-            rcStrict = VERR_SVM_VMEXIT_FAILED;
+            rcStrict = VINF_EM_TRIPLE_FAULT;
         }
     }
     else
@@ -704,6 +721,26 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
 # endif
 
         /*
+         * Validate and map PAE PDPEs if the guest will be using PAE paging.
+         * Invalid PAE PDPEs here causes a #VMEXIT.
+         */
+        bool fPdpesMapped;
+        if (   !pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging
+            && CPUMIsPaePagingEnabled(pVmcbNstGst->u64CR0, pVmcbNstGst->u64CR4, uValidEfer))
+        {
+            rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcbNstGst->u64CR3);
+            if (RT_SUCCESS(rc))
+                fPdpesMapped = true;
+            else
+            {
+                Log(("iemSvmVmrun: PAE PDPEs invalid -> #VMEXIT\n"));
+                return iemSvmVmexit(pVCpu, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            }
+        }
+        else
+            fPdpesMapped = false;
+
+        /*
          * Copy the remaining guest state from the VMCB to the guest-CPU context.
          */
         pVCpu->cpum.GstCtx.gdtr.cbGdt = pVmcbNstGst->GDTR.u32Limit;
@@ -741,7 +778,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
         /*
          * Update PGM, IEM and others of a world-switch.
          */
-        VBOXSTRICTRC rcStrict = iemSvmWorldSwitch(pVCpu);
+        VBOXSTRICTRC rcStrict = iemSvmWorldSwitch(pVCpu, fPdpesMapped);
         if (rcStrict == VINF_SUCCESS)
         { /* likely */ }
         else if (RT_SUCCESS(rcStrict))
