@@ -4208,7 +4208,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
             }
             else if (!fNestedPagingAndFullGuestExec)
                 return VMSetError(pVM, VERR_CPUM_INVALID_HWVIRT_CONFIG, RT_SRC_POS,
-                                  "Cannot enable nested VT-x/AMD-V without nested-paging and unresricted guest execution!\n");
+                                  "Cannot enable nested VT-x/AMD-V without nested-paging and unrestricted guest execution!\n");
         }
 
         if (pConfig->fNestedHWVirt)
