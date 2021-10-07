@@ -105,7 +105,7 @@ class tdAudioTest(vbox.TestDriver):
 
         # Audio controller type to use.
         # If set to None, the OS' recommended controller type will be used (defined by Main).
-        self.enmAudioControllerType = None;
+        self.sAudioControllerType = None;
 
     def showUsage(self):
         """
@@ -155,14 +155,10 @@ class tdAudioTest(vbox.TestDriver):
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
-            if not self.importVBoxApi(): # So we can use the constant below.
-                return iArg + 1; # Just skip stuff.
-            if   asArgs[iArg] == 'HDA':
-                self.enmAudioControllerType = vboxcon.AudioControllerType_HDA;
-            elif asArgs[iArg] == 'AC97':
-                self.enmAudioControllerType = vboxcon.AudioControllerType_AC97;
-            elif asArgs[iArg] == 'SB16':
-                self.enmAudioControllerType = vboxcon.AudioControllerType_SB16;
+            if    asArgs[iArg] == 'HDA' \
+               or asArgs[iArg] == 'AC97' \
+               or asArgs[iArg] == 'SB16':
+                self.sAudioControllerType = asArgs[iArg];
             else:
                 raise base.InvalidOption('The "--audio-controller-type" value "%s" is not valid' % (asArgs[iArg]));
         elif    asArgs[iArg] == '--audio-test-count' \
@@ -718,13 +714,22 @@ class tdAudioTest(vbox.TestDriver):
 
             # Make sure that the VM's audio adapter is configured the way we need it to.
             if self.fpApiVer >= 4.0:
+                enmAudioControllerType = None;
                 reporter.log('Configuring audio controller type ...');
-                if self.enmAudioControllerType is None:
+                if self.sAudioControllerType is None:
                     oOsType = oSession.getOsType();
-                    self.enmAudioControllerType = oOsType.recommendedAudioController;
+                    enmAudioControllerType = oOsType.recommendedAudioController;
+                else:
+                    if self.sAudioControllerType == 'HDA':
+                        enmAudioControllerType = vboxcon.AudioControllerType_HDA;
+                    elif self.sAudioControllerType == 'AC97':
+                        enmAudioControllerType = vboxcon.AudioControllerType_AC97;
+                    elif self.sAudioControllerType == 'SB16':
+                        enmAudioControllerType = vboxcon.AudioControllerType_SB16;
+                    assert enmAudioControllerType is not None;
 
-                reporter.log('Setting user-defined audio controller type to %d' % (self.enmAudioControllerType));
-                oSession.setupAudio(self.enmAudioControllerType,
+                reporter.log('Setting user-defined audio controller type to %d' % (enmAudioControllerType));
+                oSession.setupAudio(enmAudioControllerType,
                                     fEnable = True, fEnableIn = True, fEnableOut = True);
 
             # Save the settings.
