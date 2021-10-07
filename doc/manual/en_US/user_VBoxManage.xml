@@ -6093,6 +6093,8 @@ Value: 2006.01.01</screen>
 
   <xi:include href="user_man_VBoxManage-updatecheck.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
+  <xi:include href="user_man_VBoxManage-modifynvram.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
   <!-- TODO: Figure out how we can handle other manpages. The xml is bolted to
              sect1, so it's not possible to have them "in place" -->
 

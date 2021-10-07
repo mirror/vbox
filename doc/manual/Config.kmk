@@ -56,6 +56,7 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-cloud.xml \
 	man_VBoxManage-cloudprofile.xml \
 	man_VBoxManage-signova.xml \
+	man_VBoxManage-modifynvram.xml \
 	$(if $(VBOX_WITH_VMNET), \
 	man_VBoxManage-hostonlynet.xml \
 	,) \
