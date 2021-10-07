@@ -384,6 +384,25 @@ static int tftpAllocateSession(PNATState pData, PCTFTPIPHDR pcTftpIpHeader, PPTF
     AssertRCReturn(rc, VERR_INTERNAL_ERROR);
     *ppTftpSession = pTftpSession;
 
+    LogRel(("NAT: TFTP RRQ %s", pTftpSession->szFilename));
+    const char *pszPrefix = " ";
+    if (pTftpSession->OptionBlkSize.fRequested)
+    {
+        LogRel(("%s" "blksize=%RU64", pszPrefix, pTftpSession->OptionBlkSize.u64Value));
+        pszPrefix = ", ";
+    }
+    if (pTftpSession->OptionTSize.fRequested)
+    {
+        LogRel(("%s" "tsize=%RU64", pszPrefix, pTftpSession->OptionTSize.u64Value));
+        pszPrefix = ", ";
+    }
+    if (pTftpSession->OptionTimeout.fRequested)
+    {
+        LogRel(("%s" "timeout=%RU64", pszPrefix, pTftpSession->OptionTimeout.u64Value));
+        pszPrefix = ", ";
+    }
+    LogRel(("\n"));
+
     tftpSessionUpdate(pData, pTftpSession);
 
     return VINF_SUCCESS;
@@ -417,7 +436,7 @@ static int tftpSessionFind(PNATState pData, PCTFTPIPHDR pcTftpIpHeader, PPTFTPSE
     return VERR_NOT_FOUND;
 }
 
-DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, bool fVerbose, PRTFILE pSessionFile)
+DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, PRTFILE pSessionFile)
 {
     char szSessionFilename[TFTP_FILENAME_MAX];
     ssize_t cchSessionFilename;
@@ -437,8 +456,7 @@ DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, 
     }
     else
         rc = VERR_FILENAME_TOO_LONG;
-    if (fVerbose)
-        LogRel(("NAT TFTP: %s/%s -> %Rrc\n", tftp_prefix, pTftpSession->szFilename, rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -451,7 +469,7 @@ DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSe
     int cOptions;
     LogFlowFunc(("pTftpSession:%p\n", pTftpSession));
 
-    rc = pftpSessionOpenFile(pData, pTftpSession, true /*fVerbose*/, &hSessionFile);
+    rc = pftpSessionOpenFile(pData, pTftpSession, &hSessionFile);
     if (RT_FAILURE(rc))
     {
         LogFlowFuncLeaveRC(rc);
@@ -550,7 +568,7 @@ DECLINLINE(int) tftpReadDataBlock(PNATState pData,
                     pcbReadData));
 
     u16BlkSize = (uint16_t)pcTftpSession->OptionBlkSize.u64Value;
-    rc = pftpSessionOpenFile(pData, pcTftpSession, false /*fVerbose*/, &hSessionFile);
+    rc = pftpSessionOpenFile(pData, pcTftpSession, &hSessionFile);
     if (RT_FAILURE(rc))
     {
         LogFlowFuncLeaveRC(rc);
@@ -824,7 +842,7 @@ static void tftpProcessACK(PNATState pData, PTFTPIPHDR pTftpIpHeader)
     if (tftpSendData(pData, pTftpSession,
                      RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode),
                      pTftpIpHeader))
-        LogRel(("NAT TFTP: failure\n"));
+        LogRel(("NAT: TFTP send failed\n"));
 }
 
 int slirpTftpInit(PNATState pData)
