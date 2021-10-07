@@ -368,7 +368,7 @@ int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
  * @param   uTimeoutMs          Timeout (in ms) to wait.
  * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
  *                              SharedClipboardPayloadFree(). Optional.
- * 
+ *
  * @todo    r=bird: Locking protocol is totally buggered here, or at least not
  *          explained in any way whatsoever.  We cannot really do shclEventGet
  *          and shclEventPayloadDetachInternal w/o holding the critical section
