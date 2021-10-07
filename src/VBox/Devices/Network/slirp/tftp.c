@@ -64,7 +64,6 @@ typedef struct TFPTPSESSIONOPTDESC
 typedef struct TFTPSESSION
 {
     int         fInUse;
-    unsigned char pszFilename[TFTP_FILENAME_MAX];
     struct      in_addr IpClientAddress;
     uint16_t    u16ClientPort;
     int         iTimestamp;
@@ -74,6 +73,8 @@ typedef struct TFTPSESSION
     TFPTPSESSIONOPTDESC OptionBlkSize;
     TFPTPSESSIONOPTDESC OptionTSize;
     TFPTPSESSIONOPTDESC OptionTimeout;
+
+    char szFilename[TFTP_FILENAME_MAX];
 } TFTPSESSION, *PTFTPSESSION, **PPTFTPSESSION;
 
 #pragma pack(1)
@@ -150,7 +151,7 @@ DECLINLINE(int) tftpSecurityFilenameCheck(PNATState pData, PCTFTPSESSION pcTftpS
         rc = VERR_INTERNAL_ERROR;
     else
     {
-        char *pszFullPathAbs = RTPathAbsExDup(tftp_prefix, (const char *)pcTftpSession->pszFilename, RTPATH_STR_F_STYLE_HOST);
+        char *pszFullPathAbs = RTPathAbsExDup(tftp_prefix, pcTftpSession->szFilename, RTPATH_STR_F_STYLE_HOST);
 
         if (   !pszFullPathAbs
             || !RTPathStartsWith(pszFullPathAbs, tftp_prefix))
@@ -288,9 +289,9 @@ DECLINLINE(int) tftpSessionOptionParse(PTFTPSESSION pTftpSession, PCTFTPIPHDR pc
         else
             break;
 
-        if (RTStrNLen((char *)pTftpSession->pszFilename, TFTP_FILENAME_MAX) == 0)
+        if (RTStrNLen(pTftpSession->szFilename, TFTP_FILENAME_MAX) == 0)
         {
-            rc = RTStrCopy((char *)pTftpSession->pszFilename, TFTP_FILENAME_MAX, pszTftpRRQRaw);
+            rc = RTStrCopy(pTftpSession->szFilename, TFTP_FILENAME_MAX, pszTftpRRQRaw);
             if (RT_FAILURE(rc))
             {
                 LogFlowFuncLeaveRC(rc);
@@ -423,7 +424,7 @@ DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, 
     int rc;
     LogFlowFuncEnter();
 
-    cchSessionFilename = RTStrPrintf2(szSessionFilename, TFTP_FILENAME_MAX, "%s/%s", tftp_prefix, pTftpSession->pszFilename);
+    cchSessionFilename = RTStrPrintf2(szSessionFilename, TFTP_FILENAME_MAX, "%s/%s", tftp_prefix, pTftpSession->szFilename);
     if (cchSessionFilename > 0)
     {
         LogFunc(("szSessionFilename: %s\n", szSessionFilename));
@@ -437,7 +438,7 @@ DECLINLINE(int) pftpSessionOpenFile(PNATState pData, PTFTPSESSION pTftpSession, 
     else
         rc = VERR_FILENAME_TOO_LONG;
     if (fVerbose)
-        LogRel(("NAT TFTP: %s/%s -> %Rrc\n", tftp_prefix, pTftpSession->pszFilename, rc));
+        LogRel(("NAT TFTP: %s/%s -> %Rrc\n", tftp_prefix, pTftpSession->szFilename, rc));
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
