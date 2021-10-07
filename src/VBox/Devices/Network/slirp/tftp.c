@@ -641,7 +641,7 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     rc = tftpSessionEvaluateOptions(pData, pTftpSession);
     if (RT_FAILURE(rc))
     {
-        tftpSendError(pData, pTftpSession, 2, "Option negotiation failure (file not found or inaccessible?)", pcTftpIpHeaderRecv);
+        tftpSendError(pData, pTftpSession, TFTP_EACCESS, "Option negotiation failure (file not found or inaccessible?)", pcTftpIpHeaderRecv);
         LogFlowFuncLeave();
         return rc;
     }
@@ -727,7 +727,7 @@ static int tftpSendData(PNATState pData,
         pTftpSession->cTftpAck++;
     else
     {
-        tftpSendError(pData, pTftpSession, 6, "ACK is wrong", pcTftpIpHeaderRecv);
+        tftpSendError(pData, pTftpSession, TFTP_EEXIST, "ACK is wrong", pcTftpIpHeaderRecv);
         return -1;
     }
 
@@ -764,7 +764,7 @@ static int tftpSendData(PNATState pData,
     else
     {
         m_freem(pData, m);
-        tftpSendError(pData, pTftpSession, 1, "File not found", pcTftpIpHeaderRecv);
+        tftpSendError(pData, pTftpSession, TFTP_ENOENT, "File not found", pcTftpIpHeaderRecv);
         /* send "file not found" error back */
         return -1;
     }
@@ -807,7 +807,7 @@ DECLINLINE(void) tftpProcessRRQ(PNATState pData, PCTFTPIPHDR pTftpIpHeader, int 
     /* Dont't bother with rest processing in case of invalid access */
     if (RT_FAILURE(tftpSecurityFilenameCheck(pData, pTftpSession)))
     {
-        tftpSendError(pData, pTftpSession, 2, "Access violation", pTftpIpHeader);
+        tftpSendError(pData, pTftpSession, TFTP_EACCESS, "Access violation", pTftpIpHeader);
         LogFlowFuncLeave();
         return;
     }
@@ -816,7 +816,7 @@ DECLINLINE(void) tftpProcessRRQ(PNATState pData, PCTFTPIPHDR pTftpIpHeader, int 
 
     if (RT_UNLIKELY(!tftpIsSupportedTransferMode(pTftpSession)))
     {
-        tftpSendError(pData, pTftpSession, 4, "Unsupported transfer mode", pTftpIpHeader);
+        tftpSendError(pData, pTftpSession, TFTP_ENOSYS, "Unsupported transfer mode", pTftpIpHeader);
         LogFlowFuncLeave();
         return;
     }
