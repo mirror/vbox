@@ -325,8 +325,8 @@ static PSHCLEVENTPAYLOAD shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
  *
  * @returns VBox status code.
  * @param   pSource             Event source to unregister event for.
- * @param   uID                 Event ID to unregister. 
- *  
+ * @param   uID                 Event ID to unregister.
+ *
  * @todo    r=bird: The caller must enter crit sect protecting the event source
  *          here, must it?  See explanation in ShClEventWait.
  */
@@ -373,7 +373,7 @@ int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
  *          explained in any way whatsoever.  We cannot really do shclEventGet
  *          and shclEventPayloadDetachInternal w/o holding the critical section
  *          protecting that list, otherwise wtf is the point of the locking.
- * 
+ *
  *          More to the point, ShClEventSignal is called on the HGCM service
  *          thread and would be racing the host clipboard worker thread/whomever
  *          sent the request and is making this call closely followed by
