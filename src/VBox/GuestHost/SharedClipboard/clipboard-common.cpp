@@ -327,7 +327,7 @@ static PSHCLEVENTPAYLOAD shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
  * @param   pSource             Event source to unregister event for.
  * @param   uID                 Event ID to unregister. 
  *  
- * @todo    r=bird: The caller must enter crit sect protecting the event source 
+ * @todo    r=bird: The caller must enter crit sect protecting the event source
  *          here, must it?  See explanation in ShClEventWait.
  */
 int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
