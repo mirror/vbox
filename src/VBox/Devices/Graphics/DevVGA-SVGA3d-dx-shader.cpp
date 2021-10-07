@@ -133,6 +133,7 @@ typedef struct VGPUOpcode
                                         /* ... */
                                         /* OperandN, VGPU10_OPERAND_INDEX_*RELATIVE for OperandN, ... */
                                         /* 16 probably should be enough for everyone. */
+    uint32_t const *paOpcodeToken;      /* Pointer to opcode tokens in the input buffer. */
 } VGPUOpcode;
 
 typedef struct VGPUOpcodeInfo
@@ -802,6 +803,42 @@ static const char *dxbcInterpolationModeToString(uint32_t value)
     }
     return NULL;
 }
+
+
+static const char *dxbcResourceDimensionToString(uint32_t value)
+{
+    VGPU10_RESOURCE_DIMENSION enm = (VGPU10_RESOURCE_DIMENSION)value;
+    switch (enm)
+    {
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_UNKNOWN);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_BUFFER);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURE1D);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURE2D);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURE2DMS);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURE3D);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURECUBE);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURE1DARRAY);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURE2DARRAY);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURE2DMSARRAY);
+        SVGA_CASE_ID2STR(VGPU10_RESOURCE_DIMENSION_TEXTURECUBEARRAY);
+    }
+    return NULL;
+}
+
+
+static const char *dxbcVmwareOpcodeTypeToString(uint32_t value)
+{
+    VGPU10_VMWARE_OPCODE_TYPE enm = (VGPU10_VMWARE_OPCODE_TYPE)value;
+    switch (enm)
+    {
+        SVGA_CASE_ID2STR(VGPU10_VMWARE_OPCODE_IDIV);
+        SVGA_CASE_ID2STR(VGPU10_VMWARE_OPCODE_DFRC);
+        SVGA_CASE_ID2STR(VGPU10_VMWARE_OPCODE_DRSQ);
+        SVGA_CASE_ID2STR(VGPU10_VMWARE_NUM_OPCODES);
+    }
+    return NULL;
+}
+
 #endif /* LOG_ENABLED */
 
 /*
@@ -1095,6 +1132,12 @@ DECLINLINE(uint32_t) dxbcTokenReaderRemaining(DXBCTokenReader *r)
 #endif
 
 
+DECLINLINE(uint32_t const *) dxbcTokenReaderPtr(DXBCTokenReader *r)
+{
+    return r->pToken;
+}
+
+
 DECLINLINE(bool) dxbcTokenReaderCanRead(DXBCTokenReader *r, uint32_t cToken)
 {
     return cToken <= r->cRemainingToken;
@@ -1137,6 +1180,7 @@ typedef struct DXBCByteWriter
     uint8_t *pu8ByteCodePtr;   /* Next free byte. */
     uint32_t cbAllocated;      /* How many bytes allocated in the buffer. */
     uint32_t cbRemaining;      /* How many bytes remain in the buffer. */
+    int32_t  rc;
 } DXBCByteWriter;
 
 
@@ -1168,12 +1212,15 @@ DECLINLINE(bool) dxbcByteWriterCanWrite(DXBCByteWriter *w, uint32_t cbMore)
 
     /* Do not allow to allocate more than 2 * SVGA3D_MAX_SHADER_MEMORY_BYTES */
     uint32_t const cbMax = 2 * SVGA3D_MAX_SHADER_MEMORY_BYTES;
-    AssertReturn(cbMore < cbMax && RT_ALIGN_32(cbMore, 4096) <= cbMax - w->cbAllocated, false);
+    AssertReturnStmt(cbMore < cbMax && RT_ALIGN_32(cbMore, 4096) <= cbMax - w->cbAllocated, w->rc = VERR_INVALID_PARAMETER, false);
 
     uint32_t cbNew = w->cbAllocated + RT_ALIGN_32(cbMore, 4096);
     void *pvNew = RTMemAllocZ(cbNew);
     if (!pvNew)
+    {
+        w->rc = VERR_NO_MEMORY;
         return false;
+    }
 
     uint32_t const cbCurrent = dxbcByteWriterSize(w);
     memcpy(pvNew, w->pu8ByteCodeBegin, cbCurrent);
@@ -1185,6 +1232,21 @@ DECLINLINE(bool) dxbcByteWriterCanWrite(DXBCByteWriter *w, uint32_t cbMore)
     w->cbRemaining      = cbNew - cbCurrent;
 
     return true;
+}
+
+
+DECLINLINE(bool) dxbcByteWriterAddTokens(DXBCByteWriter *w, uint32_t const *paToken, uint32_t cToken)
+{
+    uint32_t const cbWrite = cToken * sizeof(uint32_t);
+    if (dxbcByteWriterCanWrite(w, cbWrite))
+    {
+        memcpy(dxbcByteWriterPtr(w), paToken, cbWrite);
+        dxbcByteWriterCommit(w, cbWrite);
+        return true;
+    }
+
+    AssertFailed();
+    return false;
 }
 
 
@@ -1368,6 +1430,8 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
     RT_ZERO(*pOpcode);
     ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
 
+    pOpcode->paOpcodeToken = dxbcTokenReaderPtr(r);
+
     VGPU10OpcodeToken0 opcode;
     opcode.value = dxbcTokenReaderRead32(r);
 
@@ -1377,8 +1441,14 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
     uint32_t const cOperand = g_aOpcodeInfo[pOpcode->opcodeType].cOperand;
     if (cOperand != UINT32_MAX)
     {
-        Log6(("[%#x] %s length %d %s\n",
-              dxbcTokenReaderByteOffset(r) - 4, dxbcOpcodeToString(pOpcode->opcodeType), opcode.instructionLength, dxbcInterpolationModeToString(opcode.interpolationMode)));
+#ifdef LOG_ENABLED
+        if (pOpcode->opcodeType == VGPU10_OPCODE_DCL_RESOURCE)
+           Log6(("[%#x] %s length %d %s\n",
+                 dxbcTokenReaderByteOffset(r) - 4, dxbcOpcodeToString(pOpcode->opcodeType), opcode.instructionLength, dxbcResourceDimensionToString(opcode.resourceDimension)));
+        else
+           Log6(("[%#x] %s length %d %s\n",
+                 dxbcTokenReaderByteOffset(r) - 4, dxbcOpcodeToString(pOpcode->opcodeType), opcode.instructionLength, dxbcInterpolationModeToString(opcode.interpolationMode)));
+#endif
 
         ASSERT_GUEST_RETURN(cOperand < RT_ELEMENTS(pOpcode->aIdxOperand), VERR_INVALID_PARAMETER);
 
@@ -1541,7 +1611,7 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
         if (pOpcode->opcodeType == VGPU10_OPCODE_CUSTOMDATA)
         {
             Log6(("[%#x] %s %s\n",
-                  dxbcTokenReaderByteOffset(r), dxbcOpcodeToString(pOpcode->opcodeType), dxbcCustomDataClassToString(opcode.customDataClass)));
+                  dxbcTokenReaderByteOffset(r) - 4, dxbcOpcodeToString(pOpcode->opcodeType), dxbcCustomDataClassToString(opcode.customDataClass)));
 
             ASSERT_GUEST_RETURN(dxbcTokenReaderCanRead(r, 1), VERR_INVALID_PARAMETER);
             pOpcode->cOpcodeToken = dxbcTokenReaderRead32(r);
@@ -1554,6 +1624,9 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
         }
         else if (pOpcode->opcodeType == VGPU10_OPCODE_VMWARE)
         {
+            Log6(("[%#x] %s %s(%d)\n",
+                  dxbcTokenReaderByteOffset(r) - 4, dxbcOpcodeToString(pOpcode->opcodeType), dxbcVmwareOpcodeTypeToString(opcode.vmwareOpcodeType), opcode.vmwareOpcodeType));
+
             /** @todo implement */
             ASSERT_GUEST_FAILED_RETURN(VERR_INVALID_PARAMETER);
         }
@@ -1563,6 +1636,57 @@ static int dxbcParseOpcode(DXBCTokenReader *r, VGPUOpcode *pOpcode)
         // pOpcode->cOperand = 0;
     }
 
+    return VINF_SUCCESS;
+}
+
+
+typedef struct DXBCOUTPUTCTX
+{
+    VGPU10ProgramToken programToken;
+    bool fEmulateOpcodeVmware;
+} DXBCOUTPUTCTX;
+
+
+void dxbcOutputInit(DXBCOUTPUTCTX *pOutctx, VGPU10ProgramToken const *pProgramToken, uint32_t cToken)
+{
+    RT_NOREF(pProgramToken, cToken);
+    RT_ZERO(*pOutctx);
+    pOutctx->programToken = *pProgramToken;
+}
+
+
+int dxbcOutputOpcode(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w, VGPUOpcode *pOpcode)
+{
+    if (   pOutctx->programToken.programType == VGPU10_PIXEL_SHADER
+        && pOpcode->opcodeType == VGPU10_OPCODE_DCL_RESOURCE)
+    {
+        /** @todo This is a workaround. */
+        /* Sometimes the guest (Mesa) created a shader with  uninitialized resource dimension.
+         * Use texture 2d because buffer is not what a pixel shader normally uses.
+         */
+        ASSERT_GUEST_RETURN(pOpcode->cOpcodeToken == 4, VERR_INVALID_PARAMETER);
+
+        VGPU10OpcodeToken0 opcode;
+        opcode.value = pOpcode->paOpcodeToken[0];
+        if (opcode.resourceDimension == VGPU10_RESOURCE_DIMENSION_BUFFER)
+        {
+            opcode.resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+            dxbcByteWriterAddTokens(w, &opcode.value, 1);
+            dxbcByteWriterAddTokens(w, &pOpcode->paOpcodeToken[1], 2);
+            uint32_t const returnType = 0x5555; /* float */
+            dxbcByteWriterAddTokens(w, &returnType, 1);
+            return VINF_SUCCESS;
+        }
+    }
+
+    dxbcByteWriterAddTokens(w, pOpcode->paOpcodeToken, pOpcode->cOpcodeToken);
+    return VINF_SUCCESS;
+}
+
+
+int dxbcOutputFinalize(DXBCOUTPUTCTX *pOutctx, DXBCByteWriter *w)
+{
+    RT_NOREF(pOutctx, w);
     return VINF_SUCCESS;
 }
 
@@ -1592,6 +1716,14 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
           pProgramToken->majorVersion, pProgramToken->minorVersion, dxbcShaderTypeToString(pProgramToken->programType), pProgramToken->programType, cToken));
     ASSERT_GUEST_RETURN(cbShaderCode / 4 == cToken, VERR_INVALID_PARAMETER); /* Declared length should be equal to the actual. */
 
+    /* Write the parsed (and possibly modified) shader to a memory buffer. */
+    DXBCByteWriter dxbcByteWriter;
+    DXBCByteWriter *w = &dxbcByteWriter;
+    if (!dxbcByteWriterInit(w, 4096 + cbShaderCode))
+        return VERR_NO_MEMORY;
+
+    dxbcByteWriterAddTokens(w, paToken, 2);
+
     DXBCTokenReader parser;
     RT_ZERO(parser);
 
@@ -1599,11 +1731,18 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
     r->pToken = &paToken[2];
     r->cToken = r->cRemainingToken = cToken - 2;
 
+    DXBCOUTPUTCTX outctx;
+    dxbcOutputInit(&outctx, pProgramToken, cToken);
+
+    int rc = VINF_SUCCESS;
     while (dxbcTokenReaderCanRead(r, 1))
     {
         VGPUOpcode opcode;
-        int rc = dxbcParseOpcode(r, &opcode);
-        ASSERT_GUEST_RETURN(RT_SUCCESS(rc), VERR_INVALID_PARAMETER);
+        rc = dxbcParseOpcode(r, &opcode);
+        ASSERT_GUEST_STMT_BREAK(RT_SUCCESS(rc), rc = VERR_INVALID_PARAMETER);
+
+        rc = dxbcOutputOpcode(&outctx, w, &opcode);
+        AssertRCBreak(rc);
 
         if (pInfo)
         {
@@ -1614,24 +1753,27 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
                 case VGPU10_OPCODE_DCL_INPUT:
                 case VGPU10_OPCODE_DCL_INPUT_PS:
                 case VGPU10_OPCODE_DCL_INPUT_SIV:
-                    ASSERT_GUEST_RETURN(pInfo->cInputSignature < RT_ELEMENTS(pInfo->aInputSignature), VERR_INVALID_PARAMETER);
+                    ASSERT_GUEST_STMT_BREAK(pInfo->cInputSignature < RT_ELEMENTS(pInfo->aInputSignature), rc = VERR_INVALID_PARAMETER);
                     pSignatureEntry = &pInfo->aInputSignature[pInfo->cInputSignature++];
                     break;
                 case VGPU10_OPCODE_DCL_OUTPUT:
                 case VGPU10_OPCODE_DCL_OUTPUT_SIV:
                 case VGPU10_OPCODE_DCL_OUTPUT_SGV:
-                    ASSERT_GUEST_RETURN(pInfo->cOutputSignature < RT_ELEMENTS(pInfo->aOutputSignature), VERR_INVALID_PARAMETER);
+                    ASSERT_GUEST_STMT_BREAK(pInfo->cOutputSignature < RT_ELEMENTS(pInfo->aOutputSignature), rc = VERR_INVALID_PARAMETER);
                     pSignatureEntry = &pInfo->aOutputSignature[pInfo->cOutputSignature++];
                     break;
                 default:
                     break;
             }
 
+            if (RT_FAILURE(rc))
+                break;
+
             if (pSignatureEntry)
             {
-                ASSERT_GUEST_RETURN(   opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE32
-                                    || opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE64,
-                                    VERR_NOT_SUPPORTED);
+                ASSERT_GUEST_STMT_BREAK(   opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE32
+                                        || opcode.aValOperand[0].aOperandIndex[0].indexRepresentation == VGPU10_OPERAND_INDEX_IMMEDIATE64,
+                                        rc = VERR_NOT_SUPPORTED);
 
                 uint32_t const indexDimension = opcode.aValOperand[0].indexDimension;
                 if (indexDimension == VGPU10_OPERAND_INDEX_0D)
@@ -1648,14 +1790,14 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
                         pSignatureEntry->semanticName  = SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED;
                     }
                     else
-                        ASSERT_GUEST_FAILED_RETURN(VERR_NOT_SUPPORTED);
+                        ASSERT_GUEST_FAILED_STMT_BREAK(rc = VERR_NOT_SUPPORTED);
                 }
                 else
                 {
-                    ASSERT_GUEST_RETURN(   indexDimension == VGPU10_OPERAND_INDEX_1D
-                                        || indexDimension == VGPU10_OPERAND_INDEX_2D
-                                        || indexDimension == VGPU10_OPERAND_INDEX_3D,
-                                        VERR_NOT_SUPPORTED);
+                    ASSERT_GUEST_STMT_BREAK(   indexDimension == VGPU10_OPERAND_INDEX_1D
+                                            || indexDimension == VGPU10_OPERAND_INDEX_2D
+                                            || indexDimension == VGPU10_OPERAND_INDEX_3D,
+                                            rc = VERR_NOT_SUPPORTED);
                     /* The register index seems to be in the highest dimension. */
                     pSignatureEntry->registerIndex = opcode.aValOperand[0].aOperandIndex[indexDimension - VGPU10_OPERAND_INDEX_1D].iOperandImmediate;
                     pSignatureEntry->semanticName  = opcode.semanticName;
@@ -1666,6 +1808,19 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
             }
         }
     }
+
+    if (RT_FAILURE(rc))
+    {
+        return rc;
+    }
+
+    rc = dxbcOutputFinalize(&outctx, w);
+    if (RT_FAILURE(rc))
+    {
+        return rc;
+    }
+
+    dxbcByteWriterFetchData(w, &pInfo->pvBytecode, &pInfo->cbBytecode);
 
 #ifdef LOG_ENABLED
     if (pInfo->cInputSignature)
@@ -1689,6 +1844,13 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
 #endif
 
     return VINF_SUCCESS;
+}
+
+
+void DXShaderFree(DXShaderInfo *pInfo)
+{
+    RTMemFree(pInfo->pvBytecode);
+    RT_ZERO(*pInfo);
 }
 
 
@@ -1845,7 +2007,12 @@ static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint
         VGPUSemanticInfo const *pSemanticInfo = dxbcSemanticInfo(pInfo, src->semanticName, u32BlobType);
 
         dst->offElementName   = cbBlob; /* Offset of the semantic's name relative to the start of the blob (without hdr). */
-        dst->idxSemantic      = aSemanticIdx[src->semanticName]++;
+        /* Use the register index as the semantic index for generic attributes in order to
+         * produce compatible semantic names between shaders.
+         */
+        dst->idxSemantic      = src->semanticName == SVGADX_SIGNATURE_SEMANTIC_NAME_UNDEFINED
+                              ? src->registerIndex
+                              : aSemanticIdx[src->semanticName]++;
         dst->enmSystemValue   = src->semanticName;
         dst->enmComponentType = src->componentType ? src->componentType : pSemanticInfo->u32Type;
         dst->idxRegister      = src->registerIndex;
@@ -1945,15 +2112,15 @@ static int dxbcCreateFromInfo(DXShaderInfo const *pInfo, void const *pvShader, u
 }
 
 
-int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void const *pvShaderCode, uint32_t cbShaderCode, void **ppvDXBC, uint32_t *pcbDXBC)
+int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void **ppvDXBC, uint32_t *pcbDXBC)
 {
     /* Build DXBC container. */
     int rc;
     DXBCByteWriter dxbcByteWriter;
     DXBCByteWriter *w = &dxbcByteWriter;
-    if (dxbcByteWriterInit(w, 4096 + cbShaderCode))
+    if (dxbcByteWriterInit(w, 4096 + pInfo->cbBytecode))
     {
-        rc = dxbcCreateFromInfo(pInfo, pvShaderCode, cbShaderCode, w);
+        rc = dxbcCreateFromInfo(pInfo, pInfo->pvBytecode, pInfo->cbBytecode, w);
         if (RT_SUCCESS(rc))
             dxbcByteWriterFetchData(w, ppvDXBC, pcbDXBC);
     }
@@ -1993,7 +2160,7 @@ static int dxbcCreateFromBytecode(void const *pvShaderCode, uint32_t cbShaderCod
     RT_ZERO(info);
     int rc = DXShaderParse(pvShaderCode, cbShaderCode, &info);
     if (RT_SUCCESS(rc))
-        rc = DXShaderCreateDXBC(&info, pvShaderCode, cbShaderCode, ppvDXBC, pcbDXBC);
+        rc = DXShaderCreateDXBC(&info, info.pvBytecode, info.cbBytecode, ppvDXBC, pcbDXBC);
     return rc;
 }
 

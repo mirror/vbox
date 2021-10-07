@@ -6361,7 +6361,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindShader(PVGASTATECC pThisCC, PVMSVGA3D
         Log6(("\n"));
 #endif
 
-        rc = DXShaderCreateDXBC(&pShader->shaderInfo, pvShaderBytecode, pShader->cbData, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
+        rc = DXShaderCreateDXBC(&pShader->shaderInfo, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
         if (RT_SUCCESS(rc))
         {
 #ifdef LOG_ENABLED

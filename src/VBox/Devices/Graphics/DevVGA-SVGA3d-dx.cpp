@@ -1481,7 +1481,9 @@ int vmsvga3dDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmd
     pEntry->offsetInBytes = 0;
     pEntry->mobid         = SVGA_ID_INVALID;
 
+    /** @todo Destroy shaders on context and backend deletion. */
     PVMSVGA3DSHADER pShader = &pDXContext->paShader[shaderId];
+    DXShaderFree(&pShader->shaderInfo);
     pShader->id                = SVGA_ID_INVALID;
     pShader->cid               = SVGA_ID_INVALID;
     pShader->type              = SVGA3D_SHADERTYPE_INVALID;
