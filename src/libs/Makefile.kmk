@@ -66,6 +66,17 @@ if   (defined(VBOX_WITH_VRDP) || defined(VBOX_WITH_EXTPACK_PUEL)) \
  include $(PATH_SUB_CURRENT)/jpeg-9b/Makefile.kmk
 endif
 
+ # libtpms for supporting the in process TPM emulation.
+if defined(VBOX_WITH_LIBTPMS) \
+ && !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_SDK) \
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && ("$(SDK_VBOX_LIBTPMS_INCS)" == "$(SDK_VBOX_LIBTPMS_DEFAULT_INCS)")
+  include $(PATH_SUB_CURRENT)/libtpms-0.9.0/Makefile.kmk
+endif
+
 # Main related things - XPCOM and XSLT.
 if defined(VBOX_WITH_MAIN) \
  && !defined(VBOX_ONLY_ADDITIONS) \
@@ -86,12 +97,6 @@ if defined(VBOX_WITH_MAIN) \
  if defined(VBOX_WITH_LIBOPUS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) && !defined(VBOX_ONLY_EXTPACKS) \
    && ("$(SDK_VBOX_OPUS_INCS)" == "$(SDK_VBOX_OPUS_DEFAULT_INCS)")
   include $(PATH_SUB_CURRENT)/libopus-1.2.1/Makefile.kmk
- endif
-
- # libtpms for supporting the in process TPM emulation.
- if defined(VBOX_WITH_LIBTPMS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) && !defined(VBOX_ONLY_EXTPACKS) \
-   && ("$(SDK_VBOX_LIBTPMS_INCS)" == "$(SDK_VBOX_LIBTPMS_DEFAULT_INCS)")
-  include $(PATH_SUB_CURRENT)/libtpms-0.9.0/Makefile.kmk
  endif
 
 endif
