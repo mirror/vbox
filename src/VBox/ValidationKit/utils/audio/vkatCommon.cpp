@@ -555,6 +555,12 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
                     if (RT_FAILURE(rc))
                         break;
 
+                    if (pTstEnv)
+                    {
+                        /* Also write the beacon data to the test object. */
+                        rc = AudioTestObjWrite(Obj, abBuf, cbToPlay);
+                    }
+
                     cbBeaconPlayed += cbPlayed;
                     cbPlayedTotal  += cbPlayed;
                     continue;
