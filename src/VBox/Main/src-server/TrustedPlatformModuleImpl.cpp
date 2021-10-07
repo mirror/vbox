@@ -18,6 +18,7 @@
 #define LOG_GROUP LOG_GROUP_MAIN_TRUSTEDPLATFORMMODULE
 #include "TrustedPlatformModuleImpl.h"
 #include "MachineImpl.h"
+#include "GuestOSTypeImpl.h"
 
 #include <iprt/cpp/utils.h>
 #include <VBox/settings.h>
@@ -336,6 +337,21 @@ void TrustedPlatformModule::i_copyFrom(TrustedPlatformModule *aThat)
 
     /* this will back up current data */
     m->bd.assignCopy(aThat->m->bd);
+}
+
+void TrustedPlatformModule::i_applyDefaults(GuestOSType *aOsType)
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Initialize default TPM settings here */
+    if (aOsType)
+        m->bd->tpmType = aOsType->i_recommendedTpm2() ? TpmType_v2_0 : TpmType_None;
+    else
+        m->bd->tpmType = TpmType_None;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

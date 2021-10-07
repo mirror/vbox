@@ -45,6 +45,9 @@
 #define VBOXOSHINT_TFRESET              RT_BIT(13)
 #define VBOXOSHINT_USB3                 RT_BIT(14)
 #define VBOXOSHINT_X2APIC               RT_BIT(15)
+#define VBOXOSHINT_EFI_SECUREBOOT       RT_BIT(16)
+#define VBOXOSHINT_TPM                  RT_BIT(17)
+#define VBOXOSHINT_TPM2                 RT_BIT(18)
 
 /** The VBoxVRDP kludge extension pack name.
  *

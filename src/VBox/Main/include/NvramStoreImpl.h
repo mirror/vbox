@@ -27,6 +27,8 @@
 #ifdef VBOX_COM_INPROC
 class Console;
 #else
+class GuestOSType;
+
 namespace settings
 {
     struct NvramSettings;
@@ -65,6 +67,7 @@ public:
     void i_rollback();
     void i_commit();
     void i_copyFrom(NvramStore *aThat);
+    HRESULT i_applyDefaults(GuestOSType *aOSType);
 #endif
 
     com::Utf8Str i_getNonVolatileStorageFile();

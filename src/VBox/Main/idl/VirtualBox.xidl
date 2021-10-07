@@ -12398,7 +12398,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="7d8ba014-4562-448a-9c1b-b454b35fc3dd"
+    uuid="14233bf3-4609-4abd-99c5-b1d99d30c9dc"
     wsmap="struct"
     reservedAttributes="15"
     >
@@ -12539,6 +12539,14 @@
 
     <attribute name="recommendedCPUCount" type="unsigned long" readonly="yes">
       <desc>Number of vCPUs recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedTpmType" type="TpmType" readonly="yes">
+      <desc>Returns the recommended trusted platform module type for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedSecureBoot" type="boolean" readonly="yes">
+      <desc>Returns @c true if EFI secure boot is recommended for this OS type.</desc>
     </attribute>
 
   </interface>

@@ -47,6 +47,8 @@ public:
     bool i_recommendedX2APIC() const { return !!(mOSHint & VBOXOSHINT_X2APIC); }
     bool i_recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
     bool i_recommendedEFI() const { return !!(mOSHint & VBOXOSHINT_EFI); }
+    bool i_recommendedEFISecureBoot() const { return !!(mOSHint & VBOXOSHINT_EFI_SECUREBOOT); }
+    bool i_recommendedTpm2() const { return !!(mOSHint & VBOXOSHINT_TPM2); }
     NetworkAdapterType_T i_networkAdapterType() const { return mNetworkAdapterType; }
     uint32_t i_numSerialEnabled() const { return mNumSerialEnabled; }
 
@@ -87,6 +89,8 @@ private:
     HRESULT getRecommendedTFReset(BOOL *aRecommendedTFReset);
     HRESULT getRecommendedX2APIC(BOOL *aRecommendedX2APIC);
     HRESULT getRecommendedCPUCount(ULONG *aRecommendedCPUCount);
+    HRESULT getRecommendedTpmType(TpmType_T *aRecommendedTpmType);
+    HRESULT getRecommendedSecureBoot(BOOL *aRecommendedSecureBoot);
 
 
     const Utf8Str mFamilyID;

@@ -25,6 +25,8 @@
 
 #include "TrustedPlatformModuleWrap.h"
 
+class GuestOSType;
+
 namespace settings
 {
     struct TpmSettings;
@@ -53,6 +55,7 @@ public:
     void i_rollback();
     void i_commit();
     void i_copyFrom(TrustedPlatformModule *aThat);
+    void i_applyDefaults(GuestOSType *aOsType);
 
 private:
 

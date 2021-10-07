@@ -365,8 +365,14 @@ HRESULT Machine::init(VirtualBox *aParent,
             mHWData->mX2APIC = false;
         }
 
+        rc = aOsType->COMGETTER(RecommendedFirmware)(&mHWData->mFirmwareType);
+        AssertComRC(rc);
+
         /* Apply BIOS defaults. */
         mBIOSSettings->i_applyDefaults(aOsType);
+
+        /* Apply TPM defaults. */
+        mTrustedPlatformModule->i_applyDefaults(aOsType);
 
         /* Apply record defaults. */
         mRecordingSettings->i_applyDefaults();
@@ -15265,6 +15271,13 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     /* Apply parallel port defaults  - not OS dependent*/
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
         mParallelPorts[slot]->i_applyDefaults();
+
+    /* This one covers the TPM type. */
+    mTrustedPlatformModule->i_applyDefaults(osType);
+
+    /* This one covers secure boot. */
+    rc = mNvramStore->i_applyDefaults(osType);
+    if (FAILED(rc)) return rc;
 
     /* Audio stuff. */
     AudioControllerType_T audioController;
