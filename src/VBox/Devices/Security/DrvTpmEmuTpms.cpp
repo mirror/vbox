@@ -328,6 +328,24 @@ static DECLCALLBACK(void) drvTpmEmuTpmsPowerOn(PPDMDRVINS pDrvIns)
 
 
 /**
+ * @interface_method_impl{PDMDRVREG,pfnReset}
+ */
+static DECLCALLBACK(void) drvTpmEmuTpmsReset(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    TPMLIB_Terminate();
+    TPM_RESULT rcTpm = TPMLIB_MainInit();
+    if (RT_UNLIKELY(rcTpm != TPM_SUCCESS))
+    {
+        LogRel(("DrvTpmEmuTpms#%u: Failed to reset TPM emulation with %#x\n",
+                pDrvIns->iInstance, rcTpm));
+        PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS, "Failed to startup the TPM with %u", rcTpm);
+    }
+}
+
+
+/**
  * @interface_method_impl{PDMDRVREG,pfnPowerOff}
  */
 static DECLCALLBACK(void) drvTpmEmuTpmsPowerOff(PPDMDRVINS pDrvIns)
@@ -486,7 +504,7 @@ const PDMDRVREG g_DrvTpmEmuTpms =
     /* pfnPowerOn */
     drvTpmEmuTpmsPowerOn,
     /* pfnReset */
-    NULL,
+    drvTpmEmuTpmsReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
