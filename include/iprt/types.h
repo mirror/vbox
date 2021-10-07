@@ -272,9 +272,7 @@ typedef _Bool bool;
      typedef _Bool bool;
 #   endif
 #  else
-#   if (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)) && (defined(_STDBOOL_H) || defined(__STDBOOL_H))
-#    undef bool
-#   endif
+#   undef bool /* see above netbsd explanation */
 typedef _Bool bool;
 #  endif
 # else
