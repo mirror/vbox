@@ -106,44 +106,23 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
             else
             {
                 rc = errno;
-                /*bool fVerifyIsDir = true; - Windows returns VERR_ALREADY_EXISTS, so why bother with this. */
-#ifdef RT_OS_SOLARIS
                 /*
-                 * mkdir on nfs mount points has been/is busted in various
-                 * during the Nevada development cycle. We've observed:
-                 *  - Build 111b (2009.06) returns EACCES.
-                 *  - Build ca. 70-80 returns ENOSYS.
+                 * Solaris mkdir returns ENOSYS on autofs directories, and also
+                 * did this apparently for NFS mount points in some Nevada
+                 * development builds. It also returned EACCES when it should
+                 * have returned EEXIST, which actually is within the POSIX
+                 * spec (not that I like this interpretation, but it seems
+                 * valid). Check ourselves.
                  */
                 if (    rc == ENOSYS
                     ||  rc == EACCES)
                 {
                     rc = RTErrConvertFromErrno(rc);
-                    /*fVerifyIsDir = false;   We'll check if it's a dir ourselves since we're going to stat() anyway. */
                     if (!stat(pszNativePath, &st))
-                    {
                         rc = VERR_ALREADY_EXISTS;
-                        /* Windows returns VERR_ALREADY_EXISTS, so why bother with this:
-                        if (!S_ISDIR(st.st_mode))
-                            rc = VERR_IS_A_FILE; */
-                    }
                 }
                 else
                     rc = RTErrConvertFromErrno(rc);
-#else
-                rc = RTErrConvertFromErrno(rc);
-#endif
-#if 0 /* Windows returns VERR_ALREADY_EXISTS, so why bother with this. */
-                if (   rc == VERR_ALREADY_EXISTS
-                    /*&& fVerifyIsDir == true*/)
-                {
-                    /*
-                     * Verify that it really exists as a directory.
-                     */
-                    struct stat st;
-                    if (!stat(pszNativePath, &st) && !S_ISDIR(st.st_mode))
-                        rc = VERR_IS_A_FILE;
-                }
-#endif
             }
         }
 
