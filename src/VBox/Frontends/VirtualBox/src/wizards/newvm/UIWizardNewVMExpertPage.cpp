@@ -312,20 +312,36 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
     const CGuestOSType &type = pWizard->guestOSType();
     ULONG recommendedRam = type.GetRecommendedRAM();
 
-    /* Set memory size of the widget and (through signals) wizard: */
-    if (m_pHardwareWidgetContainer && !m_userModifiedParameters.contains("MemorySize"))
-        m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
-
-
-    KFirmwareType fwType = type.GetRecommendedFirmware();
-    if (m_pHardwareWidgetContainer && !m_userModifiedParameters.contains("EFIEnabled"))
+    if (m_pHardwareWidgetContainer)
     {
         m_pHardwareWidgetContainer->blockSignals(true);
-        m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
+
+        /* Set memory size of the widget and the wizard: */
+        if (!m_userModifiedParameters.contains("MemorySize"))
+        {
+            m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
+            pWizard->setMemorySize(recommendedRam);
+        }
+
+        /* Set Firmware Type of the widget and the wizard: */
+        KFirmwareType fwType = type.GetRecommendedFirmware();
+        if (!m_userModifiedParameters.contains("EFIEnabled"))
+        {
+            m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
+            pWizard->setEFIEnabled(fwType != KFirmwareType_BIOS);
+        }
+
+        /* Initialize CPU count:*/
+        int iCPUCount = type.GetRecommendedCPUCount();
+        if (!m_userModifiedParameters.contains("CPUCount"))
+        {
+            m_pHardwareWidgetContainer->setCPUCount(iCPUCount);
+            pWizard->setCPUCount(iCPUCount);
+        }
         m_pHardwareWidgetContainer->blockSignals(false);
     }
-    LONG64 iRecommendedDiskSize = type.GetRecommendedHDD();
 
+    LONG64 iRecommendedDiskSize = type.GetRecommendedHDD();
     /* Prepare initial disk choice: */
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {
@@ -765,6 +781,7 @@ void UIWizardNewVMExpertPage::sltCPUCountChanged(int iCount)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     wizardWindow<UIWizardNewVM>()->setCPUCount(iCount);
+    m_userModifiedParameters << "CPUCount";
 }
 
 void UIWizardNewVMExpertPage::sltEFIEnabledChanged(bool fEnabled)
