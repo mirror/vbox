@@ -231,6 +231,8 @@ SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource)
 
     AssertMsgFailed(("Unable to register a new event ID for event source %RU16\n", pSource->uID));
 
+    RTSemEventMultiDestroy(pEvent->hEvtMulSem);
+    pEvent->hEvtMulSem = NIL_RTSEMEVENTMULTI;
     RTMemFree(pEvent);
     return NIL_SHCLEVENTID;
 }
@@ -323,7 +325,10 @@ static PSHCLEVENTPAYLOAD shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
  *
  * @returns VBox status code.
  * @param   pSource             Event source to unregister event for.
- * @param   uID                 Event ID to unregister.
+ * @param   uID                 Event ID to unregister. 
+ *  
+ * @todo    r=bird: The caller must enter crit sect protecting the event source 
+ *          here, must it?  See explanation in ShClEventWait.
  */
 int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 {
@@ -363,13 +368,24 @@ int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
  * @param   uTimeoutMs          Timeout (in ms) to wait.
  * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
  *                              SharedClipboardPayloadFree(). Optional.
+ * 
+ * @todo    r=bird: Locking protocol is totally buggered here, or at least not
+ *          explained in any way whatsoever.  We cannot really do shclEventGet
+ *          and shclEventPayloadDetachInternal w/o holding the critical section
+ *          protecting that list, otherwise wtf is the point of the locking.
+ * 
+ *          More to the point, ShClEventSignal is called on the HGCM service
+ *          thread and would be racing the host clipboard worker thread/whomever
+ *          sent the request and is making this call closely followed by
+ *          ShClEventRelease and ShClEventUnregister.  The waiting here might be
+ *          safe if there can only ever be one single thread making these kind
+ *          of requests, but the unregistering is _not_ safe w/o holding the
+ *          lock and that isn't explained anywhere that I can see.
  */
-int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs,
-                  PSHCLEVENTPAYLOAD* ppPayload)
+int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
-    /** ppPayload is optional. */
-
+    AssertPtrNullReturn(ppPayload, VERR_INVALID_POINTER);
     LogFlowFuncEnter();
 
     int rc;
@@ -424,16 +440,32 @@ uint32_t ShClEventRetain(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
  * @returns New reference count, or UINT32_MAX if failed.
  * @param   pSource             Event source of event to release.
  * @param   idEvent             ID of event to release.
+ *
+ * @todo    r=bird: The two places this is currently used make my head explode.
+ *          First you release then you unregister it.  Unregister frees is
+ *          unconditionally.
+ *
+ *          Any sane thinking person would assume that after we've release our
+ *          reference to the @a idEvent, we cannot touch it any more because we
+ *          don't have a valid reference any more.  So, when ShClEventUnregister
+ *          is then called and unconditionally frees the event: Boooooom!
+ *
+ *          The locking interface here is generally not sane either, as the
+ *          locking isn't done on the @a pSource but something the caller needs
+ *          implements.  Since we don't have access to the lock we cannot verify
+ *          the locking protocol nor can we implement it (like in
+ *          ShClEventWait).
+ *
+ *          A better interface would return PSHCLEVENT instead of SHCLEVENTID,
+ *          and then you could work directly on that as an object, rather via a
+ *          slow object list.  It would eliminate shclEventGet and any though
+ *          that someone might be updating the list while shclEventGet traverses
+ *          it.
  */
 uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
 {
     PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
-    if (!pEvent)
-    {
-        AssertFailed();
-        return UINT32_MAX;
-    }
-
+    AssertReturn(pEvent, UINT32_MAX);
     AssertReturn(pEvent->cRefs, UINT32_MAX); /* Sanity. Yeah, not atomic. */
 
     return ASMAtomicDecU32(&pEvent->cRefs);
@@ -445,12 +477,12 @@ uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
  * @returns VBox status code.
  * @param   pSource             Event source of event to signal.
  * @param   uID                 Event ID to signal.
- * @param   pPayload            Event payload to associate. Takes ownership. Optional.
+ * @param   pPayload            Event payload to associate. Takes ownership on
+ *                              success. Optional.
  *
  * @note    Caller must enter crit sect protecting the event source!
  */
-int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
-                    PSHCLEVENTPAYLOAD pPayload)
+int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, PSHCLEVENTPAYLOAD pPayload)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
 
@@ -466,6 +498,8 @@ int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
         pEvent->pPayload = pPayload;
 
         rc = RTSemEventMultiSignal(pEvent->hEvtMulSem);
+        if (RT_FAILURE(rc))
+            pEvent->pPayload = NULL; /* (no race condition if consumer also enters the critical section) */
     }
     else
         rc = VERR_NOT_FOUND;
