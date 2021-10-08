@@ -5978,7 +5978,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                     IEM_MAP_PAE_PDPES_AT_CR3_RET(pVCpu, iCrReg, uNewCrX);
                     fPdpesMapped = true;
                 }
-                rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PGE), fPdpesMapped);
+                rc = PGMFlushTLB(pVCpu, uNewCrX, !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PGE), fPdpesMapped);
                 AssertRCReturn(rc, rc);
                 /* ignore informational status codes */
             }
