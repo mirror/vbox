@@ -48,7 +48,7 @@ namespace UIWizardExportAppPage1
 }
 
 /** UINativeWizardPage extension for 1st basic page of the Export Appliance wizard,
-  * based on UIWizardAddCloudVMPage1 namespace functions. */
+  * based on UIWizardExportAppPage1 namespace functions. */
 class UIWizardExportAppPageBasic1 : public UINativeWizardPage
 {
     Q_OBJECT;
@@ -66,16 +66,16 @@ protected:
     UIWizardExportApp *wizard() const;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
 private slots:
 
@@ -94,8 +94,9 @@ private:
 
     /** Holds the main label instance. */
     QIRichTextLabel *m_pLabelMain;
+
     /** Holds the VM selector instance. */
-    QListWidget     *m_pVMSelector;
+    QListWidget *m_pVMSelector;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic1_h */

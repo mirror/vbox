@@ -135,7 +135,7 @@ namespace UIWizardExportAppPage2
 }
 
 /** UINativeWizardPage extension for 2nd basic page of the Export Appliance wizard,
-  * based on UIWizardAddCloudVMPage2 namespace functions. */
+  * based on UIWizardExportAppPage2 namespace functions. */
 class UIWizardExportAppPageBasic2 : public UINativeWizardPage
 {
     Q_OBJECT;
@@ -151,16 +151,16 @@ protected:
     UIWizardExportApp *wizard() const;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
 private slots:
 
