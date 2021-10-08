@@ -670,18 +670,18 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostValKitAudioHA_GetStatus(PPDMIHOST
 static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                            PCPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    PDRVHOSTVALKITAUDIO pThis      = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
-    PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
-    AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
+    PDRVHOSTVALKITAUDIO pThis         = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    PVALKITAUDIOSTREAM  pStreamValKit = (PVALKITAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamValKit, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
     RT_NOREF(pThis);
 
     int rc = VINF_SUCCESS;
-    PDMAudioStrmCfgCopy(&pStreamDbg->Cfg, pCfgAcq);
+    PDMAudioStrmCfgCopy(&pStreamValKit->Cfg, pCfgAcq);
 
 #ifdef VBOX_WITH_AUDIO_VALKIT_DUMP_STREAMS
-    int rc2 = AudioHlpFileCreateAndOpenEx(&pStreamDbg->pFile, AUDIOHLPFILETYPE_WAV, NULL /*use temp dir*/,
+    int rc2 = AudioHlpFileCreateAndOpenEx(&pStreamValKit->pFile, AUDIOHLPFILETYPE_WAV, NULL /*use temp dir*/,
                                           pThis->pDrvIns->iInstance, AUDIOHLPFILENAME_FLAGS_NONE, AUDIOHLPFILE_FLAGS_NONE,
                                           &pCfgReq->Props, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
                                           pCfgReq->enmDir == PDMAUDIODIR_IN ? "ValKitAudioIn" : "ValKitAudioOut");
@@ -700,14 +700,14 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInte
                                                             bool fImmediate)
 {
     RT_NOREF(pInterface, fImmediate);
-    PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
-    AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
+    PVALKITAUDIOSTREAM  pStreamValKit = (PVALKITAUDIOSTREAM)pStream;
+    AssertPtrReturn(pStreamValKit, VERR_INVALID_POINTER);
 
 #ifdef VBOX_WITH_AUDIO_VALKIT_DUMP_STREAMS
-    if (pStreamDbg->pFile)
+    if (pStreamValKit->pFile)
     {
-        AudioHlpFileDestroy(pStreamDbg->pFile);
-        pStreamDbg->pFile = NULL;
+        AudioHlpFileDestroy(pStreamValKit->pFile);
+        pStreamValKit->pFile = NULL;
     }
 #endif
 
