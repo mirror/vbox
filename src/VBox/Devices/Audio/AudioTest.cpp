@@ -2244,10 +2244,11 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     RT_NOREF(pToneParms);
     uint32_t const cbChunkSize = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
 
-    uint64_t offCur      = 0;
-    uint64_t offLastDiff = UINT64_MAX;
-    uint64_t cbSize      = RT_MIN(pCmpA->cbSize, pCmpB->cbSize);
-    uint64_t cbToCompare = cbSize;
+    uint64_t offCur       = 0;
+    uint64_t offDiffStart = 0;
+    bool     fInDiff      = false;
+    uint64_t cbSize       = RT_MIN(pCmpA->cbSize, pCmpB->cbSize);
+    uint64_t cbToCompare  = cbSize;
 
     while (cbToCompare)
     {
@@ -2261,25 +2262,26 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
 
         if (memcmp(auBufA, auBufB, RT_MIN(cbReadA, cbReadB)) != 0)
         {
-            if (offLastDiff == UINT64_MAX) /* No consequitive different chunk? Count as new then. */
+            if (!fInDiff) /* No consequitive different chunk? Count as new then. */
             {
                 cDiffs++;
-                offLastDiff = offCur;
+                offDiffStart = offCur;
+                fInDiff  = true;
             }
         }
         else /* Reset and count next difference as new then. */
         {
-            if (cDiffs)
+            if (fInDiff)
             {
-                uint32_t const cbDiff = offCur - offLastDiff;
+                uint32_t const cbDiff = offCur - offDiffStart;
                 int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
-                                                                                     pCmpA->offStart, pCmpB->offStart, offLastDiff, offCur,
+                                                                                     pCmpA->offStart, pCmpB->offStart, offDiffStart, offCur,
                                                                                      cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
                 AssertRC(rc2);
 
                 cbDiffs += cbDiff;
             }
-            offLastDiff = UINT64_MAX;
+            fInDiff = false;
         }
 
         AssertBreakStmt(cbToCompare >= cbReadA, VERR_INTERNAL_ERROR);
@@ -2288,21 +2290,21 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     }
 
     /* If we didn't mention the last diff yet, do so now. */
-    if (   offLastDiff != UINT64_MAX
-        && cDiffs)
+    if (fInDiff)
     {
-        uint32_t const cbDiff = offCur - offLastDiff;
+        uint32_t const cbDiff = offCur - offDiffStart;
         int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
-                                                                             pCmpA->offStart, pCmpB->offStart, offLastDiff, offCur,
+                                                                             pCmpA->offStart, pCmpB->offStart, offDiffStart, offCur,
                                                                              cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
         AssertRC(rc2);
 
         cbDiffs += cbDiff;
     }
 
-    if (cbDiffs)
+    if (   cbSize
+        && cbDiffs)
     {
-        uint8_t const uDiffPercent = (cbSize * 100) / cbDiffs;
+        uint8_t const uDiffPercent = cbDiffs / (cbSize * 100);
         if (uDiffPercent > pVerJob->Opts.uMaxDiffPercent)
         {
             int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Files binary-differ too much (expected maximum %RU8%%, got %RU8%%)",
