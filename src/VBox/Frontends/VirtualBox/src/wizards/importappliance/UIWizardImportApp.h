@@ -58,40 +58,61 @@ public:
         PageExpert
     };
 
-    /** Constructs export appliance wizard passing @a pParent to the base-class.
-      * @param  strFileName  Brings appliance file name. */
-    UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName);
+    /** Constructs Import Appliance wizard passing @a pParent to the base-class.
+      * @param  fImportFromOCIByDefault  Brings whether wizard should start with OCI target.
+      * @param  strFileName              Brings local file name to import OVF/OVA from. */
+    UIWizardImportApp(QWidget *pParent,
+                      bool fImportFromOCIByDefault,
+                      const QString &strFileName);
 
     /** Prepares all. */
     virtual void prepare() /* override */;
 
-    /** Returns appliance. */
-    CAppliance appliance() const;
-    /** Defines @a strFileName. */
-    bool setFile(const QString &strFileName);
-    /** Returns whether appliance is valid. */
-    bool isValid() const;
+    /** @name Local import fields.
+      * @{ */
+        /** Returns local Appliance object. */
+        CAppliance localAppliance() const { return m_comLocalAppliance; }
+        /** Defines file @a strName. */
+        bool setFile(const QString &strName);
+        /** Returns whether appliance is valid. */
+        bool isValid() const;
+    /** @} */
 
-    /** Imports appliance. */
-    bool importAppliance();
+    /** @name Auxiliary stuff.
+      * @{ */
+        /** Imports appliance. */
+        bool importAppliance();
+    /** @} */
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    /** @name Inherited stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override final */;
+    /** @} */
 
 private:
 
-    /** Returns a list of license agreement pairs. */
-    QList<QPair<QString, QString> > licenseAgreements() const;
+    /** @name Auxiliary stuff.
+      * @{ */
+        /** Returns a list of license agreement pairs. */
+        QList<QPair<QString, QString> > licenseAgreements() const;
+    /** @} */
 
-    /** Holds whether default source should be Import from OCI. */
-    bool     m_fImportFromOCIByDefault;
-    /** Handles the appliance file name. */
-    QString  m_strFileName;
+    /** @name Arguments.
+      * @{ */
+        /** Holds whether default source should be Import from OCI. */
+        bool     m_fImportFromOCIByDefault;
+        /** Handles the appliance file name. */
+        QString  m_strFileName;
+    /** @} */
 
-    /** Holds the appliance wrapper instance. */
-    CAppliance  m_comAppliance;
+    /** @name Local import fields.
+      * @{ */
+        /** Holds the local appliance wrapper instance. */
+        CAppliance  m_comLocalAppliance;
+    /** @} */
 };
 
 /** Safe pointer to appliance wizard. */

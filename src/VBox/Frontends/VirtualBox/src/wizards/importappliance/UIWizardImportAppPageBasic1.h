@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,7 +38,7 @@ class QGridLayout;
 class QLabel;
 class QListWidget;
 class QTableWidget;
-class QStackedLayout;
+class QStackedWidget;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
@@ -124,8 +124,8 @@ protected:
     /** Holds the source type combo-box instance. */
     QIComboBox  *m_pSourceComboBox;
 
-    /** Holds the stacked layout instance. */
-    QStackedLayout *m_pStackedLayout;
+    /** Holds the settings widget 1 instance. */
+    QStackedWidget *m_pSettingsWidget1;
 
     /** Holds the local container layout instance. */
     QGridLayout             *m_pLocalContainerLayout;
@@ -160,7 +160,8 @@ class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAp
 
 public:
 
-    /** Constructs 1st basic page. */
+    /** Constructs 1st basic page.
+      * @param  fImportFromOCIByDefault  Brings whether we should propose import from OCI by default. */
     UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault);
 
 protected:
@@ -169,28 +170,27 @@ protected:
     UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
     /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override */;
+    virtual void updatePageAppearance() /* override final */;
 
 private slots:
 
-    /** Handles import source change. */
-    void sltHandleSourceChange();
+    /** Handles source combo change. */
+    void sltHandleSourceComboChange();
 
-    /** Handles change in profile combo-box. */
+    /** Handles profile combo change. */
     void sltHandleProfileComboChange();
-
     /** Handles profile tool-button click. */
     void sltHandleProfileButtonClick();
 

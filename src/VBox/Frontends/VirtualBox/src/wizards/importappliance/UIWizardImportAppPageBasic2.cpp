@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,14 +17,14 @@
 
 /* Qt includes: */
 #include <QCheckBox>
-#include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
 #include <QPointer>
-#include <QStackedLayout>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "UIApplianceImportEditorWidget.h"
 #include "UIApplianceUnverifiedCertificateViewer.h"
@@ -47,7 +47,7 @@
 *********************************************************************************************************************************/
 
 UIWizardImportAppPage2::UIWizardImportAppPage2()
-    : m_pSettingsCntLayout(0)
+    : m_pSettingsWidget2(0)
     , m_pApplianceWidget(0)
     , m_pLabelImportFilePath(0)
     , m_pEditorImportFilePath(0)
@@ -104,7 +104,7 @@ void UIWizardImportAppPage2::updatePageAppearance()
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
     /* Update page appearance according to chosen source: */
-    m_pSettingsCntLayout->setCurrentIndex((int)fIsSourceCloudOne);
+    m_pSettingsWidget2->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
 void UIWizardImportAppPage2::updateMACImportPolicyComboToolTip()
@@ -153,122 +153,122 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
     if (pMainLayout)
     {
         /* Prepare label: */
-        m_pLabel = new QIRichTextLabel(this);
-        if (m_pLabel)
-            pMainLayout->addWidget(m_pLabel);
+        m_pLabelDescription = new QIRichTextLabel(this);
+        if (m_pLabelDescription)
+            pMainLayout->addWidget(m_pLabelDescription);
 
-        /* Prepare settings container layout: */
-        m_pSettingsCntLayout = new QStackedLayout;
-        if (m_pSettingsCntLayout)
+        /* Prepare settings widget 2: */
+        m_pSettingsWidget2 = new QStackedWidget(this);
+        if (m_pSettingsWidget2)
         {
-            /* Prepare appliance widget container: */
-            QWidget *pApplianceWidgetCnt = new QWidget(this);
-            if (pApplianceWidgetCnt)
+            /* Prepare appliance container: */
+            QWidget *pContainerAppliance = new QWidget(m_pSettingsWidget2);
+            if (pContainerAppliance)
             {
-                /* Prepare appliance widget layout: */
-                QGridLayout *pApplianceWidgetLayout = new QGridLayout(pApplianceWidgetCnt);
-                if (pApplianceWidgetLayout)
+                /* Prepare appliance layout: */
+                QGridLayout *pLayoutAppliance = new QGridLayout(pContainerAppliance);
+                if (pLayoutAppliance)
                 {
-                    pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
-                    pApplianceWidgetLayout->setColumnStretch(0, 0);
-                    pApplianceWidgetLayout->setColumnStretch(1, 1);
+                    pLayoutAppliance->setContentsMargins(0, 0, 0, 0);
+                    pLayoutAppliance->setColumnStretch(0, 0);
+                    pLayoutAppliance->setColumnStretch(1, 1);
 
                     /* Prepare appliance widget: */
-                    m_pApplianceWidget = new UIApplianceImportEditorWidget(pApplianceWidgetCnt);
+                    m_pApplianceWidget = new UIApplianceImportEditorWidget(pContainerAppliance);
                     if (m_pApplianceWidget)
                     {
                         m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-                        pApplianceWidgetLayout->addWidget(m_pApplianceWidget, 0, 0, 1, 3);
+                        pLayoutAppliance->addWidget(m_pApplianceWidget, 0, 0, 1, 3);
                     }
 
                     /* Prepare path selector label: */
-                    m_pLabelImportFilePath = new QLabel(pApplianceWidgetCnt);
+                    m_pLabelImportFilePath = new QLabel(pContainerAppliance);
                     if (m_pLabelImportFilePath)
                     {
                         m_pLabelImportFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                        pApplianceWidgetLayout->addWidget(m_pLabelImportFilePath, 1, 0);
+                        pLayoutAppliance->addWidget(m_pLabelImportFilePath, 1, 0);
                     }
                     /* Prepare path selector editor: */
-                    m_pEditorImportFilePath = new UIFilePathSelector(pApplianceWidgetCnt);
+                    m_pEditorImportFilePath = new UIFilePathSelector(pContainerAppliance);
                     if (m_pEditorImportFilePath)
                     {
                         m_pEditorImportFilePath->setResetEnabled(true);
                         m_pEditorImportFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
                         m_pEditorImportFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
                         m_pLabelImportFilePath->setBuddy(m_pEditorImportFilePath);
-                        pApplianceWidgetLayout->addWidget(m_pEditorImportFilePath, 1, 1, 1, 2);
+                        pLayoutAppliance->addWidget(m_pEditorImportFilePath, 1, 1, 1, 2);
                     }
 
                     /* Prepare MAC address policy label: */
-                    m_pLabelMACImportPolicy = new QLabel(pApplianceWidgetCnt);
+                    m_pLabelMACImportPolicy = new QLabel(pContainerAppliance);
                     if (m_pLabelMACImportPolicy)
                     {
                         m_pLabelMACImportPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                        pApplianceWidgetLayout->addWidget(m_pLabelMACImportPolicy, 2, 0);
+                        pLayoutAppliance->addWidget(m_pLabelMACImportPolicy, 2, 0);
                     }
                     /* Prepare MAC address policy combo: */
-                    m_pComboMACImportPolicy = new QComboBox(pApplianceWidgetCnt);
+                    m_pComboMACImportPolicy = new QIComboBox(pContainerAppliance);
                     if (m_pComboMACImportPolicy)
                     {
                         m_pComboMACImportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
                         m_pLabelMACImportPolicy->setBuddy(m_pComboMACImportPolicy);
-                        pApplianceWidgetLayout->addWidget(m_pComboMACImportPolicy, 2, 1, 1, 2);
+                        pLayoutAppliance->addWidget(m_pComboMACImportPolicy, 2, 1, 1, 2);
                     }
 
                     /* Prepare additional options label: */
-                    m_pLabelAdditionalOptions = new QLabel(pApplianceWidgetCnt);
+                    m_pLabelAdditionalOptions = new QLabel(pContainerAppliance);
                     if (m_pLabelAdditionalOptions)
                     {
                         m_pLabelAdditionalOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                        pApplianceWidgetLayout->addWidget(m_pLabelAdditionalOptions, 3, 0);
+                        pLayoutAppliance->addWidget(m_pLabelAdditionalOptions, 3, 0);
                     }
                     /* Prepare import HDs as VDIs checkbox: */
-                    m_pCheckboxImportHDsAsVDI = new QCheckBox(pApplianceWidgetCnt);
+                    m_pCheckboxImportHDsAsVDI = new QCheckBox(pContainerAppliance);
                     {
                         m_pCheckboxImportHDsAsVDI->setCheckState(Qt::Checked);
-                        pApplianceWidgetLayout->addWidget(m_pCheckboxImportHDsAsVDI, 3, 1);
+                        pLayoutAppliance->addWidget(m_pCheckboxImportHDsAsVDI, 3, 1);
                     }
 
                     /* Prepare certificate label: */
-                    m_pCertLabel = new QLabel(pApplianceWidgetCnt);
+                    m_pCertLabel = new QLabel(pContainerAppliance);
                     if (m_pCertLabel)
-                        pApplianceWidgetLayout->addWidget(m_pCertLabel, 4, 0, 1, 3);
+                        pLayoutAppliance->addWidget(m_pCertLabel, 4, 0, 1, 3);
                 }
 
-                /* Add into layout: */
-                m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
+                /* Add into widget: */
+                m_pSettingsWidget2->addWidget(pContainerAppliance);
             }
 
             /* Prepare form editor container: */
-            QWidget *pFormEditorCnt = new QWidget(this);
-            if (pFormEditorCnt)
+            QWidget *pContainerFormEditor = new QWidget(m_pSettingsWidget2);
+            if (pContainerFormEditor)
             {
                 /* Prepare form editor layout: */
-                QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
-                if (pFormEditorLayout)
+                QVBoxLayout *pLayoutFormEditor = new QVBoxLayout(pContainerFormEditor);
+                if (pLayoutFormEditor)
                 {
-                    pFormEditorLayout->setContentsMargins(0, 0, 0, 0);
+                    pLayoutFormEditor->setContentsMargins(0, 0, 0, 0);
 
                     /* Prepare form editor widget: */
-                    m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
+                    m_pFormEditor = new UIFormEditorWidget(pContainerFormEditor);
                     if (m_pFormEditor)
-                        pFormEditorLayout->addWidget(m_pFormEditor);
+                        pLayoutFormEditor->addWidget(m_pFormEditor);
                 }
 
-                /* Add into layout: */
-                m_pSettingsCntLayout->addWidget(pFormEditorCnt);
+                /* Add into widget: */
+                m_pSettingsWidget2->addWidget(pContainerFormEditor);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pSettingsCntLayout);
+            pMainLayout->addWidget(m_pSettingsWidget2);
         }
     }
 
     /* Setup connections: */
     connect(m_pEditorImportFilePath, &UIFilePathSelector::pathChanged,
-            this, &UIWizardImportAppPageBasic2::sltHandlePathChanged);
-    connect(m_pComboMACImportPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardImportAppPageBasic2::sltHandleMACImportPolicyChange);
+            this, &UIWizardImportAppPageBasic2::sltHandleImportPathEditorChange);
+    connect(m_pComboMACImportPolicy, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIWizardImportAppPageBasic2::sltHandleMACImportPolicyComboChange);
 
     /* Register fields: */
     registerField("macAddressImportPolicy", this, "macAddressImportPolicy");
@@ -284,7 +284,7 @@ void UIWizardImportAppPageBasic2::retranslateUi()
     if (m_pLabelImportFilePath)
         m_pLabelImportFilePath->setText(tr("&Machine Base Folder:"));
 
-    /* Translate MAC address policy combo-box: */
+    /* Translate MAC import policy label: */
     if (m_pLabelMACImportPolicy)
     {
         m_pLabelMACImportPolicy->setText(tr("MAC Address &Policy:"));
@@ -393,13 +393,12 @@ void UIWizardImportAppPageBasic2::initializePage()
         }
 
         /* Acquire appliance: */
-        CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->appliance();
+        CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->localAppliance();
 
         /* Initialize appliance widget: */
         m_pApplianceWidget->setAppliance(comAppliance);
         /* Make sure we initialize appliance widget model with correct base folder path: */
-        if (m_pEditorImportFilePath)
-            sltHandlePathChanged(m_pEditorImportFilePath->path());
+        sltHandleImportPathEditorChange();
 
         /* Acquire certificate: */
         CCertificate comCertificate = comAppliance.GetCertificate();
@@ -467,8 +466,7 @@ bool UIWizardImportAppPageBasic2::validatePage()
     startProcessing();
 
     /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
+    if (fieldImp("isSourceCloudOne").toBool())
     {
         /* Make sure table has own data committed: */
         m_pFormEditor->makeSureEditorDataCommitted();
@@ -476,7 +474,6 @@ bool UIWizardImportAppPageBasic2::validatePage()
         /* Check whether we have proper VSD form: */
         CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
         fResult = comForm.isNotNull();
-        Assert(fResult);
 
         /* Give changed VSD back to appliance: */
         if (fResult)
@@ -513,28 +510,30 @@ void UIWizardImportAppPageBasic2::updatePageAppearance()
     const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
     if (fIsSourceCloudOne)
     {
-        m_pLabel->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
-                                                "procedure, they are influencing the resulting local VM instance. "
-                                                "You can change many of the properties shown by double-clicking "
-                                                "on the items and disable others using the check boxes below."));
+        m_pLabelDescription->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
+                                                           "procedure, they are influencing the resulting local VM instance. "
+                                                           "You can change many of the properties shown by double-clicking "
+                                                           "on the items and disable others using the check boxes below."));
         m_pFormEditor->setFocus();
     }
     else
     {
-        m_pLabel->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
-                                                "and the suggested settings of the imported VirtualBox machines. "
-                                                "You can change many of the properties shown by double-clicking "
-                                                "on the items and disable others using the check boxes below."));
+        m_pLabelDescription->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
+                                                            "and the suggested settings of the imported VirtualBox machines. "
+                                                            "You can change many of the properties shown by double-clicking "
+                                                            "on the items and disable others using the check boxes below."));
         m_pApplianceWidget->setFocus();
     }
 }
 
-void UIWizardImportAppPageBasic2::sltHandlePathChanged(const QString &strNewPath)
+void UIWizardImportAppPageBasic2::sltHandleImportPathEditorChange()
 {
-    m_pApplianceWidget->setVirtualSystemBaseFolder(strNewPath);
+    AssertPtrReturnVoid(m_pApplianceWidget);
+    AssertPtrReturnVoid(m_pEditorImportFilePath);
+    m_pApplianceWidget->setVirtualSystemBaseFolder(m_pEditorImportFilePath->path());
 }
 
-void UIWizardImportAppPageBasic2::sltHandleMACImportPolicyChange()
+void UIWizardImportAppPageBasic2::sltHandleMACImportPolicyComboChange()
 {
     updateMACImportPolicyComboToolTip();
 }

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QListWidget>
-#include <QStackedLayout>
+#include <QStackedWidget>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -53,7 +53,7 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
     , m_pSourceLayout(0)
     , m_pSourceLabel(0)
     , m_pSourceComboBox(0)
-    , m_pStackedLayout(0)
+    , m_pSettingsWidget1(0)
     , m_pLocalContainerLayout(0)
     , m_pFileLabel(0)
     , m_pFileSelector(0)
@@ -74,13 +74,13 @@ void UIWizardImportAppPage1::populateSources()
     /* Clear combo initially: */
     m_pSourceComboBox->clear();
 
-    /* Compose hardcoded sources list, there might be few of list items: */
+    /* Compose hardcoded sources list: */
     QStringList sources;
     sources << "local";
     /* Add that list to combo: */
     foreach (const QString &strShortName, sources)
     {
-        /* Compose empty combo item, fill it's data: */
+        /* Compose empty item, fill it's data: */
         m_pSourceComboBox->addItem(QString());
         m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, strShortName, SourceData_ShortName);
     }
@@ -301,7 +301,7 @@ void UIWizardImportAppPage1::populateFormProperties()
 void UIWizardImportAppPage1::updatePageAppearance()
 {
     /* Update page appearance according to chosen source: */
-    m_pStackedLayout->setCurrentIndex((int)isSourceCloudOne());
+    m_pSettingsWidget1->setCurrentIndex((int)isSourceCloudOne());
 }
 
 void UIWizardImportAppPage1::updateSourceComboToolTip()
@@ -405,16 +405,16 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
         if (m_pLabelDescription)
             pMainLayout->addWidget(m_pLabelDescription);
 
-        /* Prepare stacked layout: */
-        m_pStackedLayout = new QStackedLayout;
-        if (m_pStackedLayout)
+        /* Prepare settings widget: */
+        m_pSettingsWidget1 = new QStackedWidget(this);
+        if (m_pSettingsWidget1)
         {
             /* Prepare local container: */
-            QWidget *pLocalContainer = new QWidget(this);
-            if (pLocalContainer)
+            QWidget *pContainerLocal = new QWidget(m_pSettingsWidget1);
+            if (pContainerLocal)
             {
                 /* Prepare local container layout: */
-                m_pLocalContainerLayout = new QGridLayout(pLocalContainer);
+                m_pLocalContainerLayout = new QGridLayout(pContainerLocal);
                 if (m_pLocalContainerLayout)
                 {
                     m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
@@ -423,12 +423,12 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pLocalContainerLayout->setRowStretch(1, 1);
 
                     /* Prepare file label: */
-                    m_pFileLabel = new QLabel(pLocalContainer);
+                    m_pFileLabel = new QLabel(pContainerLocal);
                     if (m_pFileLabel)
                         m_pLocalContainerLayout->addWidget(m_pFileLabel, 0, 0, Qt::AlignRight);
 
                     /* Prepare file-path selector: */
-                    m_pFileSelector = new UIEmptyFilePathSelector(pLocalContainer);
+                    m_pFileSelector = new UIEmptyFilePathSelector(pContainerLocal);
                     if (m_pFileSelector)
                     {
                         m_pFileLabel->setBuddy(m_pFileSelector);
@@ -440,16 +440,16 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     }
                 }
 
-                /* Add into layout: */
-                m_pStackedLayout->addWidget(pLocalContainer);
+                /* Add into widget: */
+                m_pSettingsWidget1->addWidget(pContainerLocal);
             }
 
             /* Prepare cloud container: */
-            QWidget *pCloudContainer = new QWidget(this);
-            if (pCloudContainer)
+            QWidget *pContainerCloud = new QWidget(m_pSettingsWidget1);
+            if (pContainerCloud)
             {
                 /* Prepare cloud container layout: */
-                m_pCloudContainerLayout = new QGridLayout(pCloudContainer);
+                m_pCloudContainerLayout = new QGridLayout(pContainerCloud);
                 if (m_pCloudContainerLayout)
                 {
                     m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
@@ -459,7 +459,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pCloudContainerLayout->setRowStretch(2, 1);
 
                     /* Prepare profile label: */
-                    m_pProfileLabel = new QLabel(pCloudContainer);
+                    m_pProfileLabel = new QLabel(pContainerCloud);
                     if (m_pProfileLabel)
                         m_pCloudContainerLayout->addWidget(m_pProfileLabel, 0, 0, Qt::AlignRight);
 
@@ -471,7 +471,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         pSubLayout->setSpacing(1);
 
                         /* Prepare profile combo-box: */
-                        m_pProfileComboBox = new QIComboBox(pCloudContainer);
+                        m_pProfileComboBox = new QIComboBox(pContainerCloud);
                         if (m_pProfileComboBox)
                         {
                             m_pProfileLabel->setBuddy(m_pProfileComboBox);
@@ -479,7 +479,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         }
 
                         /* Prepare profile tool-button: */
-                        m_pProfileToolButton = new QIToolButton(pCloudContainer);
+                        m_pProfileToolButton = new QIToolButton(pContainerCloud);
                         if (m_pProfileToolButton)
                         {
                             m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
@@ -492,12 +492,12 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     }
 
                     /* Prepare profile instance label: */
-                    m_pProfileInstanceLabel = new QLabel(pCloudContainer);
+                    m_pProfileInstanceLabel = new QLabel(pContainerCloud);
                     if (m_pProfileInstanceLabel)
                         m_pCloudContainerLayout->addWidget(m_pProfileInstanceLabel, 1, 0, Qt::AlignRight);
 
                     /* Prepare profile instances table: */
-                    m_pProfileInstanceList = new QListWidget(pCloudContainer);
+                    m_pProfileInstanceList = new QListWidget(pContainerCloud);
                     if (m_pProfileInstanceList)
                     {
                         m_pProfileInstanceLabel->setBuddy(m_pProfileInstanceLabel);
@@ -513,22 +513,22 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     }
                 }
 
-                /* Add into layout: */
-                m_pStackedLayout->addWidget(pCloudContainer);
+                /* Add into widget: */
+                m_pSettingsWidget1->addWidget(pContainerCloud);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pStackedLayout);
+            pMainLayout->addWidget(m_pSettingsWidget1);
         }
     }
 
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
-            this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
+            this, &UIWizardImportAppPageBasic1::sltHandleSourceComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
-            this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
-    connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
+            this, &UIWizardImportAppPageBasic1::sltHandleSourceComboChange);
+    connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UIWizardImportAppPageBasic1::sltHandleSourceComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageBasic1::completeChanged);
     connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
@@ -639,34 +639,33 @@ void UIWizardImportAppPageBasic1::initializePage()
 
 bool UIWizardImportAppPageBasic1::isComplete() const
 {
+    /* Initial result: */
     bool fResult = true;
 
-    /* Check appliance settings: */
-    if (fResult)
-    {
-        const bool fOVF = !isSourceCloudOne();
-        const bool fCSP = !fOVF;
+    /* Check whether there was cloud source selected: */
+    if (isSourceCloudOne())
+        fResult = !machineId().isNull();
+    else
+        fResult =    UICommon::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
+                  && QFile::exists(m_pFileSelector->path());
 
-        fResult =    (   fOVF
-                      && UICommon::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
-                      && QFile::exists(m_pFileSelector->path()))
-                  || (   fCSP
-                      && !m_comCloudProfile.isNull()
-                      && !m_comCloudClient.isNull()
-                      && !machineId().isNull());
-    }
-
+    /* Return result: */
     return fResult;
 }
 
 bool UIWizardImportAppPageBasic1::validatePage()
 {
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Check whether there was cloud source selected: */
     if (isSourceCloudOne())
     {
         /* Create appliance & populate form properties: */
         populateFormProperties();
-        /* And make sure they are not null: */
-        return m_comCloudAppliance.isNotNull() && m_comVSDForm.isNotNull();
+        /* Which is required to continue to the next page: */
+        fResult =    m_comCloudAppliance.isNotNull()
+                  && m_comVSDForm.isNotNull();
     }
     else
     {
@@ -680,10 +679,12 @@ bool UIWizardImportAppPageBasic1::validatePage()
             /* Reset the modified bit afterwards: */
             m_pFileSelector->resetModified();
         }
-
         /* If we have a valid ovf proceed to the appliance settings page: */
-        return qobject_cast<UIWizardImportApp*>(wizard())->isValid();
+        fResult = qobject_cast<UIWizardImportApp*>(wizard())->isValid();
     }
+
+    /* Return result: */
+    return fResult;
 }
 
 void UIWizardImportAppPageBasic1::updatePageAppearance()
@@ -710,9 +711,9 @@ void UIWizardImportAppPageBasic1::updatePageAppearance()
     }
 }
 
-void UIWizardImportAppPageBasic1::sltHandleSourceChange()
+void UIWizardImportAppPageBasic1::sltHandleSourceComboChange()
 {
-    /* Update tool-tip: */
+    /* Update combo tool-tip: */
     updateSourceComboToolTip();
 
     /* Refresh required settings: */
@@ -720,6 +721,8 @@ void UIWizardImportAppPageBasic1::sltHandleSourceChange()
     populateProfiles();
     populateProfile();
     populateProfileInstances();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
@@ -728,6 +731,8 @@ void UIWizardImportAppPageBasic1::sltHandleProfileComboChange()
     /* Refresh required settings: */
     populateProfile();
     populateProfileInstances();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 

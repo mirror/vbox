@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,9 +27,9 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QComboBox;
+class QIComboBox;
 class QLabel;
-class QStackedLayout;
+class QStackedWidget;
 class QIRichTextLabel;
 class UIApplianceImportEditorWidget;
 class UIFilePathSelector;
@@ -63,8 +63,8 @@ protected:
     /** Returns whether hard disks should be inported as VDIs. */
     bool importHDsAsVDI() const;
 
-    /** Holds the settings container layout instance. */
-    QStackedLayout *m_pSettingsCntLayout;
+    /** Holds the settings widget 2 instance. */
+    QStackedWidget *m_pSettingsWidget2;
 
     /** Holds the appliance widget instance. */
     UIApplianceImportEditorWidget *m_pApplianceWidget;
@@ -75,7 +75,7 @@ protected:
     /** Holds the MAC address label instance. */
     QLabel                        *m_pLabelMACImportPolicy;
     /** Holds the MAC address combo instance. */
-    QComboBox                     *m_pComboMACImportPolicy;
+    QIComboBox                    *m_pComboMACImportPolicy;
     /** Holds the additional options label instance. */
     QLabel                        *m_pLabelAdditionalOptions;
     /** Holds the 'import HDs as VDI' checkbox instance. */
@@ -104,34 +104,33 @@ protected:
     virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
     /** Performs page cleanup. */
-    virtual void cleanupPage() /* override */;
+    virtual void cleanupPage() /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
     /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override */;
+    virtual void updatePageAppearance() /* override final */;
 
 private slots:
 
-    /** Handles file path being changed to @a strNewPath. */
-    void sltHandlePathChanged(const QString &strNewPath);
-
-    /** Handles MAC address import policy changes. */
-    void sltHandleMACImportPolicyChange();
+    /** Handles import path editor change. */
+    void sltHandleImportPathEditorChange();
+    /** Handles MAC address import policy combo change. */
+    void sltHandleMACImportPolicyComboChange();
 
 private:
 
     /** Handles the appliance file name. */
     QString  m_strFileName;
 
-    /** Holds the label instance. */
-    QIRichTextLabel *m_pLabel;
+    /** Holds the description label instance. */
+    QIRichTextLabel *m_pLabelDescription;
 
     /** Holds the signature/certificate info label instance. */
     QLabel *m_pCertLabel;

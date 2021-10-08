@@ -146,7 +146,9 @@ private:
 *   Class UIWizardImportApp implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIWizardImportApp::UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName)
+UIWizardImportApp::UIWizardImportApp(QWidget *pParent,
+                                     bool fImportFromOCIByDefault,
+                                     const QString &strFileName)
     : UIWizard(pParent, WizardType_ImportAppliance)
     , m_fImportFromOCIByDefault(fImportFromOCIByDefault)
     , m_strFileName(strFileName)
@@ -188,17 +190,12 @@ void UIWizardImportApp::prepare()
     UIWizard::prepare();
 }
 
-CAppliance UIWizardImportApp::appliance() const
-{
-    return m_comAppliance;
-}
-
-bool UIWizardImportApp::setFile(const QString &strFileName)
+bool UIWizardImportApp::setFile(const QString &strName)
 {
     /* Clear object: */
-    m_comAppliance = CAppliance();
+    m_comLocalAppliance = CAppliance();
 
-    if (strFileName.isEmpty())
+    if (strName.isEmpty())
         return false;
 
     /* Create an appliance object: */
@@ -211,7 +208,7 @@ bool UIWizardImportApp::setFile(const QString &strFileName)
     }
 
     /* Read the file to appliance: */
-    CProgress comProgress = comAppliance.Read(strFileName);
+    CProgress comProgress = comAppliance.Read(strName);
     if (!comAppliance.isOk())
     {
         msgCenter().cannotImportAppliance(comAppliance, this);
@@ -236,7 +233,7 @@ bool UIWizardImportApp::setFile(const QString &strFileName)
     }
 
     /* Remember appliance: */
-    m_comAppliance = comAppliance;
+    m_comLocalAppliance = comAppliance;
 
     /* Success finally: */
     return true;
@@ -244,18 +241,17 @@ bool UIWizardImportApp::setFile(const QString &strFileName)
 
 bool UIWizardImportApp::isValid() const
 {
-    return m_comAppliance.isNotNull();
+    return m_comLocalAppliance.isNotNull();
 }
 
 bool UIWizardImportApp::importAppliance()
 {
     /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
+    if (field("isSourceCloudOne").toBool())
     {
-        /* Acquire prepared appliance: */
+        /* Make sure cloud appliance valid: */
         CAppliance comAppliance = field("cloudAppliance").value<CAppliance>();
-        AssertReturn(!comAppliance.isNull(), false);
+        AssertReturn(comAppliance.isNotNull(), false);
 
         /* No options for cloud VMs for now: */
         QVector<KImportOptions> options;
@@ -275,7 +271,7 @@ bool UIWizardImportApp::importAppliance()
         if (!licAgreements.isEmpty())
         {
             UIImportLicenseViewer ilv(this);
-            for (int i = 0; i < licAgreements.size(); ++ i)
+            for (int i = 0; i < licAgreements.size(); ++i)
             {
                 const QPair<QString, QString> &lic = licAgreements.at(i);
                 ilv.setContents(lic.first, lic.second);
@@ -286,19 +282,17 @@ bool UIWizardImportApp::importAppliance()
 
         /* Gather import options: */
         QVector<KImportOptions> options;
-        const MACAddressImportPolicy enmPolicy = field("macAddressImportPolicy").value<MACAddressImportPolicy>();
-        switch (enmPolicy)
+        switch (field("macAddressImportPolicy").value<MACAddressImportPolicy>())
         {
             case MACAddressImportPolicy_KeepAllMACs: options.append(KImportOptions_KeepAllMACs); break;
             case MACAddressImportPolicy_KeepNATMACs: options.append(KImportOptions_KeepNATMACs); break;
             default: break;
         }
-        bool fImportHDsAsVDI = field("importHDsAsVDI").toBool();
-        if (fImportHDsAsVDI)
+        if (field("importHDsAsVDI").toBool())
             options.append(KImportOptions_ImportToVDI);
 
         /* Import appliance: */
-        UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(m_comAppliance,
+        UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(m_comLocalAppliance,
                                                                                                          options);
         gpNotificationCenter->append(pNotification);
 
@@ -321,7 +315,7 @@ QList<QPair<QString, QString> > UIWizardImportApp::licenseAgreements() const
 {
     QList<QPair<QString, QString> > list;
 
-    foreach (CVirtualSystemDescription comVsd, m_comAppliance.GetVirtualSystemDescriptions())
+    foreach (CVirtualSystemDescription comVsd, m_comLocalAppliance.GetVirtualSystemDescriptions())
     {
         QVector<QString> strLicense;
         strLicense = comVsd.GetValuesByType(KVirtualSystemDescriptionType_License,

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2020 Oracle Corporation
+ * Copyright (C) 2009-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,7 +45,8 @@ class UIWizardImportAppPageExpert : public UIWizardPage,
 public:
 
     /** Constructs expert page.
-      * @param  strFileName  Brings appliance file name. */
+      * @param  fImportFromOCIByDefault  Brings whether we should propose import from OCI by default.
+      * @param  strFileName              Brings appliance file name. */
     UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName);
 
 protected:
@@ -56,41 +57,39 @@ protected:
     virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override final */;
 
     /** Performs page initialization. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() /* override final */;
 
     /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const /* override final */;
 
     /** Performs page validation. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() /* override final */;
 
     /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override */;
+    virtual void updatePageAppearance() /* override final */;
 
 private slots:
 
-    /** Handles import source change. */
-    void sltHandleSourceChange();
+    /** Handles source combo change. */
+    void sltHandleSourceComboChange();
 
-    /** Handles file-path change. */
-    void sltFilePathChangeHandler();
-
-    /** Handles change in profile combo-box. */
+    /** Handles imported file selector change. */
+    void sltHandleImportedFileSelectorChange();
+    /** Handles profile combo change. */
     void sltHandleProfileComboChange();
     /** Handles profile tool-button click. */
     void sltHandleProfileButtonClick();
-
-    /** Handles change in instance list. */
+    /** Handles instance list change. */
     void sltHandleInstanceListChange();
 
-    /** Handles file path being changed to @a strNewPath. */
-    void sltHandlePathChanged(const QString &strNewPath);
+    /** Handles import path editor change. */
+    void sltHandleImportPathEditorChange();
 
-    /** Handles MAC address import policy changes. */
-    void sltHandleMACImportPolicyChange();
+    /** Handles MAC address import policy combo changes. */
+    void sltHandleMACImportPolicyComboChange();
 
 private:
 
