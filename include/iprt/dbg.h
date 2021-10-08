@@ -1961,8 +1961,13 @@ RTR0DECL(int)       RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const ch
  * @retval  VERR_INVALID_POINTER if any of the pointers are bad.
  *
  * @param   hKrnlInfo       The kernel info handle.
- * @param   pszModule       Reserved for future extensions. Pass NULL.
+ * @param   pszModule       The name of the module to search, pass NULL to
+ *                          search the default kernel module(s).
  * @param   pszSymbol       The C name of the symbol.
+ *                          On Windows NT there are the following special symbols:
+ *                              - __ImageBase: The base address of the module.
+ *                              - __ImageSize: The size of the module.
+ *                              - __ImageNtHdrs: Address of the NT headers.
  * @param   ppvSymbol       Where to return the symbol value, passing NULL is
  *                          OK. This may be modified even on failure, in
  *                          particular, it will be set to NULL when
@@ -1979,8 +1984,13 @@ RTR0DECL(int)       RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const ch
  * @return  Symbol address if found, NULL if not found or some invalid parameter
  *          or something.
  * @param   hKrnlInfo       The kernel info handle.
- * @param   pszModule       Reserved for future extensions. Pass NULL.
+ * @param   pszModule       The name of the module to search, pass NULL to
+ *                          search the default kernel module(s).
  * @param   pszSymbol       The C name of the symbol.
+ *                          On Windows NT there are the following special symbols:
+ *                              - __ImageBase: The base address of the module.
+ *                              - __ImageSize: The size of the module.
+ *                              - __ImageNtHdrs: Address of the NT headers.
  * @sa      RTR0DbgKrnlInfoQuerySymbol, RTLdrGetSymbol
  */
 RTR0DECL(void *)    RTR0DbgKrnlInfoGetSymbol(RTDBGKRNLINFO hKrnlInfo, const char *pszModule, const char *pszSymbol);

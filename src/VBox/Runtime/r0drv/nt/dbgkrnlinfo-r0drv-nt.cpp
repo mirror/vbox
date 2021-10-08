@@ -170,6 +170,30 @@ static int rtR0DbgKrnlInfoLookupSymbol(PCRTDBGNTKRNLMODINFO pModInfo, const char
     if (pModInfo->fOkay)
     {
         /*
+         * Pseudo symbols:
+         */
+        if (   pszSymbol[0] == '_'
+            && pszSymbol[1] == '_'
+            && pszSymbol[2] == 'I')
+        {
+            if (strcmp(pszSymbol, "__ImageBase") == 0)
+            {
+                *ppvSymbol = (void *)pModInfo->pbImageBase;
+                return VINF_SUCCESS;
+            }
+            if (strcmp(pszSymbol, "__ImageSize") == 0)
+            {
+                *ppvSymbol = (void *)(uintptr_t)pModInfo->cbImage;
+                return VINF_SUCCESS;
+            }
+            if (strcmp(pszSymbol, "__ImageNtHdrs") == 0)
+            {
+                *ppvSymbol = pModInfo->pNtHdrs;
+                return VINF_SUCCESS;
+            }
+        }
+
+        /*
          * Binary search.
          */
         __try
