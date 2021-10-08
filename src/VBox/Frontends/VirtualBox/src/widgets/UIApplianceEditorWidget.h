@@ -294,6 +294,9 @@ public:
     /** Constructs the Appliance Editor widget passing @a pParent to the base-class. */
     UIApplianceEditorWidget(QWidget *pParent = 0);
 
+    /** Clears everything. */
+    void clear();
+
     /** Defines @a comAppliance wrapper instance. */
     virtual void setAppliance(const CAppliance &comAppliance);
 

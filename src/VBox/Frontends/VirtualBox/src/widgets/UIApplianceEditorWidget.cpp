@@ -1848,6 +1848,16 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
     retranslateUi();
 }
 
+void UIApplianceEditorWidget::clear()
+{
+    /* Wipe model: */
+    delete m_pModel;
+    m_pModel = 0;
+
+    /* And appliance: */
+    m_comAppliance = CAppliance();
+}
+
 void UIApplianceEditorWidget::setAppliance(const CAppliance &comAppliance)
 {
     m_comAppliance = comAppliance;

@@ -49,12 +49,11 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent /*
 
 void UIApplianceImportEditorWidget::setAppliance(const CAppliance &comAppliance)
 {
+    /* Cleanup previous stuff: */
+    clear();
+
     /* Call to base-class: */
     UIApplianceEditorWidget::setAppliance(comAppliance);
-
-    /* Cleanup previous stuff: */
-    if (m_pModel)
-        delete m_pModel;
 
     /* Prepare model: */
     QVector<CVirtualSystemDescription> vsds = m_comAppliance.GetVirtualSystemDescriptions();
