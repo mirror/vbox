@@ -385,7 +385,7 @@ bool UIToolBox::insertPage(int iIndex, QWidget *pWidget, const QString &strTitle
             this, &UIToolBox::sltHandleShowPageWidget);
 
     /* Add stretch at the end: */
-    m_pMainLayout->addStretch();
+    m_pMainLayout->addStretch(1);
     return iIndex;
 }
 
