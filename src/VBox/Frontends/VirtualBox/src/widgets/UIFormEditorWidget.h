@@ -61,6 +61,8 @@ public:
     /** Returns vertical header reference. */
     QHeaderView *verticalHeader() const;
 
+    /** Clears form. */
+    void clearForm();
     /** Defines @a values to be edited. */
     void setValues(const QVector<CFormValue> &values);
     /** Defines @a comForm to be edited. */
