@@ -38,6 +38,12 @@
 #include "AudioTestService.h"
 
 
+#ifdef DEBUG_andy
+/** Enables dumping audio streams to the temporary directory for debugging. */
+# define VBOX_WITH_AUDIO_VALKIT_DUMP_STREAMS
+#endif
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -52,6 +58,10 @@ typedef struct VALKITAUDIOSTREAM
     PDMAUDIOSTREAMCFG       Cfg;
     /** How much bytes are available to read (only for capturing streams). */
     uint32_t                cbAvail;
+#ifdef VBOX_WITH_AUDIO_VALKIT_DUMP_STREAMS
+    /** Audio file to dump output to. */
+    PAUDIOHLPFILE           pFile;
+#endif
 } VALKITAUDIOSTREAM;
 /** Pointer to a Validation Kit stream. */
 typedef VALKITAUDIOSTREAM *PVALKITAUDIOSTREAM;
@@ -669,6 +679,17 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCreate(PPDMIHOSTAUDIO pInter
 
     int rc = VINF_SUCCESS;
     PDMAudioStrmCfgCopy(&pStreamDbg->Cfg, pCfgAcq);
+
+#ifdef VBOX_WITH_AUDIO_VALKIT_DUMP_STREAMS
+    int rc2 = AudioHlpFileCreateAndOpenEx(&pStreamDbg->pFile, AUDIOHLPFILETYPE_WAV, NULL /*use temp dir*/,
+                                          pThis->pDrvIns->iInstance, AUDIOHLPFILENAME_FLAGS_NONE, AUDIOHLPFILE_FLAGS_NONE,
+                                          &pCfgReq->Props, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                                          pCfgReq->enmDir == PDMAUDIODIR_IN ? "ValKitAudioIn" : "ValKitAudioOut");
+    if (RT_FAILURE(rc2))
+        LogRel(("ValKit: Failed to creating debug file for %s stream '%s' in the temp directory: %Rrc\n",
+                pCfgReq->enmDir == PDMAUDIODIR_IN ? "input" : "output", pCfgReq->szName, rc2));
+#endif
+
     return rc;
 }
 
@@ -681,6 +702,14 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamDestroy(PPDMIHOSTAUDIO pInte
     RT_NOREF(pInterface, fImmediate);
     PVALKITAUDIOSTREAM  pStreamDbg = (PVALKITAUDIOSTREAM)pStream;
     AssertPtrReturn(pStreamDbg, VERR_INVALID_POINTER);
+
+#ifdef VBOX_WITH_AUDIO_VALKIT_DUMP_STREAMS
+    if (pStreamDbg->pFile)
+    {
+        AudioHlpFileDestroy(pStreamDbg->pFile);
+        pStreamDbg->pFile = NULL;
+    }
+#endif
 
     return VINF_SUCCESS;
 }
@@ -857,6 +886,13 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
     PVALKITTESTDATA     pTst  = NULL;
 
+    int rc2;
+#ifdef VBOX_WITH_AUDIO_VALKIT_DUMP_STREAMS
+    PVALKITAUDIOSTREAM  pStrmValKit = (PVALKITAUDIOSTREAM)pStream;
+    rc2 = AudioHlpFileWrite(pStrmValKit->pFile, pvBuf, cbBuf);
+    AssertRC(rc2);
+#endif
+
     bool const fIsSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf);
 
     LogRel2(("ValKit: Playing stream '%s' (%RU32 bytes / %RU64ms -- %RU64 bytes / %RU64ms total so far) ...\n",
@@ -878,7 +914,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
         pTst = pThis->pTestCurPlay;
 
-        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        rc2 = RTCritSectLeave(&pThis->CritSect);
         AssertRC(rc2);
     }
 
@@ -969,7 +1005,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                     pThis->pTestCurPlay = NULL;
                     pTst                = NULL;
 
-                    int rc2 = RTCritSectLeave(&pThis->CritSect);
+                    rc2 = RTCritSectLeave(&pThis->CritSect);
                     if (RT_SUCCESS(rc))
                         rc = rc2;
                 }
