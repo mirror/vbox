@@ -2149,7 +2149,7 @@ static int audioTestObjFileNormalizeEx(PAUDIOTESTVERIFYJOB pVerJob,
     int rc = RTPathTemp(szFileDst, sizeof(szFileDst));
     AssertRCReturn(rc, rc);
 
-    rc = RTPathAppend(szFileDst, sizeof(szFileDst), "VBoxAudioTest-normalized-XXXXX.pcm");
+    rc = RTPathAppend(szFileDst, sizeof(szFileDst), "VBoxAudioTest-normalized-XXX.pcm");
     AssertRCReturn(rc, rc);
 
     rc = RTFileCreateTemp(szFileDst, 0600);
