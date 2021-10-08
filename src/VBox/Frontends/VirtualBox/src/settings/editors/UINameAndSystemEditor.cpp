@@ -362,15 +362,15 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
         if (iTypeIndex != -1)
             m_pComboType->setCurrentIndex(iTypeIndex);
     }
-    /* Or select Windows 7 item for Windows family as default: */
+    /* Or select Windows 10 item for Windows family as default: */
     else if (m_strFamilyId == "Windows")
     {
-        QString strDefaultID = "Windows7";
+        QString strDefaultID = "Windows10";
         if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
             strDefaultID += "_64";
-        const int iIndexWin7 = m_pComboType->findData(strDefaultID, TypeID);
-        if (iIndexWin7 != -1)
-            m_pComboType->setCurrentIndex(iIndexWin7);
+        const int iIndexWin10 = m_pComboType->findData(strDefaultID, TypeID);
+        if (iIndexWin10 != -1)
+            m_pComboType->setCurrentIndex(iIndexWin10);
     }
     /* Or select Oracle Linux item for Linux family as default: */
     else if (m_strFamilyId == "Linux")
