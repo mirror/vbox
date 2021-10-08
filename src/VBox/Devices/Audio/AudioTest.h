@@ -149,8 +149,6 @@ typedef struct AUDIOTESTPARMS
     uint32_t                idxCurrent;
     /** How many iterations the test should be executed. */
     uint32_t                cIterations;
-    /** PCM audio stream properties to use. */
-    PDMAUDIOPCMPROPS        Props;
     /** Audio device to use. */
     PDMAUDIOHOSTDEV         Dev;
     /** How much to delay (wait, in ms) the test being executed. */

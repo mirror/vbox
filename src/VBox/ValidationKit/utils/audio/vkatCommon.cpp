@@ -79,7 +79,7 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream, PDMAUDIODIR enmDir, PCPDMAUDIOPCMPROPS pProps, bool fWithMixer, uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint);
+static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream, PDMAUDIODIR enmDir, PAUDIOTESTIOOPTS pPlayOpt);
 static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
 
 
@@ -333,17 +333,16 @@ int audioTestDevicesEnumerateAndCheck(PAUDIOTESTDRVSTACK pDrvStack, const char *
 }
 
 static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream,
-                               PDMAUDIODIR enmDir, PCPDMAUDIOPCMPROPS pProps, bool fWithMixer,
-                               uint32_t cMsBufferSize, uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint)
+                               PDMAUDIODIR enmDir, PAUDIOTESTIOOPTS pIoOpts)
 {
     int rc;
 
     if (enmDir == PDMAUDIODIR_IN)
-        rc = audioTestDriverStackStreamCreateInput(pDrvStack, pProps, cMsBufferSize,
-                                                   cMsPreBuffer, cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
+        rc = audioTestDriverStackStreamCreateInput(pDrvStack, &pIoOpts->Props, pIoOpts->cMsBufferSize,
+                                                   pIoOpts->cMsPreBuffer, pIoOpts->cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
     else if (enmDir == PDMAUDIODIR_OUT)
-        rc = audioTestDriverStackStreamCreateOutput(pDrvStack, pProps, cMsBufferSize,
-                                                    cMsPreBuffer, cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
+        rc = audioTestDriverStackStreamCreateOutput(pDrvStack, &pIoOpts->Props, pIoOpts->cMsBufferSize,
+                                                    pIoOpts->cMsPreBuffer, pIoOpts->cMsSchedulingHint, &pStream->pStream, &pStream->Cfg);
     else
         rc = VERR_NOT_SUPPORTED;
 
@@ -359,15 +358,15 @@ static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pS
         /*
          * Automatically enable the mixer if the PCM properties don't match.
          */
-        if (   !fWithMixer
-            && !PDMAudioPropsAreEqual(pProps, &pStream->Cfg.Props))
+        if (   !pIoOpts->fWithMixer
+            && !PDMAudioPropsAreEqual(&pIoOpts->Props, &pStream->Cfg.Props))
         {
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,  "Enabling stream mixer\n");
-            fWithMixer = true;
+            pIoOpts->fWithMixer = true;
         }
 
         rc = AudioTestMixStreamInit(&pStream->Mix, pDrvStack, pStream->pStream,
-                                    fWithMixer ? pProps : NULL, 100 /* ms */); /** @todo Configure mixer buffer? */
+                                    pIoOpts->fWithMixer ? &pIoOpts->Props : NULL, 100 /* ms */); /** @todo Configure mixer buffer? */
     }
 
     if (RT_FAILURE(rc))
@@ -405,6 +404,45 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
 *   Test Primitives                                                                                                              *
 *********************************************************************************************************************************/
 
+/**
+ * Initializes test tone parameters (partly with random values).
+
+ * @param   pToneParms          Test tone parameters to initialize.
+ */
+void audioTestToneParmsInit(PAUDIOTESTTONEPARMS pToneParms)
+{
+    RT_BZERO(pToneParms, sizeof(AUDIOTESTTONEPARMS));
+
+    /**
+     * Set default (randomized) test tone parameters if not set explicitly.
+     */
+    pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
+    pToneParms->msDuration     = RTRandU32Ex(200, RT_MS_30SEC);
+    pToneParms->uVolumePercent = 100; /* We always go with maximum volume for now. */
+
+    PDMAudioPropsInit(&pToneParms->Props,
+                      2 /* 16-bit */, true /* fPcmSigned */, 2 /* cPcmChannels */, 44100 /* uPcmHz */);
+}
+
+/**
+ * Initializes I/O options with some sane default values.
+ *
+ * @param   pIoOpts             I/O options to initialize.
+ */
+void audioTestIoOptsInitDefaults(PAUDIOTESTIOOPTS pIoOpts)
+{
+    RT_BZERO(pIoOpts, sizeof(AUDIOTESTIOOPTS));
+
+    /* Initialize the PCM properties to some sane values. */
+    PDMAudioPropsInit(&pIoOpts->Props,
+                      2 /* 16-bit */, true /* fPcmSigned */, 2 /* cPcmChannels */, 44100 /* uPcmHz */);
+
+    pIoOpts->cMsBufferSize     = UINT32_MAX;
+    pIoOpts->cMsPreBuffer      = UINT32_MAX;
+    pIoOpts->cMsSchedulingHint = UINT32_MAX;
+    pIoOpts->uVolumePercent    = 100; /* Use maximum volume by default. */
+}
+
 #if 0 /* Unused */
 /**
  * Returns a random scheduling hint (in ms).
@@ -429,6 +467,7 @@ DECLINLINE(uint32_t) audioTestEnvGetRandomSchedulingHint(void)
  * Plays a test tone on a specific audio test stream.
  *
  * @returns VBox status code.
+ * @param   pIoOpts             I/O options to use.
  * @param   pTstEnv             Test environment to use for running the test.
  *                              Optional and can be NULL (for simple playback only).
  * @param   pStream             Stream to use for playing the tone.
@@ -436,7 +475,7 @@ DECLINLINE(uint32_t) audioTestEnvGetRandomSchedulingHint(void)
  *
  * @note    Blocking function.
  */
-int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
     AUDIOTESTTONE TstTone;
     AudioTestToneInit(&TstTone, &pStream->Cfg.Props, pParms->dbFreqHz);
@@ -445,7 +484,8 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
     if (pTstEnv)
         pcszPathOut = pTstEnv->Set.szPathAbs;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (tone frequency is %RU16Hz, %RU32ms)\n", (uint16_t)pParms->dbFreqHz, pParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (tone frequency is %RU16Hz, %RU32ms, %RU8%% volume)\n",
+                 (uint16_t)pParms->dbFreqHz, pParms->msDuration, pParms->uVolumePercent);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using %RU32ms stream scheduling hint\n", pStream->Cfg.Device.cMsSchedulingHint);
     if (pcszPathOut)
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Writing to '%s'\n", pcszPathOut);
@@ -461,9 +501,7 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
         AssertRCReturn(rc, rc);
     }
 
-    /* Try to crank up the system's master volume up to 100% so that we (hopefully) play the test tone always at the same leve.
-     * Not supported on all platforms yet, therefore not critical for overall testing (yet). */
-    unsigned const uVolPercent = 100;
+    uint8_t const uVolPercent = pIoOpts->uVolumePercent;
     int rc2 = audioTestSetMasterVolume(uVolPercent);
     if (RT_FAILURE(rc2))
     {
@@ -665,13 +703,14 @@ int audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTES
  * Records a test tone from a specific audio test stream.
  *
  * @returns VBox status code.
+ * @param   pIoOpts             I/O options to use.
  * @param   pTstEnv             Test environment to use for running the test.
  * @param   pStream             Stream to use for recording the tone.
  * @param   pParms              Tone parameters to use.
  *
  * @note    Blocking function.
  */
-static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
+static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
     const char *pcszPathOut = pTstEnv->Set.szPathAbs;
 
@@ -693,11 +732,11 @@ static int audioTestRecordTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, 
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Recording %RU32 bytes total\n", cbToRecTotal);
 
         AudioTestObjAddMetadataStr(Obj, "stream_to_record_bytes=%RU32\n", cbToRecTotal);
-        AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_ms=%RU32\n", pTstEnv->cMsBufferSize);
-        AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_ms=%RU32\n", pTstEnv->cMsPreBuffer);
+        AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_ms=%RU32\n", pIoOpts->cMsBufferSize);
+        AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_ms=%RU32\n", pIoOpts->cMsPreBuffer);
         /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
          *       has nothing to do with the device emulation scheduling hint. */
-        AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pTstEnv->cMsSchedulingHint);
+        AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pIoOpts->cMsSchedulingHint);
 
         uint8_t         abSamples[16384];
         uint32_t const  cbSamplesAligned = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
@@ -861,8 +900,9 @@ static DECLCALLBACK(int) audioTestGstAtsTestSetEndCallback(void const *pvUser, c
  */
 static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
-    PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
-    PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
+    PATSCALLBACKCTX  pCtx    = (PATSCALLBACKCTX)pvUser;
+    PAUDIOTESTENV    pTstEnv = pCtx->pTstEnv;
+    PAUDIOTESTIOOPTS pIoOpts = &pTstEnv->IoOpts;
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for playing test tone #%RU32 (%RU16Hz, %RU32ms) ...\n",
                  pToneParms->Hdr.idxSeq, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
@@ -873,8 +913,7 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestStreamInit(pTstEnv->pDrvStack, pTstStream, PDMAUDIODIR_OUT, &pTstEnv->Props, false /* fWithMixer */,
-                                 pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer, pTstEnv->cMsSchedulingHint);
+    int rc = audioTestStreamInit(pTstEnv->pDrvStack, pTstStream, PDMAUDIODIR_OUT, pIoOpts);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTPARMS TstParms;
@@ -887,7 +926,7 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
         rc = AudioTestSetTestBegin(&pTstEnv->Set, "Playing test tone", &TstParms, &pTst);
         if (RT_SUCCESS(rc))
         {
-            rc = audioTestPlayTone(pTstEnv, pTstStream, pToneParms);
+            rc = audioTestPlayTone(&pTstEnv->IoOpts, pTstEnv, pTstStream, pToneParms);
             if (RT_SUCCESS(rc))
             {
                 AudioTestSetTestDone(pTst);
@@ -909,8 +948,9 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
 /** @copydoc ATSCALLBACKS::pfnToneRecord */
 static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, PAUDIOTESTTONEPARMS pToneParms)
 {
-    PATSCALLBACKCTX pCtx    = (PATSCALLBACKCTX)pvUser;
-    PAUDIOTESTENV   pTstEnv = pCtx->pTstEnv;
+    PATSCALLBACKCTX  pCtx    = (PATSCALLBACKCTX)pvUser;
+    PAUDIOTESTENV    pTstEnv = pCtx->pTstEnv;
+    PAUDIOTESTIOOPTS pIoOpts = &pTstEnv->IoOpts;
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for recording test tone #%RU32 (%RU32ms) ...\n",
                  pToneParms->Hdr.idxSeq, pToneParms->msDuration);
@@ -921,22 +961,20 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
 
     const PAUDIOTESTSTREAM pTstStream = &pTstEnv->aStreams[0]; /** @todo Make this dynamic. */
 
-    int rc = audioTestStreamInit(pTstEnv->pDrvStack, pTstStream, PDMAUDIODIR_IN, &pTstEnv->Props, false /* fWithMixer */,
-                                 pTstEnv->cMsBufferSize, pTstEnv->cMsPreBuffer, pTstEnv->cMsSchedulingHint);
+    int rc = audioTestStreamInit(pTstEnv->pDrvStack, pTstStream, PDMAUDIODIR_IN, pIoOpts);
     if (RT_SUCCESS(rc))
     {
         AUDIOTESTPARMS TstParms;
         RT_ZERO(TstParms);
         TstParms.enmType  = AUDIOTESTTYPE_TESTTONE_RECORD;
         TstParms.enmDir   = PDMAUDIODIR_IN;
-        TstParms.Props    = pToneParms->Props;
         TstParms.TestTone = *pToneParms;
 
         PAUDIOTESTENTRY pTst;
         rc = AudioTestSetTestBegin(&pTstEnv->Set, "Recording test tone from host", &TstParms, &pTst);
         if (RT_SUCCESS(rc))
         {
-            rc = audioTestRecordTone(pTstEnv, pTstStream, pToneParms);
+            rc = audioTestRecordTone(pIoOpts, pTstEnv, pTstStream, pToneParms);
             if (RT_SUCCESS(rc))
             {
                 AudioTestSetTestDone(pTst);
@@ -1174,12 +1212,27 @@ int audioTestEnvConfigureAndStartTcpServer(PATSSERVER pSrv, PCATSCALLBACKS pCall
 /**
  * Initializes an audio test environment.
  *
- * @returns VBox status code.
  * @param   pTstEnv             Audio test environment to initialize.
+ */
+void audioTestEnvInit(PAUDIOTESTENV pTstEnv)
+{
+    RT_BZERO(pTstEnv, sizeof(AUDIOTESTENV));
+
+    audioTestIoOptsInitDefaults(&pTstEnv->IoOpts);
+    audioTestToneParmsInit(&pTstEnv->ToneParms);
+}
+
+/**
+ * Creates an audio test environment.
+ *
+ * @returns VBox status code.
+ * @param   pTstEnv             Audio test environment to create.
  * @param   pDrvStack           Driver stack to use.
  */
-int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
+int audioTestEnvCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
 {
+    AssertReturn(PDMAudioPropsAreValid(&pTstEnv->IoOpts.Props), VERR_WRONG_ORDER);
+
     int rc = VINF_SUCCESS;
 
     pTstEnv->pDrvStack = pDrvStack;
@@ -1209,13 +1262,6 @@ int audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack)
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using tag '%s'\n", pTstEnv->szTag);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Output directory is '%s'\n", pTstEnv->szPathOut);
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Temp directory is '%s'\n", pTstEnv->szPathTemp);
-
-    if (!pTstEnv->cMsBufferSize)
-        pTstEnv->cMsBufferSize     = UINT32_MAX;
-    if (!pTstEnv->cMsPreBuffer)
-        pTstEnv->cMsPreBuffer      = UINT32_MAX;
-    if (!pTstEnv->cMsSchedulingHint)
-        pTstEnv->cMsSchedulingHint = UINT32_MAX;
 
     char szPathTemp[RTPATH_MAX];
     if (   !strlen(pTstEnv->szPathTemp)

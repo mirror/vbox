@@ -130,6 +130,8 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
 
     PAUDIOTESTENV pTstEnvGst = &pCtx->Guest.TstEnv;
 
+    audioTestEnvInit(pTstEnvGst);
+
     /* Flag the environment for self test mode. */
     pTstEnvGst->fSelftest = true;
 
@@ -150,11 +152,7 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
 
     pTstEnvGst->enmMode = AUDIOTESTMODE_GUEST;
 
-    /** @todo Make this customizable. */
-    PDMAudioPropsInit(&pTstEnvGst->Props,
-                      2 /* 16-bit */, true  /* fSigned */, 2 /* cChannels */, 44100 /* uHz */);
-
-    rc = audioTestEnvInit(pTstEnvGst, &pCtx->DrvStack);
+    rc = audioTestEnvCreate(pTstEnvGst, &pCtx->DrvStack);
     if (RT_SUCCESS(rc))
     {
         RTThreadUserSignal(hThread);
@@ -182,6 +180,8 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 
     PAUDIOTESTENV pTstEnvHst = &pCtx->Host.TstEnv;
 
+    audioTestEnvInit(pTstEnvHst);
+
     /* Flag the environment for self test mode. */
     pTstEnvHst->fSelftest = true;
 
@@ -194,10 +194,6 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 
     rc = AudioTestPathCreateTemp(pTstEnvHst->szPathOut, sizeof(pTstEnvHst->szPathOut), "selftest-out");
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
-
-    /* Initialize the PCM properties to some sane values. */
-    PDMAudioPropsInit(&pTstEnvHst->Props,
-                      2 /* 16-bit */, true /* fPcmSigned */, 2 /* cPcmChannels */, 44100 /* uPcmHz */);
 
     /*
      * Step 1.
@@ -223,7 +219,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
          */
         pTstEnvHst->enmMode = AUDIOTESTMODE_HOST;
 
-        rc = audioTestEnvInit(pTstEnvHst, &pCtx->DrvStack);
+        rc = audioTestEnvCreate(pTstEnvHst, &pCtx->DrvStack);
         if (RT_SUCCESS(rc))
         {
             /*

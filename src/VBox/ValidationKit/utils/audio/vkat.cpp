@@ -121,7 +121,6 @@ enum
 {
     VKAT_TEST_OPT_COUNT = 900,
     VKAT_TEST_OPT_DEV,
-    VKAT_TEST_OPT_TONE_DURATION_MS,
     VKAT_TEST_OPT_GUEST_ATS_ADDR,
     VKAT_TEST_OPT_GUEST_ATS_PORT,
     VKAT_TEST_OPT_HOST_ATS_ADDR,
@@ -141,7 +140,9 @@ enum
     VKAT_TEST_OPT_TCP_BIND_ADDRESS,
     VKAT_TEST_OPT_TCP_BIND_PORT,
     VKAT_TEST_OPT_TCP_CONNECT_ADDRESS,
-    VKAT_TEST_OPT_TCP_CONNECT_PORT
+    VKAT_TEST_OPT_TCP_CONNECT_PORT,
+    VKAT_TEST_OPT_TONE_DURATION_MS,
+    VKAT_TEST_OPT_TONE_VOL_PERCENT
 };
 
 /**
@@ -194,12 +195,13 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,           RTGETOPT_REQ_NOTHING },
     { "--tag",               VKAT_TEST_OPT_TAG,                 RTGETOPT_REQ_STRING  },
     { "--tempdir",           VKAT_TEST_OPT_TEMPDIR,             RTGETOPT_REQ_STRING  },
-    { "--volume",            VKAT_TEST_OPT_VOL,                 RTGETOPT_REQ_UINT8   },
+    { "--vol",               VKAT_TEST_OPT_VOL,                 RTGETOPT_REQ_UINT8   },
     { "--tcp-bind-addr",     VKAT_TEST_OPT_TCP_BIND_ADDRESS,    RTGETOPT_REQ_STRING  },
     { "--tcp-bind-port",     VKAT_TEST_OPT_TCP_BIND_PORT,       RTGETOPT_REQ_UINT16  },
     { "--tcp-connect-addr",  VKAT_TEST_OPT_TCP_CONNECT_ADDRESS, RTGETOPT_REQ_STRING  },
     { "--tcp-connect-port",  VKAT_TEST_OPT_TCP_CONNECT_PORT,    RTGETOPT_REQ_UINT16  },
-    { "--tone-duration",     VKAT_TEST_OPT_TONE_DURATION_MS,    RTGETOPT_REQ_UINT32  }
+    { "--tone-duration",     VKAT_TEST_OPT_TONE_DURATION_MS,    RTGETOPT_REQ_UINT32  },
+    { "--tone-vol",          VKAT_TEST_OPT_TONE_VOL_PERCENT,    RTGETOPT_REQ_UINT8   }
 };
 
 /**
@@ -274,19 +276,11 @@ static DECLCALLBACK(int) audioTestPlayToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOTES
     }
 
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_PLAY;
-    pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_OUT;
     pTstParmsAcq->cIterations = pTstEnv->cIterations == 0 ? RTRandU32Ex(1, 10) : pTstEnv->cIterations;
     pTstParmsAcq->idxCurrent  = 0;
 
-    PAUDIOTESTTONEPARMS pToneParms = &pTstParmsAcq->TestTone;
-
-    pToneParms->Props          = pTstParmsAcq->Props;
-    pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
-    pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
-    pToneParms->msDuration     = pTstEnv->cMsToneDuration == 0 ? RTRandU32Ex(200, RT_MS_30SEC) : pTstEnv->cMsToneDuration;
-    pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
-    pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
+    pTstParmsAcq->TestTone    = pTstEnv->ToneParms;
 
     return rc;
 }
@@ -380,20 +374,11 @@ static DECLCALLBACK(int) audioTestRecordToneSetup(PAUDIOTESTENV pTstEnv, PAUDIOT
     }
 
     pTstParmsAcq->enmType     = AUDIOTESTTYPE_TESTTONE_RECORD;
-    pTstParmsAcq->Props       = pTstEnv->Props;
     pTstParmsAcq->enmDir      = PDMAUDIODIR_IN;
     pTstParmsAcq->cIterations = pTstEnv->cIterations == 0 ? RTRandU32Ex(1, 10) : pTstEnv->cIterations;
     pTstParmsAcq->idxCurrent  = 0;
 
-    PAUDIOTESTTONEPARMS pToneParms = &pTstParmsAcq->TestTone;
-
-    pToneParms->Props          = pTstParmsAcq->Props;
-    pToneParms->dbFreqHz       = AudioTestToneGetRandomFreq();
-    pToneParms->msPrequel      = 0; /** @todo Implement analyzing this first! */
-    pToneParms->Props          = pTstParmsAcq->Props;
-    pToneParms->msDuration     = pTstEnv->cMsToneDuration == 0 ? RTRandU32Ex(200, RT_MS_30SEC) : pTstEnv->cMsToneDuration;
-    pToneParms->msSequel       = 0;   /** @todo Implement analyzing this first! */
-    pToneParms->uVolumePercent = 100; /** @todo Implement analyzing this first! */
+    pTstParmsAcq->TestTone    = pTstEnv->ToneParms;
 
     return rc;
 }
@@ -716,8 +701,10 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
                                                        "    Default: random number";
         case VKAT_TEST_OPT_DEV:                 return "Name of the input/output device to use\n"
                                                        "    Default: default device";
-        case VKAT_TEST_OPT_TONE_DURATION_MS:    return "Duration (in ms) of test tone to play / record for selected tests\n"
-                                                       "    Default: random number";
+        case VKAT_TEST_OPT_TONE_DURATION_MS:    return "Test tone duration to play / record (ms)\n"
+                                                       "    Default: random duration";
+        case VKAT_TEST_OPT_TONE_VOL_PERCENT:    return "Test tone volume (percent)\n"
+                                                       "    Default: 100";
         case VKAT_TEST_OPT_GUEST_ATS_ADDR:      return "Address of guest ATS to connect to\n"
                                                        "    Default: " ATS_TCP_DEF_CONNECT_GUEST_STR;
         case VKAT_TEST_OPT_GUEST_ATS_PORT:      return "Port of guest ATS to connect to (needs NAT port forwarding)\n"
@@ -726,27 +713,27 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
                                                        "    Default: " ATS_TCP_DEF_CONNECT_HOST_ADDR_STR;
         case VKAT_TEST_OPT_HOST_ATS_PORT:       return "Port of host ATS to connect to\n"
                                                        "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
-        case VKAT_TEST_OPT_MODE:                return "Specifies the test mode to use when running the tests";
+        case VKAT_TEST_OPT_MODE:                return "Test mode to use when running the tests";
         case VKAT_TEST_OPT_NO_VERIFY:           return "Skips the verification step";
-        case VKAT_TEST_OPT_OUTDIR:              return "Specifies the output directory to use";
+        case VKAT_TEST_OPT_OUTDIR:              return "Output directory to use";
         case VKAT_TEST_OPT_PAUSE:               return "Not yet implemented";
-        case VKAT_TEST_OPT_PCM_HZ:              return "Specifies the PCM Hetz (Hz) rate to use\n"
+        case VKAT_TEST_OPT_PCM_HZ:              return "PCM Hertz (Hz) rate to use\n"
                                                        "    Default: 44100";
-        case VKAT_TEST_OPT_PCM_BIT:             return "Specifies the PCM sample bits (i.e. 16) to use\n"
+        case VKAT_TEST_OPT_PCM_BIT:             return "PCM sample bits (i.e. 16) to use\n"
                                                        "    Default: 16";
-        case VKAT_TEST_OPT_PCM_CHAN:            return "Specifies the number of PCM channels to use\n"
+        case VKAT_TEST_OPT_PCM_CHAN:            return "PCM channels to use\n"
                                                        "    Default: 2";
-        case VKAT_TEST_OPT_PCM_SIGNED:          return "Specifies whether to use signed (true) or unsigned (false) samples\n"
+        case VKAT_TEST_OPT_PCM_SIGNED:          return "PCM samples to use (signed = true, unsigned = false)\n"
                                                        "    Default: true";
-        case VKAT_TEST_OPT_PROBE_BACKENDS:      return "Specifies whether to probe all (available) backends until a working one is found\n"
+        case VKAT_TEST_OPT_PROBE_BACKENDS:      return "Whether to probe all (available) backends until a working one is found\n"
                                                        "    Default: false";
-        case VKAT_TEST_OPT_TAG:                 return "Specifies the test set tag to use";
-        case VKAT_TEST_OPT_TEMPDIR:             return "Specifies the temporary directory to use";
-        case VKAT_TEST_OPT_VOL:                 return "Specifies the audio volume (in percent, 0-100) to use";
-        case VKAT_TEST_OPT_TCP_BIND_ADDRESS:    return "Specifies the TCP address listening to (server mode)";
-        case VKAT_TEST_OPT_TCP_BIND_PORT:       return "Specifies the TCP port listening to (server mode)";
-        case VKAT_TEST_OPT_TCP_CONNECT_ADDRESS: return "Specifies the TCP address to connect to (client mode)";
-        case VKAT_TEST_OPT_TCP_CONNECT_PORT:    return "Specifies the TCP port to connect to (client mode)";
+        case VKAT_TEST_OPT_TAG:                 return "Test set tag to use";
+        case VKAT_TEST_OPT_TEMPDIR:             return "Temporary directory to use";
+        case VKAT_TEST_OPT_VOL:                 return "Audio volume (percent) to use";
+        case VKAT_TEST_OPT_TCP_BIND_ADDRESS:    return "TCP address listening to (server mode)";
+        case VKAT_TEST_OPT_TCP_BIND_PORT:       return "TCP port listening to (server mode)";
+        case VKAT_TEST_OPT_TCP_CONNECT_ADDRESS: return "TCP address to connect to (client mode)";
+        case VKAT_TEST_OPT_TCP_CONNECT_PORT:    return "TCP port to connect to (client mode)";
         default:
             break;
     }
@@ -762,16 +749,15 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
 static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
 {
     AUDIOTESTENV TstEnv;
-    RT_ZERO(TstEnv);
+    audioTestEnvInit(&TstEnv);
 
     int         rc;
 
-    PCPDMDRVREG pDrvReg       = AudioTestGetDefaultBackend();
-    bool        fWithDrvAudio = false;
-    uint8_t     cPcmSampleBit = 0;
-    uint8_t     cPcmChannels  = 0;
-    uint32_t    uPcmHz        = 0;
-    bool        fPcmSigned    = true;
+    PCPDMDRVREG pDrvReg        = AudioTestGetDefaultBackend();
+    uint8_t     cPcmSampleBit  = 0;
+    uint8_t     cPcmChannels   = 0;
+    uint32_t    uPcmHz         = 0;
+    bool        fPcmSigned     = true;
     bool        fProbeBackends = false;
 
     const char *pszGuestTcpAddr  = NULL;
@@ -797,7 +783,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'd':
-                fWithDrvAudio = true;
+                TstEnv.IoOpts.fWithDrvAudio = true;
                 break;
 
             case 'e':
@@ -849,7 +835,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VKAT_TEST_OPT_TONE_DURATION_MS:
-                TstEnv.cMsToneDuration = ValueUnion.u32;
+                TstEnv.ToneParms.msDuration = ValueUnion.u32;
+                break;
+
+            case VKAT_TEST_OPT_TONE_VOL_PERCENT:
+                TstEnv.ToneParms.uVolumePercent = ValueUnion.u8;
                 break;
 
             case VKAT_TEST_OPT_PAUSE:
@@ -894,7 +884,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VKAT_TEST_OPT_VOL:
-                TstEnv.uVolumePercent = ValueUnion.u8;
+                TstEnv.IoOpts.uVolumePercent = ValueUnion.u8;
                 break;
 
             case VKAT_TEST_OPT_TCP_BIND_ADDRESS:
@@ -929,11 +919,6 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
      */
     RTTestBanner(g_hTest);
 
-    /* Initialize the custom test parameters with sensible defaults if nothing else is given. */
-    PDMAudioPropsInit(&TstEnv.Props,
-                      cPcmSampleBit ? cPcmSampleBit / 8 : 2 /* 16-bit */, fPcmSigned, cPcmChannels ? cPcmChannels : 2,
-                      uPcmHz ? uPcmHz : 44100);
-
     if (TstEnv.enmMode == AUDIOTESTMODE_UNKNOWN)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No test mode (--mode) specified!\n");
 
@@ -942,13 +927,23 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         && TstEnv.TcpOpts.szConnectAddr[0])
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Only one TCP connection mode (connect as client *or* bind as server) can be specified) at a time!\n");
 
+    /* Set new (override standard) I/O PCM properties if set by the user. */
+    if (   cPcmSampleBit
+        || cPcmChannels
+        || uPcmHz)
+    {
+        PDMAudioPropsInit(&TstEnv.IoOpts.Props,
+                          cPcmSampleBit ? cPcmSampleBit / 2 : 2 /* 16-bit */, fPcmSigned /* fSigned */,
+                          cPcmChannels  ? cPcmChannels      : 2 /* Stereo */, uPcmHz ? uPcmHz : 44100);
+    }
+
     AUDIOTESTDRVSTACK DrvStack;
     if (fProbeBackends)
         rc = audioTestDriverStackProbe(&DrvStack, pDrvReg,
-                                       true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio); /** @todo Make in/out configurable, too. */
+                                       true /* fEnabledIn */, true /* fEnabledOut */, TstEnv.IoOpts.fWithDrvAudio); /** @todo Make in/out configurable, too. */
     else
         rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,
-                                        true /* fEnabledIn */, true /* fEnabledOut */, fWithDrvAudio); /** @todo Make in/out configurable, too. */
+                                        true /* fEnabledIn */, true /* fEnabledOut */, TstEnv.IoOpts.fWithDrvAudio); /** @todo Make in/out configurable, too. */
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
 
@@ -958,7 +953,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Enumerating device(s) failed: %Rrc\n", rc);
 
     /* For now all tests have the same test environment and driver stack. */
-    rc = audioTestEnvInit(&TstEnv, &DrvStack);
+    rc = audioTestEnvCreate(&TstEnv, &DrvStack);
     if (RT_SUCCESS(rc))
         rc = audioTestWorker(&TstEnv);
 

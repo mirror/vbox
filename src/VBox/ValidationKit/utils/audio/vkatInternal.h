@@ -196,6 +196,29 @@ typedef struct AUDIOTESTENVTCPOPTS
 typedef AUDIOTESTENVTCPOPTS *PAUDIOTESTENVTCPOPTS;
 
 /**
+ * Structure holding additional I/O options.
+ */
+typedef struct AUDIOTESTIOOPTS
+{
+    /** Whether to use the audio connector or not. */
+    bool             fWithDrvAudio;
+    /** Whether to use a mixing buffer or not. */
+    bool             fWithMixer;
+    /** Buffer size (in ms). */
+    uint32_t         cMsBufferSize;
+    /** Pre-buffering size (in ms). */
+    uint32_t         cMsPreBuffer;
+    /** Scheduling (in ms). */
+    uint32_t         cMsSchedulingHint;
+    /** Audio vlume to use (in percent). */
+    uint8_t          uVolumePercent;
+    /** PCM audio properties to use. */
+    PDMAUDIOPCMPROPS Props;
+} AUDIOTESTIOOPTS;
+/** Pointer to additional playback options. */
+typedef AUDIOTESTIOOPTS *PAUDIOTESTIOOPTS;
+
+/**
  * Structure for keeping a user context for the test service callbacks.
  */
 typedef struct ATSCALLBACKCTX
@@ -224,32 +247,22 @@ typedef struct AUDIOTESTENV
     bool                    fSelftest;
     /** Whether skip the actual verification or not. */
     bool                    fSkipVerify;
-    /** The PCM properties to use. */
-    PDMAUDIOPCMPROPS        Props;
     /** Name of the audio device to use.
      *  If empty the default audio device will be used. */
     char                    szDev[128];
-    /** Audio volume to use (in percent).
-     *  Might not be available on all systems. */
-    uint8_t                 uVolumePercent;
     /** Number of iterations for *all* tests specified.
      *  When set to 0 (default), a random value (see specific test) will be chosen. */
     uint32_t                cIterations;
-    /** Duration (in ms) to play / record test tone.
-     *  When set to 0 (default), a random value (see specific test) will be chosen. */
-    uint32_t                cMsToneDuration;
+    /** I/O options to use. */
+    AUDIOTESTIOOPTS         IoOpts;
+    /** Test tone parameters to use. */
+    AUDIOTESTTONEPARMS      ToneParms;
     /** Output path for storing the test environment's final test files. */
     char                    szTag[AUDIOTEST_TAG_MAX];
     /** Output path for storing the test environment's final test files. */
     char                    szPathOut[RTPATH_MAX];
     /** Temporary path for this test environment. */
     char                    szPathTemp[RTPATH_MAX];
-    /** Buffer size (in ms). */
-    RTMSINTERVAL            cMsBufferSize;
-    /** Pre-buffering time (in ms). */
-    RTMSINTERVAL            cMsPreBuffer;
-    /** Scheduling hint (in ms). */
-    RTMSINTERVAL            cMsSchedulingHint;
     /** Pointer to audio test driver stack to use. */
     PAUDIOTESTDRVSTACK      pDrvStack;
     /** Audio stream. */
@@ -453,7 +466,8 @@ int         audioTestEnvConnectToValKitAts(PAUDIOTESTENV pTstEnv,
 
 /** @name Test environment handling
  * @{ */
-int         audioTestEnvInit(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack);
+void        audioTestEnvInit(PAUDIOTESTENV pTstEnv);
+int         audioTestEnvCreate(PAUDIOTESTENV pTstEnv, PAUDIOTESTDRVSTACK pDrvStack);
 void        audioTestEnvDestroy(PAUDIOTESTENV pTstEnv);
 int         audioTestEnvPrologue(PAUDIOTESTENV pTstEnv, bool fPack, char *pszPackFile, size_t cbPackFile);
 
@@ -464,9 +478,11 @@ void        audioTestParmsDestroy(PAUDIOTESTPARMS pTstParms);
 int         audioTestWorker(PAUDIOTESTENV pTstEnv);
 
 /** @todo Test tone handling */
-int         audioTestPlayTone(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
+int         audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms);
+void        audioTestToneParmsInit(PAUDIOTESTTONEPARMS pToneParms);
 /** @}  */
 
+void        audioTestIoOptsInitDefaults(PAUDIOTESTIOOPTS pIoOpts);
 
 /*********************************************************************************************************************************
 *   Common command line stuff                                                                                                    *

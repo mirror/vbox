@@ -66,7 +66,7 @@ static DECLCALLBACK(const char *) audioTestCmdEnumHelp(PCRTGETOPTDEF pOpt)
     switch (pOpt->iShort)
     {
         case 'b':                               return "The audio backend to use.";
-        case VKAT_ENUM_OPT_PROBE_BACKENDS:      return "Specifies whether to probe all (available) backends until a working one is found\n"
+        case VKAT_ENUM_OPT_PROBE_BACKENDS:      return "Whether to probe all (available) backends until a working one is found\n"
                                                        "    Default: false";
         default:  return NULL;
     }
@@ -192,29 +192,6 @@ const VKATCMD g_CmdEnum =
 *********************************************************************************************************************************/
 
 /**
- * Structure holding additional playback options.
- */
-typedef struct AUDIOTESTPLAYOPTS
-{
-    /** Whether to use the audio connector or not. */
-    bool             fWithDrvAudio;
-    /** Whether to use a mixing buffer or not. */
-    bool             fWithMixer;
-    /** Buffer size (in ms). */
-    uint32_t         cMsBufferSize;
-    /** Pre-buffering size (in ms). */
-    uint32_t         cMsPreBuffer;
-    /** Scheduling (in ms). */
-    uint32_t         cMsSchedulingHint;
-    /** Audio vlume to use (in percent). */
-    uint8_t          uVolumePercent;
-    /** PCM audio properties to use. */
-    PDMAUDIOPCMPROPS Props;
-} AUDIOTESTPLAYOPTS;
-/** Pointer to additional playback options. */
-typedef AUDIOTESTPLAYOPTS *PAUDIOTESTPLAYOPTS;
-
-/**
  * Worker for audioTestPlayOne implementing the play loop.
  */
 static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTWAVEFILE pWaveFile,
@@ -303,7 +280,7 @@ static RTEXITCODE audioTestPlayOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTW
  * Worker for audioTestCmdPlayHandler that plays one file.
  */
 static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, const char *pszDevId,
-                                   PAUDIOTESTPLAYOPTS pOpts)
+                                   PAUDIOTESTIOOPTS pIoOpts)
 {
     char szTmp[128];
 
@@ -331,7 +308,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
      */
     RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
     AUDIOTESTDRVSTACK   DrvStack;
-    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, pOpts->fWithDrvAudio);
+    rc = audioTestDriverStackInit(&DrvStack, pDrvReg, pIoOpts->fWithDrvAudio);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -343,37 +320,37 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
             /*
              * Open a stream for the output.
              */
-            uint8_t const cChannels = PDMAudioPropsChannels(&pOpts->Props);
+            uint8_t const cChannels = PDMAudioPropsChannels(&pIoOpts->Props);
 
             PDMAUDIOPCMPROPS ReqProps = WaveFile.Props;
             if (cChannels != 0 && PDMAudioPropsChannels(&ReqProps) != cChannels)
                 PDMAudioPropsSetChannels(&ReqProps, cChannels);
 
-            uint8_t const cbSample = PDMAudioPropsSampleSize(&pOpts->Props);
+            uint8_t const cbSample = PDMAudioPropsSampleSize(&pIoOpts->Props);
             if (cbSample != 0)
                 PDMAudioPropsSetSampleSize(&ReqProps, cbSample);
 
-            uint32_t const uHz = PDMAudioPropsHz(&pOpts->Props);
+            uint32_t const uHz = PDMAudioPropsHz(&pIoOpts->Props);
             if (uHz != 0)
                 ReqProps.uHz = uHz;
 
             PDMAUDIOSTREAMCFG CfgAcq;
             PPDMAUDIOSTREAM   pStream  = NULL;
-            rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &ReqProps, pOpts->cMsBufferSize,
-                                                        pOpts->cMsPreBuffer, pOpts->cMsSchedulingHint, &pStream, &CfgAcq);
+            rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &ReqProps, pIoOpts->cMsBufferSize,
+                                                        pIoOpts->cMsPreBuffer, pIoOpts->cMsSchedulingHint, &pStream, &CfgAcq);
             if (RT_SUCCESS(rc))
             {
                 /*
                  * Automatically enable the mixer if the wave file and the
                  * output parameters doesn't match.
                  */
-                if (   !pOpts->fWithMixer
+                if (   !pIoOpts->fWithMixer
                     && (   !PDMAudioPropsAreEqual(&WaveFile.Props, &pStream->Cfg.Props)
-                        || pOpts->uVolumePercent != 100)
+                        || pIoOpts->uVolumePercent != 100)
                    )
                 {
                     RTMsgInfo("Enabling the mixer buffer.\n");
-                    pOpts->fWithMixer = true;
+                    pIoOpts->fWithMixer = true;
                 }
 
                 /*
@@ -381,16 +358,16 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                  * is false, otherwise it's doing mixing, resampling and recoding.
                  */
                 AUDIOTESTDRVMIXSTREAM Mix;
-                rc = AudioTestMixStreamInit(&Mix, &DrvStack, pStream, pOpts->fWithMixer ? &WaveFile.Props : NULL, 100 /*ms*/);
+                rc = AudioTestMixStreamInit(&Mix, &DrvStack, pStream, pIoOpts->fWithMixer ? &WaveFile.Props : NULL, 100 /*ms*/);
                 if (RT_SUCCESS(rc))
                 {
                     if (g_uVerbosity > 0)
                         RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n",
                                   PDMAudioPropsToString(&pStream->Cfg.Props, szTmp, sizeof(szTmp)),
-                                  pStream->cbBackend, pOpts->fWithMixer ? " mixed" : "");
+                                  pStream->cbBackend, pIoOpts->fWithMixer ? " mixed" : "");
 
-                    if (pOpts->fWithMixer)
-                        AudioTestMixStreamSetVolume(&Mix, pOpts->uVolumePercent);
+                    if (pIoOpts->fWithMixer)
+                        AudioTestMixStreamSetVolume(&Mix, pIoOpts->uVolumePercent);
 
                     /*
                      * Enable the stream and start playing.
@@ -426,7 +403,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
  */
 static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
                                            PCPDMDRVREG pDrvReg, const char *pszDevId,
-                                           PAUDIOTESTPLAYOPTS pOpts)
+                                           PAUDIOTESTIOOPTS pIoOpts)
 {
     char szTmp[128];
 
@@ -438,7 +415,7 @@ static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
      */
     RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
     AUDIOTESTDRVSTACK   DrvStack;
-    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, pOpts->fWithDrvAudio);
+    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, pIoOpts->fWithDrvAudio);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -450,35 +427,35 @@ static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
             /*
              * Open a stream for the output.
              */
-            uint8_t const cChannels = PDMAudioPropsChannels(&pOpts->Props);
+            uint8_t const cChannels = PDMAudioPropsChannels(&pIoOpts->Props);
 
             PDMAUDIOPCMPROPS ReqProps = pToneParms->Props;
             if (cChannels != 0 && PDMAudioPropsChannels(&ReqProps) != cChannels)
                 PDMAudioPropsSetChannels(&ReqProps, cChannels);
 
-            uint8_t const cbSample = PDMAudioPropsSampleSize(&pOpts->Props);
+            uint8_t const cbSample = PDMAudioPropsSampleSize(&pIoOpts->Props);
             if (cbSample != 0)
                 PDMAudioPropsSetSampleSize(&ReqProps, cbSample);
 
-            uint32_t const uHz = PDMAudioPropsHz(&pOpts->Props);
+            uint32_t const uHz = PDMAudioPropsHz(&pIoOpts->Props);
             if (uHz != 0)
                 ReqProps.uHz = uHz;
 
-            rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &ReqProps, pOpts->cMsBufferSize,
-                                                        pOpts->cMsPreBuffer, pOpts->cMsSchedulingHint, &TstStream.pStream, &TstStream.Cfg);
+            rc = audioTestDriverStackStreamCreateOutput(&DrvStack, &ReqProps, pIoOpts->cMsBufferSize,
+                                                        pIoOpts->cMsPreBuffer, pIoOpts->cMsSchedulingHint, &TstStream.pStream, &TstStream.Cfg);
             if (RT_SUCCESS(rc))
             {
                 /*
                  * Automatically enable the mixer if the wave file and the
                  * output parameters doesn't match.
                  */
-                if (   !pOpts->fWithMixer
+                if (   !pIoOpts->fWithMixer
                     && (   !PDMAudioPropsAreEqual(&pToneParms->Props, &TstStream.pStream->Cfg.Props)
                         || pToneParms->uVolumePercent != 100)
                     )
                 {
                     RTMsgInfo("Enabling the mixer buffer.\n");
-                    pOpts->fWithMixer = true;
+                    pIoOpts->fWithMixer = true;
                 }
 
                 /*
@@ -486,13 +463,13 @@ static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
                  * is false, otherwise it's doing mixing, resampling and recoding.
                  */
                 rc = AudioTestMixStreamInit(&TstStream.Mix, &DrvStack, TstStream.pStream,
-                                            pOpts->fWithMixer ? &pToneParms->Props : NULL, 100 /*ms*/);
+                                            pIoOpts->fWithMixer ? &pToneParms->Props : NULL, 100 /*ms*/);
                 if (RT_SUCCESS(rc))
                 {
                     if (g_uVerbosity > 0)
                         RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n",
                                   PDMAudioPropsToString(&TstStream.pStream->Cfg.Props, szTmp, sizeof(szTmp)),
-                                  TstStream.pStream->cbBackend, pOpts->fWithMixer ? " mixed" : "");
+                                  TstStream.pStream->cbBackend, pIoOpts->fWithMixer ? " mixed" : "");
 
                     /*
                      * Enable the stream and start playing.
@@ -500,10 +477,10 @@ static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
                     rc = AudioTestMixStreamEnable(&TstStream.Mix);
                     if (RT_SUCCESS(rc))
                     {
-                        if (pOpts->fWithMixer)
+                        if (pIoOpts->fWithMixer)
                             AudioTestMixStreamSetVolume(&TstStream.Mix, pToneParms->uVolumePercent);
 
-                        rc = audioTestPlayTone(NULL /* pTstEnv */, &TstStream, pToneParms);
+                        rc = audioTestPlayTone(pIoOpts, NULL /* pTstEnv */, &TstStream, pToneParms);
                         if (RT_SUCCESS(rc))
                             rcExit = RTEXITCODE_SUCCESS;
                     }
@@ -537,6 +514,7 @@ enum
 {
     VKAT_PLAY_OPT_TONE_DUR = 900,
     VKAT_PLAY_OPT_TONE_FREQ,
+    VKAT_PLAY_OPT_TONE_VOL,
     VKAT_PLAY_OPT_VOL
 };
 
@@ -554,6 +532,7 @@ static const RTGETOPTDEF g_aCmdPlayOptions[] =
     { "--test-tone",        't',                          RTGETOPT_REQ_NOTHING },
     { "--tone-dur",         VKAT_PLAY_OPT_TONE_DUR,       RTGETOPT_REQ_UINT32 },
     { "--tone-freq",        VKAT_PLAY_OPT_TONE_FREQ,      RTGETOPT_REQ_UINT32 },
+    { "--tone-vol",         VKAT_PLAY_OPT_TONE_VOL,       RTGETOPT_REQ_UINT32 },
     { "--output-device",    'o',                          RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                          RTGETOPT_REQ_NOTHING },
     { "--with-mixer",       'm',                          RTGETOPT_REQ_NOTHING },
@@ -576,7 +555,8 @@ static DECLCALLBACK(const char *) audioTestCmdPlayHelp(PCRTGETOPTDEF pOpt)
         case 'o':                       return "The ID of the output device to use";
         case VKAT_PLAY_OPT_TONE_DUR:    return "Test tone duration (ms)";
         case VKAT_PLAY_OPT_TONE_FREQ:   return "Test tone frequency (Hz)";
-        case VKAT_PLAY_OPT_VOL:         return "Volume (in percent, 0-100) to use";
+        case VKAT_PLAY_OPT_TONE_VOL:    return "Test tone volume (percent)";
+        case VKAT_PLAY_OPT_VOL:         return "Playback volume (percent)";
         default:                        return NULL;
     }
 }
@@ -598,16 +578,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
     uint8_t     cChannels           = 0;
     uint32_t    uHz                 = 0;
 
-    AUDIOTESTPLAYOPTS PlayOpts;
-    RT_ZERO(PlayOpts);
-
-    PlayOpts.uVolumePercent = 100; /* Use maximum volume by default. */
+    AUDIOTESTIOOPTS IoOpts;
+    audioTestIoOptsInitDefaults(&IoOpts);
 
     AUDIOTESTTONEPARMS ToneParms;
-    RT_ZERO(ToneParms);
-
-    ToneParms.dbFreqHz   = AudioTestToneGetRandomFreq();
-    ToneParms.msDuration = RTRandU32Ex(0, RT_MS_10SEC); /** @todo Probably a bit too long, but let's see. */
+    audioTestToneParmsInit(&ToneParms);
 
     /* Argument processing loop: */
     int           ch;
@@ -627,7 +602,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 break;
 
             case 'd':
-                PlayOpts.fWithDrvAudio = true;
+                IoOpts.fWithDrvAudio = true;
                 break;
 
             case 'f':
@@ -635,7 +610,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 break;
 
             case 'm':
-                PlayOpts.fWithMixer = true;
+                IoOpts.fWithMixer = true;
                 break;
 
             case 'o':
@@ -658,10 +633,16 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 ToneParms.dbFreqHz = ValueUnion.u32;
                 break;
 
+            case VKAT_PLAY_OPT_TONE_VOL:
+                ToneParms.uVolumePercent = ValueUnion.u8;
+                if (ToneParms.uVolumePercent > 100)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid tonevolume (0-100)");
+                break;
+
             case VKAT_PLAY_OPT_VOL:
-                PlayOpts.uVolumePercent = ValueUnion.u8;
-                if (PlayOpts.uVolumePercent > 100)
-                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid volume (0-100)");
+                IoOpts.uVolumePercent = ValueUnion.u8;
+                if (IoOpts.uVolumePercent > 100)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid playback volume (0-100)");
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -669,12 +650,12 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                 if (cTestTones)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Playing test tones (-t) cannot be combined with playing files");
 
-                /* Use some sane defaults if no PCM props are set by the user. */
-                PDMAudioPropsInit(&PlayOpts.Props,
+                /* Set new (override standard) I/O PCM properties if set by the user. */
+                PDMAudioPropsInit(&IoOpts.Props,
                                   cbSample  ? cbSample  : 2 /* 16-bit */, true /* fSigned */,
                                   cChannels ? cChannels : 2 /* Stereo */, uHz ? uHz : 44100);
 
-                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, &PlayOpts);
+                RTEXITCODE rcExit = audioTestPlayOne(ValueUnion.psz, pDrvReg, pszDevId, &IoOpts);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
                 break;
@@ -694,9 +675,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdPlayHandler(PRTGETOPTSTATE pGetState
                           cbSample  ? cbSample  : 2 /* 16-bit */, true /* fSigned */,
                           cChannels ? cChannels : 2 /* Stereo */, uHz ? uHz : 44100);
 
-        ToneParms.uVolumePercent = PlayOpts.uVolumePercent;
-
-        RTEXITCODE rcExit = audioTestPlayTestToneOne(&ToneParms, pDrvReg, pszDevId, &PlayOpts);
+        RTEXITCODE rcExit = audioTestPlayTestToneOne(&ToneParms, pDrvReg, pszDevId, &IoOpts);
         if (rcExit != RTEXITCODE_SUCCESS)
             return rcExit;
     }
@@ -799,9 +778,7 @@ static RTEXITCODE audioTestRecOneInner(PAUDIOTESTDRVMIXSTREAM pMix, PAUDIOTESTWA
  * Worker for audioTestCmdRecHandler that recs one file.
  */
 static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, uint8_t cbWaveSample, uint32_t uWaveHz,
-                                  PCPDMDRVREG pDrvReg, const char *pszDevId, uint32_t cMsBufferSize,
-                                  uint32_t cMsPreBuffer, uint32_t cMsSchedulingHint,
-                                  uint8_t cChannels, uint8_t cbSample, uint32_t uHz, bool fWithDrvAudio, bool fWithMixer,
+                                  PCPDMDRVREG pDrvReg, const char *pszDevId, PAUDIOTESTIOOPTS pIoOpts,
                                   uint64_t cMaxFrames, uint64_t cNsMaxDuration)
 {
     /*
@@ -809,7 +786,7 @@ static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, ui
      */
     RTEXITCODE          rcExit = RTEXITCODE_FAILURE;
     AUDIOTESTDRVSTACK   DrvStack;
-    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, fWithDrvAudio);
+    int rc = audioTestDriverStackInit(&DrvStack, pDrvReg, pIoOpts->fWithDrvAudio);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -823,14 +800,15 @@ static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, ui
              */
             PDMAUDIOPCMPROPS  ReqProps;
             PDMAudioPropsInit(&ReqProps,
-                              cbSample ? cbSample : cbWaveSample ? cbWaveSample : 2,
-                              true /*fSigned*/,
-                              cChannels ? cChannels : cWaveChannels ? cWaveChannels : 2,
-                              uHz ? uHz : uWaveHz ? uWaveHz : 44100);
+                              pIoOpts->Props.cbSampleX ? pIoOpts->Props.cbSampleX : cbWaveSample ? cbWaveSample : 2,
+                              pIoOpts->Props.fSigned,
+                              pIoOpts->Props.cChannelsX ? pIoOpts->Props.cChannelsX : cWaveChannels ? cWaveChannels : 2,
+                              pIoOpts->Props.uHz ? pIoOpts->Props.uHz : uWaveHz ? uWaveHz : 44100);
+
             PDMAUDIOSTREAMCFG CfgAcq;
             PPDMAUDIOSTREAM   pStream  = NULL;
-            rc = audioTestDriverStackStreamCreateInput(&DrvStack, &ReqProps, cMsBufferSize,
-                                                       cMsPreBuffer, cMsSchedulingHint, &pStream, &CfgAcq);
+            rc = audioTestDriverStackStreamCreateInput(&DrvStack, &ReqProps, pIoOpts->cMsBufferSize,
+                                                       pIoOpts->cMsPreBuffer, pIoOpts->cMsSchedulingHint, &pStream, &CfgAcq);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -843,10 +821,10 @@ static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, ui
                                   true /*fSigned*/,
                                   cWaveChannels ? cWaveChannels : PDMAudioPropsChannels(&CfgAcq.Props),
                                   uWaveHz ? uWaveHz : PDMAudioPropsHz(&CfgAcq.Props));
-                if (!fWithMixer && !PDMAudioPropsAreEqual(&WaveProps, &CfgAcq.Props))
+                if (!pIoOpts->fWithMixer && !PDMAudioPropsAreEqual(&WaveProps, &CfgAcq.Props))
                 {
                     RTMsgInfo("Enabling the mixer buffer.\n");
-                    fWithMixer = true;
+                    pIoOpts->fWithMixer = true;
                 }
 
                 /* Console the max duration into frames now that we've got the wave file format. */
@@ -863,14 +841,14 @@ static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, ui
                  * is false, otherwise it's doing mixing, resampling and recoding.
                  */
                 AUDIOTESTDRVMIXSTREAM Mix;
-                rc = AudioTestMixStreamInit(&Mix, &DrvStack, pStream, fWithMixer ? &WaveProps : NULL, 100 /*ms*/);
+                rc = AudioTestMixStreamInit(&Mix, &DrvStack, pStream, pIoOpts->fWithMixer ? &WaveProps : NULL, 100 /*ms*/);
                 if (RT_SUCCESS(rc))
                 {
                     char szTmp[128];
                     if (g_uVerbosity > 0)
                         RTMsgInfo("Stream: %s cbBackend=%#RX32%s\n",
                                   PDMAudioPropsToString(&pStream->Cfg.Props, szTmp, sizeof(szTmp)),
-                                  pStream->cbBackend, fWithMixer ? " mixed" : "");
+                                  pStream->cbBackend, pIoOpts->fWithMixer ? " mixed" : "");
 
                     /*
                      * Open the wave output file.
@@ -985,12 +963,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
 {
     /* Option values: */
     PCPDMDRVREG pDrvReg             = AudioTestGetDefaultBackend();
-    uint32_t    cMsBufferSize       = UINT32_MAX;
-    uint32_t    cMsPreBuffer        = UINT32_MAX;
-    uint32_t    cMsSchedulingHint   = UINT32_MAX;
     const char *pszDevId            = NULL;
-    bool        fWithDrvAudio       = false;
-    bool        fWithMixer          = false;
     uint8_t     cbSample            = 0;
     uint8_t     cChannels           = 0;
     uint32_t    uHz                 = 0;
@@ -999,6 +972,9 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
     uint32_t    uWaveHz             = 0;
     uint64_t    cMaxFrames          = UINT64_MAX;
     uint64_t    cNsMaxDuration      = UINT64_MAX;
+
+    AUDIOTESTIOOPTS IoOpts;
+    audioTestIoOptsInitDefaults(&IoOpts);
 
     /* Argument processing loop: */
     int           ch;
@@ -1022,7 +998,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'd':
-                fWithDrvAudio = true;
+                IoOpts.fWithDrvAudio = true;
                 break;
 
             case 'f':
@@ -1038,7 +1014,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'm':
-                fWithMixer = true;
+                IoOpts.fWithMixer = true;
                 break;
 
             case 'r':
@@ -1067,9 +1043,18 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdRecHandler(PRTGETOPTSTATE pGetState)
 
             case VINF_GETOPT_NOT_OPTION:
             {
+                if (   cbSample
+                    || cChannels
+                    || uHz)
+                {
+                    /* Set new (override standard) I/O PCM properties if set by the user. */
+                    PDMAudioPropsInit(&IoOpts.Props,
+                                      cbSample  ? cbSample  : 2 /* 16-bit */, true /* fSigned */,
+                                      cChannels ? cChannels : 2 /* Stereo */, uHz ? uHz : 44100);
+                }
+
                 RTEXITCODE rcExit = audioTestRecOne(ValueUnion.psz, cWaveChannels, cbWaveSample, uWaveHz,
-                                                    pDrvReg, pszDevId, cMsBufferSize, cMsPreBuffer, cMsSchedulingHint,
-                                                    cChannels, cbSample, uHz, fWithDrvAudio, fWithMixer,
+                                                    pDrvReg, pszDevId, &IoOpts,
                                                     cMaxFrames, cNsMaxDuration);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
