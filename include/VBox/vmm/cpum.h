@@ -1901,7 +1901,7 @@ DECLINLINE(bool) CPUMIsGuestInVmxRootMode(PCCPUMCTX pCtx)
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   fIntercept  The SVM control/instruction intercept, see
  *                      SVM_CTRL_INTERCEPT_*.
  */
@@ -1920,7 +1920,7 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx    Pointer to the context.
+ * @param   pCtx    Current CPU context.
  * @param   uCr     The CR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
@@ -1939,7 +1939,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx    Pointer to the context.
+ * @param   pCtx    Current CPU context.
  * @param   uCr     The CR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
@@ -1958,7 +1958,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCt
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx    Pointer to the context.
+ * @param   pCtx    Current CPU context.
  * @param   uDr     The DR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
@@ -1977,7 +1977,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx    Pointer to the context.
+ * @param   pCtx    Current CPU context.
  * @param   uDr     The DR register number (0 to 15).
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
@@ -1996,7 +1996,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCt
  *
  * @returns @c true if in intercept is active, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uVector     The exception / interrupt vector.
  */
 DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector)
@@ -2014,8 +2014,8 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
  * Checks if the nested-guest VMCB has virtual-interrupt masking enabled.
  *
  * @returns @c true if virtual-interrupts are masked, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Current CPU context.
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
  */
@@ -2033,8 +2033,8 @@ DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
  * Checks if the nested-guest VMCB has nested-paging enabled.
  *
  * @returns @c true if nested-paging is enabled, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Current CPU context.
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
  */
@@ -2052,8 +2052,8 @@ DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx
  * Gets the nested-guest VMCB pause-filter count.
  *
  * @returns The pause-filter count.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Current CPU context.
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
  */
@@ -2071,7 +2071,7 @@ DECLINLINE(uint16_t) CPUMGetGuestSvmPauseFilterCount(PCVMCPU pVCpu, PCCPUMCTX pC
  * Updates the NextRIP (NRIP) field in the nested-guest VMCB.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   cbInstr     The length of the current instruction in bytes.
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
@@ -2088,7 +2088,7 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbI
  * executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uPinCtls    The Pin-based VM-execution controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
@@ -2105,7 +2105,7 @@ DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PCCPUMCTX pCtx, uint32_t uPinCtls)
  * when executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uProcCtls   The Processor-based VM-execution controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
@@ -2122,7 +2122,7 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCCPUMCTX pCtx, uint32_t uProcCtls)
  * are set when executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uProcCtls2  The Secondary Processor-based VM-execution controls to
  *                      check.
  *
@@ -2140,7 +2140,7 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCCPUMCTX pCtx, uint32_t uProcCtls2)
  * are set when executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uProcCtls3  The Tertiary Processor-based VM-execution controls to
  *                      check.
  *
@@ -2158,7 +2158,7 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls3Set(PCCPUMCTX pCtx, uint64_t uProcCtls3)
  * nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uExitCtls   The VM-exit controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
@@ -2175,7 +2175,7 @@ DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PCCPUMCTX pCtx, uint32_t uExitCtls)
  * nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uEntryCtls  The VM-entry controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
@@ -2191,7 +2191,7 @@ DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PCCPUMCTX pCtx, uint32_t uEntryCtls)
  * Checks whether events injected in the nested-guest are subject to VM-exit checks.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pCtx    Pointer to the context.
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestVmxInterceptEvents(PCCPUMCTX pCtx)
 {
@@ -2202,7 +2202,7 @@ DECLINLINE(bool) CPUMIsGuestVmxInterceptEvents(PCCPUMCTX pCtx)
 /**
  * Sets whether events injected in the nested-guest are subject to VM-exit checks.
  *
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   fIntercept  Whether to subject injected events to VM-exits or not.
  */
 DECLINLINE(void) CPUMSetGuestVmxInterceptEvents(PCPUMCTX pCtx, bool fInterceptEvents)
@@ -2221,7 +2221,7 @@ DECLINLINE(void) CPUMSetGuestVmxInterceptEvents(PCPUMCTX pCtx, bool fInterceptEv
  * function.
  *
  * @returns @c true if the exception causes a VM-exit, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uVector     The exception vector.
  * @param   uErrCode    The error code associated with the exception. Pass 0 if not
  *                      applicable.
@@ -2255,7 +2255,7 @@ DECLINLINE(bool) CPUMIsGuestVmxXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector,
 /**
  * Implements VMSucceed for VMX instruction success.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(void) CPUMSetGuestVmxVmSucceed(PCPUMCTX pCtx)
 {
@@ -2265,7 +2265,7 @@ DECLINLINE(void) CPUMSetGuestVmxVmSucceed(PCPUMCTX pCtx)
 /**
  * Implements VMFailInvalid for VMX instruction failure.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(void) CPUMSetGuestVmxVmFailInvalid(PCPUMCTX pCtx)
 {
@@ -2276,7 +2276,7 @@ DECLINLINE(void) CPUMSetGuestVmxVmFailInvalid(PCPUMCTX pCtx)
 /**
  * Implements VMFailValid for VMX instruction failure.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Current CPU context.
  * @param   enmInsErr   The VM instruction error.
  */
 DECLINLINE(void) CPUMSetGuestVmxVmFailValid(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
@@ -2289,7 +2289,7 @@ DECLINLINE(void) CPUMSetGuestVmxVmFailValid(PCPUMCTX pCtx, VMXINSTRERR enmInsErr
 /**
  * Implements VMFail for VMX instruction failure.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Current CPU context.
  * @param   enmInsErr   The VM instruction error.
  */
 DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
@@ -2305,7 +2305,7 @@ DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
  * nested-guest.
  *
  * @returns The APIC-access page guest-physical address.
- * @param   pCtx    Pointer to the context.
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCCPUMCTX pCtx)
 {
@@ -2317,7 +2317,7 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCCPUMCTX pCtx)
  * Gets the nested-guest CR0 subject to the guest/host mask and the read-shadow.
  *
  * @returns The nested-guest CR0.
- * @param   pCtx            Pointer to the context.
+ * @param   pCtx            Current CPU context.
  * @param   fGstHostMask    The CR0 guest/host mask to use.
  */
 DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCCPUMCTX pCtx, uint64_t fGstHostMask)
@@ -2339,7 +2339,7 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCCPUMCTX pCtx, uint64_t fGstHostM
  * Gets the nested-guest CR4 subject to the guest/host mask and the read-shadow.
  *
  * @returns The nested-guest CR4.
- * @param   pCtx            Pointer to the context.
+ * @param   pCtx            Current CPU context.
  * @param   fGstHostMask    The CR4 guest/host mask to use.
  */
 DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCCPUMCTX pCtx, uint64_t fGstHostMask)
@@ -2361,7 +2361,7 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCCPUMCTX pCtx, uint64_t fGstHostM
  * Checks whether the LMSW access causes a VM-exit or not.
  *
  * @returns @c true if the LMSW access causes a VM-exit, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   uNewMsw     The LMSW source operand (the Machine Status Word).
  */
 DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCCPUMCTX pCtx, uint16_t uNewMsw)
@@ -2405,7 +2405,7 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCCPUMCTX pCtx, uint16_t uNewMsw
  * Checks whether the Mov-to-CR0/CR4 access causes a VM-exit or not.
  *
  * @returns @c true if the Mov CRX access causes a VM-exit, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx        Current CPU context.
  * @param   iCrReg      The control register number (must be 0 or 4).
  * @param   uNewCrX     The CR0/CR4 value being written.
  */
@@ -2447,7 +2447,7 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCCPUMCTX pCtx, uint8_t i
  * Returns whether the guest has an active, current VMCS.
  *
  * @returns @c true if the guest has an active, current VMCS, @c false otherwise.
- * @param   pCtx    Pointer to the context.
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestVmxCurrentVmcsValid(PCCPUMCTX pCtx)
 {
