@@ -68,7 +68,7 @@ private slots:
     void sltHandleProfileButtonClick();
 
     /** Handles change in source tab-bar. */
-    void sltHandleSourceChange();
+    void sltHandleSourceTabBarChange();
 
     /** Handles change in instance list. */
     void sltHandleSourceImageChange();

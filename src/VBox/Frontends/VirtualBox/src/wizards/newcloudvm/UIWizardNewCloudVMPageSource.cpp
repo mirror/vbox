@@ -425,7 +425,7 @@ UIWizardNewCloudVMPageSource::UIWizardNewCloudVMPageSource()
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageSource::sltHandleProfileButtonClick);
     connect(m_pSourceTabBar, &QTabBar::currentChanged,
-            this, &UIWizardNewCloudVMPageSource::sltHandleSourceChange);
+            this, &UIWizardNewCloudVMPageSource::sltHandleSourceTabBarChange);
     connect(m_pSourceImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageSource::sltHandleSourceImageChange);
 }
@@ -545,7 +545,7 @@ void UIWizardNewCloudVMPageSource::sltHandleProfileButtonClick()
         gpManager->openCloudProfileManager();
 }
 
-void UIWizardNewCloudVMPageSource::sltHandleSourceChange()
+void UIWizardNewCloudVMPageSource::sltHandleSourceTabBarChange()
 {
     updateSource();
     emit completeChanged();
