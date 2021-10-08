@@ -36,241 +36,270 @@
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIToolBox.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
+#include "UIWizardImportAppPageBasic1.h"
+#include "UIWizardImportAppPageBasic2.h"
 #include "UIWizardImportAppPageExpert.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
 
+/* Namespaces: */
+using namespace UIWizardImportAppPage1;
+using namespace UIWizardImportAppPage2;
+
 
 UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName)
-    : UIWizardImportAppPage1(fImportFromOCIByDefault)
+    : m_fImportFromOCIByDefault(fImportFromOCIByDefault)
     , m_strFileName(strFileName)
-    , m_pCntSource(0)
-    , m_pSettingsCnt(0)
+    , m_pToolBox(0)
+    , m_pSourceLayout(0)
+    , m_pSourceLabel(0)
+    , m_pSourceComboBox(0)
+    , m_pSettingsWidget1(0)
+    , m_pLocalContainerLayout(0)
+    , m_pFileSelector(0)
+    , m_pCloudContainerLayout(0)
+    , m_pProfileComboBox(0)
+    , m_pProfileToolButton(0)
+    , m_pProfileInstanceList(0)
+    , m_pSettingsWidget2(0)
+    , m_pApplianceWidget(0)
+    , m_pLabelImportFilePath(0)
+    , m_pEditorImportFilePath(0)
+    , m_pLabelMACImportPolicy(0)
+    , m_pComboMACImportPolicy(0)
+    , m_pLabelAdditionalOptions(0)
+    , m_pCheckboxImportHDsAsVDI(0)
+    , m_pFormEditor(0)
 {
     /* Prepare main layout: */
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
-        /* Prepare source container: */
-        m_pCntSource = new QGroupBox(this);
-        if (m_pCntSource)
+        /* Prepare tool-box: */
+        m_pToolBox = new UIToolBox(this);
+        if (m_pToolBox)
         {
-            /* Prepare source layout: */
-            m_pSourceLayout = new QGridLayout(m_pCntSource);
-            if (m_pSourceLayout)
+            /* Prepare source widget: */
+            QWidget *pWidgetSource = new QWidget(m_pToolBox);
+            if (pWidgetSource)
             {
-                /* Prepare source combo: */
-                m_pSourceComboBox = new QIComboBox(m_pCntSource);
-                if (m_pSourceComboBox)
-                    m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 0);
-
-                /* Prepare settings widget 1: */
-                m_pSettingsWidget1 = new QStackedWidget(m_pCntSource);
-                if (m_pSettingsWidget1)
+                /* Prepare source layout: */
+                m_pSourceLayout = new QGridLayout(pWidgetSource);
+                if (m_pSourceLayout)
                 {
-                    /* Prepare local container: */
-                    QWidget *pContainerLocal = new QWidget(m_pSettingsWidget1);
-                    if (pContainerLocal)
-                    {
-                        /* Prepare local widget layout: */
-                        m_pLocalContainerLayout = new QGridLayout(pContainerLocal);
-                        if (m_pLocalContainerLayout)
-                        {
-                            m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
-                            m_pLocalContainerLayout->setRowStretch(1, 1);
+                    m_pSourceLayout->setContentsMargins(0, 0, 0, 0);
 
-                            /* Prepare file-path selector: */
-                            m_pFileSelector = new UIEmptyFilePathSelector(pContainerLocal);
-                            if (m_pFileSelector)
+                    /* Prepare source combo: */
+                    m_pSourceComboBox = new QIComboBox(pWidgetSource);
+                    if (m_pSourceComboBox)
+                        m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 0);
+
+                    /* Prepare settings widget 1: */
+                    m_pSettingsWidget1 = new QStackedWidget(pWidgetSource);
+                    if (m_pSettingsWidget1)
+                    {
+                        /* Prepare local container: */
+                        QWidget *pContainerLocal = new QWidget(m_pSettingsWidget1);
+                        if (pContainerLocal)
+                        {
+                            /* Prepare local widget layout: */
+                            m_pLocalContainerLayout = new QGridLayout(pContainerLocal);
+                            if (m_pLocalContainerLayout)
                             {
-                                m_pFileSelector->setHomeDir(uiCommon().documentsPath());
-                                m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
-                                m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
-                                m_pFileSelector->setEditable(true);
-                                m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 0);
+                                m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
+                                m_pLocalContainerLayout->setRowStretch(1, 1);
+
+                                /* Prepare file-path selector: */
+                                m_pFileSelector = new UIEmptyFilePathSelector(pContainerLocal);
+                                if (m_pFileSelector)
+                                {
+                                    m_pFileSelector->setHomeDir(uiCommon().documentsPath());
+                                    m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
+                                    m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
+                                    m_pFileSelector->setEditable(true);
+                                    m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 0);
+                                }
                             }
+
+                            /* Add into widget: */
+                            m_pSettingsWidget1->addWidget(pContainerLocal);
                         }
 
-                        /* Add into widget: */
-                        m_pSettingsWidget1->addWidget(pContainerLocal);
-                    }
-
-                    /* Prepare cloud container: */
-                    QWidget *pContainerCloud = new QWidget(m_pSettingsWidget1);
-                    if (pContainerCloud)
-                    {
-                        /* Prepare cloud container layout: */
-                        m_pCloudContainerLayout = new QGridLayout(pContainerCloud);
-                        if (m_pCloudContainerLayout)
+                        /* Prepare cloud container: */
+                        QWidget *pContainerCloud = new QWidget(m_pSettingsWidget1);
+                        if (pContainerCloud)
                         {
-                            m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
-                            m_pCloudContainerLayout->setRowStretch(1, 1);
-
-                            /* Prepare profile layout: */
-                            QHBoxLayout *pLayoutProfile = new QHBoxLayout;
-                            if (pLayoutProfile)
+                            /* Prepare cloud container layout: */
+                            m_pCloudContainerLayout = new QGridLayout(pContainerCloud);
+                            if (m_pCloudContainerLayout)
                             {
-                                pLayoutProfile->setContentsMargins(0, 0, 0, 0);
-                                pLayoutProfile->setSpacing(1);
+                                m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
+                                m_pCloudContainerLayout->setRowStretch(1, 1);
 
-                                /* Prepare profile combo-box: */
-                                m_pProfileComboBox = new QIComboBox(pContainerCloud);
-                                if (m_pProfileComboBox)
-                                    pLayoutProfile->addWidget(m_pProfileComboBox);
-
-                                /* Prepare profile tool-button: */
-                                m_pProfileToolButton = new QIToolButton(pContainerCloud);
-                                if (m_pProfileToolButton)
+                                /* Prepare profile layout: */
+                                QHBoxLayout *pLayoutProfile = new QHBoxLayout;
+                                if (pLayoutProfile)
                                 {
-                                    m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
-                                                                                      ":/cloud_profile_manager_disabled_16px.png"));
-                                    pLayoutProfile->addWidget(m_pProfileToolButton);
+                                    pLayoutProfile->setContentsMargins(0, 0, 0, 0);
+                                    pLayoutProfile->setSpacing(1);
+
+                                    /* Prepare profile combo-box: */
+                                    m_pProfileComboBox = new QIComboBox(pContainerCloud);
+                                    if (m_pProfileComboBox)
+                                        pLayoutProfile->addWidget(m_pProfileComboBox);
+
+                                    /* Prepare profile tool-button: */
+                                    m_pProfileToolButton = new QIToolButton(pContainerCloud);
+                                    if (m_pProfileToolButton)
+                                    {
+                                        m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                                                                          ":/cloud_profile_manager_disabled_16px.png"));
+                                        pLayoutProfile->addWidget(m_pProfileToolButton);
+                                    }
+
+                                    /* Add into layout: */
+                                    m_pCloudContainerLayout->addLayout(pLayoutProfile, 0, 0);
                                 }
 
-                                /* Add into layout: */
-                                m_pCloudContainerLayout->addLayout(pLayoutProfile, 0, 0);
+                                /* Create profile instances table: */
+                                m_pProfileInstanceList = new QListWidget(pContainerCloud);
+                                if (m_pProfileInstanceList)
+                                {
+                                    const QFontMetrics fm(m_pProfileInstanceList->font());
+                                    const int iFontWidth = fm.width('x');
+                                    const int iTotalWidth = 50 * iFontWidth;
+                                    const int iFontHeight = fm.height();
+                                    const int iTotalHeight = 4 * iFontHeight;
+                                    m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+//                                    m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                                    m_pProfileInstanceList->setAlternatingRowColors(true);
+                                    m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 0);
+                                }
                             }
 
-                            /* Create profile instances table: */
-                            m_pProfileInstanceList = new QListWidget(pContainerCloud);
-                            if (m_pProfileInstanceList)
-                            {
-                                const QFontMetrics fm(m_pProfileInstanceList->font());
-                                const int iFontWidth = fm.width('x');
-                                const int iTotalWidth = 50 * iFontWidth;
-                                const int iFontHeight = fm.height();
-                                const int iTotalHeight = 4 * iFontHeight;
-                                m_pProfileInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-//                                m_pProfileInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                                m_pProfileInstanceList->setAlternatingRowColors(true);
-                                m_pCloudContainerLayout->addWidget(m_pProfileInstanceList, 1, 0);
-                            }
+                            /* Add into widget: */
+                            m_pSettingsWidget1->addWidget(pContainerCloud);
                         }
 
-                        /* Add into widget: */
-                        m_pSettingsWidget1->addWidget(pContainerCloud);
+                        /* Add into layout: */
+                        m_pSourceLayout->addWidget(m_pSettingsWidget1, 1, 0);
                     }
-
-                    /* Add into layout: */
-                    m_pSourceLayout->addWidget(m_pSettingsWidget1, 1, 0);
                 }
+
+                /* Add into tool-box: */
+                m_pToolBox->insertPage(0, pWidgetSource, QString());
             }
 
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pCntSource);
-        }
-
-        /* Prepare settings container: */
-        m_pSettingsCnt = new QGroupBox(this);
-        if (m_pSettingsCnt)
-        {
-            /* Prepare settings layout: */
-            QVBoxLayout *pLayoutSettings = new QVBoxLayout(m_pSettingsCnt);
-            if (pLayoutSettings)
+            /* Prepare settings widget 2: */
+            m_pSettingsWidget2 = new QStackedWidget(m_pToolBox);
+            if (m_pSettingsWidget2)
             {
-                /* Prepare settings widget 2: */
-                m_pSettingsWidget2 = new QStackedWidget(m_pSettingsCnt);
-                if (m_pSettingsWidget2)
+                /* Prepare appliance container: */
+                QWidget *pContainerAppliance = new QWidget(m_pSettingsWidget2);
+                if (pContainerAppliance)
                 {
-                    /* Prepare appliance container: */
-                    QWidget *pContainerAppliance = new QWidget(m_pSettingsCnt);
-                    if (pContainerAppliance)
+                    /* Prepare appliance layout: */
+                    QGridLayout *pLayoutAppliance = new QGridLayout(pContainerAppliance);
+                    if (pLayoutAppliance)
                     {
-                        /* Prepare appliance layout: */
-                        QGridLayout *pLayoutAppliance = new QGridLayout(pContainerAppliance);
-                        if (pLayoutAppliance)
+                        pLayoutAppliance->setContentsMargins(0, 0, 0, 0);
+
+                        /* Prepare appliance widget: */
+                        m_pApplianceWidget = new UIApplianceImportEditorWidget(pContainerAppliance);
+                        if (m_pApplianceWidget)
                         {
-                            /* Prepare appliance widget: */
-                            m_pApplianceWidget = new UIApplianceImportEditorWidget(pContainerAppliance);
-                            if (m_pApplianceWidget)
-                            {
-                                m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-                                pLayoutAppliance->addWidget(m_pApplianceWidget, 0, 0, 1, 3);
-                            }
-
-                            /* Prepare import path label: */
-                            m_pLabelImportFilePath = new QLabel(pContainerAppliance);
-                            if (m_pLabelImportFilePath)
-                            {
-                                m_pLabelImportFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                                pLayoutAppliance->addWidget(m_pLabelImportFilePath, 1, 0);
-                            }
-                            /* Prepare import path selector: */
-                            m_pEditorImportFilePath = new UIFilePathSelector(pContainerAppliance);
-                            if (m_pEditorImportFilePath)
-                            {
-                                m_pEditorImportFilePath->setResetEnabled(true);
-                                m_pEditorImportFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-                                m_pEditorImportFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-                                m_pLabelImportFilePath->setBuddy(m_pEditorImportFilePath);
-                                pLayoutAppliance->addWidget(m_pEditorImportFilePath, 1, 1, 1, 2);
-                            }
-
-                            /* Prepare MAC address policy label: */
-                            m_pLabelMACImportPolicy = new QLabel(pContainerAppliance);
-                            if (m_pLabelMACImportPolicy)
-                            {
-                                m_pLabelMACImportPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                                pLayoutAppliance->addWidget(m_pLabelMACImportPolicy, 2, 0);
-                            }
-                            /* Prepare MAC address policy combo: */
-                            m_pComboMACImportPolicy = new QIComboBox(pContainerAppliance);
-                            if (m_pComboMACImportPolicy)
-                            {
-                                m_pComboMACImportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-                                m_pLabelMACImportPolicy->setBuddy(m_pComboMACImportPolicy);
-                                pLayoutAppliance->addWidget(m_pComboMACImportPolicy, 2, 1, 1, 2);
-                            }
-
-                            /* Prepare additional options label: */
-                            m_pLabelAdditionalOptions = new QLabel(pContainerAppliance);
-                            if (m_pLabelAdditionalOptions)
-                            {
-                                m_pLabelAdditionalOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                                pLayoutAppliance->addWidget(m_pLabelAdditionalOptions, 3, 0);
-                            }
-                            /* Prepare import HDs as VDIs checkbox: */
-                            m_pCheckboxImportHDsAsVDI = new QCheckBox(pContainerAppliance);
-                            {
-                                m_pCheckboxImportHDsAsVDI->setCheckState(Qt::Checked);
-                                pLayoutAppliance->addWidget(m_pCheckboxImportHDsAsVDI, 3, 1);
-                            }
+                            m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+                            pLayoutAppliance->addWidget(m_pApplianceWidget, 0, 0, 1, 3);
                         }
 
-                        /* Add into layout: */
-                        m_pSettingsWidget2->addWidget(pContainerAppliance);
-                    }
-
-                    /* Prepare form editor container: */
-                    QWidget *pContainerFormEditor = new QWidget(m_pSettingsCnt);
-                    if (pContainerFormEditor)
-                    {
-                        /* Prepare form editor layout: */
-                        QVBoxLayout *pLayoutFormEditor = new QVBoxLayout(pContainerFormEditor);
-                        if (pLayoutFormEditor)
+                        /* Prepare import path label: */
+                        m_pLabelImportFilePath = new QLabel(pContainerAppliance);
+                        if (m_pLabelImportFilePath)
                         {
-                            /* Prepare form editor widget: */
-                            m_pFormEditor = new UIFormEditorWidget(pContainerFormEditor);
-                            if (m_pFormEditor)
-                                pLayoutFormEditor->addWidget(m_pFormEditor);
+                            m_pLabelImportFilePath->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                            pLayoutAppliance->addWidget(m_pLabelImportFilePath, 1, 0);
+                        }
+                        /* Prepare import path selector: */
+                        m_pEditorImportFilePath = new UIFilePathSelector(pContainerAppliance);
+                        if (m_pEditorImportFilePath)
+                        {
+                            m_pEditorImportFilePath->setResetEnabled(true);
+                            m_pEditorImportFilePath->setDefaultPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+                            m_pEditorImportFilePath->setPath(uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+                            m_pLabelImportFilePath->setBuddy(m_pEditorImportFilePath);
+                            pLayoutAppliance->addWidget(m_pEditorImportFilePath, 1, 1, 1, 2);
                         }
 
-                        /* Add into layout: */
-                        m_pSettingsWidget2->addWidget(pContainerFormEditor);
+                        /* Prepare MAC address policy label: */
+                        m_pLabelMACImportPolicy = new QLabel(pContainerAppliance);
+                        if (m_pLabelMACImportPolicy)
+                        {
+                            m_pLabelMACImportPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                            pLayoutAppliance->addWidget(m_pLabelMACImportPolicy, 2, 0);
+                        }
+                        /* Prepare MAC address policy combo: */
+                        m_pComboMACImportPolicy = new QIComboBox(pContainerAppliance);
+                        if (m_pComboMACImportPolicy)
+                        {
+                            m_pComboMACImportPolicy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+                            m_pLabelMACImportPolicy->setBuddy(m_pComboMACImportPolicy);
+                            pLayoutAppliance->addWidget(m_pComboMACImportPolicy, 2, 1, 1, 2);
+                        }
+
+                        /* Prepare additional options label: */
+                        m_pLabelAdditionalOptions = new QLabel(pContainerAppliance);
+                        if (m_pLabelAdditionalOptions)
+                        {
+                            m_pLabelAdditionalOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                            pLayoutAppliance->addWidget(m_pLabelAdditionalOptions, 3, 0);
+                        }
+                        /* Prepare import HDs as VDIs checkbox: */
+                        m_pCheckboxImportHDsAsVDI = new QCheckBox(pContainerAppliance);
+                        {
+                            m_pCheckboxImportHDsAsVDI->setCheckState(Qt::Checked);
+                            pLayoutAppliance->addWidget(m_pCheckboxImportHDsAsVDI, 3, 1);
+                        }
                     }
 
                     /* Add into layout: */
-                    pLayoutSettings->addWidget(m_pSettingsWidget2);
+                    m_pSettingsWidget2->addWidget(pContainerAppliance);
                 }
+
+                /* Prepare form editor container: */
+                QWidget *pContainerFormEditor = new QWidget(m_pSettingsWidget2);
+                if (pContainerFormEditor)
+                {
+                    /* Prepare form editor layout: */
+                    QVBoxLayout *pLayoutFormEditor = new QVBoxLayout(pContainerFormEditor);
+                    if (pLayoutFormEditor)
+                    {
+                        pLayoutFormEditor->setContentsMargins(0, 0, 0, 0);
+
+                        /* Prepare form editor widget: */
+                        m_pFormEditor = new UIFormEditorWidget(pContainerFormEditor);
+                        if (m_pFormEditor)
+                            pLayoutFormEditor->addWidget(m_pFormEditor);
+                    }
+
+                    /* Add into layout: */
+                    m_pSettingsWidget2->addWidget(pContainerFormEditor);
+                }
+
+                /* Add into tool-box: */
+                m_pToolBox->insertPage(1, m_pSettingsWidget2, QString());
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pSettingsCnt);
+            pMainLayout->addWidget(m_pToolBox);
         }
+
+        /* Add stretch: */
+        pMainLayout->addStretch(1);
     }
 
     /* Setup connections: */
@@ -292,22 +321,23 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageExpert::sltHandleImportPathEditorChange);
     connect(m_pComboMACImportPolicy, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardImportAppPageExpert::sltHandleMACImportPolicyComboChange);
+    connect(m_pCheckboxImportHDsAsVDI, &QCheckBox::stateChanged,
+            this, &UIWizardImportAppPageExpert::sltHandleImportHDsAsVDICheckBoxChange);
+}
 
-    /* Register fields: */
-    registerField("isSourceCloudOne", this, "isSourceCloudOne");
-    registerField("profile", this, "profile");
-    registerField("appliance", this, "appliance");
-    registerField("vsdForm", this, "vsdForm");
-    registerField("machineId", this, "machineId");
-    registerField("macAddressImportPolicy", this, "macAddressImportPolicy");
-    registerField("importHDsAsVDI", this, "importHDsAsVDI");
+UIWizardImportApp *UIWizardImportAppPageExpert::wizard() const
+{
+    return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
 void UIWizardImportAppPageExpert::retranslateUi()
 {
-    /* Translate appliance container: */
-    if (m_pCntSource)
-        m_pCntSource->setTitle(UIWizardImportApp::tr("Source"));
+    /* Translate tool-box: */
+    if (m_pToolBox)
+    {
+        m_pToolBox->setPageTitle(0, UIWizardImportApp::tr("Source"));
+        m_pToolBox->setPageTitle(1, UIWizardImportApp::tr("Settings"));
+    }
 
     /* Translate hardcoded values of Source combo-box: */
     if (m_pSourceComboBox)
@@ -318,7 +348,7 @@ void UIWizardImportAppPageExpert::retranslateUi()
         /* Translate received values of Source combo-box.
          * We are enumerating starting from 0 for simplicity: */
         for (int i = 0; i < m_pSourceComboBox->count(); ++i)
-            if (isSourceCloudOne(i))
+            if (isSourceCloudOne(m_pSourceComboBox, i))
             {
                 m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
                 m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
@@ -337,46 +367,13 @@ void UIWizardImportAppPageExpert::retranslateUi()
     if (m_pProfileToolButton)
         m_pProfileToolButton->setToolTip(UIWizardImportApp::tr("Open Cloud Profile Manager..."));
 
-    /* Translate settings container: */
-    if (m_pSettingsCnt)
-        m_pSettingsCnt->setTitle(UIWizardImportApp::tr("Settings"));
-
     /* Translate path selector label: */
     if (m_pLabelImportFilePath)
         m_pLabelImportFilePath->setText(tr("&Machine Base Folder:"));
 
-    /* Translate MAC address policy combo-box: */
+    /* Translate MAC import policy label: */
     if (m_pLabelMACImportPolicy)
-    {
         m_pLabelMACImportPolicy->setText(tr("MAC Address &Policy:"));
-        for (int i = 0; i < m_pComboMACImportPolicy->count(); ++i)
-        {
-            const MACAddressImportPolicy enmPolicy = m_pComboMACImportPolicy->itemData(i).value<MACAddressImportPolicy>();
-            switch (enmPolicy)
-            {
-                case MACAddressImportPolicy_KeepAllMACs:
-                {
-                    m_pComboMACImportPolicy->setItemText(i, tr("Include all network adapter MAC addresses"));
-                    m_pComboMACImportPolicy->setItemData(i, tr("Include all network adapter MAC addresses during importing."), Qt::ToolTipRole);
-                    break;
-                }
-                case MACAddressImportPolicy_KeepNATMACs:
-                {
-                    m_pComboMACImportPolicy->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
-                    m_pComboMACImportPolicy->setItemData(i, tr("Include only NAT network adapter MAC addresses during importing."), Qt::ToolTipRole);
-                    break;
-                }
-                case MACAddressImportPolicy_StripAllMACs:
-                {
-                    m_pComboMACImportPolicy->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
-                    m_pComboMACImportPolicy->setItemData(i, tr("Generate new MAC addresses for all network adapters during importing."), Qt::ToolTipRole);
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
 
     /* Translate additional options label: */
     if (m_pLabelAdditionalOptions)
@@ -388,51 +385,31 @@ void UIWizardImportAppPageExpert::retranslateUi()
         m_pCheckboxImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
     }
 
-    /* Update page appearance: */
-    updatePageAppearance();
+    /* Translate separate stuff: */
+    retranslateMACImportPolicyCombo(m_pComboMACImportPolicy);
 
     /* Update tool-tips: */
-    updateSourceComboToolTip();
+    updateSourceComboToolTip(m_pSourceComboBox);
+    updateMACImportPolicyComboToolTip(m_pComboMACImportPolicy);
 }
 
 void UIWizardImportAppPageExpert::initializePage()
 {
+    /* Choose 1st tool to be chosen initially: */
+    m_pToolBox->setCurrentPage(0);
     /* Populate sources: */
-    populateSources();
-    /* Populate profiles: */
-    populateProfiles();
-    /* Populate profile: */
-    populateProfile();
-    /* Populate profile instances: */
-    populateProfileInstances();
-    /* Populate form properties: */
-    populateFormProperties();
-    refreshFormPropertiesTable();
-
-    /* Populate MAC address import combo: */
-    populateMACAddressImportPolicies();
-
+    populateSources(m_pSourceComboBox, m_fImportFromOCIByDefault);
     /* Translate page: */
     retranslateUi();
 
-    /* If we have file name passed,
-     * check if specified file contains valid appliance: */
-    if (   !m_strFileName.isEmpty()
-        && !qobject_cast<UIWizardImportApp*>(wizard())->setFile(m_strFileName))
-    {
-        wizard()->reject();
-        return;
-    }
+    /* Choose initially focused widget: */
+    if (wizard()->isSourceCloudOne())
+        m_pProfileInstanceList->setFocus();
+    else
+        m_pFileSelector->setFocus();
 
-    /* Acquire appliance: */
-    CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->localAppliance();
-    if (comAppliance.isNotNull())
-    {
-        /* Initialize appliance widget: */
-        m_pApplianceWidget->setAppliance(comAppliance);
-        /* Make sure we initialize appliance widget model with correct base folder path: */
-        sltHandleImportPathEditorChange();
-    }
+    /* Fetch it, asynchronously: */
+    QMetaObject::invokeMethod(this, "sltAsyncInit", Qt::QueuedConnection);
 }
 
 bool UIWizardImportAppPageExpert::isComplete() const
@@ -441,11 +418,11 @@ bool UIWizardImportAppPageExpert::isComplete() const
     bool fResult = true;
 
     /* Check whether there was cloud source selected: */
-    if (isSourceCloudOne())
-        fResult =    m_comCloudAppliance.isNotNull()
-                  && m_comVSDForm.isNotNull();
+    if (wizard()->isSourceCloudOne())
+        fResult =    wizard()->cloudAppliance().isNotNull()
+                  && wizard()->vsdImportForm().isNotNull();
     else
-        fResult = qobject_cast<UIWizardImportApp*>(wizard())->isValid();
+        fResult = wizard()->localAppliance().isNotNull();
 
     /* Return result: */
     return fResult;
@@ -456,17 +433,14 @@ bool UIWizardImportAppPageExpert::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
-
     /* Check whether there was cloud source selected: */
-    if (fieldImp("isSourceCloudOne").toBool())
+    if (wizard()->isSourceCloudOne())
     {
         /* Make sure table has own data committed: */
         m_pFormEditor->makeSureEditorDataCommitted();
 
         /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+        CVirtualSystemDescriptionForm comForm = wizard()->vsdImportForm();
         fResult = comForm.isNotNull();
 
         /* Give changed VSD back to appliance: */
@@ -486,40 +460,60 @@ bool UIWizardImportAppPageExpert::validatePage()
 
     /* Try to import appliance: */
     if (fResult)
-        fResult = qobject_cast<UIWizardImportApp*>(wizard())->importAppliance();
-
-    /* Unlock finish button: */
-    endProcessing();
+        fResult = wizard()->importAppliance();
 
     /* Return result: */
     return fResult;
 }
 
-void UIWizardImportAppPageExpert::updatePageAppearance()
+void UIWizardImportAppPageExpert::sltAsyncInit()
 {
-    /* Call to base-class: */
-    UIWizardImportAppPage1::updatePageAppearance();
-    UIWizardImportAppPage2::updatePageAppearance();
+    /* If we have file name passed,
+     * check if specified file contains valid appliance: */
+    if (   !m_strFileName.isEmpty()
+        && !wizard()->setFile(m_strFileName))
+    {
+        wizard()->reject();
+        return;
+    }
 
-    /* Update page appearance according to chosen storage-type: */
-    if (isSourceCloudOne())
-        m_pProfileInstanceList->setFocus();
-    else
-        m_pFileSelector->setFocus();
+    /* Refresh page widgets: */
+    sltHandleSourceComboChange();
 }
 
 void UIWizardImportAppPageExpert::sltHandleSourceComboChange()
 {
     /* Update combo tool-tip: */
-    updateSourceComboToolTip();
+    updateSourceComboToolTip(m_pSourceComboBox);
 
-    /* Refresh required settings: */
-    updatePageAppearance();
-    populateProfiles();
-    populateProfile();
-    populateProfileInstances();
-    populateFormProperties();
-    refreshFormPropertiesTable();
+    /* Update wizard fields: */
+    wizard()->setSourceCloudOne(isSourceCloudOne(m_pSourceComboBox));
+
+    /* Refresh page widgets: */
+    UIWizardImportAppPage1::refreshStackedWidget(m_pSettingsWidget1,
+                                                 wizard()->isSourceCloudOne());
+    UIWizardImportAppPage2::refreshStackedWidget(m_pSettingsWidget2,
+                                                 wizard()->isSourceCloudOne());
+
+    // WORKAROUND:
+    // We want to free some vertical space from m_pSettingsWidget1:
+    const bool fCloudCase = wizard()->isSourceCloudOne();
+    m_pProfileComboBox->setVisible(fCloudCase);
+    m_pProfileToolButton->setVisible(fCloudCase);
+    m_pProfileInstanceList->setVisible(fCloudCase);
+
+    /* Refresh local stuff: */
+    sltHandleImportedFileSelectorChange();
+    refreshMACAddressImportPolicies(m_pComboMACImportPolicy,
+                                    wizard()->isSourceCloudOne());
+    sltHandleMACImportPolicyComboChange();
+    sltHandleImportHDsAsVDICheckBoxChange();
+
+    /* Refresh cloud stuff: */
+    refreshProfileCombo(m_pProfileComboBox,
+                        source(m_pSourceComboBox),
+                        wizard()->isSourceCloudOne());
+    sltHandleProfileComboChange();
 
     /* Notify about changes: */
     emit completeChanged();
@@ -531,15 +525,16 @@ void UIWizardImportAppPageExpert::sltHandleImportedFileSelectorChange()
     if (m_pFileSelector->isModified())
     {
         /* Create local appliance: */
-        qobject_cast<UIWizardImportApp*>(wizard())->setFile(m_pFileSelector->path());
+        wizard()->setFile(path(m_pFileSelector));
         m_pFileSelector->resetModified();
     }
 
-    /* Acquire appliance: */
-    CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->localAppliance();
-    /* Initialize appliance widget: */
-    m_pApplianceWidget->setAppliance(comAppliance);
-    /* Make sure we initialize appliance widget model with correct base folder path: */
+    /* Refresh appliance widget: */
+    refreshApplianceWidget(m_pApplianceWidget,
+                           wizard()->localAppliance(),
+                           wizard()->isSourceCloudOne());
+
+    /* Update import path: */
     sltHandleImportPathEditorChange();
 
     /* Notify about changes: */
@@ -548,11 +543,12 @@ void UIWizardImportAppPageExpert::sltHandleImportedFileSelectorChange()
 
 void UIWizardImportAppPageExpert::sltHandleProfileComboChange()
 {
-    /* Refresh required settings: */
-    populateProfile();
-    populateProfileInstances();
-    populateFormProperties();
-    refreshFormPropertiesTable();
+    /* Refresh profile instances: */
+    refreshCloudProfileInstances(m_pProfileInstanceList,
+                                 source(m_pSourceComboBox),
+                                 profileName(m_pProfileComboBox),
+                                 wizard()->isSourceCloudOne());
+    sltHandleInstanceListChange();
 
     /* Notify about changes: */
     emit completeChanged();
@@ -567,8 +563,23 @@ void UIWizardImportAppPageExpert::sltHandleProfileButtonClick()
 
 void UIWizardImportAppPageExpert::sltHandleInstanceListChange()
 {
-    populateFormProperties();
-    refreshFormPropertiesTable();
+    /* Create cloud appliance and VSD import form: */
+    CAppliance comAppliance;
+    CVirtualSystemDescriptionForm comForm;
+    refreshCloudStuff(comAppliance,
+                      comForm,
+                      wizard(),
+                      machineId(m_pProfileInstanceList),
+                      source(m_pSourceComboBox),
+                      profileName(m_pProfileComboBox),
+                      wizard()->isSourceCloudOne());
+    wizard()->setCloudAppliance(comAppliance);
+    wizard()->setVsdImportForm(comForm);
+
+    /* Refresh form properties table: */
+    refreshFormPropertiesTable(m_pFormEditor,
+                               wizard()->vsdImportForm(),
+                               wizard()->isSourceCloudOne());
 
     /* Notify about changes: */
     emit completeChanged();
@@ -583,5 +594,15 @@ void UIWizardImportAppPageExpert::sltHandleImportPathEditorChange()
 
 void UIWizardImportAppPageExpert::sltHandleMACImportPolicyComboChange()
 {
-    updateMACImportPolicyComboToolTip();
+    /* Update combo tool-tip: */
+    updateMACImportPolicyComboToolTip(m_pComboMACImportPolicy);
+
+    /* Update wizard fields: */
+    wizard()->setMACAddressImportPolicy(macAddressImportPolicy(m_pComboMACImportPolicy));
+}
+
+void UIWizardImportAppPageExpert::sltHandleImportHDsAsVDICheckBoxChange()
+{
+    /* Update wizard fields: */
+    wizard()->setImportHDsAsVDI(isImportHDsAsVDI(m_pCheckboxImportHDsAsVDI));
 }

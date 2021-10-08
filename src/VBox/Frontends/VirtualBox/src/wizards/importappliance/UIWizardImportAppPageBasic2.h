@@ -22,8 +22,8 @@
 #endif
 
 /* GUI includes: */
+#include "UINativeWizardPage.h"
 #include "UIWizardImportApp.h"
-#include "UIWizardPage.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -35,33 +35,101 @@ class UIApplianceImportEditorWidget;
 class UIFilePathSelector;
 class UIFormEditorWidget;
 
-/** UIWizardPageBase extension for 2nd page of the Import Appliance wizard. */
-class UIWizardImportAppPage2 : public UIWizardPageBase
+/** Certificate text template types. */
+enum kCertText
 {
-protected:
+    kCertText_Uninitialized = 0,
+    kCertText_Unsigned,
+    kCertText_IssuedTrusted,
+    kCertText_IssuedExpired,
+    kCertText_IssuedUnverified,
+    kCertText_SelfSignedTrusted,
+    kCertText_SelfSignedExpired,
+    kCertText_SelfSignedUnverified
+};
 
-    /** Constructs 2nd page base. */
-    UIWizardImportAppPage2();
+/** Namespace for 2nd basic page of the Import Appliance wizard. */
+namespace UIWizardImportAppPage2
+{
+    /** Refresh stacked widget. */
+    void refreshStackedWidget(QStackedWidget *pStackedWidget,
+                              bool fIsSourceCloudOne);
 
-    /** Populates MAC address import policies. */
-    void populateMACAddressImportPolicies();
-
-    /** Updates page appearance. */
-    virtual void updatePageAppearance();
-
-    /** Updates MAC import policy combo tool-tips. */
-    void updateMACImportPolicyComboToolTip();
+    /** Refreshes appliance widget. */
+    void refreshApplianceWidget(UIApplianceImportEditorWidget *pApplianceWidget,
+                                const CAppliance &comAppliance,
+                                bool fIsSourceCloudOne);
+    /** Refresh MAC address import policies. */
+    void refreshMACAddressImportPolicies(QIComboBox *pCombo,
+                                         bool fIsSourceCloudOne);
 
     /** Refreshes form properties table. */
-    void refreshFormPropertiesTable();
+    void refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
+                                    const CVirtualSystemDescriptionForm &comForm,
+                                    bool fIsSourceCloudOne);
 
     /** Returns MAC address import policy. */
-    MACAddressImportPolicy macAddressImportPolicy() const;
-    /** Defines MAC address import @a enmPolicy. */
-    void setMACAddressImportPolicy(MACAddressImportPolicy enmPolicy);
+    MACAddressImportPolicy macAddressImportPolicy(QIComboBox *pCombo);
+    /** Returns whether hard disks should be imported as VDIs. */
+    bool isImportHDsAsVDI(QCheckBox *pCheckBox);
 
-    /** Returns whether hard disks should be inported as VDIs. */
-    bool importHDsAsVDI() const;
+    /** Translates MAC import policy combo. */
+    void retranslateMACImportPolicyCombo(QIComboBox *pCombo);
+    /** Translates certificate label. */
+    void retranslateCertificateLabel(QLabel *pLabel, const kCertText &enmType, const QString &strSignedBy);
+
+    /** Updates MAC import policy combo tool-tips. */
+    void updateMACImportPolicyComboToolTip(QIComboBox *pCombo);
+}
+
+/** UINativeWizardPage extension for 2nd basic page of the Import Appliance wizard,
+  * based on UIWizardImportAppPage2 namespace functions. */
+class UIWizardImportAppPageBasic2 : public UINativeWizardPage
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs 2nd basic page.
+      * @param  strFileName  Brings appliance file name. */
+    UIWizardImportAppPageBasic2(const QString &strFileName);
+
+protected:
+
+    /** Returns wizard this page belongs to. */
+    UIWizardImportApp *wizard() const;
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override final */;
+
+    /** Performs page initialization. */
+    virtual void initializePage() /* override final */;
+
+    /** Performs page validation. */
+    virtual bool validatePage() /* override final */;
+
+private slots:
+
+    /** Inits page async way. */
+    void sltAsyncInit();
+
+    /** Handles import path editor change. */
+    void sltHandleImportPathEditorChange();
+    /** Handles MAC address import policy combo change. */
+    void sltHandleMACImportPolicyComboChange();
+    /** Handles import HDs as VDI check-box change. */
+    void sltHandleImportHDsAsVDICheckBoxChange();
+
+private:
+
+    /** Handles appliance certificate. */
+    void handleApplianceCertificate();
+
+    /** Handles the appliance file name. */
+    QString  m_strFileName;
+
+    /** Holds the description label instance. */
+    QIRichTextLabel *m_pLabelDescription;
 
     /** Holds the settings widget 2 instance. */
     QStackedWidget *m_pSettingsWidget2;
@@ -80,70 +148,17 @@ protected:
     QLabel                        *m_pLabelAdditionalOptions;
     /** Holds the 'import HDs as VDI' checkbox instance. */
     QCheckBox                     *m_pCheckboxImportHDsAsVDI;
-
-    /** Holds the Form Editor widget instance. */
-    UIFormEditorWidget *m_pFormEditor;
-};
-
-/** UIWizardPage extension for 2nd page of the Import Appliance wizard, extends UIWizardImportAppPage2 as well. */
-class UIWizardImportAppPageBasic2 : public UIWizardPage, public UIWizardImportAppPage2
-{
-    Q_OBJECT;
-    Q_PROPERTY(MACAddressImportPolicy macAddressImportPolicy READ macAddressImportPolicy);
-    Q_PROPERTY(bool importHDsAsVDI READ importHDsAsVDI);
-
-public:
-
-    /** Constructs 2nd basic page.
-      * @param  strFileName  Brings appliance file name. */
-    UIWizardImportAppPageBasic2(const QString &strFileName);
-
-protected:
-
-    /** Allows to access 'field()' from base part. */
-    virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
-
-    /** Performs page initialization. */
-    virtual void initializePage() /* override final */;
-    /** Performs page cleanup. */
-    virtual void cleanupPage() /* override final */;
-
-    /** Performs page validation. */
-    virtual bool validatePage() /* override final */;
-
-    /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override final */;
-
-private slots:
-
-    /** Handles import path editor change. */
-    void sltHandleImportPathEditorChange();
-    /** Handles MAC address import policy combo change. */
-    void sltHandleMACImportPolicyComboChange();
-
-private:
-
-    /** Handles the appliance file name. */
-    QString  m_strFileName;
-
-    /** Holds the description label instance. */
-    QIRichTextLabel *m_pLabelDescription;
-
     /** Holds the signature/certificate info label instance. */
-    QLabel *m_pCertLabel;
+    QLabel                        *m_pCertLabel;
 
     /** Holds the certificate text template type. */
-    enum {
-        kCertText_Uninitialized = 0, kCertText_Unsigned,
-        kCertText_IssuedTrusted,     kCertText_IssuedExpired,     kCertText_IssuedUnverified,
-        kCertText_SelfSignedTrusted, kCertText_SelfSignedExpired, kCertText_SelfSignedUnverified
-    } m_enmCertText;
+    kCertText  m_enmCertText;
 
     /** Holds the "signed by" information. */
     QString  m_strSignedBy;
+
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidget *m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h */

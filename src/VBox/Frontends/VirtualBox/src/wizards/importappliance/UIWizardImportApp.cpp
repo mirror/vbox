@@ -28,7 +28,6 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIFileDialog.h"
-#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIWizardImportApp.h"
@@ -149,45 +148,20 @@ private:
 UIWizardImportApp::UIWizardImportApp(QWidget *pParent,
                                      bool fImportFromOCIByDefault,
                                      const QString &strFileName)
-    : UIWizard(pParent, WizardType_ImportAppliance)
+    : UINativeWizard(pParent, WizardType_ImportAppliance, WizardMode_Auto, "ovf")
     , m_fImportFromOCIByDefault(fImportFromOCIByDefault)
     , m_strFileName(strFileName)
+    , m_fSourceCloudOne(false)
+    , m_enmMacAddressImportPolicy(MACAddressImportPolicy_MAX)
+    , m_fImportHDsAsVDI(false)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/wizard_ovf_import.png");
+    setPixmapName(":/wizard_ovf_import.png");
 #else /* VBOX_WS_MAC */
     /* Assign background image: */
-    assignBackground(":/wizard_ovf_import_bg.png");
+    setPixmapName(":/wizard_ovf_import_bg.png");
 #endif /* VBOX_WS_MAC */
-}
-
-void UIWizardImportApp::prepare()
-{
-    enableHelpButton("ovf");
-    /* Create corresponding pages: */
-    switch (mode())
-    {
-        case WizardMode_Basic:
-        {
-            if (m_fImportFromOCIByDefault || m_strFileName.isEmpty())
-                setPage(Page1, new UIWizardImportAppPageBasic1(m_fImportFromOCIByDefault));
-            setPage(Page2, new UIWizardImportAppPageBasic2(m_strFileName));
-            break;
-        }
-        case WizardMode_Expert:
-        {
-            setPage(PageExpert, new UIWizardImportAppPageExpert(m_fImportFromOCIByDefault, m_strFileName));
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed(("Invalid mode: %d", mode()));
-            break;
-        }
-    }
-    /* Call to base-class: */
-    UIWizard::prepare();
 }
 
 bool UIWizardImportApp::setFile(const QString &strName)
@@ -239,25 +213,19 @@ bool UIWizardImportApp::setFile(const QString &strName)
     return true;
 }
 
-bool UIWizardImportApp::isValid() const
-{
-    return m_comLocalAppliance.isNotNull();
-}
-
 bool UIWizardImportApp::importAppliance()
 {
     /* Check whether there was cloud source selected: */
-    if (field("isSourceCloudOne").toBool())
+    if (isSourceCloudOne())
     {
         /* Make sure cloud appliance valid: */
-        CAppliance comAppliance = field("cloudAppliance").value<CAppliance>();
-        AssertReturn(comAppliance.isNotNull(), false);
+        AssertReturn(m_comCloudAppliance.isNotNull(), false);
 
         /* No options for cloud VMs for now: */
         QVector<KImportOptions> options;
 
         /* Import appliance: */
-        UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(comAppliance,
+        UINotificationProgressApplianceImport *pNotification = new UINotificationProgressApplianceImport(m_comCloudAppliance,
                                                                                                          options);
         gpNotificationCenter->append(pNotification);
 
@@ -282,13 +250,13 @@ bool UIWizardImportApp::importAppliance()
 
         /* Gather import options: */
         QVector<KImportOptions> options;
-        switch (field("macAddressImportPolicy").value<MACAddressImportPolicy>())
+        switch (macAddressImportPolicy())
         {
             case MACAddressImportPolicy_KeepAllMACs: options.append(KImportOptions_KeepAllMACs); break;
             case MACAddressImportPolicy_KeepNATMACs: options.append(KImportOptions_KeepNATMACs); break;
             default: break;
         }
-        if (field("importHDsAsVDI").toBool())
+        if (isImportHDsAsVDI())
             options.append(KImportOptions_ImportToVDI);
 
         /* Import appliance: */
@@ -301,14 +269,40 @@ bool UIWizardImportApp::importAppliance()
     }
 }
 
+void UIWizardImportApp::populatePages()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case WizardMode_Basic:
+        {
+            if (m_fImportFromOCIByDefault || m_strFileName.isEmpty())
+                addPage(new UIWizardImportAppPageBasic1(m_fImportFromOCIByDefault));
+            addPage(new UIWizardImportAppPageBasic2(m_strFileName));
+            break;
+        }
+        case WizardMode_Expert:
+        {
+            addPage(new UIWizardImportAppPageExpert(m_fImportFromOCIByDefault, m_strFileName));
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
+    }
+}
+
 void UIWizardImportApp::retranslateUi()
 {
     /* Call to base-class: */
-    UIWizard::retranslateUi();
+    UINativeWizard::retranslateUi();
 
     /* Translate wizard: */
     setWindowTitle(tr("Import Virtual Appliance"));
-    setButtonText(QWizard::FinishButton, tr("Import"));
+    /// @todo implement this?
+    //setButtonText(QWizard::FinishButton, tr("Import"));
 }
 
 QList<QPair<QString, QString> > UIWizardImportApp::licenseAgreements() const

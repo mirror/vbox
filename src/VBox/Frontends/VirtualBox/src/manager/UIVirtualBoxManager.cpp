@@ -879,11 +879,9 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
-    UISafePointerWizardImportApp pWizard = new UIWizardImportApp(pWizardParent, false /* OCI by default? */, strTmpFile);
+    UINativeWizardPointer pWizard = new UIWizardImportApp(pWizardParent, false /* OCI by default? */, strTmpFile);
     windowManager().registerNewParent(pWizard, pWizardParent);
-    pWizard->prepare();
-    if (strFileName.isEmpty() || pWizard->isValid())
-        pWizard->exec();
+    pWizard->exec();
     delete pWizard;
 }
 

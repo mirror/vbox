@@ -22,11 +22,12 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizard.h"
+#include "UINativeWizard.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CAppliance.h"
+#include "CVirtualSystemDescriptionForm.h"
 
 /** MAC address policies. */
 enum MACAddressImportPolicy
@@ -39,24 +40,11 @@ enum MACAddressImportPolicy
 Q_DECLARE_METATYPE(MACAddressImportPolicy);
 
 /** Import Appliance wizard. */
-class UIWizardImportApp : public UIWizard
+class UIWizardImportApp : public UINativeWizard
 {
     Q_OBJECT;
 
 public:
-
-    /** Basic page IDs. */
-    enum
-    {
-        Page1,
-        Page2
-    };
-
-    /** Expert page IDs. */
-    enum
-    {
-        PageExpert
-    };
 
     /** Constructs Import Appliance wizard passing @a pParent to the base-class.
       * @param  fImportFromOCIByDefault  Brings whether wizard should start with OCI target.
@@ -65,8 +53,13 @@ public:
                       bool fImportFromOCIByDefault,
                       const QString &strFileName);
 
-    /** Prepares all. */
-    virtual void prepare() /* override */;
+    /** @name Common fields.
+      * @{ */
+        /** Returns whether source is cloud one. */
+        bool isSourceCloudOne() const { return m_fSourceCloudOne; }
+        /** Defines whether source is @a fCloudOne. */
+        void setSourceCloudOne(bool fCloudOne) { m_fSourceCloudOne = fCloudOne; }
+    /** @} */
 
     /** @name Local import fields.
       * @{ */
@@ -74,8 +67,29 @@ public:
         CAppliance localAppliance() const { return m_comLocalAppliance; }
         /** Defines file @a strName. */
         bool setFile(const QString &strName);
-        /** Returns whether appliance is valid. */
-        bool isValid() const;
+
+        /** Returns MAC address import policy. */
+        MACAddressImportPolicy macAddressImportPolicy() const { return m_enmMacAddressImportPolicy; }
+        /** Defines MAC address import @a enmPolicy. */
+        void setMACAddressImportPolicy(MACAddressImportPolicy enmPolicy) { m_enmMacAddressImportPolicy = enmPolicy; }
+
+        /** Returns whether hard disks should be imported as VDIs. */
+        bool isImportHDsAsVDI() const { return m_fImportHDsAsVDI; }
+        /** Defines whether hard disks should be imported @a fAsVDI. */
+        void setImportHDsAsVDI(bool fAsVDI) { m_fImportHDsAsVDI = fAsVDI; }
+    /** @} */
+
+    /** @name Cloud import fields.
+      * @{ */
+        /** Returns cloud Appliance object. */
+        CAppliance cloudAppliance() const { return m_comCloudAppliance; }
+        /** Defines cloud @a comAppliance object. */
+        void setCloudAppliance(const CAppliance &comAppliance) { m_comCloudAppliance = comAppliance; }
+
+        /** Returns Virtual System Description import form object. */
+        CVirtualSystemDescriptionForm vsdImportForm() const { return m_comVsdImportForm; }
+        /** Defines Virtual System Description import @a comForm object. */
+        void setVsdImportForm(const CVirtualSystemDescriptionForm &comForm) { m_comVsdImportForm = comForm; }
     /** @} */
 
     /** @name Auxiliary stuff.
@@ -88,6 +102,9 @@ protected:
 
     /** @name Inherited stuff.
       * @{ */
+        /** Populates pages. */
+        virtual void populatePages() /* override final */;
+
         /** Handles translation event. */
         virtual void retranslateUi() /* override final */;
     /** @} */
@@ -108,14 +125,32 @@ private:
         QString  m_strFileName;
     /** @} */
 
+    /** @name Common fields.
+      * @{ */
+        /** */
+        bool  m_fSourceCloudOne;
+    /** @} */
+
     /** @name Local import fields.
       * @{ */
-        /** Holds the local appliance wrapper instance. */
+        /** Holds the local appliance wrapper object. */
         CAppliance  m_comLocalAppliance;
+
+        /** Holds the MAC address import policy. */
+        MACAddressImportPolicy  m_enmMacAddressImportPolicy;
+
+        /** Holds whether hard disks should be imported as VDIs. */
+        bool  m_fImportHDsAsVDI;
+    /** @} */
+
+    /** @name Cloud import fields.
+      * @{ */
+        /** Holds the cloud appliance wrapper object. */
+        CAppliance  m_comCloudAppliance;
+
+        /** Holds the Virtual System Description import form wrapper object. */
+        CVirtualSystemDescriptionForm  m_comVsdImportForm;
     /** @} */
 };
-
-/** Safe pointer to appliance wizard. */
-typedef QPointer<UIWizardImportApp> UISafePointerWizardImportApp;
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportApp_h */

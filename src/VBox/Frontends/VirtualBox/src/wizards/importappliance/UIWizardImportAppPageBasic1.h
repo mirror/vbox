@@ -22,27 +22,20 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardPage.h"
-
-/* COM includes: */
-#include "COMEnums.h"
-#include "CAppliance.h"
-#include "CCloudClient.h"
-#include "CCloudProfile.h"
-#include "CCloudProvider.h"
-#include "CCloudProviderManager.h"
-#include "CVirtualSystemDescriptionForm.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
 class QListWidget;
-class QTableWidget;
 class QStackedWidget;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 class UIEmptyFilePathSelector;
+class UIWizardImportApp;
+class CAppliance;
+class CVirtualSystemDescriptionForm;
 
 /** Source combo data fields. */
 enum
@@ -58,64 +51,105 @@ enum
     ProfileData_Name = Qt::UserRole + 1
 };
 
-/** UIWizardPageBase extension for 1st page of the Import Appliance wizard. */
-class UIWizardImportAppPage1 : public UIWizardPageBase
+/** Namespace for 1st basic page of the Import Appliance wizard. */
+namespace UIWizardImportAppPage1
 {
-protected:
-
-    /** Constructs 1st page base. */
-    UIWizardImportAppPage1(bool fImportFromOCIByDefault);
-
     /** Populates sources. */
-    void populateSources();
-    /** Populates profiles. */
-    void populateProfiles();
-    /** Populates profile. */
-    void populateProfile();
-    /** Populates profile instances. */
-    void populateProfileInstances();
-    /** Populates form properties. */
-    void populateFormProperties();
+    void populateSources(QIComboBox *pCombo,
+                         bool fImportFromOCIByDefault);
 
-    /** Updates page appearance. */
-    virtual void updatePageAppearance();
-
-    /** Updates source combo tool-tips. */
-    void updateSourceComboToolTip();
-
-    /** Defines @a strSource. */
-    void setSource(const QString &strSource);
-    /** Returns source. */
-    QString source() const;
+    /** Returns current source of @a pCombo specified. */
+    QString source(QIComboBox *pCombo);
     /** Returns whether source under certain @a iIndex is cloud one. */
-    bool isSourceCloudOne(int iIndex = -1) const;
+    bool isSourceCloudOne(QIComboBox *pCombo, int iIndex = -1);
+
+    /** Refresh stacked widget. */
+    void refreshStackedWidget(QStackedWidget *pStackedWidget,
+                              bool fIsFormatCloudOne);
+
+    /** Refresh profile combo. */
+    void refreshProfileCombo(QIComboBox *pCombo,
+                             const QString &strSource,
+                             bool fIsSourceCloudOne);
+    /** Refresh profile instances. */
+    void refreshCloudProfileInstances(QListWidget *pListWidget,
+                                      const QString &strSource,
+                                      const QString &strProfileName,
+                                      bool fIsSourceCloudOne);
+    /** Refresh cloud stuff. */
+    void refreshCloudStuff(CAppliance &comCloudAppliance,
+                           CVirtualSystemDescriptionForm &comCloudVsdImportForm,
+                           QWidget *pParent,
+                           const QString &strMachineId,
+                           const QString &strSource,
+                           const QString &strProfileName,
+                           bool fIsSourceCloudOne);
+
+    /** Returns imported file path. */
+    QString path(UIEmptyFilePathSelector *pFileSelector);
 
     /** Returns profile name. */
-    QString profileName() const;
+    QString profileName(QIComboBox *pCombo);
     /** Returns machine ID. */
-    QString machineId() const;
-    /** Returns Cloud Profile object. */
-    CCloudProfile profile() const;
-    /** Returns Cloud Appliance object. */
-    CAppliance cloudAppliance() const;
-    /** Returns Virtual System Description Form object. */
-    CVirtualSystemDescriptionForm vsdForm() const;
+    QString machineId(QListWidget *pListWidget);
+
+    /** Updates source combo tool-tips. */
+    void updateSourceComboToolTip(QIComboBox *pCombo);
+}
+
+/** UINativeWizardPage extension for 1st basic page of the Import Appliance wizard,
+  * based on UIWizardImportAppPage1 namespace functions. */
+class UIWizardImportAppPageBasic1 : public UINativeWizardPage
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs 1st basic page.
+      * @param  fImportFromOCIByDefault  Brings whether we should propose import from OCI by default. */
+    UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault);
+
+protected:
+
+    /** Returns wizard this page belongs to. */
+    UIWizardImportApp *wizard() const;
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override final */;
+
+    /** Performs page initialization. */
+    virtual void initializePage() /* override final */;
+
+    /** Returns whether page is complete. */
+    virtual bool isComplete() const /* override final */;
+
+    /** Performs page validation. */
+    virtual bool validatePage() /* override final */;
+
+private slots:
+
+    /** Handles source combo change. */
+    void sltHandleSourceComboChange();
+
+    /** Handles profile combo change. */
+    void sltHandleProfileComboChange();
+    /** Handles profile tool-button click. */
+    void sltHandleProfileButtonClick();
+
+private:
+
+    /** Update local stuff. */
+    void updateLocalStuff();
+    /** Updates cloud stuff. */
+    void updateCloudStuff();
 
     /** Holds whether default source should be Import from OCI. */
     bool  m_fImportFromOCIByDefault;
 
-    /** Holds the Cloud Provider Manager reference. */
-    CCloudProviderManager          m_comCloudProviderManager;
-    /** Holds the Cloud Provider object reference. */
-    CCloudProvider                 m_comCloudProvider;
-    /** Holds the Cloud Profile object reference. */
-    CCloudProfile                  m_comCloudProfile;
-    /** Holds the Cloud Client object reference. */
-    CCloudClient                   m_comCloudClient;
-    /** Holds the Cloud Appliance object reference. */
-    CAppliance                     m_comCloudAppliance;
-    /** Holds the Virtual System Description Form object reference. */
-    CVirtualSystemDescriptionForm  m_comVSDForm;
+    /** Holds the main label instance. */
+    QIRichTextLabel *m_pLabelMain;
+    /** Holds the description label instance. */
+    QIRichTextLabel *m_pLabelDescription;
 
     /** Holds the source layout instance. */
     QGridLayout *m_pSourceLayout;
@@ -146,60 +180,6 @@ protected:
     QLabel       *m_pProfileInstanceLabel;
     /** Holds the profile instance list instance. */
     QListWidget  *m_pProfileInstanceList;
-};
-
-/** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardImportAppPage1 as well. */
-class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAppPage1
-{
-    Q_OBJECT;
-    Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
-    Q_PROPERTY(CCloudProfile profile READ profile);
-    Q_PROPERTY(CAppliance cloudAppliance READ cloudAppliance);
-    Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
-    Q_PROPERTY(QString machineId READ machineId);
-
-public:
-
-    /** Constructs 1st basic page.
-      * @param  fImportFromOCIByDefault  Brings whether we should propose import from OCI by default. */
-    UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault);
-
-protected:
-
-    /** Allows access wizard from base part. */
-    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override final */;
-
-    /** Performs page initialization. */
-    virtual void initializePage() /* override final */;
-
-    /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override final */;
-
-    /** Performs page validation. */
-    virtual bool validatePage() /* override final */;
-
-    /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override final */;
-
-private slots:
-
-    /** Handles source combo change. */
-    void sltHandleSourceComboChange();
-
-    /** Handles profile combo change. */
-    void sltHandleProfileComboChange();
-    /** Handles profile tool-button click. */
-    void sltHandleProfileButtonClick();
-
-private:
-
-    /** Holds the main label instance. */
-    QIRichTextLabel *m_pLabelMain;
-    /** Holds the description label instance. */
-    QIRichTextLabel *m_pLabelDescription;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h */

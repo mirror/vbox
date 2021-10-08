@@ -22,25 +22,28 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardImportAppPageBasic1.h"
-#include "UIWizardImportAppPageBasic2.h"
+#include "UINativeWizardPage.h"
 
 /* Forward declarations: */
-class QGroupBox;
+class QCheckBox;
+class QGridLayout;
+class QLabel;
+class QListWidget;
+class QStackedWidget;
+class QIComboBox;
+class QIToolButton;
+class UIApplianceImportEditorWidget;
+class UIEmptyFilePathSelector;
+class UIFilePathSelector;
+class UIFormEditorWidget;
+class UIToolBox;
+class UIWizardImportApp;
 
-/** UIWizardPage extension for UIWizardImportAppPage1 and UIWizardImportAppPage2. */
-class UIWizardImportAppPageExpert : public UIWizardPage,
-                                    public UIWizardImportAppPage1,
-                                    public UIWizardImportAppPage2
+/** UINativeWizardPage extension for expert page of the Import Appliance wizard,
+  * based on UIWizardImportAppPage1 & UIWizardImportAppPage2 namespace functions. */
+class UIWizardImportAppPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;
-    Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
-    Q_PROPERTY(CCloudProfile profile READ profile);
-    Q_PROPERTY(CAppliance cloudAppliance READ cloudAppliance);
-    Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
-    Q_PROPERTY(QString machineId READ machineId);
-    Q_PROPERTY(MACAddressImportPolicy macAddressImportPolicy READ macAddressImportPolicy);
-    Q_PROPERTY(bool importHDsAsVDI READ importHDsAsVDI);
 
 public:
 
@@ -51,10 +54,8 @@ public:
 
 protected:
 
-    /** Allows access wizard from base part. */
-    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
-    /** Allows to access 'field()' from base part. */
-    virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
+    /** Returns wizard this page belongs to. */
+    UIWizardImportApp *wizard() const;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override final */;
@@ -68,10 +69,10 @@ protected:
     /** Performs page validation. */
     virtual bool validatePage() /* override final */;
 
-    /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override final */;
-
 private slots:
+
+    /** Inits page async way. */
+    void sltAsyncInit();
 
     /** Handles source combo change. */
     void sltHandleSourceComboChange();
@@ -87,19 +88,67 @@ private slots:
 
     /** Handles import path editor change. */
     void sltHandleImportPathEditorChange();
-
-    /** Handles MAC address import policy combo changes. */
+    /** Handles MAC address import policy combo change. */
     void sltHandleMACImportPolicyComboChange();
+    /** Handles import HDs as VDI check-box change. */
+    void sltHandleImportHDsAsVDICheckBoxChange();
 
 private:
 
+    /** Holds whether default source should be Import from OCI. */
+    bool     m_fImportFromOCIByDefault;
     /** Handles the appliance file name. */
     QString  m_strFileName;
 
-    /** Holds the source container instance. */
-    QGroupBox *m_pCntSource;
-    /** Holds the settings container instance. */
-    QGroupBox *m_pSettingsCnt;
+    /** Holds the tool-box instance. */
+    UIToolBox *m_pToolBox;
+
+    /** Holds the source layout instance. */
+    QGridLayout *m_pSourceLayout;
+    /** Holds the source type label instance. */
+    QLabel      *m_pSourceLabel;
+    /** Holds the source type combo-box instance. */
+    QIComboBox  *m_pSourceComboBox;
+
+    /** Holds the settings widget 1 instance. */
+    QStackedWidget *m_pSettingsWidget1;
+
+    /** Holds the local container layout instance. */
+    QGridLayout             *m_pLocalContainerLayout;
+    /** Holds the file selector instance. */
+    UIEmptyFilePathSelector *m_pFileSelector;
+
+    /** Holds the cloud container layout instance. */
+    QGridLayout  *m_pCloudContainerLayout;
+    /** Holds the profile combo-box instance. */
+    QIComboBox   *m_pProfileComboBox;
+    /** Holds the profile management tool-button instance. */
+    QIToolButton *m_pProfileToolButton;
+    /** Holds the profile instance list instance. */
+    QListWidget  *m_pProfileInstanceList;
+
+    /** Holds the settings widget 2 instance. */
+    QStackedWidget *m_pSettingsWidget2;
+
+    /** Holds the appliance widget instance. */
+    UIApplianceImportEditorWidget *m_pApplianceWidget;
+    /** Holds the import file-path label instance. */
+    QLabel                        *m_pLabelImportFilePath;
+    /** Holds the import file-path editor instance. */
+    UIFilePathSelector            *m_pEditorImportFilePath;
+    /** Holds the MAC address label instance. */
+    QLabel                        *m_pLabelMACImportPolicy;
+    /** Holds the MAC address combo instance. */
+    QIComboBox                    *m_pComboMACImportPolicy;
+    /** Holds the additional options label instance. */
+    QLabel                        *m_pLabelAdditionalOptions;
+    /** Holds the 'import HDs as VDI' checkbox instance. */
+    QCheckBox                     *m_pCheckboxImportHDsAsVDI;
+    /** Holds the signature/certificate info label instance. */
+    QLabel                        *m_pCertLabel;
+
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidget *m_pFormEditor;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageExpert_h */

@@ -17,9 +17,7 @@
 
 /* Qt includes: */
 #include <QCheckBox>
-#include <QGridLayout>
 #include <QLabel>
-#include <QPointer>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -41,102 +39,251 @@
 #include "CSystemProperties.h"
 #include "CVirtualSystemDescriptionForm.h"
 
+/* Namespaces: */
+using namespace UIWizardImportAppPage2;
+
 
 /*********************************************************************************************************************************
 *   Class UIWizardImportAppPage2 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPage2::UIWizardImportAppPage2()
-    : m_pSettingsWidget2(0)
-    , m_pApplianceWidget(0)
-    , m_pLabelImportFilePath(0)
-    , m_pEditorImportFilePath(0)
-    , m_pLabelMACImportPolicy(0)
-    , m_pComboMACImportPolicy(0)
-    , m_pLabelAdditionalOptions(0)
-    , m_pCheckboxImportHDsAsVDI(0)
-    , m_pFormEditor(0)
+void UIWizardImportAppPage2::refreshStackedWidget(QStackedWidget *pStackedWidget,
+                                                  bool fIsSourceCloudOne)
 {
+    /* Sanity check: */
+    AssertPtrReturnVoid(pStackedWidget);
+
+    /* Update stack appearance according to chosen source: */
+    pStackedWidget->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
-void UIWizardImportAppPage2::populateMACAddressImportPolicies()
+void UIWizardImportAppPage2::refreshApplianceWidget(UIApplianceImportEditorWidget *pApplianceWidget,
+                                                    const CAppliance &comAppliance,
+                                                    bool fIsSourceCloudOne)
 {
-    /* Map known import options to known MAC address import policies: */
-    QMap<KImportOptions, MACAddressImportPolicy> knownOptions;
-    knownOptions[KImportOptions_KeepAllMACs] = MACAddressImportPolicy_KeepAllMACs;
-    knownOptions[KImportOptions_KeepNATMACs] = MACAddressImportPolicy_KeepNATMACs;
+    /* Sanity check: */
+    AssertPtrReturnVoid(pApplianceWidget);
 
-    /* Load currently supported import options: */
-    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-    const QVector<KImportOptions> supportedOptions = comProperties.GetSupportedImportOptions();
-
-    /* Check which of supported options/policies are known: */
-    QList<MACAddressImportPolicy> supportedPolicies;
-    foreach (const KImportOptions &enmOption, supportedOptions)
-        if (knownOptions.contains(enmOption))
-            supportedPolicies << knownOptions.value(enmOption);
-
-    /* Block signals while updating: */
-    m_pComboMACImportPolicy->blockSignals(true);
-
-    /* Cleanup combo: */
-    m_pComboMACImportPolicy->clear();
-
-    /* Add supported policies first: */
-    foreach (const MACAddressImportPolicy &enmPolicy, supportedPolicies)
-        m_pComboMACImportPolicy->addItem(QString(), QVariant::fromValue(enmPolicy));
-
-    /* Add hardcoded policy finally: */
-    m_pComboMACImportPolicy->addItem(QString(), QVariant::fromValue(MACAddressImportPolicy_StripAllMACs));
-
-    /* Set default: */
-    if (supportedPolicies.contains(MACAddressImportPolicy_KeepNATMACs))
-        setMACAddressImportPolicy(MACAddressImportPolicy_KeepNATMACs);
+    /* If source is cloud one: */
+    if (fIsSourceCloudOne)
+    {
+        /* Clear form: */
+        pApplianceWidget->clear();
+    }
+    /* If source is local one: */
     else
-        setMACAddressImportPolicy(MACAddressImportPolicy_StripAllMACs);
-
-    /* Unblock signals after update: */
-    m_pComboMACImportPolicy->blockSignals(false);
+    {
+        /* Make sure appliance widget get new appliance: */
+        if (comAppliance.isNotNull())
+            pApplianceWidget->setAppliance(comAppliance);
+    }
 }
 
-void UIWizardImportAppPage2::updatePageAppearance()
+void UIWizardImportAppPage2::refreshMACAddressImportPolicies(QIComboBox *pCombo,
+                                                             bool fIsSourceCloudOne)
 {
-    /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
-    /* Update page appearance according to chosen source: */
-    m_pSettingsWidget2->setCurrentIndex((int)fIsSourceCloudOne);
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+
+    /* If source is cloud one: */
+    if (fIsSourceCloudOne)
+    {
+        /* Block signals while updating: */
+        pCombo->blockSignals(true);
+
+        /* Clear combo: */
+        pCombo->clear();
+
+        /* Unblock signals after update: */
+        pCombo->blockSignals(false);
+    }
+    /* If source is local one: */
+    else
+    {
+        /* We need top-level parent as well: */
+        QWidget *pParent = pCombo->window();
+        AssertPtrReturnVoid(pParent);
+
+        /* Map known import options to known MAC address import policies: */
+        QMap<KImportOptions, MACAddressImportPolicy> knownOptions;
+        knownOptions[KImportOptions_KeepAllMACs] = MACAddressImportPolicy_KeepAllMACs;
+        knownOptions[KImportOptions_KeepNATMACs] = MACAddressImportPolicy_KeepNATMACs;
+        /* Load currently supported import options: */
+        const QVector<KImportOptions> supportedOptions =
+            uiCommon().virtualBox().GetSystemProperties().GetSupportedImportOptions();
+        /* Check which of supported options/policies are known: */
+        QList<MACAddressImportPolicy> supportedPolicies;
+        foreach (const KImportOptions &enmOption, supportedOptions)
+            if (knownOptions.contains(enmOption))
+                supportedPolicies << knownOptions.value(enmOption);
+        /* Remember current item data to be able to restore it: */
+        MACAddressImportPolicy enmOldData = MACAddressImportPolicy_MAX;
+        if (pCombo->currentIndex() != -1)
+            enmOldData = pCombo->currentData().value<MACAddressImportPolicy>();
+        else
+        {
+            if (supportedPolicies.contains(MACAddressImportPolicy_KeepNATMACs))
+                enmOldData = MACAddressImportPolicy_KeepNATMACs;
+            else
+                enmOldData = MACAddressImportPolicy_StripAllMACs;
+        }
+
+        /* Block signals while updating: */
+        pCombo->blockSignals(true);
+
+        /* Cleanup combo: */
+        pCombo->clear();
+
+        /* Add supported policies first: */
+        foreach (const MACAddressImportPolicy &enmPolicy, supportedPolicies)
+            pCombo->addItem(QString(), QVariant::fromValue(enmPolicy));
+
+        /* Add hardcoded policy finally: */
+        pCombo->addItem(QString(), QVariant::fromValue(MACAddressImportPolicy_StripAllMACs));
+
+        /* Set previous/default item if possible: */
+        int iNewIndex = -1;
+        if (   iNewIndex == -1
+            && enmOldData != MACAddressImportPolicy_MAX)
+            iNewIndex = pCombo->findData(QVariant::fromValue(enmOldData));
+        if (   iNewIndex == -1
+            && pCombo->count() > 0)
+            iNewIndex = 0;
+        if (iNewIndex != -1)
+            pCombo->setCurrentIndex(iNewIndex);
+
+        /* Unblock signals after update: */
+        pCombo->blockSignals(false);
+
+        /* Translate finally: */
+        retranslateMACImportPolicyCombo(pCombo);
+    }
 }
 
-void UIWizardImportAppPage2::updateMACImportPolicyComboToolTip()
+void UIWizardImportAppPage2::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
+                                                        const CVirtualSystemDescriptionForm &comForm,
+                                                        bool fIsSourceCloudOne)
 {
-    const QString strCurrentToolTip = m_pComboMACImportPolicy->currentData(Qt::ToolTipRole).toString();
-    m_pComboMACImportPolicy->setToolTip(strCurrentToolTip);
+    /* Sanity check: */
+    AssertPtrReturnVoid(pFormEditor);
+
+    /* If source is cloud one: */
+    if (fIsSourceCloudOne)
+    {
+        /* Make sure properties table get new description form: */
+        if (comForm.isNotNull())
+            pFormEditor->setVirtualSystemDescriptionForm(comForm);
+    }
+    /* If source is local one: */
+    else
+    {
+        /* Clear form: */
+        pFormEditor->clearForm();
+    }
 }
 
-void UIWizardImportAppPage2::refreshFormPropertiesTable()
+MACAddressImportPolicy UIWizardImportAppPage2::macAddressImportPolicy(QIComboBox *pCombo)
 {
-    /* Acquire VSD form: */
-    CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
-    /* Make sure the properties table get the new description form: */
-    if (comForm.isNotNull())
-        m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
+    /* Sanity check: */
+    AssertPtrReturn(pCombo, MACAddressImportPolicy_MAX);
+
+    /* Give the actual result: */
+    return pCombo->currentData().value<MACAddressImportPolicy>();
 }
 
-MACAddressImportPolicy UIWizardImportAppPage2::macAddressImportPolicy() const
+bool UIWizardImportAppPage2::isImportHDsAsVDI(QCheckBox *pCheckBox)
 {
-    return m_pComboMACImportPolicy->currentData().value<MACAddressImportPolicy>();
+    /* Sanity check: */
+    AssertPtrReturn(pCheckBox, false);
+
+    /* Give the actual result: */
+    return pCheckBox->isChecked();
 }
 
-void UIWizardImportAppPage2::setMACAddressImportPolicy(MACAddressImportPolicy enmMACAddressImportPolicy)
+void UIWizardImportAppPage2::retranslateMACImportPolicyCombo(QIComboBox *pCombo)
 {
-    const int iIndex = m_pComboMACImportPolicy->findData(enmMACAddressImportPolicy);
-    AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pComboMACImportPolicy->setCurrentIndex(iIndex);
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+
+    /* Enumerate combo items: */
+    for (int i = 0; i < pCombo->count(); ++i)
+    {
+        const MACAddressImportPolicy enmPolicy = pCombo->itemData(i).value<MACAddressImportPolicy>();
+        switch (enmPolicy)
+        {
+            case MACAddressImportPolicy_KeepAllMACs:
+            {
+                pCombo->setItemText(i, UIWizardImportApp::tr("Include all network adapter MAC addresses"));
+                pCombo->setItemData(i, UIWizardImportApp::tr("Include all network adapter MAC addresses "
+                                                             "during importing."), Qt::ToolTipRole);
+                break;
+            }
+            case MACAddressImportPolicy_KeepNATMACs:
+            {
+                pCombo->setItemText(i, UIWizardImportApp::tr("Include only NAT network adapter MAC addresses"));
+                pCombo->setItemData(i, UIWizardImportApp::tr("Include only NAT network adapter MAC addresses "
+                                                             "during importing."), Qt::ToolTipRole);
+                break;
+            }
+            case MACAddressImportPolicy_StripAllMACs:
+            {
+                pCombo->setItemText(i, UIWizardImportApp::tr("Generate new MAC addresses for all network adapters"));
+                pCombo->setItemData(i, UIWizardImportApp::tr("Generate new MAC addresses for all network adapters "
+                                                             "during importing."), Qt::ToolTipRole);
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
-bool UIWizardImportAppPage2::importHDsAsVDI() const
+void UIWizardImportAppPage2::retranslateCertificateLabel(QLabel *pLabel, const kCertText &enmType, const QString &strSignedBy)
 {
-    return m_pCheckboxImportHDsAsVDI->isChecked();
+    /* Sanity check: */
+    AssertPtrReturnVoid(pLabel);
+
+    /* Handle known types: */
+    switch (enmType)
+    {
+        case kCertText_Unsigned:
+            pLabel->setText(UIWizardImportApp::tr("Appliance is not signed"));
+            break;
+        case kCertText_IssuedTrusted:
+            pLabel->setText(UIWizardImportApp::tr("Appliance signed by %1 (trusted)").arg(strSignedBy));
+            break;
+        case kCertText_IssuedExpired:
+            pLabel->setText(UIWizardImportApp::tr("Appliance signed by %1 (expired!)").arg(strSignedBy));
+            break;
+        case kCertText_IssuedUnverified:
+            pLabel->setText(UIWizardImportApp::tr("Unverified signature by %1!").arg(strSignedBy));
+            break;
+        case kCertText_SelfSignedTrusted:
+            pLabel->setText(UIWizardImportApp::tr("Self signed by %1 (trusted)").arg(strSignedBy));
+            break;
+        case kCertText_SelfSignedExpired:
+            pLabel->setText(UIWizardImportApp::tr("Self signed by %1 (expired!)").arg(strSignedBy));
+            break;
+        case kCertText_SelfSignedUnverified:
+            pLabel->setText(UIWizardImportApp::tr("Unverified self signed signature by %1!").arg(strSignedBy));
+            break;
+        default:
+            AssertFailed();
+            RT_FALL_THRU();
+        case kCertText_Uninitialized:
+            pLabel->setText("<uninitialized page>");
+            break;
+    }
+}
+
+void UIWizardImportAppPage2::updateMACImportPolicyComboToolTip(QIComboBox *pCombo)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+
+    /* Update tool-tip: */
+    const QString strCurrentToolTip = pCombo->currentData(Qt::ToolTipRole).toString();
+    pCombo->setToolTip(strCurrentToolTip);
 }
 
 
@@ -146,7 +293,18 @@ bool UIWizardImportAppPage2::importHDsAsVDI() const
 
 UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileName)
     : m_strFileName(strFileName)
+    , m_pLabelDescription(0)
+    , m_pSettingsWidget2(0)
+    , m_pApplianceWidget(0)
+    , m_pLabelImportFilePath(0)
+    , m_pEditorImportFilePath(0)
+    , m_pLabelMACImportPolicy(0)
+    , m_pComboMACImportPolicy(0)
+    , m_pLabelAdditionalOptions(0)
+    , m_pCheckboxImportHDsAsVDI(0)
+    , m_pCertLabel(0)
     , m_enmCertText(kCertText_Uninitialized)
+    , m_pFormEditor(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -269,10 +427,13 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
             this, &UIWizardImportAppPageBasic2::sltHandleImportPathEditorChange);
     connect(m_pComboMACImportPolicy, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardImportAppPageBasic2::sltHandleMACImportPolicyComboChange);
+    connect(m_pCheckboxImportHDsAsVDI, &QCheckBox::stateChanged,
+            this, &UIWizardImportAppPageBasic2::sltHandleImportHDsAsVDICheckBoxChange);
+}
 
-    /* Register fields: */
-    registerField("macAddressImportPolicy", this, "macAddressImportPolicy");
-    registerField("importHDsAsVDI", this, "importHDsAsVDI");
+UIWizardImportApp *UIWizardImportAppPageBasic2::wizard() const
+{
+    return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
 void UIWizardImportAppPageBasic2::retranslateUi()
@@ -280,42 +441,28 @@ void UIWizardImportAppPageBasic2::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance settings"));
 
+    /* Translate description label: */
+    if (m_pLabelDescription)
+    {
+        if (wizard()->isSourceCloudOne())
+            m_pLabelDescription->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
+                                                               "procedure, they are influencing the resulting local VM instance. "
+                                                               "You can change many of the properties shown by double-clicking "
+                                                               "on the items and disable others using the check boxes below."));
+        else
+            m_pLabelDescription->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
+                                                               "and the suggested settings of the imported VirtualBox machines. "
+                                                               "You can change many of the properties shown by double-clicking "
+                                                               "on the items and disable others using the check boxes below."));
+    }
+
     /* Translate path selector label: */
     if (m_pLabelImportFilePath)
         m_pLabelImportFilePath->setText(tr("&Machine Base Folder:"));
 
     /* Translate MAC import policy label: */
     if (m_pLabelMACImportPolicy)
-    {
         m_pLabelMACImportPolicy->setText(tr("MAC Address &Policy:"));
-        for (int i = 0; i < m_pComboMACImportPolicy->count(); ++i)
-        {
-            const MACAddressImportPolicy enmPolicy = m_pComboMACImportPolicy->itemData(i).value<MACAddressImportPolicy>();
-            switch (enmPolicy)
-            {
-                case MACAddressImportPolicy_KeepAllMACs:
-                {
-                    m_pComboMACImportPolicy->setItemText(i, tr("Include all network adapter MAC addresses"));
-                    m_pComboMACImportPolicy->setItemData(i, tr("Include all network adapter MAC addresses during importing."), Qt::ToolTipRole);
-                    break;
-                }
-                case MACAddressImportPolicy_KeepNATMACs:
-                {
-                    m_pComboMACImportPolicy->setItemText(i, tr("Include only NAT network adapter MAC addresses"));
-                    m_pComboMACImportPolicy->setItemData(i, tr("Include only NAT network adapter MAC addresses during importing."), Qt::ToolTipRole);
-                    break;
-                }
-                case MACAddressImportPolicy_StripAllMACs:
-                {
-                    m_pComboMACImportPolicy->setItemText(i, tr("Generate new MAC addresses for all network adapters"));
-                    m_pComboMACImportPolicy->setItemData(i, tr("Generate new MAC addresses for all network adapters during importing."), Qt::ToolTipRole);
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
 
     /* Translate additional options label: */
     if (m_pLabelAdditionalOptions)
@@ -327,134 +474,27 @@ void UIWizardImportAppPageBasic2::retranslateUi()
         m_pCheckboxImportHDsAsVDI->setToolTip(tr("Import all the hard drives that belong to this appliance in VDI format."));
     }
 
-    /* Translate the certificate label: */
-    if (m_pCertLabel)
-    {
-        switch (m_enmCertText)
-        {
-            case kCertText_Unsigned:
-                m_pCertLabel->setText(UIWizardImportApp::tr("Appliance is not signed"));
-                break;
-            case kCertText_IssuedTrusted:
-                m_pCertLabel->setText(UIWizardImportApp::tr("Appliance signed by %1 (trusted)").arg(m_strSignedBy));
-                break;
-            case kCertText_IssuedExpired:
-                m_pCertLabel->setText(UIWizardImportApp::tr("Appliance signed by %1 (expired!)").arg(m_strSignedBy));
-                break;
-            case kCertText_IssuedUnverified:
-                m_pCertLabel->setText(UIWizardImportApp::tr("Unverified signature by %1!").arg(m_strSignedBy));
-                break;
-            case kCertText_SelfSignedTrusted:
-                m_pCertLabel->setText(UIWizardImportApp::tr("Self signed by %1 (trusted)").arg(m_strSignedBy));
-                break;
-            case kCertText_SelfSignedExpired:
-                m_pCertLabel->setText(UIWizardImportApp::tr("Self signed by %1 (expired!)").arg(m_strSignedBy));
-                break;
-            case kCertText_SelfSignedUnverified:
-                m_pCertLabel->setText(UIWizardImportApp::tr("Unverified self signed signature by %1!").arg(m_strSignedBy));
-                break;
-            default:
-                AssertFailed();
-                RT_FALL_THRU();
-            case kCertText_Uninitialized:
-                m_pCertLabel->setText("<uninitialized page>");
-                break;
-        }
-    }
+    /* Translate separate stuff: */
+    retranslateMACImportPolicyCombo(m_pComboMACImportPolicy);
+    retranslateCertificateLabel(m_pCertLabel, m_enmCertText, m_strSignedBy);
 
-    /* Update page appearance: */
-    updatePageAppearance();
+    /* Update tool-tips: */
+    updateMACImportPolicyComboToolTip(m_pComboMACImportPolicy);
 }
 
 void UIWizardImportAppPageBasic2::initializePage()
 {
-    /* Update widget visibility: */
-    updatePageAppearance();
-
-    /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
-    {
-        /* Refresh form properties table: */
-        refreshFormPropertiesTable();
-    }
-    else
-    {
-        /* Populate MAC address import combo: */
-        populateMACAddressImportPolicies();
-
-        /* If we have file name passed,
-         * check if specified file contains valid appliance: */
-        if (   !m_strFileName.isEmpty()
-            && !qobject_cast<UIWizardImportApp*>(wizard())->setFile(m_strFileName))
-        {
-            wizard()->reject();
-            return;
-        }
-
-        /* Acquire appliance: */
-        CAppliance comAppliance = qobject_cast<UIWizardImportApp*>(wizard())->localAppliance();
-
-        /* Initialize appliance widget: */
-        m_pApplianceWidget->setAppliance(comAppliance);
-        /* Make sure we initialize appliance widget model with correct base folder path: */
-        sltHandleImportPathEditorChange();
-
-        /* Acquire certificate: */
-        CCertificate comCertificate = comAppliance.GetCertificate();
-        if (comCertificate.isNull())
-            m_enmCertText = kCertText_Unsigned;
-        else
-        {
-            /* Pick a 'signed-by' name: */
-            m_strSignedBy = comCertificate.GetFriendlyName();
-
-            /* If trusted, just select the right message: */
-            if (comCertificate.GetTrusted())
-            {
-                if (comCertificate.GetSelfSigned())
-                    m_enmCertText = !comCertificate.GetExpired() ? kCertText_SelfSignedTrusted : kCertText_SelfSignedExpired;
-                else
-                    m_enmCertText = !comCertificate.GetExpired() ? kCertText_IssuedTrusted     : kCertText_IssuedExpired;
-            }
-            else
-            {
-                /* Not trusted!  Must ask the user whether to continue in this case: */
-                m_enmCertText = comCertificate.GetSelfSigned() ? kCertText_SelfSignedUnverified : kCertText_IssuedUnverified;
-
-                /* Translate page early: */
-                retranslateUi();
-
-                /* Instantiate the dialog: */
-                QPointer<UIApplianceUnverifiedCertificateViewer> pDialog =
-                    new UIApplianceUnverifiedCertificateViewer(this, comCertificate);
-
-                /* Show viewer in modal mode: */
-                const int iResultCode = pDialog->exec();
-
-                /* Leave if viewer destroyed prematurely: */
-                if (!pDialog)
-                    return;
-                /* Delete viewer finally: */
-                delete pDialog;
-
-                /* Dismiss the entire import-appliance wizard if user rejects certificate: */
-                if (iResultCode == QDialog::Rejected)
-                    wizard()->reject();
-            }
-        }
-    }
-
     /* Translate page: */
     retranslateUi();
-}
 
-void UIWizardImportAppPageBasic2::cleanupPage()
-{
-    /* Rollback settings: */
-    m_pApplianceWidget->restoreDefaults();
-    /* Call to base-class: */
-    UIWizardPage::cleanupPage();
+    /* Choose initially focused widget: */
+    if (wizard()->isSourceCloudOne())
+        m_pFormEditor->setFocus();
+    else
+        m_pApplianceWidget->setFocus();
+
+    /* Fetch it, asynchronously: */
+    QMetaObject::invokeMethod(this, "sltAsyncInit", Qt::QueuedConnection);
 }
 
 bool UIWizardImportAppPageBasic2::validatePage()
@@ -462,17 +502,14 @@ bool UIWizardImportAppPageBasic2::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Lock finish button: */
-    startProcessing();
-
     /* Check whether there was cloud source selected: */
-    if (fieldImp("isSourceCloudOne").toBool())
+    if (wizard()->isSourceCloudOne())
     {
         /* Make sure table has own data committed: */
         m_pFormEditor->makeSureEditorDataCommitted();
 
         /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+        CVirtualSystemDescriptionForm comForm = wizard()->vsdImportForm();
         fResult = comForm.isNotNull();
 
         /* Give changed VSD back to appliance: */
@@ -492,38 +529,43 @@ bool UIWizardImportAppPageBasic2::validatePage()
 
     /* Try to import appliance: */
     if (fResult)
-        fResult = qobject_cast<UIWizardImportApp*>(wizard())->importAppliance();
-
-    /* Unlock finish button: */
-    endProcessing();
+        fResult = wizard()->importAppliance();
 
     /* Return result: */
     return fResult;
 }
 
-void UIWizardImportAppPageBasic2::updatePageAppearance()
+void UIWizardImportAppPageBasic2::sltAsyncInit()
 {
-    /* Call to base-class: */
-    UIWizardImportAppPage2::updatePageAppearance();
+    /* If we have file name passed,
+     * check if specified file contains valid appliance: */
+    if (   !m_strFileName.isEmpty()
+        && !wizard()->setFile(m_strFileName))
+    {
+        wizard()->reject();
+        return;
+    }
 
-    /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
-    {
-        m_pLabelDescription->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
-                                                           "procedure, they are influencing the resulting local VM instance. "
-                                                           "You can change many of the properties shown by double-clicking "
-                                                           "on the items and disable others using the check boxes below."));
-        m_pFormEditor->setFocus();
-    }
-    else
-    {
-        m_pLabelDescription->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
-                                                            "and the suggested settings of the imported VirtualBox machines. "
-                                                            "You can change many of the properties shown by double-clicking "
-                                                            "on the items and disable others using the check boxes below."));
-        m_pApplianceWidget->setFocus();
-    }
+    /* Refresh page widgets: */
+    refreshStackedWidget(m_pSettingsWidget2,
+                         wizard()->isSourceCloudOne());
+    refreshApplianceWidget(m_pApplianceWidget,
+                           wizard()->localAppliance(),
+                           wizard()->isSourceCloudOne());
+    refreshMACAddressImportPolicies(m_pComboMACImportPolicy,
+                                    wizard()->isSourceCloudOne());
+    refreshFormPropertiesTable(m_pFormEditor,
+                               wizard()->vsdImportForm(),
+                               wizard()->isSourceCloudOne());
+
+    /* Init wizard fields: */
+    sltHandleImportPathEditorChange();
+    sltHandleMACImportPolicyComboChange();
+    sltHandleImportHDsAsVDICheckBoxChange();
+
+    /* Handle appliance certificate: */
+    if (!wizard()->isSourceCloudOne())
+        handleApplianceCertificate();
 }
 
 void UIWizardImportAppPageBasic2::sltHandleImportPathEditorChange()
@@ -535,5 +577,65 @@ void UIWizardImportAppPageBasic2::sltHandleImportPathEditorChange()
 
 void UIWizardImportAppPageBasic2::sltHandleMACImportPolicyComboChange()
 {
-    updateMACImportPolicyComboToolTip();
+    /* Update combo tool-tip: */
+    updateMACImportPolicyComboToolTip(m_pComboMACImportPolicy);
+
+    /* Update wizard fields: */
+    wizard()->setMACAddressImportPolicy(macAddressImportPolicy(m_pComboMACImportPolicy));
+}
+
+void UIWizardImportAppPageBasic2::sltHandleImportHDsAsVDICheckBoxChange()
+{
+    /* Update wizard fields: */
+    wizard()->setImportHDsAsVDI(isImportHDsAsVDI(m_pCheckboxImportHDsAsVDI));
+}
+
+void UIWizardImportAppPageBasic2::handleApplianceCertificate()
+{
+    /* Handle certificate: */
+    CAppliance comAppliance = wizard()->localAppliance();
+    CCertificate comCertificate = comAppliance.GetCertificate();
+    if (comCertificate.isNull())
+        m_enmCertText = kCertText_Unsigned;
+    else
+    {
+        /* Pick a 'signed-by' name: */
+        m_strSignedBy = comCertificate.GetFriendlyName();
+
+        /* If trusted, just select the right message: */
+        if (comCertificate.GetTrusted())
+        {
+            if (comCertificate.GetSelfSigned())
+                m_enmCertText = !comCertificate.GetExpired() ? kCertText_SelfSignedTrusted : kCertText_SelfSignedExpired;
+            else
+                m_enmCertText = !comCertificate.GetExpired() ? kCertText_IssuedTrusted     : kCertText_IssuedExpired;
+        }
+        else
+        {
+            /* Not trusted!  Must ask the user whether to continue in this case: */
+            m_enmCertText = comCertificate.GetSelfSigned() ? kCertText_SelfSignedUnverified : kCertText_IssuedUnverified;
+
+            /* Translate page early: */
+            retranslateUi();
+
+            /* Instantiate the dialog: */
+            QPointer<UIApplianceUnverifiedCertificateViewer> pDialog =
+                new UIApplianceUnverifiedCertificateViewer(this, comCertificate);
+
+            /* Show viewer in modal mode: */
+            const int iResultCode = pDialog->exec();
+            /* Leave if viewer destroyed prematurely: */
+            if (!pDialog)
+                return;
+            /* Delete viewer finally: */
+            delete pDialog;
+
+            /* Dismiss the entire import-appliance wizard if user rejects certificate: */
+            if (iResultCode == QDialog::Rejected)
+                wizard()->reject();
+        }
+    }
+
+    /* Translate certificate label: */
+    retranslateCertificateLabel(m_pCertLabel, m_enmCertText, m_strSignedBy);
 }

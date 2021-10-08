@@ -16,20 +16,16 @@
  */
 
 /* Qt includes: */
-#include <QFileInfo>
-#include <QHeaderView>
+#include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QStackedWidget>
-#include <QTableWidget>
-#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
-#include "UICommon.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -37,19 +33,381 @@
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic1.h"
-#include "UIWizardImportAppPageBasic2.h"
 
 /* COM includes: */
-#include "CStringArray.h"
+#include "CAppliance.h"
 #include "CVirtualSystemDescription.h"
+#include "CVirtualSystemDescriptionForm.h"
+
+/* Namespaces: */
+using namespace UIWizardImportAppPage1;
 
 
 /*********************************************************************************************************************************
 *   Class UIWizardImportAppPage1 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
+void UIWizardImportAppPage1::populateSources(QIComboBox *pCombo, bool fImportFromOCIByDefault)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+    /* We need top-level parent as well: */
+    QWidget *pParent = pCombo->window();
+    AssertPtrReturnVoid(pParent);
+
+    /* Remember current item data to be able to restore it: */
+    QString strOldData;
+    if (pCombo->currentIndex() != -1)
+        strOldData = pCombo->currentData(SourceData_ShortName).toString();
+    else
+    {
+        /* Otherwise "OCI" or "local" should be the default one: */
+        if (fImportFromOCIByDefault)
+            strOldData = "OCI";
+        else
+            strOldData = "local";
+    }
+
+    /* Block signals while updating: */
+    pCombo->blockSignals(true);
+
+    /* Clear combo initially: */
+    pCombo->clear();
+
+    /* Compose hardcoded sources list: */
+    QStringList sources;
+    sources << "local";
+    /* Add that list to combo: */
+    foreach (const QString &strShortName, sources)
+    {
+        /* Compose empty item, fill it's data: */
+        pCombo->addItem(QString());
+        pCombo->setItemData(pCombo->count() - 1, strShortName, SourceData_ShortName);
+    }
+
+    /* Iterate through existing providers: */
+    foreach (const CCloudProvider &comProvider, listCloudProviders(pParent))
+    {
+        /* Skip if we have nothing to populate (file missing?): */
+        if (comProvider.isNull())
+            continue;
+        /* Acquire provider name: */
+        QString strProviderName;
+        if (!cloudProviderName(comProvider, strProviderName, pParent))
+            continue;
+        /* Acquire provider short name: */
+        QString strProviderShortName;
+        if (!cloudProviderShortName(comProvider, strProviderShortName, pParent))
+            continue;
+
+        /* Compose empty item, fill it's data: */
+        pCombo->addItem(QString());
+        pCombo->setItemData(pCombo->count() - 1, strProviderName,      SourceData_Name);
+        pCombo->setItemData(pCombo->count() - 1, strProviderShortName, SourceData_ShortName);
+        pCombo->setItemData(pCombo->count() - 1, true,                 SourceData_IsItCloudFormat);
+    }
+
+    /* Set previous/default item if possible: */
+    int iNewIndex = -1;
+    if (   iNewIndex == -1
+        && !strOldData.isNull())
+        iNewIndex = pCombo->findData(strOldData, SourceData_ShortName);
+    if (   iNewIndex == -1
+        && pCombo->count() > 0)
+        iNewIndex = 0;
+    if (iNewIndex != -1)
+        pCombo->setCurrentIndex(iNewIndex);
+
+    /* Unblock signals after update: */
+    pCombo->blockSignals(false);
+}
+
+QString UIWizardImportAppPage1::source(QIComboBox *pCombo)
+{
+    /* Sanity check: */
+    AssertPtrReturn(pCombo, QString());
+
+    /* Give the actual result: */
+    return pCombo->currentData(SourceData_ShortName).toString();
+}
+
+bool UIWizardImportAppPage1::isSourceCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
+{
+    /* Sanity check: */
+    AssertPtrReturn(pCombo, false);
+
+    /* Handle special case, -1 means "current one": */
+    if (iIndex == -1)
+        iIndex = pCombo->currentIndex();
+
+    /* Give the actual result: */
+    return pCombo->itemData(iIndex, SourceData_IsItCloudFormat).toBool();
+}
+
+void UIWizardImportAppPage1::refreshStackedWidget(QStackedWidget *pStackedWidget,
+                                                  bool fIsSourceCloudOne)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pStackedWidget);
+
+    /* Update stack appearance according to chosen source: */
+    pStackedWidget->setCurrentIndex((int)fIsSourceCloudOne);
+}
+
+void UIWizardImportAppPage1::refreshProfileCombo(QIComboBox *pCombo,
+                                                 const QString &strSource,
+                                                 bool fIsSourceCloudOne)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+
+    /* If source is cloud one: */
+    if (fIsSourceCloudOne)
+    {
+        /* We need top-level parent as well: */
+        QWidget *pParent = pCombo->window();
+        AssertPtrReturnVoid(pParent);
+        /* Acquire provider: */
+        CCloudProvider comProvider = cloudProviderByShortName(strSource, pParent);
+        AssertReturnVoid(comProvider.isNotNull());
+
+        /* Remember current item data to be able to restore it: */
+        QString strOldData;
+        if (pCombo->currentIndex() != -1)
+            strOldData = pCombo->currentData(ProfileData_Name).toString();
+
+        /* Block signals while updating: */
+        pCombo->blockSignals(true);
+
+        /* Clear combo initially: */
+        pCombo->clear();
+
+        /* Iterate through existing profile names: */
+        foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pParent))
+        {
+            /* Skip if we have nothing to populate (wtf happened?): */
+            if (comProfile.isNull())
+                continue;
+            /* Acquire profile name: */
+            QString strProfileName;
+            if (!cloudProfileName(comProfile, strProfileName, pParent))
+                continue;
+
+            /* Compose item, fill it's data: */
+            pCombo->addItem(strProfileName);
+            pCombo->setItemData(pCombo->count() - 1, strProfileName, ProfileData_Name);
+        }
+
+        /* Set previous/default item if possible: */
+        int iNewIndex = -1;
+        if (   iNewIndex == -1
+            && !strOldData.isNull())
+            iNewIndex = pCombo->findData(strOldData, ProfileData_Name);
+        if (   iNewIndex == -1
+            && pCombo->count() > 0)
+            iNewIndex = 0;
+        if (iNewIndex != -1)
+            pCombo->setCurrentIndex(iNewIndex);
+
+        /* Unblock signals after update: */
+        pCombo->blockSignals(false);
+    }
+    /* If source is local one: */
+    else
+    {
+        /* Block signals while updating: */
+        pCombo->blockSignals(true);
+
+        /* Clear combo initially: */
+        pCombo->clear();
+
+        /* Unblock signals after update: */
+        pCombo->blockSignals(false);
+    }
+}
+
+void UIWizardImportAppPage1::refreshCloudProfileInstances(QListWidget *pListWidget,
+                                                          const QString &strSource,
+                                                          const QString &strProfileName,
+                                                          bool fIsSourceCloudOne)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pListWidget);
+
+    /* If source is cloud one: */
+    if (fIsSourceCloudOne)
+    {
+        /* We need top-level parent as well: */
+        QWidget *pParent = pListWidget->window();
+        AssertPtrReturnVoid(pParent);
+        /* Acquire client: */
+        CCloudClient comClient = cloudClientByName(strSource, strProfileName, pParent);
+        AssertReturnVoid(comClient.isNotNull());
+
+        /* Block signals while updating: */
+        pListWidget->blockSignals(true);
+
+        /* Clear list initially: */
+        pListWidget->clear();
+
+        /* Gather VM names, ids and states.
+         * Currently we are interested in Running and Stopped VMs only. */
+        QString strErrorMessage;
+        const QMap<QString, QString> instances = listInstances(comClient, strErrorMessage, pParent);
+
+        /* Push acquired names to list rows: */
+        foreach (const QString &strId, instances.keys())
+        {
+            /* Create list item: */
+            QListWidgetItem *pItem = new QListWidgetItem(instances.value(strId), pListWidget);
+            if (pItem)
+            {
+                pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                pItem->setData(Qt::UserRole, strId);
+            }
+        }
+
+        /* Choose the 1st one by default if possible: */
+        if (pListWidget->count())
+            pListWidget->setCurrentRow(0);
+
+        /* Unblock signals after update: */
+        pListWidget->blockSignals(false);
+    }
+    /* If source is local one: */
+    else
+    {
+        /* Block signals while updating: */
+        pListWidget->blockSignals(true);
+
+        /* Clear combo initially: */
+        pListWidget->clear();
+
+        /* Unblock signals after update: */
+        pListWidget->blockSignals(false);
+    }
+}
+
+void UIWizardImportAppPage1::refreshCloudStuff(CAppliance &comCloudAppliance,
+                                               CVirtualSystemDescriptionForm &comCloudVsdImportForm,
+                                               QWidget *pParent,
+                                               const QString &strMachineId,
+                                               const QString &strSource,
+                                               const QString &strProfileName,
+                                               bool fIsSourceCloudOne)
+{
+    /* Clear stuff: */
+    comCloudAppliance = CAppliance();
+    comCloudVsdImportForm = CVirtualSystemDescriptionForm();
+
+    /* If source is NOT cloud one: */
+    if (!fIsSourceCloudOne)
+        return;
+
+    /* We need top-level parent as well: */
+    AssertPtrReturnVoid(pParent);
+    /* Acquire client: */
+    CCloudClient comClient = cloudClientByName(strSource, strProfileName, pParent);
+    AssertReturnVoid(comClient.isNotNull());
+
+    /* Create appliance: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CAppliance comAppliance = comVBox.CreateAppliance();
+    if (!comVBox.isOk())
+    {
+        msgCenter().cannotCreateAppliance(comVBox, pParent);
+        return;
+    }
+
+    /* Remember appliance: */
+    comCloudAppliance = comAppliance;
+
+    /* Read cloud instance info: */
+    CProgress comReadProgress = comCloudAppliance.Read(QString("OCI://%1/%2").arg(strProfileName, strMachineId));
+    if (!comCloudAppliance.isOk())
+    {
+        msgCenter().cannotImportAppliance(comCloudAppliance, pParent);
+        return;
+    }
+
+    /* Show "Read appliance" progress: */
+    msgCenter().showModalProgressDialog(comReadProgress, UIWizardImportApp::tr("Read appliance ..."),
+                                        ":/progress_reading_appliance_90px.png", pParent, 0);
+    if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
+    {
+        msgCenter().cannotImportAppliance(comReadProgress, comCloudAppliance.GetPath(), pParent);
+        return;
+    }
+
+    /* Acquire virtual system description: */
+    QVector<CVirtualSystemDescription> descriptions = comCloudAppliance.GetVirtualSystemDescriptions();
+    if (!comCloudAppliance.isOk())
+    {
+        msgCenter().cannotAcquireVirtualSystemDescription(comCloudAppliance, pParent);
+        return;
+    }
+
+    /* Make sure there is at least one virtual system description created: */
+    AssertReturnVoid(!descriptions.isEmpty());
+    CVirtualSystemDescription comDescription = descriptions.at(0);
+
+    /* Read Cloud Client description form: */
+    CVirtualSystemDescriptionForm comVsdImportForm;
+    bool fSuccess = importDescriptionForm(comClient, comDescription, comVsdImportForm, pParent);
+    if (!fSuccess)
+        return;
+
+    /* Remember form: */
+    comCloudVsdImportForm = comVsdImportForm;
+}
+
+QString UIWizardImportAppPage1::path(UIEmptyFilePathSelector *pFileSelector)
+{
+    /* Sanity check: */
+    AssertPtrReturn(pFileSelector, QString());
+
+    /* Give the actual result: */
+    return pFileSelector->path().toLower();
+}
+
+QString UIWizardImportAppPage1::profileName(QIComboBox *pCombo)
+{
+    /* Sanity check: */
+    AssertPtrReturn(pCombo, QString());
+
+    /* Give the actual result: */
+    return pCombo->currentData(ProfileData_Name).toString();
+}
+
+QString UIWizardImportAppPage1::machineId(QListWidget *pListWidget)
+{
+    /* Sanity check: */
+    AssertPtrReturn(pListWidget, QString());
+
+    /* Give the actual result: */
+    QListWidgetItem *pItem = pListWidget->currentItem();
+    return pItem ? pItem->data(Qt::UserRole).toString() : QString();
+}
+
+void UIWizardImportAppPage1::updateSourceComboToolTip(QIComboBox *pCombo)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pCombo);
+
+    /* Update tool-tip: */
+    const QString strCurrentToolTip = pCombo->currentData(Qt::ToolTipRole).toString();
+    pCombo->setToolTip(strCurrentToolTip);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIWizardImportAppPageBasic1 implementation.                                                                            *
+*********************************************************************************************************************************/
+
+UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault)
     : m_fImportFromOCIByDefault(fImportFromOCIByDefault)
+    , m_pLabelMain(0)
+    , m_pLabelDescription(0)
     , m_pSourceLayout(0)
     , m_pSourceLabel(0)
     , m_pSourceComboBox(0)
@@ -63,309 +421,6 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
     , m_pProfileToolButton(0)
     , m_pProfileInstanceLabel(0)
     , m_pProfileInstanceList(0)
-{
-}
-
-void UIWizardImportAppPage1::populateSources()
-{
-    /* Block signals while updating: */
-    m_pSourceComboBox->blockSignals(true);
-
-    /* Clear combo initially: */
-    m_pSourceComboBox->clear();
-
-    /* Compose hardcoded sources list: */
-    QStringList sources;
-    sources << "local";
-    /* Add that list to combo: */
-    foreach (const QString &strShortName, sources)
-    {
-        /* Compose empty item, fill it's data: */
-        m_pSourceComboBox->addItem(QString());
-        m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, strShortName, SourceData_ShortName);
-    }
-
-    /* Initialize Cloud Provider Manager: */
-    bool fOCIPresent = false;
-    m_comCloudProviderManager = cloudProviderManager(wizardImp());
-    if (m_comCloudProviderManager.isNotNull())
-    {
-        /* Iterate through existing providers: */
-        foreach (const CCloudProvider &comProvider, listCloudProviders(wizardImp()))
-        {
-            /* Skip if we have nothing to populate (file missing?): */
-            if (comProvider.isNull())
-                continue;
-
-            /* Compose empty item, fill it's data: */
-            m_pSourceComboBox->addItem(QString());
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetName(),      SourceData_Name);
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetShortName(), SourceData_ShortName);
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, true,                       SourceData_IsItCloudFormat);
-            if (m_pSourceComboBox->itemData(m_pSourceComboBox->count() - 1, SourceData_ShortName).toString() == "OCI")
-                fOCIPresent = true;
-        }
-    }
-
-    /* Set default: */
-    if (m_fImportFromOCIByDefault && fOCIPresent)
-        setSource("OCI");
-    else
-        setSource("local");
-
-    /* Unblock signals after update: */
-    m_pSourceComboBox->blockSignals(false);
-}
-
-void UIWizardImportAppPage1::populateProfiles()
-{
-    /* Block signals while updating: */
-    m_pProfileComboBox->blockSignals(true);
-
-    /* Remember current item data to be able to restore it: */
-    QString strOldData;
-    if (m_pProfileComboBox->currentIndex() != -1)
-        strOldData = m_pProfileComboBox->itemData(m_pProfileComboBox->currentIndex(), ProfileData_Name).toString();
-
-    /* Clear combo initially: */
-    m_pProfileComboBox->clear();
-    /* Clear Cloud Provider: */
-    m_comCloudProvider = CCloudProvider();
-
-    /* If source is cloud one & provider chosen: */
-    if (isSourceCloudOne() && !source().isEmpty())
-    {
-        /* (Re)initialize Cloud Provider: */
-        m_comCloudProvider = cloudProviderByShortName(source(), wizardImp());
-        if (m_comCloudProvider.isNotNull())
-        {
-            /* Iterate through existing profile names: */
-            foreach (const CCloudProfile &comProfile, listCloudProfiles(m_comCloudProvider, wizardImp()))
-            {
-                /* Acquire profile name: */
-                QString strProfileName;
-                if (cloudProfileName(comProfile, strProfileName, wizardImp()))
-                {
-                    /* Compose item, fill it's data: */
-                    m_pProfileComboBox->addItem(strProfileName);
-                    m_pProfileComboBox->setItemData(m_pProfileComboBox->count() - 1, strProfileName, ProfileData_Name);
-                }
-            }
-        }
-
-        /* Set previous/default item if possible: */
-        int iNewIndex = -1;
-        if (   iNewIndex == -1
-            && !strOldData.isNull())
-            iNewIndex = m_pProfileComboBox->findData(strOldData, ProfileData_Name);
-        if (   iNewIndex == -1
-            && m_pProfileComboBox->count() > 0)
-            iNewIndex = 0;
-        if (iNewIndex != -1)
-            m_pProfileComboBox->setCurrentIndex(iNewIndex);
-    }
-
-    /* Unblock signals after update: */
-    m_pProfileComboBox->blockSignals(false);
-}
-
-void UIWizardImportAppPage1::populateProfile()
-{
-    /* Clear Cloud Profile: */
-    m_comCloudProfile = CCloudProfile();
-
-    /* If both provider and profile chosen: */
-    if (!source().isNull() && !profileName().isNull())
-    {
-        /* Acquire Cloud Profile: */
-        m_comCloudProfile = cloudProfileByName(source(), profileName(), wizardImp());
-    }
-}
-
-void UIWizardImportAppPage1::populateProfileInstances()
-{
-    /* Block signals while updating: */
-    m_pProfileInstanceList->blockSignals(true);
-
-    /* Clear list initially: */
-    m_pProfileInstanceList->clear();
-    /* Clear Cloud Client: */
-    m_comCloudClient = CCloudClient();
-
-    /* If profile chosen: */
-    if (m_comCloudProfile.isNotNull())
-    {
-        /* Main API request sequence, can be interrupted after any step: */
-        do
-        {
-            /* Acquire Cloud Client: */
-            m_comCloudClient = cloudClient(m_comCloudProfile);
-            if (m_comCloudClient.isNull())
-                break;
-
-            /* Gather VM names, ids and states.
-             * Currently we are interested in Running and Stopped VMs only. */
-            QString strErrorMessage;
-            QMap<QString, QString> instances = listInstances(m_comCloudClient, strErrorMessage, wizardImp());
-
-            /* Push acquired names to list rows: */
-            foreach (const QString &strId, instances.keys())
-            {
-                /* Create list item: */
-                QListWidgetItem *pItem = new QListWidgetItem(instances.value(strId), m_pProfileInstanceList);
-                if (pItem)
-                {
-                    pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
-                    pItem->setData(Qt::UserRole, strId);
-                }
-            }
-
-            /* Choose the 1st one by default if possible: */
-            if (m_pProfileInstanceList->count())
-                m_pProfileInstanceList->setCurrentRow(0);
-        }
-        while (0);
-    }
-
-    /* Unblock signals after update: */
-    m_pProfileInstanceList->blockSignals(false);
-}
-
-void UIWizardImportAppPage1::populateFormProperties()
-{
-    /* Clear appliance: */
-    m_comCloudAppliance = CAppliance();
-    /* Clear form properties: */
-    m_comVSDForm = CVirtualSystemDescriptionForm();
-
-    /* If client created: */
-    if (m_comCloudClient.isNotNull())
-    {
-        /* Main API request sequence, can be interrupted after any step: */
-        do
-        {
-            /* Create appliance: */
-            CVirtualBox comVBox = uiCommon().virtualBox();
-            CAppliance comAppliance = comVBox.CreateAppliance();
-            if (!comVBox.isOk())
-            {
-                msgCenter().cannotCreateAppliance(comVBox);
-                break;
-            }
-
-            /* Remember appliance: */
-            m_comCloudAppliance = comAppliance;
-
-            /* Read cloud instance info: */
-            CProgress comReadProgress = m_comCloudAppliance.Read(QString("OCI://%1/%2").arg(profileName(), machineId()));
-            if (!m_comCloudAppliance.isOk())
-            {
-                msgCenter().cannotImportAppliance(m_comCloudAppliance);
-                break;
-            }
-
-            /* Show "Read appliance" progress: */
-            msgCenter().showModalProgressDialog(comReadProgress, UIWizardImportApp::tr("Read appliance ..."),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
-            if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotImportAppliance(comReadProgress, m_comCloudAppliance.GetPath());
-                break;
-            }
-
-            /* Acquire virtual system description: */
-            QVector<CVirtualSystemDescription> descriptions = m_comCloudAppliance.GetVirtualSystemDescriptions();
-            if (!m_comCloudAppliance.isOk())
-            {
-                msgCenter().cannotAcquireVirtualSystemDescription(m_comCloudAppliance);
-                break;
-            }
-
-            /* Make sure there is at least one virtual system description created: */
-            AssertReturnVoid(!descriptions.isEmpty());
-            CVirtualSystemDescription comDescription = descriptions.at(0);
-
-            /* Read Cloud Client description form: */
-            CVirtualSystemDescriptionForm comForm;
-            bool fSuccess = importDescriptionForm(m_comCloudClient, comDescription, comForm, wizardImp());
-            if (!fSuccess)
-                break;
-
-            /* Remember form: */
-            m_comVSDForm = comForm;
-        }
-        while (0);
-    }
-}
-
-void UIWizardImportAppPage1::updatePageAppearance()
-{
-    /* Update page appearance according to chosen source: */
-    m_pSettingsWidget1->setCurrentIndex((int)isSourceCloudOne());
-}
-
-void UIWizardImportAppPage1::updateSourceComboToolTip()
-{
-    const QString strCurrentToolTip = m_pSourceComboBox->currentData(Qt::ToolTipRole).toString();
-    m_pSourceComboBox->setToolTip(strCurrentToolTip);
-}
-
-void UIWizardImportAppPage1::setSource(const QString &strSource)
-{
-    const int iIndex = m_pSourceComboBox->findData(strSource, SourceData_ShortName);
-    AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pSourceComboBox->setCurrentIndex(iIndex);
-}
-
-QString UIWizardImportAppPage1::source() const
-{
-    const int iIndex = m_pSourceComboBox->currentIndex();
-    return m_pSourceComboBox->itemData(iIndex, SourceData_ShortName).toString();
-}
-
-bool UIWizardImportAppPage1::isSourceCloudOne(int iIndex /* = -1 */) const
-{
-    if (iIndex == -1)
-        iIndex = m_pSourceComboBox->currentIndex();
-    return m_pSourceComboBox->itemData(iIndex, SourceData_IsItCloudFormat).toBool();
-}
-
-QString UIWizardImportAppPage1::profileName() const
-{
-    const int iIndex = m_pProfileComboBox->currentIndex();
-    return m_pProfileComboBox->itemData(iIndex, ProfileData_Name).toString();
-}
-
-QString UIWizardImportAppPage1::machineId() const
-{
-    QListWidgetItem *pItem = m_pProfileInstanceList->currentItem();
-    return pItem ? pItem->data(Qt::UserRole).toString() : QString();
-}
-
-CCloudProfile UIWizardImportAppPage1::profile() const
-{
-    return m_comCloudProfile;
-}
-
-CAppliance UIWizardImportAppPage1::cloudAppliance() const
-{
-    return m_comCloudAppliance;
-}
-
-CVirtualSystemDescriptionForm UIWizardImportAppPage1::vsdForm() const
-{
-    return m_comVSDForm;
-}
-
-
-/*********************************************************************************************************************************
-*   Class UIWizardImportAppPageBasic1 implementation.                                                                            *
-*********************************************************************************************************************************/
-
-UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault)
-    : UIWizardImportAppPage1(fImportFromOCIByDefault)
-    , m_pLabelMain(0)
-    , m_pLabelDescription(0)
 {
     /* Prepare main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -537,13 +592,11 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageBasic1::sltHandleProfileButtonClick);
     connect(m_pProfileInstanceList, &QListWidget::currentRowChanged,
             this, &UIWizardImportAppPageBasic1::completeChanged);
+}
 
-    /* Register fields: */
-    registerField("isSourceCloudOne", this, "isSourceCloudOne");
-    registerField("profile", this, "profile");
-    registerField("cloudAppliance", this, "cloudAppliance");
-    registerField("vsdForm", this, "vsdForm");
-    registerField("machineId", this, "machineId");
+UIWizardImportApp *UIWizardImportAppPageBasic1::wizard() const
+{
+    return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
 void UIWizardImportAppPageBasic1::retranslateUi()
@@ -557,6 +610,21 @@ void UIWizardImportAppPageBasic1::retranslateUi()
                                                     "local file system to import OVF archive or one of known cloud "
                                                     "service providers to import cloud VM from."));
 
+    /* Translate description label: */
+    if (m_pLabelDescription)
+    {
+        if (wizard()->isSourceCloudOne())
+            m_pLabelDescription->setText(UIWizardImportApp::
+                                         tr("<p>Please choose one of cloud service profiles you have registered to import virtual "
+                                            "machine from.  Corresponding machines list will be updated.  To continue, "
+                                            "select one of machines to import below.</p>"));
+        else
+            m_pLabelDescription->setText(UIWizardImportApp::
+                                         tr("<p>Please choose a file to import the virtual appliance from.  VirtualBox currently "
+                                            "supports importing appliances saved in the Open Virtualization Format (OVF).  "
+                                            "To continue, select the file to import below.</p>"));
+    }
+
     /* Translate source label: */
     if (m_pSourceLabel)
         m_pSourceLabel->setText(UIWizardImportApp::tr("&Source:"));
@@ -569,7 +637,7 @@ void UIWizardImportAppPageBasic1::retranslateUi()
         /* Translate received values of Source combo-box.
          * We are enumerating starting from 0 for simplicity: */
         for (int i = 0; i < m_pSourceComboBox->count(); ++i)
-            if (isSourceCloudOne(i))
+            if (isSourceCloudOne(m_pSourceComboBox, i))
             {
                 m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
                 m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
@@ -615,26 +683,25 @@ void UIWizardImportAppPageBasic1::retranslateUi()
         m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
     }
 
-    /* Update page appearance: */
-    updatePageAppearance();
-
     /* Update tool-tips: */
-    updateSourceComboToolTip();
+    updateSourceComboToolTip(m_pSourceComboBox);
 }
 
 void UIWizardImportAppPageBasic1::initializePage()
 {
     /* Populate sources: */
-    populateSources();
-    /* Populate profiles: */
-    populateProfiles();
-    /* Populate profile: */
-    populateProfile();
-    /* Populate profile instances: */
-    populateProfileInstances();
-
+    populateSources(m_pSourceComboBox, m_fImportFromOCIByDefault);
     /* Translate page: */
     retranslateUi();
+
+    /* Choose initially focused widget: */
+    if (wizard()->isSourceCloudOne())
+        m_pProfileInstanceList->setFocus();
+    else
+        m_pFileSelector->setFocus();
+
+    /* Fetch it, asynchronously: */
+    QMetaObject::invokeMethod(this, "sltHandleSourceComboChange", Qt::QueuedConnection);
 }
 
 bool UIWizardImportAppPageBasic1::isComplete() const
@@ -643,11 +710,11 @@ bool UIWizardImportAppPageBasic1::isComplete() const
     bool fResult = true;
 
     /* Check whether there was cloud source selected: */
-    if (isSourceCloudOne())
-        fResult = !machineId().isNull();
+    if (wizard()->isSourceCloudOne())
+        fResult = !machineId(m_pProfileInstanceList).isEmpty();
     else
-        fResult =    UICommon::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
-                  && QFile::exists(m_pFileSelector->path());
+        fResult =    UICommon::hasAllowedExtension(path(m_pFileSelector), OVFFileExts)
+                  && QFile::exists(path(m_pFileSelector));
 
     /* Return result: */
     return fResult;
@@ -659,68 +726,47 @@ bool UIWizardImportAppPageBasic1::validatePage()
     bool fResult = true;
 
     /* Check whether there was cloud source selected: */
-    if (isSourceCloudOne())
+    if (wizard()->isSourceCloudOne())
     {
-        /* Create appliance & populate form properties: */
-        populateFormProperties();
+        /* Update cloud stuff: */
+        updateCloudStuff();
         /* Which is required to continue to the next page: */
-        fResult =    m_comCloudAppliance.isNotNull()
-                  && m_comVSDForm.isNotNull();
+        fResult =    wizard()->cloudAppliance().isNotNull()
+                  && wizard()->vsdImportForm().isNotNull();
     }
     else
     {
-        /* If file name was changed: */
+        /* Update local stuff (only if something changed): */
         if (m_pFileSelector->isModified())
         {
-            /* Check if specified file contains valid appliance: */
-            if (   !QFile::exists(m_pFileSelector->path())
-                || !qobject_cast<UIWizardImportApp*>(wizard())->setFile(m_pFileSelector->path()))
-                return false;
-            /* Reset the modified bit afterwards: */
+            updateLocalStuff();
             m_pFileSelector->resetModified();
         }
-        /* If we have a valid ovf proceed to the appliance settings page: */
-        fResult = qobject_cast<UIWizardImportApp*>(wizard())->isValid();
+        /* Which is required to continue to the next page: */
+        fResult = wizard()->localAppliance().isNotNull();
     }
 
     /* Return result: */
     return fResult;
 }
 
-void UIWizardImportAppPageBasic1::updatePageAppearance()
-{
-    /* Call to base-class: */
-    UIWizardImportAppPage1::updatePageAppearance();
-
-    /* Update page appearance according to chosen storage-type: */
-    if (isSourceCloudOne())
-    {
-        m_pLabelDescription->setText(UIWizardImportApp::
-                                     tr("<p>Please choose one of cloud service profiles you have registered to import virtual "
-                                        "machine from.  Corresponding machines list will be updated.  To continue, "
-                                        "select one of machines to import below.</p>"));
-        m_pProfileInstanceList->setFocus();
-    }
-    else
-    {
-        m_pLabelDescription->setText(UIWizardImportApp::
-                                     tr("<p>Please choose a file to import the virtual appliance from.  VirtualBox currently "
-                                        "supports importing appliances saved in the Open Virtualization Format (OVF).  "
-                                        "To continue, select the file to import below.</p>"));
-        m_pFileSelector->setFocus();
-    }
-}
-
 void UIWizardImportAppPageBasic1::sltHandleSourceComboChange()
 {
     /* Update combo tool-tip: */
-    updateSourceComboToolTip();
+    updateSourceComboToolTip(m_pSourceComboBox);
 
-    /* Refresh required settings: */
-    updatePageAppearance();
-    populateProfiles();
-    populateProfile();
-    populateProfileInstances();
+    /* Update wizard fields: */
+    wizard()->setSourceCloudOne(isSourceCloudOne(m_pSourceComboBox));
+
+    /* Refresh page widgets: */
+    refreshStackedWidget(m_pSettingsWidget1,
+                         wizard()->isSourceCloudOne());
+    refreshProfileCombo(m_pProfileComboBox,
+                        source(m_pSourceComboBox),
+                        wizard()->isSourceCloudOne());
+
+    /* Update profile instances: */
+    sltHandleProfileComboChange();
 
     /* Notify about changes: */
     emit completeChanged();
@@ -729,8 +775,10 @@ void UIWizardImportAppPageBasic1::sltHandleSourceComboChange()
 void UIWizardImportAppPageBasic1::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
-    populateProfile();
-    populateProfileInstances();
+    refreshCloudProfileInstances(m_pProfileInstanceList,
+                                 source(m_pSourceComboBox),
+                                 profileName(m_pProfileComboBox),
+                                 wizard()->isSourceCloudOne());
 
     /* Notify about changes: */
     emit completeChanged();
@@ -741,4 +789,26 @@ void UIWizardImportAppPageBasic1::sltHandleProfileButtonClick()
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
+}
+
+void UIWizardImportAppPageBasic1::updateLocalStuff()
+{
+    /* Create local appliance: */
+    wizard()->setFile(path(m_pFileSelector));
+}
+
+void UIWizardImportAppPageBasic1::updateCloudStuff()
+{
+    /* Create cloud appliance and VSD import form: */
+    CAppliance comAppliance;
+    CVirtualSystemDescriptionForm comForm;
+    refreshCloudStuff(comAppliance,
+                      comForm,
+                      wizard(),
+                      machineId(m_pProfileInstanceList),
+                      source(m_pSourceComboBox),
+                      profileName(m_pProfileComboBox),
+                      wizard()->isSourceCloudOne());
+    wizard()->setCloudAppliance(comAppliance);
+    wizard()->setVsdImportForm(comForm);
 }
