@@ -350,6 +350,7 @@ typedef HV_PARTITION_PROPERTY *PHV_PARTITION_PROPERTY;
 typedef enum
 {
     HvPartitionPropertyPrivilegeFlags = 0x00010000,
+    HvPartitionPropertySyntheticProcessorFeaturesBanks, /**< Read by WHvApi::Capabilities::GetSyntheticProcessorFeaturesBanks (build 22000) */
 
     HvPartitionPropertyCpuReserve = 0x00020001,
     HvPartitionPropertyCpuCap,
@@ -359,6 +360,9 @@ typedef enum
     HvPartitionPropertyEmulatedTimerPeriod = 0x00030000, /**< @note Fails on exo partition (build 17134). */
     HvPartitionPropertyEmulatedTimerControl,        /**< @note Fails on exo partition (build 17134). */
     HvPartitionPropertyPmTimerAssist,               /**< @note Fails on exo partition (build 17134). */
+    HvPartitionPropertyUnknown30003,                /**< @note WHvSetupPartition writes this (build 22000). */
+    HvPartitionPropertyUnknown30004,                /**< ? */
+    HvPartitionPropertyUnknown30005,                /**< WHvPartitionPropertyCodeReferenceTime maps to this (build 22000) */
 
     HvPartitionPropertyDebugChannelId = 0x00040000, /**< @note Hangs system on exo partition hangs (build 17134). */
 
@@ -368,7 +372,24 @@ typedef enum
     HvPartitionPropertyUnknown50003,                /**< On exo partition (build 17134), initial value zero. */
     HvPartitionPropertyUnknown50004,                /**< On exo partition (build 17134), initial value zero. */
     HvPartitionPropertyUnknown50005,                /**< On exo partition (build 17134), initial value one. */
-    HvPartitionPropertyUnknown50006,                /**< On exo partition (build 17134), initial value zero. */
+    HvPartitionPropertyUnknown50006,                /**< On exo partition (build 17134), initial value zero.
+                                                     * @note build 22000/w11-ga fends this off in VID.SYS. */
+    HvPartitionPropertyUnknown50007,
+    HvPartitionPropertyUnknown50008,
+    HvPartitionPropertyUnknown50009,
+    HvPartitionPropertyUnknown5000a,
+    HvPartitionPropertyUnknown5000b,
+    HvPartitionPropertyUnknown5000c,
+    HvPartitionPropertyUnknown5000d,
+    HvPartitionPropertyUnknown5000e,
+    HvPartitionPropertyUnknown5000f,
+    HvPartitionPropertyUnknown50010,
+    HvPartitionPropertyUnknown50012,
+    HvPartitionPropertyUnknown50013,                /**< Set by WHvSetupPartition (build 22000) */
+    HvPartitionPropertyUnknown50014,
+    HvPartitionPropertyUnknown50015,
+    HvPartitionPropertyUnknown50016,
+    HvPartitionPropertyUnknown50017,                /**< Set by WHvSetupPartition (build 22000) */
 
     HvPartitionPropertyProcessorVendor = 0x00060000,
     HvPartitionPropertyProcessorFeatures,           /**< On exo/17134/threadripper: 0x6cb26f39fbf */
@@ -377,6 +398,11 @@ typedef enum
     HvPartitionPropertyUnknown60004,                /**< On exo partition (build 17134), initial value zero. */
     HvPartitionPropertyUnknown60005,                /**< On exo partition (build 17134), initial value 0x603. */
     HvPartitionPropertyUnknown60006,                /**< On exo partition (build 17134), initial value 0x2c. */
+    HvPartitionPropertyUnknown60007,                /**< WHvSetupPartition reads this (build 22000). */
+    HvPartitionPropertyUnknown60008,                /**< WHvSetupPartition reads this (build 22000). */
+    HvPartitionPropertyProcessorClockFrequency,     /**< Read by WHvApi::Capabilities::GetProcessorClockFrequency (build 22000). */
+    HvPartitionPropertyProcessorFeaturesBank0,      /**< Read by WHvApi::Capabilities::GetProcessorFeaturesBanks (build 22000). */
+    HvPartitionPropertyProcessorFeaturesBank1,      /**< Read by WHvApi::Capabilities::GetProcessorFeaturesBanks (build 22000). */
 
     HvPartitionPropertyGuestOsId = 0x00070000,      /**< @since v4 */
 
