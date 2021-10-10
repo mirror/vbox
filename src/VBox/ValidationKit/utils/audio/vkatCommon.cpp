@@ -523,8 +523,9 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         AssertStmt(cbToPlayTotal, rc = VERR_INVALID_PARAMETER);
         uint32_t cbPlayedTotal  = 0;
 
-        /* We play a pre + post beacon before + after the actual test tone with exactly 1024 audio frames. */
-        uint32_t const cbBeacon       = PDMAudioPropsFramesToBytes(&pStream->Cfg.Props, 1024);
+        /* We play a pre + post beacon before + after the actual test tone
+         * with exactly AUDIOTEST_BEACON_SIZE_FRAMES audio frames. */
+        uint32_t const cbBeacon       = PDMAudioPropsFramesToBytes(&pStream->Cfg.Props, AUDIOTEST_BEACON_SIZE_FRAMES);
         uint32_t       cbBeaconToPlay = cbBeacon;
         uint32_t       cbBeaconPlayed = 0;
 
@@ -587,7 +588,9 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                 {
                     /* Limit to exactly one beacon (pre or post). */
                     cbToPlay = RT_MIN(sizeof(abBuf), RT_MIN(cbCanWrite, cbBeaconToPlay - cbBeaconPlayed));
-                    memset(abBuf, 0x42 /* Our actual beacon data, hopefully the answer to all ... */, cbToPlay);
+                    memset(abBuf,
+                           cbPlayedTotal >= cbToPlayTotal - cbBeaconToPlay ? AUDIOTEST_BEACON_BYTE_POST : AUDIOTEST_BEACON_BYTE_PRE,
+                           cbToPlay);
 
                     rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
                     if (RT_FAILURE(rc))

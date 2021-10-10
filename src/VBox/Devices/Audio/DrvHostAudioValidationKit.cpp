@@ -311,6 +311,13 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
 
     Assert(pThis->cTestsRec == 0);
     Assert(pThis->cTestsPlay == 0);
+
+    if (pThis->cbPlayedNoTest)
+    {
+        LogRel2(("ValKit: Warning: Guest was playing back audio when no playback test is active (%RU64 bytes total)\n",
+                 pThis->cbPlayedNoTest));
+        pThis->cbPlayedNoTest = 0;
+    }
 }
 
 
@@ -516,8 +523,12 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     AssertReturn(pTestData->t.TestTone.Parms.msDuration, VERR_INVALID_PARAMETER);
     AssertReturn(PDMAudioPropsAreValid(&pTestData->t.TestTone.Parms.Props), VERR_INVALID_PARAMETER);
 
-    pTestData->t.TestTone.u.Play.cbToRead = PDMAudioPropsMilliToBytes(&pTestData->t.TestTone.Parms.Props,
-                                                                      pTestData->t.TestTone.Parms.msDuration);
+    pTestData->t.TestTone.u.Play.cbToRead  = PDMAudioPropsMilliToBytes(&pTestData->t.TestTone.Parms.Props,
+                                                                       pTestData->t.TestTone.Parms.msDuration);
+    uint32_t const cbBeacons = PDMAudioPropsFramesToBytes(&pTestData->t.TestTone.Parms.Props,
+                                                          AUDIOTEST_BEACON_SIZE_FRAMES * 2 /* Pre + post beacon */);
+    pTestData->t.TestTone.u.Play.cbToRead += cbBeacons;
+
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
@@ -920,8 +931,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     if (pTst == NULL) /* Empty list? */
     {
-        LogRel2(("ValKit: Warning: Guest is playing back audio when no playback test is active\n"));
-
         pThis->cbPlayedNoTest += cbBuf;
 
         *pcbWritten = cbBuf;
@@ -930,7 +939,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     if (pThis->cbPlayedNoTest)
     {
-        LogRel(("ValKit: Warning: Guest was playing back audio (%RU32 bytes, %RU64ms) when no playback test is active\n",
+        LogRel(("ValKit: Warning: Guest was playing back audio (%RU64 bytes, %RU64ms) when no playback test is active\n",
                 pThis->cbPlayedNoTest, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedNoTest)));
         pThis->cbPlayedNoTest = 0;
     }
@@ -942,7 +951,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     else /* Audible data */
     {
         if (pThis->cbPlayedSilence)
-            LogRel(("ValKit: Guest was playing back %RU32 bytes (%RU64ms) of silence\n",
+            LogRel(("ValKit: Guest was playing back %RU64 bytes (%RU64ms) of silence\n",
                     pThis->cbPlayedSilence, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedSilence)));
         pThis->cbPlayedSilence = 0;
     }

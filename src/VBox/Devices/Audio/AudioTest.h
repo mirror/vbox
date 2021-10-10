@@ -31,6 +31,12 @@
 #define AUDIOTEST_ERROR_DESC_MAX        256
 /** Prefix for audio test (set) directories. */
 #define AUDIOTEST_PATH_PREFIX_STR       "vkat"
+/** Audio beacon data (single byte) to use for the post beacon (intro). */
+#define AUDIOTEST_BEACON_BYTE_PRE       0x42
+/** Audio beacon data (single byte) to use for the post beacon (outro). */
+#define AUDIOTEST_BEACON_BYTE_POST      0x24
+/** Pre / post audio beacon size (in audio frames). */
+#define AUDIOTEST_BEACON_SIZE_FRAMES    1024
 
 /**
  * Enumeration for an audio test tone (wave) type.
