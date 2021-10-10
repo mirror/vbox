@@ -1415,7 +1415,7 @@ int AudioTestMixStreamDrain(PAUDIOTESTDRVMIXSTREAM pMix, bool fSync)
     }
 
     /*
-     * Then we do the regular workt.
+     * Then we do the regular work.
      */
     return audioTestDriverStackStreamDrain(pMix->pDrvStack, pMix->pStream, fSync);
 }
