@@ -2204,14 +2204,16 @@ static int audioTestObjFileNormalize(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOBJI
  */
 typedef struct AUDIOTESTFILECMPPARMS
 {
+    /** File name for logging purposes. */
+    const char *pszName;
     /** File handle to file to compare. */
-    RTFILE   hFile;
+    RTFILE      hFile;
     /** Absolute offset (in bytes) to start comparing.
      *  Ignored when set to 0. */
-    uint64_t offStart;
+    uint64_t    offStart;
     /** Size (in bytes) of area to compare.
      *  Starts at \a offStart. */
-    uint64_t cbSize;
+    uint64_t    cbSize;
 } AUDIOTESTFILECMPPARMS;
 /** Pointer to file comparison parameters for one file. */
 typedef AUDIOTESTFILECMPPARMS *PAUDIOTESTFILECMPPARMS;
@@ -2316,6 +2318,81 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     return cDiffs;
 }
 
+/**
+ * Verifies a pre/post beacon of a test tone.
+ *
+ * @returns VBox status code.
+ * @param   pVerJob             Verification job to verify PCM data for.
+ * @param   fPre                Set to \c true to verify a pre beacon, or \c false to verify a post beacon.
+ * @param   pCmp                File comparison parameters to file to verify beacon for.
+ * @param   pToneParms          Tone parameters to use for verification.
+ */
+static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
+                                     bool fPre, PAUDIOTESTFILECMPPARMS pCmp, PAUDIOTESTTONEPARMS pToneParms)
+{
+    int rc = RTFileSeek(pCmp->hFile, pCmp->offStart, RTFILE_SEEK_BEGIN, NULL);
+    AssertRCReturn(rc, rc);
+
+    uint8_t        auBuf[64];
+    uint64_t       cbToCompare = pCmp->cbSize;
+    uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
+    bool           fInBeacon   = false;
+    uint32_t       cbBeacon    = 0;
+
+    uint8_t const  byBeacon    = fPre ? AUDIOTEST_BEACON_BYTE_PRE : AUDIOTEST_BEACON_BYTE_POST;
+
+    AssertReturn(cbFrameSize == 4, VERR_NOT_SUPPORTED); /* Otherwise the stuff below won't work. */
+
+    /* Slow as heck, but does the job for now. */
+    while (cbToCompare)
+    {
+        size_t cbRead;
+        rc = RTFileRead(pCmp->hFile, auBuf, RT_MIN(cbToCompare, cbFrameSize), &cbRead);
+        AssertRCBreak(rc);
+
+        if (cbRead < cbFrameSize)
+            break;
+
+        for (size_t i = 0; i < cbRead; i += cbFrameSize)
+        {
+            if (   auBuf[i]     == byBeacon
+                && auBuf[i + 1] == byBeacon
+                && auBuf[i + 2] == byBeacon
+                && auBuf[i + 3] == byBeacon)
+            {
+                if (!fInBeacon)
+                {
+                    cbBeacon  = 0;
+                    fInBeacon = true;
+                }
+                cbBeacon += cbFrameSize;
+            }
+            else
+            {
+                if (fInBeacon)
+                {
+                    fInBeacon = false;
+                    continue;
+                }
+            }
+        }
+
+        cbToCompare -= cbRead;
+    }
+
+    uint32_t const cbBeaconExpected = PDMAudioPropsFramesToBytes(&pToneParms->Props, AUDIOTEST_BEACON_SIZE_FRAMES);
+    bool     const fValid           = cbBeacon == cbBeaconExpected;
+    if (!fValid)
+    {
+        int rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest, "File '%s': %s beacon %s (got %RU32 bytes, expected %RU32)",
+                                             pCmp->pszName,
+                                             fPre ? "Pre" : "Post", cbBeacon ? "found" : "not found", cbBeacon, cbBeaconExpected);
+        AssertRC(rc2);
+    }
+
+    return rc;
+}
+
 #define CHECK_RC_MAYBE_RET(a_rc, a_pVerJob) \
     if (RT_FAILURE(a_rc)) \
     { \
@@ -2393,10 +2470,10 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     {
         size_t const cbDiffAbs = cbSizeA > cbSizeB ? cbSizeA - cbSizeB : cbSizeB - cbSizeA;
 
-        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes (%RU64ms)",
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s': %zu bytes (%RU64ms)",
                                             ObjA.szName, cbSizeA, PDMAudioPropsBytesToMilli(&pVerJob->PCMProps, cbSizeA));
         AssertRC(rc2);
-        rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s' is %zu bytes (%RU64ms)",
+        rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s': %zu bytes (%RU64ms)",
                                         ObjB.szName, cbSizeB, PDMAudioPropsBytesToMilli(&pVerJob->PCMProps, cbSizeB));
         AssertRC(rc2);
 
@@ -2434,6 +2511,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
 
     AUDIOTESTFILECMPPARMS FileA;
     RT_ZERO(FileA);
+    FileA.pszName   = ObjA.szName;
     FileA.hFile     = ObjA.File.hFile;
     FileA.offStart  =        audioTestToneFileFind(ObjA.File.hFile,
                                                    true /* fFindSilence */, 0 /* uOff */, &ToneParmsA, cbSearchWindow);
@@ -2447,6 +2525,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
 
     AUDIOTESTFILECMPPARMS FileB;
     RT_ZERO(FileB);
+    FileB.pszName   = ObjB.szName;
     FileB.hFile     = ObjB.File.hFile;
     FileB.offStart  =        audioTestToneFileFind(ObjB.File.hFile,
                                                    true /* fFindSilence */, 0 /* uOff */, &ToneParmsB, cbSearchWindow);
@@ -2460,11 +2539,23 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
                                     ObjA.szName, FileA.offStart, FileA.offStart, FileA.cbSize, FileA.cbSize, cbSizeA);
     AssertRC(rc2);
 
-    rc = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File B ('%s'): uOff=%RU64 (%#x), cbSize=%RU64 (%#x), cbFileSize=%RU64\n",
-                                   ObjB.szName, FileB.offStart, FileB.offStart, FileB.cbSize, FileB.cbSize, cbSizeB);
+    rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File B ('%s'): uOff=%RU64 (%#x), cbSize=%RU64 (%#x), cbFileSize=%RU64\n",
+                                    ObjB.szName, FileB.offStart, FileB.offStart, FileB.cbSize, FileB.cbSize, cbSizeB);
     AssertRC(rc2);
 #endif
 
+    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileA, &ToneParmsA);
+    AssertRC(rc);
+    rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileA, &ToneParmsA);
+    AssertRC(rc);
+    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileB, &ToneParmsB);
+    AssertRC(rc);
+    rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileB, &ToneParmsB);
+    AssertRC(rc);
+
+    /* Note! When finding the pre/post beacons fail it's mostly pointless to comparing the files in any way,
+     *       as this would be the strongest hint that testing failed as a whole. We do it anyway for now, to
+     *       just get a clue what's going on. Might be disabled lateron. */
     uint32_t const cDiffs = audioTestFilesFindDiffsBinary(pVerJob, &FileA, &FileB, &ToneParmsA);
 
     if (cDiffs > pVerJob->Opts.cMaxDiff)
