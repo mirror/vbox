@@ -96,28 +96,105 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void)
 
 RTR0DECL(int) RTR0MemKernelCopyFrom(void *pvDst, void const *pvSrc, size_t cb)
 {
+    if (!RTR0MemKernelIsValidAddr((void *)pvSrc))
+        return VERR_ACCESS_DENIED;
+
+    uint8_t       *pbDst = (uint8_t *)pvDst;
+    uint8_t const *pbSrc = (uint8_t const *)pvSrc;
+
+#if 0
+    /*
+     * The try+except stuff does not work for kernel addresses.
+     */
     __try
     {
-        memcpy(pvDst, pvSrc, cb);
+        while (cb-- > 0)
+            *pbDst++ = *pbSrc++;
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
     {
         return VERR_ACCESS_DENIED;
     }
+#else
+    /*
+     * This is the best I can come up with for now: Work page-by-page using MmIsAddressValid.
+     */
+    while (cb > 0)
+    {
+        if (!MmIsAddressValid((PVOID)pbSrc))
+            return VERR_ACCESS_DENIED;
+
+        size_t cbToCopy = (uintptr_t)pbSrc & PAGE_OFFSET_MASK;
+        if (cbToCopy > cb)
+            cbToCopy = cb;
+        cb -= cbToCopy;
+
+        __try /* doesn't work, but can't hurt, right? */
+        {
+            while (cbToCopy-- > 0)
+                *pbDst++ = *pbSrc++;
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            return VERR_ACCESS_DENIED;
+        }
+    }
+#endif
     return VINF_SUCCESS;
 }
 
 
 RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb)
 {
+    if (!RTR0MemKernelIsValidAddr(pvDst))
+        return VERR_ACCESS_DENIED;
+#if 0
+    uint8_t       *pbDst = (uint8_t *)pvDst;
+    uint8_t const *pbSrc = (uint8_t const *)pvSrc;
+# if 0
+    /*
+     * The try+except stuff does not work for kernel addresses.
+     */
     __try
     {
-        memcpy(pvDst, pvSrc, cb);
+        while (cb-- > 0)
+            *pbDst++ = *pbSrc++;
     }
     __except(EXCEPTION_EXECUTE_HANDLER)
     {
         return VERR_ACCESS_DENIED;
     }
+
+# else
+    /*
+     * This is the best I can come up with for now: Work page-by-page using MmIsAddressValid.
+     * Note! MmIsAddressValid does not indicate that it's writable, so we're a bit buggered if it isn't...
+     */
+    while (cb > 0)
+    {
+        if (!MmIsAddressValid((PVOID)pbSrc))
+            return VERR_ACCESS_DENIED;
+
+        size_t cbToCopy = (uintptr_t)pbSrc & PAGE_OFFSET_MASK;
+        if (cbToCopy > cb)
+            cbToCopy = cb;
+        cb -= cbToCopy;
+
+        __try /* doesn't work, but can't hurt, right? */
+        {
+            while (cbToCopy-- > 0)
+                *pbDst++ = *pbSrc++;
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
+            return VERR_ACCESS_DENIED;
+        }
+    }
+# endif
     return VINF_SUCCESS;
+#else
+    RT_NOREF(pvDst, pvSrc, cb);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
