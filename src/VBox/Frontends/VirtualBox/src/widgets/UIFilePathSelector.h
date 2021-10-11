@@ -65,8 +65,7 @@ public:
     {
         PathId = 0,
         SelectId,
-        ResetId,
-        RecentListSeparator
+        ResetId
     };
 
     /** Constructs file-path selector passing @a pParent to QIComboBox base-class. */
@@ -204,6 +203,9 @@ private:
     /** Holds the cached tool-tip for empty path in focused case. */
     QString  m_strNoneToolTipFocused;
 
+    /** Holds whether editor has Reset action. */
+    bool     m_fResetEnabled;
+
     /** Holds whether the path is editable. */
     bool     m_fEditable;
     /** Holds whether the path is modified. */
@@ -223,6 +225,8 @@ private:
     /** Path is set to m_strDefaultPath when it is reset. */
     QString m_strDefaultPath;
 
+    /** Holds the recent list separator position. */
+    int                 m_iRecentListSeparatorPosition;
     /** Holds whether medium type for recent media list. If it is UIMediumDeviceType_Invalid the recent list is not shown. */
     UIMediumDeviceType  m_enmRecentMediaListType;
 };

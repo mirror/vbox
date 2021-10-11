@@ -59,12 +59,14 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QIComboBox>(pParent)
     , m_enmMode(Mode_Folder)
     , m_strInitialPath(QDir::current().absolutePath())
+    , m_fResetEnabled(true)
     , m_fEditable(true)
     , m_fModified(false)
     , m_fEditableMode(false)
     , m_fMouseAwaited(false)
     , m_fToolTipOverriden(false)
     , m_pCopyAction(new QAction(this))
+    , m_iRecentListSeparatorPosition(ResetId + 1)
     , m_enmRecentMediaListType(UIMediumDeviceType_Invalid)
 {
 #ifdef VBOX_WS_WIN
@@ -153,6 +155,12 @@ void UIFilePathSelector::setEditable(bool fEditable)
 
 void UIFilePathSelector::setResetEnabled(bool fEnabled)
 {
+    /* Cache requested state: */
+    m_fResetEnabled = fEnabled;
+
+    /* Update recent list separator position: */
+    m_iRecentListSeparatorPosition = fEnabled ? ResetId + 1 : ResetId;
+
     if (!fEnabled && count() - 1 == ResetId)
         removeItem(ResetId);
     else if (fEnabled && count() - 1 == ResetId - 1)
@@ -343,31 +351,25 @@ void UIFilePathSelector::retranslateUi()
 
 void UIFilePathSelector::onActivated(int iIndex)
 {
-    switch (iIndex)
+    /* Since the presence of ResetId and position of recent list separator
+     * are dynamical now, we should control condition more carefully: */
+    if (iIndex == SelectId)
+        selectPath();
+    else if (m_fResetEnabled && iIndex == ResetId)
     {
-        case SelectId:
-        {
-            selectPath();
-            break;
-        }
-        case ResetId:
-        {
-            if (m_strDefaultPath.isEmpty())
-                changePath(QString());
-            else
-                changePath(m_strDefaultPath);
-            break;
-        }
-        default:
-        {
-            if (iIndex >= RecentListSeparator)
-            {
-                changePath(itemText(iIndex));
-                update();
-            }
-            break;
-        }
+        if (m_strDefaultPath.isEmpty())
+            changePath(QString());
+        else
+            changePath(m_strDefaultPath);
     }
+    else if (iIndex >= m_iRecentListSeparatorPosition)
+    {
+        /* Switch back to Path item early, lineEdit() in refreshText()
+         * should be related to this exactly item: */
+        setCurrentIndex(PathId);
+        changePath(itemText(iIndex));
+    }
+
     setCurrentIndex(PathId);
     setFocus();
 }
@@ -389,7 +391,7 @@ void UIFilePathSelector::copyToClipboard()
 void UIFilePathSelector::changePath(const QString &strPath,
                                     bool fRefreshText /* = true */)
 {
-    const QString strOldPath = m_strPath;
+    const QString strOldPath = QDir::toNativeSeparators(m_strPath);
     setPath(strPath, fRefreshText);
     if (!m_fModified && m_strPath != strOldPath)
         m_fModified = true;
@@ -612,10 +614,8 @@ void UIFilePathSelector::refreshText()
 void UIFilePathSelector::sltRecentMediaListUpdated(UIMediumDeviceType enmMediumType)
 {
     /* Remove the recent media list from the end of the combo: */
-    while (count() >= static_cast<int>(RecentListSeparator))
-    {
+    while (count() >= m_iRecentListSeparatorPosition)
         removeItem(count() - 1);
-    }
 
 
     if (enmMediumType != m_enmRecentMediaListType)
@@ -640,7 +640,7 @@ void UIFilePathSelector::sltRecentMediaListUpdated(UIMediumDeviceType enmMediumT
     if (recentMedia.isEmpty())
         return;
 
-    insertSeparator(RecentListSeparator);
+    insertSeparator(m_iRecentListSeparatorPosition);
     foreach (const QString strPath, recentMedia)
         addItem(strPath);
 
