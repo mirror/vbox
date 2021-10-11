@@ -3029,7 +3029,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemExtendedHandleInformation, /* 64 */
     SystemInformation_Unknown_65,
     SystemInformation_Unknown_66,
-    SystemInformation_Unknown_67,
+    SystemInformation_Unknown_67, /**< See https://www.geoffchappell.com/studies/windows/km/ntoskrnl/api/ex/sysinfo/codeintegrity.htm */
     SystemInformation_Unknown_68,
     SystemInformation_HotPatchInfo, /* 69 */
     SystemInformation_Unknown_70,
