@@ -234,7 +234,7 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
  */
 static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-#ifdef IN_RING0
+#if 0 /*def IN_RING0 - why? */
     RT_NOREF_PV(cbMinRead);
     AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
     RT_BZERO(&pDis->abInstr[offInstr], cbMaxRead);
