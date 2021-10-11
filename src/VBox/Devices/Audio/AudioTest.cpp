@@ -2439,7 +2439,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
                                                    true /* fFindSilence */, 0 /* uOff */, &ToneParmsA, cbSearchWindow);
     FileA.cbSize    = RT_MIN(audioTestToneFileFind(ObjA.File.hFile,
                                                    false /* fFindSilence */, FileA.offStart, &ToneParmsA, cbSearchWindow),
-                             cbSizeA);
+                             cbSizeA - FileA.offStart);
 
     AUDIOTESTTONEPARMS ToneParmsB;
     RT_ZERO(ToneParmsB);
@@ -2452,7 +2452,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
                                                    true /* fFindSilence */, 0 /* uOff */, &ToneParmsB, cbSearchWindow);
     FileB.cbSize    = RT_MIN(audioTestToneFileFind(ObjB.File.hFile,
                                                    false /* fFindSilence */, FileB.offStart, &ToneParmsB, cbSearchWindow),
-                             cbSizeB);
+                             cbSizeB - FileB.offStart);
 
     int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File A ('%s'): uOff=%RU64 (%#x), cbSize=%RU64 (%#x), cbFileSize=%RU64\n",
                                         ObjA.szName, FileA.offStart, FileA.offStart, FileA.cbSize, FileA.cbSize, cbSizeA);
