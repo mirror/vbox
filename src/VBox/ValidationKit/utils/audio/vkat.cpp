@@ -152,7 +152,8 @@ enum
 {
     VKAT_VERIFY_OPT_MAX_DIFF_COUNT = 900,
     VKAT_VERIFY_OPT_MAX_DIFF_PERCENT,
-    VKAT_VERIFY_OPT_MAX_SIZE_PERCENT
+    VKAT_VERIFY_OPT_MAX_SIZE_PERCENT,
+    VKAT_VERIFY_OPT_NORMALIZE
 };
 
 /**
@@ -211,7 +212,8 @@ static const RTGETOPTDEF g_aCmdVerifyOptions[] =
 {
     { "--max-diff-count",      VKAT_VERIFY_OPT_MAX_DIFF_COUNT,     RTGETOPT_REQ_UINT32 },
     { "--max-diff-percent",    VKAT_VERIFY_OPT_MAX_DIFF_PERCENT,   RTGETOPT_REQ_UINT8  },
-    { "--max-size-percent",    VKAT_VERIFY_OPT_MAX_SIZE_PERCENT,   RTGETOPT_REQ_UINT8  }
+    { "--max-size-percent",    VKAT_VERIFY_OPT_MAX_SIZE_PERCENT,   RTGETOPT_REQ_UINT8  },
+    { "--normalize",           VKAT_VERIFY_OPT_NORMALIZE,          RTGETOPT_REQ_BOOL   }
 };
 
 /** Terminate ASAP if set.  Set on Ctrl-C. */
@@ -1148,6 +1150,10 @@ static DECLCALLBACK(RTEXITCODE) audioVerifyMain(PRTGETOPTSTATE pGetState)
 
             case VKAT_VERIFY_OPT_MAX_SIZE_PERCENT:
                 Opts.uMaxSizePercent = ValueUnion.u8;
+                break;
+
+            case VKAT_VERIFY_OPT_NORMALIZE:
+                Opts.fNormalize = ValueUnion.f;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
