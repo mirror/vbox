@@ -2364,6 +2364,8 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * - Querying HvPartitionPropertyDebugChannelId via HvCallGetPartitionProperty
  *   (hypercall) hangs the host (17134).
  *
+ * - CommonUtilities::GuidToString needs a 'static' before the hex digit array,
+ *   looks pointless to re-init a stack copy it for each call (novice mistake).
  *
  *
  * Old concerns that have been addressed:
