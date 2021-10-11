@@ -271,7 +271,7 @@ private slots:
     void sltCloseVMInformationDialogDefault() { sltCloseVMInformationDialog(true); }
     void sltShowFileManagerDialog();
     void sltCloseFileManagerDialog();
-    void sltReset();
+    void sltReset(bool fShowConfirmation = true);
     void sltPause(bool fOn);
     void sltDetach();
     void sltSaveState();
@@ -385,6 +385,8 @@ private:
       * if there are no other vms running at the moment. Note that this seems to be not needed on Linux since
       * closing vm windows re-activates screen saver automatically. On Windows explicit re-activation is needed. */
     void activateScreenSaver();
+    /* Shows the boot failure dialog through which user can mount a boot DVD and reset the vm. */
+    void showBootFailureDialog();
 
     /* Private variables: */
     UISession *m_pSession;

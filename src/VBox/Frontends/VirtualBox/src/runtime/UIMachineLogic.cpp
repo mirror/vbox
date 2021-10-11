@@ -33,6 +33,7 @@
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
+#include "UIBootTimeErrorDialog.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
@@ -664,6 +665,8 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
     /* Preprocess known runtime error types: */
     if (strErrorId == "DrvVD_DEKMISSING")
         return askUserForTheDiskEncryptionPasswords();
+    else if (strErrorId == "VMBootFail")
+        return showBootFailureDialog();
 
     /* Show runtime error: */
     msgCenter().showRuntimeError(console(), fIsFatal, strErrorId, strMessage);
@@ -1542,7 +1545,6 @@ void UIMachineLogic::sltShowSoftKeyboard()
     if (machine().isNull() || !activeMachineWindow())
         return;
 
-    /* Create the soft keyboard only once: */
     if (!m_pSoftKeyboardDialog)
     {
         QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
@@ -1796,10 +1798,15 @@ void UIMachineLogic::sltCloseFileManagerDialog()
     UIFileManagerDialogFactory().cleanup(pDialog);
 }
 
-void UIMachineLogic::sltReset()
+void UIMachineLogic::sltReset(bool fShowConfirmation /* = true */)
 {
-    /* Confirm/Reset current console: */
-    if (msgCenter().confirmResetMachine(machineName()))
+    if (fShowConfirmation)
+    {
+        /* Confirm/Reset current console: */
+        if (msgCenter().confirmResetMachine(machineName()))
+            console().Reset();
+    }
+    else
         console().Reset();
 
     /* TODO_NEW_CORE: On reset the additional screens didn't get a display
@@ -3246,6 +3253,23 @@ void UIMachineLogic::activateScreenSaver()
     if (fAnother)
         return;
     sltDisableHostScreenSaverStateChanged(false);
+}
+
+void UIMachineLogic::showBootFailureDialog()
+{
+    QWidget *pParent = windowManager().realParentWindow(activeMachineWindow());
+    UIBootTimeErrorDialog *pBootFailureDialog = new UIBootTimeErrorDialog(pParent, machine());
+    AssertPtrReturnVoid(pBootFailureDialog);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), &UIAction::triggered,
+            this, &UIMachineLogic::sltReset);
+
+    int iResult = pBootFailureDialog->exec(false);
+
+
+    delete pBootFailureDialog;
+
+    if (iResult == static_cast<int>(UIBootTimeErrorDialog::ReturnCode_Reset))
+        sltReset(false);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
