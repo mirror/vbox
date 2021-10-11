@@ -2772,9 +2772,9 @@ void AudioTestSetVerifyOptsInitStrict(PAUDIOTESTVERIFYOPTS pOpts)
     RT_BZERO(pOpts, sizeof(AUDIOTESTVERIFYOPTS));
 
     pOpts->fKeepGoing      = true;
-    pOpts->fNormalize      = true;
-    pOpts->cMaxDiff        = 0; /* By default we're very strict and consider any diff as being erroneous. */
-    pOpts->uMaxSizePercent = 1; /* 1% is okay for us; might be due to any buffering / setup phase. */
+    pOpts->fNormalize      = false; /* Skip normalization by default now, as we now use the OS' master volume to play/record tones. */
+    pOpts->cMaxDiff        = 0;     /* By default we're very strict and consider any diff as being erroneous. */
+    pOpts->uMaxSizePercent = 1;     /* 1% is okay for us; might be due to any buffering / setup phase. */
 
     /* We use a search window of 10ms by default for finding (non-)silent parts. */
     pOpts->msSearchWindow  = 10;
