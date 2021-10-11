@@ -384,6 +384,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemObjGetPagePhysAddr",              (void *)(uintptr_t)RTR0MemObjGetPagePhysAddr },
     { "RTR0MemObjIsMapping",                    (void *)(uintptr_t)RTR0MemObjIsMapping },
     { "RTR0MemObjLockUserTag",                  (void *)(uintptr_t)RTR0MemObjLockUserTag },
+    { "RTR0MemObjLockKernelTag",                (void *)(uintptr_t)RTR0MemObjLockKernelTag },
     { "RTR0MemObjMapKernelExTag",               (void *)(uintptr_t)RTR0MemObjMapKernelExTag },
     { "RTR0MemObjMapKernelTag",                 (void *)(uintptr_t)RTR0MemObjMapKernelTag },
     { "RTR0MemObjMapUserTag",                   (void *)(uintptr_t)RTR0MemObjMapUserTag },
