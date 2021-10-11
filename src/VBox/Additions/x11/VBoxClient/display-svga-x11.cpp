@@ -738,8 +738,15 @@ static DECLCALLBACK(int) vbclSVGAInit(void)
     if (isXwayland())
     {
         rc = VbglR3DrmClientStart();
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+        {
+            VBClLogInfo("VBoxDrmClient has been successfully started, exitting parent process\n");
+            exit(0);
+        }
+        else
+        {
             VBClLogError("Starting DRM resizing client failed with %Rrc\n", rc);
+        }
         return rc;
     }
 
