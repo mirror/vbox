@@ -332,6 +332,8 @@ static DECLCALLBACK(int32_t) drvHostAudioAlsaLibInitOnce(void *pvUser)
                 return rc;
             }
         }
+
+        RTLdrClose(hMod);
     }
     else
         LogRelFunc(("Failed to load library %s (%Rrc)\n", VBOX_ALSA_LIB, rc));

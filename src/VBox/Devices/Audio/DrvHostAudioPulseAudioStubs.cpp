@@ -344,6 +344,8 @@ static DECLCALLBACK(int32_t) drvHostAudioPulseLibInitOnce(void *pvUser)
                 break;
             }
         }
+
+        RTLdrClose(hMod);
     }
     else
         LogRelFunc(("Failed to load library %s: %Rrc\n", VBOX_PULSE_LIB, rc));
