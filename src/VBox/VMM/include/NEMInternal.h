@@ -194,6 +194,8 @@ typedef struct NEM
 
     /** Info about the VidGetHvPartitionId I/O control interface. */
     NEMWINIOCTL                 IoCtlGetHvPartitionId;
+    /** Info about the VidGetPartitionProperty I/O control interface. */
+    NEMWINIOCTL                 IoCtlGetPartitionProperty;
     /** Info about the VidStartVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlStartVirtualProcessor;
     /** Info about the VidStopVirtualProcessor I/O control interface. */
@@ -289,6 +291,11 @@ typedef struct NEMCPU
         uint8_t                 ab[64];
         HV_PARTITION_ID         idPartition;
         HV_VP_INDEX             idCpu;
+        struct
+        {
+            uint64_t            enmProperty;
+            uint64_t            uValue;
+        } GetProp;
 # ifdef VID_MSHAGN_F_GET_NEXT_MESSAGE
         VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT MsgSlotHandleAndGetNext;
 # endif
@@ -383,6 +390,8 @@ typedef struct NEMR0PERVM
     PSUPR0IOCTLCTX              pIoCtlCtx;
     /** Info about the VidGetHvPartitionId I/O control interface. */
     NEMWINIOCTL                 IoCtlGetHvPartitionId;
+    /** Info about the VidGetPartitionProperty I/O control interface. */
+    NEMWINIOCTL                 IoCtlGetPartitionProperty;
     /** Info about the VidStartVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlStartVirtualProcessor;
     /** Info about the VidStopVirtualProcessor I/O control interface. */

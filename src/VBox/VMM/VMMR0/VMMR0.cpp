@@ -183,7 +183,10 @@ DECLEXPORT(int) ModuleInit(void *hMod)
                                     if (RT_SUCCESS(rc))
 #endif
                                     {
+#ifdef VBOX_WITH_NEM_R0
+                                        rc = NEMR0Init();
                                         if (RT_SUCCESS(rc))
+#endif
                                         {
                                             LogFlow(("ModuleInit: returns success\n"));
                                             return VINF_SUCCESS;
@@ -266,6 +269,9 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
     HMR0Term();
 #ifdef VBOX_WITH_TRIPLE_FAULT_HACK
     vmmR0TripleFaultHackTerm();
+#endif
+#ifdef VBOX_WITH_NEM_R0
+    NEMR0Term();
 #endif
 
     /*

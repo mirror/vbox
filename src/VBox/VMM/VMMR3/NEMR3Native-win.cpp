@@ -68,13 +68,17 @@
 #endif
 
 /** VID I/O control detection: Fake partition handle input. */
-#define NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE          ((HANDLE)(uintptr_t)38479125)
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE                      ((HANDLE)(uintptr_t)38479125)
 /** VID I/O control detection: Fake partition ID return. */
-#define NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_ID    UINT64_C(0xfa1e000042424242)
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_ID                UINT64_C(0xfa1e000042424242)
+/** VID I/O control detection: The property we get via VidGetPartitionProperty. */
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_CODE     HvPartitionPropertyProcessorVendor
+/** VID I/O control detection: Fake property value return. */
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_VALUE    UINT64_C(0xf00dface01020304)
 /** VID I/O control detection: Fake CPU index input. */
-#define NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX        UINT32_C(42)
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX                    UINT32_C(42)
 /** VID I/O control detection: Fake timeout input. */
-#define NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT         UINT32_C(0x00080286)
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT                     UINT32_C(0x00080286)
 
 
 /*********************************************************************************************************************************
@@ -104,6 +108,7 @@ static decltype(WHvSetVirtualProcessorRegisters) *  g_pfnWHvSetVirtualProcessorR
 /** @name APIs imported from Vid.dll
  * @{ */
 static decltype(VidGetHvPartitionId)               *g_pfnVidGetHvPartitionId;
+static decltype(VidGetPartitionProperty)           *g_pfnVidGetPartitionProperty;
 static decltype(VidStartVirtualProcessor)          *g_pfnVidStartVirtualProcessor;
 static decltype(VidStopVirtualProcessor)           *g_pfnVidStopVirtualProcessor;
 static decltype(VidMessageSlotMap)                 *g_pfnVidMessageSlotMap;
@@ -150,6 +155,7 @@ static const struct
     NEM_WIN_IMPORT(0, false, WHvSetVirtualProcessorRegisters),
 #endif
     NEM_WIN_IMPORT(1, false, VidGetHvPartitionId),
+    NEM_WIN_IMPORT(1, false, VidGetPartitionProperty),
     NEM_WIN_IMPORT(1, false, VidMessageSlotMap),
     NEM_WIN_IMPORT(1, false, VidMessageSlotHandleAndGetNext),
     NEM_WIN_IMPORT(1, false, VidStartVirtualProcessor),
@@ -169,6 +175,8 @@ static decltype(NtDeviceIoControlFile) *g_pfnNtDeviceIoControlFile;
 static decltype(NtDeviceIoControlFile) **g_ppfnVidNtDeviceIoControlFile;
 /** Info about the VidGetHvPartitionId I/O control interface. */
 static NEMWINIOCTL g_IoCtlGetHvPartitionId;
+/** Info about the VidGetPartitionProperty I/O control interface. */
+static NEMWINIOCTL g_IoCtlGetPartitionProperty;
 /** Info about the VidStartVirtualProcessor I/O control interface. */
 static NEMWINIOCTL g_IoCtlStartVirtualProcessor;
 /** Info about the VidStopVirtualProcessor I/O control interface. */
@@ -373,34 +381,50 @@ static int nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid, PRTERRINFO pErrInfo)
         /*
          * Walk the thunks table(s) looking for NtDeviceIoControlFile.
          */
-        PIMAGE_THUNK_DATA pFirstThunk = (PIMAGE_THUNK_DATA)&pbImage[pImps->FirstThunk]; /* update this. */
-        PIMAGE_THUNK_DATA pThunk      = pImps->OriginalFirstThunk == 0                  /* read from this. */
-                                      ? (PIMAGE_THUNK_DATA)&pbImage[pImps->FirstThunk]
-                                      : (PIMAGE_THUNK_DATA)&pbImage[pImps->OriginalFirstThunk];
-        while (pThunk->u1.Ordinal != 0)
+        uintptr_t *puFirstThunk = (uintptr_t *)&pbImage[pImps->FirstThunk]; /* update this. */
+        if (   pImps->OriginalFirstThunk != 0
+            && pImps->OriginalFirstThunk != pImps->FirstThunk)
         {
-            if (!(pThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG32))
+            uintptr_t const *puOrgThunk = (uintptr_t const *)&pbImage[pImps->OriginalFirstThunk]; /* read from this. */
+            uintptr_t        cLeft      = (cbImage - (RT_MAX(pImps->FirstThunk, pImps->OriginalFirstThunk)))
+                                        / sizeof(*puFirstThunk);
+            while (cLeft-- > 0 && *puOrgThunk != 0)
             {
-                AssertReturn(pThunk->u1.Ordinal > 0 && pThunk->u1.Ordinal < cbImage,
-                             RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad FirstThunk: %#x", pImps->FirstThunk));
-
-                const char *pszSymbol = (const char *)&pbImage[(uintptr_t)pThunk->u1.AddressOfData + 2];
-                if (strcmp(pszSymbol, "NtDeviceIoControlFile") == 0)
+                if (!(*puOrgThunk & IMAGE_ORDINAL_FLAG64)) /* ASSUMES 64-bit */
                 {
-                    DWORD fOldProt = PAGE_READONLY;
-                    VirtualProtect(&pFirstThunk->u1.Function, sizeof(uintptr_t), PAGE_EXECUTE_READWRITE, &fOldProt);
-                    g_ppfnVidNtDeviceIoControlFile = (decltype(NtDeviceIoControlFile) **)&pFirstThunk->u1.Function;
-                    /* Don't restore the protection here, so we modify the NtDeviceIoControlFile pointer later. */
-                }
-            }
+                    AssertReturn(*puOrgThunk > 0 && *puOrgThunk < cbImage,
+                                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad thunk entry: %#x", *puOrgThunk));
 
-            pThunk++;
-            pFirstThunk++;
+                    const char *pszSymbol = (const char *)&pbImage[*puOrgThunk + 2];
+                    if (strcmp(pszSymbol, "NtDeviceIoControlFile") == 0)
+                        g_ppfnVidNtDeviceIoControlFile = (decltype(NtDeviceIoControlFile) **)puFirstThunk;
+                }
+
+                puOrgThunk++;
+                puFirstThunk++;
+            }
+        }
+        else
+        {
+            /* No original thunk table, so scan the resolved symbols for a match
+               with the NtDeviceIoControlFile address. */
+            uintptr_t const uNeedle = (uintptr_t)g_pfnNtDeviceIoControlFile;
+            uintptr_t       cLeft   = (cbImage - pImps->FirstThunk) / sizeof(*puFirstThunk);
+            while (cLeft-- > 0 && *puFirstThunk != 0)
+            {
+                if (*puFirstThunk == uNeedle)
+                    g_ppfnVidNtDeviceIoControlFile = (decltype(NtDeviceIoControlFile) **)puFirstThunk;
+                puFirstThunk++;
+            }
         }
     }
 
-    if (*g_ppfnVidNtDeviceIoControlFile)
+    if (g_ppfnVidNtDeviceIoControlFile != NULL)
     {
+        /* Make the thunk writable we can freely modify it. */
+        DWORD fOldProt = PAGE_READONLY;
+        VirtualProtect((void *)(uintptr_t)g_ppfnVidNtDeviceIoControlFile, sizeof(uintptr_t), PAGE_EXECUTE_READWRITE, &fOldProt);
+
 #ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
         *g_ppfnVidNtDeviceIoControlFile = nemR3WinLogWrapper_NtDeviceIoControlFile;
 #endif
@@ -792,6 +816,34 @@ nemR3WinIoctlDetector_GetHvPartitionId(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTIN
 
 
 /**
+ * Used to fill in g_IoCtlGetHvPartitionId.
+ */
+static NTSTATUS WINAPI
+nemR3WinIoctlDetector_GetPartitionProperty(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTINE pfnApcCallback, PVOID pvApcCtx,
+                                           PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
+                                           PVOID pvOutput, ULONG cbOutput)
+{
+    AssertLogRelMsgReturn(hFile == NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, ("hFile=%p\n", hFile), STATUS_INVALID_PARAMETER_1);
+    RT_NOREF(hEvt); RT_NOREF(pfnApcCallback); RT_NOREF(pvApcCtx);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pIos), ("pIos=%p\n", pIos), STATUS_INVALID_PARAMETER_5);
+    AssertLogRelMsgReturn(cbInput == sizeof(VID_PARTITION_PROPERTY_CODE), ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_8);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pvInput), ("pvInput=%p\n", pvInput), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(*(VID_PARTITION_PROPERTY_CODE *)pvInput == NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_CODE,
+                          ("*pvInput=%#x, expected %#x\n", *(HV_PARTITION_PROPERTY_CODE *)pvInput,
+                           NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_CODE), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pvOutput), ("pvOutput=%p\n", pvOutput), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(cbOutput == sizeof(HV_PARTITION_PROPERTY), ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
+    *(HV_PARTITION_PROPERTY *)pvOutput = NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_VALUE;
+
+    g_IoCtlGetPartitionProperty.cbInput   = cbInput;
+    g_IoCtlGetPartitionProperty.cbOutput  = cbOutput;
+    g_IoCtlGetPartitionProperty.uFunction = uFunction;
+
+    return STATUS_SUCCESS;
+}
+
+
+/**
  * Used to fill in g_IoCtlStartVirtualProcessor.
  */
 static NTSTATUS WINAPI
@@ -935,9 +987,9 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
      */
     decltype(NtDeviceIoControlFile) * const pfnOrg = *g_ppfnVidNtDeviceIoControlFile;
 
-    /* VidGetHvPartitionId - must work due to memory. */
-    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_GetHvPartitionId;
+    /* VidGetHvPartitionId - must work due to our memory management. */
     HV_PARTITION_ID idHvPartition = HV_PARTITION_ID_INVALID;
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_GetHvPartitionId;
     BOOL fRet = g_pfnVidGetHvPartitionId(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, &idHvPartition);
     *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
     AssertReturn(fRet && idHvPartition == NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_ID && g_IoCtlGetHvPartitionId.uFunction != 0,
@@ -946,6 +998,21 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
                                fRet, idHvPartition, GetLastError()) );
     LogRel(("NEM: VidGetHvPartitionId            -> fun:%#x in:%#x out:%#x\n",
             g_IoCtlGetHvPartitionId.uFunction, g_IoCtlGetHvPartitionId.cbInput, g_IoCtlGetHvPartitionId.cbOutput));
+
+    /* VidGetPartitionProperty - must work as it's fallback for VidGetHvPartitionId. */
+    HV_PARTITION_PROPERTY uPropValue = ~NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_VALUE;
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_GetPartitionProperty;
+    fRet = g_pfnVidGetPartitionProperty(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_CODE,
+                                        &uPropValue);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    AssertReturn(   fRet
+                 && uPropValue == NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_PROPERTY_VALUE
+                 && g_IoCtlGetHvPartitionId.uFunction != 0,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                               "Problem figuring out VidGetPartitionProperty: fRet=%u uPropValue=%#x dwErr=%u",
+                               fRet, uPropValue, GetLastError()) );
+    LogRel(("NEM: VidGetPartitionProperty        -> fun:%#x in:%#x out:%#x\n",
+            g_IoCtlGetPartitionProperty.uFunction, g_IoCtlGetPartitionProperty.cbInput, g_IoCtlGetPartitionProperty.cbOutput));
 
     int rcRet = VINF_SUCCESS;
     /* VidStartVirtualProcessor */
@@ -1029,6 +1096,7 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
 
     /* Done. */
     pVM->nem.s.IoCtlGetHvPartitionId            = g_IoCtlGetHvPartitionId;
+    pVM->nem.s.IoCtlGetPartitionProperty        = g_IoCtlGetPartitionProperty;
     pVM->nem.s.IoCtlStartVirtualProcessor       = g_IoCtlStartVirtualProcessor;
     pVM->nem.s.IoCtlStopVirtualProcessor        = g_IoCtlStopVirtualProcessor;
     pVM->nem.s.IoCtlMessageSlotHandleAndGetNext = g_IoCtlMessageSlotHandleAndGetNext;
@@ -1386,7 +1454,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
                           pVM->nem.s.uCpuFeatures.u64, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
 
     /*
-     * Set up the partition and create EMTs.
+     * Set up the partition.
      *
      * Seems like this is where the partition is actually instantiated and we get
      * a handle to it.
@@ -1397,7 +1465,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
                           "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)",
                           hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
 
-    /* Get the handle. */
+    /* Get the handle (could also fish this out via VID.DLL NtDeviceIoControlFile intercepting). */
     HANDLE hPartitionDevice;
     __try
     {
@@ -1413,11 +1481,33 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to get device handle for partition %p: %Rhrc", hPartition, hrc);
 
-    HV_PARTITION_ID idHvPartition = HV_PARTITION_ID_INVALID;
-    if (!g_pfnVidGetHvPartitionId(hPartitionDevice, &idHvPartition))
+    /* Test the handle. */
+    HV_PARTITION_PROPERTY uValue;
+    if (!g_pfnVidGetPartitionProperty(hPartitionDevice, HvPartitionPropertyProcessorVendor, &uValue))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to get device handle and/or partition ID for %p (hPartitionDevice=%p, Last=%#x/%u)",
                           hPartition, hPartitionDevice, RTNtLastStatusValue(), RTNtLastErrorValue());
+    LogRel(("NEM: HvPartitionPropertyProcessorVendor=%#llx (%lld)\n", uValue, uValue));
+
+    /*
+     * Get the partition ID so we can keep managing our memory the way we've
+     * been doing for the last 12+ years.
+     *
+     * The WHvMapGpaRange/WHvUnmapGpaRange interface is very ill-fitting and
+     * very inflexible compared to what we need.  Fortunately, the hypervisor
+     * have a much better interface which we are able to use from ring-0.
+     * Not pretty, but necessary for the time being.
+     */
+    HV_PARTITION_ID idHvPartition = HV_PARTITION_ID_INVALID;
+    if (!g_pfnVidGetHvPartitionId(hPartitionDevice, &idHvPartition))
+    {
+        if (RTNtLastErrorValue() != ERROR_INVALID_FUNCTION) /* Will try get it later in VMMR0_DO_NEM_INIT_VM_PART_2. */
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Failed to get device handle and/or partition ID for %p (hPartitionDevice=%p, Last=%#x/%u)",
+                              hPartition, hPartitionDevice, RTNtLastStatusValue(), RTNtLastErrorValue());
+        LogRel(("NEM: VidGetHvPartitionId failed with ERROR_NOT_SUPPORTED, will try again later from ring-0...\n"));
+        idHvPartition = HV_PARTITION_ID_INVALID;
+    }
     pVM->nem.s.hPartitionDevice = hPartitionDevice;
     pVM->nem.s.idHvPartition    = idHvPartition;
 
@@ -1483,7 +1573,8 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_NEM_INIT_VM_PART_2, 0, NULL);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n", hPartitionDevice, idHvPartition));
+        LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n",
+                hPartitionDevice, pVM->nem.s.idHvPartition));
 
 #if 1
         VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_NEM_UPDATE_STATISTICS, 0, NULL);

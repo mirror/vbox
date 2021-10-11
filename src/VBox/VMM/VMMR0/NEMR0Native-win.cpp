@@ -38,10 +38,15 @@
 #include <VBox/vmm/gvmm.h>
 #include <VBox/param.h>
 
+#include <iprt/ctype.h>
+#include <iprt/critsect.h>
 #include <iprt/dbg.h>
+#include <iprt/mem.h>
 #include <iprt/memobj.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#define PIMAGE_NT_HEADERS32 PIMAGE_NT_HEADERS32_PECOFF
+#include <iprt/formats/pecoff.h>
 
 
 /* Assert compile context sanity. */
@@ -75,6 +80,40 @@ static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysIn
  */
 static NTSTATUS (*g_pfnWinHvDepositMemory)(uintptr_t idPartition, size_t cPages, uintptr_t IdealNode, size_t *pcActuallyAdded);
 
+RT_C_DECLS_BEGIN
+/**
+ * The WinHvGetPartitionProperty function we intercept in VID.SYS to get the
+ * Hyper-V partition ID.
+ *
+ * This is used from assembly.
+ */
+NTSTATUS WinHvGetPartitionProperty(uintptr_t idPartition, HV_PARTITION_PROPERTY_CODE enmProperty, PHV_PARTITION_PROPERTY puValue);
+decltype(WinHvGetPartitionProperty) *g_pfnWinHvGetPartitionProperty;
+RT_C_DECLS_END
+
+/** @name VID.SYS image details.
+ * @{ */
+static uint8_t                                 *g_pbVidSys                            = NULL;
+static uintptr_t                                g_cbVidSys                            = 0;
+static PIMAGE_NT_HEADERS                        g_pVidSysHdrs                         = NULL;
+/** Pointer to the import thunk entry in VID.SYS for WinHvGetPartitionProperty if we found it. */
+static decltype(WinHvGetPartitionProperty)    **g_ppfnVidSysWinHvGetPartitionProperty = NULL;
+
+/** Critical section protecting the WinHvGetPartitionProperty hacking. */
+static RTCRITSECT                               g_VidSysCritSect;
+RT_C_DECLS_BEGIN
+/** The partition ID passed to WinHvGetPartitionProperty by VID.SYS.   */
+HV_PARTITION_ID                                 g_idVidSysFoundPartition = HV_PARTITION_ID_INVALID;
+/** The thread which is currently looking for a partition ID. */
+RTNATIVETHREAD                                  g_hVidSysMatchThread     = NIL_RTNATIVETHREAD;
+/** The property code we expect in WinHvGetPartitionProperty. */
+VID_PARTITION_PROPERTY_CODE                     g_enmVidSysMatchProperty = INT64_MAX;
+/* NEMR0NativeA-win.asm: */
+extern uint8_t                                  g_abNemR0WinHvrWinHvGetPartitionProperty_OriginalProlog[64];
+RT_C_DECLS_END
+/** @} */
+
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -91,6 +130,12 @@ NEM_TMPL_STATIC int  nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint6
 DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PGVMCPU pGVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput);
 
+/* NEMR0NativeA-win.asm: */
+DECLASM(NTSTATUS)    nemR0VidSysWinHvGetPartitionProperty(uintptr_t idPartition, HV_PARTITION_PROPERTY_CODE enmProperty,
+                                                          PHV_PARTITION_PROPERTY puValue);
+DECLASM(NTSTATUS)    nemR0WinHvrWinHvGetPartitionProperty(uintptr_t idPartition, HV_PARTITION_PROPERTY_CODE enmProperty,
+                                                          PHV_PARTITION_PROPERTY puValue);
+
 
 /*
  * Instantate the code we share with ring-0.
@@ -102,6 +147,23 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PGVMCPU pGVCpu, uint32_t
 #endif
 #include "../VMMAll/NEMAllNativeTemplate-win.cpp.h"
 
+
+/**
+ * Module initialization for NEM.
+ */
+VMMR0_INT_DECL(int)  NEMR0Init(void)
+{
+    return RTCritSectInit(&g_VidSysCritSect);
+}
+
+
+/**
+ * Module termination for NEM.
+ */
+VMMR0_INT_DECL(void) NEMR0Term(void)
+{
+    RTCritSectDelete(&g_VidSysCritSect);
+}
 
 
 /**
@@ -131,6 +193,7 @@ static int nemR0InitHypercallData(PNEMR0HYPERCALLDATA pHypercallData)
     return rc;
 }
 
+
 /**
  * Worker for NEMR0CleanupVM and NEMR0InitVM that cleans up a hypercall page.
  *
@@ -147,6 +210,169 @@ static void nemR0DeleteHypercallData(PNEMR0HYPERCALLDATA pHypercallData)
     }
     pHypercallData->hMemObj    = NIL_RTR0MEMOBJ;
     pHypercallData->HCPhysPage = NIL_RTHCPHYS;
+}
+
+
+static int nemR0StrICmp(const char *psz1, const char *psz2)
+{
+    for (;;)
+    {
+        char ch1 = *psz1++;
+        char ch2 = *psz2++;
+        if (   ch1 != ch2
+            && RT_C_TO_LOWER(ch1) != RT_C_TO_LOWER(ch2))
+            return ch1 - ch2;
+        if (!ch1)
+            return 0;
+    }
+}
+
+
+/**
+ * Worker for nemR0PrepareForVidSysIntercept().
+ */
+static void nemR0PrepareForVidSysInterceptInner(void)
+{
+    uint32_t const             cbImage       = g_cbVidSys;
+    uint8_t * const            pbImage       = g_pbVidSys;
+    PIMAGE_NT_HEADERS const    pNtHdrs       = g_pVidSysHdrs;
+    uintptr_t const            offEndNtHdrs  = (uintptr_t)(pNtHdrs + 1) - (uintptr_t)pbImage;
+
+#define CHECK_LOG_RET(a_Expr, a_LogRel) do { \
+            if (RT_LIKELY(a_Expr)) { /* likely */ } \
+            else \
+            { \
+                LogRel(a_LogRel); \
+                return; \
+            } \
+        } while (0)
+
+    //__try
+    {
+        /*
+         * Get and validate the import directory entry.
+         */
+        CHECK_LOG_RET(   pNtHdrs->OptionalHeader.NumberOfRvaAndSizes >  IMAGE_DIRECTORY_ENTRY_IMPORT
+                      || pNtHdrs->OptionalHeader.NumberOfRvaAndSizes <= IMAGE_NUMBEROF_DIRECTORY_ENTRIES * 4,
+                      ("NEMR0: vid.sys: NumberOfRvaAndSizes is out of range: %#x\n", pNtHdrs->OptionalHeader.NumberOfRvaAndSizes));
+
+        IMAGE_DATA_DIRECTORY const ImportDir = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+        CHECK_LOG_RET(   ImportDir.Size >= sizeof(IMAGE_IMPORT_DESCRIPTOR)
+                      && ImportDir.VirtualAddress >= offEndNtHdrs /* ASSUMES NT headers before imports */
+                      && (uint64_t)ImportDir.VirtualAddress + ImportDir.Size <= cbImage,
+                      ("NEMR0: vid.sys: Bad import directory entry: %#x LB %#x (cbImage=%#x, offEndNtHdrs=%#zx)\n",
+                       ImportDir.VirtualAddress, ImportDir.Size, cbImage, offEndNtHdrs));
+
+        /*
+         * Walk the import descriptor table looking for NTDLL.DLL.
+         */
+        for (PIMAGE_IMPORT_DESCRIPTOR pImps = (PIMAGE_IMPORT_DESCRIPTOR)&pbImage[ImportDir.VirtualAddress];
+             pImps->Name != 0 && pImps->FirstThunk != 0;
+             pImps++)
+        {
+            CHECK_LOG_RET(pImps->Name < cbImage, ("NEMR0: vid.sys: Bad import directory entry name: %#x", pImps->Name));
+            const char *pszModName = (const char *)&pbImage[pImps->Name];
+            if (nemR0StrICmp(pszModName, "winhvr.sys"))
+                continue;
+            CHECK_LOG_RET(pImps->FirstThunk < cbImage && pImps->FirstThunk >= offEndNtHdrs,
+                          ("NEMR0: vid.sys: Bad FirstThunk: %#x", pImps->FirstThunk));
+            CHECK_LOG_RET(   pImps->u.OriginalFirstThunk == 0
+                          || (pImps->u.OriginalFirstThunk >= offEndNtHdrs && pImps->u.OriginalFirstThunk < cbImage),
+                          ("NEMR0: vid.sys: Bad OriginalFirstThunk: %#x", pImps->u.OriginalFirstThunk));
+
+            /*
+             * Walk the thunks table(s) looking for WinHvGetPartitionProperty.
+             */
+            uintptr_t *puFirstThunk = (uintptr_t *)&pbImage[pImps->FirstThunk]; /* update this. */
+            if (   pImps->u.OriginalFirstThunk != 0
+                && pImps->u.OriginalFirstThunk != pImps->FirstThunk)
+            {
+                uintptr_t const *puOrgThunk = (uintptr_t const *)&pbImage[pImps->u.OriginalFirstThunk]; /* read from this. */
+                uintptr_t        cLeft      = (cbImage - (RT_MAX(pImps->FirstThunk, pImps->u.OriginalFirstThunk)))
+                                            / sizeof(*puFirstThunk);
+                while (cLeft-- > 0 && *puOrgThunk != 0)
+                {
+                    if (!(*puOrgThunk & IMAGE_ORDINAL_FLAG64))
+                    {
+                        CHECK_LOG_RET(*puOrgThunk >= offEndNtHdrs && *puOrgThunk < cbImage,
+                                      ("NEMR0: vid.sys: Bad thunk entry: %#x", *puOrgThunk));
+
+                        const char *pszSymbol = (const char *)&pbImage[*puOrgThunk + 2];
+                        if (strcmp(pszSymbol, "WinHvGetPartitionProperty") == 0)
+                            g_ppfnVidSysWinHvGetPartitionProperty = (decltype(WinHvGetPartitionProperty) **)puFirstThunk;
+                    }
+
+                    puOrgThunk++;
+                    puFirstThunk++;
+                }
+            }
+            else
+            {
+                /* No original thunk table, so scan the resolved symbols for a match
+                   with the WinHvGetPartitionProperty address. */
+                uintptr_t const uNeedle = (uintptr_t)g_pfnWinHvGetPartitionProperty;
+                uintptr_t       cLeft   = (cbImage - pImps->FirstThunk) / sizeof(*puFirstThunk);
+                while (cLeft-- > 0 && *puFirstThunk != 0)
+                {
+                    if (*puFirstThunk == uNeedle)
+                        g_ppfnVidSysWinHvGetPartitionProperty = (decltype(WinHvGetPartitionProperty) **)puFirstThunk;
+                    puFirstThunk++;
+                }
+            }
+        }
+
+        /* Report the findings: */
+        if (g_ppfnVidSysWinHvGetPartitionProperty)
+            LogRel(("NEMR0: vid.sys: Found WinHvGetPartitionProperty import thunk at %p (value %p vs %p)\n",
+                    g_ppfnVidSysWinHvGetPartitionProperty,*g_ppfnVidSysWinHvGetPartitionProperty, g_pfnWinHvGetPartitionProperty));
+        else
+            LogRel(("NEMR0: vid.sys: Did not find WinHvGetPartitionProperty!\n"));
+    }
+    //__except(EXCEPTION_EXECUTE_HANDLER)
+    //{
+    //    return;
+    //}
+#undef CHECK_LOG_RET
+}
+
+
+/**
+ * Worker for NEMR0InitVM that prepares for intercepting stuff in VID.SYS.
+ */
+static void nemR0PrepareForVidSysIntercept(RTDBGKRNLINFO hKrnlInfo)
+{
+    /*
+     * Resolve the symbols we need first.
+     */
+    int rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "vid.sys", "__ImageBase", (void **)&g_pbVidSys);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "vid.sys", "__ImageSize", (void **)&g_cbVidSys);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "vid.sys", "__ImageNtHdrs", (void **)&g_pVidSysHdrs);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "winhvr.sys", "WinHvGetPartitionProperty",
+                                                (void **)&g_pfnWinHvGetPartitionProperty);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Now locate the import thunk entry for WinHvGetPartitionProperty in vid.sys.
+                     */
+                    nemR0PrepareForVidSysInterceptInner();
+                }
+                else
+                    LogRel(("NEMR0: Failed to find winhvr.sys!WinHvGetPartitionProperty (%Rrc)\n", rc));
+            }
+            else
+                LogRel(("NEMR0: Failed to find vid.sys!__ImageNtHdrs (%Rrc)\n", rc));
+        }
+        else
+            LogRel(("NEMR0: Failed to find vid.sys!__ImageSize (%Rrc)\n", rc));
+    }
+    else
+        LogRel(("NEMR0: Failed to find vid.sys!__ImageBase (%Rrc)\n", rc));
 }
 
 
@@ -186,6 +412,14 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM)
             if (RT_FAILURE(rc))
                 rc = rc == VERR_MODULE_NOT_FOUND ? VERR_NEM_MISSING_KERNEL_API_2 : VERR_NEM_MISSING_KERNEL_API_3;
         }
+
+        /*
+         * Since late 2021 we may also need to do some nasty trickery with vid.sys to get
+         * the partition ID. So, ge the necessary info while we have a hKrnlInfo instance.
+         */
+        if (RT_SUCCESS(rc))
+            nemR0PrepareForVidSysIntercept(hKrnlInfo);
+
         RTR0DbgKrnlInfoRelease(hKrnlInfo);
         if (RT_SUCCESS(rc))
         {
@@ -282,6 +516,286 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PGVMCPU pGVCpu, uint32_t
 
 
 /**
+ * Here is something that we really do not wish to do, but find us force do to
+ * right now as we cannot rewrite the memory management of VBox 6.1 in time for
+ * windows 11.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The ring-0 VM structure.
+ * @param   pahMemObjs  Array of 6 memory objects that the caller will release.
+ *                      ASSUMES that they are initialized to NIL.
+ */
+static int nemR0InitVMPart2DontWannaDoTheseUglyPartitionIdFallbacks(PGVM pGVM, PRTR0MEMOBJ pahMemObjs)
+{
+    /*
+     * Check preconditions:
+     */
+    if (   !g_ppfnVidSysWinHvGetPartitionProperty
+        || (uintptr_t)g_ppfnVidSysWinHvGetPartitionProperty & (sizeof(uintptr_t) - 1))
+    {
+        LogRel(("NEMR0: g_ppfnVidSysWinHvGetPartitionProperty is NULL or misaligned (%p), partition ID fallback not possible.\n",
+                g_ppfnVidSysWinHvGetPartitionProperty));
+        return VERR_NEM_INIT_FAILED;
+    }
+    if (!g_pfnWinHvGetPartitionProperty)
+    {
+        LogRel(("NEMR0: g_pfnWinHvGetPartitionProperty is NULL, partition ID fallback not possible.\n"));
+        return VERR_NEM_INIT_FAILED;
+    }
+    if (!pGVM->nem.s.IoCtlGetPartitionProperty.uFunction)
+    {
+        LogRel(("NEMR0: IoCtlGetPartitionProperty.uFunction is 0, partition ID fallback not possible.\n"));
+        return VERR_NEM_INIT_FAILED;
+    }
+
+    /*
+     * Create an alias for the thunk table entry because its very likely to be read-only.
+     */
+    int rc = RTR0MemObjLockKernel(&pahMemObjs[0], g_ppfnVidSysWinHvGetPartitionProperty, sizeof(uintptr_t), RTMEM_PROT_READ);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("NEMR0: RTR0MemObjLockKernel failed on VID.SYS thunk table entry: %Rrc\n", rc));
+        return rc;
+    }
+
+    rc = RTR0MemObjEnterPhys(&pahMemObjs[1], RTR0MemObjGetPagePhysAddr(pahMemObjs[0], 0), PAGE_SIZE, RTMEM_CACHE_POLICY_DONT_CARE);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("NEMR0: RTR0MemObjEnterPhys failed on VID.SYS thunk table entry: %Rrc\n", rc));
+        return rc;
+    }
+
+    rc = RTR0MemObjMapKernel(&pahMemObjs[2], pahMemObjs[1], (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("NEMR0: RTR0MemObjMapKernel failed on VID.SYS thunk table entry: %Rrc\n", rc));
+        return rc;
+    }
+
+    decltype(WinHvGetPartitionProperty) **ppfnThunkAlias
+        = (decltype(WinHvGetPartitionProperty) **)(  (uintptr_t)RTR0MemObjAddress(pahMemObjs[2])
+                                                   | ((uintptr_t)g_ppfnVidSysWinHvGetPartitionProperty & PAGE_OFFSET_MASK));
+    LogRel(("NEMR0: ppfnThunkAlias=%p *ppfnThunkAlias=%p; original: %p & %p, phys %RHp\n", ppfnThunkAlias, *ppfnThunkAlias,
+            g_ppfnVidSysWinHvGetPartitionProperty, *g_ppfnVidSysWinHvGetPartitionProperty,
+            RTR0MemObjGetPagePhysAddr(pahMemObjs[0], 0) ));
+
+    /*
+     * Create an alias for the target code in WinHvr.sys as there is a very decent
+     * chance we have to patch it.
+     */
+    rc = RTR0MemObjLockKernel(&pahMemObjs[3], g_pfnWinHvGetPartitionProperty, sizeof(uintptr_t), RTMEM_PROT_READ);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("NEMR0: RTR0MemObjLockKernel failed on WinHvGetPartitionProperty (%p): %Rrc\n", g_pfnWinHvGetPartitionProperty, rc));
+        return rc;
+    }
+
+    rc = RTR0MemObjEnterPhys(&pahMemObjs[4], RTR0MemObjGetPagePhysAddr(pahMemObjs[3], 0), PAGE_SIZE, RTMEM_CACHE_POLICY_DONT_CARE);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("NEMR0: RTR0MemObjEnterPhys failed on WinHvGetPartitionProperty: %Rrc\n", rc));
+        return rc;
+    }
+
+    rc = RTR0MemObjMapKernel(&pahMemObjs[5], pahMemObjs[4], (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("NEMR0: RTR0MemObjMapKernel failed on WinHvGetPartitionProperty: %Rrc\n", rc));
+        return rc;
+    }
+
+    uint8_t *pbTargetAlias = (uint8_t *)(  (uintptr_t)RTR0MemObjAddress(pahMemObjs[5])
+                                         | ((uintptr_t)g_pfnWinHvGetPartitionProperty & PAGE_OFFSET_MASK));
+    LogRel(("NEMR0: pbTargetAlias=%p %.16Rhxs; original: %p %.16Rhxs, phys %RHp\n", pbTargetAlias, pbTargetAlias,
+            g_pfnWinHvGetPartitionProperty, g_pfnWinHvGetPartitionProperty, RTR0MemObjGetPagePhysAddr(pahMemObjs[3], 0) ));
+
+    /*
+     * Analyse the target functions prologue to figure out how much we should copy
+     * when patching it.  We repeat this every time because we don't want to get
+     * tripped up by someone else doing the same stuff as we're doing here.
+     * We need at least 12 bytes for the patch sequence (MOV RAX, QWORD; JMP RAX)
+     */
+    union
+    {
+        uint8_t  ab[48];    /**< Must be equal or smallar than g_abNemR0WinHvrWinHvGetPartitionProperty_OriginalProlog */
+        int64_t  ai64[6];
+    } Org;
+    memcpy(Org.ab, g_pfnWinHvGetPartitionProperty, sizeof(Org)); /** @todo ASSUMES 48 valid bytes start at function... */
+
+    uint32_t       offJmpBack = 0;
+    uint32_t const cbMinJmpPatch = 12;
+    DISSTATE       Dis;
+    while (offJmpBack < cbMinJmpPatch && offJmpBack < sizeof(Org) - 16)
+    {
+        uint32_t cbInstr = 1;
+        rc = DISInstr(&Org.ab[offJmpBack], DISCPUMODE_64BIT, &Dis, &cbInstr);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("NEMR0: DISInstr failed %#x bytes into WinHvGetPartitionProperty: %Rrc (%.48Rhxs)\n",
+                    offJmpBack, rc, Org.ab));
+            break;
+        }
+        if (Dis.pCurInstr->fOpType & DISOPTYPE_CONTROLFLOW)
+        {
+            LogRel(("NEMR0: Control flow instruction %#x bytes into WinHvGetPartitionProperty prologue: %.48Rhxs\n",
+                    offJmpBack, Org.ab));
+            break;
+        }
+        if (Dis.ModRM.Bits.Mod == 0 && Dis.ModRM.Bits.Rm == 5 /* wrt RIP */)
+        {
+            LogRel(("NEMR0: RIP relative addressing %#x bytes into WinHvGetPartitionProperty prologue: %.48Rhxs\n",
+                    offJmpBack, Org.ab));
+            break;
+        }
+        offJmpBack += cbInstr;
+    }
+
+    uintptr_t const cbLeftInPage = PAGE_SIZE - ((uintptr_t)g_pfnWinHvGetPartitionProperty & PAGE_OFFSET_MASK);
+    if (cbLeftInPage < 16 && offJmpBack >= cbMinJmpPatch)
+    {
+        LogRel(("NEMR0: WinHvGetPartitionProperty patching not possible do the page crossing: %p (%#zx)\n",
+                g_pfnWinHvGetPartitionProperty, cbLeftInPage));
+        offJmpBack = 0;
+    }
+    if (offJmpBack >= cbMinJmpPatch)
+        LogRel(("NEMR0: offJmpBack=%#x for WinHvGetPartitionProperty (%p: %.48Rhxs)\n",
+                offJmpBack, g_pfnWinHvGetPartitionProperty, Org.ab));
+    else
+        offJmpBack = 0;
+    rc = VINF_SUCCESS;
+
+    /*
+     * Now enter serialization lock and get on with it...
+     */
+    PVMCPUCC const pVCpu0 = &pGVM->aCpus[0];
+    NTSTATUS       rcNt;
+    RTCritSectEnter(&g_VidSysCritSect);
+
+    /*
+     * First attempt, patching the import table entry.
+     */
+    g_idVidSysFoundPartition = HV_PARTITION_ID_INVALID;
+    g_hVidSysMatchThread     = RTThreadNativeSelf();
+    g_enmVidSysMatchProperty = pVCpu0->nem.s.uIoCtlBuf.GetProp.enmProperty = HvPartitionPropertyProcessorVendor;
+    pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue = 0;
+
+    void *pvOld = NULL;
+    if (ASMAtomicCmpXchgExPtr(ppfnThunkAlias, (void *)(uintptr_t)nemR0VidSysWinHvGetPartitionProperty,
+                              (void *)(uintptr_t)g_pfnWinHvGetPartitionProperty, &pvOld))
+    {
+        LogRel(("NEMR0: after switch to %p: ppfnThunkAlias=%p *ppfnThunkAlias=%p; original: %p & %p\n",
+                nemR0VidSysWinHvGetPartitionProperty, ppfnThunkAlias, *ppfnThunkAlias,
+                g_ppfnVidSysWinHvGetPartitionProperty, *g_ppfnVidSysWinHvGetPartitionProperty));
+
+        rcNt = nemR0NtPerformIoControl(pGVM, pVCpu0, pGVM->nemr0.s.IoCtlGetPartitionProperty.uFunction,
+                                       &pVCpu0->nem.s.uIoCtlBuf.GetProp.enmProperty,
+                                       sizeof(pVCpu0->nem.s.uIoCtlBuf.GetProp.enmProperty),
+                                       &pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue,
+                                       sizeof(pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue));
+        ASMAtomicWritePtr(ppfnThunkAlias, (void *)(uintptr_t)g_pfnWinHvGetPartitionProperty);
+        HV_PARTITION_ID idHvPartition = g_idVidSysFoundPartition;
+
+        LogRel(("NEMR0: WinHvGetPartitionProperty trick #1 yielded: rcNt=%#x idHvPartition=%#RX64 uValue=%#RX64\n",
+                rcNt, idHvPartition, pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue));
+        pGVM->nemr0.s.idHvPartition = idHvPartition;
+    }
+    else
+    {
+        LogRel(("NEMR0: Unexpected WinHvGetPartitionProperty pointer in VID.SYS: %p, expected %p\n",
+                pvOld, g_pfnWinHvGetPartitionProperty));
+        rc = VERR_NEM_INIT_FAILED;
+    }
+
+    /*
+     * If that didn't succeed, try patching the winhvr.sys code.
+     */
+    if (   pGVM->nemr0.s.idHvPartition == HV_PARTITION_ID_INVALID
+        && offJmpBack >= cbMinJmpPatch)
+    {
+        g_idVidSysFoundPartition = HV_PARTITION_ID_INVALID;
+        g_hVidSysMatchThread     = RTThreadNativeSelf();
+        g_enmVidSysMatchProperty = pVCpu0->nem.s.uIoCtlBuf.GetProp.enmProperty = HvPartitionPropertyProcessorVendor;
+        pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue = 0;
+
+        /*
+         * Prepare the hook area.
+         */
+        uint8_t *pbDst = g_abNemR0WinHvrWinHvGetPartitionProperty_OriginalProlog;
+        memcpy(pbDst, (uint8_t const *)(uintptr_t)g_pfnWinHvGetPartitionProperty, offJmpBack);
+        pbDst += offJmpBack;
+
+        *pbDst++ = 0x48; /* mov rax, imm64 */
+        *pbDst++ = 0xb8;
+        *(uint64_t *)pbDst = (uintptr_t)g_pfnWinHvGetPartitionProperty + offJmpBack;
+        pbDst += sizeof(uint64_t);
+        *pbDst++ = 0xff; /* jmp rax */
+        *pbDst++ = 0xe0;
+        *pbDst++ = 0xcc; /* int3 */
+
+        /*
+         * Patch the original. We use cmpxchg16b here to avoid concurrency problems
+         * (this also makes sure we don't trample over someone else doing similar
+         * patching at the same time).
+         */
+        union
+        {
+            uint8_t  ab[16];
+            uint64_t au64[2];
+        } Patch;
+        memcpy(Patch.ab, Org.ab, sizeof(Patch));
+        pbDst = Patch.ab;
+        *pbDst++ = 0x48; /* mov rax, imm64 */
+        *pbDst++ = 0xb8;
+        *(uint64_t *)pbDst = (uintptr_t)nemR0WinHvrWinHvGetPartitionProperty;
+        pbDst += sizeof(uint64_t);
+        *pbDst++ = 0xff; /* jmp rax */
+        *pbDst++ = 0xe0;
+
+        int64_t ai64CmpCopy[2] = { Org.ai64[0], Org.ai64[1] }; /* paranoia  */
+        if (_InterlockedCompareExchange128((__int64 volatile *)pbTargetAlias, Patch.au64[1], Patch.au64[0], ai64CmpCopy) != 0)
+        {
+            rcNt = nemR0NtPerformIoControl(pGVM, pVCpu0, pGVM->nemr0.s.IoCtlGetPartitionProperty.uFunction,
+                                           &pVCpu0->nem.s.uIoCtlBuf.GetProp.enmProperty,
+                                           sizeof(pVCpu0->nem.s.uIoCtlBuf.GetProp.enmProperty),
+                                           &pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue,
+                                           sizeof(pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue));
+
+            for (uint32_t cFailures = 0; cFailures < 10; cFailures++)
+            {
+                ai64CmpCopy[0] = Patch.au64[0]; /* paranoia */
+                ai64CmpCopy[1] = Patch.au64[1];
+                if (_InterlockedCompareExchange128((__int64 volatile *)pbTargetAlias, Org.ai64[1], Org.ai64[0], ai64CmpCopy) != 0)
+                {
+                    if (cFailures > 0)
+                        LogRel(("NEMR0: Succeeded on try #%u.\n", cFailures));
+                    break;
+                }
+                LogRel(("NEMR0: Patch restore failure #%u: %.16Rhxs, expected %.16Rhxs\n",
+                        cFailures + 1, &ai64CmpCopy[0], &Patch.au64[0]));
+                RTThreadSleep(1000);
+            }
+
+            HV_PARTITION_ID idHvPartition = g_idVidSysFoundPartition;
+            LogRel(("NEMR0: WinHvGetPartitionProperty trick #2 yielded: rcNt=%#x idHvPartition=%#RX64 uValue=%#RX64\n",
+                    rcNt, idHvPartition, pVCpu0->nem.s.uIoCtlBuf.GetProp.uValue));
+            pGVM->nemr0.s.idHvPartition = idHvPartition;
+
+        }
+        else
+        {
+            LogRel(("NEMR0: Failed to install WinHvGetPartitionProperty patch: %.16Rhxs, expected %.16Rhxs\n",
+                    &ai64CmpCopy[0], &Org.ai64[0]));
+            rc = VERR_NEM_INIT_FAILED;
+        }
+    }
+
+    RTCritSectLeave(&g_VidSysCritSect);
+
+    return rc;
+}
+
+
+/**
  * 2nd part of the initialization, after we've got a partition handle.
  *
  * @returns VBox status code.
@@ -303,6 +817,12 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
     AssertLogRelReturn(Copy.cbInput == 0, VERR_NEM_INIT_FAILED);
     AssertLogRelReturn(Copy.cbOutput == sizeof(HV_PARTITION_ID), VERR_NEM_INIT_FAILED);
     pGVM->nemr0.s.IoCtlGetHvPartitionId = Copy;
+
+    Copy = pGVM->nem.s.IoCtlGetPartitionProperty;
+    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbInput == sizeof(VID_PARTITION_PROPERTY_CODE), VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbOutput == sizeof(HV_PARTITION_PROPERTY), VERR_NEM_INIT_FAILED);
+    pGVM->nemr0.s.IoCtlGetPartitionProperty = Copy;
 
     pGVM->nemr0.s.fMayUseRing0Runloop = pGVM->nem.s.fUseRing0Runloop;
 
@@ -355,11 +875,35 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
         PVMCPUCC pVCpu0 = &pGVM->aCpus[0];
         NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu0, pGVM->nemr0.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
                                                 &pVCpu0->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu0->nem.s.uIoCtlBuf.idPartition));
+#if 0
         AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
         pGVM->nemr0.s.idHvPartition = pVCpu0->nem.s.uIoCtlBuf.idPartition;
+#else
+        /*
+         * Since 2021 (Win11) the above I/O control doesn't work on exo-partitions
+         * so we have to go to extremes to get at it.  Sigh.
+         */
+        if (   !NT_SUCCESS(rcNt)
+            || pVCpu0->nem.s.uIoCtlBuf.idPartition == HV_PARTITION_ID_INVALID)
+        {
+            LogRel(("IoCtlGetHvPartitionId failed: r0=%#RX64, r3=%#RX64, rcNt=%#x\n",
+                    pGVM->nemr0.s.idHvPartition, pGVM->nem.s.idHvPartition, rcNt));
+
+            RTR0MEMOBJ ahMemObjs[6]
+                = { NIL_RTR0MEMOBJ, NIL_RTR0MEMOBJ, NIL_RTR0MEMOBJ, NIL_RTR0MEMOBJ, NIL_RTR0MEMOBJ, NIL_RTR0MEMOBJ };
+            rc = nemR0InitVMPart2DontWannaDoTheseUglyPartitionIdFallbacks(pGVM, ahMemObjs);
+            size_t i = RT_ELEMENTS(ahMemObjs);
+            while (i-- > 0)
+                RTR0MemObjFree(ahMemObjs[i], false /*fFreeMappings*/);
+        }
+        if (pGVM->nem.s.idHvPartition == HV_PARTITION_ID_INVALID)
+            pGVM->nem.s.idHvPartition = pGVM->nemr0.s.idHvPartition;
+#endif
         AssertLogRelMsgReturn(pGVM->nemr0.s.idHvPartition == pGVM->nem.s.idHvPartition,
                               ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nemr0.s.idHvPartition, pGVM->nem.s.idHvPartition),
                               VERR_NEM_INIT_FAILED);
+        if (RT_SUCCESS(rc) && pGVM->nemr0.s.idHvPartition == HV_PARTITION_ID_INVALID)
+            rc = VERR_NEM_INIT_FAILED;
     }
 
     return rc;

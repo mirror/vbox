@@ -88,6 +88,8 @@ VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled);
 
 /** @defgroup grp_nem_r0    The NEM ring-0 Context API
  * @{  */
+VMMR0_INT_DECL(int)  NEMR0Init(void);
+VMMR0_INT_DECL(void) NEMR0Term(void);
 VMMR0_INT_DECL(int)  NEMR0InitVM(PGVM pGVM);
 VMMR0_INT_DECL(int)  NEMR0InitVMPart2(PGVM pGVM);
 VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM);
@@ -100,6 +102,9 @@ VMMR0_INT_DECL(int)  NEMR0ResumeCpuTickOnAll(PGVM pGVM, VMCPUID idCpu, uint64_t 
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0DoExperiment(PGVM pGVM, VMCPUID idCpu, uint64_t u64Arg);
+#ifdef RT_OS_WINDOWS
+VMMR0_INT_DECL(int)  NEMR0WinGetPartitionId(PGVM pGVM, uintptr_t uHandle);
+#endif
 /** @} */
 
 
