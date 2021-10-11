@@ -123,6 +123,9 @@ typedef VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT const *PCVID_IOCTL_INPU
 #define VID_MSHAGN_F_CANCEL             RT_BIT_32(2)
 /** @} */
 
+/** A 64-bit version of HV_PARTITION_PROPERTY_CODE. */
+typedef int64_t VID_PARTITION_PROPERTY_CODE;
+
 
 #ifdef IN_RING3
 RT_C_DECLS_BEGIN
@@ -161,17 +164,19 @@ DECLIMPORT(BOOL) VIDAPI VidGetHvPartitionId(VID_PARTITION_HANDLE hPartition, HV_
  *
  * @returns Success indicator (details in LastErrorValue).
  * @param   hPartition  The partition handle.
- * @param   enmProperty The property to get.
+ * @param   enmProperty The property to get.  Is a HV_PARTITION_PROPERTY_CODE
+ *                      type, but seems to be passed around as a 64-bit integer
+ *                      for some reason.
  * @param   puValue     Where to return the property value.
  */
-DECLIMPORT(BOOL) VIDAPI VidGetPartitionProperty(VID_PARTITION_HANDLE hPartition, HV_PARTITION_PROPERTY_CODE enmProperty,
+DECLIMPORT(BOOL) VIDAPI VidGetPartitionProperty(VID_PARTITION_HANDLE hPartition, VID_PARTITION_PROPERTY_CODE enmProperty,
                                                 PHV_PARTITION_PROPERTY puValue);
 
 /**
  * @copydoc VidGetPartitionProperty
  * @note Currently (Windows 11 GA) identical to VidGetPartitionProperty.
  */
-DECLIMPORT(BOOL) VIDAPI VidGetExoPartitionProperty(VID_PARTITION_HANDLE hPartition, HV_PARTITION_PROPERTY_CODE enmProperty,
+DECLIMPORT(BOOL) VIDAPI VidGetExoPartitionProperty(VID_PARTITION_HANDLE hPartition, VID_PARTITION_PROPERTY_CODE enmProperty,
                                                    PHV_PARTITION_PROPERTY puValue);
 
 /**
