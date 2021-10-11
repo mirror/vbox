@@ -277,7 +277,7 @@ void UIWizardImportApp::populatePages()
         case WizardMode_Basic:
         {
             if (m_fImportFromOCIByDefault || m_strFileName.isEmpty())
-                addPage(new UIWizardImportAppPageBasic1(m_fImportFromOCIByDefault));
+                addPage(new UIWizardImportAppPageBasic1(m_fImportFromOCIByDefault, m_strFileName));
             addPage(new UIWizardImportAppPageBasic2(m_strFileName));
             break;
         }

@@ -323,6 +323,19 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageExpert::sltHandleMACImportPolicyComboChange);
     connect(m_pCheckboxImportHDsAsVDI, &QCheckBox::stateChanged,
             this, &UIWizardImportAppPageExpert::sltHandleImportHDsAsVDICheckBoxChange);
+
+    /* Parse passed full group name if any: */
+    if (   m_fImportFromOCIByDefault
+        && !m_strFileName.isEmpty())
+    {
+        const QString strProviderShortName = m_strFileName.section('/', 1, 1);
+        const QString strProfileName = m_strFileName.section('/', 2, 2);
+        if (!strProviderShortName.isEmpty() && !strProfileName.isEmpty())
+        {
+            m_strSource = strProviderShortName;
+            m_strProfileName = strProfileName;
+        }
+    }
 }
 
 UIWizardImportApp *UIWizardImportAppPageExpert::wizard() const
@@ -398,7 +411,9 @@ void UIWizardImportAppPageExpert::initializePage()
     /* Choose 1st tool to be chosen initially: */
     m_pToolBox->setCurrentPage(0);
     /* Populate sources: */
-    populateSources(m_pSourceComboBox, m_fImportFromOCIByDefault);
+    populateSources(m_pSourceComboBox,
+                    m_fImportFromOCIByDefault,
+                    m_strSource);
     /* Translate page: */
     retranslateUi();
 
@@ -470,7 +485,8 @@ void UIWizardImportAppPageExpert::sltAsyncInit()
 {
     /* If we have file name passed,
      * check if specified file contains valid appliance: */
-    if (   !m_strFileName.isEmpty()
+    if (   !m_fImportFromOCIByDefault
+        && !m_strFileName.isEmpty()
         && !wizard()->setFile(m_strFileName))
     {
         wizard()->reject();
@@ -512,6 +528,7 @@ void UIWizardImportAppPageExpert::sltHandleSourceComboChange()
     /* Refresh cloud stuff: */
     refreshProfileCombo(m_pProfileComboBox,
                         source(m_pSourceComboBox),
+                        m_strProfileName,
                         wizard()->isSourceCloudOne());
     sltHandleProfileComboChange();
 

@@ -866,10 +866,23 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
 {
     /* Initialize variables: */
 #ifdef VBOX_WS_MAC
-    const QString strTmpFile = ::darwinResolveAlias(strFileName);
+    QString strTmpFile = ::darwinResolveAlias(strFileName);
 #else
-    const QString strTmpFile = strFileName;
+    QString strTmpFile = strFileName;
 #endif
+
+    /* If there is no file-name passed,
+     * check if cloud stuff focused currently: */
+    bool fOCIByDefault = false;
+    if (   strTmpFile.isEmpty()
+        && (   m_pWidget->isSingleCloudProviderGroupSelected()
+            || m_pWidget->isSingleCloudProfileGroupSelected()
+            || m_pWidget->isCloudMachineItemSelected()))
+    {
+        /* We can generate cloud hints as well: */
+        fOCIByDefault = true;
+        strTmpFile = m_pWidget->fullGroupName();
+    }
 
     /* Lock the action preventing cascade calls: */
     UIQObjectPropertySetter guardBlock(actionPool()->action(UIActionIndexMN_M_File_S_ImportAppliance), "opened", true);
@@ -879,7 +892,7 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
-    UINativeWizardPointer pWizard = new UIWizardImportApp(pWizardParent, false /* OCI by default? */, strTmpFile);
+    UINativeWizardPointer pWizard = new UIWizardImportApp(pWizardParent, fOCIByDefault, strTmpFile);
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->exec();
     delete pWizard;

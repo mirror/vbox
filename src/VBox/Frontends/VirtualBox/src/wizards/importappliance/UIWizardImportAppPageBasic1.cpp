@@ -47,7 +47,9 @@ using namespace UIWizardImportAppPage1;
 *   Class UIWizardImportAppPage1 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-void UIWizardImportAppPage1::populateSources(QIComboBox *pCombo, bool fImportFromOCIByDefault)
+void UIWizardImportAppPage1::populateSources(QIComboBox *pCombo,
+                                             bool fImportFromOCIByDefault,
+                                             const QString &strSource)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -63,7 +65,7 @@ void UIWizardImportAppPage1::populateSources(QIComboBox *pCombo, bool fImportFro
     {
         /* Otherwise "OCI" or "local" should be the default one: */
         if (fImportFromOCIByDefault)
-            strOldData = "OCI";
+            strOldData = strSource.isEmpty() ? "OCI" : strSource;
         else
             strOldData = "local";
     }
@@ -156,6 +158,7 @@ void UIWizardImportAppPage1::refreshStackedWidget(QStackedWidget *pStackedWidget
 
 void UIWizardImportAppPage1::refreshProfileCombo(QIComboBox *pCombo,
                                                  const QString &strSource,
+                                                 const QString &strProfileName,
                                                  bool fIsSourceCloudOne)
 {
     /* Sanity check: */
@@ -175,6 +178,8 @@ void UIWizardImportAppPage1::refreshProfileCombo(QIComboBox *pCombo,
         QString strOldData;
         if (pCombo->currentIndex() != -1)
             strOldData = pCombo->currentData(ProfileData_Name).toString();
+        else if (!strProfileName.isEmpty())
+            strOldData = strProfileName;
 
         /* Block signals while updating: */
         pCombo->blockSignals(true);
@@ -189,13 +194,13 @@ void UIWizardImportAppPage1::refreshProfileCombo(QIComboBox *pCombo,
             if (comProfile.isNull())
                 continue;
             /* Acquire profile name: */
-            QString strProfileName;
-            if (!cloudProfileName(comProfile, strProfileName, pParent))
+            QString strCurrentProfileName;
+            if (!cloudProfileName(comProfile, strCurrentProfileName, pParent))
                 continue;
 
             /* Compose item, fill it's data: */
-            pCombo->addItem(strProfileName);
-            pCombo->setItemData(pCombo->count() - 1, strProfileName, ProfileData_Name);
+            pCombo->addItem(strCurrentProfileName);
+            pCombo->setItemData(pCombo->count() - 1, strCurrentProfileName, ProfileData_Name);
         }
 
         /* Set previous/default item if possible: */
@@ -404,8 +409,9 @@ void UIWizardImportAppPage1::updateSourceComboToolTip(QIComboBox *pCombo)
 *   Class UIWizardImportAppPageBasic1 implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault)
+UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault, const QString &strFileName)
     : m_fImportFromOCIByDefault(fImportFromOCIByDefault)
+    , m_strFileName(strFileName)
     , m_pLabelMain(0)
     , m_pLabelDescription(0)
     , m_pSourceLayout(0)
@@ -592,6 +598,19 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageBasic1::sltHandleProfileButtonClick);
     connect(m_pProfileInstanceList, &QListWidget::currentRowChanged,
             this, &UIWizardImportAppPageBasic1::completeChanged);
+
+    /* Parse passed full group name if any: */
+    if (   m_fImportFromOCIByDefault
+        && !m_strFileName.isEmpty())
+    {
+        const QString strProviderShortName = m_strFileName.section('/', 1, 1);
+        const QString strProfileName = m_strFileName.section('/', 2, 2);
+        if (!strProviderShortName.isEmpty() && !strProfileName.isEmpty())
+        {
+            m_strSource = strProviderShortName;
+            m_strProfileName = strProfileName;
+        }
+    }
 }
 
 UIWizardImportApp *UIWizardImportAppPageBasic1::wizard() const
@@ -690,7 +709,9 @@ void UIWizardImportAppPageBasic1::retranslateUi()
 void UIWizardImportAppPageBasic1::initializePage()
 {
     /* Populate sources: */
-    populateSources(m_pSourceComboBox, m_fImportFromOCIByDefault);
+    populateSources(m_pSourceComboBox,
+                    m_fImportFromOCIByDefault,
+                    m_strSource);
     /* Translate page: */
     retranslateUi();
 
@@ -763,6 +784,7 @@ void UIWizardImportAppPageBasic1::sltHandleSourceComboChange()
                          wizard()->isSourceCloudOne());
     refreshProfileCombo(m_pProfileComboBox,
                         source(m_pSourceComboBox),
+                        m_strProfileName,
                         wizard()->isSourceCloudOne());
 
     /* Update profile instances: */

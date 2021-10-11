@@ -100,6 +100,11 @@ private:
     /** Handles the appliance file name. */
     QString  m_strFileName;
 
+    /** Holds the cached source. */
+    QString  m_strSource;
+    /** Holds the cached profile name. */
+    QString  m_strProfileName;
+
     /** Holds the tool-box instance. */
     UIToolBox *m_pToolBox;
 

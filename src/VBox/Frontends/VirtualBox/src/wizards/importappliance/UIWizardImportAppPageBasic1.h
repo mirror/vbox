@@ -56,7 +56,8 @@ namespace UIWizardImportAppPage1
 {
     /** Populates sources. */
     void populateSources(QIComboBox *pCombo,
-                         bool fImportFromOCIByDefault);
+                         bool fImportFromOCIByDefault,
+                         const QString &strSource);
 
     /** Returns current source of @a pCombo specified. */
     QString source(QIComboBox *pCombo);
@@ -70,6 +71,7 @@ namespace UIWizardImportAppPage1
     /** Refresh profile combo. */
     void refreshProfileCombo(QIComboBox *pCombo,
                              const QString &strSource,
+                             const QString &strProfileName,
                              bool fIsSourceCloudOne);
     /** Refresh profile instances. */
     void refreshCloudProfileInstances(QListWidget *pListWidget,
@@ -106,8 +108,9 @@ class UIWizardImportAppPageBasic1 : public UINativeWizardPage
 public:
 
     /** Constructs 1st basic page.
-      * @param  fImportFromOCIByDefault  Brings whether we should propose import from OCI by default. */
-    UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault);
+      * @param  fImportFromOCIByDefault  Brings whether we should propose import from OCI by default.
+      * @param  strFileName              Brings appliance file name. */
+    UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault, const QString &strFileName);
 
 protected:
 
@@ -144,7 +147,14 @@ private:
     void updateCloudStuff();
 
     /** Holds whether default source should be Import from OCI. */
-    bool  m_fImportFromOCIByDefault;
+    bool     m_fImportFromOCIByDefault;
+    /** Handles the appliance file name. */
+    QString  m_strFileName;
+
+    /** Holds the cached source. */
+    QString  m_strSource;
+    /** Holds the cached profile name. */
+    QString  m_strProfileName;
 
     /** Holds the main label instance. */
     QIRichTextLabel *m_pLabelMain;
