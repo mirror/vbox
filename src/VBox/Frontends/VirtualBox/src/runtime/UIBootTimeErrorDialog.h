@@ -40,7 +40,7 @@ class UIFilePathSelector;
 #include "CMachine.h"
 
 /** QIDialog extension providing GUI with a dialog to select an existing medium. */
-class SHARED_LIBRARY_STUFF UIBootTimeErrorDialog : public QIWithRetranslateUI<QIMainDialog>
+class UIBootTimeErrorDialog : public QIWithRetranslateUI<QIMainDialog>
 {
 
     Q_OBJECT;
