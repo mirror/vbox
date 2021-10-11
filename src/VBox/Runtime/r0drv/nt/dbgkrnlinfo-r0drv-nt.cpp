@@ -339,14 +339,27 @@ static bool rtR0DbgKrnlNtParseModule(PRTDBGNTKRNLMODINFO pModInfo, uint8_t const
                       pModInfo->szName, pModInfo->cbImage, cbMapping);
 
     /*
-     * Find the export directory.
+     * Find the export directory.  It's okay if none is present too.
      */
     IMAGE_DATA_DIRECTORY ExpDir = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
     if (   ExpDir.Size < sizeof(IMAGE_EXPORT_DIRECTORY)
         || ExpDir.VirtualAddress < pModInfo->offEndSectHdrs
         || ExpDir.VirtualAddress >= pModInfo->cbImage
         || ExpDir.VirtualAddress + ExpDir.Size > pModInfo->cbImage)
+    {
+        if (ExpDir.Size == 0 && ExpDir.VirtualAddress == 0)
+        {
+            pModInfo->offExportDir      = 0;
+            pModInfo->cbExportDir       = 0;
+            pModInfo->cNamedExports     = 0;
+            pModInfo->cExports          = 0;
+            pModInfo->paoffExports      = NULL;
+            pModInfo->paoffNamedExports = NULL;
+            pModInfo->pau16NameOrdinals = NULL;
+            return true;
+        }
         MODERR_RETURN("%s: Missing or invalid export directory: %#lx LB %#x\n", pModInfo->szName, ExpDir.VirtualAddress, ExpDir.Size);
+    }
     pModInfo->offExportDir = ExpDir.VirtualAddress;
     pModInfo->cbExportDir  = ExpDir.Size;
 
