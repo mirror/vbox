@@ -84,9 +84,6 @@ private slots:
 
 private:
 
-    /** Updates machines. */
-    void updateMachines();
-
     /** Holds the list of selected VM names. */
     const QStringList  m_selectedVMNames;
     /** Holds whether we should fast travel to next page. */

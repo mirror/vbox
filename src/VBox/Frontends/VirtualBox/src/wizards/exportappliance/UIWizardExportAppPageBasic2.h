@@ -190,14 +190,9 @@ private slots:
 
 private:
 
-    /** Updates format. */
-    void updateFormat();
-
     /** Update local stuff. */
     void updateLocalStuff();
 
-    /** Updates profile. */
-    void updateProfile();
     /** Updates cloud stuff. */
     void updateCloudStuff();
 

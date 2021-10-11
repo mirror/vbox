@@ -1063,7 +1063,28 @@ bool UIWizardExportAppPageBasic2::validatePage()
 
 void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
 {
-    updateFormat();
+    /* Update combo tool-tip: */
+    updateFormatComboToolTip(m_pFormatComboBox);
+
+    /* Update wizard fields: */
+    wizard()->setFormat(format(m_pFormatComboBox));
+    wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
+
+    /* Refresh settings widget state: */
+    refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
+
+    /* Update export settings: */
+    refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
+    refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
+    refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
+    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
+    refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
+
+    /* Update profile: */
+    sltHandleProfileComboChange();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
@@ -1099,7 +1120,16 @@ void UIWizardExportAppPageBasic2::sltHandleIncludeISOsCheckBoxChange()
 
 void UIWizardExportAppPageBasic2::sltHandleProfileComboChange()
 {
-    updateProfile();
+    /* Update wizard fields: */
+    wizard()->setProfileName(profileName(m_pProfileComboBox));
+
+    /* Update export settings: */
+    refreshCloudProfile(m_comCloudProfile,
+                        wizard()->format(),
+                        wizard()->profileName(),
+                        wizard()->isFormatCloudOne());
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
@@ -1121,48 +1151,12 @@ void UIWizardExportAppPageBasic2::sltHandleProfileButtonClick()
         gpManager->openCloudProfileManager();
 }
 
-void UIWizardExportAppPageBasic2::updateFormat()
-{
-    /* Update combo tool-tip: */
-    updateFormatComboToolTip(m_pFormatComboBox);
-
-    /* Update wizard fields: */
-    wizard()->setFormat(format(m_pFormatComboBox));
-    wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
-
-    /* Refresh settings widget state: */
-    refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
-
-    /* Update export settings: */
-    refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());
-    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
-    refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
-    refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
-    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
-    refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
-
-    /* Update profile: */
-    updateProfile();
-}
-
 void UIWizardExportAppPageBasic2::updateLocalStuff()
 {
     /* Create appliance: */
     CAppliance comAppliance;
     refreshLocalStuff(comAppliance, wizard()->machineIDs(), wizard()->uri());
     wizard()->setLocalAppliance(comAppliance);
-}
-
-void UIWizardExportAppPageBasic2::updateProfile()
-{
-    /* Update wizard fields: */
-    wizard()->setProfileName(profileName(m_pProfileComboBox));
-
-    /* Update export settings: */
-    refreshCloudProfile(m_comCloudProfile,
-                        wizard()->format(),
-                        wizard()->profileName(),
-                        wizard()->isFormatCloudOne());
 }
 
 void UIWizardExportAppPageBasic2::updateCloudStuff()

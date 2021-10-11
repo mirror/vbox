@@ -243,13 +243,10 @@ bool UIWizardExportAppPageBasic1::validatePage()
 
 void UIWizardExportAppPageBasic1::sltHandleVMItemSelectionChanged()
 {
-    updateMachines();
-    emit completeChanged();
-}
-
-void UIWizardExportAppPageBasic1::updateMachines()
-{
     /* Update wizard fields: */
     wizard()->setMachineNames(machineNames(m_pVMSelector));
     wizard()->setMachineIDs(machineIDs(m_pVMSelector));
+
+    /* Notify about changes: */
+    emit completeChanged();
 }

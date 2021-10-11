@@ -672,13 +672,50 @@ bool UIWizardExportAppPageExpert::validatePage()
 
 void UIWizardExportAppPageExpert::sltHandleVMItemSelectionChanged()
 {
-    updateMachines();
+    /* Update wizard fields: */
+    wizard()->setMachineNames(machineNames(m_pVMSelector));
+    wizard()->setMachineIDs(machineIDs(m_pVMSelector));
+
+    /* Refresh required settings: */
+    refreshFileSelectorName(m_strFileSelectorName, wizard()->machineNames(), m_strDefaultApplianceName, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
+
+    /* Update local stuff: */
+    updateLocalStuff();
+    /* Update cloud stuff: */
+    updateCloudStuff();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
 void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
 {
-    updateFormat();
+    /* Update combo tool-tip: */
+    updateFormatComboToolTip(m_pFormatComboBox);
+
+    /* Update wizard fields: */
+    wizard()->setFormat(format(m_pFormatComboBox));
+    wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
+
+    /* Refresh settings widget state: */
+    UIWizardExportAppPage2::refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
+    UIWizardExportAppPage3::refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());
+
+    /* Update export settings: */
+    refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());
+    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
+    refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
+    refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
+    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
+    refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
+
+    /* Update local stuff: */
+    updateLocalStuff();
+    /* Update profile: */
+    sltHandleProfileComboChange();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
@@ -714,7 +751,19 @@ void UIWizardExportAppPageExpert::sltHandleIncludeISOsCheckBoxChange()
 
 void UIWizardExportAppPageExpert::sltHandleProfileComboChange()
 {
-    updateProfile();
+    /* Update wizard fields: */
+    wizard()->setProfileName(profileName(m_pProfileComboBox));
+
+    /* Update export settings: */
+    refreshCloudProfile(m_comCloudProfile,
+                        wizard()->format(),
+                        wizard()->profileName(),
+                        wizard()->isFormatCloudOne());
+
+    /* Update cloud stuff: */
+    updateCloudStuff();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
@@ -736,70 +785,12 @@ void UIWizardExportAppPageExpert::sltHandleProfileButtonClick()
         gpManager->openCloudProfileManager();
 }
 
-void UIWizardExportAppPageExpert::updateMachines()
-{
-    /* Update wizard fields: */
-    wizard()->setMachineNames(machineNames(m_pVMSelector));
-    wizard()->setMachineIDs(machineIDs(m_pVMSelector));
-
-    /* Refresh required settings: */
-    refreshFileSelectorName(m_strFileSelectorName, wizard()->machineNames(), m_strDefaultApplianceName, wizard()->isFormatCloudOne());
-    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
-
-    /* Update local stuff: */
-    updateLocalStuff();
-    /* Update cloud stuff: */
-    updateCloudStuff();
-}
-
-void UIWizardExportAppPageExpert::updateFormat()
-{
-    /* Update combo tool-tip: */
-    updateFormatComboToolTip(m_pFormatComboBox);
-
-    /* Update wizard fields: */
-    wizard()->setFormat(format(m_pFormatComboBox));
-    wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
-
-    /* Refresh settings widget state: */
-    UIWizardExportAppPage2::refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
-    UIWizardExportAppPage3::refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());
-
-    /* Update export settings: */
-    refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());
-    refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
-    refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
-    refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
-    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
-    refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
-
-    /* Update local stuff: */
-    updateLocalStuff();
-    /* Update profile: */
-    updateProfile();
-}
-
 void UIWizardExportAppPageExpert::updateLocalStuff()
 {
     /* Create appliance: */
     CAppliance comAppliance;
     refreshLocalStuff(comAppliance, wizard()->machineIDs(), wizard()->uri());
     wizard()->setLocalAppliance(comAppliance);
-}
-
-void UIWizardExportAppPageExpert::updateProfile()
-{
-    /* Update wizard fields: */
-    wizard()->setProfileName(profileName(m_pProfileComboBox));
-
-    /* Update export settings: */
-    refreshCloudProfile(m_comCloudProfile,
-                        wizard()->format(),
-                        wizard()->profileName(),
-                        wizard()->isFormatCloudOne());
-
-    /* Update cloud stuff: */
-    updateCloudStuff();
 }
 
 void UIWizardExportAppPageExpert::updateCloudStuff()
