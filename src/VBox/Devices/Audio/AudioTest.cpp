@@ -2454,6 +2454,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
                                                    false /* fFindSilence */, FileB.offStart, &ToneParmsB, cbSearchWindow),
                              cbSizeB - FileB.offStart);
 
+#ifdef DEBUG
     int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File A ('%s'): uOff=%RU64 (%#x), cbSize=%RU64 (%#x), cbFileSize=%RU64\n",
                                         ObjA.szName, FileA.offStart, FileA.offStart, FileA.cbSize, FileA.cbSize, cbSizeA);
     AssertRC(rc2);
@@ -2461,6 +2462,7 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     rc = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File B ('%s'): uOff=%RU64 (%#x), cbSize=%RU64 (%#x), cbFileSize=%RU64\n",
                                    ObjB.szName, FileB.offStart, FileB.offStart, FileB.cbSize, FileB.cbSize, cbSizeB);
     AssertRC(rc2);
+#endif
 
     uint32_t const cDiffs = audioTestFilesFindDiffsBinary(pVerJob, &FileA, &FileB, &ToneParmsA);
 
