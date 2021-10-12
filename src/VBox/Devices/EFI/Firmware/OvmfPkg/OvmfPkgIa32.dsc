@@ -84,7 +84,9 @@
 !if $(TOOL_CHAIN_TAG) != "XCODE5" && $(TOOL_CHAIN_TAG) != "CLANGPDB"
   GCC:*_*_*_CC_FLAGS                   = -mno-mmx -mno-sse
 !endif
+!ifndef $(VBOX) # We want some debug information even for release builds, thank you.
   RELEASE_*_*_GENFW_FLAGS = --zero
+!endif
 
 !ifdef $(VBOX)
 !ifdef $(SOURCE_DEBUG_ENABLE)

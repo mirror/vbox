@@ -90,7 +90,9 @@
   GCC:*_*_X64_GENFW_FLAGS   = --keepexceptiontable
   INTEL:*_*_X64_GENFW_FLAGS = --keepexceptiontable
 !endif
+!ifndef $(VBOX) # We want some debug information even for release builds, thank you.
   RELEASE_*_*_GENFW_FLAGS = --zero
+!endif
 
   #
   # Disable deprecated APIs.
