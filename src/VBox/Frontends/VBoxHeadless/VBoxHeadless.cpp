@@ -791,7 +791,6 @@ windowsMessageMonitor(RTTHREAD ThreadSelf, void *pvUser)
 
     if (b < 0)
         LogRel(("VBoxHeadless: GetMessage failed\n"));
-    LogRel(("VBoxHeadless: stopping windows message loop\n"));
 
     destroyWindow();
     return VINF_SUCCESS;
