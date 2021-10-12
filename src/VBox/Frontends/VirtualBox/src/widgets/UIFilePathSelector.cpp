@@ -614,7 +614,7 @@ void UIFilePathSelector::refreshText()
 void UIFilePathSelector::sltRecentMediaListUpdated(UIMediumDeviceType enmMediumType)
 {
     /* Remove the recent media list from the end of the combo: */
-    while (count() >= m_iRecentListSeparatorPosition)
+    while (count() > m_iRecentListSeparatorPosition)
         removeItem(count() - 1);
 
 
