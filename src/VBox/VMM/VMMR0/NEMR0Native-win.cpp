@@ -80,6 +80,7 @@ static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysIn
  * Apparently node numbers above 64 has a different meaning.
  */
 static NTSTATUS (*g_pfnWinHvDepositMemory)(uintptr_t idPartition, size_t cPages, uintptr_t IdealNode, size_t *pcActuallyAdded);
+#endif
 
 RT_C_DECLS_BEGIN
 /**
@@ -91,7 +92,6 @@ RT_C_DECLS_BEGIN
 NTSTATUS WinHvGetPartitionProperty(uintptr_t idPartition, HV_PARTITION_PROPERTY_CODE enmProperty, PHV_PARTITION_PROPERTY puValue);
 decltype(WinHvGetPartitionProperty) *g_pfnWinHvGetPartitionProperty;
 RT_C_DECLS_END
-#endif
 
 /** @name VID.SYS image details.
  * @{ */
@@ -157,7 +157,11 @@ DECLASM(NTSTATUS)    nemR0WinHvrWinHvGetPartitionProperty(uintptr_t idPartition,
  */
 VMMR0_INT_DECL(int)  NEMR0Init(void)
 {
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     return RTCritSectInit(&g_VidSysCritSect);
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -166,9 +170,12 @@ VMMR0_INT_DECL(int)  NEMR0Init(void)
  */
 VMMR0_INT_DECL(void) NEMR0Term(void)
 {
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     RTCritSectDelete(&g_VidSysCritSect);
+#endif
 }
 
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 
 /**
  * Worker for NEMR0InitVM that allocates a hypercall page.
@@ -242,7 +249,7 @@ static void nemR0PrepareForVidSysInterceptInner(void)
     PIMAGE_NT_HEADERS const    pNtHdrs       = g_pVidSysHdrs;
     uintptr_t const            offEndNtHdrs  = (uintptr_t)(pNtHdrs + 1) - (uintptr_t)pbImage;
 
-#define CHECK_LOG_RET(a_Expr, a_LogRel) do { \
+# define CHECK_LOG_RET(a_Expr, a_LogRel) do { \
             if (RT_LIKELY(a_Expr)) { /* likely */ } \
             else \
             { \
@@ -336,7 +343,7 @@ static void nemR0PrepareForVidSysInterceptInner(void)
     //{
     //    return;
     //}
-#undef CHECK_LOG_RET
+# undef CHECK_LOG_RET
 }
 
 
@@ -378,6 +385,8 @@ static void nemR0PrepareForVidSysIntercept(RTDBGKRNLINFO hKrnlInfo)
     else
         LogRel(("NEMR0: Failed to find vid.sys!__ImageBase (%Rrc)\n", rc));
 }
+
+#endif /* NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 
 
 /**
