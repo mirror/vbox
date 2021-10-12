@@ -2389,6 +2389,12 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
                                              fPre ? "Pre" : "Post", cbBeacon ? "found" : "not found", cbBeacon, cbBeaconExpected);
         AssertRC(rc2);
     }
+    else
+    {
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s': %s beacon found and valid",
+                                            pCmp->pszName, fPre ? "Pre" : "Post");
+        AssertRC(rc2);
+    }
 
     return rc;
 }
