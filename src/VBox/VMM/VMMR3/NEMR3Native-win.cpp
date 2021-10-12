@@ -177,12 +177,14 @@ static decltype(NtDeviceIoControlFile) **g_ppfnVidNtDeviceIoControlFile;
 static NEMWINIOCTL g_IoCtlGetHvPartitionId;
 /** Info about the VidGetPartitionProperty I/O control interface. */
 static NEMWINIOCTL g_IoCtlGetPartitionProperty;
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
 /** Info about the VidStartVirtualProcessor I/O control interface. */
 static NEMWINIOCTL g_IoCtlStartVirtualProcessor;
 /** Info about the VidStopVirtualProcessor I/O control interface. */
 static NEMWINIOCTL g_IoCtlStopVirtualProcessor;
 /** Info about the VidMessageSlotHandleAndGetNext I/O control interface. */
 static NEMWINIOCTL g_IoCtlMessageSlotHandleAndGetNext;
+#endif
 #ifdef LOG_ENABLED
 /** Info about the VidMessageSlotMap I/O control interface - for logging. */
 static NEMWINIOCTL g_IoCtlMessageSlotMap;
@@ -842,6 +844,7 @@ nemR3WinIoctlDetector_GetPartitionProperty(HANDLE hFile, HANDLE hEvt, PIO_APC_RO
     return STATUS_SUCCESS;
 }
 
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
 
 /**
  * Used to fill in g_IoCtlStartVirtualProcessor.
@@ -943,6 +946,7 @@ nemR3WinIoctlDetector_MessageSlotHandleAndGetNext(HANDLE hFile, HANDLE hEvt, PIO
     return STATUS_SUCCESS;
 }
 
+#endif /* defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED) */
 
 #ifdef LOG_ENABLED
 /**
@@ -1015,6 +1019,8 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
             g_IoCtlGetPartitionProperty.uFunction, g_IoCtlGetPartitionProperty.cbInput, g_IoCtlGetPartitionProperty.cbOutput));
 
     int rcRet = VINF_SUCCESS;
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
+
     /* VidStartVirtualProcessor */
     *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_StartVirtualProcessor;
     fRet = g_pfnVidStartVirtualProcessor(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
@@ -1051,6 +1057,7 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
             g_IoCtlMessageSlotHandleAndGetNext.uFunction, g_IoCtlMessageSlotHandleAndGetNext.cbInput,
             g_IoCtlMessageSlotHandleAndGetNext.cbOutput));
 
+#endif /* defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED) */
 #ifdef LOG_ENABLED
     /* The following are only for logging: */
     union
@@ -1097,9 +1104,11 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
     /* Done. */
     pVM->nem.s.IoCtlGetHvPartitionId            = g_IoCtlGetHvPartitionId;
     pVM->nem.s.IoCtlGetPartitionProperty        = g_IoCtlGetPartitionProperty;
+#ifdef NEM_WIN_WITH_RING0_RUNLOOP
     pVM->nem.s.IoCtlStartVirtualProcessor       = g_IoCtlStartVirtualProcessor;
     pVM->nem.s.IoCtlStopVirtualProcessor        = g_IoCtlStopVirtualProcessor;
     pVM->nem.s.IoCtlMessageSlotHandleAndGetNext = g_IoCtlMessageSlotHandleAndGetNext;
+#endif
     return rcRet;
 }
 

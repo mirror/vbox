@@ -196,12 +196,14 @@ typedef struct NEM
     NEMWINIOCTL                 IoCtlGetHvPartitionId;
     /** Info about the VidGetPartitionProperty I/O control interface. */
     NEMWINIOCTL                 IoCtlGetPartitionProperty;
+#  ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** Info about the VidStartVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlStartVirtualProcessor;
     /** Info about the VidStopVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlStopVirtualProcessor;
     /** Info about the VidStopVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
+#  endif
 
     /** Statistics updated by NEMR0UpdateStatistics. */
     struct
@@ -392,6 +394,7 @@ typedef struct NEMR0PERVM
     NEMWINIOCTL                 IoCtlGetHvPartitionId;
     /** Info about the VidGetPartitionProperty I/O control interface. */
     NEMWINIOCTL                 IoCtlGetPartitionProperty;
+#  ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** Info about the VidStartVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlStartVirtualProcessor;
     /** Info about the VidStopVirtualProcessor I/O control interface. */
@@ -400,6 +403,7 @@ typedef struct NEMR0PERVM
     NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
     /** Whether we may use the ring-0 runloop or not. */
     bool                        fMayUseRing0Runloop;
+#  endif
 
     /** Hypercall input/ouput page for non-EMT. */
     NEMR0HYPERCALLDATA          HypercallData;

@@ -3832,7 +3832,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, WHV_R
 #endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef IN_RING0
+#if defined(IN_RING0) && defined(NEM_WIN_WITH_RING0_RUNLOOP)
 /**
  * Perform an I/O control operation on the partition handle (VID.SYS),
  * restarting on alert-like behaviour.
