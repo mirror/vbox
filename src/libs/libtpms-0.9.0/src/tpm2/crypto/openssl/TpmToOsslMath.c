@@ -501,8 +501,8 @@ PointFromOssl(
     if(y == NULL)
 	FAIL(FATAL_ERROR_ALLOCATION);
     // If this returns false, then the point is at infinity
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(LIBRESSL_VERSION_NUMBER)					// libtpms added begin
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && \
+    !defined(LIBRESSL_VERSION_NUMBER)					// libtpms added begin VBox: fixed openssl version number check from 0x10100000L
     OK = EC_POINT_get_affine_coordinates(E->G, pIn, x, y, E->CTX);
 #else									// libtpms added begin
     OK = EC_POINT_get_affine_coordinates_GFp(E->G, pIn, x, y, E->CTX);
@@ -536,8 +536,8 @@ EcPointInitialized(
 	    if(E == NULL)
 		FAIL(FATAL_ERROR_ALLOCATION);
 	    P = EC_POINT_new(E->G);
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(LIBRESSL_VERSION_NUMBER)					// libtpms added begin
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && \
+    !defined(LIBRESSL_VERSION_NUMBER)					// libtpms added begin VBox: fixed openssl version number check from 0x10100000L
 	    if(!EC_POINT_set_affine_coordinates(E->G, P, bnX, bnY, E->CTX))
 #else									// libtpms added end
 	    if(!EC_POINT_set_affine_coordinates_GFp(E->G, P, bnX, bnY, E->CTX))
@@ -594,8 +594,8 @@ BnCurveInitialize(
 	    VERIFY(P != NULL);
 	    
 	    // Need to use this in case Montgomery method is being used
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(LIBRESSL_VERSION_NUMBER)						// libtpms added begin
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && \
+    !defined(LIBRESSL_VERSION_NUMBER)						// libtpms added begin VBox: fixed openssl version number check from 0x10100000L
 	    VERIFY(EC_POINT_set_affine_coordinates(E->G, P, bnX, bnY, CTX));
 #else										// libtpms added end
 	    VERIFY(EC_POINT_set_affine_coordinates_GFp(E->G, P, bnX, bnY, CTX));
