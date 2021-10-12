@@ -1286,6 +1286,13 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     }
 #endif
 
+#ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+    /** Some guess working here. */
+    pVM->nem.s.cMaxMappedPages = 4000;
+    if (g_uBuildNo >= 22000)
+        pVM->nem.s.cMaxMappedPages = _64K; /* seems it can do lots more even */
+#endif
+
     /*
      * Error state.
      * The error message will be non-empty on failure and 'rc' will be set too.
@@ -1333,6 +1340,26 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         nemR3WinDisableX2Apic(pVM);
 
                         /* Register release statistics */
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.cMappedPages, STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesCurrentlyMapped", STAMUNIT_PAGES, "Number guest pages currently mapped by the VM");
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatMapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesMapCalls", STAMUNIT_PAGES, "Calls to WHvMapGpaRange/HvCallMapGpaPages");
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatMapPageFailed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesMapFails", STAMUNIT_PAGES, "Calls to WHvMapGpaRange/HvCallMapGpaPages that failed");
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatUnmapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesUnmapCalls", STAMUNIT_PAGES, "Calls to WHvUnmapGpaRange/HvCallUnmapGpaPages");
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatUnmapPageFailed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesUnmapFails", STAMUNIT_PAGES, "Calls to WHvUnmapGpaRange/HvCallUnmapGpaPages that failed");
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatRemapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesRemapCalls", STAMUNIT_PAGES, "Calls to HvCallMapGpaPages for changing page protection");
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatRemapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesRemapFails", STAMUNIT_PAGES, "Calls to HvCallMapGpaPages for changing page protection failed");
+#else
+                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatUnmapAllPages, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesUnmapAll", STAMUNIT_PAGES, "Times we had to unmap all the pages");
+#endif
+
                         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                         {
                             PNEMCPU pNemCpu = &pVM->apCpusR3[idCpu]->nem.s;
@@ -2025,12 +2052,14 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
         if (SUCCEEDED(hrc))
 #endif
         {
+            STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPage);
             uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
             Log5(("NEM GPA unmapped/A20: %RGp (was %s, cMappedPages=%u)\n", GCPhys, g_apszPageStates[pInfo->u2NemState], cMappedPages));
             pInfo->u2NemState = NEM_WIN_PAGE_STATE_UNMAPPED;
         }
         else
         {
+            STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
             LogRel(("nemR3WinUnsetForA20CheckerCallback/unmap: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
             return rc;
