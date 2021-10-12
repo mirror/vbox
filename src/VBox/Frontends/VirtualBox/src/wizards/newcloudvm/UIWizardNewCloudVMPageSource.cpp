@@ -529,13 +529,30 @@ bool UIWizardNewCloudVMPageSource::validatePage()
 
 void UIWizardNewCloudVMPageSource::sltHandleProviderComboChange()
 {
-    updateProvider();
+    /* Update combo tool-tip: */
+    updateComboToolTip(m_pProviderComboBox);
+
+    /* Update wizard fields: */
+    wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
+
+    /* Update profiles: */
+    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
+    sltHandleProfileComboChange();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
 void UIWizardNewCloudVMPageSource::sltHandleProfileComboChange()
 {
-    updateProfile();
+    /* Update wizard fields: */
+    wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
+    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
+
+    /* Update source: */
+    sltHandleSourceTabBarChange();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
@@ -547,38 +564,19 @@ void UIWizardNewCloudVMPageSource::sltHandleProfileButtonClick()
 
 void UIWizardNewCloudVMPageSource::sltHandleSourceTabBarChange()
 {
-    updateSource();
+    /* Update source type: */
+    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->client());
+    sltHandleSourceImageChange();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
 void UIWizardNewCloudVMPageSource::sltHandleSourceImageChange()
 {
-    updateSourceImage();
-    emit completeChanged();
-}
-
-void UIWizardNewCloudVMPageSource::updateProvider()
-{
-    updateComboToolTip(m_pProviderComboBox);
-    wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
-    updateProfile();
-}
-
-void UIWizardNewCloudVMPageSource::updateProfile()
-{
-    wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
-    updateSource();
-}
-
-void UIWizardNewCloudVMPageSource::updateSource()
-{
-    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->client());
-    updateSourceImage();
-}
-
-void UIWizardNewCloudVMPageSource::updateSourceImage()
-{
+    /* Update source image: */
     m_strSourceImageId = currentListWidgetData(m_pSourceImageList);
+
+    /* Notify about changes: */
+    emit completeChanged();
 }

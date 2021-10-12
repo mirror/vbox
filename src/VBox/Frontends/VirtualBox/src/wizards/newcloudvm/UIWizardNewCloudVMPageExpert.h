@@ -75,16 +75,6 @@ private slots:
 
 private:
 
-    /** Updates provider. */
-    void updateProvider();
-    /** Updates profile. */
-    void updateProfile();
-    /** Updates source. */
-    void updateSource();
-    /** Updates source image. */
-    void updateSourceImage();
-    /** Updates VSD form. */
-    void updateVSDForm();
     /** Updates properties table. */
     void updatePropertiesTable();
 
