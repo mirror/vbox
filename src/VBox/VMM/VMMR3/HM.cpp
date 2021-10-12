@@ -3297,8 +3297,7 @@ static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
 
     if (!HMIsEnabled(pVM))
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
-
-    if (HMIsVmxActive(pVM))
+    else if (HMIsVmxActive(pVM))
     {
         if (pVM->hm.s.vmx.fLbrCfg)
         {
@@ -3344,7 +3343,7 @@ static DECLCALLBACK(void) hmR3InfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
     {
         Assert(HMIsSvmActive(pVM));
         /** @todo SVM: LBRs (get them from VMCB if possible). */
-        pHlp->pfnPrintf(pHlp, "SVM LBR not implemented in VM debugger yet\n");
+        pHlp->pfnPrintf(pHlp, "SVM LBR not implemented.\n");
     }
 }
 
