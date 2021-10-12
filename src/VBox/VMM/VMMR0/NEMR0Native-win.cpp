@@ -67,6 +67,7 @@ typedef uint32_t DWORD; /* for winerror.h constants */
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysInput, uint64_t HCPhysOutput);
 
 /**
@@ -90,9 +91,11 @@ RT_C_DECLS_BEGIN
 NTSTATUS WinHvGetPartitionProperty(uintptr_t idPartition, HV_PARTITION_PROPERTY_CODE enmProperty, PHV_PARTITION_PROPERTY puValue);
 decltype(WinHvGetPartitionProperty) *g_pfnWinHvGetPartitionProperty;
 RT_C_DECLS_END
+#endif
 
 /** @name VID.SYS image details.
  * @{ */
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 static uint8_t                                 *g_pbVidSys                            = NULL;
 static uintptr_t                                g_cbVidSys                            = 0;
 static PIMAGE_NT_HEADERS                        g_pVidSysHdrs                         = NULL;
@@ -101,6 +104,7 @@ static decltype(WinHvGetPartitionProperty)    **g_ppfnVidSysWinHvGetPartitionPro
 
 /** Critical section protecting the WinHvGetPartitionProperty hacking. */
 static RTCRITSECT                               g_VidSysCritSect;
+#endif /* NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 RT_C_DECLS_BEGIN
 /** The partition ID passed to WinHvGetPartitionProperty by VID.SYS.   */
 HV_PARTITION_ID                                 g_idVidSysFoundPartition = HV_PARTITION_ID_INVALID;
@@ -391,6 +395,7 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM)
     int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
     AssertRCReturn(rc, rc);
 
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /*
      * We want to perform hypercalls here.  The NT kernel started to expose a very low
      * level interface to do this thru somewhere between build 14271 and 16299.  Since
@@ -463,10 +468,12 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM)
             }
         }
     }
+#endif /* NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 
     return rc;
 }
 
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 
 /**
  * Perform an I/O control operation on the partition handle (VID.SYS).
@@ -489,7 +496,7 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM)
 DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PGVMCPU pGVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput)
 {
-#ifdef RT_STRICT
+# ifdef RT_STRICT
     /*
      * Input and output parameters are part of the VM CPU structure.
      */
@@ -498,7 +505,7 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PGVMCPU pGVCpu, uint32_t
         AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pGVCpu <= sizeof(*pGVCpu), VERR_INVALID_PARAMETER);
     if (pvOutput)
         AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pGVCpu <= sizeof(*pGVCpu), VERR_INVALID_PARAMETER);
-#endif
+# endif
 
     int32_t rcNt = STATUS_UNSUCCESSFUL;
     int rc = SUPR0IoCtlPerform(pGVM->nemr0.s.pIoCtlCtx, uFunction,
@@ -794,6 +801,7 @@ static int nemR0InitVMPart2DontWannaDoTheseUglyPartitionIdFallbacks(PGVM pGVM, P
     return rc;
 }
 
+#endif /* NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 
 /**
  * 2nd part of the initialization, after we've got a partition handle.
@@ -807,9 +815,10 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
     int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
     AssertRCReturn(rc, rc);
     SUPR0Printf("NEMR0InitVMPart2\n"); LogRel(("2: NEMR0InitVMPart2\n"));
-#ifdef NEM_WIN_WITH_RING0_RUNLOOP
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
     Assert(pGVM->nemr0.s.fMayUseRing0Runloop == false);
-#endif
+# endif
 
     /*
      * Copy and validate the I/O control information from ring-3.
@@ -826,7 +835,7 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
     AssertLogRelReturn(Copy.cbOutput == sizeof(HV_PARTITION_PROPERTY), VERR_NEM_INIT_FAILED);
     pGVM->nemr0.s.IoCtlGetPartitionProperty = Copy;
 
-#ifdef NEM_WIN_WITH_RING0_RUNLOOP
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
     pGVM->nemr0.s.fMayUseRing0Runloop = pGVM->nem.s.fUseRing0Runloop;
 
     Copy = pGVM->nem.s.IoCtlStartVirtualProcessor;
@@ -857,7 +866,7 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
     AssertLogRelStmt(Copy.uFunction != pGVM->nemr0.s.IoCtlStopVirtualProcessor.uFunction, rc = VERR_NEM_INIT_FAILED);
     if (RT_SUCCESS(rc))
         pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext = Copy;
-#endif
+# endif
 
     if (   RT_SUCCESS(rc)
         || !pGVM->nem.s.fUseRing0Runloop)
@@ -879,10 +888,10 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
         PVMCPUCC pVCpu0 = &pGVM->aCpus[0];
         NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu0, pGVM->nemr0.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
                                                 &pVCpu0->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu0->nem.s.uIoCtlBuf.idPartition));
-#if 0
+# if 0
         AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
         pGVM->nemr0.s.idHvPartition = pVCpu0->nem.s.uIoCtlBuf.idPartition;
-#else
+# else
         /*
          * Since 2021 (Win11) the above I/O control doesn't work on exo-partitions
          * so we have to go to extremes to get at it.  Sigh.
@@ -902,13 +911,14 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
         }
         if (pGVM->nem.s.idHvPartition == HV_PARTITION_ID_INVALID)
             pGVM->nem.s.idHvPartition = pGVM->nemr0.s.idHvPartition;
-#endif
+# endif
         AssertLogRelMsgReturn(pGVM->nemr0.s.idHvPartition == pGVM->nem.s.idHvPartition,
                               ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nemr0.s.idHvPartition, pGVM->nem.s.idHvPartition),
                               VERR_NEM_INIT_FAILED);
         if (RT_SUCCESS(rc) && pGVM->nemr0.s.idHvPartition == HV_PARTITION_ID_INVALID)
             rc = VERR_NEM_INIT_FAILED;
     }
+#endif /* NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 
     return rc;
 }
@@ -924,6 +934,7 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
  */
 VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM)
 {
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     pGVM->nemr0.s.idHvPartition = HV_PARTITION_ID_INVALID;
 
     /* Clean up I/O control context. */
@@ -943,6 +954,9 @@ VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM)
     if (RTCritSectIsInitialized(&pGVM->nemr0.s.HypercallDataCritSect))
         RTCritSectDelete(&pGVM->nemr0.s.HypercallDataCritSect);
     nemR0DeleteHypercallData(&pGVM->nemr0.s.HypercallData);
+#else
+    RT_NOREF(pGVM);
+#endif
 }
 
 
@@ -969,6 +983,7 @@ static int nemR3WinDummyReadGpa(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys)
 #endif
 
 
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 /**
  * Worker for NEMR0MapPages and others.
  */
@@ -1041,6 +1056,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysS
         }
     }
 }
+#endif /* NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 
 
 /**
@@ -1057,6 +1073,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysS
  */
 VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, VMCPUID idCpu)
 {
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /*
      * Unpack the call.
      */
@@ -1076,9 +1093,14 @@ VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, VMCPUID idCpu)
         rc = nemR0WinMapPages(pGVM, pGVCpu, GCPhysSrc, GCPhysDst, cPages, fFlags);
     }
     return rc;
+#else
+    RT_NOREF(pGVM, idCpu);
+    return  VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 /**
  * Worker for NEMR0UnmapPages and others.
  */
@@ -1108,17 +1130,18 @@ NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhy
     Log6(("NEMR0UnmapPages: %RGp L %u -> %#RX64\n", GCPhys, cPages, uResult));
     if (uResult == ((uint64_t)cPages << 32))
     {
-#if 1       /* Do we need to do this? Hopefully not... */
+# if 1       /* Do we need to do this? Hopefully not... */
         uint64_t volatile uR = g_pfnHvlInvokeHypercall(HvCallUncommitGpaPages | ((uint64_t)cPages << 32),
                                                        pGVCpu->nemr0.s.HypercallData.HCPhysPage, 0);
         AssertMsg(uR == ((uint64_t)cPages << 32), ("uR=%#RX64\n", uR)); NOREF(uR);
-#endif
+# endif
         return VINF_SUCCESS;
     }
 
     LogRel(("g_pfnHvlInvokeHypercall/UnmapGpaPages -> %#RX64\n", uResult));
     return VERR_NEM_UNMAP_PAGES_FAILED;
 }
+#endif /* NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 
 
 /**
@@ -1135,6 +1158,7 @@ NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhy
  */
 VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, VMCPUID idCpu)
 {
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /*
      * Unpack the call.
      */
@@ -1152,6 +1176,10 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, VMCPUID idCpu)
         rc = nemR0WinUnmapPages(pGVM, pGVCpu, GCPhys, cPages);
     }
     return rc;
+#else
+    RT_NOREF(pGVM, idCpu);
+    return  VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
@@ -3005,6 +3033,7 @@ VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
  */
 VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, VMCPUID idCpu)
 {
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /*
      * Validate the call.
      */
@@ -3064,10 +3093,13 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, VMCPUID idCpu)
             rc = VERR_WRONG_ORDER;
     }
     return rc;
+#else
+    RT_NOREF(pGVM, idCpu);
+    return VINF_SUCCESS;
+#endif
 }
 
 
-#if 1 && defined(DEBUG_bird)
 /**
  * Debug only interface for poking around and exploring Hyper-V stuff.
  *
@@ -3077,6 +3109,7 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, VMCPUID idCpu)
  */
 VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, VMCPUID idCpu, uint64_t u64Arg)
 {
+#if defined(DEBUG_bird) && defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
     /*
      * Resolve CPU structures.
      */
@@ -3163,6 +3196,9 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, VMCPUID idCpu, uint64_t u64Arg)
             rc = VERR_INVALID_FUNCTION;
     }
     return rc;
+#else   /* !DEBUG_bird */
+    RT_NOREF(pGVM, idCpu, u64Arg);
+    return VERR_NOT_SUPPORTED;
+#endif /* !DEBUG_bird */
 }
-#endif /* DEBUG_bird */
 

@@ -173,10 +173,12 @@ static const struct
 static decltype(NtDeviceIoControlFile) *g_pfnNtDeviceIoControlFile;
 /** Pointer to the NtDeviceIoControlFile import table entry. */
 static decltype(NtDeviceIoControlFile) **g_ppfnVidNtDeviceIoControlFile;
+#if defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED)
 /** Info about the VidGetHvPartitionId I/O control interface. */
 static NEMWINIOCTL g_IoCtlGetHvPartitionId;
 /** Info about the VidGetPartitionProperty I/O control interface. */
 static NEMWINIOCTL g_IoCtlGetPartitionProperty;
+#endif
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
 /** Info about the VidStartVirtualProcessor I/O control interface. */
 static NEMWINIOCTL g_IoCtlStartVirtualProcessor;
@@ -240,6 +242,8 @@ static const char * const g_apszWHvMemAccesstypes[4] = { "read", "write", "exec"
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+DECLINLINE(int) nemR3NativeGCPhys2R3PtrReadOnly(PVM pVM, RTGCPHYS GCPhys, const void **ppv);
+DECLINLINE(int) nemR3NativeGCPhys2R3PtrWriteable(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 
 /*
  * Instantate the code we share with ring-0.
@@ -790,6 +794,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     return VINF_SUCCESS;
 }
 
+#if defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED)
 
 /**
  * Used to fill in g_IoCtlGetHvPartitionId.
@@ -844,6 +849,7 @@ nemR3WinIoctlDetector_GetPartitionProperty(HANDLE hFile, HANDLE hEvt, PIO_APC_RO
     return STATUS_SUCCESS;
 }
 
+#endif /* defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED) */
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
 
 /**
@@ -984,11 +990,14 @@ static NTSTATUS WINAPI nemR3WinIoctlDetector_ForLogging(HANDLE hFile, HANDLE hEv
  */
 static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
 {
+    RT_NOREF(pVM, pErrInfo);
+
     /*
      * Probe the I/O control information for select VID APIs so we can use
      * them directly from ring-0 and better log them.
      *
      */
+#if defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED)
     decltype(NtDeviceIoControlFile) * const pfnOrg = *g_ppfnVidNtDeviceIoControlFile;
 
     /* VidGetHvPartitionId - must work due to our memory management. */
@@ -1018,6 +1027,7 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
     LogRel(("NEM: VidGetPartitionProperty        -> fun:%#x in:%#x out:%#x\n",
             g_IoCtlGetPartitionProperty.uFunction, g_IoCtlGetPartitionProperty.cbInput, g_IoCtlGetPartitionProperty.cbOutput));
 
+#endif
     int rcRet = VINF_SUCCESS;
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
 
@@ -1102,8 +1112,10 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
 #endif
 
     /* Done. */
+#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     pVM->nem.s.IoCtlGetHvPartitionId            = g_IoCtlGetHvPartitionId;
     pVM->nem.s.IoCtlGetPartitionProperty        = g_IoCtlGetPartitionProperty;
+#endif
 #ifdef NEM_WIN_WITH_RING0_RUNLOOP
     pVM->nem.s.IoCtlStartVirtualProcessor       = g_IoCtlStartVirtualProcessor;
     pVM->nem.s.IoCtlStopVirtualProcessor        = g_IoCtlStopVirtualProcessor;

@@ -47,8 +47,8 @@ RT_C_DECLS_BEGIN
  * Windows: Code configuration.
  */
 # define NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-//# define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS /**< Applies to ring-3 code only. Useful for testing VID API. */
-//# define NEM_WIN_USE_OUR_OWN_RUN_API          /**< Applies to ring-3 code only. Useful for testing VID API. */
+//# define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS   /**< Applies to ring-3 code only. Useful for testing VID API. */
+//# define NEM_WIN_USE_OUR_OWN_RUN_API            /**< Applies to ring-3 code only. Useful for testing VID API. */
 //# define NEM_WIN_WITH_RING0_RUNLOOP             /**< Enables the ring-0 runloop. */
 //# define NEM_WIN_USE_RING0_RUNLOOP_BY_DEFAULT   /**< For quickly testing ring-3 API without messing with CFGM. */
 # if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
@@ -192,10 +192,12 @@ typedef struct NEM
     /** Number of currently mapped pages. */
     uint32_t volatile           cMappedPages;
 
+#  ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /** Info about the VidGetHvPartitionId I/O control interface. */
     NEMWINIOCTL                 IoCtlGetHvPartitionId;
     /** Info about the VidGetPartitionProperty I/O control interface. */
     NEMWINIOCTL                 IoCtlGetPartitionProperty;
+#  endif
 #  ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** Info about the VidStartVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlStartVirtualProcessor;
@@ -370,7 +372,7 @@ typedef NEMR0HYPERCALLDATA *PNEMR0HYPERCALLDATA;
  */
 typedef struct NEMR0PERVCPU
 {
-# ifdef RT_OS_WINDOWS
+# if defined(RT_OS_WINDOWS) && defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
     /** Hypercall input/ouput page. */
     NEMR0HYPERCALLDATA          HypercallData;
     /** Delta to add to convert a ring-0 pointer to a ring-3 one.   */
@@ -386,6 +388,7 @@ typedef struct NEMR0PERVCPU
 typedef struct NEMR0PERVM
 {
 # ifdef RT_OS_WINDOWS
+#  ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /** The partition ID. */
     uint64_t                    idHvPartition;
     /** I/O control context. */
@@ -394,6 +397,7 @@ typedef struct NEMR0PERVM
     NEMWINIOCTL                 IoCtlGetHvPartitionId;
     /** Info about the VidGetPartitionProperty I/O control interface. */
     NEMWINIOCTL                 IoCtlGetPartitionProperty;
+#  endif
 #  ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** Info about the VidStartVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlStartVirtualProcessor;
@@ -405,10 +409,12 @@ typedef struct NEMR0PERVM
     bool                        fMayUseRing0Runloop;
 #  endif
 
+#  ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /** Hypercall input/ouput page for non-EMT. */
     NEMR0HYPERCALLDATA          HypercallData;
     /** Critical section protecting use of HypercallData. */
     RTCRITSECT                  HypercallDataCritSect;
+#  endif
 
 # else
     uint32_t                    uDummy;
