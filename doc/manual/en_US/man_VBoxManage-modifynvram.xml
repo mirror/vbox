@@ -69,6 +69,20 @@
       <arg>--name=<replaceable>name</replaceable></arg>
       <arg>--filename=<replaceable>filename</replaceable></arg>
     </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-modifynvram-deletevar">
+      <command>VBoxManage modifynvram</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">deletevar</arg>
+      <arg>--name=<replaceable>name</replaceable></arg>
+      <arg>--owner-uuid=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-modifynvram-changevar">
+      <command>VBoxManage modifynvram</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">changevar</arg>
+      <arg>--name=<replaceable>name</replaceable></arg>
+      <arg>--filename=<replaceable>filename</replaceable></arg>
+    </cmdsynopsis>
   </refsynopsisdiv>
 
   <refsect1>
@@ -166,6 +180,47 @@
               Where to store the content of the variable upon success. This is optional,
               if omitted the content will be dumped to the terminal as a hex dump.
             </para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-modifynvram-deletevar">
+      <title>modifynvram deletevar</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Deletes the given variable identified by its name and owner UUID.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--name=<replaceable>name</replaceable></option></term>
+          <listitem><para>UEFI variable name to delete.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--owner-uuid=<replaceable>uuid</replaceable></option></term>
+          <listitem><para>The UUID identifying the owner of the variable to delete.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-modifynvram-changevar">
+      <title>modifynvram changevar</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Changes the UEFI variable content to the one form the given file.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--name=<replaceable>name</replaceable></option></term>
+          <listitem><para>UEFI variable name to change the data for.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--filename=<replaceable>filename</replaceable></option></term>
+          <listitem>
+            <para>The file to read the data from.</para>
           </listitem>
         </varlistentry>
       </variablelist>

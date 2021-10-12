@@ -288,6 +288,134 @@ static RTEXITCODE handleModifyNvramQueryUefiVar(HandlerArg *a, ComPtr<INvramStor
 
 
 /**
+ * Handles the 'modifynvram myvm deletevar' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   nvram           Reference to the NVRAM store interface.
+ */
+static RTEXITCODE handleModifyNvramDeleteUefiVar(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
+{
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        /* common options */
+        { "--name",       'n', RTGETOPT_REQ_STRING },
+        { "--owner-uuid", 'f', RTGETOPT_REQ_STRING }
+    };
+
+    const char *pszVarName = NULL;
+    const char *pszOwnerUuid = NULL;
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc - 2, &a->argv[2], s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'n':
+                pszVarName = ValueUnion.psz;
+                break;
+            case 'f':
+                pszOwnerUuid = ValueUnion.psz;
+                break;
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (!pszVarName)
+        return errorSyntax("No variable name was given to \"deletevar\"");
+    if (!pszOwnerUuid)
+        return errorSyntax("No owner UUID was given to \"deletevar\"");
+
+    ComPtr<IUefiVariableStore> uefiVarStore;
+    CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
+    CHECK_ERROR2I_RET(uefiVarStore, DeleteVariable(Bstr(pszVarName).raw(), Bstr(pszOwnerUuid).raw()), RTEXITCODE_FAILURE);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Handles the 'modifynvram myvm changevar' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   nvram           Reference to the NVRAM store interface.
+ */
+static RTEXITCODE handleModifyNvramChangeUefiVar(HandlerArg *a, ComPtr<INvramStore> &nvramStore)
+{
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        /* common options */
+        { "--name",       'n', RTGETOPT_REQ_STRING },
+        { "--filename",   'f', RTGETOPT_REQ_STRING }
+    };
+
+    const char *pszVarName = NULL;
+    const char *pszVarDataFilename = NULL;
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc - 2, &a->argv[2], s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'n':
+                pszVarName = ValueUnion.psz;
+                break;
+            case 'f':
+                pszVarDataFilename = ValueUnion.psz;
+                break;
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (!pszVarName)
+        return errorSyntax("No variable name was given to \"changevar\"");
+    if (!pszVarDataFilename)
+        return errorSyntax("No variable data filename was given to \"changevar\"");
+
+    RTFILE hFile = NIL_RTFILE;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    vrc = RTFileOpen(&hFile, pszVarDataFilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(vrc))
+    {
+        uint64_t cbFile = 0;
+        vrc = RTFileQuerySize(hFile, &cbFile);
+        if (RT_SUCCESS(vrc))
+        {
+            com::SafeArray<BYTE> aData;
+            aData.resize(cbFile);
+
+            vrc = RTFileRead(hFile, aData.raw(), aData.size(), NULL /*pcbRead*/);
+            RTFileClose(hFile);
+
+            if (RT_SUCCESS(vrc))
+            {
+                ComPtr<IUefiVariableStore> uefiVarStore;
+                CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
+                CHECK_ERROR2I_RET(uefiVarStore, ChangeVariable(Bstr(pszVarName).raw(), ComSafeArrayAsInParam(aData)), RTEXITCODE_FAILURE);
+            }
+            else
+                rcExit = RTMsgErrorExitFailure("Error reading from '%s': %Rrc", pszVarDataFilename, vrc);
+        }
+    }
+    else
+       rcExit = RTMsgErrorExitFailure("Error opening '%s': %Rrc", pszVarDataFilename, vrc);
+
+    return rcExit;
+}
+
+
+/**
  * Handles the 'modifynvram' command.
  * @returns Exit code.
  * @param   a               The handler argument package.
@@ -342,6 +470,16 @@ RTEXITCODE handleModifyNvram(HandlerArg *a)
     {
         setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_QUERYVAR);
         rc = handleModifyNvramQueryUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    }
+    else if (!strcmp(a->argv[1], "deletevar"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_DELETEVAR);
+        rc = handleModifyNvramDeleteUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    }
+    else if (!strcmp(a->argv[1], "changevar"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_MODIFYNVRAM_CHANGEVAR);
+        rc = handleModifyNvramChangeUefiVar(a, nvramStore) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
     else
         return errorUnknownSubcommand(a->argv[0]);

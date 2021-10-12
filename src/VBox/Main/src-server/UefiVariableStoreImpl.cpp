@@ -241,15 +241,71 @@ HRESULT UefiVariableStore::addVariable(const com::Utf8Str &aName, const com::Gui
 
 HRESULT UefiVariableStore::deleteVariable(const com::Utf8Str &aName, const com::Guid &aOwnerUuid)
 {
-    RT_NOREF(aName, aOwnerUuid);
-    return E_NOTIMPL;
+    RT_NOREF(aOwnerUuid);
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/raw/%s", aName.c_str());
+    if (cch > 0)
+    {
+        RTVFSDIR hVfsDirRoot = NIL_RTVFSDIR;
+        int vrc = RTVfsOpenRoot(m->hVfsUefiVarStore, &hVfsDirRoot);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTVfsDirRemoveDir(hVfsDirRoot, szVarPath, 0 /*fFlags*/);
+            RTVfsDirRelease(hVfsDirRoot);
+            if (RT_FAILURE(vrc))
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to remove variable '%s' (%Rrc)"), aName.c_str(), vrc);
+        }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to open the variable store root (%Rrc)"), vrc);
+    }
+    else
+        hrc = setError(E_FAIL, tr("The variable name is too long"));
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
 HRESULT UefiVariableStore::changeVariable(const com::Utf8Str &aName, const std::vector<BYTE> &aData)
 {
-    RT_NOREF(aName, aData);
-    return E_NOTIMPL;
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    HRESULT hrc = i_retainUefiVariableStore(false /*fReadonly*/);
+    if (FAILED(hrc)) return hrc;
+
+    AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    hrc = i_uefiVarStoreOpenVar(aName.c_str(), &hVfsFile);
+    if (SUCCEEDED(hrc))
+    {
+        int vrc = RTVfsFileSetSize(hVfsFile, aData.size(), RTVFSFILE_SIZE_F_NORMAL);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTVfsFileWriteAt(hVfsFile, 0 /*off*/, &aData.front(), aData.size(), NULL /*pcbWritten*/);
+            if (RT_FAILURE(vrc))
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to data for variable '%s' (%Rrc)"), aName.c_str(), vrc);
+        }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to allocate space for the variable '%s' (%Rrc)"), aName.c_str(), vrc);
+
+        RTVfsFileRelease(hVfsFile);
+    }
+
+    i_releaseUefiVariableStore();
+    return hrc;
 }
 
 
@@ -737,6 +793,33 @@ HRESULT UefiVariableStore::i_uefiVarStoreAddVar(PCEFI_GUID pGuid, const char *ps
         if (RT_FAILURE(vrc))
             hrc = setError(E_FAIL, tr("Creating the variable '%s' failed: %Rrc"), pszVar, vrc);
     }
+
+    return hrc;
+}
+
+
+/**
+ * Tries to open the given variable from the variable store and returns a file handle.
+ *
+ * @returns IPRT status code.
+ * @param   pszVar              The variable name.
+ * @param   phVfsFile           Where to return the VFS file handle to the created variable on success.
+ */
+HRESULT UefiVariableStore::i_uefiVarStoreOpenVar(const char *pszVar, PRTVFSFILE phVfsFile)
+{
+    char szVarPath[_1K];
+    ssize_t cch = RTStrPrintf2(szVarPath, sizeof(szVarPath), "/by-name/%s", pszVar);
+    Assert(cch > 0); RT_NOREF(cch);
+
+    HRESULT hrc = S_OK;
+    int vrc = RTVfsFileOpen(m->hVfsUefiVarStore, szVarPath,
+                            RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                            phVfsFile);
+    if (   vrc == VERR_PATH_NOT_FOUND
+        || vrc == VERR_FILE_NOT_FOUND)
+        hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The variable '%s' could not be found"), pszVar);
+    else if (RT_FAILURE(vrc))
+        hrc = setError(VBOX_E_IPRT_ERROR, tr("Couldn't open variable '%s' (%Rrc)"), pszVar, vrc);
 
     return hrc;
 }
