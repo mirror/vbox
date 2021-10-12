@@ -93,7 +93,7 @@ cmd := $(filter-out all Makefile,$(MAKECMDGOALS))
 all:
 	mkdir -p $(bldbase)
 	ln -sf $(addprefix $(debroot)/debian/,$(DEBPKGFILES)) $(bldbase)
-	+$(MAKE) -C $(outdir) -f debian/rules $(cmd)
+	+$(MAKE) -C $(outdir) vboxroot=$(vboxroot) -f debian/rules $(cmd)
 
 Makefile:
 
