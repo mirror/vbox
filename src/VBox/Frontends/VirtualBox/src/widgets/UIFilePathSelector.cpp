@@ -168,6 +168,8 @@ void UIFilePathSelector::setResetEnabled(bool fEnabled)
         insertItem(ResetId, "");
         setItemIcon(ResetId, UIIconPool::iconSet(":/eraser_16px.png"));
     }
+
+    sltRecentMediaListUpdated(m_enmRecentMediaListType);
     retranslateUi();
 }
 
@@ -643,5 +645,4 @@ void UIFilePathSelector::sltRecentMediaListUpdated(UIMediumDeviceType enmMediumT
     insertSeparator(m_iRecentListSeparatorPosition);
     foreach (const QString strPath, recentMedia)
         addItem(strPath);
-
 }
