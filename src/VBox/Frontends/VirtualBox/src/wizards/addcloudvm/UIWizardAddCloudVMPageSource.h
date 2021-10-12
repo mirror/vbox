@@ -112,13 +112,6 @@ private slots:
 
 private:
 
-    /** Updates provider. */
-    void updateProvider();
-    /** Updates profile. */
-    void updateProfile();
-    /** Updates source instance. */
-    void updateSourceInstance();
-
     /** Holds the main label instance. */
     QIRichTextLabel *m_pLabelMain;
 

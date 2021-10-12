@@ -459,13 +459,31 @@ bool UIWizardAddCloudVMPageSource::validatePage()
 
 void UIWizardAddCloudVMPageSource::sltHandleProviderComboChange()
 {
-    updateProvider();
+    /* Update combo tool-tip: */
+    updateComboToolTip(m_pProviderComboBox);
+
+    /* Update wizard fields: */
+    wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
+
+    /* Update profiles: */
+    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
+    sltHandleProfileComboChange();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
 void UIWizardAddCloudVMPageSource::sltHandleProfileComboChange()
 {
-    updateProfile();
+    /* Update wizard fields: */
+    wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
+    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
+
+    /* Update profile instances: */
+    populateProfileInstances(m_pSourceInstanceList, wizard()->client());
+    sltHandleSourceInstanceChange();
+
+    /* Notify about changes: */
     emit completeChanged();
 }
 
@@ -477,27 +495,9 @@ void UIWizardAddCloudVMPageSource::sltHandleProfileButtonClick()
 
 void UIWizardAddCloudVMPageSource::sltHandleSourceInstanceChange()
 {
-    updateSourceInstance();
-    emit completeChanged();
-}
-
-void UIWizardAddCloudVMPageSource::updateProvider()
-{
-    updateComboToolTip(m_pProviderComboBox);
-    wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
-    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
-    updateProfile();
-}
-
-void UIWizardAddCloudVMPageSource::updateProfile()
-{
-    wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
-    populateProfileInstances(m_pSourceInstanceList, wizard()->client());
-    updateSourceInstance();
-}
-
-void UIWizardAddCloudVMPageSource::updateSourceInstance()
-{
+    /* Update wizard fields: */
     wizard()->setInstanceIds(currentListWidgetData(m_pSourceInstanceList));
+
+    /* Notify about changes: */
+    emit completeChanged();
 }

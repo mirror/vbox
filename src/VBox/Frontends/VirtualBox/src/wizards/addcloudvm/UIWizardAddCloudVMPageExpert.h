@@ -71,13 +71,6 @@ private slots:
 
 private:
 
-    /** Updates provider. */
-    void updateProvider();
-    /** Updates profile. */
-    void updateProfile();
-    /** Updates source instance. */
-    void updateSourceInstance();
-
     /** Holds the provider container instance. */
     QGroupBox *m_pCntProvider;
 
