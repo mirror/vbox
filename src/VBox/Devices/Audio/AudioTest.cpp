@@ -154,7 +154,7 @@ typedef struct AUDIOTESTOBJINT
     uint32_t             cRefs;
     /** Name of the test object.
      *  Must not contain a path and has to be able to serialize to disk. */
-    char                 szName[64];
+    char                 szName[256];
     /** The object type. */
     AUDIOTESTOBJTYPE     enmType;
     /** Meta data list. */
