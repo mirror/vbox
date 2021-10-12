@@ -514,8 +514,6 @@ typedef struct AC97DRIVER
     /** Whether this driver is in an attached state or not. */
     bool                            fAttached;
     uint8_t                         abPadding[6];
-    /** Pointer to the description string passed to PDMDevHlpDriverAttach(). */
-    R3PTRTYPE(char *)               pszDesc;
     /** Pointer to attached driver base interface. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Audio connector interface to the underlying host backend. */
@@ -526,6 +524,8 @@ typedef struct AC97DRIVER
     AC97DRIVERSTREAM                MicIn;
     /** Driver stream for output. */
     AC97DRIVERSTREAM                Out;
+    /** The LUN description. */
+    char                            szDesc[48 - 2];
 } AC97DRIVER;
 /** Pointer to a host backend driver (LUN). */
 typedef AC97DRIVER *PAC97DRIVER;
@@ -4144,90 +4144,84 @@ static int ichac97R3MixerAddDrv(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, PAC97D
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThisCC     The ring-3 AC'97 device state.
- * @param   iLun        The logical unit which is being attached.
+ * @param   uLUN        The logical unit which is being attached.
  * @param   ppDrv       Attached driver instance on success. Optional.
  */
-static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, unsigned iLun, PAC97DRIVER *ppDrv)
+static int ichac97R3AttachInternal(PPDMDEVINS pDevIns, PAC97STATER3 pThisCC, unsigned uLUN, PAC97DRIVER *ppDrv)
 {
     /*
-     * Attach driver.
+     * Allocate a new driver structure and try attach the driver.
      */
-    char *pszDesc = RTStrAPrintf2("Audio driver port (AC'97) for LUN #%u", iLun);
-    AssertLogRelReturn(pszDesc, VERR_NO_STR_MEMORY);
+    PAC97DRIVER pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
+    AssertPtrReturn(pDrv, VERR_NO_MEMORY);
+    RTStrPrintf(pDrv->szDesc, sizeof(pDrv->szDesc), "Audio driver port (AC'97) for LUN #%u", uLUN);
 
     PPDMIBASE pDrvBase;
-    int rc = PDMDevHlpDriverAttach(pDevIns, iLun, &pThisCC->IBase, &pDrvBase, pszDesc);
+    int rc = PDMDevHlpDriverAttach(pDevIns, uLUN, &pThisCC->IBase, &pDrvBase, pDrv->szDesc);
     if (RT_SUCCESS(rc))
     {
-        PAC97DRIVER pDrv = (PAC97DRIVER)RTMemAllocZ(sizeof(AC97DRIVER));
-        if (pDrv)
+       pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
+        AssertPtr(pDrv->pConnector);
+        if (RT_VALID_PTR(pDrv->pConnector))
         {
-            pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
-            AssertPtr(pDrv->pConnector);
-            if (RT_VALID_PTR(pDrv->pConnector))
+            pDrv->pDrvBase   = pDrvBase;
+            pDrv->uLUN       = uLUN;
+
+            /* Attach to driver list if not attached yet. */
+            if (!pDrv->fAttached)
             {
-                pDrv->pDrvBase   = pDrvBase;
-                pDrv->uLUN       = iLun;
-                pDrv->pszDesc    = pszDesc;
-
-                /* Attach to driver list if not attached yet. */
-                if (!pDrv->fAttached)
-                {
-                    RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
-                    pDrv->fAttached = true;
-                }
-
-                if (ppDrv)
-                    *ppDrv = pDrv;
-
-                /*
-                 * While we're here, give the windows backends a hint about our typical playback
-                 * configuration.
-                 */
-                if (   pDrv->pConnector
-                    && pDrv->pConnector->pfnStreamConfigHint)
-                {
-                    /* 48kHz */
-                    PDMAUDIOSTREAMCFG Cfg;
-                    RT_ZERO(Cfg);
-                    Cfg.enmDir                        = PDMAUDIODIR_OUT;
-                    Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
-                    Cfg.Device.cMsSchedulingHint      = 5;
-                    Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
-                    PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 48000);
-                    RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 48kHz 2ch S16 (HDA config hint)");
-
-                    pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
-# if 0
-                    /* 44.1kHz */
-                    RT_ZERO(Cfg);
-                    Cfg.enmDir                        = PDMAUDIODIR_OUT;
-                    Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
-                    Cfg.Device.cMsSchedulingHint      = 10;
-                    Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
-                    PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
-                    RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
-
-                    pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
-# endif
-                }
-
-                LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", iLun, pDrv->pConnector));
-                return VINF_SUCCESS;
+                RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
+                pDrv->fAttached = true;
             }
-            RTMemFree(pDrv);
-            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
+
+            if (ppDrv)
+                *ppDrv = pDrv;
+
+            /*
+             * While we're here, give the windows backends a hint about our typical playback
+             * configuration.
+             */
+            if (   pDrv->pConnector
+                && pDrv->pConnector->pfnStreamConfigHint)
+            {
+                /* 48kHz */
+                PDMAUDIOSTREAMCFG Cfg;
+                RT_ZERO(Cfg);
+                Cfg.enmDir                        = PDMAUDIODIR_OUT;
+                Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
+                Cfg.Device.cMsSchedulingHint      = 5;
+                Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
+                PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 48000);
+                RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 48kHz 2ch S16 (HDA config hint)");
+
+                pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
+# if 0
+                /* 44.1kHz */
+                RT_ZERO(Cfg);
+                Cfg.enmDir                        = PDMAUDIODIR_OUT;
+                Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
+                Cfg.Device.cMsSchedulingHint      = 10;
+                Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
+                PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
+                RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
+
+                pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
+# endif
+            }
+
+            LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", uLUN, pDrv->pConnector));
+            return VINF_SUCCESS;
         }
-        else
-            rc = VERR_NO_MEMORY;
+        RTMemFree(pDrv);
+        rc = VERR_PDM_MISSING_INTERFACE_BELOW;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        LogFunc(("No attached driver for LUN #%u\n", iLun));
+        LogFunc(("No attached driver for LUN #%u\n", uLUN));
     else
-        LogFunc(("Attached driver for LUN #%u failed: %Rrc\n", iLun, rc));
+        LogFunc(("Attached driver for LUN #%u failed: %Rrc\n", uLUN, rc));
+    RTMemFree(pDrv);
 
-    RTStrFree(pszDesc);
-    LogFunc(("LUN#%u: rc=%Rrc\n", iLun, rc));
+    LogFunc(("LUN#%u: rc=%Rrc\n", uLUN, rc));
     return rc;
 }
 
@@ -4321,7 +4315,6 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uin
 
             DEVAC97_UNLOCK(pDevIns, pThis);
 
-            RTStrFree(pDrv->pszDesc);
             RTMemFree(pDrv);
             return;
         }
@@ -4346,7 +4339,6 @@ static DECLCALLBACK(int) ichac97R3Destruct(PPDMDEVINS pDevIns)
     RTListForEachSafe(&pThisCC->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
     {
         RTListNodeRemove(&pDrv->Node);
-        RTMemFree(pDrv->pszDesc);
         RTMemFree(pDrv);
     }
 

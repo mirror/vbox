@@ -190,6 +190,8 @@ typedef struct HDADRIVER
     /** Mixer stream for rear output. */
     HDADRIVERSTREAM                    Rear;
 #endif
+    /** The LUN description. */
+    char                               szDesc[48 - 2];
 } HDADRIVER;
 /** The HDA host driver backend. */
 typedef struct HDADRIVER *PHDADRIVER;
@@ -4525,73 +4527,65 @@ static DECLCALLBACK(void *) hdaR3QueryInterface(struct PDMIBASE *pInterface, con
  */
 static int hdaR3AttachInternal(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC, unsigned uLUN, PHDADRIVER *ppDrv)
 {
-    /*
-     * Attach driver.
-     */
-    char *pszDesc = RTStrAPrintf2("Audio driver port (HDA) for LUN#%u", uLUN);
-    AssertLogRelReturn(pszDesc, VERR_NO_STR_MEMORY);
+    PHDADRIVER pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
+    AssertPtrReturn(pDrv, VERR_NO_MEMORY);
+    RTStrPrintf(pDrv->szDesc, sizeof(pDrv->szDesc), "Audio driver port (HDA) for LUN #%u", uLUN);
 
     PPDMIBASE pDrvBase;
-    int rc = PDMDevHlpDriverAttach(pDevIns, uLUN, &pThisCC->IBase, &pDrvBase, pszDesc);
+    int rc = PDMDevHlpDriverAttach(pDevIns, uLUN, &pThisCC->IBase, &pDrvBase, pDrv->szDesc);
     if (RT_SUCCESS(rc))
     {
-        PHDADRIVER pDrv = (PHDADRIVER)RTMemAllocZ(sizeof(HDADRIVER));
-        if (pDrv)
+        pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
+        AssertPtr(pDrv->pConnector);
+        if (RT_VALID_PTR(pDrv->pConnector))
         {
-            pDrv->pConnector = PDMIBASE_QUERY_INTERFACE(pDrvBase, PDMIAUDIOCONNECTOR);
-            AssertPtr(pDrv->pConnector);
-            if (RT_VALID_PTR(pDrv->pConnector))
+            pDrv->pDrvBase          = pDrvBase;
+            pDrv->pHDAStateShared   = pThis;
+            pDrv->pHDAStateR3       = pThisCC;
+            pDrv->uLUN              = uLUN;
+
+            /* Attach to driver list if not attached yet. */
+            if (!pDrv->fAttached)
             {
-                pDrv->pDrvBase          = pDrvBase;
-                pDrv->pHDAStateShared   = pThis;
-                pDrv->pHDAStateR3       = pThisCC;
-                pDrv->uLUN              = uLUN;
-
-                /* Attach to driver list if not attached yet. */
-                if (!pDrv->fAttached)
-                {
-                    RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
-                    pDrv->fAttached = true;
-                }
-
-                if (ppDrv)
-                    *ppDrv = pDrv;
-
-                /*
-                 * While we're here, give the windows backends a hint about our typical playback
-                 * configuration.
-                 * Note! If 48000Hz is advertised to the guest, add it here.
-                 */
-                if (   pDrv->pConnector
-                    && pDrv->pConnector->pfnStreamConfigHint)
-                {
-                    PDMAUDIOSTREAMCFG Cfg;
-                    RT_ZERO(Cfg);
-                    Cfg.enmDir                        = PDMAUDIODIR_OUT;
-                    Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
-                    Cfg.Device.cMsSchedulingHint      = 10;
-                    Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
-                    PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
-                    RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
-
-                    pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
-                }
-
-                LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", uLUN, pDrv->pConnector));
-                return VINF_SUCCESS;
+                RTListAppend(&pThisCC->lstDrv, &pDrv->Node);
+                pDrv->fAttached = true;
             }
 
-            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
+            if (ppDrv)
+                *ppDrv = pDrv;
+
+            /*
+             * While we're here, give the windows backends a hint about our typical playback
+             * configuration.
+             * Note! If 48000Hz is advertised to the guest, add it here.
+             */
+            if (   pDrv->pConnector
+                && pDrv->pConnector->pfnStreamConfigHint)
+            {
+                PDMAUDIOSTREAMCFG Cfg;
+                RT_ZERO(Cfg);
+                Cfg.enmDir                        = PDMAUDIODIR_OUT;
+                Cfg.enmPath                       = PDMAUDIOPATH_OUT_FRONT;
+                Cfg.Device.cMsSchedulingHint      = 10;
+                Cfg.Backend.cFramesPreBuffering   = UINT32_MAX;
+                PDMAudioPropsInit(&Cfg.Props, 2, true /*fSigned*/, 2, 44100);
+                RTStrPrintf(Cfg.szName, sizeof(Cfg.szName), "output 44.1kHz 2ch S16 (HDA config hint)");
+
+                pDrv->pConnector->pfnStreamConfigHint(pDrv->pConnector, &Cfg); /* (may trash CfgReq) */
+            }
+
+            LogFunc(("LUN#%u: returns VINF_SUCCESS (pCon=%p)\n", uLUN, pDrv->pConnector));
+            return VINF_SUCCESS;
         }
-        else
-            rc = VERR_NO_MEMORY;
+
+        rc = VERR_PDM_MISSING_INTERFACE_BELOW;
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         LogFunc(("No attached driver for LUN #%u\n", uLUN));
     else
         LogFunc(("Failed attaching driver for LUN #%u: %Rrc\n", uLUN, rc));
+    RTMemFree(pDrv);
 
-    RTStrFree(pszDesc);
     LogFunc(("LUN#%u: rc=%Rrc\n", uLUN, rc));
     return rc;
 }
