@@ -799,6 +799,12 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
         //TMR3TimerDestroyUsb(pVM, pUsbIns);
         //SSMR3DeregisterUsb(pVM, pUsbIns, NULL, 0);
         pdmR3ThreadDestroyUsb(pVM, pUsbIns);
+
+        if (pUsbIns->pszName)
+        {
+            RTStrFree(pUsbIns->pszName); /* See the RTStrDup() call in PDMUsb.cpp:pdmR3UsbCreateDevice. */
+            pUsbIns->pszName = NULL;
+        }
     }
 
     /* then the 'normal' ones. */
