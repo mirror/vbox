@@ -283,14 +283,20 @@ bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
 #if !defined(DEBUG)
     int cWait = 10;
 #else
-    int cWait = !VM_IS_RAW_MODE_ENABLED(pVM)
-             && (   enmEvent == DBGFEVENT_ASSERTION_HYPER
-                 || enmEvent == DBGFEVENT_FATAL_ERROR)
-             && !RTEnvExist("VBOX_DBGF_WAIT_FOR_ATTACH")
+    int cWait = RTEnvExist("VBOX_DBGF_NO_WAIT_FOR_ATTACH")
+             || (   !VM_IS_RAW_MODE_ENABLED(pVM)
+                 && (   enmEvent == DBGFEVENT_ASSERTION_HYPER
+                     || enmEvent == DBGFEVENT_FATAL_ERROR)
+                 && !RTEnvExist("VBOX_DBGF_WAIT_FOR_ATTACH"))
               ? 10
               : 150;
 #endif
-    RTStrmPrintf(g_pStdErr, "DBGF: No debugger attached, waiting %d second%s for one to attach (event=%d)\n",
+    RTStrmPrintf(g_pStdErr,
+                 "DBGF: No debugger attached, waiting %d second%s for one to attach (event=%d)\n"
+#ifdef DEBUG
+                 "      Set VBOX_DBGF_NO_WAIT_FOR_ATTACH=1 for short wait or VBOX_DBGF_WAIT_FOR_ATTACH=1 longer.\n"
+#endif
+                 ,
                  cWait / 10, cWait != 10 ? "s" : "", enmEvent);
     RTStrmFlush(g_pStdErr);
     while (cWait > 0)
