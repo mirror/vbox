@@ -347,8 +347,15 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     /* If auto-mount of guest-screens (auto-pilot) disabled: */
     else
     {
+        /* Should we send a hint? */
+        bool fSendHint = true;
         /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
-        if ((int)frameBuffer()->width() != size.width() || (int)frameBuffer()->height() != size.height())
+        if (fSendHint && (int)frameBuffer()->width() == size.width() && (int)frameBuffer()->height() == size.height())
+            fSendHint = false;
+        /* Do not send a hint if GA supports graphics and we have sent that hint already: */
+        if (fSendHint && uisession()->isGuestSupportsGraphics() && m_lastSizeHint == size)
+            fSendHint = false;
+        if (fSendHint)
         {
             LogRel(("GUI: UIMachineView::sltPerformGuestResize: Sending guest size-hint to screen %d as %dx%d\n",
                     (int)screenId(), size.width(), size.height()));
@@ -361,6 +368,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
                                        size.height(),
                                        0 /* bits per pixel */,
                                        true /* notify? */);
+            m_lastSizeHint = size;
         }
     }
 }

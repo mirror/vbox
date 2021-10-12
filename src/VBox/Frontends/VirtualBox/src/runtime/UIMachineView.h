@@ -372,6 +372,11 @@ protected:
      * Not explicitly initialised (i.e. invalid by default). */
     QSize m_sizeHintOverride;
 
+    /** Last size hint sent as a part of guest auto-resize feature.
+      * @note Useful to avoid spamming CDisplay with same hint before
+      *       frame-buffer finally resized to requested size. */
+    QSize  m_lastSizeHint;
+
     /** Holds current host-screen number. */
     int m_iHostScreenNumber;
 
