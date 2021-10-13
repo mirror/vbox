@@ -159,6 +159,7 @@ struct X11CONTEXT
     XRRCrtcInfo* (*pXRRGetCrtcInfo) (Display *, XRRScreenResources *, RRCrtc crtc);
     void (*pXRRFreeCrtcInfo)(XRRCrtcInfo *);
     void (*pXRRAddOutputMode)(Display *, RROutput, RRMode);
+    void (*pXRRSetOutputPrimary)(Display *, Window, RROutput);
 };
 
 static X11CONTEXT x11Context;
@@ -170,6 +171,7 @@ struct RANDROUTPUT
     uint32_t width;
     uint32_t height;
     bool fEnabled;
+    bool fPrimary;
 };
 
 struct DisplayModeR {
@@ -886,6 +888,9 @@ static int openLibRandR()
     *(void **)(&x11Context.pXRRAddOutputMode) = dlsym(x11Context.pRandLibraryHandle, "XRRAddOutputMode");
     checkFunctionPtrReturn(x11Context.pXRRAddOutputMode);
 
+    *(void **)(&x11Context.pXRRSetOutputPrimary) = dlsym(x11Context.pRandLibraryHandle, "XRRSetOutputPrimary");
+    checkFunctionPtrReturn(x11Context.pXRRSetOutputPrimary);
+
     return VINF_SUCCESS;
 }
 #endif
@@ -912,6 +917,7 @@ static void x11Connect()
     x11Context.pXRRGetCrtcInfo = NULL;
     x11Context.pXRRFreeCrtcInfo = NULL;
     x11Context.pXRRAddOutputMode = NULL;
+    x11Context.pXRRSetOutputPrimary = NULL;
     x11Context.fWmwareCtrlExtention = false;
     x11Context.fMonitorInfoAvailable = false;
     x11Context.hRandRMajor = 0;
@@ -1225,6 +1231,17 @@ static bool configureOutput(int iOutputIndex, struct RANDROUTPUT *paOutputs)
     if (x11Context.pXRRAddOutputMode)
         x11Context.pXRRAddOutputMode(x11Context.pDisplay, outputId, pModeInfo->id);
 #endif
+
+    if (paOutputs[iOutputIndex].fPrimary)
+    {
+#ifdef WITH_DISTRO_XRAND_XINERAMA
+        XRRSetOutputPrimary(x11Context.pDisplay, x11Context.rootWindow, outputId);
+#else
+        if (x11Context.pXRRSetOutputPrimary)
+            x11Context.pXRRSetOutputPrimary(x11Context.pDisplay, x11Context.rootWindow, outputId);
+#endif
+    }
+
     /* Make sure outputs crtc is set. */
     pOutputInfo->crtc = pOutputInfo->crtcs[0];
 
@@ -1421,16 +1438,14 @@ static DECLCALLBACK(int) vbclSVGAWorker(bool volatile *pfShutdown)
             }
             /* Create a whole topology and send it to xrandr. */
             struct RANDROUTPUT aOutputs[VMW_MAX_HEADS];
-            int iRunningX = 0;
             for (int j = 0; j < x11Context.hOutputCount; ++j)
             {
-                aOutputs[j].x = iRunningX;
+                aOutputs[j].x = aMonitors[j].xOrigin;
                 aOutputs[j].y = aMonitors[j].yOrigin;
                 aOutputs[j].width = aMonitors[j].cx;
                 aOutputs[j].height = aMonitors[j].cy;
                 aOutputs[j].fEnabled = !(aMonitors[j].fDisplayFlags & VMMDEV_DISPLAY_DISABLED);
-                if (aOutputs[j].fEnabled)
-                    iRunningX += aOutputs[j].width;
+                aOutputs[j].fPrimary = (aMonitors[j].fDisplayFlags & VMMDEV_DISPLAY_PRIMARY);
             }
             /* In 32-bit guests GAs build on our release machines causes an xserver lock during vmware_ctrl extention
                if we do the call withing XGrab. We make the call the said extension only once (to connect the outputs)
