@@ -678,6 +678,7 @@ uint32_t virtioCoreR3VirtqBufRelease(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf)
         STAM_REL_COUNTER_INC(&pVirtio->StatDescChainsFreed);
 #endif
     }
+    RT_NOREF(pVirtio);
     return cRefs;
 }
 
@@ -1443,7 +1444,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortIn(PPDMDEVINS pDevIns, void 
     else
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uQueueNotify,               VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
         VIRTIO_DEV_CONFIG_ACCESS(         uQueueNotify,               VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort, pVirtio);
-#if LEGACY_MSIX_SUPPORTED
+#ifdef LEGACY_MSIX_SUPPORTED
     else
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uMsixConfig,                VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
         VIRTIO_DEV_CONFIG_ACCESS(         uMsixConfig,                VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort, pVirtio);
@@ -1499,7 +1500,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortOut(PPDMDEVINS pDevIns, void
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uVirtqSelect,        VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
         VIRTIO_DEV_CONFIG_ACCESS(         uVirtqSelect,        VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort, pVirtio);
     else
-#if LEGACY_MSIX_SUPPORTED
+#ifdef LEGACY_MSIX_SUPPORTED
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uMsixConfig,         VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
         VIRTIO_DEV_CONFIG_ACCESS(         uMsixConfig,         VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort, pVirtio);
     else
