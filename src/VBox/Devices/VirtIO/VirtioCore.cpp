@@ -674,7 +674,9 @@ uint32_t virtioCoreR3VirtqBufRelease(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf)
     {
         pVirtqBuf->u32Magic = ~VIRTQBUF_MAGIC;
         RTMemFree(pVirtqBuf);
+#ifdef VBOX_WITH_STATISTICS
         STAM_REL_COUNTER_INC(&pVirtio->StatDescChainsFreed);
+#endif
     }
     return cRefs;
 }
@@ -850,7 +852,9 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
         virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufIn, paSegsIn, cSegsIn);
         pVirtqBuf->pSgPhysReturn = &pVirtqBuf->SgBufIn;
         pVirtqBuf->cbPhysReturn  = cbIn;
+#ifdef VBOX_WITH_STATISTICS
         STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsIn, cSegsIn);
+#endif
     }
 
     if (cSegsOut)
@@ -858,10 +862,14 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
         virtioCoreGCPhysChainInit(&pVirtqBuf->SgBufOut, paSegsOut, cSegsOut);
         pVirtqBuf->pSgPhysSend   = &pVirtqBuf->SgBufOut;
         pVirtqBuf->cbPhysSend    = cbOut;
+#ifdef VBOX_WITH_STATISTICS
         STAM_REL_COUNTER_ADD(&pVirtio->StatDescChainsSegsOut, cSegsOut);
+#endif
     }
 
+#ifdef VBOX_WITH_STATISTICS
     STAM_REL_COUNTER_INC(&pVirtio->StatDescChainsAllocated);
+#endif
     Log6Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
         pVirtq->szName, cSegsOut, cbOut, cSegsIn, cbIn));
 
