@@ -50,7 +50,8 @@ class UIFormEditorWidget;
 class UIToolBox;
 class UIWizardExportApp;
 
-/** UIWizardPage extension for UIWizardExportAppVMs, UIWizardExportAppFormat and UIWizardExportAppSettings. */
+/** UINativeWizardPage extension for expert page of the Export Appliance wizard,
+  * based on UIWizardExportAppVMs, UIWizardExportAppFormat & UIWizardExportAppSettings namespace functions. */
 class UIWizardExportAppPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;

@@ -29,7 +29,7 @@
 #include "CMachine.h"
 #include "CSnapshot.h"
 
-/* Clone VM wizard: */
+/** Clone Virtual Machine wizard: */
 class UIWizardCloneVM : public UINativeWizard
 {
     Q_OBJECT;

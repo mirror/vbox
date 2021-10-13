@@ -29,7 +29,7 @@
 #include "CMedium.h"
 #include "CMediumFormat.h"
 
-/** UIWizard subclass to clone virtual disk image files. */
+/** Clone Virtual Disk wizard: */
 class UIWizardCloneVD : public UINativeWizard
 {
     Q_OBJECT;

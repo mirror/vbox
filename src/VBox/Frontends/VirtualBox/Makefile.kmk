@@ -916,8 +916,6 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UINativeWizard.h \
 	src/wizards/UINativeWizardPage.h \
-	src/wizards/UIWizard.h \
-	src/wizards/UIWizardPage.h \
 	src/wizards/editors/UIWizardDiskEditors.h \
 	src/wizards/newvd/UIWizardNewVD.h \
 	src/wizards/newvd/UIWizardNewVDFileTypePage.h \
@@ -1473,8 +1471,6 @@ UICommon_SOURCES = \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UINativeWizard.cpp \
 	src/wizards/UINativeWizardPage.cpp \
-	src/wizards/UIWizard.cpp \
-	src/wizards/UIWizardPage.cpp \
 	src/wizards/editors/UIWizardDiskEditors.cpp \
 	src/wizards/newvd/UIWizardNewVD.cpp \
 	src/wizards/newvd/UIWizardNewVDFileTypePage.cpp \
