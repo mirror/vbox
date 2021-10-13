@@ -464,12 +464,8 @@
  * @note Ignored if EPT bit 7 is 0. */
 #define EPT_E_BIT_SHADOW_STACK  60
 #define EPT_E_SHADOW_STACK      RT_BIT_64(EPT_E_BIT_SHADOW_STACK)   /**< @see EPT_E_BIT_SHADOW_STACK*/
-/** Bit 61 - Sub-page write permissions (PT only, ignored).
- * @note Ignored if sub-page write permissions for EPT is disabled. */
-#define EPT_E_BIT_SHADOW_STACK  60
-#define EPT_E_SHADOW_STACK      RT_BIT_64(EPT_E_BIT_SHADOW_STACK)   /**< @see EPT_E_BIT_SHADOW_STACK*/
 
-/* Bit 62 is always ignored at time of writing. */
+/* Bit 61, 62 are always ignored at time of writing. */
 
 /** Bit 63 - Supress \#VE (leaf only, ignored).
  * @note Ignored if EPT violation to \#VE conversion is disabled. */
@@ -519,6 +515,8 @@ AssertCompileSize(EPTPML4EBITS, 8);
 #define EPT_PML4_SHIFT          X86_PML4_SHIFT
 /** The PML4 index mask (apply to a shifted page address). */
 #define EPT_PML4_MASK           X86_PML4_MASK
+/** Bits - - EPT - PML4 MBZ Mask. */
+#define EPT_PML4E_MBZ_MASK      UINT64_C(0x00000000000000f8)
 
 /**
  * EPT PML4E.
@@ -557,6 +555,7 @@ typedef EPTPML4 *PEPTPML4;
 /** Pointer to a const EPT PML4 Table. */
 typedef const EPTPML4 *PCEPTPML4;
 
+
 /**
  * EPT Page Directory Pointer Entry. Bit view.
  * In accordance with the VT-x spec.
@@ -586,6 +585,11 @@ AssertCompileSize(EPTPDPTEBITS, 8);
 #define EPT_PDPT_SHIFT          X86_PDPT_SHIFT
 /** The PDPT index mask (apply to a shifted page address). */
 #define EPT_PDPT_MASK           X86_PDPT_MASK_AMD64
+/** Bits 3-7 - - EPT - PDPTE MBZ Mask. */
+#define EPT_PDPTE_MBZ_MASK      UINT64_C(0x00000000000000f8)
+/** Bits 12-29 - - EPT - 1GB PDPTE MBZ Mask. */
+#define EPT_PDPTE1G_MBZ_MASK    UINT64_C(0x000000003ffff000)
+/** */
 
 /**
  * EPT Page Directory Pointer.
@@ -624,6 +628,7 @@ typedef EPTPDPT *PEPTPDPT;
 /** Pointer to a const EPT Page Directory Pointer Table. */
 typedef const EPTPDPT *PCEPTPDPT;
 
+
 /**
  * EPT Page Directory Table Entry. Bit view.
  * In accordance with the VT-x spec.
@@ -655,6 +660,10 @@ AssertCompileSize(EPTPDEBITS, 8);
 #define EPT_PD_SHIFT            X86_PD_PAE_SHIFT
 /** The PD index mask (apply to a shifted page address). */
 #define EPT_PD_MASK             X86_PD_PAE_MASK
+/** Bits 3-7 - EPT - PDE MBZ Mask. */
+#define EPT_PDE_MBZ_MASK        UINT64_C(0x00000000000000f8)
+
+
 
 /**
  * EPT 2MB Page Directory Table Entry. Bit view.
@@ -687,6 +696,9 @@ AssertCompileSize(EPTPDE2MBITS, 8);
 
 /** Bits 21-51 - - EPT - Physical Page number of the next level. */
 #define EPT_PDE2M_PG_MASK       X86_PDE2M_PAE_PG_MASK
+/** Bits 20-12 - - EPT - PDE 2M MBZ Mask. */
+#define EPT_PDE2M_MBZ_MASK      UINT64_C(0x00000000001ff000)
+
 
 /**
  * EPT Page Directory Table Entry.
@@ -763,6 +775,9 @@ AssertCompileSize(EPTPTEBITS, 8);
 #define EPT_PT_SHIFT            X86_PT_PAE_SHIFT
 /** The EPT PT index mask (apply to a shifted page address). */
 #define EPT_PT_MASK             X86_PT_PAE_MASK
+/** No bits - - EPT - PTE MBZ bits. */
+#define EPT_PTE_MBZ_MASK        UINT64_C(0x0000000000000000)
+
 
 /**
  * EPT Page Table Entry.
