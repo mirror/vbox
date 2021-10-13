@@ -389,6 +389,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DialogType &enmDi
     switch (enmDialogType)
     {
         case UIExtraDataMetaDefs::DialogType_VISOCreator: strResult = "VISOCreator"; break;
+        case UIExtraDataMetaDefs::DialogType_BootFailure: strResult = "BootFailure"; break;
         case UIExtraDataMetaDefs::DialogType_All:         strResult = "All"; break;
         default:
         {
@@ -406,6 +407,7 @@ template<> UIExtraDataMetaDefs::DialogType fromInternalString<UIExtraDataMetaDef
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;      QList<UIExtraDataMetaDefs::DialogType> values;
     keys << "VISOCreator"; values << UIExtraDataMetaDefs::DialogType_VISOCreator;
+    keys << "BootFailure"; values << UIExtraDataMetaDefs::DialogType_BootFailure;
     keys << "All";         values << UIExtraDataMetaDefs::DialogType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strDialogType, Qt::CaseInsensitive))

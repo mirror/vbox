@@ -494,6 +494,7 @@ public:
     {
         DialogType_Invalid     = 0,
         DialogType_VISOCreator = RT_BIT(0),
+        DialogType_BootFailure = RT_BIT(1),
         DialogType_All         = 0xFFFF
     };
     Q_ENUM(DialogType);

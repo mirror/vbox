@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QAction>
+#include <QCheckBox>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMenuBar>
@@ -27,18 +28,17 @@
 #include "QIDialogButtonBox.h"
 #include "QIToolButton.h"
 #include "QIRichTextLabel.h"
-
-#include "UICommon.h"
-#include "UIDesktopWidgetWatchdog.h"
-
-#include "UIFilePathSelector.h"
 #include "UIBootFailureDialog.h"
-
+#include "UICommon.h"
+#include "UIConverter.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIFilePathSelector.h"
 #include "UIIconPool.h"
-#include "UIModalWindowManager.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 
-
+/* COM includes: */
 #include "CMediumAttachment.h"
 #include "CStorageController.h"
 
@@ -53,9 +53,21 @@ UIBootFailureDialog::UIBootFailureDialog(QWidget *pParent, const CMachine &comMa
     , m_pLabel(0)
     , m_pBootImageSelector(0)
     , m_pBootImageLabel(0)
+    , m_pIconLabel(0)
+    , m_pSuppressDialogCheckBox(0)
     , m_comMachine(comMachine)
 {
     configure();
+}
+
+UIBootFailureDialog::~UIBootFailureDialog()
+{
+    if (m_pSuppressDialogCheckBox && m_pSuppressDialogCheckBox->isChecked())
+    {
+        QStringList suppressedMessageList = gEDataManager->suppressedMessages();
+        suppressedMessageList << gpConverter->toInternalString(UIExtraDataMetaDefs::DialogType_BootFailure);
+        gEDataManager->setSuppressedMessages(suppressedMessageList);
+    }
 }
 
 QString UIBootFailureDialog::bootMediumPath() const
@@ -78,6 +90,8 @@ void UIBootFailureDialog::retranslateUi()
                              "Selecting an ISO file will attemt to mount it immediately to the guest machine."));
     if (m_pBootImageLabel)
         m_pBootImageLabel->setText(tr("Boot DVD:"));
+    if (m_pSuppressDialogCheckBox)
+        m_pSuppressDialogCheckBox->setText(tr("Do not show this dialog again"));
 }
 
 void UIBootFailureDialog::configure()
@@ -109,9 +123,20 @@ void UIBootFailureDialog::prepareWidgets()
     if (!m_pMainLayout || !menuBar())
         return;
 
+    QHBoxLayout *pTopLayout = new QHBoxLayout;
+    pTopLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_pIconLabel = new QLabel;
+    if (m_pIconLabel)
+    {
+        m_pIconLabel->setPixmap(iconPixmap());
+        m_pIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+        pTopLayout->addWidget(m_pIconLabel, Qt::AlignTop | Qt::AlignCenter);
+    }
+
     m_pLabel = new QIRichTextLabel;
     if (m_pLabel)
-        m_pMainLayout->addWidget(m_pLabel);
+        pTopLayout->addWidget(m_pLabel);
 
     QHBoxLayout *pSelectorLayout = new QHBoxLayout;
     pSelectorLayout->setContentsMargins(0, 0, 0, 0);
@@ -133,7 +158,14 @@ void UIBootFailureDialog::prepareWidgets()
         connect(m_pBootImageSelector, &UIFilePathSelector::pathChanged,
                 this, &UIBootFailureDialog::sltFileSelectorPathChanged);
     }
+
+    m_pMainLayout->addLayout(pTopLayout);
     m_pMainLayout->addLayout(pSelectorLayout);
+
+    m_pSuppressDialogCheckBox = new QCheckBox;
+    if (m_pSuppressDialogCheckBox)
+        m_pMainLayout->addWidget(m_pSuppressDialogCheckBox);
+
     m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
@@ -143,6 +175,7 @@ void UIBootFailureDialog::prepareWidgets()
 
         m_pMainLayout->addWidget(m_pButtonBox);
     }
+
     m_pMainLayout->addStretch();
     retranslateUi();
 }
@@ -183,7 +216,7 @@ void UIBootFailureDialog::showEvent(QShowEvent *pEvent)
 
     if (m_pParent)
         UIDesktopWidgetWatchdog::centerWidget(this, m_pParent, false);
-
+    QIWithRetranslateUI<QIMainDialog>::showEvent(pEvent);
 }
 
 void UIBootFailureDialog::setTitle()
@@ -245,4 +278,13 @@ bool UIBootFailureDialog::insertBootMedium(const QUuid &uMediumId)
 void UIBootFailureDialog::sltFileSelectorPathChanged(const QString &strPath)
 {
     insertBootMedium(uiCommon().openMedium(UIMediumDeviceType_DVD, strPath));
+}
+
+QPixmap UIBootFailureDialog::iconPixmap()
+{
+    QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning);
+    if (icon.isNull())
+        return QPixmap();
+    int iSize = QApplication::style()->pixelMetric(QStyle::PM_MessageBoxIconSize, 0, 0);
+    return icon.pixmap(iSize, iSize);
 }

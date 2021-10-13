@@ -666,7 +666,12 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
     if (strErrorId == "DrvVD_DEKMISSING")
         return askUserForTheDiskEncryptionPasswords();
     else if (strErrorId == "VMBootFail")
-        return showBootFailureDialog();
+    {
+        if (!gEDataManager->suppressedMessages().contains(gpConverter->toInternalString(UIExtraDataMetaDefs::DialogType_BootFailure)))
+            return showBootFailureDialog();
+        else
+            return;
+    }
 
     /* Show runtime error: */
     msgCenter().showRuntimeError(console(), fIsFatal, strErrorId, strMessage);
@@ -3264,7 +3269,6 @@ void UIMachineLogic::showBootFailureDialog()
             this, &UIMachineLogic::sltReset);
 
     int iResult = pBootFailureDialog->exec(false);
-
 
     delete pBootFailureDialog;
 
