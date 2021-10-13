@@ -1152,12 +1152,14 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("VMX - Virtual-Machine Extensions                       ", fVmx);
         /* Basic. */
         VMXFEATDUMP("InsOutInfo - INS/OUTS instruction info.                ", fVmxInsOutInfo);
+
         /* Pin-based controls. */
         VMXFEATDUMP("ExtIntExit - External interrupt exiting                ", fVmxExtIntExit);
         VMXFEATDUMP("NmiExit - NMI exiting                                  ", fVmxNmiExit);
         VMXFEATDUMP("VirtNmi - Virtual NMIs                                 ", fVmxVirtNmi);
         VMXFEATDUMP("PreemptTimer - VMX preemption timer                    ", fVmxPreemptTimer);
         VMXFEATDUMP("PostedInt - Posted interrupts                          ", fVmxPostedInt);
+
         /* Processor-based controls. */
         VMXFEATDUMP("IntWindowExit - Interrupt-window exiting               ", fVmxIntWindowExit);
         VMXFEATDUMP("TscOffsetting - TSC offsetting                         ", fVmxTscOffsetting);
@@ -1168,6 +1170,7 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("RdtscExit - RDTSC exiting                              ", fVmxRdtscExit);
         VMXFEATDUMP("Cr3LoadExit - CR3-load exiting                         ", fVmxCr3LoadExit);
         VMXFEATDUMP("Cr3StoreExit - CR3-store exiting                       ", fVmxCr3StoreExit);
+        VMXFEATDUMP("TertiaryExecCtls - Activate tertiary controls          ", fVmxTertiaryExecCtls);
         VMXFEATDUMP("Cr8LoadExit  - CR8-load exiting                        ", fVmxCr8LoadExit);
         VMXFEATDUMP("Cr8StoreExit - CR8-store exiting                       ", fVmxCr8StoreExit);
         VMXFEATDUMP("UseTprShadow - Use TPR shadow                          ", fVmxUseTprShadow);
@@ -1180,6 +1183,7 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("MonitorExit - MONITOR exiting                          ", fVmxMonitorExit);
         VMXFEATDUMP("PauseExit - PAUSE exiting                              ", fVmxPauseExit);
         VMXFEATDUMP("SecondaryExecCtl - Activate secondary controls         ", fVmxSecondaryExecCtls);
+
         /* Secondary processor-based controls. */
         VMXFEATDUMP("VirtApic - Virtualize-APIC accesses                    ", fVmxVirtApicAccess);
         VMXFEATDUMP("Ept - Extended Page Tables                             ", fVmxEpt);
@@ -1199,12 +1203,24 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("RdseedExiting - RDSEED exiting                         ", fVmxRdseedExit);
         VMXFEATDUMP("PML - Page-Modification Log (PML)                      ", fVmxPml);
         VMXFEATDUMP("EptVe - EPT violations can cause #VE                   ", fVmxEptXcptVe);
+        VMXFEATDUMP("ConcealVmxFromPt - Conceal VMX from Processor Trace    ", fVmxConcealVmxFromPt);
         VMXFEATDUMP("XsavesXRstors - Enable XSAVES/XRSTORS                  ", fVmxXsavesXrstors);
+        VMXFEATDUMP("ModeBasedExecuteEpt - Mode-based execute permissions   ", fVmxModeBasedExecuteEpt);
+        VMXFEATDUMP("SppEpt - Sub-page page write permissions for EPT       ", fVmxSppEpt);
+        VMXFEATDUMP("PtEpt - Processor Trace address' translatable by EPT   ", fVmxPtEpt);
+        VMXFEATDUMP("UseTscScaling - Use TSC scaling                        ", fVmxUseTscScaling);
+        VMXFEATDUMP("UserWaitPause - Enable TPAUSE, UMONITOR and UMWAIT     ", fVmxUserWaitPause);
+        VMXFEATDUMP("EnclvExit - ENCLV exiting                              ", fVmxEnclvExit);
+
+        /* Tertiary processor-based controls. */
+        VMXFEATDUMP("LoadIwKeyExit - LOADIWKEY exiting                      ", fVmxLoadIwKeyExit);
+
         /* VM-entry controls. */
         VMXFEATDUMP("EntryLoadDebugCtls - Load debug controls on VM-entry   ", fVmxEntryLoadDebugCtls);
         VMXFEATDUMP("Ia32eModeGuest - IA-32e mode guest                     ", fVmxIa32eModeGuest);
         VMXFEATDUMP("EntryLoadEferMsr - Load IA32_EFER MSR on VM-entry      ", fVmxEntryLoadEferMsr);
         VMXFEATDUMP("EntryLoadPatMsr - Load IA32_PAT MSR on VM-entry        ", fVmxEntryLoadPatMsr);
+
         /* VM-exit controls. */
         VMXFEATDUMP("ExitSaveDebugCtls - Save debug controls on VM-exit     ", fVmxExitSaveDebugCtls);
         VMXFEATDUMP("HostAddrSpaceSize - Host address-space size            ", fVmxHostAddrSpaceSize);
@@ -1214,9 +1230,10 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("ExitSaveEferMsr - Save IA32_EFER MSR on VM-exit        ", fVmxExitSaveEferMsr);
         VMXFEATDUMP("ExitLoadEferMsr - Load IA32_EFER MSR on VM-exit        ", fVmxExitLoadEferMsr);
         VMXFEATDUMP("SavePreemptTimer - Save VMX-preemption timer           ", fVmxSavePreemptTimer);
+
         /* Miscellaneous data. */
         VMXFEATDUMP("ExitSaveEferLma - Save IA32_EFER.LMA on VM-exit        ", fVmxExitSaveEferLma);
-        VMXFEATDUMP("IntelPt - Intel PT (Processor Trace) in VMX operation  ", fVmxIntelPt);
+        VMXFEATDUMP("IntelPt - Intel PT (Processor Trace) in VMX operation  ", fVmxPt);
         VMXFEATDUMP("VmwriteAll - VMWRITE to any supported VMCS field       ", fVmxVmwriteAll);
         VMXFEATDUMP("EntryInjectSoftInt - Inject softint. with 0-len instr. ", fVmxEntryInjectSoftInt);
 #undef VMXFEATDUMP
@@ -1336,26 +1353,32 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
     /* Secondary processor-based VM-execution controls. */
     if (pGuestFeatures->fVmxSecondaryExecCtls)
     {
-        uint32_t const fFeatures = (pGuestFeatures->fVmxVirtApicAccess    << VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_SHIFT  )
-                                 | (pGuestFeatures->fVmxEpt               << VMX_BF_PROC_CTLS2_EPT_SHIFT               )
-                                 | (pGuestFeatures->fVmxDescTableExit     << VMX_BF_PROC_CTLS2_DESC_TABLE_EXIT_SHIFT   )
-                                 | (pGuestFeatures->fVmxRdtscp            << VMX_BF_PROC_CTLS2_RDTSCP_SHIFT            )
-                                 | (pGuestFeatures->fVmxVirtX2ApicMode    << VMX_BF_PROC_CTLS2_VIRT_X2APIC_MODE_SHIFT  )
-                                 | (pGuestFeatures->fVmxVpid              << VMX_BF_PROC_CTLS2_VPID_SHIFT              )
-                                 | (pGuestFeatures->fVmxWbinvdExit        << VMX_BF_PROC_CTLS2_WBINVD_EXIT_SHIFT       )
-                                 | (pGuestFeatures->fVmxUnrestrictedGuest << VMX_BF_PROC_CTLS2_UNRESTRICTED_GUEST_SHIFT)
-                                 | (pGuestFeatures->fVmxApicRegVirt       << VMX_BF_PROC_CTLS2_APIC_REG_VIRT_SHIFT     )
-                                 | (pGuestFeatures->fVmxVirtIntDelivery   << VMX_BF_PROC_CTLS2_VIRT_INT_DELIVERY_SHIFT )
-                                 | (pGuestFeatures->fVmxPauseLoopExit     << VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_SHIFT   )
-                                 | (pGuestFeatures->fVmxRdrandExit        << VMX_BF_PROC_CTLS2_RDRAND_EXIT_SHIFT       )
-                                 | (pGuestFeatures->fVmxInvpcid           << VMX_BF_PROC_CTLS2_INVPCID_SHIFT           )
-                                 | (pGuestFeatures->fVmxVmFunc            << VMX_BF_PROC_CTLS2_VMFUNC_SHIFT            )
-                                 | (pGuestFeatures->fVmxVmcsShadowing     << VMX_BF_PROC_CTLS2_VMCS_SHADOWING_SHIFT    )
-                                 | (pGuestFeatures->fVmxRdseedExit        << VMX_BF_PROC_CTLS2_RDSEED_EXIT_SHIFT       )
-                                 | (pGuestFeatures->fVmxPml               << VMX_BF_PROC_CTLS2_PML_SHIFT               )
-                                 | (pGuestFeatures->fVmxEptXcptVe         << VMX_BF_PROC_CTLS2_EPT_VE_SHIFT            )
-                                 | (pGuestFeatures->fVmxXsavesXrstors     << VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT    )
-                                 | (pGuestFeatures->fVmxUseTscScaling     << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT       );
+        uint32_t const fFeatures = (pGuestFeatures->fVmxVirtApicAccess        << VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_SHIFT   )
+                                 | (pGuestFeatures->fVmxEpt                   << VMX_BF_PROC_CTLS2_EPT_SHIFT                )
+                                 | (pGuestFeatures->fVmxDescTableExit         << VMX_BF_PROC_CTLS2_DESC_TABLE_EXIT_SHIFT    )
+                                 | (pGuestFeatures->fVmxRdtscp                << VMX_BF_PROC_CTLS2_RDTSCP_SHIFT             )
+                                 | (pGuestFeatures->fVmxVirtX2ApicMode        << VMX_BF_PROC_CTLS2_VIRT_X2APIC_MODE_SHIFT   )
+                                 | (pGuestFeatures->fVmxVpid                  << VMX_BF_PROC_CTLS2_VPID_SHIFT               )
+                                 | (pGuestFeatures->fVmxWbinvdExit            << VMX_BF_PROC_CTLS2_WBINVD_EXIT_SHIFT        )
+                                 | (pGuestFeatures->fVmxUnrestrictedGuest     << VMX_BF_PROC_CTLS2_UNRESTRICTED_GUEST_SHIFT )
+                                 | (pGuestFeatures->fVmxApicRegVirt           << VMX_BF_PROC_CTLS2_APIC_REG_VIRT_SHIFT      )
+                                 | (pGuestFeatures->fVmxVirtIntDelivery       << VMX_BF_PROC_CTLS2_VIRT_INT_DELIVERY_SHIFT  )
+                                 | (pGuestFeatures->fVmxPauseLoopExit         << VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_SHIFT    )
+                                 | (pGuestFeatures->fVmxRdrandExit            << VMX_BF_PROC_CTLS2_RDRAND_EXIT_SHIFT        )
+                                 | (pGuestFeatures->fVmxInvpcid               << VMX_BF_PROC_CTLS2_INVPCID_SHIFT            )
+                                 | (pGuestFeatures->fVmxVmFunc                << VMX_BF_PROC_CTLS2_VMFUNC_SHIFT             )
+                                 | (pGuestFeatures->fVmxVmcsShadowing         << VMX_BF_PROC_CTLS2_VMCS_SHADOWING_SHIFT     )
+                                 | (pGuestFeatures->fVmxRdseedExit            << VMX_BF_PROC_CTLS2_RDSEED_EXIT_SHIFT        )
+                                 | (pGuestFeatures->fVmxPml                   << VMX_BF_PROC_CTLS2_PML_SHIFT                )
+                                 | (pGuestFeatures->fVmxEptXcptVe             << VMX_BF_PROC_CTLS2_EPT_VE_SHIFT             )
+                                 | (pGuestFeatures->fVmxConcealVmxFromPt      << VMX_BF_PROC_CTLS2_CONCEAL_VMX_FROM_PT_SHIFT)
+                                 | (pGuestFeatures->fVmxXsavesXrstors         << VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT     )
+                                 | (pGuestFeatures->fVmxModeBasedExecuteEpt   << VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_SHIFT)
+                                 | (pGuestFeatures->fVmxSppEpt                << VMX_BF_PROC_CTLS2_SPP_EPT_SHIFT            )
+                                 | (pGuestFeatures->fVmxPtEpt                 << VMX_BF_PROC_CTLS2_PT_EPT_SHIFT             )
+                                 | (pGuestFeatures->fVmxUseTscScaling         << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT        )
+                                 | (pGuestFeatures->fVmxUserWaitPause         << VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_SHIFT    )
+                                 | (pGuestFeatures->fVmxEnclvExit             << VMX_BF_PROC_CTLS2_ENCLV_EXIT_SHIFT         );
         uint32_t const fAllowed0 = 0;
         uint32_t const fAllowed1 = fFeatures;
         pGuestVmxMsrs->ProcCtls2.u = RT_MAKE_U64(fAllowed0, fAllowed1);
@@ -1407,7 +1430,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         pGuestVmxMsrs->u64Misc = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,      VMX_V_PREEMPT_TIMER_SHIFT             )
                                | RT_BF_MAKE(VMX_BF_MISC_EXIT_SAVE_EFER_LMA,     pGuestFeatures->fVmxExitSaveEferLma   )
                                | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        fActivityState                        )
-                               | RT_BF_MAKE(VMX_BF_MISC_INTEL_PT,               pGuestFeatures->fVmxIntelPt           )
+                               | RT_BF_MAKE(VMX_BF_MISC_INTEL_PT,               pGuestFeatures->fVmxPt                )
                                | RT_BF_MAKE(VMX_BF_MISC_SMM_READ_SMBASE_MSR,    0                                     )
                                | RT_BF_MAKE(VMX_BF_MISC_CR3_TARGET,             VMX_V_CR3_TARGET_COUNT                )
                                | RT_BF_MAKE(VMX_BF_MISC_MAX_MSRS,               cMaxMsrs                              )
@@ -1514,74 +1537,84 @@ static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCC
     if (!cpumR3IsHwAssistNstGstExecAllowed(pVM))
         return false;
 
+#define CPUM_VMX_FEAT_SHIFT(a_pFeat, a_FeatName, a_cShift)  ((uint64_t)(a_pFeat->a_FeatName) << (a_cShift))
+#define CPUM_VMX_MAKE_FEATURES_1(a_pFeat)   (  CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxInsOutInfo         ,  0) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExtIntExit         ,  1) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxNmiExit            ,  2) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVirtNmi            ,  3) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPreemptTimer       ,  4) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPostedInt          ,  5) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxIntWindowExit      ,  6) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxTscOffsetting      ,  7) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxHltExit            ,  8) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxInvlpgExit         ,  9) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxMwaitExit          , 10) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxRdpmcExit          , 12) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxRdtscExit          , 13) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxCr3LoadExit        , 14) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxCr3StoreExit       , 15) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxTertiaryExecCtls   , 16) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxCr8LoadExit        , 17) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxCr8StoreExit       , 18) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUseTprShadow       , 19) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxNmiWindowExit      , 20) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxMovDRxExit         , 21) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUncondIoExit       , 22) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUseIoBitmaps       , 23) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxMonitorTrapFlag    , 24) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUseMsrBitmaps      , 25) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxMonitorExit        , 26) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPauseExit          , 27) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSecondaryExecCtls  , 28) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVirtApicAccess     , 29) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEpt                , 30) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxDescTableExit      , 31) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxRdtscp             , 32) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVirtX2ApicMode     , 33) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVpid               , 34) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxWbinvdExit         , 35) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUnrestrictedGuest  , 36) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxApicRegVirt        , 37) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVirtIntDelivery    , 38) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPauseLoopExit      , 39) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxRdrandExit         , 40) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxInvpcid            , 41) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVmFunc             , 42) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVmcsShadowing      , 43) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxRdseedExit         , 44) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPml                , 45) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEptXcptVe          , 46) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxConcealVmxFromPt   , 47) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxXsavesXrstors      , 48) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxModeBasedExecuteEpt, 49) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSppEpt             , 50) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPtEpt              , 51) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUseTscScaling      , 52) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUserWaitPause      , 53) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEnclvExit          , 54) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxLoadIwKeyExit      , 55) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadDebugCtls , 56) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxIa32eModeGuest     , 57) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadEferMsr   , 58) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadPatMsr    , 59) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveDebugCtls  , 60) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxHostAddrSpaceSize  , 61) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitAckExtInt      , 62) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSavePatMsr     , 63))
+
+#define CPUM_VMX_MAKE_FEATURES_2(a_pFeat)   (  CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitLoadPatMsr     ,  0) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveEferMsr    ,  1) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitLoadEferMsr    ,  2) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSavePreemptTimer   ,  3) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveEferLma    ,  4) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPt                 ,  5) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVmwriteAll         ,  6) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryInjectSoftInt ,  7))
+
     /* Check first set of feature bits. */
     {
-        uint64_t const fBase = ((uint64_t)pBase->fVmxInsOutInfo         <<  0) | ((uint64_t)pBase->fVmxExtIntExit         <<  1)
-                             | ((uint64_t)pBase->fVmxNmiExit            <<  2) | ((uint64_t)pBase->fVmxVirtNmi            <<  3)
-                             | ((uint64_t)pBase->fVmxPreemptTimer       <<  4) | ((uint64_t)pBase->fVmxPostedInt          <<  5)
-                             | ((uint64_t)pBase->fVmxIntWindowExit      <<  6) | ((uint64_t)pBase->fVmxTscOffsetting      <<  7)
-                             | ((uint64_t)pBase->fVmxHltExit            <<  8) | ((uint64_t)pBase->fVmxInvlpgExit         <<  9)
-                             | ((uint64_t)pBase->fVmxMwaitExit          << 10) | ((uint64_t)pBase->fVmxRdpmcExit          << 11)
-                             | ((uint64_t)pBase->fVmxRdtscExit          << 12) | ((uint64_t)pBase->fVmxCr3LoadExit        << 13)
-                             | ((uint64_t)pBase->fVmxCr3StoreExit       << 14) | ((uint64_t)pBase->fVmxCr8LoadExit        << 15)
-                             | ((uint64_t)pBase->fVmxCr8StoreExit       << 16) | ((uint64_t)pBase->fVmxUseTprShadow       << 17)
-                             | ((uint64_t)pBase->fVmxNmiWindowExit      << 18) | ((uint64_t)pBase->fVmxMovDRxExit         << 19)
-                             | ((uint64_t)pBase->fVmxUncondIoExit       << 20) | ((uint64_t)pBase->fVmxUseIoBitmaps       << 21)
-                             | ((uint64_t)pBase->fVmxMonitorTrapFlag    << 22) | ((uint64_t)pBase->fVmxUseMsrBitmaps      << 23)
-                             | ((uint64_t)pBase->fVmxMonitorExit        << 24) | ((uint64_t)pBase->fVmxPauseExit          << 25)
-                             | ((uint64_t)pBase->fVmxSecondaryExecCtls  << 26) | ((uint64_t)pBase->fVmxVirtApicAccess     << 27)
-                             | ((uint64_t)pBase->fVmxEpt                << 28) | ((uint64_t)pBase->fVmxDescTableExit      << 29)
-                             | ((uint64_t)pBase->fVmxRdtscp             << 30) | ((uint64_t)pBase->fVmxVirtX2ApicMode     << 31)
-                             | ((uint64_t)pBase->fVmxVpid               << 32) | ((uint64_t)pBase->fVmxWbinvdExit         << 33)
-                             | ((uint64_t)pBase->fVmxUnrestrictedGuest  << 34) | ((uint64_t)pBase->fVmxApicRegVirt        << 35)
-                             | ((uint64_t)pBase->fVmxVirtIntDelivery    << 36) | ((uint64_t)pBase->fVmxPauseLoopExit      << 37)
-                             | ((uint64_t)pBase->fVmxRdrandExit         << 38) | ((uint64_t)pBase->fVmxInvpcid            << 39)
-                             | ((uint64_t)pBase->fVmxVmFunc             << 40) | ((uint64_t)pBase->fVmxVmcsShadowing      << 41)
-                             | ((uint64_t)pBase->fVmxRdseedExit         << 42) | ((uint64_t)pBase->fVmxPml                << 43)
-                             | ((uint64_t)pBase->fVmxEptXcptVe          << 44) | ((uint64_t)pBase->fVmxXsavesXrstors      << 45)
-                             | ((uint64_t)pBase->fVmxUseTscScaling      << 46) | ((uint64_t)pBase->fVmxEntryLoadDebugCtls << 47)
-                             | ((uint64_t)pBase->fVmxIa32eModeGuest     << 48) | ((uint64_t)pBase->fVmxEntryLoadEferMsr   << 49)
-                             | ((uint64_t)pBase->fVmxEntryLoadPatMsr    << 50) | ((uint64_t)pBase->fVmxExitSaveDebugCtls  << 51)
-                             | ((uint64_t)pBase->fVmxHostAddrSpaceSize  << 52) | ((uint64_t)pBase->fVmxExitAckExtInt      << 53)
-                             | ((uint64_t)pBase->fVmxExitSavePatMsr     << 54) | ((uint64_t)pBase->fVmxExitLoadPatMsr     << 55)
-                             | ((uint64_t)pBase->fVmxExitSaveEferMsr    << 56) | ((uint64_t)pBase->fVmxExitLoadEferMsr    << 57)
-                             | ((uint64_t)pBase->fVmxSavePreemptTimer   << 58) | ((uint64_t)pBase->fVmxExitSaveEferLma    << 59)
-                             | ((uint64_t)pBase->fVmxIntelPt            << 60) | ((uint64_t)pBase->fVmxVmwriteAll         << 61)
-                             | ((uint64_t)pBase->fVmxEntryInjectSoftInt << 62);
-
-        uint64_t const fGst  = ((uint64_t)pGst->fVmxInsOutInfo          <<  0) | ((uint64_t)pGst->fVmxExtIntExit          <<  1)
-                             | ((uint64_t)pGst->fVmxNmiExit             <<  2) | ((uint64_t)pGst->fVmxVirtNmi             <<  3)
-                             | ((uint64_t)pGst->fVmxPreemptTimer        <<  4) | ((uint64_t)pGst->fVmxPostedInt           <<  5)
-                             | ((uint64_t)pGst->fVmxIntWindowExit       <<  6) | ((uint64_t)pGst->fVmxTscOffsetting       <<  7)
-                             | ((uint64_t)pGst->fVmxHltExit             <<  8) | ((uint64_t)pGst->fVmxInvlpgExit          <<  9)
-                             | ((uint64_t)pGst->fVmxMwaitExit           << 10) | ((uint64_t)pGst->fVmxRdpmcExit           << 11)
-                             | ((uint64_t)pGst->fVmxRdtscExit           << 12) | ((uint64_t)pGst->fVmxCr3LoadExit         << 13)
-                             | ((uint64_t)pGst->fVmxCr3StoreExit        << 14) | ((uint64_t)pGst->fVmxCr8LoadExit         << 15)
-                             | ((uint64_t)pGst->fVmxCr8StoreExit        << 16) | ((uint64_t)pGst->fVmxUseTprShadow        << 17)
-                             | ((uint64_t)pGst->fVmxNmiWindowExit       << 18) | ((uint64_t)pGst->fVmxMovDRxExit          << 19)
-                             | ((uint64_t)pGst->fVmxUncondIoExit        << 20) | ((uint64_t)pGst->fVmxUseIoBitmaps        << 21)
-                             | ((uint64_t)pGst->fVmxMonitorTrapFlag     << 22) | ((uint64_t)pGst->fVmxUseMsrBitmaps       << 23)
-                             | ((uint64_t)pGst->fVmxMonitorExit         << 24) | ((uint64_t)pGst->fVmxPauseExit           << 25)
-                             | ((uint64_t)pGst->fVmxSecondaryExecCtls   << 26) | ((uint64_t)pGst->fVmxVirtApicAccess      << 27)
-                             | ((uint64_t)pGst->fVmxEpt                 << 28) | ((uint64_t)pGst->fVmxDescTableExit       << 29)
-                             | ((uint64_t)pGst->fVmxRdtscp              << 30) | ((uint64_t)pGst->fVmxVirtX2ApicMode      << 31)
-                             | ((uint64_t)pGst->fVmxVpid                << 32) | ((uint64_t)pGst->fVmxWbinvdExit          << 33)
-                             | ((uint64_t)pGst->fVmxUnrestrictedGuest   << 34) | ((uint64_t)pGst->fVmxApicRegVirt         << 35)
-                             | ((uint64_t)pGst->fVmxVirtIntDelivery     << 36) | ((uint64_t)pGst->fVmxPauseLoopExit       << 37)
-                             | ((uint64_t)pGst->fVmxRdrandExit          << 38) | ((uint64_t)pGst->fVmxInvpcid             << 39)
-                             | ((uint64_t)pGst->fVmxVmFunc              << 40) | ((uint64_t)pGst->fVmxVmcsShadowing       << 41)
-                             | ((uint64_t)pGst->fVmxRdseedExit          << 42) | ((uint64_t)pGst->fVmxPml                 << 43)
-                             | ((uint64_t)pGst->fVmxEptXcptVe           << 44) | ((uint64_t)pGst->fVmxXsavesXrstors       << 45)
-                             | ((uint64_t)pGst->fVmxUseTscScaling       << 46) | ((uint64_t)pGst->fVmxEntryLoadDebugCtls  << 47)
-                             | ((uint64_t)pGst->fVmxIa32eModeGuest      << 48) | ((uint64_t)pGst->fVmxEntryLoadEferMsr    << 49)
-                             | ((uint64_t)pGst->fVmxEntryLoadPatMsr     << 50) | ((uint64_t)pGst->fVmxExitSaveDebugCtls   << 51)
-                             | ((uint64_t)pGst->fVmxHostAddrSpaceSize   << 52) | ((uint64_t)pGst->fVmxExitAckExtInt       << 53)
-                             | ((uint64_t)pGst->fVmxExitSavePatMsr      << 54) | ((uint64_t)pGst->fVmxExitLoadPatMsr      << 55)
-                             | ((uint64_t)pGst->fVmxExitSaveEferMsr     << 56) | ((uint64_t)pGst->fVmxExitLoadEferMsr     << 57)
-                             | ((uint64_t)pGst->fVmxSavePreemptTimer    << 58) | ((uint64_t)pGst->fVmxExitSaveEferLma     << 59)
-                             | ((uint64_t)pGst->fVmxIntelPt             << 60) | ((uint64_t)pGst->fVmxVmwriteAll          << 61)
-                             | ((uint64_t)pGst->fVmxEntryInjectSoftInt  << 62);
-
+        uint64_t const fBase = CPUM_VMX_MAKE_FEATURES_1(pBase);
+        uint64_t const fGst  = CPUM_VMX_MAKE_FEATURES_1(pGst);
         if ((fBase | fGst) != fBase)
         {
             uint64_t const fDiff = fBase ^ fGst;
@@ -1593,8 +1626,8 @@ static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCC
 
     /* Check second set of feature bits. */
     {
-        uint64_t const fBase = ((uint64_t)pBase->fVmxTertiaryExecCtls   <<  0) | ((uint64_t)pBase->fVmxLoadIwKeyExit      <<  1);
-        uint64_t const fGst  = ((uint64_t)pGst->fVmxTertiaryExecCtls    <<  0) | ((uint64_t)pGst->fVmxLoadIwKeyExit       <<  1);
+        uint64_t const fBase = CPUM_VMX_MAKE_FEATURES_2(pBase);
+        uint64_t const fGst  = CPUM_VMX_MAKE_FEATURES_2(pGst);
         if ((fBase | fGst) != fBase)
         {
             uint64_t const fDiff = fBase ^ fGst;
@@ -1603,6 +1636,9 @@ static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCC
             return false;
         }
     }
+#undef CPUM_VMX_FEAT_SHIFT
+#undef CPUM_VMX_MAKE_FEATURES_1
+#undef CPUM_VMX_MAKE_FEATURES_2
 
     return true;
 }
@@ -1689,8 +1725,14 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxRdseedExit            = 0;
     EmuFeat.fVmxPml                   = 0;
     EmuFeat.fVmxEptXcptVe             = 0;
+    EmuFeat.fVmxConcealVmxFromPt      = 0;
     EmuFeat.fVmxXsavesXrstors         = 0;
+    EmuFeat.fVmxModeBasedExecuteEpt   = 0;
+    EmuFeat.fVmxSppEpt                = 0;
+    EmuFeat.fVmxPtEpt                 = 0;
     EmuFeat.fVmxUseTscScaling         = 0;
+    EmuFeat.fVmxUserWaitPause         = 0;
+    EmuFeat.fVmxEnclvExit             = 0;
     EmuFeat.fVmxLoadIwKeyExit         = 0;
     EmuFeat.fVmxEntryLoadDebugCtls    = 1;
     EmuFeat.fVmxIa32eModeGuest        = 1;
@@ -1705,7 +1747,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxExitLoadEferMsr       = 1;
     EmuFeat.fVmxSavePreemptTimer      = 0;  /* Cannot be enabled if VMX-preemption timer is disabled. */
     EmuFeat.fVmxExitSaveEferLma       = 1;  /* Cannot be disabled if unrestricted guest is enabled. */
-    EmuFeat.fVmxIntelPt               = 0;
+    EmuFeat.fVmxPt                    = 0;
     EmuFeat.fVmxVmwriteAll            = 0;  /** @todo NSTVMX: enable this when nested VMCS shadowing is enabled. */
     EmuFeat.fVmxEntryInjectSoftInt    = 1;
 
@@ -1764,8 +1806,14 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxRdseedExit            = (pBaseFeat->fVmxRdseedExit            & EmuFeat.fVmxRdseedExit           );
     pGuestFeat->fVmxPml                   = (pBaseFeat->fVmxPml                   & EmuFeat.fVmxPml                  );
     pGuestFeat->fVmxEptXcptVe             = (pBaseFeat->fVmxEptXcptVe             & EmuFeat.fVmxEptXcptVe            );
+    pGuestFeat->fVmxConcealVmxFromPt      = (pBaseFeat->fVmxConcealVmxFromPt      & EmuFeat.fVmxConcealVmxFromPt     );
     pGuestFeat->fVmxXsavesXrstors         = (pBaseFeat->fVmxXsavesXrstors         & EmuFeat.fVmxXsavesXrstors        );
+    pGuestFeat->fVmxModeBasedExecuteEpt   = (pBaseFeat->fVmxModeBasedExecuteEpt   & EmuFeat.fVmxModeBasedExecuteEpt  );
+    pGuestFeat->fVmxSppEpt                = (pBaseFeat->fVmxSppEpt                & EmuFeat.fVmxSppEpt               );
+    pGuestFeat->fVmxPtEpt                 = (pBaseFeat->fVmxPtEpt                 & EmuFeat.fVmxPtEpt                );
     pGuestFeat->fVmxUseTscScaling         = (pBaseFeat->fVmxUseTscScaling         & EmuFeat.fVmxUseTscScaling        );
+    pGuestFeat->fVmxUserWaitPause         = (pBaseFeat->fVmxUserWaitPause         & EmuFeat.fVmxUserWaitPause        );
+    pGuestFeat->fVmxEnclvExit             = (pBaseFeat->fVmxEnclvExit             & EmuFeat.fVmxEnclvExit            );
     pGuestFeat->fVmxLoadIwKeyExit         = (pBaseFeat->fVmxLoadIwKeyExit         & EmuFeat.fVmxLoadIwKeyExit        );
     pGuestFeat->fVmxEntryLoadDebugCtls    = (pBaseFeat->fVmxEntryLoadDebugCtls    & EmuFeat.fVmxEntryLoadDebugCtls   );
     pGuestFeat->fVmxIa32eModeGuest        = (pBaseFeat->fVmxIa32eModeGuest        & EmuFeat.fVmxIa32eModeGuest       );
@@ -1780,7 +1828,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxExitLoadEferMsr       = (pBaseFeat->fVmxExitLoadEferMsr       & EmuFeat.fVmxExitLoadEferMsr      );
     pGuestFeat->fVmxSavePreemptTimer      = (pBaseFeat->fVmxSavePreemptTimer      & EmuFeat.fVmxSavePreemptTimer     );
     pGuestFeat->fVmxExitSaveEferLma       = (pBaseFeat->fVmxExitSaveEferLma       & EmuFeat.fVmxExitSaveEferLma      );
-    pGuestFeat->fVmxIntelPt               = (pBaseFeat->fVmxIntelPt               & EmuFeat.fVmxIntelPt              );
+    pGuestFeat->fVmxPt                    = (pBaseFeat->fVmxPt                    & EmuFeat.fVmxPt                   );
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
     pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
 
@@ -1814,8 +1862,14 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
         Assert(!pGuestFeat->fVmxRdseedExit);
         Assert(!pGuestFeat->fVmxPml);
         Assert(!pGuestFeat->fVmxEptXcptVe);
+        Assert(!pGuestFeat->fVmxConcealVmxFromPt);
         Assert(!pGuestFeat->fVmxXsavesXrstors);
+        Assert(!pGuestFeat->fVmxModeBasedExecuteEpt);
+        Assert(!pGuestFeat->fVmxSppEpt);
+        Assert(!pGuestFeat->fVmxPtEpt);
         Assert(!pGuestFeat->fVmxUseTscScaling);
+        Assert(!pGuestFeat->fVmxUserWaitPause);
+        Assert(!pGuestFeat->fVmxEnclvExit);
     }
     else if (pGuestFeat->fVmxUnrestrictedGuest)
     {

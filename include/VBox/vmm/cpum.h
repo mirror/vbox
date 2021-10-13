@@ -1308,10 +1308,22 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxPml : 1;
     /** VMX: Supports EPT-violations \#VE. */
     uint32_t        fVmxEptXcptVe : 1;
+    /** VMX: Supports conceal VMX from PT. */
+    uint32_t        fVmxConcealVmxFromPt : 1;
     /** VMX: Supports XSAVES/XRSTORS. */
     uint32_t        fVmxXsavesXrstors : 1;
+    /** VMX: Supports mode-based execute control for EPT. */
+    uint32_t        fVmxModeBasedExecuteEpt : 1;
+    /** VMX: Supports sub-page write permissions for EPT. */
+    uint32_t        fVmxSppEpt : 1;
+    /** VMX: Supports Intel PT to output guest-physical addresses for EPT. */
+    uint32_t        fVmxPtEpt : 1;
     /** VMX: Supports TSC scaling. */
     uint32_t        fVmxUseTscScaling : 1;
+    /** VMX: Supports TPAUSE, UMONITOR, or UMWAIT. */
+    uint32_t        fVmxUserWaitPause : 1;
+    /** VMX: Supports enclave (ENCLV) exiting. */
+    uint32_t        fVmxEnclvExit : 1;
     /** @} */
 
     /** @name VMX Tertiary processor-based controls.
@@ -1357,7 +1369,7 @@ typedef struct CPUMFEATURES
     /** VMX: Supports storing EFER.LMA into IA32e-mode guest field on VM-exit. */
     uint32_t        fVmxExitSaveEferLma : 1;
     /** VMX: Whether Intel PT (Processor Trace) is supported in VMX mode or not. */
-    uint32_t        fVmxIntelPt : 1;
+    uint32_t        fVmxPt : 1;
     /** VMX: Supports VMWRITE to any valid VMCS field incl. read-only fields, otherwise
      *  VMWRITE cannot modify read-only VM-exit information fields. */
     uint32_t        fVmxVmwriteAll : 1;
@@ -1367,7 +1379,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding1 : 31;
+    uint32_t        fVmxPadding1 : 25;
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMFEATURES, 48);
@@ -1583,6 +1595,7 @@ VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, u
 VMM_INT_DECL(int)       CPUMStartGuestVmxPremptTimer(PVMCPUCC pVCpu, uint32_t uTimer, uint8_t cShift, uint64_t *pu64EntryTick);
 VMM_INT_DECL(int)       CPUMStopGuestVmxPremptTimer(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu);
 /** @} */
 
 /** @name Externalized State Helpers.

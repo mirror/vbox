@@ -3032,3 +3032,16 @@ VMM_INT_DECL(int) CPUMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsr
     return VERR_OUT_OF_RANGE;
 }
 
+
+/**
+ * Checks whether the guest is in VMX non-root mode and using EPT paging.
+ *
+ * @returns @c true if in VMX non-root operation with EPT, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu)
+{
+    return    CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
+           && CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_EPT);
+}
+

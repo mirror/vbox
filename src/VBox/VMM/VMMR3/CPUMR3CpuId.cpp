@@ -1806,8 +1806,14 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
         pFeatures->fVmxRdseedExit            = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_RDSEED_EXIT);
         pFeatures->fVmxPml                   = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_PML);
         pFeatures->fVmxEptXcptVe             = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_EPT_XCPT_VE);
+        pFeatures->fVmxConcealVmxFromPt      = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT);
         pFeatures->fVmxXsavesXrstors         = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_XSAVES_XRSTORS);
+        pFeatures->fVmxModeBasedExecuteEpt   = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_MODE_BASED_EPT_PERM);
+        pFeatures->fVmxSppEpt                = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_SPP_EPT);
+        pFeatures->fVmxPtEpt                 = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_PT_EPT);
         pFeatures->fVmxUseTscScaling         = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_TSC_SCALING);
+        pFeatures->fVmxUserWaitPause         = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_USER_WAIT_PAUSE);
+        pFeatures->fVmxEnclvExit             = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_ENCLV_EXIT);
     }
 
     /* Tertiary processor-based VM-execution controls. */
@@ -1842,7 +1848,7 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
     {
         uint32_t const fMiscData = pVmxMsrs->u64Misc;
         pFeatures->fVmxExitSaveEferLma       = RT_BOOL(fMiscData & VMX_MISC_EXIT_SAVE_EFER_LMA);
-        pFeatures->fVmxIntelPt               = RT_BOOL(fMiscData & VMX_MISC_INTEL_PT);
+        pFeatures->fVmxPt                    = RT_BOOL(fMiscData & VMX_MISC_INTEL_PT);
         pFeatures->fVmxVmwriteAll            = RT_BOOL(fMiscData & VMX_MISC_VMWRITE_ALL);
         pFeatures->fVmxEntryInjectSoftInt    = RT_BOOL(fMiscData & VMX_MISC_ENTRY_INJECT_SOFT_INT);
     }
