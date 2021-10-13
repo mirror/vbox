@@ -2742,7 +2742,6 @@ typedef struct PGMMODEDATAGST
     uint32_t                        uType;
     DECLCALLBACKMEMBER(int, pfnGetPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLCALLBACKMEMBER(int, pfnModifyPage,(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLCALLBACKMEMBER(int, pfnGetPDE,(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde));
     DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
     DECLCALLBACKMEMBER(int, pfnExit,(PVMCPUCC pVCpu));
 #ifdef IN_RING3

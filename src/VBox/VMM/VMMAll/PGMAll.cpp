@@ -561,12 +561,11 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
  */
 PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
 {
-    { UINT32_MAX, NULL, NULL, NULL, NULL, NULL }, /* 0 */
+    { UINT32_MAX, NULL, NULL, NULL, NULL }, /* 0 */
     {
         PGM_TYPE_REAL,
         PGM_GST_NAME_REAL(GetPage),
         PGM_GST_NAME_REAL(ModifyPage),
-        PGM_GST_NAME_REAL(GetPDE),
         PGM_GST_NAME_REAL(Enter),
         PGM_GST_NAME_REAL(Exit),
 #ifdef IN_RING3
@@ -577,7 +576,6 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
         PGM_TYPE_PROT,
         PGM_GST_NAME_PROT(GetPage),
         PGM_GST_NAME_PROT(ModifyPage),
-        PGM_GST_NAME_PROT(GetPDE),
         PGM_GST_NAME_PROT(Enter),
         PGM_GST_NAME_PROT(Exit),
 #ifdef IN_RING3
@@ -588,7 +586,6 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
         PGM_TYPE_32BIT,
         PGM_GST_NAME_32BIT(GetPage),
         PGM_GST_NAME_32BIT(ModifyPage),
-        PGM_GST_NAME_32BIT(GetPDE),
         PGM_GST_NAME_32BIT(Enter),
         PGM_GST_NAME_32BIT(Exit),
 #ifdef IN_RING3
@@ -599,7 +596,6 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
         PGM_TYPE_PAE,
         PGM_GST_NAME_PAE(GetPage),
         PGM_GST_NAME_PAE(ModifyPage),
-        PGM_GST_NAME_PAE(GetPDE),
         PGM_GST_NAME_PAE(Enter),
         PGM_GST_NAME_PAE(Exit),
 #ifdef IN_RING3
@@ -611,7 +607,6 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
         PGM_TYPE_AMD64,
         PGM_GST_NAME_AMD64(GetPage),
         PGM_GST_NAME_AMD64(ModifyPage),
-        PGM_GST_NAME_AMD64(GetPDE),
         PGM_GST_NAME_AMD64(Enter),
         PGM_GST_NAME_AMD64(Exit),
 # ifdef IN_RING3
@@ -3210,7 +3205,6 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
     AssertReturn(g_aPgmGuestModeData[idxNewGst].uType == idxNewGst, VERR_PGM_MODE_IPE);
     AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnGetPage, VERR_PGM_MODE_IPE);
     AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnModifyPage, VERR_PGM_MODE_IPE);
-    AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnGetPDE, VERR_PGM_MODE_IPE);
     AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnExit, VERR_PGM_MODE_IPE);
     AssertPtrReturn(g_aPgmGuestModeData[idxNewGst].pfnEnter, VERR_PGM_MODE_IPE);
 #ifdef IN_RING3

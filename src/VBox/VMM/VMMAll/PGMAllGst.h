@@ -27,7 +27,6 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
 #endif
 PGM_GST_DECL(int,  GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
 PGM_GST_DECL(int,  ModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGM_GST_DECL(int,  GetPDE)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 
 #ifdef IN_RING3 /* r3 only for now.  */
 PGM_GST_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
@@ -451,56 +450,6 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t
     /* real / protected mode: ignore. */
     NOREF(pVCpu); NOREF(GCPtr); NOREF(fFlags); NOREF(fMask);
     return VINF_SUCCESS;
-#endif
-}
-
-
-/**
- * Retrieve guest PDE information.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   GCPtr       Guest context pointer.
- * @param   pPDE        Pointer to guest PDE structure.
- */
-PGM_GST_DECL(int, GetPDE)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
-{
-#if PGM_GST_TYPE == PGM_TYPE_32BIT \
- || PGM_GST_TYPE == PGM_TYPE_PAE   \
- || PGM_GST_TYPE == PGM_TYPE_AMD64
-
-# if PGM_GST_TYPE != PGM_TYPE_AMD64
-    /* Boundary check. */
-    if (RT_UNLIKELY(GCPtr >= _4G))
-        return VERR_PAGE_TABLE_NOT_PRESENT;
-# endif
-
-# if PGM_GST_TYPE == PGM_TYPE_32BIT
-    unsigned    iPd = (GCPtr >> GST_PD_SHIFT) & GST_PD_MASK;
-    PX86PD      pPd = pgmGstGet32bitPDPtr(pVCpu);
-
-# elif PGM_GST_TYPE == PGM_TYPE_PAE
-    unsigned    iPd = 0;                /* shut up gcc */
-    PCX86PDPAE  pPd = pgmGstGetPaePDPtr(pVCpu, GCPtr, &iPd, NULL);
-
-# elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    PX86PML4E   pPml4eIgn;
-    X86PDPE     PdpeIgn;
-    unsigned    iPd = 0;                /* shut up gcc */
-    PCX86PDPAE  pPd = pgmGstGetLongModePDPtr(pVCpu, GCPtr, &pPml4eIgn, &PdpeIgn, &iPd);
-    /* Note! We do not return an effective PDE here like we do for the PTE in GetPage method. */
-# endif
-
-    if (RT_LIKELY(pPd))
-        pPDE->u = (X86PGPAEUINT)pPd->a[iPd].u;
-    else
-        pPDE->u = 0;
-    return VINF_SUCCESS;
-
-#else
-    NOREF(pVCpu); NOREF(GCPtr); NOREF(pPDE);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
 #endif
 }
 
