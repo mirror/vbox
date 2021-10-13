@@ -683,9 +683,9 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/exportappliance/UIWizardExportAppPageVMs.h \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.h \
 	src/wizards/importappliance/UIWizardImportApp.h \
-	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
-	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
-	src/wizards/importappliance/UIWizardImportAppPageExpert.h
+	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
+	src/wizards/importappliance/UIWizardImportAppPageSettings.h \
+	src/wizards/importappliance/UIWizardImportAppPageSource.h
 
 
 #
@@ -1193,9 +1193,9 @@ VirtualBox_SOURCES = \
 	src/wizards/exportappliance/UIWizardExportAppPageVMs.cpp \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
-	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
-	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
-	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp
+	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
+	src/wizards/importappliance/UIWizardImportAppPageSettings.cpp \
+	src/wizards/importappliance/UIWizardImportAppPageSource.cpp
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \

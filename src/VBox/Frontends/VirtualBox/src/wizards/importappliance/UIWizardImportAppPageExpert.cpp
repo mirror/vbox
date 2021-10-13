@@ -40,16 +40,16 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
-#include "UIWizardImportAppPageBasic1.h"
-#include "UIWizardImportAppPageBasic2.h"
 #include "UIWizardImportAppPageExpert.h"
+#include "UIWizardImportAppPageSettings.h"
+#include "UIWizardImportAppPageSource.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
 
 /* Namespaces: */
-using namespace UIWizardImportAppPage1;
-using namespace UIWizardImportAppPage2;
+using namespace UIWizardImportAppSettings;
+using namespace UIWizardImportAppSource;
 
 
 UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName)
@@ -506,10 +506,10 @@ void UIWizardImportAppPageExpert::sltHandleSourceComboChange()
     wizard()->setSourceCloudOne(isSourceCloudOne(m_pSourceComboBox));
 
     /* Refresh page widgets: */
-    UIWizardImportAppPage1::refreshStackedWidget(m_pSettingsWidget1,
-                                                 wizard()->isSourceCloudOne());
-    UIWizardImportAppPage2::refreshStackedWidget(m_pSettingsWidget2,
-                                                 wizard()->isSourceCloudOne());
+    UIWizardImportAppSource::refreshStackedWidget(m_pSettingsWidget1,
+                                                  wizard()->isSourceCloudOne());
+    UIWizardImportAppSettings::refreshStackedWidget(m_pSettingsWidget2,
+                                                    wizard()->isSourceCloudOne());
 
     // WORKAROUND:
     // We want to free some vertical space from m_pSettingsWidget1:

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageBasic1 class implementation.
+ * VBox Qt GUI - UIWizardImportAppPageSource class implementation.
  */
 
 /*
@@ -32,7 +32,7 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
-#include "UIWizardImportAppPageBasic1.h"
+#include "UIWizardImportAppPageSource.h"
 
 /* COM includes: */
 #include "CAppliance.h"
@@ -40,16 +40,16 @@
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Namespaces: */
-using namespace UIWizardImportAppPage1;
+using namespace UIWizardImportAppSource;
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardImportAppPage1 implementation.                                                                                 *
+*   Class UIWizardImportAppSource implementation.                                                                                *
 *********************************************************************************************************************************/
 
-void UIWizardImportAppPage1::populateSources(QIComboBox *pCombo,
-                                             bool fImportFromOCIByDefault,
-                                             const QString &strSource)
+void UIWizardImportAppSource::populateSources(QIComboBox *pCombo,
+                                              bool fImportFromOCIByDefault,
+                                              const QString &strSource)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -124,7 +124,7 @@ void UIWizardImportAppPage1::populateSources(QIComboBox *pCombo,
     pCombo->blockSignals(false);
 }
 
-QString UIWizardImportAppPage1::source(QIComboBox *pCombo)
+QString UIWizardImportAppSource::source(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, QString());
@@ -133,7 +133,7 @@ QString UIWizardImportAppPage1::source(QIComboBox *pCombo)
     return pCombo->currentData(SourceData_ShortName).toString();
 }
 
-bool UIWizardImportAppPage1::isSourceCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
+bool UIWizardImportAppSource::isSourceCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, false);
@@ -146,8 +146,8 @@ bool UIWizardImportAppPage1::isSourceCloudOne(QIComboBox *pCombo, int iIndex /* 
     return pCombo->itemData(iIndex, SourceData_IsItCloudFormat).toBool();
 }
 
-void UIWizardImportAppPage1::refreshStackedWidget(QStackedWidget *pStackedWidget,
-                                                  bool fIsSourceCloudOne)
+void UIWizardImportAppSource::refreshStackedWidget(QStackedWidget *pStackedWidget,
+                                                   bool fIsSourceCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pStackedWidget);
@@ -156,10 +156,10 @@ void UIWizardImportAppPage1::refreshStackedWidget(QStackedWidget *pStackedWidget
     pStackedWidget->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
-void UIWizardImportAppPage1::refreshProfileCombo(QIComboBox *pCombo,
-                                                 const QString &strSource,
-                                                 const QString &strProfileName,
-                                                 bool fIsSourceCloudOne)
+void UIWizardImportAppSource::refreshProfileCombo(QIComboBox *pCombo,
+                                                  const QString &strSource,
+                                                  const QString &strProfileName,
+                                                  bool fIsSourceCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -231,10 +231,10 @@ void UIWizardImportAppPage1::refreshProfileCombo(QIComboBox *pCombo,
     }
 }
 
-void UIWizardImportAppPage1::refreshCloudProfileInstances(QListWidget *pListWidget,
-                                                          const QString &strSource,
-                                                          const QString &strProfileName,
-                                                          bool fIsSourceCloudOne)
+void UIWizardImportAppSource::refreshCloudProfileInstances(QListWidget *pListWidget,
+                                                           const QString &strSource,
+                                                           const QString &strProfileName,
+                                                           bool fIsSourceCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pListWidget);
@@ -293,13 +293,13 @@ void UIWizardImportAppPage1::refreshCloudProfileInstances(QListWidget *pListWidg
     }
 }
 
-void UIWizardImportAppPage1::refreshCloudStuff(CAppliance &comCloudAppliance,
-                                               CVirtualSystemDescriptionForm &comCloudVsdImportForm,
-                                               QWidget *pParent,
-                                               const QString &strMachineId,
-                                               const QString &strSource,
-                                               const QString &strProfileName,
-                                               bool fIsSourceCloudOne)
+void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
+                                                CVirtualSystemDescriptionForm &comCloudVsdImportForm,
+                                                QWidget *pParent,
+                                                const QString &strMachineId,
+                                                const QString &strSource,
+                                                const QString &strProfileName,
+                                                bool fIsSourceCloudOne)
 {
     /* Clear stuff: */
     comCloudAppliance = CAppliance();
@@ -366,7 +366,7 @@ void UIWizardImportAppPage1::refreshCloudStuff(CAppliance &comCloudAppliance,
     comCloudVsdImportForm = comVsdImportForm;
 }
 
-QString UIWizardImportAppPage1::path(UIEmptyFilePathSelector *pFileSelector)
+QString UIWizardImportAppSource::path(UIEmptyFilePathSelector *pFileSelector)
 {
     /* Sanity check: */
     AssertPtrReturn(pFileSelector, QString());
@@ -375,7 +375,7 @@ QString UIWizardImportAppPage1::path(UIEmptyFilePathSelector *pFileSelector)
     return pFileSelector->path().toLower();
 }
 
-QString UIWizardImportAppPage1::profileName(QIComboBox *pCombo)
+QString UIWizardImportAppSource::profileName(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, QString());
@@ -384,7 +384,7 @@ QString UIWizardImportAppPage1::profileName(QIComboBox *pCombo)
     return pCombo->currentData(ProfileData_Name).toString();
 }
 
-QString UIWizardImportAppPage1::machineId(QListWidget *pListWidget)
+QString UIWizardImportAppSource::machineId(QListWidget *pListWidget)
 {
     /* Sanity check: */
     AssertPtrReturn(pListWidget, QString());
@@ -394,7 +394,7 @@ QString UIWizardImportAppPage1::machineId(QListWidget *pListWidget)
     return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
-void UIWizardImportAppPage1::updateSourceComboToolTip(QIComboBox *pCombo)
+void UIWizardImportAppSource::updateSourceComboToolTip(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -406,10 +406,10 @@ void UIWizardImportAppPage1::updateSourceComboToolTip(QIComboBox *pCombo)
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardImportAppPageBasic1 implementation.                                                                            *
+*   Class UIWizardImportAppPageSource implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault, const QString &strFileName)
+UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDefault, const QString &strFileName)
     : m_fImportFromOCIByDefault(fImportFromOCIByDefault)
     , m_strFileName(strFileName)
     , m_pLabelMain(0)
@@ -585,19 +585,19 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
 
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
-            this, &UIWizardImportAppPageBasic1::sltHandleSourceComboChange);
+            this, &UIWizardImportAppPageSource::sltHandleSourceComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
-            this, &UIWizardImportAppPageBasic1::sltHandleSourceComboChange);
+            this, &UIWizardImportAppPageSource::sltHandleSourceComboChange);
     connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardImportAppPageBasic1::sltHandleSourceComboChange);
+            this, &UIWizardImportAppPageSource::sltHandleSourceComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
-            this, &UIWizardImportAppPageBasic1::completeChanged);
+            this, &UIWizardImportAppPageSource::completeChanged);
     connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardImportAppPageBasic1::sltHandleProfileComboChange);
+            this, &UIWizardImportAppPageSource::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
-            this, &UIWizardImportAppPageBasic1::sltHandleProfileButtonClick);
+            this, &UIWizardImportAppPageSource::sltHandleProfileButtonClick);
     connect(m_pProfileInstanceList, &QListWidget::currentRowChanged,
-            this, &UIWizardImportAppPageBasic1::completeChanged);
+            this, &UIWizardImportAppPageSource::completeChanged);
 
     /* Parse passed full group name if any: */
     if (   m_fImportFromOCIByDefault
@@ -613,12 +613,12 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
     }
 }
 
-UIWizardImportApp *UIWizardImportAppPageBasic1::wizard() const
+UIWizardImportApp *UIWizardImportAppPageSource::wizard() const
 {
     return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardImportAppPageBasic1::retranslateUi()
+void UIWizardImportAppPageSource::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance to import"));
@@ -706,7 +706,7 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     updateSourceComboToolTip(m_pSourceComboBox);
 }
 
-void UIWizardImportAppPageBasic1::initializePage()
+void UIWizardImportAppPageSource::initializePage()
 {
     /* Populate sources: */
     populateSources(m_pSourceComboBox,
@@ -725,7 +725,7 @@ void UIWizardImportAppPageBasic1::initializePage()
     QMetaObject::invokeMethod(this, "sltHandleSourceComboChange", Qt::QueuedConnection);
 }
 
-bool UIWizardImportAppPageBasic1::isComplete() const
+bool UIWizardImportAppPageSource::isComplete() const
 {
     /* Initial result: */
     bool fResult = true;
@@ -741,7 +741,7 @@ bool UIWizardImportAppPageBasic1::isComplete() const
     return fResult;
 }
 
-bool UIWizardImportAppPageBasic1::validatePage()
+bool UIWizardImportAppPageSource::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -771,7 +771,7 @@ bool UIWizardImportAppPageBasic1::validatePage()
     return fResult;
 }
 
-void UIWizardImportAppPageBasic1::sltHandleSourceComboChange()
+void UIWizardImportAppPageSource::sltHandleSourceComboChange()
 {
     /* Update combo tool-tip: */
     updateSourceComboToolTip(m_pSourceComboBox);
@@ -794,7 +794,7 @@ void UIWizardImportAppPageBasic1::sltHandleSourceComboChange()
     emit completeChanged();
 }
 
-void UIWizardImportAppPageBasic1::sltHandleProfileComboChange()
+void UIWizardImportAppPageSource::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
     refreshCloudProfileInstances(m_pProfileInstanceList,
@@ -806,20 +806,20 @@ void UIWizardImportAppPageBasic1::sltHandleProfileComboChange()
     emit completeChanged();
 }
 
-void UIWizardImportAppPageBasic1::sltHandleProfileButtonClick()
+void UIWizardImportAppPageSource::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
 }
 
-void UIWizardImportAppPageBasic1::updateLocalStuff()
+void UIWizardImportAppPageSource::updateLocalStuff()
 {
     /* Create local appliance: */
     wizard()->setFile(path(m_pFileSelector));
 }
 
-void UIWizardImportAppPageBasic1::updateCloudStuff()
+void UIWizardImportAppPageSource::updateCloudStuff()
 {
     /* Create cloud appliance and VSD import form: */
     CAppliance comAppliance;

@@ -40,7 +40,7 @@ class UIToolBox;
 class UIWizardImportApp;
 
 /** UINativeWizardPage extension for expert page of the Import Appliance wizard,
-  * based on UIWizardImportAppPage1 & UIWizardImportAppPage2 namespace functions. */
+  * based on UIWizardImportAppSource & UIWizardImportAppSettings namespace functions. */
 class UIWizardImportAppPageExpert : public UINativeWizardPage
 {
     Q_OBJECT;

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardImportAppPageSource class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageSource_h
+#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageSource_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -51,8 +51,8 @@ enum
     ProfileData_Name = Qt::UserRole + 1
 };
 
-/** Namespace for 1st basic page of the Import Appliance wizard. */
-namespace UIWizardImportAppPage1
+/** Namespace for Source page of the Import Appliance wizard. */
+namespace UIWizardImportAppSource
 {
     /** Populates sources. */
     void populateSources(QIComboBox *pCombo,
@@ -99,18 +99,18 @@ namespace UIWizardImportAppPage1
     void updateSourceComboToolTip(QIComboBox *pCombo);
 }
 
-/** UINativeWizardPage extension for 1st basic page of the Import Appliance wizard,
-  * based on UIWizardImportAppPage1 namespace functions. */
-class UIWizardImportAppPageBasic1 : public UINativeWizardPage
+/** UINativeWizardPage extension for Source page of the Import Appliance wizard,
+  * based on UIWizardImportAppSource namespace functions. */
+class UIWizardImportAppPageSource : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 1st basic page.
+    /** Constructs Source page.
       * @param  fImportFromOCIByDefault  Brings whether we should propose import from OCI by default.
       * @param  strFileName              Brings appliance file name. */
-    UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault, const QString &strFileName);
+    UIWizardImportAppPageSource(bool fImportFromOCIByDefault, const QString &strFileName);
 
 protected:
 
@@ -192,4 +192,4 @@ private:
     QListWidget  *m_pProfileInstanceList;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageSource_h */

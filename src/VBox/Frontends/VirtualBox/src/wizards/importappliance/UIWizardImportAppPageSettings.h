@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardImportAppPageSettings class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageSettings_h
+#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageSettings_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,8 +48,8 @@ enum kCertText
     kCertText_SelfSignedUnverified
 };
 
-/** Namespace for 2nd basic page of the Import Appliance wizard. */
-namespace UIWizardImportAppPage2
+/** Namespace for Settings page of the Import Appliance wizard. */
+namespace UIWizardImportAppSettings
 {
     /** Refresh stacked widget. */
     void refreshStackedWidget(QStackedWidget *pStackedWidget,
@@ -82,17 +82,17 @@ namespace UIWizardImportAppPage2
     void updateMACImportPolicyComboToolTip(QIComboBox *pCombo);
 }
 
-/** UINativeWizardPage extension for 2nd basic page of the Import Appliance wizard,
-  * based on UIWizardImportAppPage2 namespace functions. */
-class UIWizardImportAppPageBasic2 : public UINativeWizardPage
+/** UINativeWizardPage extension for Settings page of the Import Appliance wizard,
+  * based on UIWizardImportAppSettings namespace functions. */
+class UIWizardImportAppPageSettings : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 2nd basic page.
+    /** Constructs Settings page.
       * @param  strFileName  Brings appliance file name. */
-    UIWizardImportAppPageBasic2(const QString &strFileName);
+    UIWizardImportAppPageSettings(const QString &strFileName);
 
 protected:
 
@@ -161,4 +161,4 @@ private:
     UIFormEditorWidget *m_pFormEditor;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageSettings_h */

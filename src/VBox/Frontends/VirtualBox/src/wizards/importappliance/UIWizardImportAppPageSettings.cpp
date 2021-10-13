@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardImportAppPageSettings class implementation.
  */
 
 /*
@@ -31,7 +31,7 @@
 #include "UIFormEditorWidget.h"
 #include "UIMessageCenter.h"
 #include "UIWizardImportApp.h"
-#include "UIWizardImportAppPageBasic2.h"
+#include "UIWizardImportAppPageSettings.h"
 
 /* COM includes: */
 #include "CAppliance.h"
@@ -40,15 +40,15 @@
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Namespaces: */
-using namespace UIWizardImportAppPage2;
+using namespace UIWizardImportAppSettings;
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardImportAppPage2 implementation.                                                                                 *
+*   Class UIWizardImportAppSettings implementation.                                                                              *
 *********************************************************************************************************************************/
 
-void UIWizardImportAppPage2::refreshStackedWidget(QStackedWidget *pStackedWidget,
-                                                  bool fIsSourceCloudOne)
+void UIWizardImportAppSettings::refreshStackedWidget(QStackedWidget *pStackedWidget,
+                                                     bool fIsSourceCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pStackedWidget);
@@ -57,9 +57,9 @@ void UIWizardImportAppPage2::refreshStackedWidget(QStackedWidget *pStackedWidget
     pStackedWidget->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
-void UIWizardImportAppPage2::refreshApplianceWidget(UIApplianceImportEditorWidget *pApplianceWidget,
-                                                    const CAppliance &comAppliance,
-                                                    bool fIsSourceCloudOne)
+void UIWizardImportAppSettings::refreshApplianceWidget(UIApplianceImportEditorWidget *pApplianceWidget,
+                                                       const CAppliance &comAppliance,
+                                                       bool fIsSourceCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pApplianceWidget);
@@ -79,8 +79,8 @@ void UIWizardImportAppPage2::refreshApplianceWidget(UIApplianceImportEditorWidge
     }
 }
 
-void UIWizardImportAppPage2::refreshMACAddressImportPolicies(QIComboBox *pCombo,
-                                                             bool fIsSourceCloudOne)
+void UIWizardImportAppSettings::refreshMACAddressImportPolicies(QIComboBox *pCombo,
+                                                                bool fIsSourceCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -160,9 +160,9 @@ void UIWizardImportAppPage2::refreshMACAddressImportPolicies(QIComboBox *pCombo,
     }
 }
 
-void UIWizardImportAppPage2::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
-                                                        const CVirtualSystemDescriptionForm &comForm,
-                                                        bool fIsSourceCloudOne)
+void UIWizardImportAppSettings::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
+                                                           const CVirtualSystemDescriptionForm &comForm,
+                                                           bool fIsSourceCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pFormEditor);
@@ -182,7 +182,7 @@ void UIWizardImportAppPage2::refreshFormPropertiesTable(UIFormEditorWidget *pFor
     }
 }
 
-MACAddressImportPolicy UIWizardImportAppPage2::macAddressImportPolicy(QIComboBox *pCombo)
+MACAddressImportPolicy UIWizardImportAppSettings::macAddressImportPolicy(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, MACAddressImportPolicy_MAX);
@@ -191,7 +191,7 @@ MACAddressImportPolicy UIWizardImportAppPage2::macAddressImportPolicy(QIComboBox
     return pCombo->currentData().value<MACAddressImportPolicy>();
 }
 
-bool UIWizardImportAppPage2::isImportHDsAsVDI(QCheckBox *pCheckBox)
+bool UIWizardImportAppSettings::isImportHDsAsVDI(QCheckBox *pCheckBox)
 {
     /* Sanity check: */
     AssertPtrReturn(pCheckBox, false);
@@ -200,7 +200,7 @@ bool UIWizardImportAppPage2::isImportHDsAsVDI(QCheckBox *pCheckBox)
     return pCheckBox->isChecked();
 }
 
-void UIWizardImportAppPage2::retranslateMACImportPolicyCombo(QIComboBox *pCombo)
+void UIWizardImportAppSettings::retranslateMACImportPolicyCombo(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -238,7 +238,7 @@ void UIWizardImportAppPage2::retranslateMACImportPolicyCombo(QIComboBox *pCombo)
     }
 }
 
-void UIWizardImportAppPage2::retranslateCertificateLabel(QLabel *pLabel, const kCertText &enmType, const QString &strSignedBy)
+void UIWizardImportAppSettings::retranslateCertificateLabel(QLabel *pLabel, const kCertText &enmType, const QString &strSignedBy)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pLabel);
@@ -276,7 +276,7 @@ void UIWizardImportAppPage2::retranslateCertificateLabel(QLabel *pLabel, const k
     }
 }
 
-void UIWizardImportAppPage2::updateMACImportPolicyComboToolTip(QIComboBox *pCombo)
+void UIWizardImportAppSettings::updateMACImportPolicyComboToolTip(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -288,10 +288,10 @@ void UIWizardImportAppPage2::updateMACImportPolicyComboToolTip(QIComboBox *pComb
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardImportAppPageBasic2 implementation.                                                                            *
+*   Class UIWizardImportAppPageSettings implementation.                                                                          *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileName)
+UIWizardImportAppPageSettings::UIWizardImportAppPageSettings(const QString &strFileName)
     : m_strFileName(strFileName)
     , m_pLabelDescription(0)
     , m_pSettingsWidget2(0)
@@ -424,19 +424,19 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
 
     /* Setup connections: */
     connect(m_pEditorImportFilePath, &UIFilePathSelector::pathChanged,
-            this, &UIWizardImportAppPageBasic2::sltHandleImportPathEditorChange);
+            this, &UIWizardImportAppPageSettings::sltHandleImportPathEditorChange);
     connect(m_pComboMACImportPolicy, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardImportAppPageBasic2::sltHandleMACImportPolicyComboChange);
+            this, &UIWizardImportAppPageSettings::sltHandleMACImportPolicyComboChange);
     connect(m_pCheckboxImportHDsAsVDI, &QCheckBox::stateChanged,
-            this, &UIWizardImportAppPageBasic2::sltHandleImportHDsAsVDICheckBoxChange);
+            this, &UIWizardImportAppPageSettings::sltHandleImportHDsAsVDICheckBoxChange);
 }
 
-UIWizardImportApp *UIWizardImportAppPageBasic2::wizard() const
+UIWizardImportApp *UIWizardImportAppPageSettings::wizard() const
 {
     return qobject_cast<UIWizardImportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardImportAppPageBasic2::retranslateUi()
+void UIWizardImportAppPageSettings::retranslateUi()
 {
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance settings"));
@@ -482,7 +482,7 @@ void UIWizardImportAppPageBasic2::retranslateUi()
     updateMACImportPolicyComboToolTip(m_pComboMACImportPolicy);
 }
 
-void UIWizardImportAppPageBasic2::initializePage()
+void UIWizardImportAppPageSettings::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -497,7 +497,7 @@ void UIWizardImportAppPageBasic2::initializePage()
     QMetaObject::invokeMethod(this, "sltAsyncInit", Qt::QueuedConnection);
 }
 
-bool UIWizardImportAppPageBasic2::validatePage()
+bool UIWizardImportAppPageSettings::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -535,7 +535,7 @@ bool UIWizardImportAppPageBasic2::validatePage()
     return fResult;
 }
 
-void UIWizardImportAppPageBasic2::sltAsyncInit()
+void UIWizardImportAppPageSettings::sltAsyncInit()
 {
     /* If we have file name passed,
      * check if specified file contains valid appliance: */
@@ -568,14 +568,14 @@ void UIWizardImportAppPageBasic2::sltAsyncInit()
         handleApplianceCertificate();
 }
 
-void UIWizardImportAppPageBasic2::sltHandleImportPathEditorChange()
+void UIWizardImportAppPageSettings::sltHandleImportPathEditorChange()
 {
     AssertPtrReturnVoid(m_pApplianceWidget);
     AssertPtrReturnVoid(m_pEditorImportFilePath);
     m_pApplianceWidget->setVirtualSystemBaseFolder(m_pEditorImportFilePath->path());
 }
 
-void UIWizardImportAppPageBasic2::sltHandleMACImportPolicyComboChange()
+void UIWizardImportAppPageSettings::sltHandleMACImportPolicyComboChange()
 {
     /* Update combo tool-tip: */
     updateMACImportPolicyComboToolTip(m_pComboMACImportPolicy);
@@ -584,13 +584,13 @@ void UIWizardImportAppPageBasic2::sltHandleMACImportPolicyComboChange()
     wizard()->setMACAddressImportPolicy(macAddressImportPolicy(m_pComboMACImportPolicy));
 }
 
-void UIWizardImportAppPageBasic2::sltHandleImportHDsAsVDICheckBoxChange()
+void UIWizardImportAppPageSettings::sltHandleImportHDsAsVDICheckBoxChange()
 {
     /* Update wizard fields: */
     wizard()->setImportHDsAsVDI(isImportHDsAsVDI(m_pCheckboxImportHDsAsVDI));
 }
 
-void UIWizardImportAppPageBasic2::handleApplianceCertificate()
+void UIWizardImportAppPageSettings::handleApplianceCertificate()
 {
     /* Handle certificate: */
     CAppliance comAppliance = wizard()->localAppliance();
