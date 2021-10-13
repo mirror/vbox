@@ -677,10 +677,10 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/clonevd/UIWizardCloneVDPathSizePage.h \
 	src/wizards/clonevd/UIWizardCloneVDExpertPage.h \
 	src/wizards/exportappliance/UIWizardExportApp.h \
-	src/wizards/exportappliance/UIWizardExportAppPageBasic1.h \
-	src/wizards/exportappliance/UIWizardExportAppPageBasic2.h \
-	src/wizards/exportappliance/UIWizardExportAppPageBasic3.h \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.h \
+	src/wizards/exportappliance/UIWizardExportAppPageFormat.h \
+	src/wizards/exportappliance/UIWizardExportAppPageSettings.h \
+	src/wizards/exportappliance/UIWizardExportAppPageVMs.h \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.h \
 	src/wizards/importappliance/UIWizardImportApp.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
@@ -1187,10 +1187,10 @@ VirtualBox_SOURCES = \
 	src/wizards/clonevd/UIWizardCloneVDPathSizePage.cpp \
 	src/wizards/clonevd/UIWizardCloneVDExpertPage.cpp \
 	src/wizards/exportappliance/UIWizardExportApp.cpp \
-	src/wizards/exportappliance/UIWizardExportAppPageBasic1.cpp \
-	src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp \
-	src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageFormat.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageSettings.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageVMs.cpp \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \

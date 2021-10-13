@@ -43,15 +43,15 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardExportApp.h"
-#include "UIWizardExportAppPageBasic1.h"
-#include "UIWizardExportAppPageBasic2.h"
-#include "UIWizardExportAppPageBasic3.h"
 #include "UIWizardExportAppPageExpert.h"
+#include "UIWizardExportAppPageFormat.h"
+#include "UIWizardExportAppPageSettings.h"
+#include "UIWizardExportAppPageVMs.h"
 
 /* Namespaces: */
-using namespace UIWizardExportAppPage1;
-using namespace UIWizardExportAppPage2;
-using namespace UIWizardExportAppPage3;
+using namespace UIWizardExportAppFormat;
+using namespace UIWizardExportAppSettings;
+using namespace UIWizardExportAppVMs;
 
 
 /*********************************************************************************************************************************
@@ -427,9 +427,9 @@ void UIWizardExportAppPageExpert::retranslateUi()
     refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
 
     /* Translate tool-box: */
-    m_pToolBox->setPageTitle(0, UIWizardExportApp::tr("Virtual &machines to export"));
-    m_pToolBox->setPageTitle(1, UIWizardExportApp::tr("Virtual &system settings"));
-    m_pToolBox->setPageTitle(2, UIWizardExportApp::tr("Appliance settings"));
+    m_pToolBox->setPageTitle(0, UIWizardExportApp::tr("Virtual &machines"));
+    m_pToolBox->setPageTitle(1, UIWizardExportApp::tr("Format &settings"));
+    m_pToolBox->setPageTitle(2, UIWizardExportApp::tr("&Appliance settings"));
 
     /* Translate File selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
@@ -699,8 +699,8 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     wizard()->setFormatCloudOne(isFormatCloudOne(m_pFormatComboBox));
 
     /* Refresh settings widget state: */
-    UIWizardExportAppPage2::refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
-    UIWizardExportAppPage3::refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());
+    UIWizardExportAppFormat::refreshStackedWidget(m_pSettingsWidget1, wizard()->isFormatCloudOne());
+    UIWizardExportAppSettings::refreshStackedWidget(m_pSettingsWidget2, wizard()->isFormatCloudOne());
 
     /* Update export settings: */
     refreshFileSelectorExtension(m_strFileSelectorExt, m_pFileSelector, wizard()->isFormatCloudOne());

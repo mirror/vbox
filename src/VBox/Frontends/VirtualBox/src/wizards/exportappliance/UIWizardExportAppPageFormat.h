@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardExportAppPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardExportAppPageFormat class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageFormat_h
+#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageFormat_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -59,8 +59,8 @@ enum
     ProfileData_Name = Qt::UserRole + 1
 };
 
-/** Namespace for 2nd basic page of the Export Appliance wizard. */
-namespace UIWizardExportAppPage2
+/** Namespace for Format page of the Export Appliance wizard. */
+namespace UIWizardExportAppFormat
 {
     /** Populates formats. */
     void populateFormats(QIComboBox *pCombo, bool fExportToOCIByDefault);
@@ -134,16 +134,16 @@ namespace UIWizardExportAppPage2
     void updateMACAddressExportPolicyComboToolTip(QIComboBox *pCombo);
 }
 
-/** UINativeWizardPage extension for 2nd basic page of the Export Appliance wizard,
-  * based on UIWizardExportAppPage2 namespace functions. */
-class UIWizardExportAppPageBasic2 : public UINativeWizardPage
+/** UINativeWizardPage extension for Format page of the Export Appliance wizard,
+  * based on UIWizardExportAppFormat namespace functions. */
+class UIWizardExportAppPageFormat : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 2nd basic page. */
-    UIWizardExportAppPageBasic2(bool fExportToOCIByDefault);
+    /** Constructs Format page. */
+    UIWizardExportAppPageFormat(bool fExportToOCIByDefault);
 
 protected:
 
@@ -259,4 +259,4 @@ private:
     QMap<CloudExportMode, QAbstractButton*>  m_exportModeButtons;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageFormat_h */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardExportAppPageBasic1 class implementation.
+ * VBox Qt GUI - UIWizardExportAppPageVMs class implementation.
  */
 
 /*
@@ -25,13 +25,13 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
-#include "UIWizardExportAppPageBasic1.h"
+#include "UIWizardExportAppPageVMs.h"
 
 /* COM includes: */
 #include "CMachine.h"
 
 /* Namespaces: */
-using namespace UIWizardExportAppPage1;
+using namespace UIWizardExportAppVMs;
 
 
 /** QListWidgetItem subclass for Export Appliance wizard VM list. */
@@ -69,10 +69,10 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardExportAppPage1 implementation.                                                                                 *
+*   Class UIWizardExportAppVMs implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-void UIWizardExportAppPage1::populateVMItems(QListWidget *pVMSelector, const QStringList &selectedVMNames)
+void UIWizardExportAppVMs::populateVMItems(QListWidget *pVMSelector, const QStringList &selectedVMNames)
 {
     /* Add all VM items into VM selector: */
     foreach (const CMachine &comMachine, uiCommon().virtualBox().GetMachines())
@@ -120,7 +120,7 @@ void UIWizardExportAppPage1::populateVMItems(QListWidget *pVMSelector, const QSt
     }
 }
 
-void UIWizardExportAppPage1::refreshSavedMachines(QStringList &savedMachines, QListWidget *pVMSelector)
+void UIWizardExportAppVMs::refreshSavedMachines(QStringList &savedMachines, QListWidget *pVMSelector)
 {
     savedMachines.clear();
     foreach (QListWidgetItem *pItem, pVMSelector->selectedItems())
@@ -128,7 +128,7 @@ void UIWizardExportAppPage1::refreshSavedMachines(QStringList &savedMachines, QL
             savedMachines << pItem->text();
 }
 
-QStringList UIWizardExportAppPage1::machineNames(QListWidget *pVMSelector)
+QStringList UIWizardExportAppVMs::machineNames(QListWidget *pVMSelector)
 {
     /* Prepare list: */
     QStringList names;
@@ -139,7 +139,7 @@ QStringList UIWizardExportAppPage1::machineNames(QListWidget *pVMSelector)
     return names;
 }
 
-QList<QUuid> UIWizardExportAppPage1::machineIDs(QListWidget *pVMSelector)
+QList<QUuid> UIWizardExportAppVMs::machineIDs(QListWidget *pVMSelector)
 {
     /* Prepare list: */
     QList<QUuid> ids;
@@ -152,10 +152,10 @@ QList<QUuid> UIWizardExportAppPage1::machineIDs(QListWidget *pVMSelector)
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardExportAppPageBasic1 implementation.                                                                            *
+*   Class UIWizardExportAppPageVMs implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPageBasic1::UIWizardExportAppPageBasic1(const QStringList &selectedVMNames, bool fFastTravelToNextPage)
+UIWizardExportAppPageVMs::UIWizardExportAppPageVMs(const QStringList &selectedVMNames, bool fFastTravelToNextPage)
     : m_selectedVMNames(selectedVMNames)
     , m_fFastTravelToNextPage(fFastTravelToNextPage)
     , m_pLabelMain(0)
@@ -182,18 +182,18 @@ UIWizardExportAppPageBasic1::UIWizardExportAppPageBasic1(const QStringList &sele
 
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,
-            this, &UIWizardExportAppPageBasic1::sltHandleVMItemSelectionChanged);
+            this, &UIWizardExportAppPageVMs::sltHandleVMItemSelectionChanged);
 }
 
-UIWizardExportApp *UIWizardExportAppPageBasic1::wizard() const
+UIWizardExportApp *UIWizardExportAppPageVMs::wizard() const
 {
     return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardExportAppPageBasic1::retranslateUi()
+void UIWizardExportAppPageVMs::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Virtual machines to export"));
+    setTitle(UIWizardExportApp::tr("Virtual machines"));
 
     /* Translate widgets: */
     m_pLabelMain->setText(UIWizardExportApp::tr("<p>Please select the virtual machines that should be added to the appliance. "
@@ -201,7 +201,7 @@ void UIWizardExportAppPageBasic1::retranslateUi()
                                                 "turned off before they can be exported.</p>"));
 }
 
-void UIWizardExportAppPageBasic1::initializePage()
+void UIWizardExportAppPageVMs::initializePage()
 {
     /* Populate VM items: */
     populateVMItems(m_pVMSelector, m_selectedVMNames);
@@ -214,7 +214,7 @@ void UIWizardExportAppPageBasic1::initializePage()
         wizard()->goForward();
 }
 
-bool UIWizardExportAppPageBasic1::isComplete() const
+bool UIWizardExportAppPageVMs::isComplete() const
 {
     /* Initial result: */
     bool fResult = true;
@@ -226,7 +226,7 @@ bool UIWizardExportAppPageBasic1::isComplete() const
     return fResult;
 }
 
-bool UIWizardExportAppPageBasic1::validatePage()
+bool UIWizardExportAppPageVMs::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -241,7 +241,7 @@ bool UIWizardExportAppPageBasic1::validatePage()
     return fResult;
 }
 
-void UIWizardExportAppPageBasic1::sltHandleVMItemSelectionChanged()
+void UIWizardExportAppPageVMs::sltHandleVMItemSelectionChanged()
 {
     /* Update wizard fields: */
     wizard()->setMachineNames(machineNames(m_pVMSelector));

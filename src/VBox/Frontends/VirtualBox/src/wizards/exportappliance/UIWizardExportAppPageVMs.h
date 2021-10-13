@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardExportAppPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardExportAppPageVMs class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageVMs_h
+#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageVMs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -32,8 +32,8 @@ class QListWidget;
 class QIRichTextLabel;
 class UIWizardExportApp;
 
-/** Namespace for 1st basic page of the Export Appliance wizard. */
-namespace UIWizardExportAppPage1
+/** Namespace for VMs page of the Export Appliance wizard. */
+namespace UIWizardExportAppVMs
 {
     /** Populates @a pVMSelector with items on the basis of passed @a selectedVMNames. */
     void populateVMItems(QListWidget *pVMSelector, const QStringList &selectedVMNames);
@@ -47,18 +47,18 @@ namespace UIWizardExportAppPage1
     QList<QUuid> machineIDs(QListWidget *pVMSelector);
 }
 
-/** UINativeWizardPage extension for 1st basic page of the Export Appliance wizard,
-  * based on UIWizardExportAppPage1 namespace functions. */
-class UIWizardExportAppPageBasic1 : public UINativeWizardPage
+/** UINativeWizardPage extension for VMs page of the Export Appliance wizard,
+  * based on UIWizardExportAppVMs namespace functions. */
+class UIWizardExportAppPageVMs : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 1st basic page.
+    /** Constructs VMs page.
       * @param  selectedVMNames        Brings the list of selected VM names.
       * @param  fFastTravelToNextPage  Brings whether we should fast-travel to next page. */
-    UIWizardExportAppPageBasic1(const QStringList &selectedVMNames, bool fFastTravelToNextPage);
+    UIWizardExportAppPageVMs(const QStringList &selectedVMNames, bool fFastTravelToNextPage);
 
 protected:
 
@@ -96,4 +96,4 @@ private:
     QListWidget *m_pVMSelector;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageVMs_h */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardExportAppPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardExportAppPageFormat class implementation.
  */
 
 /*
@@ -37,21 +37,21 @@
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardExportApp.h"
-#include "UIWizardExportAppPageBasic2.h"
+#include "UIWizardExportAppPageFormat.h"
 
 /* COM includes: */
 #include "CMachine.h"
 #include "CSystemProperties.h"
 
 /* Namespaces: */
-using namespace UIWizardExportAppPage2;
+using namespace UIWizardExportAppFormat;
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardExportAppPage2 implementation.                                                                                 *
+*   Class UIWizardExportAppFormat implementation.                                                                                *
 *********************************************************************************************************************************/
 
-void UIWizardExportAppPage2::populateFormats(QIComboBox *pCombo, bool fExportToOCIByDefault)
+void UIWizardExportAppFormat::populateFormats(QIComboBox *pCombo, bool fExportToOCIByDefault)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -128,7 +128,7 @@ void UIWizardExportAppPage2::populateFormats(QIComboBox *pCombo, bool fExportToO
     pCombo->blockSignals(false);
 }
 
-void UIWizardExportAppPage2::populateMACAddressPolicies(QIComboBox *pCombo)
+void UIWizardExportAppFormat::populateMACAddressPolicies(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -188,7 +188,7 @@ void UIWizardExportAppPage2::populateMACAddressPolicies(QIComboBox *pCombo)
     pCombo->blockSignals(false);
 }
 
-QString UIWizardExportAppPage2::format(QIComboBox *pCombo)
+QString UIWizardExportAppFormat::format(QIComboBox *pCombo)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, QString());
@@ -197,7 +197,7 @@ QString UIWizardExportAppPage2::format(QIComboBox *pCombo)
     return pCombo->currentData(FormatData_ShortName).toString();
 }
 
-bool UIWizardExportAppPage2::isFormatCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
+bool UIWizardExportAppFormat::isFormatCloudOne(QIComboBox *pCombo, int iIndex /* = -1 */)
 {
     /* Sanity check: */
     AssertPtrReturn(pCombo, false);
@@ -210,16 +210,16 @@ bool UIWizardExportAppPage2::isFormatCloudOne(QIComboBox *pCombo, int iIndex /* 
     return pCombo->itemData(iIndex, FormatData_IsItCloudFormat).toBool();
 }
 
-void UIWizardExportAppPage2::refreshStackedWidget(QStackedWidget *pStackedWidget, bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshStackedWidget(QStackedWidget *pStackedWidget, bool fIsFormatCloudOne)
 {
     /* Update stack appearance according to chosen format: */
     pStackedWidget->setCurrentIndex((int)fIsFormatCloudOne);
 }
 
-void UIWizardExportAppPage2::refreshFileSelectorName(QString &strFileSelectorName,
-                                                     const QStringList &machineNames,
-                                                     const QString &strDefaultApplianceName,
-                                                     bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshFileSelectorName(QString &strFileSelectorName,
+                                                      const QStringList &machineNames,
+                                                      const QString &strDefaultApplianceName,
+                                                      bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
@@ -239,9 +239,9 @@ void UIWizardExportAppPage2::refreshFileSelectorName(QString &strFileSelectorNam
     }
 }
 
-void UIWizardExportAppPage2::refreshFileSelectorExtension(QString &strFileSelectorExt,
-                                                          UIEmptyFilePathSelector *pFileSelector,
-                                                          bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshFileSelectorExtension(QString &strFileSelectorExt,
+                                                           UIEmptyFilePathSelector *pFileSelector,
+                                                           bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
@@ -264,10 +264,10 @@ void UIWizardExportAppPage2::refreshFileSelectorExtension(QString &strFileSelect
     }
 }
 
-void UIWizardExportAppPage2::refreshFileSelectorPath(UIEmptyFilePathSelector *pFileSelector,
-                                                     const QString &strFileSelectorName,
-                                                     const QString &strFileSelectorExt,
-                                                     bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshFileSelectorPath(UIEmptyFilePathSelector *pFileSelector,
+                                                      const QString &strFileSelectorName,
+                                                      const QString &strFileSelectorExt,
+                                                      bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
@@ -286,8 +286,8 @@ void UIWizardExportAppPage2::refreshFileSelectorPath(UIEmptyFilePathSelector *pF
     }
 }
 
-void UIWizardExportAppPage2::refreshManifestCheckBoxAccess(QCheckBox *pCheckBox,
-                                                           bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshManifestCheckBoxAccess(QCheckBox *pCheckBox,
+                                                            bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
@@ -305,8 +305,8 @@ void UIWizardExportAppPage2::refreshManifestCheckBoxAccess(QCheckBox *pCheckBox,
     }
 }
 
-void UIWizardExportAppPage2::refreshIncludeISOsCheckBoxAccess(QCheckBox *pCheckBox,
-                                                              bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshIncludeISOsCheckBoxAccess(QCheckBox *pCheckBox,
+                                                               bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
@@ -323,9 +323,9 @@ void UIWizardExportAppPage2::refreshIncludeISOsCheckBoxAccess(QCheckBox *pCheckB
     }
 }
 
-void UIWizardExportAppPage2::refreshLocalStuff(CAppliance &comLocalAppliance,
-                                               const QList<QUuid> &machineIDs,
-                                               const QString &strUri)
+void UIWizardExportAppFormat::refreshLocalStuff(CAppliance &comLocalAppliance,
+                                                const QList<QUuid> &machineIDs,
+                                                const QString &strUri)
 {
     /* Clear stuff: */
     comLocalAppliance = CAppliance();
@@ -364,9 +364,9 @@ void UIWizardExportAppPage2::refreshLocalStuff(CAppliance &comLocalAppliance,
     }
 }
 
-void UIWizardExportAppPage2::refreshProfileCombo(QIComboBox *pCombo,
-                                                 const QString &strFormat,
-                                                 bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshProfileCombo(QIComboBox *pCombo,
+                                                  const QString &strFormat,
+                                                  bool fIsFormatCloudOne)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
@@ -436,10 +436,10 @@ void UIWizardExportAppPage2::refreshProfileCombo(QIComboBox *pCombo,
     }
 }
 
-void UIWizardExportAppPage2::refreshCloudProfile(CCloudProfile &comCloudProfile,
-                                                 const QString &strShortProviderName,
-                                                 const QString &strProfileName,
-                                                 bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshCloudProfile(CCloudProfile &comCloudProfile,
+                                                  const QString &strShortProviderName,
+                                                  const QString &strProfileName,
+                                                  bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
@@ -449,8 +449,8 @@ void UIWizardExportAppPage2::refreshCloudProfile(CCloudProfile &comCloudProfile,
         comCloudProfile = CCloudProfile();
 }
 
-void UIWizardExportAppPage2::refreshCloudExportMode(const QMap<CloudExportMode, QAbstractButton*> &radios,
-                                                    bool fIsFormatCloudOne)
+void UIWizardExportAppFormat::refreshCloudExportMode(const QMap<CloudExportMode, QAbstractButton*> &radios,
+                                                     bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
@@ -473,14 +473,14 @@ void UIWizardExportAppPage2::refreshCloudExportMode(const QMap<CloudExportMode, 
     }
 }
 
-void UIWizardExportAppPage2::refreshCloudStuff(CAppliance &comCloudAppliance,
-                                               CCloudClient &comCloudClient,
-                                               CVirtualSystemDescription &comCloudVsd,
-                                               CVirtualSystemDescriptionForm &comCloudVsdExportForm,
-                                               const CCloudProfile &comCloudProfile,
-                                               const QList<QUuid> &machineIDs,
-                                               const QString &strUri,
-                                               const CloudExportMode enmCloudExportMode)
+void UIWizardExportAppFormat::refreshCloudStuff(CAppliance &comCloudAppliance,
+                                                CCloudClient &comCloudClient,
+                                                CVirtualSystemDescription &comCloudVsd,
+                                                CVirtualSystemDescriptionForm &comCloudVsdExportForm,
+                                                const CCloudProfile &comCloudProfile,
+                                                const QList<QUuid> &machineIDs,
+                                                const QString &strUri,
+                                                const CloudExportMode enmCloudExportMode)
 {
     /* Clear stuff: */
     comCloudAppliance = CAppliance();
@@ -563,12 +563,12 @@ void UIWizardExportAppPage2::refreshCloudStuff(CAppliance &comCloudAppliance,
     comCloudVsdExportForm = comVsdExportForm;
 }
 
-QString UIWizardExportAppPage2::profileName(QIComboBox *pCombo)
+QString UIWizardExportAppFormat::profileName(QIComboBox *pCombo)
 {
     return pCombo->currentData(ProfileData_Name).toString();
 }
 
-void UIWizardExportAppPage2::updateFormatComboToolTip(QIComboBox *pCombo)
+void UIWizardExportAppFormat::updateFormatComboToolTip(QIComboBox *pCombo)
 {
     AssertPtrReturnVoid(pCombo);
     QString strCurrentToolTip;
@@ -580,7 +580,7 @@ void UIWizardExportAppPage2::updateFormatComboToolTip(QIComboBox *pCombo)
     pCombo->setToolTip(strCurrentToolTip);
 }
 
-void UIWizardExportAppPage2::updateMACAddressExportPolicyComboToolTip(QIComboBox *pCombo)
+void UIWizardExportAppFormat::updateMACAddressExportPolicyComboToolTip(QIComboBox *pCombo)
 {
     AssertPtrReturnVoid(pCombo);
     QString strCurrentToolTip;
@@ -594,10 +594,10 @@ void UIWizardExportAppPage2::updateMACAddressExportPolicyComboToolTip(QIComboBox
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardExportAppPageBasic2 implementation.                                                                            *
+*   Class UIWizardExportAppPageFormat implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefault)
+UIWizardExportAppPageFormat::UIWizardExportAppPageFormat(bool fExportToOCIByDefault)
     : m_fExportToOCIByDefault(fExportToOCIByDefault)
     , m_pLabelFormat(0)
     , m_pLabelSettings(0)
@@ -848,36 +848,36 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
 
     /* Setup connections: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileRegistered,
-            this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
+            this, &UIWizardExportAppPageFormat::sltHandleFormatComboChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigCloudProfileChanged,
-            this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
+            this, &UIWizardExportAppPageFormat::sltHandleFormatComboChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
-            this, &UIWizardExportAppPageBasic2::sltHandleFileSelectorChange);
+            this, &UIWizardExportAppPageFormat::sltHandleFileSelectorChange);
     connect(m_pFormatComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
+            this, &UIWizardExportAppPageFormat::sltHandleFormatComboChange);
     connect(m_pMACComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange);
+            this, &UIWizardExportAppPageFormat::sltHandleMACAddressExportPolicyComboChange);
     connect(m_pManifestCheckbox, &QCheckBox::stateChanged,
-            this, &UIWizardExportAppPageBasic2::sltHandleManifestCheckBoxChange);
+            this, &UIWizardExportAppPageFormat::sltHandleManifestCheckBoxChange);
     connect(m_pIncludeISOsCheckbox, &QCheckBox::stateChanged,
-            this, &UIWizardExportAppPageBasic2::sltHandleIncludeISOsCheckBoxChange);
+            this, &UIWizardExportAppPageFormat::sltHandleIncludeISOsCheckBoxChange);
     connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UIWizardExportAppPageBasic2::sltHandleProfileComboChange);
+            this, &UIWizardExportAppPageFormat::sltHandleProfileComboChange);
     connect(m_pExportModeButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*, bool)>(&QButtonGroup::buttonToggled),
-            this, &UIWizardExportAppPageBasic2::sltHandleRadioButtonToggled);
+            this, &UIWizardExportAppPageFormat::sltHandleRadioButtonToggled);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
-            this, &UIWizardExportAppPageBasic2::sltHandleProfileButtonClick);
+            this, &UIWizardExportAppPageFormat::sltHandleProfileButtonClick);
 }
 
-UIWizardExportApp *UIWizardExportAppPageBasic2::wizard() const
+UIWizardExportApp *UIWizardExportAppPageFormat::wizard() const
 {
     return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardExportAppPageBasic2::retranslateUi()
+void UIWizardExportAppPageFormat::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance settings"));
+    setTitle(UIWizardExportApp::tr("Format settings"));
 
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
@@ -999,7 +999,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     updateMACAddressExportPolicyComboToolTip(m_pMACComboBox);
 }
 
-void UIWizardExportAppPageBasic2::initializePage()
+void UIWizardExportAppPageFormat::initializePage()
 {
     /* Populate formats: */
     populateFormats(m_pFormatComboBox, m_fExportToOCIByDefault);
@@ -1018,7 +1018,7 @@ void UIWizardExportAppPageBasic2::initializePage()
     QMetaObject::invokeMethod(this, "sltHandleFormatComboChange", Qt::QueuedConnection);
 }
 
-bool UIWizardExportAppPageBasic2::isComplete() const
+bool UIWizardExportAppPageFormat::isComplete() const
 {
     /* Initial result: */
     bool fResult = true;
@@ -1033,7 +1033,7 @@ bool UIWizardExportAppPageBasic2::isComplete() const
     return fResult;
 }
 
-bool UIWizardExportAppPageBasic2::validatePage()
+bool UIWizardExportAppPageFormat::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -1061,7 +1061,7 @@ bool UIWizardExportAppPageBasic2::validatePage()
     return fResult;
 }
 
-void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
+void UIWizardExportAppPageFormat::sltHandleFormatComboChange()
 {
     /* Update combo tool-tip: */
     updateFormatComboToolTip(m_pFormatComboBox);
@@ -1088,7 +1088,7 @@ void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleFileSelectorChange()
+void UIWizardExportAppPageFormat::sltHandleFileSelectorChange()
 {
     /* Skip empty paths: */
     if (m_pFileSelector->path().isEmpty())
@@ -1099,26 +1099,26 @@ void UIWizardExportAppPageBasic2::sltHandleFileSelectorChange()
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleMACAddressExportPolicyComboChange()
+void UIWizardExportAppPageFormat::sltHandleMACAddressExportPolicyComboChange()
 {
     updateMACAddressExportPolicyComboToolTip(m_pMACComboBox);
     wizard()->setMACAddressExportPolicy(m_pMACComboBox->currentData().value<MACAddressExportPolicy>());
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleManifestCheckBoxChange()
+void UIWizardExportAppPageFormat::sltHandleManifestCheckBoxChange()
 {
     wizard()->setManifestSelected(m_pManifestCheckbox->isChecked());
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleIncludeISOsCheckBoxChange()
+void UIWizardExportAppPageFormat::sltHandleIncludeISOsCheckBoxChange()
 {
     wizard()->setIncludeISOsSelected(m_pIncludeISOsCheckbox->isChecked());
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleProfileComboChange()
+void UIWizardExportAppPageFormat::sltHandleProfileComboChange()
 {
     /* Update wizard fields: */
     wizard()->setProfileName(profileName(m_pProfileComboBox));
@@ -1133,7 +1133,7 @@ void UIWizardExportAppPageBasic2::sltHandleProfileComboChange()
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleRadioButtonToggled(QAbstractButton *pButton, bool fToggled)
+void UIWizardExportAppPageFormat::sltHandleRadioButtonToggled(QAbstractButton *pButton, bool fToggled)
 {
     /* Handle checked buttons only: */
     if (!fToggled)
@@ -1144,14 +1144,14 @@ void UIWizardExportAppPageBasic2::sltHandleRadioButtonToggled(QAbstractButton *p
     emit completeChanged();
 }
 
-void UIWizardExportAppPageBasic2::sltHandleProfileButtonClick()
+void UIWizardExportAppPageFormat::sltHandleProfileButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
 }
 
-void UIWizardExportAppPageBasic2::updateLocalStuff()
+void UIWizardExportAppPageFormat::updateLocalStuff()
 {
     /* Create appliance: */
     CAppliance comAppliance;
@@ -1159,7 +1159,7 @@ void UIWizardExportAppPageBasic2::updateLocalStuff()
     wizard()->setLocalAppliance(comAppliance);
 }
 
-void UIWizardExportAppPageBasic2::updateCloudStuff()
+void UIWizardExportAppPageFormat::updateCloudStuff()
 {
     /* Create appliance, client, VSD and VSD export form: */
     CAppliance comAppliance;

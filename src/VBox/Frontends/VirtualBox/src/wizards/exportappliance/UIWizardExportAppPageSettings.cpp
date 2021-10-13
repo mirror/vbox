@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardExportAppPageBasic3 class implementation.
+ * VBox Qt GUI - UIWizardExportAppPageSettings class implementation.
  */
 
 /*
@@ -27,30 +27,30 @@
 #include "UIFormEditorWidget.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
-#include "UIWizardExportAppPageBasic3.h"
+#include "UIWizardExportAppPageSettings.h"
 
 /* COM includes: */
 #include "CMachine.h"
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Namespaces: */
-using namespace UIWizardExportAppPage3;
+using namespace UIWizardExportAppSettings;
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardExportAppPage3 implementation.                                                                                 *
+*   Class UIWizardExportAppSettings implementation.                                                                              *
 *********************************************************************************************************************************/
 
-void UIWizardExportAppPage3::refreshStackedWidget(QStackedWidget *pStackedWidget,
-                                                  bool fIsFormatCloudOne)
+void UIWizardExportAppSettings::refreshStackedWidget(QStackedWidget *pStackedWidget,
+                                                     bool fIsFormatCloudOne)
 {
     /* Update stack appearance according to chosen format: */
     pStackedWidget->setCurrentIndex((int)fIsFormatCloudOne);
 }
 
-void UIWizardExportAppPage3::refreshApplianceSettingsWidget(UIApplianceExportEditorWidget *pApplianceWidget,
-                                                            const CAppliance &comAppliance,
-                                                            bool fIsFormatCloudOne)
+void UIWizardExportAppSettings::refreshApplianceSettingsWidget(UIApplianceExportEditorWidget *pApplianceWidget,
+                                                               const CAppliance &comAppliance,
+                                                               bool fIsFormatCloudOne)
 {
     /* Nothing for cloud case? */
     if (fIsFormatCloudOne)
@@ -63,9 +63,9 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget(UIApplianceExportEdi
     pApplianceWidget->setAppliance(comAppliance);
 }
 
-void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
-                                                        const CVirtualSystemDescriptionForm &comVsdForm,
-                                                        bool fIsFormatCloudOne)
+void UIWizardExportAppSettings::refreshFormPropertiesTable(UIFormEditorWidget *pFormEditor,
+                                                           const CVirtualSystemDescriptionForm &comVsdForm,
+                                                           bool fIsFormatCloudOne)
 {
     /* Nothing for local case? */
     if (!fIsFormatCloudOne)
@@ -80,10 +80,10 @@ void UIWizardExportAppPage3::refreshFormPropertiesTable(UIFormEditorWidget *pFor
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardExportAppPageBasic3 implementation.                                                                            *
+*   Class UIWizardExportAppPageSettings implementation.                                                                          *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
+UIWizardExportAppPageSettings::UIWizardExportAppPageSettings()
     : m_pLabel(0)
     , m_pSettingsWidget2(0)
     , m_pApplianceWidget(0)
@@ -152,15 +152,15 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     }
 }
 
-UIWizardExportApp *UIWizardExportAppPageBasic3::wizard() const
+UIWizardExportApp *UIWizardExportAppPageSettings::wizard() const
 {
     return qobject_cast<UIWizardExportApp*>(UINativeWizardPage::wizard());
 }
 
-void UIWizardExportAppPageBasic3::retranslateUi()
+void UIWizardExportAppPageSettings::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Virtual system settings"));
+    setTitle(UIWizardExportApp::tr("Appliance settings"));
 
     /* Translate label: */
     if (wizard()->isFormatCloudOne())
@@ -172,7 +172,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
                                                 "appliance.  You can change it by double clicking on individual lines."));
 }
 
-void UIWizardExportAppPageBasic3::initializePage()
+void UIWizardExportAppPageSettings::initializePage()
 {
     /* Translate page: */
     retranslateUi();
@@ -190,7 +190,7 @@ void UIWizardExportAppPageBasic3::initializePage()
         m_pApplianceWidget->setFocus();
 }
 
-bool UIWizardExportAppPageBasic3::validatePage()
+bool UIWizardExportAppPageSettings::validatePage()
 {
     /* Initial result: */
     bool fResult = true;

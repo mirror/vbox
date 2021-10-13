@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardExportAppPageBasic3 class declaration.
+ * VBox Qt GUI - UIWizardExportAppPageSettings class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h
-#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h
+#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageSettings_h
+#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageSettings_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -38,8 +38,8 @@ class UIApplianceExportEditorWidget;
 class UIFormEditorWidget;
 class UIWizardExportApp;
 
-/** Namespace for 3rd basic page of the Export Appliance wizard. */
-namespace UIWizardExportAppPage3
+/** Namespace for Settings page of the Export Appliance wizard. */
+namespace UIWizardExportAppSettings
 {
     /** Refresh stacked widget. */
     void refreshStackedWidget(QStackedWidget *pStackedWidget,
@@ -55,16 +55,16 @@ namespace UIWizardExportAppPage3
                                     bool fIsFormatCloudOne);
 }
 
-/** UINativeWizardPage extension for 3rd basic page of the Export Appliance wizard,
-  * based on UIWizardExportAppPage3 namespace functions. */
-class UIWizardExportAppPageBasic3 : public UINativeWizardPage
+/** UINativeWizardPage extension for Settings page of the Export Appliance wizard,
+  * based on UIWizardExportAppSettings namespace functions. */
+class UIWizardExportAppPageSettings : public UINativeWizardPage
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs 3rd basic page. */
-    UIWizardExportAppPageBasic3();
+    /** Constructs Settings page. */
+    UIWizardExportAppPageSettings();
 
 protected:
 
@@ -97,4 +97,4 @@ private:
     bool  m_fLaunching;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageSettings_h */

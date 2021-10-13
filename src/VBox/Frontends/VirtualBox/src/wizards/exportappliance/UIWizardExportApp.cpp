@@ -27,10 +27,10 @@
 #include "UINotificationCenter.h"
 #include "UIProgressObject.h"
 #include "UIWizardExportApp.h"
-#include "UIWizardExportAppPageBasic1.h"
-#include "UIWizardExportAppPageBasic2.h"
-#include "UIWizardExportAppPageBasic3.h"
 #include "UIWizardExportAppPageExpert.h"
+#include "UIWizardExportAppPageFormat.h"
+#include "UIWizardExportAppPageSettings.h"
+#include "UIWizardExportAppPageVMs.h"
 
 /* COM includes: */
 #include "CAppliance.h"
@@ -442,9 +442,9 @@ void UIWizardExportApp::populatePages()
     {
         case WizardMode_Basic:
         {
-            addPage(new UIWizardExportAppPageBasic1(m_predefinedMachineNames, m_fFastTraverToExportOCI));
-            addPage(new UIWizardExportAppPageBasic2(m_fFastTraverToExportOCI));
-            addPage(new UIWizardExportAppPageBasic3);
+            addPage(new UIWizardExportAppPageVMs(m_predefinedMachineNames, m_fFastTraverToExportOCI));
+            addPage(new UIWizardExportAppPageFormat(m_fFastTraverToExportOCI));
+            addPage(new UIWizardExportAppPageSettings);
             break;
         }
         case WizardMode_Expert:
