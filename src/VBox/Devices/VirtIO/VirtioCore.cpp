@@ -1455,7 +1455,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortIn(PPDMDEVINS pDevIns, void 
     else if (offPort >= sizeof(VIRTIO_LEGACY_PCI_COMMON_CFG_T))
     {
         STAM_PROFILE_ADV_STOP(&pVirtio->CTX_SUFF(StatRead), a);
-#if IN_RING3
+#ifdef IN_RING3
         /* Access device-specific configuration */
         PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
         int rc = pVirtioCC->pfnDevCapRead(pDevIns, offPort - sizeof(VIRTIO_LEGACY_PCI_COMMON_CFG_T), pv, cb);
@@ -1630,7 +1630,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortOut(PPDMDEVINS pDevIns, void
     }
     else if (offPort >= sizeof(VIRTIO_LEGACY_PCI_COMMON_CFG_T))
     {
-#if IN_RING3
+#ifdef IN_RING3
 
         /* Access device-specific configuration */
         PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
