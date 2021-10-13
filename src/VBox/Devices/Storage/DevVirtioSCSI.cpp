@@ -357,7 +357,7 @@ typedef VIRTIOSCSIWORKER *PVIRTIOSCSIWORKER;
 typedef struct VIRTIOSCSIWORKERR3
 {
     R3PTRTYPE(PPDMTHREAD)           pThread;                    /**< pointer to worker thread's handle                 */
-    uint16_t                        auRedoDescs[VIRTQ_MAX_ENTRIES];/**< List of previously suspended reqs to re-submit    */
+    uint16_t                        auRedoDescs[VIRTQ_SIZE];/**< List of previously suspended reqs to re-submit    */
     uint16_t                        cRedoDescs;                 /**< Number of redo desc chain head desc idxes in list */
 } VIRTIOSCSIWORKERR3;
 /** Pointer to a VirtIO SCSI worker. */
@@ -456,13 +456,13 @@ typedef struct VIRTIOSCSI
     /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
     uint32_t                        fHasT10pi;
 
-    /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
+    /** True if VIRTIO_SCSI_F_HOTPLUG was negotiated */
     uint32_t                        fHasHotplug;
 
-    /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
+    /** True if VIRTIO_SCSI_F_INOUT was negotiated */
     uint32_t                        fHasInOutBufs;
 
-    /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
+    /** True if VIRTIO_SCSI_F_CHANGE was negotiated */
     uint32_t                        fHasLunChange;
 
     /** True if in the process of resetting */
@@ -558,10 +558,10 @@ typedef struct VIRTIOSCSIREQ
     PVIRTIOSCSITARGET              pTarget;                     /**< Target                                            */
     uint16_t                       uVirtqNbr;                   /**< Index of queue this request arrived on            */
     PVIRTQBUF                      pVirtqBuf;                   /**< Prepared desc chain pulled from virtq avail ring  */
-    size_t                         cbDataIn;                    /**< size of dataout buffer                            */
+    size_t                         cbDataIn;                    /**< size of datain buffer                             */
     size_t                         cbDataOut;                   /**< size of dataout buffer                            */
     uint16_t                       uDataInOff;                  /**< Fixed size of respHdr + sense (precede datain)    */
-    uint16_t                       uDataOutOff;                 /**< Fixed size of respHdr + sense (precede datain)    */
+    uint16_t                       uDataOutOff;                 /**< Fixed size of reqhdr + cdb (precede dataout)      */
     uint32_t                       cbSenseAlloc;                /**< Size of sense buffer                              */
     size_t                         cbSenseLen;                  /**< Receives \# bytes written into sense buffer       */
     uint8_t                       *pbSense;                     /**< Pointer to R3 sense buffer                        */
@@ -827,7 +827,7 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
 
     RTSGSEG aReqSegs[2];
 
-    /* Segment #1: Request header*/
+    /* Segment #1: Response header*/
     aReqSegs[0].pvSeg = pRespHdr;
     aReqSegs[0].cbSeg = sizeof(*pRespHdr);
 
@@ -1163,7 +1163,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
      * it on the stack.
      */
     size_t const cbReqHdr = sizeof(REQ_CMD_HDR_T) + cbCdb;
-    AssertReturn(pVirtqBuf->cbPhysSend >= cbReqHdr, VERR_INVALID_PARAMETER);
+    AssertReturn(pVirtqBuf && pVirtqBuf->cbPhysSend >= cbReqHdr, VERR_INVALID_PARAMETER);
 
     AssertCompile(VIRTIOSCSI_CDB_SIZE_MAX < 4096);
     union
@@ -1713,7 +1713,7 @@ static DECLCALLBACK(void) virtioScsiR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIO
 
         /*
          * BIOS may change these values. When the OS comes up, and KVM driver accessed
-         * through the Windows, assumes they are the default size. So as per the VirtIO 1.0 spec,
+         * through Windows, it assumes they are the default size. So as per the VirtIO 1.0 spec,
          * 5.6.4, these device configuration values must be set to default upon device reset.
          */
         pThis->virtioScsiConfig.uSenseSize = VIRTIOSCSI_SENSE_SIZE_DEFAULT;
@@ -1957,10 +1957,10 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
         uint16_t cReqsRedo;
         rc = pHlp->pfnSSMGetU16(pSSM, &cReqsRedo);
         AssertRCReturn(rc, rc);
-        AssertReturn(cReqsRedo < VIRTQ_MAX_ENTRIES,
+        AssertReturn(cReqsRedo < VIRTQ_SIZE,
                      pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
                                               N_("Bad count of I/O transactions to re-do in saved state (%#x, max %#x - 1)"),
-                                              cReqsRedo, VIRTQ_MAX_ENTRIES));
+                                              cReqsRedo, VIRTQ_SIZE));
 
         for (uint16_t uVirtqNbr = VIRTQ_REQ_BASE; uVirtqNbr < VIRTIOSCSI_VIRTQ_CNT; uVirtqNbr++)
         {
@@ -1981,14 +1981,14 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
             uint16_t idxHead;
             rc = pHlp->pfnSSMGetU16(pSSM, &idxHead);
             AssertRCReturn(rc, rc);
-            AssertReturn(idxHead < VIRTQ_MAX_ENTRIES,
+            AssertReturn(idxHead < VIRTQ_SIZE,
                          pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
                                                   N_("Bad queue element index for re-do in saved state (%#x, max %#x)"),
-                                                  idxHead, VIRTQ_MAX_ENTRIES - 1));
+                                                  idxHead, VIRTQ_SIZE - 1));
 
             PVIRTIOSCSIWORKERR3 pWorkerR3 = &pThisCC->aWorkers[uVirtqNbr];
             pWorkerR3->auRedoDescs[pWorkerR3->cRedoDescs++] = idxHead;
-            pWorkerR3->cRedoDescs %= VIRTQ_MAX_ENTRIES;
+            pWorkerR3->cRedoDescs %= VIRTQ_SIZE;
         }
     }
 

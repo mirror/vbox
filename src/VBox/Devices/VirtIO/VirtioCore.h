@@ -24,6 +24,7 @@
 
 #include <iprt/ctype.h>
 #include <iprt/sg.h>
+#include <iprt/types.h>
 
 #ifdef LOG_ENABLED
 # define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) \
@@ -47,11 +48,21 @@ typedef struct VIRTIOCORERC *PVIRTIOCORERC;
 typedef CTX_SUFF(PVIRTIOCORE) PVIRTIOCORECC;
 
 #define VIRTIO_MAX_VIRTQ_NAME_SIZE          32                   /**< Maximum length of a queue name           */
-#define VIRTQ_MAX_ENTRIES                   1024                 /**< Max size (# desc elements) of a virtq    */
+#define VIRTQ_SIZE                        1024                   /**< Max size (# entries) of a virtq          */
 #define VIRTQ_MAX_COUNT                     24                   /**< Max queues we allow guest to create      */
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
+#define VIRTIO_REGION_LEGACY_IO             0                    /**< BAR for VirtIO legacy drivers MBZ        */
 #define VIRTIO_REGION_PCI_CAP               2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
 #define VIRTIO_REGION_MSIX_CAP              0                    /**< Bar for MSI-X handling                   */
+#define VIRTIO_PAGE_SIZE                 4096                    /**< Page size used by VirtIO specification   */
+
+
+/* Note: The VirtIO specification, particularly rev. 0.95, and clarified in rev 1.0 for transitional devices,
+         says the page sized used for Queue Size calculations is usually 4096 bytes, but dependent on the
+         the transport. In an appendix of the 0.95 spec, the 'mmio device', which has not been
+         implemented by VBox legacy device in VirtualBox, says guest must report the page size. For now
+         will set page size to a static 4096 based on the original VBox legacy VirtIO implementation which
+         tied it to PAGE_SIZE which appears to work (or at least good enough for most practical purposes)      */
 
 
 /** The following virtioCoreGCPhysChain*() functions mimic the functionality of the related RT s/g functions,
@@ -106,8 +117,8 @@ typedef struct VIRTQBUF
      * @{ */
     VIRTIOSGBUF         SgBufIn;
     VIRTIOSGBUF         SgBufOut;
-    VIRTIOSGSEG         aSegsIn[VIRTQ_MAX_ENTRIES];
-    VIRTIOSGSEG         aSegsOut[VIRTQ_MAX_ENTRIES];
+    VIRTIOSGSEG         aSegsIn[VIRTQ_SIZE];
+    VIRTIOSGSEG         aSegsOut[VIRTQ_SIZE];
     /** @} */
 } VIRTQBUF_T;
 
@@ -128,18 +139,31 @@ typedef struct VIRTIOPCIPARAMS
     uint16_t  uInterruptPin;                                     /**< PCI Cfg Interrupt pin                     */
 } VIRTIOPCIPARAMS, *PVIRTIOPCIPARAMS;
 
-#define VIRTIO_F_VERSION_1                  RT_BIT_64(32)        /**< Required feature bit for 1.0 devices      */
+/* Virtio Platform Indepdented Reserved Feature Bits (see 1.1 specification section 6) */
+
+#define VIRTIO_F_NOTIFY_ON_EMPTY            RT_BIT_64(24)        /**< Legacy feature: Force intr if no AVAIL    */
+#define VIRTIO_F_ANY_LAYOUT                 RT_BIT_64(27)        /**< Doc bug: Goes under two names in spec     */
 #define VIRTIO_F_INDIRECT_DESC              RT_BIT_64(28)        /**< Allow descs to point to list of descs     */
-#define VIRTIO_F_EVENT_IDX                  RT_BIT_64(29)        /**< Allow notification disable for n elems    */
 #define VIRTIO_F_RING_INDIRECT_DESC         RT_BIT_64(28)        /**< Doc bug: Goes under two names in spec     */
+#define VIRTIO_F_EVENT_IDX                  RT_BIT_64(29)        /**< Allow notification disable for n elems    */
 #define VIRTIO_F_RING_EVENT_IDX             RT_BIT_64(29)        /**< Doc bug: Goes under two names in spec     */
+#define VIRTIO_F_BAD_FEATURE                RT_BIT_64(30)        /**< QEMU kludge.  UNUSED as of >= VirtIO 1.0  */
+#define VIRTIO_F_VERSION_1                  RT_BIT_64(32)        /**< Required feature bit for 1.0 devices      */
+#define VIRTIO_F_ACCESS_PLATFORM            RT_BIT_64(33)        /**< Funky guest mem access   (VirtIO 1.1 NYI) */
+#define VIRTIO_F_RING_PACKED                RT_BIT_64(34)        /**< Packed Queue Layout      (VirtIO 1.1 NYI) */
+#define VIRTIO_F_IN_ORDER                   RT_BIT_64(35)        /**< Honor guest buf order    (VirtIO 1.1 NYI) */
+#define VIRTIO_F_ORDER_PLATFORM             RT_BIT_64(36)        /**< Host mem access honored  (VirtIO 1.1 NYI) */
+#define VIRTIO_F_SR_IOV                     RT_BIT_64(37)        /**< Dev Single Root I/O virt (VirtIO 1.1 NYI) */
+#define VIRTIO_F_NOTIFICAITON_DATA          RT_BIT_64(38)        /**< Driver passes extra data (VirtIO 1.1 NYI) */
 
 #define VIRTIO_DEV_INDEPENDENT_FEATURES_OFFERED ( 0 )            /**< TBD: Add VIRTIO_F_INDIRECT_DESC           */
+#define VIRTIO_DEV_INDEPENDENT_LEGACY_FEATURES_OFFERED ( 0 )     /**< Only offered to legacy drivers            */
 
 #define VIRTIO_ISR_VIRTQ_INTERRUPT           RT_BIT_32(0)        /**< Virtq interrupt bit of ISR register       */
 #define VIRTIO_ISR_DEVICE_CONFIG             RT_BIT_32(1)        /**< Device configuration changed bit of ISR   */
+#define DEVICE_PCI_NETWORK_SUBSYSTEM                    1        /**< Network Card, per VirtIO legacy spec.     */
 #define DEVICE_PCI_VENDOR_ID_VIRTIO                0x1AF4        /**< Guest driver locates dev via (mandatory)  */
-#define DEVICE_PCI_REVISION_ID_VIRTIO                   1        /**< VirtIO 1.0 non-transitional drivers >= 1  */
+#define DEVICE_PCI_REVISION_ID_VIRTIO                   0        /**< VirtIO Modern Transitional driver rev MBZ */
 
 /** Reserved (*negotiated*) Feature Bits (e.g. device independent features, VirtIO 1.0 spec,section 6) */
 
@@ -189,6 +213,26 @@ typedef struct virtio_pci_cap
 }  VIRTIO_PCI_CAP_T, *PVIRTIO_PCI_CAP_T;
 
 /**
+ * VirtIO Legacy Capabilities' related MMIO-mapped structs (see virtio-0.9.5 spec)
+ *
+ * Note: virtio_pci_device_cap is dev-specific, implemented by client. Definition unknown here.
+ */
+typedef struct virtio_legacy_pci_common_cfg
+{
+    /* Device-specific fields */
+    uint32_t  uDeviceFeatures;                                   /**< RO (device reports features to driver)    */
+    uint32_t  uDriverFeatures;                                   /**< RW (driver-accepted device features)      */
+    uint32_t  uVirtqPfn;                                         /**< RW (driver writes queue page number)      */
+    uint16_t  uQueueSize;                                        /**< RW (queue size, 0 - 2^n)                  */
+    uint16_t  uVirtqSelect;                                      /**< RW (selects queue focus for these fields) */
+    uint16_t  uQueueNotify;                                      /**< RO (offset into virtqueue; see spec)      */
+    uint8_t   fDeviceStatus;                                     /**< RW (driver writes device status, 0=reset) */
+    uint8_t   fIsrStatus;                                        /**< RW (driver writes ISR status, 0=reset)    */
+//    uint16_t  uMsixConfig;                                       /**< RW (driver sets MSI-X config vector)      */
+//    uint16_t  uMsixVector;                                       /**< RW (driver sets MSI-X config vector)      */
+} VIRTIO_LEGACY_PCI_COMMON_CFG_T, *PVIRTIO_LEGACY_PCI_COMMON_CFG_T;
+
+/**
  * VirtIO 1.0 Capabilities' related MMIO-mapped structs:
  *
  * Note: virtio_pci_device_cap is dev-specific, implemented by client. Definition unknown here.
@@ -207,8 +251,8 @@ typedef struct virtio_pci_common_cfg
 
     /* Virtq-specific fields (values reflect (via MMIO) info related to queue indicated by uVirtqSelect. */
     uint16_t  uVirtqSelect;                                      /**< RW (selects queue focus for these fields) */
-    uint16_t  uSize;                                             /**< RW (queue size, 0 - 2^n)                  */
-    uint16_t  uMsix;                                             /**< RW (driver selects MSI-X queue vector)    */
+    uint16_t  uQueueSize;                                        /**< RW (queue size, 0 - 2^n)                  */
+    uint16_t  uMsixVector;                                       /**< RW (driver selects MSI-X queue vector)    */
     uint16_t  uEnable;                                           /**< RW (driver controls usability of queue)   */
     uint16_t  uNotifyOffset;                                     /**< RO (offset into virtqueue; see spec)      */
     uint64_t  GCPhysVirtqDesc;                                   /**< RW (driver writes desc table phys addr)   */
@@ -244,10 +288,10 @@ typedef struct VIRTQUEUE
     RTGCPHYS                    GCPhysVirtqDesc;                  /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
     RTGCPHYS                    GCPhysVirtqAvail;                 /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
     RTGCPHYS                    GCPhysVirtqUsed;                  /**< (MMIO) PhysAdr per-Q used structs   GUEST */
-    uint16_t                    uMsix;                            /**< (MMIO) Per-queue vector for MSI-X   GUEST */
+    uint16_t                    uMsixVector;                      /**< (MMIO) Per-queue vector for MSI-X   GUEST */
     uint16_t                    uEnable;                          /**< (MMIO) Per-queue enable             GUEST */
     uint16_t                    uNotifyOffset;                    /**< (MMIO) per-Q notify offset           HOST */
-    uint16_t                    uSize;                            /**< (MMIO) Per-queue size          HOST/GUEST */
+    uint16_t                    uQueueSize;                       /**< (MMIO) Per-queue size          HOST/GUEST */
     uint16_t                    uAvailIdxShadow;                  /**< Consumer's position in avail ring         */
     uint16_t                    uUsedIdxShadow;                   /**< Consumer's position in used ring          */
     uint16_t                    uVirtq;                           /**< Index of this queue                       */
@@ -271,8 +315,15 @@ typedef struct VIRTIOCORE
     uint32_t                    uDriverFeaturesSelect;            /**< (MMIO) hi/lo select uDriverFeatures GUEST */
     uint32_t                    uMsixConfig;                      /**< (MMIO) MSI-X vector                 GUEST */
     uint8_t                     fDeviceStatus;                    /**< (MMIO) Device Status                GUEST */
-    uint8_t                     uPrevDeviceStatus;                /**< (MMIO) Prev Device Status           GUEST */
+    uint8_t                     fPrevDeviceStatus;                /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                     uConfigGeneration;                /**< (MMIO) Device config sequencer       HOST */
+    uint16_t                    uQueueNotify;                     /**< Caches queue idx in legacy mode     GUEST */
+    bool                        fGenUpdatePending;                /**< If set, update cfg gen after driver reads */
+    uint8_t                     uPciCfgDataOff;                   /**< Offset to PCI configuration data area     */
+    uint8_t                     uISR;                             /**< Interrupt Status Register.                */
+    uint8_t                     fMsiSupport;                      /**< Flag set if using MSI instead of ISR      */
+    uint8_t                     fLegacyDriver;                    /**< Set if guest driver < VirtIO 1.0          */
+    uint16_t                    uVirtqSelect;                     /**< (MMIO) queue selector               GUEST */
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
      * @{ */
@@ -283,20 +334,27 @@ typedef struct VIRTIOCORE
     VIRTIO_PCI_CAP_LOCATIONS_T  LocDeviceCap;                     /**< VIRTIO_PCI_CAP_T + custom data.           */
     /** @} */
 
-    uint16_t                    uVirtqSelect;                     /**< (MMIO) queue selector               GUEST */
-    bool                        fGenUpdatePending;                /**< If set, update cfg gen after driver reads */
-    uint8_t                     uPciCfgDataOff;                   /**< Offset to PCI configuration data area     */
-    uint8_t                     uISR;                             /**< Interrupt Status Register.                */
-    uint8_t                     fMsiSupport;                      /**< Flag set if using MSI instead of ISR      */
-    /** The MMIO handle for the PCI capability region (\#2). */
-    IOMMMIOHANDLE               hMmioPciCap;
 
+
+    IOMMMIOHANDLE               hMmioPciCap;                      /**< MMIO handle of PCI cap. region (\#2)      */
+    IOMIOPORTHANDLE             hLegacyIoPorts;                   /**< Handle of legacy I/O port range.          */
+
+
+#ifdef VBOX_WITH_STATISTICS
     /** @name Statistics
      * @{ */
     STAMCOUNTER                 StatDescChainsAllocated;
     STAMCOUNTER                 StatDescChainsFreed;
     STAMCOUNTER                 StatDescChainsSegsIn;
     STAMCOUNTER                 StatDescChainsSegsOut;
+    STAMPROFILEADV              StatReadR3;                        /** I/O port and MMIO R3 Read profiling       */
+    STAMPROFILEADV              StatReadR0;                        /** I/O port and MMIO R0 Read profiling       */
+    STAMPROFILEADV              StatReadRC;                        /** I/O port and MMIO R3 Read profiling       */
+    STAMPROFILEADV              StatWriteR3;                       /** I/O port and MMIO R3 Write profiling      */
+    STAMPROFILEADV              StatWriteR0;                       /** I/O port and MMIO R3 Write profiling      */
+    STAMPROFILEADV              StatWriteRC;                       /** I/O port and MMIO R3 Write profiling      */
+#endif
+
     /** @} */
 } VIRTIOCORE;
 
@@ -366,6 +424,7 @@ typedef struct VIRTIOCORER3
     R3PTRTYPE(uint8_t *)                pbPrevDevSpecificCfg;      /**< Previous read dev-specific cfg of client  */
     bool                                fGenUpdatePending;         /**< If set, update cfg gen after driver reads */
     char                                pcszMmioName[MAX_NAME];    /**< MMIO mapping name                         */
+    char                                pcszPortIoName[MAX_NAME];  /**< PORT mapping name                         */
 } VIRTIOCORER3;
 
 /**
@@ -647,6 +706,16 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
  */
 int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
+/**
+ * Checks to see if guest has acknowledged device's VIRTIO_F_VERSION_1 feature.
+ * If not, it's presumed to be a VirtIO legacy guest driver. Note that legacy drivers
+ * may start using the device prematurely, as opposed to the rigorously sane protocol
+ * prescribed by the "modern" VirtIO spec. Doing so is suggestive of a legacy driver.
+ * Therefore legacy mode is the assumption un proven otherwise.
+ *
+ * @param   pVirtio      Pointer to the virtio state.
+ */
+int virtioCoreIsLegacyMode(PVIRTIOCORE pVirtio);
 
 DECLINLINE(void) virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
 {
@@ -880,6 +949,8 @@ uint32_t virtioCoreR3VirtqBufRelease(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf);
 DECLINLINE(bool) virtioCoreIsVirtqEnabled(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     Assert(uVirtqNbr < RT_ELEMENTS(pVirtio->aVirtqueues));
+    if (pVirtio->fLegacyDriver)
+        return pVirtio->aVirtqueues[uVirtqNbr].GCPhysVirtqDesc != 0;
     return pVirtio->aVirtqueues[uVirtqNbr].uEnable != 0;
 }
 
@@ -957,7 +1028,7 @@ void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint
  * @param   cb          count of characters to dump from buffer
  * @param   uBase       base address of per-row address prefixing of hex output
  * @param   pszTitle    Optional title. If present displays title that lists
- *                      provided text with value of cb to indicate size next to it.
+ *                      provided text with value of cb to indicate VIRTQ_SIZE next to it.
  */
 void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
 
@@ -992,6 +1063,31 @@ DECLINLINE(size_t) virtioCoreGCPhysChainCalcBufSize(PCVIRTIOSGBUF pGcSgBuf)
     return cb;
 }
 
+/**
+ * This VirtIO transitional device supports "modern" (rev 1.0+) as well as "legacy" (e.g. < 1.0) VirtIO drivers.
+ * Some legacy guest drivers are known to mishandle PCI bus mastering wherein the PCI flavor of GC phys
+ * access functions can't be used. The following wrappers select the mem access method based on whether the
+ * device is operating in legacy mode or not.
+ */
+DECLINLINE(int) virtioCoreGCPhysWrite(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbWrite)
+{
+    int rc;
+    if (virtioCoreIsLegacyMode(pVirtio))
+        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    else
+        rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    return rc;
+}
+
+DECLINLINE(int) virtioCoreGCPhysRead(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    int rc;
+    if (virtioCoreIsLegacyMode(pVirtio))
+        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    else
+        rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    return rc;
+}
 
 /** Misc VM and PDM boilerplate */
 int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
@@ -1054,6 +1150,8 @@ DECLINLINE(bool) virtioCoreMatchMember(uint32_t uOffset, uint32_t cb, uint32_t u
             virtioCoreMatchMember(uOffsetOfAccess, cb, \
                                   RT_UOFFSETOF(tCfgStruct, member),  \
                                   RT_SIZEOFMEMB(tCfgStruct, member), false /* fSubfieldMatch */)
+
+
 
 /**
  * Copy reads or copy writes specified member field of config struct (based on fWrite),
