@@ -46,7 +46,6 @@
 #include "UIMessageCenter.h"
 #include "UIMousePointerShapeData.h"
 #include "UINotificationCenter.h"
-#include "UIWizardFirstRun.h"
 #include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
 #include "UISettingsDialogSpecific.h"
@@ -168,22 +167,7 @@ bool UISession::initialize()
     if (gEDataManager->autoCaptureEnabled())
         UINotificationMessage::remindAboutAutoCapture();
 
-    /* Check if we are in teleportation waiting mode.
-     * In that case no first run wizard is necessary. */
     m_machineState = machine().GetState();
-    if (   isFirstTimeStarted()
-        && !((   m_machineState == KMachineState_PoweredOff
-              || m_machineState == KMachineState_Aborted
-              || m_machineState == KMachineState_AbortedSaved
-              || m_machineState == KMachineState_Teleported)
-             && machine().GetTeleporterEnabled()))
-    {
-        UISafePointerWizard pWizard = new UIWizardFirstRun(mainMachineWindow(), machine());
-        pWizard->prepare();
-        pWizard->exec();
-        if (pWizard)
-            delete pWizard;
-    }
 
     /* Apply debug settings from the command line. */
     if (!debugger().isNull() && debugger().isOk())
@@ -898,7 +882,6 @@ UISession::UISession(UIMachine *pMachine)
     , m_fAllCloseActionsRestricted(false)
     /* Common flags: */
     , m_fInitialized(false)
-    , m_fIsFirstTimeStarted(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsAutoCaptureDisabled(false)
     , m_fIsManualOverride(false)
@@ -1233,12 +1216,6 @@ void UISession::loadSessionSettings()
         /* Load user's machine-window name postfix: */
         m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(uMachineID);
 #endif
-
-        /* Should the First RUN wizard be here? */
-        m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(uMachineID);
-        /* Disable First RUN wizard for subsequent start anyway: */
-        if (m_fIsFirstTimeStarted)
-            gEDataManager->setMachineFirstTimeStarted(false, uMachineID);
 
         /* Should guest autoresize? */
         QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);

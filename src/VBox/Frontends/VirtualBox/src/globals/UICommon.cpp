@@ -2234,13 +2234,6 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
                                                     fMount, false /* retry? */);
             }
         }
-        /* If mounting was successful: */
-        if (fWasMounted)
-        {
-            /* Disable First RUN Wizard: */
-            if (gEDataManager->machineFirstTimeStarted(comMachine.GetId()))
-                gEDataManager->setMachineFirstTimeStarted(false, comMachine.GetId());
-        }
     }
 
     /* Save settings: */

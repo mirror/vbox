@@ -261,9 +261,6 @@ void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
     /* Show Expert button for 1st page: */
     if (iIndex == 0)
         fIsExpertButtonAvailable = true;
-    /* But first-run wizard has no such button anyway: */
-    if (m_enmType == WizardType_FirstRun)
-        fIsExpertButtonAvailable = false;
     /* Hide/show Expert button finally: */
     QPushButton *pButtonExpert = wizardButton(WizardButtonType_Expert);
     AssertMsgReturnVoid(pButtonExpert, ("No Expert wizard button found!\n"));

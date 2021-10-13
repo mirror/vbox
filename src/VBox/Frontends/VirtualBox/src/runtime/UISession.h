@@ -177,7 +177,6 @@ public:
     bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
                                     machineStatePrevious() == KMachineState_TeleportingPausedVM; }
     bool isInitialized() const { return m_fInitialized; }
-    bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
@@ -561,7 +560,6 @@ private:
 
     /* Common flags: */
     bool m_fInitialized : 1;
-    bool m_fIsFirstTimeStarted : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsAutoCaptureDisabled : 1;
     /** Holds whether VM is in 'manual-override' mode

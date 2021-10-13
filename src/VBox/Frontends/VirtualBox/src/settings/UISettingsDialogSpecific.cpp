@@ -324,7 +324,6 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QUuid &
     , m_uMachineId(uMachineId)
     , m_strCategory(strCategory)
     , m_strControl(strControl)
-    , m_fResetFirstRunFlag(false)
 {
     /* Prepare: */
     prepare();
@@ -469,10 +468,6 @@ void UISettingsDialogMachine::saveOwnData()
         if (pSystemPage && pSystemPage->isHIDEnabled() && m_machine.GetUSBControllers().isEmpty())
             m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
 
-        /* Disable First RUN Wizard: */
-        if (m_fResetFirstRunFlag)
-            gEDataManager->setMachineFirstTimeStarted(false, m_uMachineId);
-
         /* Save settings finally: */
         m_machine.SaveSettings();
     }
@@ -564,9 +559,6 @@ void UISettingsDialogMachine::sltMarkLoaded()
     /* Call for base-class: */
     UISettingsDialog::sltMarkLoaded();
 
-    /* No need to reset 'first run' flag: */
-    m_fResetFirstRunFlag = false;
-
     /* Unlock the session if exists: */
     if (!m_session.isNull())
     {
@@ -647,11 +639,6 @@ void UISettingsDialogMachine::sltMachineDataChanged(const QUuid &uMachineId)
     loadOwnData();
 }
 
-void UISettingsDialogMachine::sltResetFirstRunFlag()
-{
-    m_fResetFirstRunFlag = true;
-}
-
 void UISettingsDialogMachine::prepare()
 {
     /* Window icon: */
@@ -718,8 +705,6 @@ void UISettingsDialogMachine::prepare()
                 case MachineSettingsPageType_Storage:
                 {
                     pSettingsPage = new UIMachineSettingsStorage;
-                    connect(static_cast<UIMachineSettingsStorage*>(pSettingsPage), &UIMachineSettingsStorage::sigStorageChanged,
-                            this, &UISettingsDialogMachine::sltResetFirstRunFlag);
                     addItem(":/hd_32px.png", ":/hd_24px.png", ":/hd_16px.png",
                             iPageIndex, "#storage", pSettingsPage);
                     addPageHelpKeyword(iPageIndex, "settings-storage");

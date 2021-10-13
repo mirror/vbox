@@ -1928,7 +1928,6 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_HideDescriptionForWizards
            << GUI_HideFromManager << GUI_HideDetails
            << GUI_PreventReconfiguration << GUI_PreventSnapshotOperations
-           << GUI_FirstRun
 #ifndef VBOX_WS_MAC
            << GUI_MachineWindowIcons << GUI_MachineWindowNamePostfix
 #endif /* !VBOX_WS_MAC */
@@ -3096,9 +3095,6 @@ void UIExtraDataManager::setCloudConsolePublicKeyPath(const QString &strPath)
 
 WizardMode UIExtraDataManager::modeForWizardType(WizardType type)
 {
-    /* Some wizard use only 'basic' mode: */
-    if (type == WizardType_FirstRun)
-        return WizardMode_Basic;
     /* Otherwise get mode from cached extra-data: */
     return extraDataStringList(GUI_HideDescriptionForWizards).contains(gpConverter->toInternalString(type))
            ? WizardMode_Expert : WizardMode_Basic;
@@ -3144,18 +3140,6 @@ bool UIExtraDataManager::machineSnapshotOperationsEnabled(const QUuid &uID)
 {
     /* 'True' unless 'restriction' feature allowed: */
     return !isFeatureAllowed(GUI_PreventSnapshotOperations, uID);
-}
-
-bool UIExtraDataManager::machineFirstTimeStarted(const QUuid &uID)
-{
-    /* 'True' only if feature is allowed: */
-    return isFeatureAllowed(GUI_FirstRun, uID);
-}
-
-void UIExtraDataManager::setMachineFirstTimeStarted(bool fFirstTimeStarted, const QUuid &uID)
-{
-    /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_FirstRun, toFeatureAllowed(fFirstTimeStarted), uID);
 }
 
 QStringList UIExtraDataManager::machineWindowIconNames(const QUuid &uID)

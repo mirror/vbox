@@ -292,9 +292,6 @@ void UIWizard::sltCurrentIdChanged(int iId)
     /* Enable hide/show description button for 1st page: */
     if (iId == 0)
         fIsHideShowDescriptionButtonAvailable = true;
-    /* But first-run wizard has no such button anyway: */
-    if (m_enmType == WizardType_FirstRun)
-        fIsHideShowDescriptionButtonAvailable = false;
     /* Set a flag for hide/show description button finally: */
     setOption(QWizard::HaveCustomButton1, fIsHideShowDescriptionButtonAvailable);
 }
@@ -432,9 +429,6 @@ double UIWizard::ratio() const
         case WizardType_NewVD:
         case WizardType_CloneVD:
             dRatio += 0.1;
-            break;
-        case WizardType_FirstRun:
-            dRatio += 0.3;
             break;
         default:
             break;

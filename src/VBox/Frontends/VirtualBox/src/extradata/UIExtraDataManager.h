@@ -487,11 +487,6 @@ public:
         /** Returns whether machine snapshot operations enabled. */
         bool machineSnapshotOperationsEnabled(const QUuid &uID);
 
-        /** Returns whether this machine is first time started. */
-        bool machineFirstTimeStarted(const QUuid &uID);
-        /** Returns whether this machine is fFirstTimeStarted. */
-        void setMachineFirstTimeStarted(bool fFirstTimeStarted, const QUuid &uID);
-
         /** Except Mac OS X: Returns redefined machine-window icon names. */
         QStringList machineWindowIconNames(const QUuid &uID);
 #ifndef VBOX_WS_MAC

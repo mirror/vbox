@@ -298,7 +298,6 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/clonevd \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
-	./src/wizards/firstrun \
 	./src/wizards/editors
 
 VBOX_GUI_INC_DIRS += \
@@ -741,9 +740,7 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/seamless/UIMachineViewSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h \
 	src/softkeyboard/UISoftKeyboard.h \
-	src/widgets/UIMiniToolBar.h \
-	src/wizards/firstrun/UIWizardFirstRun.h \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
+	src/widgets/UIMiniToolBar.h
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBoxVM_QT_MOCHDRS += \
@@ -1266,9 +1263,7 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/softkeyboard/UISoftKeyboard.cpp \
-	src/widgets/UIMiniToolBar.cpp \
-	src/wizards/firstrun/UIWizardFirstRun.cpp \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
+	src/widgets/UIMiniToolBar.cpp
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBoxVM_SOURCES += \
@@ -1983,7 +1978,6 @@ QTGUI_DOXYFILE_INPUT_DIRS := \
 		wizards/clonevd \
 		wizards/clonevm \
 		wizards/exportappliance \
-		wizards/firstrun \
 		wizards/importappliance \
 		wizards/newcloudvm \
 		wizards/newvd \
