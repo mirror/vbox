@@ -32,7 +32,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 
 #include "UIFilePathSelector.h"
-#include "UIBootTimeErrorDialog.h"
+#include "UIBootFailureDialog.h"
 
 #include "UIIconPool.h"
 #include "UIModalWindowManager.h"
@@ -42,7 +42,7 @@
 #include "CMediumAttachment.h"
 #include "CStorageController.h"
 
-UIBootTimeErrorDialog::UIBootTimeErrorDialog(QWidget *pParent, const CMachine &comMachine)
+UIBootFailureDialog::UIBootFailureDialog(QWidget *pParent, const CMachine &comMachine)
     :QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_pParent(pParent)
     , m_pCentralWidget(0)
@@ -58,14 +58,14 @@ UIBootTimeErrorDialog::UIBootTimeErrorDialog(QWidget *pParent, const CMachine &c
     configure();
 }
 
-QString UIBootTimeErrorDialog::bootMediumPath() const
+QString UIBootFailureDialog::bootMediumPath() const
 {
     if (!m_pBootImageSelector)
         return QString();
     return m_pBootImageSelector->path();
 }
 
-void UIBootTimeErrorDialog::retranslateUi()
+void UIBootFailureDialog::retranslateUi()
 {
     if (m_pCloseButton)
         m_pCloseButton->setText(tr("&Close"));
@@ -80,7 +80,7 @@ void UIBootTimeErrorDialog::retranslateUi()
         m_pBootImageLabel->setText(tr("Boot DVD:"));
 }
 
-void UIBootTimeErrorDialog::configure()
+void UIBootFailureDialog::configure()
 {
     setWindowIcon(UIIconPool::iconSetFull(":/media_manager_32px.png", ":/media_manager_16px.png"));
     setTitle();
@@ -88,15 +88,15 @@ void UIBootTimeErrorDialog::configure()
     prepareConnections();
 }
 
-void UIBootTimeErrorDialog::prepareConnections()
+void UIBootFailureDialog::prepareConnections()
 {
     if (m_pCloseButton)
-        connect(m_pCloseButton, &QPushButton::clicked, this, &UIBootTimeErrorDialog::sltCancel);
+        connect(m_pCloseButton, &QPushButton::clicked, this, &UIBootFailureDialog::sltCancel);
     if (m_pResetButton)
-        connect(m_pResetButton, &QPushButton::clicked, this, &UIBootTimeErrorDialog::sltReset);
+        connect(m_pResetButton, &QPushButton::clicked, this, &UIBootFailureDialog::sltReset);
 }
 
-void UIBootTimeErrorDialog::prepareWidgets()
+void UIBootFailureDialog::prepareWidgets()
 {
     m_pCentralWidget = new QWidget;
     if (!m_pCentralWidget)
@@ -131,7 +131,7 @@ void UIBootTimeErrorDialog::prepareWidgets()
             m_pBootImageLabel->setBuddy(m_pBootImageSelector);
         pSelectorLayout->addWidget(m_pBootImageSelector);
         connect(m_pBootImageSelector, &UIFilePathSelector::pathChanged,
-                this, &UIBootTimeErrorDialog::sltFileSelectorPathChanged);
+                this, &UIBootFailureDialog::sltFileSelectorPathChanged);
     }
     m_pMainLayout->addLayout(pSelectorLayout);
     m_pButtonBox = new QIDialogButtonBox;
@@ -147,17 +147,17 @@ void UIBootTimeErrorDialog::prepareWidgets()
     retranslateUi();
 }
 
-void UIBootTimeErrorDialog::sltCancel()
+void UIBootFailureDialog::sltCancel()
 {
     done(static_cast<int>(ReturnCode_Close));
 }
 
-void UIBootTimeErrorDialog::sltReset()
+void UIBootFailureDialog::sltReset()
 {
     done(static_cast<int>(ReturnCode_Reset));
 }
 
-void UIBootTimeErrorDialog::showEvent(QShowEvent *pEvent)
+void UIBootFailureDialog::showEvent(QShowEvent *pEvent)
 {
     Q_UNUSED(pEvent);
 
@@ -186,11 +186,11 @@ void UIBootTimeErrorDialog::showEvent(QShowEvent *pEvent)
 
 }
 
-void UIBootTimeErrorDialog::setTitle()
+void UIBootFailureDialog::setTitle()
 {
 }
 
-bool UIBootTimeErrorDialog::insertBootMedium(const QUuid &uMediumId)
+bool UIBootFailureDialog::insertBootMedium(const QUuid &uMediumId)
 {
     AssertReturn(!uMediumId.isNull(), false);
 
@@ -242,7 +242,7 @@ bool UIBootTimeErrorDialog::insertBootMedium(const QUuid &uMediumId)
     return fSuccess;
 }
 
-void UIBootTimeErrorDialog::sltFileSelectorPathChanged(const QString &strPath)
+void UIBootFailureDialog::sltFileSelectorPathChanged(const QString &strPath)
 {
     insertBootMedium(uiCommon().openMedium(UIMediumDeviceType_DVD, strPath));
 }

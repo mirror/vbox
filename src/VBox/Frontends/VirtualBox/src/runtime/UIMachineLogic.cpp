@@ -33,7 +33,7 @@
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
-#include "UIBootTimeErrorDialog.h"
+#include "UIBootFailureDialog.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
@@ -3258,7 +3258,7 @@ void UIMachineLogic::activateScreenSaver()
 void UIMachineLogic::showBootFailureDialog()
 {
     QWidget *pParent = windowManager().realParentWindow(activeMachineWindow());
-    UIBootTimeErrorDialog *pBootFailureDialog = new UIBootTimeErrorDialog(pParent, machine());
+    UIBootFailureDialog *pBootFailureDialog = new UIBootFailureDialog(pParent, machine());
     AssertPtrReturnVoid(pBootFailureDialog);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), &UIAction::triggered,
             this, &UIMachineLogic::sltReset);
@@ -3268,7 +3268,7 @@ void UIMachineLogic::showBootFailureDialog()
 
     delete pBootFailureDialog;
 
-    if (iResult == static_cast<int>(UIBootTimeErrorDialog::ReturnCode_Reset))
+    if (iResult == static_cast<int>(UIBootFailureDialog::ReturnCode_Reset))
         sltReset(false);
 }
 

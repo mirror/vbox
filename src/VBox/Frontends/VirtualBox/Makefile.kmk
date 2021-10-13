@@ -693,7 +693,7 @@ VirtualBox_QT_MOCHDRS = \
 #
 VirtualBoxVM_QT_MOCHDRS = \
 	src/globals/UIStarter.h \
-	src/runtime/UIBootTimeErrorDialog.h \
+	src/runtime/UIBootFailureDialog.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -1214,7 +1214,7 @@ $(call VBOX_SET_VER_INFO_EXE,VirtualBox,VirtualBox Manager,$(VBOX_WINDOWS_ICON_F
 VirtualBoxVM_SOURCES = \
 	src/main.cpp \
 	src/globals/UIStarter.cpp \
-	src/runtime/UIBootTimeErrorDialog.cpp \
+	src/runtime/UIBootFailureDialog.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \

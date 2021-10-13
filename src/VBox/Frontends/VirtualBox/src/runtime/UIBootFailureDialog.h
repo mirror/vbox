@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIBootTimeErrorDialog class declaration.
+ * VBox Qt GUI - UIBootFailureDialog class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_runtime_UIBootTimeErrorDialog_h
-#define FEQT_INCLUDED_SRC_runtime_UIBootTimeErrorDialog_h
+#ifndef FEQT_INCLUDED_SRC_runtime_UIBootFailureDialog_h
+#define FEQT_INCLUDED_SRC_runtime_UIBootFailureDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -40,7 +40,7 @@ class UIFilePathSelector;
 #include "CMachine.h"
 
 /** QIDialog extension providing GUI with a dialog to select an existing medium. */
-class UIBootTimeErrorDialog : public QIWithRetranslateUI<QIMainDialog>
+class UIBootFailureDialog : public QIWithRetranslateUI<QIMainDialog>
 {
 
     Q_OBJECT;
@@ -56,7 +56,7 @@ public:
         ReturnCode_Max
     };
 
-    UIBootTimeErrorDialog(QWidget *pParent, const CMachine &comMachine);
+    UIBootFailureDialog(QWidget *pParent, const CMachine &comMachine);
     QString bootMediumPath() const;
 
 protected:
@@ -102,4 +102,4 @@ private:
     CMachine              m_comMachine;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_runtime_UIBootTimeErrorDialog_h */
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIBootFailureDialog_h */
