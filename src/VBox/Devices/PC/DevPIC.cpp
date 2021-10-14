@@ -500,11 +500,15 @@ static VBOXSTRICTRC pic_ioport_write(PPDMDEVINS pDevIns, PDEVPIC pThis, PDEVPICC
 
             pPic->init_state = 1;
             pPic->init4 = val & 1;
-            if (val & 0x02)
-                AssertReleaseMsgFailed(("single mode not supported"));
-            if (val & 0x08)
-                if (pThis->cRelLogEntries++ < 64)
-                    LogRel(("pic_write: Level sensitive IRQ setting ignored.\n"));
+            if (!(val & 0x0a))
+            { /* likely */ }
+            else if (pThis->cRelLogEntries++ < 64)
+            {
+                if (val & 0x02)
+                    LogRel(("PIC: Single mode not supported, ignored.\n"));
+                if (val & 0x08)
+                    LogRel(("PIC: Level sensitive IRQ setting ignored.\n"));
+            }
         }
         else if (val & 0x08)
         {
