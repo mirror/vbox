@@ -2095,10 +2095,25 @@ static DECLCALLBACK(int) vrbProcR3SetAmplifier(PHDACODECR3 pThis, uint32_t uCmd,
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), uCmd, 0);
 
-    //    if (CODEC_NID(uCmd) == pThis->Cfg.u8AdcVolsLineIn)
-    //    {
+        /*
+         * Check if the node ID is the one we use for controlling the line-in volume;
+         * with STAC9220 this is connected to STAC9220_NID_AMP_ADC0 (ID 0x17).
+         *
+         * If we don't do this check here, some guests like newer Ubuntus mute mic-in
+         * afterwards (connected to STAC9220_NID_AMP_ADC1 (ID 0x18)). This then would
+         * also mute line-in, which breaks audio recording.
+         *
+         * See STAC9220 V1.0 01/08, p. 30 + oem2ticketref:53.
+         */
+        if (CODEC_NID(uCmd) == pThis->Cfg.idxAdcVolsLineIn)
             hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
-    //    }
+
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# error "Implement mic-in volume / mute setting."
+        else if (CODEC_NID(uCmd) == pThis->Cfg.idxAdcVolsMicIn)
+            hdaR3CodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_MIC_IN);
+#endif
+
     }
     if (fIsOut)
     {
