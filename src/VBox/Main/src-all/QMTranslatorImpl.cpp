@@ -346,7 +346,7 @@ public:
 
     size_t plural(size_t aNum) const
     {
-        if (aNum == SIZE_MAX || m_pluralRules.empty())
+        if (aNum == (~(size_t)0) || m_pluralRules.empty())
             return 0;
 
         size_t   uPluralNumber = 0;
