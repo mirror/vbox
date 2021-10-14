@@ -1152,16 +1152,16 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
                      */
                     if (pCur->cAliasedPages)
                     {
-                        PPGMPAGE    pPage = &pRam->aPages[(pCur->Core.Key - pRam->GCPhys) >> PAGE_SHIFT];
-                        uint32_t    cLeft = pCur->cPages;
+                        PPGMPAGE    pPage      = &pRam->aPages[(pCur->Core.Key - pRam->GCPhys) >> PAGE_SHIFT];
+                        RTGCPHYS    GCPhysPage = pCur->Core.Key;
+                        uint32_t    cLeft      = pCur->cPages;
                         while (cLeft-- > 0)
                         {
                             if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
                                 || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO)
                             {
                                 Assert(pCur->cAliasedPages > 0);
-                                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)cLeft << PAGE_SHIFT),
-                                                                   false /*fDoAccounting*/);
+                                pgmHandlerPhysicalResetAliasedPage(pVM, pPage, GCPhysPage, false /*fDoAccounting*/);
                                 --pCur->cAliasedPages;
 #ifndef VBOX_STRICT
                                 if (pCur->cAliasedPages == 0)
@@ -1169,6 +1169,7 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
 #endif
                             }
                             Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO);
+                            GCPhysPage += PAGE_SIZE;
                             pPage++;
                         }
                         Assert(pCur->cAliasedPages == 0);
