@@ -212,12 +212,38 @@ class HGCMClient: public HGCMObject
             , fRequestor(a_fRequestor)
             , idxCategory(a_idxCategory)
             , cPendingCalls(0)
+            , m_fGuestAccessible(false)
         {
             Assert(idxCategory < HGCM_CLIENT_CATEGORY_MAX);
         }
         ~HGCMClient();
 
         int Init(HGCMService *pSvc);
+
+        /** Lookups a client object by its handle. */
+        static HGCMClient *ReferenceByHandle(uint32_t idClient)
+        {
+            return (HGCMClient *)hgcmObjReference(idClient, HGCMOBJ_CLIENT);
+        }
+
+        /** Lookups a client object by its handle and makes sure that it's accessible to the guest. */
+        static HGCMClient *ReferenceByHandleForGuest(uint32_t idClient)
+        {
+            HGCMClient *pClient = (HGCMClient *)hgcmObjReference(idClient, HGCMOBJ_CLIENT);
+            if (pClient)
+            {
+                if (RT_LIKELY(pClient->m_fGuestAccessible))
+                    return pClient;
+                pClient->Dereference();
+            }
+            return NULL;
+        }
+
+        /** Make the client object accessible to the guest. */
+        void makeAccessibleToGuest()
+        {
+            ASMAtomicWriteBool(&m_fGuestAccessible, true);
+        }
 
         /** Service that the client is connected to. */
         HGCMService *pService;
@@ -234,6 +260,10 @@ class HGCMClient: public HGCMObject
 
         /** Number of pending calls. */
         uint32_t volatile cPendingCalls;
+
+    protected:
+        /** Set if the client is accessible to the guest, clear if not. */
+        bool volatile m_fGuestAccessible;
 
     private: /* none of this: */
         HGCMClient();
@@ -674,7 +704,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 
                 LogFlowFunc(("SVC_MSG_CONNECT u32ClientId = %d\n", pMsg->u32ClientId));
 
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference(pMsg->u32ClientId, HGCMOBJ_CLIENT);
+                HGCMClient *pClient = HGCMClient::ReferenceByHandle(pMsg->u32ClientId);
 
                 if (pClient)
                 {
@@ -718,7 +748,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
                 LogFlowFunc(("SVC_MSG_GUESTCALL u32ClientId = %d, u32Function = %d, cParms = %d, paParms = %p\n",
                              pMsg->u32ClientId, pMsg->u32Function, pMsg->cParms, pMsg->paParms));
 
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference(pMsg->u32ClientId, HGCMOBJ_CLIENT);
+                HGCMClient *pClient = HGCMClient::ReferenceByHandleForGuest(pMsg->u32ClientId);
 
                 if (pClient)
                 {
@@ -740,7 +770,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 
                 LogFlowFunc(("SVC_MSG_GUESTCANCELLED idClient = %d\n", pMsg->idClient));
 
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference(pMsg->idClient, HGCMOBJ_CLIENT);
+                HGCMClient *pClient = HGCMClient::ReferenceByHandleForGuest(pMsg->idClient);
 
                 if (pClient)
                 {
@@ -770,7 +800,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 
                 LogFlowFunc(("SVC_MSG_LOADSTATE\n"));
 
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference(pMsg->u32ClientId, HGCMOBJ_CLIENT);
+                HGCMClient *pClient = HGCMClient::ReferenceByHandle(pMsg->u32ClientId);
 
                 if (pClient)
                 {
@@ -803,7 +833,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 
                 LogFlowFunc(("SVC_MSG_SAVESTATE\n"));
 
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference(pMsg->u32ClientId, HGCMOBJ_CLIENT);
+                HGCMClient *pClient = HGCMClient::ReferenceByHandle(pMsg->u32ClientId);
 
                 rc = VINF_SUCCESS;
 
@@ -939,7 +969,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
      /* Resolve the client ID and verify that it belongs to this service before
         trying to disconnect it. */
      int rc = VERR_NOT_FOUND;
-     HGCMClient * const pClient = (HGCMClient *)hgcmObjReference(idClient, HGCMOBJ_CLIENT);
+     HGCMClient * const pClient = HGCMClient::ReferenceByHandle(idClient);
      if (pClient)
      {
          if (pClient->pService == pService)
@@ -1482,7 +1512,7 @@ void HGCMService::ReleaseService(void)
         while (pSvc->m_cClients && pSvc->m_paClientIds)
         {
             uint32_t const     idClient = pSvc->m_paClientIds[0];
-            HGCMClient * const pClient  = (HGCMClient *)hgcmObjReference(idClient, HGCMOBJ_CLIENT);
+            HGCMClient * const pClient  = HGCMClient::ReferenceByHandle(idClient);
             Assert(pClient);
             LogFlowFunc(("handle %d/%p\n", pSvc->m_paClientIds[0], pClient));
 
@@ -1788,6 +1818,9 @@ int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32C
         }
 
         ReferenceService();
+
+        /* The guest may now use this client object. */
+        pClient->makeAccessibleToGuest();
     }
     else
     {
@@ -2315,7 +2348,7 @@ static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
                 LogFlowFunc(("HGCM_MSG_DISCONNECT u32ClientId = %d\n",
                              pMsg->u32ClientId));
 
-                HGCMClient *pClient = (HGCMClient *)hgcmObjReference(pMsg->u32ClientId, HGCMOBJ_CLIENT);
+                HGCMClient *pClient = HGCMClient::ReferenceByHandle(pMsg->u32ClientId);
 
                 if (!pClient)
                 {
@@ -2767,7 +2800,7 @@ int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort,
     int rc = VERR_HGCM_INVALID_CLIENT_ID;
 
     /* Resolve the client handle to the client instance pointer. */
-    HGCMClient *pClient = (HGCMClient *)hgcmObjReference(u32ClientId, HGCMOBJ_CLIENT);
+    HGCMClient *pClient = HGCMClient::ReferenceByHandleForGuest(u32ClientId);
 
     if (pClient)
     {
@@ -2797,7 +2830,7 @@ void HGCMGuestCancelled(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t idC
     AssertReturnVoid(idClient != 0);
 
     /* Resolve the client handle to the client instance pointer. */
-    HGCMClient *pClient = (HGCMClient *)hgcmObjReference(idClient, HGCMOBJ_CLIENT);
+    HGCMClient *pClient = HGCMClient::ReferenceByHandleForGuest(idClient);
 
     if (pClient)
     {
