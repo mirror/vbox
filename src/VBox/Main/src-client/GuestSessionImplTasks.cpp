@@ -2044,8 +2044,7 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
     AssertReturn(hVfsIso != NIL_RTVFS, VERR_INVALID_POINTER);
 
     RTVFSFILE hVfsFile = NIL_RTVFSFILE;
-    int rc = RTVfsFileOpen(hVfsIso, strFileSrc.c_str(),
-                           RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, & hVfsFile);
+    int rc = RTVfsFileOpen(hVfsIso, strFileSrc.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, &hVfsFile);
     if (RT_SUCCESS(rc))
     {
         uint64_t cbSrcSize = 0;
