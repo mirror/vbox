@@ -3262,8 +3262,7 @@ void UIMachineLogic::activateScreenSaver()
 
 void UIMachineLogic::showBootFailureDialog()
 {
-    QWidget *pParent = windowManager().realParentWindow(activeMachineWindow());
-    UIBootFailureDialog *pBootFailureDialog = new UIBootFailureDialog(pParent, machine());
+    UIBootFailureDialog *pBootFailureDialog = new UIBootFailureDialog(activeMachineWindow(), machine());
     AssertPtrReturnVoid(pBootFailureDialog);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), &UIAction::triggered,
             this, &UIMachineLogic::sltReset);

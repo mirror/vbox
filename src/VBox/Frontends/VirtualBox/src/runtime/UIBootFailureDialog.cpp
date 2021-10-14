@@ -150,6 +150,7 @@ void UIBootFailureDialog::prepareWidgets()
     {
         m_pBootImageSelector->setMode(UIFilePathSelector::Mode_File_Open);
         m_pBootImageSelector->setFileDialogFilters("ISO Images(*.iso *.ISO)");
+        m_pBootImageSelector->setResetEnabled(false);
         m_pBootImageSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
         m_pBootImageSelector->setRecentMediaListType(UIMediumDeviceType_DVD);
         if (m_pBootImageLabel)
@@ -192,31 +193,10 @@ void UIBootFailureDialog::sltReset()
 
 void UIBootFailureDialog::showEvent(QShowEvent *pEvent)
 {
-    Q_UNUSED(pEvent);
-
-    /* Try to determine the initial size: */
-    // QSize proposedSize;
-    // int iHostScreen = 0;
-    // if (m_pParent)
-    //     iHostScreen = gpDesktop->screenNumber(m_pParent);
-    // else
-    //     iHostScreen = gpDesktop->screenNumber(this);
-    // if (iHostScreen >= 0 && iHostScreen < gpDesktop->screenCount())
-    // {
-    //     /* On the basis of current host-screen geometry if possible: */
-    //     const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
-    //     if (screenGeometry.isValid())
-    //         proposedSize = screenGeometry.size() * 5 / 15;
-    // }
-    // /* Fallback to default size if we failed: */
-    // if (proposedSize.isNull())
-    //     proposedSize = QSize(800, 600);
-    // /* Resize to initial size: */
-    // resize(proposedSize);
-
     if (m_pParent)
         UIDesktopWidgetWatchdog::centerWidget(this, m_pParent, false);
     QIWithRetranslateUI<QIMainDialog>::showEvent(pEvent);
+
 }
 
 void UIBootFailureDialog::setTitle()
