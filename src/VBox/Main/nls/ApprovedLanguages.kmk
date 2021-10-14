@@ -17,4 +17,5 @@
 
 # The list of approved Main API languages.
 VBOX_APPROVED_MAIN_LANGUAGES := \
-	ru    \
+	ru
+
