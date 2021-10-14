@@ -2037,8 +2037,7 @@ int GuestSessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgu
 }
 
 int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTVFS hVfsIso,
-                                                     Utf8Str const &strFileSrc, const Utf8Str &strFileDst,
-                                                     bool fOptional)
+                                                     Utf8Str const &strFileSrc, const Utf8Str &strFileDst, bool fOptional)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertReturn(hVfsIso != NIL_RTVFS, VERR_INVALID_POINTER);
@@ -2080,8 +2079,7 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
             }
             else
             {
-                rc = fileCopyToGuestInner(strFileSrc, hVfsFile, strFileDst, dstFile,
-                                          FileCopyFlag_None, 0 /*cbOffset*/, cbSrcSize);
+                rc = fileCopyToGuestInner(strFileSrc, hVfsFile, strFileDst, dstFile, FileCopyFlag_None, 0 /*offCopy*/, cbSrcSize);
 
                 int rc2 = dstFile->i_closeFile(&rcGuest);
                 AssertRC(rc2);
@@ -2089,16 +2087,9 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
         }
 
         RTVfsFileRelease(hVfsFile);
-        if (RT_FAILURE(rc))
-            return rc;
     }
-    else
-    {
-        if (fOptional)
-            return VINF_SUCCESS;
-
-        return rc;
-    }
+    else if (fOptional)
+        rc = VINF_SUCCESS;
 
     return rc;
 }
