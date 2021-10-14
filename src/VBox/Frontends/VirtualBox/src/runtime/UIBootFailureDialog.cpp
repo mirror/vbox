@@ -80,14 +80,21 @@ QString UIBootFailureDialog::bootMediumPath() const
 void UIBootFailureDialog::retranslateUi()
 {
     if (m_pCloseButton)
+    {
         m_pCloseButton->setText(tr("&Close"));
+        m_pCloseButton->setToolTip(tr("Closes this dialog without resetting the guest or mounting a medium"));
+    }
     if (m_pResetButton)
-        m_pResetButton->setText(tr("&Reset"));
+    {
+        m_pResetButton->setText(tr("&Reset VM"));
+        m_pResetButton->setToolTip(tr("Mounts the selected ISO if any and restarts the vm"));
+    }
 
     if (m_pLabel)
         m_pLabel->setText(tr("The virtual machine failed to boot. That might be caused by a missing operating system "
                              "or misconfigured boot order. Mounting an operation install DVD might solve this problem. "
-                             "Selecting an ISO file will attemt to mount it immediately to the guest machine."));
+                             "Selecting an ISO file will attempt to mount it after the dialog is closed."));
+
     if (m_pBootImageLabel)
         m_pBootImageLabel->setText(tr("Boot DVD:"));
     if (m_pSuppressDialogCheckBox)
@@ -203,61 +210,16 @@ void UIBootFailureDialog::setTitle()
 {
 }
 
-bool UIBootFailureDialog::insertBootMedium(const QUuid &uMediumId)
-{
-    AssertReturn(!uMediumId.isNull(), false);
-
-    CVirtualBox comVBox = uiCommon().virtualBox();
-    const CGuestOSType &comOsType = comVBox.GetGuestOSType(m_comMachine.GetOSTypeId());
-    /* Get recommended controller bus & type: */
-    const KStorageBus enmRecommendedDvdBus = comOsType.GetRecommendedDVDStorageBus();
-    const KStorageControllerType enmRecommendedDvdType = comOsType.GetRecommendedDVDStorageController();
-
-    CMediumAttachment comAttachment;
-    /* Search for an attachment of required bus & type: */
-    foreach (const CMediumAttachment &comCurrentAttachment, m_comMachine.GetMediumAttachments())
-    {
-        /* Determine current attachment's controller: */
-        const CStorageController &comCurrentController = m_comMachine.GetStorageControllerByName(comCurrentAttachment.GetController());
-
-        if (   comCurrentController.GetBus() == enmRecommendedDvdBus
-            && comCurrentController.GetControllerType() == enmRecommendedDvdType
-            && comCurrentAttachment.GetType() == KDeviceType_DVD)
-        {
-            comAttachment = comCurrentAttachment;
-            break;
-        }
-    }
-    AssertMsgReturn(!comAttachment.isNull(), ("Storage Controller is NOT properly configured!\n"), false);
-
-    const UIMedium guiMedium = uiCommon().medium(uMediumId);
-    const CMedium comMedium = guiMedium.medium();
-
-    /* Mount medium to the predefined port/device: */
-    m_comMachine.MountMedium(comAttachment.GetController(), comAttachment.GetPort(), comAttachment.GetDevice(), comMedium, false /* force */);
-    bool fSuccess = m_comMachine.isOk();
-
-    QWidget *pParent = windowManager().realParentWindow(this);
-
-    /* Show error message if necessary: */
-    if (!fSuccess)
-        msgCenter().cannotRemountMedium(m_comMachine, guiMedium, true /* mount? */, false /* retry? */, pParent);
-    else
-    {
-        /* Save machine settings: */
-        m_comMachine.SaveSettings();
-        fSuccess = m_comMachine.isOk();
-
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            msgCenter().cannotSaveMachineSettings(m_comMachine, pParent);
-    }
-    return fSuccess;
-}
-
 void UIBootFailureDialog::sltFileSelectorPathChanged(const QString &strPath)
 {
-    insertBootMedium(uiCommon().openMedium(UIMediumDeviceType_DVD, strPath));
+    Q_UNUSED(strPath);
+    bool fISOValid = checkISOImage();
+    if (m_pBootImageSelector)
+    {
+        m_pBootImageSelector->mark(!fISOValid, tr("The selected path is invalid."));
+    }
+    if (m_pResetButton)
+        m_pResetButton->setEnabled(fISOValid);
 }
 
 QPixmap UIBootFailureDialog::iconPixmap()
@@ -267,4 +229,15 @@ QPixmap UIBootFailureDialog::iconPixmap()
         return QPixmap();
     int iSize = QApplication::style()->pixelMetric(QStyle::PM_MessageBoxIconSize, 0, 0);
     return icon.pixmap(iSize, iSize);
+}
+
+bool UIBootFailureDialog::checkISOImage() const
+{
+    AssertReturn(m_pBootImageSelector, true);
+    if (m_pBootImageSelector->path().isEmpty())
+        return true;
+    QFileInfo fileInfo(m_pBootImageSelector->path());
+    if (!fileInfo.exists() || !fileInfo.isReadable())
+        return false;
+    return true;
 }

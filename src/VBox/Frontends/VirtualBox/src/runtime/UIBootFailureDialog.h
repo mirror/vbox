@@ -73,8 +73,9 @@ private slots:
 
 private:
 
-    bool insertBootMedium(const QUuid &uMediumId);
     QPixmap iconPixmap();
+    /* Checks if selected iso exists and readable. Returns false if not. Returns true if nothing is selected. */
+    bool checkISOImage() const;
 
     /** @name Event-handling stuff.
       * @{ */
