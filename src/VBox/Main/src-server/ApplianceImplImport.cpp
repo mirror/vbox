@@ -3047,7 +3047,7 @@ HRESULT Appliance::i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo)
                      pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID);
     else if (RTAsn1OctetString_IsPresent(&pSignedData->ContentInfo.Content))
         i_addWarning(tr("Invalid PKCS#7/CMS data: embedded (%u bytes), expected external","",
-                        (int)pSignedData->ContentInfo.Content.Asn1Core.cb),
+                        pSignedData->ContentInfo.Content.Asn1Core.cb),
                      pSignedData->ContentInfo.Content.Asn1Core.cb);
     else if (pSignedData->SignerInfos.cItems == 0)
         i_addWarning(tr("Invalid PKCS#7/CMS: No signers"));

@@ -38,7 +38,7 @@ public:
      *                          pszSource for the purpose of reverse translation.
      *                          Will be set to NULL if @a pszSource is returned.
      * @param   pszDisamb       Disambiguationg comment, empty by default
-     * @param   iNum            Plural form indicator.
+     * @param   aNum            Plural form indicator.
      *
      * @returns Pointer to a translation (UTF-8 encoding), source string on failure.
      */
