@@ -185,7 +185,7 @@ protected:
                                                      const char  *pszComponent,
                                                      const char  *pszSourceText,
                                                      const char  *pszComment = NULL,
-                                                     const size_t aNum = -1);
+                                                     const size_t aNum = (~(size_t)0));
     static DECLCALLBACK(int)      i_hlpReservedN(PCVBOXEXTPACKHLP pHlp);
     /** @}  */
 
