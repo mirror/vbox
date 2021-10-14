@@ -828,7 +828,7 @@ void Machine::uninit()
         if (SUCCEEDED(autoCaller.rc()))
         {
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            i_saveSettings(NULL, Machine::SaveS_Force);
+            i_saveSettings(NULL, alock, Machine::SaveS_Force);
         }
     }
 
@@ -1609,7 +1609,7 @@ HRESULT Machine::setCPUExecutionCap(ULONG aCPUExecutionCap)
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
-        i_saveSettings(NULL);
+        i_saveSettings(NULL, alock);
 
     return S_OK;
 }
@@ -2663,7 +2663,7 @@ HRESULT Machine::setClipboardMode(ClipboardMode_T aClipboardMode)
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
-        i_saveSettings(NULL);
+        i_saveSettings(NULL, alock);
 
     return S_OK;
 }
@@ -2694,7 +2694,7 @@ HRESULT Machine::setClipboardFileTransfersEnabled(BOOL aEnabled)
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
-        i_saveSettings(NULL);
+        i_saveSettings(NULL, alock);
 
     return S_OK;
 }
@@ -2726,7 +2726,7 @@ HRESULT Machine::setDnDMode(DnDMode_T aDnDMode)
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
-        i_saveSettings(NULL);
+        i_saveSettings(NULL, alock);
 
     return S_OK;
 }
@@ -4800,7 +4800,7 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
         // This saving of settings is tricky: there is no "old state" for the
         // extradata items at all (unlike all other settings), so the old/new
         // settings comparison would give a wrong result!
-        i_saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force);
+        i_saveSettings(&fNeedsGlobalSaveSettings, alock, SaveS_Force);
 
         if (fNeedsGlobalSaveSettings)
         {
@@ -4837,7 +4837,7 @@ HRESULT Machine::saveSettings()
 
     /* save all VM data excluding snapshots */
     bool fNeedsGlobalSaveSettings = false;
-    rc = i_saveSettings(&fNeedsGlobalSaveSettings);
+    rc = i_saveSettings(&fNeedsGlobalSaveSettings, mlock);
     mlock.release();
 
     if (SUCCEEDED(rc) && fNeedsGlobalSaveSettings)
@@ -4930,7 +4930,7 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
                         mUserData->s.strName.c_str());
 
     // wait for state dependents to drop to zero
-    i_ensureNoStateDependencies();
+    i_ensureNoStateDependencies(alock);
 
     if (!mData->mAccessible)
     {
@@ -6410,7 +6410,7 @@ HRESULT Machine::hotPlugCPU(ULONG aCpu)
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
-        i_saveSettings(NULL);
+        i_saveSettings(NULL, alock);
 
     return S_OK;
 }
@@ -6447,7 +6447,7 @@ HRESULT Machine::hotUnplugCPU(ULONG aCpu)
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
-        i_saveSettings(NULL);
+        i_saveSettings(NULL, alock);
 
     return S_OK;
 }
@@ -7882,7 +7882,7 @@ HRESULT Machine::i_prepareRegister()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* wait for state dependents to drop to zero */
-    i_ensureNoStateDependencies();
+    i_ensureNoStateDependencies(alock);
 
     if (!mData->mAccessible)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -7906,7 +7906,7 @@ HRESULT Machine::i_prepareRegister()
          || (!mData->pMachineConfigFile->fileExists())
        )
     {
-        rc = i_saveSettings(NULL);
+        rc = i_saveSettings(NULL, alock);
                 // no need to check whether VirtualBox.xml needs saving too since
                 // we can't have a machine XML file rename pending
         if (FAILED(rc)) return rc;
@@ -8419,16 +8419,14 @@ Machine *Machine::i_getMachine()
  * guarantee that no new dependents may be added when this method returns
  * control to the caller.
  *
- * @note Locks this object for writing. The lock will be released while waiting
- *       (if necessary).
+ * @note Receives a lock to this object for writing. The lock will be released
+ *       while waiting (if necessary).
  *
  * @warning To be used only in methods that change the machine state!
  */
-void Machine::i_ensureNoStateDependencies()
+void Machine::i_ensureNoStateDependencies(AutoWriteLock &alock)
 {
     AssertReturnVoid(isWriteLockOnCurrentThread());
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Wait for all state dependents if necessary */
     if (mData->mMachineStateDeps != 0)
@@ -8476,7 +8474,7 @@ HRESULT Machine::i_setMachineState(MachineState_T aMachineState)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* wait for state dependents to drop to zero */
-    i_ensureNoStateDependencies();
+    i_ensureNoStateDependencies(alock);
 
     MachineState_T const enmOldState = mData->mMachineState;
     if (enmOldState != aMachineState)
@@ -9865,6 +9863,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
  * @param   aFlags  Flags.
  */
 HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
+                                AutoWriteLock &alock,
                                 int  aFlags /*= 0*/)
 {
     LogFlowThisFuncEnter();
@@ -9873,7 +9872,7 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
 
     /* make sure child objects are unable to modify the settings while we are
      * saving them */
-    i_ensureNoStateDependencies();
+    i_ensureNoStateDependencies(alock);
 
     AssertReturn(!i_isSnapshotMachine(),
                  E_FAIL);
@@ -12998,7 +12997,7 @@ void SessionMachine::i_saveStateHandler(SaveStateTask &task)
             mSSData->strStateFilePath = task.m_strStateFilePath;
 
             /* save all VM settings */
-            rc = i_saveSettings(NULL);
+            rc = i_saveSettings(NULL, alock);
                     // no need to check whether VirtualBox.xml needs saving also since
                     // we can't have a name change pending at this point
         }

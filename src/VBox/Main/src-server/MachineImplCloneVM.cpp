@@ -1599,7 +1599,7 @@ HRESULT MachineCloneVM::run()
 
             /* save all VM data */
             bool fNeedsGlobalSaveSettings = false;
-            rc = d->pTrgMachine->i_saveSettings(&fNeedsGlobalSaveSettings, Machine::SaveS_Force);
+            rc = d->pTrgMachine->i_saveSettings(&fNeedsGlobalSaveSettings, trgLock, Machine::SaveS_Force);
             if (FAILED(rc)) throw rc;
             /* Release all locks */
             trgLock.release();

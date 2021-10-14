@@ -1394,7 +1394,8 @@ RWLockHandle *SnapshotMachine::lockHandle() const
  */
 HRESULT SnapshotMachine::i_onSnapshotChange(Snapshot *aSnapshot)
 {
-    AutoMultiWriteLock2 mlock(this, aSnapshot COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock slock(aSnapshot COMMA_LOCKVAL_SRC_POS);
     Guid uuidMachine(mData->mUuid),
          uuidSnapshot(aSnapshot->i_getId());
     bool fNeedsGlobalSaveSettings = false;
@@ -1403,9 +1404,11 @@ HRESULT SnapshotMachine::i_onSnapshotChange(Snapshot *aSnapshot)
      * modification of the current state flag, cause this snapshot data isn't
      * related to the current state. */
     mMachine->i_setModified(Machine::IsModified_Snapshots, false /* fAllowStateModification */);
+    slock.release();
     HRESULT rc = mMachine->i_saveSettings(&fNeedsGlobalSaveSettings,
+                                          alock,
                                           SaveS_Force);        // we know we need saving, no need to check
-    mlock.release();
+    alock.release();
 
     if (SUCCEEDED(rc) && fNeedsGlobalSaveSettings)
     {
@@ -1753,7 +1756,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
         /* save settings to ensure current changes are committed and
          * hard disks are fixed up */
-        rc = i_saveSettings(NULL);
+        rc = i_saveSettings(NULL, alock);
             // no need to check for whether VirtualBox.xml needs changing since
             // we can't have a machine XML rename pending at this point
         if (FAILED(rc))
@@ -2108,7 +2111,7 @@ HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWrite
              * reset the mCurrentStateModified flag */
             flSaveSettings |= SaveS_ResetCurStateModified;
 
-        rc = i_saveSettings(NULL, flSaveSettings);
+        rc = i_saveSettings(NULL, alock, flSaveSettings);
     }
 
     if (aSuccess && SUCCEEDED(rc))
@@ -2507,7 +2510,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
 
         // save machine settings, reset the modified flag and commit;
         bool fNeedsGlobalSaveSettings = false;
-        rc = i_saveSettings(&fNeedsGlobalSaveSettings,
+        rc = i_saveSettings(&fNeedsGlobalSaveSettings, alock,
                             SaveS_ResetCurStateModified);
         if (FAILED(rc))
             throw rc;
@@ -2719,7 +2722,9 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
     {
         if (mData->flModifications)
         {
-            rc = i_saveSettings(NULL);
+            snapshotLock.release();
+            rc = i_saveSettings(NULL, alock);
+            snapshotLock.acquire();
                 // no need to change for whether VirtualBox.xml needs saving since
                 // we can't have a machine XML rename pending at this point
             if (FAILED(rc)) return rc;

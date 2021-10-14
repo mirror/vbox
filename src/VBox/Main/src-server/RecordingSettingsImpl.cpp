@@ -238,7 +238,7 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
         }
         else
         {
-            AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+            AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // pMachine is const, needs no locking
             m->pMachine->i_setModified(Machine::IsModified_Recording);
 
             /* Make sure to release the mutable dependency lock from above before
@@ -247,7 +247,7 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
 
             /** Save settings if online - @todo why is this required? -- @bugref{6818} */
             if (Global::IsOnline(m->pMachine->i_getMachineState()))
-                rc = m->pMachine->i_saveSettings(NULL);
+                rc = m->pMachine->i_saveSettings(NULL, mlock);
         }
     }
 

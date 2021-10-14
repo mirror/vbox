@@ -5479,7 +5479,7 @@ void VirtualBox::i_saveModifiedRegistries()
                 if (getObjectState().getState() != ObjectState::Ready)
                     continue;
                 AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
-                rc = pMachine->i_saveSettings(&fNeedsGlobalSettings,
+                rc = pMachine->i_saveSettings(&fNeedsGlobalSettings, mlock,
                                               Machine::SaveS_Force);           // caller said save, so stop arguing
             }
         }
