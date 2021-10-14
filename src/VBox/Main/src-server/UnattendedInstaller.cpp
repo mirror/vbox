@@ -424,7 +424,8 @@ HRESULT UnattendedInstaller::addScriptToFloppyImage(BaseTextScript *pEditor, RTV
                 hrc = S_OK; /* done */
             else
                 hrc = mpParent->setErrorBoth(E_FAIL, vrc,
-                                             tr("Error writing %zu bytes to '%s' in floppy image '%s': %Rrc"),
+                                             tr("Error writing %zu bytes to '%s' in floppy image '%s': %Rrc",
+                                                "", strScript.length()),
                                              strScript.length(), pEditor->getDefaultFilename(),
                                              getAuxiliaryFloppyFilePath().c_str());
         }
@@ -587,7 +588,7 @@ HRESULT UnattendedInstaller::addScriptToIsoMaker(BaseTextScript *pEditor, RTFSIS
         }
         else
             hrc = mpParent->setErrorBoth(E_FAIL, vrc,
-                                         tr("RTVfsFileFromBuffer failed on the %zu byte script '%s' (%Rrc)"),
+                                         tr("RTVfsFileFromBuffer failed on the %zu byte script '%s' (%Rrc)", "", cchScript),
                                          cchScript, pszDstFilename, vrc);
     }
     return hrc;

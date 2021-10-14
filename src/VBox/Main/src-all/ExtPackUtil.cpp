@@ -336,7 +336,8 @@ RTCString *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a
 
     /* Check the file size. */
     if (ObjInfo.cbObject > _1M || ObjInfo.cbObject < 0)
-        return &(new RTCString)->printf(ExtPackUtil::tr("The XML file is too large (%'RU64 bytes)"), ObjInfo.cbObject);
+        return &(new RTCString)->printf(ExtPackUtil::tr("The XML file is too large (%'RU64 bytes)", "", ObjInfo.cbObject),
+                                        ObjInfo.cbObject);
     size_t const cbFile = (size_t)ObjInfo.cbObject;
 
     /* Rewind to the start of the file. */
@@ -901,7 +902,7 @@ static int vboxExtPackVerifyFileDigest(RTMANIFEST hFileManifest, const char *psz
             vboxExtPackSetError(pszError, cbError, ExtPackUtil::tr("Bad SHA-256 '%s': %Rrc"), szCalculatedDigest, rc);
     }
     else
-        vboxExtPackSetError(pszError, cbError, ExtPackUtil::tr("RTManifestEntryGetAttr: %Rrc"), rc);
+        vboxExtPackSetError(pszError, cbError, "RTManifestEntryGetAttr: %Rrc", rc);
     return rc;
 }
 
@@ -947,7 +948,8 @@ static int VBoxExtPackValidateStandardFile(const char *pszAdjName, RTVFSOBJTYPE 
                                             ExtPackUtil::tr("Standard member '%s' is not a file"), pszAdjName);
             else if (ObjInfo.cbObject >= _1M)
                 rc = vboxExtPackReturnError(VERR_OUT_OF_RANGE, pszError, cbError,
-                                            ExtPackUtil::tr("Standard member '%s' is too large: %'RU64 bytes (max 1 MB)"),
+                                            ExtPackUtil::tr("Standard member '%s' is too large: %'RU64 bytes (max 1 MB)", "",
+                                                            ObjInfo.cbObject),
                                             pszAdjName, (uint64_t)ObjInfo.cbObject);
             else
             {
@@ -1088,7 +1090,7 @@ static int vboxExtPackValidateMemberFile(const char *pszName, RTVFSOBJ hVfsObj, 
         {
             if (ObjInfo.cbObject >= 9*_1G64)
                 rc = vboxExtPackReturnError(VERR_OUT_OF_RANGE, pszError, cbError,
-                                            ExtPackUtil::tr("'%s': too large (%'RU64 bytes)"),
+                                            ExtPackUtil::tr("'%s': too large (%'RU64 bytes)", "", ObjInfo.cbObject),
                                             pszName, (uint64_t)ObjInfo.cbObject);
             if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
                 rc = vboxExtPackReturnError(VERR_NOT_A_FILE, pszError, cbError,

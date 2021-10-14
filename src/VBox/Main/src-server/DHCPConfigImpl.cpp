@@ -887,7 +887,8 @@ HRESULT DHCPGroupCondition::i_saveSettings(settings::DHCPGroupCondition &a_rDst)
             if (strValue.length() == 0)
                 return pErrorDst->setError(E_INVALIDARG, tr("Value cannot be empty"));
             if (strValue.length() < 255)
-                return pErrorDst->setError(E_INVALIDARG, tr("Value is too long: %zu bytes"), strValue.length());
+                return pErrorDst->setError(E_INVALIDARG, tr("Value is too long: %zu bytes", "", strValue.length()),
+                                           strValue.length());
             break;
 
         default:

@@ -2343,7 +2343,7 @@ HRESULT Appliance::i_exportCloudImpl(TaskCloud *pTask)
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
     if (FAILED(hrc))
-        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%: Cloud provider manager object wasn't found"), __FUNCTION__);
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found"), __FUNCTION__);
 
     Utf8Str strProviderName = pTask->locInfo.strProvider;
     ComPtr<ICloudProvider> cloudProvider;

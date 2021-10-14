@@ -100,7 +100,7 @@ HRESULT BaseTextScript::readFromHandle(RTVFSFILE hVfsFile, const char *pszFilena
             mStrScriptFullContent.setNull();
         }
         else
-            hrc = mpSetError->setErrorVrc(vrc, tr("Failed to allocate memory (%'RU64 bytes) for '%s'"),
+            hrc = mpSetError->setErrorVrc(vrc, tr("Failed to allocate memory (%'RU64 bytes) for '%s'", "", cbFile),
                                           cbFile, pszFilename);
     }
     else if (RT_SUCCESS(vrc))
@@ -263,7 +263,9 @@ const RTCString &GeneralTextScript::getContentOfLine(size_t idxLine)
 HRESULT GeneralTextScript::setContentOfLine(size_t idxLine, const Utf8Str &rStrNewLine)
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
-                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("attempting to set line %zu when there are only %zu lines"),
+                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE,
+                                          tr("attempting to set line %zu when there are only %zu lines", "",
+                                             mScriptContentByLines.size()),
                                           idxLine, mScriptContentByLines.size()));
     try
     {
@@ -292,7 +294,8 @@ HRESULT GeneralTextScript::findAndReplace(size_t idxLine, const Utf8Str &rStrNee
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
                  mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE,
-                                          tr("attempting search&replace in line %zu when there are only %zu lines"),
+                                          tr("attempting search&replace in line %zu when there are only %zu lines", "",
+                                             mScriptContentByLines.size()),
                                           idxLine, mScriptContentByLines.size()));
 
     RTCString &rDstString = mScriptContentByLines[idxLine];
@@ -319,7 +322,9 @@ HRESULT GeneralTextScript::findAndReplace(size_t idxLine, const Utf8Str &rStrNee
 HRESULT GeneralTextScript::appendToLine(size_t idxLine, const Utf8Str &rStrToAppend)
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
-                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("appending to line %zu when there are only %zu lines"),
+                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE,
+                                          tr("appending to line %zu when there are only %zu lines", "",
+                                             mScriptContentByLines.size()),
                                           idxLine, mScriptContentByLines.size()));
 
     try
@@ -336,7 +341,9 @@ HRESULT GeneralTextScript::appendToLine(size_t idxLine, const Utf8Str &rStrToApp
 HRESULT GeneralTextScript::prependToLine(size_t idxLine, const Utf8Str &rStrToPrepend)
 {
     AssertReturn(idxLine < mScriptContentByLines.size(),
-                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("prepending to line %zu when there are only %zu lines"),
+                 mpSetError->setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE,
+                                          tr("prepending to line %zu when there are only %zu lines", "",
+                                             mScriptContentByLines.size()),
                                           idxLine, mScriptContentByLines.size()));
 
     RTCString &rDstString = mScriptContentByLines[idxLine];

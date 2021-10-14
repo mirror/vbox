@@ -210,7 +210,7 @@ HRESULT DataStream::read(ULONG aSize, ULONG aTimeoutMS, std::vector<BYTE> &aData
         if (vrc == VERR_TIMEOUT)
             hrc = VBOX_E_TIMEOUT;
         else if (RT_FAILURE(vrc))
-            hrc = setErrorBoth(E_FAIL, vrc, tr("Error reading %u bytes: %Rrc"), aSize, vrc);
+            hrc = setErrorBoth(E_FAIL, vrc, tr("Error reading %u bytes: %Rrc", "", aSize), aSize, vrc);
     }
 
     return hrc;

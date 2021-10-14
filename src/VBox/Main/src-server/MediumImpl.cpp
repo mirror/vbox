@@ -1884,7 +1884,8 @@ HRESULT Medium::setType(AutoCaller &autoCaller, MediumType_T aType)
                 || aType == MediumType_MultiAttach)
             && m->backRefs.size() > 0))
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot change the type of medium '%s' because it is attached to %d virtual machines"),
+                        tr("Cannot change the type of medium '%s' because it is attached to %d virtual machines",
+                           "", m->backRefs.size()),
                         m->strLocationFull.c_str(), m->backRefs.size());
 
     switch (aType)
@@ -1906,7 +1907,7 @@ HRESULT Medium::setType(AutoCaller &autoCaller, MediumType_T aType)
              * if there are children */
             if (i_getChildren().size() != 0)
                 return setError(VBOX_E_OBJECT_IN_USE,
-                                tr("Cannot change type for medium '%s' since it has %d child media"),
+                                tr("Cannot change type for medium '%s' since it has %d child media", "", i_getChildren().size()),
                                 m->strLocationFull.c_str(), i_getChildren().size());
             if (aType == MediumType_Shareable)
             {
@@ -3664,12 +3665,12 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
         /* Cannot encrypt media which are attached to more than one virtual machine. */
         if (m->backRefs.size() > 1)
             return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines"),
+                            tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines", "", m->backRefs.size()),
                             m->strLocationFull.c_str(), m->backRefs.size());
 
         if (i_getChildren().size() != 0)
             return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot encrypt medium '%s' because it has %d children"),
+                            tr("Cannot encrypt medium '%s' because it has %d children", "", i_getChildren().size()),
                             m->strLocationFull.c_str(), i_getChildren().size());
 
         /* Build the medium lock list. */
@@ -3717,14 +3718,15 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
             if (pMedium->m->backRefs.size() > 1)
             {
                 rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                              tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines"),
+                              tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines", "",
+                                 pMedium->m->backRefs.size()),
                               pMedium->m->strLocationFull.c_str(), pMedium->m->backRefs.size());
                 break;
             }
             else if (pMedium->i_getChildren().size() > 1)
             {
                 rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                              tr("Cannot encrypt medium '%s' because it has %d children"),
+                              tr("Cannot encrypt medium '%s' because it has %d children", "", pMedium->i_getChildren().size()),
                               pMedium->m->strLocationFull.c_str(), pMedium->i_getChildren().size());
                 break;
             }
@@ -3736,15 +3738,15 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
             throw rc;
         }
 
-        const char *pszAction = "Encrypting";
+        const char *pszAction = tr("Encrypting medium");
         if (   aCurrentPassword.isNotEmpty()
             && aCipher.isEmpty())
-            pszAction = "Decrypting";
+            pszAction = tr("Decrypting medium");
 
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("%s medium '%s'"), pszAction, m->strLocationFull.c_str()).raw(),
+                             BstrFmt("%s '%s'", pszAction, m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -4376,7 +4378,8 @@ HRESULT Medium::i_addBackReference(const Guid &aMachineId,
 
     if (m->numCreateDiffTasks > 0)
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Cannot attach medium '%s' {%RTuuid}: %u differencing child media are being created"),
+                        tr("Cannot attach medium '%s' {%RTuuid}: %u differencing child media are being created", "",
+                           m->numCreateDiffTasks),
                         m->strLocationFull.c_str(),
                         m->id.raw(),
                         m->numCreateDiffTasks);
@@ -5244,7 +5247,8 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
 
     if (m->backRefs.size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Medium '%s' cannot be closed because it is still attached to %d virtual machines"),
+                        tr("Medium '%s' cannot be closed because it is still attached to %d virtual machines", "",
+                           m->backRefs.size()),
                         m->strLocationFull.c_str(), m->backRefs.size());
 
     // perform extra media-dependent close checks
@@ -5398,7 +5402,8 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
             i_dumpBackRefs();
 #endif
             throw setError(VBOX_E_OBJECT_IN_USE,
-                           tr("Cannot delete storage: medium '%s' is still attached to the following %d virtual machine(s): %s"),
+                           tr("Cannot delete storage: medium '%s' is still attached to the following %d virtual machine(s): %s",
+                              "", m->backRefs.size()),
                            m->strLocationFull.c_str(),
                            m->backRefs.size(),
                            strMachines.c_str());
@@ -5866,7 +5871,7 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                     || (   (!aSnapshotId || !aSnapshotId->isZero())
                         && *i_getFirstMachineBackrefSnapshotId() != *aSnapshotId)))
                 throw setError(VBOX_E_OBJECT_IN_USE,
-                               tr("Medium '%s' is attached to %d virtual machines"),
+                               tr("Medium '%s' is attached to %d virtual machines", "", m->backRefs.size()),
                                m->strLocationFull.c_str(), m->backRefs.size());
             if (m->type == MediumType_Immutable)
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -5912,7 +5917,7 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             }
             if (pLast->m->backRefs.size() != 0)
                 throw setError(VBOX_E_OBJECT_IN_USE,
-                               tr("Medium '%s' is attached to %d virtual machines"),
+                               tr("Medium '%s' is attached to %d virtual machines", "", pLast->m->backRefs.size()),
                                pLast->m->strLocationFull.c_str(),
                                pLast->m->backRefs.size());
 
@@ -7564,7 +7569,7 @@ HRESULT Medium::i_canClose()
 
     if (i_getChildren().size() != 0)
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Cannot close medium '%s' because it has %d child media"),
+                        tr("Cannot close medium '%s' because it has %d child media", "", i_getChildren().size()),
                         m->strLocationFull.c_str(), i_getChildren().size());
 
     return S_OK;
@@ -10208,7 +10213,7 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
                                        task.mSize, location.c_str());
                 else if (vrc == VERR_NOT_IMPLEMENTED)
                     throw setErrorBoth(E_NOTIMPL, vrc,
-                                       tr("Resiting is not implemented, medium '%s'"),
+                                       tr("Resizing is not implemented, medium '%s'"),
                                        location.c_str());
                 else
                     throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,

@@ -540,7 +540,8 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                 }
                 else
                     /** @todo r=bird: This isn't an IPRT error, is it?   */
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Guest returned invalid drop formats (%zu formats)"), lstFormats.size());
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Guest returned invalid drop formats (%zu formats)", "",
+                                                        lstFormats.size()), lstFormats.size());
             }
             else
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Waiting for response of dropped event failed (%Rrc)"), vrc);

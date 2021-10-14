@@ -1779,7 +1779,8 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
             case VERR_GSTCTL_GUEST_ERROR:
             {
                 GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Reading %RU32 bytes from guest process handle %RU32 failed: %s"),
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest,
+                                  tr("Reading %RU32 bytes from guest process handle %RU32 failed: %s", "", aToRead),
                                   aToRead, aHandle, GuestBase::getErrorAsString(ge).c_str());
                 break;
             }
@@ -1931,7 +1932,8 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
             case VERR_GSTCTL_GUEST_ERROR:
             {
                 GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Writing %RU32 bytes (flags %#x) to guest process failed: %s"),
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest,
+                                  tr("Writing %RU32 bytes (flags %#x) to guest process failed: %s", "", cbData),
                                   cbData, aFlags, GuestBase::getErrorAsString(ge).c_str());
                 break;
             }

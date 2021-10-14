@@ -33,19 +33,19 @@
 # define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
 {\
-   static const char *tr(const char *pszSource, const char *pszComment = NULL, const int iNum = -1) \
+   static const char *tr(const char *pszSource, const char *pszComment = NULL, const size_t aNum = (~(size_t)0)) \
    { \
-       return VirtualBoxTranslator::translate(NULL, #ctx, pszSource, pszComment, iNum); \
+       return VirtualBoxTranslator::translate(NULL, #ctx, pszSource, pszComment, aNum); \
    } \
 }
 #else
 # define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
 {\
-   static const char *tr(const char *pszSource, const char *pszComment = NULL, const int iNum = -1) \
+   static const char *tr(const char *pszSource, const char *pszComment = NULL, const size_t aNum = (~(size_t)0)) \
    { \
        NOREF(pszComment); \
-       NOREF(iNum);       \
+       NOREF(aNum);       \
        return pszSource;  \
    } \
 }

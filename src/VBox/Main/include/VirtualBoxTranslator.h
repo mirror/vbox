@@ -91,10 +91,10 @@ public:
      *          valid only during lifetime of the translator instance.
      */
     static const char *translate(PTRCOMPONENT aComponent,
-                                 const char *aContext,
-                                 const char *aSourceText,
-                                 const char *aComment = NULL,
-                                 const int   aNum = -1) RT_NOEXCEPT;
+                                 const char  *aContext,
+                                 const char  *aSourceText,
+                                 const char  *aComment = NULL,
+                                 const size_t aNum = (~(size_t)0)) RT_NOEXCEPT;
 
     /**
      * Returns source text stored in the cache if exists.
@@ -140,10 +140,10 @@ private:
     int i_unregisterTranslation(PTRCOMPONENT aComponent);
 
     const char *i_translate(PTRCOMPONENT aComponent,
-                            const char *aContext,
-                            const char *aSourceText,
-                            const char *aComment = NULL,
-                            const int   aNum = -1) RT_NOEXCEPT;
+                            const char   *aContext,
+                            const char   *aSourceText,
+                            const char   *aComment = NULL,
+                            const size_t aNum = (~(size_t)0)) RT_NOEXCEPT;
 };
 
 /** Pointer to a translator component. */

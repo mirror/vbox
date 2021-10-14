@@ -532,7 +532,7 @@ HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const co
         return setError(E_FAIL, tr("The preferred locale is a two character string or empty."));
 
     if (aPreferredLanguage.length() != 2 && aPreferredLanguage.length() != 0)
-        return setError(E_FAIL, tr("The preferred lanuage is a two character string or empty."));
+        return setError(E_FAIL, tr("The preferred language is a two character string or empty."));
 
     if (   !aFormat.equals("html")
         && !aFormat.equals("rtf")
@@ -634,7 +634,8 @@ HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const co
                                 RTMemFree(pvFile);
                             }
                             else
-                                hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'"), cbFile, szName);
+                                hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'", "", cbFile),
+                                               cbFile, szName);
                         }
                         else
                             hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
@@ -1144,7 +1145,7 @@ HRESULT ExtPack::i_checkVrde(void)
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not include a VRDE module"), m->Desc.strName.c_str());
     }
     else
-        hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
     return hrc;
 }
 
@@ -1369,7 +1370,7 @@ void ExtPack::i_probeAndLoad(void)
     vrc = SUPR3HardenedVerifyDir(m->strExtPackPath.c_str(), true /*fRecursive*/, true /*fCheckFiles*/, &ErrInfo.Core);
     if (RT_FAILURE(vrc))
     {
-        m->strWhyUnusable.printf(tr("%s (rc=%Rrc)"), ErrInfo.Core.pszMsg, vrc);
+        m->strWhyUnusable.printf("%s (rc=%Rrc)", ErrInfo.Core.pszMsg, vrc);
         return;
     }
 
@@ -1426,7 +1427,7 @@ void ExtPack::i_probeAndLoad(void)
     vrc = SUPR3HardenedVerifyPlugIn(m->strMainModPath.c_str(), &ErrInfo.Core);
     if (RT_FAILURE(vrc))
     {
-        m->strWhyUnusable.printf(tr("%s"), ErrInfo.Core.pszMsg);
+        m->strWhyUnusable.printf("%s", ErrInfo.Core.pszMsg);
         return;
     }
 
@@ -2137,7 +2138,7 @@ HRESULT ExtPack::queryLicense(const com::Utf8Str &aPreferredLocale, const com::U
         return setError(E_FAIL, tr("The preferred locale is a two character string or empty."));
 
     if (aPreferredLanguage.length() != 2 && aPreferredLanguage.length() != 0)
-        return setError(E_FAIL, tr("The preferred lanuage is a two character string or empty."));
+        return setError(E_FAIL, tr("The preferred language is a two character string or empty."));
 
     if (   !aFormat.equals("html")
         && !aFormat.equals("rtf")
@@ -2167,7 +2168,7 @@ HRESULT ExtPack::queryLicense(const com::Utf8Str &aPreferredLocale, const com::U
     AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS); /* paranoia */
 
     if (!m->fUsable)
-        hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
     else
     {
         char szPath[RTPATH_MAX];

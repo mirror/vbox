@@ -287,7 +287,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
             return setError(hrcCaller,
                             tr("VBoxSDS is misconfigured to run under the '%ls' account instead of the SYSTEM one.\n"
                                "Reinstall VirtualBox to fix it.  Alternatively you can fix it using the Windows Service Control "
-                               "Manager or by running 'qc config VBoxSDS obj=LocalSystem' on a command line."), wszBuffer);
+                               "Manager or by running 'sc config VBoxSDS obj=LocalSystem' on a command line."), wszBuffer);
         if (uStartType == SERVICE_DISABLED)
             return setError(hrcCaller,
                             tr("The VBoxSDS windows service is disabled.\n"

@@ -344,9 +344,9 @@ public:
         return false;
     }
 
-    size_t plural(int aNum) const
+    size_t plural(size_t aNum) const
     {
-        if (aNum < 1 || m_pluralRules.empty())
+        if (aNum == SIZE_MAX || m_pluralRules.empty())
             return 0;
 
         size_t   uPluralNumber = 0;
@@ -363,27 +363,27 @@ public:
                 /* 'And' loop */
                 for (;;)
                 {
-                    int iOpCode = m_pluralRules[iPos++];
-                    int iOpLeft = aNum;
+                    int    iOpCode = m_pluralRules[iPos++];
+                    size_t iOpLeft = aNum;
                     if (iOpCode & Pl_Mod10)
                         iOpLeft %= 10;
                     else if (iOpCode & Pl_Mod100)
                         iOpLeft %= 100;
-                    else if (iOpLeft & Pl_Lead1000)
+                    else if (iOpCode & Pl_Lead1000)
                     {
                         while (iOpLeft >= 1000)
                             iOpLeft /= 1000;
                     }
-                    int iOpRight = m_pluralRules[iPos++];
-                    int iOp = iOpCode & Pl_OpMask;
-                    int iOpRight1 = 0;
+                    size_t iOpRight = m_pluralRules[iPos++];
+                    int    iOp = iOpCode & Pl_OpMask;
+                    size_t iOpRight1 = 0;
                     if (iOp == Pl_Between)
                         iOpRight1 = m_pluralRules[iPos++];
 
                     bool fResult =    (iOp == Pl_Eq      && iOpLeft == iOpRight)
-                            || (iOp == Pl_Lt      && iOpLeft <  iOpRight)
-                            || (iOp == Pl_Leq     && iOpLeft <= iOpRight)
-                            || (iOp == Pl_Between && iOpLeft >= iOpRight && iOpLeft <= iOpRight1);
+                                   || (iOp == Pl_Lt      && iOpLeft <  iOpRight)
+                                   || (iOp == Pl_Leq     && iOpLeft <= iOpRight)
+                                   || (iOp == Pl_Between && iOpLeft >= iOpRight && iOpLeft <= iOpRight1);
                     if (iOpCode & Pl_Not)
                         fResult = !fResult;
 
@@ -410,10 +410,10 @@ public:
         }
     }
 
-    const char *translate(const char *pszContext,
-                          const char *pszSource,
-                          const char *pszDisamb,
-                          const int   aNum,
+    const char *translate(const char  *pszContext,
+                          const char  *pszSource,
+                          const char  *pszDisamb,
+                          const size_t aNum,
                           const char **ppszSafeSource) const RT_NOEXCEPT
     {
         QMHashSetConstIter lowerIter, upperIter;
@@ -611,7 +611,7 @@ QMTranslator::QMTranslator() : m_impl(new QMTranslator_Impl) {}
 QMTranslator::~QMTranslator() { delete m_impl; }
 
 const char *QMTranslator::translate(const char *pszContext, const char *pszSource, const char **ppszSafeSource,
-                                    const char *pszDisamb /*== NULL*/, const int aNum /*= -1*/) const RT_NOEXCEPT
+                                    const char *pszDisamb /*== NULL*/, const size_t aNum /* = (~(size_t)0) */) const RT_NOEXCEPT
 
 {
     return m_impl->translate(pszContext, pszSource, pszDisamb, aNum, ppszSafeSource);

@@ -2700,7 +2700,8 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
     size_t childrenCount = pSnapshot->i_getChildrenCount();
     if (childrenCount > 1)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots, which is more than the one snapshot allowed for deletion"),
+                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots, which is more than the one snapshot allowed for deletion",
+                           "", childrenCount),
                         pSnapshot->i_getName().c_str(),
                         mUserData->s.strName.c_str(),
                         childrenCount);
@@ -3060,7 +3061,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
             if (fNeedsOnlineMerge && pSource->i_getLogicalSize() > pTarget->i_getLogicalSize())
             {
                 rc = setError(E_FAIL,
-                              tr("Unable to merge storage '%s', because it is smaller than the source image. If you resize it to have a capacity of at least %lld bytes you can retry"),
+                              tr("Unable to merge storage '%s', because it is smaller than the source image. If you resize it to have a capacity of at least %lld bytes you can retry",
+                                 "", pSource->i_getLogicalSize()),
                               pTarget->i_getLocationFull().c_str(), pSource->i_getLogicalSize());
                 throw rc;
             }

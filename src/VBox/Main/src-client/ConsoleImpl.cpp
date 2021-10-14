@@ -2641,7 +2641,7 @@ HRESULT Console::getGuestEnteredACPIMode(BOOL *aEntered)
         && mMachineState != MachineState_LiveSnapshotting
        )
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Invalid machine state %s when checking if the guest entered the ACPI mode)"),
+                        tr("Invalid machine state %s when checking if the guest entered the ACPI mode"),
                         Global::stringifyMachineState(mMachineState));
 
     /* get the VM handle. */
@@ -8716,9 +8716,12 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
      * Check the other two string lengths before converting them all to SHFLSTRINGS.
      */
     if (strName.length() >= _2K)
-        return setError(E_INVALIDARG, tr("Shared folder name is too long: %zu bytes"), strName.length());
+        return setError(E_INVALIDARG, tr("Shared folder name is too long: %zu bytes", "", strName.length()),
+                        strName.length());
     if (aData.m_strAutoMountPoint.length() >= RTPATH_MAX)
-        return setError(E_INVALIDARG, tr("Shared folder mountp point too long: %zu bytes"), aData.m_strAutoMountPoint.length());
+        return setError(E_INVALIDARG, tr("Shared folder mount point too long: %zu bytes", "",
+                                         (int)aData.m_strAutoMountPoint.length()),
+                        aData.m_strAutoMountPoint.length());
 
     PSHFLSTRING pHostPath       = ShflStringDupUtf8AsUtf16(aData.m_strHostPath.c_str());
     PSHFLSTRING pName           = ShflStringDupUtf8AsUtf16(strName.c_str());

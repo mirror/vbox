@@ -65,7 +65,7 @@ HRESULT BandwidthGroup::init(BandwidthControl *aParent,
     if (   (aType <= BandwidthGroupType_Null)
         || (aType >  BandwidthGroupType_Network))
         return setError(E_INVALIDARG,
-                        tr("Invalid bandwidth group type type"));
+                        tr("Invalid bandwidth group type"));
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);

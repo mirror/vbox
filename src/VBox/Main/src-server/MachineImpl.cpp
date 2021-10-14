@@ -4677,7 +4677,7 @@ HRESULT Machine::getNetworkAdapter(ULONG aSlot, ComPtr<INetworkAdapter> &aAdapte
        status.  testdriver/vbox.py triggers this in logVmInfo. */
     if (aSlot >= mNetworkAdapters.size())
         return setError(E_INVALIDARG,
-                        tr("No network adapter in slot %RU32 (total %RU32 adapters)"),
+                        tr("No network adapter in slot %RU32 (total %RU32 adapters)", "", mNetworkAdapters.size()),
                         aSlot, mNetworkAdapters.size());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -6778,8 +6778,9 @@ HRESULT Machine::setAutostartEnabled(BOOL aAutostartEnabled)
                            tr("The path to the autostart database is not set"));
         else
             hrc = setError(E_UNEXPECTED,
-                           tr("%s machine '%s' to the autostart database failed with %Rrc"),
-                           aAutostartEnabled ? "Adding" : "Removing",
+                           aAutostartEnabled ?
+                               tr("Adding machine '%s' to the autostart database failed with %Rrc") :
+                               tr("Removing machine '%s' from the autostart database failed with %Rrc"),
                            mUserData->s.strName.c_str(), vrc);
     }
     return hrc;
@@ -6851,8 +6852,9 @@ HRESULT Machine::setAutostopType(AutostopType_T aAutostopType)
                           tr("The path to the autostart database is not set"));
        else
            hrc = setError(E_UNEXPECTED,
-                          tr("%s machine '%s' to the autostop database failed with %Rrc"),
-                          aAutostopType != AutostopType_Disabled ? "Adding" : "Removing",
+                          aAutostopType != AutostopType_Disabled ?
+                            tr("Adding machine '%s' to the autostop database failed with %Rrc") :
+                            tr("Removing machine '%s' from the autostop database failed with %Rrc"),
                           mUserData->s.strName.c_str(), vrc);
     }
     return hrc;

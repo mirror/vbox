@@ -407,7 +407,7 @@ HRESULT Appliance::interpret()
                 /* Check for the constrains */
                 if (llNetworkAdapters.size() > maxNetworkAdapters)
                     i_addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
-                                    "has support for max %u network adapter only."),
+                                    "has support for max %u network adapter only.","", llNetworkAdapters.size()),
                                     vsysThis.strName.c_str(), llNetworkAdapters.size(), maxNetworkAdapters);
                 /* Iterate through all network adapters. */
                 settings::NetworkAdaptersList::const_iterator it1;
@@ -437,7 +437,7 @@ HRESULT Appliance::interpret()
                 /* Check for the constrains */
                 if (cEthernetAdapters > maxNetworkAdapters)
                     i_addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox "
-                                    "has support for max %u network adapter only."),
+                                    "has support for max %u network adapter only.", "", cEthernetAdapters),
                                     vsysThis.strName.c_str(), cEthernetAdapters, maxNetworkAdapters);
 
                 /* Get the default network adapter type for the selected guest OS */
@@ -3046,7 +3046,8 @@ HRESULT Appliance::i_readTailProcessingSignedData(PRTERRINFOSTATIC pErrInfo)
         i_addWarning(tr("Invalid PKCS#7/CMS inner type: %s, expected %s (data)"),
                      pSignedData->ContentInfo.ContentType.szObjId, RTCR_PKCS7_DATA_OID);
     else if (RTAsn1OctetString_IsPresent(&pSignedData->ContentInfo.Content))
-        i_addWarning(tr("Invalid PKCS#7/CMS data: embedded (%u bytes), expected external"),
+        i_addWarning(tr("Invalid PKCS#7/CMS data: embedded (%u bytes), expected external","",
+                        (int)pSignedData->ContentInfo.Content.Asn1Core.cb),
                      pSignedData->ContentInfo.Content.Asn1Core.cb);
     else if (pSignedData->SignerInfos.cItems == 0)
         i_addWarning(tr("Invalid PKCS#7/CMS: No signers"));
@@ -3478,7 +3479,8 @@ HRESULT Appliance::i_readTailProcessingVerifyContentInfoCerts(void const *pvData
 
         if (   pSignedData->SignerInfos.cItems > 1
             && pSignedData->SignerInfos.cItems != cVerifiedOkay)
-            i_addWarning(tr("%u out of %u PKCS#7/CMS signatures verfified okay"),
+            i_addWarning(tr("%u out of %u PKCS#7/CMS signatures verfified okay", "",
+                            pSignedData->SignerInfos.cItems),
                          cVerifiedOkay, pSignedData->SignerInfos.cItems);
     }
 
@@ -4453,7 +4455,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     else if (vsdeNW.size() > maxNetworkAdapters)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many network adapters: OVF requests %d network adapters, "
-                          "but VirtualBox only supports %d"),
+                          "but VirtualBox only supports %d", "", vsdeNW.size()),
                        vsdeNW.size(), maxNetworkAdapters);
     else
     {

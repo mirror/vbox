@@ -1840,7 +1840,8 @@ HRESULT Unattended::i_reconfigureIsos(com::SafeIfaceArray<IStorageController> &r
         if (cDvdDrivesNeeded > lstControllerDvdSlots.size())
         {
             /* We could in many cases create another controller here, but it's not worth the effort. */
-            return setError(E_FAIL, tr("Not enough free slots on controller '%s' to add %u DVD drive(s)"),
+            return setError(E_FAIL, tr("Not enough free slots on controller '%s' to add %u DVD drive(s)", "",
+                                       cDvdDrivesNeeded - lstControllerDvdSlots.size()),
                             strRecommendedControllerName.c_str(), cDvdDrivesNeeded - lstControllerDvdSlots.size());
         }
         Assert(cDvdDrivesNeeded == lstControllerDvdSlots.size());
@@ -2302,7 +2303,7 @@ HRESULT Unattended::setHostname(const com::Utf8Str &aHostname)
      */
     if (aHostname.length() > (aHostname.endsWith(".") ? 254U : 253U))
         return setErrorBoth(E_INVALIDARG, VERR_INVALID_NAME,
-                            tr("Hostname '%s' is %zu bytes long, max is 253 (excluding trailing dot)"),
+                            tr("Hostname '%s' is %zu bytes long, max is 253 (excluding trailing dot)", "", aHostname.length()),
                             aHostname.c_str(), aHostname.length());
     size_t      cLabels  = 0;
     const char *pszSrc   = aHostname.c_str();
