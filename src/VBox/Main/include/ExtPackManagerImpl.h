@@ -182,10 +182,10 @@ protected:
                                                        /* VBoxEventType_T */ uint32_t aType,
                                                        VBOXEXTPACK_IF_CS(IVetoEvent) **ppEventOut);
     static DECLCALLBACK(const char *) i_hlpTranslate(PCVBOXEXTPACKHLP pHlp,
-                                                     const char *pszComponent,
-                                                     const char *pszSourceText,
-                                                     const char *pszComment = NULL,
-                                                     const int   iNum = -1);
+                                                     const char  *pszComponent,
+                                                     const char  *pszSourceText,
+                                                     const char  *pszComment = NULL,
+                                                     const size_t aNum = -1);
     static DECLCALLBACK(int)      i_hlpReservedN(PCVBOXEXTPACKHLP pHlp);
     /** @}  */
 

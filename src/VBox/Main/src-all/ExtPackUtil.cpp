@@ -1090,7 +1090,7 @@ static int vboxExtPackValidateMemberFile(const char *pszName, RTVFSOBJ hVfsObj, 
         {
             if (ObjInfo.cbObject >= 9*_1G64)
                 rc = vboxExtPackReturnError(VERR_OUT_OF_RANGE, pszError, cbError,
-                                            ExtPackUtil::tr("'%s': too large (%'RU64 bytes)", "", ObjInfo.cbObject),
+                                            ExtPackUtil::tr("'%s': too large (%'RU64 bytes)", "", (size_t)ObjInfo.cbObject),
                                             pszName, (uint64_t)ObjInfo.cbObject);
             if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
                 rc = vboxExtPackReturnError(VERR_NOT_A_FILE, pszError, cbError,

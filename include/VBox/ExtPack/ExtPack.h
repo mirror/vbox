@@ -340,13 +340,13 @@ typedef struct VBOXEXTPACKHLP
      * @param   pszSourceText             String to translate
      * @param   pszComment                Comment to the string to resolve possible ambiguities
      *                                    (NULL means no comment).
-     * @param   iNum                      Number used to define plural form of the translation
+     * @param   aNum                      Number used to define plural form of the translation
      */
     DECLR3CALLBACKMEMBER(const char *, pfnTranslate,(PCVBOXEXTPACKHLP pHlp,
-                                                     const char *pszComponent,
-                                                     const char *pszSourceText,
-                                                     const char *pszComment,
-                                                     const int   iNum));
+                                                     const char  *pszComponent,
+                                                     const char  *pszSourceText,
+                                                     const char  *pszComment,
+                                                     const size_t aNum));
 
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */

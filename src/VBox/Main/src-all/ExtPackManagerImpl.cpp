@@ -2014,10 +2014,10 @@ ExtPack::i_hlpCreateVetoEvent(PCVBOXEXTPACKHLP pHlp,
 
 /*static*/ DECLCALLBACK(const char *)
 ExtPack::i_hlpTranslate(PCVBOXEXTPACKHLP pHlp,
-                        const char *pszComponent,
-                        const char *pszSourceText,
-                        const char *pszComment /* = NULL */,
-                        const int   iNum /* = -1 */)
+                        const char  *pszComponent,
+                        const char  *pszSourceText,
+                        const char  *pszComment /* = NULL */,
+                        const size_t aNum /* = -1 */)
 {
     /*
      * Validate the input and get our bearings.
@@ -2029,11 +2029,11 @@ ExtPack::i_hlpTranslate(PCVBOXEXTPACKHLP pHlp,
 
 #ifdef VBOX_WITH_MAIN_NLS
     return VirtualBoxTranslator::translate(m->pTrComponent, pszComponent,
-                                           pszSourceText,  pszComment, iNum);
+                                           pszSourceText,  pszComment, aNum);
 #else
     NOREF(pszComponent);
     NOREF(pszComment);
-    NOREF(iNum);
+    NOREF(aNum);
     return pszSourceText;
 #endif
 }
