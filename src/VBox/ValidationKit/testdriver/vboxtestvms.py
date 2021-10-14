@@ -2021,6 +2021,10 @@ class TestVmManager(object):
                sKind = 'Ubuntu_64', acCpusSup = range(1, 2), asVirtModesSup = ['hwvirt-np',], fIoApic = True, fNstHwVirt = True,
                sNic0AttachType = 'nat'),
 
+        # Audio testing.
+        TestVm('tst-audio-debian10-64',        kfGrpStdSmoke,       sHd = '6.1/audio/debian10-amd64.vdi',
+               sKind = 'Debian_64', acCpusSup = range(1, 2), fIoApic = True),
+
         # DOS and Old Windows.
         AncientTestVm('tst-dos20',              sKind = 'DOS',
                       sHd = '5.2/great-old-ones/t-dos20/t-dos20.vdi'),
