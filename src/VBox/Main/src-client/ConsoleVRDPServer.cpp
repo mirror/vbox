@@ -3402,10 +3402,9 @@ void ConsoleVRDPServer::ClipboardCreate(uint32_t u32ClientId)
         {
             rc = HGCMHostRegisterServiceExtension(&mhClipboard, "VBoxSharedClipboard", ClipboardServiceExtension, this);
             AssertRC(rc);
-
-            mcClipboardRefs++;
         }
 
+        mcClipboardRefs++;
         unlockConsoleVRDPServer();
     }
 }
