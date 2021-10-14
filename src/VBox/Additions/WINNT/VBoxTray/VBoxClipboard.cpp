@@ -537,11 +537,10 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
             const SHCLFORMAT fFormat = (uint32_t)pEvent->u.fReadData;
 
-            HANDLE hClip = NULL;
-
             LogFlowFunc(("SHCL_WIN_WM_READ_DATA: fFormat=%#x\n", fFormat));
 
             int rc = SharedClipboardWinOpen(hwnd);
+            HANDLE hClip = NULL;
             if (RT_SUCCESS(rc))
             {
                 if (fFormat & VBOX_SHCL_FMT_BITMAP)
@@ -557,9 +556,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                             GlobalUnlock(hClip);
                         }
                         else
-                        {
                             hClip = NULL;
-                        }
                     }
                 }
                 else if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
@@ -576,9 +573,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                             GlobalUnlock(hClip);
                         }
                         else
-                        {
                             hClip = NULL;
-                        }
                     }
                 }
                 else if (fFormat & VBOX_SHCL_FMT_HTML)
@@ -597,22 +592,20 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                 GlobalUnlock(hClip);
                             }
                             else
-                            {
                                 hClip = NULL;
-                            }
                         }
                     }
                 }
-                if (hClip == NULL)
-                {
-                    LogFunc(("SHCL_WIN_WM_READ_DATA: hClip=NULL, lastError=%ld\n", GetLastError()));
 
-                    /* Requested clipboard format is not available, send empty data. */
-                    VbglR3ClipboardWriteData(pCtx->CmdCtx.idClient, VBOX_SHCL_FMT_NONE, NULL, 0);
-                }
+                if (hClip == NULL)
+                    LogFunc(("SHCL_WIN_WM_READ_DATA: hClip=NULL, lastError=%ld\n", GetLastError()));
 
                 SharedClipboardWinClose();
             }
+
+            /* If the requested clipboard format is not available, we must send empty data. */
+            if (hClip == NULL)
+                VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, VBOX_SHCL_FMT_NONE, NULL, 0);
             break;
         }
 
