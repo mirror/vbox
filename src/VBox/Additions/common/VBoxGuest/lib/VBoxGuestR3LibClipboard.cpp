@@ -2461,10 +2461,11 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
  * from the host.
  *
  * @returns VBox status code.
- * @param   idClient        The client id returned by VbglR3ClipboardConnect().
- * @param   fFormat         The format of the data.
- * @param   pv              The data.
- * @param   cb              The size of the data.
+ * @param   idClient    The client id returned by VbglR3ClipboardConnect().
+ * @param   fFormat     The format of the data.
+ * @param   pvData      Pointer to the data to send.  Can be NULL if @a cbData
+ *                      is zero.
+ * @param   cbData      Number of bytes of data to send.  Zero is valid.
  */
 VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb)
 {
@@ -2493,24 +2494,22 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
  * from the host.
  *
  * @returns VBox status code.
- * @param   pCtx                The command context returned by VbglR3ClipboardConnectEx().
- * @param   uFormat             Clipboard format to send.
- * @param   pvData              Pointer to data to send.
- * @param   cbData              Size (in bytes) of data to send.
+ * @param   pCtx        The command context returned by VbglR3ClipboardConnectEx().
+ * @param   fFormat     Clipboard format to send.
+ * @param   pvData      Pointer to the data to send.  Can be NULL if @a cbData
+ *                      is zero.
+ * @param   cbData      Number of bytes of data to send.  Zero is valid.
  */
-VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
+VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT fFormat, void *pvData, uint32_t cbData)
 {
-    AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    LogFlowFunc(("ENTER: fFormat=%#x pvData=%p cbData=%#x\n", fFormat, pvData, cbData));
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    if (cbData > 0)
+        AssertPtrReturn(pvData, VERR_INVALID_POINTER);
 
     int rc;
-
-    LogFlowFuncEnter();
-
     if (pCtx->fUseLegacyProtocol)
-    {
-        rc = VbglR3ClipboardWriteData(pCtx->idClient, uFormat, pvData, cbData);
-    }
+        rc = VbglR3ClipboardWriteData(pCtx->idClient, fFormat, pvData, cbData);
     else
     {
         struct
@@ -2521,7 +2520,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uF
 
         VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_DATA_WRITE);
         Msg.Parms.id64Context.SetUInt64(pCtx->idContext);
-        Msg.Parms.f32Format.SetUInt32(uFormat);
+        Msg.Parms.f32Format.SetUInt32(fFormat);
         Msg.Parms.pData.SetPtr(pvData, cbData);
 
         LogFlowFunc(("CID=%RU32\n", pCtx->idContext));
