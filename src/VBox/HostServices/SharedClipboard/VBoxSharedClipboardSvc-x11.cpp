@@ -139,7 +139,9 @@ int ShClBackendSync(PSHCLCLIENT pClient)
     /* Tell the guest we have no data in case X11 is not available.  If
      * there is data in the host clipboard it will automatically be sent to
      * the guest when the clipboard starts up. */
-    return ShClSvcHostReportFormats(pClient, VBOX_SHCL_FMT_NONE);
+    if (ShClSvcIsBackendActive())
+        return ShClSvcHostReportFormats(pClient, VBOX_SHCL_FMT_NONE);
+    return VINF_SUCCESS;
 }
 
 /*
@@ -289,10 +291,13 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFor
     rc = RTCritSectEnter(&pClient->CritSect);
     if (RT_SUCCESS(rc))
     {
-        /** @todo r=bird: BUGBUG: Revisit this   */
-        if (fFormats != VBOX_SHCL_FMT_NONE) /* No formats to report? */
+        if (ShClSvcIsBackendActive())
         {
-            rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
+            /** @todo r=bird: BUGBUG: Revisit this   */
+            if (fFormats != VBOX_SHCL_FMT_NONE) /* No formats to report? */
+            {
+                rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
+            }
         }
 
         RTCritSectLeave(&pClient->CritSect);

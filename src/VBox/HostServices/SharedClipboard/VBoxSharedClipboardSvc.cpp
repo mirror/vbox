@@ -1399,6 +1399,10 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 /**
  * Reports available VBox clipboard formats to the guest.
  *
+ * @note    Host backend callers must check if it's active (use
+ *          ShClSvcIsBackendActive) before calling to prevent mixing up the
+ *          VRDE clipboard.
+ *
  * @returns VBox status code.
  * @param   pClient             Client to report clipboard formats to.
  * @param   fFormats            The formats to report (VBOX_SHCL_FMT_XXX), zero
@@ -1544,26 +1548,36 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
         rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
         if (RT_SUCCESS(rc))
         {
-            if (g_ExtState.pfnExtension)
+            rc = RTCritSectEnter(&g_CritSect);
+            if (RT_SUCCESS(rc))
             {
-                SHCLEXTPARMS parms;
-                RT_ZERO(parms);
-                parms.uFormat = fFormats;
+                if (g_ExtState.pfnExtension)
+                {
+                    SHCLEXTPARMS parms;
+                    RT_ZERO(parms);
+                    parms.uFormat = fFormats;
 
-                g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
+                    g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
+                }
+                else
+                {
+#ifdef LOG_ENABLED
+                    char *pszFmts = ShClFormatsToStrA(fFormats);
+                    if (pszFmts)
+                    {
+                        LogRel2(("Shared Clipboard: Guest reported formats '%s' to host\n", pszFmts));
+                        RTStrFree(pszFmts);
+                    }
+#endif
+                    rc = ShClBackendFormatAnnounce(pClient, fFormats);
+                    if (RT_FAILURE(rc))
+                        LogRel(("Shared Clipboard: Reporting guest clipboard formats to the host failed with %Rrc\n", rc));
+                }
+
+                RTCritSectLeave(&g_CritSect);
             }
             else
-            {
-#ifdef LOG_ENABLED
-                char *pszFmts = ShClFormatsToStrA(fFormats);
-                AssertPtrReturn(pszFmts, VERR_NO_MEMORY);
-                LogRel2(("Shared Clipboard: Guest reported formats '%s' to host\n", pszFmts));
-                RTStrFree(pszFmts);
-#endif
-                rc = ShClBackendFormatAnnounce(pClient, fFormats);
-                if (RT_FAILURE(rc))
-                    LogRel(("Shared Clipboard: Reporting guest clipboard formats to the host failed with %Rrc\n", rc));
-            }
+                LogRel2(("Shared Clipboard: Unable to take internal lock while receiving guest clipboard announcement: %Rrc\n", rc));
         }
     }
 
@@ -1668,8 +1682,10 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     /*
      * Do the reading.
      */
-    int rc;
     uint32_t cbActual = 0;
+
+    int rc = RTCritSectEnter(&g_CritSect);
+    AssertRCReturn(rc, rc);
 
     /* If there is a service extension active, try reading data from it first. */
     if (g_ExtState.pfnExtension)
@@ -1726,6 +1742,8 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         if (cbActual >= cbData)
             rc = VINF_BUFFER_OVERFLOW;
     }
+
+    RTCritSectLeave(&g_CritSect);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1853,15 +1871,19 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
 
 #ifdef LOG_ENABLED
     char *pszFmt = ShClFormatsToStrA(uFormat);
-    AssertPtrReturn(pszFmt, VERR_NO_MEMORY);
-    LogRel2(("Shared Clipboard: Guest writes %RU32 bytes clipboard data in format '%s' to host\n", cbData, pszFmt));
-    RTStrFree(pszFmt);
+    if (pszFmt)
+    {
+        LogRel2(("Shared Clipboard: Guest writes %RU32 bytes clipboard data in format '%s' to host\n", cbData, pszFmt));
+        RTStrFree(pszFmt);
+    }
 #endif
 
     /*
      * Write the data to the active host side clipboard.
      */
-    int rc;
+    int rc = RTCritSectEnter(&g_CritSect);
+    AssertRCReturn(rc, rc);
+
     if (g_ExtState.pfnExtension)
     {
         SHCLEXTPARMS parms;
@@ -1886,6 +1908,8 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
             LogRel(("Shared Clipboard: Signalling host about guest clipboard data failed with %Rrc\n", rc2));
         AssertRC(rc2);
     }
+
+    RTCritSectLeave(&g_CritSect);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2694,6 +2718,14 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
     SHCLEXTPARMS parms;
     RT_ZERO(parms);
 
+    /*
+     * Reference counting for service extension registration is done a few
+     * layers up (in ConsoleVRDPServer::ClipboardCreate()).
+     */
+
+    int rc = RTCritSectEnter(&g_CritSect);
+    AssertLogRelRCReturn(rc, rc);
+
     if (pfnExtension)
     {
         /* Install extension. */
@@ -2701,8 +2733,9 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
         g_ExtState.pvExtension  = pvExtension;
 
         parms.u.pfnCallback = extCallback;
-
         g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
+
+        LogRel2(("Shared Clipboard: registered service extension\n"));
     }
     else
     {
@@ -2710,9 +2743,13 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
             g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
 
         /* Uninstall extension. */
+        g_ExtState.pvExtension  = NULL;
         g_ExtState.pfnExtension = NULL;
-        g_ExtState.pvExtension = NULL;
+
+        LogRel2(("Shared Clipboard: de-registered service extension\n"));
     }
+
+    RTCritSectLeave(&g_CritSect);
 
     return VINF_SUCCESS;
 }

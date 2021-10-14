@@ -258,6 +258,8 @@ typedef struct _SHCLEXTSTATE
     uint32_t       fDelayedFormats;
 } SHCLEXTSTATE, *PSHCLEXTSTATE;
 
+extern SHCLEXTSTATE g_ExtState;
+
 int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource);
 
 void shClSvcMsgQueueReset(PSHCLCLIENT pClient);
@@ -297,6 +299,15 @@ uint32_t ShClSvcGetMode(void);
 bool ShClSvcGetHeadless(void);
 bool ShClSvcLock(void);
 void ShClSvcUnlock(void);
+
+/**
+ * Checks if the backend is active (@c true), or if VRDE is in control of
+ * the host side.
+ */
+DECLINLINE(bool) ShClSvcIsBackendActive(void)
+{
+    return g_ExtState.pfnExtension == NULL;
+}
 /** @} */
 
 
