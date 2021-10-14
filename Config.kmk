@@ -323,6 +323,13 @@ VBOX_SUPPORTED_HOST_ARCHS := amd64
 # exist and which value they should have (usually 1, but anyway).
 #
 
+# Indicate VBOX_ONLY build if any of the VBOX_ONLY_* variables are set.
+VBOX_ONLY_BUILD := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK VALIDATIONKIT\
+	, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
+if $(words $(VBOX_ONLY_BUILD)) > 1
+ $(error VBox: More than one VBOX_ONLY build enabled! $(VBOX_ONLY_BUILD))
+endif
+
 # Select new Xcode based on host OS X version.
 ifeq ($(KBUILD_HOST),darwin)
  if "$(KBUILD_TARGET_ARCH)" == "arm64"
@@ -679,9 +686,13 @@ endif
 # Whether to generate a database of USB vendor IDs and device IDs into VBoxSVC.
 VBOX_WITH_MAIN_USB_ID_DATABASE = 1
 # Whether to enable error message translation in Main.
-VBOX_WITH_MAIN_NLS = 1
+ifndef VBOX_ONLY_BUILD
+ VBOX_WITH_MAIN_NLS = 1
+endif
 # Whether to enable error message translation in Extension VM Pack.
-VBOX_WITH_PUEL_NLS = 1
+if !defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_EXTPACKS)
+ VBOX_WITH_PUEL_NLS = 1
+endif
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
 if1of ($(KBUILD_TARGET), linux solaris)
@@ -1258,24 +1269,6 @@ ifdef VBOX_BRANDING_CFG
 endif
 
 #
-# VBOX_WITH_NLS controls all NLS (except the GUI at the moment).
-# We disable NLS for SDK-only builds.
-#
-if defined(VBOX_WITH_MAIN_NLS) || defined(VBOX_WITH_PUEL_NLS)
- VBOX_WITH_NLS := 1
-endif
-#
-# Additions does not use NLS support yet
-#
-if defined(VBOX_ONLY_SDK) || defined(VBOX_ONLY_ADDITIONS)
- override VBOX_WITH_NLS :=
-endif
-ifndef VBOX_WITH_NLS # (We test again to account for 'override VBOX_WITH_NLS :=')
- VBOX_WITH_MAIN_NLS :=
- VBOX_WITH_PUEL_NLS :=
-endif
-
-#
 # Bitch about old settings.
 #
 ifdef VBOX_WITHOUT_LINUX_COMPILER_H
@@ -1285,10 +1278,21 @@ endif
 #
 # Indicate VBOX_ONLY build if any of the VBOX_ONLY_* variables are set.
 #
-VBOX_ONLY_BUILD := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK VALIDATIONKIT\
+VBOX_ONLY_BUILD_NEW := $(strip $(foreach x, ADDITIONS DOCS EXTPACKS SDK VALIDATIONKIT\
 	, $(if-expr defined(VBOX_ONLY_$(x)),VBOX_ONLY_$(x))))
-if $(words $(VBOX_ONLY_BUILD)) > 1
- $(error VBox: More than one VBOX_ONLY build enabled! $(VBOX_ONLY_BUILD))
+ifneq ($(VBOX_ONLY_BUILD),$(VBOX_ONLY_BUILD_NEW))
+ $(error VBox: LocalConfig.kmk changed the VBOX_ONLY_ build status, VBOX_ONLY_* must be on the kmk command line or in the environment: $(VBOX_ONLY_BUILD) -> $(VBOX_ONLY_BUILD_NEW))
+endif
+
+#
+# Enforce VBOX_WITH_NLS.  It controls all NLS (except the GUI at the moment).
+#
+if defined(VBOX_WITH_MAIN_NLS) || defined(VBOX_WITH_PUEL_NLS)
+ VBOX_WITH_NLS := 1
+ ifndef VBOX_WITH_NLS # (We test again to account for 'override VBOX_WITH_NLS :=')
+  VBOX_WITH_MAIN_NLS :=
+  VBOX_WITH_PUEL_NLS :=
+ endif
 endif
 
 #
