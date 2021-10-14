@@ -226,11 +226,14 @@ class tdAudioTest(vbox.TestDriver):
 
         fRc = True;
 
+        oVM         = None;
+        oVirtualBox = None;
+
         oVirtualBox = self.oVBoxMgr.getVirtualBox();
         try:
             oVM = oVirtualBox.findMachine(self.sRunningVmName);
             if oVM.state != self.oVBoxMgr.constants.MachineState_Running:
-                reporter.error("Machine '%s' is not in Running state" % (self.sRunningVmName));
+                reporter.error("Machine '%s' is not in Running state (state is %d)" % (self.sRunningVmName, oVM.state));
                 fRc = False;
         except:
             reporter.errorXcpt("Machine '%s' not found" % (self.sRunningVmName));
@@ -248,8 +251,10 @@ class tdAudioTest(vbox.TestDriver):
                 reporter.error("Unable to open session for machine '%s'" % (self.sRunningVmName));
                 fRc = False;
 
-        del oVM;
-        del oVirtualBox;
+        if oVM:
+            del oVM;
+        if oVirtualBox:
+            del oVirtualBox;
         return fRc;
 
     def getGstVkatLogFilePath(self, oTestVm):
