@@ -1505,11 +1505,17 @@ extpacks-build: \
 	extpacks-build-freebsd.amd64 \
 	extpacks-build-freebsd.x86
 
-VBOX_EXTPACKS_BUILD.amd64 = VBOX_ONLY_EXTPACKS=1 \
+VBOX_EXTPACKS_BUILD.amd64 = VBOX_ONLY_EXTPACKS=1 VBOX_WITH_MAIN_NLS= VBOX_WITH_PUEL_NLS_NO_QM=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=amd64 VBOX_SVN_REV=$(VBOX_SVN_REV)
 
-VBOX_EXTPACKS_BUILD.x86 = VBOX_ONLY_EXTPACKS=1 \
+VBOX_EXTPACKS_BUILD.x86   = VBOX_ONLY_EXTPACKS=1 VBOX_WITH_MAIN_NLS= VBOX_WITH_PUEL_NLS_NO_QM=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=x86 VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+ifdef VBOX_WITH_PUEL_NLS
+ VBOX_EXTPACKS_HOST_EXTRA = VBOX_WITH_PUEL_NLS_NO_QM=
+else
+ VBOX_EXTPACKS_HOST_EXTRA = VBOX_WITH_PUEL_NLS_NO_QM=
+endif
 
 # Automatically determine the extpack build subdir name. Used for figuring out
 # directory names inside the extension pack building VMs.
@@ -1525,7 +1531,7 @@ endif
 
 extpacks-build-win.amd64:
 ifeq ($(KBUILD_TARGET),win)
-	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 extension packs)
 	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_WIN_AMD64_IP) 'cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.amd64) all '
@@ -1535,7 +1541,7 @@ endif
 extpacks-build-win.x86:
 if1of (x86, $(VBOX_SUPPORTED_HOST_ARCHS))
  ifeq ($(KBUILD_TARGET),win)
-	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
  else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/x86 extension packs)
 	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_WIN_X86_IP) 'cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.x86) all '
@@ -1547,7 +1553,7 @@ endif
 
 ifeq ($(KBUILD_TARGET),solaris)
 extpacks-build-solaris.amd64:
-	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 
 else
 # Serialize 32-bit and 64-bit ASSUMING the same VM builds both.
@@ -1570,18 +1576,18 @@ endif
 
 extpacks-build-os2.x86:
 #ifeq ($(KBUILD_TARGET),os2)
-#	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+#	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 #else
 #	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_OS2_IP) ' cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) '
 #endif
 
 ifeq ($(KBUILD_TARGET),linux)
 extpacks-build-linux.amd64:   $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
-	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 
 extpacks-build-linux.x86:   $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
  if1of (x86, $(VBOX_SUPPORTED_HOST_ARCHS))
-	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
  else
 	@$(ECHO) "nothing to do for unsupported host $@"
  endif
@@ -1616,7 +1622,7 @@ endif
 
 extpacks-build-freebsd.amd64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
 #ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.amd64)
-#	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+#	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 #else
 #	$(call VBOX_BLD_VM_MSG_BEGIN,FreeBSD/amd64 extension packs)
 #	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_FBSD_AMD64_IP) 'cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all '
@@ -1625,7 +1631,7 @@ extpacks-build-freebsd.amd64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
 
 extpacks-build-freebsd.x86: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
 #ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.x86)
-#	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+#	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 #else
 #	$(call VBOX_BLD_VM_MSG_BEGIN,FreeBSD/x86 extension packs)
 #	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_FBSD_X86_IP) 'cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all '
@@ -1634,7 +1640,7 @@ extpacks-build-freebsd.x86: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
 
 extpacks-build-darwin.amd64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
-	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_EXTRA) $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 extension packs)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
