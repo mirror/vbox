@@ -44,6 +44,7 @@
 #include "CSession.h"
 #include "CSnapshot.h"
 #include "CVirtualSystemDescription.h"
+#include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
 class CAudioAdapter;
@@ -957,6 +958,57 @@ private:
     QString        m_strName;
     /** Holds the machine media being removed. */
     CMediumVector  m_media;
+};
+
+/** UINotificationProgress extension for launch VSD form create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressLaunchVSDFormCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about VSD @a comForm created.
+      * @param  comForm  Brings created VSD form. */
+    void sigVSDFormCreated(const CVirtualSystemDescriptionForm &comForm);
+
+public:
+
+    /** Constructs launch VSD form create notification-progress.
+      * @param  comClient             Brings the cloud client being creating VSD form.
+      * @param  comVsd                Brings the VSD, form being created for.
+      * @param  strProviderShortName  Brings the short provider name.
+      * @param  strProfileName        Brings the profile name. */
+    UINotificationProgressLaunchVSDFormCreate(const CCloudClient &comClient,
+                                              const CVirtualSystemDescription &comVSD,
+                                              const QString &strProviderShortName,
+                                              const QString &strProfileName);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being creating VSD form. */
+    CCloudClient                   m_comClient;
+    /** Holds the VSD, form being created for. */
+    CVirtualSystemDescription      m_comVSD;
+    /** Holds the VSD form being created. */
+    CVirtualSystemDescriptionForm  m_comVSDForm;
+    /** Holds the short provider name. */
+    QString                        m_strProviderShortName;
+    /** Holds the profile name. */
+    QString                        m_strProfileName;
 };
 
 /** UINotificationProgress extension for cloud machine add functionality. */

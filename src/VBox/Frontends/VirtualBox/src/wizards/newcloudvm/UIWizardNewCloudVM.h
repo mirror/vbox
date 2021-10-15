@@ -53,7 +53,7 @@ public:
     CVirtualSystemDescriptionForm vsdForm() const { return m_comVSDForm; }
 
     /** Creates VSD Form. */
-    bool createVSDForm();
+    void createVSDForm();
 
     /** Creates New Cloud VM. */
     bool createCloudVM();

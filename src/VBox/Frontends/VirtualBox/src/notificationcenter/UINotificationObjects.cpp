@@ -1931,6 +1931,51 @@ CProgress UINotificationProgressMachineMediaRemove::createProgress(COMResult &co
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressLaunchVSDFormCreate implementation.                                                              *
+*********************************************************************************************************************************/
+
+UINotificationProgressLaunchVSDFormCreate::UINotificationProgressLaunchVSDFormCreate(const CCloudClient &comClient,
+                                                                                     const CVirtualSystemDescription &comVSD,
+                                                                                     const QString &strProviderShortName,
+                                                                                     const QString &strProfileName)
+    : m_comClient(comClient)
+    , m_comVSD(comVSD)
+    , m_strProviderShortName(strProviderShortName)
+    , m_strProfileName(strProfileName)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressLaunchVSDFormCreate::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressLaunchVSDFormCreate::name() const
+{
+    return UINotificationProgress::tr("Creating launch VSD form ...");
+}
+
+QString UINotificationProgressLaunchVSDFormCreate::details() const
+{
+    return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2")
+                                      .arg(m_strProviderShortName, m_strProfileName);
+}
+
+CProgress UINotificationProgressLaunchVSDFormCreate::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.GetLaunchDescriptionForm(m_comVSD, m_comVSDForm);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressLaunchVSDFormCreate::sltHandleProgressFinished()
+{
+    if (m_comVSDForm.isNotNull())
+        emit sigVSDFormCreated(m_comVSDForm);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressCloudMachineAdd implementation.                                                                  *
 *********************************************************************************************************************************/
 

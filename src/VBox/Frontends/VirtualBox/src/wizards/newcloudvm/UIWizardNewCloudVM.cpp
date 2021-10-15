@@ -51,67 +51,21 @@ UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent,
     }
 }
 
-bool UIWizardNewCloudVM::createVSDForm()
+void UIWizardNewCloudVM::createVSDForm()
 {
-    /* Prepare result: */
-    bool fResult = false;
-
     /* Acquire prepared client and description: */
     CCloudClient comClient = client();
     CVirtualSystemDescription comVSD = vsd();
-    AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
+    AssertReturnVoid(comClient.isNotNull() && comVSD.isNotNull());
 
-    /* Read Cloud Client description form: */
-    CVirtualSystemDescriptionForm comForm;
-    CProgress comProgress = comClient.GetLaunchDescriptionForm(comVSD, comForm);
-    /* Check for immediate errors: */
-    if (!comClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comClient);
-    else
-    {
-        /* Make sure progress initially valid: */
-        if (!comProgress.isNull() && !comProgress.GetCompleted())
-        {
-            /* Create take snapshot progress object: */
-            QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
-            if (pObject)
-            {
-                connect(pObject.data(), &UIProgressObject::sigProgressChange,
-                        this, &UIWizardNewCloudVM::sltHandleProgressChange);
-                connect(pObject.data(), &UIProgressObject::sigProgressComplete,
-                        this, &UIWizardNewCloudVM::sltHandleProgressFinished);
-                sltHandleProgressStarted();
-                pObject->exec();
-                if (pObject)
-                    delete pObject;
-                else
-                {
-                    // Premature application shutdown,
-                    // exit immediately:
-                    return fResult;
-                }
-            }
-        }
-
-        /* Check for progress errors: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress);
-        else
-        {
-            /* Check whether form really read: */
-            if (comForm.isNotNull())
-            {
-                /* Remember Virtual System Description Form: */
-                setVSDForm(comForm);
-
-                /* Finally, success: */
-                fResult = true;
-            }
-        }
-    }
-
-    /* Return result: */
-    return fResult;
+    /* Create launch VSD form: */
+    UINotificationProgressLaunchVSDFormCreate *pNotification = new UINotificationProgressLaunchVSDFormCreate(comClient,
+                                                                                                             comVSD,
+                                                                                                             providerShortName(),
+                                                                                                             profileName());
+    connect(pNotification, &UINotificationProgressLaunchVSDFormCreate::sigVSDFormCreated,
+            this, &UIWizardNewCloudVM::setVSDForm);
+    handleNotificationProgressNow(pNotification);
 }
 
 bool UIWizardNewCloudVM::createCloudVM()
