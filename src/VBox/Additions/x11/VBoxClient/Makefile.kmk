@@ -19,6 +19,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # Use header files from our tree for randr and xinerama. and don't link but rather dlopen libXrand
+# This is mostly because the GA build boxes can have a very old xrandr lib, so instead of linking we dlopen.
 VBOX_WITH_DISTRO_XRAND_XINERAMA=
 
 # We don't yet have a seamless mode compilation flag, so define it here unconditionally.
