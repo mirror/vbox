@@ -41,28 +41,14 @@ public:
       * @param  strFullGroupName  Brings full group name (/provider/profile) to create VM in. */
     UIWizardNewCloudVM(QWidget *pParent, const QString &strFullGroupName);
 
-    /** Defines @a strProviderShortName. */
-    void setProviderShortName(const QString &strProviderShortName) { m_strProviderShortName = strProviderShortName; }
     /** Returns provider short name. */
     QString providerShortName() const { return m_strProviderShortName; }
-
-    /** Defines @a strProfileName. */
-    void setProfileName(const QString &strProfileName) { m_strProfileName = strProfileName; }
     /** Returns profile name. */
     QString profileName() const { return m_strProfileName; }
-
-    /** Defines Cloud @a comClient object. */
-    void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
     /** Returns Cloud Client object. */
     CCloudClient client() const { return m_comClient; }
-
-    /** Defines Virtual System @a comVSD object. */
-    void setVSD(const CVirtualSystemDescription &comVSD) { m_comVSD = comVSD; }
     /** Returns Virtual System Description object. */
     CVirtualSystemDescription vsd() const { return m_comVSD; }
-
-    /** Defines Virtual System Description @a comForm object. */
-    void setVSDForm(const CVirtualSystemDescriptionForm &comForm) { m_comVSDForm = comForm; }
     /** Returns Virtual System Description Form object. */
     CVirtualSystemDescriptionForm vsdForm() const { return m_comVSDForm; }
 
@@ -71,6 +57,19 @@ public:
 
     /** Creates New Cloud VM. */
     bool createCloudVM();
+
+public slots:
+
+    /** Defines @a strProviderShortName. */
+    void setProviderShortName(const QString &strProviderShortName) { m_strProviderShortName = strProviderShortName; }
+    /** Defines @a strProfileName. */
+    void setProfileName(const QString &strProfileName) { m_strProfileName = strProfileName; }
+    /** Defines Cloud @a comClient object. */
+    void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
+    /** Defines Virtual System @a comVSD object. */
+    void setVSD(const CVirtualSystemDescription &comVSD) { m_comVSD = comVSD; }
+    /** Defines Virtual System Description @a comForm object. */
+    void setVSDForm(const CVirtualSystemDescriptionForm &comForm) { m_comVSDForm = comForm; }
 
 protected:
 
