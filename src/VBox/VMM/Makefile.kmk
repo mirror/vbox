@@ -83,6 +83,7 @@ endif
 if "$(KBUILD_TYPE)" == "debug" && "$(USERNAME)" == "bird" && 0
 VBoxVMM_DEFS    += RTMEM_WRAP_TO_EF_APIS
 endif
+VBoxVMM_DEFS.darwin = VMM_R0_SWITCH_STACK
 
 VBoxVMM_INCS     = \
 	include \
@@ -467,6 +468,7 @@ VMMR0_DEFS     += VMM_R0_SWITCH_STACK
  if1of ($(KBUILD_TARGET), darwin linux win)
 VMMR0_DEFS     += VMM_R0_TOUCH_FPU
  endif
+VMMR0_DEFS.darwin = VMM_R0_SWITCH_STACK
 VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
 
  ifeq ($(VBOX_LDR_FMT),elf)
