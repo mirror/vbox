@@ -1184,6 +1184,32 @@
       </para>
     </note>
 
+    <para>
+      On Linux, Mac OS X and Solaris &product-name; will only allow IP
+      addresses in 192.68.56.0/21 range to be assigned to host-only
+      adapters. For IPv6 only link-local addresses are allowed. If other
+      ranges are desired, they can be enabled by creating
+      <filename>/etc/vbox/networks.conf</filename> and specifying allowed
+      ranges there. For example, to allow 10.0.0.0/8 and 192.168.0.0/16
+      IPv4 ranges as well as 2001::/64 range put the following lines into
+      <filename>/etc/vbox/networks.conf</filename>:
+      <screen>
+      * 10.0.0.0/8 192.168.0.0/16
+      * 2001::/64
+      </screen>
+      Lines starting with the hash <command>#</command> are ignored. Next
+      example allows any addresses, effectively disabling range control:
+      <screen>
+      * 0.0.0.0/0 ::/0
+      </screen>
+      If the file exists, but no ranges are specified in it, no addresses
+      will be assigned to host-only adapters. The following example
+      effectively disables all ranges:
+      <screen>
+      # No addresses are allowed for host-only adapters
+      </screen>
+    </para>
+
   </sect1>
 
   <sect1 id="network_udp_tunnel">

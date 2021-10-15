@@ -80,7 +80,7 @@ static int NetIfAdpCtl(const char * pcszIfName, const char *pszAddr, const char 
                 return VINF_SUCCESS;
             LogRel(("NetIfAdpCtl: failed to create process for %s: iStats=%d enmReason=%d\n",
                     szAdpCtl, Status.iStatus, Status.enmReason));
-            rc = VERR_GENERAL_FAILURE;
+            rc = -Status.iStatus;
         }
     }
     else
