@@ -387,6 +387,7 @@ private:
     void activateScreenSaver();
     /* Shows the boot failure dialog through which user can mount a boot DVD and reset the vm. */
     void showBootFailureDialog();
+    /** Attempts to mount medium with @p uMediumId to the machine if it can find an appropriate controller and port. */
     bool mountBootMedium(const QUuid &uMediumId);
 
     /* Private variables: */

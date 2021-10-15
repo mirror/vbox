@@ -3328,7 +3328,7 @@ bool UIMachineLogic::mountBootMedium(const QUuid &uMediumId)
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            msgCenter().cannotSaveMachineSettings(comMachine, pParent);
+            UINotificationMessage::cannotSaveMachineSettings(machine());
     }
     return fSuccess;
 }
