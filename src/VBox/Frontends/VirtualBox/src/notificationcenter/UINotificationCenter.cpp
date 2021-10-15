@@ -226,6 +226,41 @@ void UINotificationCenter::revoke(const QUuid &uId)
     return m_pModel->revokeObject(uId);
 }
 
+void UINotificationCenter::handleNow(UINotificationProgress *pProgress)
+{
+    /* Check for the recursive run: */
+    AssertMsgReturnVoid(!m_pEventLoop, ("UINotificationCenter::handleNow() is called recursively!\n"));
+
+    /* Guard progress for the case
+     * it destroyed itself in his append call: */
+    QPointer<UINotificationProgress> guardProgress = pProgress;
+    connect(pProgress, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationCenter::sltHandleProgressFinished);
+    append(pProgress);
+
+    /* Is progress still valid? */
+    if (guardProgress.isNull())
+        return;
+
+    /* Create a local event-loop: */
+    QEventLoop eventLoop;
+    m_pEventLoop = &eventLoop;
+
+    /* Guard ourself for the case
+     * we destroyed ourself in our event-loop: */
+    QPointer<UINotificationCenter> guardThis = this;
+
+    /* Start the blocking event-loop: */
+    eventLoop.exec();
+
+    /* Are we still valid? */
+    if (guardThis.isNull())
+        return;
+
+    /* Cleanup event-loop: */
+    m_pEventLoop = 0;
+}
+
 void UINotificationCenter::retranslateUi()
 {
     if (m_pOpenButton)
@@ -358,6 +393,15 @@ void UINotificationCenter::sltModelChanged()
     setHidden(m_pModel->ids().isEmpty());
     if (m_pModel->ids().isEmpty() && m_pOpenButton->isChecked())
         m_pOpenButton->toggle();
+}
+
+void UINotificationCenter::sltHandleProgressFinished()
+{
+    /* Make sure event-loop is running: */
+    AssertPtrReturnVoid(m_pEventLoop.data());
+
+    /* Break the loop: */
+    m_pEventLoop->exit();
 }
 
 void UINotificationCenter::prepare()

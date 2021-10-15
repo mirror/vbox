@@ -22,6 +22,8 @@
 #endif
 
 /* Qt includes: */
+#include <QEventLoop>
+#include <QPointer>
 #include <QUuid>
 #include <QWidget>
 
@@ -78,6 +80,10 @@ public:
     /** Revokes a notification object referenced by @a uId from intenal model. */
     void revoke(const QUuid &uId);
 
+    /** Immediately and synchronously handles passed notification @a pProgress.
+      * @note It's a blocking call finished by sltHandleProgressFinished(). */
+    void handleNow(UINotificationProgress *pProgress);
+
 protected:
 
     /** Handles translation event. */
@@ -104,6 +110,10 @@ private slots:
 
     /** Handles signal about model being updated. */
     void sltModelChanged();
+
+    /** Handles immediate progress being finished.
+      * @note Breaks blocking handleNow() call. */
+    void sltHandleProgressFinished();
 
 private:
 
@@ -159,6 +169,11 @@ private:
     QTimer *m_pTimerOpen;
     /** Holds the open-object ID. */
     QUuid   m_uOpenObjectId;
+
+    /** Holds the separate event-loop instance.
+      * @note  This event-loop is only used when the center
+      *        handles progress directly via handleNow(). */
+    QPointer<QEventLoop>  m_pEventLoop;
 };
 
 /** Singleton notification-center 'official' name. */

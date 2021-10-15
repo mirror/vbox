@@ -38,6 +38,7 @@ class QStackedWidget;
 class QVBoxLayout;
 class UINativeWizardPage;
 class UINotificationCenter;
+class UINotificationProgress;
 
 /** Native wizard buttons. */
 enum WizardButtonType
@@ -75,6 +76,11 @@ protected:
 class SHARED_LIBRARY_STUFF UINativeWizard : public QIWithRetranslateUI<QDialog>
 {
     Q_OBJECT;
+
+public:
+
+    /** Immediately handles notification @a pProgress object. */
+    void handleNotificationProgressNow(UINotificationProgress *pProgress);
 
 public slots:
 

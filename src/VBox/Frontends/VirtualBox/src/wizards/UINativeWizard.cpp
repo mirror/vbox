@@ -79,6 +79,11 @@ void UIFrame::paintEvent(QPaintEvent *pEvent)
 #endif /* VBOX_WS_MAC */
 
 
+void UINativeWizard::handleNotificationProgressNow(UINotificationProgress *pProgress)
+{
+    m_pNotificationCenter->handleNow(pProgress);
+}
+
 int UINativeWizard::exec()
 {
     /* Init wizard: */
