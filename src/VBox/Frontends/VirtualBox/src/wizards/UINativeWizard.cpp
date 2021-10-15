@@ -35,6 +35,7 @@
 #include "UIMessageCenter.h"
 #include "UINativeWizard.h"
 #include "UINativeWizardPage.h"
+#include "UINotificationCenter.h"
 
 
 #ifdef VBOX_WS_MAC
@@ -102,6 +103,7 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
     , m_pWidgetStack(0)
     , m_pProgressStack(0)
     , m_pProgressBar(0)
+    , m_pNotificationCenter(0)
 {
     prepare();
 }
@@ -542,10 +544,17 @@ void UINativeWizard::prepare()
             pLayoutMain->addWidget(pWidgetBottom);
         }
     }
+
+    /* Prepare local notification-center: */
+    m_pNotificationCenter = new UINotificationCenter(this);
 }
 
 void UINativeWizard::cleanup()
 {
+    /* Cleanup local notification-center: */
+    delete m_pNotificationCenter;
+    m_pNotificationCenter = 0;
+
     /* Remove all the pages: */
     m_pWidgetStack->blockSignals(true);
     while (m_pWidgetStack->count() > 0)

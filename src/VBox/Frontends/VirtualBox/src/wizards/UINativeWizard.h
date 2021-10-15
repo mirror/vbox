@@ -37,6 +37,7 @@ class QPushButton;
 class QStackedWidget;
 class QVBoxLayout;
 class UINativeWizardPage;
+class UINotificationCenter;
 
 /** Native wizard buttons. */
 enum WizardButtonType
@@ -197,6 +198,9 @@ private:
     QProgressBar                         *m_pProgressBar;
     /** Holds button instance map. */
     QMap<WizardButtonType, QPushButton*>  m_buttons;
+
+    /** Holds the local notification-center instance. */
+    UINotificationCenter *m_pNotificationCenter;
 };
 
 /** Native wizard interface pointer. */
