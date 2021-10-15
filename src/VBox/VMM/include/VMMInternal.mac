@@ -23,9 +23,7 @@
 ;
 %ifndef VMM_R0_SWITCH_STACK
  %ifndef VMM_R0_NO_SWITCH_STACK
-  %ifdef RT_OS_DARWIN
-   %define VMM_R0_SWITCH_STACK
-  %endif
+  ; No-one uses stack switching any more.
  %endif
 %endif
 
