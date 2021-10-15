@@ -127,7 +127,7 @@ UINotificationCenter *UINotificationCenter::s_pInstance = 0;
 void UINotificationCenter::create(QWidget *pParent /* = 0 */)
 {
     AssertReturnVoid(!s_pInstance);
-    new UINotificationCenter(pParent);
+    s_pInstance = new UINotificationCenter(pParent);
 }
 
 /* static */
@@ -135,12 +135,32 @@ void UINotificationCenter::destroy()
 {
     AssertPtrReturnVoid(s_pInstance);
     delete s_pInstance;
+    s_pInstance = 0;
 }
 
 /* static */
 UINotificationCenter *UINotificationCenter::instance()
 {
     return s_pInstance;
+}
+
+UINotificationCenter::UINotificationCenter(QWidget *pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pModel(0)
+    , m_pLayoutMain(0)
+    , m_pLayoutButtons(0)
+    , m_pOpenButton(0)
+    , m_pKeepButton(0)
+    , m_pLayoutItems(0)
+    , m_pStateMachineSliding(0)
+    , m_iAnimatedValue(0)
+    , m_pTimerOpen(0)
+{
+    prepare();
+}
+
+UINotificationCenter::~UINotificationCenter()
+{
 }
 
 void UINotificationCenter::setParent(QWidget *pParent)
@@ -204,27 +224,6 @@ void UINotificationCenter::revoke(const QUuid &uId)
 {
     AssertReturnVoid(!uId.isNull());
     return m_pModel->revokeObject(uId);
-}
-
-UINotificationCenter::UINotificationCenter(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pModel(0)
-    , m_pLayoutMain(0)
-    , m_pLayoutButtons(0)
-    , m_pOpenButton(0)
-    , m_pKeepButton(0)
-    , m_pLayoutItems(0)
-    , m_pStateMachineSliding(0)
-    , m_iAnimatedValue(0)
-    , m_pTimerOpen(0)
-{
-    s_pInstance = this;
-    prepare();
-}
-
-UINotificationCenter::~UINotificationCenter()
-{
-    s_pInstance = 0;
 }
 
 void UINotificationCenter::retranslateUi()

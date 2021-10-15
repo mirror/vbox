@@ -62,6 +62,11 @@ public:
     /** Returns notification-center singleton instance. */
     static UINotificationCenter *instance();
 
+    /** Constructs notification-center passing @a pParent to the base-class. */
+    UINotificationCenter(QWidget *pParent);
+    /** Destructs notification-center. */
+    virtual ~UINotificationCenter() /* override final */;
+
     /** Defines notification-center @a pParent. */
     void setParent(QWidget *pParent);
 
@@ -74,11 +79,6 @@ public:
     void revoke(const QUuid &uId);
 
 protected:
-
-    /** Constructs notification-center passing @a pParent to the base-class. */
-    UINotificationCenter(QWidget *pParent);
-    /** Destructs notification-center. */
-    virtual ~UINotificationCenter() /* override final */;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override final */;
