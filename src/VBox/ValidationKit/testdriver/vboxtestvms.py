@@ -2017,13 +2017,13 @@ class TestVmManager(object):
         #       sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', sChipsetType = 'ich9'),
 
         # Nested hardware-virtualization
-        TestVm('tst-nsthwvirt-ubuntu-64',    kfGrpStdSmoke,       sHd = '5.3/nat/nsthwvirt-ubuntu64/t-nsthwvirt-ubuntu64.vdi',
+        TestVm('tst-nsthwvirt-ubuntu-64',   kfGrpStdSmoke,       sHd = '5.3/nat/nsthwvirt-ubuntu64/t-nsthwvirt-ubuntu64.vdi',
                sKind = 'Ubuntu_64', acCpusSup = range(1, 2), asVirtModesSup = ['hwvirt-np',], fIoApic = True, fNstHwVirt = True,
                sNic0AttachType = 'nat'),
 
         # Audio testing.
-        TestVm('tst-audio-debian10-64',        kfGrpStdSmoke,       sHd = '6.1/audio/debian10-amd64-2.vdi',
-               sKind = 'Debian_64', acCpusSup = range(1, 2), fIoApic = True),
+        TestVm('tst-audio-debian10-64',     kfGrpStdSmoke,       sHd = '6.1/audio/debian10-amd64-2.vdi',
+               sKind = 'Debian_64', acCpusSup = range(1, 33), fIoApic = True),
 
         # DOS and Old Windows.
         AncientTestVm('tst-dos20',              sKind = 'DOS',
