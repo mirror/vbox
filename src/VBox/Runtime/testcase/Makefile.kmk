@@ -474,15 +474,10 @@ ifn1of ($(KBUILD_TARGET), win)
 endif
 tstLdrObjR0_LIBS = \
 	$(PATH_STAGE_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-ifeq ($(VBOX_LDR_FMT),pe)
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
+if1of ($(VBOX_LDR_FMT),pe lx)
  tstLdrObjR0_LIBS += \
-	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB) \
-	$(TARGET_tstLdr-4Imp)
-endif
-ifeq ($(VBOX_LDR_FMT),lx)
- tstLdrObjR0_LIBS += \
-	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB) \
 	$(TARGET_tstLdr-4Imp)
 endif
 
@@ -772,10 +767,9 @@ tstRTR0DbgKrnlInfo_INST = $(INST_TESTCASE)
 tstRTR0DbgKrnlInfo_DEFS = IN_RT_R0
 tstRTR0DbgKrnlInfo_SYSSUFF = .r0
 tstRTR0DbgKrnlInfo_SOURCES = tstRTR0DbgKrnlInfo.cpp
-tstRTR0DbgKrnlInfo_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0DbgKrnlInfo_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+tstRTR0DbgKrnlInfo_LIBS = \
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0DbgKrnlInfoDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0DbgKrnlInfoDriverHardened_NAME = tstRTR0DbgKrnlInfoDriver
@@ -798,10 +792,9 @@ tstRTR0MemUserKernel_INST = $(INST_TESTCASE)
 tstRTR0MemUserKernel_DEFS = IN_RT_R0
 tstRTR0MemUserKernel_SYSSUFF = .r0
 tstRTR0MemUserKernel_SOURCES = tstRTR0MemUserKernel.cpp
-tstRTR0MemUserKernel_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0MemUserKernel_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+tstRTR0MemUserKernel_LIBS = \
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0MemUserKernelDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0MemUserKernelDriverHardened_NAME = tstRTR0MemUserKernelDriver
@@ -823,10 +816,9 @@ tstRTR0SemMutex_INST = $(INST_TESTCASE)
 tstRTR0SemMutex_DEFS = IN_RT_R0
 tstRTR0SemMutex_SYSSUFF = .r0
 tstRTR0SemMutex_SOURCES = tstRTR0SemMutex.cpp
-tstRTR0SemMutex_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0SemMutex_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+tstRTR0SemMutex_LIBS = \
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0SemMutexDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0SemMutexDriverHardened_NAME = tstRTR0SemMutexDriver
@@ -848,10 +840,9 @@ tstRTR0Thread_INST = $(INST_TESTCASE)
 tstRTR0Thread_DEFS = IN_RT_R0
 tstRTR0Thread_SYSSUFF = .r0
 tstRTR0Thread_SOURCES = tstRTR0Thread.cpp
-tstRTR0Thread_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0Thread_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+tstRTR0Thread_LIBS = \
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0ThreadDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0ThreadDriverHardened_NAME = tstRTR0ThreadDriver
@@ -873,10 +864,9 @@ tstRTR0Timer_INST = $(INST_TESTCASE)
 tstRTR0Timer_DEFS = IN_RT_R0
 tstRTR0Timer_SYSSUFF = .r0
 tstRTR0Timer_SOURCES = tstRTR0Timer.cpp
-tstRTR0Timer_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0Timer_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+tstRTR0Timer_LIBS = \
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0TimerDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0TimerDriverHardened_NAME = tstRTR0TimerDriver
@@ -898,10 +888,9 @@ tstRTR0ThreadPreemption_INST = $(INST_TESTCASE)
 tstRTR0ThreadPreemption_DEFS = IN_RT_R0
 tstRTR0ThreadPreemption_SYSSUFF = .r0
 tstRTR0ThreadPreemption_SOURCES = tstRTR0ThreadPreemption.cpp
-tstRTR0ThreadPreemption_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0ThreadPreemption_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+tstRTR0ThreadPreemption_LIBS = \
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
  tstRTR0ThreadPreemptionDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
  tstRTR0ThreadPreemptionDriverHardened_NAME = tstRTR0ThreadPreemptionDriver

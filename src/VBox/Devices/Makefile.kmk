@@ -1390,9 +1390,10 @@ endif
 
  if1of ($(VBOX_LDR_FMT), pe lx)
  VBoxDDR0_LIBS           = \
- 	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
- 	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB)
  endif
+ VBoxDDR0_LIBS          += \
+ 	$(VBOX_LIB_SUPR0)
 
  $(call VBOX_SET_VER_INFO_R0,VBoxDDR0,VirtualBox VMM Devices and Drivers$(COMMA) ring-0) # (last!)
 

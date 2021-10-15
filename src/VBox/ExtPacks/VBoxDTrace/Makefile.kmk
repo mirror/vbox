@@ -267,11 +267,8 @@ if defined(VBOX_WITH_EXTPACK_VBOXDTRACE) && defined(VBOX_WITH_EXTPACK)
  	VBoxDTraceR0A.asm \
  	$(VBOXDT_PATH_UTS)/common/dtrace/dtrace.c
  VBoxDTraceR0_LIBS = \
- 	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
- ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
-  VBoxDTraceR0_LIBS += \
-  	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
- endif
+ 	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
  $(call VBOX_SET_VER_INFO_R0,VBoxDTraceR0,VBoxDTrace Core (ring-0))
 
 

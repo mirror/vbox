@@ -135,11 +135,8 @@ TEMPLATE_VBoxValidationKitR0_EXTENDS_BY = appending
 TEMPLATE_VBoxValidationKitR0_INST = $(INST_VALIDATIONKIT)$(KBUILD_TARGET)/$(KBUILD_TARGET_ARCH)/
 TEMPLATE_VBoxValidationKitR0_DEFS = IN_RT_R0
 TEMPLATE_VBoxValidationKitR0_LIBS = \
-	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-if1of ($(KBUILD_TARGET),os2 win)
- TEMPLATE_VBoxValidationKitR0_LIBS += \
- 	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_SUPR0)
 
 #
 # List of python sources that should be linted and unittested.
