@@ -318,6 +318,13 @@ int main()
     GOODCIDR("1.2.3.4/255.255.255.0",   0x01020304, 24);
     GOODCIDR("1.2.3.4/255.255.255.255", 0x01020304, 32);
 
+#if 0
+    /** @todo doesn't support 0/0 yet */
+    GOODCIDR("0.0.0.0/0",       0x00000000,  0);
+    GOODCIDR("0.0.0.0/0x0",     0x00000000,  0);
+    GOODCIDR("0.0.0.0/0.0.0.0", 0x00000000,  0);
+#endif
+
     GOODCIDR("\t " "1.2.3.4/24",       0x01020304, 24); /* leading spaces ok */
     GOODCIDR(      "1.2.3.4/24" " \t", 0x01020304, 24); /* trailing spaces ok */
     GOODCIDR("\t " "1.2.3.4/24" " \t", 0x01020304, 24); /* both are ok */
