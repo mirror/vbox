@@ -2326,18 +2326,20 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
  * @param   fPre                Set to \c true to verify a pre beacon, or \c false to verify a post beacon.
  * @param   pCmp                File comparison parameters to file to verify beacon for.
  * @param   pToneParms          Tone parameters to use for verification.
+ * @param   puOff               Where to return the file offset (in bytes) right after the found beacon.
  */
 static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
-                                     bool fPre, PAUDIOTESTFILECMPPARMS pCmp, PAUDIOTESTTONEPARMS pToneParms)
+                                     bool fPre, PAUDIOTESTFILECMPPARMS pCmp, PAUDIOTESTTONEPARMS pToneParms, uint64_t *puOff)
 {
     int rc = RTFileSeek(pCmp->hFile, pCmp->offStart, RTFILE_SEEK_BEGIN, NULL);
     AssertRCReturn(rc, rc);
 
     uint8_t        auBuf[64];
-    uint64_t       cbToCompare = pCmp->cbSize;
-    uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
-    bool           fInBeacon   = false;
-    uint32_t       cbBeacon    = 0;
+    uint64_t       cbToCompare   = pCmp->cbSize;
+    uint32_t const cbFrameSize   = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
+    bool           fInBeacon     = false;
+    uint32_t       cbBeacon      = 0;
+    size_t         offLastBeacon = 0; /* Offset (in bytes) of last beacon read. */
 
     uint8_t const  byBeacon    = fPre ? AUDIOTEST_BEACON_BYTE_PRE : AUDIOTEST_BEACON_BYTE_POST;
 
@@ -2371,7 +2373,8 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
             {
                 if (fInBeacon)
                 {
-                    fInBeacon = false;
+                    fInBeacon     = false;
+                    offLastBeacon = RTFileTell(pCmp->hFile);
                     continue;
                 }
             }
@@ -2394,6 +2397,9 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
         int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s': %s beacon found and valid",
                                             pCmp->pszName, fPre ? "Pre" : "Post");
         AssertRC(rc2);
+
+        if (puOff)
+            *puOff = offLastBeacon;
     }
 
     return rc;
@@ -2550,13 +2556,13 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     AssertRC(rc2);
 #endif
 
-    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileA, &ToneParmsA);
+    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileA, &ToneParmsA, &FileA.offStart /* Save new offset after pre beacon */);
     AssertRC(rc);
-    rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileA, &ToneParmsA);
+    rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileA, &ToneParmsA, NULL);
     AssertRC(rc);
-    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileB, &ToneParmsB);
+    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileB, &ToneParmsB, &FileB.offStart /* Save new offset after pre beacon */);
     AssertRC(rc);
-    rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileB, &ToneParmsB);
+    rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileB, &ToneParmsB, NULL);
     AssertRC(rc);
 
     /* Note! When finding the pre/post beacons fail it's mostly pointless to comparing the files in any way,
