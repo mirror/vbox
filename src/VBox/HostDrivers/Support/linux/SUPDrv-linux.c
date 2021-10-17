@@ -1706,7 +1706,7 @@ RTDECL(int) SUPR0PrintfV(const char *pszFormat, va_list va)
     IPRT_LINUX_RESTORE_EFL_AC();
     return 0;
 }
-SUPR0_EXPORT_SYMBOL(SUPR0Printf);
+SUPR0_EXPORT_SYMBOL(SUPR0PrintfV);
 
 
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
