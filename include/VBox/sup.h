@@ -2230,7 +2230,7 @@ SUPR0DECL(int)  SUPR0PrintfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_A
  * @param   pszFormat       IPRT format string.
  * @param   ...             Arguments referenced by the format string.
  */
-#if defined(__GNUC__)
+#if defined(__GNUC__) && defined(__inline__)
 /* Define it as static for GCC as it cannot inline functions using va_start() anyway,
    and linux redefines __inline__ to always inlining forcing gcc to issue an error. */
 static int __attribute__((__unused__))
