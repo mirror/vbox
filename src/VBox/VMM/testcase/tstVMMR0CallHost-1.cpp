@@ -171,6 +171,114 @@ void tst(int iFrom, int iTo, int iInc)
 }
 
 
+#if defined(VMM_R0_SWITCH_STACK) && defined(RT_ARCH_AMD64)
+/*
+ * Stack switch back tests.
+ */
+RT_C_DECLS_BEGIN
+DECLCALLBACK(int) tstWrapped1(        PVMMR0JMPBUF pJmp, uintptr_t u1, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5,
+                                      uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
+DECLCALLBACK(int) StkBack_tstWrapped1(PVMMR0JMPBUF pJmp, uintptr_t u1, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5,
+                                      uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
+DECLCALLBACK(int) tstWrappedThin(PVMMR0JMPBUF pJmp);
+DECLCALLBACK(int) StkBack_tstWrappedThin(PVMMR0JMPBUF pJmp);
+RT_C_DECLS_END
+
+
+DECLCALLBACK(int) StkBack_tstWrapped1(PVMMR0JMPBUF pJmp, uintptr_t u1, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5,
+                                      uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u1 == ~(uintptr_t)1U, -2);
+    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -3);
+    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -4);
+    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -5);
+    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -6);
+    RTTESTI_CHECK_RET(u6 == ~(uintptr_t)6U, -7);
+    RTTESTI_CHECK_RET(u7 == ~(uintptr_t)7U, -8);
+    RTTESTI_CHECK_RET(u8 == ~(uintptr_t)8U, -9);
+    RTTESTI_CHECK_RET(u9 == ~(uintptr_t)9U, -10);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) tstSwitchBackInner(intptr_t i1, intptr_t i2)
+{
+    RTTESTI_CHECK_RET(i1 == -42, -20);
+    RTTESTI_CHECK_RET(i2 == (intptr_t)&g_Jmp, -21);
+
+    void *pv = alloca(32);
+    memset(pv, 'b', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack < VMM_STACK_SIZE, -22);
+
+    int rc = tstWrapped1(&g_Jmp,
+                         ~(uintptr_t)1U,
+                         ~(uintptr_t)2U,
+                         ~(uintptr_t)3U,
+                         ~(uintptr_t)4U,
+                         ~(uintptr_t)5U,
+                         ~(uintptr_t)6U,
+                         ~(uintptr_t)7U,
+                         ~(uintptr_t)8U,
+                         ~(uintptr_t)9U);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+    return rc;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrappedThin(PVMMR0JMPBUF pJmp)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -31);
+
+    void *pv = alloca(32);
+    memset(pv, 'c', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -32);
+
+    return 42;
+}
+
+DECLCALLBACK(int) tstSwitchBackInnerThin(intptr_t i1, intptr_t i2)
+{
+    RT_NOREF(i1);
+    return tstWrappedThin((PVMMR0JMPBUF)i2);
+}
+
+
+void tstSwitchBack(void)
+{
+    RTR0PTR R0PtrSaved = g_Jmp.pvSavedStack;
+    RT_ZERO(g_Jmp);
+    g_Jmp.pvSavedStack = R0PtrSaved;
+    memset((void *)g_Jmp.pvSavedStack, '\0', VMM_STACK_SIZE);
+    g_cbFoo = 0;
+    g_cJmps = 0;
+    g_cbFooUsed = 0;
+    g_fInLongJmp = false;
+
+    //for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
+    {
+        int rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tstSwitchBackInner, (PVM)(intptr_t)-42, (PVMCPU)&g_Jmp);
+        RTTESTI_CHECK_MSG_RETV(rc == 42,
+                               ("i=%d iOrg=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x fInLongJmp=%d\n",
+                                0, 0 /*i, iOrg*/, rc, g_cbFoo, g_cbFooUsed, g_fInLongJmp));
+
+        rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tstSwitchBackInnerThin, NULL, (PVMCPU)&g_Jmp);
+        RTTESTI_CHECK_MSG_RETV(rc == 42,
+                               ("i=%d iOrg=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x fInLongJmp=%d\n",
+                                0, 0 /*i, iOrg*/, rc, g_cbFoo, g_cbFooUsed, g_fInLongJmp));
+
+    }
+    //RTTESTI_CHECK_MSG_RETV(g_cJmps, ("No jumps!"));
+}
+
+#endif
+
+
 int main()
 {
     /*
@@ -195,6 +303,10 @@ int main()
     tst(0, 7000, 1);
     RTTestSub(hTest, "Decreasing stack usage");
     tst(7599, 0, -1);
+#if defined(VMM_R0_SWITCH_STACK) && defined(RT_ARCH_AMD64)
+    RTTestSub(hTest, "Switch back");
+    tstSwitchBack();
+#endif
 
     return RTTestSummaryAndDestroy(hTest);
 }

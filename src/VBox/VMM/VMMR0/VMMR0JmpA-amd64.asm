@@ -23,6 +23,9 @@
 %include "VMMInternal.mac"
 %include "VBox/err.mac"
 %include "VBox/param.mac"
+%ifdef VMM_R0_SWITCH_STACK
+ %include "VBox/SUPR0StackWrapper.mac"
+%endif
 
 
 ;*******************************************************************************
@@ -145,8 +148,33 @@ SEH64_END_PROLOGUE
     repne stosq
     mov     [rdi - 10h], rbx
   %endif
-    lea     r15, [r15 + VMM_STACK_SIZE - 40h]
-    mov     rsp, r15                    ; Switch stack!
+
+    ; New RSP
+  %ifdef WITHOUT_SUPR0STACKINFO
+    lea     r15, [r15 + VMM_STACK_SIZE]
+  %else
+    lea     r15, [r15 + VMM_STACK_SIZE - SUPR0STACKINFO_size]
+
+    ; Plant SUPR0 stack info.
+    mov     [r15 + SUPR0STACKINFO.pResumeKernelStack], rsp
+    mov     [r15 + SUPR0STACKINFO.pSelf], r15
+    mov     dword [r15 + SUPR0STACKINFO.magic0], SUPR0STACKINFO_MAGIC0
+    mov     dword [r15 + SUPR0STACKINFO.magic1], SUPR0STACKINFO_MAGIC1
+    mov     dword [r15 + SUPR0STACKINFO.magic2], SUPR0STACKINFO_MAGIC2
+    mov     dword [r15 + SUPR0STACKINFO.magic3], SUPR0STACKINFO_MAGIC3
+
+  %endif
+
+    ; Switch stack!
+  %ifndef WITHOUT_SUPR0STACKINFO
+    lea     rsp, [r15 - 16*8 + SUPR0STACKINFO_size] ; Make sure the generic wrapper doesn't crash when moving 16 args.
+  %else
+   %ifdef ASM_CALL64_MSC
+    lea     rsp, [r15 - 20h]
+   %else
+    mov     rsp, r15
+   %endif
+  %endif
  %endif ; VMM_R0_SWITCH_STACK
 
     mov     r12, rdx                    ; Save pJmpBuf.
@@ -161,8 +189,12 @@ SEH64_END_PROLOGUE
     mov     rdx, r12                    ; Restore pJmpBuf
 
  %ifdef VMM_R0_SWITCH_STACK
-  %ifdef VBOX_STRICT
+    ; Reset the debug mark and the stack info header.
     mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
+  %ifndef WITHOUT_SUPR0STACKINFO
+    mov     qword [r15 + VMM_STACK_SIZE - SUPR0STACKINFO_size + SUPR0STACKINFO.magic0], 0h
+  %endif
+  %ifdef VBOX_STRICT
     mov     dword [r15], 0h             ; Reset the marker
   %endif
  %endif
@@ -272,6 +304,21 @@ SEH64_END_PROLOGUE
  %endif
 
 %ifdef VMM_R0_SWITCH_STACK
+    ; Update the signature in case the kernel stack moved.
+    mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
+    test    r15, r15
+    jz      .entry_error
+ %ifndef WITHOUT_SUPR0STACKINFO
+    lea     r15, [r15 + VMM_STACK_SIZE - SUPR0STACKINFO_size]
+
+    mov     [r15 + SUPR0STACKINFO.pResumeKernelStack], rsp
+    mov     [r15 + SUPR0STACKINFO.pSelf], r15
+    mov     dword [r15 + SUPR0STACKINFO.magic0], SUPR0STACKINFO_MAGIC0
+    mov     dword [r15 + SUPR0STACKINFO.magic1], SUPR0STACKINFO_MAGIC1
+    mov     dword [r15 + SUPR0STACKINFO.magic2], SUPR0STACKINFO_MAGIC2
+    mov     dword [r15 + SUPR0STACKINFO.magic3], SUPR0STACKINFO_MAGIC3
+ %endif
+
     ; Switch stack.
     mov     rsp, [xDX + VMMR0JMPBUF.SpResume]
 %else

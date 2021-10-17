@@ -222,7 +222,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - nothing
  */
-#define SUPDRV_IOC_VERSION                              0x00310004
+#define SUPDRV_IOC_VERSION                              0x00330000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -275,7 +275,7 @@ typedef struct SUPCOOKIE
 typedef struct SUPFUNC
 {
     /** Name - mangled. */
-    char            szName[32];
+    char            szName[48];
     /** Address. */
     RTR0PTR         pfn;
 } SUPFUNC, *PSUPFUNC;

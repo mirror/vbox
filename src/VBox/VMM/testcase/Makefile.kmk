@@ -313,6 +313,9 @@ tstVMMR0CallHost-1_SOURCES.x86 = \
 
 tstVMMR0CallHost-2_EXTENDS = tstVMMR0CallHost-1
 tstVMMR0CallHost-2_DEFS = VMM_R0_SWITCH_STACK
+tstVMMR0CallHost-2_SOURCES.amd64 = \
+	$(tstVMMR0CallHost-1_SOURCES.amd64) \
+	tstVMMR0CallHost-2A.asm
 
 #
 # For testing the VM request queue code.

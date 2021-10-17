@@ -40,7 +40,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  LIBRARIES += SUPR3-x86
 endif
 if   !defined(VBOX_ONLY_DOCS)
- if1of ($(VBOX_LDR_FMT), pe lx)
+ if1of ($(VBOX_LDR_FMT), pe lx macho)
   LIBRARIES += SUPR0
  endif
 endif
@@ -533,6 +533,36 @@ $$(SUPR0_0_OUTDIR)/SUPR0.def: \
    SUPR0_POST_CMDS = $(KLIBTWEAKER_EXT) --clear-timestamps --fill-null_thunk_data $(out)
   endif
  endif
+
+else ifeq ($(VBOX_LDR_FMT),macho)
+ SUPR0_VBOX_KMK_FILE = $(PATH_OUT)/SUPR0/files.kmk
+ include $(SUPR0_VBOX_KMK_FILE)
+ SUPR0_SOURCES       = $(SUPR0_VBOX_FILES)
+ SUPR0_CLEAN         = $(SUPR0_VBOX_FILES) $$(SUPR0_0_OUTDIR)/SUPR0.asm $(SUPR0_VBOX_KMK_FILE) $(SUPR0_VBOX_KMK_FILE).ts
+
+ # Generate a make include file which lists the wrapper source files.
+# $ (call KB_FN_AUTO_CMD_DEPS,$(SUPR0_VBOX_KMK_FILE).ts)
+ $(SUPR0_VBOX_KMK_FILE).ts \
+ +| $(SUPR0_VBOX_KMK_FILE): \
+		$(PATH_SUB_CURRENT)/SUPDrv.cpp \
+		$(PATH_SUB_CURRENT)/SUPR0-asm-files.sed
+#	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_GENERATE,,$(SUPR0_VBOX_KMK_FILE))
+	$(QUIET)$(RM) -f -- "$@"
+	$(QUIET)$(MKDIR) -p -- "$(@D)"
+	$(QUIET)$(SED) --output "$@" -f "$(PATH_SUB_CURRENT)/SUPR0-asm-files.sed" "$(PATH_SUB_CURRENT)/SUPDrv.cpp"
+	$(QUIET)$(CP) --changed -fv "$@" $(SUPR0_VBOX_KMK_FILE)
+
+ $$(SUPR0_0_OUTDIR)/SUPR0.asm +| $(SUPR0_VBOX_FILES): \
+		$(PATH_SUB_CURRENT)/SUPDrv.cpp \
+		$(PATH_SUB_CURRENT)/SUPR0-asm.sed \
+               | $$(dir $$@)
+#	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_GENERATE,,$(SUPR0_VBOX_KMK_FILE))
+	$(QUIET)$(RM) -f -- "$@"
+	$(QUIET)$(SED) --output "$@" -f "$(PATH_SUB_CURRENT)/SUPR0-asm.sed" "$(PATH_SUB_CURRENT)/SUPDrv.cpp"
+	$(VBOX_FILESPLIT) "$@" "$(dir $@)"
+
 endif
 
 
