@@ -156,7 +156,7 @@ static int                  supdrvIOCtl_ResumeSuspendedKbds(void);
 /** @def STKBACK
  * Indicates that the symbol needs to switch back to the kernel stack on darwin.
  * See @bugref{10124} for details. */
-#if 1
+#ifdef RT_OS_DARWIN
 # define STKBACK(a) "StkBack_" a
 #else
 # define STKBACK(a) a
