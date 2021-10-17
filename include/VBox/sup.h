@@ -2220,6 +2220,13 @@ SUPR0DECL(int)  SUPR0IoCtlPerform(PSUPR0IOCTLCTX pCtx, uintptr_t uFunction,
  */
 SUPR0DECL(int)  SUPR0PrintfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
+/* Suppress -Winline warnings as (older) gcc refuses to inline functions using va_start:  */
+#if RT_GNUC_PREREQ(4, 2)
+# if RT_GNUC_PREREQ(4, 6)
+#  pragma GCC diagnostic push
+# endif
+# pragma GCC diagnostic ignored "-Winline"
+#endif
 /**
  * Writes to the debugger and/or kernel log.
  *
@@ -2239,6 +2246,9 @@ DECLINLINE(int) SUPR0Printf(const char *pszFormat, ...)
     va_end(va);
     return 0;
 }
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
 
 #ifdef IN_RING0
 /** Debug printf macro. This also exist in SUPLib, see SUPLibInternal.h. */
