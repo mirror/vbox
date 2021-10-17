@@ -1481,6 +1481,7 @@
 # define RTLogSetGroupLimit                             RT_MANGLER(RTLogSetGroupLimit)
 # define RTLogSetR0ProgramStart                         RT_MANGLER(RTLogSetR0ProgramStart) /* r0drv */
 # define RTLogSetR0ThreadNameF                          RT_MANGLER(RTLogSetR0ThreadNameF) /* r0drv */
+# define RTLogSetR0ThreadNameV                          RT_MANGLER(RTLogSetR0ThreadNameV) /* r0drv */
 # define RTLogWriteCom                                  RT_MANGLER(RTLogWriteCom)
 # define RTLogWriteDebugger                             RT_MANGLER(RTLogWriteDebugger)
 # define RTLogWriteStdErr                               RT_MANGLER(RTLogWriteStdErr)
