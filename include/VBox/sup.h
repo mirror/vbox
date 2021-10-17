@@ -2220,19 +2220,6 @@ SUPR0DECL(int)  SUPR0IoCtlPerform(PSUPR0IOCTLCTX pCtx, uintptr_t uFunction,
  */
 SUPR0DECL(int)  SUPR0PrintfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 
-/* HACK ALERT! linux/compiler_types.h redefines __inline__ to always_inline which causes the compiler (gcc 9.3 and
-               older at least) to barf on the va_list below when SUPR0Printf is used, preventing compiliation of
-               SUPDrv.c among other things.  We have a hack for this in iprt/types.h for pre 4.1 compilers where
-               it would barf even if not used, causing troubles on 2-3 functions in iprt/string.h.  Applying that
-               fix for all gcc versions there would be preferable, however, since a while we include iprt/types.h
-               at the start of the-linux-kernel.h, making that kind of suspect as it may cause breakage...
-               So, chickening out and just working around it here for now. */
-#if defined(__inline__) && defined(RT_OS_LINUX) && defined(__KERNEL__) && defined(__LINUX_COMPILER_TYPES_H)
-/** @todo In the long run, sort this out in a more proper way! */
-# define SUPR0PRINTF_UNDO_INLINE_HACK 1
-# undef __inline__
-#endif
-
 /**
  * Writes to the debugger and/or kernel log.
  *
@@ -2243,8 +2230,14 @@ SUPR0DECL(int)  SUPR0PrintfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_A
  * @param   pszFormat       IPRT format string.
  * @param   ...             Arguments referenced by the format string.
  */
-DECLINLINE(int) SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2); /* RT_IPRT_FORMAT_ATTR only allowed on proto */
-DECLINLINE(int) SUPR0Printf(const char *pszFormat, ...)
+#if defined(__GNUC__)
+/* Define it as static for GCC as it cannot inline functions using va_start() anyway,
+   and linux redefines __inline__ to always inlining forcing gcc to issue an error. */
+static int __attribute__((__unused__))
+#else
+DECLINLINE(int)
+#endif
+RT_IPRT_FORMAT_ATTR(1, 2) SUPR0Printf(const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
