@@ -35,7 +35,11 @@ $b footer
 /SED: END/,$d
 
 # Drop all lines not specifying an export.
-/^    { "/!d
+/^    { STK[BO][AK][CA][KY]/!d
+
+# Remove the darwin stack switch-back indicator.
+s/STKBACK(\([^)][^)]*\))/\1/
+s/STKOKAY(\([^)][^)]*\))/\1/
 
 # Handle trailing selection comment (/* solaris-only, os2-only */).
 /\*\/ *$/!b transform
