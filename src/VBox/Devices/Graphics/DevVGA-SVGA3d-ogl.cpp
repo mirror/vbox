@@ -27,6 +27,7 @@
 //# define RTMEM_WRAP_TO_EF_APIS
 #endif
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
+#define GL_SILENCE_DEPRECATION          /* shut up deprecated warnings on darwin (10.15 sdk) */
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/version.h>
 #include <VBox/err.h>
