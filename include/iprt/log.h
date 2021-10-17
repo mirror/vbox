@@ -2123,7 +2123,17 @@ RTDECL(int) RTLogSetFlushCallback(PRTLOGGER pLogger, PFNRTLOGFLUSH pfnFlush);
  * @param   pszNameFmt  The format string for the thread name.
  * @param   ...         Format arguments.
  */
-RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
+
+/**
+ * Sets the thread name for a thread specific ring-0 logger.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger     The logger. NULL is not allowed.
+ * @param   pszNameFmt  The format string for the thread name.
+ * @param   va          Format arguments.
+ */
+RTR0DECL(int) RTLogSetR0ThreadNameV(PRTLOGGER pLogger, const char *pszNameFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Sets the program start time for a thread specific ring-0 logger.
@@ -2352,7 +2362,7 @@ RTDECL(void) RTLogLogger(PRTLOGGER pLogger, void *pvCallerRet, const char *pszFo
  * @param   pszFormat   Format string.
  * @param   args        Format arguments.
  */
-RTDECL(void) RTLogLoggerV(PRTLOGGER pLogger, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(3, 0);
+RTDECL(void) RTLogLoggerV(PRTLOGGER pLogger, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(2, 0);
 
 /**
  * Write to a logger instance.

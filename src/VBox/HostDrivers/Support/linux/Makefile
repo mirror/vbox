@@ -84,6 +84,7 @@ VBOXMOD_OBJS += \
 	common/log/logrelellipsis.o \
 	common/log/logcom.o \
 	common/log/logformat.o \
+	common/log/RTLogCreateEx.o \
 	common/misc/RTAssertMsg1Weak.o \
 	common/misc/RTAssertMsg2.o \
 	common/misc/RTAssertMsg2Add.o \
@@ -104,10 +105,13 @@ VBOXMOD_OBJS += \
 	common/string/RTStrNLen.o \
 	common/string/stringalloc.o \
 	common/string/strformat.o \
+	common/string/RTStrFormat.o \
 	common/string/strformatnum.o \
 	common/string/strformattype.o \
 	common/string/strprintf.o \
+	common/string/strprintf-ellipsis.o \
 	common/string/strprintf2.o \
+	common/string/strprintf2-ellipsis.o \
 	common/string/strtonum.o \
 	common/table/avlpv.o \
 	common/time/time.o \

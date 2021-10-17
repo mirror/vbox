@@ -105,6 +105,7 @@ static DECLCALLBACK(size_t) rtStrPrintf2Output(void *pvArg, const char *pachChar
     return cbChars;
 }
 
+
 RTDECL(ssize_t) RTStrPrintf2V(char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args)
 {
     STRPRINTF2OUTPUTARGS Args;
@@ -122,19 +123,6 @@ RTDECL(ssize_t) RTStrPrintf2V(char *pszBuffer, size_t cchBuffer, const char *psz
 RT_EXPORT_SYMBOL(RTStrPrintf2V);
 
 
-
-RTDECL(ssize_t) RTStrPrintf2(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)
-{
-    va_list va;
-    ssize_t cbRet;
-    va_start(va, pszFormat);
-    cbRet = RTStrPrintf2V(pszBuffer, cchBuffer, pszFormat, va);
-    va_end(va);
-    return cbRet;
-}
-RT_EXPORT_SYMBOL(RTStrPrintf2);
-
-
 RTDECL(ssize_t) RTStrPrintf2ExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer,
                                 const char *pszFormat,  va_list args)
 {
@@ -149,16 +137,4 @@ RTDECL(ssize_t) RTStrPrintf2ExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBu
     return !Args.fOverflowed ? (ssize_t)cchRet : -(ssize_t)cchRet - 1;
 }
 RT_EXPORT_SYMBOL(RTStrPrintf2ExV);
-
-
-RTDECL(ssize_t) RTStrPrintf2Ex(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)
-{
-    va_list args;
-    ssize_t cbRet;
-    va_start(args, pszFormat);
-    cbRet = RTStrPrintf2ExV(pfnFormat, pvArg, pszBuffer, cchBuffer, pszFormat, args);
-    va_end(args);
-    return cbRet;
-}
-RT_EXPORT_SYMBOL(RTStrPrintf2Ex);
 

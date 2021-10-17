@@ -535,21 +535,17 @@ static DECLCALLBACK(size_t) VBoxDrvLogOutput(void *pvArg, const char *pachChars,
 }
 
 
-SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
+SUPR0DECL(int) SUPR0PrintfV(const char *pszFormat, va_list va)
 {
-    va_list va;
-
 #if 0 //def DEBUG_bird
-    va_start(va, pszFormat);
-    RTLogComPrintfV(pszFormat, va);
-    va_end(va);
+    va_list va2;
+    va_copy(va2, va);
+    RTLogComPrintfV(pszFormat, va2);
+    va_end(va2);
 #endif
 
-    va_start(va, pszFormat);
-    int cch = RTLogFormatV(VBoxDrvLogOutput, NULL, pszFormat, va);
-    va_end(va);
-
-    return cch;
+    RTLogFormatV(VBoxDrvLogOutput, NULL, pszFormat, va);
+    return 0;
 }
 
 

@@ -1302,21 +1302,17 @@ SUPR0DECL(int) SUPR0HCPhysToVirt(RTHCPHYS HCPhys, void **ppv)
 }
 
 
-RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
+RTDECL(int) SUPR0PrintfV(const char *pszFormat, va_list va)
 {
-    va_list     args;
-    char        szMsg[512];
-
     /* cmn_err() acquires adaptive mutexes. Not preemption safe, see @bugref{6657}. */
-    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-        return 0;
+    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+    {
+        char szMsg[512];
+        RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
+        szMsg[sizeof(szMsg) - 1] = '\0';
 
-    va_start(args, pszFormat);
-    RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, args);
-    va_end(args);
-
-    szMsg[sizeof(szMsg) - 1] = '\0';
-    cmn_err(CE_CONT, "%s", szMsg);
+        cmn_err(CE_CONT, "%s", szMsg);
+    }
     return 0;
 }
 

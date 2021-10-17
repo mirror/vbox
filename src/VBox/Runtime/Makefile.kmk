@@ -500,6 +500,7 @@ RuntimeR3_SOURCES       = \
 	common/log/tracedefault.cpp \
 	common/log/tracelogreader.cpp \
 	common/log/tracelogwriter.cpp \
+	common/log/RTLogCreateEx.cpp \
 	common/math/bignum.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2.cpp \
@@ -625,13 +626,16 @@ RuntimeR3_SOURCES       = \
 	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
+	common/string/RTStrFormat.cpp \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
 	common/string/strhash1.cpp \
 	common/string/stringalloc.cpp \
 	common/string/strprintf.cpp \
+	common/string/strprintf-ellipsis.cpp \
 	common/string/strprintf2.cpp \
+	common/string/strprintf2-ellipsis.cpp \
 	common/string/strcache.cpp \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
@@ -1815,6 +1819,7 @@ RuntimeBldProg_SOURCES         = \
 	common/log/logformat.cpp \
 	common/log/logrel.cpp \
 	common/log/logrelellipsis.cpp \
+	common/log/RTLogCreateEx.cpp \
 	common/math/bignum.cpp \
 	common/misc/assert.cpp \
 	common/misc/cidr.cpp \
@@ -1897,13 +1902,16 @@ RuntimeBldProg_SOURCES         = \
 	common/string/straprintf.cpp \
 	common/string/strcache.cpp \
 	common/string/strformat.cpp \
+	common/string/RTStrFormat.cpp \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
 	common/string/strhash1.cpp \
 	common/string/stringalloc.cpp \
 	common/string/strprintf.cpp \
+	common/string/strprintf-ellipsis.cpp \
 	common/string/strprintf2.cpp \
+	common/string/strprintf2-ellipsis.cpp \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
 	common/string/strtonum.cpp \
@@ -2663,11 +2671,14 @@ RuntimeR3NoCrt_DEFS     := \
 RuntimeR3NoCrt_SOURCES  := \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
+	common/string/RTStrFormat.cpp \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
 	common/string/strprintf.cpp \
+	common/string/strprintf-ellipsis.cpp \
 	common/string/strprintf2.cpp \
+	common/string/strprintf2-ellipsis.cpp \
 	common/string/stringalloc.cpp \
 	common/string/strtonum.cpp \
 	common/string/RTStrNLen.cpp \
@@ -2740,6 +2751,8 @@ RuntimeR0_SOURCES      := \
 	common/log/logformat.cpp \
 	common/log/tracebuf.cpp \
 	common/log/tracedefault.cpp \
+	common/log/RTLogCreateEx.cpp \
+	common/log/RTLogSetR0ThreadNameF.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/misc/RTAssertMsg2Add.cpp \
@@ -2753,6 +2766,8 @@ RuntimeR0_SOURCES      := \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
  	common/path/RTPathFilename.cpp \
+	common/string/strprintf-ellipsis.cpp \
+	common/string/strprintf2-ellipsis.cpp \
 	common/string/strhash1.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
@@ -2926,6 +2941,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/log/logformat.cpp \
 	common/log/tracebuf.cpp \
 	common/log/tracedefault.cpp \
+	common/log/RTLogCreateEx.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/misc/RTAssertMsg2Add.cpp \
@@ -2979,12 +2995,15 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/RTUtf16NICmpAscii.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
+	common/string/RTStrFormat.cpp \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
 	common/string/strhash1.cpp \
 	common/string/strprintf.cpp \
+	common/string/strprintf-ellipsis.cpp \
 	common/string/strprintf2.cpp \
+	common/string/strprintf2-ellipsis.cpp \
 	common/string/strtonum.cpp \
 	common/string/stringalloc.cpp \
 	common/string/unidata-flags.cpp \
@@ -3663,6 +3682,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/log/logformat.cpp \
  	common/log/tracebuf.cpp \
  	common/log/tracedefault.cpp \
+	common/log/RTLogCreateEx.cpp \
  	common/misc/RTAssertMsg1Weak.cpp \
  	common/misc/RTAssertMsg2.cpp \
  	common/misc/RTAssertMsg2Add.cpp \
@@ -3676,13 +3696,16 @@ ifdef VBOX_WITH_RAW_MODE
  	common/misc/sanity-cpp.cpp \
  	common/path/RTPathFilename.cpp \
  	common/string/strformat.cpp \
+ 	common/string/RTStrFormat.cpp \
  	common/string/strformatnum.cpp \
  	common/string/strformatrt.cpp \
  	common/string/strformattype.cpp \
  	common/string/strncmp.cpp \
  	common/string/strpbrk.cpp \
  	common/string/strprintf.cpp \
+ 	common/string/strprintf-ellipsis.cpp \
  	common/string/strprintf2.cpp \
+ 	common/string/strprintf2-ellipsis.cpp \
  	common/string/RTStrCmp.cpp \
  	common/string/RTStrCopy.cpp \
  	common/string/RTStrCopyEx.cpp \

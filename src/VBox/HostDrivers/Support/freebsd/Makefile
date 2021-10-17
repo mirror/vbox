@@ -68,7 +68,8 @@ SRCS += \
 	logrel.c \
 	logrelellipsis.c \
 	logcom.c \
-	logformat.c
+	logformat.c \
+	RTLogCreateEx.c
 
 .PATH:	${.CURDIR}/common/misc
 SRCS += \
@@ -96,11 +97,14 @@ SRCS += \
 	RTStrCopyP.c \
 	RTStrEnd.c \
 	strformat.c \
+	RTStrFormat.c \
 	strformatnum.c \
 	strformatrt.c \
 	strformattype.c \
 	strprintf.c \
+	strprintf-ellipsis.c \
 	strprintf2.c \
+	strprintf2-ellipsis.c \
 	strtonum.c \
 	memchr.c \
 	stringalloc.c

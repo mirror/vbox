@@ -832,30 +832,3 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
 }
 RT_EXPORT_SYMBOL(RTStrFormatV);
 
-
-/**
- * Partial implementation of a printf like formatter.
- * It doesn't do everything correct, and there is no floating point support.
- * However, it supports custom formats by the means of a format callback.
- *
- * @returns number of bytes formatted.
- * @param   pfnOutput   Output worker.
- *                      Called in two ways. Normally with a string an it's length.
- *                      For termination, it's called with NULL for string, 0 for length.
- * @param   pvArgOutput Argument to the output worker.
- * @param   pfnFormat   Custom format worker.
- * @param   pvArgFormat Argument to the format worker.
- * @param   pszFormat   Format string.
- * @param   ...         Argument list.
- */
-RTDECL(size_t) RTStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *pszFormat, ...)
-{
-    size_t cch;
-    va_list args;
-    va_start(args, pszFormat);
-    cch = RTStrFormatV(pfnOutput, pvArgOutput, pfnFormat, pvArgFormat, pszFormat, args);
-    va_end(args);
-    return cch;
-}
-RT_EXPORT_SYMBOL(RTStrFormat);
-

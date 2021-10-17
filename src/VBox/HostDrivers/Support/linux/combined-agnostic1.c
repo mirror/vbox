@@ -63,6 +63,8 @@
 #undef LOG_GROUP
 #include "common/log/logformat.c"
 #undef LOG_GROUP
+#include "common/log/RTLogCreateEx.c"
+#undef LOG_GROUP
 #include "common/misc/RTAssertMsg1Weak.c"
 #undef LOG_GROUP
 #include "common/misc/RTAssertMsg2.c"

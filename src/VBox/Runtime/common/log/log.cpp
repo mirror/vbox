@@ -1354,26 +1354,6 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint64_t fFlags, const char *pszGro
 RT_EXPORT_SYMBOL(RTLogCreate);
 
 
-RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint64_t fFlags, const char *pszGroupSettings,
-                          unsigned cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
-                          uint32_t cBufDescs, PRTLOGBUFFERDESC paBufDescs, uint32_t fDestFlags,
-                          PFNRTLOGPHASE pfnPhase, uint32_t cHistory, uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
-                          PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...)
-{
-    va_list va;
-    int     rc;
-
-    va_start(va, pszFilenameFmt);
-    rc = RTLogCreateExV(ppLogger, pszEnvVarBase, fFlags, pszGroupSettings, cGroups, papszGroups, cMaxEntriesPerGroup,
-                        cBufDescs, paBufDescs, fDestFlags,
-                        pfnPhase, cHistory, cbHistoryFileMax, cSecsHistoryTimeSlot,
-                        pErrInfo, pszFilenameFmt, va);
-    va_end(va);
-    return rc;
-}
-RT_EXPORT_SYMBOL(RTLogCreateEx);
-
-
 /**
  * Destroys a logger instance.
  *
@@ -2055,15 +2035,12 @@ RT_EXPORT_SYMBOL(RTLogSetGroupLimit);
 
 #ifdef IN_RING0
 
-RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, ...)
+RTR0DECL(int) RTLogSetR0ThreadNameV(PRTLOGGER pLogger, const char *pszNameFmt, va_list va)
 {
     PRTLOGGERINTERNAL pLoggerInt = (PRTLOGGERINTERNAL)pLogger;
     int               rc;
     if (pLoggerInt)
     {
-        va_list va;
-        va_start(va, pszNameFmt);
-
         rc = rtlogLock(pLoggerInt);
         if (RT_SUCCESS(rc))
         {
@@ -2071,14 +2048,12 @@ RTR0DECL(int) RTLogSetR0ThreadNameF(PRTLOGGER pLogger, const char *pszNameFmt, .
             rtlogUnlock(pLoggerInt);
             rc = cch > 0 ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
         }
-
-        va_end(va);
     }
     else
         rc = VERR_INVALID_PARAMETER;
     return rc;
 }
-RT_EXPORT_SYMBOL(RTLogSetR0ThreadNameF);
+RT_EXPORT_SYMBOL(RTLogSetR0ThreadNameV);
 
 
 RTR0DECL(int) RTLogSetR0ProgramStart(PRTLOGGER pLogger, uint64_t nsStart)
