@@ -44,6 +44,7 @@
 #include <sys/fcntl.h>
 #include <sys/conf.h>
 #include <sys/uio.h>
+#include <vm/pmap.h> /* for pmap_map() */
 
 #include "../SUPDrvInternal.h"
 #include <VBox/version.h>
@@ -635,6 +636,17 @@ int VBOXCALL    supdrvOSMsrProberModify(RTCPUID idCpu, PSUPMSRPROBER pReq)
 }
 
 #endif /* SUPDRV_WITH_MSR_PROBER */
+
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+SUPR0DECL(int) SUPR0HCPhysToVirt(RTHCPHYS HCPhys, void **ppv)
+{
+    AssertReturn(!(HCPhys & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
+    AssertReturn(HCPhys != NIL_RTHCPHYS, VERR_INVALID_POINTER);
+    *ppv = (void *)(uintptr_t)pmap_map(NULL, HCPhys, (HCPhys | PAGE_OFFSET_MASK) + 1, VM_PROT_WRITE | VM_PROT_READ);
+    return VINF_SUCCESS;
+}
+#endif
 
 
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
