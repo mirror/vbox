@@ -28,6 +28,14 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 #
+# Globals.
+#
+VBOX_PATH_SUP_SRC            := $(PATH_SUB_CURRENT)
+VBOX_PATH_SUPR3_CERTIFICATES := $(PATH_SUB_CURRENT)/Certificates
+VBOX_PATH_RUNTIME_SRC        ?= $(PATH_ROOT)/src/VBox/Runtime
+
+
+#
 # Targets
 #
 LIBRARIES += SUPR3 SUPR3Static
@@ -102,7 +110,6 @@ VBOX_SUP_WIN_CERTS += NtRootDigiCert8=NtRoot-CrossSign-DigiCertAssuredIDRootCA-5
 VBOX_SUP_WIN_CERTS += NtRootDigiCert9=NtRoot-CrossSign-DigiCertHighAssuranceEVRootCA-f4a38dbe86386c554d25f1ce2557a4fe.taf
 
 VBOX_SUP_WIN_CERT_NAMES := $(foreach cert,$(VBOX_SUP_WIN_CERTS),$(firstword $(subst =,$(SPACE) ,$(cert))))
-VBOX_PATH_SUPR3_CERTIFICATES := $(PATH_SUB_CURRENT)/Certificates
 
 # 1=name, 2=filter, 3=buildcert?.
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING)
@@ -200,7 +207,6 @@ SUPR3Static_SOURCES.win = $(filter-out win/SUPHardenedVerifyImage-win.cpp, $(SUP
 #
 # The static part of the hardened support library (ring-3).
 #
-VBOX_PATH_RUNTIME_SRC ?= $(PATH_ROOT)/src/VBox/Runtime
 SUPR3HardenedStatic_TEMPLATE = VBOXR3HARDENEDLIB
 SUPR3HardenedStatic_DEFS     = IN_SUP_HARDENED_R3
 SUPR3HardenedStatic_DEFS    += \
@@ -550,7 +556,7 @@ else ifeq ($(VBOX_LDR_FMT),macho)
 	$(call MSG_GENERATE,,$(SUPR0_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f -- "$@"
 	$(QUIET)$(MKDIR) -p -- "$(@D)"
-	$(QUIET)$(SED) --output "$@" -f "$(PATH_SUB_CURRENT)/SUPR0-asm-files.sed" "$(PATH_SUB_CURRENT)/SUPDrv.cpp"
+	$(QUIET)$(SED) --output "$@" -f "$(VBOX_PATH_SUP_SRC)/SUPR0-asm-files.sed" "$(VBOX_PATH_SUP_SRC)/SUPDrv.cpp"
 	$(QUIET)$(CP) --changed -fv "$@" $(SUPR0_VBOX_KMK_FILE)
 
  $$(SUPR0_0_OUTDIR)/SUPR0.asm +| $(SUPR0_VBOX_FILES): \
@@ -560,7 +566,7 @@ else ifeq ($(VBOX_LDR_FMT),macho)
 #	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_GENERATE,,$(SUPR0_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f -- "$@"
-	$(QUIET)$(SED) --output "$@" -f "$(PATH_SUB_CURRENT)/SUPR0-asm.sed" "$(PATH_SUB_CURRENT)/SUPDrv.cpp"
+	$(QUIET)$(SED) --output "$@" -f "$(VBOX_PATH_SUP_SRC)/SUPR0-asm.sed" "$(VBOX_PATH_SUP_SRC)/SUPDrv.cpp"
 	$(VBOX_FILESPLIT) "$@" "$(dir $@)"
 
 endif
