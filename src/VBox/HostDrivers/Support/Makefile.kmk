@@ -562,7 +562,7 @@ else ifeq ($(VBOX_LDR_FMT),macho)
  $$(SUPR0_0_OUTDIR)/SUPR0.asm +| $(SUPR0_VBOX_FILES): \
 		$(PATH_SUB_CURRENT)/SUPDrv.cpp \
 		$(PATH_SUB_CURRENT)/SUPR0-asm.sed \
-               | $$(dir $$@)
+               | $$(dir $$@) $(VBOX_FILESPLIT)
 #	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(call MSG_GENERATE,,$(SUPR0_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f -- "$@"
