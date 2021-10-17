@@ -1,0 +1,132 @@
+; $Id$
+;; @file
+; SUP - Support Library, ring-0 stack switching wrappers.
+;
+
+;
+; Copyright (C) 2006-2021 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+
+%ifndef ___VBox_SUPR0StackWrapper_mac
+%define ___VBox_SUPR0StackWrapper_mac
+
+%include "VBox/asmdefs.mac"
+
+;; VBox's own Stack
+%define SUPR0STACKINFO_MAGIC0 0786f4256h    ; VBox
+%define SUPR0STACKINFO_MAGIC1 06f207327h    ; 's o
+%define SUPR0STACKINFO_MAGIC2 053206e77h    ; wn S
+%define SUPR0STACKINFO_MAGIC3 06b636174h    ; tack
+
+;;
+; Stack info located before the start of the stack, at the top of the page.
+;
+struc SUPR0STACKINFO
+        .magic0             resd   1
+        .magic1             resd   1
+        .magic2             resd   1
+        .magic3             resd   1
+        .pResumeKernelStack resq   1
+        .pSelf              resq   1
+endstruc
+
+;;
+; Generic stack switching wrapper.
+;
+; This supports up to 16 arguments on the stack in addition to the 6 GPR
+; and 6 FPR arguments, which should be enough for most functions, even
+; RTLogCreateExV.
+;
+%macro SUPR0StackWrapperGeneric 1
+BEGINCODE
+extern NAME(StkBack_ %+ %1)
+
+BEGINPROC %1
+        ;
+        ; Check for the stack info.
+        ;
+        mov     rax, rsp
+        or      rax, 0fffh
+        sub     rax, SUPR0STACKINFO_size - 1
+
+        ; Check for the magic.
+        cmp     dword [rax + SUPR0STACKINFO.magic0], SUPR0STACKINFO_MAGIC0
+        jne     .regular
+        cmp     dword [rax + SUPR0STACKINFO.magic1], SUPR0STACKINFO_MAGIC1
+        jne     .regular
+        cmp     dword [rax + SUPR0STACKINFO.magic2], SUPR0STACKINFO_MAGIC2
+        jne     .regular
+        cmp     dword [rax + SUPR0STACKINFO.magic3], SUPR0STACKINFO_MAGIC3
+        jne     .regular
+
+        ; Verify the self pointer.
+        cmp     [rax + SUPR0STACKINFO.pSelf], rax
+        jne     .regular
+
+        ;
+        ; Perform a stack switch.  We set up a RBP frame on the old stack so we
+        ; can use leave to restore the incoming stack upon return.
+        ;
+        push    rbp
+        mov     rbp, rsp
+
+        ; The actual switch.
+        mov     r10, 0ffffffffffffffe0h ; shuts up warning on 'and rsp, 0ffffffffffffffe0h'
+        and     r10, [rax + SUPR0STACKINFO.pResumeKernelStack]
+        mov     rsp, r10
+
+        ;
+        ; Copy over 16 stack arguments (128 bytes).
+        ;
+        ; We kind of ASSUME no function takes more arguments than that, and we ASSUME
+        ; the code setting up the info makes sure rbp+88h won't underflow the stack.
+        ;
+
+        push    qword [rbp + 88h]
+        push    qword [rbp + 80h]
+        push    qword [rbp + 78h]
+        push    qword [rbp + 70h]
+        push    qword [rbp + 68h]
+        push    qword [rbp + 60h]
+        push    qword [rbp + 58h]
+        push    qword [rbp + 50h]
+        push    qword [rbp + 48h]
+        push    qword [rbp + 40h]
+        push    qword [rbp + 38h]
+        push    qword [rbp + 30h]
+        push    qword [rbp + 28h]
+        push    qword [rbp + 20h]
+        push    qword [rbp + 18h]
+        push    qword [rbp + 10h]
+
+        call    NAME(StkBack_ %+ %1)
+
+        leave
+        ret
+
+.regular:
+        jmp     NAME(StkBack_ %+ %1)
+ENDPROC   %1
+%endmacro
+
+
+%endif
+
+
