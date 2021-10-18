@@ -215,7 +215,7 @@ CountFunctionArguments(RetType(RTCALL *)(Types ...))
 # ifdef _MSC_VER
 #  define SUPEXP_STK_BACKF(a_cArgs, a_Name)     { #a_Name,       a_cArgs,                            (void *)(uintptr_t)a_Name }
 # else
-#  define SUPEXP_STK_BACK(a_cArgs, a_Name)      { #a_Name,       SUPEXP_CHECK_ARGS(a_cArgs, a_Name), (void *)(uintptr_t)a_Name }
+#  define SUPEXP_STK_BACKF(a_cArgs, a_Name)     { #a_Name,       SUPEXP_CHECK_ARGS(a_cArgs, a_Name), (void *)(uintptr_t)a_Name }
 # endif
 #endif
 /** @} */
