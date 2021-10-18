@@ -6341,25 +6341,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindShader(PVGASTATECC pThisCC, PVMSVGA3D
 
     if (pvShaderBytecode)
     {
-#ifdef LOG_ENABLED
-        Log(("Shader: cid=%u shid=%u type=%d:\n", pDXContext->cid, pShader->id, pDXShader->enmShaderType));
-        uint8_t *pu8 = (uint8_t *)pvShaderBytecode;
-        for (uint32_t i = 0; i < pShader->cbData; ++i)
-        {
-            if ((i % 16) == 0)
-            {
-                if (i > 0)
-                    Log6((",\n"));
-
-                Log6(("    %#04x", pu8[i]));
-            }
-            else
-            {
-                Log6((", %#04x", pu8[i]));
-            }
-        }
-        Log6(("\n"));
-#endif
+        Log(("Shader: cid=%u shid=%u type=%d\n", pDXContext->cid, pShader->id, pDXShader->enmShaderType));
 
         rc = DXShaderCreateDXBC(&pShader->shaderInfo, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
         if (RT_SUCCESS(rc))
@@ -6370,10 +6352,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindShader(PVGASTATECC pThisCC, PVMSVGA3D
                 ID3D10Blob *pBlob = 0;
                 HRESULT hr2 = pBackend->pfnD3DDisassemble(pDXShader->pvDXBC, pDXShader->cbDXBC, 0, NULL, &pBlob);
                 if (SUCCEEDED(hr2) && pBlob && pBlob->GetBufferSize())
-                {
-                    Log6(("Shader: cid=%u shid=%u type=%d:\n%s\n",
-                          pDXContext->cid, pShader->id, pDXShader->enmShaderType, pBlob->GetBufferPointer()));
-                }
+                    Log6(("%s\n", pBlob->GetBufferPointer()));
                 else
                     AssertFailed();
                 D3D_RELEASE(pBlob);
