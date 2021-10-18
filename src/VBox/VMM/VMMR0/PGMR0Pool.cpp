@@ -144,7 +144,7 @@ static int pgmR0PoolGrowInner(PGVM pGVM, PPGMPOOL pPool)
 #ifndef VMM_R0_SWITCH_STACK
 static int pgmR0PoolGrowOnKrnlStk(PGVM pGVM, PGVMCPU pGVCpu, PPGMPOOL pPool)
 #else
-DECLASM(int) pgmR0PoolGrowOnKrnlStk(PGVM pGVM, PGVMCPU pGVCpu);
+DECLASM(int) pgmR0PoolGrowOnKrnlStk(PGVM pGVM, PGVMCPU pGVCpu, PPGMPOOL pPool);
 DECLASM(int) StkBack_pgmR0PoolGrowOnKrnlStk(PGVM pGVM, PGVMCPU pGVCpu, PPGMPOOL pPool)
 #endif
 {
