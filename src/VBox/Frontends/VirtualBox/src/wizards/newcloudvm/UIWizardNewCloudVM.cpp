@@ -26,7 +26,6 @@
 
 /* COM includes: */
 #include "CCloudMachine.h"
-#include "CProgress.h"
 
 
 UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent,
