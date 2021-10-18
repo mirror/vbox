@@ -181,25 +181,6 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
         return rc;
     if (pfnVMAtError)
         rc = VMR3AtErrorRegister(pUVM, pfnVMAtError, pvUserVM);
-
-#ifdef RT_OS_DARWIN
-    /*
-     * We currently do not run on darwin 12+ as we still have a few calls to
-     * ring-3 left in VMMR0 that forces us to use a custom stack for parts of
-     * the code.  This will cause falsely detected kernel stack overflow panics
-     * in machine_switch_context and pmap_switch_context. See @bugref{10124},
-     * @bugref{10093} and @bugref{10086}.
-     */
-    if (RT_SUCCESS(rc))
-    {
-        char szDarwinVersion[512];
-        RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szDarwinVersion, sizeof(szDarwinVersion));
-        if (   RTStrVersionCompare(szDarwinVersion, "21.0.0") >= 0
-            && !RTEnvExist("VBOX_VMM_FORCE_MACOS_12"))
-            rc = vmR3SetErrorU(pUVM, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                               "macOS 12 and later is not supported yet by this VirtualBox version - sorry");
-    }
-#endif
     if (RT_SUCCESS(rc))
     {
         /*
