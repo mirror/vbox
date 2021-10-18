@@ -547,7 +547,7 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
  * @param   pSrcPos     The source position. (Can be NULL.)
  * @param   fNoVal      No validation records.
  */
-#ifndef VMM_R0_SWITCH_STACK
+#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                     PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 #else
@@ -734,7 +734,7 @@ DECLASM(int) StkBack_pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, i
     }
     /* not reached */
 }
-#ifdef VMM_R0_SWITCH_STACK
+#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
 decltype(StkBack_pdmCritSectRwEnterShared) pdmCritSectRwEnterShared;
 #endif
 
@@ -891,7 +891,7 @@ VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PVM pVM, PPDMCRITSECTRW pThis, bool 
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwTryEnterSharedDebug,
  *          PDMCritSectRwLeaveExcl, RTCritSectRwLeaveShared.
  */
-#ifndef VMM_R0_SWITCH_STACK
+#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
 #else
 DECLASM(int) StkBack_pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
@@ -1050,7 +1050,7 @@ DECLASM(int) StkBack_pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pT
 
     return VINF_SUCCESS;
 }
-#ifdef VMM_R0_SWITCH_STACK
+#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
 decltype(StkBack_pdmCritSectRwLeaveSharedWorker) pdmCritSectRwLeaveSharedWorker;
 #endif
 
@@ -1316,7 +1316,7 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
  * @param   pSrcPos     The source position. (Can be NULL.)
  * @param   fNoVal      No validation records.
  */
-#ifndef VMM_R0_SWITCH_STACK
+#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                   PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 #else
@@ -1535,7 +1535,7 @@ DECLASM(int) StkBack_pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int
     return rcBusy;
 #endif
 }
-#ifdef VMM_R0_SWITCH_STACK
+#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
 decltype(StkBack_pdmCritSectRwEnterExcl) pdmCritSectRwEnterExcl;
 #endif
 
@@ -1692,7 +1692,7 @@ VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PVM pVM, PPDMCRITSECTRW pThis, bool fC
  * @param   fNoVal      No validation records (i.e. queued release).
  * @sa      PDMCritSectRwLeaveShared, RTCritSectRwLeaveExcl.
  */
-#ifndef VMM_R0_SWITCH_STACK
+#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
 #else
 DECLASM(int) StkBack_pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
@@ -1930,7 +1930,7 @@ DECLASM(int) StkBack_pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThi
     return VINF_SUCCESS;
 #endif
 }
-#ifdef VMM_R0_SWITCH_STACK
+#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
 decltype(StkBack_pdmCritSectRwLeaveExclWorker) pdmCritSectRwLeaveExclWorker;
 #endif
 
