@@ -2956,6 +2956,7 @@ static int vmmR0LogWaitFlushed(PGVM pGVM, VMCPUID idCpu, size_t idxLogger)
 #ifndef VMM_R0_SWITCH_STACK
 static bool   vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush)
 #else
+DECLASM(bool) vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush);
 DECLASM(bool) StkBack_vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush)
 #endif
 {
@@ -3111,9 +3112,6 @@ DECLASM(bool) StkBack_vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t 
 
     return fFlushedBuffer;
 }
-#ifdef VMM_R0_SWITCH_STACK
-decltype(StkBack_vmmR0LoggerFlushInner) vmmR0LoggerFlushInner;
-#endif
 
 
 /**
