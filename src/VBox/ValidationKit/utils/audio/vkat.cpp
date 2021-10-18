@@ -85,7 +85,7 @@ AUDIOTESTBACKENDDESC const g_aBackends[] =
  *       -- most distros are using an ALSA plugin for PulseAudio nowadays.
  *       However, some of these configurations do not seem to work by default (can't create audio streams).
  *
- *       If PulseAudio is not available, the (optional) probing ("--probe") will choose the "pure" ALSA stack instead then.
+ *       If PulseAudio is not available, the (optional) probing ("--probe-backends") will choose the "pure" ALSA stack instead then.
  */
 #if defined(VBOX_WITH_AUDIO_ALSA) && defined(RT_OS_LINUX)
     {   &g_DrvHostALSAAudio,          "alsa" },
@@ -870,7 +870,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 break;
 
             case VKAT_TEST_OPT_PROBE_BACKENDS:
-                fProbeBackends = ValueUnion.f;
+                fProbeBackends = true;
                 break;
 
             case VKAT_TEST_OPT_TAG:
