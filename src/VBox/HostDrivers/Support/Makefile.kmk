@@ -48,9 +48,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  LIBRARIES += SUPR3-x86
 endif
 if   !defined(VBOX_ONLY_DOCS)
- if1of ($(VBOX_LDR_FMT), pe lx macho)
-  LIBRARIES += SUPR0
- endif
+ LIBRARIES += SUPR0
 endif
 if !defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_RAW_MODE)
  LIBRARIES += SUPRC

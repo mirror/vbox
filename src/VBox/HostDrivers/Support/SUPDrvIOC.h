@@ -275,7 +275,9 @@ typedef struct SUPCOOKIE
 typedef struct SUPFUNC
 {
     /** Name - mangled. */
-    char            szName[48];
+    char            szName[47];
+    /** For internal checking. Ignore. */
+    uint8_t         cArgs;
     /** Address. */
     RTR0PTR         pfn;
 } SUPFUNC, *PSUPFUNC;

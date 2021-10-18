@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# IPRT - SED script for generating SUPR0.def
+# IPRT - SED script for generating SUPR0.def - Windows PE.
 #
 
 #
@@ -35,11 +35,19 @@ $b footer
 /SED: END/,$d
 
 # Drop all lines not specifying an export.
-/^    { STK[BO][AK][CA][KY]/!d
+/^    SUPEXP_/!d
 
-# Remove the darwin stack switch-back indicator.
-s/STKBACK(\([^)][^)]*\))/\1/
-s/STKOKAY(\([^)][^)]*\))/\1/
+# Extract the export name from these type of statements:
+#    SUPEXP_CUSTOM(  0,  g_pSUPGlobalInfoPage,     &g_pSUPGlobalInfoPage),            /* SED: DATA */
+#    SUPEXP_STK_OKAY(0,  SUPGetGIP),
+#    SUPEXP_STK_BACK(22, SUPReadTscWithDelta),
+# Will be transformed to:
+#    g_pSUPGlobalInfoPage /* SED: DATA */
+#    SUPGetGIP
+#    SUPReadTscWithDelta
+s/SUPEXP_CUSTOM( *[0-9][0-9]* *, *\([^),][^),]*\), [^)]*), */\1 /
+s/SUPEXP_STK_OKAY( *[0-9][0-9]* *, *\([^)][^)]*\)), */\1 /
+s/SUPEXP_STK_BACK( *[0-9][0-9]* *, *\([^)][^)]*\)), */\1 /
 
 # Handle trailing selection comment (/* solaris-only, windows-only */).
 /\*\/ *$/!b transform
@@ -47,14 +55,11 @@ s/STKOKAY(\([^)][^)]*\))/\1/
 /only-/!b transform
 d
 
+# Deal with special /* SED: DATA */ comment.
 :transform
-# Transform the export line, the format is like this:
-#    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },            /* SED: DATA */
-
-s/^    { "\([^"]*\)",[^}]*}[,]/    \1/
-
 s,/\* SED: \([A-Z]*\) \*/, \1,
 s, */\*.*\*/ *$,,
+s, *$,,
 b end
 
 :header

@@ -34,9 +34,9 @@ $b footer
 # Drop all lines from the SED: END marker and till the end of the file.
 /SED: END/,$d
 
-# We are only interested in the STKBACK lines.
-/^    { STKBACK(/!d
-s/^    { STKBACK("\([^"][^"]*\)"),.*$/    \$(SUPR0_0_OUTDIR)\/StkBack_\1.asm \\/
+# We are only interested in the SUPEXP_STK_BACK lines.
+/^ *SUPEXP_STK_BACK(/!d
+s/^ *SUPEXP_STK_BACK( *[0-9][0-9]* *, *\([^)][^)]*\)),.*$*/    \$(SUPR0_0_OUTDIR)\/StkBack_\1.asm \\/
 b end
 
 :header
