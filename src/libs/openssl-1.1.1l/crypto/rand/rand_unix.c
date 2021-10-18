@@ -34,7 +34,7 @@
 #if defined(__OpenBSD__)
 # include <sys/param.h>
 #endif
-#if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED >= 10100
+#if defined(__APPLE__) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 10100
 # include <CommonCrypto/CommonRandom.h>
 #endif
 
@@ -381,7 +381,7 @@ static ssize_t syscall_random(void *buf, size_t buflen)
         if (errno != ENOSYS)
             return -1;
     }
-#  elif defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED >= 10100
+#  elif defined(__APPLE__) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 10100
     if (CCRandomGenerateBytes(buf, buflen) == kCCSuccess)
 	    return (ssize_t)buflen;
 
