@@ -30,4 +30,5 @@ SUPR0StackWrapperGeneric pdmCritSectRwEnterShared, 6
 SUPR0StackWrapperGeneric pdmCritSectRwLeaveSharedWorker, 3
 SUPR0StackWrapperGeneric pdmCritSectRwEnterExcl, 6
 SUPR0StackWrapperGeneric pdmCritSectRwLeaveExclWorker, 6
+SUPR0StackWrapperGeneric pgmR0PoolGrowOnKrnlStk, 3
 
