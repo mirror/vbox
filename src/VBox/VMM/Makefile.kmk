@@ -569,6 +569,8 @@ VMMR0_SOURCES.amd64 = \
 	VMMR0/VMMR0JmpA-amd64.asm
 VMMR0_SOURCES.x86 = \
 	VMMR0/VMMR0JmpA-x86.asm
+VMMR0_SOURCES.darwin.amd64 = \
+	VMMR0/VMMR0StackBack-darwin.asm
 
 VMMR0_LIBS = \
 	$(PATH_STAGE_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
