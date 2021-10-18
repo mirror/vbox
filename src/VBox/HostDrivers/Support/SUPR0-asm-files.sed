@@ -35,8 +35,8 @@ $b footer
 /SED: END/,$d
 
 # We are only interested in the SUPEXP_STK_BACK lines.
-/^ *SUPEXP_STK_BACK(/!d
-s/^ *SUPEXP_STK_BACK( *[0-9][0-9]* *, *\([^)][^)]*\)),.*$*/    \$(SUPR0_0_OUTDIR)\/StkBack_\1.asm \\/
+/^ *SUPEXP_STK_BACKF*(/!d
+s/^ *SUPEXP_STK_BACKF*( *[0-9][0-9]* *, *\([^)][^)]*\)),.*$*/    \$(SUPR0_0_OUTDIR)\/StkBack_\1.asm \\/
 b end
 
 :header

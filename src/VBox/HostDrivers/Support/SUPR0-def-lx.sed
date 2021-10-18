@@ -47,7 +47,7 @@ $b footer
 #    _SUPReadTscWithDelta
 s/SUPEXP_CUSTOM( *[0-9][0-9]* *, *\([^),][^),]*\), [^)]*), */_\1 /
 s/SUPEXP_STK_OKAY( *[0-9][0-9]* *, *\([^)][^)]*\)), */_\1 /
-s/SUPEXP_STK_BACK( *[0-9][0-9]* *, *\([^)][^)]*\)), */_\1 /
+s/SUPEXP_STK_BACKF*( *[0-9][0-9]* *, *\([^)][^)]*\)), */_\1 /
 
 # Handle trailing selection comment (/* solaris-only, os2-only */).
 /\*\/ *$/!b transform
