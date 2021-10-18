@@ -26,4 +26,8 @@
 SUPR0StackWrapperGeneric vmmR0LoggerFlushInner, 5
 SUPR0StackWrapperGeneric pdmR0CritSectEnterContendedOnKrnlStk, 6
 SUPR0StackWrapperGeneric pdmR0CritSectLeaveSignallingOnKrnlStk, 5
+SUPR0StackWrapperGeneric pdmCritSectRwEnterShared, 6
+SUPR0StackWrapperGeneric pdmCritSectRwLeaveSharedWorker, 3
+SUPR0StackWrapperGeneric pdmCritSectRwEnterExcl, 6
+SUPR0StackWrapperGeneric pdmCritSectRwLeaveExclWorker, 6
 
