@@ -2395,6 +2395,7 @@ static DECLCALLBACK(int) vmmR0EntryExWrapper(void *pvArgs)
 VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
                             PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
+#ifndef VMM_R0_SWITCH_STACK /* Not safe unless we disable preemption first. */
     /*
      * Requests that should only happen on the EMT thread will be
      * wrapped in a setjmp so we can assert without causing trouble.
@@ -2451,6 +2452,9 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
                 break;
         }
     }
+#else
+    RT_NOREF(pVM);
+#endif
     return vmmR0EntryExWorker(pGVM, idCpu, enmOperation, pReq, u64Arg, pSession);
 }
 
