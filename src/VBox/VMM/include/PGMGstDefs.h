@@ -42,7 +42,6 @@
 #undef GST_GET_PTE_SHW_FLAGS
 #undef GST_PT_SHIFT
 #undef GST_PT_MASK
-#undef GST_TOTAL_PD_ENTRIES
 #undef GST_CR3_PAGE_MASK
 #undef GST_PDPE_ENTRIES
 #undef GST_PDPT_SHIFT
@@ -157,7 +156,6 @@
     ((Pde).u & (X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_G))
 # define GST_PD_SHIFT                           X86_PD_SHIFT
 # define GST_PD_MASK                            X86_PD_MASK
-# define GST_TOTAL_PD_ENTRIES                   X86_PG_ENTRIES
 # define GST_PTE_PG_MASK                        X86_PTE_PG_MASK
 # define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (X86_PTE_P | X86_PTE_RW | X86_PTE_US | X86_PTE_A | X86_PTE_D | X86_PTE_G))
 # define GST_PT_SHIFT                           X86_PT_SHIFT
@@ -203,7 +201,6 @@
 #  define GSTPTWALK                             PGMPTWALKGSTPAE
 #  define PGSTPTWALK                            PPGMPTWALKGSTPAE
 #  define PCGSTPTWALK                           PCPGMPTWALKGSTPAE
-#  define GST_TOTAL_PD_ENTRIES                  (X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES)
 #  define GST_PDPE_ENTRIES                      X86_PG_PAE_PDPE_ENTRIES
 #  define GST_PDPE_PG_MASK                      X86_PDPE_PG_MASK
 #  define GST_PDPT_SHIFT                        X86_PDPT_SHIFT
@@ -220,7 +217,6 @@
 #  define GSTPTWALK                             PGMPTWALKGSTAMD64
 #  define PGSTPTWALK                            PPGMPTWALKGSTAMD64
 #  define PCGSTPTWALK                           PCPGMPTWALKGSTAMD64
-#  define GST_TOTAL_PD_ENTRIES                  (X86_PG_AMD64_ENTRIES * X86_PG_AMD64_PDPE_ENTRIES)
 #  define GST_PDPE_ENTRIES                      X86_PG_AMD64_PDPE_ENTRIES
 #  define GST_PDPT_SHIFT                        X86_PDPT_SHIFT
 #  define GST_PDPE_PG_MASK                      X86_PDPE_PG_MASK
