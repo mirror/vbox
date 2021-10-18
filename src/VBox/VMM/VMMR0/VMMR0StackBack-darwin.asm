@@ -23,6 +23,7 @@
 %include "VBox/SUPR0StackWrapper.mac"
 
 
+SUPR0StackWrapperGeneric vmmR0LoggerFlushInner, 5
 SUPR0StackWrapperGeneric pdmR0CritSectEnterContendedOnKrnlStk, 6
 SUPR0StackWrapperGeneric pdmR0CritSectLeaveSignallingOnKrnlStk, 5
 
