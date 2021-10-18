@@ -1072,9 +1072,9 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
             VMMTrashVolatileXMMRegs();
 #  endif
             return VINF_SUCCESS;
-# else
+# else  /* VMM_R0_SWITCH_STACK */
             return pdmR0CritSectLeaveSignallingOnKrnlStk(pVM, pVCpu, pCritSect, cLockers, hEventToSignal);
-# endif
+# endif /* VMM_R0_SWITCH_STACK */
         }
 
         /*
