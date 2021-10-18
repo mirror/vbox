@@ -556,6 +556,8 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
 static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                     PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 #else
+DECLASM(int) pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
+                                      PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal);
 DECLASM(int) StkBack_pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                               PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 #endif
@@ -739,9 +741,6 @@ DECLASM(int) StkBack_pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, i
     }
     /* not reached */
 }
-#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
-decltype(StkBack_pdmCritSectRwEnterShared) pdmCritSectRwEnterShared;
-#endif
 
 
 /**
@@ -1322,6 +1321,8 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
 static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                   PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 #else
+DECLASM(int) pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
+                                    PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal);
 DECLASM(int) StkBack_pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                             PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 #endif
@@ -1537,9 +1538,6 @@ DECLASM(int) StkBack_pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int
     return rcBusy;
 #endif
 }
-#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
-decltype(StkBack_pdmCritSectRwEnterExcl) pdmCritSectRwEnterExcl;
-#endif
 
 
 /**
@@ -1697,6 +1695,7 @@ VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PVM pVM, PPDMCRITSECTRW pThis, bool fC
 #if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
 #else
+DECLASM(int) pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
 DECLASM(int) StkBack_pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
 #endif
 {
@@ -1932,9 +1931,6 @@ DECLASM(int) StkBack_pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThi
     return VINF_SUCCESS;
 #endif
 }
-#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
-decltype(StkBack_pdmCritSectRwLeaveExclWorker) pdmCritSectRwLeaveExclWorker;
-#endif
 
 
 /**
