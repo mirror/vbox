@@ -100,7 +100,12 @@ static int32_t g_fCmpWriteSupported = -1;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
+#else
+DECLASM(int) pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
+decltype(pdmCritSectRwLeaveSharedWorker) StkBack_pdmCritSectRwLeaveSharedWorker;
+#endif
 
 
 #ifdef RTASM_HAVE_CMP_WRITE_U128
@@ -1050,9 +1055,6 @@ DECLASM(int) StkBack_pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pT
 
     return VINF_SUCCESS;
 }
-#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
-decltype(StkBack_pdmCritSectRwLeaveSharedWorker) pdmCritSectRwLeaveSharedWorker;
-#endif
 
 
 /**
