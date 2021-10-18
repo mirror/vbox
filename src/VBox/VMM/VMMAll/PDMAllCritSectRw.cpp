@@ -104,7 +104,7 @@ static int32_t g_fCmpWriteSupported = -1;
 static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
 #else
 DECLASM(int) pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
-decltype(pdmCritSectRwLeaveSharedWorker) StkBack_pdmCritSectRwLeaveSharedWorker;
+DECLASM(int) StkBack_pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
 #endif
 
 
