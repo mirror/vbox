@@ -1009,6 +1009,9 @@ int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREA
         rc = pDrvStack->pIHostAudio->pfnStreamDrain(pDrvStack->pIHostAudio, &pStreamAt->Backend);
         if (RT_SUCCESS(rc) && fSync)
         {
+            RTMSINTERVAL const msTimeout = RT_MS_5MIN; /* 5 minutes should be really enough for draining our stuff. */
+            uint64_t const     tsStart   = RTTimeMilliTS();
+
             /*
              * This is a synchronous drain, so wait for the driver to change state to inactive.
              */
@@ -1029,6 +1032,13 @@ int audioTestDriverStackStreamDrain(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREA
                 {
                     RTTestFailed(g_hTest, "pfnStreamPlay/DRAIN did not set cbWritten to zero: %#x", cbWritten);
                     rc = VERR_MISSING;
+                    break;
+                }
+
+                /* Fail-safe for audio stacks and/or implementations which mess up draining. */
+                if (RTTimeMilliTS() - tsStart > msTimeout)
+                {
+                    RTTestFailed(g_hTest, "Draining stream took too long (timeout is %RU32ms), giving up", msTimeout);
                     break;
                 }
             }
