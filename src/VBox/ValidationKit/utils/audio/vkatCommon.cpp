@@ -556,10 +556,13 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         uint64_t        offStream          = 0;
         uint64_t        nsTimeout          = RT_MS_5MIN_64 * RT_NS_1MS;
         uint64_t        nsLastMsgCantWrite = 0; /* Timestamp (in ns) when the last message of an unwritable stream was shown. */
+        uint64_t        nsLastWrite        = 0;
 
         while (cbPlayedTotal < cbToPlayTotal)
         {
             uint64_t const nsNow = RTTimeNanoTS();
+            if (!nsLastWrite)
+                nsLastWrite = nsNow;
 
             /* Pace ourselves a little. */
             if (offStream >= cbPreBuffer)
@@ -640,6 +643,9 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
 
                             if (cbPlayed != cbToPlay)
                                 RTTestFailed(g_hTest, "Only played %RU32/%RU32 bytes", cbPlayed, cbToPlay);
+
+                            if (cbPlayed)
+                                nsLastWrite = nsNow;
                         }
                     }
                 }
@@ -653,9 +659,11 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
             {
                 RTMSINTERVAL const msSleep = RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256);
 
-                if (!nsLastMsgCantWrite || nsNow - nsLastMsgCantWrite > RT_NS_10SEC) /* Don't spam the output too much. */
+                if (   !nsLastMsgCantWrite
+                    || nsNow - nsLastMsgCantWrite > RT_NS_10SEC) /* Don't spam the output too much. */
                 {
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be writable again ...\n", msSleep);
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be writable again (last write %RU64ns ago) ...\n",
+                                 msSleep, nsNow - nsLastWrite);
                     nsLastMsgCantWrite = nsNow;
                 }
 
