@@ -48,13 +48,27 @@ struc SUPR0STACKINFO
 endstruc
 
 ;;
+; Number of parameters in GPRs and the spill area size.
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_MSC
+  %define SUPR0_GRP_PARAMS      4
+  %define SUPR0_SPILL_AREA      4
+ %else
+  %define SUPR0_GRP_PARAMS      6
+  %define SUPR0_SPILL_AREA      0
+ %endif
+%else
+ %define SUPR0_GRP_PARAMS       0
+ %define SUPR0_SPILL_AREA       0
+%endif
+
+;;
 ; Generic stack switching wrapper.
 ;
-; This supports up to 16 arguments on the stack in addition to the 6 GPR
-; and 6 FPR arguments, which should be enough for most functions, even
-; RTLogCreateExV.
+; @param %1     The name
+; @param %2     Number of arguments.
 ;
-%macro SUPR0StackWrapperGeneric 1
+%macro SUPR0StackWrapperGeneric 2
 BEGINCODE
 extern NAME(StkBack_ %+ %1)
 
@@ -94,28 +108,51 @@ BEGINPROC %1
         mov     rsp, r10
 
         ;
-        ; Copy over 16 stack arguments (128 bytes).
+        ; Copy over stack arguments.
         ;
-        ; We kind of ASSUME no function takes more arguments than that, and we ASSUME
-        ; the code setting up the info makes sure rbp+88h won't underflow the stack.
+        ; Note! We always copy 2-3 extra arguments (%2 + 2) just in case someone got
+        ;       the argument count wrong.
         ;
-
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 18
+ %error too many parameters
+ %fatal too many parameters
+%endif
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 16
+        push    qword [rbp + 98h]
+        push    qword [rbp + 90h]
+%endif
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 14
         push    qword [rbp + 88h]
         push    qword [rbp + 80h]
+%endif
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 12
         push    qword [rbp + 78h]
         push    qword [rbp + 70h]
+%endif
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 10
         push    qword [rbp + 68h]
         push    qword [rbp + 60h]
+%endif
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 8
         push    qword [rbp + 58h]
         push    qword [rbp + 50h]
+%endif
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 6
         push    qword [rbp + 48h]
         push    qword [rbp + 40h]
+%endif
+%if (%2 + 2) > SUPR0_GRP_PARAMS + 4
         push    qword [rbp + 38h]
         push    qword [rbp + 30h]
+%endif
+%if ((%2 + 2) > SUPR0_GRP_PARAMS + 2) || (SUPR0_SPILL_AREA > 2)
         push    qword [rbp + 28h]
         push    qword [rbp + 20h]
+%endif
+%if ((%2 + 2) > SUPR0_GRP_PARAMS)     || (SUPR0_SPILL_AREA > 0)
         push    qword [rbp + 18h]
         push    qword [rbp + 10h]
+%endif
 
         call    NAME(StkBack_ %+ %1)
 

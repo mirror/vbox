@@ -176,28 +176,205 @@ void tst(int iFrom, int iTo, int iInc)
  * Stack switch back tests.
  */
 RT_C_DECLS_BEGIN
-DECLCALLBACK(int) tstWrapped1(        PVMMR0JMPBUF pJmp, uintptr_t u1, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5,
-                                      uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
-DECLCALLBACK(int) StkBack_tstWrapped1(PVMMR0JMPBUF pJmp, uintptr_t u1, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5,
-                                      uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
+DECLCALLBACK(int) tstWrapped4(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4);
+DECLCALLBACK(int) StkBack_tstWrapped4( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4);
+DECLCALLBACK(int) tstWrapped5(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5);
+DECLCALLBACK(int) StkBack_tstWrapped5( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5);
+DECLCALLBACK(int) tstWrapped6(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6);
+DECLCALLBACK(int) StkBack_tstWrapped6( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6);
+DECLCALLBACK(int) tstWrapped7(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7);
+DECLCALLBACK(int) StkBack_tstWrapped7( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7);
+DECLCALLBACK(int) tstWrapped8(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8);
+DECLCALLBACK(int) StkBack_tstWrapped8( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8);
+DECLCALLBACK(int) tstWrapped9(         PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
+DECLCALLBACK(int) StkBack_tstWrapped9( PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
+DECLCALLBACK(int) tstWrapped10(        PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10);
+DECLCALLBACK(int) StkBack_tstWrapped10(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10);
+DECLCALLBACK(int) tstWrapped16(        PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16);
+DECLCALLBACK(int) StkBack_tstWrapped16(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16);
+DECLCALLBACK(int) tstWrapped20(        PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16, uintptr_t u17, uintptr_t u18, uintptr_t u19, uintptr_t u20);
+DECLCALLBACK(int) StkBack_tstWrapped20(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16, uintptr_t u17, uintptr_t u18, uintptr_t u19, uintptr_t u20);
+
 DECLCALLBACK(int) tstWrappedThin(PVMMR0JMPBUF pJmp);
 DECLCALLBACK(int) StkBack_tstWrappedThin(PVMMR0JMPBUF pJmp);
 RT_C_DECLS_END
 
 
-DECLCALLBACK(int) StkBack_tstWrapped1(PVMMR0JMPBUF pJmp, uintptr_t u1, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5,
-                                      uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9)
+
+DECLCALLBACK(int) StkBack_tstWrapped4(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4)
 {
     RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u1 == ~(uintptr_t)1U, -2);
-    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -3);
-    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -4);
-    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -5);
-    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -6);
-    RTTESTI_CHECK_RET(u6 == ~(uintptr_t)6U, -7);
-    RTTESTI_CHECK_RET(u7 == ~(uintptr_t)7U, -8);
-    RTTESTI_CHECK_RET(u8 == ~(uintptr_t)8U, -9);
-    RTTESTI_CHECK_RET(u9 == ~(uintptr_t)9U, -10);
+    RTTESTI_CHECK_RET(u2 == (uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 == (uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 == (uintptr_t)4U, -4);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrapped5(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -5);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrapped6(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
+    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrapped7(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -5);
+    RTTESTI_CHECK_RET(u6 == ~(uintptr_t)6U, -6);
+    RTTESTI_CHECK_RET(u7 == ~(uintptr_t)7U, -7);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrapped8(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
+    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
+    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
+    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+DECLCALLBACK(int) StkBack_tstWrapped9(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -5);
+    RTTESTI_CHECK_RET(u6 == ~(uintptr_t)6U, -6);
+    RTTESTI_CHECK_RET(u7 == ~(uintptr_t)7U, -7);
+    RTTESTI_CHECK_RET(u8 == ~(uintptr_t)8U, -8);
+    RTTESTI_CHECK_RET(u9 == ~(uintptr_t)9U, -9);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrapped10(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
+    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
+    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
+    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
+    RTTESTI_CHECK_RET(u9 ==  (uintptr_t)9U, -9);
+    RTTESTI_CHECK_RET(u10 == (uintptr_t)10U, -10);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrapped16(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
+    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
+    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
+    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
+    RTTESTI_CHECK_RET(u9 ==  (uintptr_t)9U, -9);
+    RTTESTI_CHECK_RET(u10 == (uintptr_t)10U, -10);
+    RTTESTI_CHECK_RET(u11 == (uintptr_t)11U, -11);
+    RTTESTI_CHECK_RET(u12 == (uintptr_t)12U, -12);
+    RTTESTI_CHECK_RET(u13 == (uintptr_t)13U, -13);
+    RTTESTI_CHECK_RET(u14 == (uintptr_t)14U, -14);
+    RTTESTI_CHECK_RET(u15 == (uintptr_t)15U, -15);
+    RTTESTI_CHECK_RET(u16 == (uintptr_t)16U, -16);
+
+    void *pv = alloca(32);
+    memset(pv, 'a', 32);
+    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
+
+    return 42;
+}
+
+
+DECLCALLBACK(int) StkBack_tstWrapped20(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16, uintptr_t u17, uintptr_t u18, uintptr_t u19, uintptr_t u20)
+{
+    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
+    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
+    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
+    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
+    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
+    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
+    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
+    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
+    RTTESTI_CHECK_RET(u9 ==  (uintptr_t)9U, -9);
+    RTTESTI_CHECK_RET(u10 == (uintptr_t)10U, -10);
+    RTTESTI_CHECK_RET(u11 == (uintptr_t)11U, -11);
+    RTTESTI_CHECK_RET(u12 == (uintptr_t)12U, -12);
+    RTTESTI_CHECK_RET(u13 == (uintptr_t)13U, -13);
+    RTTESTI_CHECK_RET(u14 == (uintptr_t)14U, -14);
+    RTTESTI_CHECK_RET(u15 == (uintptr_t)15U, -15);
+    RTTESTI_CHECK_RET(u16 == (uintptr_t)16U, -16);
+    RTTESTI_CHECK_RET(u17 == (uintptr_t)17U, -17);
+    RTTESTI_CHECK_RET(u18 == (uintptr_t)18U, -18);
+    RTTESTI_CHECK_RET(u19 == (uintptr_t)19U, -19);
+    RTTESTI_CHECK_RET(u20 == (uintptr_t)20U, -20);
 
     void *pv = alloca(32);
     memset(pv, 'a', 32);
@@ -216,16 +393,32 @@ DECLCALLBACK(int) tstSwitchBackInner(intptr_t i1, intptr_t i2)
     memset(pv, 'b', 32);
     RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack < VMM_STACK_SIZE, -22);
 
-    int rc = tstWrapped1(&g_Jmp,
-                         ~(uintptr_t)1U,
-                         ~(uintptr_t)2U,
-                         ~(uintptr_t)3U,
-                         ~(uintptr_t)4U,
-                         ~(uintptr_t)5U,
-                         ~(uintptr_t)6U,
-                         ~(uintptr_t)7U,
-                         ~(uintptr_t)8U,
-                         ~(uintptr_t)9U);
+    int rc;
+    rc = tstWrapped4(&g_Jmp,  (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped5(&g_Jmp, ~(uintptr_t)2U, ~(uintptr_t)3U, ~(uintptr_t)4U, ~(uintptr_t)5U);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped6(&g_Jmp,  (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped7(&g_Jmp, ~(uintptr_t)2U, ~(uintptr_t)3U, ~(uintptr_t)4U, ~(uintptr_t)5U, ~(uintptr_t)6U, ~(uintptr_t)7U);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped8(&g_Jmp,  (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped9(&g_Jmp, ~(uintptr_t)2U, ~(uintptr_t)3U, ~(uintptr_t)4U, ~(uintptr_t)5U, ~(uintptr_t)6U, ~(uintptr_t)7U, ~(uintptr_t)8U, ~(uintptr_t)9U);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped10(&g_Jmp, (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U,  (uintptr_t)9U,  (uintptr_t)10);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped16(&g_Jmp, (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U,  (uintptr_t)9U,  (uintptr_t)10,  (uintptr_t)11,  (uintptr_t)12,  (uintptr_t)13,  (uintptr_t)14,  (uintptr_t)15,  (uintptr_t)16);
+    RTTESTI_CHECK_RET(rc == 42, -23);
+
+    rc = tstWrapped20(&g_Jmp, (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U,  (uintptr_t)9U,  (uintptr_t)10,  (uintptr_t)11,  (uintptr_t)12,  (uintptr_t)13,  (uintptr_t)14,  (uintptr_t)15,  (uintptr_t)16,  (uintptr_t)17,  (uintptr_t)18,  (uintptr_t)19,  (uintptr_t)20);
     RTTESTI_CHECK_RET(rc == 42, -23);
     return rc;
 }

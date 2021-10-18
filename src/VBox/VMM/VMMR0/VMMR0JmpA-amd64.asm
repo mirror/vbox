@@ -166,14 +166,10 @@ SEH64_END_PROLOGUE
   %endif
 
     ; Switch stack!
-  %ifndef WITHOUT_SUPR0STACKINFO
-    lea     rsp, [r15 - 16*8 + SUPR0STACKINFO_size] ; Make sure the generic wrapper doesn't crash when moving 16 args.
-  %else
-   %ifdef ASM_CALL64_MSC
+  %ifdef ASM_CALL64_MSC
     lea     rsp, [r15 - 20h]
-   %else
+  %else
     mov     rsp, r15
-   %endif
   %endif
  %endif ; VMM_R0_SWITCH_STACK
 

@@ -36,7 +36,7 @@ $b footer
 
 # We are only interested in the SUPEXP_STK_BACK lines.
 /^ *SUPEXP_STK_BACKF*(/!d
-s/^ *SUPEXP_STK_BACKF*( *\([0-9][0-9]*\) *, *\([^)][^)]*\)),.*$/\/\/ ##### BEGINFILE \"StkBack_\2.asm\"\n%include "VBox\/SUPR0StackWrapper.mac"\nSUPR0StackWrapperGeneric \2\n\/\/ ##### ENDFILE/
+s/^ *SUPEXP_STK_BACKF*( *\([0-9][0-9]*\) *, *\([^)][^)]*\)),.*$/\/\/ ##### BEGINFILE \"StkBack_\2.asm\"\n%include "VBox\/SUPR0StackWrapper.mac"\nSUPR0StackWrapperGeneric \2, \1\n\/\/ ##### ENDFILE/
 b end
 
 :header

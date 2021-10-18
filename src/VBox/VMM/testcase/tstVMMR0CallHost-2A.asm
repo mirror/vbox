@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2020 Oracle Corporation
+; Copyright (C) 2006-2021 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -17,6 +17,14 @@
 
 %include "VBox/SUPR0StackWrapper.mac"
 
-SUPR0StackWrapperGeneric tstWrapped1
-SUPR0StackWrapperGeneric tstWrappedThin
+SUPR0StackWrapperGeneric tstWrappedThin, 1
+SUPR0StackWrapperGeneric tstWrapped4,    4
+SUPR0StackWrapperGeneric tstWrapped5,    5
+SUPR0StackWrapperGeneric tstWrapped6,    6
+SUPR0StackWrapperGeneric tstWrapped7,    7
+SUPR0StackWrapperGeneric tstWrapped8,    8
+SUPR0StackWrapperGeneric tstWrapped9,    9
+SUPR0StackWrapperGeneric tstWrapped10,   10
+SUPR0StackWrapperGeneric tstWrapped16,   16
+SUPR0StackWrapperGeneric tstWrapped20,   20
 
