@@ -930,7 +930,7 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamDrain(PPDMIHOSTAUDIO pInterface, 
     PDRVHSTAUDALSASTREAM pStreamALSA = (PDRVHSTAUDALSASTREAM)pStream;
 
     snd_pcm_state_t const enmState = snd_pcm_state(pStreamALSA->hPCM);
-    LogFlowFunc(("Stream '%s' input state: %s (%d)\n", pStreamALSA->Cfg.szName, snd_pcm_state_name(enmState), enmState));
+    LogRelFlowFunc(("Stream '%s' input state: %s (%d)\n", pStreamALSA->Cfg.szName, snd_pcm_state_name(enmState), enmState));
 
     /* Only for output streams. */
     AssertReturn(pStreamALSA->Cfg.enmDir == PDMAUDIODIR_OUT, VERR_WRONG_ORDER);
@@ -951,7 +951,7 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamDrain(PPDMIHOSTAUDIO pInterface, 
                 if (rc == -EPIPE && enmState2 == enmState)
                 {
                     /* Not entirely sure, but possibly an underrun, so just disable the stream. */
-                    LogFunc(("snd_pcm_drain failed with -EPIPE, stopping stream (%s)\n", pStreamALSA->Cfg.szName));
+                    LogRel2(("ALSA: snd_pcm_drain failed with -EPIPE, stopping stream (%s)\n", pStreamALSA->Cfg.szName));
                     rc = snd_pcm_drop(pStreamALSA->hPCM);
                     if (rc >= 0)
                         rc = VINF_SUCCESS;
@@ -975,7 +975,7 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamDrain(PPDMIHOSTAUDIO pInterface, 
             rc = VINF_SUCCESS;
             break;
     }
-    LogFlowFunc(("returns %Rrc (state %s)\n", rc, snd_pcm_state_name(snd_pcm_state(pStreamALSA->hPCM))));
+    LogRelFlowFunc(("returns %Rrc (state %s)\n", rc, snd_pcm_state_name(snd_pcm_state(pStreamALSA->hPCM))));
     return rc;
 }
 
