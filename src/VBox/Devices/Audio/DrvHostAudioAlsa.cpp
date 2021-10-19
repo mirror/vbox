@@ -132,7 +132,9 @@ static int drvHstAudAlsaStreamClose(snd_pcm_t **phPCM)
         return VINF_SUCCESS;
 
     int rc;
+    LogRel(("ALSA: Calling snd_pcm_close() ...\n"));
     int rc2 = snd_pcm_close(*phPCM);
+    LogRel(("ALSA: Calling snd_pcm_close() done\n"));
     if (rc2 == 0)
     {
         *phPCM = NULL;
@@ -693,6 +695,7 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
              PDMAudioPropsHz(&pCfgAcq->Props), pCfgAcq->Backend.cFramesPeriod, pCfgAcq->Backend.cFramesBufferSize,
              PDMAudioPropsChannels(&pCfgAcq->Props), enmAlsaFmt));
 
+#if 0
     /*
      * Channel config (not fatal).
      */
@@ -702,6 +705,9 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
         if (err < 0)
             LogRel2(("ALSA: snd_pcm_set_chmap failed: %s (%d)\n", snd_strerror(err), err));
     }
+#else
+    LogRel(("ALSA: Skipping setting channel map ...\n"));
+#endif
 
     return 0;
 }
