@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#undef VBOX_WITH_NATIVE_NEM
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
