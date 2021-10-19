@@ -305,6 +305,8 @@
 #define RTNT_INVALID_HANDLE_VALUE         ( (HANDLE)~(uintptr_t)0 )
 /** Constant UNICODE_STRING initializer. */
 #define RTNT_CONSTANT_UNISTR(a_String)   { sizeof(a_String) - sizeof(WCHAR), sizeof(a_String), (WCHAR *)a_String }
+/** Null UNICODE_STRING initializer. */
+#define RTNT_NULL_UNISTR()               { 0, 0, NULL }
 
 /** Declaration wrapper for NT apis.
  * Adds nothrow.  Don't use with callbacks. */
@@ -3389,6 +3391,7 @@ typedef RTL_CRITICAL_SECTION *PRTL_CRITICAL_SECTION;
 # define RTL_QUERY_REGISTRY_TYPECHECK_SHIFT 24
 #endif
 
+RT_DECL_NTAPI(VOID)         RtlFreeUnicodeString(PUNICODE_STRING);
 
 RT_C_DECLS_END
 /** @} */
@@ -3677,7 +3680,6 @@ RT_DECL_NTAPI(PVOID)        RtlReAllocateHeap(HANDLE hHeap, ULONG fFlags, PVOID 
 RT_DECL_NTAPI(BOOLEAN)      RtlFreeHeap(HANDLE hHeap, ULONG fFlags, PVOID pvMem);
 # endif /* IPRT_NT_USE_WINTERNL */
 RT_DECL_NTAPI(SIZE_T)       RtlCompactHeap(HANDLE hHeap, ULONG fFlags);
-RT_DECL_NTAPI(VOID)         RtlFreeUnicodeString(PUNICODE_STRING);
 RT_DECL_NTAPI(SIZE_T)       RtlSizeHeap(HANDLE hHeap, ULONG fFlags, PVOID pvMem);
 RT_DECL_NTAPI(NTSTATUS)     RtlGetLastNtStatus(VOID);
 RT_DECL_NTAPI(ULONG)        RtlGetLastWin32Error(VOID);
