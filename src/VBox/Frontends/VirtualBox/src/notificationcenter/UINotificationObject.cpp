@@ -110,6 +110,7 @@ bool UINotificationSimple::isSuppressed(const QString &strInternalName)
 
 UINotificationProgress::UINotificationProgress()
     : m_pTask(0)
+    , m_fFinished(false)
     , m_uPercent(0)
 {
 }
@@ -118,6 +119,11 @@ UINotificationProgress::~UINotificationProgress()
 {
     delete m_pTask;
     m_pTask = 0;
+}
+
+bool UINotificationProgress::isFinished() const
+{
+    return m_fFinished;
 }
 
 ulong UINotificationProgress::percent() const
@@ -185,6 +191,7 @@ void UINotificationProgress::sltHandleProgressChange(ulong uPercent)
 
 void UINotificationProgress::sltHandleProgressFinished()
 {
+    m_fFinished = true;
     m_uPercent = 100;
     emit sigProgressFinished();
 
