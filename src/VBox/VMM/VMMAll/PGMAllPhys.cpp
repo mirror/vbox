@@ -1088,6 +1088,8 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS G
                                        pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }
+#else
+    RT_NOREF(GCPhys);
 #endif
 }
 

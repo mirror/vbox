@@ -554,6 +554,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVMCC pVM, RTGCPHYS GCPhys)
  */
 static void pgmHandlerPhysicalDeregisterNotifyNEM(PVMCC pVM, PPGMPHYSHANDLER pCur)
 {
+#ifdef VBOX_WITH_NATIVE_NEM
     PPGMPHYSHANDLERTYPEINT  pCurType    = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
     RTGCPHYS                GCPhysStart = pCur->Core.Key;
     RTGCPHYS                GCPhysLast  = pCur->Core.KeyLast;
@@ -615,6 +616,9 @@ static void pgmHandlerPhysicalDeregisterNotifyNEM(PVMCC pVM, PPGMPHYSHANDLER pCu
                                          pRam ? PGM_RAMRANGE_CALC_PAGE_R3PTR(pRam, GCPhysStart) : NULL, &u2State);
     if (u2State != UINT8_MAX && pRam)
         pgmPhysSetNemStateForPages(&pRam->aPages[(GCPhysStart - pRam->GCPhys) >> PAGE_SHIFT], cb >> PAGE_SHIFT, u2State);
+#else
+    RT_NOREF(pVM, pCur);
+#endif
 }
 
 
@@ -702,7 +706,9 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
     Assert(   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
            || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO);
     Assert(PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
+#ifdef VBOX_WITH_NATIVE_NEM
     RTHCPHYS const HCPhysPrev = PGM_PAGE_GET_HCPHYS(pPage);
+#endif
 
     /*
      * Flush any shadow page table references *first*.
@@ -751,6 +757,8 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
                                    NEM_PAGE_PROT_NONE, PGMPAGETYPE_MMIO, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }
+#else
+    RT_NOREF(pRam);
 #endif
 }
 
