@@ -281,11 +281,24 @@ pgmPhysRomWriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
                 if (!PGMROMPROT_IS_ROM(pRomPage->enmProt))
                 {
                     pShadowPage = pgmPhysGetPage(pVM, GCPhys);
-                    AssertLogRelReturn(pShadowPage, VERR_PGM_PHYS_PAGE_GET_IPE);
+                    AssertLogRelMsgReturnStmt(pShadowPage, ("%RGp\n", GCPhys), PGM_UNLOCK(pVM), VERR_PGM_PHYS_PAGE_GET_IPE);
                 }
 
                 void *pvDstPage;
-                int rc = pgmPhysPageMakeWritableAndMap(pVM, pShadowPage, GCPhys & X86_PTE_PG_MASK, &pvDstPage);
+                int rc;
+#if defined(VBOX_WITH_PGM_NEM_MODE) && defined(IN_RING3)
+                if (PGM_IS_IN_NEM_MODE(pVM) && PGMROMPROT_IS_ROM(pRomPage->enmProt))
+                {
+                    pvDstPage = &pRom->pbR3Alternate[GCPhys - pRom->GCPhys];
+                    rc = VINF_SUCCESS;
+                }
+                else
+#endif
+                {
+                    rc = pgmPhysPageMakeWritableAndMap(pVM, pShadowPage, GCPhys & X86_PTE_PG_MASK, &pvDstPage);
+                    if (RT_SUCCESS(rc))
+                        pvDstPage = (uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK);
+                }
                 if (RT_SUCCESS(rc))
                 {
                     memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
@@ -1058,6 +1071,7 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS G
     pVM->pgm.s.cMonitoredPages--;
     pVM->pgm.s.cWrittenToPages++;
 
+#ifdef VBOX_WITH_NATIVE_NEM
     /*
      * Notify NEM about the protection change so we won't spin forever.
      *
@@ -1066,12 +1080,15 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS G
      */
     if (VM_IS_NEM_ENABLED(pVM) && GCPhys != NIL_RTGCPHYS)
     {
-        uint8_t     u2State = PGM_PAGE_GET_NEM_STATE(pPage);
-        PGMPAGETYPE enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+        uint8_t      u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+        PGMPAGETYPE  enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+        PPGMRAMRANGE pRam    = pgmPhysGetRange(pVM, GCPhys);
         NEMHCNotifyPhysPageProtChanged(pVM, GCPhys, PGM_PAGE_GET_HCPHYS(pPage),
+                                       pRam ? PGM_RAMRANGE_CALC_PAGE_R3PTR(pRam, GCPhys) : NULL,
                                        pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }
+#endif
 }
 
 
@@ -1243,6 +1260,27 @@ static int pgmPhysPageMapCommon(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPG
         return VINF_SUCCESS;
 # endif
     }
+
+# ifdef VBOX_WITH_PGM_NEM_MODE
+    if (pVM->pgm.s.fNemMode)
+    {
+#  ifdef IN_RING3
+        /*
+         * Find the corresponding RAM range and use that to locate the mapping address.
+         */
+        /** @todo Use the page ID for some kind of indexing as we do with MMIO2 above. */
+        PPGMRAMRANGE const pRam = pgmPhysGetRange(pVM, GCPhys);
+        AssertLogRelMsgReturn(pRam, ("%RTGp\n", GCPhys), VERR_INTERNAL_ERROR_3);
+        size_t const idxPage = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;
+        Assert(pPage == &pRam->aPages[idxPage]);
+        *ppMap = NULL;
+        *ppv   = (uint8_t *)pRam->pvR3 + (idxPage << PAGE_SHIFT);
+        return VINF_SUCCESS;
+#  else
+        AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+#  endif
+    }
+# endif
 
     const uint32_t idChunk = PGM_PAGE_GET_CHUNKID(pPage);
     if (idChunk == NIL_GMM_CHUNKID)
@@ -4350,6 +4388,7 @@ VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVMCC pVM, RTGCPHYS GCPhys, bool fWritab
     return rc;
 }
 
+#ifdef VBOX_WITH_NATIVE_NEM
 
 /**
  * Interface used by NEM to check what to do on a memory access exit.
@@ -4492,4 +4531,25 @@ VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC pVCpu, uint8_t 
 
     return rc;
 }
+
+
+/**
+ * Helper for setting the NEM state for a range of pages.
+ *
+ * @param   paPages     Array of pages to modify.
+ * @param   cPages      How many pages to modify.
+ * @param   u2State     The new state value.
+ */
+void pgmPhysSetNemStateForPages(PPGMPAGE paPages, RTGCPHYS cPages, uint8_t u2State)
+{
+    PPGMPAGE pPage = paPages;
+    while (cPages-- > 0)
+    {
+        PGM_PAGE_SET_NEM_STATE(pPage, u2State);
+        pPage++;
+    }
+}
+
+#endif /* VBOX_WITH_NATIVE_NEM */
+
 

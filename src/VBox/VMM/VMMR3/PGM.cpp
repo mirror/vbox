@@ -735,6 +735,20 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 
 
+#ifdef VBOX_WITH_PGM_NEM_MODE
+/**
+ * Interface that NEM uses to switch PGM into simplified memory managment mode.
+ *
+ * This call occurs before PGMR3Init.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+VMMR3_INT_DECL(void) PGMR3EnableNemMode(PVM pVM)
+{
+    AssertFatal(!PDMCritSectIsInitialized(&pVM->pgm.s.CritSectX));
+    pVM->pgm.s.fNemMode = true;
+}
+#endif
 
 
 /**
@@ -809,7 +823,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
+#ifndef PGM_WITHOUT_MAPPINGS
     pVM->pgm.s.GCPtrPrevRamRangeMapping = MM_HYPER_AREA_ADDRESS;
+#endif
 
     rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "RamPreAlloc", &pVM->pgm.s.fRamPreAlloc,
 #ifdef VBOX_WITH_PREALLOC_RAM_BY_DEFAULT

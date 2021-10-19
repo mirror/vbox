@@ -4591,12 +4591,28 @@ void nemHCNativeNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmK
 }
 
 
-void nemHCNativeNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
-                                                int fRestoreAsRAM, bool fRestoreAsRAM2)
+VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                                        RTR3PTR pvMemR3, uint8_t *pu2State)
 {
-    Log5(("nemHCNativeNotifyHandlerPhysicalDeregister: %RGp LB %RGp enmKind=%d fRestoreAsRAM=%d fRestoreAsRAM2=%d\n",
-          GCPhys, cb, enmKind, fRestoreAsRAM, fRestoreAsRAM2));
-    NOREF(pVM); NOREF(enmKind); NOREF(GCPhys); NOREF(cb); NOREF(fRestoreAsRAM); NOREF(fRestoreAsRAM2);
+    Log5(("NEMHCNotifyHandlerPhysicalDeregister: %RGp LB %RGp enmKind=%d pvMemR3=%p pu2State=%p (%d)\n",
+          GCPhys, cb, enmKind, pvMemR3, pu2State, *pu2State));
+
+    *pu2State = UINT8_MAX;
+#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE) && defined(IN_RING3)
+    if (pvMemR3)
+    {
+        HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvMemR3, GCPhys, cb,
+                                     WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute | WHvMapGpaRangeFlagWrite);
+        if (SUCCEEDED(hrc))
+            *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
+        else
+            AssertLogRelMsgFailed(("NEMHCNotifyHandlerPhysicalDeregister: WHvMapGpaRange(,%p,%RGp,%RGp,) -> %Rhrc\n",
+                                   pvMemR3, GCPhys, cb, hrc));
+    }
+    RT_NOREF(enmKind);
+#else
+    RT_NOREF(pVM, enmKind, GCPhys, cb, pvMemR3);
+#endif
 }
 
 
@@ -4956,12 +4972,13 @@ int nemHCNativeNotifyPhysPageAllocated(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPh
 }
 
 
-void nemHCNativeNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
-                                          PGMPAGETYPE enmType, uint8_t *pu2State)
+VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, RTR3PTR pvR3, uint32_t fPageProt,
+                                                  PGMPAGETYPE enmType, uint8_t *pu2State)
 {
-    Log5(("nemHCNativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
+    Log5(("NEMHCNotifyPhysPageProtChanged: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
           GCPhys, HCPhys, fPageProt, enmType, *pu2State));
-    RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
+    Assert(VM_IS_NEM_ENABLED(pVM));
+    RT_NOREF(HCPhys, enmType, pvR3);
 
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
@@ -4987,12 +5004,13 @@ void nemHCNativeNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS H
 }
 
 
-void nemHCNativeNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
-                                     uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State)
+VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
+                                              RTR3PTR pvNewR3, uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State)
 {
-    Log5(("nemHCNativeNotifyPhysPageChanged: %RGp HCPhys=%RHp->%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
-          GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, *pu2State));
-    RT_NOREF_PV(HCPhysPrev); RT_NOREF_PV(HCPhysNew); RT_NOREF_PV(enmType);
+    Log5(("nemHCNativeNotifyPhysPageChanged: %RGp HCPhys=%RHp->%RHp pvNewR3=%p fPageProt=%#x enmType=%d *pu2State=%d\n",
+          GCPhys, HCPhysPrev, HCPhysNew, pvNewR3, fPageProt, enmType, *pu2State));
+    Assert(VM_IS_NEM_ENABLED(pVM));
+    RT_NOREF(HCPhysPrev, HCPhysNew, pvNewR3, enmType);
 
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     PVMCPUCC pVCpu = VMMGetCpu(pVM);

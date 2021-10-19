@@ -159,6 +159,13 @@
  * only making them writable when getting a write access \#PF. */
 #define VBOX_WITH_REAL_WRITE_MONITORED_PAGES
 
+/** @def VBOX_WITH_PGM_NEM_MODE
+ * Enabled the NEM memory management mode in PGM.  See PGM::fNemMode for
+ * details. */
+#ifdef DOXYGEN_RUNNING
+# define VBOX_WITH_PGM_NEM_MODE
+#endif
+
 /** @} */
 
 
@@ -1275,7 +1282,7 @@ typedef struct PGMRAMRANGE
     uint32_t                            fPadding1;
     /** Last address in the range (inclusive). Page aligned (-1). */
     RTGCPHYS                            GCPhysLast;
-    /** Start of the HC mapping of the range. This is only used for MMIO2. */
+    /** Start of the HC mapping of the range. This is only used for MMIO2 and in NEM mode. */
     R3PTRTYPE(void *)                   pvR3;
     /** Live save per page tracking data. */
     R3PTRTYPE(PPGMLIVESAVERAMPAGE)      paLSPages;
@@ -1334,6 +1341,12 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
  */
 #define PGM_RAMRANGE_TLB_IDX(a_GCPhys)      ( ((a_GCPhys) >> 20) & (PGM_RAMRANGE_TLB_ENTRIES - 1) )
 
+/**
+ * Calculates the ring-3 address for a_GCPhysPage if the RAM range has a
+ * mapping address.
+ */
+#define PGM_RAMRANGE_CALC_PAGE_R3PTR(a_pRam, a_GCPhysPage) \
+    ( (a_pRam)->pvR3 ? (R3PTRTYPE(uint8_t *))(a_pRam)->pvR3 + (a_GCPhysPage) - (a_pRam)->GCPhys : NULL )
 
 
 /**
@@ -1394,13 +1407,11 @@ typedef struct PGMROMRANGE
     /** Size of the range. */
     RTGCPHYS                            cb;
     /** The flags (PGMPHYS_ROM_FLAGS_*). */
-    uint32_t                            fFlags;
+    uint8_t                             fFlags;
     /** The saved state range ID. */
     uint8_t                             idSavedState;
     /** Alignment padding. */
-    uint8_t                             au8Alignment[3];
-    /** Alignment padding ensuring that aPages is sizeof(PGMROMPAGE) aligned. */
-    uint32_t                            au32Alignemnt[HC_ARCH_BITS == 32 ? 5 : 1];
+    uint8_t                             au8Alignment[2];
     /** The size bits pvOriginal points to. */
     uint32_t                            cbOriginal;
     /** Pointer to the original bits when PGMPHYS_ROM_FLAGS_PERMANENT_BINARY was specified.
@@ -1408,6 +1419,15 @@ typedef struct PGMROMRANGE
     R3PTRTYPE(const void *)             pvOriginal;
     /** The ROM description. */
     R3PTRTYPE(const char *)             pszDesc;
+#ifdef VBOX_WITH_PGM_NEM_MODE
+    /** In simplified memory mode this provides alternate backing for shadowed ROMs.
+     * - PGMROMPROT_READ_ROM_WRITE_IGNORE:  Shadow
+     * - PGMROMPROT_READ_ROM_WRITE_RAM:     Shadow
+     * - PGMROMPROT_READ_RAM_WRITE_IGNORE:  ROM
+     * - PGMROMPROT_READ_RAM_WRITE_RAM:     ROM  */
+    R3PTRTYPE(uint8_t *)                pbR3Alternate;
+    RTR3PTR                             pvAlignment2;
+#endif
     /** The per page tracking structures. */
     PGMROMPAGE                          aPages[1];
 } PGMROMRANGE;
@@ -2918,6 +2938,19 @@ typedef struct PGM
      * the VM (default), or if it should be allocated when first written to.
      */
     bool                            fRamPreAlloc;
+#ifdef VBOX_WITH_PGM_NEM_MODE
+    /** Set if we're operating in NEM memory mode.
+     *
+     * NEM mode implies that memory is allocated in big chunks for each RAM range
+     * rather than on demand page by page.  Memory is also not locked and PGM has
+     * therefore no physical addresses for them.  Page sharing is out of the
+     * question.  Ballooning depends on the native execution engine, but probably
+     * pointless as well.  */
+    bool                            fNemMode;
+# define PGM_IS_IN_NEM_MODE(a_pVM)  ((a_pVM)->pgm.s.fNemMode)
+#else
+# define PGM_IS_IN_NEM_MODE(a_pVM)  (false)
+#endif
     /** Indicates whether write monitoring is currently in use.
      * This is used to prevent conflicts between live saving and page sharing
      * detection. */
@@ -2931,8 +2964,6 @@ typedef struct PGM
      * not is something we find out during VMM initialization and we won't
      * change this later on. */
     bool                            fNestedPaging;
-    /** The host paging mode. (This is what SUPLib reports.) */
-    SUPPAGINGMODE                   enmHostMode;
     /** We're not in a state which permits writes to guest memory.
      * (Only used in strict builds.) */
     bool                            fNoMorePhysWrites;
@@ -2954,7 +2985,12 @@ typedef struct PGM
     /** Large page enabled flag. */
     bool                            fUseLargePages;
     /** Alignment padding. */
-    bool                            afAlignment3[6];
+#ifndef VBOX_WITH_PGM_NEM_MODE
+    bool                            afAlignment3[1];
+#endif
+    /** The host paging mode. (This is what SUPLib reports.) */
+    SUPPAGINGMODE                   enmHostMode;
+    bool                            fAlignment3b;
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */
@@ -2974,8 +3010,12 @@ typedef struct PGM
     /** Base address (GC) of fixed mapping.
      * This is valid if either fMappingsFixed or fMappingsFixedRestored is set. */
     RTGCPTR                         GCPtrMappingFixed;
+#ifndef PGM_WITHOUT_MAPPINGS
     /** The address of the previous RAM range mapping. */
     RTGCPTR                         GCPtrPrevRamRangeMapping;
+#else
+    RTGCPTR                         Unused0;
+#endif
 
     /** Physical access handler type for ROM protection. */
     PGMPHYSHANDLERTYPE              hRomPhysHandlerType;
@@ -3721,11 +3761,11 @@ int             pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, 
                                            RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler);
 int             pgmHandlerPhysicalExDup(PVMCC pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler);
 int             pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
-int             pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, int fRestoreAsRAM);
+int             pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler);
 int             pgmHandlerPhysicalExDestroy(PVMCC pVM, PPGMPHYSHANDLER pHandler);
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
 bool            pgmHandlerPhysicalIsAll(PVMCC pVM, RTGCPHYS GCPhys);
-void            pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, bool fDoAccounting);
+void            pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, PPGMRAMRANGE pRam, bool fDoAccounting);
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
@@ -3762,6 +3802,9 @@ PPGMRAMRANGE    pgmPhysGetRangeAtOrAboveSlow(PVM pVM, RTGCPHYS GCPhys);
 PPGMPAGE        pgmPhysGetPageSlow(PVM pVM, RTGCPHYS GCPhys);
 int             pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage);
 int             pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam);
+#ifdef VBOX_WITH_NATIVE_NEM
+void            pgmPhysSetNemStateForPages(PPGMPAGE paPages, RTGCPHYS cPages, uint8_t u2State);
+#endif
 
 #ifdef IN_RING3
 void            pgmR3PhysRelinkRamRanges(PVM pVM);

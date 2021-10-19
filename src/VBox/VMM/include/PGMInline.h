@@ -345,15 +345,19 @@ DECLINLINE(void) pgmPhysPageWriteMonitor(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCP
             Assert(PGM_PAGE_GET_PDE_TYPE(pFirstPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED);
     }
 
+#ifdef VBOX_WITH_NATIVE_NEM
     /* Tell NEM. */
     if (VM_IS_NEM_ENABLED(pVM))
     {
-        uint8_t     u2State = PGM_PAGE_GET_NEM_STATE(pPage);
-        PGMPAGETYPE enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+        uint8_t      u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+        PGMPAGETYPE  enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+        PPGMRAMRANGE pRam    = pgmPhysGetRange(pVM, GCPhysPage);
         NEMHCNotifyPhysPageProtChanged(pVM, GCPhysPage, PGM_PAGE_GET_HCPHYS(pPage),
+                                       pRam ? PGM_RAMRANGE_CALC_PAGE_R3PTR(pRam, GCPhysPage) : NULL,
                                        pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }
+#endif
 }
 
 

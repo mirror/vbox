@@ -41,6 +41,10 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+#if defined(VBOX_WITH_PGM_NEM_MODE) && !defined(VBOX_WITH_NATIVE_NEM)
+# error "VBOX_WITH_PGM_NEM_MODE requires VBOX_WITH_NATIVE_NEM to be defined"
+#endif
+
 
 #ifdef RT_OS_WINDOWS
 /*
@@ -59,6 +63,9 @@ RT_C_DECLS_BEGIN
 # endif
 # if defined(NEM_WIN_WITH_RING0_RUNLOOP) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
 #  error "NEM_WIN_WITH_RING0_RUNLOOP requires NEM_WIN_USE_HYPERCALLS_FOR_PAGES"
+# endif
+# if defined(VBOX_WITH_PGM_NEM_MODE) && defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
+#  error "VBOX_WITH_PGM_NEM_MODE cannot be used together with NEM_WIN_USE_HYPERCALLS_FOR_PAGES"
 # endif
 
 /**
@@ -450,25 +457,14 @@ bool            nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu);
 bool            nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 void            nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
 
-int     nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
-int     nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2);
-int     nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
-int     nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
-int     nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
 void    nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled);
 #endif
 
 void    nemHCNativeNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
-void    nemHCNativeNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
-                                                   int fRestoreAsRAM, bool fRestoreAsRAM2);
 void    nemHCNativeNotifyHandlerPhysicalModify(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
                                                RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM);
 int     nemHCNativeNotifyPhysPageAllocated(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
                                            PGMPAGETYPE enmType, uint8_t *pu2State);
-void    nemHCNativeNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
-                                             PGMPAGETYPE enmType, uint8_t *pu2State);
-void    nemHCNativeNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew, uint32_t fPageProt,
-                                         PGMPAGETYPE enmType, uint8_t *pu2State);
 
 
 #ifdef RT_OS_WINDOWS

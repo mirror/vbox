@@ -1335,11 +1335,19 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                     rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
                     if (RT_SUCCESS(rc))
                     {
+                        /*
+                         * Set ourselves as the execution engine and make config adjustments.
+                         */
                         VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
                         Log(("NEM: Marked active!\n"));
                         nemR3WinDisableX2Apic(pVM);
+#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+                        PGMR3EnableNemMode(pVM);
+#endif
 
-                        /* Register release statistics */
+                        /*
+                         * Register release statistics
+                         */
                         STAMR3Register(pVM, (void *)&pVM->nem.s.cMappedPages, STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesCurrentlyMapped", STAMUNIT_PAGES, "Number guest pages currently mapped by the VM");
                         STAMR3Register(pVM, (void *)&pVM->nem.s.StatMapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
@@ -1402,6 +1410,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         STAMR3RegisterRefresh(pUVM, &pVM->nem.s.R0Stats.cPagesInUse,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
                                               STAMUNIT_PAGES, STAM_REFRESH_GRP_NEM, "Pages in use by hypervisor",
                                               "/NEM/R0Stats/cPagesInUse");
+
                     }
                 }
                 else
@@ -1941,46 +1950,158 @@ DECLINLINE(int) nemR3NativeGCPhys2R3PtrWriteable(PVM pVM, RTGCPHYS GCPhys, void 
 }
 
 
-int nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
+VMMR3_INT_DECL(int) NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvR3)
 {
-    Log5(("nemR3NativeNotifyPhysRamRegister: %RGp LB %RGp\n", GCPhys, cb));
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb);
+    Log5(("NEMR3NotifyPhysRamRegister: %RGp LB %RGp, pvR3=%p\n", GCPhys, cb, pvR3));
+#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+    if (pvR3)
+    {
+        HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvR3, GCPhys, cb,
+                                     WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        if (SUCCEEDED(hrc))
+        { /* likely */ }
+        else
+        {
+            LogRel(("NEMR3NotifyPhysRamRegister: GCPhys=%RGp LB %RGp pvR3=%p hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                    GCPhys, cb, pvR3, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            return VERR_NEM_MAP_PAGES_FAILED;
+        }
+    }
+#else
+    RT_NOREF(pVM, GCPhys, cb, pvR3);
+#endif
     return VINF_SUCCESS;
 }
 
 
-int nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2)
+VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
+                                                  void *pvRam, void *pvMmio2, uint8_t *pu2State)
 {
-    Log5(("nemR3NativeNotifyPhysMmioExMap: %RGp LB %RGp fFlags=%#x pvMmio2=%p\n", GCPhys, cb, fFlags, pvMmio2));
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags); NOREF(pvMmio2);
+    Log5(("NEMR3NotifyPhysMmioExMapEarly: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p (%d)\n",
+          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, *pu2State));
+
+#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+    /*
+     * Unmap the RAM we're replacing.
+     */
+    if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
+    {
+        HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, cb);
+        if (SUCCEEDED(hrc))
+        { /* likely */ }
+        else if (pvMmio2)
+            LogRel(("NEMR3NotifyPhysMmioExMapEarly: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> hrc=%Rhrc (%#x) Last=%#x/%u (ignored)\n",
+                    GCPhys, cb, fFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+        else
+        {
+            LogRel(("NEMR3NotifyPhysMmioExMapEarly: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                    GCPhys, cb, fFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            return VERR_NEM_UNMAP_PAGES_FAILED;
+        }
+    }
+
+    /*
+     * Map MMIO2 if any.
+     */
+    if (pvMmio2)
+    {
+        Assert(fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2);
+        HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvMmio2, GCPhys, cb,
+                                     WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        if (SUCCEEDED(hrc))
+            *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
+        else
+        {
+            LogRel(("NEMR3NotifyPhysMmioExMapEarly: GCPhys=%RGp LB %RGp fFlags=%#x pvMmio2=%p: Map -> hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                    GCPhys, cb, fFlags, pvMmio2, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            return VERR_NEM_MAP_PAGES_FAILED;
+        }
+    }
+    else
+    {
+        Assert(!(fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2));
+        *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
+    }
+
+#else
+    RT_NOREF(pVM, GCPhys, cb, pvRam, pvMmio2);
+    *pu2State = (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE) ? UINT8_MAX : NEM_WIN_PAGE_STATE_UNMAPPED;
+#endif
     return VINF_SUCCESS;
 }
 
 
-int nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
+                                                 void *pvRam, void *pvMmio2)
 {
-    Log5(("nemR3NativeNotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2);
     return VINF_SUCCESS;
 }
 
 
-/**
- * Called early during ROM registration, right after the pages have been
- * allocated and the RAM range updated.
- *
- * This will be succeeded by a number of NEMHCNotifyPhysPageProtChanged() calls
- * and finally a NEMR3NotifyPhysRomRegisterEarly().
- *
- * @returns VBox status code
- * @param   pVM             The cross context VM structure.
- * @param   GCPhys          The ROM address (page aligned).
- * @param   cb              The size (page aligned).
- * @param   fFlags          NEM_NOTIFY_PHYS_ROM_F_XXX.
- */
-int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvRam,
+                                               void *pvMmio2, uint8_t *pu2State)
 {
-    Log5(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
+    Log5(("NEMR3NotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p\n",
+          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State));
+
+    int rc = VINF_SUCCESS;
+#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+    /*
+     * Unmap the MMIO2 pages.
+     */
+    /** @todo If we implement aliasing (MMIO2 page aliased into MMIO range),
+     *        we may have more stuff to unmap even in case of pure MMIO... */
+    if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2)
+    {
+        HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, cb);
+        if (FAILED(hrc))
+        {
+            LogRel2(("NEMR3NotifyPhysMmioExUnmap: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> hrc=%Rhrc (%#x) Last=%#x/%u (ignored)\n",
+                     GCPhys, cb, fFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            rc = VERR_NEM_UNMAP_PAGES_FAILED;
+        }
+    }
+
+    /*
+     * Restore the RAM we replaced.
+     */
+    if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
+    {
+        AssertPtr(pvRam);
+        HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvRam, GCPhys, cb,
+                                     WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        if (SUCCEEDED(hrc))
+        { /* likely */ }
+        else
+        {
+            LogRel(("NEMR3NotifyPhysMmioExUnmap: GCPhys=%RGp LB %RGp pvMmio2=%p hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                    GCPhys, cb, pvMmio2, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            rc = VERR_NEM_MAP_PAGES_FAILED;
+        }
+        if (pu2State)
+            *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
+    }
+    /* Mark the pages as unmapped if relevant. */
+    else if (pu2State)
+        *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
+
+    RT_NOREF(pvMmio2);
+#else
+    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State);
+    if (pu2State)
+        *pu2State = UINT8_MAX;
+#endif
+    return rc;
+}
+
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages, uint32_t fFlags,
+                                                     uint8_t *pu2State)
+{
+    Log5(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp pvPages=%p fFlags=%#x\n", GCPhys, cb, pvPages, fFlags));
+    *pu2State = UINT8_MAX;
+
 #if 0 /* Let's not do this after all.  We'll protection change notifications for each page and if not we'll map them lazily. */
     RTGCPHYS const cPages = cb >> X86_PAGE_SHIFT;
     for (RTGCPHYS iPage = 0; iPage < cPages; iPage++, GCPhys += X86_PAGE_SIZE)
@@ -2006,30 +2127,39 @@ int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
             return rc;
         }
     }
-#else
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb);
-#endif
     RT_NOREF_PV(fFlags);
+#else
+    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags);
+#endif
     return VINF_SUCCESS;
 }
 
 
-/**
- * Called after the ROM range has been fully completed.
- *
- * This will be preceeded by a NEMR3NotifyPhysRomRegisterEarly() call as well a
- * number of NEMHCNotifyPhysPageProtChanged calls.
- *
- * @returns VBox status code
- * @param   pVM             The cross context VM structure.
- * @param   GCPhys          The ROM address (page aligned).
- * @param   cb              The size (page aligned).
- * @param   fFlags          NEM_NOTIFY_PHYS_ROM_F_XXX.
- */
-int nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages,
+                                                    uint32_t fFlags, uint8_t *pu2State)
 {
-    Log5(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    Log5(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp pvPages=%p fFlags=%#x pu2State=%p\n",
+          GCPhys, cb, pvPages, fFlags, pu2State));
+    *pu2State = UINT8_MAX;
+
+#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+    /*
+     * (Re-)map readonly.
+     */
+    AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
+    HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvPages, GCPhys, cb, WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute);
+    if (SUCCEEDED(hrc))
+        *pu2State = NEM_WIN_PAGE_STATE_READABLE;
+    else
+    {
+        LogRel(("nemR3NativeNotifyPhysRomRegisterEarly: GCPhys=%RGp LB %RGp pvPages=%p fFlags=%#x hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                GCPhys, cb, pvPages, fFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+        return VERR_NEM_MAP_PAGES_FAILED;
+    }
+    RT_NOREF(fFlags);
+#else
+    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags);
+#endif
     return VINF_SUCCESS;
 }
 

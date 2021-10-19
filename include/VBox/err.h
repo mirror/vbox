@@ -652,6 +652,8 @@
 #define VERR_PGM_SHW_NONE_IPE                   (-1687)
 /** One or more PAE PDPEs are invalid due to reserved bits being set. */
 #define VERR_PGM_PAE_PDPE_RSVD                  (-1688)
+/** Attemted illegal operation in simplified memory management mode. */
+#define VERR_PGM_NOT_SUPPORTED_FOR_NEM_MODE     (-1689)
 /** @} */
 
 
