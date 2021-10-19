@@ -88,6 +88,8 @@ void UIProgressTask::start()
 
             /* Notify external listeners: */
             emit sigProgressStarted();
+            if (m_comProgress.GetCompleted())
+                sltHandleProgressEventHandlingFinished();
         }
     }
 }
