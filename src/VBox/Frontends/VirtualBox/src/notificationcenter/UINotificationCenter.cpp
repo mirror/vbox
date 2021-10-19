@@ -241,6 +241,9 @@ void UINotificationCenter::handleNow(UINotificationProgress *pProgress)
     /* Is progress still valid? */
     if (guardProgress.isNull())
         return;
+    /* Is progress still running? */
+    if (guardProgress->isFinished())
+        return;
 
     /* Create a local event-loop: */
     QEventLoop eventLoop;
@@ -397,11 +400,9 @@ void UINotificationCenter::sltModelChanged()
 
 void UINotificationCenter::sltHandleProgressFinished()
 {
-    /* Make sure event-loop is running: */
-    AssertPtrReturnVoid(m_pEventLoop.data());
-
-    /* Break the loop: */
-    m_pEventLoop->exit();
+    /* Break the loop if exists: */
+    if (m_pEventLoop)
+        m_pEventLoop->exit();
 }
 
 void UINotificationCenter::prepare()
