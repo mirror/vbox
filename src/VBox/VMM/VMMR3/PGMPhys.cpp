@@ -1761,6 +1761,7 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
      */
     pgmR3PhysLinkRamRange(pVM, pNew, pPrev);
 
+#ifdef VBOX_WITH_NATIVE_NEM
     /*
      * Notify NEM now that it has been linked.
      */
@@ -1768,6 +1769,9 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
     if (RT_FAILURE(rc))
         pgmR3PhysUnlinkRamRange2(pVM, pNew, pPrev);
     return rc;
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -5687,7 +5691,9 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
         AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
         return VMSetError(pVM, VERR_PGM_PHYS_INVALID_PAGE_ID, RT_SRC_POS, "GCPhys=%RGp idPage=%#x", GCPhys, pPage);
     }
+#ifdef VBOX_WITH_PGM_NEM_MODE
     const RTHCPHYS HCPhysPrev = PGM_PAGE_GET_HCPHYS(pPage);
+#endif
 
     /* update page count stats. */
     if (PGM_PAGE_IS_SHARED(pPage))
