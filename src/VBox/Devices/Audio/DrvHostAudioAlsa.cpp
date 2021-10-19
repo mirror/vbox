@@ -832,7 +832,11 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface
 
     /** @todo r=bird: It's not like we can do much with a bad status... Check
      *        what the caller does... */
-    return drvHstAudAlsaStreamClose(&pStreamALSA->hPCM);
+    int rc = drvHstAudAlsaStreamClose(&pStreamALSA->hPCM);
+
+    LogRelFlowFunc(("returns %Rrc (state %s)\n", rc, snd_pcm_state_name(snd_pcm_state(pStreamALSA->hPCM))));
+
+    return rc;
 }
 
 
