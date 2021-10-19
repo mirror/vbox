@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#undef VBOX_WITH_NATIVE_NEM
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -1195,7 +1196,9 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
         }
         return rc;
     }
-#endif /* VBOX_WITH_PGM_NEM_MODE */
+#else  /* !VBOX_WITH_PGM_NEM_MODE */
+    RT_NOREF(pvMmio2);
+#endif /* !VBOX_WITH_PGM_NEM_MODE */
 
     /*
      * Regular mode.
@@ -3910,7 +3913,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Unmap(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HAN
     pgmPhysInvalidRamRangeTlbs(pVM);
 
     PGM_UNLOCK(pVM);
-    return rc;
+    return rcRet;
 }
 
 
@@ -4415,9 +4418,11 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                 pRamNew = pRam;
             }
 
+#ifdef VBOX_WITH_NATIVE_NEM
             /* Set the NEM state of the pages if needed. */
             if (u2NemState != UINT8_MAX)
                 pgmPhysSetNemStateForPages(&pRamNew->aPages[idxFirstRamPage], cPages, u2NemState);
+#endif
 
             /* Flush physical page map TLB. */
             pgmPhysInvalidatePageMapTLB(pVM);
@@ -4527,6 +4532,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
 #endif
                             GMMR3AllocatePagesCleanup(pReq);
 
+#ifdef VBOX_WITH_NATIVE_NEM
                         /*
                          * Notify NEM again.
                          */
@@ -4536,11 +4542,13 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                         if (u2NemState != UINT8_MAX)
                             pgmPhysSetNemStateForPages(&pRamNew->aPages[idxFirstRamPage], cPages, u2NemState);
                         if (RT_SUCCESS(rc))
+#endif
                             return rc;
 
                         /*
                          * bail out
                          */
+#ifdef VBOX_WITH_NATIVE_NEM
                         /* unlink */
                         if (pRomPrev)
                         {
@@ -4555,15 +4563,15 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
 
                         if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
                         {
-#ifdef VBOX_WITH_PGM_NEM_MODE
+# ifdef VBOX_WITH_PGM_NEM_MODE
                             if (pVM->pgm.s.fNemMode)
                                 pVM->pgm.s.cPrivatePages -= cPages;
                             else
-#endif
+# endif
                                 pVM->pgm.s.cZeroPages -= cPages;
                             pVM->pgm.s.cAllPages -= cPages;
                         }
-
+#endif
                     }
                     else
                         rc = VERR_NO_MEMORY;
@@ -4889,7 +4897,9 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
                     int rc2 = pgmPoolTrackUpdateGCPhys(pVM, GCPhysPage, pRamPage, true /*fFlushPTEs*/, &fFlushTLB);
                     if (rc2 != VINF_SUCCESS && (rc == VINF_SUCCESS || RT_FAILURE(rc2)))
                         rc = rc2;
+#ifdef VBOX_WITH_NATIVE_NEM
                     uint8_t u2State = PGM_PAGE_GET_NEM_STATE(pRamPage);
+#endif
 
                     PPGMPAGE pOld = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Virgin : &pRomPage->Shadow;
                     PPGMPAGE pNew = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Shadow : &pRomPage->Virgin;
@@ -5726,6 +5736,8 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
                                    pgmPhysPageCalcNemProtection(pPage, enmNewType), enmNewType, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }
+#else
+    RT_NOREF(enmNewType);
 #endif
 
     /*
