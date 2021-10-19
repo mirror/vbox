@@ -150,12 +150,17 @@ void UIBootFailureDialog::prepareWidgets()
     m_pBootImageLabel = new QLabel;
 
     if (m_pBootImageLabel)
+    {
         pSelectorLayout->addWidget(m_pBootImageLabel);
+        m_pBootImageLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
+    }
 
     m_pBootImageSelector = new UIFilePathSelector;
     if (m_pBootImageSelector)
     {
         m_pBootImageSelector->setMode(UIFilePathSelector::Mode_File_Open);
+        m_pBootImageSelector->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
         m_pBootImageSelector->setFileDialogFilters("ISO Images(*.iso *.ISO)");
         m_pBootImageSelector->setResetEnabled(false);
         m_pBootImageSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
