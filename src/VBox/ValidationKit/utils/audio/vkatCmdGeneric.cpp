@@ -384,6 +384,7 @@ static RTEXITCODE audioTestPlayOne(const char *pszFile, PCPDMDRVREG pDrvReg, con
                     AudioTestMixStreamTerm(&Mix);
                 }
                 audioTestDriverStackStreamDestroy(&DrvStack, pStream);
+                pStream = NULL;
             }
             else
                 rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);
@@ -493,6 +494,7 @@ static RTEXITCODE audioTestPlayTestToneOne(PAUDIOTESTTONEPARMS pToneParms,
                     AudioTestMixStreamTerm(&TstStream.Mix);
                 }
                 audioTestDriverStackStreamDestroy(&DrvStack, TstStream.pStream);
+                TstStream.pStream = NULL;
             }
             else
                 rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);
@@ -888,6 +890,7 @@ static RTEXITCODE audioTestRecOne(const char *pszFile, uint8_t cWaveChannels, ui
                     AudioTestMixStreamTerm(&Mix);
                 }
                 audioTestDriverStackStreamDestroy(&DrvStack, pStream);
+                pStream = NULL;
             }
             else
                 rcExit = RTMsgErrorExitFailure("Creating output stream failed: %Rrc", rc);

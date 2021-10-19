@@ -884,34 +884,41 @@ int audioTestDriverStackStreamCreateInput(PAUDIOTESTDRVSTACK pDrvStack, PCPDMAUD
 
 /**
  * Destroys a stream.
+ *
+ * @param   pDrvStack           Driver stack the stream to destroy is assigned to.
+ * @param   pStream             Stream to destroy. Pointer will be NULL (invalid) after successful return.
  */
 void audioTestDriverStackStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PPDMAUDIOSTREAM pStream)
 {
-    if (pStream)
+    if (!pStream)
+        return;
+
+    if (pDrvStack->pIAudioConnector)
     {
-        if (pDrvStack->pIAudioConnector)
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' (IAudioConnector) ...\n", pStream->Cfg.szName);
+        int rc = pDrvStack->pIAudioConnector->pfnStreamDestroy(pDrvStack->pIAudioConnector, pStream, true /*fImmediate*/);
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "pfnStreamDestroy failed: %Rrc", rc);
+    }
+    else
+    {
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' (IHostAudio) ...\n", pStream->Cfg.szName);
+        PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
+        int rc = pDrvStack->pIHostAudio->pfnStreamDestroy(pDrvStack->pIHostAudio, &pStreamAt->Backend, true /*fImmediate*/);
+        if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' (IAudioConnector) ...\n", pStream->Cfg.szName);
-            int rc = pDrvStack->pIAudioConnector->pfnStreamDestroy(pDrvStack->pIAudioConnector, pStream, true /*fImmediate*/);
-            if (RT_FAILURE(rc))
-                RTTestFailed(g_hTest, "pfnStreamDestroy failed: %Rrc", rc);
+            pStreamAt->Core.uMagic    = ~PDMAUDIOSTREAM_MAGIC;
+            pStreamAt->Backend.uMagic = ~PDMAUDIOBACKENDSTREAM_MAGIC;
+
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' done\n", pStream->Cfg.szName);
+
+            RTMemFree(pStreamAt);
+
+            pStreamAt = NULL;
+            pStream   = NULL;
         }
         else
-        {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' (IHostAudio) ...\n", pStream->Cfg.szName);
-            PAUDIOTESTDRVSTACKSTREAM pStreamAt = (PAUDIOTESTDRVSTACKSTREAM)pStream;
-            int rc = pDrvStack->pIHostAudio->pfnStreamDestroy(pDrvStack->pIHostAudio, &pStreamAt->Backend, true /*fImmediate*/);
-            if (RT_SUCCESS(rc))
-            {
-                pStreamAt->Core.uMagic    = ~PDMAUDIOSTREAM_MAGIC;
-                pStreamAt->Backend.uMagic = ~PDMAUDIOBACKENDSTREAM_MAGIC;
-                RTMemFree(pStreamAt);
-            }
-            else
-                RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamDestroy failed: %Rrc", rc);
-        }
-
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Destroying stream '%s' done\n", pStream->Cfg.szName);
+            RTTestFailed(g_hTest, "PDMIHOSTAUDIO::pfnStreamDestroy failed: %Rrc", rc);
     }
 }
 
