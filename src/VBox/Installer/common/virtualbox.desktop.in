@@ -2,8 +2,8 @@
 Encoding=UTF-8
 Version=1.0
 Name=@VBOX_PRODUCT@
-GenericName=Virtualization Software
-GenericName[de]=Virtualisierung Software
+GenericName=Virtual Machine
+GenericName[de]=Virtuelle Maschine
 GenericName[ru]=Виртуальная машина
 Type=Application
 Exec=VirtualBox %U
