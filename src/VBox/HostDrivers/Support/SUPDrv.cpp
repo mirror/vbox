@@ -299,6 +299,7 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    1,  SUPR0GetSessionGVM),
     SUPEXP_STK_BACK(    1,  SUPR0GetSessionVM),
     SUPEXP_STK_BACK(    3,  SUPR0SetSessionVM),
+    SUPEXP_STK_BACK(    1,  SUPR0GetSessionUid),
     SUPEXP_STK_BACK(    6,  SUPR0TscDeltaMeasureBySetIndex),
     SUPEXP_STK_BACK(    1,  SUPR0TracerDeregisterDrv),
     SUPEXP_STK_BACK(    2,  SUPR0TracerDeregisterImpl),
@@ -3327,6 +3328,21 @@ SUPR0DECL(int) SUPR0SetSessionVM(PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
     return VINF_SUCCESS;
 }
 SUPR0_EXPORT_SYMBOL(SUPR0SetSessionVM);
+
+
+/**
+ * For getting SUPDRVSESSION::Uid.
+ *
+ * @returns The session UID. NIL_RTUID if invalid pointer or not successfully
+ *          set by the host code.
+ * @param   pSession    The session of the current thread.
+ */
+SUPR0DECL(RTUID) SUPR0GetSessionUid(PSUPDRVSESSION pSession)
+{
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), NIL_RTUID);
+    return pSession->Uid;
+}
+SUPR0_EXPORT_SYMBOL(SUPR0GetSessionUid);
 
 
 /** @copydoc RTLogDefaultInstanceEx
