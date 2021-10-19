@@ -1017,6 +1017,9 @@ main(int argc, char **argv)
         return VINF_SUCCESS;
     }
 
+    if (!g_vboximgOpts.pszImageUuidOrPath)
+        return RTMsgErrorExitFailure("A image UUID or path needs to be provided using the --image/-i option\n");
+
     Bstr    pMediumUuid;
     ComPtr<IMedium> pVDiskMedium = NULL;
     char   *pszFormat;
