@@ -7804,7 +7804,10 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
             if (fWhat & CPUMCTX_EXTRN_DR7)
             {
                 if (!pVCpu->hmr0.s.fUsingHyperDR7)
-                    rc = VMXReadVmcsNw(VMX_VMCS_GUEST_DR7, &pCtx->dr[7]);   AssertRC(rc);
+                {
+                    rc = VMXReadVmcsNw(VMX_VMCS_GUEST_DR7, &pCtx->dr[7]);
+                    AssertRC(rc);
+                }
             }
 
             if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
