@@ -88,5 +88,5 @@ lib/virtualbox/nls/VirtualBox_hu.qm
 lib/virtualbox/nls/qt_cs.qm
 lib/virtualbox/nls/VirtualBox_cs.qm
 share/applications/virtualbox.desktop
+share/applications/virtualboxvm.desktop
 share/pixmaps/VBox.png
-

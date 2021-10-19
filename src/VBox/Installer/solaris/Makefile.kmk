@@ -544,6 +544,7 @@ $(VBOX_PATH_SI_SCRATCH)/dist-copy.ts: \
 		$(VBOX_VERSION_STAMP) \
 		\
 		$(VBOX_PATH_INST_COMMON_SRC)/virtualbox.desktop.in \
+	    $(VBOX_PATH_INST_COMMON_SRC)/virtualboxvm.desktop.in \
 		$(VBOX_PATH_INST_COMMON_SRC)/virtualbox.xml \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.applications.in \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
@@ -644,7 +645,12 @@ $(VBOX_PATH_SI_SCRATCH)/dist-copy.ts: \
 		-e "s+@VBOX_DOC_PATH@+/opt/VirtualBox+" \
 		--output $(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/applications/virtualbox.desktop \
 		$(VBOX_PATH_INST_COMMON_SRC)/virtualbox.desktop.in
+	$(SED) -e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+		-e "s+@VBOX_DOC_PATH@+/opt/VirtualBox+" \
+		--output $(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/applications/virtualboxvm.desktop \
+		$(VBOX_PATH_INST_COMMON_SRC)/virtualboxvm.desktop.in
 	$(CHMOD) 0644 $(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/applications/virtualbox.desktop
+	$(CHMOD) 0644 $(VBOX_PATH_SI_SCRATCH_PKG)/usr/share/applications/virtualboxvm.desktop
 
 # Desktop stuff in /usr/share/mime/packages/ (S10 cannot deal with icon information in virtualbox.xml).
 	$(SED) -e '/<icon/d' \

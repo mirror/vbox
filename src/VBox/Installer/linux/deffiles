@@ -102,6 +102,7 @@ DEFAULT_FILE_NAMES=" \
     VBox.sh \
     VBox.png \
     virtualbox.desktop \
+    virtualboxvm.desktop \
     src/ \
     src/include/ \
     src/include/iprt/ \

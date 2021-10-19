@@ -196,6 +196,7 @@ ln -s /usr/lib/virtualbox/vbox-img $RPM_BUILD_ROOT/usr/bin/vbox-img
 ln -s /usr/lib/virtualbox/vboximg-mount $RPM_BUILD_ROOT/usr/bin/vboximg-mount
 ln -s /usr/share/virtualbox/src/vboxhost $RPM_BUILD_ROOT/usr/src/vboxhost-%VER%
 mv virtualbox.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualbox.desktop
+mv virtualboxvm.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualboxvm.desktop
 mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
 %{!?is_ose: mv LICENSE $RPM_BUILD_ROOT%{VBOXDOCDIR}}
 mv UserManual*.pdf $RPM_BUILD_ROOT%{VBOXDOCDIR}
