@@ -590,7 +590,7 @@ int audioTestWorker(PAUDIOTESTENV pTstEnv)
             if (RT_SUCCESS(rc))
             {
                 /** @todo Fudge! */
-                RTMSINTERVAL const msWait = RTRandU32Ex(RT_MS_5SEC, RT_MS_30SEC);
+                RTMSINTERVAL const msWait = RTRandU32Ex(RT_MS_1SEC, RT_MS_5SEC);
                 RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                              "Waiting %RU32ms to let guest and the audio stack process remaining data  ...\n", msWait);
                 RTThreadSleep(msWait);
