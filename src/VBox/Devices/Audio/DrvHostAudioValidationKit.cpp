@@ -79,6 +79,12 @@ typedef struct VALKITTESTTONEDATA
             uint64_t           cbToWrite;
             /** How many bytes already written. */
             uint64_t           cbWritten;
+            /** Size (in bytes) a single pre/post beacon is. */
+            uint32_t           cbBeacon;
+            /** Beacon bytes to write. */
+            uint32_t           cbBeaconToWrite;
+            /** Beacon bytes written. */
+            uint32_t           cbBeaconWritten;
         } Rec;
         struct
         {
@@ -477,19 +483,34 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
 
     memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
+    PPDMAUDIOPCMPROPS const pProps = &pTestData->t.TestTone.Parms.Props;
+
     AssertReturn(pTestData->t.TestTone.Parms.msDuration, VERR_INVALID_PARAMETER);
-    AssertReturn(PDMAudioPropsAreValid(&pTestData->t.TestTone.Parms.Props), VERR_INVALID_PARAMETER);
+    AssertReturn(PDMAudioPropsAreValid(pProps), VERR_INVALID_PARAMETER);
 
-    AudioTestToneInit(&pTestData->t.TestTone.Tone, &pTestData->t.TestTone.Parms.Props, pTestData->t.TestTone.Parms.dbFreqHz);
+    AudioTestToneInit(&pTestData->t.TestTone.Tone, pProps, pTestData->t.TestTone.Parms.dbFreqHz);
 
-    pTestData->t.TestTone.u.Rec.cbToWrite = PDMAudioPropsMilliToBytes(&pTestData->t.TestTone.Parms.Props,
+    pTestData->t.TestTone.u.Rec.cbToWrite = PDMAudioPropsMilliToBytes(pProps,
                                                                       pTestData->t.TestTone.Parms.msDuration);
+
+    /* We play a pre + post beacon before + after the actual test tone
+     * with exactly AUDIOTEST_BEACON_SIZE_FRAMES audio frames. */
+    pTestData->t.TestTone.u.Rec.cbBeacon        = PDMAudioPropsFramesToBytes(pProps, AUDIOTEST_BEACON_SIZE_FRAMES);
+    pTestData->t.TestTone.u.Rec.cbBeaconToWrite = pTestData->t.TestTone.u.Rec.cbBeacon;
+
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
         LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes, host test #%RU32)\n",
                 pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite,
                 pToneParms->Hdr.idxSeq));
+        if (pTestData->t.TestTone.u.Rec.cbBeaconToWrite)
+        {
+            LogRel2(("ValKit: Guest recording test #%RU32 includes 2 x %RU32 bytes of beacons\n",
+                     pThis->idxTest, pTestData->t.TestTone.u.Rec.cbBeaconToWrite));
+
+            pTestData->t.TestTone.u.Rec.cbToWrite += 2 /* Pre + Post */ * pTestData->t.TestTone.u.Rec.cbBeaconToWrite;
+        }
 
         RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
 
@@ -1066,8 +1087,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        pThis->cbRecordedTotal += cbBuf; /* Do a bit of accounting. */
-
         if (pThis->pTestCurRec == NULL)
         {
             pThis->pTestCurRec = RTListGetFirst(&pThis->lstTestsRec, VALKITTESTDATA, Node);
@@ -1096,53 +1115,82 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         return VINF_SUCCESS;
     }
 
-    uint32_t cbRead = 0;
+    uint32_t cbWritten = 0;
+
+    /* Start playing the post beacon? */
+    if (pTst->t.TestTone.u.Rec.cbWritten == pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbBeaconToWrite)
+        pTst->t.TestTone.u.Rec.cbBeaconWritten = 0;
+
+    /* Any beacon to write? */
+    if (   pTst->t.TestTone.u.Rec.cbBeaconToWrite
+        && pTst->t.TestTone.u.Rec.cbBeaconWritten < pTst->t.TestTone.u.Rec.cbBeaconToWrite)
+    {
+        /* Limit to exactly one beacon (pre or post). */
+        uint32_t const cbToWrite = RT_MIN(cbBuf,
+                                          pTst->t.TestTone.u.Rec.cbBeaconToWrite - pTst->t.TestTone.u.Rec.cbBeaconWritten);
+        memset(pvBuf,
+                 pTst->t.TestTone.u.Rec.cbWritten >= pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbBeaconToWrite
+               ? AUDIOTEST_BEACON_BYTE_POST : AUDIOTEST_BEACON_BYTE_PRE,
+               cbToWrite);
+
+        cbWritten = cbToWrite;
+
+        pTst->t.TestTone.u.Rec.cbBeaconWritten += cbWritten;
+        Assert(pTst->t.TestTone.u.Rec.cbBeaconWritten <= pTst->t.TestTone.u.Rec.cbBeaconToWrite);
+
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        uint32_t const cbToWrite = RT_MIN(cbBuf,
+                                            (pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbBeaconToWrite)
+                                          - pTst->t.TestTone.u.Rec.cbWritten);
+        if (cbToWrite)
+            rc = AudioTestToneGenerate(&pTst->t.TestTone.Tone, pvBuf, cbToWrite, &cbWritten);
+        if (   RT_SUCCESS(rc)
+            && cbWritten)
+        {
+            Assert(cbWritten == cbToWrite);
+
+            if (cbWritten > pStrmValKit->cbAvail)
+                LogRel(("ValKit: Warning: Test #%RU32: Reading more from capturing stream than availabe for (%RU32 vs. %RU32)\n",
+                        pTst->idxTest, cbWritten, pStrmValKit->cbAvail));
+        }
+    }
 
     if (RT_SUCCESS(rc))
     {
-        uint32_t cbToWrite = RT_MIN(cbBuf,
-                                    pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten);
-        if (cbToWrite)
-            rc = AudioTestToneGenerate(&pTst->t.TestTone.Tone, pvBuf, cbToWrite, &cbRead);
-        if (   RT_SUCCESS(rc)
-            && cbRead)
+        rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbWritten);
+        if (RT_SUCCESS(rc))
         {
-            Assert(cbRead == cbToWrite);
+            pThis->cbRecordedTotal += cbWritten; /* Do a bit of accounting. */
 
-            if (cbRead > pStrmValKit->cbAvail)
-                LogRel(("ValKit: Warning: Test #%RU32: Reading more from capturing stream than availabe for (%RU32 vs. %RU32)\n",
-                        pTst->idxTest, cbRead, pStrmValKit->cbAvail));
+            pStrmValKit->cbAvail   -= RT_MIN(pStrmValKit->cbAvail, cbWritten);
 
-            pStrmValKit->cbAvail -= RT_MIN(pStrmValKit->cbAvail, cbRead);
+            pTst->t.TestTone.u.Rec.cbWritten += cbWritten;
+            Assert(pTst->t.TestTone.u.Rec.cbWritten <= pTst->t.TestTone.u.Rec.cbToWrite);
 
-            rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbRead);
-            if (RT_SUCCESS(rc))
+            LogRel(("ValKit: Test #%RU32: Supplied %RU32 bytes of (capturing) audio data (%RU32 bytes left)\n",
+                    pTst->idxTest, cbWritten, pStrmValKit->cbAvail));
+
+            const bool fComplete = pTst->t.TestTone.u.Rec.cbWritten >= pTst->t.TestTone.u.Rec.cbToWrite;
+            if (fComplete)
             {
-                pTst->t.TestTone.u.Rec.cbWritten += cbRead;
-                Assert(pTst->t.TestTone.u.Rec.cbWritten <= pTst->t.TestTone.u.Rec.cbToWrite);
+                LogRel(("ValKit: Test #%RU32: Recording done (took %RU32ms)\n",
+                        pTst->idxTest, RTTimeMilliTS() - pTst->msStartedTS));
 
-                LogRel(("ValKit: Test #%RU32: Read %RU32 bytes of (capturing) audio data (%RU32 bytes left)\n",
-                        pTst->idxTest, cbRead, pStrmValKit->cbAvail));
+                AudioTestSetTestDone(pTst->pEntry);
 
-                const bool fComplete = pTst->t.TestTone.u.Rec.cbWritten >= pTst->t.TestTone.u.Rec.cbToWrite;
-                if (fComplete)
+                rc = RTCritSectEnter(&pThis->CritSect);
+                if (RT_SUCCESS(rc))
                 {
-                    LogRel(("ValKit: Test #%RU32: Recording done (took %RU32ms)\n",
-                            pTst->idxTest, RTTimeMilliTS() - pTst->msStartedTS));
+                    drvHostValKiUnregisterRecTest(pThis, pTst);
 
-                    AudioTestSetTestDone(pTst->pEntry);
+                    pThis->pTestCurRec = NULL;
+                    pTst               = NULL;
 
-                    rc = RTCritSectEnter(&pThis->CritSect);
-                    if (RT_SUCCESS(rc))
-                    {
-                        drvHostValKiUnregisterRecTest(pThis, pTst);
-
-                        pThis->pTestCurRec = NULL;
-                        pTst               = NULL;
-
-                        int rc2 = RTCritSectLeave(&pThis->CritSect);
-                        AssertRC(rc2);
-                    }
+                    int rc2 = RTCritSectLeave(&pThis->CritSect);
+                    AssertRC(rc2);
                 }
             }
         }
@@ -1155,7 +1203,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         LogRel(("ValKit: Test #%RU32: Failed with %Rrc\n", pTst->idxTest, rc));
     }
 
-    *pcbRead = cbRead;
+    *pcbRead = cbWritten;
 
     return VINF_SUCCESS; /** @todo Return rc here? */
 }
