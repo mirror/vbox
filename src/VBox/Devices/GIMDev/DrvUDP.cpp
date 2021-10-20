@@ -171,7 +171,9 @@ static DECLCALLBACK(void) drvUDPDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvUDPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     RT_NOREF1(fFlags);
-    PDRVUDP pThis = PDMINS_2_DATA(pDrvIns, PDRVUDP);
+    PDRVUDP         pThis = PDMINS_2_DATA(pDrvIns, PDRVUDP);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
+
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
@@ -189,11 +191,11 @@ static DECLCALLBACK(int) drvUDPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "ServerAddress|ServerPort", "");
 
-    int rc = CFGMR3QueryStringAlloc(pCfg, "ServerAddress", &pThis->pszServerAddress);
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "ServerAddress", &pThis->pszServerAddress);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"ServerAddress\" resulted in %Rrc"), rc);
-    rc = CFGMR3QueryU16(pCfg, "ServerPort", &pThis->uServerPort);
+    rc = pHlp->pfnCFGMQueryU16(pCfg, "ServerPort", &pThis->uServerPort);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"ServerPort\" resulted in %Rrc"), rc);
