@@ -92,9 +92,10 @@ static DECLCALLBACK(void) drvIfTrace_Destruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvIfTrace_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVIFTRACE   pThis   = PDMINS_2_DATA(pDrvIns, PDRVIFTRACE);
-
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVIFTRACE     pThis = PDMINS_2_DATA(pDrvIns, PDRVIFTRACE);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
+
 
     /*
      * Initialize the instance data.
@@ -110,7 +111,7 @@ static DECLCALLBACK(int) drvIfTrace_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "TraceFilePath|", "");
 
-    int rc = CFGMR3QueryStringAlloc(pCfg, "TraceFilePath", &pThis->pszTraceFilePath);
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "TraceFilePath", &pThis->pszTraceFilePath);
     AssertLogRelRCReturn(rc, rc);
 
     /* Try to create a file based trace log. */
