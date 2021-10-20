@@ -211,7 +211,8 @@ static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
+    VIRTUALKD       *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
+    PCPDMDEVHLPR3   pHlp   = pDevIns->pHlpR3;
     RT_NOREF(iInstance);
 
     pThis->fOpenChannelDetected = false;
@@ -227,7 +228,7 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * constructed, but there will be a warning and it will not work. */
 
     char szPath[RTPATH_MAX];
-    int rc = CFGMR3QueryStringDef(pCfg, "Path", szPath, sizeof(szPath) - sizeof("kdclient64.dll"), "");
+    int rc = pHlp->pfnCFGMQueryStringDef(pCfg, "Path", szPath, sizeof(szPath) - sizeof("kdclient64.dll"), "");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"Path\" value"));
 
