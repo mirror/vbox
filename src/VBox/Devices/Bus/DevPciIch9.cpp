@@ -3313,9 +3313,10 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
     Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
-    PDEVPCIBUSCC pBusCC   = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
-    PDEVPCIROOT  pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS   pBus     = &pPciRoot->PciBus;
+    PDEVPCIBUSCC    pBusCC   = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
+    PDEVPCIROOT     pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PCPDMDEVHLPR3   pHlp     = pDevIns->pHlpR3;
+    PDEVPCIBUS      pBus     = &pPciRoot->PciBus;
     Assert(ASMMemIsZero(pPciRoot, sizeof(*pPciRoot))); /* code used to memset it for some funny reason. just temp insurance. */
 
     /*
@@ -3324,16 +3325,16 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IOAPIC|McfgBase|McfgLength", "");
 
     /* query whether we got an IOAPIC */
-    int rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &pPciRoot->fUseIoApic, false /** @todo default to true? */);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IOAPIC", &pPciRoot->fUseIoApic, false /** @todo default to true? */);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"IOAPIC\"")));
 
     if (!pPciRoot->fUseIoApic)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Must use IO-APIC with ICH9 chipset"));
 
-    rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &pPciRoot->u64PciConfigMMioAddress, 0);
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "McfgBase", &pPciRoot->u64PciConfigMMioAddress, 0);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"McfgBase\"")));
 
-    rc = CFGMR3QueryU64Def(pCfg, "McfgLength", &pPciRoot->u64PciConfigMMioLength, 0);
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "McfgLength", &pPciRoot->u64PciConfigMMioLength, 0);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to read \"McfgLength\"")));
 
     Log(("PCI: fUseIoApic=%RTbool McfgBase=%#RX64 McfgLength=%#RX64 fR0Enabled=%RTbool fRCEnabled=%RTbool\n", pPciRoot->fUseIoApic,
@@ -3639,6 +3640,7 @@ static DECLCALLBACK(int) ich9pcibridgeR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) ich9pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
 
     /*
      * Validate and read configuration.
@@ -3647,11 +3649,11 @@ static DECLCALLBACK(int) ich9pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInsta
 
     /* check if we're supposed to implement a PCIe bridge. */
     bool fExpress;
-    int rc = CFGMR3QueryBoolDef(pCfg, "ExpressEnabled", &fExpress, false);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ExpressEnabled", &fExpress, false);
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"ExpressEnabled\"")));
 
     char szExpressPortType[80];
-    rc = CFGMR3QueryStringDef(pCfg, "ExpressPortType", szExpressPortType, sizeof(szExpressPortType), "RootCmplxIntEp");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ExpressPortType", szExpressPortType, sizeof(szExpressPortType), "RootCmplxIntEp");
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: failed to read \"ExpressPortType\" as string")));
 
     uint8_t const uExpressPortType = ich9pcibridgeR3GetExpressPortTypeFromString(szExpressPortType);
