@@ -373,9 +373,11 @@ static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
-    LogFlow(("drvNetSnifferConstruct:\n"));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVNETSNIFFER  pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
+
+    LogFlow(("drvNetSnifferConstruct:\n"));
 
     /*
      * Init the static parts.
@@ -414,16 +416,15 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "File\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "File", "");
 
-    if (CFGMR3GetFirstChild(pCfg))
+    if (pHlp->pfnCFGMGetFirstChild(pCfg))
         LogRel(("NetSniffer: Found child config entries -- are you trying to redirect ports?\n"));
 
     /*
      * Get the filename.
      */
-    rc = CFGMR3QueryString(pCfg, "File", pThis->szFilename, sizeof(pThis->szFilename));
+    rc = pHlp->pfnCFGMQueryString(pCfg, "File", pThis->szFilename, sizeof(pThis->szFilename));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (pDrvIns->iInstance > 0)

@@ -414,9 +414,11 @@ static DECLCALLBACK(void) drvR3NetShaperDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvR3NetShaperConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVNETSHAPER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSHAPER);
-    LogFlow(("drvNetShaperConstruct:\n"));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVNETSHAPER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSHAPER);
+    PCPDMDRVHLPR3 pHlp  = pDrvIns->pHlpR3;
+
+    LogFlow(("drvNetShaperConstruct:\n"));
 
     /*
      * Init the static parts.
@@ -459,13 +461,12 @@ static DECLCALLBACK(int) drvR3NetShaperConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "BwGroup\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "BwGroup", "");
 
     /*
      * Find the bandwidth group we have to attach to.
      */
-    rc = CFGMR3QueryStringAlloc(pCfg, "BwGroup", &pThis->pszBwGroup);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "BwGroup", &pThis->pszBwGroup);
     if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
     {
         rc = PDMDRV_SET_ERROR(pDrvIns, rc,

@@ -1291,8 +1291,10 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
 static int drvIntNetR3CfgGetPolicy(PPDMDRVINS pDrvIns, const char *pszName, PCDRVINTNETFLAG paFlags, size_t cFlags,
                                    uint32_t fFixedFlag, uint32_t *pfFlags)
 {
+    PCPDMDRVHLPR3 pHlp = pDrvIns->pHlpR3;
+
     char szValue[64];
-    int rc = CFGMR3QueryString(pDrvIns->pCfg, pszName, szValue, sizeof(szValue));
+    int rc = pHlp->pfnCFGMQueryString(pDrvIns->pCfg, pszName, szValue, sizeof(szValue));
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1353,7 +1355,8 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 {
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
+    PDRVINTNET      pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
+    PCPDMDRVHLPR3   pHlp = pDrvIns->pHlpR3;
     bool f;
 
     /*
@@ -1440,7 +1443,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{Network, string}
      * The name of the internal network to connect to.
      */
-    int rc = CFGMR3QueryString(pCfg, "Network", OpenReq.szNetwork, sizeof(OpenReq.szNetwork));
+    int rc = pHlp->pfnCFGMQueryString(pCfg, "Network", OpenReq.szNetwork, sizeof(OpenReq.szNetwork));
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"Network\" value"));
@@ -1450,7 +1453,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * The trunk connection type see INTNETTRUNKTYPE.
      */
     uint32_t u32TrunkType;
-    rc = CFGMR3QueryU32(pCfg, "TrunkType", &u32TrunkType);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "TrunkType", &u32TrunkType);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         u32TrunkType = kIntNetTrunkType_None;
     else if (RT_FAILURE(rc))
@@ -1461,7 +1464,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{Trunk, string, ""}
      * The name of the trunk connection.
      */
-    rc = CFGMR3QueryString(pCfg, "Trunk", OpenReq.szTrunk, sizeof(OpenReq.szTrunk));
+    rc = pHlp->pfnCFGMQueryString(pCfg, "Trunk", OpenReq.szTrunk, sizeof(OpenReq.szTrunk));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.szTrunk[0] = '\0';
     else if (RT_FAILURE(rc))
@@ -1475,7 +1478,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * attaching to a wireless NIC this option is usually a requirement.
      */
     bool fSharedMacOnWire;
-    rc = CFGMR3QueryBoolDef(pCfg, "SharedMacOnWire", &fSharedMacOnWire, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "SharedMacOnWire", &fSharedMacOnWire, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"SharedMacOnWire\" value"));
@@ -1487,7 +1490,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Everyone on the computer can connect to a public network.
      * @deprecated Use AccessPolicy instead.
      */
-    rc = CFGMR3QueryBool(pCfg, "RestrictAccess", &f);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "RestrictAccess", &f);
     if (RT_SUCCESS(rc))
     {
         if (f)
@@ -1506,7 +1509,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * request.  Use this with RequireAsRestrictivePolicy to prevent
      * restrictions from being lifted.  If no further policy changes are
      * desired, apply the relevant fixed flags. */
-    rc = CFGMR3QueryBoolDef(pCfg, "RequireExactPolicyMatch", &f, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "RequireExactPolicyMatch", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RequireExactPolicyMatch\" value"));
@@ -1518,7 +1521,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * network is at least as restrictive as specified this request specifies
      * and prevent them  being lifted later on.
      */
-    rc = CFGMR3QueryBoolDef(pCfg, "RequireAsRestrictivePolicy", &f, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "RequireAsRestrictivePolicy", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RequireAsRestrictivePolicy\" value"));
@@ -1626,7 +1629,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{ReceiveBufferSize, uint32_t, 318 KB}
      * The size of the receive buffer.
      */
-    rc = CFGMR3QueryU32(pCfg, "ReceiveBufferSize", &OpenReq.cbRecv);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "ReceiveBufferSize", &OpenReq.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.cbRecv = 318 * _1K ;
     else if (RT_FAILURE(rc))
@@ -1641,7 +1644,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * header will fragment the buffer such that the frame won't fit on either
      * side of it and the code will get very upset about it all.
      */
-    rc = CFGMR3QueryU32(pCfg, "SendBufferSize", &OpenReq.cbSend);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "SendBufferSize", &OpenReq.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.cbSend = RT_ALIGN_Z(VBOX_MAX_GSO_SIZE * 3, _1K);
     else if (RT_FAILURE(rc))
@@ -1657,7 +1660,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * This alterns the way the thread is suspended and resumed. When it's being used by
      * a service such as LWIP/iSCSI it shouldn't suspend immediately like for a NIC.
      */
-    rc = CFGMR3QueryBool(pCfg, "IsService", &pThis->fActivateEarlyDeactivateLate);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "IsService", &pThis->fActivateEarlyDeactivateLate);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->fActivateEarlyDeactivateLate = false;
     else if (RT_FAILURE(rc))
@@ -1669,7 +1672,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * When set only raise a runtime error if we cannot connect to the internal
      * network. */
     bool fIgnoreConnectFailure;
-    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreConnectFailure", &fIgnoreConnectFailure, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IgnoreConnectFailure", &fIgnoreConnectFailure, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IgnoreConnectFailure\" value"));
@@ -1691,7 +1694,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         }
     }
 #endif
-    rc = CFGMR3QueryBoolDef(pCfg, "Workaround1", &fWorkaround1, fWorkaround1);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Workaround1", &fWorkaround1, fWorkaround1);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"Workaround1\" value"));

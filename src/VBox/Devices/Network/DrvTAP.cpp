@@ -853,7 +853,8 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 {
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDRVTAP         pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
 
     /*
      * Init the static parts.
@@ -896,8 +897,12 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Device\0InitProg\0TermProg\0FileHandle\0TAPSetupApplication\0TAPTerminateApplication\0MAC"))
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES, "");
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "Device"
+                                           "|FileHandle"
+                                           "|TAPSetupApplication"
+                                           "|TAPTerminateApplication"
+                                           "|MAC",
+                                           "");
 
     /*
      * Check that no-one is attached to us.
@@ -919,7 +924,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      */
     int rc;
 #if defined(RT_OS_SOLARIS)   /** @todo Other platforms' TAP code should be moved here from ConsoleImpl. */
-    rc = CFGMR3QueryStringAlloc(pCfg, "TAPSetupApplication", &pThis->pszSetupApplication);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "TAPSetupApplication", &pThis->pszSetupApplication);
     if (RT_SUCCESS(rc))
     {
         if (!RTPathExists(pThis->pszSetupApplication))
@@ -929,7 +934,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "TAPTerminateApplication", &pThis->pszTerminateApplication);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "TAPTerminateApplication", &pThis->pszTerminateApplication);
     if (RT_SUCCESS(rc))
     {
         if (!RTPathExists(pThis->pszTerminateApplication))
@@ -939,7 +944,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "Device", &pThis->pszDeviceName);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Device", &pThis->pszDeviceName);
     if (RT_FAILURE(rc))
         pThis->fStatic = false;
 
@@ -962,7 +967,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 #else /* !RT_OS_SOLARIS */
 
     uint64_t u64File;
-    rc = CFGMR3QueryU64(pCfg, "FileHandle", &u64File);
+    rc = pHlp->pfnCFGMQueryU64(pCfg, "FileHandle", &u64File);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Query for \"FileHandle\" 32-bit signed integer failed"));
