@@ -3764,7 +3764,8 @@ static DECLCALLBACK(int) drvvdIoReqQuerySuspendedNext(PPDMIMEDIAEX pInterface, P
  */
 static DECLCALLBACK(int) drvvdIoReqSuspendedSave(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
 {
-    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    PVBOXDISK           pThis  = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    PCPDMDRVHLPR3       pHlp   = pThis->pDrvIns->pHlpR3;
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
 
     AssertReturn(!drvvdMediaExIoReqIsVmRunning(pThis), VERR_INVALID_STATE);
@@ -3772,28 +3773,28 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedSave(PPDMIMEDIAEX pInterface, PSSMHA
     AssertReturn(   pIoReq->enmState == VDIOREQSTATE_SUSPENDED
                  || pIoReq->enmState == VDIOREQSTATE_ALLOCATED, VERR_INVALID_STATE);
 
-    SSMR3PutU32(pSSM, DRVVD_IOREQ_SAVED_STATE_VERSION);
-    SSMR3PutU32(pSSM, (uint32_t)pIoReq->enmType);
-    SSMR3PutU32(pSSM, pIoReq->uIoReqId);
-    SSMR3PutU32(pSSM, pIoReq->fFlags);
+    pHlp->pfnSSMPutU32(pSSM, DRVVD_IOREQ_SAVED_STATE_VERSION);
+    pHlp->pfnSSMPutU32(pSSM, (uint32_t)pIoReq->enmType);
+    pHlp->pfnSSMPutU32(pSSM, pIoReq->uIoReqId);
+    pHlp->pfnSSMPutU32(pSSM, pIoReq->fFlags);
     if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
         || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
     {
-        SSMR3PutU64(pSSM, pIoReq->ReadWrite.offStart);
-        SSMR3PutU64(pSSM, pIoReq->ReadWrite.cbReq);
-        SSMR3PutU64(pSSM, pIoReq->ReadWrite.cbReqLeft);
+        pHlp->pfnSSMPutU64(pSSM, pIoReq->ReadWrite.offStart);
+        pHlp->pfnSSMPutU64(pSSM, pIoReq->ReadWrite.cbReq);
+        pHlp->pfnSSMPutU64(pSSM, pIoReq->ReadWrite.cbReqLeft);
     }
     else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
     {
-        SSMR3PutU32(pSSM, pIoReq->Discard.cRanges);
+        pHlp->pfnSSMPutU32(pSSM, pIoReq->Discard.cRanges);
         for (unsigned i = 0; i < pIoReq->Discard.cRanges; i++)
         {
-            SSMR3PutU64(pSSM, pIoReq->Discard.paRanges[i].offStart);
-            SSMR3PutU64(pSSM, pIoReq->Discard.paRanges[i].cbRange);
+            pHlp->pfnSSMPutU64(pSSM, pIoReq->Discard.paRanges[i].offStart);
+            pHlp->pfnSSMPutU64(pSSM, pIoReq->Discard.paRanges[i].cbRange);
         }
     }
 
-    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
 /**
@@ -3801,7 +3802,8 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedSave(PPDMIMEDIAEX pInterface, PSSMHA
  */
 static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
 {
-    PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    PVBOXDISK           pThis  = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
+    PCPDMDRVHLPR3       pHlp   = pThis->pDrvIns->pHlpR3;
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
 
     AssertReturn(!drvvdMediaExIoReqIsVmRunning(pThis), VERR_INVALID_STATE);
@@ -3813,10 +3815,10 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
     int rc = VINF_SUCCESS;
     bool fPlaceOnRedoList = true;
 
-    SSMR3GetU32(pSSM, &u32);
+    pHlp->pfnSSMGetU32(pSSM, &u32);
     if (u32 <= DRVVD_IOREQ_SAVED_STATE_VERSION)
     {
-        SSMR3GetU32(pSSM, &u32);
+        pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertReturn(   u32 == PDMMEDIAEXIOREQTYPE_WRITE
                      || u32 == PDMMEDIAEXIOREQTYPE_READ
                      || u32 == PDMMEDIAEXIOREQTYPE_DISCARD
@@ -3824,19 +3826,19 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
         pIoReq->enmType = (PDMMEDIAEXIOREQTYPE)u32;
 
-        SSMR3GetU32(pSSM, &u32);
+        pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertReturn(u32 == pIoReq->uIoReqId, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-        SSMR3GetU32(pSSM, &u32);
+        pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertReturn(u32 == pIoReq->fFlags, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
         if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
             || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
         {
-            SSMR3GetU64(pSSM, &pIoReq->ReadWrite.offStart);
-            SSMR3GetU64(pSSM, &u64);
+            pHlp->pfnSSMGetU64(pSSM, &pIoReq->ReadWrite.offStart);
+            pHlp->pfnSSMGetU64(pSSM, &u64);
             pIoReq->ReadWrite.cbReq = (size_t)u64;
-            SSMR3GetU64(pSSM, &u64);
+            pHlp->pfnSSMGetU64(pSSM, &u64);
             pIoReq->ReadWrite.cbReqLeft = (size_t)u64;
 
             /*
@@ -3862,7 +3864,7 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
         }
         else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
         {
-            rc = SSMR3GetU32(pSSM, &pIoReq->Discard.cRanges);
+            rc = pHlp->pfnSSMGetU32(pSSM, &pIoReq->Discard.cRanges);
             if (RT_SUCCESS(rc))
             {
                 pIoReq->Discard.paRanges = (PRTRANGE)RTMemAllocZ(pIoReq->Discard.cRanges * sizeof(RTRANGE));
@@ -3870,8 +3872,8 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
                 {
                     for (unsigned i = 0; i < pIoReq->Discard.cRanges; i++)
                     {
-                        SSMR3GetU64(pSSM, &pIoReq->Discard.paRanges[i].offStart);
-                        SSMR3GetU64(pSSM, &u64);
+                        pHlp->pfnSSMGetU64(pSSM, &pIoReq->Discard.paRanges[i].offStart);
+                        pHlp->pfnSSMGetU64(pSSM, &u64);
                         pIoReq->Discard.paRanges[i].cbRange = (size_t)u64;
                     }
                 }
@@ -3881,7 +3883,7 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
         }
 
         if (RT_SUCCESS(rc))
-            rc = SSMR3GetU32(pSSM, &u32); /* sanity/terminator */
+            rc = pHlp->pfnSSMGetU32(pSSM, &u32); /* sanity/terminator */
         if (RT_SUCCESS(rc))
             AssertReturn(u32 == UINT32_MAX, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
         if (   RT_SUCCESS(rc)
