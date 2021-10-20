@@ -3906,27 +3906,30 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
  * Loads all configured plugins.
  *
  * @returns VBox status code.
+ * @param   pDrvIns  Driver instance data.
  * @param   pCfg     CFGM node holding plugin list.
  */
-static int drvvdLoadPlugins(PCFGMNODE pCfg)
+static int drvvdLoadPlugins(PPDMDRVINS pDrvIns, PCFGMNODE pCfg)
 {
-    PCFGMNODE pCfgPlugins = CFGMR3GetChild(pCfg, "Plugins");
+    PCPDMDRVHLPR3 pHlp = pDrvIns->pHlpR3;
+
+    PCFGMNODE pCfgPlugins = pHlp->pfnCFGMGetChild(pCfg, "Plugins");
 
     if (pCfgPlugins)
     {
-        PCFGMNODE pPluginCur = CFGMR3GetFirstChild(pCfgPlugins);
+        PCFGMNODE pPluginCur = pHlp->pfnCFGMGetFirstChild(pCfgPlugins);
         while (pPluginCur)
         {
             int rc = VINF_SUCCESS;
             char *pszPluginFilename = NULL;
-            rc = CFGMR3QueryStringAlloc(pPluginCur, "Path", &pszPluginFilename);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pPluginCur, "Path", &pszPluginFilename);
             if (RT_SUCCESS(rc))
                 rc = VDPluginLoadFromFilename(pszPluginFilename);
 
             if (RT_FAILURE(rc))
                 LogRel(("VD: Failed to load plugin '%s' with %Rrc, continuing\n", pszPluginFilename, rc));
 
-            pPluginCur = CFGMR3GetNextChild(pPluginCur);
+            pPluginCur = pHlp->pfnCFGMGetNextChild(pPluginCur);
         }
     }
 
@@ -3943,17 +3946,18 @@ static int drvvdLoadPlugins(PCFGMNODE pCfg)
  */
 static int drvvdSetupFilters(PVBOXDISK pThis, PCFGMNODE pCfg)
 {
+    PCPDMDRVHLPR3 pHlp = pThis->pDrvIns->pHlpR3;
     int rc = VINF_SUCCESS;
-    PCFGMNODE pCfgFilter = CFGMR3GetChild(pCfg, "Filters");
 
+    PCFGMNODE pCfgFilter = pHlp->pfnCFGMGetChild(pCfg, "Filters");
     if (pCfgFilter)
     {
-        PCFGMNODE pCfgFilterConfig = CFGMR3GetChild(pCfgFilter, "VDConfig");
+        PCFGMNODE pCfgFilterConfig = pHlp->pfnCFGMGetChild(pCfgFilter, "VDConfig");
         char *pszFilterName = NULL;
         VDINTERFACECONFIG VDIfConfig;
         PVDINTERFACE pVDIfsFilter = NULL;
 
-        rc = CFGMR3QueryStringAlloc(pCfgFilter, "FilterName", &pszFilterName);
+        rc = pHlp->pfnCFGMQueryStringAlloc(pCfgFilter, "FilterName", &pszFilterName);
         if (RT_SUCCESS(rc))
         {
             VDIfConfig.pfnAreKeysValid = drvvdCfgAreKeysValid;
@@ -4179,18 +4183,19 @@ static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface, const char
  */
 static DECLCALLBACK(int) drvvdLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    PVBOXDISK       pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
     Assert(!pThis->fErrorUseRuntime);
 
     /* Drop out if we don't have any work to do or if it's a failed load. */
     if (   !pThis->fTempReadOnly
-        || RT_FAILURE(SSMR3HandleGetStatus(pSSM)))
+        || RT_FAILURE(pHlp->pfnSSMHandleGetStatus(pSSM)))
         return VINF_SUCCESS;
 
     int rc = drvvdSetWritable(pThis);
     if (RT_FAILURE(rc)) /** @todo does the bugger set any errors? */
-        return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,
-                                 N_("Failed to write lock the images"));
+        return pHlp->pfnSSMSetLoadError(pSSM, rc, RT_SRC_POS,
+                                        N_("Failed to write lock the images"));
     return VINF_SUCCESS;
 }
 
@@ -4619,7 +4624,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     }
 
     /* Before we access any VD API load all given plugins. */
-    rc = drvvdLoadPlugins(pCfg);
+    rc = drvvdLoadPlugins(pDrvIns, pCfg);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Loading VD plugins failed"));
 
@@ -4935,7 +4940,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                                         N_("DrvVD configuration error: Querying \"NonRotationalMedium\" as boolean failed"));
         }
 
-        PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");
+        PCFGMNODE pParent = pHlp->pfnCFGMGetChild(pCurNode, "Parent");
         if (!pParent)
             break;
         pCurNode = pParent;

@@ -1185,7 +1185,7 @@ DECLINLINE(void *) PDMUsbHlpMMHeapAllocZ(PPDMUSBINS pUsbIns, size_t cb)
  */
 DECLINLINE(void) PDMUsbHlpMMHeapFree(PPDMUSBINS pUsbIns, void *pv)
 {
-    return pUsbIns->pHlpR3->pfnMMHeapFree(pUsbIns, pv);
+    pUsbIns->pHlpR3->pfnMMHeapFree(pUsbIns, pv);
 }
 
 /**
