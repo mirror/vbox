@@ -2357,7 +2357,9 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
 {
     RT_NOREF1(pCfgGlobal);
     PDMUSB_CHECK_VERSIONS_RETURN(pUsbIns);
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    PUSBHID     pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    PCPDMUSBHLP pHlp  = pUsbIns->pHlpR3;
+
     LogRelFlow(("usbHidConstruct/#%u:\n", iInstance));
 
     /*
@@ -2378,11 +2380,11 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    rc = CFGMR3ValidateConfig(pCfg, "/", "Mode|CoordShift", "Config", "UsbHid", iInstance);
+    rc = pHlp->pfnCFGMValidateConfig(pCfg, "/", "Mode|CoordShift", "Config", "UsbHid", iInstance);
     if (RT_FAILURE(rc))
         return rc;
     char szMode[64];
-    rc = CFGMR3QueryStringDef(pCfg, "Mode", szMode, sizeof(szMode), "relative");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "Mode", szMode, sizeof(szMode), "relative");
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query settings"));
     if (!RTStrCmp(szMode, "relative"))
@@ -2413,7 +2415,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     if (!pThis->Lun0.pDrv)
         return PDMUsbHlpVMSetError(pUsbIns, VERR_PDM_MISSING_INTERFACE, RT_SRC_POS, N_("HID failed to query mouse interface"));
 
-    rc = CFGMR3QueryU8Def(pCfg, "CoordShift", &pThis->u8CoordShift, 1);
+    rc = pHlp->pfnCFGMQueryU8Def(pCfg, "CoordShift", &pThis->u8CoordShift, 1);
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query shift factor"));
 
