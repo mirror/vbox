@@ -68,89 +68,57 @@ public:
     /** @name Common fields.
       * @{ */
         /** Returns a list of machine names. */
-        QStringList machineNames() const;
-        /** Defines a list of machine @a names. */
-        void setMachineNames(const QStringList &names);
+        QStringList machineNames() const { return m_machineNames; }
         /** Returns a list of machine IDs. */
-        QList<QUuid> machineIDs() const;
-        /** Defines a list of machine @a ids. */
-        void setMachineIDs(const QList<QUuid> &ids);
+        QList<QUuid> machineIDs() const { return m_machineIDs; }
 
         /** Returns format. */
-        QString format() const;
-        /** Defines @a strFormat. */
-        void setFormat(const QString &strFormat);
+        QString format() const { return m_strFormat; }
 
         /** Returns whether format is cloud one. */
-        bool isFormatCloudOne() const;
-        /** Defines whether format is @a fCloudOne. */
-        void setFormatCloudOne(bool fCloudOne);
+        bool isFormatCloudOne() const { return m_fFormatCloudOne; }
     /** @} */
 
     /** @name Local export fields.
       * @{ */
         /** Returns path. */
-        QString path() const;
-        /** Defines @a strPath. */
-        void setPath(const QString &strPath);
+        QString path() const { return m_strPath; }
 
         /** Returns MAC address export policy. */
-        MACAddressExportPolicy macAddressExportPolicy() const;
-        /** Defines MAC address export @a enmPolicy. */
-        void setMACAddressExportPolicy(MACAddressExportPolicy enmPolicy);
+        MACAddressExportPolicy macAddressExportPolicy() const { return m_enmMACAddressExportPolicy; }
 
         /** Returns whether manifest is selected. */
-        bool isManifestSelected() const;
-        /** Defines whether manifest is @a fSelected. */
-        void setManifestSelected(bool fSelected);
+        bool isManifestSelected() const { return m_fManifestSelected; }
 
         /** Returns whether include ISOs is selected. */
-        bool isIncludeISOsSelected() const;
-        /** Defines whether include ISOs is @a fSelected. */
-        void setIncludeISOsSelected(bool fSelected);
+        bool isIncludeISOsSelected() const { return m_fIncludeISOsSelected; }
 
         /** Returns local appliance object. */
-        CAppliance localAppliance();
-        /** Defines local @a comAppliance object. */
-        void setLocalAppliance(const CAppliance &comAppliance);
+        CAppliance localAppliance() const { return m_comLocalAppliance; }
     /** @} */
 
     /** @name Cloud export fields.
       * @{ */
         /** Returns profile name. */
-        QString profileName() const;
-        /** Defines profile @a strName. */
-        void setProfileName(const QString &strName);
+        QString profileName() const { return m_strProfileName; }
 
         /** Returns cloud appliance object. */
-        CAppliance cloudAppliance();
-        /** Defines cloud @a comAppliance object. */
-        void setCloudAppliance(const CAppliance &comAppliance);
+        CAppliance cloudAppliance() const { return m_comCloudAppliance; }
 
         /** Returns cloud client object. */
-        CCloudClient cloudClient();
-        /** Defines cloud @a comClient object. */
-        void setCloudClient(const CCloudClient &comClient);
+        CCloudClient cloudClient() const { return m_comCloudClient; }
 
         /** Returns virtual system description object. */
-        CVirtualSystemDescription vsd();
-        /** Defines virtual system @a comDescription object. */
-        void setVsd(const CVirtualSystemDescription &comDescription);
+        CVirtualSystemDescription vsd() const { return m_comVsd; }
 
         /** Returns virtual system description export form object. */
-        CVirtualSystemDescriptionForm vsdExportForm();
-        /** Defines virtual system description export @a comForm object. */
-        void setVsdExportForm(const CVirtualSystemDescriptionForm &comForm);
+        CVirtualSystemDescriptionForm vsdExportForm() const { return m_comVsdExportForm; }
 
         /** Returns virtual system description launch form object. */
-        CVirtualSystemDescriptionForm vsdLaunchForm();
-        /** Defines virtual system description launch @a comForm object. */
-        void setVsdLaunchForm(const CVirtualSystemDescriptionForm &comForm);
+        CVirtualSystemDescriptionForm vsdLaunchForm() const { return m_comVsdLaunchForm; }
 
         /** Returns cloud export mode. */
-        CloudExportMode cloudExportMode() const;
-        /** Defines cloud export @a enmMode. */
-        void setCloudExportMode(const CloudExportMode &enmMode);
+        CloudExportMode cloudExportMode() const { return m_enmCloudExportMode; }
     /** @} */
 
     /** @name Auxiliary stuff.
@@ -173,6 +141,64 @@ public:
 
         /** Creates New Cloud VM. */
         bool createCloudVM();
+    /** @} */
+
+public slots:
+
+    /** @name Common fields.
+      * @{ */
+        /** Defines a list of machine @a names. */
+        void setMachineNames(const QStringList &names) { m_machineNames = names; }
+        /** Defines a list of machine @a ids. */
+        void setMachineIDs(const QList<QUuid> &ids) { m_machineIDs = ids; }
+
+        /** Defines @a strFormat. */
+        void setFormat(const QString &strFormat) { m_strFormat = strFormat; }
+
+        /** Defines whether format is @a fCloudOne. */
+        void setFormatCloudOne(bool fCloudOne) { m_fFormatCloudOne = fCloudOne; }
+    /** @} */
+
+    /** @name Local export fields.
+      * @{ */
+        /** Defines @a strPath. */
+        void setPath(const QString &strPath) { m_strPath = strPath; }
+
+        /** Defines MAC address export @a enmPolicy. */
+        void setMACAddressExportPolicy(MACAddressExportPolicy enmPolicy) { m_enmMACAddressExportPolicy = enmPolicy; }
+
+        /** Defines whether manifest is @a fSelected. */
+        void setManifestSelected(bool fSelected) { m_fManifestSelected = fSelected; }
+
+        /** Defines whether include ISOs is @a fSelected. */
+        void setIncludeISOsSelected(bool fSelected) { m_fIncludeISOsSelected = fSelected; }
+
+        /** Defines local @a comAppliance object. */
+        void setLocalAppliance(const CAppliance &comAppliance) { m_comLocalAppliance = comAppliance; }
+    /** @} */
+
+    /** @name Cloud export fields.
+      * @{ */
+        /** Defines profile @a strName. */
+        void setProfileName(const QString &strName) { m_strProfileName = strName; }
+
+        /** Defines cloud @a comAppliance object. */
+        void setCloudAppliance(const CAppliance &comAppliance) { m_comCloudAppliance = comAppliance; }
+
+        /** Defines cloud @a comClient object. */
+        void setCloudClient(const CCloudClient &comClient) { m_comCloudClient = comClient; }
+
+        /** Defines virtual system @a comDescription object. */
+        void setVsd(const CVirtualSystemDescription &comDescription) { m_comVsd = comDescription; }
+
+        /** Defines virtual system description export @a comForm object. */
+        void setVsdExportForm(const CVirtualSystemDescriptionForm &comForm) { m_comVsdExportForm = comForm; }
+
+        /** Defines virtual system description launch @a comForm object. */
+        void setVsdLaunchForm(const CVirtualSystemDescriptionForm &comForm) { m_comVsdLaunchForm = comForm; }
+
+        /** Defines cloud export @a enmMode. */
+        void setCloudExportMode(const CloudExportMode &enmMode) { m_enmCloudExportMode = enmMode; }
     /** @} */
 
 protected:
