@@ -70,14 +70,16 @@ static int cleanupDynamicDsdt(PPDMDEVINS pDevIns, void *pvPtr)
 
 static int patchAml(PPDMDEVINS pDevIns, uint8_t *pabAml, size_t cbAml)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     uint16_t cCpus;
-    int rc = CFGMR3QueryU16Def(pDevIns->pCfg, "NumCPUs", &cCpus, 1);
+    int rc = pHlp->pfnCFGMQueryU16Def(pDevIns->pCfg, "NumCPUs", &cCpus, 1);
     if (RT_FAILURE(rc))
         return rc;
 
     /* Clear CPU objects at all, if needed */
     bool fShowCpu;
-    rc = CFGMR3QueryBoolDef(pDevIns->pCfg, "ShowCpu", &fShowCpu, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pDevIns->pCfg, "ShowCpu", &fShowCpu, false);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -145,8 +147,10 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t *pabAml, size_t cbAml)
  */
 static int patchAmlCpuHotPlug(PPDMDEVINS pDevIns, uint8_t *pabAml, size_t cbAml)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     uint16_t cCpus;
-    int rc = CFGMR3QueryU16Def(pDevIns->pCfg, "NumCPUs", &cCpus, 1);
+    int rc = pHlp->pfnCFGMQueryU16Def(pDevIns->pCfg, "NumCPUs", &cCpus, 1);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -285,8 +289,10 @@ static int patchAmlCpuHotPlug(PPDMDEVINS pDevIns, uint8_t *pabAml, size_t cbAml)
 static int acpiAmlLoadExternal(PPDMDEVINS pDevIns, const char *pcszCfgName, const char *pcszSignature,
                                uint8_t **ppabAmlCode, size_t *pcbAmlCode)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     char *pszAmlFilePath = NULL;
-    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfg, pcszCfgName, &pszAmlFilePath);
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pDevIns->pCfg, pcszCfgName, &pszAmlFilePath);
     if (RT_SUCCESS(rc))
     {
         /* Load from file. */
@@ -395,13 +401,15 @@ int acpiCleanupDsdt(PPDMDEVINS pDevIns, void *pvPtr)
 /** No docs, lazy coder. */
 int acpiPrepareSsdt(PPDMDEVINS pDevIns, void **ppvPtr, size_t *pcbSsdt)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     uint8_t *pabAmlCodeSsdt = NULL;
     size_t   cbAmlCodeSsdt = 0;
     int rc = acpiAmlLoadExternal(pDevIns, "SsdtFilePath", "SSDT", &pabAmlCodeSsdt, &cbAmlCodeSsdt);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         bool fCpuHotPlug = false;
-        rc = CFGMR3QueryBoolDef(pDevIns->pCfg, "CpuHotPlug", &fCpuHotPlug, false);
+        rc = pHlp->pfnCFGMQueryBoolDef(pDevIns->pCfg, "CpuHotPlug", &fCpuHotPlug, false);
         if (RT_SUCCESS(rc))
         {
             if (fCpuHotPlug)
