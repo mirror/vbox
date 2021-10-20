@@ -1721,7 +1721,7 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDO
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMHeapFree
+ * @copydoc PDMDRVHLPR3::pfnMMHeapFree
  */
 DECLINLINE(void) PDMDrvHlpMMHeapFree(PPDMDRVINS pDrvIns, void *pv)
 {
