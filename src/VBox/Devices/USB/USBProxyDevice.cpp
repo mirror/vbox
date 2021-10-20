@@ -815,28 +815,31 @@ static DECLCALLBACK(void) usbProxyDestruct(PPDMUSBINS pUsbIns)
  * @returns VBox status code.
  * @param   pFilter         The filter.
  * @param   enmFieldIdx     The filter field indext.
+ * @param   pHlp            The USB helper callback table.
  * @param   pNode           The CFGM node.
  * @param   pszExact        The exact value name.
  * @param   pszExpr         The expression value name.
  */
-static int usbProxyQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, PCFGMNODE pNode, const char *pszExact, const char *pszExpr)
+static int usbProxyQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx,
+                            PCPDMUSBHLP pHlp, PCFGMNODE pNode,
+                            const char *pszExact, const char *pszExpr)
 {
     char szTmp[256];
 
     /* try exact first */
     uint16_t u16;
-    int rc = CFGMR3QueryU16(pNode, pszExact, &u16);
+    int rc = pHlp->pfnCFGMQueryU16(pNode, pszExact, &u16);
     if (RT_SUCCESS(rc))
     {
         rc = USBFilterSetNumExact(pFilter, enmFieldIdx, u16, true);
         AssertRCReturn(rc, rc);
 
         /* make sure only the exact attribute is present. */
-        rc = CFGMR3QueryString(pNode, pszExpr, szTmp, sizeof(szTmp));
+        rc = pHlp->pfnCFGMQueryString(pNode, pszExpr, szTmp, sizeof(szTmp));
         if (RT_UNLIKELY(rc != VERR_CFGM_VALUE_NOT_FOUND))
         {
             szTmp[0] = '\0';
-            CFGMR3GetName(pNode, szTmp, sizeof(szTmp));
+            pHlp->pfnCFGMGetName(pNode, szTmp, sizeof(szTmp));
             LogRel(("usbProxyConstruct: %s: Both %s and %s are present!\n", szTmp, pszExact, pszExpr));
             return VERR_INVALID_PARAMETER;
         }
@@ -845,13 +848,13 @@ static int usbProxyQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, PCFGMN
     if (RT_UNLIKELY(rc != VERR_CFGM_VALUE_NOT_FOUND))
     {
         szTmp[0] = '\0';
-        CFGMR3GetName(pNode, szTmp, sizeof(szTmp));
+        pHlp->pfnCFGMGetName(pNode, szTmp, sizeof(szTmp));
         LogRel(("usbProxyConstruct: %s: %s query failed, rc=%Rrc\n", szTmp, pszExact, rc));
         return rc;
     }
 
     /* expression? */
-    rc = CFGMR3QueryString(pNode, pszExpr, szTmp, sizeof(szTmp));
+    rc = pHlp->pfnCFGMQueryString(pNode, pszExpr, szTmp, sizeof(szTmp));
     if (RT_SUCCESS(rc))
     {
         rc = USBFilterSetNumExpression(pFilter, enmFieldIdx, szTmp, true);
@@ -861,7 +864,7 @@ static int usbProxyQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, PCFGMN
     if (RT_UNLIKELY(rc != VERR_CFGM_VALUE_NOT_FOUND))
     {
         szTmp[0] = '\0';
-        CFGMR3GetName(pNode, szTmp, sizeof(szTmp));
+        pHlp->pfnCFGMGetName(pNode, szTmp, sizeof(szTmp));
         LogRel(("usbProxyConstruct: %s: %s query failed, rc=%Rrc\n", szTmp, pszExpr, rc));
         return rc;
     }
@@ -875,7 +878,9 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
 {
     PDMUSB_CHECK_VERSIONS_RETURN(pUsbIns);
     RT_NOREF(iInstance);
-    PUSBPROXYDEV pThis = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
+    PUSBPROXYDEV    pThis = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
+    PCPDMUSBHLP     pHlp  = pUsbIns->pHlpR3;
+
     LogFlow(("usbProxyConstruct: pUsbIns=%p iInstance=%d\n", pUsbIns, iInstance));
 
     /*
@@ -892,15 +897,15 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
      * Read the basic configuration.
      */
     char szAddress[1024];
-    int rc = CFGMR3QueryString(pCfg, "Address", szAddress, sizeof(szAddress));
+    int rc = pHlp->pfnCFGMQueryString(pCfg, "Address", szAddress, sizeof(szAddress));
     AssertRCReturn(rc, rc);
 
     char szBackend[64];
-    rc = CFGMR3QueryString(pCfg, "Backend", szBackend, sizeof(szBackend));
+    rc = pHlp->pfnCFGMQueryString(pCfg, "Backend", szBackend, sizeof(szBackend));
     AssertRCReturn(rc, rc);
 
     void *pvBackend;
-    rc = CFGMR3QueryPtr(pCfg, "pvBackend", &pvBackend);
+    rc = pHlp->pfnCFGMQueryPtr(pCfg, "pvBackend", &pvBackend);
     AssertRCReturn(rc, rc);
 
     /*
@@ -976,7 +981,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
      * be useful).
      */
     PCFGMNODE pCfgGlobalDev = pCfgGlobal;
-    PCFGMNODE pCur = CFGMR3GetFirstChild(pCfgGlobal);
+    PCFGMNODE pCur = pHlp->pfnCFGMGetFirstChild(pCfgGlobal);
     if (pCur)
     {
         /*
@@ -995,7 +1000,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
 
         int iBestMatchRate = -1;
         PCFGMNODE pBestMatch = NULL;
-        for (pCur = CFGMR3GetFirstChild(pCfgGlobal); pCur; pCur = CFGMR3GetNextChild(pCur))
+        for (pCur = pHlp->pfnCFGMGetFirstChild(pCfgGlobal); pCur; pCur = pHlp->pfnCFGMGetNextChild(pCur))
         {
             /*
              * Construct a filter from the attributes in the node.
@@ -1004,25 +1009,25 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
             USBFilterInit(&Filter, USBFILTERTYPE_CAPTURE);
 
             /* numeric */
-            if (    RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_VENDOR_ID,        pCur, "idVendor",        "idVendorExpr"))
-                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_PRODUCT_ID,       pCur, "idProduct",       "idProcutExpr"))
-                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_REV,       pCur, "bcdDevice",       "bcdDeviceExpr"))
-                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_CLASS,     pCur, "bDeviceClass",    "bDeviceClassExpr"))
-                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_SUB_CLASS, pCur, "bDeviceSubClass", "bDeviceSubClassExpr"))
-                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_PROTOCOL,  pCur, "bDeviceProtocol", "bDeviceProtocolExpr")))
+            if (    RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_VENDOR_ID,        pHlp, pCur, "idVendor",        "idVendorExpr"))
+                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_PRODUCT_ID,       pHlp, pCur, "idProduct",       "idProcutExpr"))
+                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_REV,       pHlp, pCur, "bcdDevice",       "bcdDeviceExpr"))
+                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_CLASS,     pHlp, pCur, "bDeviceClass",    "bDeviceClassExpr"))
+                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_SUB_CLASS, pHlp, pCur, "bDeviceSubClass", "bDeviceSubClassExpr"))
+                ||  RT_FAILURE(usbProxyQueryNum(&Filter, USBFILTERIDX_DEVICE_PROTOCOL,  pHlp, pCur, "bDeviceProtocol", "bDeviceProtocolExpr")))
                 continue; /* skip it */
 
             /* strings */
             /** @todo manufacturer, product and serial strings */
 
             /* ignore unknown config values, but not without bitching. */
-            if (!CFGMR3AreValuesValid(pCur,
-                                      "idVendor\0idVendorExpr\0"
-                                      "idProduct\0idProductExpr\0"
-                                      "bcdDevice\0bcdDeviceExpr\0"
-                                      "bDeviceClass\0bDeviceClassExpr\0"
-                                      "bDeviceSubClass\0bDeviceSubClassExpr\0"
-                                      "bDeviceProtocol\0bDeviceProtocolExpr\0"))
+            if (!pHlp->pfnCFGMAreValuesValid(pCur,
+                                             "idVendor\0idVendorExpr\0"
+                                             "idProduct\0idProductExpr\0"
+                                             "bcdDevice\0bcdDeviceExpr\0"
+                                             "bDeviceClass\0bDeviceClassExpr\0"
+                                             "bDeviceSubClass\0bDeviceSubClassExpr\0"
+                                             "bDeviceProtocol\0bDeviceProtocolExpr\0"))
                 LogRel(("usbProxyConstruct: Unknown value(s) in config filter (ignored)!\n"));
 
             /*
@@ -1039,7 +1044,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
             }
         }
         if (pBestMatch)
-            pCfgGlobalDev = CFGMR3GetChild(pBestMatch, "Config");
+            pCfgGlobalDev = pHlp->pfnCFGMGetChild(pBestMatch, "Config");
         if (pCfgGlobalDev)
             pCfgGlobalDev = pCfgGlobal;
     }
@@ -1047,45 +1052,45 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     /*
      * Query the rest of the configuration using the global as fallback.
      */
-    rc = CFGMR3QueryU32(pCfg, "MaskedIfs", &pThis->fMaskedIfs);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "MaskedIfs", &pThis->fMaskedIfs);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryU32(pCfgGlobalDev, "MaskedIfs", &pThis->fMaskedIfs);
+        rc = pHlp->pfnCFGMQueryU32(pCfgGlobalDev, "MaskedIfs", &pThis->fMaskedIfs);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->fMaskedIfs = 0;
     else
         AssertRCReturn(rc, rc);
 
     bool fForce11Device;
-    rc = CFGMR3QueryBool(pCfg, "Force11Device", &fForce11Device);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "Force11Device", &fForce11Device);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryBool(pCfgGlobalDev, "Force11Device", &fForce11Device);
+        rc = pHlp->pfnCFGMQueryBool(pCfgGlobalDev, "Force11Device", &fForce11Device);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fForce11Device = false;
     else
         AssertRCReturn(rc, rc);
 
     bool fForce11PacketSize;
-    rc = CFGMR3QueryBool(pCfg, "Force11PacketSize", &fForce11PacketSize);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "Force11PacketSize", &fForce11PacketSize);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryBool(pCfgGlobalDev, "Force11PacketSize", &fForce11PacketSize);
+        rc = pHlp->pfnCFGMQueryBool(pCfgGlobalDev, "Force11PacketSize", &fForce11PacketSize);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fForce11PacketSize = false;
     else
         AssertRCReturn(rc, rc);
 
     bool fEditAudioSyncEp;
-    rc = CFGMR3QueryBool(pCfg, "EditAudioSyncEp", &fEditAudioSyncEp);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "EditAudioSyncEp", &fEditAudioSyncEp);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryBool(pCfgGlobalDev, "EditAudioSyncEp", &fEditAudioSyncEp);
+        rc = pHlp->pfnCFGMQueryBool(pCfgGlobalDev, "EditAudioSyncEp", &fEditAudioSyncEp);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fEditAudioSyncEp = true;    /* NB: On by default! */
     else
         AssertRCReturn(rc, rc);
 
     bool fEditRemoteWake;
-    rc = CFGMR3QueryBool(pCfg, "EditRemoteWake", &fEditRemoteWake);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "EditRemoteWake", &fEditRemoteWake);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        rc = CFGMR3QueryBool(pCfgGlobalDev, "EditRemoteWake", &fEditRemoteWake);
+        rc = pHlp->pfnCFGMQueryBool(pCfgGlobalDev, "EditRemoteWake", &fEditRemoteWake);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fEditRemoteWake = true;    /* NB: On by default! */
     else
