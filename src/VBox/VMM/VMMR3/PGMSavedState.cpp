@@ -156,18 +156,18 @@ typedef struct
 
 static const SSMFIELD s_aPGMFields[] =
 {
-    SSMFIELD_ENTRY(         PGM, fMappingsFixed),
-    SSMFIELD_ENTRY_GCPTR(   PGM, GCPtrMappingFixed),
-    SSMFIELD_ENTRY(         PGM, cbMappingFixed),
+    SSMFIELD_ENTRY_OLD(          fMappingsFixed, sizeof(bool)),
+    SSMFIELD_ENTRY_OLD_GCPTR(    GCPtrMappingFixed),
+    SSMFIELD_ENTRY_OLD(          cbMappingFixed, sizeof(uint32_t)),
     SSMFIELD_ENTRY(         PGM, cBalloonedPages),
     SSMFIELD_ENTRY_TERM()
 };
 
 static const SSMFIELD s_aPGMFieldsPreBalloon[] =
 {
-    SSMFIELD_ENTRY(         PGM, fMappingsFixed),
-    SSMFIELD_ENTRY_GCPTR(   PGM, GCPtrMappingFixed),
-    SSMFIELD_ENTRY(         PGM, cbMappingFixed),
+    SSMFIELD_ENTRY_OLD(          fMappingsFixed, sizeof(bool)),
+    SSMFIELD_ENTRY_OLD_GCPTR(    GCPtrMappingFixed),
+    SSMFIELD_ENTRY_OLD(          cbMappingFixed, sizeof(uint32_t)),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -2049,10 +2049,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save basic data (required / unaffected by relocation).
      */
-    bool const fMappingsFixed  = pVM->pgm.s.fMappingsFixed;
-    pVM->pgm.s.fMappingsFixed |= pVM->pgm.s.fMappingsFixedRestored;
     SSMR3PutStruct(pSSM, pPGM, &s_aPGMFields[0]);
-    pVM->pgm.s.fMappingsFixed  = fMappingsFixed;
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         rc = SSMR3PutStruct(pSSM, &pVM->apCpusR3[idCpu]->pgm.s, &s_aPGMCpuFields[0]);
@@ -2997,10 +2994,6 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         rc = SSMR3GetStruct(pSSM, &pgmOld, &s_aPGMFields_Old[0]);
         AssertLogRelRCReturn(rc, rc);
 
-        pPGM->fMappingsFixed    = pgmOld.fMappingsFixed;
-        pPGM->GCPtrMappingFixed = pgmOld.GCPtrMappingFixed;
-        pPGM->cbMappingFixed    = pgmOld.cbMappingFixed;
-
         PVMCPU pVCpu0 = pVM->apCpusR3[0];
         pVCpu0->pgm.s.fA20Enabled   = pgmOld.fA20Enabled;
         pVCpu0->pgm.s.GCPhysA20Mask = pgmOld.GCPhysA20Mask;
@@ -3010,9 +3003,10 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     {
         AssertRelease(pVM->cCpus == 1);
 
-        SSMR3GetBool(pSSM,      &pPGM->fMappingsFixed);
-        SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
-        SSMR3GetU32(pSSM,       &pPGM->cbMappingFixed);
+        SSMR3Skip(pSSM,         sizeof(bool));
+        RTGCPTR GCPtrIgn;
+        SSMR3GetGCPtr(pSSM,     &GCPtrIgn);
+        SSMR3Skip(pSSM,         sizeof(uint32_t));
 
         uint32_t cbRamSizeIgnored;
         rc = SSMR3GetU32(pSSM,  &cbRamSizeIgnored);
@@ -3212,65 +3206,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                 /* Update the PSE, NX flags and validity masks. */
                 pVCpu->pgm.s.fGst32BitPageSizeExtension = CPUMIsGuestPageSizeExtEnabled(pVCpu);
                 PGMNotifyNxeChanged(pVCpu, CPUMIsGuestNXEnabled(pVCpu));
-            }
-
-            /*
-             * Try re-fixate the guest mappings.
-             */
-            pVM->pgm.s.fMappingsFixedRestored = false;
-            if (   pVM->pgm.s.fMappingsFixed
-                && pgmMapAreMappingsEnabled(pVM))
-            {
-#ifndef PGM_WITHOUT_MAPPINGS
-                RTGCPTR     GCPtrFixed    = pVM->pgm.s.GCPtrMappingFixed;
-                uint32_t    cbFixed       = pVM->pgm.s.cbMappingFixed;
-                pVM->pgm.s.fMappingsFixed = false;
-
-                uint32_t    cbRequired;
-                int rc2 = PGMR3MappingsSize(pVM, &cbRequired); AssertRC(rc2);
-                if (   RT_SUCCESS(rc2)
-                    && cbRequired > cbFixed)
-                    rc2 = VERR_OUT_OF_RANGE;
-                if (RT_SUCCESS(rc2))
-                    rc2 = pgmR3MappingsFixInternal(pVM, GCPtrFixed, cbFixed);
-                if (RT_FAILURE(rc2))
-                {
-                    LogRel(("PGM: Unable to re-fixate the guest mappings at %RGv-%RGv: rc=%Rrc (cbRequired=%#x)\n",
-                            GCPtrFixed, GCPtrFixed + cbFixed, rc2, cbRequired));
-                    pVM->pgm.s.fMappingsFixed         = false;
-                    pVM->pgm.s.fMappingsFixedRestored = true;
-                    pVM->pgm.s.GCPtrMappingFixed      = GCPtrFixed;
-                    pVM->pgm.s.cbMappingFixed         = cbFixed;
-                }
-#else
-                AssertFailed();
-#endif
-            }
-            else
-            {
-                /* We used to set fixed + disabled while we only use disabled now,
-                   so wipe the state to avoid any confusion. */
-                pVM->pgm.s.fMappingsFixed    = false;
-                pVM->pgm.s.GCPtrMappingFixed = NIL_RTGCPTR;
-                pVM->pgm.s.cbMappingFixed    = 0;
-            }
-
-            /*
-             * If we have floating mappings, do a CR3 sync now to make sure the HMA
-             * doesn't conflict with guest code / data and thereby cause trouble
-             * when restoring other components like PATM.
-             */
-            if (pgmMapAreMappingsFloating(pVM))
-            {
-                PVMCPU pVCpu = pVM->apCpusR3[0];
-                rc = PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu),  CPUMGetGuestCR4(pVCpu), true);
-                if (RT_FAILURE(rc))
-                    return SSMR3SetLoadError(pSSM, VERR_WRONG_ORDER, RT_SRC_POS,
-                                             N_("PGMSyncCR3 failed unexpectedly with rc=%Rrc"), rc);
-
-                /* Make sure to re-sync before executing code. */
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             }
         }
     }

@@ -631,54 +631,47 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
                 rc = vmR3InitRing3(pVM, pUVM);
                 if (RT_SUCCESS(rc))
                 {
-#ifndef PGM_WITHOUT_MAPPINGS
-                    rc = PGMR3FinalizeMappings(pVM);
+                    LogFlow(("Ring-3 init succeeded\n"));
+
+                    /*
+                     * Init the Ring-0 components.
+                     */
+                    rc = vmR3InitRing0(pVM);
                     if (RT_SUCCESS(rc))
-#endif
                     {
+                        /* Relocate again, because some switcher fixups depends on R0 init results. */
+                        VMR3Relocate(pVM, 0 /* offDelta */);
 
-                        LogFlow(("Ring-3 init succeeded\n"));
-
+#ifdef VBOX_WITH_DEBUGGER
                         /*
-                         * Init the Ring-0 components.
+                         * Init the tcp debugger console if we're building
+                         * with debugger support.
                          */
-                        rc = vmR3InitRing0(pVM);
-                        if (RT_SUCCESS(rc))
+                        void *pvUser = NULL;
+                        rc = DBGCIoCreate(pUVM, &pvUser);
+                        if (    RT_SUCCESS(rc)
+                            ||  rc == VERR_NET_ADDRESS_IN_USE)
                         {
-                            /* Relocate again, because some switcher fixups depends on R0 init results. */
-                            VMR3Relocate(pVM, 0 /* offDelta */);
-
-#ifdef VBOX_WITH_DEBUGGER
+                            pUVM->vm.s.pvDBGC = pvUser;
+#endif
                             /*
-                             * Init the tcp debugger console if we're building
-                             * with debugger support.
+                             * Now we can safely set the VM halt method to default.
                              */
-                            void *pvUser = NULL;
-                            rc = DBGCIoCreate(pUVM, &pvUser);
-                            if (    RT_SUCCESS(rc)
-                                ||  rc == VERR_NET_ADDRESS_IN_USE)
+                            rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
+                            if (RT_SUCCESS(rc))
                             {
-                                pUVM->vm.s.pvDBGC = pvUser;
-#endif
                                 /*
-                                 * Now we can safely set the VM halt method to default.
+                                 * Set the state and we're done.
                                  */
-                                rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * Set the state and we're done.
-                                     */
-                                    vmR3SetState(pVM, VMSTATE_CREATED, VMSTATE_CREATING);
-                                    return VINF_SUCCESS;
-                                }
-#ifdef VBOX_WITH_DEBUGGER
-                                DBGCIoTerminate(pUVM, pUVM->vm.s.pvDBGC);
-                                pUVM->vm.s.pvDBGC = NULL;
+                                vmR3SetState(pVM, VMSTATE_CREATED, VMSTATE_CREATING);
+                                return VINF_SUCCESS;
                             }
-#endif
-                            //..
+#ifdef VBOX_WITH_DEBUGGER
+                            DBGCIoTerminate(pUVM, pUVM->vm.s.pvDBGC);
+                            pUVM->vm.s.pvDBGC = NULL;
                         }
+#endif
+                        //..
                     }
                     vmR3Destroy(pVM);
                 }
@@ -912,9 +905,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                 rc = PDMR3Init(pVM);
                                                                 if (RT_SUCCESS(rc))
                                                                 {
-                                                                    rc = PGMR3InitDynMap(pVM);
-                                                                    if (RT_SUCCESS(rc))
-                                                                        rc = MMR3HyperInitFinalize(pVM);
+                                                                    rc = MMR3HyperInitFinalize(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                         rc = PGMR3InitFinalize(pVM);
                                                                     if (RT_SUCCESS(rc))

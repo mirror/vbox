@@ -38,14 +38,13 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifndef PGM_WITHOUT_MAPPINGS
-static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode,
-                                                    void *pvUser);
-#endif
 static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR pGCPtr, PMMLOOKUPHYPER *ppLookup);
 static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, PRTR0PTR pR0PtrHeap);
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static int MMR3HyperReserveFence(PVM pVM);
+static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages,
+                             const char *pszDesc, PRTGCPTR pGCPtr);
 
 
 /**
@@ -221,7 +220,7 @@ int mmR3HyperTerm(PVM pVM)
 
 
 /**
- * Finalizes the HMA mapping.
+ * Finalizes the HMA mapping (obsolete).
  *
  * This is called later during init, most (all) HMA allocations should be done
  * by the time this function is called.
@@ -238,387 +237,12 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
     int rc = PDMR3CritSectInit(pVM, &pVM->mm.s.pHyperHeapR3->Lock, RT_SRC_POS, "MM-HYPER");
     AssertRC(rc);
 
-#ifndef PGM_WITHOUT_MAPPINGS
-    /*
-     * Adjust and create the HMA mapping.
-     */
-    while ((RTINT)pVM->mm.s.offHyperNextStatic + 64*_1K < (RTINT)pVM->mm.s.cbHyperArea - _4M)
-        pVM->mm.s.cbHyperArea -= _4M;
-    rc = PGMR3MapPT(pVM, pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea, 0 /*fFlags*/,
-                    mmR3HyperRelocateCallback, NULL, "Hypervisor Memory Area");
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
     pVM->mm.s.fPGMInitialized = true;
-
-#ifndef PGM_WITHOUT_MAPPINGS
-    /*
-     * Do all the delayed mappings.
-     */
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uintptr_t)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
-    for (;;)
-    {
-        RTGCPTR     GCPtr = pVM->mm.s.pvHyperAreaGC + pLookup->off;
-        uint32_t    cPages = pLookup->cb >> PAGE_SHIFT;
-        switch (pLookup->enmType)
-        {
-            case MMLOOKUPHYPERTYPE_LOCKED:
-            {
-                PCRTHCPHYS paHCPhysPages = pLookup->u.Locked.paHCPhysPages;
-                for (uint32_t i = 0; i < cPages; i++)
-                {
-                    rc = PGMMap(pVM, GCPtr + (i << PAGE_SHIFT), paHCPhysPages[i], PAGE_SIZE, 0);
-                    AssertRCReturn(rc, rc);
-                }
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_HCPHYS:
-                rc = PGMMap(pVM, GCPtr, pLookup->u.HCPhys.HCPhys, pLookup->cb, 0);
-                break;
-
-            case MMLOOKUPHYPERTYPE_GCPHYS:
-            {
-                const RTGCPHYS  GCPhys = pLookup->u.GCPhys.GCPhys;
-                const uint32_t  cb = pLookup->cb;
-                for (uint32_t off = 0; off < cb; off += PAGE_SIZE)
-                {
-                    RTHCPHYS HCPhys;
-                    rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys + off, &HCPhys);
-                    if (RT_FAILURE(rc))
-                        break;
-                    rc = PGMMap(pVM, GCPtr + off, HCPhys, PAGE_SIZE, 0);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_MMIO2:
-            {
-                const RTGCPHYS offEnd = pLookup->u.MMIO2.off + pLookup->cb;
-                for (RTGCPHYS offCur = pLookup->u.MMIO2.off; offCur < offEnd; offCur += PAGE_SIZE)
-                {
-                    RTHCPHYS HCPhys;
-                    rc = PGMR3PhysMMIO2GetHCPhys(pVM, pLookup->u.MMIO2.pDevIns, pLookup->u.MMIO2.iSubDev,
-                                                 pLookup->u.MMIO2.iRegion, offCur, &HCPhys);
-                    if (RT_FAILURE(rc))
-                        break;
-                    rc = PGMMap(pVM, GCPtr + (offCur - pLookup->u.MMIO2.off), HCPhys, PAGE_SIZE, 0);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_DYNAMIC:
-                /* do nothing here since these are either fences or managed by someone else using PGM. */
-                break;
-
-            default:
-                AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
-                break;
-        }
-
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("rc=%Rrc cb=%d off=%#RX32 enmType=%d pszDesc=%s\n",
-                             rc, pLookup->cb, pLookup->off, pLookup->enmType, pLookup->pszDesc));
-            return rc;
-        }
-
-        /* next */
-        if (pLookup->offNext == (int32_t)NIL_OFFSET)
-            break;
-        pLookup = (PMMLOOKUPHYPER)((uintptr_t)pLookup + pLookup->offNext);
-    }
-#endif /* !PGM_WITHOUT_MAPPINGS */
 
     LogFlow(("MMR3HyperInitFinalize: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
-
-#ifndef PGM_WITHOUT_MAPPINGS
-/**
- * Callback function which will be called when PGM is trying to find a new
- * location for the mapping.
- *
- * The callback is called in two modes, 1) the check mode and 2) the relocate mode.
- * In 1) the callback should say if it objects to a suggested new location. If it
- * accepts the new location, it is called again for doing it's relocation.
- *
- *
- * @returns true if the location is ok.
- * @returns false if another location should be found.
- * @param   pVM         The cross context VM structure.
- * @param   GCPtrOld    The old virtual address.
- * @param   GCPtrNew    The new virtual address.
- * @param   enmMode     Used to indicate the callback mode.
- * @param   pvUser      User argument. Ignored.
- * @remark  The return value is no a failure indicator, it's an acceptance
- *          indicator. Relocation can not fail!
- */
-static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew,
-                                                    PGMRELOCATECALL enmMode, void *pvUser)
-{
-    NOREF(pvUser);
-    switch (enmMode)
-    {
-        /*
-         * Verify location - all locations are good for us.
-         */
-        case PGMRELOCATECALL_SUGGEST:
-            return true;
-
-        /*
-         * Execute the relocation.
-         */
-        case PGMRELOCATECALL_RELOCATE:
-        {
-            /*
-             * Accepted!
-             */
-            AssertMsg(GCPtrOld == pVM->mm.s.pvHyperAreaGC,
-                      ("GCPtrOld=%RGv pVM->mm.s.pvHyperAreaGC=%RGv\n", GCPtrOld, pVM->mm.s.pvHyperAreaGC));
-            Log(("Relocating the hypervisor from %RGv to %RGv\n", GCPtrOld, GCPtrNew));
-
-            /*
-             * Relocate the VM structure and ourselves.
-             */
-            RTGCINTPTR offDelta = GCPtrNew - GCPtrOld;
-            pVM->pVMRC                          += offDelta;
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                pVM->aCpus[i].pVMRC              = pVM->pVMRC;
-
-            pVM->mm.s.pvHyperAreaGC             += offDelta;
-            Assert(pVM->mm.s.pvHyperAreaGC < _4G);
-            pVM->mm.s.pHyperHeapRC              += offDelta;
-            pVM->mm.s.pHyperHeapR3->pbHeapRC    += offDelta;
-            pVM->mm.s.pHyperHeapR3->pVMRC        = pVM->pVMRC;
-
-            /*
-             * Relocate the rest.
-             */
-            VMR3Relocate(pVM, offDelta);
-            return true;
-        }
-
-        default:
-            AssertMsgFailed(("Invalid relocation mode %d\n", enmMode));
-    }
-
-    return false;
-}
-
-
-/**
- * Maps contiguous HC physical memory into the hypervisor region in the GC.
- *
- * @return VBox status code.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pvR3        Ring-3 address of the memory. Must be page aligned!
- * @param   pvR0        Optional ring-0 address of the memory.
- * @param   HCPhys      Host context physical address of the memory to be
- *                      mapped. Must be page aligned!
- * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   pszDesc     Description.
- * @param   pGCPtr      Where to store the GC address.
- */
-VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTR0PTR pvR0, RTHCPHYS HCPhys, size_t cb,
-                                  const char *pszDesc, PRTGCPTR pGCPtr)
-{
-    LogFlow(("MMR3HyperMapHCPhys: pvR3=%p pvR0=%p HCPhys=%RHp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n",
-             pvR3, pvR0, HCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
-
-    /*
-     * Validate input.
-     */
-    AssertReturn(RT_ALIGN_P(pvR3, PAGE_SIZE) == pvR3, VERR_INVALID_PARAMETER);
-    AssertReturn(RT_ALIGN_T(pvR0, PAGE_SIZE, RTR0PTR) == pvR0, VERR_INVALID_PARAMETER);
-    AssertReturn(RT_ALIGN_T(HCPhys, PAGE_SIZE, RTHCPHYS) == HCPhys, VERR_INVALID_PARAMETER);
-    AssertReturn(pszDesc && *pszDesc, VERR_INVALID_PARAMETER);
-
-    /*
-     * Add the memory to the hypervisor area.
-     */
-    uint32_t cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
-    AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
-    RTGCPTR         GCPtr;
-    PMMLOOKUPHYPER  pLookup;
-    int rc = mmR3HyperMap(pVM, cbAligned, pszDesc, &GCPtr, &pLookup);
-    if (RT_SUCCESS(rc))
-    {
-        pLookup->enmType = MMLOOKUPHYPERTYPE_HCPHYS;
-        pLookup->u.HCPhys.pvR3   = pvR3;
-        pLookup->u.HCPhys.pvR0   = pvR0;
-        pLookup->u.HCPhys.HCPhys = HCPhys;
-
-        /*
-         * Update the page table.
-         */
-        if (pVM->mm.s.fPGMInitialized)
-            rc = PGMMap(pVM, GCPtr, HCPhys, cbAligned, 0);
-        if (RT_SUCCESS(rc))
-            *pGCPtr = GCPtr;
-    }
-    return rc;
-}
-
-
-/**
- * Maps contiguous GC physical memory into the hypervisor region in the GC.
- *
- * @return VBox status code.
- *
- * @param   pVM         The cross context VM structure.
- * @param   GCPhys      Guest context physical address of the memory to be mapped. Must be page aligned!
- * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the GC address.
- */
-VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr)
-{
-    LogFlow(("MMR3HyperMapGCPhys: GCPhys=%RGp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", GCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
-
-    /*
-     * Validate input.
-     */
-    AssertReturn(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys, VERR_INVALID_PARAMETER);
-    AssertReturn(pszDesc && *pszDesc, VERR_INVALID_PARAMETER);
-
-    /*
-     * Add the memory to the hypervisor area.
-     */
-    cb = RT_ALIGN_Z(cb, PAGE_SIZE);
-    RTGCPTR         GCPtr;
-    PMMLOOKUPHYPER  pLookup;
-    int rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
-    if (RT_SUCCESS(rc))
-    {
-        pLookup->enmType = MMLOOKUPHYPERTYPE_GCPHYS;
-        pLookup->u.GCPhys.GCPhys = GCPhys;
-
-        /*
-         * Update the page table.
-         */
-        for (unsigned off = 0; off < cb; off += PAGE_SIZE)
-        {
-            RTHCPHYS HCPhys;
-            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys + off, &HCPhys);
-            AssertRC(rc);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgFailed(("rc=%Rrc GCPhys=%RGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
-                break;
-            }
-            if (pVM->mm.s.fPGMInitialized)
-            {
-                rc = PGMMap(pVM, GCPtr + off, HCPhys, PAGE_SIZE, 0);
-                AssertRC(rc);
-                if (RT_FAILURE(rc))
-                {
-                    AssertMsgFailed(("rc=%Rrc GCPhys=%RGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
-                    break;
-                }
-            }
-        }
-
-        if (RT_SUCCESS(rc) && pGCPtr)
-            *pGCPtr = GCPtr;
-    }
-    return rc;
-}
-
-
-/**
- * Maps a portion of an MMIO2 region into the hypervisor region.
- *
- * Callers of this API must never deregister the MMIO2 region before the
- * VM is powered off.  If this becomes a requirement MMR3HyperUnmapMMIO2
- * API will be needed to perform cleanups.
- *
- * @return VBox status code.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pDevIns     The device owning the MMIO2 memory.
- * @param   iSubDev     The sub-device number.
- * @param   iRegion     The region.
- * @param   off         The offset into the region. Will be rounded down to closest page boundary.
- * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundary.
- * @param   pszDesc     Mapping description.
- * @param   pRCPtr      Where to store the RC address.
- */
-VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
-                                const char *pszDesc, PRTRCPTR pRCPtr)
-{
-    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iSubDev=%#x iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pRCPtr=%p\n",
-             pDevIns, iSubDev, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
-    int rc;
-
-    /*
-     * Validate input.
-     */
-    AssertReturn(pszDesc && *pszDesc, VERR_INVALID_PARAMETER);
-    AssertReturn(off + cb > off, VERR_INVALID_PARAMETER);
-    uint32_t const offPage = off & PAGE_OFFSET_MASK;
-    off &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
-    cb += offPage;
-    cb = RT_ALIGN_Z(cb, PAGE_SIZE);
-    const RTGCPHYS offEnd = off + cb;
-    AssertReturn(offEnd > off, VERR_INVALID_PARAMETER);
-    for (RTGCPHYS offCur = off; offCur < offEnd; offCur += PAGE_SIZE)
-    {
-        RTHCPHYS HCPhys;
-        rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iSubDev, iRegion, offCur, &HCPhys);
-        AssertMsgRCReturn(rc, ("rc=%Rrc - iSubDev=%#x iRegion=%#x off=%RGp\n", rc, iSubDev, iRegion, off), rc);
-    }
-
-    /*
-     * Add the memory to the hypervisor area.
-     */
-    RTGCPTR         GCPtr;
-    PMMLOOKUPHYPER  pLookup;
-    rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
-    if (RT_SUCCESS(rc))
-    {
-        pLookup->enmType = MMLOOKUPHYPERTYPE_MMIO2;
-        pLookup->u.MMIO2.pDevIns = pDevIns;
-        pLookup->u.MMIO2.iSubDev = iSubDev;
-        pLookup->u.MMIO2.iRegion = iRegion;
-        pLookup->u.MMIO2.off = off;
-
-        /*
-         * Update the page table.
-         */
-        if (pVM->mm.s.fPGMInitialized)
-        {
-            for (RTGCPHYS offCur = off; offCur < offEnd; offCur += PAGE_SIZE)
-            {
-                RTHCPHYS HCPhys;
-                rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iSubDev, iRegion, offCur, &HCPhys);
-                AssertRCReturn(rc, rc);
-                rc = PGMMap(pVM, GCPtr + (offCur - off), HCPhys, PAGE_SIZE, 0);
-                if (RT_FAILURE(rc))
-                {
-                    AssertMsgFailed(("rc=%Rrc offCur=%RGp %s\n", rc, offCur, pszDesc));
-                    break;
-                }
-            }
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            GCPtr |= offPage;
-            *pRCPtr = GCPtr;
-            AssertLogRelReturn(*pRCPtr == GCPtr, VERR_INTERNAL_ERROR);
-        }
-    }
-    return rc;
-}
-
-#endif /* !PGM_WITHOUT_MAPPINGS */
 
 /**
  * Maps locked R3 virtual memory into the hypervisor region in the GC.
@@ -633,8 +257,8 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
  * @param   pszDesc     Mapping description.
  * @param   pGCPtr      Where to store the GC address corresponding to pvR3.
  */
-VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages,
-                                 const char *pszDesc, PRTGCPTR pGCPtr)
+static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages,
+                             const char *pszDesc, PRTGCPTR pGCPtr)
 {
     LogFlow(("MMR3HyperMapPages: pvR3=%p pvR0=%p cPages=%zu paPages=%p pszDesc=%p:{%s} pGCPtr=%p\n",
              pvR3, pvR0, cPages, paPages, pszDesc, pszDesc, pGCPtr));
@@ -674,78 +298,20 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
                 paHCPhysPages[i] = paPages[i].Phys;
             }
 
-#ifndef PGM_WITHOUT_MAPPINGS
-            if (pVM->mm.s.fPGMInitialized)
-            {
-                for (size_t i = 0; i < cPages; i++)
-                {
-                    rc = PGMMap(pVM, GCPtr + (i << PAGE_SHIFT), paHCPhysPages[i], PAGE_SIZE, 0);
-                    AssertRCBreak(rc);
-                }
-            }
-#endif
-            if (RT_SUCCESS(rc))
-            {
-                pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
-                pLookup->u.Locked.pvR3          = pvR3;
-                pLookup->u.Locked.pvR0          = pvR0;
-                pLookup->u.Locked.paHCPhysPages = paHCPhysPages;
+            pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
+            pLookup->u.Locked.pvR3          = pvR3;
+            pLookup->u.Locked.pvR0          = pvR0;
+            pLookup->u.Locked.paHCPhysPages = paHCPhysPages;
 
-                /* done. */
-                *pGCPtr   = GCPtr;
-                return rc;
-            }
-            /* Don't care about failure clean, we're screwed if this fails anyway. */
+            /* done. */
+            *pGCPtr   = GCPtr;
+            return rc;
         }
+        /* Don't care about failure clean, we're screwed if this fails anyway. */
     }
 
     return rc;
 }
-
-
-#ifndef PGM_WITHOUT_MAPPINGS
-/**
- * Reserves a hypervisor memory area.
- * Most frequent usage is fence pages and dynamically mappings like the guest PD and PDPT.
- *
- * @return VBox status code.
- *
- * @param   pVM         The cross context VM structure.
- * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the assigned GC address. Optional.
- */
-VMMR3DECL(int) MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGCPTR pGCPtr)
-{
-    LogFlow(("MMR3HyperMapHCRam: cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", (int)cb, pszDesc, pszDesc, pGCPtr));
-
-    /*
-     * Validate input.
-     */
-    if (    cb <= 0
-        ||  !pszDesc
-        ||  !*pszDesc)
-    {
-        AssertMsgFailed(("Invalid parameter\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Add the memory to the hypervisor area.
-     */
-    RTGCPTR         GCPtr;
-    PMMLOOKUPHYPER  pLookup;
-    int rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
-    if (RT_SUCCESS(rc))
-    {
-        pLookup->enmType = MMLOOKUPHYPERTYPE_DYNAMIC;
-        if (pGCPtr)
-            *pGCPtr = GCPtr;
-        return VINF_SUCCESS;
-    }
-    return rc;
-}
-#endif /* !PGM_WITHOUT_MAPPINGS */
 
 
 /**
@@ -754,14 +320,10 @@ VMMR3DECL(int) MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGC
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-VMMR3DECL(int) MMR3HyperReserveFence(PVM pVM)
+static int MMR3HyperReserveFence(PVM pVM)
 {
-#ifndef PGM_WITHOUT_MAPPINGS
-    return MMR3HyperReserve(pVM, cb, "fence", NULL);
-#else
     RT_NOREF(pVM);
     return VINF_SUCCESS;
-#endif
 }
 
 
@@ -1138,61 +700,6 @@ DECLINLINE(PMMLOOKUPHYPER) mmR3HyperLookupR3(PVM pVM, void *pvR3)
 
 
 /**
- * Set / unset guard status on one or more hyper heap pages.
- *
- * @returns VBox status code (first failure).
- * @param   pVM                 The cross context VM structure.
- * @param   pvStart             The hyper heap page address. Must be page
- *                              aligned.
- * @param   cb                  The number of bytes. Must be page aligned.
- * @param   fSet                Whether to set or unset guard page status.
- */
-VMMR3DECL(int) MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet)
-{
-    /*
-     * Validate input.
-     */
-    AssertReturn(!((uintptr_t)pvStart & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
-    AssertReturn(!(cb & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn(cb <= UINT32_MAX, VERR_INVALID_PARAMETER);
-    PMMLOOKUPHYPER pLookup = mmR3HyperLookupR3(pVM, pvStart);
-    AssertReturn(pLookup, VERR_INVALID_PARAMETER);
-    AssertReturn(pLookup->enmType == MMLOOKUPHYPERTYPE_LOCKED, VERR_INVALID_PARAMETER);
-
-    /*
-     * Get down to business.
-     * Note! We quietly ignore errors from the support library since the
-     *       protection stuff isn't possible to implement on all platforms.
-     */
-    uint8_t    *pbR3  = (uint8_t *)pLookup->u.Locked.pvR3;
-    RTR0PTR     R0Ptr = pLookup->u.Locked.pvR0 != (uintptr_t)pLookup->u.Locked.pvR3
-                      ? pLookup->u.Locked.pvR0
-                      : NIL_RTR0PTR;
-    uint32_t    off   = (uint32_t)((uint8_t *)pvStart - pbR3);
-    int         rc;
-    if (fSet)
-    {
-#ifndef PGM_WITHOUT_MAPPINGS
-        rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pvStart), cb, 0);
-#else
-        rc = VINF_SUCCESS;
-#endif
-        SUPR3PageProtect(pbR3, R0Ptr, off, (uint32_t)cb, RTMEM_PROT_NONE);
-    }
-    else
-    {
-#ifndef PGM_WITHOUT_MAPPINGS
-        rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pvStart), cb, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-#else
-        rc = VINF_SUCCESS;
-#endif
-        SUPR3PageProtect(pbR3, R0Ptr, off, (uint32_t)cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
-    }
-    return rc;
-}
-
-
-/**
  * Convert hypervisor HC virtual address to HC physical address.
  *
  * @returns HC physical address.
@@ -1243,112 +750,6 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
     return NIL_RTHCPHYS;
 }
 
-#ifndef PGM_WITHOUT_MAPPINGS
-
-/**
- * Implements the hcphys-not-found return case of MMR3HyperQueryInfoFromHCPhys.
- *
- * @returns VINF_SUCCESS, VINF_BUFFER_OVERFLOW.
- * @param   pVM                 The cross context VM structure.
- * @param   HCPhys              The host physical address to look for.
- * @param   pLookup             The HMA lookup entry corresponding to HCPhys.
- * @param   pszWhat             Where to return the description.
- * @param   cbWhat              Size of the return buffer.
- * @param   pcbAlloc            Where to return the size of whatever it is.
- */
-static int mmR3HyperQueryInfoFromHCPhysFound(PVM pVM, RTHCPHYS HCPhys, PMMLOOKUPHYPER pLookup,
-                                             char *pszWhat, size_t cbWhat, uint32_t *pcbAlloc)
-{
-    NOREF(pVM); NOREF(HCPhys);
-    *pcbAlloc = pLookup->cb;
-    int rc = RTStrCopy(pszWhat, cbWhat, pLookup->pszDesc);
-    return rc == VERR_BUFFER_OVERFLOW ? VINF_BUFFER_OVERFLOW : rc;
-}
-
-
-/**
- * Scans the HMA for the physical page and reports back a description if found.
- *
- * @returns VINF_SUCCESS, VINF_BUFFER_OVERFLOW, VERR_NOT_FOUND.
- * @param   pVM                 The cross context VM structure.
- * @param   HCPhys              The host physical address to look for.
- * @param   pszWhat             Where to return the description.
- * @param   cbWhat              Size of the return buffer.
- * @param   pcbAlloc            Where to return the size of whatever it is.
- */
-VMMR3_INT_DECL(int) MMR3HyperQueryInfoFromHCPhys(PVM pVM, RTHCPHYS HCPhys, char *pszWhat, size_t cbWhat, uint32_t *pcbAlloc)
-{
-    RTHCPHYS        HCPhysPage = HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK;
-    PMMLOOKUPHYPER  pLookup    = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
-    for (;;)
-    {
-        switch (pLookup->enmType)
-        {
-            case MMLOOKUPHYPERTYPE_LOCKED:
-            {
-                uint32_t i = pLookup->cb >> PAGE_SHIFT;
-                while (i-- > 0)
-                    if (pLookup->u.Locked.paHCPhysPages[i] == HCPhysPage)
-                        return mmR3HyperQueryInfoFromHCPhysFound(pVM, HCPhys, pLookup, pszWhat, cbWhat, pcbAlloc);
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_HCPHYS:
-            {
-                if (pLookup->u.HCPhys.HCPhys - HCPhysPage < pLookup->cb)
-                    return mmR3HyperQueryInfoFromHCPhysFound(pVM, HCPhys, pLookup, pszWhat, cbWhat, pcbAlloc);
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_MMIO2:
-            case MMLOOKUPHYPERTYPE_GCPHYS:
-            case MMLOOKUPHYPERTYPE_DYNAMIC:
-            {
-                /* brute force. */
-                uint32_t i = pLookup->cb >> PAGE_SHIFT;
-                while (i-- > 0)
-                {
-                    RTGCPTR     GCPtr = pLookup->off + pVM->mm.s.pvHyperAreaGC;
-                    RTHCPHYS    HCPhysCur;
-                    int rc = PGMMapGetPage(pVM, GCPtr, NULL, &HCPhysCur);
-                    if (RT_SUCCESS(rc) && HCPhysCur == HCPhysPage)
-                        return mmR3HyperQueryInfoFromHCPhysFound(pVM, HCPhys, pLookup, pszWhat, cbWhat, pcbAlloc);
-                }
-                break;
-            }
-            default:
-                AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
-                break;
-        }
-
-        /* next */
-        if ((unsigned)pLookup->offNext == NIL_OFFSET)
-            break;
-        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
-    }
-    return VERR_NOT_FOUND;
-}
-
-
-/**
- * Read hypervisor memory from GC virtual address.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pvDst       Destination address (HC of course).
- * @param   GCPtr       GC virtual address.
- * @param   cb          Number of bytes to read.
- *
- * @remarks For DBGF only.
- */
-VMMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
-{
-    if (GCPtr - pVM->mm.s.pvHyperAreaGC >= pVM->mm.s.cbHyperArea)
-        return VERR_INVALID_POINTER;
-    return PGMR3MapRead(pVM, pvDst, GCPtr, cb);
-}
-
-#endif /* !PGM_WITHOUT_MAPPINGS */
 
 /**
  * Info handler for 'hma', it dumps the list of lookup records for the hypervisor memory area.

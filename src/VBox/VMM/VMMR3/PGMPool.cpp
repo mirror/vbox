@@ -543,9 +543,6 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                             //Assert((pShwPD->a[i].u & UINT64_C(0xfff0000000000f80)) == 0); - bogus, includes X86_PDE_PS.
                             if ((pShwPD->a[i].u & (X86_PDE_P | X86_PDE_PS)) == (X86_PDE_P | X86_PDE_PS))
                             {
-# ifndef PGM_WITHOUT_MAPPINGS
-                                Assert(!(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING));
-# endif
                                 pShwPD->a[i].u = 0;
                                 Assert(pPage->cPresent);
                                 pPage->cPresent--;
@@ -564,9 +561,6 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                         {
                             if ((pShwPD->a[i].u & (EPT_E_READ | EPT_E_LEAF)) == (EPT_E_READ | EPT_E_LEAF))
                             {
-# ifndef PGM_WITHOUT_MAPPINGS
-                                Assert(!(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING));
-# endif
                                 pShwPD->a[i].u = 0;
                                 Assert(pPage->cPresent);
                                 pPage->cPresent--;

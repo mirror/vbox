@@ -1075,43 +1075,6 @@ DECLINLINE(bool) pgmPoolIsDirtyPage(PVMCC pVM, RTGCPHYS GCPhys)
 }
 
 
-/**
- * Tells if mappings are to be put into the shadow page table or not.
- *
- * @returns boolean result
- * @param   pVM         The cross context VM structure.
- */
-DECL_FORCE_INLINE(bool) pgmMapAreMappingsEnabled(PVMCC pVM)
-{
-#ifdef PGM_WITHOUT_MAPPINGS
-    /* Only raw-mode has mappings. */
-    Assert(!VM_IS_RAW_MODE_ENABLED(pVM)); NOREF(pVM);
-    return false;
-#else
-    Assert(pVM->cCpus == 1 || !VM_IS_RAW_MODE_ENABLED(pVM));
-    return VM_IS_RAW_MODE_ENABLED(pVM);
-#endif
-}
-
-
-/**
- * Checks if the mappings are floating and enabled.
- *
- * @returns true / false.
- * @param   pVM         The cross context VM structure.
- */
-DECL_FORCE_INLINE(bool) pgmMapAreMappingsFloating(PVMCC pVM)
-{
-#ifdef PGM_WITHOUT_MAPPINGS
-    /* Only raw-mode has mappings. */
-    Assert(!VM_IS_RAW_MODE_ENABLED(pVM)); NOREF(pVM);
-    return false;
-#else
-    return !pVM->pgm.s.fMappingsFixed
-        && pgmMapAreMappingsEnabled(pVM);
-#endif
-}
-
 /** @} */
 
 #endif /* !VMM_INCLUDED_SRC_include_PGMInline_h */

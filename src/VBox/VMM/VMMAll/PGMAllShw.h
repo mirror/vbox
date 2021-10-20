@@ -415,35 +415,9 @@ PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags,
      * Get PT entry.
      */
     PSHWPT          pPT;
-# ifndef PGM_WITHOUT_MAPPINGS
-    if (!(Pde.u & PGM_PDFLAGS_MAPPING))
-# endif
-    {
-        int rc2 = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pde.u & SHW_PDE_PG_MASK, &pPT);
-        if (RT_FAILURE(rc2))
-            return rc2;
-    }
-# ifndef PGM_WITHOUT_MAPPINGS
-    else /* mapping: */
-    {
-#  if  PGM_SHW_TYPE == PGM_TYPE_AMD64 \
-    || PGM_SHW_TYPE == PGM_TYPE_EPT \
-    || defined(PGM_WITHOUT_MAPPINGS)
-        AssertFailed(); /* can't happen */
-        pPT = NULL;     /* shut up MSC */
-#  else
-        Assert(pgmMapAreMappingsEnabled(pVM));
-
-        PPGMMAPPING pMap = pgmGetMapping(pVM, (RTGCPTR)GCPtr);
-        AssertMsgReturn(pMap, ("GCPtr=%RGv\n", GCPtr), VERR_PGM_MAPPING_IPE);
-#   if PGM_SHW_TYPE == PGM_TYPE_32BIT || PGM_SHW_TYPE == PGM_TYPE_NESTED_32BIT
-        pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTX_SUFF(pPT);
-#   else /* PAE */
-        pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTX_SUFF(paPaePTs);
-#   endif
-#  endif
-    }
-# endif /* !PGM_WITHOUT_MAPPINGS */
+    int rc2 = PGM_HCPHYS_2_PTR(pVM, pVCpu, Pde.u & SHW_PDE_PG_MASK, &pPT);
+    if (RT_FAILURE(rc2))
+        return rc2;
     const unsigned  iPt = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
     SHWPTE          Pte = pPT->a[iPt];
     if (!SHW_PTE_IS_P(Pte))

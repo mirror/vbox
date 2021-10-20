@@ -465,9 +465,6 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                 uShw.pv = PGMPOOL_PAGE_2_PTR(pVM, pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 X86PGPAEUINT const uPde = uShw.pPDPae->a[iShw].u;
-#ifndef PGM_WITHOUT_MAPPINGS
-                Assert(!(uPde & PGM_PDFLAGS_MAPPING));
-#endif
                 if (uPde & X86_PDE_P)
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uPde));
@@ -482,9 +479,6 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                     const unsigned iShw2 = (off + cbWrite - 1) / sizeof(X86PDEPAE);
                     AssertBreak(iShw2 < RT_ELEMENTS(uShw.pPDPae->a));
                     X86PGPAEUINT const uPde2 = uShw.pPDPae->a[iShw2].u;
-#ifndef PGM_WITHOUT_MAPPINGS
-                    Assert(!(uPde2 & PGM_PDFLAGS_MAPPING));
-#endif
                     if (uPde2 & X86_PDE_P)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uPde2));
@@ -3759,9 +3753,6 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
-#ifndef PGM_WITHOUT_MAPPINGS
-            Assert(!(u.pau64[iUserTable] & PGM_PDFLAGS_MAPPING));
-#endif
             break;
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             Assert(iUserTable < X86_PG_PAE_ENTRIES);
@@ -4446,11 +4437,7 @@ DECLINLINE(void) pgmPoolTrackDerefPD(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PD 
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
         X86PGUINT const uPde = pShwPD->a[i].u;
-#ifndef PGM_WITHOUT_MAPPINGS
-        if ((uPde & (X86_PDE_P | PGM_PDFLAGS_MAPPING)) == X86_PDE_P)
-#else
         if (uPde & X86_PDE_P)
-#endif
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & X86_PDE_PG_MASK);
             if (pSubPage)
@@ -4474,11 +4461,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
     {
         X86PGPAEUINT const uPde = pShwPD->a[i].u;
-#ifndef PGM_WITHOUT_MAPPINGS
-        if ((uPde & (X86_PDE_P | PGM_PDFLAGS_MAPPING)) == X86_PDE_P)
-#else
         if (uPde & X86_PDE_P)
-#endif
         {
 #ifdef PGM_WITH_LARGE_PAGES
             if (uPde & X86_PDE_PS)
@@ -4518,11 +4501,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPTPae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX
     {
         X86PGPAEUINT const uPdpe = pShwPDPT->a[i].u;
         Assert((uPdpe & (X86_PDPE_PAE_MBZ_MASK | UINT64_C(0x7ff0000000000200))) == 0);
-        if (    uPdpe & X86_PDPE_P
-#ifndef PGM_WITHOUT_MAPPINGS
-            &&  !(uPdpe & PGM_PLXFLAGS_MAPPING)
-#endif
-           )
+        if (uPdpe & X86_PDPE_P)
         {
             PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, uPdpe & X86_PDPE_PG_MASK);
             if (pSubPage)

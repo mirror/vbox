@@ -1103,53 +1103,18 @@ static uint64_t pgmR3DumpHierarchyCalcRange(PPGMR3DUMPHIERARCHYSTATE pState, uin
  * @param   pState              The dumper state.
  * @param   HCPhys              The physical address of the shadow page.
  * @param   pszDesc             The description.
- * @param   fIsMapping          Set if it's a mapping.
  * @param   ppv                 Where to return the pointer.
  */
-static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, const char *pszDesc,
-                                        bool fIsMapping, void const **ppv)
+static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, const char *pszDesc, void const **ppv)
 {
-    void *pvPage;
-    if (!fIsMapping)
+    PPGMPOOLPAGE pPoolPage = pgmPoolQueryPageForDbg(pState->pVM->pgm.s.pPoolR3, HCPhys);
+    if (pPoolPage)
     {
-        PPGMPOOLPAGE pPoolPage = pgmPoolQueryPageForDbg(pState->pVM->pgm.s.pPoolR3, HCPhys);
-        if (pPoolPage)
-        {
-            pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! %s at HCPhys=%RHp was not found in the page pool!\n",
-                                    pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
-            return VERR_PGM_POOL_GET_PAGE_FAILED;
-        }
-        pvPage = (uint8_t *)pPoolPage->pvPageR3 + (HCPhys & PAGE_OFFSET_MASK);
+        pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! %s at HCPhys=%RHp was not found in the page pool!\n",
+                                pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
+        return VERR_PGM_POOL_GET_PAGE_FAILED;
     }
-    else
-    {
-        pvPage = NULL;
-#ifndef PGM_WITHOUT_MAPPINGS
-        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
-        {
-            uint64_t off = pState->u64Address - pMap->GCPtr;
-            if (off < pMap->cb)
-            {
-                const int iPDE = (uint32_t)(off >> X86_PD_SHIFT);
-                const int iSub = (int)((off >> X86_PD_PAE_SHIFT) & 1); /* MSC is a pain sometimes */
-                if ((iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0) != HCPhys)
-                    pState->pHlp->pfnPrintf(pState->pHlp,
-                                            "%0*llx error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
-                                            pState->cchAddress, pState->u64Address, iPDE,
-                                            iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0, HCPhys);
-                pvPage = &pMap->aPTs[iPDE].paPaePTsR3[iSub];
-                break;
-            }
-        }
-#endif /* !PGM_WITHOUT_MAPPINGS */
-        if (!pvPage)
-        {
-            pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! PT mapping %s at HCPhys=%RHp was not found in the page pool!\n",
-                                    pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
-            return VERR_INVALID_PARAMETER;
-        }
-    }
-    *ppv = pvPage;
+    *ppv = (uint8_t *)pPoolPage->pvPageR3 + (HCPhys & PAGE_OFFSET_MASK);
     return VINF_SUCCESS;
 }
 
@@ -1168,29 +1133,7 @@ static void pgmR3DumpHierarchyShwTablePageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
     if (pPage)
         RTStrPrintf(szPage, sizeof(szPage), " idx=0i%u", pPage->idx);
     else
-    {
-        /* probably a mapping */
         strcpy(szPage, " not found");
-#ifndef PGM_WITHOUT_MAPPINGS
-        for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
-        {
-            uint64_t off = pState->u64Address - pMap->GCPtr;
-            if (off < pMap->cb)
-            {
-                const int iPDE = (uint32_t)(off >> X86_PD_SHIFT);
-                if (pMap->aPTs[iPDE].HCPhysPT == HCPhys)
-                    RTStrPrintf(szPage, sizeof(szPage), " #%u: %s", iPDE, pMap->pszDesc);
-                else if (pMap->aPTs[iPDE].HCPhysPaePT0 == HCPhys)
-                    RTStrPrintf(szPage, sizeof(szPage), " #%u/0: %s", iPDE, pMap->pszDesc);
-                else if (pMap->aPTs[iPDE].HCPhysPaePT1 == HCPhys)
-                    RTStrPrintf(szPage, sizeof(szPage), " #%u/1: %s", iPDE, pMap->pszDesc);
-                else
-                    continue;
-                break;
-            }
-        }
-#endif /* !PGM_WITHOUT_MAPPINGS */
-    }
     PGM_UNLOCK(pState->pVM);
     pState->pHlp->pfnPrintf(pState->pHlp, "%s", szPage);
 }
@@ -1220,17 +1163,7 @@ static void pgmR3DumpHierarchyShwGuestPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
         pState->pHlp->pfnPrintf(pState->pHlp, " -> %RGp %s", GCPhys, szPage);
     }
     else
-    {
-#ifndef PGM_WITHOUT_MAPPINGS
-        /* check the heap */
-        uint32_t cbAlloc;
-        rc = MMR3HyperQueryInfoFromHCPhys(pState->pVM, HCPhys, szPage, sizeof(szPage), &cbAlloc);
-        if (RT_SUCCESS(rc))
-            pState->pHlp->pfnPrintf(pState->pHlp, " %s %#x bytes", szPage, cbAlloc);
-        else
-#endif
-            pState->pHlp->pfnPrintf(pState->pHlp, " not found");
-    }
+        pState->pHlp->pfnPrintf(pState->pHlp, " not found");
     NOREF(cbPage);
 }
 
@@ -1241,12 +1174,11 @@ static void pgmR3DumpHierarchyShwGuestPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState              The dumper state.
  * @param   HCPhys              The page table address.
- * @param   fIsMapping          Whether it is a mapping.
  */
-static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fIsMapping)
+static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
 {
     PCPGMSHWPTPAE pPT;
-    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page table", fIsMapping, (void const **)&pPT);
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page table", (void const **)&pPT);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1314,7 +1246,7 @@ static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
 static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
     PCX86PDPAE pPD;
-    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory", false, (void const **)&pPD);
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory", (void const **)&pPD);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1346,11 +1278,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.b.u1PAT         ? "AT" : "--",
                                         Pde.b.u1NoExecute   ? "NX" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
-#ifndef PGM_WITHOUT_MAPPINGS
-                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
-#else
                                         '-',
-#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE2M_PAE_PG_MASK);
                 if (pState->fDumpPageInfo)
@@ -1379,11 +1307,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.n.u1CacheDisable? "CD" : "--",
                                         Pde.n.u1NoExecute   ? "NX" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
-#ifndef PGM_WITHOUT_MAPPINGS
-                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
-#else
                                         '-',
-#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PAE_PG_MASK);
                 if (pState->fDumpPageInfo)
@@ -1394,13 +1318,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyShwPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK,
-#ifndef PGM_WITHOUT_MAPPINGS
-                                                         RT_BOOL(Pde.u & PGM_PDFLAGS_MAPPING)
-#else
-                                                         false /*fIsMapping*/
-#endif
-                                                         );
+                    int rc2 = pgmR3DumpHierarchyShwPaePT(pState, Pde.u & X86_PDE_PAE_PG_MASK);
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
@@ -1428,7 +1346,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
         return VINF_SUCCESS;
 
     PCX86PDPT pPDPT;
-    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory pointer table", false, (void const **)&pPDPT);
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory pointer table", (void const **)&pPDPT);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1518,7 +1436,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
 static int pgmR3DumpHierarchyShwPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
     PCX86PML4 pPML4;
-    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page map level 4", false, (void const **)&pPML4);
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page map level 4", (void const **)&pPML4);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1590,12 +1508,11 @@ static int pgmR3DumpHierarchyShwPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
  * @param   HCPhys      The physical address of the table.
- * @param   fMapping    Set if it's a guest mapping.
  */
-static int pgmR3DumpHierarchyShw32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, bool fMapping)
+static int pgmR3DumpHierarchyShw32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
 {
     PCX86PT pPT;
-    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page table", fMapping, (void const **)&pPT);
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page table", (void const **)&pPT);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1645,7 +1562,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
         return VINF_SUCCESS;
 
     PCX86PD pPD;
-    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory", false, (void const **)&pPD);
+    int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory", (void const **)&pPD);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1676,11 +1593,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                         Pde.b.u1CacheDisable? "CD" : "--",
                                         Pde.b.u1PAT         ? "AT" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
-#ifndef PGM_WITHOUT_MAPPINGS
-                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
-#else
                                         '-',
-#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         u64Phys);
                 if (pState->fDumpPageInfo)
@@ -1701,11 +1614,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                         Pde.n.u1WriteThru   ? "WT" : "--",
                                         Pde.n.u1CacheDisable? "CD" : "--",
                                         Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
-#ifndef PGM_WITHOUT_MAPPINGS
-                                        Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
-#else
                                         '-',
-#endif
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PG_MASK);
                 if (pState->fDumpPageInfo)
@@ -1714,13 +1623,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
 
                 if (cMaxDepth)
                 {
-                    int rc2 = pgmR3DumpHierarchyShw32BitPT(pState, Pde.u & X86_PDE_PG_MASK,
-#ifndef PGM_WITHOUT_MAPPINGS
-                                                           !!(Pde.u & PGM_PDFLAGS_MAPPING)
-#else
-                                                           false /*fIsMapping*/
-#endif
-                                                           );
+                    int rc2 = pgmR3DumpHierarchyShw32BitPT(pState, Pde.u & X86_PDE_PG_MASK);
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }

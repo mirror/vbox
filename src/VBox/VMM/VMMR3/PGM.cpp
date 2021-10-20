@@ -823,9 +823,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
     pVM->pgm.s.enmHostMode      = SUPPAGINGMODE_INVALID;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
-#ifndef PGM_WITHOUT_MAPPINGS
-    pVM->pgm.s.GCPtrPrevRamRangeMapping = MM_HYPER_AREA_ADDRESS;
-#endif
 
     rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "RamPreAlloc", &pVM->pgm.s.fRamPreAlloc,
 #ifdef VBOX_WITH_PREALLOC_RAM_BY_DEFAULT
@@ -1004,11 +1001,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
                                    "Pass 'phys', 'virt', 'hyper' as argument if only one kind is wanted."
                                    "Add 'nost' if the statistics are unwanted, use together with 'all' or explicit selection.",
                                    pgmR3InfoHandlers);
-#ifndef PGM_WITHOUT_MAPPINGS
-        DBGFR3InfoRegisterInternal(pVM, "mappings",
-                                   "Dumps guest mappings.",
-                                   pgmR3MapInfo);
-#endif
 
         pgmR3InitStats(pVM);
 
@@ -1078,81 +1070,6 @@ static int pgmR3InitPaging(PVM pVM)
     }
 
     pVM->pgm.s.enmHostMode   = SUPPAGINGMODE_INVALID;
-
-#ifndef PGM_WITHOUT_MAPPINGS
-    /*
-     * Allocate static mapping space for whatever the cr3 register
-     * points to and in the case of PAE mode to the 4 PDs.
-     */
-    int rc = MMR3HyperReserve(pVM, PAGE_SIZE * 5, "CR3 mapping", &pVM->pgm.s.GCPtrCR3Mapping);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to reserve two pages for cr mapping in HMA, rc=%Rrc\n", rc));
-        return rc;
-    }
-    MMR3HyperReserveFence(pVM);
-#endif
-
-#if 0
-    /*
-     * Allocate pages for the three possible intermediate contexts
-     * (AMD64, PAE and plain 32-Bit). We maintain all three contexts
-     * for the sake of simplicity. The AMD64 uses the PAE for the
-     * lower levels, making the total number of pages 11 (3 + 7 + 1).
-     *
-     * We assume that two page tables will be enought for the core code
-     * mappings (HC virtual and identity).
-     */
-    pVM->pgm.s.pInterPD         = (PX86PD)MMR3PageAllocLow(pVM);    AssertReturn(pVM->pgm.s.pInterPD,         VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPTs[0]    = (PX86PT)MMR3PageAllocLow(pVM);    AssertReturn(pVM->pgm.s.apInterPTs[0],    VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPTs[1]    = (PX86PT)MMR3PageAllocLow(pVM);    AssertReturn(pVM->pgm.s.apInterPTs[1],    VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPaePTs[0] = (PX86PTPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePTs[0], VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPaePTs[1] = (PX86PTPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePTs[1], VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPaePDs[0] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[0], VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPaePDs[1] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[1], VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPaePDs[2] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[2], VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.apInterPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);    AssertReturn(pVM->pgm.s.apInterPaePDs[3], VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.pInterPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);  AssertReturn(pVM->pgm.s.pInterPaePDPT,    VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.pInterPaePDPT64  = (PX86PDPT)MMR3PageAllocLow(pVM);  AssertReturn(pVM->pgm.s.pInterPaePDPT64,  VERR_NO_PAGE_MEMORY);
-    pVM->pgm.s.pInterPaePML4    = (PX86PML4)MMR3PageAllocLow(pVM);  AssertReturn(pVM->pgm.s.pInterPaePML4,    VERR_NO_PAGE_MEMORY);
-
-    pVM->pgm.s.HCPhysInterPD = MMPage2Phys(pVM, pVM->pgm.s.pInterPD);
-    AssertRelease(pVM->pgm.s.HCPhysInterPD != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPD & PAGE_OFFSET_MASK));
-    pVM->pgm.s.HCPhysInterPaePDPT = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT);
-    AssertRelease(pVM->pgm.s.HCPhysInterPaePDPT != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPaePDPT & PAGE_OFFSET_MASK));
-    pVM->pgm.s.HCPhysInterPaePML4 = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePML4);
-    AssertRelease(pVM->pgm.s.HCPhysInterPaePML4 != NIL_RTHCPHYS && !(pVM->pgm.s.HCPhysInterPaePML4 & PAGE_OFFSET_MASK) && pVM->pgm.s.HCPhysInterPaePML4 < 0xffffffff);
-
-    /*
-     * Initialize the pages, setting up the PML4 and PDPT for repetitive 4GB action.
-     */
-    ASMMemZeroPage(pVM->pgm.s.pInterPD);
-    ASMMemZeroPage(pVM->pgm.s.apInterPTs[0]);
-    ASMMemZeroPage(pVM->pgm.s.apInterPTs[1]);
-
-    ASMMemZeroPage(pVM->pgm.s.apInterPaePTs[0]);
-    ASMMemZeroPage(pVM->pgm.s.apInterPaePTs[1]);
-
-    ASMMemZeroPage(pVM->pgm.s.pInterPaePDPT);
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apInterPaePDs); i++)
-    {
-        ASMMemZeroPage(pVM->pgm.s.apInterPaePDs[i]);
-        pVM->pgm.s.pInterPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT
-                                          | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[i]);
-    }
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.pInterPaePDPT64->a); i++)
-    {
-        const unsigned iPD = i % RT_ELEMENTS(pVM->pgm.s.apInterPaePDs);
-        pVM->pgm.s.pInterPaePDPT64->a[i].u = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A | PGM_PLXFLAGS_PERMANENT
-                                            | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[iPD]);
-    }
-
-    RTHCPHYS HCPhysInterPaePDPT64 = MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT64);
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.pInterPaePML4->a); i++)
-        pVM->pgm.s.pInterPaePML4->a[i].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A | PGM_PLXFLAGS_PERMANENT
-                                         | HCPhysInterPaePDPT64;
-#endif
 
     /*
      * Initialize paging workers and mode from current host mode
@@ -1427,7 +1344,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2HndUnhandled,     "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerUnhandled",  "Profiling of the Trap0eHandler body when the cause is access outside the monitored areas of a monitored page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2InvalidPhys,      "/PGM/CPU%u/RZ/Trap0e/Time2/InvalidPhys",       "Profiling of the Trap0eHandler body when the cause is access to an invalid physical guest address.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2MakeWritable,     "/PGM/CPU%u/RZ/Trap0e/Time2/MakeWritable",      "Profiling of the Trap0eHandler body when the cause is that a page needed to be made writeable.");
-        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Mapping,          "/PGM/CPU%u/RZ/Trap0e/Time2/Mapping",           "Profiling of the Trap0eHandler body when the cause is related to the guest mappings.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Misc,             "/PGM/CPU%u/RZ/Trap0e/Time2/Misc",              "Profiling of the Trap0eHandler body when the cause is not known.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSync,        "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSync",         "Profiling of the Trap0eHandler body when the cause is an out-of-sync page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndPhys, "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncHndPhys",  "Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page.");
@@ -1437,7 +1353,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Wp0RoUsHack,      "/PGM/CPU%u/RZ/Trap0e/Time2/WP0R0USHack",       "Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be enabled.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Wp0RoUsUnhack,    "/PGM/CPU%u/RZ/Trap0e/Time2/WP0R0USUnhack",     "Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be disabled.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eConflicts,             "/PGM/CPU%u/RZ/Trap0e/Conflicts",               "The number of times #PF was caused by an undetected conflict.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersMapping,       "/PGM/CPU%u/RZ/Trap0e/Handlers/Mapping",        "Number of traps due to access handlers in mappings.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersOutOfSync,     "/PGM/CPU%u/RZ/Trap0e/Handlers/OutOfSync",      "Number of traps due to out-of-sync handled pages.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersPhysAll,       "/PGM/CPU%u/RZ/Trap0e/Handlers/PhysAll",        "Number of traps due to physical all-access handlers.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersPhysAllOpt,    "/PGM/CPU%u/RZ/Trap0e/Handlers/PhysAllOpt",     "Number of the physical all-access handler traps using the optimization.");
@@ -1456,7 +1371,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eSVReserved,            "/PGM/CPU%u/RZ/Trap0e/Err/Supervisor/Reserved", "Number of supervisor mode reserved bit page faults.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eSNXE,                  "/PGM/CPU%u/RZ/Trap0e/Err/Supervisor/NXE",      "Number of supervisor mode NXE page faults.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eGuestPF,               "/PGM/CPU%u/RZ/Trap0e/GuestPF",                 "Number of real guest page faults.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eGuestPFMapping,        "/PGM/CPU%u/RZ/Trap0e/GuestPF/InMapping",       "Number of real guest page faults in a mapping.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eWPEmulInRZ,            "/PGM/CPU%u/RZ/Trap0e/WP/InRZ",                 "Number of guest page faults due to X86_CR0_WP emulation.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eWPEmulToR3,            "/PGM/CPU%u/RZ/Trap0e/WP/ToR3",                 "Number of guest page faults due to X86_CR0_WP emulation (forward to R3 for emulation).");
 #if 0 /* rarely useful; leave for debugging. */
@@ -1540,7 +1454,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePage4KBPages,      "/PGM/CPU%u/RZ/InvalidatePage/4KBPages",    "The number of times PGMInvalidatePage() was called for a 4KB page.");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePage4MBPages,      "/PGM/CPU%u/RZ/InvalidatePage/4MBPages",    "The number of times PGMInvalidatePage() was called for a 4MB page.");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePage4MBPagesSkip,  "/PGM/CPU%u/RZ/InvalidatePage/4MBPagesSkip","The number of times PGMInvalidatePage() skipped a 4MB page.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePagePDMappings,    "/PGM/CPU%u/RZ/InvalidatePage/PDMappings",  "The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict).");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePagePDNAs,         "/PGM/CPU%u/RZ/InvalidatePage/PDNAs",       "The number of times PGMInvalidatePage() was called for a not accessed page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePagePDNPs,         "/PGM/CPU%u/RZ/InvalidatePage/PDNPs",       "The number of times PGMInvalidatePage() was called for a not present page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePagePDOutOfSync,   "/PGM/CPU%u/RZ/InvalidatePage/PDOutOfSync", "The number of times PGMInvalidatePage() was called for an out of sync page directory.");
@@ -1588,7 +1501,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePage4KBPages,      "/PGM/CPU%u/R3/InvalidatePage/4KBPages",    "The number of times PGMInvalidatePage() was called for a 4KB page.");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePage4MBPages,      "/PGM/CPU%u/R3/InvalidatePage/4MBPages",    "The number of times PGMInvalidatePage() was called for a 4MB page.");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePage4MBPagesSkip,  "/PGM/CPU%u/R3/InvalidatePage/4MBPagesSkip","The number of times PGMInvalidatePage() skipped a 4MB page.");
-        PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePagePDMappings,    "/PGM/CPU%u/R3/InvalidatePage/PDMappings",  "The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict).");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePagePDNAs,         "/PGM/CPU%u/R3/InvalidatePage/PDNAs",       "The number of times PGMInvalidatePage() was called for a not accessed page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePagePDNPs,         "/PGM/CPU%u/R3/InvalidatePage/PDNPs",       "The number of times PGMInvalidatePage() was called for a not present page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePagePDOutOfSync,   "/PGM/CPU%u/R3/InvalidatePage/PDOutOfSync", "The number of times PGMInvalidatePage() was called for an out of sync page directory.");
@@ -1616,50 +1528,6 @@ static int pgmR3InitStats(PVM pVM)
 
 
 /**
- * Init the PGM bits that rely on VMMR0 and MM to be fully initialized.
- *
- * The dynamic mapping area will also be allocated and initialized at this
- * time. We could allocate it during PGMR3Init of course, but the mapping
- * wouldn't be allocated at that time preventing us from setting up the
- * page table entries with the dummy page.
- *
- * @returns VBox status code.
- * @param   pVM     The cross context VM structure.
- */
-VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
-{
-#ifndef PGM_WITHOUT_MAPPINGS
-    RTGCPTR GCPtr;
-    int     rc;
-
-    /*
-     * Reserve space for the dynamic mappings.
-     */
-    rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping", &GCPtr);
-    if (RT_SUCCESS(rc))
-        pVM->pgm.s.pbDynPageMapBaseGC = GCPtr;
-
-    if (    RT_SUCCESS(rc)
-        &&  (pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_PAE_SHIFT) != ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_PAE_SHIFT))
-    {
-        rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping not crossing", &GCPtr);
-        if (RT_SUCCESS(rc))
-            pVM->pgm.s.pbDynPageMapBaseGC = GCPtr;
-    }
-    if (RT_SUCCESS(rc))
-    {
-        AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_PAE_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_PAE_SHIFT));
-        MMR3HyperReserveFence(pVM);
-    }
-    return rc;
-#else
-    RT_NOREF(pVM);
-    return VINF_SUCCESS;
-#endif
-}
-
-
-/**
  * Ring-3 init finalizing.
  *
  * @returns VBox status code.
@@ -1667,31 +1535,6 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
  */
 VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 {
-#ifndef PGM_WITHOUT_MAPPINGS
-    int rc = VERR_IPE_UNINITIALIZED_STATUS; /* (MSC incorrectly thinks it can be used uninitialized) */
-
-    /*
-     * Reserve space for the dynamic mappings.
-     * Initialize the dynamic mapping pages with dummy pages to simply the cache.
-     */
-    /* get the pointer to the page table entries. */
-    PPGMMAPPING pMapping = pgmGetMapping(pVM, pVM->pgm.s.pbDynPageMapBaseGC);
-    AssertRelease(pMapping);
-    const uintptr_t off = pVM->pgm.s.pbDynPageMapBaseGC - pMapping->GCPtr;
-    const unsigned iPT =  off >> X86_PD_SHIFT;
-    const unsigned iPG = (off >> X86_PT_SHIFT) & X86_PT_MASK;
-    pVM->pgm.s.paDynPageMap32BitPTEsGC = pMapping->aPTs[iPT].pPTRC      + iPG * sizeof(pMapping->aPTs[0].pPTR3->a[0]);
-    pVM->pgm.s.paDynPageMapPaePTEsGC   = pMapping->aPTs[iPT].paPaePTsRC + iPG * sizeof(pMapping->aPTs[0].paPaePTsR3->a[0]);
-
-    /* init cache area */
-    RTHCPHYS HCPhysDummy = MMR3PageDummyHCPhys(pVM);
-    for (uint32_t offDynMap = 0; offDynMap < MM_HYPER_DYNAMIC_SIZE; offDynMap += PAGE_SIZE)
-    {
-        rc = PGMMap(pVM, pVM->pgm.s.pbDynPageMapBaseGC + offDynMap, HCPhysDummy, PAGE_SIZE, 0);
-        AssertRCReturn(rc, rc);
-    }
-#endif
-
     /*
      * Determine the max physical address width (MAXPHYADDR) and apply it to
      * all the mask members and stuff.
@@ -1771,9 +1614,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     /*
      * Allocate memory if we're supposed to do that.
      */
-#ifdef PGM_WITHOUT_MAPPINGS
     int rc = VINF_SUCCESS;
-#endif
     if (pVM->pgm.s.fRamPreAlloc)
         rc = pgmR3PhysRamPreAllocate(pVM);
 
@@ -1869,51 +1710,6 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     if (pVM->pgm.s.pRamRangesXR3)
         pgmR3PhysRelinkRamRanges(pVM);
 
-#ifndef PGM_WITHOUT_MAPPINGS
-
-    /*
-     * Update the two page directories with all page table mappings.
-     * (One or more of them have changed, that's why we're here.)
-     */
-    pVM->pgm.s.pMappingsRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pMappingsR3);
-    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur->pNextR3; pCur = pCur->pNextR3)
-        pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
-
-    /* Relocate GC addresses of Page Tables. */
-    for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
-    {
-        for (RTHCUINT i = 0; i < pCur->cPTs; i++)
-        {
-            pCur->aPTs[i].pPTRC = MMHyperR3ToRC(pVM, pCur->aPTs[i].pPTR3);
-            pCur->aPTs[i].paPaePTsRC = MMHyperR3ToRC(pVM, pCur->aPTs[i].paPaePTsR3);
-        }
-    }
-
-    /*
-     * Dynamic page mapping area.
-     */
-    pVM->pgm.s.paDynPageMap32BitPTEsGC += offDelta;
-    pVM->pgm.s.paDynPageMapPaePTEsGC   += offDelta;
-    pVM->pgm.s.pbDynPageMapBaseGC      += offDelta;
-
-    if (pVM->pgm.s.pRCDynMap)
-    {
-        pVM->pgm.s.pRCDynMap += offDelta;
-        PPGMRCDYNMAP pDynMap = (PPGMRCDYNMAP)MMHyperRCToCC(pVM, pVM->pgm.s.pRCDynMap);
-
-        pDynMap->paPages     += offDelta;
-        PPGMRCDYNMAPENTRY paPages = (PPGMRCDYNMAPENTRY)MMHyperRCToCC(pVM, pDynMap->paPages);
-
-        for (uint32_t iPage = 0; iPage < pDynMap->cPages; iPage++)
-        {
-            paPages[iPage].pvPage       += offDelta;
-            paPages[iPage].uPte.pLegacy += offDelta;
-            paPages[iPage].uPte.pPae    += offDelta;
-        }
-    }
-
-#endif /* PGM_WITHOUT_MAPPINGS */
-
     /*
      * The Zero page.
      */
@@ -1979,14 +1775,6 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     VM_ASSERT_EMT(pVM);
 
     PGM_LOCK_VOID(pVM);
-
-    /*
-     * Unfix any fixed mappings and disable CR3 monitoring.
-     */
-    pVM->pgm.s.fMappingsFixed         = false;
-    pVM->pgm.s.fMappingsFixedRestored = false;
-    pVM->pgm.s.GCPtrMappingFixed      = NIL_RTGCPTR;
-    pVM->pgm.s.cbMappingFixed         = 0;
 
     /*
      * Exit the guest paging mode before the pgm pool gets reset.

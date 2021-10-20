@@ -1001,32 +1001,6 @@ VMMDECL(int) PGMPrefetchPage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 }
 
 
-#ifndef PGM_WITHOUT_MAPPINGS
-/**
- * Gets the mapping corresponding to the specified address (if any).
- *
- * @returns Pointer to the mapping.
- * @returns NULL if not
- *
- * @param   pVM         The cross context VM structure.
- * @param   GCPtr       The guest context pointer.
- */
-PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
-{
-    PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
-    while (pMapping)
-    {
-        if ((uintptr_t)GCPtr < (uintptr_t)pMapping->GCPtr)
-            break;
-        if ((uintptr_t)GCPtr - (uintptr_t)pMapping->GCPtr < pMapping->cb)
-            return pMapping;
-        pMapping = pMapping->CTX_SUFF(pNext);
-    }
-    return NULL;
-}
-#endif
-
-
 /**
  * Verifies a range of pages for read or write access
  *
@@ -1228,18 +1202,6 @@ VMMDECL(int) PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 
     PGM_UNLOCK(pVM);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,InvalidatePage), a);
-
-#ifdef IN_RING3
-    /*
-     * Check if we have a pending update of the CR3 monitoring.
-     */
-    if (    RT_SUCCESS(rc)
-        &&  (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3))
-    {
-        pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-        Assert(!pVM->pgm.s.fMappingsFixed); Assert(pgmMapAreMappingsEnabled(pVM));
-    }
-#endif /* IN_RING3 */
 
     /* Ignore all irrelevant error codes. */
     if (    rc == VERR_PAGE_NOT_PRESENT
@@ -2483,18 +2445,13 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpes
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
         rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fPdpesMapped);
         if (RT_LIKELY(rc == VINF_SUCCESS))
-        {
-            if (pgmMapAreMappingsFloating(pVM))
-                pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-        }
+        { }
         else
         {
             AssertMsg(rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc));
             Assert(VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
             pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
-            if (pgmMapAreMappingsFloating(pVM))
-                pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MONITOR_CR3;
         }
 
         if (fGlobal)
@@ -2513,14 +2470,6 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpes
             PGM_UNLOCK(pVM);
         }
 #endif
-        /*
-         * Check if we have a pending update of the CR3 monitoring.
-         */
-        if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
-        {
-            pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            Assert(!pVM->pgm.s.fMappingsFixed); Assert(pgmMapAreMappingsEnabled(pVM));
-        }
         if (fGlobal)
             STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLBSameCR3Global));
         else
@@ -2564,8 +2513,6 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fPdpesMapped)
 
     /* We assume we're only called in nested paging mode. */
     Assert(pVCpu->CTX_SUFF(pVM)->pgm.s.fNestedPaging || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
-    Assert(!pgmMapAreMappingsEnabled(pVCpu->CTX_SUFF(pVM)));
-    Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
 
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
@@ -2707,16 +2654,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
             Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL));
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
-        }
-
-        /*
-         * Check if we have a pending update of the CR3 monitoring.
-         */
-        if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
-        {
-            pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            Assert(!pVCpu->CTX_SUFF(pVM)->pgm.s.fMappingsFixed);
-            Assert(pgmMapAreMappingsEnabled(pVCpu->CTX_SUFF(pVM)));
         }
     }
 
@@ -3746,48 +3683,8 @@ VMMDECL(void) PGMDeregisterStringFormatTypes(void)
 #endif
 }
 
+
 #ifdef VBOX_STRICT
-
-# ifndef PGM_WITHOUT_MAPPINGS
-/**
- * Asserts that there are no mapping conflicts.
- *
- * @returns Number of conflicts.
- * @param   pVM     The cross context VM structure.
- */
-VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
-{
-    unsigned cErrors = 0;
-
-    /* Only applies to raw mode -> 1 VPCU */
-    Assert(pVM->cCpus == 1);
-    PVMCPU pVCpu = &VMCC_GET_CPU_0(pVM);
-
-    /*
-     * Check for mapping conflicts.
-     */
-    for (PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
-         pMapping;
-         pMapping = pMapping->CTX_SUFF(pNext))
-    {
-        /** @todo This is slow and should be optimized, but since it's just assertions I don't care now. */
-        for (RTGCPTR GCPtr = pMapping->GCPtr; GCPtr <= pMapping->GCPtrLast; GCPtr += PAGE_SIZE)
-        {
-            int rc = PGMGstGetPage(pVCpu, (RTGCPTR)GCPtr, NULL, NULL);
-            if (rc != VERR_PAGE_TABLE_NOT_PRESENT)
-            {
-                AssertMsgFailed(("Conflict at %RGv with %s\n", GCPtr, R3STRING(pMapping->pszDesc)));
-                cErrors++;
-                break;
-            }
-        }
-    }
-
-    return cErrors;
-}
-# endif /* !PGM_WITHOUT_MAPPINGS */
-
-
 /**
  * Asserts that everything related to the guest CR3 is correctly shadowed.
  *
@@ -3816,6 +3713,5 @@ VMMDECL(unsigned) PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t
     STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;
 }
-
 #endif /* VBOX_STRICT */
 

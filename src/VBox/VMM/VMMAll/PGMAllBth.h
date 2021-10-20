@@ -127,11 +127,6 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
         /* Mark the page as unlocked; allow flushing again. */
         pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
-# ifndef PGM_WITHOUT_MAPPINGS
-        /* Remove the hypervisor mappings from the shadow page table. */
-        pgmMapDeactivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-# endif
-
         pgmPoolFreeByPage(pPool, pOldShwPageCR3, NIL_PGMPOOL_IDX, UINT32_MAX);
         pVCpu->pgm.s.pShwPageCR3R3 = NIL_RTR3PTR;
         pVCpu->pgm.s.pShwPageCR3R0 = NIL_RTR0PTR;
@@ -153,11 +148,6 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
-
-# ifndef PGM_WITHOUT_MAPPINGS
-    /* Apply all hypervisor mappings to the new CR3. */
-    rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
-# endif
 
     PGM_UNLOCK(pVM);
     return rc;
@@ -184,24 +174,6 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
  */
 PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPUCC pVCpu, PGSTPTWALK pGstWalk, RTGCUINT uErr)
 {
-#  if !defined(PGM_WITHOUT_MAPPINGS) && (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE)
-    /*
-     * Check for write conflicts with our hypervisor mapping.
-     *
-     * If the  guest happens to access a non-present page, where our hypervisor
-     * is currently mapped, then we'll create a #PF storm in the guest.
-     */
-    if (   (uErr & (X86_TRAP_PF_P | X86_TRAP_PF_RW)) == (X86_TRAP_PF_P | X86_TRAP_PF_RW)
-        && pgmMapAreMappingsEnabled(pVCpu->CTX_SUFF(pVM))
-        && MMHyperIsInsideArea(pVCpu->CTX_SUFF(pVM), pGstWalk->Core.GCPtr))
-    {
-        /* Force a CR3 sync to check for conflicts and emulate the instruction. */
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-        STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2GuestTrap; });
-        return VINF_EM_RAW_EMULATE_INSTR;
-    }
-#  endif
-
     /*
      * Calc the error code for the guest trap.
      */
@@ -677,53 +649,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
         return VINF_PGM_SYNC_CR3;
     }
 
-#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(PGM_WITHOUT_MAPPINGS)
-    /*
-     * Check if this address is within any of our mappings.
-     *
-     * This is *very* fast and it's gonna save us a bit of effort below and prevent
-     * us from screwing ourself with MMIO2 pages which have a GC Mapping (VRam).
-     * (BTW, it's impossible to have physical access handlers in a mapping.)
-     */
-    if (pgmMapAreMappingsEnabled(pVM))
-    {
-        PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
-        for ( ; pMapping; pMapping = pMapping->CTX_SUFF(pNext))
-        {
-            if (pvFault < pMapping->GCPtr)
-                break;
-            if (pvFault - pMapping->GCPtr < pMapping->cb)
-            {
-                /*
-                 * The first thing we check is if we've got an undetected conflict.
-                 */
-                if (pgmMapAreMappingsFloating(pVM))
-                {
-                    unsigned iPT = pMapping->cb >> GST_PD_SHIFT;
-                    while (iPT-- > 0)
-                        if (GstWalk.pPde[iPT].n.u1Present)
-                        {
-                            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eConflicts);
-                            Log(("Trap0e: Detected Conflict %RGv-%RGv\n", pMapping->GCPtr, pMapping->GCPtrLast));
-                            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3); /** @todo no need to do global sync,right? */
-                            STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2Mapping; });
-                            return VINF_PGM_SYNC_CR3;
-                        }
-                }
-
-                /*
-                 * Pretend we're not here and let the guest handle the trap.
-                 */
-                TRPMSetErrorCode(pVCpu, uErr & ~X86_TRAP_PF_P);
-                STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eGuestPFMapping);
-                LogFlow(("PGM: Mapping access -> route trap to recompiler!\n"));
-                STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2Mapping; });
-                return VINF_EM_RAW_GUEST_TRAP;
-            }
-        }
-    } /* pgmAreMappingsEnabled(&pVM->pgm.s) */
-#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
-
     /*
      * Check if this fault address is flagged for special treatment,
      * which means we'll have to figure out the physical address and
@@ -1102,9 +1027,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     if (!(pPdptDst->a[iPdpt].u & X86_PDPE_P))
 #  endif
     {
-#  ifndef PGM_WITHOUT_MAPPINGS
-        Assert(!pPdptDst || !(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING));
-#  endif
         STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,InvalidatePageSkipped));
         PGM_INVL_PG(pVCpu, GCPtrPage);
         return VINF_SUCCESS;
@@ -1211,18 +1133,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
     {
         Assert(    (PdeSrc.u & X86_PDE_US) == (PdeDst.u & X86_PDE_US)
                &&  ((PdeSrc.u & X86_PDE_RW) || !(PdeDst.u & X86_PDE_RW) || pVCpu->pgm.s.cNetwareWp0Hacks > 0));
-# ifndef PGM_WITHOUT_MAPPINGS
-        if (PdeDst.u & PGM_PDFLAGS_MAPPING)
-        {
-            /*
-             * Conflict - Let SyncPT deal with it to avoid duplicate code.
-             */
-            Assert(pgmMapAreMappingsEnabled(pVM));
-            Assert(PGMGetGuestMode(pVCpu) <= PGMMODE_PAE);
-            rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
-        }
-        else
-# endif /* !PGM_WITHOUT_MAPPINGS */
         if (!fIsBigPage)
         {
             /*
@@ -1320,22 +1230,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         /*
          * Page directory is not present, mark shadow PDE not present.
          */
-# ifndef PGM_WITHOUT_MAPPINGS
-        if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
-# endif
-        {
-            pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            SHW_PDE_ATOMIC_SET(*pPdeDst, 0);
-            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-            PGM_INVL_PG(pVCpu, GCPtrPage);
-        }
-# ifndef PGM_WITHOUT_MAPPINGS
-        else
-        {
-            Assert(pgmMapAreMappingsEnabled(pVM));
-            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,InvalidatePagePDMappings));
-        }
-# endif
+        pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
+        SHW_PDE_ATOMIC_SET(*pPdeDst, 0);
+        STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,InvalidatePagePDNPs));
+        PGM_INVL_PG(pVCpu, GCPtrPage);
     }
     return rc;
 
@@ -2537,40 +2435,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
     Assert(pShwPde);
 # endif
 
-# ifndef PGM_WITHOUT_MAPPINGS
-    /*
-     * Check for conflicts.
-     * RC: In case of a conflict we'll go to Ring-3 and do a full SyncCR3.
-     * R3: Simply resolve the conflict.
-     */
-    if (PdeDst.u & PGM_PDFLAGS_MAPPING)
-    {
-        Assert(pgmMapAreMappingsEnabled(pVM));
-#  ifndef IN_RING3
-        Log(("SyncPT: Conflict at %RGv\n", GCPtrPage));
-        STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
-        return VERR_ADDRESS_CONFLICT;
-
-#  else  /* IN_RING3 */
-        PPGMMAPPING pMapping = pgmGetMapping(pVM, (RTGCPTR)GCPtrPage);
-        Assert(pMapping);
-#   if PGM_GST_TYPE == PGM_TYPE_32BIT
-        rc = pgmR3SyncPTResolveConflict(pVM, pMapping, pPDSrc, GCPtrPage & (GST_PD_MASK << GST_PD_SHIFT));
-#   elif PGM_GST_TYPE == PGM_TYPE_PAE
-        rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, GCPtrPage & (GST_PD_MASK << GST_PD_SHIFT));
-#   else
-        AssertFailed(); NOREF(pMapping); /* can't happen for amd64 */
-#   endif
-        if (RT_FAILURE(rc))
-        {
-            STAM_PROFILE_STOP(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,SyncPT), a);
-            return rc;
-        }
-        PdeDst = *pPdeDst;
-#  endif /* IN_RING3 */
-    }
-# endif /* !PGM_WITHOUT_MAPPINGS */
-    Assert(!SHW_PDE_IS_P(PdeDst)); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
+    Assert(!SHW_PDE_IS_P(PdeDst)); /* We're only supposed to call SyncPT on PDE!P.*/
 
     /*
      * Sync the page directory entry.
@@ -2984,9 +2849,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
 # endif
     SHWPDE          PdeDst = *pPdeDst;
 
-# ifndef PGM_WITHOUT_MAPPINGS
-    Assert(!(PdeDst.u & PGM_PDFLAGS_MAPPING));
-# endif
     Assert(!SHW_PDE_IS_P(PdeDst)); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
 # if defined(PGM_WITH_LARGE_PAGES) && PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
@@ -3234,26 +3096,21 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
         Assert(pPDDst);
         PdeDst = pPDDst->a[iPDDst];
 # endif
-# ifndef PGM_WITHOUT_MAPPINGS
-        if (!(PdeDst.u & PGM_PDFLAGS_MAPPING))
-# endif
+        if (!(PdeDst.u & X86_PDE_P))
         {
-            if (!(PdeDst.u & X86_PDE_P))
-            {
-                /** @todo r=bird: This guy will set the A bit on the PDE,
-                 *    probably harmless. */
-                rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
-            }
-            else
-            {
-                /* Note! We used to sync PGM_SYNC_NR_PAGES pages, which triggered assertions in CSAM, because
-                 *       R/W attributes of nearby pages were reset. Not sure how that could happen. Anyway, it
-                 *       makes no sense to prefetch more than one page.
-                 */
-                rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, GCPtrPage, 1, 0);
-                if (RT_SUCCESS(rc))
-                    rc = VINF_SUCCESS;
-            }
+            /** @todo r=bird: This guy will set the A bit on the PDE,
+             *    probably harmless. */
+            rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
+        }
+        else
+        {
+            /* Note! We used to sync PGM_SYNC_NR_PAGES pages, which triggered assertions in CSAM, because
+             *       R/W attributes of nearby pages were reset. Not sure how that could happen. Anyway, it
+             *       makes no sense to prefetch more than one page.
+             */
+            rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrc, GCPtrPage, 1, 0);
+            if (RT_SUCCESS(rc))
+                rc = VINF_SUCCESS;
         }
         PGM_UNLOCK(pVM);
     }
@@ -3479,7 +3336,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t 
     /*
      * Nested / EPT / None - No work.
      */
-    Assert(!pgmMapAreMappingsEnabled(pVM));
     return VINF_SUCCESS;
 
 #elif PGM_SHW_TYPE == PGM_TYPE_AMD64
@@ -3487,35 +3343,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t 
      * AMD64 (Shw & Gst) - No need to check all paging levels; we zero
      * out the shadow parts when the guest modifies its tables.
      */
-    Assert(!pgmMapAreMappingsEnabled(pVM));
     return VINF_SUCCESS;
 
 #else /* !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 
-#  ifndef PGM_WITHOUT_MAPPINGS
-    /*
-     * Check for and resolve conflicts with our guest mappings if they
-     * are enabled and not fixed.
-     */
-    if (pgmMapAreMappingsFloating(pVM))
-    {
-        int rc = pgmMapResolveConflicts(pVM);
-        Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3);
-        if (rc == VINF_SUCCESS)
-        { /* likely */ }
-        else if (rc == VINF_PGM_SYNC_CR3)
-        {
-            LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
-            return VINF_PGM_SYNC_CR3;
-        }
-        else if (RT_FAILURE(rc))
-            return rc;
-        else
-            AssertMsgFailed(("%Rrc\n", rc));
-    }
-#  else
-    Assert(!pgmMapAreMappingsEnabled(pVM));
-#  endif
     return VINF_SUCCESS;
 #endif /* !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) && PGM_SHW_TYPE != PGM_TYPE_AMD64 */
 }
@@ -3762,19 +3593,6 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
                 const SHWPDE PdeDst = *pgmShwGetPaePDEPtr(pVCpu, GCPtr);
 #  else
                 const SHWPDE PdeDst = pPDDst->a[iPDDst];
-#  endif
-#  ifndef PGM_WITHOUT_MAPPINGS
-                if (PdeDst.u & PGM_PDFLAGS_MAPPING)
-                {
-                    Assert(pgmMapAreMappingsEnabled(pVM));
-                    if ((PdeDst.u & X86_PDE_AVL_MASK) != PGM_PDFLAGS_MAPPING)
-                    {
-                        AssertMsgFailed(("Mapping shall only have PGM_PDFLAGS_MAPPING set! PdeDst.u=%#RX64\n", (uint64_t)PdeDst.u));
-                        cErrors++;
-                        continue;
-                    }
-                }
-                else
 #  endif
                 if (   (PdeDst.u & X86_PDE_P)
                     || ((PdeDst.u & (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) == (X86_PDE_P | PGM_PDFLAGS_TRACK_DIRTY)) )
@@ -4410,19 +4228,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped)
     pVCpu->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 #  endif
 
-#  ifndef PGM_WITHOUT_MAPPINGS
-    /*
-     * Apply all hypervisor mappings to the new CR3.
-     * Note that SyncCR3 will be executed in case CR3 is changed in a guest paging mode; this will
-     * make sure we check for conflicts in the new CR3 root.
-     */
-#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL) || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
-#   endif
-    int const rc3 = pgmMapActivateCR3(pVM, pNewShwPageCR3);
-    AssertRCReturn(rc3, rc3);
-#  endif
-
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
 
@@ -4431,10 +4236,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped)
         &&  pOldShwPageCR3 != pNewShwPageCR3    /* @todo can happen due to incorrect syncing between REM & PGM; find the real cause */)
     {
         Assert(pOldShwPageCR3->enmKind != PGMPOOLKIND_FREE);
-#  ifndef PGM_WITHOUT_MAPPINGS
-        /* Remove the hypervisor mappings from the shadow page table. */
-        pgmMapDeactivateCR3(pVM, pOldShwPageCR3);
-#  endif
+
         /* Mark the page as unlocked; allow flushing again. */
         pgmPoolUnlockPage(pPool, pOldShwPageCR3);
 
@@ -4496,12 +4298,6 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
     Assert(!pVM->pgm.s.fNestedPaging);
 # endif
     PGM_LOCK_VOID(pVM);
-
-# ifndef PGM_WITHOUT_MAPPINGS
-    if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
-        /* Remove the hypervisor mappings from the shadow page table. */
-        pgmMapDeactivateCR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-# endif
 
     if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
