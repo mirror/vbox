@@ -651,55 +651,6 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
 
 
 /**
- * Lookus up a ring-3 pointer to HMA.
- *
- * @returns The lookup record on success, NULL on failure.
- * @param   pVM                 The cross context VM structure.
- * @param   pvR3                The ring-3 address to look up.
- */
-DECLINLINE(PMMLOOKUPHYPER) mmR3HyperLookupR3(PVM pVM, void *pvR3)
-{
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
-    for (;;)
-    {
-        switch (pLookup->enmType)
-        {
-            case MMLOOKUPHYPERTYPE_LOCKED:
-            {
-                unsigned off = (uint8_t *)pvR3 - (uint8_t *)pLookup->u.Locked.pvR3;
-                if (off < pLookup->cb)
-                    return pLookup;
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_HCPHYS:
-            {
-                unsigned off = (uint8_t *)pvR3 - (uint8_t *)pLookup->u.HCPhys.pvR3;
-                if (off < pLookup->cb)
-                    return pLookup;
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_GCPHYS:
-            case MMLOOKUPHYPERTYPE_MMIO2:
-            case MMLOOKUPHYPERTYPE_DYNAMIC:
-                /** @todo ?    */
-                break;
-
-            default:
-                AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
-                return NULL;
-        }
-
-        /* next */
-        if ((unsigned)pLookup->offNext == NIL_OFFSET)
-            return NULL;
-        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
-    }
-}
-
-
-/**
  * Convert hypervisor HC virtual address to HC physical address.
  *
  * @returns HC physical address.
