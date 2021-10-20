@@ -433,9 +433,9 @@ static DECLCALLBACK(void *) drvStorageFltIBase_QueryInterface(PPDMIBASE pInterfa
  */
 static DECLCALLBACK(int) drvStorageFlt_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVSTORAGEFILTER   pThis   = PDMINS_2_DATA(pDrvIns, PDRVSTORAGEFILTER);
-
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVSTORAGEFILTER   pThis = PDMINS_2_DATA(pDrvIns, PDRVSTORAGEFILTER);
+    PCPDMDRVHLPR3       pHlp  = pDrvIns->pHlpR3;
 
     /*
      * Initialize the instance data.
@@ -487,7 +487,7 @@ static DECLCALLBACK(int) drvStorageFlt_Construct(PPDMDRVINS pDrvIns, PCFGMNODE p
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "AsyncIOSupported|", "");
 
-    int rc = CFGMR3QueryBoolDef(pCfg, "AsyncIOSupported", &pThis->fAsyncIOSupported, true);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "AsyncIOSupported", &pThis->fAsyncIOSupported, true);
     AssertLogRelRCReturn(rc, rc);
 
     /*
