@@ -155,6 +155,7 @@ UINotificationCenter::UINotificationCenter(QWidget *pParent)
     , m_pStateMachineSliding(0)
     , m_iAnimatedValue(0)
     , m_pTimerOpen(0)
+    , m_fLastResult(false)
 {
     prepare();
 }
@@ -226,10 +227,13 @@ void UINotificationCenter::revoke(const QUuid &uId)
     return m_pModel->revokeObject(uId);
 }
 
-void UINotificationCenter::handleNow(UINotificationProgress *pProgress)
+bool UINotificationCenter::handleNow(UINotificationProgress *pProgress)
 {
     /* Check for the recursive run: */
-    AssertMsgReturnVoid(!m_pEventLoop, ("UINotificationCenter::handleNow() is called recursively!\n"));
+    AssertMsgReturn(!m_pEventLoop, ("UINotificationCenter::handleNow() is called recursively!\n"), false);
+
+    /* Reset the result: */
+    m_fLastResult = false;
 
     /* Guard progress for the case
      * it destroyed itself in his append call: */
@@ -240,10 +244,10 @@ void UINotificationCenter::handleNow(UINotificationProgress *pProgress)
 
     /* Is progress still valid? */
     if (guardProgress.isNull())
-        return;
+        return m_fLastResult;
     /* Is progress still running? */
     if (guardProgress->isFinished())
-        return;
+        return m_fLastResult;
 
     /* Create a local event-loop: */
     QEventLoop eventLoop;
@@ -258,10 +262,13 @@ void UINotificationCenter::handleNow(UINotificationProgress *pProgress)
 
     /* Are we still valid? */
     if (guardThis.isNull())
-        return;
+        return false;
 
     /* Cleanup event-loop: */
     m_pEventLoop = 0;
+
+    /* Return actual result: */
+    return m_fLastResult;
 }
 
 void UINotificationCenter::retranslateUi()
@@ -400,6 +407,13 @@ void UINotificationCenter::sltModelChanged()
 
 void UINotificationCenter::sltHandleProgressFinished()
 {
+    /* Acquire the sender: */
+    UINotificationProgress *pProgress = qobject_cast<UINotificationProgress*>(sender());
+    AssertPtrReturnVoid(pProgress);
+
+    /* Set the result: */
+    m_fLastResult = pProgress->error().isNull();
+
     /* Break the loop if exists: */
     if (m_pEventLoop)
         m_pEventLoop->exit();

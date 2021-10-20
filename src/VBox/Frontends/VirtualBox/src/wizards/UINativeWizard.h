@@ -80,7 +80,7 @@ class SHARED_LIBRARY_STUFF UINativeWizard : public QIWithRetranslateUI<QDialog>
 public:
 
     /** Immediately handles notification @a pProgress object. */
-    void handleNotificationProgressNow(UINotificationProgress *pProgress);
+    bool handleNotificationProgressNow(UINotificationProgress *pProgress);
 
 public slots:
 

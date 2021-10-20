@@ -82,7 +82,7 @@ public:
 
     /** Immediately and synchronously handles passed notification @a pProgress.
       * @note It's a blocking call finished by sltHandleProgressFinished(). */
-    void handleNow(UINotificationProgress *pProgress);
+    bool handleNow(UINotificationProgress *pProgress);
 
 protected:
 
@@ -174,6 +174,8 @@ private:
       * @note  This event-loop is only used when the center
       *        handles progress directly via handleNow(). */
     QPointer<QEventLoop>  m_pEventLoop;
+    /** Holds the last handleNow() result. */
+    bool                  m_fLastResult;
 };
 
 /** Singleton notification-center 'official' name. */
