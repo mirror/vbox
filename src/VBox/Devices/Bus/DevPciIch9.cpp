@@ -1715,7 +1715,7 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
         }
 
         /* commit the loaded device config. */
-        rc = devpciR3CommonRestoreRegions(pSSM, pDev, u.DevTmp.Int.s.aIORegions,
+        rc = devpciR3CommonRestoreRegions(pHlp, pSSM, pDev, u.DevTmp.Int.s.aIORegions,
                                           uVersion >= VBOX_ICH9PCI_SAVED_STATE_VERSION_REGION_SIZES);
         if (RT_FAILURE(rc))
             break;
