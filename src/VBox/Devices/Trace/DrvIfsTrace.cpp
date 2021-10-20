@@ -79,7 +79,7 @@ static DECLCALLBACK(void) drvIfTrace_Destruct(PPDMDRVINS pDrvIns)
 
     if (pThis->pszTraceFilePath)
     {
-        MMR3HeapFree(pThis->pszTraceFilePath);
+        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszTraceFilePath);
         pThis->pszTraceFilePath = NULL;
     }
 }

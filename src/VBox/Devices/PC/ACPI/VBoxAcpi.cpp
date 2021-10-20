@@ -346,7 +346,7 @@ static int acpiAmlLoadExternal(PPDMDEVINS pDevIns, const char *pcszCfgName, cons
 
             RTFileClose(hFileAml);
         }
-        MMR3HeapFree(pszAmlFilePath);
+        PDMDevHlpMMHeapFree(pDevIns, pszAmlFilePath);
     }
 
     return rc;

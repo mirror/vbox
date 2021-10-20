@@ -1376,6 +1376,19 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SSMDeregister(PPDMDRVINS pDrvIns, const cha
 }
 
 
+/** @interface_method_impl{PDMDRVHLPR3,pfnMMHeapFree} */
+static DECLCALLBACK(void) pdmR3DrvHlp_MMHeapFree(PPDMDRVINS pDrvIns, void *pv)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    LogFlow(("pdmR3DrvHlp_MMHeapFree: caller='%s'/%d: pv=%p\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, pv));
+
+    MMR3HeapFree(pv);
+
+    LogFlow(("pdmR3DrvHlp_MMHeapFree: caller='%s'/%d: returns\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+}
+
+
 /** @interface_method_impl{PDMDRVHLPR3,pfnDBGFInfoRegister} */
 static DECLCALLBACK(int) pdmR3DrvHlp_DBGFInfoRegister(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler)
 {
@@ -2164,6 +2177,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     CFGMR3GetValueType,
     CFGMR3AreValuesValid,
     CFGMR3ValidateConfig,
+    pdmR3DrvHlp_MMHeapFree,
     pdmR3DrvHlp_DBGFInfoRegister,
     pdmR3DrvHlp_DBGFInfoRegisterArgv,
     pdmR3DrvHlp_DBGFInfoDeregister,

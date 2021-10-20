@@ -158,7 +158,7 @@ static DECLCALLBACK(void) drvUDPDestruct(PPDMDRVINS pDrvIns)
         LogRel(("DrvUDP#%u: Closed socket to %s:%u\n", pThis->pDrvIns->iInstance, pThis->pszServerAddress, pThis->uServerPort));
     }
 
-    MMR3HeapFree(pThis->pszServerAddress);
+    PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszServerAddress);
     pThis->pszServerAddress = NULL;
 }
 

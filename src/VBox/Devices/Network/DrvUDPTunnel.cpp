@@ -413,7 +413,7 @@ static DECLCALLBACK(void) drvUDPTunnelDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->pszDestIP)
     {
-        MMR3HeapFree(pThis->pszDestIP);
+        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszDestIP);
         pThis->pszDestIP = NULL;
     }
 

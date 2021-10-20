@@ -3773,11 +3773,10 @@ static int acpiR3PlantTables(PPDMDEVINS pDevIns, PACPISTATE pThis, PACPISTATER3 
      * Calculate the sizes for the low region and for the 64-bit prefetchable memory.
      * The latter starts never below 4G.
      */
-    PVM pVM                    = PDMDevHlpGetVM(pDevIns);
-    uint32_t        cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
-    uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
+    uint32_t        cbBelow4GB = PDMDevHlpMMPhysGetRamSizeBelow4GB(pDevIns);
+    uint64_t const  cbAbove4GB = PDMDevHlpMMPhysGetRamSizeAbove4GB(pDevIns);
 
-    pThis->u64RamSize = MMR3PhysGetRamSize(pVM);
+    pThis->u64RamSize = PDMDevHlpMMPhysGetRamSize(pDevIns);
     if (pThis->fPciPref64Enabled)
     {
         uint64_t const u64PciPref64Min = _4G + cbAbove4GB;

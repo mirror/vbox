@@ -848,7 +848,7 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
         RTFileDelete(pThis->pszLocation);
 #endif /* !RT_OS_WINDOWS */
 
-    MMR3HeapFree(pThis->pszLocation);
+    PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszLocation);
     pThis->pszLocation = NULL;
 
     /*

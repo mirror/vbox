@@ -501,7 +501,7 @@ static DECLCALLBACK(void) drvVDEDestruct(PPDMDRVINS pDrvIns)
         pThis->hPipeRead = NIL_RTPIPE;
     }
 
-    MMR3HeapFree(pThis->pszDeviceName);
+    PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszDeviceName);
     pThis->pszDeviceName = NULL;
 
     /*

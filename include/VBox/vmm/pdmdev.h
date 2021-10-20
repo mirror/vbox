@@ -41,6 +41,7 @@
 #include <VBox/vmm/pdmcommon.h>
 #include <VBox/vmm/pdmpcidev.h>
 #include <VBox/vmm/iom.h>
+#include <VBox/vmm/mm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/cfgm.h>
@@ -2422,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 49, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 50, 1)
 
 /**
  * PDM Device API.
@@ -3147,12 +3148,47 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void *, pfnMMHeapAllocZ,(PPDMDEVINS pDevIns, size_t cb));
 
     /**
+     * Allocating string printf.
+     *
+     * @returns Pointer to the string.
+     * @param   pDevIns             The device instance.
+     * @param   enmTag              The statistics tag.
+     * @param   pszFormat           The format string.
+     * @param   va                  Format arguments.
+     */
+    DECLR3CALLBACKMEMBER(char *, pfnMMHeapAPrintfV,(PPDMDEVINS pDevIns, MMTAG enmTag, const char *pszFormat, va_list va));
+
+    /**
      * Free memory allocated with pfnMMHeapAlloc() and pfnMMHeapAllocZ().
      *
      * @param   pDevIns             The device instance.
      * @param   pv                  Pointer to the memory to free.
      */
     DECLR3CALLBACKMEMBER(void, pfnMMHeapFree,(PPDMDEVINS pDevIns, void *pv));
+
+    /**
+     * Returns the physical RAM size of the VM.
+     *
+     * @returns RAM size in bytes.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnMMPhysGetRamSize,(PPDMDEVINS pDevIns));
+
+    /**
+     * Returns the physical RAM size of the VM below the 4GB boundary.
+     *
+     * @returns RAM size in bytes.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnMMPhysGetRamSizeBelow4GB,(PPDMDEVINS pDevIns));
+
+    /**
+     * Returns the physical RAM size of the VM above the 4GB boundary.
+     *
+     * @returns RAM size in bytes.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnMMPhysGetRamSizeAbove4GB,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the VM state.
@@ -6722,11 +6758,54 @@ DECLINLINE(void *) PDMDevHlpMMHeapAllocZ(PPDMDEVINS pDevIns, size_t cb)
 }
 
 /**
+ * Allocating string printf.
+ *
+ * @returns Pointer to the string.
+ * @param   pDevIns     The device instance.
+ * @param   enmTag      The statistics tag.
+ * @param   pszFormat   The format string.
+ * @param   ...         Format arguments.
+ */
+DECLINLINE(char *) RT_IPRT_FORMAT_ATTR(2, 3) PDMDevHlpMMHeapAPrintf(PPDMDEVINS pDevIns, MMTAG enmTag, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    char *psz = pDevIns->pHlpR3->pfnMMHeapAPrintfV(pDevIns, enmTag, pszFormat, va);
+    va_end(va);
+
+    return psz;
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnMMHeapFree
  */
 DECLINLINE(void) PDMDevHlpMMHeapFree(PPDMDEVINS pDevIns, void *pv)
 {
     pDevIns->pHlpR3->pfnMMHeapFree(pDevIns, pv);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMPhysGetRamSize
+ */
+DECLINLINE(uint64_t) PDMDevHlpMMPhysGetRamSize(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnMMPhysGetRamSize(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMPhysGetRamSizeBelow4GB
+ */
+DECLINLINE(uint32_t) PDMDevHlpMMPhysGetRamSizeBelow4GB(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnMMPhysGetRamSizeBelow4GB(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMPhysGetRamSizeAbove4GB
+ */
+DECLINLINE(uint64_t) PDMDevHlpMMPhysGetRamSizeAbove4GB(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnMMPhysGetRamSizeAbove4GB(pDevIns);
 }
 #endif /* IN_RING3 */
 

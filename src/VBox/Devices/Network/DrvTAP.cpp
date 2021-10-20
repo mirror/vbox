@@ -814,14 +814,14 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
     if (!pThis->fStatic)
         RTStrFree(pThis->pszDeviceName);    /* allocated by drvTAPSetupApplication */
     else
-        MMR3HeapFree(pThis->pszDeviceName);
+        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszDeviceName);
 #else
-    MMR3HeapFree(pThis->pszDeviceName);
+    PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszDeviceName);
 #endif
     pThis->pszDeviceName = NULL;
-    MMR3HeapFree(pThis->pszSetupApplication);
+    PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszSetupApplication);
     pThis->pszSetupApplication = NULL;
-    MMR3HeapFree(pThis->pszTerminateApplication);
+    PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszTerminateApplication);
     pThis->pszTerminateApplication = NULL;
 
     /*

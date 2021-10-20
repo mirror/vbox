@@ -2036,23 +2036,23 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
         if (!RTStrICmp(pszIoLogType, "File"))
         {
             rc = RTTraceLogWrCreateFile(&pThis->hIoLogger, NULL, pszIoLogFilename);
-            MMR3HeapFree(pszIoLogFilename);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszIoLogFilename);
         }
         else if (!RTStrICmp(pszIoLogType, "Server"))
         {
             rc = RTTraceLogWrCreateTcpServer(&pThis->hIoLogger, NULL, pszAddress, uPort);
             if (pszAddress)
-                MMR3HeapFree(pszAddress);
+                PDMDrvHlpMMHeapFree(pDrvIns, pszAddress);
         }
         else if (!RTStrICmp(pszIoLogType, "Client"))
         {
             rc = RTTraceLogWrCreateTcpClient(&pThis->hIoLogger, NULL, pszAddress, uPort);
-            MMR3HeapFree(pszAddress);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszAddress);
         }
         else
             AssertMsgFailed(("Invalid I/O log type given: %s\n", pszIoLogType));
 
-        MMR3HeapFree(pszIoLogType);
+        PDMDrvHlpMMHeapFree(pDrvIns, pszIoLogType);
     }
 
     /* Read in all data before the start if requested. */

@@ -1091,6 +1091,21 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t 
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMHeapAPrintfV} */
+static DECLCALLBACK(char *) pdmR3DevHlp_MMHeapAPrintfV(PPDMDEVINS pDevIns, MMTAG enmTag, const char *pszFormat, va_list va)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_MMHeapAPrintfV: caller='%s'/%d: enmTag=%u pszFormat=%p:{%s}\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, enmTag, pszFormat, pszFormat));
+
+    char *psz = MMR3HeapAPrintfV(pDevIns->Internal.s.pVMR3, enmTag, pszFormat, va);
+
+    LogFlow(("pdmR3DevHlp_MMHeapAPrintfV: caller='%s'/%d: returns %p:{%s}\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, psz, psz));
+    return psz;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnMMHeapFree} */
 static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
 {
@@ -1100,6 +1115,48 @@ static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
     MMR3HeapFree(pv);
 
     LogFlow(("pdmR3DevHlp_MMHeapAlloc: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMPhysGetRamSize} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_MMPhysGetRamSize(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
+    LogFlow(("pdmR3DevHlp_MMPhysGetRamSize: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint64_t cb = MMR3PhysGetRamSize(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_MMPhysGetRamSize: caller='%s'/%d: returns %RU64\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, cb));
+    return cb;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMPhysGetRamSizeBelow4GB} */
+static DECLCALLBACK(uint32_t) pdmR3DevHlp_MMPhysGetRamSizeBelow4GB(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
+    LogFlow(("pdmR3DevHlp_MMPhysGetRamSizeBelow4GB: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint32_t cb = MMR3PhysGetRamSizeBelow4GB(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_MMPhysGetRamSizeBelow4GB: caller='%s'/%d: returns %RU32\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, cb));
+    return cb;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMPhysGetRamSizeAbove4GB} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_MMPhysGetRamSizeAbove4GB(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF_PV(pDevIns);
+    LogFlow(("pdmR3DevHlp_MMPhysGetRamSizeAbove4GB: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint64_t cb = MMR3PhysGetRamSizeAbove4GB(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_MMPhysGetRamSizeAbove4GB: caller='%s'/%d: returns %RU64\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, cb));
+    return cb;
 }
 
 
@@ -4477,7 +4534,11 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
+    pdmR3DevHlp_MMHeapAPrintfV,
     pdmR3DevHlp_MMHeapFree,
+    pdmR3DevHlp_MMPhysGetRamSize,
+    pdmR3DevHlp_MMPhysGetRamSizeBelow4GB,
+    pdmR3DevHlp_MMPhysGetRamSizeAbove4GB,
     pdmR3DevHlp_VMState,
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_VMSetErrorV,
@@ -4841,7 +4902,11 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
+    pdmR3DevHlp_MMHeapAPrintfV,
     pdmR3DevHlp_MMHeapFree,
+    pdmR3DevHlp_MMPhysGetRamSize,
+    pdmR3DevHlp_MMPhysGetRamSizeBelow4GB,
+    pdmR3DevHlp_MMPhysGetRamSizeAbove4GB,
     pdmR3DevHlp_VMState,
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_VMSetErrorV,
@@ -5362,7 +5427,11 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
+    pdmR3DevHlp_MMHeapAPrintfV,
     pdmR3DevHlp_MMHeapFree,
+    pdmR3DevHlp_MMPhysGetRamSize,
+    pdmR3DevHlp_MMPhysGetRamSizeBelow4GB,
+    pdmR3DevHlp_MMPhysGetRamSizeAbove4GB,
     pdmR3DevHlp_VMState,
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_VMSetErrorV,

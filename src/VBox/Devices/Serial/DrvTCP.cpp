@@ -528,7 +528,7 @@ static DECLCALLBACK(void) drvTCPDestruct(PPDMDRVINS pDrvIns)
         pThis->hPollSet = NIL_RTPOLLSET;
     }
 
-    MMR3HeapFree(pThis->pszLocation);
+    PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszLocation);
     pThis->pszLocation = NULL;
 
     /*

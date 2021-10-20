@@ -243,7 +243,7 @@ static DECLCALLBACK(int) pcarchInitComplete(PPDMDEVINS pDevIns)
             int rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysStart, GCPhysCur - GCPhysStart,
                                                pcarchReservedMemoryWrite, pcarchReservedMemoryRead,
                                                IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU | IOMMMIO_FLAGS_ABS,
-                                               MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS /* bad bird*/, "PC Arch Reserved #%u", iRegion),
+                                               PDMDevHlpMMHeapAPrintf(pDevIns, MM_TAG_PGM_PHYS /* bad bird*/, "PC Arch Reserved #%u", iRegion),
                                                &hMmioRegion);
             AssertLogRelRCReturn(rc, rc);
             iRegion++;

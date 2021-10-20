@@ -541,6 +541,14 @@ typedef struct PDMUSBHLP
     DECLR3CALLBACKMEMBER(void *, pfnMMHeapAllocZ,(PPDMUSBINS pUsbIns, size_t cb));
 
     /**
+     * Free memory allocated with pfnMMHeapAlloc() and pfnMMHeapAllocZ().
+     *
+     * @param   pUsbIns             The USB device instance.
+     * @param   pv                  Pointer to the memory to free.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnMMHeapFree,(PPDMUSBINS pUsbIns, void *pv));
+
+    /**
      * Create a queue.
      *
      * @returns VBox status code.
@@ -920,7 +928,7 @@ typedef PDMUSBHLP *PPDMUSBHLP;
 typedef const PDMUSBHLP *PCPDMUSBHLP;
 
 /** Current USBHLP version number. */
-#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 5, 0)
+#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 6, 0)
 
 #endif /* IN_RING3 */
 
@@ -1177,8 +1185,7 @@ DECLINLINE(void *) PDMUsbHlpMMHeapAllocZ(PPDMUSBINS pUsbIns, size_t cb)
  */
 DECLINLINE(void) PDMUsbHlpMMHeapFree(PPDMUSBINS pUsbIns, void *pv)
 {
-    NOREF(pUsbIns);
-    MMR3HeapFree(pv);
+    return pUsbIns->pHlpR3->pfnMMHeapFree(pUsbIns, pv);
 }
 
 /**

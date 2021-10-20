@@ -3966,7 +3966,7 @@ static int drvvdSetupFilters(PVBOXDISK pThis, PCFGMNODE pCfg)
 
             rc = VDFilterAdd(pThis->pDisk, pszFilterName, VD_FILTER_FLAGS_DEFAULT, pVDIfsFilter);
 
-            MMR3HeapFree(pszFilterName);
+            PDMDrvHlpMMHeapFree(pThis->pDrvIns, pszFilterName);
         }
     }
 
@@ -4452,7 +4452,7 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     }
     if (pThis->pszBwGroup)
     {
-        MMR3HeapFree(pThis->pszBwGroup);
+        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszBwGroup);
         pThis->pszBwGroup = NULL;
     }
     if (pThis->hHbdMgr != NIL_HBDMGR)
@@ -4817,10 +4817,10 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             {
                 PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_BLOCK_UNKNOWN_TYPE, RT_SRC_POS,
                                     N_("Unknown type \"%s\""), psz);
-                MMR3HeapFree(psz);
+                PDMDrvHlpMMHeapFree(pDrvIns, psz);
                 return VERR_PDM_BLOCK_UNKNOWN_TYPE;
             }
-            MMR3HeapFree(psz); psz = NULL;
+            PDMDrvHlpMMHeapFree(pDrvIns, psz); psz = NULL;
 
             rc = pHlp->pfnCFGMQueryStringAlloc(pCurNode, "CachePath", &pszCachePath);
             if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
@@ -4883,10 +4883,10 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 if (RT_FAILURE(rc))
                 {
                     PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Uuid from string failed on \"%s\""), psz);
-                    MMR3HeapFree(psz);
+                    PDMDrvHlpMMHeapFree(pDrvIns, psz);
                     return rc;
                 }
-                MMR3HeapFree(psz); psz = NULL;
+                PDMDrvHlpMMHeapFree(pDrvIns, psz); psz = NULL;
             }
             else
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Uuid\" from the config"));
@@ -5243,9 +5243,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                break;
             }
 
-            MMR3HeapFree(pszName);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszName);
             pszName = NULL;
-            MMR3HeapFree(pszFormat);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszFormat);
             pszFormat = NULL;
 
             /* next */
@@ -5292,9 +5292,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         }
 
         if (RT_VALID_PTR(pszCachePath))
-            MMR3HeapFree(pszCachePath);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszCachePath);
         if (RT_VALID_PTR(pszCacheFormat))
-            MMR3HeapFree(pszCacheFormat);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszCacheFormat);
 
         if (   RT_SUCCESS(rc)
             && pThis->fMergePending
@@ -5450,9 +5450,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     if (RT_FAILURE(rc))
     {
         if (RT_VALID_PTR(pszName))
-            MMR3HeapFree(pszName);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszName);
         if (RT_VALID_PTR(pszFormat))
-            MMR3HeapFree(pszFormat);
+            PDMDrvHlpMMHeapFree(pDrvIns, pszFormat);
         /* drvvdDestruct does the rest. */
     }
 

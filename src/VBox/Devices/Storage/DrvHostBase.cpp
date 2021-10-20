@@ -1222,7 +1222,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->pszDevice)
     {
-        MMR3HeapFree(pThis->pszDevice);
+        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pszDevice);
         pThis->pszDevice = NULL;
     }
 
@@ -1415,10 +1415,10 @@ DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Configuration error: Uuid from string failed on \"%s\", rc=%Rrc.\n", psz, rc));
-            MMR3HeapFree(psz);
+            PDMDrvHlpMMHeapFree(pDrvIns, psz);
             return rc;
         }
-        MMR3HeapFree(psz);
+        PDMDrvHlpMMHeapFree(pDrvIns, psz);
     }
     else
     {

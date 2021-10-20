@@ -2774,7 +2774,7 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     if (RT_SUCCESS(rc))
     {
         rc = drvHstAudCaSetDevice(pThis, &pThis->InputDevice, true /*fInput*/, false /*fNotify*/, pszTmp);
-        MMR3HeapFree(pszTmp);
+        PDMDrvHlpMMHeapFree(pDrvIns, pszTmp);
     }
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND && rc != VERR_CFGM_NO_PARENT)
         return PDMDRV_SET_ERROR(pDrvIns, rc, "Failed to query 'InputDeviceID'");
@@ -2783,7 +2783,7 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     if (RT_SUCCESS(rc))
     {
         rc = drvHstAudCaSetDevice(pThis, &pThis->OutputDevice, false /*fInput*/, false /*fNotify*/, pszTmp);
-        MMR3HeapFree(pszTmp);
+        PDMDrvHlpMMHeapFree(pDrvIns, pszTmp);
     }
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND && rc != VERR_CFGM_NO_PARENT)
         return PDMDRV_SET_ERROR(pDrvIns, rc, "Failed to query 'OutputDeviceID'");

@@ -1376,7 +1376,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
                                        N_("VUSBSniffer cannot open '%s' for writing. The directory must exist and it must be writable for the current user"),
                                        pszCaptureFilename);
 
-        MMR3HeapFree(pszCaptureFilename);
+        PDMDrvHlpMMHeapFree(pDrvIns, pszCaptureFilename);
     }
 
     /*

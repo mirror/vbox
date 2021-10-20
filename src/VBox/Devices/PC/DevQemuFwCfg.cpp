@@ -322,7 +322,7 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmFileSz(PDEVQEMUFWCFG pThis, PCQEMUF
         }
         else
             LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
-        MMR3HeapFree(pszFilePath);
+        PDMDevHlpMMHeapFree(pThis->pDevIns, pszFilePath);
     }
     else
         LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));
@@ -404,7 +404,7 @@ static DECLCALLBACK(int) qemuFwCfgR3SetupCfgmFile(PDEVQEMUFWCFG pThis, PCQEMUFWC
         }
         else
             LogRel(("QemuFwCfg: Failed to open file \"%s\" -> %Rrc\n", pszFilePath, rc));
-        MMR3HeapFree(pszFilePath);
+        PDMDevHlpMMHeapFree(pThis->pDevIns, pszFilePath);
     }
     else
         LogRel(("QemuFwCfg: Failed to query \"%s\" -> %Rrc\n", pItem->pszCfgmKey, rc));

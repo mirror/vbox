@@ -1747,6 +1747,18 @@ static DECLCALLBACK(void *) pdmR3UsbHlp_MMHeapAllocZ(PPDMUSBINS pUsbIns, size_t 
 }
 
 
+/** @interface_method_impl{PDMUSBHLP,pfnMMHeapFree} */
+static DECLCALLBACK(void) pdmR3UsbHlp_MMHeapFree(PPDMUSBINS pUsbIns, void *pv)
+{
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    LogFlow(("pdmR3UsbHlp_MMHeapFree: caller='%s'/%d: pv=%p\n", pUsbIns->pReg->szName, pUsbIns->iInstance, pv));
+
+    MMR3HeapFree(pv);
+
+    LogFlow(("pdmR3UsbHlp_MMHeapFree: caller='%s'/%d: returns\n", pUsbIns->pReg->szName, pUsbIns->iInstance));
+}
+
+
 /** @interface_method_impl{PDMUSBHLP,pfnPDMQueueCreate} */
 static DECLCALLBACK(int) pdmR3UsbHlp_PDMQueueCreate(PPDMUSBINS pUsbIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
                                                     PFNPDMQUEUEUSB pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
@@ -2179,6 +2191,7 @@ const PDMUSBHLP g_pdmR3UsbHlp =
     pdmR3UsbHlp_DBGFInfoRegisterArgv,
     pdmR3UsbHlp_MMHeapAlloc,
     pdmR3UsbHlp_MMHeapAllocZ,
+    pdmR3UsbHlp_MMHeapFree,
     pdmR3UsbHlp_PDMQueueCreate,
     pdmR3UsbHlp_SSMRegister,
     SSMR3PutStruct,

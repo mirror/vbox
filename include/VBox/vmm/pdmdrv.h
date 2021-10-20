@@ -1064,6 +1064,14 @@ typedef struct PDMDRVHLPR3
     /** @} */
 
     /**
+     * Free memory allocated with pfnMMHeapAlloc() and pfnMMHeapAllocZ().
+     *
+     * @param   pDrvIns             Driver instance.
+     * @param   pv                  Pointer to the memory to free.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnMMHeapFree,(PPDMDRVINS pDrvIns, void *pv));
+
+    /**
      * Register an info handler with DBGF.
      *
      * @returns VBox status code.
@@ -1451,7 +1459,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 9, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 10, 0)
 
 
 /**
@@ -1710,6 +1718,14 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDO
                                               NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
                                               NULL /*pfnSavePrep*/, NULL /*pfnSaveExec*/, NULL /*pfnSaveDone*/,
                                               NULL /*pfnLoadPrep*/, NULL /*pfnLoadExec*/, pfnLoadDone);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMHeapFree
+ */
+DECLINLINE(void) PDMDrvHlpMMHeapFree(PPDMDRVINS pDrvIns, void *pv)
+{
+    pDrvIns->pHlpR3->pfnMMHeapFree(pDrvIns, pv);
 }
 
 /**
