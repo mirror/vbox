@@ -571,11 +571,10 @@ static DECLCALLBACK(uint64_t) pdmR0DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR0,pfnQueueToPtr} */
-static DECLCALLBACK(PPDMQUEUE)  pdmR0DevHlp_QueueToPtr(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
+/** Converts a queue handle to a ring-0 queue pointer. */
+DECLINLINE(PPDMQUEUE)  pdmR0DevHlp_QueueToPtr(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns);
     return (PPDMQUEUE)MMHyperR3ToCC(pDevIns->Internal.s.pGVM, hQueue);
 }
 
@@ -591,14 +590,6 @@ static DECLCALLBACK(PPDMQUEUEITEMCORE) pdmR0DevHlp_QueueAlloc(PPDMDEVINS pDevIns
 static DECLCALLBACK(void) pdmR0DevHlp_QueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
 {
     return PDMQueueInsert(pdmR0DevHlp_QueueToPtr(pDevIns, hQueue), pItem);
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR0,pfnQueueInsertEx} */
-static DECLCALLBACK(void) pdmR0DevHlp_QueueInsertEx(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem,
-                                                    uint64_t cNanoMaxDelay)
-{
-    return PDMQueueInsertEx(pdmR0DevHlp_QueueToPtr(pDevIns, hQueue), pItem, cNanoMaxDelay);
 }
 
 
@@ -1370,10 +1361,8 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_TMTimeVirtGet,
     pdmR0DevHlp_TMTimeVirtGetFreq,
     pdmR0DevHlp_TMTimeVirtGetNano,
-    pdmR0DevHlp_QueueToPtr,
     pdmR0DevHlp_QueueAlloc,
     pdmR0DevHlp_QueueInsert,
-    pdmR0DevHlp_QueueInsertEx,
     pdmR0DevHlp_QueueFlushIfNecessary,
     pdmR0DevHlp_TaskTrigger,
     pdmR0DevHlp_SUPSemEventSignal,
@@ -1479,10 +1468,8 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
     pdmR0DevHlp_TMTimeVirtGet,
     pdmR0DevHlp_TMTimeVirtGetFreq,
     pdmR0DevHlp_TMTimeVirtGetNano,
-    pdmR0DevHlp_QueueToPtr,
     pdmR0DevHlp_QueueAlloc,
     pdmR0DevHlp_QueueInsert,
-    pdmR0DevHlp_QueueInsertEx,
     pdmR0DevHlp_QueueFlushIfNecessary,
     pdmR0DevHlp_TaskTrigger,
     pdmR0DevHlp_SUPSemEventSignal,

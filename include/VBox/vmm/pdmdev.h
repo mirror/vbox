@@ -2423,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 50, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 51, 0)
 
 /**
  * PDM Device API.
@@ -3707,29 +3707,6 @@ typedef struct PDMDEVHLPR3
      * @param   fRZEnabled          Set if the queue should work in RC and R0.
      * @param   pszName             The queue base name. The instance number will be
      *                              appended automatically.
-     * @param   ppQueue             Where to store the queue pointer on success.
-     * @thread  The emulation thread.
-     * @remarks The device critical section will NOT be entered before calling the
-     *          callback.  No locks will be held, but for now it's safe to assume
-     *          that only one EMT will do queue callbacks at any one time.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnQueueCreatePtr,(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                                 PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName,
-                                                 PPDMQUEUE *ppQueue));
-
-    /**
-     * Create a queue.
-     *
-     * @returns VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   cbItem              The size of a queue item.
-     * @param   cItems              The number of items in the queue.
-     * @param   cMilliesInterval    The number of milliseconds between polling the queue.
-     *                              If 0 then the emulation thread will be notified whenever an item arrives.
-     * @param   pfnCallback         The consumer function.
-     * @param   fRZEnabled          Set if the queue should work in RC and R0.
-     * @param   pszName             The queue base name. The instance number will be
-     *                              appended automatically.
      * @param   phQueue             Where to store the queue handle on success.
      * @thread  EMT(0)
      * @remarks The device critical section will NOT be entered before calling the
@@ -3740,10 +3717,8 @@ typedef struct PDMDEVHLPR3
                                               PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName,
                                               PDMQUEUEHANDLE *phQueue));
 
-    DECLR3CALLBACKMEMBER(PPDMQUEUE, pfnQueueToPtr,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
     DECLR3CALLBACKMEMBER(PPDMQUEUEITEMCORE, pfnQueueAlloc,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
     DECLR3CALLBACKMEMBER(void, pfnQueueInsert,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem));
-    DECLR3CALLBACKMEMBER(void, pfnQueueInsertEx,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem, uint64_t cNanoMaxDelay));
     DECLR3CALLBACKMEMBER(bool, pfnQueueFlushIfNecessary,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
     /** @} */
 
@@ -5295,10 +5270,8 @@ typedef struct PDMDEVHLPR0
 
     /** @name Exported PDM Queue Functions
      * @{ */
-    DECLR0CALLBACKMEMBER(PPDMQUEUE, pfnQueueToPtr,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
     DECLR0CALLBACKMEMBER(PPDMQUEUEITEMCORE, pfnQueueAlloc,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
     DECLR0CALLBACKMEMBER(void, pfnQueueInsert,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem));
-    DECLR0CALLBACKMEMBER(void, pfnQueueInsertEx,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem, uint64_t cNanoMaxDelay));
     DECLR0CALLBACKMEMBER(bool, pfnQueueFlushIfNecessary,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
     /** @} */
 
@@ -5521,7 +5494,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 21, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 22, 0)
 
 
 /**
@@ -7649,19 +7622,10 @@ DECLINLINE(int) PDMDevHlpDriverReconfigure2(PPDMDEVINS pDevIns, uint32_t iLun, c
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnQueueCreatePtr
- */
-DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                     PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
-{
-    return pDevIns->pHlpR3->pfnQueueCreatePtr(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, ppQueue);
-}
-
-/**
  * @copydoc PDMDEVHLPR3::pfnQueueCreate
  */
-DECLINLINE(int) PDMDevHlpQueueCreateNew(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                        PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PDMQUEUEHANDLE *phQueue)
+DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                     PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PDMQUEUEHANDLE *phQueue)
 {
     return pDevIns->pHlpR3->pfnQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, phQueue);
 }
@@ -7682,14 +7646,6 @@ DECLINLINE(PPDMQUEUEITEMCORE) PDMDevHlpQueueAlloc(PPDMDEVINS pDevIns, PDMQUEUEHA
 DECLINLINE(void) PDMDevHlpQueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
 {
     pDevIns->CTX_SUFF(pHlp)->pfnQueueInsert(pDevIns, hQueue, pItem);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnQueueInsertEx
- */
-DECLINLINE(void) PDMDevHlpQueueInsertEx(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem, uint64_t cNanoMaxDelay)
-{
-    pDevIns->CTX_SUFF(pHlp)->pfnQueueInsertEx(pDevIns, hQueue, pItem, cNanoMaxDelay);
 }
 
 /**

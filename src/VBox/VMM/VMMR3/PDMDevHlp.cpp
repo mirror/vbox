@@ -2368,30 +2368,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverReconfigure(PPDMDEVINS pDevIns, uint3
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnQueueCreatePtr} */
-static DECLCALLBACK(int) pdmR3DevHlp_QueueCreatePtr(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                                    PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_QueueCreatePtr: caller='%s'/%d: cbItem=%#x cItems=%#x cMilliesInterval=%u pfnCallback=%p fRZEnabled=%RTbool pszName=%p:{%s} ppQueue=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, pszName, ppQueue));
-
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-
-    if (pDevIns->iInstance > 0)
-    {
-        pszName = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s_%u", pszName, pDevIns->iInstance);
-        AssertLogRelReturn(pszName, VERR_NO_MEMORY);
-    }
-
-    int rc = PDMR3QueueCreateDevice(pVM, pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, ppQueue);
-
-    LogFlow(("pdmR3DevHlp_QueueCreatePtr: caller='%s'/%d: returns %Rrc *ppQueue=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, rc, *ppQueue));
-    return rc;
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnQueueCreate} */
 static DECLCALLBACK(int) pdmR3DevHlp_QueueCreate(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                                  PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName,
@@ -2419,8 +2395,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_QueueCreate(PPDMDEVINS pDevIns, size_t cbIt
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnQueueToPtr} */
-static DECLCALLBACK(PPDMQUEUE)  pdmR3DevHlp_QueueToPtr(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
+/**
+ * Converts a queue handle to a queue pointer.
+ */
+DECLINLINE(PPDMQUEUE)  pdmR3DevHlp_QueueToPtr(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     RT_NOREF(pDevIns);
@@ -2439,14 +2417,6 @@ static DECLCALLBACK(PPDMQUEUEITEMCORE) pdmR3DevHlp_QueueAlloc(PPDMDEVINS pDevIns
 static DECLCALLBACK(void) pdmR3DevHlp_QueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
 {
     return PDMQueueInsert(pdmR3DevHlp_QueueToPtr(pDevIns, hQueue), pItem);
-}
-
-
-/** @interface_method_impl{PDMDEVHLPR3,pfnQueueInsertEx} */
-static DECLCALLBACK(void) pdmR3DevHlp_QueueInsertEx(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem,
-                                                    uint64_t cNanoMaxDelay)
-{
-    return PDMQueueInsertEx(pdmR3DevHlp_QueueToPtr(pDevIns, hQueue), pItem, cNanoMaxDelay);
 }
 
 
@@ -4569,12 +4539,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_DriverReconfigure,
-    pdmR3DevHlp_QueueCreatePtr,
     pdmR3DevHlp_QueueCreate,
-    pdmR3DevHlp_QueueToPtr,
     pdmR3DevHlp_QueueAlloc,
     pdmR3DevHlp_QueueInsert,
-    pdmR3DevHlp_QueueInsertEx,
     pdmR3DevHlp_QueueFlushIfNecessary,
     pdmR3DevHlp_TaskCreate,
     pdmR3DevHlp_TaskTrigger,
@@ -4937,12 +4904,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_DriverReconfigure,
-    pdmR3DevHlp_QueueCreatePtr,
     pdmR3DevHlp_QueueCreate,
-    pdmR3DevHlp_QueueToPtr,
     pdmR3DevHlp_QueueAlloc,
     pdmR3DevHlp_QueueInsert,
-    pdmR3DevHlp_QueueInsertEx,
     pdmR3DevHlp_QueueFlushIfNecessary,
     pdmR3DevHlp_TaskCreate,
     pdmR3DevHlp_TaskTrigger,
@@ -5462,12 +5426,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_DriverAttach,
     pdmR3DevHlp_DriverDetach,
     pdmR3DevHlp_DriverReconfigure,
-    pdmR3DevHlp_QueueCreatePtr,
     pdmR3DevHlp_QueueCreate,
-    pdmR3DevHlp_QueueToPtr,
     pdmR3DevHlp_QueueAlloc,
     pdmR3DevHlp_QueueInsert,
-    pdmR3DevHlp_QueueInsertEx,
     pdmR3DevHlp_QueueFlushIfNecessary,
     pdmR3DevHlp_TaskCreate,
     pdmR3DevHlp_TaskTrigger,
