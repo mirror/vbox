@@ -1269,14 +1269,15 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 {
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PVUSBROOTHUB    pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
+
     LogFlow(("vusbRhConstruct: Instance %d\n", pDrvIns->iInstance));
-    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
 
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "CaptureFilename\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "CaptureFilename", "");
 
     /*
      * Check that there are no drivers below us.
@@ -1293,7 +1294,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         return rc;
 
     char *pszCaptureFilename = NULL;
-    rc = CFGMR3QueryStringAlloc(pCfg, "CaptureFilename", &pszCaptureFilename);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "CaptureFilename", &pszCaptureFilename);
     if (   RT_FAILURE(rc)
         && rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
@@ -1382,8 +1383,8 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      * Register ourselves as a USB hub.
      * The current implementation uses the VUSBIRHCONFIG interface for communication.
      */
-    PCPDMUSBHUBHLP pHlp; /* not used currently */
-    rc = PDMDrvHlpUSBRegisterHub(pDrvIns, pThis->fHcVersions, pThis->Hub.cPorts, &g_vusbHubReg, &pHlp);
+    PCPDMUSBHUBHLP pHlpUsb; /* not used currently */
+    rc = PDMDrvHlpUSBRegisterHub(pDrvIns, pThis->fHcVersions, pThis->Hub.cPorts, &g_vusbHubReg, &pHlpUsb);
     if (RT_FAILURE(rc))
         return rc;
 
