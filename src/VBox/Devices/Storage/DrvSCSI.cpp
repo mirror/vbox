@@ -146,7 +146,7 @@ typedef struct DRVSCSI
     /** Size of a VSCSI I/O request. */
     size_t                  cbVScsiIoReqAlloc;
     /** Queue to defer unmounting to EMT. */
-    PPDMQUEUE               pQueue;
+    PDMQUEUEHANDLE          hQueue;
 } DRVSCSI, *PDRVSCSI;
 
 /** Convert a VSCSI I/O request handle to the associated PDMIMEDIAEX I/O request. */
@@ -313,11 +313,11 @@ static DECLCALLBACK(int) drvscsiEject(VSCSILUN hVScsiLun, void *pvScsiLunUser)
     rc = RTSemEventCreate(&hSemEvt);
     if (RT_SUCCESS(rc))
     {
-        PDRVSCSIEJECTSTATE pEjectState = (PDRVSCSIEJECTSTATE)PDMQueueAlloc(pThis->pQueue);
+        PDRVSCSIEJECTSTATE pEjectState = (PDRVSCSIEJECTSTATE)PDMDrvHlpQueueAlloc(pThis->pDrvIns, pThis->hQueue);
         if (pEjectState)
         {
             pEjectState->hSemEvt = hSemEvt;
-            PDMQueueInsert(pThis->pQueue, &pEjectState->Core);
+            PDMDrvHlpQueueInsert(pThis->pDrvIns, pThis->hQueue, &pEjectState->Core);
 
             /* Wait for completion. */
             rc = RTSemEventWait(pEjectState->hSemEvt, RT_INDEFINITE_WAIT);
@@ -1066,13 +1066,18 @@ static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice
  *          If false the item will not be removed and the flushing will stop.
  * @param   pDrvIns     The driver instance.
  * @param   pItem       The item to consume. Upon return this item will be freed.
+ * @thread  EMT
+ *
+ * @todo    r=bird: Seems the idea here is that we have to do this on an EMT,
+ *          probably because of PDMIMOUNT::pfnUnmount.  I don't quite get why
+ *          though, as EMT doesn't exactly serialize anything anymore (SMP)...
  */
 static DECLCALLBACK(bool) drvscsiR3NotifyQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItem)
 {
     PDRVSCSIEJECTSTATE pEjectState = (PDRVSCSIEJECTSTATE)pItem;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
 
-    int rc = pThis->pDrvMount->pfnUnmount(pThis->pDrvMount, false/*=fForce*/, true/*=fEject*/);
+    int rc = pThis->pDrvMount->pfnUnmount(pThis->pDrvMount, false /*fForce*/, true /*fEject*/);
     Assert(RT_SUCCESS(rc) || rc == VERR_PDM_MEDIA_LOCKED || rc == VERR_PDM_MEDIA_NOT_MOUNTED);
     if (RT_SUCCESS(rc))
         pThis->pDevMediaExPort->pfnMediumEjected(pThis->pDevMediaExPort);
@@ -1508,7 +1513,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
         LogRel(("SCSI#%d: Enabled UNMAP support\n", pDrvIns->iInstance));
 
     rc = PDMDrvHlpQueueCreate(pDrvIns, sizeof(DRVSCSIEJECTSTATE), 1, 0, drvscsiR3NotifyQueueConsumer,
-                              "SCSI-Eject", &pThis->pQueue);
+                              "SCSI-Eject", &pThis->hQueue);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("VSCSI configuration error: Failed to create notification queue"));

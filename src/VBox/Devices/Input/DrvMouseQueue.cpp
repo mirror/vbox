@@ -50,7 +50,7 @@ typedef struct DRVMOUSEQUEUE
     /** Our mouse port interface. */
     PDMIMOUSEPORT               IPort;
     /** The queue handle. */
-    PPDMQUEUE                   pQueue;
+    PDMQUEUEHANDLE              hQueue;
     /** Discard input when this flag is set.
      * We only accept input when the VM is running. */
     bool                        fInactive;
@@ -128,7 +128,7 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface,
     if (pDrv->fInactive)
         return VINF_SUCCESS;
 
-    PDRVMOUSEQUEUEITEM pItem = (PDRVMOUSEQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
+    PDRVMOUSEQUEUEITEM pItem = (PDRVMOUSEQUEUEITEM)PDMDrvHlpQueueAlloc(pDrv->pDrvIns, pDrv->hQueue);
     if (pItem)
     {
         RT_ZERO(pItem->u.padding);
@@ -138,7 +138,7 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface,
         pItem->u.Relative.dz       = dz;
         pItem->u.Relative.dw       = dw;
         pItem->u.Relative.fButtons = fButtons;
-        PDMQueueInsert(pDrv->pQueue, &pItem->Core);
+        PDMDrvHlpQueueInsert(pDrv->pDrvIns, pDrv->hQueue, &pItem->Core);
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_QUEUE_ITEMS;
@@ -156,7 +156,7 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface,
     if (pDrv->fInactive)
         return VINF_SUCCESS;
 
-    PDRVMOUSEQUEUEITEM pItem = (PDRVMOUSEQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
+    PDRVMOUSEQUEUEITEM pItem = (PDRVMOUSEQUEUEITEM)PDMDrvHlpQueueAlloc(pDrv->pDrvIns, pDrv->hQueue);
     if (pItem)
     {
         RT_ZERO(pItem->u.padding);
@@ -166,7 +166,7 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface,
         pItem->u.Absolute.dz       = dz;
         pItem->u.Absolute.dw       = dw;
         pItem->u.Absolute.fButtons = fButtons;
-        PDMQueueInsert(pDrv->pQueue, &pItem->Core);
+        PDMDrvHlpQueueInsert(pDrv->pDrvIns, pDrv->hQueue, &pItem->Core);
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_QUEUE_ITEMS;
@@ -212,8 +212,7 @@ static DECLCALLBACK(void) drvMouseFlushQueue(PPDMIMOUSECONNECTOR pInterface)
 {
     PDRVMOUSEQUEUE pDrv = PPDMIMOUSECONNECTOR_2_DRVMOUSEQUEUE(pInterface);
 
-    AssertPtr(pDrv->pQueue);
-    PDMQueueFlushIfNecessary(pDrv->pQueue);
+    PDMDrvHlpQueueFlushIfNecessary(pDrv->pDrvIns, pDrv->hQueue);
 }
 
 
@@ -341,6 +340,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init basic data members and interfaces.
      */
+    pDrv->pDrvIns                           = pDrvIns;
     pDrv->fInactive                         = true;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvMouseQueueQueryInterface;
@@ -356,28 +356,18 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Get the IMousePort interface of the above driver/device.
      */
     pDrv->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUSEPORT);
-    if (!pDrv->pUpPort)
-    {
-        AssertMsgFailed(("Configuration error: No mouse port interface above!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+    AssertMsgReturn(pDrv->pUpPort, ("Configuration error: No mouse port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 
     /*
      * Attach driver below and query it's connector interface.
      */
     PPDMIBASE pDownBase;
     int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pDownBase);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
-        return rc;
-    }
+    AssertMsgRCReturn(rc, ("Failed to attach driver below us! rc=%Rra\n", rc), rc);
+
     pDrv->pDownConnector = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIMOUSECONNECTOR);
-    if (!pDrv->pDownConnector)
-    {
-        AssertMsgFailed(("Configuration error: No mouse connector interface below!\n"));
-        return VERR_PDM_MISSING_INTERFACE_BELOW;
-    }
+    AssertMsgReturn(pDrv->pDownConnector, ("Configuration error: No mouse connector interface below!\n"),
+                    VERR_PDM_MISSING_INTERFACE_BELOW);
 
     /*
      * Create the queue.
@@ -386,29 +376,19 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     rc = pHlp->pfnCFGMQueryU32(pCfg, "Interval", &cMilliesInterval);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cMilliesInterval = 0;
-    else if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: 32-bit \"Interval\" -> rc=%Rrc\n", rc));
-        return rc;
-    }
+    else
+        AssertMsgRCReturn(rc, ("Configuration error: 32-bit \"Interval\" -> rc=%Rrc\n", rc), rc);
 
     uint32_t cItems = 0;
     rc = pHlp->pfnCFGMQueryU32(pCfg, "QueueSize", &cItems);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cItems = 128;
-    else if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: 32-bit \"QueueSize\" -> rc=%Rrc\n", rc));
-        return rc;
-    }
+    else
+        AssertMsgRCReturn(rc, ("Configuration error: 32-bit \"QueueSize\" -> rc=%Rrc\n", rc), rc);
 
     rc = PDMDrvHlpQueueCreate(pDrvIns, sizeof(DRVMOUSEQUEUEITEM), cItems, cMilliesInterval,
-                              drvMouseQueueConsumer, "Mouse", &pDrv->pQueue);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to create driver: cItems=%d cMilliesInterval=%d rc=%Rrc\n", cItems, cMilliesInterval, rc));
-        return rc;
-    }
+                              drvMouseQueueConsumer, "Mouse", &pDrv->hQueue);
+    AssertMsgRCReturn(rc, ("Failed to create driver: cItems=%d cMilliesInterval=%d rc=%Rrc\n", cItems, cMilliesInterval, rc), rc);
 
     return VINF_SUCCESS;
 }

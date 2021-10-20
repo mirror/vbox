@@ -1252,13 +1252,24 @@ static DECLCALLBACK(PSUPDRVSESSION) pdmR3DrvHlp_GetSupDrvSession(PPDMDRVINS pDrv
 }
 
 
-/** @interface_method_impl{PDMDRVHLPR3,pfnQueueCreate} */
-static DECLCALLBACK(int) pdmR3DrvHlp_QueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                                 PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
+/**
+ * Conversion from handle to queue pointer (temporary).
+ */
+DECLINLINE(PPDMQUEUE) pdmR3DrvHlp_QueueToPtr(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p pszName=%p:{%s} ppQueue=%p\n",
-             pDrvIns->pReg->szName, pDrvIns->iInstance, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, pszName, ppQueue));
+    RT_NOREF(pDrvIns);
+    return (PPDMQUEUE)hQueue;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnQueueCreate} */
+static DECLCALLBACK(int) pdmR3DrvHlp_QueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                                 PFNPDMQUEUEDRV pfnCallback, const char *pszName, PDMQUEUEHANDLE *phQueue)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p pszName=%p:{%s} phQueue=%p\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, pszName, phQueue));
     PVM pVM = pDrvIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
 
@@ -1268,11 +1279,35 @@ static DECLCALLBACK(int) pdmR3DrvHlp_QueueCreate(PPDMDRVINS pDrvIns, uint32_t cb
         AssertLogRelReturn(pszName, VERR_NO_MEMORY);
     }
 
-    int rc = PDMR3QueueCreateDriver(pVM, pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
+    PPDMQUEUE pQueue = NULL;
+    int rc = PDMR3QueueCreateDriver(pVM, pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, &pQueue);
+    *phQueue = (PDMQUEUEHANDLE)pQueue;
 
-    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: returns %Rrc *ppQueue=%p\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc, *ppQueue));
+    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: returns %Rrc *phQueue=%p\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc, *phQueue));
     return rc;
 }
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnQueueAlloc} */
+static DECLCALLBACK(PPDMQUEUEITEMCORE) pdmR3DrvHlp_QueueAlloc(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue)
+{
+    return PDMQueueAlloc(pdmR3DrvHlp_QueueToPtr(pDrvIns, hQueue));
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnQueueInsert} */
+static DECLCALLBACK(void) pdmR3DrvHlp_QueueInsert(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
+{
+    return PDMQueueInsert(pdmR3DrvHlp_QueueToPtr(pDrvIns, hQueue), pItem);
+}
+
+
+/** @interface_method_impl{PDMDRVHLPR3,pfnQueueFlushIfNecessary} */
+static DECLCALLBACK(bool) pdmR3DrvHlp_QueueFlushIfNecessary(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue)
+{
+    return PDMQueueFlushIfNecessary(pdmR3DrvHlp_QueueToPtr(pDrvIns, hQueue));
+}
+
 
 
 /** @interface_method_impl{PDMDRVHLPR3,pfnTMGetVirtualFreq} */
@@ -2031,6 +2066,9 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DrvHlp_GetSupDrvSession,
     pdmR3DrvHlp_QueueCreate,
+    pdmR3DrvHlp_QueueAlloc,
+    pdmR3DrvHlp_QueueInsert,
+    pdmR3DrvHlp_QueueFlushIfNecessary,
     pdmR3DrvHlp_TMGetVirtualFreq,
     pdmR3DrvHlp_TMGetVirtualTime,
     pdmR3DrvHlp_TimerCreate,
@@ -2216,6 +2254,8 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_TimerSetMillies,
     pdmR3DrvHlp_STAMDeregisterByPrefix,
     pdmR3DrvHlp_QueryGenericUserObject,
+    NULL,
+    NULL,
     NULL,
     NULL,
     NULL,

@@ -819,6 +819,8 @@ typedef struct PDMDRVHLPR3
      */
     DECLR3CALLBACKMEMBER(PSUPDRVSESSION, pfnGetSupDrvSession,(PPDMDRVINS pDrvIns));
 
+    /** @name Exported PDM Queue Functions
+     * @{ */
     /**
      * Create a queue.
      *
@@ -831,11 +833,16 @@ typedef struct PDMDRVHLPR3
      * @param   pfnCallback         The consumer function.
      * @param   pszName             The queue base name. The instance number will be
      *                              appended automatically.
-     * @param   ppQueue             Where to store the queue handle on success.
+     * @param   phQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnQueueCreate,(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                              PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue));
+                                              PFNPDMQUEUEDRV pfnCallback, const char *pszName, PDMQUEUEHANDLE *phQueue));
+
+    DECLR3CALLBACKMEMBER(PPDMQUEUEITEMCORE, pfnQueueAlloc,(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue));
+    DECLR3CALLBACKMEMBER(void, pfnQueueInsert,(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem));
+    DECLR3CALLBACKMEMBER(bool, pfnQueueFlushIfNecessary,(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue));
+    /** @} */
 
     /**
      * Query the virtual timer frequency.
@@ -1446,6 +1453,8 @@ typedef struct PDMDRVHLPR3
      */
     DECLR3CALLBACKMEMBER(void *, pfnQueryGenericUserObject,(PPDMDRVINS pDrvIns, PCRTUUID pUuid));
 
+    DECLR3CALLBACKMEMBER(void, pfnReserved0,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved1,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved2,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved3,(PPDMDRVINS pDrvIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(PPDMDRVINS pDrvIns));
@@ -1459,7 +1468,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 10, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 11, 0)
 
 
 /**
@@ -1631,9 +1640,33 @@ DECLINLINE(PSUPDRVSESSION) PDMDrvHlpGetSupDrvSession(PPDMDRVINS pDrvIns)
  * @copydoc PDMDRVHLPR3::pfnQueueCreate
  */
 DECLINLINE(int) PDMDrvHlpQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                        PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
+                                        PFNPDMQUEUEDRV pfnCallback, const char *pszName, PDMQUEUEHANDLE *phQueue)
 {
-    return pDrvIns->pHlpR3->pfnQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
+    return pDrvIns->pHlpR3->pfnQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, phQueue);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnQueueAlloc
+ */
+DECLINLINE(PPDMQUEUEITEMCORE) PDMDrvHlpQueueAlloc(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnQueueAlloc(pDrvIns, hQueue);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnQueueInsert
+ */
+DECLINLINE(void) PDMDrvHlpQueueInsert(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
+{
+    pDrvIns->CTX_SUFF(pHlp)->pfnQueueInsert(pDrvIns, hQueue, pItem);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnQueueFlushIfNecessary
+ */
+DECLINLINE(bool) PDMDrvHlpQueueFlushIfNecessary(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue)
+{
+    return pDrvIns->CTX_SUFF(pHlp)->pfnQueueFlushIfNecessary(pDrvIns, hQueue);
 }
 
 /**
