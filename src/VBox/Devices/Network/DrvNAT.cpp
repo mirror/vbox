@@ -1376,7 +1376,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
 
     RT_NOREF(pNetwork); /** @todo figure why pNetwork isn't used */
 
-    PCFGMNODE pPFTree = CFGMR3GetChild(pCfg, "PortForwarding");
+    PCFGMNODE pPFTree = pHlp->pfnCFGMGetChild(pCfg, "PortForwarding");
     if (pPFTree == NULL)
         return VINF_SUCCESS;
 
@@ -1530,6 +1530,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVNAT         pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
 
     LogFlow(("drvNATConstruct:\n"));
 
@@ -1684,7 +1685,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             do                                                  \
             {                                                   \
                 int len = 0;                                    \
-                rc = CFGMR3QueryS32(pCfg, name, &len);    \
+                rc = pHlp->pfnCFGMQueryS32(pCfg, name, &len);    \
                 if (RT_SUCCESS(rc))                             \
                     setter(pThis->pNATState, len);              \
             } while(0)
@@ -1702,7 +1703,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 #endif
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-        PCFGMNODE pMappingsCfg = CFGMR3GetChild(pCfg, "HostResolverMappings");
+        PCFGMNODE pMappingsCfg = pHlp->pfnCFGMGetChild(pCfg, "HostResolverMappings");
 
         if (pMappingsCfg)
         {

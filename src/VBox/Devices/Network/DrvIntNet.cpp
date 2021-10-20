@@ -1055,7 +1055,7 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
         case VMRESUMEREASON_HOST_RESUME:
         {
             uint32_t u32TrunkType;
-            int rc = CFGMR3QueryU32(pDrvIns->pCfg, "TrunkType", &u32TrunkType);
+            int rc = pDrvIns->pHlpR3->pfnCFGMQueryU32(pDrvIns->pCfg, "TrunkType", &u32TrunkType);
             AssertRC(rc);
 
             /*
