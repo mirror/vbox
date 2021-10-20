@@ -189,7 +189,8 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
 {
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
+    PDRVRAWFILE     pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
 
     /*
      * Init the static parts.
@@ -208,10 +209,9 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /*
      * Read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Location\0"))
-        AssertFailedReturn(VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES);
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "Location", "");
 
-    int rc = CFGMR3QueryStringAlloc(pCfg, "Location", &pThis->pszLocation);
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Location", &pThis->pszLocation);
     if (RT_FAILURE(rc))
         AssertMsgFailedReturn(("Configuration error: query \"Location\" resulted in %Rrc.\n", rc), rc);
 

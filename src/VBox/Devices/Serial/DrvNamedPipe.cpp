@@ -886,6 +886,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    PCPDMDRVHLPR3 pHlp  = pDrvIns->pHlpR3;
 
     /*
      * Init the static parts.
@@ -923,11 +924,11 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "Location|IsServer", "");
 
-    int rc = CFGMR3QueryStringAlloc(pCfg, "Location", &pThis->pszLocation);
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Location", &pThis->pszLocation);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"Location\" resulted in %Rrc"), rc);
-    rc = CFGMR3QueryBool(pCfg, "IsServer", &pThis->fIsServer);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "IsServer", &pThis->fIsServer);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"IsServer\" resulted in %Rrc"), rc);
