@@ -1,0 +1,31 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Name=@VBOX_PRODUCT@
+GenericName=Virtual Machine
+GenericName[de]=Virtuelle Maschine
+GenericName[ru]=Виртуальная машина
+Type=Application
+Exec=VirtualBoxVM %U
+TryExec=VirtualBoxVM
+Keywords=virtualization;
+Keywords[de]=Virtualisierung;
+Keywords[ru]=виртуализация;
+MimeType=application/x-virtualbox-vbox;application/x-virtualbox-vbox-extpack;application/x-virtualbox-ovf;application/x-virtualbox-ova;
+DocPath=file://@VBOX_DOC_PATH@/UserManual.pdf
+Icon=virtualbox
+Categories=Emulator;System;
+Actions=Manager;
+StartupWMClass=VirtualBox Machine
+Comment=Run the virtual machine
+Comment[de]=
+Comment[it]=
+Comment[ko]=
+Comment[pl]=
+Comment[ru]=
+Comment[sv]=
+
+[Desktop Action Manager]
+Exec=VirtualBoxVM
+Name=Run the Virtual Machine
+Name[de]=

@@ -104,14 +104,16 @@ linux-misc_SOURCES = \
 	$(VBOX_PATH_INST_COMMON_SRC)/virtualbox.xml \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(linux-misc_0_OUTDIR)/generated.sh=>scripts/generated.sh \
-	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualbox.desktop,)
+	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualbox.desktop,) \
+	$(if $(VBOX_WITH_QTGUI),$(linux-misc_0_OUTDIR)/virtualboxvm.desktop,)
 ifeq ($(KBUILD_TYPE),asan)
 linux-misc_SOURCES += $(foreach lib,$(VBOX_GCC_SANITIZER_SO_FILES) \
 	,$(lib)=>$(notdir $(lib)) $(lib)=>testcase/$(notdir $(lib)) $(lib)=>tools/$(notdir $(lib)) )
 endif
 linux-misc_CLEAN = \
 	$(linux-misc_0_OUTDIR)/generated.sh \
-	$(linux-misc_0_OUTDIR)/virtualbox.desktop
+	$(linux-misc_0_OUTDIR)/virtualbox.desktop \
+	$(linux-misc_0_OUTDIR)/virtualboxvm.desktop
 
 $$(linux-misc_0_OUTDIR)/generated.sh: $(VBOX_VERSION_STAMP) $(VBOX_LNX_INST_DEP_ON_MAKEFILE) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
@@ -122,6 +124,12 @@ $$(linux-misc_0_OUTDIR)/generated.sh: $(VBOX_VERSION_STAMP) $(VBOX_LNX_INST_DEP_
 	$(QUIET)$(APPEND) '$@' 'VBOX_VENDOR="$(VBOX_VENDOR)"'
 
 $$(linux-misc_0_OUTDIR)/virtualbox.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_LNX_APP_DOCS)+" \
+		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+		--output $@ $<
+
+$$(linux-misc_0_OUTDIR)/virtualboxvm.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualboxvm.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_LNX_APP_DOCS)+" \
 		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
@@ -253,6 +261,7 @@ ifdef VBOX_WITH_QTGUI
  endif
  VBOX_LNX_NO_STRIP += \
  	virtualbox.desktop \
+ 	virtualboxvm.desktop \
  	virtualbox.xml \
  	$(VBOX_LICENSE_FILES) \
  	$(if $(VBOX_WITH_ORACLE_QT),$(notdir $(wildcard $(PATH_STAGE_BIN)/lib*VBox*)),) \
