@@ -2207,7 +2207,9 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 {
     RT_NOREF(pCfg, fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVHSTAUDPA pThis = PDMINS_2_DATA(pDrvIns, PDRVHSTAUDPA);
+    PDRVHSTAUDPA    pThis = PDMINS_2_DATA(pDrvIns, PDRVHSTAUDPA);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
+
     LogRel(("Audio: Initializing PulseAudio driver\n"));
 
     /*
@@ -2243,11 +2245,11 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Read configuration.
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "VmName|InputDeviceID|OutputDeviceID", "");
-    int rc = CFGMR3QueryString(pCfg, "VmName", pThis->szStreamName, sizeof(pThis->szStreamName));
+    int rc = pHlp->pfnCFGMQueryString(pCfg, "VmName", pThis->szStreamName, sizeof(pThis->szStreamName));
     AssertMsgRCReturn(rc, ("Confguration error: No/bad \"VmName\" value, rc=%Rrc\n", rc), rc);
-    rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", pThis->szInputDev, sizeof(pThis->szInputDev), "");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "InputDeviceID", pThis->szInputDev, sizeof(pThis->szInputDev), "");
     AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"InputDeviceID\" as string: rc=%Rrc\n", rc), rc);
-    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", pThis->szOutputDev, sizeof(pThis->szOutputDev), "");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "OutputDeviceID", pThis->szOutputDev, sizeof(pThis->szOutputDev), "");
     AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"OutputDeviceID\" as string: rc=%Rrc\n", rc), rc);
 
     /*

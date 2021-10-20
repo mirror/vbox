@@ -3088,7 +3088,8 @@ static DECLCALLBACK(void) drvHostAudioWasDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVHOSTAUDIOWAS pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTAUDIOWAS);
+    PDRVHOSTAUDIOWAS    pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTAUDIOWAS);
+    PCPDMDRVHLPR3       pHlp  = pDrvIns->pHlpR3;
     RT_NOREF(fFlags, pCfg);
 
     /*
@@ -3133,7 +3134,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "VmName|VmUuid|InputDeviceID|OutputDeviceID", "");
 
     char szTmp[1024];
-    int rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", szTmp, sizeof(szTmp), "");
+    int rc = pHlp->pfnCFGMQueryStringDef(pCfg, "InputDeviceID", szTmp, sizeof(szTmp), "");
     AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"InputDeviceID\" as string: rc=%Rrc\n", rc), rc);
     if (szTmp[0])
     {
@@ -3141,7 +3142,7 @@ static DECLCALLBACK(int) drvHostAudioWasConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
         AssertRCReturn(rc, rc);
     }
 
-    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", szTmp, sizeof(szTmp), "");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "OutputDeviceID", szTmp, sizeof(szTmp), "");
     AssertMsgRCReturn(rc, ("Confguration error: Failed to read \"OutputDeviceID\" as string: rc=%Rrc\n", rc), rc);
     if (szTmp[0])
     {

@@ -2722,7 +2722,8 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 {
     RT_NOREF(pCfg, fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVHOSTCOREAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
+    PDRVHOSTCOREAUDIO   pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTCOREAUDIO);
+    PCPDMDRVHLPR3       pHlp  = pDrvIns->pHlpR3;
     LogRel(("Audio: Initializing Core Audio driver\n"));
 
     /*
@@ -2769,7 +2770,7 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "InputDeviceID|OutputDeviceID", "");
 
     char *pszTmp = NULL;
-    rc = CFGMR3QueryStringAlloc(pCfg, "InputDeviceID", &pszTmp);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "InputDeviceID", &pszTmp);
     if (RT_SUCCESS(rc))
     {
         rc = drvHstAudCaSetDevice(pThis, &pThis->InputDevice, true /*fInput*/, false /*fNotify*/, pszTmp);
@@ -2778,7 +2779,7 @@ static DECLCALLBACK(int) drvHstAudCaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND && rc != VERR_CFGM_NO_PARENT)
         return PDMDRV_SET_ERROR(pDrvIns, rc, "Failed to query 'InputDeviceID'");
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "OutputDeviceID", &pszTmp);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "OutputDeviceID", &pszTmp);
     if (RT_SUCCESS(rc))
     {
         rc = drvHstAudCaSetDevice(pThis, &pThis->OutputDevice, false /*fInput*/, false /*fNotify*/, pszTmp);

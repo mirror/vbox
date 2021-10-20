@@ -1474,7 +1474,8 @@ static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 {
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVHSTAUDALSA pThis = PDMINS_2_DATA(pDrvIns, PDRVHSTAUDALSA);
+    PDRVHSTAUDALSA  pThis = PDMINS_2_DATA(pDrvIns, PDRVHSTAUDALSA);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
     LogRel(("Audio: Initializing ALSA driver\n"));
 
     /*
@@ -1513,9 +1514,9 @@ static DECLCALLBACK(int) drvHstAudAlsaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "OutputDeviceID|InputDeviceID", "");
 
-    rc = CFGMR3QueryStringDef(pCfg, "InputDeviceID", pThis->szInputDev, sizeof(pThis->szInputDev), "default");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "InputDeviceID", pThis->szInputDev, sizeof(pThis->szInputDev), "default");
     AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryStringDef(pCfg, "OutputDeviceID", pThis->szOutputDev, sizeof(pThis->szOutputDev), "default");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "OutputDeviceID", pThis->szOutputDev, sizeof(pThis->szOutputDev), "default");
     AssertRCReturn(rc, rc);
 
     /*

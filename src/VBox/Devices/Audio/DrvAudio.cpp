@@ -4632,7 +4632,8 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    PDRVAUDIO       pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
     LogFlowFunc(("pDrvIns=%#p, pCfgHandle=%#p, fFlags=%x\n", pDrvIns, pCfg, fFlags));
 
     /*
@@ -4669,21 +4670,21 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                                   "PreBufferSizeMsOut",
                                   "In|Out");
 
-    int rc = CFGMR3QueryStringDef(pCfg, "DriverName", pThis->BackendCfg.szName, sizeof(pThis->BackendCfg.szName), "Untitled");
+    int rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DriverName", pThis->BackendCfg.szName, sizeof(pThis->BackendCfg.szName), "Untitled");
     AssertLogRelRCReturn(rc, rc);
 
     /* Neither input nor output by default for security reasons. */
-    rc = CFGMR3QueryBoolDef(pCfg, "InputEnabled",  &pThis->In.fEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "InputEnabled",  &pThis->In.fEnabled, false);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = CFGMR3QueryBoolDef(pCfg, "OutputEnabled", &pThis->Out.fEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "OutputEnabled", &pThis->Out.fEnabled, false);
     AssertLogRelRCReturn(rc, rc);
 
     /* Debug stuff (same for both directions). */
-    rc = CFGMR3QueryBoolDef(pCfg, "DebugEnabled", &pThis->CfgIn.Dbg.fEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "DebugEnabled", &pThis->CfgIn.Dbg.fEnabled, false);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = CFGMR3QueryStringDef(pCfg, "DebugPathOut", pThis->CfgIn.Dbg.szPathOut, sizeof(pThis->CfgIn.Dbg.szPathOut), "");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DebugPathOut", pThis->CfgIn.Dbg.szPathOut, sizeof(pThis->CfgIn.Dbg.szPathOut), "");
     AssertLogRelRCReturn(rc, rc);
     if (pThis->CfgIn.Dbg.szPathOut[0] == '\0')
     {
@@ -4719,10 +4720,10 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
 
 #define QUERY_VAL_RET(a_Width, a_szName, a_pValue, a_uDefault, a_ExprValid, a_szValidRange) \
             do { \
-                rc = RT_CONCAT(CFGMR3QueryU,a_Width)(pDirNode, strcpy(szNm, a_szName), a_pValue); \
+                rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pDirNode, strcpy(szNm, a_szName), a_pValue); \
                 if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                 { \
-                    rc = RT_CONCAT(CFGMR3QueryU,a_Width)(pCfg, strcat(szNm, pszDir), a_pValue); \
+                    rc = RT_CONCAT(pHlp->pfnCFGMQueryU,a_Width)(pCfg, strcat(szNm, pszDir), a_pValue); \
                     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT) \
                     { \
                         *(a_pValue) = a_uDefault; \
@@ -4738,17 +4739,17 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
                                                N_("Configuration error: Unsupported %s value %u. " a_szValidRange), szNm, *(a_pValue)); \
             } while (0)
 
-        PCFGMNODE const pDirNode = CFGMR3GetChild(pCfg, pszDir);
-        rc = CFGMR3ValidateConfig(pDirNode, iDir == 0 ? "In/" : "Out/",
-                                  "PCMSampleBit|"
-                                  "PCMSampleHz|"
-                                  "PCMSampleSigned|"
-                                  "PCMSampleSwapEndian|"
-                                  "PCMSampleChannels|"
-                                  "PeriodSizeMs|"
-                                  "BufferSizeMs|"
-                                  "PreBufferSizeMs",
-                                  "", pDrvIns->pReg->szName, pDrvIns->iInstance);
+        PCFGMNODE const pDirNode = pHlp->pfnCFGMGetChild(pCfg, pszDir);
+        rc = pHlp->pfnCFGMValidateConfig(pDirNode, iDir == 0 ? "In/" : "Out/",
+                                         "PCMSampleBit|"
+                                         "PCMSampleHz|"
+                                         "PCMSampleSigned|"
+                                         "PCMSampleSwapEndian|"
+                                         "PCMSampleChannels|"
+                                         "PeriodSizeMs|"
+                                         "BufferSizeMs|"
+                                         "PreBufferSizeMs",
+                                         "", pDrvIns->pReg->szName, pDrvIns->iInstance);
         AssertRCReturn(rc, rc);
 
         uint8_t cSampleBits = 0;
