@@ -43,6 +43,7 @@
 #include "CMedium.h"
 #include "CSession.h"
 #include "CSnapshot.h"
+#include "CVFSExplorer.h"
 #include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 
@@ -958,6 +959,66 @@ private:
     QString        m_strName;
     /** Holds the machine media being removed. */
     CMediumVector  m_media;
+};
+
+/** UINotificationProgress extension for VFS explorer update functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressVFSExplorerUpdate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs VFS explorer update notification-progress.
+      * @param  comExplorer  Brings the VFS explorer being updated. */
+    UINotificationProgressVFSExplorerUpdate(const CVFSExplorer &comExplorer);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the VFS explorer being updated. */
+    CVFSExplorer  m_comExplorer;
+    /** Holds the VFS explorer path. */
+    QString       m_strPath;
+};
+
+/** UINotificationProgress extension for VFS explorer files remove functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressVFSExplorerFilesRemove : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs VFS explorer files remove notification-progress.
+      * @param  comExplorer  Brings the VFS explorer removing the files.
+      * @param  files        Brings a vector of files to be removed. */
+    UINotificationProgressVFSExplorerFilesRemove(const CVFSExplorer &comExplorer,
+                                                 const QVector<QString> &files);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the VFS explorer removing the files. */
+    CVFSExplorer      m_comExplorer;
+    /** Holds a vector of files to be removed. */
+    QVector<QString>  m_files;
+    /** Holds the VFS explorer path. */
+    QString           m_strPath;
 };
 
 /** UINotificationProgress extension for launch VSD form create functionality. */

@@ -303,23 +303,14 @@ bool UIWizardExportApp::exportAppliance()
 
         /* Initialize VFS explorer: */
         CVFSExplorer comExplorer = comAppliance.CreateVFSExplorer(uri(false /* fWithFile */));
-        if (comExplorer.isNotNull())
-        {
-            CProgress comProgress = comExplorer.Update();
-            if (comExplorer.isOk() && comProgress.isNotNull())
-            {
-                msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Checking files ..."),
-                                                    ":/progress_refresh_90px.png", this);
-                if (comProgress.GetCanceled())
-                    return false;
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    return msgCenter().cannotCheckFiles(comProgress, this);
-            }
-            else
-                return msgCenter().cannotCheckFiles(comExplorer, this);
-        }
-        else
+        if (!comAppliance.isOk())
             return msgCenter().cannotCheckFiles(comAppliance, this);
+
+        /* Update VFS explorer: */
+        UINotificationProgressVFSExplorerUpdate *pNotification =
+            new UINotificationProgressVFSExplorerUpdate(comExplorer);
+        if (!handleNotificationProgressNow(pNotification))
+            return false;
 
         /* Confirm overwriting for existing files: */
         QVector<QString> exists = comExplorer.Exists(files);
@@ -329,18 +320,11 @@ bool UIWizardExportApp::exportAppliance()
         /* DELETE all the files which exists after everything is confirmed: */
         if (!exists.isEmpty())
         {
-            CProgress comProgress = comExplorer.Remove(exists);
-            if (comExplorer.isOk() && comProgress.isNotNull())
-            {
-                msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Removing files ..."),
-                                                    ":/progress_delete_90px.png", this);
-                if (comProgress.GetCanceled())
-                    return false;
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                    return msgCenter().cannotRemoveFiles(comProgress, this);
-            }
-            else
-                return msgCenter().cannotCheckFiles(comExplorer, this);
+            /* Remove files with VFS explorer: */
+            UINotificationProgressVFSExplorerFilesRemove *pNotification =
+                new UINotificationProgressVFSExplorerFilesRemove(comExplorer, exists);
+            if (!handleNotificationProgressNow(pNotification))
+                return false;
         }
 
         /* Export the VMs, on success we are finished: */
