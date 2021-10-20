@@ -24,6 +24,7 @@ Comment[ko]=
 Comment[pl]=
 Comment[ru]=
 Comment[sv]=
+NoDisplay=true
 
 [Desktop Action Manager]
 Exec=VirtualBoxVM
