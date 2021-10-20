@@ -1379,7 +1379,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SSMDeregister(PPDMDRVINS pDrvIns, const cha
 /** @interface_method_impl{PDMDRVHLPR3,pfnMMHeapFree} */
 static DECLCALLBACK(void) pdmR3DrvHlp_MMHeapFree(PPDMDRVINS pDrvIns, void *pv)
 {
-    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    PDMDRV_ASSERT_DRVINS(pDrvIns); RT_NOREF(pDrvIns);
     LogFlow(("pdmR3DrvHlp_MMHeapFree: caller='%s'/%d: pv=%p\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, pv));
 
