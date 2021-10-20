@@ -154,7 +154,6 @@ typedef enum MMTAG
  * @{ */
 
 VMMDECL(RTR3PTR)    MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
-VMMDECL(RTRCPTR)    MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr);
 #ifndef IN_RING0
 VMMDECL(void *)     MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr);
 #endif
@@ -195,8 +194,6 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
     return pv;
 }
 #endif
-
-VMMDECL(RTRCPTR)    MMHyperCCToRC(PVM pVM, void *pv);
 
 
 VMMDECL(int)        MMHyperAlloc(PVMCC pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);

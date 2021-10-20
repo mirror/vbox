@@ -326,25 +326,6 @@ VMMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr)
 }
 
 
-/**
- * Converts a ring-0 host context address in the Hypervisor memory region to a raw-mode context address.
- *
- * @returns raw-mode context address.
- * @param   pVM         The cross context VM structure.
- * @param   R0Ptr       The ring-0 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-VMMDECL(RTRCPTR) MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr)
-{
-    uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupR0(pVM, R0Ptr, &off);
-    if (pLookup)
-        return mmHyperLookupCalcRC(pVM, pLookup, off);
-    return NIL_RTRCPTR;
-}
-
-
 #ifndef IN_RING0
 /**
  * Converts a ring-0 host context address in the Hypervisor memory region to a current context address.
@@ -523,25 +504,6 @@ VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
     return NIL_RTR0PTR;
 }
 #endif
-
-
-/**
- * Converts a current context address in the Hypervisor memory region to a raw-mode context address.
- *
- * @returns guest context address.
- * @param   pVM         The cross context VM structure.
- * @param   pv          The current context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-VMMDECL(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
-{
-    uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);
-    if (pLookup)
-        return mmHyperLookupCalcRC(pVM, pLookup, off);
-    return NIL_RTRCPTR;
-}
 
 
 /**

@@ -4271,7 +4271,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
              * Register the ROM access handler.
              */
             rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
-                                            pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew), pszDesc);
+                                            pRomNew, MMHyperCCToR0(pVM, pRomNew), NIL_RTRCPTR, pszDesc);
             if (RT_SUCCESS(rc))
             {
                 /*
