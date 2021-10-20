@@ -1062,12 +1062,6 @@ typedef struct PDMQUEUE
     PVMR0                           pVMR0;
     /** LIFO of pending items - R0. */
     R0PTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingR0;
-    /** Pointer to the GC VM and indicator for GC enabled queue.
-     * If this is NULL, the queue cannot be used in GC.
-     */
-    PVMRC                           pVMRC;
-    /** LIFO of pending items - GC. */
-    RCPTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingRC;
 
     /** Item size (bytes). */
     uint32_t                        cbItem;
@@ -1106,11 +1100,6 @@ typedef struct PDMQUEUE
         R3PTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemR3;
         /** Pointer to the free item - HC Ptr. */
         R0PTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemR0;
-        /** Pointer to the free item - GC Ptr. */
-        RCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemRC;
-#if HC_ARCH_BITS == 64
-        RTRCPTR                                 Alignment0;
-#endif
     }                               aFreeItems[1];
 } PDMQUEUE;
 
@@ -1433,11 +1422,6 @@ typedef struct PDM
     R3PTRTYPE(PPDMQUEUE)            pDevHlpQueueR3;
     /** Queue in which devhlp tasks are queued for R3 execution - R0 Ptr. */
     R0PTRTYPE(PPDMQUEUE)            pDevHlpQueueR0;
-    /** Queue in which devhlp tasks are queued for R3 execution - RC Ptr. */
-    RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueRC;
-    /** Pointer to the queue which should be manually flushed - RC Ptr.
-     * Only touched by EMT. */
-    RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushRC;
     /** Pointer to the queue which should be manually flushed - R0 Ptr.
      * Only touched by EMT. */
     R0PTRTYPE(struct PDMQUEUE *)    pQueueFlushR0;
@@ -1675,8 +1659,6 @@ int         pdmR3LdrInitU(PUVM pUVM);
 void        pdmR3LdrTermU(PUVM pUVM, bool fFinal);
 char       *pdmR3FileR3(const char *pszFile, bool fShared);
 int         pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName);
-
-void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);
 
 int         pdmR3TaskInit(PVM pVM);
 void        pdmR3TaskTerm(PVM pVM);

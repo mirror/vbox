@@ -578,12 +578,6 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     LogFlow(("PDMR3Relocate\n"));
 
     /*
-     * Queues.
-     */
-    pdmR3QueueRelocate(pVM, offDelta);
-    pVM->pdm.s.pDevHlpQueueRC = PDMQueueRCPtr(pVM->pdm.s.pDevHlpQueueR3);
-
-    /*
      * The registered PIC.
      */
     if (pVM->pdm.s.Pic.pDevInsRC)

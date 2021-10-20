@@ -134,8 +134,6 @@ int pdmR3DevInit(PVM pVM)
                                   &pVM->pdm.s.pDevHlpQueueR3);
     AssertRCReturn(rc, rc);
     pVM->pdm.s.pDevHlpQueueR0 = PDMQueueR0Ptr(pVM->pdm.s.pDevHlpQueueR3);
-    pVM->pdm.s.pDevHlpQueueRC = PDMQueueRCPtr(pVM->pdm.s.pDevHlpQueueR3);
-
 
     /*
      *

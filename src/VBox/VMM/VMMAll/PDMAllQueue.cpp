@@ -82,6 +82,7 @@ static void pdmQueueSetFF(PPDMQUEUE pQueue)
 
 /**
  * Queue an item.
+ *
  * The item must have been obtained using PDMQueueAlloc(). Once the item
  * have been passed to this function it must not be touched!
  *
@@ -119,6 +120,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 
 /**
  * Queue an item.
+ *
  * The item must have been obtained using PDMQueueAlloc(). Once the item
  * have been passed to this function it must not be touched!
  *
@@ -144,26 +146,6 @@ VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
         VMCPU_FF_SET(VMMGetCpu0(pVM), VMCPU_FF_TO_R3);
         Log2(("PDMQueueInsertEx: Setting VMCPU_FF_TO_R3\n"));
     }
-#endif
-}
-
-
-
-/**
- * Gets the RC pointer for the specified queue.
- *
- * @returns The RC address of the queue.
- * @returns NULL if pQueue is invalid.
- * @param   pQueue          The queue handle.
- */
-VMMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
-{
-    AssertPtr(pQueue);
-    Assert(pQueue->pVMR3 && pQueue->pVMRC);
-#ifdef IN_RC
-    return pQueue;
-#else
-    return MMHyperCCToRC(pQueue->CTX_SUFF(pVM), pQueue);
 #endif
 }
 
@@ -197,8 +179,7 @@ VMMDECL(bool) PDMQueueFlushIfNecessary(PPDMQUEUE pQueue)
 {
     AssertPtr(pQueue);
     if (   pQueue->pPendingR3 != NIL_RTR3PTR
-        || pQueue->pPendingR0 != NIL_RTR0PTR
-        || pQueue->pPendingRC != NIL_RTRCPTR)
+        || pQueue->pPendingR0 != NIL_RTR0PTR)
     {
         pdmQueueSetFF(pQueue);
         return false;

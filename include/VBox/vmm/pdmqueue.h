@@ -58,11 +58,6 @@ typedef struct PDMQUEUEITEMCORE
     R3PTRTYPE(PPDMQUEUEITEMCORE)    pNextR3;
     /** Pointer to the next item in the pending list - R0 Pointer. */
     R0PTRTYPE(PPDMQUEUEITEMCORE)    pNextR0;
-    /** Pointer to the next item in the pending list - RC Pointer. */
-    RCPTRTYPE(PPDMQUEUEITEMCORE)    pNextRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         Alignment0;
-#endif
 } PDMQUEUEITEMCORE;
 
 
@@ -155,7 +150,6 @@ VMMR3_INT_DECL(void) PDMR3QueueFlushAll(PVM pVM);
 VMMDECL(PPDMQUEUEITEMCORE)    PDMQueueAlloc(PPDMQUEUE pQueue);
 VMMDECL(void)                 PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem);
 VMMDECL(void)                 PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay);
-VMMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue);
 VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue);
 VMMDECL(bool)                 PDMQueueFlushIfNecessary(PPDMQUEUE pQueue);
 
