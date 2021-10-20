@@ -530,8 +530,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         uint32_t       cbBeaconToPlay = cbBeacon;
         uint32_t       cbBeaconPlayed = 0;
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing %RU32 bytes total\n", cbToPlayTotal);
-        if (cbBeaconToPlay)
+        if (cbBeacon)
         {
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing 2 x %RU32 bytes pre/post beacons\n", cbBeaconToPlay);
             cbToPlayTotal += cbBeacon * 2 /* Pre + post beacon */;
@@ -539,6 +538,8 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
 
         if (pTstEnv)
         {
+            AudioTestObjAddMetadataStr(Obj, "beacon_pre_bytes=%RU32\n", cbBeacon);
+            AudioTestObjAddMetadataStr(Obj, "beacon_post_bytes=%RU32\n", cbBeacon);
             AudioTestObjAddMetadataStr(Obj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
             AudioTestObjAddMetadataStr(Obj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
             AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
@@ -547,6 +548,8 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
              *       has nothing to do with the device emulation scheduling hint. */
             AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
         }
+
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing %RU32 bytes total\n", cbToPlayTotal);
 
         PAUDIOTESTDRVMIXSTREAM pMix = &pStream->Mix;
 
@@ -743,8 +746,6 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
     {
         uint64_t cbToRecTotal = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
 
-        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Recording %RU32 bytes total\n", cbToRecTotal);
-
         /* We record a pre + post beacon before + after the actual test tone
          * with exactly AUDIOTEST_BEACON_SIZE_FRAMES audio frames. */
         uint32_t const cbBeacon = PDMAudioPropsFramesToBytes(&pStream->Cfg.Props, AUDIOTEST_BEACON_SIZE_FRAMES);
@@ -752,6 +753,9 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         {
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording 2 x %RU32 bytes pre/post beacons\n", cbBeacon);
             cbToRecTotal += cbBeacon * 2 /* Pre + post beacon */;
+
+            AudioTestObjAddMetadataStr(Obj, "beacon_pre_bytes=%RU32\n", cbBeacon);
+            AudioTestObjAddMetadataStr(Obj, "beacon_post_bytes=%RU32\n", cbBeacon);
         }
 
         AudioTestObjAddMetadataStr(Obj, "stream_to_record_bytes=%RU32\n", cbToRecTotal);
@@ -760,6 +764,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
          *       has nothing to do with the device emulation scheduling hint. */
         AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pIoOpts->cMsSchedulingHint);
+
+        RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Recording %RU32 bytes total\n", cbToRecTotal);
 
         uint8_t         abSamples[16384];
         uint32_t const  cbSamplesAligned = PDMAudioPropsFloorBytesToFrame(pMix->pProps, sizeof(abSamples));
