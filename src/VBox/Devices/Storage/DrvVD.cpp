@@ -4477,10 +4477,12 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    LogFlowFunc(("\n"));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-    int rc = VINF_SUCCESS;
+    PVBOXDISK       pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
+
+    LogFlowFunc(("\n"));
+
     char *pszName = NULL;        /* The path of the disk image file. */
     char *pszFormat = NULL;      /* The format backed to use for this image. */
     char *pszCachePath = NULL;   /* The path to the cache image. */
@@ -4572,8 +4574,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 
     pThis->VDIfError.pfnError     = drvvdErrorCallback;
     pThis->VDIfError.pfnMessage   = NULL;
-    rc = VDInterfaceAdd(&pThis->VDIfError.Core, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
-                        pDrvIns, sizeof(VDINTERFACEERROR), &pThis->pVDIfsDisk);
+    int rc = VDInterfaceAdd(&pThis->VDIfError.Core, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
+                            pDrvIns, sizeof(VDINTERFACEERROR), &pThis->pVDIfsDisk);
     AssertRC(rc);
 
     /* List of images is empty now. */
@@ -4642,17 +4644,17 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         {
             /* Toplevel configuration additionally contains the global image
              * open flags. Some might be converted to per-image flags later. */
-            fValid = CFGMR3AreValuesValid(pCurNode,
-                                          "Format\0Path\0"
-                                          "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
-                                          "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
-                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0BlockCache\0"
-                                          "CachePath\0CacheFormat\0Discard\0InformAboutZeroBlocks\0"
-                                          "SkipConsistencyChecks\0"
-                                          "Locked\0BIOSVisible\0Cylinders\0Heads\0Sectors\0Mountable\0"
-                                          "EmptyDrive\0IoBufMax\0NonRotationalMedium\0"
+            fValid = pHlp->pfnCFGMAreValuesValid(pCurNode,
+                                                 "Format\0Path\0"
+                                                 "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
+                                                 "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
+                                                 "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0BlockCache\0"
+                                                 "CachePath\0CacheFormat\0Discard\0InformAboutZeroBlocks\0"
+                                                 "SkipConsistencyChecks\0"
+                                                 "Locked\0BIOSVisible\0Cylinders\0Heads\0Sectors\0Mountable\0"
+                                                 "EmptyDrive\0IoBufMax\0NonRotationalMedium\0"
 #if defined(VBOX_PERIODIC_FLUSH) || defined(VBOX_IGNORE_FLUSH)
-                                          "FlushInterval\0IgnoreFlush\0IgnoreFlushAsync\0"
+                                                 "FlushInterval\0IgnoreFlush\0IgnoreFlushAsync\0"
 #endif /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
                                            );
         }
@@ -4660,8 +4662,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         {
             /* All other image configurations only contain image name and
              * the format information. */
-            fValid = CFGMR3AreValuesValid(pCurNode, "Format\0Path\0"
-                                                    "MergeSource\0MergeTarget\0");
+            fValid = pHlp->pfnCFGMAreValuesValid(pCurNode, "Format\0Path\0"
+                                                           "MergeSource\0MergeTarget\0");
         }
         if (!fValid)
         {
@@ -4672,7 +4674,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 
         if (pCurNode == pCfg)
         {
-            rc = CFGMR3QueryBoolDef(pCurNode, "HostIPStack", &fHostIP, true);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "HostIPStack", &fHostIP, true);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4680,7 +4682,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryBoolDef(pCurNode, "HonorZeroWrites", &fHonorZeroWrites, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "HonorZeroWrites", &fHonorZeroWrites, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4688,7 +4690,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryBoolDef(pCurNode, "ReadOnly", &fReadOnly, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "ReadOnly", &fReadOnly, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4696,7 +4698,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryBoolDef(pCurNode, "MaybeReadOnly", &fMaybeReadOnly, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "MaybeReadOnly", &fMaybeReadOnly, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4704,7 +4706,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryBoolDef(pCurNode, "TempReadOnly", &pThis->fTempReadOnly, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "TempReadOnly", &pThis->fTempReadOnly, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4718,7 +4720,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryBoolDef(pCurNode, "Shareable", &pThis->fShareable, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "Shareable", &pThis->fShareable, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4726,14 +4728,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"UseNewIo\" as boolean failed"));
                 break;
             }
-            rc = CFGMR3QueryBoolDef(pCurNode, "SetupMerge", &pThis->fMergePending, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "SetupMerge", &pThis->fMergePending, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4746,28 +4748,28 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"MergePending\" are set"));
                 break;
             }
-            rc = CFGMR3QueryBoolDef(pCurNode, "BootAcceleration", &pThis->fBootAccelEnabled, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "BootAcceleration", &pThis->fBootAccelEnabled, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"BootAcceleration\" as boolean failed"));
                 break;
             }
-            rc = CFGMR3QueryU32Def(pCurNode, "BootAccelerationBuffer", (uint32_t *)&pThis->cbBootAccelBuffer, 16 * _1K);
+            rc = pHlp->pfnCFGMQueryU32Def(pCurNode, "BootAccelerationBuffer", (uint32_t *)&pThis->cbBootAccelBuffer, 16 * _1K);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"BootAccelerationBuffer\" as integer failed"));
                 break;
             }
-            rc = CFGMR3QueryBoolDef(pCurNode, "BlockCache", &fUseBlockCache, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "BlockCache", &fUseBlockCache, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"BlockCache\" as boolean failed"));
                 break;
             }
-            rc = CFGMR3QueryStringAlloc(pCurNode, "BwGroup", &pThis->pszBwGroup);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCurNode, "BwGroup", &pThis->pszBwGroup);
             if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4776,7 +4778,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
             else
                 rc = VINF_SUCCESS;
-            rc = CFGMR3QueryBoolDef(pCurNode, "Discard", &fDiscard, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "Discard", &fDiscard, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4789,14 +4791,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"Discard\" are set"));
                 break;
             }
-            rc = CFGMR3QueryBoolDef(pCurNode, "InformAboutZeroBlocks", &fInformAboutZeroBlocks, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "InformAboutZeroBlocks", &fInformAboutZeroBlocks, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"InformAboutZeroBlocks\" as boolean failed"));
                 break;
             }
-            rc = CFGMR3QueryBoolDef(pCurNode, "SkipConsistencyChecks", &fSkipConsistencyChecks, true);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "SkipConsistencyChecks", &fSkipConsistencyChecks, true);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4805,7 +4807,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
 
             char *psz = NULL;
-           rc = CFGMR3QueryStringAlloc(pCfg, "Type", &psz);
+           rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Type", &psz);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_BLOCK_NO_TYPE, N_("Failed to obtain the sub type"));
             pThis->enmType = drvvdGetMediaTypeFromString(psz);
@@ -4818,7 +4820,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
             MMR3HeapFree(psz); psz = NULL;
 
-            rc = CFGMR3QueryStringAlloc(pCurNode, "CachePath", &pszCachePath);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCurNode, "CachePath", &pszCachePath);
             if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4830,7 +4832,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 
             if (pszCachePath)
             {
-                rc = CFGMR3QueryStringAlloc(pCurNode, "CacheFormat", &pszCacheFormat);
+                rc = pHlp->pfnCFGMQueryStringAlloc(pCurNode, "CacheFormat", &pszCacheFormat);
                 if (RT_FAILURE(rc))
                 {
                     rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4840,37 +4842,37 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
 
             /* Mountable */
-            rc = CFGMR3QueryBoolDef(pCfg, "Mountable", &pThis->fMountable, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Mountable", &pThis->fMountable, false);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Mountable\" from the config"));
 
             /* Locked */
-            rc = CFGMR3QueryBoolDef(pCfg, "Locked", &pThis->fLocked, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Locked", &pThis->fLocked, false);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Locked\" from the config"));
 
             /* BIOS visible */
-            rc = CFGMR3QueryBoolDef(pCfg, "BIOSVisible", &pThis->fBiosVisible, true);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "BIOSVisible", &pThis->fBiosVisible, true);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"BIOSVisible\" from the config"));
 
             /* Cylinders */
-            rc = CFGMR3QueryU32Def(pCfg, "Cylinders", &pThis->LCHSGeometry.cCylinders, 0);
+            rc = pHlp->pfnCFGMQueryU32Def(pCfg, "Cylinders", &pThis->LCHSGeometry.cCylinders, 0);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Cylinders\" from the config"));
 
             /* Heads */
-            rc = CFGMR3QueryU32Def(pCfg, "Heads", &pThis->LCHSGeometry.cHeads, 0);
+            rc = pHlp->pfnCFGMQueryU32Def(pCfg, "Heads", &pThis->LCHSGeometry.cHeads, 0);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Heads\" from the config"));
 
             /* Sectors */
-            rc = CFGMR3QueryU32Def(pCfg, "Sectors", &pThis->LCHSGeometry.cSectors, 0);
+            rc = pHlp->pfnCFGMQueryU32Def(pCfg, "Sectors", &pThis->LCHSGeometry.cSectors, 0);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Sectors\" from the config"));
 
             /* Uuid */
-            rc = CFGMR3QueryStringAlloc(pCfg, "Uuid", &psz);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Uuid", &psz);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 RTUuidClear(&pThis->Uuid);
             else if (RT_SUCCESS(rc))
@@ -4888,13 +4890,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Uuid\" from the config"));
 
 #ifdef VBOX_PERIODIC_FLUSH
-            rc = CFGMR3QueryU32Def(pCfg, "FlushInterval", &pThis->cbFlushInterval, 0);
+            rc = pHlp->pfnCFGMQueryU32Def(pCfg, "FlushInterval", &pThis->cbFlushInterval, 0);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"FlushInterval\" from the config"));
 #endif /* VBOX_PERIODIC_FLUSH */
 
 #ifdef VBOX_IGNORE_FLUSH
-            rc = CFGMR3QueryBoolDef(pCfg, "IgnoreFlush", &pThis->fIgnoreFlush, true);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IgnoreFlush", &pThis->fIgnoreFlush, true);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IgnoreFlush\" from the config"));
 
@@ -4903,7 +4905,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             else
                 LogRel(("DrvVD: Flushes will be passed to the disk\n"));
 
-            rc = CFGMR3QueryBoolDef(pCfg, "IgnoreFlushAsync", &pThis->fIgnoreFlushAsync, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IgnoreFlushAsync", &pThis->fIgnoreFlushAsync, false);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IgnoreFlushAsync\" from the config"));
 
@@ -4913,7 +4915,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 LogRel(("DrvVD: Async flushes will be passed to the disk\n"));
 #endif /* VBOX_IGNORE_FLUSH */
 
-            rc = CFGMR3QueryBoolDef(pCurNode, "EmptyDrive", &fEmptyDrive, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "EmptyDrive", &fEmptyDrive, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -4921,11 +4923,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryU32Def(pCfg, "IoBufMax", &cbIoBufMax, 5 * _1M);
+            rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IoBufMax", &cbIoBufMax, 5 * _1M);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IoBufMax\" from the config"));
 
-            rc = CFGMR3QueryBoolDef(pCfg, "NonRotationalMedium", &pThis->fNonRotational, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "NonRotationalMedium", &pThis->fNonRotational, false);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
                                         N_("DrvVD configuration error: Querying \"NonRotationalMedium\" as boolean failed"));
@@ -5013,7 +5015,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             /*
              * Read the image configuration.
              */
-            rc = CFGMR3QueryStringAlloc(pCurNode, "Path", &pszName);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCurNode, "Path", &pszName);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -5021,7 +5023,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 break;
             }
 
-            rc = CFGMR3QueryStringAlloc(pCurNode, "Format", &pszFormat);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCurNode, "Format", &pszFormat);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -5030,7 +5032,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
 
             bool fMergeSource;
-            rc = CFGMR3QueryBoolDef(pCurNode, "MergeSource", &fMergeSource, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "MergeSource", &fMergeSource, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -5050,7 +5052,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
 
             bool fMergeTarget;
-            rc = CFGMR3QueryBoolDef(pCurNode, "MergeTarget", &fMergeTarget, false);
+            rc = pHlp->pfnCFGMQueryBoolDef(pCurNode, "MergeTarget", &fMergeTarget, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -5069,7 +5071,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 }
             }
 
-            PCFGMNODE pCfgVDConfig = CFGMR3GetChild(pCurNode, "VDConfig");
+            PCFGMNODE pCfgVDConfig = pHlp->pfnCFGMGetChild(pCurNode, "VDConfig");
             pImage->VDIfConfig.pfnAreKeysValid = drvvdCfgAreKeysValid;
             pImage->VDIfConfig.pfnQuerySize    = drvvdCfgQuerySize;
             pImage->VDIfConfig.pfnQuery        = drvvdCfgQuery;
@@ -5089,7 +5091,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             if (!pThis->pCfgCrypto)
             {
                 if (pCfgVDConfig)
-                    pThis->pCfgCrypto = CFGMR3GetChild(pCfgVDConfig, "CRYPT");
+                    pThis->pCfgCrypto = pHlp->pfnCFGMGetChild(pCfgVDConfig, "CRYPT");
 
                 if (pThis->pCfgCrypto)
                 {
@@ -5247,7 +5249,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             /* next */
             iLevel--;
             iImageIdx++;
-            pCurNode = CFGMR3GetParent(pCurNode);
+            pCurNode = pHlp->pfnCFGMGetParent(pCurNode);
         }
 
         LogRel(("VD: Opening the disk took %lld ns\n", RTTimeNanoTS() - tsStart));
