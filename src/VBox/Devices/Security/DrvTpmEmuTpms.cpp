@@ -361,7 +361,8 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 {
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVTPMEMU pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
+    PDRVTPMEMU      pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMEMU);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
 
     /*
      * Init the static parts.
@@ -406,7 +407,7 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     TPMLIB_TPMVersion enmVersion = TPMLIB_TPM_VERSION_2;
     uint32_t uTpmVersion = 0;
-    rc = CFGMR3QueryU32Def(pCfg, "TpmVersion", &uTpmVersion, 2);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "TpmVersion", &uTpmVersion, 2);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"TpmVersion\" resulted in %Rrc"), rc);
@@ -437,7 +438,7 @@ static DECLCALLBACK(int) drvTpmEmuTpmsConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                    N_("Querying the maximum supported buffer size failed with %u"), rcTpm);
 
-    rc = CFGMR3QueryU32Def(pCfg, "BufferSize", &pThis->cbBuffer, (uint32_t)cbBufferMax);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "BufferSize", &pThis->cbBuffer, (uint32_t)cbBufferMax);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"BufferSize\" resulted in %Rrc"), rc);

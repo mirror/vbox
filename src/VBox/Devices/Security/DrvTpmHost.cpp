@@ -276,7 +276,8 @@ static DECLCALLBACK(int) drvTpmHostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
 {
     RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVTPMHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMHOST);
+    PDRVTPMHOST     pThis = PDMINS_2_DATA(pDrvIns, PDRVTPMHOST);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
 
     /*
      * Init the static parts.
@@ -301,7 +302,7 @@ static DECLCALLBACK(int) drvTpmHostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "TpmId", "");
 
     uint32_t idTpm = RTTPM_ID_DEFAULT;
-    int rc = CFGMR3QueryU32Def(pCfg, "TpmId", &idTpm, RTTPM_ID_DEFAULT);
+    int rc = pHlp->pfnCFGMQueryU32Def(pCfg, "TpmId", &idTpm, RTTPM_ID_DEFAULT);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Configuration error: querying \"TpmId\" resulted in %Rrc"), rc);
