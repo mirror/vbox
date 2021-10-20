@@ -1944,6 +1944,8 @@ DECLCALLBACK(uint64_t) hgcmR3GetVMMDevSessionId(PPDMIHGCMPORT pInterface)
  */
 int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
 {
+    PCPDMDEVHLPR3 pHlp = pThisCC->pDevIns->pHlpR3;
+
     LogFlowFunc(("\n"));
 
     /* Compute how many commands are pending. */
@@ -1957,7 +1959,7 @@ int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
     LogFlowFunc(("cCmds = %d\n", cCmds));
 
     /* Save number of commands. */
-    int rc = SSMR3PutU32(pSSM, cCmds);
+    int rc = pHlp->pfnSSMPutU32(pSSM, cCmds);
     AssertRCReturn(rc, rc);
 
     if (cCmds > 0)
@@ -1968,19 +1970,19 @@ int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
 
             /** @todo Don't save cancelled requests! It serves no purpose.  See restore and
              *        @bugref{4032#c4} for details. */
-            SSMR3PutU32     (pSSM, (uint32_t)pCmd->enmCmdType);
-            SSMR3PutBool    (pSSM, pCmd->fCancelled);
-            SSMR3PutGCPhys  (pSSM, pCmd->GCPhys);
-            SSMR3PutU32     (pSSM, pCmd->cbRequest);
-            SSMR3PutU32     (pSSM, (uint32_t)pCmd->enmRequestType);
+            pHlp->pfnSSMPutU32     (pSSM, (uint32_t)pCmd->enmCmdType);
+            pHlp->pfnSSMPutBool    (pSSM, pCmd->fCancelled);
+            pHlp->pfnSSMPutGCPhys  (pSSM, pCmd->GCPhys);
+            pHlp->pfnSSMPutU32     (pSSM, pCmd->cbRequest);
+            pHlp->pfnSSMPutU32     (pSSM, (uint32_t)pCmd->enmRequestType);
             const uint32_t cParms = pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL ? pCmd->u.call.cParms : 0;
-            rc = SSMR3PutU32(pSSM, cParms);
+            rc = pHlp->pfnSSMPutU32(pSSM, cParms);
             AssertRCReturn(rc, rc);
 
             if (pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL)
             {
-                SSMR3PutU32     (pSSM, pCmd->u.call.u32ClientID);
-                rc = SSMR3PutU32(pSSM, pCmd->u.call.u32Function);
+                pHlp->pfnSSMPutU32     (pSSM, pCmd->u.call.u32ClientID);
+                rc = pHlp->pfnSSMPutU32(pSSM, pCmd->u.call.u32Function);
                 AssertRCReturn(rc, rc);
 
                 /* Guest parameters. */
@@ -1989,16 +1991,16 @@ int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
                 {
                     VBOXHGCMGUESTPARM * const pGuestParm = &pCmd->u.call.paGuestParms[i];
 
-                    rc = SSMR3PutU32(pSSM, (uint32_t)pGuestParm->enmType);
+                    rc = pHlp->pfnSSMPutU32(pSSM, (uint32_t)pGuestParm->enmType);
                     AssertRCReturn(rc, rc);
 
                     if (   pGuestParm->enmType == VMMDevHGCMParmType_32bit
                         || pGuestParm->enmType == VMMDevHGCMParmType_64bit)
                     {
                         const VBOXHGCMPARMVAL * const pVal = &pGuestParm->u.val;
-                        SSMR3PutU64     (pSSM, pVal->u64Value);
-                        SSMR3PutU32     (pSSM, pVal->offValue);
-                        rc = SSMR3PutU32(pSSM, pVal->cbValue);
+                        pHlp->pfnSSMPutU64     (pSSM, pVal->u64Value);
+                        pHlp->pfnSSMPutU32     (pSSM, pVal->offValue);
+                        rc = pHlp->pfnSSMPutU32(pSSM, pVal->cbValue);
                     }
                     else if (   pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_In
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
@@ -2008,14 +2010,14 @@ int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
                              || pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList)
                     {
                         const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
-                        SSMR3PutU32     (pSSM, pPtr->cbData);
-                        SSMR3PutU32     (pSSM, pPtr->offFirstPage);
-                        SSMR3PutU32     (pSSM, pPtr->cPages);
-                        rc = SSMR3PutU32(pSSM, pPtr->fu32Direction);
+                        pHlp->pfnSSMPutU32     (pSSM, pPtr->cbData);
+                        pHlp->pfnSSMPutU32     (pSSM, pPtr->offFirstPage);
+                        pHlp->pfnSSMPutU32     (pSSM, pPtr->cPages);
+                        rc = pHlp->pfnSSMPutU32(pSSM, pPtr->fu32Direction);
 
                         uint32_t iPage;
                         for (iPage = 0; RT_SUCCESS(rc) && iPage < pPtr->cPages; ++iPage)
-                            rc = SSMR3PutGCPhys(pSSM, pPtr->paPages[iPage]);
+                            rc = pHlp->pfnSSMPutGCPhys(pSSM, pPtr->paPages[iPage]);
                     }
                     else if (pGuestParm->enmType == VMMDevHGCMParmType_NoBouncePageList)
                     {
@@ -2032,12 +2034,12 @@ int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
             }
             else if (pCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
             {
-                SSMR3PutU32(pSSM, pCmd->u.connect.u32ClientID);
-                SSMR3PutMem(pSSM, pCmd->u.connect.pLoc, sizeof(*pCmd->u.connect.pLoc));
+                pHlp->pfnSSMPutU32(pSSM, pCmd->u.connect.u32ClientID);
+                pHlp->pfnSSMPutMem(pSSM, pCmd->u.connect.pLoc, sizeof(*pCmd->u.connect.pLoc));
             }
             else if (pCmd->enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT)
             {
-                SSMR3PutU32(pSSM, pCmd->u.disconnect.u32ClientID);
+                pHlp->pfnSSMPutU32(pSSM, pCmd->u.disconnect.u32ClientID);
             }
             else
             {
@@ -2045,13 +2047,13 @@ int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
             }
 
             /* A reserved field, will allow to extend saved data for a command. */
-            rc = SSMR3PutU32(pSSM, 0);
+            rc = pHlp->pfnSSMPutU32(pSSM, 0);
             AssertRCReturn(rc, rc);
         }
     }
 
     /* A reserved field, will allow to extend saved data for VMMDevHGCM. */
-    rc = SSMR3PutU32(pSSM, 0);
+    rc = pHlp->pfnSSMPutU32(pSSM, 0);
     AssertRCReturn(rc, rc);
 
     return rc;
@@ -2074,13 +2076,15 @@ int vmmdevR3HgcmSaveState(PVMMDEVCC pThisCC, PSSMHANDLE pSSM)
  */
 int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     LogFlowFunc(("\n"));
 
     pThisCC->uSavedStateVersion = uVersion; /* For vmmdevR3HgcmLoadStateDone */
 
     /* Read how many commands were pending. */
     uint32_t cCmds = 0;
-    int rc = SSMR3GetU32(pSSM, &cCmds);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cCmds);
     AssertRCReturn(rc, rc);
 
     LogFlowFunc(("cCmds = %d\n", cCmds));
@@ -2101,14 +2105,14 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             VMMDevRequestType enmRequestType;
             uint32_t          cParms;
 
-            SSMR3GetU32     (pSSM, &u32);
+            pHlp->pfnSSMGetU32     (pSSM, &u32);
             enmCmdType = (VBOXHGCMCMDTYPE)u32;
-            SSMR3GetBool    (pSSM, &fCancelled);
-            SSMR3GetGCPhys  (pSSM, &GCPhys);
-            SSMR3GetU32     (pSSM, &cbRequest);
-            SSMR3GetU32     (pSSM, &u32);
+            pHlp->pfnSSMGetBool    (pSSM, &fCancelled);
+            pHlp->pfnSSMGetGCPhys  (pSSM, &GCPhys);
+            pHlp->pfnSSMGetU32     (pSSM, &cbRequest);
+            pHlp->pfnSSMGetU32     (pSSM, &u32);
             enmRequestType = (VMMDevRequestType)u32;
-            rc = SSMR3GetU32(pSSM, &cParms);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cParms);
             AssertRCReturn(rc, rc);
 
             PVBOXHGCMCMD pCmd = vmmdevR3HgcmCmdAlloc(pThisCC, enmCmdType, GCPhys, cbRequest, cParms, 0 /*fRequestor*/);
@@ -2121,8 +2125,8 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
 
             if (enmCmdType == VBOXHGCMCMDTYPE_CALL)
             {
-                SSMR3GetU32     (pSSM, &pCmd->u.call.u32ClientID);
-                rc = SSMR3GetU32(pSSM, &pCmd->u.call.u32Function);
+                pHlp->pfnSSMGetU32     (pSSM, &pCmd->u.call.u32ClientID);
+                rc = pHlp->pfnSSMGetU32(pSSM, &pCmd->u.call.u32Function);
                 AssertRCReturn(rc, rc);
 
                 /* Guest parameters. */
@@ -2131,7 +2135,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
                 {
                     VBOXHGCMGUESTPARM * const pGuestParm = &pCmd->u.call.paGuestParms[i];
 
-                    rc = SSMR3GetU32(pSSM, &u32);
+                    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
                     AssertRCReturn(rc, rc);
                     pGuestParm->enmType = (HGCMFunctionParameterType)u32;
 
@@ -2139,9 +2143,9 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
                         || pGuestParm->enmType == VMMDevHGCMParmType_64bit)
                     {
                         VBOXHGCMPARMVAL * const pVal = &pGuestParm->u.val;
-                        SSMR3GetU64     (pSSM, &pVal->u64Value);
-                        SSMR3GetU32     (pSSM, &pVal->offValue);
-                        rc = SSMR3GetU32(pSSM, &pVal->cbValue);
+                        pHlp->pfnSSMGetU64     (pSSM, &pVal->u64Value);
+                        pHlp->pfnSSMGetU32     (pSSM, &pVal->offValue);
+                        rc = pHlp->pfnSSMGetU32(pSSM, &pVal->cbValue);
                     }
                     else if (   pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_In
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
@@ -2151,10 +2155,10 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
                              || pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList)
                     {
                         VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
-                        SSMR3GetU32     (pSSM, &pPtr->cbData);
-                        SSMR3GetU32     (pSSM, &pPtr->offFirstPage);
-                        SSMR3GetU32     (pSSM, &pPtr->cPages);
-                        rc = SSMR3GetU32(pSSM, &pPtr->fu32Direction);
+                        pHlp->pfnSSMGetU32     (pSSM, &pPtr->cbData);
+                        pHlp->pfnSSMGetU32     (pSSM, &pPtr->offFirstPage);
+                        pHlp->pfnSSMGetU32     (pSSM, &pPtr->cPages);
+                        rc = pHlp->pfnSSMGetU32(pSSM, &pPtr->fu32Direction);
                         if (RT_SUCCESS(rc))
                         {
                             if (pPtr->cPages == 1)
@@ -2172,7 +2176,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
                             {
                                 uint32_t iPage;
                                 for (iPage = 0; iPage < pPtr->cPages; ++iPage)
-                                    rc = SSMR3GetGCPhys(pSSM, &pPtr->paPages[iPage]);
+                                    rc = pHlp->pfnSSMGetGCPhys(pSSM, &pPtr->paPages[iPage]);
                             }
                         }
                     }
@@ -2190,13 +2194,13 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             }
             else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
             {
-                SSMR3GetU32(pSSM, &pCmd->u.connect.u32ClientID);
-                rc = SSMR3GetMem(pSSM, pCmd->u.connect.pLoc, sizeof(*pCmd->u.connect.pLoc));
+                pHlp->pfnSSMGetU32(pSSM, &pCmd->u.connect.u32ClientID);
+                rc = pHlp->pfnSSMGetMem(pSSM, pCmd->u.connect.pLoc, sizeof(*pCmd->u.connect.pLoc));
                 AssertRCReturn(rc, rc);
             }
             else if (enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT)
             {
-                rc = SSMR3GetU32(pSSM, &pCmd->u.disconnect.u32ClientID);
+                rc = pHlp->pfnSSMGetU32(pSSM, &pCmd->u.disconnect.u32ClientID);
                 AssertRCReturn(rc, rc);
             }
             else
@@ -2205,7 +2209,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             }
 
             /* A reserved field, will allow to extend saved data for a command. */
-            rc = SSMR3GetU32(pSSM, &u32);
+            rc = pHlp->pfnSSMGetU32(pSSM, &u32);
             AssertRCReturn(rc, rc);
 
             /*
@@ -2229,7 +2233,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
         }
 
         /* A reserved field, will allow to extend saved data for VMMDevHGCM. */
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertRCReturn(rc, rc);
     }
     else if (uVersion >= 9)
@@ -2246,8 +2250,8 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             uint32_t          cbRequest;
             uint32_t          cLinAddrs;
 
-            SSMR3GetGCPhys  (pSSM, &GCPhys);
-            rc = SSMR3GetU32(pSSM, &cbRequest);
+            pHlp->pfnSSMGetGCPhys  (pSSM, &GCPhys);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cbRequest);
             AssertRCReturn(rc, rc);
 
             LogFlowFunc(("Restoring %RGp size %x bytes\n", GCPhys, cbRequest));
@@ -2256,13 +2260,13 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
              * Now the command is reconstructed in vmmdevR3HgcmLoadStateDone.
              */
             if (uVersion <= 12)
-                SSMR3Skip(pSSM, sizeof (uint32_t));
+                pHlp->pfnSSMSkip(pSSM, sizeof (uint32_t));
 
-            SSMR3GetU32     (pSSM, &u32);
+            pHlp->pfnSSMGetU32     (pSSM, &u32);
             enmCmdType = (VBOXHGCMCMDTYPE)u32;
-            SSMR3GetBool    (pSSM, &fCancelled);
+            pHlp->pfnSSMGetBool    (pSSM, &fCancelled);
             /* How many linear pointers. Always 0 if not a call command. */
-            rc = SSMR3GetU32(pSSM, &cLinAddrs);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cLinAddrs);
             AssertRCReturn(rc, rc);
 
             PVBOXHGCMCMD pCmd = vmmdevR3HgcmCmdAlloc(pThisCC, enmCmdType, GCPhys, cbRequest, cLinAddrs, 0 /*fRequestor*/);
@@ -2275,7 +2279,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             if (cLinAddrs > 0)
             {
                 /* Skip number of pages for all LinAddrs in this command. */
-                SSMR3Skip(pSSM, sizeof(uint32_t));
+                pHlp->pfnSSMSkip(pSSM, sizeof(uint32_t));
 
                 uint32_t i;
                 for (i = 0; i < cLinAddrs; ++i)
@@ -2283,9 +2287,9 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
                     VBOXHGCMPARMPTR * const pPtr = &pCmd->u.call.paGuestParms[i].u.ptr;
 
                     /* Index of the parameter. Use cbData field to store the index. */
-                    SSMR3GetU32     (pSSM, &pPtr->cbData);
-                    SSMR3GetU32     (pSSM, &pPtr->offFirstPage);
-                    rc = SSMR3GetU32(pSSM, &pPtr->cPages);
+                    pHlp->pfnSSMGetU32     (pSSM, &pPtr->cbData);
+                    pHlp->pfnSSMGetU32     (pSSM, &pPtr->offFirstPage);
+                    rc = pHlp->pfnSSMGetU32(pSSM, &pPtr->cPages);
                     AssertRCReturn(rc, rc);
 
                     pPtr->paPages = (RTGCPHYS *)vmmdevR3HgcmCallMemAlloc(pThisCC, pCmd, pPtr->cPages * sizeof(RTGCPHYS));
@@ -2293,12 +2297,12 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
 
                     uint32_t iPage;
                     for (iPage = 0; iPage < pPtr->cPages; ++iPage)
-                        rc = SSMR3GetGCPhys(pSSM, &pPtr->paPages[iPage]);
+                        rc = pHlp->pfnSSMGetGCPhys(pSSM, &pPtr->paPages[iPage]);
                 }
             }
 
             /* A reserved field, will allow to extend saved data for a command. */
-            rc = SSMR3GetU32(pSSM, &u32);
+            rc = pHlp->pfnSSMGetU32(pSSM, &u32);
             AssertRCReturn(rc, rc);
 
             /* See current version above. */
@@ -2313,7 +2317,7 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
         }
 
         /* A reserved field, will allow to extend saved data for VMMDevHGCM. */
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertRCReturn(rc, rc);
     }
     else
@@ -2325,8 +2329,8 @@ int vmmdevR3HgcmLoadState(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pThisCC, 
             RTGCPHYS GCPhys;
             uint32_t cbRequest;
 
-            SSMR3GetGCPhys(pSSM, &GCPhys);
-            rc = SSMR3GetU32(pSSM, &cbRequest);
+            pHlp->pfnSSMGetGCPhys(pSSM, &GCPhys);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cbRequest);
             AssertRCReturn(rc, rc);
 
             LogFlowFunc(("Restoring %RGp size %x bytes\n", GCPhys, cbRequest));
