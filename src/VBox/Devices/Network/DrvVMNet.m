@@ -479,9 +479,11 @@ static DECLCALLBACK(void) drvVMNetDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    PDRVVMNET pThis = PDMINS_2_DATA(pDrvIns, PDRVVMNET);
-    LogFlow(("drvVMNetConstruct: %p\n", pDrvIns));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVVMNET       pThis = PDMINS_2_DATA(pDrvIns, PDRVVMNET);
+    PCPDMDRVHLPR3   pHlp  = pDrvIns->pHlpR3;
+
+    LogFlow(("drvVMNetConstruct: %p\n", pDrvIns));
 
     /*
      * Init the static parts.
@@ -524,7 +526,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
      * The unique id of the VMNET interface.
      */
     char szUUID[40];
-    rc = CFGMR3QueryString(pCfg, "Id", szUUID, sizeof(szUUID));
+    rc = pHlp->pfnCFGMQueryString(pCfg, "Id", szUUID, sizeof(szUUID));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         uuid_generate_random(pThis->uuid);
     else if (RT_FAILURE(rc))
@@ -538,7 +540,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
      * The trunk connection type see INTNETTRUNKTYPE.
      */
     uint32_t u32TrunkType;
-    rc = CFGMR3QueryU32(pCfg, "TrunkType", &u32TrunkType);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "TrunkType", &u32TrunkType);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"TrunkType\" value"));
@@ -549,7 +551,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
             /*
             * Get the network mask.
             */
-            rc = CFGMR3QueryString(pCfg, "NetworkMask", pThis->szNetworkMask, sizeof(pThis->szNetworkMask));
+            rc = pHlp->pfnCFGMQueryString(pCfg, "NetworkMask", pThis->szNetworkMask, sizeof(pThis->szNetworkMask));
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
                                         N_("Configuration error: Failed to get the \"NetworkMask\" value"));
@@ -557,7 +559,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
             /*
             * Get the network mask.
             */
-            rc = CFGMR3QueryString(pCfg, "LowerIP", pThis->szLowerIP, sizeof(pThis->szLowerIP));
+            rc = pHlp->pfnCFGMQueryString(pCfg, "LowerIP", pThis->szLowerIP, sizeof(pThis->szLowerIP));
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
                                         N_("Configuration error: Failed to get the \"LowerIP\" value"));
@@ -565,7 +567,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
             /*
             * Get the network mask.
             */
-            rc = CFGMR3QueryString(pCfg, "UpperIP", pThis->szUpperIP, sizeof(pThis->szUpperIP));
+            rc = pHlp->pfnCFGMQueryString(pCfg, "UpperIP", pThis->szUpperIP, sizeof(pThis->szUpperIP));
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
                                         N_("Configuration error: Failed to get the \"UpperIP\" value"));
@@ -578,7 +580,7 @@ static DECLCALLBACK(int) drvVMNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
             /** @cfgm{Trunk, string}
             * The name of the host interface to use for bridging.
             */
-            rc = CFGMR3QueryString(pCfg, "Trunk", pThis->szHostInterface, sizeof(pThis->szHostInterface));
+            rc = pHlp->pfnCFGMQueryString(pCfg, "Trunk", pThis->szHostInterface, sizeof(pThis->szHostInterface));
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc,
                                         N_("Configuration error: Failed to get the \"Trunk\" value"));
