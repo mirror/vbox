@@ -59,6 +59,7 @@
 #undef GST_IS_PDPE_VALID
 #undef GST_IS_BIG_PDPE_VALID
 #undef GST_IS_PML4E_VALID
+#undef GST_IS_PGENTRY_PRESENT
 #undef GST_IS_PSE_ACTIVE
 #undef GST_IS_NX_ACTIVE
 #undef BTH_IS_NP_ACTIVE
@@ -232,6 +233,52 @@
 # endif
 # define GST_PT_SHIFT                           X86_PT_PAE_SHIFT
 # define GST_PT_MASK                            X86_PT_PAE_MASK
+# define GST_IS_PSE_ACTIVE(pVCpu)               (true)
+# define GST_IS_NX_ACTIVE(pVCpu)                (pgmGstIsNoExecuteActive(pVCpu))
+# define BTH_IS_NP_ACTIVE(pVM)                  (false)
+
+#elif PGM_GST_TYPE == PGM_TYPE_EPT
+# define GSTUINT                                uint64_t
+# define GST_ATOMIC_OR(a_pu, a_fFlags)          ASMAtomicOrU64((a_pu), (a_fFlags))
+# define GSTPT                                  EPTPT
+# define PGSTPT                                 PEPTPT
+# define GSTPTE                                 EPTPTE
+# define PGSTPTE                                PEPTPTE
+# define GSTPD                                  EPTPD
+# define PGSTPD                                 PEPTPD
+# define GSTPDE                                 EPTPDE
+# define PGSTPDE                                PEPTPDE
+# define GST_BIG_PAGE_SIZE                      X86_PAGE_2M_SIZE
+# define GST_BIG_PAGE_OFFSET_MASK               X86_PAGE_2M_OFFSET_MASK
+# define GST_PDE_PG_MASK                        EPT_PDE_PG_MASK
+# define GST_PDE_BIG_PG_MASK                    EPT_PDE2M_PG_MASK
+# define GST_PD_SHIFT                           EPT_PD_SHIFT
+# define GST_PD_MASK                            EPT_PD_MASK
+# define GSTPTWALK                              PGMPTWALKGSTEPT
+# define PGSTPTWALK                             PPGMPTWALKGSTEPT
+# define PCGSTPTWALK                            PCPGMPTWALKGSTEPT
+# define GST_PDPE_ENTRIES                       EPT_PG_ENTRIES
+# define GST_PDPT_SHIFT                         EPT_PDPT_SHIFT
+# define GST_PDPE_PG_MASK                       EPT_PDPTE_PG_MASK
+# define GST_PDPT_MASK                          EPT_PDPT_MASK
+# define GST_PTE_PG_MASK                        EPT_E_PG_MASK
+# define GST_CR3_PAGE_MASK                      X86_CR3_EPT_PAGE_MASK
+# define GST_PT_SHIFT                           EPT_PT_SHIFT
+# define GST_PT_MASK                            EPT_PT_MASK
+# define GST_GET_PTE_GCPHYS(Pte)                PGM_A20_APPLY(pVCpu, ((Pte).u & GST_PTE_PG_MASK))
+# define GST_GET_PDE_GCPHYS(Pde)                PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDE_PG_MASK))
+# define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDE_BIG_PG_MASK))
+# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (pVCpu)->pgm.s.fGst64ShadowedPteMask )                                // TODO
+# define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedPdeMask )                                // TODO
+# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)  ( ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPdeMask ) | PGM_PDFLAGS_BIG_PAGE)   // TODO
+# define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde)  ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPde4PteMask )                   // TODO
+# define GST_IS_PTE_VALID(pVCpu, Pte)           (!( (Pte).u   & (pVCpu)->pgm.s.fGstAmd64MbzPteMask ))                            // TODO
+# define GST_IS_PDE_VALID(pVCpu, Pde)           (!( (Pde).u   & (pVCpu)->pgm.s.fGstAmd64MbzPdeMask ))                            // TODO
+# define GST_IS_BIG_PDE_VALID(pVCpu, Pde)       (!( (Pde).u   & (pVCpu)->pgm.s.fGstAmd64MbzBigPdeMask ))                         // TODO
+# define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstAmd64MbzPdpeMask ))                           // TODO
+# define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstAmd64MbzBigPdpeMask ))                        // TODO
+# define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (!( (Pml4e).u & (pVCpu)->pgm.s.fGstEptMbzPml4eMask ))
+# define GST_IS_PGENTRY_PRESENT(pVCpu, Entry)   (!( (Entry).u & (pVCpu)->pgm.s.fGstEptPresentMask ))
 # define GST_IS_PSE_ACTIVE(pVCpu)               (true)
 # define GST_IS_NX_ACTIVE(pVCpu)                (pgmGstIsNoExecuteActive(pVCpu))
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)

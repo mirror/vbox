@@ -218,7 +218,7 @@
     (   (uGstType) >= PGM_TYPE_PAE \
      && (uShwType) < PGM_TYPE_NESTED_32BIT)
 
-/** Macro for checking for nested or EPT.
+/** Macro for checking for nested.
  * @param   uType   PGM_TYPE_*
  */
 #define PGM_TYPE_IS_NESTED(uType) \
@@ -2403,6 +2403,37 @@ typedef PGMPTWALKGSTAMD64 *PPGMPTWALKGSTAMD64;
 /** Pointer to a const AMD64 guest page table walk. */
 typedef PGMPTWALKGSTAMD64 const *PCPGMPTWALKGSTAMD64;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Guest page table walk for the EPT mode.
+ */
+typedef struct PGMPTWALKGSTEPT
+{
+    /** The common core. */
+    PGMPTWALKCORE   Core;
+
+    PEPTPML4        pPml4;
+    PEPTPML4E       pPml4e;
+    EPTPML4E        Pml4e;
+
+    PEPTPDPT        pPdpt;
+    PEPTPDPTE       pPdpte;
+    EPTPDPTE        Pdpte;
+
+    PEPTPD          pPd;
+    PEPTPDE         pPde;
+    EPTPDE          Pde;
+
+    PEPTPT          pPt;
+    PEPTPTE         pPte;
+    EPTPTE          Pte;
+} PGMPTWALKGSTEPT;
+/** Pointer to an EPT guest page table walk. */
+typedef PGMPTWALKGSTEPT *PPGMPTWALKGSTEPT;
+/** Pointer to a const EPT guest page table walk. */
+typedef PGMPTWALKGSTEPT const *PCPGMPTWALKGSTEPT;
+#endif
+
 /**
  * Guest page table walk for the PAE mode.
  */
@@ -2462,6 +2493,8 @@ typedef enum PGMPTWALKGSTTYPE
     PGMPTWALKGSTTYPE_PAE,
     /**  PGMPTWALKGST::u.Legacy is valid. */
     PGMPTWALKGSTTYPE_32BIT,
+    /** PGMPTWALKGST::u.Ept is valid. */
+    PGMPTWALKGSTTYPE_EPT,
     /** Customary 32-bit type hack. */
     PGMPTWALKGSTTYPE_32BIT_HACK = 0x7fff0000
 } PGMPTWALKGSTTYPE;
@@ -2482,6 +2515,10 @@ typedef struct PGMPTWALKGST
         /** The page walker for 32-bit paging (called legacy due to C naming
          * convension). */
         PGMPTWALKGST32BIT   Legacy;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        /** The page walker for EPT. */
+        PGMPTWALKGSTEPT     Ept;
+#endif
     } u;
     /** Indicates which part of the union is valid. */
     PGMPTWALKGSTTYPE        enmType;
@@ -2522,6 +2559,11 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_GST_NAME_AMD64(name)                        PGM_CTX(pgm,GstAMD64##name)
 #define PGM_GST_NAME_RC_AMD64_STR(name)                 "pgmRCGstAMD64" #name
 #define PGM_GST_NAME_R0_AMD64_STR(name)                 "pgmR0GstAMD64" #name
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+# define PGM_GST_NAME_EPT(name)                         PGM_CTX(pgm,GstEPT##name)
+# define PGM_GST_NAME_RC_EPT_STR(name)                  "pgmRCGstEPT" #name
+# define PGM_GST_NAME_R0_EPT_STR(name)                  "pgmR0GstEPT" #name
+#endif
 #define PGM_GST_DECL(type, name)                        PGM_CTX_DECL(type) PGM_GST_NAME(name)
 
 #define PGM_SHW_NAME_32BIT(name)                        PGM_CTX(pgm,Shw32Bit##name)
@@ -2580,6 +2622,9 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_NAME_EPT_32BIT(name)                    PGM_CTX(pgm,BthEPT32Bit##name)
 #define PGM_BTH_NAME_EPT_PAE(name)                      PGM_CTX(pgm,BthEPTPAE##name)
 #define PGM_BTH_NAME_EPT_AMD64(name)                    PGM_CTX(pgm,BthEPTAMD64##name)
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+# define PGM_BTH_NAME_EPT_EPT(name)                     PGM_CTX(pgm,BthEPTEPT##name)
+#endif
 #define PGM_BTH_NAME_NONE_REAL(name)                    PGM_CTX(pgm,BthNoneReal##name)
 #define PGM_BTH_NAME_NONE_PROT(name)                    PGM_CTX(pgm,BthNoneProt##name)
 #define PGM_BTH_NAME_NONE_32BIT(name)                   PGM_CTX(pgm,BthNone32Bit##name)
@@ -2614,6 +2659,9 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_NAME_RC_EPT_32BIT_STR(name)             "pgmRCBthEPT32Bit" #name
 #define PGM_BTH_NAME_RC_EPT_PAE_STR(name)               "pgmRCBthEPTPAE" #name
 #define PGM_BTH_NAME_RC_EPT_AMD64_STR(name)             "pgmRCBthEPTAMD64" #name
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+# define PGM_BTH_NAME_RC_EPT_EPT_STR(name)              "pgmRCBthEPTEPT" #name
+#endif
 
 #define PGM_BTH_NAME_R0_32BIT_REAL_STR(name)            "pgmR0Bth32BitReal" #name
 #define PGM_BTH_NAME_R0_32BIT_PROT_STR(name)            "pgmR0Bth32BitProt" #name
@@ -2644,6 +2692,9 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_NAME_R0_EPT_32BIT_STR(name)             "pgmR0BthEPT32Bit" #name
 #define PGM_BTH_NAME_R0_EPT_PAE_STR(name)               "pgmR0BthEPTPAE" #name
 #define PGM_BTH_NAME_R0_EPT_AMD64_STR(name)             "pgmR0BthEPTAMD64" #name
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+# define PGM_BTH_NAME_R0_EPT_EPT_STR(name)              "pgmR0BthEPTEPT" #name
+#endif
 
 #define PGM_BTH_DECL(type, name)        PGM_CTX_DECL(type) PGM_BTH_NAME(name)
 /** @} */
@@ -2666,7 +2717,9 @@ typedef struct PGMMODEDATAGST
 } PGMMODEDATAGST;
 
 /** The length of g_aPgmGuestModeData. */
-#ifdef VBOX_WITH_64_BITS_GUESTS
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+# define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_EPT + 1)
+#elif defined(VBOX_WITH_64_BITS_GUESTS)
 # define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_AMD64 + 1)
 #else
 # define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_PAE + 1)
@@ -3445,6 +3498,40 @@ typedef struct PGMCPU
     uint64_t                        fGst64ShadowedBigPde4PteMask;
     /** @} */
 
+    /** @name EPT Guest Paging.
+     * @{ */
+    /** The guest's page directory pointer table, R3 pointer. */
+    R3PTRTYPE(PEPTPML4)             pGstEptPml4R3;
+    /** The guest's page directory pointer table, R0 pointer. */
+    R0PTRTYPE(PEPTPML4)             pGstEptPml4R0;
+    /** Mask containing the MBZ PTE bits. */
+    uint64_t                        fGstEptMbzPteMask;
+    /** Mask containing the MBZ PDE bits. */
+    uint64_t                        fGstEptMbzPdeMask;
+    /** Mask containing the MBZ big page PDE bits. */
+    uint64_t                        fGstEptMbzBigPdeMask;
+    /** Mask containing the MBZ PDPE bits. */
+    uint64_t                        fGstEptMbzPdpeMask;
+    /** Mask containing the MBZ big page PDPE bits. */
+    uint64_t                        fGstEptMbzBigPdpeMask;
+    /** Mask containing the MBZ PML4E bits. */
+    uint64_t                        fGstEptMbzPml4eMask;
+    /** Mask to determine whether an entry is present. */
+    uint64_t                        fGstEptPresentMask;
+    /** Mask containing the PML4E bits that we shadow. */
+    uint64_t                        fGstEptShadowedPml4eMask;
+    /** Mask containing the PDPE bits that we shadow. */
+    uint64_t                        fGstEptShadowedPdpeMask;
+    /** Mask containing the big page PDPE bits that we shadow. */
+    uint64_t                        fGstEptShadowedBigPdpeMask;
+    /** Mask containing the PDE bits that we shadow. */
+    uint64_t                        fGstEptShadowedPdeMask;
+    /** Mask containing the big page PDE bits that we shadow. */
+    uint64_t                        fGstEptShadowedBigPdeMask;
+    /** Mask containing the PTE bits that we shadow. */
+    uint64_t                        fGstEptShadowedPteMask;
+    /** @} */
+
     /** Pointer to the page of the current active CR3 - R3 Ptr. */
     R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
     /** Pointer to the page of the current active CR3 - R0 Ptr. */
@@ -3656,6 +3743,9 @@ int             pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd);
 int             pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt);
 int             pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd);
 int             pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+int             pgmGstLazyMapEptPml4(PVMCPUCC pVCpu, PEPTPML4 *ppPml4);
+#endif
 int             pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
 int             pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
 

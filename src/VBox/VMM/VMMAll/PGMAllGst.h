@@ -22,6 +22,7 @@
 RT_C_DECLS_BEGIN
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
+ || PGM_GST_TYPE == PGM_TYPE_EPT \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk);
 #endif
@@ -72,6 +73,7 @@ PGM_GST_DECL(int, Exit)(PVMCPUCC pVCpu)
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
+ || PGM_GST_TYPE == PGM_TYPE_EPT \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
 
@@ -165,6 +167,27 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         rc = pgmGstGetPaePDPTPtrEx(pVCpu, &pWalk->pPdpt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
+
+# elif PGM_GST_TYPE == PGM_TYPE_EPT
+        rc = pgmGstGetEptPML4PtrEx(pVCpu, &pWalk->pPml4);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc);
+
+        PEPTPML4E pPml4e;
+        pWalk->pPml4e = pPml4e = &pWalk->pPml4->a[(GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK];
+        EPTPML4E  Pml4e;
+        pWalk->Pml4e.u = Pml4e.u = pPml4e->u;
+
+        if (GST_IS_PGENTRY_PRESENT(pVCpu, Pml4e)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 4);
+
+        if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
+        else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 4);
+
+        /** @todo figure out what this effective stuff is about. */
+        pWalk->Core.fEffective = fEffective = ((uint32_t)Pml4e.u & (X86_PML4E_RW  | X86_PML4E_US | X86_PML4E_PWT | X86_PML4E_PCD | X86_PML4E_A))
+                                            | ((uint32_t)(Pml4e.u >> 63) ^ 1) /*NX */;
+# error "Implement me."
 # endif
     }
     {
@@ -297,7 +320,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
     }
 }
 
-#endif /* 32BIT, PAE, AMD64 */
+#endif /* 32BIT, PAE, EPT, AMD64 */
 
 /**
  * Gets effective Guest OS page information.
@@ -330,6 +353,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRT
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT \
    || PGM_GST_TYPE == PGM_TYPE_PAE \
+   || PGM_GST_TYPE == PGM_TYPE_EPT \
    || PGM_GST_TYPE == PGM_TYPE_AMD64
 
     GSTPTWALK Walk;

@@ -726,6 +726,63 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Gets the pointer to a page map level-4 entry when the guest using EPT paging.
+ *
+ * @returns Pointer to the PML4 entry.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   iPml4       The index.
+ * @remarks Only used by AssertCR3.
+ */
+DECLINLINE(PEPTPML4E) pgmGstGetEptPML4EPtr(PVMCPUCC pVCpu, unsigned int iPml4)
+{
+    PEPTPML4 pEptPml4 = pVCpu->pgm.s.CTX_SUFF(pGstEptPml4);
+    if (pEptPml4)
+    { /* likely */ }
+    else
+    {
+         int const rc = pgmGstLazyMapEptPml4(pVCpu, &pEptPml4);
+         AssertRCReturn(rc, NULL);
+    }
+    return &pEptPml4->a[iPml4];
+}
+
+
+/**
+ * Gets the page map level-4 pointer for the guest when the guest is using EPT
+ * paging.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   ppEptPml4   Where to return the mapping.  Always set.
+ */
+DECLINLINE(int) pgmGstGetEptPML4PtrEx(PVMCPUCC pVCpu, PEPTPML4 *ppEptPml4)
+{
+    *ppEptPml4 = pVCpu->pgm.s.CTX_SUFF(pGstEptPml4);
+    if (RT_UNLIKELY(!*ppEptPml4))
+        return pgmGstLazyMapEptPml4(pVCpu, ppEptPml4);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the page map level-4 pointer for the guest when the guest is using EPT
+ * paging.
+ *
+ * @returns Pointer to the EPT PML4 page.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(PEPTPML4) pgmGstGetEptPML4Ptr(PVMCPUCC pVCpu)
+{
+    PEPTPML4 pEptPml4;
+    int rc = pgmGstGetEptPML4PtrEx(pVCpu, &pEptPml4);
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc);
+    return pEptPml4;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+
+
 /**
  * Gets the shadow page directory, 32-bit.
  *

@@ -488,6 +488,21 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
 # undef PGM_GST_NAME
 #endif /* VBOX_WITH_64_BITS_GUESTS */
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/* Guest - EPT mode */
+# define PGM_GST_TYPE               PGM_TYPE_EPT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_EPT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_EPT_EPT(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_EPT_PT_FOR_PHYS
+# include "PGMGstDefs.h"
+# include "PGMAllGst.h"
+# include "PGMAllBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
 
@@ -613,6 +628,21 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
         PGM_GST_NAME_AMD64(Relocate),
 # endif
     },
+#endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    { UINT32_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_NESTED_32BIT */
+    { UINT32_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_NESTED_PAE   */
+    { UINT32_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_NESTED_AMD64 */
+    {
+        PGM_TYPE_EPT,
+        PGM_GST_NAME_EPT(GetPage),
+        PGM_GST_NAME_EPT(ModifyPage),
+        PGM_GST_NAME_EPT(Enter),
+        PGM_GST_NAME_EPT(Exit),
+# ifdef IN_RING3
+        PGM_GST_NAME_EPT(Relocate),
+# endif
+    }
 #endif
 };
 
@@ -862,7 +892,11 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_32BIT - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_AMD64 - illegal */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    PGMMODEDATABTH_ENTRY(PGM_TYPE_EPT, PGM_TYPE_EPT, PGM_BTH_NAME_EPT_EPT),
+#else
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_EPT          - illegal */
+#endif
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NONE         - illegal */
 
 
@@ -1931,10 +1965,16 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
             pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
             return VERR_PGM_NOT_USED_IN_MODE;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMMODE_EPT:
+            pWalk->enmType = PGMPTWALKGSTTYPE_EPT;
+            return PGM_GST_NAME_EPT(Walk)(pVCpu, GCPtr, &pWalk->u.Ept);
+#else
+        case PGMMODE_EPT:
+#endif
         case PGMMODE_NESTED_32BIT:
         case PGMMODE_NESTED_PAE:
         case PGMMODE_NESTED_AMD64:
-        case PGMMODE_EPT:
         default:
             AssertFailed();
             pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
@@ -2343,6 +2383,48 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+ /**
+ * Performs the lazy mapping of the guest PML4 table when using EPT paging.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   ppEptPml4   Where to return the pointer to the mapping.  This will
+ *                      always be set.
+ */
+int pgmGstLazyMapEptPml4(PVMCPUCC pVCpu, PEPTPML4 *ppEptPml4)
+{
+    Assert(!pVCpu->pgm.s.CTX_SUFF(pGstEptPml4));
+    PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
+    PGM_LOCK_VOID(pVM);
+
+    RTGCPHYS const GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_EPT_PAGE_MASK;
+    PPGMPAGE       pPage;
+    int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)ppEptPml4);
+        if (RT_SUCCESS(rc))
+        {
+# ifdef IN_RING3
+            pVCpu->pgm.s.pGstEptPml4R0 = NIL_RTR0PTR;
+            pVCpu->pgm.s.pGstEptPml4R3 = *ppEptPml4;
+# else
+            pVCpu->pgm.s.pGstEptPml4R3 = NIL_RTR3PTR;
+            pVCpu->pgm.s.pGstEptPml4R0 = *ppEptPml4;
+# endif
+            PGM_UNLOCK(pVM);
+            return VINF_SUCCESS;
+        }
+    }
+
+    PGM_UNLOCK(pVM);
+    *ppEptPml4 = NULL;
+    return rc;
+}
+#endif
+
+
 /**
  * Gets the current CR3 register value for the shadow memory context.
  * @returns CR3 value.
@@ -2392,6 +2474,11 @@ DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
         case PGMMODE_AMD64_NX:
             GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_AMD64_PAGE_MASK);
             break;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMMODE_EPT:
+            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_EPT_PAGE_MASK);
+            break;
+#endif
         default:
             GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_PAGE_MASK);
             break;
@@ -2818,6 +2905,11 @@ VMMDECL(int) PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t 
      *       special AMD-V paged real mode (APM vol 2, rev 3.28, 15.9).
      */
     PGMMODE enmGuestMode;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+        enmGuestMode = PGMMODE_EPT;
+    else
+#endif
     if (cr0 & X86_CR0_PG)
     {
         if (!(cr4 & X86_CR4_PAE))
@@ -3024,6 +3116,13 @@ static PGMMODE pgmCalcShadowMode(PVMCC pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
             }
             break;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMMODE_EPT:
+            /* Nested paging is a requirement for nested VT-x. */
+            Assert(enmHostMode == PGMMODE_EPT);
+            break;
+#endif
+
         default:
             AssertLogRelMsgFailedReturn(("enmGuestMode=%d\n", enmGuestMode), PGMMODE_INVALID);
     }
@@ -3078,6 +3177,13 @@ static PGMMODE pgmCalcShadowMode(PVMCC pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                     }
             }
         }
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        else
+        {
+            /* Nested paging is a requirement for nested VT-x. */
+            AssertLogRelMsgReturn(enmGuestMode != PGMMODE_EPT, ("enmHostMode=%d\n", pVM->pgm.s.enmHostMode), PGMMODE_INVALID);
+        }
+#endif
     }
 
     return enmShadowMode;
@@ -3222,6 +3328,11 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
         case PGMMODE_AMD64_NX:
         case PGMMODE_AMD64:
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_AMD64_PAGE_MASK;
+            break;
+#endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        case PGMMODE_EPT:
+            GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_EPT_PAGE_MASK;
             break;
 #endif
         default:
