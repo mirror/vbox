@@ -1699,11 +1699,12 @@ VMMR3DECL(int) PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint64_t 
  * @param   GCPhys          The address of the RAM range.
  * @param   GCPhysLast      The last address of the RAM range.
  * @param   R0PtrNew        Ditto for R0.
+ * @param   fFlags          PGM_RAM_RANGE_FLAGS_FLOATING or zero.
  * @param   pszDesc         The description.
  * @param   pPrev           The previous RAM range (for linking).
  */
 static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
-                                        RTR0PTR R0PtrNew, const char *pszDesc, PPGMRAMRANGE pPrev)
+                                        RTR0PTR R0PtrNew, uint32_t fFlags, const char *pszDesc, PPGMRAMRANGE pPrev)
 {
     /*
      * Initialize the range.
@@ -1713,9 +1714,9 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
     pNew->GCPhysLast    = GCPhysLast;
     pNew->cb            = GCPhysLast - GCPhys + 1;
     pNew->pszDesc       = pszDesc;
+    pNew->fFlags        = fFlags;
     pNew->pvR3          = NULL;
     pNew->paLSPages     = NULL;
-    pNew->fFlags        = 0;
 
     uint32_t const cPages = pNew->cb >> PAGE_SHIFT;
 #ifdef VBOX_WITH_PGM_NEM_MODE
@@ -1806,7 +1807,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
          * Ok, init and link the range.
          */
         rc = pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhys + ((RTGCPHYS)cRamPages << PAGE_SHIFT) - 1,
-                                          R0PtrChunk, pszDescChunk, *ppPrev);
+                                          R0PtrChunk, PGM_RAM_RANGE_FLAGS_FLOATING, pszDescChunk, *ppPrev);
         if (RT_SUCCESS(rc))
             *ppPrev = pNew;
 
@@ -1927,7 +1928,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
         rc = MMR3HyperAllocOnceNoRel(pVM, cbRamRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc cbRamRange=%zu\n", rc, cbRamRange), rc);
 
-        rc = pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, MMHyperCCToR0(pVM, pNew), pszDesc, pPrev);
+        rc = pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, MMHyperCCToR0(pVM, pNew), 0 /*fFlags*/, pszDesc, pPrev);
         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc cbRamRange=%zu\n", rc, cbRamRange), rc);
     }
     pgmPhysInvalidatePageMapTLB(pVM);
