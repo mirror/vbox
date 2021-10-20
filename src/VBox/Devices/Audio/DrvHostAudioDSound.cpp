@@ -2664,12 +2664,13 @@ static DECLCALLBACK(void) drvHostDSoundDestruct(PPDMDRVINS pDrvIns)
 }
 
 
-static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID *pUuid)
+static LPCGUID dsoundConfigQueryGUID(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszName, RTUUID *pUuid)
 {
+    PCPDMDRVHLPR3 pHlp = pDrvIns->pHlpR3;
     LPCGUID pGuid = NULL;
 
     char *pszGuid = NULL;
-    int rc = CFGMR3QueryStringAlloc(pCfg, pszName, &pszGuid);
+    int rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, pszName, &pszGuid);
     if (RT_SUCCESS(rc))
     {
         rc = RTUuidFromStr(pUuid, pszGuid);
@@ -2687,8 +2688,8 @@ static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID
 
 static void dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 {
-    pThis->Cfg.pGuidPlay    = dsoundConfigQueryGUID(pCfg, "DeviceGuidOut", &pThis->Cfg.uuidPlay);
-    pThis->Cfg.pGuidCapture = dsoundConfigQueryGUID(pCfg, "DeviceGuidIn",  &pThis->Cfg.uuidCapture);
+    pThis->Cfg.pGuidPlay    = dsoundConfigQueryGUID(pThis->pDrvIns, pCfg, "DeviceGuidOut", &pThis->Cfg.uuidPlay);
+    pThis->Cfg.pGuidCapture = dsoundConfigQueryGUID(pThis->pDrvIns, pCfg, "DeviceGuidIn",  &pThis->Cfg.uuidCapture);
 
     DSLOG(("DSound: Configuration: DeviceGuidOut {%RTuuid}, DeviceGuidIn {%RTuuid}\n",
            &pThis->Cfg.uuidPlay,
