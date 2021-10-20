@@ -1114,7 +1114,7 @@ DECLCALLBACK(void) devpciR3CommonInterceptConfigAccesses(PPDMDEVINS pDevIns, PPD
 }
 
 
-static int ich9pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
+static int ich9pciR3CommonSaveExec(PCPDMDEVHLPR3 pHlp, PDEVPCIBUS pBus, PSSMHANDLE pSSM)
 {
     /*
      * Iterate thru all the devices.
@@ -1125,71 +1125,74 @@ static int ich9pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
         if (pDev)
         {
             /* Device position */
-            SSMR3PutU32(pSSM, uDevFn);
+            pHlp->pfnSSMPutU32(pSSM, uDevFn);
 
             /* PCI config registers */
-            SSMR3PutU32(pSSM, sizeof(pDev->abConfig));
-            SSMR3PutMem(pSSM, pDev->abConfig, sizeof(pDev->abConfig));
+            pHlp->pfnSSMPutU32(pSSM, sizeof(pDev->abConfig));
+            pHlp->pfnSSMPutMem(pSSM, pDev->abConfig, sizeof(pDev->abConfig));
 
             /* Device flags */
-            SSMR3PutU32(pSSM, pDev->Int.s.fFlags);
+            pHlp->pfnSSMPutU32(pSSM, pDev->Int.s.fFlags);
 
             /* IRQ pin state */
-            SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
+            pHlp->pfnSSMPutS32(pSSM, pDev->Int.s.uIrqPinState);
 
             /* MSI info */
-            SSMR3PutU8(pSSM, pDev->Int.s.u8MsiCapOffset);
-            SSMR3PutU8(pSSM, pDev->Int.s.u8MsiCapSize);
+            pHlp->pfnSSMPutU8(pSSM, pDev->Int.s.u8MsiCapOffset);
+            pHlp->pfnSSMPutU8(pSSM, pDev->Int.s.u8MsiCapSize);
 
             /* MSI-X info */
-            SSMR3PutU8(pSSM, pDev->Int.s.u8MsixCapOffset);
-            SSMR3PutU8(pSSM, pDev->Int.s.u8MsixCapSize);
+            pHlp->pfnSSMPutU8(pSSM, pDev->Int.s.u8MsixCapOffset);
+            pHlp->pfnSSMPutU8(pSSM, pDev->Int.s.u8MsixCapSize);
 
             /* Save MSI-X page state */
             if (pDev->Int.s.u8MsixCapOffset != 0)
             {
-                SSMR3PutU32(pSSM, pDev->Int.s.cbMsixRegion);
-                SSMR3PutMem(pSSM, pDev->abMsixState, pDev->Int.s.cbMsixRegion);
+                pHlp->pfnSSMPutU32(pSSM, pDev->Int.s.cbMsixRegion);
+                pHlp->pfnSSMPutMem(pSSM, pDev->abMsixState, pDev->Int.s.cbMsixRegion);
             }
             else
-                SSMR3PutU32(pSSM, 0);
+                pHlp->pfnSSMPutU32(pSSM, 0);
 
             /* Save the type an size of all the regions. */
             for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
             {
-                SSMR3PutU8(pSSM, pDev->Int.s.aIORegions[iRegion].type);
-                SSMR3PutU64(pSSM, pDev->Int.s.aIORegions[iRegion].size);
+                pHlp->pfnSSMPutU8(pSSM, pDev->Int.s.aIORegions[iRegion].type);
+                pHlp->pfnSSMPutU64(pSSM, pDev->Int.s.aIORegions[iRegion].size);
             }
         }
     }
-    return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* terminator */
 }
 
 static DECLCALLBACK(int) ich9pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PDEVPCIROOT     pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     /*
      * Bus state data.
      */
-    SSMR3PutU32(pSSM, pThis->uConfigReg);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uConfigReg);
 
     /*
      * Save IRQ states.
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
-        SSMR3PutU32(pSSM, pThis->auPciApicIrqLevels[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->auPciApicIrqLevels[i]);
 
-    SSMR3PutU32(pSSM, UINT32_MAX);  /* separator */
+    pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);  /* separator */
 
-    return ich9pciR3CommonSaveExec(&pThis->PciBus, pSSM);
+    return ich9pciR3CommonSaveExec(pHlp, &pThis->PciBus, pSSM);
 }
 
 
 static DECLCALLBACK(int) ich9pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVPCIBUS pThis = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    return ich9pciR3CommonSaveExec(pThis, pSSM);
+    PDEVPCIBUS      pThis = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+
+    return ich9pciR3CommonSaveExec(pHlp, pThis, pSSM);
 }
 
 
@@ -1485,6 +1488,7 @@ static DECLCALLBACK(int) devpciR3CommonRestoreSwapRegions(PPDMPCIDEV pPciDev, ui
  * Checks for and deals with changes in resource sizes and types.
  *
  * @returns VBox status code.
+ * @param   pHlp                The device instance helper callback table.
  * @param   pSSM                The Saved state handle.
  * @param   pPciDev             The PCI device in question.
  * @param   paIoRegions         I/O regions with the size and type fields from
@@ -1492,7 +1496,7 @@ static DECLCALLBACK(int) devpciR3CommonRestoreSwapRegions(PPDMPCIDEV pPciDev, ui
  * @param   fNewState           Set if this is a new state with I/O region sizes
  *                              and types, clear if old one.
  */
-int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGION paIoRegions, bool fNewState)
+int devpciR3CommonRestoreRegions(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGION paIoRegions, bool fNewState)
 {
     int rc;
     if (fNewState)
@@ -1514,11 +1518,11 @@ int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGI
                                                             devpciR3CommonRestoreSwapRegions);
                     pPciDev->Int.s.bPadding0 = 0;
                     if (RT_FAILURE(rc))
-                        return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,
-                                                 N_("Device %s/%u failed to respond to region #%u size/type changing from %#RGp/%#x to %#RGp/%#x: %Rrc"),
-                                                 pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, iRegion,
-                                                 pPciDev->Int.s.aIORegions[iRegion].size, pPciDev->Int.s.aIORegions[iRegion].type,
-                                                 paIoRegions[iRegion].size, paIoRegions[iRegion].type, rc);
+                        return pHlp->pfnSSMSetLoadError(pSSM, rc, RT_SRC_POS,
+                                                        N_("Device %s/%u failed to respond to region #%u size/type changing from %#RGp/%#x to %#RGp/%#x: %Rrc"),
+                                                        pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, iRegion,
+                                                        pPciDev->Int.s.aIORegions[iRegion].size, pPciDev->Int.s.aIORegions[iRegion].type,
+                                                        paIoRegions[iRegion].size, paIoRegions[iRegion].type, rc);
                 }
                 pPciDev->Int.s.aIORegions[iRegion].type = paIoRegions[iRegion].type;
                 pPciDev->Int.s.aIORegions[iRegion].size = paIoRegions[iRegion].size;
@@ -1532,8 +1536,8 @@ int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGI
         rc = pPciDev->pfnRegionLoadChangeHookR3(pPciDev->Int.s.pDevInsR3, pPciDev, UINT32_MAX, RTGCPHYS_MAX, (PCIADDRESSSPACE)-1,
                                                 devpciR3CommonRestoreOldSetRegion, NULL);
         if (RT_FAILURE(rc))
-            return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,  N_("Device %s/%u failed to resize its resources: %Rrc"),
-                                     pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, rc);
+            return pHlp->pfnSSMSetLoadError(pSSM, rc, RT_SRC_POS,  N_("Device %s/%u failed to resize its resources: %Rrc"),
+                                            pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, rc);
     }
     return VINF_SUCCESS;
 }
@@ -1551,6 +1555,7 @@ int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGI
  */
 static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
     uint32_t     u32;
     int          rc;
 
@@ -1588,7 +1593,7 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
     for (uint32_t uDevFn = 0;; uDevFn++)
     {
         /* index / terminator */
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             break;
         if (u32 == (uint32_t)~0)
@@ -1605,11 +1610,11 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
                 /* safe, only needs to go to the config space array */
                 LogRel(("PCI: New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", uDevFn, pDev->pszNameR3,
                         PDMPciDevGetVendorId(pDev), PDMPciDevGetDeviceId(pDev)));
-                if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+                if (pHlp->pfnSSMHandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                 {
                     /* safe, only needs to go to the config space array */
-                    rc = SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("New device in slot %#x, %s (vendor=%#06x device=%#06x)"),
-                                          uDevFn, pDev->pszNameR3, PDMPciDevGetVendorId(pDev), PDMPciDevGetDeviceId(pDev));
+                    rc = pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("New device in slot %#x, %s (vendor=%#06x device=%#06x)"),
+                                                 uDevFn, pDev->pszNameR3, PDMPciDevGetVendorId(pDev), PDMPciDevGetDeviceId(pDev));
                     break;
                 }
             }
@@ -1634,38 +1639,38 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
         uint32_t cbConfig = 256;
         if (uVersion >= VBOX_ICH9PCI_SAVED_STATE_VERSION_4KB_CFG_SPACE)
         {
-            rc = SSMR3GetU32(pSSM, &cbConfig);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cbConfig);
             AssertRCReturn(rc, rc);
             if (cbConfig != 256 && cbConfig != _4K)
-                return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                         "cbConfig=%#RX32, expected 0x100 or 0x1000", cbConfig);
+                return pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                                "cbConfig=%#RX32, expected 0x100 or 0x1000", cbConfig);
         }
-        SSMR3GetMem(pSSM, u.DevTmp.abConfig, cbConfig);
+        pHlp->pfnSSMGetMem(pSSM, u.DevTmp.abConfig, cbConfig);
 
-        SSMR3GetU32(pSSM, &u.DevTmp.Int.s.fFlags);
-        SSMR3GetS32(pSSM, &u.DevTmp.Int.s.uIrqPinState);
-        SSMR3GetU8(pSSM, &u.DevTmp.Int.s.u8MsiCapOffset);
-        SSMR3GetU8(pSSM, &u.DevTmp.Int.s.u8MsiCapSize);
-        SSMR3GetU8(pSSM, &u.DevTmp.Int.s.u8MsixCapOffset);
-        rc = SSMR3GetU8(pSSM, &u.DevTmp.Int.s.u8MsixCapSize);
+        pHlp->pfnSSMGetU32(pSSM, &u.DevTmp.Int.s.fFlags);
+        pHlp->pfnSSMGetS32(pSSM, &u.DevTmp.Int.s.uIrqPinState);
+        pHlp->pfnSSMGetU8(pSSM, &u.DevTmp.Int.s.u8MsiCapOffset);
+        pHlp->pfnSSMGetU8(pSSM, &u.DevTmp.Int.s.u8MsiCapSize);
+        pHlp->pfnSSMGetU8(pSSM, &u.DevTmp.Int.s.u8MsixCapOffset);
+        rc = pHlp->pfnSSMGetU8(pSSM, &u.DevTmp.Int.s.u8MsixCapSize);
         AssertRCReturn(rc, rc);
 
         /* Load MSI-X page state */
         uint32_t cbMsixState = u.DevTmp.Int.s.u8MsixCapOffset != 0 ? _4K : 0;
         if (uVersion >= VBOX_ICH9PCI_SAVED_STATE_VERSION_4KB_CFG_SPACE)
         {
-            rc = SSMR3GetU32(pSSM, &cbMsixState);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cbMsixState);
             AssertRCReturn(rc, rc);
         }
         if (cbMsixState)
         {
             if (   cbMsixState > (uint32_t)(pDev ? pDev->cbMsixState : _32K + _16K)
                 || cbMsixState > sizeof(u) - RT_UOFFSETOF(PDMPCIDEV, abMsixState))
-                return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                         "cbMsixState=%#RX32, expected at most RT_MIN(%#x, %#zx)",
-                                         cbMsixState, (pDev ? pDev->cbMsixState : _32K + _16K),
-                                         sizeof(u) - RT_UOFFSETOF(PDMPCIDEV, abMsixState));
-            rc = SSMR3GetMem(pSSM, u.DevTmp.abMsixState, cbMsixState);
+                return pHlp->pfnSSMSetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                                "cbMsixState=%#RX32, expected at most RT_MIN(%#x, %#zx)",
+                                                cbMsixState, (pDev ? pDev->cbMsixState : _32K + _16K),
+                                                sizeof(u) - RT_UOFFSETOF(PDMPCIDEV, abMsixState));
+            rc = pHlp->pfnSSMGetMem(pSSM, u.DevTmp.abMsixState, cbMsixState);
             AssertRCReturn(rc, rc);
         }
 
@@ -1674,8 +1679,8 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
         {
             for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
             {
-                SSMR3GetU8(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].type);
-                rc = SSMR3GetU64(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].size);
+                pHlp->pfnSSMGetU8(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].type);
+                rc = pHlp->pfnSSMGetU64(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].size);
                 AssertLogRelRCReturn(rc, rc);
             }
         }
@@ -1689,11 +1694,11 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
             /* safe, only needs to go to the config space array */
             LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", uDevFn,
                     PDMPciDevGetVendorId(&u.DevTmp), PDMPciDevGetDeviceId(&u.DevTmp)));
-            if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+            if (pHlp->pfnSSMHandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
             {
                 /* safe, only needs to go to the config space array */
-                rc = SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x has been removed! vendor=%#06x device=%#06x"),
-                                      uDevFn, PDMPciDevGetVendorId(&u.DevTmp), PDMPciDevGetDeviceId(&u.DevTmp));
+                rc = pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x has been removed! vendor=%#06x device=%#06x"),
+                                             uDevFn, PDMPciDevGetVendorId(&u.DevTmp), PDMPciDevGetDeviceId(&u.DevTmp));
                 break;
             }
             continue;
@@ -1704,8 +1709,8 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
         if (PDMPciDevGetVendorId(&u.DevTmp) != PDMPciDevGetVendorId(pDev))
         {
             /* safe, only needs to go to the config space array */
-            rc = SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
-                                  uDevFn, pDev->pszNameR3, PDMPciDevGetVendorId(&u.DevTmp), PDMPciDevGetVendorId(pDev));
+            rc = pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
+                                         uDevFn, pDev->pszNameR3, PDMPciDevGetVendorId(&u.DevTmp), PDMPciDevGetVendorId(pDev));
             break;
         }
 
@@ -1735,10 +1740,11 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
 
 static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS  pBus  = &pThis->PciBus;
-    uint32_t    u32;
-    int         rc;
+    PDEVPCIROOT     pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PDEVPCIBUS      pBus  = &pThis->PciBus;
+    uint32_t        u32;
+    int             rc;
 
     /* We ignore this version as there's no saved state with it anyway */
     if (uVersion <= VBOX_ICH9PCI_SAVED_STATE_VERSION_NOMSI)
@@ -1749,16 +1755,16 @@ static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
     /*
      * Bus state data.
      */
-    SSMR3GetU32(pSSM, &pThis->uConfigReg);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->uConfigReg);
 
     /*
      * Load IRQ states.
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
-        SSMR3GetU32V(pSSM, &pThis->auPciApicIrqLevels[i]);
+        pHlp->pfnSSMGetU32V(pSSM, &pThis->auPciApicIrqLevels[i]);
 
     /* separator */
-    rc = SSMR3GetU32(pSSM, &u32);
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     if (u32 != (uint32_t)~0)
