@@ -974,7 +974,7 @@ static DECLCALLBACK(void) drvACPIDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
+    RT_NOREF(pCfg, fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVACPI pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
     int rc = VINF_SUCCESS;
@@ -995,8 +995,7 @@ static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "", "");
 
     /*
      * Check that no-one is attached to us.
