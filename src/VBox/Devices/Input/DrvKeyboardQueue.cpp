@@ -467,15 +467,17 @@ static DECLCALLBACK(void) drvKbdQueuePowerOff(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    PDRVKBDQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    LogFlow(("drvKbdQueueConstruct: iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVKBDQUEUE    pDrv = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    PCPDMDRVHLPR3   pHlp = pDrvIns->pHlpR3;
+
+    LogFlow(("drvKbdQueueConstruct: iInstance=%d\n", pDrvIns->iInstance));
+
 
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "QueueSize\0Interval\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "QueueSize|Interval", "");
 
     /*
      * Init basic data members and interfaces.
@@ -525,7 +527,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Create the queue.
      */
     uint32_t cMilliesInterval = 0;
-    rc = CFGMR3QueryU32(pCfg, "Interval", &cMilliesInterval);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "Interval", &cMilliesInterval);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cMilliesInterval = 0;
     else if (RT_FAILURE(rc))
@@ -535,7 +537,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     }
 
     uint32_t cItems = 0;
-    rc = CFGMR3QueryU32(pCfg, "QueueSize", &cItems);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "QueueSize", &cItems);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cItems = 128;
     else if (RT_FAILURE(rc))
