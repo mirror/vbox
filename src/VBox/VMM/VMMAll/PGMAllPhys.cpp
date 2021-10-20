@@ -4554,4 +4554,3 @@ void pgmPhysSetNemStateForPages(PPGMPAGE paPages, RTGCPHYS cPages, uint8_t u2Sta
 
 #endif /* VBOX_WITH_NATIVE_NEM */
 
-
