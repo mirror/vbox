@@ -745,6 +745,15 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
         RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Recording %RU32 bytes total\n", cbToRecTotal);
 
+        /* We record a pre + post beacon before + after the actual test tone
+         * with exactly AUDIOTEST_BEACON_SIZE_FRAMES audio frames. */
+        uint32_t const cbBeacon = PDMAudioPropsFramesToBytes(&pStream->Cfg.Props, AUDIOTEST_BEACON_SIZE_FRAMES);
+        if (cbBeacon)
+        {
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording 2 x %RU32 bytes pre/post beacons\n", cbBeacon);
+            cbToRecTotal += cbBeacon * 2 /* Pre + post beacon */;
+        }
+
         AudioTestObjAddMetadataStr(Obj, "stream_to_record_bytes=%RU32\n", cbToRecTotal);
         AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_ms=%RU32\n", pIoOpts->cMsBufferSize);
         AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_ms=%RU32\n", pIoOpts->cMsPreBuffer);
