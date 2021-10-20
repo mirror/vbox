@@ -1326,10 +1326,10 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    int rc = VINF_SUCCESS;
+    RT_NOREF(pCfg);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     LogFlowFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
-    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Initialize the instance data.
@@ -1405,7 +1405,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     if (pThis->pLedPort != NULL)
     {
         /* Get The Led. */
-        rc = pThis->pLedPort->pfnQueryStatusLed(pThis->pLedPort, 0, &pThis->pLed);
+        int rc = pThis->pLedPort->pfnQueryStatusLed(pThis->pLedPort, 0, &pThis->pLed);
         if (RT_FAILURE(rc))
             pThis->pLed = &pThis->Led;
     }
@@ -1420,7 +1420,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /*
      * Try attach driver below and query it's media interface.
      */
-    rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
     if (RT_FAILURE(rc))
         return rc;
 
