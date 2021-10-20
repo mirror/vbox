@@ -1186,7 +1186,7 @@
 
     <para>
       On Linux, Mac OS X and Solaris &product-name; will only allow IP
-      addresses in 192.68.56.0/21 range to be assigned to host-only
+      addresses in 192.168.56.0/21 range to be assigned to host-only
       adapters. For IPv6 only link-local addresses are allowed. If other
       ranges are desired, they can be enabled by creating
       <filename>/etc/vbox/networks.conf</filename> and specifying allowed
