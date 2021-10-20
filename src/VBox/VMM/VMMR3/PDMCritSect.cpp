@@ -1087,32 +1087,6 @@ VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM)
 
 
 /**
- * Gets the ring-0 address of the NOP critical section.
- *
- * @returns The ring-0 address of the NOP critical section.
- * @param   pVM                 The cross context VM structure.
- */
-VMMR3DECL(R0PTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopR0(PVM pVM)
-{
-    VM_ASSERT_VALID_EXT_RETURN(pVM, NIL_RTR0PTR);
-    return MMHyperR3ToR0(pVM, &pVM->pdm.s.NopCritSect);
-}
-
-
-/**
- * Gets the raw-mode context address of the NOP critical section.
- *
- * @returns The raw-mode context address of the NOP critical section.
- * @param   pVM                 The cross context VM structure.
- */
-VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM)
-{
-    VM_ASSERT_VALID_EXT_RETURN(pVM, NIL_RTRCPTR);
-    return MMHyperR3ToRC(pVM, &pVM->pdm.s.NopCritSect);
-}
-
-
-/**
  * Display matching critical sections.
  */
 static void pdmR3CritSectInfoWorker(PUVM pUVM, const char *pszPatterns, PCDBGFINFOHLP pHlp, unsigned cVerbosity)

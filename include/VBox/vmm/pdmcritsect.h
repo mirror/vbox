@@ -88,8 +88,6 @@ VMMDECL(bool)       PDMCritSectHasWaiters(PVMCC pVM, PCPDMCRITSECT pCritSect);
 VMMDECL(uint32_t)   PDMCritSectGetRecursion(PCPDMCRITSECT pCritSect);
 
 VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM);
-VMMR3DECL(R0PTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopR0(PVM pVM);
-VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM);
 
 /* Strict build: Remap the two enter calls to the debug versions. */
 #ifdef VBOX_STRICT

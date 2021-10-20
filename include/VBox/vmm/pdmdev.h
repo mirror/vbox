@@ -2423,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 51, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 52, 0)
 
 /**
  * PDM Device API.
@@ -3815,24 +3815,6 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(PPDMCRITSECT, pfnCritSectGetNop,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the NOP critical section.
-     *
-     * @returns The ring-0 address of the NOP critical section.
-     * @param   pDevIns             The device instance.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(R0PTRTYPE(PPDMCRITSECT), pfnCritSectGetNopR0,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the NOP critical section.
-     *
-     * @returns The raw-mode context address of the NOP critical section.
-     * @param   pDevIns             The device instance.
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(RCPTRTYPE(PPDMCRITSECT), pfnCritSectGetNopRC,(PPDMDEVINS pDevIns));
 
     /**
      * Changes the device level critical section from the automatically created
@@ -7839,26 +7821,6 @@ DECLINLINE(PPDMCRITSECT) PDMDevHlpCritSectGetNop(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnCritSectGetNop(pDevIns);
 }
-
-#ifdef IN_RING3
-
-/**
- * @copydoc PDMDEVHLPR3::pfnCritSectGetNopR0
- */
-DECLINLINE(R0PTRTYPE(PPDMCRITSECT)) PDMDevHlpCritSectGetNopR0(PPDMDEVINS pDevIns)
-{
-    return pDevIns->pHlpR3->pfnCritSectGetNopR0(pDevIns);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnCritSectGetNopRC
- */
-DECLINLINE(RCPTRTYPE(PPDMCRITSECT)) PDMDevHlpCritSectGetNopRC(PPDMDEVINS pDevIns)
-{
-    return pDevIns->pHlpR3->pfnCritSectGetNopRC(pDevIns);
-}
-
-#endif /* IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnSetDeviceCritSect
