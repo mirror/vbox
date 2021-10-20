@@ -332,15 +332,12 @@ bool UIWizardExportApp::exportAppliance()
     }
 }
 
-bool UIWizardExportApp::createVsdLaunchForm()
+void UIWizardExportApp::createVsdLaunchForm()
 {
-    /* Prepare result: */
-    bool fResult = false;
-
     /* Acquire prepared client and description: */
     CCloudClient comClient = cloudClient();
     CVirtualSystemDescription comVSD = vsd();
-    AssertReturn(comClient.isNotNull() && comVSD.isNotNull(), false);
+    AssertReturnVoid(comClient.isNotNull() && comVSD.isNotNull());
 
     /* Get Launch description form: */
     CVirtualSystemDescriptionForm comForm;
@@ -369,7 +366,7 @@ bool UIWizardExportApp::createVsdLaunchForm()
                 {
                     // Premature application shutdown,
                     // exit immediately:
-                    return fResult;
+                    return;
                 }
             }
         }
@@ -384,15 +381,9 @@ bool UIWizardExportApp::createVsdLaunchForm()
             {
                 /* Remember Virtual System Description Form: */
                 setVsdLaunchForm(comForm);
-
-                /* Finally, success: */
-                fResult = true;
             }
         }
     }
-
-    /* Return result: */
-    return fResult;
 }
 
 bool UIWizardExportApp::createCloudVM()

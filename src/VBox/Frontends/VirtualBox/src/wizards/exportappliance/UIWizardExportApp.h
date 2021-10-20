@@ -169,7 +169,7 @@ public:
         bool exportAppliance();
 
         /** Creates VSD Form. */
-        bool createVsdLaunchForm();
+        void createVsdLaunchForm();
 
         /** Creates New Cloud VM. */
         bool createCloudVM();
