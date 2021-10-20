@@ -72,19 +72,19 @@ int main(int argc, char **argv)
     RT_ZERO(Callbacks);
     Callbacks.pfnTestSetSendRead  = tstTestSetSendReadCallback;
 
-    ATSCLIENT Client;
-
     ATSSERVER Srv;
+    rc = AudioTestSvcInit(&Srv, &Callbacks);
+    RTTEST_CHECK_RC_OK(hTest, rc);
 
     RTGETOPTUNION Val;
     RT_ZERO(Val);
 
-    Val.psz = "server";
+    Val.u32 = ATSCONNMODE_SERVER;
     rc = AudioTestSvcHandleOption(&Srv, ATSTCPOPT_CONN_MODE, &Val);
     RTTEST_CHECK_RC_OK(hTest, rc);
 
-    rc = AudioTestSvcInit(&Srv, &Callbacks);
-    RTTEST_CHECK_RC_OK(hTest, rc);
+    ATSCLIENT Client;
+
     if (RT_SUCCESS(rc))
     {
         uint16_t uPort = ATS_TCP_DEF_BIND_PORT_HOST;
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
             rc = AudioTestSvcClientCreate(&Client);
             RTTEST_CHECK_RC_OK(hTest, rc);
 
-            Val.psz = "client";
+            Val.u32 = ATSCONNMODE_CLIENT;
             rc = AudioTestSvcClientHandleOption(&Client, ATSTCPOPT_CONN_MODE, &Val);
             RTTEST_CHECK_RC_OK(hTest, rc);
 
