@@ -6221,11 +6221,11 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     pSVGAState = pThisCC->svga.pSvgaR3State;
 
     /* Register the write-protected GBO access handler type. */
-    rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns), PGMPHYSHANDLERKIND_WRITE,
-                                          vmsvgaR3GboAccessHandler,
-                                          NULL, NULL, NULL,
-                                          NULL, NULL, NULL,
-                                          "VMSVGA GBO", &pSVGAState->hGboAccessHandlerType);
+    rc = PDMDevHlpPGMHandlerPhysicalTypeRegister(pDevIns, PGMPHYSHANDLERKIND_WRITE,
+                                                 vmsvgaR3GboAccessHandler,
+                                                 NULL, NULL,
+                                                 NULL, NULL,
+                                                 "VMSVGA GBO", &pSVGAState->hGboAccessHandlerType);
     AssertRCReturn(rc, rc);
 
 # ifdef VBOX_WITH_VMSVGA3D
@@ -6274,11 +6274,11 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
 
 # ifdef DEBUG_GMR_ACCESS
     /* Register the GMR access handler type. */
-    rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns), PGMPHYSHANDLERKIND_WRITE,
-                                          vmsvgaR3GmrAccessHandler,
-                                          NULL, NULL, NULL,
-                                          NULL, NULL, NULL,
-                                          "VMSVGA GMR", &pThis->svga.hGmrAccessHandlerType);
+    rc = PDMDevHlpPGMHandlerPhysicalTypeRegister(pDevIns, PGMPHYSHANDLERKIND_WRITE,
+                                                 vmsvgaR3GmrAccessHandler,
+                                                 NULL, NULL,
+                                                 NULL, NULL,
+                                                 "VMSVGA GMR", &pThis->svga.hGmrAccessHandlerType);
     AssertRCReturn(rc, rc);
 # endif
 
@@ -6286,16 +6286,16 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
     /* Register the FIFO access handler type.  In addition to
        debugging FIFO access, this is also used to facilitate
        extended fifo thread sleeps. */
-    rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns),
+    rc = PDMDevHlpPGMHandlerPhysicalTypeRegister(pDevIns,
 #  ifdef DEBUG_FIFO_ACCESS
-                                          PGMPHYSHANDLERKIND_ALL,
+                                                 PGMPHYSHANDLERKIND_ALL,
 #  else
-                                          PGMPHYSHANDLERKIND_WRITE,
+                                                 PGMPHYSHANDLERKIND_WRITE,
 #  endif
-                                          vmsvgaR3FifoAccessHandler,
-                                          NULL, NULL, NULL,
-                                          NULL, NULL, NULL,
-                                          "VMSVGA FIFO", &pThis->svga.hFifoAccessHandlerType);
+                                                 vmsvgaR3FifoAccessHandler,
+                                                 NULL, NULL,
+                                                 NULL, NULL,
+                                                 "VMSVGA FIFO", &pThis->svga.hFifoAccessHandlerType);
     AssertRCReturn(rc, rc);
 # endif
 
