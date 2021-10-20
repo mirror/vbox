@@ -2178,7 +2178,7 @@ static int dxbcCreateIOSGNBlob(DXShaderInfo const *pInfo, DXBCHeader *pHdr, uint
         aIdxSignature[src->registerIndex] = i;
     }
 
-    uint32_t cbBlob = RT_UOFFSETOF(DXBCBlobIOSGN, aElement[cSignature])
+    uint32_t cbBlob = RT_UOFFSETOF_DYN(DXBCBlobIOSGN, aElement[cSignature])
                     + cSignature * RT_SIZEOFMEMB(DXBCBlobIOSGN, aElement[0]);
     if (!dxbcByteWriterCanWrite(w, sizeof(DXBCBlobHeader) + cbBlob))
         return VERR_NO_MEMORY;
