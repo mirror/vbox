@@ -179,51 +179,14 @@ void UIWizardExportApp::createVsdLaunchForm()
     CVirtualSystemDescription comVSD = vsd();
     AssertReturnVoid(comClient.isNotNull() && comVSD.isNotNull());
 
-    /* Get Launch description form: */
-    CVirtualSystemDescriptionForm comForm;
-    CProgress comProgress = comClient.GetLaunchDescriptionForm(comVSD, comForm);
-    /* Check for immediate errors: */
-    if (!comClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comClient);
-    else
-    {
-        /* Make sure progress initially valid: */
-        if (!comProgress.isNull() && !comProgress.GetCompleted())
-        {
-            /* Create take snapshot progress object: */
-            QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
-            if (pObject)
-            {
-                connect(pObject.data(), &UIProgressObject::sigProgressChange,
-                        this, &UIWizardExportApp::sltHandleProgressChange);
-                connect(pObject.data(), &UIProgressObject::sigProgressComplete,
-                        this, &UIWizardExportApp::sltHandleProgressFinished);
-                sltHandleProgressStarted();
-                pObject->exec();
-                if (pObject)
-                    delete pObject;
-                else
-                {
-                    // Premature application shutdown,
-                    // exit immediately:
-                    return;
-                }
-            }
-        }
-
-        /* Check for progress errors: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress);
-        else
-        {
-            /* Check whether form really read: */
-            if (comForm.isNotNull())
-            {
-                /* Remember Virtual System Description Form: */
-                setVsdLaunchForm(comForm);
-            }
-        }
-    }
+    /* Create launch VSD form: */
+    UINotificationProgressLaunchVSDFormCreate *pNotification = new UINotificationProgressLaunchVSDFormCreate(comClient,
+                                                                                                             comVSD,
+                                                                                                             format(),
+                                                                                                             profileName());
+    connect(pNotification, &UINotificationProgressLaunchVSDFormCreate::sigVSDFormCreated,
+            this, &UIWizardExportApp::setVsdLaunchForm);
+    handleNotificationProgressNow(pNotification);
 }
 
 bool UIWizardExportApp::createCloudVM()
