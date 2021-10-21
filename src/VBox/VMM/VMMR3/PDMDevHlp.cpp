@@ -767,6 +767,69 @@ static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS p
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
+                                                                PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
+                                                                RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM  pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalRegister: caller='%s'/%d: GCPhys=%RGp GCPhysLast=%RGp hType=%u pvUserR3=%p pvUserR0=%llx pvUsereRC=%llx pszDesc=%p:{%s}\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, GCPhysLast, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc, pszDesc));
+
+    int rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc);
+
+    Log(("pdmR3DevHlp_PGMHandlerPhysicalRegister: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalDeregister} */
+static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalDeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM  pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalDeregister: caller='%s'/%d: GCPhys=%RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
+
+    int rc = PGMHandlerPhysicalDeregister(pVM, GCPhys);
+
+    Log(("pdmR3DevHlp_PGMHandlerPhysicalDeregister: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalPageTempOff} */
+static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalPageTempOff(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM  pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalPageTempOff: caller='%s'/%d: GCPhys=%RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
+
+    int rc = PGMHandlerPhysicalPageTempOff(pVM, GCPhys, GCPhysPage);
+
+    Log(("pdmR3DevHlp_PGMHandlerPhysicalPageTempOff: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalReset} */
+static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalReset(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM  pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalReset: caller='%s'/%d: GCPhys=%RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
+
+    int rc = PGMHandlerPhysicalReset(pVM, GCPhys);
+
+    Log(("pdmR3DevHlp_PGMHandlerPhysicalReset: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, uint32_t fFlags)
 {
@@ -4844,6 +4907,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
+    pdmR3DevHlp_PGMHandlerPhysicalRegister,
+    pdmR3DevHlp_PGMHandlerPhysicalDeregister,
+    pdmR3DevHlp_PGMHandlerPhysicalPageTempOff,
+    pdmR3DevHlp_PGMHandlerPhysicalReset,
     pdmR3DevHlp_VMMRegisterPatchMemory,
     pdmR3DevHlp_VMMDeregisterPatchMemory,
     pdmR3DevHlp_SharedModuleRegister,
@@ -5219,6 +5286,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
+    pdmR3DevHlp_PGMHandlerPhysicalRegister,
+    pdmR3DevHlp_PGMHandlerPhysicalDeregister,
+    pdmR3DevHlp_PGMHandlerPhysicalPageTempOff,
+    pdmR3DevHlp_PGMHandlerPhysicalReset,
     pdmR3DevHlp_VMMRegisterPatchMemory,
     pdmR3DevHlp_VMMDeregisterPatchMemory,
     pdmR3DevHlp_SharedModuleRegister,
@@ -5381,6 +5452,52 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister(PP
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     RT_NOREF(enmKind, pfnHandlerR3, pszHandlerR0, pszPfHandlerR0, pszHandlerRC, pszPfHandlerRC, pszDesc, phType);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
+                                                                          PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
+                                                                          RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(GCPhys, GCPhysLast, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalDeregister} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalDeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(GCPhys);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalPageTempOff} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalPageTempOff(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(GCPhys, GCPhysPage);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalReset} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalReset(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(GCPhys);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
                             pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
@@ -5819,6 +5936,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_GetSupDrvSession,
     pdmR3DevHlp_Untrusted_QueryGenericUserObject,
     pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister,
+    pdmR3DevHlp_Untrusted_PGMHandlerPhysicalRegister,
+    pdmR3DevHlp_Untrusted_PGMHandlerPhysicalDeregister,
+    pdmR3DevHlp_Untrusted_PGMHandlerPhysicalPageTempOff,
+    pdmR3DevHlp_Untrusted_PGMHandlerPhysicalReset,
     pdmR3DevHlp_Untrusted_VMMRegisterPatchMemory,
     pdmR3DevHlp_Untrusted_VMMDeregisterPatchMemory,
     pdmR3DevHlp_Untrusted_SharedModuleRegister,

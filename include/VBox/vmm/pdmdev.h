@@ -2423,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 54, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 55, 0)
 
 /**
  * PDM Device API.
@@ -4659,6 +4659,79 @@ typedef struct PDMDEVHLPR3
                                                                   const char *pszDesc, PPGMPHYSHANDLERTYPE phType));
 
     /**
+     * Register a access handler for a physical range.
+     *
+     * @returns VBox status code.
+     * @retval  VINF_SUCCESS when successfully installed.
+     * @retval  VINF_PGM_GCPHYS_ALIASED when the shadow PTs could be updated because
+     *          the guest page aliased or/and mapped by multiple PTs. A CR3 sync has been
+     *          flagged together with a pool clearing.
+     * @retval  VERR_PGM_HANDLER_PHYSICAL_CONFLICT if the range conflicts with an existing
+     *          one. A debug assertion is raised.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Start physical address.
+     * @param   GCPhysLast          Last physical address. (inclusive)
+     * @param   hType               The handler type registration handle.
+     * @param   pvUserR3            User argument to the R3 handler.
+     * @param   pvUserR0            User argument to the R0 handler.
+     * @param   pvUserRC            User argument to the RC handler. This can be a value
+     *                              less that 0x10000 or a (non-null) pointer that is
+     *                              automatically relocated.
+     * @param   pszDesc             Description of this handler.  If NULL, the type
+     *                              description will be used instead.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPGMHandlerPhysicalRegister, (PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
+                                                              PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
+                                                              RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc));
+
+    /**
+     * Deregister a physical page access handler.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              Start physical address.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPGMHandlerPhysicalDeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
+
+    /**
+     * Temporarily turns off the access monitoring of a page within a monitored
+     * physical write/all page access handler region.
+     *
+     * Use this when no further \#PFs are required for that page. Be aware that
+     * a page directory sync might reset the flags, and turn on access monitoring
+     * for the page.
+     *
+     * The caller must do required page table modifications.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              The start address of the access handler. This
+     *                              must be a fully page aligned range or we risk
+     *                              messing up other handlers installed for the
+     *                              start and end pages.
+     * @param   GCPhysPage          The physical address of the page to turn off
+     *                              access monitoring for.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPGMHandlerPhysicalPageTempOff,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage));
+
+    /**
+     * Resets any modifications to individual pages in a physical page access
+     * handler region.
+     *
+     * This is used in pair with PGMHandlerPhysicalPageTempOff(),
+     * PGMHandlerPhysicalPageAliasMmio2() or PGMHandlerPhysicalPageAliasHC().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              The start address of the handler regions, i.e. what you
+     *                              passed to PGMR3HandlerPhysicalRegister(),
+     *                              PGMHandlerPhysicalRegisterEx() or
+     *                              PGMHandlerPhysicalModify().
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPGMHandlerPhysicalReset,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
+
+    /**
      * Registers the guest memory range that can be used for patching.
      *
      * @returns VBox status code.
@@ -5609,6 +5682,27 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(int, pfnHpetSetUpContext,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR0 *ppHpetHlp));
 
+    /**
+     * Temporarily turns off the access monitoring of a page within a monitored
+     * physical write/all page access handler region.
+     *
+     * Use this when no further \#PFs are required for that page. Be aware that
+     * a page directory sync might reset the flags, and turn on access monitoring
+     * for the page.
+     *
+     * The caller must do required page table modifications.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              The start address of the access handler. This
+     *                              must be a fully page aligned range or we risk
+     *                              messing up other handlers installed for the
+     *                              start and end pages.
+     * @param   GCPhysPage          The physical address of the page to turn off
+     *                              access monitoring for.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnPGMHandlerPhysicalPageTempOff,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage));
+
     /** Space reserved for future members.
      * @{ */
     DECLR0CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -5632,7 +5726,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 22, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 23, 0)
 
 
 /**
@@ -8900,6 +8994,43 @@ DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMP
                                                               pszHandlerR0, pszPfHandlerR0,
                                                               pszHandlerRC, pszPfHandlerRC,
                                                               pszDesc, phType);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalRegister
+ */
+DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
+                                                    PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
+                                                    RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc)
+{
+    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalRegister(pDevIns, GCPhys, GCPhysLast, hType,
+                                                          pvUserR3, pvUserR0, pvUserRC, pszDesc);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalDeregister
+ */
+DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalDeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalDeregister(pDevIns, GCPhys);
+}
+#endif
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalPageTempOff
+ */
+DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalPageTempOff(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPGMHandlerPhysicalPageTempOff(pDevIns, GCPhys, GCPhysPage);
+}
+
+#ifdef IN_RING3
+/**
+ * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalReset
+ */
+DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalReset(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalReset(pDevIns, GCPhys);
 }
 
 /**

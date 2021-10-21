@@ -2860,9 +2860,9 @@ static DECLCALLBACK(int) vmsvgaR3RegisterGmr(PPDMDEVINS pDevIns, uint32_t gmrId)
 
     for (uint32_t i = 0; i < pGMR->numDescriptors; i++)
     {
-        rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
-                                        pGMR->paDesc[i].GCPhys, pGMR->paDesc[i].GCPhys + pGMR->paDesc[i].numPages * PAGE_SIZE - 1,
-                                        pThis->svga.hGmrAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR, "VMSVGA GMR");
+        rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns,
+                                                 pGMR->paDesc[i].GCPhys, pGMR->paDesc[i].GCPhys + pGMR->paDesc[i].numPages * PAGE_SIZE - 1,
+                                                 pThis->svga.hGmrAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR, "VMSVGA GMR");
         AssertRC(rc);
     }
     return VINF_SUCCESS;
@@ -2877,7 +2877,7 @@ static DECLCALLBACK(int) vmsvgaR3DeregisterGmr(PPDMDEVINS pDevIns, uint32_t gmrI
 
     for (uint32_t i = 0; i < pGMR->numDescriptors; i++)
     {
-        int rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pGMR->paDesc[i].GCPhys);
+        int rc = PDMDevHlpPGMHandlerPhysicalDeregister(pDevIns, pGMR->paDesc[i].GCPhys);
         AssertRC(rc);
     }
     return VINF_SUCCESS;
@@ -2896,7 +2896,7 @@ static DECLCALLBACK(int) vmsvgaR3ResetGmrHandlers(PVGASTATE pThis)
         {
             for (uint32_t j = 0; j < pGMR->numDescriptors; j++)
             {
-                int rc = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pGMR->paDesc[j].GCPhys);
+                int rc = PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pGMR->paDesc[j].GCPhys);
                 AssertRC(rc);
             }
         }
@@ -4579,7 +4579,7 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
             else
             {
 # ifdef VMSVGA_USE_FIFO_ACCESS_HANDLER
-                int rc2 = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
+                int rc2 = PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pThis->svga.GCPhysFIFO);
                 AssertRC(rc2); /* No break. Racing EMTs unmapping and remapping the region. */
 # endif
                 if (   !fBadOrDisabledFifo
@@ -5195,14 +5195,14 @@ DECLCALLBACK(int) vmsvgaR3PciIORegionFifoMapUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV
 # if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
         if (RT_SUCCESS(rc))
         {
-            rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress,
+            rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns, GCPhysAddress,
 #  ifdef DEBUG_FIFO_ACCESS
-                                            GCPhysAddress + (pThis->svga.cbFIFO - 1),
+                                                     GCPhysAddress + (pThis->svga.cbFIFO - 1),
 #  else
-                                            GCPhysAddress + PAGE_SIZE - 1,
+                                                     GCPhysAddress + PAGE_SIZE - 1,
 #  endif
-                                            pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
-                                            "VMSVGA FIFO");
+                                                     pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
+                                                     "VMSVGA FIFO");
             AssertRC(rc);
         }
 # endif
@@ -5217,7 +5217,7 @@ DECLCALLBACK(int) vmsvgaR3PciIORegionFifoMapUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV
     {
         Assert(pThis->svga.GCPhysFIFO);
 # if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
-        rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
+        rc = PDMDevHlpPGMHandlerPhysicalDeregister(pDevIns, pThis->svga.GCPhysFIFO);
         AssertRC(rc);
 # else
         rc = VINF_SUCCESS;

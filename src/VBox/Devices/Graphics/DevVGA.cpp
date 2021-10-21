@@ -3625,6 +3625,8 @@ static DECLCALLBACK(VBOXSTRICTRC) vgaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
  */
 static VBOXSTRICTRC vgaLFBAccess(PVMCC pVM, PPDMDEVINS pDevIns, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr)
 {
+    RT_NOREF(pVM);
+
     VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_EM_RAW_EMULATE_INSTR);
     if (rc == VINF_SUCCESS)
     {
@@ -3639,7 +3641,7 @@ static VBOXSTRICTRC vgaLFBAccess(PVMCC pVM, PPDMDEVINS pDevIns, PVGASTATE pThis,
          * Then return telling the caller to restart the guest instruction.
          * ASSUME: the guest always maps video memory RW.
          */
-        rc = PGMHandlerPhysicalPageTempOff(pVM, pThis->GCPhysVRAM, GCPhys);
+        rc = PDMDevHlpPGMHandlerPhysicalPageTempOff(pDevIns, pThis->GCPhysVRAM, GCPhys);
         if (RT_SUCCESS(rc))
         {
 #ifndef IN_RING3
@@ -4784,7 +4786,7 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     STAM_COUNTER_INC(&pThis->StatUpdateDisp);
     if (pThis->fHasDirtyBits && pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS)
     {
-        PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
+        PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pThis->GCPhysVRAM);
         pThis->fHasDirtyBits = false;
     }
     if (pThis->fRemappedVGA)
@@ -4813,7 +4815,7 @@ static int vboxR3UpdateDisplayAllInternal(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     {
         /* The dirty bits array has been just cleared, reset handlers as well. */
         if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS)
-            PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
+            PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pThis->GCPhysVRAM);
     }
     if (pThis->fRemappedVGA)
     {
@@ -5498,10 +5500,10 @@ static DECLCALLBACK(void) vgaR3TimerRefresh(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
 int vgaR3RegisterVRAMHandler(PPDMDEVINS pDevIns, PVGASTATE pThis, uint64_t cbFrameBuffer)
 {
     Assert(pThis->GCPhysVRAM);
-    int rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
-                                        pThis->GCPhysVRAM, pThis->GCPhysVRAM + (cbFrameBuffer - 1),
-                                        pThis->hLfbAccessHandlerType, pDevIns, pDevIns->pDevInsR0RemoveMe,
-                                        pDevIns->pDevInsForRC, "VGA LFB");
+    int rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns,
+                                                 pThis->GCPhysVRAM, pThis->GCPhysVRAM + (cbFrameBuffer - 1),
+                                                 pThis->hLfbAccessHandlerType, pDevIns, pDevIns->pDevInsR0RemoveMe,
+                                                 pDevIns->pDevInsForRC, "VGA LFB");
 
     AssertRC(rc);
     return rc;
@@ -5514,7 +5516,7 @@ int vgaR3RegisterVRAMHandler(PPDMDEVINS pDevIns, PVGASTATE pThis, uint64_t cbFra
 int vgaR3UnregisterVRAMHandler(PPDMDEVINS pDevIns, PVGASTATE pThis)
 {
     Assert(pThis->GCPhysVRAM);
-    int rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
+    int rc = PDMDevHlpPGMHandlerPhysicalDeregister(pDevIns, pThis->GCPhysVRAM);
     AssertRC(rc);
     return rc;
 }
@@ -5568,9 +5570,9 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
                )
 # endif
             {
-                rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
-                                                pThis->hLfbAccessHandlerType, pDevIns, pDevIns->pDevInsR0RemoveMe,
-                                                pDevIns->pDevInsForRC, "VGA LFB");
+                rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns, GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
+                                                         pThis->hLfbAccessHandlerType, pDevIns, pDevIns->pDevInsR0RemoveMe,
+                                                         pDevIns->pDevInsForRC, "VGA LFB");
                 AssertLogRelRC(rc);
             }
 
@@ -5595,7 +5597,7 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
            )
 # endif
         {
-            rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
+            rc = PDMDevHlpPGMHandlerPhysicalDeregister(pDevIns, pThis->GCPhysVRAM);
             AssertRC(rc);
         }
 # ifdef VBOX_WITH_VMSVGA
@@ -6052,7 +6054,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
         &&  pThis->GCPhysVRAM
         &&  pThis->GCPhysVRAM != NIL_RTGCPHYS)
     {
-        int rc = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
+        int rc = PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pThis->GCPhysVRAM);
         AssertRC(rc);
     }
     if (pThis->fRemappedVGA)

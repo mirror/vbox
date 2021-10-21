@@ -1319,6 +1319,20 @@ static DECLCALLBACK(int) pdmR0DevHlp_HpetSetUpContext(PPDMDEVINS pDevIns, PPDMHP
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnPGMHandlerPhysicalPageTempOff} */
+static DECLCALLBACK(int) pdmR0DevHlp_PGMHandlerPhysicalPageTempOff(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_PGMHandlerPhysicalPageTempOff: caller='%s'/%d: GCPhys=%RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
+
+    int rc = PGMHandlerPhysicalPageTempOff(pDevIns->Internal.s.pGVM, GCPhys, GCPhysPage);
+
+    Log(("pdmR0DevHlp_PGMHandlerPhysicalPageTempOff: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /**
  * The Ring-0 Device Helper Callbacks.
  */
@@ -1411,6 +1425,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_ApicSetUpContext,
     pdmR0DevHlp_IoApicSetUpContext,
     pdmR0DevHlp_HpetSetUpContext,
+    pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,
@@ -1518,6 +1533,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
     pdmR0DevHlp_ApicSetUpContext,
     pdmR0DevHlp_IoApicSetUpContext,
     pdmR0DevHlp_HpetSetUpContext,
+    pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,

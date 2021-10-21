@@ -591,9 +591,9 @@ fWriteProtected = false;
         pGbo->fGboFlags |= VMSVGAGBO_F_WRITE_PROTECTED;
         for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
         {
-            rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pSvgaR3State->pDevIns),
-                                            pGbo->paDescriptors[i].GCPhys, pGbo->paDescriptors[i].GCPhys + pGbo->paDescriptors[i].cPages * PAGE_SIZE - 1,
-                                            pSvgaR3State->hGboAccessHandlerType, pSvgaR3State->pDevIns, NIL_RTR0PTR, NIL_RTRCPTR, "VMSVGA GBO");
+            rc = PDMDevHlpPGMHandlerPhysicalRegister(pSvgaR3State->pDevIns,
+                                                     pGbo->paDescriptors[i].GCPhys, pGbo->paDescriptors[i].GCPhys + pGbo->paDescriptors[i].cPages * PAGE_SIZE - 1,
+                                                     pSvgaR3State->hGboAccessHandlerType, pSvgaR3State->pDevIns, NIL_RTR0PTR, NIL_RTRCPTR, "VMSVGA GBO");
             AssertRC(rc);
         }
     }
@@ -610,7 +610,7 @@ static void vmsvgaR3GboDestroy(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGbo)
         {
             for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
             {
-                int rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pSvgaR3State->pDevIns), pGbo->paDescriptors[i].GCPhys);
+                int rc = PDMDevHlpPGMHandlerPhysicalDeregister(pSvgaR3State->pDevIns, pGbo->paDescriptors[i].GCPhys);
                 AssertRC(rc);
             }
         }
