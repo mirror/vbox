@@ -1274,15 +1274,34 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, PCRTLDRSIGNATUREI
                Sysinternals' sigcheck util ignores it, while MS sigtool doesn't trust the root.
                It's possible we're being too strict, but well, it's the only case so far, so no
                need to relax the Key Usage restrictions just for a certificate w/o a trusted root.
-               */
+
+               VERR_CR_X509_CPV_UNKNOWN_CRITICAL_EXTENSION: Intel 27.20.100.9126 igdumdim64.dll
+               has three signatures, the first is signed with a certificate (C=US,ST=CA,
+               L=Santa Clara,O=Intel Corporation,CN=IntelGraphicsPE2021) that has a critical
+               subject key identifier.  This used to trip up the path validator.  However, the
+               other two signatures are from microsoft and checks out fine.  So, in future
+               situations like this it would be nice to simply continue with the next signature.
+               See bugref{10130} for details.
+
+               VERR_SUP_VP_NOT_VALID_KERNEL_CODE_SIGNATURE: Is related to the above intel problem,
+               but this is what we get if suppressing the unknown critical subjectKeyIdentifier
+               in IPRT.  We don't need all signatures to be valid kernel signatures, we should be
+               happy with just one and ignore any additional signatures as long as they don't look
+               like they've been compromised. Thus continue with this status too. */
             pNtViRdr->rcLastSignatureFailure = rc;
             if (   rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME
                 || rc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS
-                || rc == VERR_CR_PKCS7_KEY_USAGE_MISMATCH)
+                || rc == VERR_CR_PKCS7_KEY_USAGE_MISMATCH
+                || rc == VERR_CR_X509_CPV_UNKNOWN_CRITICAL_EXTENSION
+                || rc == VERR_SUP_VP_NOT_VALID_KERNEL_CODE_SIGNATURE)
             {
                 SUP_DPRINTF(("%s: Signature #%u/%u: %s (%d) w/ timestamp=%#RX64/%s.\n", pNtViRdr->szFilename, pInfo->iSignature + 1, pInfo->cSignatures,
-                             rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME ? "VERR_CR_X509_CPV_NOT_VALID_AT_TIME" : "VERR_CR_X509_CPV_NO_TRUSTED_PATHS", rc,
-                             RTTimeSpecGetSeconds(&aTimes[i].TimeSpec), aTimes[i].pszDesc));
+                             rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME            ? "VERR_CR_X509_CPV_NOT_VALID_AT_TIME"
+                             : rc == VERR_CR_X509_CPV_NO_TRUSTED_PATHS           ? "VERR_CR_X509_CPV_NO_TRUSTED_PATHS"
+                             : rc == VERR_CR_PKCS7_KEY_USAGE_MISMATCH            ? "VERR_CR_PKCS7_KEY_USAGE_MISMATCH"
+                             : rc == VERR_CR_X509_CPV_UNKNOWN_CRITICAL_EXTENSION ? "VERR_CR_X509_CPV_UNKNOWN_CRITICAL_EXTENSION"
+                                                                                 : "VERR_SUP_VP_NOT_VALID_KERNEL_CODE_SIGNATURE",
+                             rc, RTTimeSpecGetSeconds(&aTimes[i].TimeSpec), aTimes[i].pszDesc));
 
                 /* This leniency is not applicable to build certificate requirements (signature #1 only). */
                 if (  !(pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT)
