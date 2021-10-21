@@ -2125,7 +2125,7 @@ static int vmmdevReqHandler_ChangeMemBalloon(PPDMDEVINS pDevIns, PVMMDEV pThis, 
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
     Log(("VMMDevReq_ChangeMemBalloon\n"));
-    int rc = PGMR3PhysChangeMemBalloon(PDMDevHlpGetVM(pDevIns), !!pReq->fInflate, pReq->cPages, pReq->aPhysPage);
+    int rc = PDMDevHlpPhysChangeMemBalloon(pDevIns, !!pReq->fInflate, pReq->cPages, pReq->aPhysPage);
     if (pReq->fInflate)
         STAM_REL_U32_INC(&pThis->StatMemBalloonChunks);
     else
@@ -2490,8 +2490,8 @@ static int vmmdevReqHandler_RegisterSharedModule(PPDMDEVINS pDevIns, VMMDevReque
     /*
      * Forward the request to the VMM.
      */
-    return PGMR3SharedModuleRegister(PDMDevHlpGetVM(pDevIns), pReq->enmGuestOS, pReq->szName, pReq->szVersion,
-                                     pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
+    return PDMDevHlpSharedModuleRegister(pDevIns, pReq->enmGuestOS, pReq->szName, pReq->szVersion,
+                                         pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
 }
 
 /**
@@ -2520,8 +2520,8 @@ static int vmmdevReqHandler_UnregisterSharedModule(PPDMDEVINS pDevIns, VMMDevReq
     /*
      * Forward the request to the VMM.
      */
-    return PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pDevIns), pReq->szName, pReq->szVersion,
-                                       pReq->GCBaseAddr, pReq->cbModule);
+    return PDMDevHlpSharedModuleUnregister(pDevIns, pReq->szName, pReq->szVersion,
+                                           pReq->GCBaseAddr, pReq->cbModule);
 }
 
 /**
@@ -2536,7 +2536,7 @@ static int vmmdevReqHandler_CheckSharedModules(PPDMDEVINS pDevIns, VMMDevRequest
     VMMDevSharedModuleCheckRequest *pReq = (VMMDevSharedModuleCheckRequest *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(VMMDevSharedModuleCheckRequest),
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
-    return PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pDevIns));
+    return PDMDevHlpSharedModuleCheckAll(pDevIns);
 }
 
 /**
@@ -2573,12 +2573,7 @@ static int vmmdevReqHandler_DebugIsPageShared(PPDMDEVINS pDevIns, VMMDevRequestH
     AssertMsgReturn(pReq->header.size == sizeof(VMMDevPageIsSharedRequest),
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-# ifdef DEBUG
-    return PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
-# else
-    RT_NOREF(pDevIns);
-    return VERR_NOT_IMPLEMENTED;
-# endif
+    return PDMDevHlpSharedModuleGetPageState(pDevIns, pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
 }
 
 #endif /* VBOX_WITH_PAGE_SHARING */

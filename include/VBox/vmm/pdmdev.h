@@ -2423,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 53, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 54, 0)
 
 /**
  * PDM Device API.
@@ -3137,6 +3137,17 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              The physical address to check.
      */
     DECLR3CALLBACKMEMBER(bool, pfnPhysIsGCPhysNormal,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
+
+    /**
+     * Inflate or deflate a memory balloon
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   fInflate            Inflate or deflate memory balloon
+     * @param   cPages              Number of pages to free
+     * @param   paPhysPage          Array of guest physical addresses
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPhysChangeMemBalloon,(PPDMDEVINS pDevIns, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage));
 
     /**
      * Allocate memory which is associated with current VM instance
@@ -4666,6 +4677,55 @@ typedef struct PDMDEVHLPR3
      * @param   cbPatchMem          Size of the memory range.
      */
     DECLR3CALLBACKMEMBER(int, pfnVMMDeregisterPatchMemory, (PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem));
+
+    /**
+     * Registers a new shared module for the VM
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   enmGuestOS          Guest OS type.
+     * @param   pszModuleName       Module name.
+     * @param   pszVersion          Module version.
+     * @param   GCBaseAddr          Module base address.
+     * @param   cbModule            Module size.
+     * @param   cRegions            Number of shared region descriptors.
+     * @param   paRegions           Shared region(s).
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSharedModuleRegister,(PPDMDEVINS pDevIns, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion,
+                                                       RTGCPTR GCBaseAddr, uint32_t cbModule,
+                                                       uint32_t cRegions, VMMDEVSHAREDREGIONDESC const *paRegions));
+
+    /**
+     * Unregisters a shared module for the VM
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pszModuleName       Module name.
+     * @param   pszVersion          Module version.
+     * @param   GCBaseAddr          Module base address.
+     * @param   cbModule            Module size.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSharedModuleUnregister,(PPDMDEVINS pDevIns, char *pszModuleName, char *pszVersion,
+                                                         RTGCPTR GCBaseAddr, uint32_t cbModule));
+
+    /**
+     * Query the state of a page in a shared module
+     *
+     * @returns VBox status code.
+     * @param   pVM                 The cross context VM structure.
+     * @param   GCPtrPage           Page address.
+     * @param   pfShared            Shared status (out).
+     * @param   pfPageFlags         Page flags (out).
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSharedModuleGetPageState, (PPDMDEVINS pDevIns, RTGCPTR GCPtrPage, bool *pfShared, uint64_t *pfPageFlags));
+
+    /**
+     * Check all registered modules for changes.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSharedModuleCheckAll,(PPDMDEVINS pDevIns));
 
     /** @} */
 
@@ -6761,6 +6821,14 @@ DECLINLINE(bool) PDMDevHlpPhysIsGCPhysNormal(PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnPhysChangeMemBalloon
+ */
+DECLINLINE(int) PDMDevHlpPhysChangeMemBalloon(PPDMDEVINS pDevIns, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysChangeMemBalloon(pDevIns, fInflate, cPages, paPhysPage);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnCpuGetGuestMicroarch
  */
 DECLINLINE(CPUMMICROARCH) PDMDevHlpCpuGetGuestMicroarch(PPDMDEVINS pDevIns)
@@ -8848,6 +8916,43 @@ DECLINLINE(int) PDMDevHlpVMMRegisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPt
 DECLINLINE(int) PDMDevHlpVMMDeregisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
 {
     return pDevIns->pHlpR3->pfnVMMDeregisterPatchMemory(pDevIns, GCPtrPatchMem, cbPatchMem);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSharedModuleRegister
+ */
+DECLINLINE(int) PDMDevHlpSharedModuleRegister(PPDMDEVINS pDevIns, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion,
+                                              RTGCPTR GCBaseAddr, uint32_t cbModule,
+                                              uint32_t cRegions, VMMDEVSHAREDREGIONDESC const *paRegions)
+{
+    return pDevIns->pHlpR3->pfnSharedModuleRegister(pDevIns, enmGuestOS, pszModuleName, pszVersion,
+                                                    GCBaseAddr, cbModule, cRegions, paRegions);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSharedModuleUnregister
+ */
+DECLINLINE(int) PDMDevHlpSharedModuleUnregister(PPDMDEVINS pDevIns, char *pszModuleName, char *pszVersion,
+                                                RTGCPTR GCBaseAddr, uint32_t cbModule)
+{
+    return pDevIns->pHlpR3->pfnSharedModuleUnregister(pDevIns, pszModuleName, pszVersion, GCBaseAddr, cbModule);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSharedModuleGetPageState
+ */
+DECLINLINE(int) PDMDevHlpSharedModuleGetPageState(PPDMDEVINS pDevIns, RTGCPTR GCPtrPage, bool *pfShared,
+                                                  uint64_t *pfPageFlags)
+{
+    return pDevIns->pHlpR3->pfnSharedModuleGetPageState(pDevIns, GCPtrPage, pfShared, pfPageFlags);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSharedModuleCheckAll
+ */
+DECLINLINE(int) PDMDevHlpSharedModuleCheckAll(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnSharedModuleCheckAll(pDevIns);
 }
 
 /** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */

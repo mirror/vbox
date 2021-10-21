@@ -976,6 +976,20 @@ static DECLCALLBACK(bool) pdmR3DevHlp_PhysIsGCPhysNormal(PPDMDEVINS pDevIns, RTG
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysChangeMemBalloon} */
+static DECLCALLBACK(int) pdmR3DevHlp_PhysChangeMemBalloon(PPDMDEVINS pDevIns, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_PhysChangeMemBalloon: caller='%s'/%d: fInflate=%RTbool cPages=%u paPhysPage=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, fInflate, cPages, paPhysPage));
+
+    int rc = PGMR3PhysChangeMemBalloon(pDevIns->Internal.s.pVMR3, fInflate, cPages, paPhysPage);
+
+    Log(("pdmR3DevHlp_PhysChangeMemBalloon: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestMicroarch} */
 static DECLCALLBACK(CPUMMICROARCH) pdmR3DevHlp_CpuGetGuestMicroarch(PPDMDEVINS pDevIns)
 {
@@ -4355,7 +4369,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMMRegisterPatchMemory} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMMRegisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
 
     LogFlow(("pdmR3DevHlp_VMMRegisterPatchMemory: caller='%s'/%d: GCPtrPatchMem=%RGv cbPatchMem=%RU32\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPtrPatchMem, cbPatchMem));
@@ -4370,7 +4384,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMMRegisterPatchMemory(PPDMDEVINS pDevIns, 
 /** @interface_method_impl{PDMDEVHLPR3,pfnVMMDeregisterPatchMemory} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMMDeregisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
 {
-    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF(pDevIns);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
 
     LogFlow(("pdmR3DevHlp_VMMDeregisterPatchMemory: caller='%s'/%d: GCPtrPatchMem=%RGv cbPatchMem=%RU32\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPtrPatchMem, cbPatchMem));
@@ -4378,6 +4392,74 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMMDeregisterPatchMemory(PPDMDEVINS pDevIns
     int rc = VMMR3DeregisterPatchMemory(pDevIns->Internal.s.pVMR3, GCPtrPatchMem, cbPatchMem);
 
     LogFlow(("pdmR3DevHlp_VMMDeregisterPatchMemory: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleRegister(PPDMDEVINS pDevIns, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion,
+                                                          RTGCPTR GCBaseAddr, uint32_t cbModule,
+                                                          uint32_t cRegions, VMMDEVSHAREDREGIONDESC const *paRegions)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_SharedModuleRegister: caller='%s'/%d: enmGuestOS=%u pszModuleName=%p:{%s} pszVersion=%p:{%s} GCBaseAddr=%RGv cbModule=%#x cRegions=%u paRegions=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, enmGuestOS, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions, paRegions));
+
+    int rc = PGMR3SharedModuleRegister(pDevIns->Internal.s.pVMR3, enmGuestOS, pszModuleName, pszVersion,
+                                       GCBaseAddr, cbModule, cRegions, paRegions);
+
+    LogFlow(("pdmR3DevHlp_SharedModuleRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleUnregister} */
+static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleUnregister(PPDMDEVINS pDevIns, char *pszModuleName, char *pszVersion,
+                                                            RTGCPTR GCBaseAddr, uint32_t cbModule)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_SharedModuleUnregister: caller='%s'/%d: enmGuestOS=%u pszModuleName=%p:{%s} pszVersion=%p:{%s} GCBaseAddr=%RGv cbModule=%#x\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pszModuleName, pszVersion, GCBaseAddr, cbModule));
+
+    int rc = PGMR3SharedModuleUnregister(pDevIns->Internal.s.pVMR3, pszModuleName, pszVersion, GCBaseAddr, cbModule);
+
+    LogFlow(("pdmR3DevHlp_SharedModuleUnregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleGetPageState} */
+static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleGetPageState(PPDMDEVINS pDevIns, RTGCPTR GCPtrPage, bool *pfShared, uint64_t *pfPageFlags)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_SharedModuleGetPageState: caller='%s'/%d: GCPtrPage=%RGv pfShared=%p pfPageFlags=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, GCPtrPage, pfShared, pfPageFlags));
+
+#ifdef DEBUG
+    int rc = PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), GCPtrPage, pfShared, pfPageFlags);
+#else
+    int rc = VERR_NOT_IMPLEMENTED;
+#endif
+
+    LogFlow(("pdmR3DevHlp_SharedModuleGetPageState: caller='%s'/%d: returns %Rrc *pfShared=%RTbool *pfPageFlags=%#RX64\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc, *pfShared, *pfPageFlags));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleCheckAll} */
+static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleCheckAll(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_SharedModuleCheckAll: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+
+    int rc = PGMR3SharedModuleCheckAll(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_SharedModuleCheckAll: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -4583,6 +4665,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysWriteGCVirt,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_PhysIsGCPhysNormal,
+    pdmR3DevHlp_PhysChangeMemBalloon,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
     pdmR3DevHlp_MMHeapAPrintfV,
@@ -4747,6 +4830,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
     pdmR3DevHlp_VMMRegisterPatchMemory,
     pdmR3DevHlp_VMMDeregisterPatchMemory,
+    pdmR3DevHlp_SharedModuleRegister,
+    pdmR3DevHlp_SharedModuleUnregister,
+    pdmR3DevHlp_SharedModuleGetPageState,
+    pdmR3DevHlp_SharedModuleCheckAll,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
@@ -4953,6 +5040,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PhysWriteGCVirt,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_PhysIsGCPhysNormal,
+    pdmR3DevHlp_PhysChangeMemBalloon,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
     pdmR3DevHlp_MMHeapAPrintfV,
@@ -5117,6 +5205,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
     pdmR3DevHlp_VMMRegisterPatchMemory,
     pdmR3DevHlp_VMMDeregisterPatchMemory,
+    pdmR3DevHlp_SharedModuleRegister,
+    pdmR3DevHlp_SharedModuleUnregister,
+    pdmR3DevHlp_SharedModuleGetPageState,
+    pdmR3DevHlp_SharedModuleCheckAll,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 #endif /* VBOX_WITH_DBGF_TRACING */
@@ -5295,6 +5387,52 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMMDeregisterPatchMemory(PPDMDEVI
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     RT_NOREF(GCPtrPatchMem, cbPatchMem);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleRegister} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_SharedModuleRegister(PPDMDEVINS pDevIns, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion,
+                                                                    RTGCPTR GCBaseAddr, uint32_t cbModule,
+                                                                    uint32_t cRegions, VMMDEVSHAREDREGIONDESC const *paRegions)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(enmGuestOS, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions, paRegions);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleUnregister} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_SharedModuleUnregister(PPDMDEVINS pDevIns, char *pszModuleName, char *pszVersion,
+                                                                      RTGCPTR GCBaseAddr, uint32_t cbModule)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pszModuleName, pszVersion, GCBaseAddr, cbModule);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleGetPageState} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_SharedModuleGetPageState(PPDMDEVINS pDevIns, RTGCPTR GCPtrPage, bool *pfShared, uint64_t *pfPageFlags)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(GCPtrPage, pfShared, pfPageFlags);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSharedModuleCheckAll} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_SharedModuleCheckAll(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
                             pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
@@ -5502,6 +5640,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysWriteGCVirt,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
     pdmR3DevHlp_PhysIsGCPhysNormal,
+    pdmR3DevHlp_PhysChangeMemBalloon,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
     pdmR3DevHlp_MMHeapAPrintfV,
@@ -5666,6 +5805,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister,
     pdmR3DevHlp_Untrusted_VMMRegisterPatchMemory,
     pdmR3DevHlp_Untrusted_VMMDeregisterPatchMemory,
+    pdmR3DevHlp_Untrusted_SharedModuleRegister,
+    pdmR3DevHlp_Untrusted_SharedModuleUnregister,
+    pdmR3DevHlp_Untrusted_SharedModuleGetPageState,
+    pdmR3DevHlp_Untrusted_SharedModuleCheckAll,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
