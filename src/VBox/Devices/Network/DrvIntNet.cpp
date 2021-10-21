@@ -1198,7 +1198,7 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
      */
     if (pThis->pXmitThread)
     {
-        int rc = PDMR3ThreadDestroy(pThis->pXmitThread, NULL);
+        int rc = PDMDrvHlpThreadDestroy(pDrvIns, pThis->pXmitThread, NULL);
         AssertRC(rc);
         pThis->pXmitThread = NULL;
     }

@@ -1255,6 +1255,16 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
+    /** @name Exported PDM Thread Functions
+     * @{ */
+    DECLR3CALLBACKMEMBER(int, pfnThreadDestroy,(PPDMTHREAD pThread, int *pRcThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadIAmSuspending,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadIAmRunning,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadSleep,(PPDMTHREAD pThread, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnThreadSuspend,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadResume,(PPDMTHREAD pThread));
+    /** @} */
+
     /**
      * Creates an async completion template for a driver instance.
      *
@@ -1468,7 +1478,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 11, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 12, 0)
 
 
 /**
@@ -1955,6 +1965,60 @@ DECLINLINE(int) PDMDrvHlpThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, 
                                       PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     return pDrvIns->pHlpR3->pfnThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+}
+
+/**
+ * @copydoc PDMR3ThreadDestroy
+ * @param   pDrvIns     The driver instance.
+ */
+DECLINLINE(int) PDMDrvHlpThreadDestroy(PPDMDRVINS pDrvIns, PPDMTHREAD pThread, int *pRcThread)
+{
+    return pDrvIns->pHlpR3->pfnThreadDestroy(pThread, pRcThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadIAmSuspending
+ * @param   pDrvIns     The driver instance.
+ */
+DECLINLINE(int) PDMDrvHlpThreadIAmSuspending(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    return pDrvIns->pHlpR3->pfnThreadIAmSuspending(pThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadIAmRunning
+ * @param   pDrvIns     The driver instance.
+ */
+DECLINLINE(int) PDMDrvHlpThreadIAmRunning(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    return pDrvIns->pHlpR3->pfnThreadIAmRunning(pThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadSleep
+ * @param   pDrvIns     The driver instance.
+ */
+DECLINLINE(int) PDMDrvHlpThreadSleep(PPDMDRVINS pDrvIns, PPDMTHREAD pThread, RTMSINTERVAL cMillies)
+{
+    return pDrvIns->pHlpR3->pfnThreadSleep(pThread, cMillies);
+}
+
+/**
+ * @copydoc PDMR3ThreadSuspend
+ * @param   pDrvIns     The driver instance.
+ */
+DECLINLINE(int) PDMDrvHlpThreadSuspend(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    return pDrvIns->pHlpR3->pfnThreadSuspend(pThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadResume
+ * @param   pDrvIns     The driver instance.
+ */
+DECLINLINE(int) PDMDrvHlpThreadResume(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    return pDrvIns->pHlpR3->pfnThreadResume(pThread);
 }
 
 # ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
