@@ -1612,9 +1612,9 @@ protected:
 private:
 
     /** Holds the appliance being read. */
-    CAppliance               m_comAppliance;
+    CAppliance  m_comAppliance;
     /** Holds the appliance path. */
-    QString                  m_strPath;
+    QString     m_strPath;
 };
 
 /** UINotificationProgress extension for import appliance functionality. */
