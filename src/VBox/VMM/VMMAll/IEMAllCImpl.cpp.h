@@ -5943,7 +5943,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             /* See Intel spec. 27.2.2 "EPT Translation Mechanism" footnote. */
             uint64_t const fInvPhysMask = !CPUMIsGuestVmxEptPagingEnabledEx(IEM_GET_CTX(pVCpu))
                                         ? ~(RT_BIT_64(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth) - 1U)
-                                        : (X86_CR3_EPT_PAGE_MASK | X86_PAGE_4K_OFFSET_MASK);
+                                        : (~X86_CR3_EPT_PAGE_MASK | X86_PAGE_4K_OFFSET_MASK);
 #else
             uint64_t const fInvPhysMask = UINT64_C(0xfff0000000000000);
 #endif
