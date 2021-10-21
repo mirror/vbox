@@ -745,11 +745,6 @@ static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
 {
     uint8_t         elcr[2]    = {0, 0};
     PDEVPCIROOT     pGlobals   = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PVM             pVM        = PDMDevHlpGetVM(pDevIns); Assert(pVM);
-    PVMCPU          pVCpu      = PDMDevHlpGetVMCPU(pDevIns); Assert(pVCpu);
-    uint32_t const  cbBelow4GB = PDMDevHlpMMPhysGetRamSizeBelow4GB(pDevIns);
-    uint64_t const  cbAbove4GB = PDMDevHlpMMPhysGetRamSizeAbove4GB(pDevIns);
-    RT_NOREF(cbBelow4GB, cbAbove4GB);
 
     LogRel(("PCI: Setting up resources and interrupts\n"));
 
