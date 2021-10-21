@@ -678,7 +678,7 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         }
 
     }
-#endif
+#endif /* VBOX_WITH_RAW_MODE_KEEP */
 }
 
 

@@ -489,16 +489,10 @@ typedef struct TM
     RTTIMENANOTSDATAR3          VirtualGetRawDataR3;
     /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
     RTTIMENANOTSDATAR0          VirtualGetRawDataR0;
-    /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
-    RTTIMENANOTSDATARC          VirtualGetRawDataRC;
     /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
     R3PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR3;
     /** Pointer to the ring-0 tmVirtualGetRawNanoTS worker function. */
     R0PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR0;
-    /** Pointer to the raw-mode tmVirtualGetRawNanoTS worker function. */
-    RCPTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawRC;
-    /** Alignment. */
-    RTRCPTR                     AlignmentRCPtr;
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared.
      * When fVirtualSyncTicking is set it holds the last time returned to
      * the guest (while the lock was held). */
@@ -576,14 +570,9 @@ typedef struct TM
     int64_t volatile            nsLastUtcNow;
     /** File to touch on UTC jump. */
     R3PTRTYPE(char *)           pszUtcTouchFileOnJump;
-    /** Just to avoid dealing with 32-bit alignment trouble. */
-    R3PTRTYPE(char *)           pszAlignment2b;
 
-    /** Pointer to our RC mapping of the GIP. */
-    RCPTRTYPE(void *)           pvGIPRC;
     /** Pointer to our R3 mapping of the GIP. */
     R3PTRTYPE(void *)           pvGIPR3;
-
 
     /** The schedule timer timer handle (runtime timer).
      * This timer will do frequent check on pending queue schedules and

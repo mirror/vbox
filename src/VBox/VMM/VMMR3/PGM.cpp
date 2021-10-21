@@ -923,7 +923,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvZeroPgR3);
         if (RT_SUCCESS(rc))
         {
-            pVM->pgm.s.pvZeroPgRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pvZeroPgR3);
             pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
             pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
             AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);

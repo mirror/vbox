@@ -290,7 +290,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.VirtualGetRawDataR3.pfnBad         = tmVirtualNanoTSBad;
     pVM->tm.s.VirtualGetRawDataR3.pfnBadCpuIndex = tmVirtualNanoTSBadCpuIndex;
     pVM->tm.s.VirtualGetRawDataR3.pu64Prev       = &pVM->tm.s.u64VirtualRawPrev;
-    pVM->tm.s.VirtualGetRawDataRC.pu64Prev       = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     pVM->tm.s.VirtualGetRawDataR0.pu64Prev       = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     AssertRelease(pVM->tm.s.VirtualGetRawDataR0.pu64Prev);
     /* The rest is done in TMR3InitFinalize() since it's too early to call PDM. */
@@ -674,8 +673,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR3.cBadPrev, STAMTYPE_U32, "/TM/R3/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.c1nsSteps,STAMTYPE_U32, "/TM/R0/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.cBadPrev, STAMTYPE_U32, "/TM/R0/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
-    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.c1nsSteps,STAMTYPE_U32, "/TM/RC/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
-    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.cBadPrev, STAMTYPE_U32, "/TM/RC/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.offVirtualSync,               STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",               STAMUNIT_NS, "The current offset. (subtract GivenUp to get the lag)");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attempted caught up with.");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.HzHint.s.uMax,                STAMTYPE_U32, "/TM/MaxHzHint",                               STAMUNIT_HZ, "Max guest timer frequency hint.");
@@ -691,8 +688,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cUpdateRaces,STAMTYPE_U32, "/TM/R3/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cExpired,    STAMTYPE_U32, "/TM/R0/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cUpdateRaces,STAMTYPE_U32, "/TM/R0/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
-    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cExpired,    STAMTYPE_U32, "/TM/RC/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
-    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cUpdateRaces,STAMTYPE_U32, "/TM/RC/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,                            STAMTYPE_PROFILE, "/TM/DoQueues",                    STAMUNIT_TICKS_PER_CALL, "Profiling timer TMR3TimerQueuesDo.");
     STAM_REG(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].StatDo,    STAMTYPE_PROFILE, "/TM/DoQueues/Virtual",            STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual clock queue.");
     STAM_REG(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].StatDo,STAMTYPE_PROFILE,"/TM/DoQueues/VirtualSync",        STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual sync clock queue.");
@@ -1068,17 +1063,6 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
     /*
      * Resolve symbols.
      */
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
-        AssertRCReturn(rc, rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBadCpuIndex",   &pVM->tm.s.VirtualGetRawDataRC.pfnBadCpuIndex);
-        AssertRCReturn(rc, rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSRediscover",    &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
-        AssertRCReturn(rc, rc);
-        pVM->tm.s.pfnVirtualGetRawRC = pVM->tm.s.VirtualGetRawDataRC.pfnRediscover;
-    }
-
     rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
     AssertRCReturn(rc, rc);
     rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBadCpuIndex",   &pVM->tm.s.VirtualGetRawDataR0.pfnBadCpuIndex);
@@ -1149,16 +1133,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
 VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("TMR3Relocate\n"));
-
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        pVM->tm.s.pvGIPRC           = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
-        pVM->tm.s.VirtualGetRawDataRC.pu64Prev       += offDelta;
-        pVM->tm.s.VirtualGetRawDataRC.pfnBad         += offDelta;
-        pVM->tm.s.VirtualGetRawDataRC.pfnBadCpuIndex += offDelta;
-        pVM->tm.s.VirtualGetRawDataRC.pfnRediscover  += offDelta;
-        pVM->tm.s.pfnVirtualGetRawRC                 += offDelta;
-    }
+    RT_NOREF(pVM, offDelta);
 }
 
 
@@ -1281,27 +1256,6 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
         pVCpu->tm.s.u64TSC         = 0;
         pVCpu->tm.s.u64TSCLastSeen = 0;
     }
-}
-
-
-/**
- * Resolve a builtin RC symbol.
- * Called by PDM when loading or relocating GC modules.
- *
- * @returns VBox status
- * @param   pVM             The cross context VM structure.
- * @param   pszSymbol       Symbol to resolve.
- * @param   pRCPtrValue     Where to store the symbol value.
- * @remark  This has to     work before TMR3Relocate() is called.
- */
-VMM_INT_DECL(int) TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue)
-{
-    if (!strcmp(pszSymbol, "g_pSUPGlobalInfoPage"))
-        *pRCPtrValue = MMHyperR3ToRC(pVM, &pVM->tm.s.pvGIPRC);
-    //else if (..)
-    else
-        return VERR_SYMBOL_NOT_FOUND;
-    return VINF_SUCCESS;
 }
 
 

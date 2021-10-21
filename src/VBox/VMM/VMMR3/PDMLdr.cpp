@@ -400,14 +400,6 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
             if (RT_SUCCESS(rc))
                 *pValue = RCPtr;
         }
-        else if (   !strncmp(pszSymbol, "TM", 2)
-                 || !strcmp(pszSymbol, "g_pSUPGlobalInfoPage"))
-        {
-            RTRCPTR RCPtr = 0;
-            rc = TMR3GetImportRC(pVM, pszSymbol, &RCPtr);
-            if (RT_SUCCESS(rc))
-                *pValue = RCPtr;
-        }
         else
         {
             AssertMsg(!pszModule, ("Unknown builtin symbol '%s' for module '%s'!\n", pszSymbol, pModule->szName)); NOREF(pModule);

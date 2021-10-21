@@ -269,7 +269,6 @@ VMM_INT_DECL(int)       TMR3InitFinalize(PVM pVM);
 VMM_INT_DECL(void)      TMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMM_INT_DECL(int)       TMR3Term(PVM pVM);
 VMM_INT_DECL(void)      TMR3Reset(PVM pVM);
-VMM_INT_DECL(int)       TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMM_INT_DECL(int)       TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback,
                                               void *pvUser, uint32_t fFlags, const char *pszName, PTMTIMERHANDLE phTimer);
 VMM_INT_DECL(int)       TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback,

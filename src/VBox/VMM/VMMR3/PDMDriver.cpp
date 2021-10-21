@@ -745,6 +745,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                         rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DrvHlp", &pNew->pHlpR0);
                         AssertReleaseRCReturn(rc, rc);
                     }
+#ifdef VBOX_WITH_RAW_MODE_KEEP
                     if (   (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
                         && VM_IS_RAW_MODE_ENABLED(pVM))
                     {
@@ -752,6 +753,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                         rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDrvHlp", &pNew->pHlpRC);
                         AssertReleaseRCReturn(rc, rc);
                     }
+#endif
 
                     pDrv->iNextInstance++;
                     pDrv->cInstances++;

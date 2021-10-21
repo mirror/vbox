@@ -367,26 +367,6 @@ VMMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
 }
 
 
-/**
- * Converts a ring-3 host context address in the Hypervisor memory region to a guest context address.
- *
- * @returns guest context address.
- * @param   pVM         The cross context VM structure.
- * @param   R3Ptr       The ring-3 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-VMMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
-{
-    uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupR3(pVM, R3Ptr, &off);
-    if (pLookup)
-        return mmHyperLookupCalcRC(pVM, pLookup, off);
-    AssertMsgFailed(("R3Ptr=%p is not inside the hypervisor memory area!\n", R3Ptr));
-    return NIL_RTRCPTR;
-}
-
-
 #ifndef IN_RING3
 /**
  * Converts a ring-3 host context address in the Hypervisor memory region to a current context address.

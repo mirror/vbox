@@ -156,10 +156,12 @@ int pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUs
      */
     AssertPtr(ppPhysHandler);
     AssertReturn(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC, VERR_INVALID_HANDLE);
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     AssertMsgReturn(    (RTRCUINTPTR)pvUserRC < 0x10000
                     ||  MMHyperR3ToRC(pVM, MMHyperRCToR3(pVM, pvUserRC)) == pvUserRC,
                     ("Not RC pointer! pvUserRC=%RRv\n", pvUserRC),
                     VERR_INVALID_PARAMETER);
+#endif
 #if 0 /* No longer valid. */
     AssertMsgReturn(    (RTR0UINTPTR)pvUserR0 < 0x10000
                     ||  MMHyperR3ToR0(pVM, MMHyperR0ToR3(pVM, pvUserR0)) == pvUserR0,
