@@ -2353,7 +2353,7 @@ DECLINLINE(int) PDMDrvHlpBlkCacheResume(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCac
 DECLINLINE(void) PDMDrvHlpBlkCacheIoXferComplete(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache,
                                                  PPDMBLKCACHEIOXFER hIoXfer, int rcIoXfer)
 {
-    return pDrvIns->pHlpR3->pfnBlkCacheIoXferComplete(pBlkCache, hIoXfer, rcIoXfer);
+    pDrvIns->pHlpR3->pfnBlkCacheIoXferComplete(pBlkCache, hIoXfer, rcIoXfer);
 }
 
 /**
