@@ -1256,14 +1256,13 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
                    a special wake up condition on FIFO completion. */
                 PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
                 STAM_REL_PROFILE_START(&pSVGAState->StatBusyDelayEmts, EmtDelay);
-                PVM         pVM   = PDMDevHlpGetVM(pDevIns);
                 VMCPUID     idCpu = PDMDevHlpGetCurrentCpuId(pDevIns);
                 VMCPUSET_ATOMIC_ADD(&pSVGAState->BusyDelayedEmts, idCpu);
                 ASMAtomicIncU32(&pSVGAState->cBusyDelayedEmts);
                 if (pThis->svga.fBusy)
                 {
                     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* hack around lock order issue. */
-                    rc = VMR3WaitForDeviceReady(pVM, idCpu);
+                    rc = PDMDevHlpVMWaitForDeviceReady(pDevIns, idCpu);
                     int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_IGNORED);
                     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
                 }
@@ -4110,14 +4109,13 @@ static void vmsvgaR3FifoSetNotBusy(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
     if (pSVGAState->cBusyDelayedEmts > 0)
     {
 # ifdef VMSVGA_USE_EMT_HALT_CODE
-        PVM pVM = PDMDevHlpGetVM(pDevIns);
         VMCPUID idCpu = VMCpuSetFindLastPresentInternal(&pSVGAState->BusyDelayedEmts);
         if (idCpu != NIL_VMCPUID)
         {
-            VMR3NotifyCpuDeviceReady(pVM, idCpu);
+            PDMDevHlpVMNotifyCpuDeviceReady(pDevIns, idCpu);
             while (idCpu-- > 0)
                 if (VMCPUSET_IS_PRESENT(&pSVGAState->BusyDelayedEmts, idCpu))
-                    VMR3NotifyCpuDeviceReady(pVM, idCpu);
+                    PDMDevHlpVMNotifyCpuDeviceReady(pDevIns, idCpu);
         }
 # else
         int rc2 = RTSemEventMultiSignal(pSVGAState->hBusyDelayedEmts);

@@ -2423,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 52, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 53, 0)
 
 /**
  * PDM Device API.
@@ -3128,6 +3128,17 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2GCPhys, (PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys));
 
     /**
+     * Checks if a GC physical address is a normal page,
+     * i.e. not ROM, MMIO or reserved.
+     *
+     * @returns true if normal.
+     * @returns false if invalid, ROM, MMIO or reserved page.
+     * @param   pDevIns             The device instance.
+     * @param   GCPhys              The physical address to check.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnPhysIsGCPhysNormal,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
+
+    /**
      * Allocate memory which is associated with current VM instance
      * and automatically freed on it's destruction.
      *
@@ -3233,6 +3244,71 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnVMSetRuntimeErrorV,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId,
                                                      const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(4, 0));
+
+    /**
+     * Special interface for implementing a HLT-like port on a device.
+     *
+     * This can be called directly from device code, provide the device is trusted
+     * to access the VMM directly.  Since we may not have an accurate register set
+     * and the caller certainly shouldn't (device code does not access CPU
+     * registers), this function will return when interrupts are pending regardless
+     * of the actual EFLAGS.IF state.
+     *
+     * @returns VBox error status (never informational statuses).
+     * @param   pDevIns             The device instance.
+     * @param   idCpu               The id of the calling EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMWaitForDeviceReady,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+
+    /**
+     * Wakes up a CPU that has called PDMDEVHLPR3::pfnVMWaitForDeviceReady.
+     *
+     * @returns VBox error status (never informational statuses).
+     * @param   pDevIns             The device instance.
+     * @param   idCpu               The id of the calling EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMNotifyCpuDeviceReady,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+
+    /**
+     * Convenience wrapper for VMR3ReqCallU.
+     *
+     * This assumes (1) you're calling a function that returns an VBox status code
+     * and that you do not wish to wait for it to complete.
+     *
+     * @returns VBox status code returned by VMR3ReqCallVU.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   idDstCpu            The destination CPU(s). Either a specific CPU ID or
+     *                              one of the following special values:
+     *                                  VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+     * @param   pfnFunction         Pointer to the function to call.
+     * @param   cArgs               Number of arguments following in the ellipsis.
+     * @param   Args                Argument vector.
+     *
+     * @remarks See remarks on VMR3ReqCallVU.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMReqCallNoWaitV,(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, va_list Args));
+
+    /**
+     * Convenience wrapper for VMR3ReqCallU.
+     *
+     * This assumes (1) you're calling a function that returns void, (2) that you
+     * wish to wait for ever for it to return, and (3) that it's priority request
+     * that can be safely be handled during async suspend and power off.
+     *
+     * @returns VBox status code of VMR3ReqCallVU.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   idDstCpu            The destination CPU(s). Either a specific CPU ID or
+     *                              one of the following special values:
+     *                                  VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+     * @param   pfnFunction         Pointer to the function to call.
+     * @param   cArgs               Number of arguments following in the ellipsis.
+     * @param   Args                Argument vector.
+     *
+     * @remarks See remarks on VMR3ReqCallVU.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMReqPriorityCallWaitV,(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, va_list Args));
 
     /**
      * Stops the VM and enters the debugger to look at the guest state.
@@ -4570,6 +4646,26 @@ typedef struct PDMDEVHLPR3
                                                                   const char *pszHandlerR0, const char *pszPfHandlerR0,
                                                                   const char *pszHandlerRC, const char *pszPfHandlerRC,
                                                                   const char *pszDesc, PPGMPHYSHANDLERTYPE phType));
+
+    /**
+     * Registers the guest memory range that can be used for patching.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   GCPtrPatchMem       Patch memory range.
+     * @param   cbPatchMem          Size of the memory range.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMMRegisterPatchMemory, (PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem));
+
+    /**
+     * Deregisters the guest memory range that can be used for patching.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   GCPtrPatchMem       Patch memory range.
+     * @param   cbPatchMem          Size of the memory range.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVMMDeregisterPatchMemory, (PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem));
 
     /** @} */
 
@@ -6657,6 +6753,14 @@ DECLINLINE(void) PDMDevHlpPhysBulkReleasePageMappingLocks(PPDMDEVINS pDevIns, ui
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnPhysIsGCPhysNormal
+ */
+DECLINLINE(bool) PDMDevHlpPhysIsGCPhysNormal(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysIsGCPhysNormal(pDevIns, GCPhys);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnCpuGetGuestMicroarch
  */
 DECLINLINE(CPUMMICROARCH) PDMDevHlpCpuGetGuestMicroarch(PPDMDEVINS pDevIns)
@@ -6822,6 +6926,77 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(4, 5) PDMDevHlpVMSetRuntimeError(PPDMDEVINS 
     va_start(va, pszFormat);
     rc = pDevIns->CTX_SUFF(pHlp)->pfnVMSetRuntimeErrorV(pDevIns, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
+    return rc;
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnVMWaitForDeviceReady
+ */
+DECLINLINE(int) PDMDevHlpVMWaitForDeviceReady(PPDMDEVINS pDevIns, VMCPUID idCpu)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnVMWaitForDeviceReady(pDevIns, idCpu);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnVMNotifyCpuDeviceReady
+ */
+DECLINLINE(int) PDMDevHlpVMNotifyCpuDeviceReady(PPDMDEVINS pDevIns, VMCPUID idCpu)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnVMNotifyCpuDeviceReady(pDevIns, idCpu);
+}
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns an VBox status code
+ * and that you do not wish to wait for it to complete.
+ *
+ * @returns VBox status code returned by VMR3ReqCallVU.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   idDstCpu            The destination CPU(s). Either a specific CPU ID or
+ *                              one of the following special values:
+ *                                  VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction         Pointer to the function to call.
+ * @param   cArgs               Number of arguments following in the ellipsis.
+ * @param   ...                 Argument list.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
+ */
+DECLINLINE(int) PDMDevHlpVMReqCallNoWait(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list Args;
+    va_start(Args, cArgs);
+    int rc = pDevIns->CTX_SUFF(pHlp)->pfnVMReqCallNoWaitV(pDevIns, idDstCpu, pfnFunction, cArgs, Args);
+    va_end(Args);
+    return rc;
+}
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns void, (2) that you
+ * wish to wait for ever for it to return, and (3) that it's priority request
+ * that can be safely be handled during async suspend and power off.
+ *
+ * @returns VBox status code of VMR3ReqCallVU.
+ *
+ * @param   pDevIns             The device instance.
+ * @param   idDstCpu            The destination CPU(s). Either a specific CPU ID or
+ *                              one of the following special values:
+ *                                  VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction         Pointer to the function to call.
+ * @param   cArgs               Number of arguments following in the ellipsis.
+ * @param   ...                 Argument list.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
+ */
+DECLINLINE(int) PDMDevHlpVMReqPriorityCallWait(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list Args;
+    va_start(Args, cArgs);
+    int rc = pDevIns->CTX_SUFF(pHlp)->pfnVMReqPriorityCallWaitV(pDevIns, idDstCpu, pfnFunction, cArgs, Args);
+    va_end(Args);
     return rc;
 }
 
@@ -8657,6 +8832,22 @@ DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMP
                                                               pszHandlerR0, pszPfHandlerR0,
                                                               pszHandlerRC, pszPfHandlerRC,
                                                               pszDesc, phType);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnVMMRegisterPatchMemory
+ */
+DECLINLINE(int) PDMDevHlpVMMRegisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
+{
+    return pDevIns->pHlpR3->pfnVMMRegisterPatchMemory(pDevIns, GCPtrPatchMem, cbPatchMem);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnVMMDeregisterPatchMemory
+ */
+DECLINLINE(int) PDMDevHlpVMMDeregisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
+{
+    return pDevIns->pHlpR3->pfnVMMDeregisterPatchMemory(pDevIns, GCPtrPatchMem, cbPatchMem);
 }
 
 /** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */

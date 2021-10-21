@@ -1274,7 +1274,7 @@ static int vmmdevReqHandler_RegisterPatchMemory(PPDMDEVINS pDevIns, VMMDevReques
     VMMDevReqPatchMemory *pReq = (VMMDevReqPatchMemory *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    return VMMR3RegisterPatchMemory(PDMDevHlpGetVM(pDevIns), pReq->pPatchMem, pReq->cbPatchMem);
+    return PDMDevHlpVMMRegisterPatchMemory(pDevIns, pReq->pPatchMem, pReq->cbPatchMem);
 }
 
 
@@ -1290,7 +1290,7 @@ static int vmmdevReqHandler_DeregisterPatchMemory(PPDMDEVINS pDevIns, VMMDevRequ
     VMMDevReqPatchMemory *pReq = (VMMDevReqPatchMemory *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    return VMMR3DeregisterPatchMemory(PDMDevHlpGetVM(pDevIns), pReq->pPatchMem, pReq->cbPatchMem);
+    return PDMDevHlpVMMDeregisterPatchMemory(pDevIns, pReq->pPatchMem, pReq->cbPatchMem);
 }
 
 

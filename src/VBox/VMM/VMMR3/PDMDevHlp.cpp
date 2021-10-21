@@ -962,6 +962,20 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysBulkReleasePageMappingLocks(PPDMDEVINS
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysIsGCPhysNormal} */
+static DECLCALLBACK(bool) pdmR3DevHlp_PhysIsGCPhysNormal(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_PhysIsGCPhysNormal: caller='%s'/%d: GCPhys=%RGp\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
+
+    bool fNormal = PGMPhysIsGCPhysNormal(pDevIns->Internal.s.pVMR3, GCPhys);
+
+    Log(("pdmR3DevHlp_PhysIsGCPhysNormal: caller='%s'/%d: returns %RTbool\n", pDevIns->pReg->szName, pDevIns->iInstance, fNormal));
+    return fNormal;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestMicroarch} */
 static DECLCALLBACK(CPUMMICROARCH) pdmR3DevHlp_CpuGetGuestMicroarch(PPDMDEVINS pDevIns)
 {
@@ -1200,6 +1214,70 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     int rc = VMSetRuntimeErrorV(pDevIns->Internal.s.pVMR3, fFlags, pszErrorId, pszFormat, va);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMWaitForDeviceReady} */
+static DECLCALLBACK(int) pdmR3DevHlp_VMWaitForDeviceReady(PPDMDEVINS pDevIns, VMCPUID idCpu)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_VMWaitForDeviceReady: caller='%s'/%d: idCpu=%u\n", pDevIns->pReg->szName, pDevIns->iInstance, idCpu));
+
+    int rc = VMR3WaitForDeviceReady(pDevIns->Internal.s.pVMR3, idCpu);
+
+    LogFlow(("pdmR3DevHlp_VMWaitForDeviceReady: caller='%s'/%d: returns %Rrc\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMNotifyCpuDeviceReady} */
+static DECLCALLBACK(int) pdmR3DevHlp_VMNotifyCpuDeviceReady(PPDMDEVINS pDevIns, VMCPUID idCpu)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_VMNotifyCpuDeviceReady: caller='%s'/%d: idCpu=%u\n", pDevIns->pReg->szName, pDevIns->iInstance, idCpu));
+
+    int rc = VMR3NotifyCpuDeviceReady(pDevIns->Internal.s.pVMR3, idCpu);
+
+    LogFlow(("pdmR3DevHlp_VMNotifyCpuDeviceReady: caller='%s'/%d: returns %Rrc\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMReqCallNoWaitV} */
+static DECLCALLBACK(int) pdmR3DevHlp_VMReqCallNoWaitV(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_VMReqCallNoWaitV: caller='%s'/%d: idDstCpu=%u pfnFunction=%p cArgs=%u\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, idDstCpu, pfnFunction, cArgs));
+
+    int rc = VMR3ReqCallVU(pDevIns->Internal.s.pVMR3->pUVM, idDstCpu, NULL, 0, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_NO_WAIT,
+                           pfnFunction, cArgs, Args);
+
+    LogFlow(("pdmR3DevHlp_VMReqCallNoWaitV: caller='%s'/%d: returns %Rrc\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMReqPriorityCallWaitV} */
+static DECLCALLBACK(int) pdmR3DevHlp_VMReqPriorityCallWaitV(PPDMDEVINS pDevIns, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_VMReqCallNoWaitV: caller='%s'/%d: idDstCpu=%u pfnFunction=%p cArgs=%u\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, idDstCpu, pfnFunction, cArgs));
+
+    PVMREQ pReq;
+    int rc = VMR3ReqCallVU(pDevIns->Internal.s.pVMR3->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_PRIORITY,
+                           pfnFunction, cArgs, Args);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    LogFlow(("pdmR3DevHlp_VMReqCallNoWaitV: caller='%s'/%d: returns %Rrc\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -4274,6 +4352,36 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMMRegisterPatchMemory} */
+static DECLCALLBACK(int) pdmR3DevHlp_VMMRegisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_VMMRegisterPatchMemory: caller='%s'/%d: GCPtrPatchMem=%RGv cbPatchMem=%RU32\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, GCPtrPatchMem, cbPatchMem));
+
+    int rc = VMMR3RegisterPatchMemory(pDevIns->Internal.s.pVMR3, GCPtrPatchMem, cbPatchMem);
+
+    LogFlow(("pdmR3DevHlp_VMMRegisterPatchMemory: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMMDeregisterPatchMemory} */
+static DECLCALLBACK(int) pdmR3DevHlp_VMMDeregisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_VMMDeregisterPatchMemory: caller='%s'/%d: GCPtrPatchMem=%RGv cbPatchMem=%RU32\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, GCPtrPatchMem, cbPatchMem));
+
+    int rc = VMMR3DeregisterPatchMemory(pDevIns->Internal.s.pVMR3, GCPtrPatchMem, cbPatchMem);
+
+    LogFlow(("pdmR3DevHlp_VMMDeregisterPatchMemory: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /**
  * The device helper structure for trusted devices.
  */
@@ -4474,6 +4582,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysReadGCVirt,
     pdmR3DevHlp_PhysWriteGCVirt,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
+    pdmR3DevHlp_PhysIsGCPhysNormal,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
     pdmR3DevHlp_MMHeapAPrintfV,
@@ -4485,6 +4594,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_VMSetErrorV,
     pdmR3DevHlp_VMSetRuntimeErrorV,
+    pdmR3DevHlp_VMWaitForDeviceReady,
+    pdmR3DevHlp_VMNotifyCpuDeviceReady,
+    pdmR3DevHlp_VMReqCallNoWaitV,
+    pdmR3DevHlp_VMReqPriorityCallWaitV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
     pdmR3DevHlp_DBGFInfoRegisterArgv,
@@ -4632,6 +4745,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
+    pdmR3DevHlp_VMMRegisterPatchMemory,
+    pdmR3DevHlp_VMMDeregisterPatchMemory,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
@@ -4837,6 +4952,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PhysReadGCVirt,
     pdmR3DevHlp_PhysWriteGCVirt,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
+    pdmR3DevHlp_PhysIsGCPhysNormal,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
     pdmR3DevHlp_MMHeapAPrintfV,
@@ -4848,6 +4964,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_VMSetErrorV,
     pdmR3DevHlp_VMSetRuntimeErrorV,
+    pdmR3DevHlp_VMWaitForDeviceReady,
+    pdmR3DevHlp_VMNotifyCpuDeviceReady,
+    pdmR3DevHlp_VMReqCallNoWaitV,
+    pdmR3DevHlp_VMReqPriorityCallWaitV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
     pdmR3DevHlp_DBGFInfoRegisterArgv,
@@ -4995,6 +5115,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
+    pdmR3DevHlp_VMMRegisterPatchMemory,
+    pdmR3DevHlp_VMMDeregisterPatchMemory,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 #endif /* VBOX_WITH_DBGF_TRACING */
@@ -5151,6 +5273,28 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister(PP
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     RT_NOREF(enmKind, pfnHandlerR3, pszHandlerR0, pszPfHandlerR0, pszHandlerRC, pszPfHandlerRC, pszDesc, phType);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMMRegisterPatchMemory} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMMRegisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(GCPtrPatchMem, cbPatchMem);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMMDeregisterPatchMemory} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMMDeregisterPatchMemory(PPDMDEVINS pDevIns, RTGCPTR GCPtrPatchMem, uint32_t cbPatchMem)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(GCPtrPatchMem, cbPatchMem);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
                             pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
@@ -5357,6 +5501,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysReadGCVirt,
     pdmR3DevHlp_PhysWriteGCVirt,
     pdmR3DevHlp_PhysGCPtr2GCPhys,
+    pdmR3DevHlp_PhysIsGCPhysNormal,
     pdmR3DevHlp_MMHeapAlloc,
     pdmR3DevHlp_MMHeapAllocZ,
     pdmR3DevHlp_MMHeapAPrintfV,
@@ -5368,6 +5513,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet,
     pdmR3DevHlp_VMSetErrorV,
     pdmR3DevHlp_VMSetRuntimeErrorV,
+    pdmR3DevHlp_VMWaitForDeviceReady,
+    pdmR3DevHlp_VMNotifyCpuDeviceReady,
+    pdmR3DevHlp_VMReqCallNoWaitV,
+    pdmR3DevHlp_VMReqPriorityCallWaitV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
     pdmR3DevHlp_DBGFInfoRegisterArgv,
@@ -5515,6 +5664,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_GetSupDrvSession,
     pdmR3DevHlp_Untrusted_QueryGenericUserObject,
     pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister,
+    pdmR3DevHlp_Untrusted_VMMRegisterPatchMemory,
+    pdmR3DevHlp_Untrusted_VMMDeregisterPatchMemory,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 

@@ -224,20 +224,19 @@ pcarchReservedMemoryRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *p
  */
 static DECLCALLBACK(int) pcarchInitComplete(PPDMDEVINS pDevIns)
 {
-    PVM             pVM       = PDMDevHlpGetVM(pDevIns);
     int             iRegion   = 0;
     RTGCPHYS const  GCPhysEnd = 0x100000;
     RTGCPHYS        GCPhysCur = 0x0a0000;
     do
     {
-        if (!PGMPhysIsGCPhysNormal(pVM, GCPhysCur))
+        if (!PDMDevHlpPhysIsGCPhysNormal(pDevIns, GCPhysCur))
             GCPhysCur += X86_PAGE_SIZE;
         else
         {
             RTGCPHYS const GCPhysStart = GCPhysCur;
             do
                 GCPhysCur += X86_PAGE_SIZE;
-            while (GCPhysCur < GCPhysEnd && PGMPhysIsGCPhysNormal(pVM, GCPhysCur));
+            while (GCPhysCur < GCPhysEnd && PDMDevHlpPhysIsGCPhysNormal(pDevIns, GCPhysCur));
 
             IOMMMIOHANDLE hMmioRegion;
             int rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysStart, GCPhysCur - GCPhysStart,
