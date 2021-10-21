@@ -5947,6 +5947,20 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(int, pfnMmioResetRegion, (PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion));
 
+    /**
+     * Returns the array of MMIO2 regions that are expected to be registered and
+     * later mapped into the guest-physical address space for the GIM provider
+     * configured for the VM.
+     *
+     * @returns Pointer to an array of GIM MMIO2 regions, may return NULL.
+     * @param   pDevIns         Pointer to the GIM device instance.
+     * @param   pcRegions       Where to store the number of items in the array.
+     *
+     * @remarks The caller does not own and therefore must -NOT- try to free the
+     *          returned pointer.
+     */
+    DECLR0CALLBACKMEMBER(PGIMMMIO2REGION, pfnGIMGetMmio2Regions,(PPDMDEVINS pDevIns, uint32_t *pcRegions));
+
     /** Space reserved for future members.
      * @{ */
     DECLR0CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -5970,7 +5984,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 24, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 25, 0)
 
 
 /**
@@ -9444,15 +9458,17 @@ DECLINLINE(int) PDMDevHlpGIMGetDebugSetup(PPDMDEVINS pDevIns, PGIMDEBUGSETUP pDb
 {
     return pDevIns->pHlpR3->pfnGIMGetDebugSetup(pDevIns, pDbgSetup);
 }
+#endif
 
 /**
  * @copydoc PDMDEVHLPR3::pfnGIMGetMmio2Regions
  */
 DECLINLINE(PGIMMMIO2REGION) PDMDevHlpGIMGetMmio2Regions(PPDMDEVINS pDevIns, uint32_t *pcRegions)
 {
-    return pDevIns->pHlpR3->pfnGIMGetMmio2Regions(pDevIns, pcRegions);
+    return pDevIns->CTX_SUFF(pHlp)->pfnGIMGetMmio2Regions(pDevIns, pcRegions);
 }
 
+#ifdef IN_RING3
 /** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */
 # define PDMDEVHLP_SSM_GET_ENUM32_RET(a_pHlp, a_pSSM, a_enmDst, a_EnumType) \
     do { \

@@ -1364,6 +1364,21 @@ static DECLCALLBACK(int) pdmR0DevHlp_MmioResetRegion(PPDMDEVINS pDevIns, IOMMMIO
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnGIMGetMmio2Regions} */
+static DECLCALLBACK(PGIMMMIO2REGION) pdmR0DevHlp_GIMGetMmio2Regions(PPDMDEVINS pDevIns, uint32_t *pcRegions)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR0DevHlp_GIMGetMmio2Regions: caller='%s'/%d: pcRegions=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pcRegions));
+
+    PGIMMMIO2REGION pRegion = GIMGetMmio2Regions(pDevIns->Internal.s.pGVM, pcRegions);
+
+    LogFlow(("pdmR0DevHlp_GIMGetMmio2Regions: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pRegion));
+    return pRegion;
+}
+
+
 /**
  * The Ring-0 Device Helper Callbacks.
  */
@@ -1459,6 +1474,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
     pdmR0DevHlp_MmioMapMmio2Page,
     pdmR0DevHlp_MmioResetRegion,
+    pdmR0DevHlp_GIMGetMmio2Regions,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,
@@ -1569,6 +1585,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
     pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
     pdmR0DevHlp_MmioMapMmio2Page,
     pdmR0DevHlp_MmioResetRegion,
+    pdmR0DevHlp_GIMGetMmio2Regions,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,
