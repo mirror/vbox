@@ -80,7 +80,7 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream, PDMAUDIODIR enmDir, PAUDIOTESTIOOPTS pPlayOpt);
-static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream);
+static int audioTestStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream);
 
 
 /*********************************************************************************************************************************
@@ -379,10 +379,10 @@ static int audioTestStreamInit(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pS
  * Destroys an audio test stream.
  *
  * @returns VBox status code.
- * @param   pTstEnv             Test environment the stream to destroy contains.
+ * @param   pDrvStack           Driver stack the stream belongs to.
  * @param   pStream             Audio stream to destroy.
  */
-static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream)
+static int audioTestStreamDestroy(PAUDIOTESTDRVSTACK pDrvStack, PAUDIOTESTSTREAM pStream)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
@@ -390,7 +390,7 @@ static int audioTestStreamDestroy(PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStrea
     {
         /** @todo Anything else to do here, e.g. test if there are left over samples or some such? */
 
-        audioTestDriverStackStreamDestroy(pTstEnv->pDrvStack, pStream->pStream);
+        audioTestDriverStackStreamDestroy(pDrvStack, pStream->pStream);
         pStream->pStream  = NULL;
         pStream->pBackend = NULL;
     }
@@ -964,7 +964,7 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
                 AudioTestSetTestFailed(pTst, rc, "Playing tone failed");
         }
 
-        int rc2 = audioTestStreamDestroy(pTstEnv, pTstStream);
+        int rc2 = audioTestStreamDestroy(pTstEnv->pDrvStack, pTstStream);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -1012,7 +1012,7 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
                 AudioTestSetTestFailed(pTst, rc, "Recording tone failed");
         }
 
-        int rc2 = audioTestStreamDestroy(pTstEnv, pTstStream);
+        int rc2 = audioTestStreamDestroy(pTstEnv->pDrvStack, pTstStream);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -1461,7 +1461,7 @@ void audioTestEnvDestroy(PAUDIOTESTENV pTstEnv)
 
     for (unsigned i = 0; i < RT_ELEMENTS(pTstEnv->aStreams); i++)
     {
-        int rc2 = audioTestStreamDestroy(pTstEnv, &pTstEnv->aStreams[i]);
+        int rc2 = audioTestStreamDestroy(pTstEnv->pDrvStack, &pTstEnv->aStreams[i]);
         if (RT_FAILURE(rc2))
             RTTestFailed(g_hTest, "Stream destruction for stream #%u failed with %Rrc\n", i, rc2);
     }
