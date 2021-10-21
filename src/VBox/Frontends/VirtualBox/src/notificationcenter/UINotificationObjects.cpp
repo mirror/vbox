@@ -2820,6 +2820,38 @@ CProgress UINotificationProgressApplianceWrite::createProgress(COMResult &comRes
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressApplianceRead implementation.                                                                    *
+*********************************************************************************************************************************/
+
+UINotificationProgressApplianceRead::UINotificationProgressApplianceRead(const CAppliance &comAppliance,
+                                                                         const QString &strPath)
+    : m_comAppliance(comAppliance)
+    , m_strPath(strPath)
+{
+}
+
+QString UINotificationProgressApplianceRead::name() const
+{
+    return UINotificationProgress::tr("Reading appliance ...");
+}
+
+QString UINotificationProgressApplianceRead::details() const
+{
+    return UINotificationProgress::tr("<b>From:</b> %1").arg(m_strPath);
+}
+
+CProgress UINotificationProgressApplianceRead::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comAppliance.Read(m_strPath);
+    /* Store COM result: */
+    comResult = m_comAppliance;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressApplianceImport implementation.                                                                  *
 *********************************************************************************************************************************/
 

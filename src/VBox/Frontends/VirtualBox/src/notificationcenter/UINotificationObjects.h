@@ -1587,6 +1587,36 @@ private:
     QString                  m_strPath;
 };
 
+/** UINotificationProgress extension for appliance read functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressApplianceRead : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs appliance read notification-progress.
+      * @param  comAppliance  Brings the appliance being read.
+      * @param  strPath       Brings the appliance path. */
+    UINotificationProgressApplianceRead(const CAppliance &comAppliance,
+                                        const QString &strPath);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the appliance being read. */
+    CAppliance               m_comAppliance;
+    /** Holds the appliance path. */
+    QString                  m_strPath;
+};
+
 /** UINotificationProgress extension for import appliance functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressApplianceImport : public UINotificationProgress
 {

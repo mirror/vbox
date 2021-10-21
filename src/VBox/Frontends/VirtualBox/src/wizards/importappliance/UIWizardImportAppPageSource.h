@@ -81,7 +81,7 @@ namespace UIWizardImportAppSource
     /** Refresh cloud stuff. */
     void refreshCloudStuff(CAppliance &comCloudAppliance,
                            CVirtualSystemDescriptionForm &comCloudVsdImportForm,
-                           QWidget *pParent,
+                           UIWizardImportApp *pWizard,
                            const QString &strMachineId,
                            const QString &strSource,
                            const QString &strProfileName,

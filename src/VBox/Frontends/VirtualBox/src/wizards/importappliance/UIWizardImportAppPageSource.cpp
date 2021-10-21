@@ -29,6 +29,7 @@
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
@@ -295,7 +296,7 @@ void UIWizardImportAppSource::refreshCloudProfileInstances(QListWidget *pListWid
 
 void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
                                                 CVirtualSystemDescriptionForm &comCloudVsdImportForm,
-                                                QWidget *pParent,
+                                                UIWizardImportApp *pWizard,
                                                 const QString &strMachineId,
                                                 const QString &strSource,
                                                 const QString &strProfileName,
@@ -310,9 +311,9 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
         return;
 
     /* We need top-level parent as well: */
-    AssertPtrReturnVoid(pParent);
+    AssertPtrReturnVoid(pWizard);
     /* Acquire client: */
-    CCloudClient comClient = cloudClientByName(strSource, strProfileName, pParent);
+    CCloudClient comClient = cloudClientByName(strSource, strProfileName, pWizard);
     AssertReturnVoid(comClient.isNotNull());
 
     /* Create appliance: */
@@ -320,7 +321,7 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
     CAppliance comAppliance = comVBox.CreateAppliance();
     if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateAppliance(comVBox, pParent);
+        msgCenter().cannotCreateAppliance(comVBox, pWizard);
         return;
     }
 
@@ -328,27 +329,17 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
     comCloudAppliance = comAppliance;
 
     /* Read cloud instance info: */
-    CProgress comReadProgress = comCloudAppliance.Read(QString("OCI://%1/%2").arg(strProfileName, strMachineId));
-    if (!comCloudAppliance.isOk())
-    {
-        msgCenter().cannotImportAppliance(comCloudAppliance, pParent);
+    UINotificationProgressApplianceRead *pNotification = new UINotificationProgressApplianceRead(comCloudAppliance,
+                                                                                                 QString("OCI://%1/%2").arg(strProfileName,
+                                                                                                                            strMachineId));
+    if (!pWizard->handleNotificationProgressNow(pNotification))
         return;
-    }
-
-    /* Show "Read appliance" progress: */
-    msgCenter().showModalProgressDialog(comReadProgress, UIWizardImportApp::tr("Read appliance ..."),
-                                        ":/progress_reading_appliance_90px.png", pParent, 0);
-    if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
-    {
-        msgCenter().cannotImportAppliance(comReadProgress, comCloudAppliance.GetPath(), pParent);
-        return;
-    }
 
     /* Acquire virtual system description: */
     QVector<CVirtualSystemDescription> descriptions = comCloudAppliance.GetVirtualSystemDescriptions();
     if (!comCloudAppliance.isOk())
     {
-        msgCenter().cannotAcquireVirtualSystemDescription(comCloudAppliance, pParent);
+        msgCenter().cannotAcquireVirtualSystemDescription(comCloudAppliance, pWizard);
         return;
     }
 
@@ -358,7 +349,7 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
 
     /* Read Cloud Client description form: */
     CVirtualSystemDescriptionForm comVsdImportForm;
-    bool fSuccess = importDescriptionForm(comClient, comDescription, comVsdImportForm, pParent);
+    bool fSuccess = importDescriptionForm(comClient, comDescription, comVsdImportForm, pWizard);
     if (!fSuccess)
         return;
 
