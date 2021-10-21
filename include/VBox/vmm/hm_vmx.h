@@ -515,8 +515,10 @@ AssertCompileSize(EPTPML4EBITS, 8);
 #define EPT_PML4_SHIFT          X86_PML4_SHIFT
 /** The PML4 index mask (apply to a shifted page address). */
 #define EPT_PML4_MASK           X86_PML4_MASK
-/** Bits - - EPT - PML4 MBZ Mask. */
+/** Bits - - EPT - PML4 MBZ mask. */
 #define EPT_PML4E_MBZ_MASK      UINT64_C(0x00000000000000f8)
+/** Mask of all possible EPT PML4E attribute bits. */
+#define EPT_PML4E_ATTR_MASK     (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED | EPT_E_USER_EXECUTE)
 
 /**
  * EPT PML4E.
