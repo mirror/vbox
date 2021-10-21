@@ -4425,7 +4425,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleUnregister(PPDMDEVINS pDevIns, 
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
-    LogFlow(("pdmR3DevHlp_SharedModuleUnregister: caller='%s'/%d: enmGuestOS=%u pszModuleName=%p:{%s} pszVersion=%p:{%s} GCBaseAddr=%RGv cbModule=%#x\n",
+    LogFlow(("pdmR3DevHlp_SharedModuleUnregister: caller='%s'/%d: pszModuleName=%p:{%s} pszVersion=%p:{%s} GCBaseAddr=%RGv cbModule=%#x\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pszModuleName, pszModuleName, pszVersion, pszVersion, GCBaseAddr, cbModule));
 
 #ifdef VBOX_WITH_PAGE_SHARING
