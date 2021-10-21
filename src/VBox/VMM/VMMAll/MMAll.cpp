@@ -273,20 +273,6 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
 
 
 /**
- * Calculate the raw-mode context address of an offset into the HMA memory chunk.
- *
- * @returns the raw-mode context base address.
- * @param   pVM         The cross context VM structure.
- * @param   pLookup     The HMA lookup record.
- * @param   off         The offset into the HMA memory chunk.
- */
-DECLINLINE(RTRCPTR) mmHyperLookupCalcRC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
-{
-    return (RTRCPTR)((RTRCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
-}
-
-
-/**
  * Calculate the guest context address of an offset into the HMA memory chunk.
  *
  * @returns the guest context base address.
