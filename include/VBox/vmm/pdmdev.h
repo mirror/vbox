@@ -2423,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 57, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 58, 0)
 
 /**
  * PDM Device API.
@@ -3448,6 +3448,87 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
+
+    /**
+     * Report a bug check.
+     *
+     * @returns
+     * @param   pDevIns             The device instance.
+     * @param   enmEvent            The kind of BSOD event this is.
+     * @param   uBugCheck           The bug check number.
+     * @param   uP1                 The bug check parameter \#1.
+     * @param   uP2                 The bug check parameter \#2.
+     * @param   uP3                 The bug check parameter \#3.
+     * @param   uP4                 The bug check parameter \#4.
+     *
+     * @thread EMT
+     */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnDBGFReportBugCheck,(PPDMDEVINS pDevIns, DBGFEVENTTYPE enmEvent, uint64_t uBugCheck,
+                                                              uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4));
+
+    /**
+     * Write core dump of the guest.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pszFilename         The name of the file to which the guest core
+     *                              dump should be written.
+     * @param   fReplaceFile        Whether to replace the file or not.
+     *
+     * @remarks The VM may need to be suspended before calling this function in
+     *          order to truly stop all device threads and drivers. This function
+     *          only synchronizes EMTs.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFCoreWrite,(PPDMDEVINS pDevIns, const char *pszFilename, bool fReplaceFile));
+
+    /**
+     * Gets the logger info helper.
+     * The returned info helper will unconditionally write all output to the log.
+     *
+     * @returns Pointer to the logger info helper.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(PCDBGFINFOHLP, pfnDBGFInfoLogHlp,(PPDMDEVINS pDevIns));
+
+    /**
+     * Queries a 64-bit register value.
+     *
+     * @retval  VINF_SUCCESS
+     * @retval  VERR_INVALID_VM_HANDLE
+     * @retval  VERR_INVALID_CPU_ID
+     * @retval  VERR_DBGF_REGISTER_NOT_FOUND
+     * @retval  VERR_DBGF_UNSUPPORTED_CAST
+     * @retval  VINF_DBGF_TRUNCATED_REGISTER
+     * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
+     *
+     * @param   pDevIns             The device instance.
+     * @param   idDefCpu            The default target CPU ID, VMCPUID_ANY if not
+     *                              applicable.  Can be OR'ed with
+     *                              DBGFREG_HYPER_VMCPUID.
+     * @param   pszReg              The register that's being queried.  Except for
+     *                              CPU registers, this must be on the form
+     *                              "set.reg[.sub]".
+     * @param   pu64                Where to store the register value.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFRegNmQueryU64,(PPDMDEVINS pDevIns, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64));
+
+    /**
+     * Format a set of registers.
+     *
+     * This is restricted to registers from one CPU, that specified by @a idCpu.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   idCpu               The CPU ID of any CPU registers that may be
+     *                              printed, pass VMCPUID_ANY if not applicable.
+     * @param   pszBuf              The output buffer.
+     * @param   cbBuf               The size of the output buffer.
+     * @param   pszFormat           The format string.  Register names are given by
+     *                              %VR{name}, they take no arguments.
+     * @param   va                  Other format arguments.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFRegPrintfV,(PPDMDEVINS pDevIns, VMCPUID idCpu, char *pszBuf, size_t cbBuf,
+                                                 const char *pszFormat, va_list va));
 
     /**
      * Registers a statistics sample.
@@ -7340,6 +7421,64 @@ DECLINLINE(int) PDMDevHlpDBGFInfoRegisterArgv(PPDMDEVINS pDevIns, const char *ps
 DECLINLINE(int) PDMDevHlpDBGFRegRegister(PPDMDEVINS pDevIns, PCDBGFREGDESC paRegisters)
 {
     return pDevIns->pHlpR3->pfnDBGFRegRegister(pDevIns, paRegisters);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDBGFReportBugCheck
+ */
+DECLINLINE(VBOXSTRICTRC) PDMDevHlpDBGFReportBugCheck(PPDMDEVINS pDevIns, DBGFEVENTTYPE enmEvent, uint64_t uBugCheck,
+                                                     uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4)
+{
+    return pDevIns->pHlpR3->pfnDBGFReportBugCheck(pDevIns, enmEvent, uBugCheck, uP1, uP2, uP3, uP4);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDBGFCoreWrite
+ */
+DECLINLINE(int) PDMDevHlpDBGFCoreWrite(PPDMDEVINS pDevIns, const char *pszFilename, bool fReplaceFile)
+{
+    return pDevIns->pHlpR3->pfnDBGFCoreWrite(pDevIns, pszFilename, fReplaceFile);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDBGFInfoLogHlp
+ */
+DECLINLINE(PCDBGFINFOHLP) PDMDevHlpDBGFInfoLogHlp(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnDBGFInfoLogHlp(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDBGFRegNmQueryU64
+ */
+DECLINLINE(int) PDMDevHlpDBGFRegNmQueryU64(PPDMDEVINS pDevIns, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64)
+{
+    return pDevIns->pHlpR3->pfnDBGFRegNmQueryU64(pDevIns, idDefCpu, pszReg, pu64);
+}
+
+    /**
+     * Format a set of registers.
+     *
+     * This is restricted to registers from one CPU, that specified by @a idCpu.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   idCpu               The CPU ID of any CPU registers that may be
+     *                              printed, pass VMCPUID_ANY if not applicable.
+     * @param   pszBuf              The output buffer.
+     * @param   cbBuf               The size of the output buffer.
+     * @param   pszFormat           The format string.  Register names are given by
+     *                              %VR{name}, they take no arguments.
+     * @param   ...                 Argument list.
+     */
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(4, 5) PDMDevHlpDBGFRegPrintf(PPDMDEVINS pDevIns, VMCPUID idCpu, char *pszBuf, size_t cbBuf,
+                                                                 const char *pszFormat, ...)
+{
+    va_list Args;
+    va_start(Args, pszFormat);
+    int rc = pDevIns->pHlpR3->pfnDBGFRegPrintfV(pDevIns, idCpu, pszBuf, cbBuf, pszFormat, Args);
+    va_end(Args);
+    return rc;
 }
 
 /**

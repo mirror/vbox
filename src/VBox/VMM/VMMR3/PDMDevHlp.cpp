@@ -1490,6 +1490,81 @@ static DECLCALLBACK(RTTRACEBUF) pdmR3DevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFReportBugCheck} */
+static DECLCALLBACK(VBOXSTRICTRC) pdmR3DevHlp_DBGFReportBugCheck(PPDMDEVINS pDevIns, DBGFEVENTTYPE enmEvent, uint64_t uBugCheck,
+                                                                 uint64_t uP1, uint64_t uP2, uint64_t uP3, uint64_t uP4)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_DBGFReportBugCheck: caller='%s'/%d: enmEvent=%u uBugCheck=%#x uP1=%#x uP2=%#x uP3=%#x uP4=%#x\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, enmEvent, uBugCheck, uP1, uP2, uP3, uP4));
+
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    VBOXSTRICTRC rcStrict = DBGFR3ReportBugCheck(pVM, VMMGetCpu(pVM), enmEvent, uBugCheck, uP1, uP2, uP3, uP4);
+
+    LogFlow(("pdmR3DevHlp_DBGFReportBugCheck: caller='%s'/%d: returns %Rrc\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFCoreWrite} */
+static DECLCALLBACK(int) pdmR3DevHlp_DBGFCoreWrite(PPDMDEVINS pDevIns, const char *pszFilename, bool fReplaceFile)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_DBGFCoreWrite: caller='%s'/%d: pszFilename=%p:{%s} fReplaceFile=%RTbool\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pszFilename, pszFilename, fReplaceFile));
+
+    int rc = DBGFR3CoreWrite(pDevIns->Internal.s.pVMR3->pUVM, pszFilename, fReplaceFile);
+
+    LogFlow(("pdmR3DevHlp_DBGFCoreWrite: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFInfoLogHlp} */
+static DECLCALLBACK(PCDBGFINFOHLP) pdmR3DevHlp_DBGFInfoLogHlp(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF(pDevIns);
+    LogFlow(("pdmR3DevHlp_DBGFInfoLogHlp: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+
+    PCDBGFINFOHLP pHlp = DBGFR3InfoLogHlp();
+
+    LogFlow(("pdmR3DevHlp_DBGFInfoLogHlp: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pHlp));
+    return pHlp;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFRegNmQueryU64} */
+static DECLCALLBACK(int) pdmR3DevHlp_DBGFRegNmQueryU64(PPDMDEVINS pDevIns, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_DBGFRegNmQueryU64: caller='%s'/%d: idDefCpu=%u pszReg=%p:{%s} pu64=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, idDefCpu, pszReg, pszReg, pu64));
+
+    int rc = DBGFR3RegNmQueryU64(pDevIns->Internal.s.pVMR3->pUVM, idDefCpu, pszReg, pu64);
+
+    LogFlow(("pdmR3DevHlp_DBGFRegNmQueryU64: caller='%s'/%d: returns %Rrc *pu64=%#RX64\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc, *pu64));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFRegPrintfV} */
+static DECLCALLBACK(int) pdmR3DevHlp_DBGFRegPrintfV(PPDMDEVINS pDevIns, VMCPUID idCpu, char *pszBuf, size_t cbBuf,
+                                                    const char *pszFormat, va_list va)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_DBGFRegPrintfV: caller='%s'/%d: idCpu=%u pszBuf=%p cbBuf=%u pszFormat=%p:{%s}\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, idCpu, pszBuf, cbBuf, pszFormat, pszFormat));
+
+    int rc = DBGFR3RegPrintfV(pDevIns->Internal.s.pVMR3->pUVM, idCpu, pszBuf, cbBuf, pszFormat, va);
+
+    LogFlow(("pdmR3DevHlp_DBGFRegPrintfV: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegister} */
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName,
                                                    STAMUNIT enmUnit, const char *pszDesc)
@@ -4818,6 +4893,11 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_DBGFInfoRegisterArgv,
     pdmR3DevHlp_DBGFRegRegister,
     pdmR3DevHlp_DBGFTraceBuf,
+    pdmR3DevHlp_DBGFReportBugCheck,
+    pdmR3DevHlp_DBGFCoreWrite,
+    pdmR3DevHlp_DBGFInfoLogHlp,
+    pdmR3DevHlp_DBGFRegNmQueryU64,
+    pdmR3DevHlp_DBGFRegPrintfV,
     pdmR3DevHlp_STAMRegister,
     pdmR3DevHlp_STAMRegisterV,
     pdmR3DevHlp_PCIRegister,
@@ -5200,6 +5280,11 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_DBGFInfoRegisterArgv,
     pdmR3DevHlp_DBGFRegRegister,
     pdmR3DevHlp_DBGFTraceBuf,
+    pdmR3DevHlp_DBGFReportBugCheck,
+    pdmR3DevHlp_DBGFCoreWrite,
+    pdmR3DevHlp_DBGFInfoLogHlp,
+    pdmR3DevHlp_DBGFRegNmQueryU64,
+    pdmR3DevHlp_DBGFRegPrintfV,
     pdmR3DevHlp_STAMRegister,
     pdmR3DevHlp_STAMRegisterV,
     pdmR3DevHlp_PCIRegister,
@@ -5853,6 +5938,11 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_DBGFInfoRegisterArgv,
     pdmR3DevHlp_DBGFRegRegister,
     pdmR3DevHlp_DBGFTraceBuf,
+    pdmR3DevHlp_DBGFReportBugCheck,
+    pdmR3DevHlp_DBGFCoreWrite,
+    pdmR3DevHlp_DBGFInfoLogHlp,
+    pdmR3DevHlp_DBGFRegNmQueryU64,
+    pdmR3DevHlp_DBGFRegPrintfV,
     pdmR3DevHlp_STAMRegister,
     pdmR3DevHlp_STAMRegisterV,
     pdmR3DevHlp_PCIRegister,

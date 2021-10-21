@@ -692,12 +692,12 @@ void vpciR3DumpStateWorker(PVPCISTATE pThis, PCDBGFINFOHLP pHlp)
 }
 
 # ifdef LOG_ENABLED
-void vpciR3DumpState(PVPCISTATE pThis, const char *pcszCaller)
+void vpciR3DumpState(PPDMDEVINS pDevIns, PVPCISTATE pThis, const char *pcszCaller)
 {
     if (LogIs2Enabled())
     {
         Log2(("vpciR3DumpState: (called from %s)\n", pcszCaller));
-        vpciR3DumpStateWorker(pThis, DBGFR3InfoLogHlp());
+        vpciR3DumpStateWorker(pThis, PDMDevHlpDBGFInfoLogHlp(pDevIns));
     }
 }
 # else
@@ -708,13 +708,14 @@ void vpciR3DumpState(PVPCISTATE pThis, const char *pcszCaller)
  * Saved the core virtio state.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device insatnce data.
  * @param   pHlp        The device helpers.
  * @param   pThis       The shared virtio core instance data.
  * @param   pSSM        The handle to the saved state.
  */
-int vpciR3SaveExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM)
+int vpciR3SaveExec(PPDMDEVINS pDevIns, PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM)
 {
-    vpciR3DumpState(pThis, "vpciR3SaveExec");
+    vpciR3DumpState(pDevIns, pThis, "vpciR3SaveExec");
 
     pHlp->pfnSSMPutU32(pSSM, pThis->uGuestFeatures);
     pHlp->pfnSSMPutU16(pSSM, pThis->uQueueSelector);
@@ -740,6 +741,7 @@ int vpciR3SaveExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM)
  * Loads a saved device state.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device insatnce data.
  * @param   pHlp        The device helpers.
  * @param   pThis       The shared virtio core instance data.
  * @param   pSSM        The handle to the saved state.
@@ -747,7 +749,7 @@ int vpciR3SaveExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM)
  * @param   uPass       The data pass.
  * @param   cQueues     The default queue count (for old states).
  */
-int vpciR3LoadExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t cQueues)
+int vpciR3LoadExec(PPDMDEVINS pDevIns, PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t cQueues)
 {
     int rc;
 
@@ -789,7 +791,7 @@ int vpciR3LoadExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32
         }
     }
 
-    vpciR3DumpState(pThis, "vpciLoadExec");
+    vpciR3DumpState(pDevIns, pThis, "vpciLoadExec");
 
     return VINF_SUCCESS;
 }

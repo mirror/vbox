@@ -1924,7 +1924,7 @@ static DECLCALLBACK(int) vnetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     vnetR3SaveConfig(pDevIns, pThis, pSSM);
 
     /* Save the common part */
-    int rc = vpciR3SaveExec(pHlp, &pThis->VPCI, pSSM);
+    int rc = vpciR3SaveExec(pDevIns, pHlp, &pThis->VPCI, pSSM);
     AssertRCReturn(rc, rc);
 
     /* Save device-specific part */
@@ -1974,7 +1974,7 @@ static DECLCALLBACK(int) vnetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)))
         LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", INSTANCE(pThis), &pThis->macConfigured, &macConfigured));
 
-    rc = vpciR3LoadExec(pHlp, &pThis->VPCI, pSSM, uVersion, uPass, VNET_N_QUEUES);
+    rc = vpciR3LoadExec(pDevIns, pHlp, &pThis->VPCI, pSSM, uVersion, uPass, VNET_N_QUEUES);
     AssertRCReturn(rc, rc);
 
     if (uPass == SSM_PASS_FINAL)

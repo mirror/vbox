@@ -2832,7 +2832,7 @@ ichac97IoPortNabmWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
                                 ichac97StreamUpdateSR(pDevIns, pThis, pStream, pStream->Regs.sr | AC97_SR_BCIS);
 # ifdef LOG_ENABLED
                             if (LogIsFlowEnabled())
-                                ichac97R3DbgPrintBdl(pDevIns, pThis, pStream, DBGFR3InfoLogHlp(), "ichac97IoPortNabmWrite: ");
+                                ichac97R3DbgPrintBdl(pDevIns, pThis, pStream, PDMDevHlpDBGFInfoLogHlp(pDevIns), "ichac97IoPortNabmWrite: ");
 # endif
                             ichac97R3StreamEnable(pDevIns, pThis, pThisCC, pStream, pStreamCC, true /* fEnable */);
 

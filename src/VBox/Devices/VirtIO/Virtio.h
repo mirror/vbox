@@ -282,8 +282,8 @@ PVQUEUE vpciR3AddQueue(PVPCISTATE pThis, PVPCISTATECC pThisCC, unsigned uSize, P
 void *vpciR3QueryInterface(PVPCISTATECC pThisCC, const char *pszIID);
 void  vpciR3SetWriteLed(PVPCISTATE pThis, bool fOn);
 void  vpciR3SetReadLed(PVPCISTATE pThis, bool fOn);
-int   vpciR3SaveExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM);
-int   vpciR3LoadExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t cQueues);
+int   vpciR3SaveExec(PPDMDEVINS pDevIns, PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM);
+int   vpciR3LoadExec(PPDMDEVINS pDevIns, PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t cQueues);
 void  vpciR3DumpStateWorker(PVPCISTATE pThis, PCDBGFINFOHLP pHlp);
 
 void  vpciReset(PPDMDEVINS pDevIns, PVPCISTATE pThis);

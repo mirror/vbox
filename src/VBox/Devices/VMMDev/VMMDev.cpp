@@ -596,15 +596,14 @@ static int vmmDevReqHandler_NtBugCheck(PPDMDEVINS pDevIns, VMMDevRequestHeader *
     if (pReqHdr->size == sizeof(VMMDevReqNtBugCheck))
     {
         VMMDevReqNtBugCheck const *pReq = (VMMDevReqNtBugCheck const *)pReqHdr;
-        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pDevIns), PDMDevHlpGetVMCPU(pDevIns), DBGFEVENT_BSOD_VMMDEV,
-                             pReq->uBugCheck, pReq->auParameters[0], pReq->auParameters[1],
-                             pReq->auParameters[2], pReq->auParameters[3]);
+        PDMDevHlpDBGFReportBugCheck(pDevIns, DBGFEVENT_BSOD_VMMDEV,
+                                    pReq->uBugCheck, pReq->auParameters[0], pReq->auParameters[1],
+                                    pReq->auParameters[2], pReq->auParameters[3]);
     }
     else if (pReqHdr->size == sizeof(VMMDevRequestHeader))
     {
         LogRel(("VMMDev: NT BugCheck w/o data.\n"));
-        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pDevIns), PDMDevHlpGetVMCPU(pDevIns), DBGFEVENT_BSOD_VMMDEV,
-                             0, 0, 0, 0, 0);
+        PDMDevHlpDBGFReportBugCheck(pDevIns, DBGFEVENT_BSOD_VMMDEV, 0, 0, 0, 0, 0);
     }
     else
         return VERR_INVALID_PARAMETER;
@@ -2630,8 +2629,7 @@ static int vmmdevReqHandler_WriteCoreDump(PPDMDEVINS pDevIns, PVMMDEV pThis, VMM
     /*
      * Write the core file.
      */
-    PUVM pUVM = PDMDevHlpGetUVM(pDevIns);
-    return DBGFR3CoreWrite(pUVM, szCorePath, true /*fReplaceFile*/);
+    return PDMDevHlpDBGFCoreWrite(pDevIns, szCorePath, true /*fReplaceFile*/);
 }
 
 
