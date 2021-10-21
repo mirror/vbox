@@ -608,15 +608,16 @@ int VBoxNetLwipNAT::initIPv4()
         return rc;
     }
 
-    if (iPrefixLength > 30)
+    if (iPrefixLength > 30 || 0 >= iPrefixLength)
     {
-        reportError("IPv4 prefix length %d is too narrow\n", iPrefixLength);
+        reportError("Invalid IPv4 prefix length %d\n", iPrefixLength);
         return VERR_INVALID_PARAMETER;
     }
 
     rc = RTNetPrefixToMaskIPv4(iPrefixLength, &Mask4);
     AssertRCReturn(rc, rc);
-    AssertReturn(iPrefixLength > 0, VERR_INVALID_PARAMETER);
+
+    /** @todo r=uwe Check the address is unicast, not a loopback, etc. */
 
     RTNETADDRIPV4 Addr4;
     Addr4.u = Net4.u | RT_H2N_U32_C(0x00000001);
