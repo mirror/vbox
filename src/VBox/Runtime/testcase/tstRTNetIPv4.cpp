@@ -318,12 +318,17 @@ int main()
     GOODCIDR("1.2.3.4/255.255.255.0",   0x01020304, 24);
     GOODCIDR("1.2.3.4/255.255.255.255", 0x01020304, 32);
 
-#if 0
-    /** @todo doesn't support 0/0 yet */
     GOODCIDR("0.0.0.0/0",       0x00000000,  0);
     GOODCIDR("0.0.0.0/0x0",     0x00000000,  0);
     GOODCIDR("0.0.0.0/0.0.0.0", 0x00000000,  0);
-#endif
+
+    /*
+     * we allow zero prefix mostly for the sake of the above
+     * "everything"/default case, but allow it on everything - a
+     * conscientious caller should be doing more checks on the result
+     * anyway.
+     */
+    GOODCIDR("1.2.3.4/0",       0x01020304,  0);        /* prefix can be zero */
 
     GOODCIDR("\t " "1.2.3.4/24",       0x01020304, 24); /* leading spaces ok */
     GOODCIDR(      "1.2.3.4/24" " \t", 0x01020304, 24); /* trailing spaces ok */
@@ -338,8 +343,9 @@ int main()
     BADCIDR("1.2.3.4/240.");
     BADCIDR("1.2.3.4/240.");
 
-    BADCIDR("1.2.3.4/0");       /* prefix can't be zero */
     BADCIDR("1.2.3.4/33");      /* prefix is too big */
+    BADCIDR("1.2.3.4/256");     /* prefix is too big */
+    BADCIDR("1.2.3.4/257");     /* prefix is too big */
     BADCIDR("1.2.3.4/-1");      /* prefix is negative */
     BADCIDR("1.2.3.4/");        /* prefix is missing */
     BADCIDR("1.2.3.4/a");       /* prefix is not a number */

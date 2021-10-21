@@ -246,14 +246,20 @@ int main()
     /* we currently ignore the zone */
     GOODCIDR("1:2:3:4::%if/64", 0x00010002, 0x00030004,          0,          0,  64);
 
-#if 0
-    /** @todo doesn't support ::/0 yet */
+
     GOODCIDR("::/0", 0, 0, 0, 0, 0);
-#endif
+
+    /*
+     * we allow zero prefix mostly for the sake of the above
+     * "everything"/default case, but allow it on everything - a
+     * conscientious caller should be doing more checks on the result
+     * anyway.
+     */
+    GOODCIDR("1:2:3:4::/0",    0x00010002, 0x00030004,          0,          0,    0);
+
 
     BADCIDR("1:2:3:4:: 64");
     BADCIDR("1:2:3:4::/64x");
-    BADCIDR("1:2:3:4::/0");
     BADCIDR("1:2:3:4::/-1");
     BADCIDR("1:2:3:4::/129");
     BADCIDR("1:2:3:4::/256");
