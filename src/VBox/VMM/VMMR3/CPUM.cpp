@@ -396,7 +396,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64AddrApicAccess),
     SSMFIELD_ENTRY(       VMXVVMCS, u64AddrPostedIntDesc),
     SSMFIELD_ENTRY(       VMXVVMCS, u64VmFuncCtls),
-    SSMFIELD_ENTRY(       VMXVVMCS, u64EptpPtr),
+    SSMFIELD_ENTRY(       VMXVVMCS, u64EptPtr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64EoiExitBitmap0),
     SSMFIELD_ENTRY(       VMXVVMCS, u64EoiExitBitmap1),
     SSMFIELD_ENTRY(       VMXVVMCS, u64EoiExitBitmap2),
@@ -3676,7 +3676,7 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %sAPIC-access addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrApicAccess.u);
         pHlp->pfnPrintf(pHlp, "  %sPosted-intr desc addr      = %#RX64\n",   pszPrefix, pVmcs->u64AddrPostedIntDesc.u);
         pHlp->pfnPrintf(pHlp, "  %sVM-functions control       = %#RX64\n",   pszPrefix, pVmcs->u64VmFuncCtls.u);
-        pHlp->pfnPrintf(pHlp, "  %sEPTP ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64EptpPtr.u);
+        pHlp->pfnPrintf(pHlp, "  %sEPTP ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64EptPtr.u);
         pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 0          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap0.u);
         pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 1          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap1.u);
         pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 2          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap2.u);

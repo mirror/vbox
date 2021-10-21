@@ -253,7 +253,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    10 */ RT_UOFFSETOF(VMXVVMCS, u64AddrApicAccess),
         /*    11 */ RT_UOFFSETOF(VMXVVMCS, u64AddrPostedIntDesc),
         /*    12 */ RT_UOFFSETOF(VMXVVMCS, u64VmFuncCtls),
-        /*    13 */ RT_UOFFSETOF(VMXVVMCS, u64EptpPtr),
+        /*    13 */ RT_UOFFSETOF(VMXVVMCS, u64EptPtr),
         /*    14 */ RT_UOFFSETOF(VMXVVMCS, u64EoiExitBitmap0),
         /*    15 */ RT_UOFFSETOF(VMXVVMCS, u64EoiExitBitmap1),
         /*    16 */ RT_UOFFSETOF(VMXVVMCS, u64EoiExitBitmap2),
@@ -6099,14 +6099,14 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
             /* Reserved bits. */
             uint8_t const cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
             uint64_t const fValidMask       = VMX_EPTP_VALID_MASK & ~(UINT64_MAX << cMaxPhysAddrWidth);
-            if (pVmcs->u64EptpPtr.u & fValidMask)
+            if (pVmcs->u64EptPtr.u & fValidMask)
             { /* likely */ }
             else
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EptpRsvd);
 
             /* Memory Type. */
             uint64_t const fCaps    = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
-            uint8_t const  fMemType = RT_BF_GET(pVmcs->u64EptpPtr.u, VMX_BF_EPTP_MEMTYPE);
+            uint8_t const  fMemType = RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_MEMTYPE);
             if (   (   fMemType == VMX_EPTP_MEMTYPE_WB
                     && RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_MEMTYPE_WB))
                 || (   fMemType == VMX_EPTP_MEMTYPE_UC
@@ -6122,13 +6122,13 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
              * as the maximum supported page-walk level hence we hardcode it as 3 (1 less than 4)
              */
             Assert(RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4));
-            if (RT_BF_GET(pVmcs->u64EptpPtr.u, VMX_BF_EPTP_PAGE_WALK_LENGTH) == 3)
+            if (RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_PAGE_WALK_LENGTH) == 3)
             { /* likely */ }
             else
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EptpPageWalkLength);
 
             /* Access and dirty bits support in EPT structures. */
-            if (   !RT_BF_GET(pVmcs->u64EptpPtr.u, VMX_BF_EPTP_ACCESS_DIRTY)
+            if (   !RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_ACCESS_DIRTY)
                 ||  RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY))
             { /* likely */ }
             else

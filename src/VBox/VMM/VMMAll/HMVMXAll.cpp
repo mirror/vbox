@@ -925,7 +925,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
         LogRel(("  %sAPIC-access addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrApicAccess.u));
         LogRel(("  %sPosted-intr desc addr      = %#RX64\n",   pszPrefix, pVmcs->u64AddrPostedIntDesc.u));
         LogRel(("  %sVM-functions control       = %#RX64\n",   pszPrefix, pVmcs->u64VmFuncCtls.u));
-        LogRel(("  %sEPTP ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64EptpPtr.u));
+        LogRel(("  %sEPTP ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64EptPtr.u));
         LogRel(("  %sEOI-exit bitmap 0          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap0.u));
         LogRel(("  %sEOI-exit bitmap 1          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap1.u));
         LogRel(("  %sEOI-exit bitmap 2          = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap2.u));

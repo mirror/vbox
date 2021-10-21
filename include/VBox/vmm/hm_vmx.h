@@ -3850,7 +3850,7 @@ typedef struct
     RTUINT64U       u64AddrApicAccess;           /**< 0x2a8 - APIC-access address. */
     RTUINT64U       u64AddrPostedIntDesc;        /**< 0x2b0 - Posted-interrupt descriptor address. */
     RTUINT64U       u64VmFuncCtls;               /**< 0x2b8 - VM-functions control. */
-    RTUINT64U       u64EptpPtr;                  /**< 0x2c0 - EPTP pointer. */
+    RTUINT64U       u64EptPtr;                   /**< 0x2c0 - EPT pointer. */
     RTUINT64U       u64EoiExitBitmap0;           /**< 0x2c8 - EOI-exit bitmap 0. */
     RTUINT64U       u64EoiExitBitmap1;           /**< 0x2d0 - EOI-exit bitmap 1. */
     RTUINT64U       u64EoiExitBitmap2;           /**< 0x2d8 - EOI-exit bitmap 2. */
