@@ -1920,7 +1920,9 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
         clipQueryX11Formats(pCtx);
 #endif
 
-    if (pvSrc == NULL)
+    /* If X11 clipboard buffer has no data, libXt can pass to XtGetSelectionValue()
+     * callback an empty string, in this case cbSrc is 0. */
+    if (pvSrc == NULL || cbSrc == 0)
     {
         /* The clipboard selection may have changed before we could get it. */
         rc = VERR_NO_DATA;
