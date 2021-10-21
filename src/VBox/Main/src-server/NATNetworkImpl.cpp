@@ -292,11 +292,14 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
     /*
      * /32 is a single address, not a network, /31 is the degenerate
      * point-to-point case, so reject these.  Larger values and
-     * non-positive values are already treated as errors by the
+     * negative values are already treated as errors by the
      * conversion.
      */
     if (iPrefix > 30)
         return setError(E_FAIL, tr("%s network is too small"), aIPv4NetworkCidr.c_str());
+
+    if (iPrefix == 0)
+        return setError(E_FAIL, tr("%s specifies zero prefix"), aIPv4NetworkCidr.c_str());
 
     rc = RTNetPrefixToMaskIPv4(iPrefix, &Mask);
     AssertRCReturn(rc, setError(E_FAIL,
@@ -307,6 +310,8 @@ HRESULT NATNetwork::setNetwork(const com::Utf8Str &aIPv4NetworkCidr)
         return setError(E_FAIL,
             tr("%s: the specified address is longer than the specified prefix"),
             aIPv4NetworkCidr.c_str());
+
+    /** @todo r=uwe Check the address is unicast, not a loopback, etc. */
 
     /* normalized CIDR notation */
     com::Utf8StrFmt strCidr("%RTnaipv4/%d", Net.u, iPrefix);
