@@ -874,6 +874,7 @@ endif
 
  VBoxDD_LIBS            += \
  	$(PATH_STAGE_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
+    $(LIB_VMM) \
  	$(LIB_RUNTIME)
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_LIBS           += \
