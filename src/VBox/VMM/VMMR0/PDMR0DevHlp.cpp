@@ -1333,6 +1333,37 @@ static DECLCALLBACK(int) pdmR0DevHlp_PGMHandlerPhysicalPageTempOff(PPDMDEVINS pD
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnMmioMapMmio2Page} */
+static DECLCALLBACK(int) pdmR0DevHlp_MmioMapMmio2Page(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
+                                                      uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_MmioMapMmio2Page: caller='%s'/%d: hRegion=%RX64 offRegion=%RGp hMmio2=%RX64 offMmio2=%RGp fPageFlags=%RX64\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, hRegion, offRegion, hMmio2, offMmio2, fPageFlags));
+
+    int rc = IOMMmioMapMmio2Page(pDevIns->Internal.s.pGVM, pDevIns, hRegion, offRegion, hMmio2, offMmio2, fPageFlags);
+
+    Log(("pdmR0DevHlp_MmioMapMmio2Page: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnMmioResetRegion} */
+static DECLCALLBACK(int) pdmR0DevHlp_MmioResetRegion(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_MmioResetRegion: caller='%s'/%d: hRegion=%RX64\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
+
+    int rc = IOMMmioResetRegion(pDevIns->Internal.s.pGVM, pDevIns, hRegion);
+
+    Log(("pdmR0DevHlp_MmioResetRegion: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /**
  * The Ring-0 Device Helper Callbacks.
  */
@@ -1426,6 +1457,8 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_IoApicSetUpContext,
     pdmR0DevHlp_HpetSetUpContext,
     pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
+    pdmR0DevHlp_MmioMapMmio2Page,
+    pdmR0DevHlp_MmioResetRegion,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,
@@ -1534,6 +1567,8 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
     pdmR0DevHlp_IoApicSetUpContext,
     pdmR0DevHlp_HpetSetUpContext,
     pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
+    pdmR0DevHlp_MmioMapMmio2Page,
+    pdmR0DevHlp_MmioResetRegion,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,

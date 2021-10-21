@@ -631,7 +631,7 @@ static void vga_ioport_write(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t addr,
         {
             if (pThis->fRemappedVGA)
             {
-                IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
+                PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
                 pThis->fRemappedVGA = false;
             }
         }
@@ -670,7 +670,7 @@ static void vga_ioport_write(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t addr,
         {
             if (pThis->fRemappedVGA)
             {
-                IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
+                PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
                 pThis->fRemappedVGA = false;
             }
         }
@@ -927,7 +927,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
             /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
             if (pThis->fRemappedVGA)
             {
-                IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
+                PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
                 pThis->fRemappedVGA = false;
             }
 # endif
@@ -1036,7 +1036,7 @@ static VBOXSTRICTRC vbe_ioport_write_data(PPDMDEVINS pDevIns, PVGASTATE pThis, P
             /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
             if (pThis->fRemappedVGA)
             {
-                IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
+                PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
                 pThis->fRemappedVGA = false;
             }
             break;
@@ -1137,8 +1137,8 @@ static uint32_t vga_mem_readb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC p
         {
             /** @todo only allow read access (doesn't work now) */
             STAM_COUNTER_INC(&pThis->StatMapPage);
-            IOMMmioMapMmio2Page(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy, GCPhys - 0xa0000,
-                                pThis->hMmio2VRam, addr, X86_PTE_RW | X86_PTE_P);
+            PDMDevHlpMmioMapMmio2Page(pDevIns, pThis->hMmioLegacy, GCPhys - 0xa0000,
+                                      pThis->hMmio2VRam, addr, X86_PTE_RW | X86_PTE_P);
             /* Set as dirty as write accesses won't be noticed now. */
             vgaR3MarkDirty(pThis, addr);
             pThis->fRemappedVGA = true;
@@ -1245,8 +1245,8 @@ static VBOXSTRICTRC vga_mem_writeb(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTAT
                 && pThis->GCPhysVRAM)
             {
                 STAM_COUNTER_INC(&pThis->StatMapPage);
-                IOMMmioMapMmio2Page(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy, GCPhys - 0xa0000,
-                                    pThis->hMmio2VRam, addr, X86_PTE_RW | X86_PTE_P);
+                PDMDevHlpMmioMapMmio2Page(pDevIns, pThis->hMmioLegacy, GCPhys - 0xa0000,
+                                          pThis->hMmio2VRam, addr, X86_PTE_RW | X86_PTE_P);
                 pThis->fRemappedVGA = true;
             }
 #endif /* !IN_RC */
@@ -4791,7 +4791,7 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     }
     if (pThis->fRemappedVGA)
     {
-        IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
+        PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
         pThis->fRemappedVGA = false;
     }
 
@@ -4819,7 +4819,7 @@ static int vboxR3UpdateDisplayAllInternal(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     }
     if (pThis->fRemappedVGA)
     {
-        IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
+        PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
         pThis->fRemappedVGA = false;
     }
 
@@ -6059,7 +6059,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     }
     if (pThis->fRemappedVGA)
     {
-        IOMMmioResetRegion(PDMDevHlpGetVM(pDevIns), pDevIns, pThis->hMmioLegacy);
+        PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
         pThis->fRemappedVGA = false;
     }
 

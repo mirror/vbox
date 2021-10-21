@@ -2423,7 +2423,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 55, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 56, 0)
 
 /**
  * PDM Device API.
@@ -2714,6 +2714,44 @@ typedef struct PDMDEVHLPR3
      * @sa      @bugref{9359}
      */
     DECLR3CALLBACKMEMBER(int, pfnMmio2ChangeRegionNo,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, uint32_t iNewRegion));
+
+    /**
+     * Mapping an MMIO2 page in place of an MMIO page for direct access.
+     *
+     * This is a special optimization used by the VGA device.  Call
+     * PDMDevHlpMmioResetRegion() to undo the mapping.
+     *
+     * @returns VBox status code.  This API may return VINF_SUCCESS even if no
+     *          remapping is made.
+     * @retval  VERR_SEM_BUSY in ring-0 if we cannot get the IOM lock.
+     *
+     * @param   pDevIns         The device instance @a hRegion and @a hMmio2 are
+     *                          associated with.
+     * @param   hRegion         The handle to the MMIO region.
+     * @param   offRegion       The offset into @a hRegion of the page to be
+     *                          remapped.
+     * @param   hMmio2          The MMIO2 handle.
+     * @param   offMmio2        Offset into @a hMmio2 of the page to be use for the
+     *                          mapping.
+     * @param   fPageFlags      Page flags to set. Must be (X86_PTE_RW | X86_PTE_P)
+     *                          for the time being.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmioMapMmio2Page,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
+                                                   uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags));
+
+    /**
+     * Reset a previously modified MMIO region; restore the access flags.
+     *
+     * This undoes the effects of PDMDevHlpMmioMapMmio2Page() and is currently only
+     * intended for some ancient VGA hack.  However, it would be great to extend it
+     * beyond VT-x and/or nested-paging.
+     *
+     * @returns VBox status code.
+     *
+     * @param   pDevIns         The device instance @a hRegion is associated with.
+     * @param   hRegion         The handle to the MMIO region.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmioResetRegion, (PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion));
     /** @} */
 
     /**
@@ -5703,6 +5741,44 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(int, pfnPGMHandlerPhysicalPageTempOff,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage));
 
+    /**
+     * Mapping an MMIO2 page in place of an MMIO page for direct access.
+     *
+     * This is a special optimization used by the VGA device.  Call
+     * PDMDevHlpMmioResetRegion() to undo the mapping.
+     *
+     * @returns VBox status code.  This API may return VINF_SUCCESS even if no
+     *          remapping is made.
+     * @retval  VERR_SEM_BUSY in ring-0 if we cannot get the IOM lock.
+     *
+     * @param   pDevIns         The device instance @a hRegion and @a hMmio2 are
+     *                          associated with.
+     * @param   hRegion         The handle to the MMIO region.
+     * @param   offRegion       The offset into @a hRegion of the page to be
+     *                          remapped.
+     * @param   hMmio2          The MMIO2 handle.
+     * @param   offMmio2        Offset into @a hMmio2 of the page to be use for the
+     *                          mapping.
+     * @param   fPageFlags      Page flags to set. Must be (X86_PTE_RW | X86_PTE_P)
+     *                          for the time being.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnMmioMapMmio2Page,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
+                                                   uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags));
+
+    /**
+     * Reset a previously modified MMIO region; restore the access flags.
+     *
+     * This undoes the effects of PDMDevHlpMmioMapMmio2Page() and is currently only
+     * intended for some ancient VGA hack.  However, it would be great to extend it
+     * beyond VT-x and/or nested-paging.
+     *
+     * @returns VBox status code.
+     *
+     * @param   pDevIns         The device instance @a hRegion is associated with.
+     * @param   hRegion         The handle to the MMIO region.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnMmioResetRegion, (PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion));
+
     /** Space reserved for future members.
      * @{ */
     DECLR0CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -5726,7 +5802,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 23, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 24, 0)
 
 
 /**
@@ -6470,6 +6546,24 @@ DECLINLINE(RTGCPHYS) PDMDevHlpMmio2GetMappingAddress(PPDMDEVINS pDevIns, PGMMMIO
 }
 
 #endif /* IN_RING3 */
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmioMapMmio2Page
+ */
+DECLINLINE(RTGCPHYS) PDMDevHlpMmioMapMmio2Page(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
+                                               uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnMmioMapMmio2Page(pDevIns, hRegion, offRegion, hMmio2, offMmio2, fPageFlags);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmioResetRegion
+ */
+DECLINLINE(RTGCPHYS) PDMDevHlpMmioResetRegion(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnMmioResetRegion(pDevIns, hRegion);
+}
+
 #if !defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
