@@ -308,24 +308,15 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
     /* Is this VM being exported to cloud? */
     if (isFormatCloudOne())
     {
-        /* Prepare Export VM progress: */
-        CProgress comProgress = comAppliance.Write(format(), options, uri());
-        if (!comAppliance.isOk())
-        {
-            msgCenter().cannotExportAppliance(comAppliance, this);
-            return false;
-        }
-
-        /* Show Export VM progress: */
-        msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Exporting Appliance ..."),
-                                            ":/progress_export_90px.png", this);
-        if (comProgress.GetCanceled())
-            return false;
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            msgCenter().cannotExportAppliance(comProgress, comAppliance.GetPath(), this);
-            return false;
-        }
+        /* Export appliance: */
+        UINotificationProgressApplianceExport *pNotification = new UINotificationProgressApplianceExport(comAppliance,
+                                                                                                         format(),
+                                                                                                         options,
+                                                                                                         uri());
+        if (cloudExportMode() == CloudExportMode_DoNotAsk)
+            gpNotificationCenter->append(pNotification);
+        else
+            handleNotificationProgressNow(pNotification);
     }
     /* Is this VM being exported locally? */
     else
