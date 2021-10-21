@@ -4439,8 +4439,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleGetPageState(PPDMDEVINS pDevIns
              pDevIns->pReg->szName, pDevIns->iInstance, GCPtrPage, pfShared, pfPageFlags));
 
 #ifdef DEBUG
-    int rc = PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), GCPtrPage, pfShared, pfPageFlags);
+    int rc = PGMR3SharedModuleGetPageState(pDevIns->Internal.s.pVMR3, GCPtrPage, pfShared, pfPageFlags);
 #else
+    RT_NOREF(pDevIns, GCPtrPage, pfShared, pfPageFlags);
     int rc = VERR_NOT_IMPLEMENTED;
 #endif
 
