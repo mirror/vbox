@@ -48,6 +48,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h> /* PGMR3HandlerPhysicalTypeRegister() argument types. */
+#include <VBox/vmm/gim.h>
 #include <VBox/err.h>  /* VINF_EM_DBG_STOP, also 120+ source files expecting this. */
 #include <VBox/msi.h>
 #include <iprt/stdarg.h>
@@ -2423,7 +2424,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 58, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 60, 0)
 
 /**
  * PDM Device API.
@@ -4552,6 +4553,17 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnCpuGetGuestAddrWidths,(PPDMDEVINS pDevIns, uint8_t *pcPhysAddrWidth,
                                                          uint8_t *pcLinearAddrWidth));
 
+    /**
+     * Gets the scalable bus frequency.
+     *
+     * The bus frequency is used as a base in several MSRs that gives the CPU and
+     * other frequency ratios.
+     *
+     * @returns Scalable bus frequency in Hz. Will not return CPUM_SBUSFREQ_UNKNOWN.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnCpuGetGuestScalableBusFrequency,(PPDMDEVINS pDevIns));
+
     /** Space reserved for future members.
      * @{ */
     /**
@@ -4748,6 +4760,14 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the timestamp frequency.
+     *
+     * @returns Number of ticks per second.
+     * @param   pVM     The cross context VM structure.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTMCpuTicksPerSecond,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the support driver session.
@@ -4953,6 +4973,38 @@ typedef struct PDMDEVHLPR3
      *          device chain is known to be updated.
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryLun,(PPDMDEVINS pDevIns, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase));
+
+    /**
+     * Registers the GIM device with VMM.
+     *
+     * @param   pDevIns         Pointer to the GIM device instance.
+     * @param   pDbg            Pointer to the GIM device debug structure, can be
+     *                          NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnGIMDeviceRegister,(PPDMDEVINS pDevIns, PGIMDEBUG pDbg));
+
+    /**
+     * Gets debug setup specified by the provider.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         Pointer to the GIM device instance.
+     * @param   pDbgSetup       Where to store the debug setup details.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGIMGetDebugSetup,(PPDMDEVINS pDevIns, PGIMDEBUGSETUP pDbgSetup));
+
+    /**
+     * Returns the array of MMIO2 regions that are expected to be registered and
+     * later mapped into the guest-physical address space for the GIM provider
+     * configured for the VM.
+     *
+     * @returns Pointer to an array of GIM MMIO2 regions, may return NULL.
+     * @param   pDevIns         Pointer to the GIM device instance.
+     * @param   pcRegions       Where to store the number of items in the array.
+     *
+     * @remarks The caller does not own and therefore must -NOT- try to free the
+     *          returned pointer.
+     */
+    DECLR3CALLBACKMEMBER(PGIMMMIO2REGION, pfnGIMGetMmio2Regions,(PPDMDEVINS pDevIns, uint32_t *pcRegions));
 
     /** @} */
 
@@ -7141,6 +7193,14 @@ DECLINLINE(CPUMMICROARCH) PDMDevHlpCpuGetGuestMicroarch(PPDMDEVINS pDevIns)
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnCpuGetGuestScalableBusFrequency
+ */
+DECLINLINE(uint64_t) PDMDevHlpCpuGetGuestScalableBusFrequency(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnCpuGetGuestScalableBusFrequency(pDevIns);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnCpuGetGuestAddrWidths
  */
 DECLINLINE(void) PDMDevHlpCpuGetGuestAddrWidths(PPDMDEVINS pDevIns, uint8_t *pcPhysAddrWidth, uint8_t *pcLinearAddrWidth)
@@ -9164,6 +9224,13 @@ DECLINLINE(uint64_t) PDMDevHlpTMTimeVirtGetNano(PPDMDEVINS pDevIns)
 }
 
 #ifdef IN_RING3
+/**
+ * @copydoc PDMDEVHLPR3::pfnTMCpuTicksPerSecond
+ */
+DECLINLINE(uint64_t) PDMDevHlpTMCpuTicksPerSecond(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnTMCpuTicksPerSecond(pDevIns);
+}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnRegisterVMMDevHeap
@@ -9360,6 +9427,30 @@ DECLINLINE(int) PDMDevHlpSharedModuleCheckAll(PPDMDEVINS pDevIns)
 DECLINLINE(int) PDMDevHlpQueryLun(PPDMDEVINS pDevIns, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
 {
     return pDevIns->pHlpR3->pfnQueryLun(pDevIns, pszDevice, iInstance, iLun, ppBase);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGIMDeviceRegister
+ */
+DECLINLINE(void) PDMDevHlpGIMDeviceRegister(PPDMDEVINS pDevIns, PGIMDEBUG pDbg)
+{
+    pDevIns->pHlpR3->pfnGIMDeviceRegister(pDevIns, pDbg);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGIMGetDebugSetup
+ */
+DECLINLINE(int) PDMDevHlpGIMGetDebugSetup(PPDMDEVINS pDevIns, PGIMDEBUGSETUP pDbgSetup)
+{
+    return pDevIns->pHlpR3->pfnGIMGetDebugSetup(pDevIns, pDbgSetup);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGIMGetMmio2Regions
+ */
+DECLINLINE(PGIMMMIO2REGION) PDMDevHlpGIMGetMmio2Regions(PPDMDEVINS pDevIns, uint32_t *pcRegions)
+{
+    return pDevIns->pHlpR3->pfnGIMGetMmio2Regions(pDevIns, pcRegions);
 }
 
 /** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */

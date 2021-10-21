@@ -1648,9 +1648,9 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * CPU frequencies.
      */
-    pThisCC->u64TscFrequency = TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
+    pThisCC->u64TscFrequency = PDMDevHlpTMCpuTicksPerSecond(pDevIns);
     pThisCC->u64CpuFrequency = pThisCC->u64TscFrequency;
-    pThisCC->u64FsbFrequency = CPUMGetGuestScalableBusFrequency(PDMDevHlpGetVM(pDevIns));
+    pThisCC->u64FsbFrequency = PDMDevHlpCpuGetGuestScalableBusFrequency(pDevIns);
 
     /*
      * EFI graphics mode (with new EFI VGA code used only as a fallback, for

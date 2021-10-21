@@ -753,6 +753,20 @@ static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnTMCpuTicksPerSecond} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMCpuTicksPerSecond(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_TMCpuTicksPerSecond: caller='%s'/%d\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint64_t u64CpuTicksPerSec = TMCpuTicksPerSecond(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_TMCpuTicksPerSecond: caller='%s'/%d: returns %RU64\n", pDevIns->pReg->szName, pDevIns->iInstance, u64CpuTicksPerSec));
+    return u64CpuTicksPerSec;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnGetSupDrvSession} */
 static DECLCALLBACK(PSUPDRVSESSION) pdmR3DevHlp_GetSupDrvSession(PPDMDEVINS pDevIns)
 {
@@ -1131,6 +1145,20 @@ static DECLCALLBACK(void) pdmR3DevHlp_CpuGetGuestAddrWidths(PPDMDEVINS pDevIns, 
     CPUMGetGuestAddrWidths(pVM, pcPhysAddrWidth, pcLinearAddrWidth);
 
     Log(("pdmR3DevHlp_CpuGetGuestAddrWidths: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCpuGuestScalableBusFrequency} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_CpuGetGuestScalableBusFrequency(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_CpuGetGuestScalableBusFrequency: caller='%s'/%d\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint64_t u64Fsb = CPUMGetGuestScalableBusFrequency(pDevIns->Internal.s.pVMR3);
+
+    Log(("pdmR3DevHlp_CpuGetGuestScalableBusFrequency: caller='%s'/%d: returns %#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, u64Fsb));
+    return u64Fsb;
 }
 
 
@@ -4669,18 +4697,62 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleCheckAll(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnQueryLun} */
-static DECLCALLBACK(int) pdmR3DevHlp_pfnQueryLun(PPDMDEVINS pDevIns, const char *pszDevice,
+static DECLCALLBACK(int) pdmR3DevHlp_QueryLun(PPDMDEVINS pDevIns, const char *pszDevice,
                                                  unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
 
-    LogFlow(("pdmR3DevHlp_pfnQueryLun: caller='%s'/%d: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
+    LogFlow(("pdmR3DevHlp_QueryLun: caller='%s'/%d: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pszDevice, pszDevice, iInstance, iLun, ppBase));
 
     int rc = PDMR3QueryLun(pDevIns->Internal.s.pVMR3->pUVM, pszDevice, iInstance, iLun, ppBase);
 
-    LogFlow(("pdmR3DevHlp_pfnQueryLun: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_QueryLun: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGIMDeviceRegister} */
+static DECLCALLBACK(void) pdmR3DevHlp_GIMDeviceRegister(PPDMDEVINS pDevIns, PGIMDEBUG pDbg)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_GIMDeviceRegister: caller='%s'/%d: pDbg=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pDbg));
+
+    GIMR3GimDeviceRegister(pDevIns->Internal.s.pVMR3, pDevIns, pDbg);
+
+    LogFlow(("pdmR3DevHlp_GIMDeviceRegister: caller='%s'/%d: returns\n", pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGIMGetDebugSetup} */
+static DECLCALLBACK(int) pdmR3DevHlp_GIMGetDebugSetup(PPDMDEVINS pDevIns, PGIMDEBUGSETUP pDbgSetup)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_GIMGetDebugSetup: caller='%s'/%d: pDbgSetup=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pDbgSetup));
+
+    int rc = GIMR3GetDebugSetup(pDevIns->Internal.s.pVMR3, pDbgSetup);
+
+    LogFlow(("pdmR3DevHlp_GIMGetDebugSetup: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGIMGetMmio2Regions} */
+static DECLCALLBACK(PGIMMMIO2REGION) pdmR3DevHlp_GIMGetMmio2Regions(PPDMDEVINS pDevIns, uint32_t *pcRegions)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_GIMGetMmio2Regions: caller='%s'/%d: pcRegions=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pcRegions));
+
+    PGIMMMIO2REGION pRegion = GIMGetMmio2Regions(pDevIns->Internal.s.pVMR3, pcRegions);
+
+    LogFlow(("pdmR3DevHlp_GIMGetMmio2Regions: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pRegion));
+    return pRegion;
 }
 
 
@@ -5027,6 +5099,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_CpuGetGuestMicroarch,
     pdmR3DevHlp_CpuGetGuestAddrWidths,
+    pdmR3DevHlp_CpuGetGuestScalableBusFrequency,
     pdmR3DevHlp_STAMDeregisterByPrefix,
     0,
     0,
@@ -5053,6 +5126,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_TMTimeVirtGet,
     pdmR3DevHlp_TMTimeVirtGetFreq,
     pdmR3DevHlp_TMTimeVirtGetNano,
+    pdmR3DevHlp_TMCpuTicksPerSecond,
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
@@ -5066,7 +5140,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_SharedModuleUnregister,
     pdmR3DevHlp_SharedModuleGetPageState,
     pdmR3DevHlp_SharedModuleCheckAll,
-    pdmR3DevHlp_pfnQueryLun,
+    pdmR3DevHlp_QueryLun,
+    pdmR3DevHlp_GIMDeviceRegister,
+    pdmR3DevHlp_GIMGetDebugSetup,
+    pdmR3DevHlp_GIMGetMmio2Regions,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
@@ -5415,6 +5492,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_CpuGetGuestMicroarch,
     pdmR3DevHlp_CpuGetGuestAddrWidths,
+    pdmR3DevHlp_CpuGetGuestScalableBusFrequency,
     pdmR3DevHlp_STAMDeregisterByPrefix,
     0,
     0,
@@ -5441,6 +5519,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_TMTimeVirtGet,
     pdmR3DevHlp_TMTimeVirtGetFreq,
     pdmR3DevHlp_TMTimeVirtGetNano,
+    pdmR3DevHlp_TMCpuTicksPerSecond,
     pdmR3DevHlp_GetSupDrvSession,
     pdmR3DevHlp_QueryGenericUserObject,
     pdmR3DevHlp_PGMHandlerPhysicalTypeRegister,
@@ -5454,7 +5533,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_SharedModuleUnregister,
     pdmR3DevHlp_SharedModuleGetPageState,
     pdmR3DevHlp_SharedModuleCheckAll,
-    pdmR3DevHlp_pfnQueryLun,
+    pdmR3DevHlp_QueryLun,
+    pdmR3DevHlp_GIMDeviceRegister,
+    pdmR3DevHlp_GIMGetDebugSetup,
+    pdmR3DevHlp_GIMGetMmio2Regions,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 #endif /* VBOX_WITH_DBGF_TRACING */
@@ -5731,7 +5813,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_SharedModuleCheckAll(PPDMDEVINS p
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnQUeryLun} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnQueryLun} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_QueryLun(PPDMDEVINS pDevIns, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -5739,6 +5821,38 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_QueryLun(PPDMDEVINS pDevIns, cons
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
                             pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGIMDeviceRegister} */
+static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_GIMDeviceRegister(PPDMDEVINS pDevIns, PGIMDEBUG pDbg)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDbg);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGIMGetDebugSetup} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_GIMGetDebugSetup(PPDMDEVINS pDevIns, PGIMDEBUGSETUP pDbgSetup)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDbgSetup);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGIMGetMmio2Regions} */
+static DECLCALLBACK(PGIMMMIO2REGION) pdmR3DevHlp_Untrusted_GIMGetMmio2Regions(PPDMDEVINS pDevIns, uint32_t *pcRegions)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pcRegions);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return NULL;
 }
 
 
@@ -6085,6 +6199,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_CpuGetGuestMicroarch,
     pdmR3DevHlp_CpuGetGuestAddrWidths,
+    pdmR3DevHlp_CpuGetGuestScalableBusFrequency,
     pdmR3DevHlp_STAMDeregisterByPrefix,
     0,
     0,
@@ -6111,6 +6226,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_TMTimeVirtGet,
     pdmR3DevHlp_TMTimeVirtGetFreq,
     pdmR3DevHlp_TMTimeVirtGetNano,
+    pdmR3DevHlp_TMCpuTicksPerSecond,
     pdmR3DevHlp_Untrusted_GetSupDrvSession,
     pdmR3DevHlp_Untrusted_QueryGenericUserObject,
     pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister,
@@ -6125,6 +6241,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_SharedModuleGetPageState,
     pdmR3DevHlp_Untrusted_SharedModuleCheckAll,
     pdmR3DevHlp_Untrusted_QueryLun,
+    pdmR3DevHlp_Untrusted_GIMDeviceRegister,
+    pdmR3DevHlp_Untrusted_GIMGetDebugSetup,
+    pdmR3DevHlp_Untrusted_GIMGetMmio2Regions,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
