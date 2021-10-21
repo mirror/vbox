@@ -4406,8 +4406,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleRegister(PPDMDEVINS pDevIns, VB
     LogFlow(("pdmR3DevHlp_SharedModuleRegister: caller='%s'/%d: enmGuestOS=%u pszModuleName=%p:{%s} pszVersion=%p:{%s} GCBaseAddr=%RGv cbModule=%#x cRegions=%u paRegions=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, enmGuestOS, pszModuleName, pszModuleName, pszVersion, pszVersion, GCBaseAddr, cbModule, cRegions, paRegions));
 
+#ifdef VBOX_WITH_PAGE_SHARING
     int rc = PGMR3SharedModuleRegister(pDevIns->Internal.s.pVMR3, enmGuestOS, pszModuleName, pszVersion,
                                        GCBaseAddr, cbModule, cRegions, paRegions);
+#else
+    RT_NOREF(enmGuestOS, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions, paRegions);
+    int rc = VERR_NOT_SUPPORTED;
+#endif
 
     LogFlow(("pdmR3DevHlp_SharedModuleRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -4423,7 +4428,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleUnregister(PPDMDEVINS pDevIns, 
     LogFlow(("pdmR3DevHlp_SharedModuleUnregister: caller='%s'/%d: enmGuestOS=%u pszModuleName=%p:{%s} pszVersion=%p:{%s} GCBaseAddr=%RGv cbModule=%#x\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pszModuleName, pszModuleName, pszVersion, pszVersion, GCBaseAddr, cbModule));
 
+#ifdef VBOX_WITH_PAGE_SHARING
     int rc = PGMR3SharedModuleUnregister(pDevIns->Internal.s.pVMR3, pszModuleName, pszVersion, GCBaseAddr, cbModule);
+#else
+    RT_NOREF(pszModuleName, pszVersion, GCBaseAddr, cbModule);
+    int rc = VERR_NOT_SUPPORTED;
+#endif
 
     LogFlow(("pdmR3DevHlp_SharedModuleUnregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -4438,7 +4448,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleGetPageState(PPDMDEVINS pDevIns
     LogFlow(("pdmR3DevHlp_SharedModuleGetPageState: caller='%s'/%d: GCPtrPage=%RGv pfShared=%p pfPageFlags=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPtrPage, pfShared, pfPageFlags));
 
-#ifdef DEBUG
+#if defined(VBOX_WITH_PAGE_SHARING) && defined(DEBUG)
     int rc = PGMR3SharedModuleGetPageState(pDevIns->Internal.s.pVMR3, GCPtrPage, pfShared, pfPageFlags);
 #else
     RT_NOREF(pDevIns, GCPtrPage, pfShared, pfPageFlags);
@@ -4458,7 +4468,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleCheckAll(PPDMDEVINS pDevIns)
 
     LogFlow(("pdmR3DevHlp_SharedModuleCheckAll: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
 
+#ifdef VBOX_WITH_PAGE_SHARING
     int rc = PGMR3SharedModuleCheckAll(pDevIns->Internal.s.pVMR3);
+#else
+    RT_NOREF(pDevIns);
+    int rc = VERR_NOT_SUPPORTED;
+#endif
 
     LogFlow(("pdmR3DevHlp_SharedModuleCheckAll: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
