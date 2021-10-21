@@ -2355,23 +2355,23 @@ typedef struct PGMPTWALKCORE
  * @{ */
 #if 0
 /** Effective execute bit (!NX).   */
-#define PGMPTWALK_EFF_X                 RT_BIT_32(0)
+#define PGMPTWALK_EFF_X     UINT32_C(1)
 /** Effective read+write access bit. */
-#define PGMPTWALK_EFF_RW                X86_PTE_RW
+#define PGMPTWALK_EFF_RW    X86_PTE_RW
 /** Effective user-mode access bit. */
-#define PGMPTWALK_EFF_US                X86_PTE_US
+#define PGMPTWALK_EFF_US    X86_PTE_US
 /** Effective write through cache bit. */
-#define PGMPTWALK_EFF_PWT               X86_PTE_PWT
+#define PGMPTWALK_EFF_PWT   X86_PTE_PWT
 /** Effective cache disabled bit. */
-#define PGMPTWALK_EFF_PCD               X86_PTE_PCD
+#define PGMPTWALK_EFF_PCD   X86_PTE_PCD
 /** Effective accessed bit. */
-#define PGMPTWALK_EFF_A                 X86_PTE_A
+#define PGMPTWALK_EFF_A     X86_PTE_A
 /** The dirty bit of the final entry. */
-#define PGMPTWALK_EFF_D                 X86_PTE_D
+#define PGMPTWALK_EFF_D     X86_PTE_D
 /** The PAT bit of the final entry. */
-#define PGMPTWALK_EFF_PAT               X86_PTE_PAT
+#define PGMPTWALK_EFF_PAT   X86_PTE_PAT
 /** The global bit of the final entry. */
-#define PGMPTWALK_EFF_G                 X86_PTE_G
+#define PGMPTWALK_EFF_G     X86_PTE_G
 #endif
 /** Effective execute bit (!NX). */
 #define PGM_BF_PTWALK_EFF_X_SHIFT                   0
