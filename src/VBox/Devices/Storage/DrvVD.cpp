@@ -127,6 +127,8 @@ typedef struct VBOXIMAGE
  */
 typedef struct DRVVDSTORAGEBACKEND
 {
+    /** The virtual disk driver instance. */
+    PVBOXDISK                   pVD;
     /** PDM async completion end point. */
     PPDMASYNCCOMPLETIONENDPOINT pEndpoint;
     /** The template. */
@@ -646,6 +648,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
     pStorageBackend = (PDRVVDSTORAGEBACKEND)RTMemAllocZ(sizeof(DRVVDSTORAGEBACKEND));
     if (pStorageBackend)
     {
+        pStorageBackend->pVD            = pThis;
         pStorageBackend->fSyncIoPending = false;
         pStorageBackend->rcReqLast      = VINF_SUCCESS;
         pStorageBackend->pfnCompleted   = pfnCompleted;
@@ -669,14 +672,15 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                 if (pThis->fAsyncIoWithHostCache)
                     fFlags |= PDMACEP_FILE_FLAGS_HOST_CACHE_ENABLED;
 
-                rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint,
-                                                         pszLocation, fFlags,
-                                                         pStorageBackend->pTemplate);
+                rc = PDMDrvHlpAsyncCompletionEpCreateForFile(pThis->pDrvIns,
+                                                             &pStorageBackend->pEndpoint,
+                                                             pszLocation, fFlags,
+                                                             pStorageBackend->pTemplate);
 
                 if (RT_SUCCESS(rc))
                 {
                     if (pThis->pszBwGroup)
-                        rc = PDMR3AsyncCompletionEpSetBwMgr(pStorageBackend->pEndpoint, pThis->pszBwGroup);
+                        rc = PDMDrvHlpAsyncCompletionEpSetBwMgr(pThis->pDrvIns, pStorageBackend->pEndpoint, pThis->pszBwGroup);
 
                     if (RT_SUCCESS(rc))
                     {
@@ -686,10 +690,10 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                         return VINF_SUCCESS;
                     }
 
-                    PDMR3AsyncCompletionEpClose(pStorageBackend->pEndpoint);
+                    PDMDrvHlpAsyncCompletionEpClose(pThis->pDrvIns, pStorageBackend->pEndpoint);
                 }
 
-                PDMR3AsyncCompletionTemplateDestroy(pStorageBackend->pTemplate);
+                PDMDrvHlpAsyncCompletionTemplateDestroy(pThis->pDrvIns, pStorageBackend->pTemplate);
             }
             RTSemEventDestroy(pStorageBackend->EventSem);
         }
@@ -705,6 +709,7 @@ static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
 
     /*
      * We don't unclaim any block devices on purpose here because they
@@ -713,8 +718,8 @@ static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
      * Block devices will get unclaimed during destruction of the driver.
      */
 
-    PDMR3AsyncCompletionEpClose(pStorageBackend->pEndpoint);
-    PDMR3AsyncCompletionTemplateDestroy(pStorageBackend->pTemplate);
+    PDMDrvHlpAsyncCompletionEpClose(pThis->pDrvIns, pStorageBackend->pEndpoint);
+    PDMDrvHlpAsyncCompletionTemplateDestroy(pThis->pDrvIns, pStorageBackend->pTemplate);
     RTSemEventDestroy(pStorageBackend->EventSem);
     RTMemFree(pStorageBackend);
     return VINF_SUCCESS;;
@@ -725,6 +730,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
     RTSGSEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
 
@@ -733,7 +739,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
     DataSeg.cbSeg = cbRead;
     DataSeg.pvSeg = pvBuf;
 
-    int rc = PDMR3AsyncCompletionEpRead(pStorageBackend->pEndpoint, uOffset, &DataSeg, 1, cbRead, NULL, &pTask);
+    int rc = PDMDrvHlpAsyncCompletionEpRead(pThis->pDrvIns, pStorageBackend->pEndpoint, uOffset, &DataSeg, 1, cbRead, NULL, &pTask);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -757,6 +763,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
     RTSGSEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
 
@@ -765,7 +772,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
     DataSeg.cbSeg = cbWrite;
     DataSeg.pvSeg = (void *)pvBuf;
 
-    int rc = PDMR3AsyncCompletionEpWrite(pStorageBackend->pEndpoint, uOffset, &DataSeg, 1, cbWrite, NULL, &pTask);
+    int rc = PDMDrvHlpAsyncCompletionEpWrite(pThis->pDrvIns, pStorageBackend->pEndpoint, uOffset, &DataSeg, 1, cbWrite, NULL, &pTask);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -788,6 +795,7 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
     PPDMASYNCCOMPLETIONTASK pTask;
 
     LogFlowFunc(("pvUser=%#p pStorage=%#p\n", pvUser, pStorage));
@@ -795,7 +803,7 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
     bool fOld = ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
     Assert(!fOld); NOREF(fOld);
 
-    int rc = PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, NULL, &pTask);
+    int rc = PDMDrvHlpAsyncCompletionEpFlush(pThis->pDrvIns, pStorageBackend->pEndpoint, NULL, &pTask);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -819,9 +827,11 @@ static DECLCALLBACK(int) drvvdAsyncIOReadAsync(void *pvUser, void *pStorage, uin
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
 
-    int rc = PDMR3AsyncCompletionEpRead(pStorageBackend->pEndpoint, uOffset, paSegments, (unsigned)cSegments, cbRead,
-                                        pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    int rc = PDMDrvHlpAsyncCompletionEpRead(pThis->pDrvIns, pStorageBackend->pEndpoint,
+                                            uOffset, paSegments, (unsigned)cSegments, cbRead,
+                                            pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
     if (rc == VINF_AIO_TASK_PENDING)
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
 
@@ -835,9 +845,11 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteAsync(void *pvUser, void *pStorage, ui
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
 
-    int rc = PDMR3AsyncCompletionEpWrite(pStorageBackend->pEndpoint, uOffset, paSegments, (unsigned)cSegments, cbWrite,
-                                         pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    int rc = PDMDrvHlpAsyncCompletionEpWrite(pThis->pDrvIns, pStorageBackend->pEndpoint,
+                                             uOffset, paSegments, (unsigned)cSegments, cbWrite,
+                                             pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
     if (rc == VINF_AIO_TASK_PENDING)
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
 
@@ -849,9 +861,10 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushAsync(void *pvUser, void *pStorage,
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
 
-    int rc = PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, pvCompletion,
-                                         (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    int rc = PDMDrvHlpAsyncCompletionEpFlush(pThis->pDrvIns, pStorageBackend->pEndpoint, pvCompletion,
+                                             (PPPDMASYNCCOMPLETIONTASK)ppTask);
     if (rc == VINF_AIO_TASK_PENDING)
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
 
@@ -862,16 +875,18 @@ static DECLCALLBACK(int) drvvdAsyncIOGetSize(void *pvUser, void *pStorage, uint6
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
 
-    return PDMR3AsyncCompletionEpGetSize(pStorageBackend->pEndpoint, pcbSize);
+    return PDMDrvHlpAsyncCompletionEpGetSize(pThis->pDrvIns, pStorageBackend->pEndpoint, pcbSize);
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
 {
     RT_NOREF(pvUser);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+    PVBOXDISK pThis = pStorageBackend->pVD;
 
-    return PDMR3AsyncCompletionEpSetSize(pStorageBackend->pEndpoint, cbSize);
+    return PDMDrvHlpAsyncCompletionEpSetSize(pThis->pDrvIns, pStorageBackend->pEndpoint, cbSize);
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOSetAllocationSize(void *pvUser, void *pvStorage, uint64_t cbSize, uint32_t fFlags)
@@ -2180,7 +2195,7 @@ static DECLCALLBACK(void) drvvdBlkCacheReqComplete(void *pvUser1, void *pvUser2,
     PVBOXDISK pThis = (PVBOXDISK)pvUser1;
 
     AssertPtr(pThis->pBlkCache);
-    PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, (PPDMBLKCACHEIOXFER)pvUser2, rcReq);
+    PDMDrvHlpBlkCacheIoXferComplete(pThis->pDrvIns, pThis->pBlkCache, (PPDMBLKCACHEIOXFER)pvUser2, rcReq);
 }
 
 
@@ -2222,9 +2237,9 @@ static DECLCALLBACK(int) drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
     }
 
     if (rc == VINF_VD_ASYNC_IO_FINISHED)
-        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, VINF_SUCCESS);
+        PDMDrvHlpBlkCacheIoXferComplete(pThis->pDrvIns, pThis->pBlkCache, hIoXfer, VINF_SUCCESS);
     else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, rc);
+        PDMDrvHlpBlkCacheIoXferComplete(pThis->pDrvIns, pThis->pBlkCache, hIoXfer, rc);
 
     return VINF_SUCCESS;
 }
@@ -2240,9 +2255,9 @@ static DECLCALLBACK(int) drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCR
                               drvvdBlkCacheReqComplete, pThis, hIoXfer);
 
     if (rc == VINF_VD_ASYNC_IO_FINISHED)
-        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, VINF_SUCCESS);
+        PDMDrvHlpBlkCacheIoXferComplete(pThis->pDrvIns, pThis->pBlkCache, hIoXfer, VINF_SUCCESS);
     else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, rc);
+        PDMDrvHlpBlkCacheIoXferComplete(pThis->pDrvIns, pThis->pBlkCache, hIoXfer, rc);
 
     return VINF_SUCCESS;
 }
@@ -2734,8 +2749,8 @@ static int drvvdMediaExIoReqReadWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIo
     {
         if (pThis->pBlkCache)
         {
-            rc = PDMR3BlkCacheRead(pThis->pBlkCache, pIoReq->ReadWrite.offStart,
-                                   pIoReq->ReadWrite.pSgBuf, cbReqIo, pIoReq);
+            rc = PDMDrvHlpBlkCacheRead(pThis->pDrvIns, pThis->pBlkCache, pIoReq->ReadWrite.offStart,
+                                       pIoReq->ReadWrite.pSgBuf, cbReqIo, pIoReq);
             if (rc == VINF_SUCCESS)
                 rc = VINF_VD_ASYNC_IO_FINISHED;
             else if (rc == VINF_AIO_TASK_PENDING)
@@ -2783,8 +2798,8 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     {
         if (pThis->pBlkCache)
         {
-            rc = PDMR3BlkCacheWrite(pThis->pBlkCache, pIoReq->ReadWrite.offStart,
-                                    pIoReq->ReadWrite.pSgBuf, cbReqIo, pIoReq);
+            rc = PDMDrvHlpBlkCacheWrite(pThis->pDrvIns, pThis->pBlkCache, pIoReq->ReadWrite.offStart,
+                                        pIoReq->ReadWrite.pSgBuf, cbReqIo, pIoReq);
             if (rc == VINF_SUCCESS)
                 rc = VINF_VD_ASYNC_IO_FINISHED;
             else if (rc == VINF_AIO_TASK_PENDING)
@@ -2846,7 +2861,7 @@ static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
         {
             if (pThis->pBlkCache)
             {
-                rc = PDMR3BlkCacheFlush(pThis->pBlkCache, pIoReq);
+                rc = PDMDrvHlpBlkCacheFlush(pThis->pDrvIns, pThis->pBlkCache, pIoReq);
                 if (rc == VINF_SUCCESS)
                     rc = VINF_VD_ASYNC_IO_FINISHED;
                 else if (rc == VINF_AIO_TASK_PENDING)
@@ -2892,7 +2907,9 @@ static int drvvdMediaExIoReqDiscardWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
     {
         if (pThis->pBlkCache)
         {
-            rc = PDMR3BlkCacheDiscard(pThis->pBlkCache, pIoReq->Discard.paRanges, pIoReq->Discard.cRanges, pIoReq);
+            rc = PDMDrvHlpBlkCacheDiscard(pThis->pDrvIns, pThis->pBlkCache,
+                                          pIoReq->Discard.paRanges, pIoReq->Discard.cRanges,
+                                          pIoReq);
             if (rc == VINF_SUCCESS)
                 rc = VINF_VD_ASYNC_IO_FINISHED;
             else if (rc == VINF_AIO_TASK_PENDING)
@@ -4266,7 +4283,7 @@ static void drvvdPowerOffOrDestructOrUnmount(PPDMDRVINS pDrvIns)
 
     if (RT_VALID_PTR(pThis->pBlkCache))
     {
-        PDMR3BlkCacheRelease(pThis->pBlkCache);
+        PDMDrvHlpBlkCacheRelease(pThis->pDrvIns, pThis->pBlkCache);
         pThis->pBlkCache = NULL;
     }
 
@@ -4316,7 +4333,7 @@ static DECLCALLBACK(void) drvvdResume(PPDMDRVINS pDrvIns)
 
     if (pThis->pBlkCache)
     {
-        int rc = PDMR3BlkCacheResume(pThis->pBlkCache);
+        int rc = PDMDrvHlpBlkCacheResume(pThis->pDrvIns, pThis->pBlkCache);
         AssertRC(rc);
     }
 
@@ -4423,7 +4440,7 @@ static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
 
     if (pThis->pBlkCache)
     {
-        int rc = PDMR3BlkCacheSuspend(pThis->pBlkCache);
+        int rc = PDMDrvHlpBlkCacheSuspend(pThis->pDrvIns, pThis->pBlkCache);
         AssertRC(rc);
     }
 
@@ -4451,7 +4468,7 @@ static DECLCALLBACK(void) drvvdReset(PPDMDRVINS pDrvIns)
 
     if (pThis->pBlkCache)
     {
-        int rc = PDMR3BlkCacheClear(pThis->pBlkCache);
+        int rc = PDMDrvHlpBlkCacheClear(pThis->pDrvIns, pThis->pBlkCache);
         AssertRC(rc);
     }
 

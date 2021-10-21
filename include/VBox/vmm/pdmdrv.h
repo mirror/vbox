@@ -1281,6 +1281,28 @@ typedef struct PDMDRVHLPR3
                                                                 PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
                                                                 const char *pszDesc));
 
+    /** @name Exported PDM Async Completion Functions
+     * @{ */
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionTemplateDestroy,(PPDMASYNCCOMPLETIONTEMPLATE pTemplate));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionEpCreateForFile,(PPPDMASYNCCOMPLETIONENDPOINT ppEndpoint,
+                                                                 const char *pszFilename, uint32_t fFlags,
+                                                                 PPDMASYNCCOMPLETIONTEMPLATE pTemplate));
+    DECLR3CALLBACKMEMBER(void, pfnAsyncCompletionEpClose,(PPDMASYNCCOMPLETIONENDPOINT pEndpoint));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionEpGetSize,(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t *pcbSize));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionEpSetSize,(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t cbSize));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionEpSetBwMgr,(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, const char *pszBwMgr));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionEpFlush,(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, void *pvUser, PPPDMASYNCCOMPLETIONTASK ppTask));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionEpRead,(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                                                        PCRTSGSEG paSegments, unsigned cSegments,
+                                                        size_t cbRead, void *pvUser,
+                                                        PPPDMASYNCCOMPLETIONTASK ppTask));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionEpWrite,(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                                                         PCRTSGSEG paSegments, unsigned cSegments,
+                                                         size_t cbWrite, void *pvUser,
+                                                         PPPDMASYNCCOMPLETIONTASK ppTask));
+    /** @} */
+
+
     /**
      * Attaches network filter driver to a bandwidth group.
      *
@@ -1420,6 +1442,20 @@ typedef struct PDMDRVHLPR3
                                                   PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
                                                   PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV pfnXferEnqueueDiscard,
                                                   const char *pcszId));
+
+    /** @name Exported PDM Block Cache Functions
+     * @{ */
+    DECLR3CALLBACKMEMBER(void,     pfnBlkCacheRelease,(PPDMBLKCACHE pBlkCache));
+    DECLR3CALLBACKMEMBER(int,      pfnBlkCacheClear,(PPDMBLKCACHE pBlkCache));
+    DECLR3CALLBACKMEMBER(int,      pfnBlkCacheSuspend,(PPDMBLKCACHE pBlkCache));
+    DECLR3CALLBACKMEMBER(int,      pfnBlkCacheResume,(PPDMBLKCACHE pBlkCache));
+    DECLR3CALLBACKMEMBER(void,     pfnBlkCacheIoXferComplete,(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEIOXFER hIoXfer, int rcIoXfer));
+    DECLR3CALLBACKMEMBER(int,      pfnBlkCacheRead,(PPDMBLKCACHE pBlkCache, uint64_t off, PCRTSGBUF pSgBuf, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int,      pfnBlkCacheWrite,(PPDMBLKCACHE pBlkCache, uint64_t off, PCRTSGBUF pSgBuf, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int,      pfnBlkCacheFlush,(PPDMBLKCACHE pBlkCache, void *pvUser));
+    DECLR3CALLBACKMEMBER(int,      pfnBlkCacheDiscard,(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges, unsigned cRanges, void *pvUser));
+    /** @} */
+
     /**
      * Gets the reason for the most recent VM suspend.
      *
@@ -1478,7 +1514,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 12, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 13, 0)
 
 
 /**
@@ -2030,6 +2066,87 @@ DECLINLINE(int) PDMDrvHlpAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDM
 {
     return pDrvIns->pHlpR3->pfnAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
 }
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionTemplateDestroy
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionTemplateDestroy(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONTEMPLATE pTemplate)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionTemplateDestroy(pTemplate);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpCreateForFile
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionEpCreateForFile(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONENDPOINT ppEndpoint,
+                                                        const char *pszFilename, uint32_t fFlags,
+                                                        PPDMASYNCCOMPLETIONTEMPLATE pTemplate)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpCreateForFile(ppEndpoint, pszFilename, fFlags, pTemplate);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpClose
+ */
+DECLINLINE(void) PDMDrvHlpAsyncCompletionEpClose(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
+{
+    pDrvIns->pHlpR3->pfnAsyncCompletionEpClose(pEndpoint);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpGetSize
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionEpGetSize(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t *pcbSize)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpGetSize(pEndpoint, pcbSize);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpSetSize
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionEpSetSize(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t cbSize)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpSetSize(pEndpoint, cbSize);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpSetBwMgr
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionEpSetBwMgr(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONENDPOINT pEndpoint, const char *pszBwMgr)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpSetBwMgr(pEndpoint, pszBwMgr);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpFlush
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionEpFlush(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONENDPOINT pEndpoint, void *pvUser,
+                                                PPPDMASYNCCOMPLETIONTASK ppTask)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpFlush(pEndpoint, pvUser, ppTask);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpRead
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionEpRead(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                                               PCRTSGSEG paSegments, unsigned cSegments,
+                                               size_t cbRead, void *pvUser,
+                                               PPPDMASYNCCOMPLETIONTASK ppTask)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpRead(pEndpoint, off, paSegments, cSegments, cbRead, pvUser, ppTask);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnAsyncCompletionEpWrite
+ */
+DECLINLINE(int) PDMDrvHlpAsyncCompletionEpWrite(PPDMDRVINS pDrvIns, PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                                                PCRTSGSEG paSegments, unsigned cSegments,
+                                                size_t cbWrite, void *pvUser,
+                                                PPPDMASYNCCOMPLETIONTASK ppTask)
+{
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpRead(pEndpoint, off, paSegments, cSegments, cbWrite, pvUser, ppTask);
+}
 # endif
 
 #endif /* IN_RING3 */
@@ -2196,6 +2313,82 @@ DECLINLINE(int) PDMDrvHlpBlkCacheRetain(PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkC
                                         const char *pcszId)
 {
     return pDrvIns->pHlpR3->pfnBlkCacheRetain(pDrvIns, ppBlkCache, pfnXferComplete, pfnXferEnqueue, pfnXferEnqueueDiscard, pcszId);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheRelease
+ */
+DECLINLINE(void) PDMDrvHlpBlkCacheRelease(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache)
+{
+    pDrvIns->pHlpR3->pfnBlkCacheRelease(pBlkCache);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheClear
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheClear(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheClear(pBlkCache);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheSuspend
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheSuspend(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheSuspend(pBlkCache);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheResume
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheResume(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheResume(pBlkCache);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheIoXferComplete
+ */
+DECLINLINE(void) PDMDrvHlpBlkCacheIoXferComplete(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache,
+                                                 PPDMBLKCACHEIOXFER hIoXfer, int rcIoXfer)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheIoXferComplete(pBlkCache, hIoXfer, rcIoXfer);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheRead
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheRead(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache, uint64_t off,
+                                      PCRTSGBUF pSgBuf, size_t cbRead, void *pvUser)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheRead(pBlkCache, off, pSgBuf, cbRead, pvUser);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheWrite
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheWrite(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache, uint64_t off,
+                                      PCRTSGBUF pSgBuf, size_t cbRead, void *pvUser)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheWrite(pBlkCache, off, pSgBuf, cbRead, pvUser);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheFlush
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheFlush(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache, void *pvUser)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheFlush(pBlkCache, pvUser);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnBlkCacheDiscard
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheDiscard(PPDMDRVINS pDrvIns, PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges,
+                                         unsigned cRanges, void *pvUser)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheDiscard(pBlkCache, paRanges, cRanges, pvUser);
 }
 
 /**
