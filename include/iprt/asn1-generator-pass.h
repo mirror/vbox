@@ -753,7 +753,8 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Clone)(RT_CONCAT(P,RTASN1TMP
         case a_enmChoice: \
             rc = RTAsn1MemAllocZ(&pThis->Allocation, (void **)&pThis->a_PtrName, sizeof(*pThis->a_PtrName)); \
             if (RT_SUCCESS(rc)) \
-                rc = RT_CONCAT(a_Api,_Clone)(pThis->a_PtrName, pSrc->a_PtrName, pAllocator); break
+                rc = RT_CONCAT(a_Api,_Clone)(pThis->a_PtrName, pSrc->a_PtrName, pAllocator); \
+            break
 # define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
         case a_enmChoice: /* A bit of presence paranoia here, but better safe than sorry... */ \
             rc = RTAsn1MemAllocZ(&pThis->Allocation, (void **)&pThis->a_PtrTnNm, sizeof(*pThis->a_PtrTnNm)); \
