@@ -4765,7 +4765,7 @@ typedef struct PDMDEVHLPR3
      * Get the timestamp frequency.
      *
      * @returns Number of ticks per second.
-     * @param   pVM     The cross context VM structure.
+     * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(uint64_t, pfnTMCpuTicksPerSecond,(PPDMDEVINS pDevIns));
 

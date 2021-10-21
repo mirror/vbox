@@ -1148,7 +1148,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_CpuGetGuestAddrWidths(PPDMDEVINS pDevIns, 
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnCpuGuestScalableBusFrequency} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnCpuGetGuestScalableBusFrequency} */
 static DECLCALLBACK(uint64_t) pdmR3DevHlp_CpuGetGuestScalableBusFrequency(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
