@@ -4410,7 +4410,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleRegister(PPDMDEVINS pDevIns, VB
     int rc = PGMR3SharedModuleRegister(pDevIns->Internal.s.pVMR3, enmGuestOS, pszModuleName, pszVersion,
                                        GCBaseAddr, cbModule, cRegions, paRegions);
 #else
-    RT_NOREF(enmGuestOS, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions, paRegions);
+    RT_NOREF(pDevIns, enmGuestOS, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions, paRegions);
     int rc = VERR_NOT_SUPPORTED;
 #endif
 
@@ -4431,7 +4431,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleUnregister(PPDMDEVINS pDevIns, 
 #ifdef VBOX_WITH_PAGE_SHARING
     int rc = PGMR3SharedModuleUnregister(pDevIns->Internal.s.pVMR3, pszModuleName, pszVersion, GCBaseAddr, cbModule);
 #else
-    RT_NOREF(pszModuleName, pszVersion, GCBaseAddr, cbModule);
+    RT_NOREF(pDevIns, pszModuleName, pszVersion, GCBaseAddr, cbModule);
     int rc = VERR_NOT_SUPPORTED;
 #endif
 
