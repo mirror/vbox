@@ -309,10 +309,10 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
     if (isFormatCloudOne())
     {
         /* Export appliance: */
-        UINotificationProgressApplianceExport *pNotification = new UINotificationProgressApplianceExport(comAppliance,
-                                                                                                         format(),
-                                                                                                         options,
-                                                                                                         uri());
+        UINotificationProgressApplianceWrite *pNotification = new UINotificationProgressApplianceWrite(comAppliance,
+                                                                                                       format(),
+                                                                                                       options,
+                                                                                                       uri());
         if (cloudExportMode() == CloudExportMode_DoNotAsk)
             gpNotificationCenter->append(pNotification);
         else
@@ -322,10 +322,10 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
     else
     {
         /* Export appliance: */
-        UINotificationProgressApplianceExport *pNotification = new UINotificationProgressApplianceExport(comAppliance,
-                                                                                                         format(),
-                                                                                                         options,
-                                                                                                         uri());
+        UINotificationProgressApplianceWrite *pNotification = new UINotificationProgressApplianceWrite(comAppliance,
+                                                                                                       format(),
+                                                                                                       options,
+                                                                                                       uri());
         gpNotificationCenter->append(pNotification);
     }
 

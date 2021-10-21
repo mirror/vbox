@@ -2784,13 +2784,13 @@ void UINotificationProgressSnapshotDelete::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
-*   Class UINotificationProgressApplianceExport implementation.                                                                  *
+*   Class UINotificationProgressApplianceWrite implementation.                                                                   *
 *********************************************************************************************************************************/
 
-UINotificationProgressApplianceExport::UINotificationProgressApplianceExport(const CAppliance &comAppliance,
-                                                                             const QString &strFormat,
-                                                                             const QVector<KExportOptions> &options,
-                                                                             const QString &strPath)
+UINotificationProgressApplianceWrite::UINotificationProgressApplianceWrite(const CAppliance &comAppliance,
+                                                                           const QString &strFormat,
+                                                                           const QVector<KExportOptions> &options,
+                                                                           const QString &strPath)
     : m_comAppliance(comAppliance)
     , m_strFormat(strFormat)
     , m_options(options)
@@ -2798,17 +2798,17 @@ UINotificationProgressApplianceExport::UINotificationProgressApplianceExport(con
 {
 }
 
-QString UINotificationProgressApplianceExport::name() const
+QString UINotificationProgressApplianceWrite::name() const
 {
-    return UINotificationProgress::tr("Exporting appliance ...");
+    return UINotificationProgress::tr("Writing appliance ...");
 }
 
-QString UINotificationProgressApplianceExport::details() const
+QString UINotificationProgressApplianceWrite::details() const
 {
     return UINotificationProgress::tr("<b>To:</b> %1").arg(m_strPath);
 }
 
-CProgress UINotificationProgressApplianceExport::createProgress(COMResult &comResult)
+CProgress UINotificationProgressApplianceWrite::createProgress(COMResult &comResult)
 {
     /* Initialize progress-wrapper: */
     CProgress comProgress = m_comAppliance.Write(m_strFormat, m_options, m_strPath);

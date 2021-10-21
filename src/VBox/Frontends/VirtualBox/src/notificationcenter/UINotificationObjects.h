@@ -1549,22 +1549,22 @@ private:
     CSession  m_comSession;
 };
 
-/** UINotificationProgress extension for export appliance functionality. */
-class SHARED_LIBRARY_STUFF UINotificationProgressApplianceExport : public UINotificationProgress
+/** UINotificationProgress extension for appliance write functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressApplianceWrite : public UINotificationProgress
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs export appliance notification-progress.
-      * @param  comAppliance  Brings the appliance being exported.
+    /** Constructs appliance write notification-progress.
+      * @param  comAppliance  Brings the appliance being written.
       * @param  strFormat     Brings the appliance format.
       * @param  options       Brings the export options to be taken into account.
       * @param  strPath       Brings the appliance path. */
-    UINotificationProgressApplianceExport(const CAppliance &comAppliance,
-                                          const QString &strFormat,
-                                          const QVector<KExportOptions> &options,
-                                          const QString &strPath);
+    UINotificationProgressApplianceWrite(const CAppliance &comAppliance,
+                                         const QString &strFormat,
+                                         const QVector<KExportOptions> &options,
+                                         const QString &strPath);
 
 protected:
 
@@ -1577,7 +1577,7 @@ protected:
 
 private:
 
-    /** Holds the appliance being exported. */
+    /** Holds the appliance being written. */
     CAppliance               m_comAppliance;
     /** Holds the appliance format. */
     QString                  m_strFormat;
