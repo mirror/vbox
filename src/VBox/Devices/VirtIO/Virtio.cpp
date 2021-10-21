@@ -701,7 +701,7 @@ void vpciR3DumpState(PPDMDEVINS pDevIns, PVPCISTATE pThis, const char *pcszCalle
     }
 }
 # else
-#  define vpciR3DumpState(d, x, s)  do {} while (0)
+#  define vpciR3DumpState(d, x, s)  do { RT_NOREF((d), (x)); } while (0)
 # endif
 
 /**
