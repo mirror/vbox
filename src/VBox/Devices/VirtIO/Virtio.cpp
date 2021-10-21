@@ -791,7 +791,7 @@ int vpciR3LoadExec(PPDMDEVINS pDevIns, PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSS
         }
     }
 
-    vpciR3DumpState(pDevIns, pThis, "vpciLoadExec");
+    vpciR3DumpState(pDevIns, pThis, "vpciLoadExec"); RT_NOREF(pDevIns);
 
     return VINF_SUCCESS;
 }
