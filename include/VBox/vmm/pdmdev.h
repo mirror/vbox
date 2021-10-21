@@ -4712,7 +4712,7 @@ typedef struct PDMDEVHLPR3
      * Query the state of a page in a shared module
      *
      * @returns VBox status code.
-     * @param   pVM                 The cross context VM structure.
+     * @param   pDevIns             The device instance.
      * @param   GCPtrPage           Page address.
      * @param   pfShared            Shared status (out).
      * @param   pfPageFlags         Page flags (out).
