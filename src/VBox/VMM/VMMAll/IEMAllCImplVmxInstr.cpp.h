@@ -5887,6 +5887,65 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPUCC pVCpu, const char *pszInstr)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Checks the EPT pointer VMCS field as part of VM-entry.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   penmVmxDiag     Where to store the diagnostic reason on failure (not
+ *                          updated on success). Optional, can be NULL.
+ */
+IEM_STATIC int iemVmxVmentryCheckEptPtr(PVMCPUCC pVCpu, VMXVDIAG *penmVmxDiag)
+{
+    VMXVDIAG enmVmxDiag;
+    PCVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+
+    /* Reserved bits. */
+    uint8_t const  cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
+    uint64_t const fValidMask        = VMX_EPTP_VALID_MASK & ~(UINT64_MAX << cMaxPhysAddrWidth);
+    if (pVmcs->u64EptPtr.u & fValidMask)
+    {
+        /* Memory Type. */
+        uint64_t const fCaps    = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
+        uint8_t const  fMemType = RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_MEMTYPE);
+        if (   (   fMemType == VMX_EPTP_MEMTYPE_WB
+                && RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_MEMTYPE_WB))
+            || (   fMemType == VMX_EPTP_MEMTYPE_UC
+                && RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_MEMTYPE_UC)))
+        {
+            /*
+             * Page walk length (PML4).
+             * Intel used to specify bit 7 of IA32_VMX_EPT_VPID_CAP as page walk length
+             * of 5 but that seems to be removed from the latest specs. leaving only PML4
+             * as the maximum supported page-walk level hence we hardcode it as 3 (1 less than 4)
+             */
+            Assert(RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4));
+            if (RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_PAGE_WALK_LENGTH) == 3)
+            {
+                /* Access and dirty bits support in EPT structures. */
+                if (   !RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_ACCESS_DIRTY)
+                    ||  RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY))
+                    return VINF_SUCCESS;
+
+                enmVmxDiag = kVmxVDiag_Vmentry_EptpAccessDirty;
+            }
+            else
+                enmVmxDiag = kVmxVDiag_Vmentry_EptpPageWalkLength;
+        }
+        else
+            enmVmxDiag = kVmxVDiag_Vmentry_EptpMemType;
+    }
+    else
+        enmVmxDiag = kVmxVDiag_Vmentry_EptpRsvd;
+
+    if (penmVmxDiag)
+        *penmVmxDiag = enmVmxDiag;
+    return VERR_VMX_VMENTRY_FAILED;
+}
+#endif
+
+
 /**
  * Checks VMCS controls fields as part of VM-entry.
  *
@@ -6096,43 +6155,12 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
         /* Extended Page Tables Pointer (EPTP). */
         if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
         {
-            /* Reserved bits. */
-            uint8_t const cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
-            uint64_t const fValidMask       = VMX_EPTP_VALID_MASK & ~(UINT64_MAX << cMaxPhysAddrWidth);
-            if (pVmcs->u64EptPtr.u & fValidMask)
+            VMXVDIAG enmVmxDiag;
+            rc = iemVmxVmentryCheckEptPtr(pVCpu, &enmVmxDiag);
+            if (RT_SUCCESS(rc))
             { /* likely */ }
             else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EptpRsvd);
-
-            /* Memory Type. */
-            uint64_t const fCaps    = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
-            uint8_t const  fMemType = RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_MEMTYPE);
-            if (   (   fMemType == VMX_EPTP_MEMTYPE_WB
-                    && RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_MEMTYPE_WB))
-                || (   fMemType == VMX_EPTP_MEMTYPE_UC
-                    && RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_MEMTYPE_UC)))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EptpMemType);
-
-            /*
-             * Page walk length (PML4).
-             * Intel used to specify bit 7 of IA32_VMX_EPT_VPID_CAP as page walk length
-             * of 5 but that seems to be removed from the latest specs. leaving only PML4
-             * as the maximum supported page-walk level hence we hardcode it as 3 (1 less than 4)
-             */
-            Assert(RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4));
-            if (RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_PAGE_WALK_LENGTH) == 3)
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EptpPageWalkLength);
-
-            /* Access and dirty bits support in EPT structures. */
-            if (   !RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_ACCESS_DIRTY)
-                ||  RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EptpAccessDirty);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmVmxDiag);
         }
 #else
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));                /* We don't support EPT yet. */
