@@ -947,12 +947,12 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,
                                         true /* fEnabledIn */, true /* fEnabledOut */, TstEnv.IoOpts.fWithDrvAudio); /** @todo Make in/out configurable, too. */
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unable to init driver stack: %Rrc\n", rc);
 
     PPDMAUDIOHOSTDEV pDev;
     rc = audioTestDevicesEnumerateAndCheck(&DrvStack, TstEnv.szDev, &pDev);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Enumerating device(s) failed: %Rrc\n", rc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Enumerating device(s) failed: %Rrc\n", rc);
 
     /* For now all tests have the same test environment and driver stack. */
     rc = audioTestEnvCreate(&TstEnv, &DrvStack);
