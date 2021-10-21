@@ -1363,7 +1363,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                        "/NEM/PagesRemapCalls", STAMUNIT_PAGES, "Calls to HvCallMapGpaPages for changing page protection");
                         STAMR3Register(pVM, (void *)&pVM->nem.s.StatRemapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesRemapFails", STAMUNIT_PAGES, "Calls to HvCallMapGpaPages for changing page protection failed");
-#else
+#elif !defined(VBOX_WITH_PGM_NEM_MODE)
                         STAMR3Register(pVM, (void *)&pVM->nem.s.StatUnmapAllPages, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesUnmapAll", STAMUNIT_PAGES, "Times we had to unmap all the pages");
 #endif

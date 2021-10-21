@@ -1807,6 +1807,10 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHY
 # ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     LogRel(("nemHCWinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhys, rc));
     return rc;
+# elif defined(VBOX_WITH_PGM_NEM_MODE)
+    LogRel(("nemHCWinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp %s hrc=%Rhrc (%#x)\n",
+            GCPhys, g_apszPageStates[u2State], hrc, hrc));
+    return VERR_NEM_UNMAP_PAGES_FAILED;
 # else
     LogRel(("nemHCWinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp %s hrc=%Rhrc (%#x) Last=%#x/%u (cMappedPages=%u)\n",
             GCPhys, g_apszPageStates[u2State], hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue(),
@@ -4208,7 +4212,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
     VBOXSTRICTRC    rcStrict            = VINF_SUCCESS;
     for (unsigned iLoop = 0;; iLoop++)
     {
-# ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+# if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && !defined(VBOX_WITH_PGM_NEM_MODE)
         /*
          * Hack alert!
          */
