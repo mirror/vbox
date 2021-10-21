@@ -2353,24 +2353,92 @@ typedef struct PGMPTWALKCORE
 
 /** @name PGMPTWALKCORE::fEffective bits.
  * @{ */
+#if 0
 /** Effective execute bit (!NX).   */
-#define PGMPTWALK_EFF_X     UINT32_C(1)
-/** Effective write access bit. */
-#define PGMPTWALK_EFF_RW    X86_PTE_RW
+#define PGMPTWALK_EFF_X                 RT_BIT_32(0)
+/** Effective read+write access bit. */
+#define PGMPTWALK_EFF_RW                X86_PTE_RW
 /** Effective user-mode access bit. */
-#define PGMPTWALK_EFF_US    X86_PTE_US
+#define PGMPTWALK_EFF_US                X86_PTE_US
 /** Effective write through cache bit. */
-#define PGMPTWALK_EFF_PWT   X86_PTE_PWT
+#define PGMPTWALK_EFF_PWT               X86_PTE_PWT
 /** Effective cache disabled bit. */
-#define PGMPTWALK_EFF_PCD   X86_PTE_PCD
+#define PGMPTWALK_EFF_PCD               X86_PTE_PCD
 /** Effective accessed bit. */
-#define PGMPTWALK_EFF_A     X86_PTE_A
+#define PGMPTWALK_EFF_A                 X86_PTE_A
 /** The dirty bit of the final entry. */
-#define PGMPTWALK_EFF_D     X86_PTE_D
+#define PGMPTWALK_EFF_D                 X86_PTE_D
 /** The PAT bit of the final entry. */
-#define PGMPTWALK_EFF_PAT   X86_PTE_PAT
+#define PGMPTWALK_EFF_PAT               X86_PTE_PAT
 /** The global bit of the final entry. */
-#define PGMPTWALK_EFF_G     X86_PTE_G
+#define PGMPTWALK_EFF_G                 X86_PTE_G
+#endif
+/** Effective execute bit (!NX). */
+#define PGM_BF_PTWALK_EFF_X_SHIFT                   0
+#define PGM_BF_PTWALK_EFF_X_MASK                    UINT32_C(0x00000001)
+/** Effective read+write access bit. */
+#define PGM_BF_PTWALK_EFF_RW_SHIFT                  1
+#define PGM_BF_PTWALK_EFF_RW_MASK                   UINT32_C(0x00000002)
+/** Effective user-mode access bit. */
+#define PGM_BF_PTWALK_EFF_US_SHIFT                  2
+#define PGM_BF_PTWALK_EFF_US_MASK                   UINT32_C(0x00000004)
+/** Effective write through cache bit. */
+#define PGM_BF_PTWALK_EFF_PWT_SHIFT                 3
+#define PGM_BF_PTWALK_EFF_PWT_MASK                  UINT32_C(0x00000008)
+/** Effective cache disabled bit. */
+#define PGM_BF_PTWALK_EFF_PCD_SHIFT                 4
+#define PGM_BF_PTWALK_EFF_PCD_MASK                  UINT32_C(0x00000010)
+/** Effective accessed bit. */
+#define PGM_BF_PTWALK_EFF_A_SHIFT                   5
+#define PGM_BF_PTWALK_EFF_A_MASK                    UINT32_C(0x00000020)
+/** The dirty bit of the final entry. */
+#define PGM_BF_PTWALK_EFF_D_SHIFT                   6
+#define PGM_BF_PTWALK_EFF_D_MASK                    UINT32_C(0x00000040)
+/** The PAT bit of the final entry. */
+#define PGM_BF_PTWALK_EFF_PAT_SHIFT                 7
+#define PGM_BF_PTWALK_EFF_PAT_MASK                  UINT32_C(0x00000080)
+/** The global bit of the final entry. */
+#define PGM_BF_PTWALK_EFF_G_SHIFT                   8
+#define PGM_BF_PTWALK_EFF_G_MASK                    UINT32_C(0x00000100)
+/** Reserved (bits 11:9) unused. */
+#define PGM_BF_PTWALK_EFF_RSVD_11_9_SHIFT           9
+#define PGM_BF_PTWALK_EFF_RSVD_11_9_MASK            UINT32_C(0x00000e00)
+/** Effective read access bit - EPT only. */
+#define PGM_BF_PTWALK_EFF_R_SHIFT                   12
+#define PGM_BF_PTWALK_EFF_R_MASK                    UINT32_C(0x00001000)
+/** Effective write access bit - EPT only. */
+#define PGM_BF_PTWALK_EFF_W_SHIFT                   13
+#define PGM_BF_PTWALK_EFF_W_MASK                    UINT32_C(0x00002000)
+/** Effective execute access for supervisor-mode - EPT only. */
+#define PGM_BF_PTWALK_EFF_X_SUPER_SHIFT             14
+#define PGM_BF_PTWALK_EFF_X_SUPER_MASK              UINT32_C(0x00004000)
+/** Reserved (bits 21:15) unused. */
+#define PGM_BF_PTWALK_EFF_RSVD_21_15_SHIFT          15
+#define PGM_BF_PTWALK_EFF_RSVD_21_15_MASK           UINT32_C(0x003f8000)
+/** Effective execute access for user-mode - EPT only. */
+#define PGM_BF_PTWALK_EFF_X_USER_SHIFT              22
+#define PGM_BF_PTWALK_EFF_X_USER_MASK               UINT32_C(0x00400000)
+/** Reserved (bits 31:23). */
+#define PGM_BF_PTWALK_EFF_RSVD_31_23_SHIFT          23
+#define PGM_BF_PTWALK_EFF_RSVD_31_23_MASK           UINT32_C(0xff800000)
+RT_BF_ASSERT_COMPILE_CHECKS(PGM_BF_PTWALK_EFF_, UINT32_C(0), UINT32_MAX,
+                            (X, RW, US, PWT, PCD, A, D, PAT, G, RSVD_11_9, R, W, X_SUPER, RSVD_21_15, X_USER, RSVD_31_23));
+AssertCompile(PGM_BF_PTWALK_EFF_RW_SHIFT  == X86_PTE_BIT_RW);
+AssertCompile(PGM_BF_PTWALK_EFF_US_SHIFT  == X86_PTE_BIT_US);
+AssertCompile(PGM_BF_PTWALK_EFF_PWT_SHIFT == X86_PTE_BIT_PWT);
+AssertCompile(PGM_BF_PTWALK_EFF_PCD_SHIFT == X86_PTE_BIT_PCD);
+AssertCompile(PGM_BF_PTWALK_EFF_A_SHIFT   == X86_PTE_BIT_A);
+AssertCompile(PGM_BF_PTWALK_EFF_D_SHIFT   == X86_PTE_BIT_D);
+AssertCompile(PGM_BF_PTWALK_EFF_PAT_SHIFT == X86_PTE_BIT_PAT);
+AssertCompile(PGM_BF_PTWALK_EFF_G_SHIFT  == X86_PTE_BIT_G);
+AssertCompile(PGM_BF_PTWALK_EFF_RW_MASK  == X86_PTE_RW);
+AssertCompile(PGM_BF_PTWALK_EFF_US_MASK  == X86_PTE_US);
+AssertCompile(PGM_BF_PTWALK_EFF_PWT_MASK == X86_PTE_PWT);
+AssertCompile(PGM_BF_PTWALK_EFF_PCD_MASK == X86_PTE_PCD);
+AssertCompile(PGM_BF_PTWALK_EFF_A_MASK   == X86_PTE_A);
+AssertCompile(PGM_BF_PTWALK_EFF_D_MASK   == X86_PTE_D);
+AssertCompile(PGM_BF_PTWALK_EFF_PAT_MASK == X86_PTE_PAT);
+AssertCompile(PGM_BF_PTWALK_EFF_G_MASK   == X86_PTE_G);
 /** @} */
 
 
