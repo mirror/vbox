@@ -5939,8 +5939,19 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             }
 
             /* Check / mask the value. */
-            if (uNewCrX & UINT64_C(0xfff0000000000000))
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            /* See Intel spec. 27.2.2 "EPT Translation Mechanism" footnote. */
+            uint64_t const fInvPhysMask = !CPUMIsGuestVmxEptPagingEnabledEx(IEM_GET_CTX(pVCpu))
+                                        ? ~(RT_BIT_64(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth) - 1U)
+                                        : (X86_CR3_EPT_PAGE_MASK | X86_PAGE_4K_OFFSET_MASK);
+#else
+            uint64_t const fInvPhysMask = UINT64_C(0xfff0000000000000);
+#endif
+            if (uNewCrX & fInvPhysMask)
             {
+                /** @todo Should we raise this only for 64-bit mode like Intel claims? AMD is
+                 *        very vague in this area. As mentioned above, need testcase on real
+                 *        hardware... Sigh. */
                 Log(("Trying to load CR3 with invalid high bits set: %#llx\n", uNewCrX));
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
@@ -5948,7 +5959,10 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             uint64_t fValid;
             if (   (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
                 && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LME))
+            {
+                /** @todo Redundant? This value has already been validated above. */
                 fValid = UINT64_C(0x000fffffffffffff);
+            }
             else
                 fValid = UINT64_C(0xffffffff);
             if (uNewCrX & ~fValid)
