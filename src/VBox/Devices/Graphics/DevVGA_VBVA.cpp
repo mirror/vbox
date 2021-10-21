@@ -2827,10 +2827,8 @@ DECLCALLBACK(int) vbvaR3PortSendModeHint(PPDMIDISPLAYPORT pInterface,  uint32_t 
 
 int VBVAInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC)
 {
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
-
     int rc = HGSMICreate(&pThisCC->pHGSMI,
-                         pVM,
+                         pDevIns,
                          "VBVA",
                          0,
                          pThisCC->pbVRam,

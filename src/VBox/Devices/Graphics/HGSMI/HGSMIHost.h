@@ -37,7 +37,7 @@ typedef FNHGSMINOTIFYGUEST *PFNHGSMINOTIFYGUEST;
  */
 
 int   HGSMICreate(PHGSMIINSTANCE *ppIns,
-                  PVM             pVM,
+                  PPDMDEVINS      pDevIns,
                   const char     *pszName,
                   HGSMIOFFSET     offBase,
                   uint8_t        *pu8MemBase,

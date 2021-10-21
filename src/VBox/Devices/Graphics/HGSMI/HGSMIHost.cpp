@@ -161,7 +161,7 @@ typedef struct HGSMIHOSTHEAP
 
 typedef struct HGSMIINSTANCE
 {
-    PVM pVM;                           /**< The VM. */
+    PPDMDEVINS  pDevIns;               /**< The device instance. */
 
     const char *pszName;               /**< A name for the instance. Mostyl used in the log. */
 
@@ -327,7 +327,7 @@ HGSMIOFFSET HGSMIGuestRead(PHGSMIINSTANCE pIns)
 
     AssertPtr(pIns);
 
-    Assert(VMMGetCpu(pIns->pVM) != NULL);
+    Assert(PDMDevHlpGetVMCPU(pIns->pDevIns) != NULL);
 
 #ifndef VBOX_WITH_WDDM
     /* Currently there is no functionality here. */
@@ -344,7 +344,7 @@ HGSMIOFFSET HGSMIGuestRead(PHGSMIINSTANCE pIns)
 
 static bool hgsmiProcessHostCmdCompletion(HGSMIINSTANCE *pIns, HGSMIOFFSET offBuffer, bool fCompleteFirst)
 {
-    Assert(VMMGetCpu(pIns->pVM) != NULL);
+    Assert(PDMDevHlpGetVMCPU(pIns->pDevIns) != NULL);
 
     int rc = hgsmiFIFOLock(pIns);
     if (RT_SUCCESS(rc))
@@ -414,7 +414,7 @@ HGSMIOFFSET HGSMIHostRead(HGSMIINSTANCE *pIns)
 {
     LogFlowFunc(("pIns %p\n", pIns));
 
-    Assert(VMMGetCpu(pIns->pVM) != NULL);
+    Assert(PDMDevHlpGetVMCPU(pIns->pDevIns) != NULL);
 
     AssertPtrReturn(pIns->pHGFlags, HGSMIOFFSET_VOID);
     int rc = hgsmiFIFOLock(pIns);
@@ -1513,7 +1513,7 @@ static DECLCALLBACK(int) hgsmiChannelHandler(void *pvHandler, uint16_t u16Channe
 }
 
 int HGSMICreate(PHGSMIINSTANCE *ppIns,
-                PVM             pVM,
+                PPDMDEVINS      pDevIns,
                 const char     *pszName,
                 HGSMIOFFSET     offBase,
                 uint8_t        *pu8MemBase,
@@ -1522,10 +1522,10 @@ int HGSMICreate(PHGSMIINSTANCE *ppIns,
                 void           *pvNotifyGuest,
                 size_t          cbContext)
 {
-    LogFlowFunc(("ppIns = %p, pVM = %p, pszName = [%s], offBase = 0x%08X, pu8MemBase = %p, cbMem = 0x%08X, "
+    LogFlowFunc(("ppIns = %p, pDevIns = %p, pszName = [%s], offBase = 0x%08X, pu8MemBase = %p, cbMem = 0x%08X, "
                  "pfnNotifyGuest = %p, pvNotifyGuest = %p, cbContext = %d\n",
                  ppIns,
-                 pVM,
+                 pDevIns,
                  pszName,
                  offBase,
                  pu8MemBase,
@@ -1536,7 +1536,7 @@ int HGSMICreate(PHGSMIINSTANCE *ppIns,
                ));
 
     AssertPtrReturn(ppIns, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pVM, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pu8MemBase, VERR_INVALID_PARAMETER);
 
     int rc;
@@ -1552,7 +1552,7 @@ int HGSMICreate(PHGSMIINSTANCE *ppIns,
             rc = RTCritSectInit(&pIns->hostFIFOCritSect);
         if (RT_SUCCESS (rc))
         {
-            pIns->pVM            = pVM;
+            pIns->pDevIns        = pDevIns;
             pIns->pszName        = RT_VALID_PTR(pszName) ? pszName : "";
 
             hgsmiHostHeapSetupUninitialized(&pIns->hostHeap);
