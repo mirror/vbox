@@ -1596,6 +1596,7 @@ VMM_INT_DECL(int)       CPUMStartGuestVmxPremptTimer(PVMCPUCC pVCpu, uint32_t uT
 VMM_INT_DECL(int)       CPUMStopGuestVmxPremptTimer(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestVmxEptPtr(PCVMCPUCC pVCpu);
 /** @} */
 
 /** @name Externalized State Helpers.
@@ -2559,6 +2560,18 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCCPUMCTX pCtx)
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif
+}
+
+/**
+ * Returns the EPT pointer of the nested-guest.
+ *
+ * @returns The EPT pointer.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(uint64_t) CPUMGetGuestVmxEptPtrEx(PCCPUMCTX pCtx)
+{
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    return pCtx->hwvirt.vmx.Vmcs.u64EptPtr.u;
 }
 
 /** @} */
