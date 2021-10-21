@@ -939,6 +939,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                           cPcmChannels  ? cPcmChannels      : 2 /* Stereo */, uPcmHz ? uPcmHz : 44100);
     }
 
+    /* Do this first before everything else below. */
+    rc = AudioTestDriverStackPerformSelftest();
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Testing driver stack failed: %Rrc\n", rc);
+
     AUDIOTESTDRVSTACK DrvStack;
     if (fProbeBackends)
         rc = audioTestDriverStackProbe(&DrvStack, pDrvReg,
