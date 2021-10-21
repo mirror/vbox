@@ -182,10 +182,16 @@ endif
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
- TESTING += $(vkathost_0_OUTDIR)/tstVkatHostSelftest.run
+ tstVkatHostSelftest_EXTENDS    = vkat
+ tstVkatHostSelftest_EXTENDS_BY = appending
+ tstVkatHostSelftest_INST       = $(INST_TESTCASE)
+ tstVkatHostSelftest_DEFS.debug = VBOX_WITH_EF_WRAPS
 
- $$(vkathost_0_OUTDIR)/tstVkatHostSelftest.run: $$(vkat_1_TARGET)
-	export VKAT_RELEASE_LOG=-all; $(vkat_1_TARGET) selftest
+ PROGRAMS += tstVkatHostSelftest
+ TESTING  += $(tstVkatHostSelftest_0_OUTDIR)/tstVkatHostSelftest.run
+
+ $$(tstVkatHostSelftest_0_OUTDIR)/tstVkatHostSelftest.run: $$(tstVkatHostSelftest_1_TARGET)
+	export VKAT_RELEASE_LOG=-all; $(tstVkatHostSelftest_1_TARGET) selftest
 	$(QUIET)$(APPEND) -t "$@" "done"
 
 endif
