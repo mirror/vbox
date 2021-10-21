@@ -161,6 +161,8 @@ int pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUs
                     ||  MMHyperR3ToRC(pVM, MMHyperRCToR3(pVM, pvUserRC)) == pvUserRC,
                     ("Not RC pointer! pvUserRC=%RRv\n", pvUserRC),
                     VERR_INVALID_PARAMETER);
+#else
+    RT_NOREF(pvUser);
 #endif
 #if 0 /* No longer valid. */
     AssertMsgReturn(    (RTR0UINTPTR)pvUserR0 < 0x10000
