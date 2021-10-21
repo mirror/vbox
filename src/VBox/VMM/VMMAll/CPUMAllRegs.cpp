@@ -3041,7 +3041,6 @@ VMM_INT_DECL(int) CPUMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsr
  */
 VMM_INT_DECL(bool) CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu)
 {
-    return    CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
-           && CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_EPT);
+    return CPUMIsGuestVmxEptPagingEnabledEx(&pVCpu->cpum.s.Guest);
 }
 

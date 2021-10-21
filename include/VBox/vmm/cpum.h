@@ -2265,6 +2265,20 @@ DECLINLINE(bool) CPUMIsGuestVmxXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector,
     return false;
 }
 
+
+/**
+ * Checks whether the guest is in VMX non-root mode and using EPT paging.
+ *
+ * @returns @c true if in VMX non-root operation with EPT, @c false otherwise.
+ * @param   pCtx   Current CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxEptPagingEnabledEx(PCCPUMCTX pCtx)
+{
+    return    CPUMIsGuestInVmxNonRootMode(pCtx)
+           && CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_EPT);
+}
+
+
 /**
  * Implements VMSucceed for VMX instruction success.
  *
