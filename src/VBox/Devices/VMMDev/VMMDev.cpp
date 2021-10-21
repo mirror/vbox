@@ -1222,7 +1222,13 @@ static int vmmdevReqHandler_GetHypervisorInfo(PPDMDEVINS pDevIns, VMMDevRequestH
     VMMDevReqHypervisorInfo *pReq = (VMMDevReqHypervisorInfo *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
+#if 1 /* Obsolete for now, only used for raw-mode. */
+    RT_NOREF(pDevIns);
+    pReq->hypervisorSize = 0;
+    return VINF_SUCCESS;
+#else
     return PGMR3MappingsSize(PDMDevHlpGetVM(pDevIns), &pReq->hypervisorSize);
+#endif
 }
 
 
@@ -1239,6 +1245,13 @@ static int vmmdevReqHandler_SetHypervisorInfo(PPDMDEVINS pDevIns, VMMDevRequestH
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
     int rc;
+#if 1 /* Obsolete for now, only used for raw-mode. */
+    RT_NOREF(pDevIns);
+    if (pReq->hypervisorStart == 0 || pReq->hypervisorSize == 0)
+        rc = VINF_SUCCESS;
+    else
+        rc = VERR_TRY_AGAIN;
+#else
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     if (pReq->hypervisorStart == 0)
         rc = PGMR3MappingsUnfix(pVM);
@@ -1254,9 +1267,10 @@ static int vmmdevReqHandler_SetHypervisorInfo(PPDMDEVINS pDevIns, VMMDevRequestH
             LogRel(("VMMDev: Guest reported fixed hypervisor window at 0%010x LB %#x (rc=%Rrc)\n",
                     pReq->hypervisorStart, pReq->hypervisorSize, rc));
         }
-        else if (RT_FAILURE(rc))
+        else if (RT_FAILURE(rc)) /** @todo r=bird: This should've been RT_SUCCESS(rc)) */
             rc = VERR_TRY_AGAIN;
     }
+#endif
     return rc;
 }
 
