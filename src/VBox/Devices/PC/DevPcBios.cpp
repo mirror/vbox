@@ -768,7 +768,6 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     PDEVPCBIOS      pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     uint32_t        u32;
     unsigned        i;
-    PUVM            pUVM = PDMDevHlpGetUVM(pDevIns); AssertRelease(pUVM);
     PPDMIMEDIA      apHDs[4] = {0};
     LogFlow(("pcbiosInitComplete:\n"));
 
@@ -861,7 +860,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     for (i = 0; i < 2; i++)
     {
         PPDMIBASE pBase;
-        int rc = PDMR3QueryLun(pUVM, pThis->pszFDDevice, 0, i, &pBase);
+        int rc = PDMDevHlpQueryLun(pDevIns, pThis->pszFDDevice, 0, i, &pBase);
         if (RT_SUCCESS(rc))
         {
             PPDMIMEDIA pFD = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIA);
@@ -903,7 +902,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     for (i = 0; i < RT_ELEMENTS(apHDs); i++)
     {
         PPDMIBASE pBase;
-        int rc = PDMR3QueryLun(pUVM, pThis->pszHDDevice, 0, i, &pBase);
+        int rc = PDMDevHlpQueryLun(pDevIns, pThis->pszHDDevice, 0, i, &pBase);
         if (RT_SUCCESS(rc))
             apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIA);
         if (   apHDs[i]
@@ -964,7 +963,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         for (i = 0; i < RT_ELEMENTS(apHDs); i++)
         {
             PPDMIBASE pBase;
-            int rc = PDMR3QueryLun(pUVM, pThis->pszSataDevice, 0, pThis->iSataHDLUN[i], &pBase);
+            int rc = PDMDevHlpQueryLun(pDevIns, pThis->pszSataDevice, 0, pThis->iSataHDLUN[i], &pBase);
             if (RT_SUCCESS(rc))
                 apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIA);
             if (   apHDs[i]
@@ -1018,7 +1017,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         for (i = 0; i < RT_ELEMENTS(apHDs); i++)
         {
             PPDMIBASE pBase;
-            int rc = PDMR3QueryLun(pUVM, pThis->pszScsiDevice, 0, pThis->iScsiHDLUN[i], &pBase);
+            int rc = PDMDevHlpQueryLun(pDevIns, pThis->pszScsiDevice, 0, pThis->iScsiHDLUN[i], &pBase);
             if (RT_SUCCESS(rc))
                 apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIA);
             if (   apHDs[i]
@@ -1500,8 +1499,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Get the CPU arch so we can load the appropriate ROMs.
      */
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
-    CPUMMICROARCH const enmMicroarch = pVM ? CPUMGetGuestMicroarch(pVM) : kCpumMicroarch_Intel_P6;
+    CPUMMICROARCH const enmMicroarch = pVM ? PDMDevHlpCpuGetGuestMicroarch(pDevIns) : kCpumMicroarch_Intel_P6;
 
     if (pThis->pszPcBiosFile)
     {

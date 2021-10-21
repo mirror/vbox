@@ -4939,6 +4939,21 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnSharedModuleCheckAll,(PPDMDEVINS pDevIns));
 
+    /**
+     * Query the interface of the top level driver on a LUN.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pszDevice           Device name.
+     * @param   iInstance           Device instance.
+     * @param   iLun                The Logical Unit to obtain the interface of.
+     * @param   ppBase              Where to store the base interface pointer.
+     *
+     * @remark  We're not doing any locking ATM, so don't try call this at times when the
+     *          device chain is known to be updated.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryLun,(PPDMDEVINS pDevIns, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase));
+
     /** @} */
 
     /** Just a safety precaution. (PDM_DEVHLPR3_VERSION) */
@@ -9337,6 +9352,14 @@ DECLINLINE(int) PDMDevHlpSharedModuleGetPageState(PPDMDEVINS pDevIns, RTGCPTR GC
 DECLINLINE(int) PDMDevHlpSharedModuleCheckAll(PPDMDEVINS pDevIns)
 {
     return pDevIns->pHlpR3->pfnSharedModuleCheckAll(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnQueryLun
+ */
+DECLINLINE(int) PDMDevHlpQueryLun(PPDMDEVINS pDevIns, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
+{
+    return pDevIns->pHlpR3->pfnQueryLun(pDevIns, pszDevice, iInstance, iLun, ppBase);
 }
 
 /** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */

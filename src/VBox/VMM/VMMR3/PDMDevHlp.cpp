@@ -4668,6 +4668,22 @@ static DECLCALLBACK(int) pdmR3DevHlp_SharedModuleCheckAll(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnQueryLun} */
+static DECLCALLBACK(int) pdmR3DevHlp_pfnQueryLun(PPDMDEVINS pDevIns, const char *pszDevice,
+                                                 unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    LogFlow(("pdmR3DevHlp_pfnQueryLun: caller='%s'/%d: pszDevice=%p:{%s} iInstance=%u iLun=%u ppBase=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pszDevice, pszDevice, iInstance, iLun, ppBase));
+
+    int rc = PDMR3QueryLun(pDevIns->Internal.s.pVMR3->pUVM, pszDevice, iInstance, iLun, ppBase);
+
+    LogFlow(("pdmR3DevHlp_pfnQueryLun: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /**
  * The device helper structure for trusted devices.
  */
@@ -5050,6 +5066,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_SharedModuleUnregister,
     pdmR3DevHlp_SharedModuleGetPageState,
     pdmR3DevHlp_SharedModuleCheckAll,
+    pdmR3DevHlp_pfnQueryLun,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
@@ -5437,6 +5454,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_SharedModuleUnregister,
     pdmR3DevHlp_SharedModuleGetPageState,
     pdmR3DevHlp_SharedModuleCheckAll,
+    pdmR3DevHlp_pfnQueryLun,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 #endif /* VBOX_WITH_DBGF_TRACING */
@@ -5707,6 +5725,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_SharedModuleGetPageState(PPDMDEVI
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_SharedModuleCheckAll(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
+                            pDevIns->pReg->szName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnQUeryLun} */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_QueryLun(PPDMDEVINS pDevIns, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pszDevice, iInstance, iLun, ppBase);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
                             pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
@@ -6095,6 +6124,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_SharedModuleUnregister,
     pdmR3DevHlp_Untrusted_SharedModuleGetPageState,
     pdmR3DevHlp_Untrusted_SharedModuleCheckAll,
+    pdmR3DevHlp_Untrusted_QueryLun,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
