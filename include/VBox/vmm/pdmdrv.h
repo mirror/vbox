@@ -2145,7 +2145,7 @@ DECLINLINE(int) PDMDrvHlpAsyncCompletionEpWrite(PPDMDRVINS pDrvIns, PPDMASYNCCOM
                                                 size_t cbWrite, void *pvUser,
                                                 PPPDMASYNCCOMPLETIONTASK ppTask)
 {
-    return pDrvIns->pHlpR3->pfnAsyncCompletionEpRead(pEndpoint, off, paSegments, cSegments, cbWrite, pvUser, ppTask);
+    return pDrvIns->pHlpR3->pfnAsyncCompletionEpWrite(pEndpoint, off, paSegments, cSegments, cbWrite, pvUser, ppTask);
 }
 # endif
 
