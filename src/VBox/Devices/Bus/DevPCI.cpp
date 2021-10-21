@@ -774,9 +774,12 @@ static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     }
 
     /* Tell to the PIC. */
-    VBOXSTRICTRC rcStrict = IOMIOPortWrite(pVM, pVCpu, 0x4d0, elcr[0], sizeof(uint8_t));
+    /** @todo r=aeichner We should really move this to the BIOS code and get rid of this fake PCI BIOS thing,
+     * DevPciIch9.cpp lacks this code and has a todo for this.
+     */
+    VBOXSTRICTRC rcStrict = pDevIns->pHlpR3->pfnIoPortWrite(pDevIns, 0x4d0, elcr[0], sizeof(uint8_t));
     if (rcStrict == VINF_SUCCESS)
-        rcStrict = IOMIOPortWrite(pVM, pVCpu, 0x4d1, elcr[1], sizeof(uint8_t));
+        rcStrict = pDevIns->pHlpR3->pfnIoPortWrite(pDevIns, 0x4d1, elcr[1], sizeof(uint8_t));
     if (rcStrict != VINF_SUCCESS)
     {
         AssertMsgFailed(("Writing to PIC failed! rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
