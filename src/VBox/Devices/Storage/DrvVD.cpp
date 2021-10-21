@@ -253,6 +253,21 @@ typedef VDLSTIOREQALLOC *PVDLSTIOREQALLOC;
 #define DRVVD_VDIOREQ_ALLOC_BINS    8
 
 /**
+ * VD config node.
+ */
+typedef struct VDCFGNODE
+{
+    /** List node for the list of config nodes. */
+    RTLISTNODE              NdLst;
+    /** Pointer to the driver helper callbacks. */
+    PCPDMDRVHLPR3           pHlp;
+    /** The config node. */
+    PCFGMNODE               pCfgNode;
+} VDCFGNODE;
+/** Pointer to a VD config node. */
+typedef VDCFGNODE *PVDCFGNODE;
+
+/**
  * VBox disk container media main structure, private part.
  *
  * @implements  PDMIMEDIA
@@ -367,11 +382,17 @@ typedef struct VBOXDISK
     /** Region list. */
     PVDREGIONLIST           pRegionList;
 
+    /** VD config support.
+     * @{ */
+    /** List head of config nodes. */
+    RTLISTANCHOR            LstCfgNodes;
+    /** @} */
+
     /** Cryptographic support
      * @{ */
     /** Pointer to the CFGM node containing the config of the crypto filter
      * if enable. */
-    PCFGMNODE                pCfgCrypto;
+    VDCFGNODE                CfgCrypto;
     /** Config interface for the encryption filter. */
     VDINTERFACECONFIG        VDIfCfg;
     /** Crypto interface for the encryption filter. */
@@ -901,22 +922,30 @@ static DECLCALLBACK(int) drvvdThreadFinishWrite(void *pvUser)
 
 static DECLCALLBACK(bool) drvvdCfgAreKeysValid(void *pvUser, const char *pszzValid)
 {
-    return CFGMR3AreValuesValid((PCFGMNODE)pvUser, pszzValid);
+    PVDCFGNODE      pVdCfgNode = (PVDCFGNODE)pvUser;
+    PCPDMDRVHLPR3   pHlp       = pVdCfgNode->pHlp;
+    return pHlp->pfnCFGMAreValuesValid(pVdCfgNode->pCfgNode, pszzValid);
 }
 
 static DECLCALLBACK(int) drvvdCfgQuerySize(void *pvUser, const char *pszName, size_t *pcb)
 {
-    return CFGMR3QuerySize((PCFGMNODE)pvUser, pszName, pcb);
+    PVDCFGNODE      pVdCfgNode = (PVDCFGNODE)pvUser;
+    PCPDMDRVHLPR3   pHlp       = pVdCfgNode->pHlp;
+    return pHlp->pfnCFGMQuerySize(pVdCfgNode->pCfgNode, pszName, pcb);
 }
 
 static DECLCALLBACK(int) drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, size_t cchString)
 {
-    return CFGMR3QueryString((PCFGMNODE)pvUser, pszName, pszString, cchString);
+    PVDCFGNODE      pVdCfgNode = (PVDCFGNODE)pvUser;
+    PCPDMDRVHLPR3   pHlp       = pVdCfgNode->pHlp;
+    return pHlp->pfnCFGMQueryString(pVdCfgNode->pCfgNode, pszName, pszString, cchString);
 }
 
 static DECLCALLBACK(int) drvvdCfgQueryBytes(void *pvUser, const char *pszName, void *ppvData, size_t cbData)
 {
-    return CFGMR3QueryBytes((PCFGMNODE)pvUser, pszName, ppvData, cbData);
+    PVDCFGNODE      pVdCfgNode = (PVDCFGNODE)pvUser;
+    PCPDMDRVHLPR3   pHlp       = pVdCfgNode->pHlp;
+    return pHlp->pfnCFGMQueryBytes(pVdCfgNode->pCfgNode, pszName, ppvData, cbData);
 }
 
 
@@ -1377,7 +1406,7 @@ static DECLCALLBACK(int) drvvdINIPPoke(VDSOCKET Sock)
  */
 static int drvvdKeyCheckPrereqs(PVBOXDISK pThis, bool fSetError)
 {
-    if (   pThis->pCfgCrypto
+    if (   pThis->CfgCrypto.pCfgNode
         && !pThis->pIfSecKey)
     {
         AssertPtr(pThis->pIfSecKeyHlp);
@@ -1491,7 +1520,7 @@ static DECLCALLBACK(int) drvvdReadPcBios(PPDMIMEDIA pInterface,
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
-    if (   pThis->pCfgCrypto
+    if (   pThis->CfgCrypto.pCfgNode
         && !pThis->pIfSecKey)
         return VERR_VD_DEK_MISSING;
 
@@ -1679,7 +1708,7 @@ static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIf
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VINF_SUCCESS;
 
-    if (pThis->pCfgCrypto)
+    if (pThis->CfgCrypto.pCfgNode)
     {
         PVDINTERFACE pVDIfFilter = NULL;
 
@@ -1701,7 +1730,7 @@ static DECLCALLBACK(int) drvvdSetSecKeyIf(PPDMIMEDIA pInterface, PPDMISECKEY pIf
             pThis->pIfSecKey = pIfSecKey;
 
             rc = VDInterfaceAdd(&pThis->VDIfCfg.Core, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
-                                pThis->pCfgCrypto, sizeof(VDINTERFACECONFIG), &pVDIfFilter);
+                                &pThis->CfgCrypto, sizeof(VDINTERFACECONFIG), &pVDIfFilter);
             AssertRC(rc);
 
             rc = VDInterfaceAdd(&pThis->VDIfCrypto.Core, "DrvVD_Crypto", VDINTERFACETYPE_CRYPTO,
@@ -2172,7 +2201,7 @@ static DECLCALLBACK(int) drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
     int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
 
-    Assert (!pThis->pCfgCrypto);
+    Assert (!pThis->CfgCrypto.pCfgNode);
 
     switch (enmXferDir)
     {
@@ -3960,12 +3989,17 @@ static int drvvdSetupFilters(PVBOXDISK pThis, PCFGMNODE pCfg)
         rc = pHlp->pfnCFGMQueryStringAlloc(pCfgFilter, "FilterName", &pszFilterName);
         if (RT_SUCCESS(rc))
         {
+            VDCFGNODE CfgNode;
+
             VDIfConfig.pfnAreKeysValid = drvvdCfgAreKeysValid;
             VDIfConfig.pfnQuerySize    = drvvdCfgQuerySize;
             VDIfConfig.pfnQuery        = drvvdCfgQuery;
             VDIfConfig.pfnQueryBytes   = drvvdCfgQueryBytes;
+
+            CfgNode.pHlp     = pThis->pDrvIns->pHlpR3;
+            CfgNode.pCfgNode = pCfgFilterConfig;
             rc = VDInterfaceAdd(&VDIfConfig.Core, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
-                                pCfgFilterConfig, sizeof(VDINTERFACECONFIG), &pVDIfsFilter);
+                                &CfgNode, sizeof(VDINTERFACECONFIG), &pVDIfsFilter);
             AssertRC(rc);
 
             rc = VDFilterAdd(pThis->pDisk, pszFilterName, VD_FILTER_FLAGS_DEFAULT, pVDIfsFilter);
@@ -4475,6 +4509,14 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
             RTSemFastMutexDestroy(pThis->aIoReqAllocBins[i].hMtxLstIoReqAlloc);
 
     drvvdStatsDeregister(pThis);
+
+    PVDCFGNODE pIt;
+    PVDCFGNODE pItNext;
+    RTListForEachSafe(&pThis->LstCfgNodes, pIt, pItNext, VDCFGNODE, NdLst)
+    {
+        RTListNodeRemove(&pIt->NdLst);
+        RTMemFreeZ(pIt, sizeof(*pIt));
+    }
 }
 
 /**
@@ -4512,7 +4554,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->MergeLock                    = NIL_RTSEMRW;
     pThis->uMergeSource                 = VD_LAST_IMAGE;
     pThis->uMergeTarget                 = VD_LAST_IMAGE;
-    pThis->pCfgCrypto                   = NULL;
+    pThis->CfgCrypto.pCfgNode           = NULL;
+    pThis->CfgCrypto.pHlp               = pDrvIns->pHlpR3;
     pThis->pIfSecKey                    = NULL;
     pThis->hIoReqCache                  = NIL_RTMEMCACHE;
     pThis->hIoBufMgr                    = NIL_IOBUFMGR;
@@ -4575,6 +4618,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMediaEx.pfnIoReqQuerySuspendedNext  = drvvdIoReqQuerySuspendedNext;
     pThis->IMediaEx.pfnIoReqSuspendedSave       = drvvdIoReqSuspendedSave;
     pThis->IMediaEx.pfnIoReqSuspendedLoad       = drvvdIoReqSuspendedLoad;
+
+    RTListInit(&pThis->LstCfgNodes);
 
     /* Initialize supported VD interfaces. */
     pThis->pVDIfsDisk = NULL;
@@ -4948,7 +4993,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     }
 
     if (pThis->pDrvMediaExPort)
-        rc = IOBUFMgrCreate(&pThis->hIoBufMgr, cbIoBufMax, pThis->pCfgCrypto ? IOBUFMGR_F_REQUIRE_NOT_PAGABLE : IOBUFMGR_F_DEFAULT);
+        rc = IOBUFMgrCreate(&pThis->hIoBufMgr, cbIoBufMax, pThis->CfgCrypto.pCfgNode ? IOBUFMGR_F_REQUIRE_NOT_PAGABLE : IOBUFMGR_F_DEFAULT);
 
     if (   !fEmptyDrive
         && RT_SUCCESS(rc))
@@ -5083,8 +5128,21 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             pImage->VDIfConfig.pfnQuerySize    = drvvdCfgQuerySize;
             pImage->VDIfConfig.pfnQuery        = drvvdCfgQuery;
             pImage->VDIfConfig.pfnQueryBytes   = NULL;
+
+            PVDCFGNODE pCfgNode = (PVDCFGNODE)RTMemAllocZ(sizeof(*pCfgNode));
+            if (RT_UNLIKELY(!pCfgNode))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_NO_MEMORY,
+                                      N_("DrvVD: Failed to allocate memory for config node"));
+                break;
+            }
+
+            pCfgNode->pHlp     = pDrvIns->pHlpR3;
+            pCfgNode->pCfgNode = pCfgVDConfig;
+            RTListAppend(&pThis->LstCfgNodes, &pCfgNode->NdLst);
+
             rc = VDInterfaceAdd(&pImage->VDIfConfig.Core, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
-                                pCfgVDConfig, sizeof(VDINTERFACECONFIG), &pImage->pVDIfsImage);
+                                pCfgNode, sizeof(VDINTERFACECONFIG), &pImage->pVDIfsImage);
             AssertRC(rc);
 
             /* Check VDConfig for encryption config. */
@@ -5095,12 +5153,12 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
              * This needs to be properly fixed by specifying which part of the image should contain the
              * crypto stuff.
              */
-            if (!pThis->pCfgCrypto)
+            if (!pThis->CfgCrypto.pCfgNode)
             {
                 if (pCfgVDConfig)
-                    pThis->pCfgCrypto = pHlp->pfnCFGMGetChild(pCfgVDConfig, "CRYPT");
+                    pThis->CfgCrypto.pCfgNode = pHlp->pfnCFGMGetChild(pCfgVDConfig, "CRYPT");
 
-                if (pThis->pCfgCrypto)
+                if (pThis->CfgCrypto.pCfgNode)
                 {
                     /* Setup VDConfig interface for disk encryption support. */
                     pThis->VDIfCfg.pfnAreKeysValid  = drvvdCfgAreKeysValid;
@@ -5314,7 +5372,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         if (   fUseBlockCache
             && !pThis->fShareable
             && !fDiscard
-            && !pThis->pCfgCrypto /* Disk encryption disables the block cache for security reasons */
+            && !pThis->CfgCrypto.pCfgNode /* Disk encryption disables the block cache for security reasons */
             && RT_SUCCESS(rc))
         {
             /*
