@@ -1416,6 +1416,11 @@ class SHARED_LIBRARY_STUFF UINotificationProgressSnapshotTake : public UINotific
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about snapshot with @a id taken. */
+    void sigSnapshotTaken(const QVariant &id);
+
 public:
 
     /** Constructs snapshot take notification-progress.
@@ -1452,6 +1457,8 @@ private:
     QString   m_strMachineName;
     /** Holds the session being opened. */
     CSession  m_comSession;
+    /** Holds the taken snapshot id. */
+    QUuid     m_uSnapshotId;
 };
 
 /** UINotificationProgress extension for snapshot restore functionality. */

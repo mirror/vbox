@@ -2545,10 +2545,9 @@ CProgress UINotificationProgressSnapshotTake::createProgress(COMResult &comResul
     }
 
     /* Initialize progress-wrapper: */
-    QUuid uSnapshotId;
     CProgress comProgress = comMachine.TakeSnapshot(m_strSnapshotName,
                                                     m_strSnapshotDescription,
-                                                    true, uSnapshotId);
+                                                    true, m_uSnapshotId);
     /* Store COM result: */
     comResult = m_comMachine;
     /* Return progress-wrapper: */
@@ -2559,6 +2558,9 @@ void UINotificationProgressSnapshotTake::sltHandleProgressFinished()
 {
     if (m_comSession.isNotNull())
         m_comSession.UnlockMachine();
+
+    if (!m_uSnapshotId.isNull())
+        emit sigSnapshotTaken(QVariant::fromValue(m_uSnapshotId));
 }
 
 
