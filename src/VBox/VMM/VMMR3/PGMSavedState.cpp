@@ -2037,8 +2037,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
-    int     rc   = VINF_SUCCESS;
-    PPGM    pPGM = &pVM->pgm.s;
+    PPGM pPGM = &pVM->pgm.s;
 
     /*
      * Lock PGM and set the no-more-writes indicator.
@@ -2049,9 +2048,9 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save basic data (required / unaffected by relocation).
      */
-    SSMR3PutStruct(pSSM, pPGM, &s_aPGMFields[0]);
+    int rc = SSMR3PutStructEx(pSSM, pPGM, sizeof(*pPGM), 0 /*fFlags*/, &s_aPGMFields[0], NULL /*pvUser*/);
 
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus && RT_SUCCESS(rc); idCpu++)
         rc = SSMR3PutStruct(pSSM, &pVM->apCpusR3[idCpu]->pgm.s, &s_aPGMCpuFields[0]);
 
     /*
@@ -2971,9 +2970,9 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     if (uVersion >= PGM_SAVED_STATE_VERSION_3_0_0)
     {
         if (uVersion > PGM_SAVED_STATE_VERSION_PRE_BALLOON)
-            rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
+            rc = SSMR3GetStructEx(pSSM, pPGM, sizeof(*pPGM), 0 /*fFlags*/, &s_aPGMFields[0], NULL /*pvUser*/);
         else
-            rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFieldsPreBalloon[0]);
+            rc = SSMR3GetStructEx(pSSM, pPGM, sizeof(*pPGM), 0 /*fFlags*/, &s_aPGMFieldsPreBalloon[0], NULL /*pvUser*/);
 
         AssertLogRelRCReturn(rc, rc);
 
