@@ -61,20 +61,16 @@ typedef struct PDMDRVINSINT
 
 /** @name Driver Fakes/Stubs
  *
- * @note The VMM functions defined here will turn into driver helpers before
- *       long, as the drivers aren't supposed to import directly from the VMM in
- *       the future.
- *
  * @{  */
 
-VMMR3DECL(PCFGMNODE) CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
+VMMR3DECL(PCFGMNODE) audioTestDrvHlp_CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
 {
     RT_NOREF(pNode, pszPath);
     return NULL;
 }
 
 
-VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
+VMMR3DECL(int) audioTestDrvHlp_CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
 {
     if (pNode != NULL)
     {
@@ -98,10 +94,10 @@ VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *psz
 }
 
 
-VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
+VMMR3DECL(int) audioTestDrvHlp_CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
 {
     char szStr[128];
-    int rc = CFGMR3QueryString(pNode, pszName, szStr, sizeof(szStr));
+    int rc = audioTestDrvHlp_CFGMR3QueryString(pNode, pszName, szStr, sizeof(szStr));
     if (RT_SUCCESS(rc))
         *ppszString = RTStrDup(szStr);
 
@@ -109,14 +105,16 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
 }
 
 
-VMMR3DECL(void) MMR3HeapFree(void *pv)
+VMMR3DECL(void) audioTestDrvHlp_MMR3HeapFree(PPDMDRVINS pDrvIns, void *pv)
 {
+    RT_NOREF(pDrvIns);
+
     /* counterpart to CFGMR3QueryStringAlloc */
     RTStrFree((char *)pv);
 }
 
 
-VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
+VMMR3DECL(int) audioTestDrvHlp_CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
     PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
     if (RT_VALID_PTR(pDrvReg))
@@ -141,7 +139,7 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
 }
 
 
-VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
+VMMR3DECL(int) audioTestDrvHlp_CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
 {
     PCPDMDRVREG pDrvReg = (PCPDMDRVREG)pNode;
     if (RT_VALID_PTR(pDrvReg))
@@ -160,23 +158,23 @@ VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf
 }
 
 
-VMMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
+VMMR3DECL(int) audioTestDrvHlp_CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
 {
     RT_NOREF(pNode, pszName, pu8);
     return VERR_CFGM_VALUE_NOT_FOUND;
 }
 
 
-VMMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
+VMMR3DECL(int) audioTestDrvHlp_CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
 {
     RT_NOREF(pNode, pszName, pu32);
     return VERR_CFGM_VALUE_NOT_FOUND;
 }
 
 
-VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
-                                    const char *pszValidValues, const char *pszValidNodes,
-                                    const char *pszWho, uint32_t uInstance)
+VMMR3DECL(int) audioTestDrvHlp_CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
+                                                    const char *pszValidValues, const char *pszValidNodes,
+                                                    const char *pszWho, uint32_t uInstance)
 {
     RT_NOREF(pNode, pszNode, pszValidValues, pszValidNodes, pszWho, uInstance);
     return VINF_SUCCESS;
@@ -272,6 +270,15 @@ static const PDMDRVHLPR3 *audioTestFakeGetDrvHlp(void)
         s_DrvHlp.pfnSTAMRegisterV               = audioTestDrvHlp_STAMRegisterV;
         s_DrvHlp.pfnSTAMDeregister              = audioTestDrvHlp_STAMDeregister;
         s_DrvHlp.pfnSTAMDeregisterByPrefix      = audioTestDrvHlp_STAMDeregisterByPrefix;
+        s_DrvHlp.pfnCFGMGetChild                = audioTestDrvHlp_CFGMR3GetChild;
+        s_DrvHlp.pfnCFGMQueryString             = audioTestDrvHlp_CFGMR3QueryString;
+        s_DrvHlp.pfnCFGMQueryStringAlloc        = audioTestDrvHlp_CFGMR3QueryStringAlloc;
+        s_DrvHlp.pfnMMHeapFree                  = audioTestDrvHlp_MMR3HeapFree;
+        s_DrvHlp.pfnCFGMQueryStringDef          = audioTestDrvHlp_CFGMR3QueryStringDef;
+        s_DrvHlp.pfnCFGMQueryBoolDef            = audioTestDrvHlp_CFGMR3QueryBoolDef;
+        s_DrvHlp.pfnCFGMQueryU8                 = audioTestDrvHlp_CFGMR3QueryU8;
+        s_DrvHlp.pfnCFGMQueryU32                = audioTestDrvHlp_CFGMR3QueryU32;
+        s_DrvHlp.pfnCFGMValidateConfig          = audioTestDrvHlp_CFGMR3ValidateConfig;
     }
     return &s_DrvHlp;
 }
