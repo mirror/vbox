@@ -699,6 +699,8 @@ class tdAudioTest(vbox.TestDriver):
         if not fSkip:
             sVkatExe = self.getBinTool('vkat');
             asArgs   = [ sVkatExe, 'enum', '--probe-backends' ];
+            for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
+                asArgs.extend([ '-v' ]);
             fRc      = self.executeHst("VKAT Host Audio Probing", asArgs);
             if not fRc:
                 # Not fatal, as VBox then should fall back to the NULL audio backend (also worth having as a test case).
