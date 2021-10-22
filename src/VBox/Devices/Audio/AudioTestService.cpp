@@ -857,7 +857,7 @@ static void atsClientFree(PATSCLIENTINST pInst)
         return;
 
     /* Make sure that there is no transport client associated with it anymore. */
-    AssertReturnVoid(pInst->enmState = ATSCLIENTSTATE_DESTROYING);
+    AssertReturnVoid(pInst->enmState == ATSCLIENTSTATE_DESTROYING);
     AssertReturnVoid(pInst->pTransportClient == NULL);
 
     if (pInst->pszHostname)
