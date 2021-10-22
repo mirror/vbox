@@ -1215,6 +1215,7 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     /*
      * Switch TM TSC mode back to the original mode after a reset for
      * paravirtualized guests that alter the TM TSC mode during operation.
+     * We're already in an EMT rendezvous at this point.
      */
     if (   pVM->tm.s.fTSCModeSwitchAllowed
         && pVM->tm.s.enmTSCMode != pVM->tm.s.enmOriginalTSCMode)
@@ -3635,39 +3636,41 @@ static DECLCALLBACK(void) tmR3CpuLoadTimer(PVM pVM, TMTIMERHANDLE hTimer, void *
 static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtEnable(PVM pVM, PVMCPU pVCpuEmt, void *pvData)
 {
     AssertPtr(pVM); Assert(pVM->tm.s.fTSCModeSwitchAllowed); NOREF(pVCpuEmt); NOREF(pvData);
-    Assert(pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET);
     Assert(pVM->tm.s.enmTSCMode != TMTSCMODE_NATIVE_API); /** @todo figure out NEM/win and paravirt */
     Assert(tmR3HasFixedTSC(pVM));
 
-    /*
-     * The return value of TMCpuTickGet() and the guest's TSC value for each
-     * CPU must remain constant across the TM TSC mode-switch.  Thus we have
-     * the following equation (new/old signifies the new/old tsc modes):
-     *      uNewTsc = uOldTsc
-     *
-     * Where (see tmCpuTickGetInternal):
-     *      uOldTsc = uRawOldTsc - offTscRawSrcOld
-     *      uNewTsc = uRawNewTsc - offTscRawSrcNew
-     *
-     * Solve it for offTscRawSrcNew without replacing uOldTsc:
-     *     uRawNewTsc - offTscRawSrcNew = uOldTsc
-     *  => -offTscRawSrcNew = uOldTsc - uRawNewTsc
-     *  => offTscRawSrcNew  = uRawNewTsc - uOldTsc
-     */
-    uint64_t uRawOldTsc = tmR3CpuTickGetRawVirtualNoCheck(pVM);
-    uint64_t uRawNewTsc = SUPReadTsc();
-    uint32_t cCpus = pVM->cCpus;
-    for (uint32_t i = 0; i < cCpus; i++)
+    if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
     {
-        PVMCPU   pVCpu   = pVM->apCpusR3[i];
-        uint64_t uOldTsc = uRawOldTsc - pVCpu->tm.s.offTSCRawSrc;
-        pVCpu->tm.s.offTSCRawSrc = uRawNewTsc - uOldTsc;
-        Assert(uRawNewTsc - pVCpu->tm.s.offTSCRawSrc >= uOldTsc); /* paranoia^256 */
-    }
+        /*
+         * The return value of TMCpuTickGet() and the guest's TSC value for each
+         * CPU must remain constant across the TM TSC mode-switch.  Thus we have
+         * the following equation (new/old signifies the new/old tsc modes):
+         *      uNewTsc = uOldTsc
+         *
+         * Where (see tmCpuTickGetInternal):
+         *      uOldTsc = uRawOldTsc - offTscRawSrcOld
+         *      uNewTsc = uRawNewTsc - offTscRawSrcNew
+         *
+         * Solve it for offTscRawSrcNew without replacing uOldTsc:
+         *     uRawNewTsc - offTscRawSrcNew = uOldTsc
+         *  => -offTscRawSrcNew = uOldTsc - uRawNewTsc
+         *  => offTscRawSrcNew  = uRawNewTsc - uOldTsc
+         */
+        uint64_t uRawOldTsc = tmR3CpuTickGetRawVirtualNoCheck(pVM);
+        uint64_t uRawNewTsc = SUPReadTsc();
+        uint32_t cCpus = pVM->cCpus;
+        for (uint32_t i = 0; i < cCpus; i++)
+        {
+            PVMCPU   pVCpu   = pVM->apCpusR3[i];
+            uint64_t uOldTsc = uRawOldTsc - pVCpu->tm.s.offTSCRawSrc;
+            pVCpu->tm.s.offTSCRawSrc = uRawNewTsc - uOldTsc;
+            Assert(uRawNewTsc - pVCpu->tm.s.offTSCRawSrc >= uOldTsc); /* paranoia^256 */
+        }
 
-    LogRel(("TM: Switching TSC mode from '%s' to '%s'\n", tmR3GetTSCModeNameEx(pVM->tm.s.enmTSCMode),
-            tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
-    pVM->tm.s.enmTSCMode = TMTSCMODE_REAL_TSC_OFFSET;
+        LogRel(("TM: Switching TSC mode from '%s' to '%s'\n", tmR3GetTSCModeNameEx(pVM->tm.s.enmTSCMode),
+                tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
+        pVM->tm.s.enmTSCMode = TMTSCMODE_REAL_TSC_OFFSET;
+    }
     return VINF_SUCCESS;
 }
 
@@ -3684,10 +3687,7 @@ VMMR3_INT_DECL(int) TMR3CpuTickParavirtEnable(PVM pVM)
 {
     int rc = VINF_SUCCESS;
     if (pVM->tm.s.fTSCModeSwitchAllowed)
-    {
-        if (pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET)
-            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, tmR3CpuTickParavirtEnable, NULL);
-    }
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, tmR3CpuTickParavirtEnable, NULL);
     else
         LogRel(("TM: Host/VM is not suitable for using TSC mode '%s', request to change TSC mode ignored\n",
                 tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
@@ -3703,31 +3703,33 @@ VMMR3_INT_DECL(int) TMR3CpuTickParavirtEnable(PVM pVM)
 static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVCpuEmt, void *pvData)
 {
     AssertPtr(pVM); Assert(pVM->tm.s.fTSCModeSwitchAllowed); NOREF(pVCpuEmt);
-    Assert(   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
-           && pVM->tm.s.enmTSCMode != pVM->tm.s.enmOriginalTSCMode);
     RT_NOREF1(pvData);
 
-    /*
-     * See tmR3CpuTickParavirtEnable for an explanation of the conversion math.
-     */
-    uint64_t uRawOldTsc = SUPReadTsc();
-    uint64_t uRawNewTsc = tmR3CpuTickGetRawVirtualNoCheck(pVM);
-    uint32_t cCpus = pVM->cCpus;
-    for (uint32_t i = 0; i < cCpus; i++)
+    if (   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
+        && pVM->tm.s.enmTSCMode != pVM->tm.s.enmOriginalTSCMode)
     {
-        PVMCPU   pVCpu   = pVM->apCpusR3[i];
-        uint64_t uOldTsc = uRawOldTsc - pVCpu->tm.s.offTSCRawSrc;
-        pVCpu->tm.s.offTSCRawSrc = uRawNewTsc - uOldTsc;
-        Assert(uRawNewTsc - pVCpu->tm.s.offTSCRawSrc >= uOldTsc); /* paranoia^256 */
+        /*
+         * See tmR3CpuTickParavirtEnable for an explanation of the conversion math.
+         */
+        uint64_t uRawOldTsc = SUPReadTsc();
+        uint64_t uRawNewTsc = tmR3CpuTickGetRawVirtualNoCheck(pVM);
+        uint32_t cCpus = pVM->cCpus;
+        for (uint32_t i = 0; i < cCpus; i++)
+        {
+            PVMCPU   pVCpu   = pVM->apCpusR3[i];
+            uint64_t uOldTsc = uRawOldTsc - pVCpu->tm.s.offTSCRawSrc;
+            pVCpu->tm.s.offTSCRawSrc = uRawNewTsc - uOldTsc;
+            Assert(uRawNewTsc - pVCpu->tm.s.offTSCRawSrc >= uOldTsc); /* paranoia^256 */
 
-        /* Update the last-seen tick here as we havent't been updating it (as we don't
-           need it) while in pure TSC-offsetting mode. */
-        pVCpu->tm.s.u64TSCLastSeen = uOldTsc;
+            /* Update the last-seen tick here as we havent't been updating it (as we don't
+               need it) while in pure TSC-offsetting mode. */
+            pVCpu->tm.s.u64TSCLastSeen = uOldTsc;
+        }
+
+        LogRel(("TM: Switching TSC mode from '%s' to '%s'\n", tmR3GetTSCModeNameEx(pVM->tm.s.enmTSCMode),
+                tmR3GetTSCModeNameEx(pVM->tm.s.enmOriginalTSCMode)));
+        pVM->tm.s.enmTSCMode = pVM->tm.s.enmOriginalTSCMode;
     }
-
-    LogRel(("TM: Switching TSC mode from '%s' to '%s'\n", tmR3GetTSCModeNameEx(pVM->tm.s.enmTSCMode),
-            tmR3GetTSCModeNameEx(pVM->tm.s.enmOriginalTSCMode)));
-    pVM->tm.s.enmTSCMode = pVM->tm.s.enmOriginalTSCMode;
     return VINF_SUCCESS;
 }
 
@@ -3744,9 +3746,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVC
 VMMR3_INT_DECL(int) TMR3CpuTickParavirtDisable(PVM pVM)
 {
     int rc = VINF_SUCCESS;
-    if (   pVM->tm.s.fTSCModeSwitchAllowed
-        && pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
-        && pVM->tm.s.enmTSCMode != pVM->tm.s.enmOriginalTSCMode)
+    if (pVM->tm.s.fTSCModeSwitchAllowed)
         rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, tmR3CpuTickParavirtDisable, NULL);
     pVM->tm.s.fParavirtTscEnabled = false;
     return rc;
