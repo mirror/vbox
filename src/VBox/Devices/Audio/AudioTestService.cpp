@@ -1173,7 +1173,7 @@ int AudioTestSvcStop(PATSSERVER pThis)
     ASMAtomicXchgBool(&pThis->fTerminate, true);
 
     if (pThis->pTransport)
-        pThis->pTransport->pfnTerm(pThis->pTransportInst);
+        pThis->pTransport->pfnStop(pThis->pTransportInst);
 
     size_t cbWritten;
     int rc = RTPipeWrite(pThis->hPipeW, "", 1, &cbWritten);
