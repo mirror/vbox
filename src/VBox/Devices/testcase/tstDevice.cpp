@@ -918,6 +918,7 @@ static int tstDevTestsRun(PCTSTDEVCFG pDevTstCfg)
         Dut.IBaseSts.pfnQueryInterface = tstDevTestsRun_QueryInterface;
 
         RTListInit(&Dut.LstIoPorts);
+        RTListInit(&Dut.LstMmio);
         RTListInit(&Dut.LstTimers);
         RTListInit(&Dut.LstMmHeap);
         RTListInit(&Dut.LstPdmThreads);

@@ -87,6 +87,14 @@ static DECLCALLBACK(int) tstDevIoFuzzEntry(TSTDEVDUT hDut, PCTSTDEVCFGITEM paCfg
         cIoPortRegs++;
     }
 
+    /* Determine the amount of MMIO regions. */
+    uint32_t cMmioRegions = 0;
+    PRTDEVDUTMMIO pMmio;
+    RTListForEach(&hDut->LstMmio, pMmio, RTDEVDUTMMIO, NdMmio)
+    {
+        cMmioRegions++;
+    }
+
     RTRAND hRnd;
     int rc = RTRandAdvCreateParkMiller(&hRnd);
     if (RT_SUCCESS(rc))
@@ -98,26 +106,63 @@ static DECLCALLBACK(int) tstDevIoFuzzEntry(TSTDEVDUT hDut, PCTSTDEVCFGITEM paCfg
         RTCritSectEnter(&hDut->pDevIns->pCritSectRoR3->s.CritSect);
         do
         {
-            uint32_t iIoPort = RTRandAdvU32Ex(hRnd, 0, cIoPortRegs - 1);
-            RTListForEach(&hDut->LstIoPorts, pIoPort, RTDEVDUTIOPORT, NdIoPorts)
-            {
-                if (!iIoPort)
-                    break;
-                iIoPort--;
-            }
+            bool fMmio = false;
 
-            uint32_t uMin = pIoPort->pfnOutR3 ? 0 : 1;
-            uint32_t uMax = pIoPort->pfnInR3  ? 1 : 0;
-
-            uint32_t offPort = RTRandAdvU32Ex(hRnd, 0, pIoPort->cPorts);
-            bool fRead = RT_BOOL(uMin == uMax ? uMin : RTRandAdvU32Ex(hRnd, uMin, uMax));
-            uint32_t u32Value = fRead ? 0 : RTRandAdvU32(hRnd);
-            uint32_t cbValue = 1;//g_aAccWidths[RTRandAdvU32Ex(hRnd, 0, 2)];
-
-            if (fRead)
-                pIoPort->pfnInR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, &u32Value, cbValue);
+            if (   cMmioRegions
+                && !cIoPortRegs)
+                fMmio = true;
+            else if (   !cMmioRegions
+                     && cIoPortRegs)
+                fMmio = false;
             else
-                pIoPort->pfnOutR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, u32Value, cbValue);
+                fMmio = RT_BOOL(RTRandAdvU32Ex(hRnd, 0, 1));
+
+            if (fMmio)
+            {
+                uint32_t iMmio = RTRandAdvU32Ex(hRnd, 0, cMmioRegions - 1);
+                RTListForEach(&hDut->LstMmio, pMmio, RTDEVDUTMMIO, NdMmio)
+                {
+                    if (!iMmio)
+                        break;
+                    iMmio--;
+                }
+
+                uint32_t uMin = pMmio->pfnWriteR3 ? 0 : 1;
+                uint32_t uMax = pMmio->pfnReadR3  ? 1 : 0;
+
+                RTGCPHYS offRegion = RTRandAdvU64Ex(hRnd, 0, pMmio->cbRegion);
+                bool fRead = RT_BOOL(uMin == uMax ? uMin : RTRandAdvU32Ex(hRnd, uMin, uMax));
+                uint64_t u64Value = fRead ? 0 : RTRandAdvU64(hRnd);
+                uint32_t cbValue = g_aAccWidths[RTRandAdvU32Ex(hRnd, 0, 2)];
+
+                if (fRead)
+                    pMmio->pfnReadR3(hDut->pDevIns, pMmio->pvUserR3, offRegion, &u64Value, cbValue);
+                else
+                    pMmio->pfnWriteR3(hDut->pDevIns, pMmio->pvUserR3, offRegion, &u64Value, cbValue);
+            }
+            else
+            {
+                uint32_t iIoPort = RTRandAdvU32Ex(hRnd, 0, cIoPortRegs - 1);
+                RTListForEach(&hDut->LstIoPorts, pIoPort, RTDEVDUTIOPORT, NdIoPorts)
+                {
+                    if (!iIoPort)
+                        break;
+                    iIoPort--;
+                }
+
+                uint32_t uMin = pIoPort->pfnOutR3 ? 0 : 1;
+                uint32_t uMax = pIoPort->pfnInR3  ? 1 : 0;
+
+                uint32_t offPort = RTRandAdvU32Ex(hRnd, 0, pIoPort->cPorts);
+                bool fRead = RT_BOOL(uMin == uMax ? uMin : RTRandAdvU32Ex(hRnd, uMin, uMax));
+                uint32_t u32Value = fRead ? 0 : RTRandAdvU32(hRnd);
+                uint32_t cbValue = g_aAccWidths[RTRandAdvU32Ex(hRnd, 0, 2)];
+
+                if (fRead)
+                    pIoPort->pfnInR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, &u32Value, cbValue);
+                else
+                    pIoPort->pfnOutR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, u32Value, cbValue);
+            }
 
             cFuzzedInputs++;
         } while (   RT_SUCCESS(rc)

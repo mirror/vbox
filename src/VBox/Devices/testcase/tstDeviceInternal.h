@@ -288,6 +288,52 @@ typedef const RTDEVDUTIOPORT *PCRTDEVDUTIOPORT;
 
 
 /**
+ * Registered MMIO port access handler.
+ */
+typedef struct RTDEVDUTMMIO
+{
+    /** Node for the list of registered handlers. */
+    RTLISTNODE                      NdMmio;
+    /** Start address of the MMIO region when mapped. */
+    RTGCPHYS                        GCPhysStart;
+    /** Size of the MMIO region in bytes. */
+    RTGCPHYS                        cbRegion;
+    /** Opaque user data - R3. */
+    void                            *pvUserR3;
+    /** Write handler - R3. */
+    PFNIOMMMIONEWWRITE              pfnWriteR3;
+    /** Read handler - R3. */
+    PFNIOMMMIONEWREAD               pfnReadR3;
+    /** Fill handler - R3. */
+    PFNIOMMMIONEWFILL               pfnFillR3;
+
+    /** Opaque user data - R0. */
+    void                            *pvUserR0;
+    /** Write handler - R0. */
+    PFNIOMMMIONEWWRITE              pfnWriteR0;
+    /** Read handler - R0. */
+    PFNIOMMMIONEWREAD               pfnReadR0;
+    /** Fill handler - R0. */
+    PFNIOMMMIONEWFILL               pfnFillR0;
+
+#ifdef TSTDEV_SUPPORTS_RC
+    /** Opaque user data - RC. */
+    void                            *pvUserRC;
+    /** Write handler - RC. */
+    PFNIOMMMIONEWWRITE              pfnWriteRC;
+    /** Read handler - RC. */
+    PFNIOMMMIONEWREAD               pfnReadRC;
+    /** Fill handler - RC. */
+    PFNIOMMMIONEWFILL               pfnFillRC;
+#endif
+} RTDEVDUTMMIO;
+/** Pointer to a registered MMIO handler. */
+typedef RTDEVDUTMMIO *PRTDEVDUTMMIO;
+/** Pointer to a const MMIO handler. */
+typedef const RTDEVDUTMMIO *PCRTDEVDUTMMIO;
+
+
+/**
  * Registered SSM handlers.
  */
 typedef struct TSTDEVDUTSSM

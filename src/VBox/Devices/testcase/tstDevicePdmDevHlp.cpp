@@ -227,13 +227,23 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS c
     LogFlow(("pdmR3DevHlp_MmioCreateEx: caller='%s'/%d: cbRegion=%#RGp fFlags=%#x pPciDev=%p iPciRegion=%#x pfnWrite=%p pfnRead=%p pfnFill=%p pvUser=%p pszDesc=%p:{%s} phRegion=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, cbRegion, fFlags, pPciDev, iPciRegion, pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, pszDesc, phRegion));
 
-#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-#else
-    *phRegion = 1;
+    /** @todo Verify there is no overlapping. */
+
+    RT_NOREF(pszDesc);
     int rc = VINF_SUCCESS;
-#endif
+    PRTDEVDUTMMIO pMmio = (PRTDEVDUTMMIO)RTMemAllocZ(sizeof(*pMmio));
+    if (RT_LIKELY(pMmio))
+    {
+        pMmio->cbRegion    = cbRegion;
+        pMmio->pvUserR3    = pvUser;
+        pMmio->pfnWriteR3  = pfnWrite;
+        pMmio->pfnReadR3   = pfnRead;
+        pMmio->pfnFillR3   = pfnFill;
+        RTListAppend(&pDevIns->Internal.s.pDut->LstMmio, &pMmio->NdMmio);
+        *phRegion = (IOMMMIOHANDLE)pMmio;
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlow(("pdmR3DevHlp_MmioCreateEx: caller='%s'/%d: returns %Rrc (*phRegion=%#x)\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc, *phRegion));
@@ -247,12 +257,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE h
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: hRegion=%#x GCPhys=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, GCPhys));
 
-#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-#else
     int rc = VINF_SUCCESS;
-#endif
+    PRTDEVDUTMMIO pMmio = (PRTDEVDUTMMIO)hRegion;
+    pMmio->GCPhysStart = GCPhys;
 
     LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -265,12 +272,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
 
-#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-#else
     int rc = VINF_SUCCESS;
-#endif
+    PRTDEVDUTMMIO pMmio = (PRTDEVDUTMMIO)hRegion;
+    pMmio->GCPhysStart = NIL_RTGCPHYS;
 
     LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -283,12 +287,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioReduce(PPDMDEVINS pDevIns, IOMMMIOHANDL
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioReduce: caller='%s'/%d: hRegion=%#x cbRegion=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, cbRegion));
 
-#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
-#else
     int rc = VINF_SUCCESS;
-#endif
+    PRTDEVDUTMMIO pMmio = (PRTDEVDUTMMIO)hRegion;
+    pMmio->cbRegion = cbRegion;
+
     LogFlow(("pdmR3DevHlp_MmioReduce: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -300,12 +302,8 @@ static DECLCALLBACK(RTGCPHYS) pdmR3DevHlp_MmioGetMappingAddress(PPDMDEVINS pDevI
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3DevHlp_MmioGetMappingAddress: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
 
-#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
-    RTGCPHYS GCPhys = NIL_RTGCPHYS;
-    AssertFailed();
-#else
-    RTGCPHYS GCPhys = 0x1000;
-#endif
+    PRTDEVDUTMMIO pMmio = (PRTDEVDUTMMIO)hRegion;
+    RTGCPHYS GCPhys = pMmio->GCPhysStart;
 
     LogFlow(("pdmR3DevHlp_MmioGetMappingAddress: caller='%s'/%d: returns %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
     return GCPhys;
