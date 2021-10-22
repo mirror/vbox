@@ -818,12 +818,29 @@ static int atsClientReqProcess(PATSSERVER pThis, PATSCLIENTINST pInst, bool *pfD
     return rc;
 }
 
+/**
+ * Disconnects a client.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The ATS instance.
+ * @param   pInst               The ATS client to disconnect.
+ */
 static int atsClientDisconnect(PATSSERVER pThis, PATSCLIENTINST pInst)
 {
     AssertReturn(pInst->enmState != ATSCLIENTSTATE_DESTROYING, VERR_WRONG_ORDER);
 
     pInst->enmState = ATSCLIENTSTATE_DESTROYING;
-    pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pInst->pTransportClient);
+
+    if (   pThis->pTransportInst
+        && pInst->pTransportClient)
+    {
+        if (pThis->pTransport->pfnNotifyBye)
+            pThis->pTransport->pfnNotifyBye(pThis->pTransportInst, pInst->pTransportClient);
+
+        pThis->pTransport->pfnDisconnect(pThis->pTransportInst, pInst->pTransportClient);
+        /* Pointer is now invalid due to the call above. */
+        pInst->pTransportClient = NULL;
+    }
 
     return VINF_SUCCESS;
 }
@@ -836,9 +853,17 @@ static int atsClientDisconnect(PATSSERVER pThis, PATSCLIENTINST pInst)
  */
 static void atsClientFree(PATSCLIENTINST pInst)
 {
+    if (!pInst)
+        return;
+
+    /* Make sure that there is no transport client associated with it anymore. */
+    AssertReturnVoid(pInst->enmState = ATSCLIENTSTATE_DESTROYING);
+    AssertReturnVoid(pInst->pTransportClient == NULL);
+
     if (pInst->pszHostname)
         RTStrFree(pInst->pszHostname);
     RTMemFree(pInst);
+    pInst = NULL;
 }
 
 /**
@@ -958,6 +983,13 @@ static DECLCALLBACK(int) atsClientWorker(RTTHREAD hThread, void *pvUser)
         }
     }
 
+    if (papInsts)
+    {
+        for (size_t i = 0; i < cClientsMax; i++)
+            RTMemFree(papInsts[i]);
+        RTMemFree(papInsts);
+    }
+
     return rc;
 }
 
@@ -991,7 +1023,7 @@ static DECLCALLBACK(int) atsMainThread(RTTHREAD hThread, void *pvUser)
             continue;
 
         /*
-         * New connection, create new client structure and spin of
+         * New connection, create new client structure and spin off
          * the request handling thread.
          */
         PATSCLIENTINST pInst = (PATSCLIENTINST)RTMemAllocZ(sizeof(ATSCLIENTINST));
@@ -1235,9 +1267,8 @@ static int audioTestSvcDestroyInternal(PATSSERVER pThis)
     RTListForEachSafe(&pThis->LstClientsNew, pIt, pItNext, ATSCLIENTINST, NdLst)
     {
         RTListNodeRemove(&pIt->NdLst);
-
-        RTMemFree(pIt);
-        pIt = NULL;
+        atsClientDisconnect(pThis, pIt);
+        atsClientFree(pIt);
     }
 
     if (RTCritSectIsInitialized(&pThis->CritSectClients))

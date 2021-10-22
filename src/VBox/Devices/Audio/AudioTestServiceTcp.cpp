@@ -123,10 +123,15 @@ typedef ATSCONNCTX *PATSCONNCTX;
 
 /**
  * Disconnects the current client and frees all stashed data.
+ *
+ * @param   pThis           Transport instance.
+ * @param   pClient         Client to disconnect.
  */
 static void atsTcpDisconnectClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
 {
     RT_NOREF(pThis);
+
+    LogRelFlowFunc(("pClient=%RTsock\n", pClient->hTcpClient));
 
     if (pClient->hTcpClient != NIL_RTSOCKET)
     {
@@ -146,6 +151,25 @@ static void atsTcpDisconnectClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT 
         RTMemFree(pClient->pbTcpStashed);
         pClient->pbTcpStashed = NULL;
     }
+}
+
+/**
+ * Free's a client.
+ *
+ * @param   pThis           Transport instance.
+ * @param   pClient         Client to free.
+ *                          The pointer will be invalid after calling.
+ */
+static void atsTcpFreeClient(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
+{
+    if (!pClient)
+        return;
+
+    /* Make sure to disconnect first. */
+    atsTcpDisconnectClient(pThis, pClient);
+
+    RTMemFree(pClient);
+    pClient = NULL;
 }
 
 /**
@@ -431,9 +455,7 @@ static DECLCALLBACK(int) atsTcpWaitForConnect(PATSTRANSPORTINST pThis,  RTMSINTE
     {
         if (pClient)
         {
-            RTTcpServerDisconnectClient2(pClient->hTcpClient);
-
-            RTMemFree(pClient);
+            atsTcpFreeClient(pThis, pClient);
             pClient = NULL;
         }
     }
@@ -494,10 +516,11 @@ static DECLCALLBACK(void) atsTcpBabble(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
     do  rc = RTTcpWrite(pClient->hTcpClient, pPktHdr, cbToSend);
     while (rc == VERR_INTERRUPTED);
 
+    LogRelFlowFunc(("pClient=%RTsock, rc=%Rrc\n", pClient->hTcpClient, rc));
+
     /*
      * Disconnect the client.
      */
-    LogRelFlowFunc(("atsTcpDisconnectClient(%RTsock) (RTTcpWrite rc=%Rrc)\n", pClient->hTcpClient, rc));
     atsTcpDisconnectClient(pThis, pClient);
 }
 
@@ -700,6 +723,14 @@ static DECLCALLBACK(int) atsTcpPollSetRemove(PATSTRANSPORTINST pThis, RTPOLLSET 
 }
 
 /**
+ * @interface_method_impl{ATSTRANSPORT,pfnDisconnect}
+ */
+static DECLCALLBACK(void) atsTcpDisconnect(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
+{
+    atsTcpFreeClient(pThis, pClient);
+}
+
+/**
  * @interface_method_impl{ATSTRANSPORT,pfnPollIn}
  */
 static DECLCALLBACK(bool) atsTcpPollIn(PATSTRANSPORTINST pThis, PATSTRANSPORTCLIENT pClient)
@@ -768,11 +799,15 @@ static DECLCALLBACK(int) atsTcpCreate(PATSTRANSPORTINST *ppThis)
  */
 static DECLCALLBACK(int) atsTcpDestroy(PATSTRANSPORTINST pThis)
 {
+    /* Stop things first. */
+    atsTcpStop(pThis);
+
     /* Finally, clean up the critical section. */
     if (RTCritSectIsInitialized(&pThis->CritSect))
         RTCritSectDelete(&pThis->CritSect);
 
     RTMemFree(pThis);
+    pThis = NULL;
 
     return VINF_SUCCESS;
 }
@@ -908,6 +943,7 @@ const ATSTRANSPORT g_TcpTransport =
     /* .pfnStart          = */ atsTcpStart,
     /* .pfnStop           = */ atsTcpStop,
     /* .pfnWaitForConnect = */ atsTcpWaitForConnect,
+    /* .pfnDisconnect     = */ atsTcpDisconnect,
     /* .pfnPollIn         = */ atsTcpPollIn,
     /* .pfnPollSetAdd     = */ atsTcpPollSetAdd,
     /* .pfnPollSetRemove  = */ atsTcpPollSetRemove,

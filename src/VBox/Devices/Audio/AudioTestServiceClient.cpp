@@ -320,9 +320,8 @@ void AudioTestSvcClientDestroy(PATSCLIENT pClient)
 
     if (pClient->pTransport)
     {
-        pClient->pTransport->pfnStop(pClient->pTransportInst);
         pClient->pTransport->pfnDestroy(pClient->pTransportInst);
-        pClient->pTransport = NULL;
+        pClient->pTransportInst = NULL; /* Invalidate pointer. */
     }
 }
 
@@ -578,6 +577,11 @@ static int audioTestSvcClientDisconnectInternal(PATSCLIENT pClient)
     {
         if (pClient->pTransport->pfnNotifyBye)
             pClient->pTransport->pfnNotifyBye(pClient->pTransportInst, pClient->pTransportClient);
+
+        pClient->pTransport->pfnDisconnect(pClient->pTransportInst, pClient->pTransportClient);
+        pClient->pTransportClient = NULL;
+
+        pClient->pTransport->pfnStop(pClient->pTransportInst);
     }
 
     return rc;
