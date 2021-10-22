@@ -150,7 +150,7 @@ int main(int argc, char **argv)
         }
     }
 
-    rc = AudioTestSvcClientClose(&Client);
+    rc = AudioTestSvcClientDisconnect(&Client);
     RTTEST_CHECK_RC_OK(hTest, rc);
 
     rc = AudioTestSvcStop(&Srv);

@@ -48,7 +48,7 @@ void AudioTestSvcClientDestroy(PATSCLIENT pClient);
  * @{ */
 int AudioTestSvcClientConnectEx(PATSCLIENT pClient, RTMSINTERVAL msTimeout);
 int AudioTestSvcClientConnect(PATSCLIENT pClient);
-int AudioTestSvcClientClose(PATSCLIENT pClient);
+int AudioTestSvcClientDisconnect(PATSCLIENT pClient);
 /** @} */
 
 /** @name Option handling.

@@ -59,7 +59,7 @@ typedef struct ATSSRVREPLY *PATSSRVREPLY;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-static int audioTestSvcClientCloseInternal(PATSCLIENT pClient);
+static int audioTestSvcClientDisconnectInternal(PATSCLIENT pClient);
 
 /**
  * Initializes an ATS client, internal version.
@@ -316,11 +316,10 @@ void AudioTestSvcClientDestroy(PATSCLIENT pClient)
     if (!pClient)
         return;
 
-    /* ignore rc */ audioTestSvcClientCloseInternal(pClient);
+    /* ignore rc */ audioTestSvcClientDisconnectInternal(pClient);
 
     if (pClient->pTransport)
     {
-        pClient->pTransport->pfnTerm(pClient->pTransportInst);
         pClient->pTransport->pfnDestroy(pClient->pTransportInst);
         pClient->pTransport = NULL;
     }
@@ -568,7 +567,7 @@ int AudioTestSvcClientTestSetDownload(PATSCLIENT pClient, const char *pszTag, co
  * @returns VBox status code.
  * @param   pClient             Client to disconnect.
  */
-static int audioTestSvcClientCloseInternal(PATSCLIENT pClient)
+static int audioTestSvcClientDisconnectInternal(PATSCLIENT pClient)
 {
     if (!pClient->pTransportClient) /* Not connected (yet)? Bail out early. */
         return VINF_SUCCESS;
@@ -589,8 +588,8 @@ static int audioTestSvcClientCloseInternal(PATSCLIENT pClient)
  * @returns VBox status code.
  * @param   pClient             Client to disconnect.
  */
-int AudioTestSvcClientClose(PATSCLIENT pClient)
+int AudioTestSvcClientDisconnect(PATSCLIENT pClient)
 {
-    return audioTestSvcClientCloseInternal(pClient);
+    return audioTestSvcClientDisconnectInternal(pClient);
 }
 
