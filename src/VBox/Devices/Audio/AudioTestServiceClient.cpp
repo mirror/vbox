@@ -320,6 +320,7 @@ void AudioTestSvcClientDestroy(PATSCLIENT pClient)
 
     if (pClient->pTransport)
     {
+        pClient->pTransport->pfnTerm(pClient->pTransportInst);
         pClient->pTransport->pfnDestroy(pClient->pTransportInst);
         pClient->pTransport = NULL;
     }
