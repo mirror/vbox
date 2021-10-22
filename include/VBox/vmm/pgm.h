@@ -353,6 +353,9 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode);
 VMM_INT_DECL(RTGCPHYS) PGMGetGuestCR3Phys(PVMCPU pVCpu);
 VMM_INT_DECL(void)  PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe);
 VMMDECL(bool)       PGMHasDirtyPages(PVM pVM);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+VMM_INT_DECL(void)  PGMSetGuestEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr);
+#endif
 
 /** PGM physical access handler type registration handle (heap offset, valid
  * cross contexts without needing fixing up).  Callbacks and handler type is
