@@ -3577,6 +3577,8 @@ typedef struct PGMCPU
     R3PTRTYPE(PEPTPML4)             pGstEptPml4R3;
     /** The guest's page directory pointer table, R0 pointer. */
     R0PTRTYPE(PEPTPML4)             pGstEptPml4R0;
+    /** The guest's EPT pointer. */
+    uint64_t                        uEptPtr;
     /** Mask containing the MBZ PTE bits. */
     uint64_t                        fGstEptMbzPteMask;
     /** Mask containing the MBZ PDE bits. */
