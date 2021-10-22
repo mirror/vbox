@@ -66,8 +66,7 @@ static DECLCALLBACK(const char *) audioTestCmdEnumHelp(PCRTGETOPTDEF pOpt)
     switch (pOpt->iShort)
     {
         case 'b':                               return "The audio backend to use.";
-        case VKAT_ENUM_OPT_PROBE_BACKENDS:      return "Whether to probe all (available) backends until a working one is found\n"
-                                                       "    Default: false";
+        case VKAT_ENUM_OPT_PROBE_BACKENDS:      return "Probes all (available) backends until a working one is found\n"
         default:  return NULL;
     }
 }
@@ -101,7 +100,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestCmdEnumHandler(PRTGETOPTSTATE pGetState
                 break;
 
             case VKAT_ENUM_OPT_PROBE_BACKENDS:
-                fProbeBackends = ValueUnion.f;
+                fProbeBackends = true;
                 break;
 
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
