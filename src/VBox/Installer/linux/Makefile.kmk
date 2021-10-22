@@ -125,14 +125,12 @@ $$(linux-misc_0_OUTDIR)/generated.sh: $(VBOX_VERSION_STAMP) $(VBOX_LNX_INST_DEP_
 
 $$(linux-misc_0_OUTDIR)/virtualbox.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_LNX_APP_DOCS)+" \
-		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+	$(QUIET)$(SED) -e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
 		--output $@ $<
 
 $$(linux-misc_0_OUTDIR)/virtualboxvm.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualboxvm.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_LNX_APP_DOCS)+" \
-		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+	$(QUIET)$(SED) -e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
 		--output $@ $<
 
 INSTALLS += linux-icons

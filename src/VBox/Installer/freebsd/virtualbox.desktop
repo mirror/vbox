@@ -7,7 +7,6 @@ GenericName=Virtual Machine
 Type=Application
 Exec=VirtualBox
 TryExec=VirtualBox
-DocPath=file://$VBOX_DOC_PATH/UserManual.pdf
 Icon=VBox
 Categories=Emulator;System;
 Comment=Run several virtual systems on a single host computer

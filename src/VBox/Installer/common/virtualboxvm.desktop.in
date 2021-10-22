@@ -10,7 +10,6 @@ TryExec=VirtualBoxVM
 Keywords=virtualization;
 Keywords[de]=Virtualisierung;
 Keywords[ru]=виртуализация;
-DocPath=file://@VBOX_DOC_PATH@/UserManual.pdf
 Icon=virtualbox
 Categories=Emulator;System;
 Actions=Manager;
