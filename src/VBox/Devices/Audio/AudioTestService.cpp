@@ -861,7 +861,11 @@ static void atsClientFree(PATSCLIENTINST pInst)
     AssertReturnVoid(pInst->pTransportClient == NULL);
 
     if (pInst->pszHostname)
+    {
         RTStrFree(pInst->pszHostname);
+        pInst->pszHostname = NULL;
+    }
+
     RTMemFree(pInst);
     pInst = NULL;
 }
