@@ -712,4 +712,14 @@ void UINotificationCenter::adjustMask()
 }
 
 
+/*********************************************************************************************************************************
+*   Class UINotificationReceiver implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+void UINotificationReceiver::setReceiverProperty(const QVariant &value)
+{
+    setProperty("received_value", value);
+}
+
+
 #include "UINotificationCenter.moc"

@@ -181,4 +181,15 @@ private:
 /** Singleton notification-center 'official' name. */
 #define gpNotificationCenter UINotificationCenter::instance()
 
+/** QObject subclass receiving notification value and storing is as a property. */
+class SHARED_LIBRARY_STUFF UINotificationReceiver : public QObject
+{
+    Q_OBJECT;
+
+public slots:
+
+    /** Defines received property by @a value. */
+    void setReceiverProperty(const QVariant &value);
+};
+
 #endif /* !FEQT_INCLUDED_SRC_notificationcenter_UINotificationCenter_h */
