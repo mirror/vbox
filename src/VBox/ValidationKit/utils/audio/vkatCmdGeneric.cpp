@@ -66,7 +66,7 @@ static DECLCALLBACK(const char *) audioTestCmdEnumHelp(PCRTGETOPTDEF pOpt)
     switch (pOpt->iShort)
     {
         case 'b':                               return "The audio backend to use.";
-        case VKAT_ENUM_OPT_PROBE_BACKENDS:      return "Probes all (available) backends until a working one is found\n"
+        case VKAT_ENUM_OPT_PROBE_BACKENDS:      return "Probes all (available) backends until a working one is found\n";
         default:  return NULL;
     }
 }
