@@ -1758,13 +1758,15 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
     /*
      * Notify NEM now that it has been linked.
      */
-    int rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, pNew->cb, pNew->pvR3);
-    if (RT_FAILURE(rc))
-        pgmR3PhysUnlinkRamRange2(pVM, pNew, pPrev);
-    return rc;
-#else
-    return VINF_SUCCESS;
+    if (VM_IS_NEM_ENABLED(pVM))
+    {
+        int rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, pNew->cb, pNew->pvR3);
+        if (RT_FAILURE(rc))
+            pgmR3PhysUnlinkRamRange2(pVM, pNew, pPrev);
+        return rc;
+    }
 #endif
+    return VINF_SUCCESS;
 }
 
 
@@ -4376,12 +4378,17 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                         /*
                          * Notify NEM again.
                          */
-                        u2NemState = UINT8_MAX;
-                        rc = NEMR3NotifyPhysRomRegisterLate(pVM, GCPhys, cb, PGM_RAMRANGE_CALC_PAGE_R3PTR(pRamNew, GCPhys),
-                                                            fNemNotify, &u2NemState);
-                        if (u2NemState != UINT8_MAX)
-                            pgmPhysSetNemStateForPages(&pRamNew->aPages[idxFirstRamPage], cPages, u2NemState);
-                        if (RT_SUCCESS(rc))
+                        if (VM_IS_NEM_ENABLED(pVM))
+                        {
+                            u2NemState = UINT8_MAX;
+                            rc = NEMR3NotifyPhysRomRegisterLate(pVM, GCPhys, cb, PGM_RAMRANGE_CALC_PAGE_R3PTR(pRamNew, GCPhys),
+                                                                fNemNotify, &u2NemState);
+                            if (u2NemState != UINT8_MAX)
+                                pgmPhysSetNemStateForPages(&pRamNew->aPages[idxFirstRamPage], cPages, u2NemState);
+                            if (RT_SUCCESS(rc))
+                                return rc;
+                        }
+                        else
 #endif
                             return rc;
 
@@ -4824,7 +4831,8 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 #endif
         pVCpu->pgm.s.fA20Enabled = fEnable;
         pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!fEnable << 20);
-        NEMR3NotifySetA20(pVCpu, fEnable);
+        if (VM_IS_NEM_ENABLED(pVCpu->CTX_SUFF(pVM)))
+            NEMR3NotifySetA20(pVCpu, fEnable);
 #ifdef PGM_WITH_A20
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         pgmR3RefreshShadowModeAfterA20Change(pVCpu);
