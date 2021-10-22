@@ -1720,6 +1720,7 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         pThis->fLocChangeSup     = false;
         pThis->fEstablishmentSet = false;
+        pThis->cbCmdResp         = TPM_DATA_BUFFER_SIZE_MAX;
 
         pThisCC->pDrvBase = NULL;
         pThisCC->pDrvTpm  = NULL;
