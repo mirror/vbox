@@ -184,10 +184,21 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
         else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 4);
 
-        /** @todo figure out what this effective stuff is about. */
-        pWalk->Core.fEffective = fEffective = ((uint32_t)Pml4e.u & (X86_PML4E_RW  | X86_PML4E_US | X86_PML4E_PWT | X86_PML4E_PCD | X86_PML4E_A))
-                                            | ((uint32_t)(Pml4e.u >> 63) ^ 1) /*NX */;
-# error "Implement me."
+        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
+        uint32_t const fEffectiveEpt = ((uint32_t)Pml4e.u & EPT_PML4E_ATTR_MASK) << PGMPTWALK_EFF_EPT_ATTR_SHIFT;
+        uint8_t const fReadWrite = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_R)
+                                 | RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_W);
+        uint8_t const fExecute   = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_X_SUPER);
+        uint8_t const fAccessed  = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_A);
+        pWalk->Core.fEffective = fEffective = RT_BF_MAKE(PGM_BF_PTWALK_EFF_X,  fExecute)
+                                            | RT_BF_MAKE(PGM_BF_PTWALK_EFF_RW, fReadWrite)
+                                            | RT_BF_MAKE(PGM_BF_PTWALK_EFF_US, 1)
+                                            | RT_BF_MAKE(PGM_BF_PTWALK_EFF_A,  fAccessed)
+                                            | fEffectiveEpt;
+
+        rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pml4e.u & EPT_PML4E_PG_MASK, &pWalk->pPdpt);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
 # endif
     }
     {
