@@ -1492,15 +1492,27 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitR
      * the PDPTEs are saved from the VMCS. Otherwise they're undefined but
      * we zero them for consistency.
      */
-    if (    (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
-        && !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
-        &&  (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
-        &&  (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG))
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
     {
-        pVmcs->u64GuestPdpte0.u = pVCpu->cpum.GstCtx.aPaePdpes[0].u;
-        pVmcs->u64GuestPdpte1.u = pVCpu->cpum.GstCtx.aPaePdpes[1].u;
-        pVmcs->u64GuestPdpte2.u = pVCpu->cpum.GstCtx.aPaePdpes[2].u;
-        pVmcs->u64GuestPdpte3.u = pVCpu->cpum.GstCtx.aPaePdpes[3].u;
+        if (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
+            &&  (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
+            &&  (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG))
+        {
+            pVmcs->u64GuestPdpte0.u = pVCpu->cpum.GstCtx.aPaePdpes[0].u;
+            pVmcs->u64GuestPdpte1.u = pVCpu->cpum.GstCtx.aPaePdpes[1].u;
+            pVmcs->u64GuestPdpte2.u = pVCpu->cpum.GstCtx.aPaePdpes[2].u;
+            pVmcs->u64GuestPdpte3.u = pVCpu->cpum.GstCtx.aPaePdpes[3].u;
+        }
+        else
+        {
+            pVmcs->u64GuestPdpte0.u = 0;
+            pVmcs->u64GuestPdpte1.u = 0;
+            pVmcs->u64GuestPdpte2.u = 0;
+            pVmcs->u64GuestPdpte3.u = 0;
+        }
+
+        /* Clear PGM's copy of the EPT pointer for added safety. */
+        PGMSetGuestEptPtr(pVCpu, 0 /* uEptPtr */);
     }
     else
     {
@@ -6152,11 +6164,11 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_Vpid);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        /* Extended Page Tables Pointer (EPTP). */
+        /* Extended-Page-Table Pointer (EPTP). */
         if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
         {
             VMXVDIAG enmVmxDiag;
-            rc = iemVmxVmentryCheckEptPtr(pVCpu, &enmVmxDiag);
+            int const rc = iemVmxVmentryCheckEptPtr(pVCpu, &enmVmxDiag);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
@@ -6660,8 +6672,31 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu)
 
     /* SMI blocking is irrelevant. We don't support SMIs yet. */
 
-    /* Loading PDPTEs will be taken care when we switch modes. We don't support EPT yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
+    /*
+     * Load the PAE PDPTEs from the VMCS when using EPT with PAE paging.
+     */
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+    {
+        if (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
+            &&  (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
+            &&  (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG))
+        {
+            X86PDPE aPaePdptes[X86_PG_PAE_PDPE_ENTRIES];
+            aPaePdptes[0].u = pVmcs->u64GuestPdpte0.u;
+            aPaePdptes[1].u = pVmcs->u64GuestPdpte1.u;
+            aPaePdptes[2].u = pVmcs->u64GuestPdpte2.u;
+            aPaePdptes[3].u = pVmcs->u64GuestPdpte3.u;
+            AssertCompile(RT_ELEMENTS(aPaePdptes) == RT_ELEMENTS(pVCpu->cpum.GstCtx.aPaePdpes));
+            for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->cpum.GstCtx.aPaePdpes); i++)
+                pVCpu->cpum.GstCtx.aPaePdpes[i].u = aPaePdptes[i].u;
+        }
+
+        /*
+         * Set PGM's copy of the EPT pointer.
+         * The EPTP has already been validated while checking guest state.
+         */
+        PGMSetGuestEptPtr(pVCpu, pVmcs->u64EptPtr.u);
+    }
 
     /* VPID is irrelevant. We don't support VPID yet. */
 
