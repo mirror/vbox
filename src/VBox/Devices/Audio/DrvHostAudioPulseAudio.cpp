@@ -2261,14 +2261,20 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Load the pulse audio library.
      */
+    LogRel2(("PulseAudio: Loading PulseAudio shared library ...\n"));
     rc = audioLoadPulseLib();
     if (RT_SUCCESS(rc))
+    {
+        LogRel2(("PulseAudio: PulseAudio shared library loaded\n"));
         LogRel(("PulseAudio: Using version %s\n", pa_get_library_version()));
+    }
     else
     {
         LogRel(("PulseAudio: Failed to load the PulseAudio shared library! Error %Rrc\n", rc));
         return rc;
     }
+
+    LogRel2(("PulseAudio: Starting PulseAudio main loop ...\n"));
 
     /*
      * Set up the basic pulse audio bits (remember the destructore is always called).
@@ -2293,6 +2299,8 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         LogRel(("PulseAudio: Failed to start threaded mainloop: %s\n", pa_strerror(pa_context_errno(pThis->pContext))));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
+
+    LogRel2(("PulseAudio: Started PulseAudio main loop, connecting to server ...\n"));
 
     /*
      * Connect to the pulse audio server.
@@ -2348,12 +2356,15 @@ static DECLCALLBACK(int) drvHstAudPaConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     if (RT_SUCCESS(rc))
     {
+        LogRel2(("PulseAudio: Connected to PulseAudio server\n"));
+
         PDMDrvHlpSTAMRegister(pDrvIns, &pThis->StatOverruns, STAMTYPE_COUNTER, "Overruns", STAMUNIT_OCCURENCES,
                               "Pulse-server side buffer overruns (all streams)");
         PDMDrvHlpSTAMRegister(pDrvIns, &pThis->StatUnderruns, STAMTYPE_COUNTER, "Underruns", STAMUNIT_OCCURENCES,
                               "Pulse-server side buffer underruns (all streams)");
     }
 
+    LogRel2(("PulseAudio: Initialization ended with %Rrc\n", rc));
     return rc;
 }
 
