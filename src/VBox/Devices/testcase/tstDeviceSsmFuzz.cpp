@@ -97,8 +97,6 @@ static uint32_t tstDevSsmFuzzGetCfgU32(PCTSTDEVCFGITEM paCfg, uint32_t cCfgItems
  */
 static DECLCALLBACK(int) tstDevSsmFuzzEntry(TSTDEVDUT hDut, PCTSTDEVCFGITEM paCfg, uint32_t cCfgItems)
 {
-    RT_NOREF(hDut, paCfg);
-
     RTFUZZCTX hFuzzCtx;
     int rc = RTFuzzCtxCreate(&hFuzzCtx, RTFUZZCTXTYPE_BLOB);
     if (RT_SUCCESS(rc))

@@ -192,6 +192,9 @@ typedef struct TSTDEVPDMR0IMPORTS
 } TSTDEVPDMR0IMPORTS;
 typedef const TSTDEVPDMR0IMPORTS *PCTSTDEVPDMR0IMPORTS;
 
+typedef DECLCALLBACKTYPE(int, FNR0MODULEINIT,(void *hMod));
+typedef FNR0MODULEINIT *PFNR0MODULEINIT;
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -205,26 +208,20 @@ RTLISTANCHOR g_LstPdmMods;
 /** List of registered PDM devices. */
 RTLISTANCHOR g_LstPdmDevs;
 
+static int tstDevPdmR0RegisterModule(void *hMod, PPDMDEVMODREGR0 pModReg);
+
 /**
  * PDM R0 imports we implement.
  */
 static const TSTDEVPDMR0IMPORTS g_aPdmR0Imports[] =
 {
-#if 0
-    {"IOMMMIOMapMMIO2Page",            (PFNRT)IOMMMIOMapMMIO2Page},
-    {"IOMMMIOResetRegion",             (PFNRT)IOMMMIOResetRegion},
+    {"SUPR0TracerFireProbe",           (PFNRT)NULL},
+    {"SUPSemEventSignal",              (PFNRT)NULL},
+    {"PDMR0DeviceRegisterModule",      (PFNRT)tstDevPdmR0RegisterModule},
+    {"PDMR0DeviceDeregisterModule",    (PFNRT)NULL},
+    {"PGMShwMakePageWritable",         (PFNRT)NULL},
     {"IntNetR0IfSend",                 (PFNRT)/*IntNetR0IfSend*/NULL},
     {"IntNetR0IfSetPromiscuousMode",   (PFNRT)/*IntNetR0IfSetPromiscuousMode*/NULL},
-    {"PDMCritSectEnterDebug",          (PFNRT)PDMCritSectEnterDebug},
-    {"PDMCritSectIsOwner",             (PFNRT)PDMCritSectIsOwner},
-    {"PDMCritSectLeave",               (PFNRT)PDMCritSectLeave},
-    {"PDMCritSectTryEnterDebug",       (PFNRT)PDMCritSectTryEnterDebug},
-    {"PDMHCCritSectScheduleExitEvent", (PFNRT)PDMHCCritSectScheduleExitEvent},
-    {"PDMNsAllocateBandwidth",         (PFNRT)PDMNsAllocateBandwidth},
-    {"PDMQueueAlloc",                  (PFNRT)PDMQueueAlloc},
-    {"PDMQueueInsert",                 (PFNRT)PDMQueueInsert},
-    {"PGMHandlerPhysicalPageTempOff",  (PFNRT)PGMHandlerPhysicalPageTempOff},
-    {"PGMShwMakePageWritable",         (PFNRT)PGMShwMakePageWritable},
     {"RTAssertMsg1Weak",               (PFNRT)RTAssertMsg1Weak},
     {"RTAssertMsg2Weak",               (PFNRT)RTAssertMsg2Weak},
     {"RTAssertShouldPanic",            (PFNRT)RTAssertShouldPanic},
@@ -237,27 +234,14 @@ static const TSTDEVPDMR0IMPORTS g_aPdmR0Imports[] =
     {"RTTimeMilliTS",                  (PFNRT)RTTimeMilliTS},
     {"RTTimeNanoTS",                   (PFNRT)RTTimeNanoTS},
     {"RTTraceBufAddMsgF",              (PFNRT)RTTraceBufAddMsgF},
-    {"SUPSemEventSignal",              (PFNRT)SUPSemEventSignal},
-    {"TMTimerGet",                     (PFNRT)TMTimerGet},
-    {"TMTimerGetFreq",                 (PFNRT)TMTimerGetFreq},
-    {"TMTimerIsActive",                (PFNRT)TMTimerIsActive},
-    {"TMTimerIsLockOwner",             (PFNRT)TMTimerIsLockOwner},
-    {"TMTimerLock",                    (PFNRT)TMTimerLock},
-    {"TMTimerSet",                     (PFNRT)TMTimerSet},
-    {"TMTimerSetFrequencyHint",        (PFNRT)TMTimerSetFrequencyHint},
-    {"TMTimerSetMicro",                (PFNRT)TMTimerSetMicro},
-    {"TMTimerSetMillies",              (PFNRT)TMTimerSetMillies},
-    {"TMTimerSetNano",                 (PFNRT)TMTimerSetNano},
-    {"TMTimerStop",                    (PFNRT)TMTimerStop},
-    {"TMTimerUnlock",                  (PFNRT)TMTimerUnlock},
+    {"RTMemAllocZTag",                 (PFNRT)RTMemAllocZTag},
+    {"RTMemFree",                      (PFNRT)RTMemFree},
+    {"RTStrPrintf",                    (PFNRT)RTStrPrintf},
     {"nocrt_memcmp",                   (PFNRT)memcmp},
     {"nocrt_memcpy",                   (PFNRT)memcpy},
     {"nocrt_memmove",                  (PFNRT)memmove},
     {"nocrt_memset",                   (PFNRT)memset},
     {"nocrt_strlen",                   (PFNRT)strlen},
-#else
-    { NULL, NULL }
-#endif
 };
 
 
@@ -572,6 +556,8 @@ static DECLCALLBACK(int) tstDevPdmLoadR0RcModGetImport(RTLDRMOD hLdrMod, const c
     RT_NOREF(hLdrMod, uSymbol, pszModule);
     PTSTDEVPDMMOD pMod = (PTSTDEVPDMMOD)pvUser;
 
+    RTPrintf("Looking for %s\n", pszSymbol);
+
     /* Resolve the import. */
     PCTSTDEVPDMR0IMPORTS pImpDesc = NULL;
     bool fFound = false;
@@ -633,6 +619,13 @@ static DECLCALLBACK(int) tstDevPdmLoadR0RcModGetImport(RTLDRMOD hLdrMod, const c
 }
 
 
+static int tstDevPdmR0RegisterModule(void *hMod, PPDMDEVMODREGR0 pModReg)
+{
+    /*AssertFailed();*/ RT_NOREF(hMod, pModReg);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Loads a new R0 modules given by the filename.
  *
@@ -677,7 +670,16 @@ static int tstDevPdmLoadR0RcMod(PTSTDEVPDMMOD pMod)
                 /* Get the bits. */
                 rc = RTLdrGetBits(pMod->hLdrMod, pMod->R0Rc.pvBits, (uintptr_t)pMod->R0Rc.pvBits,
                                   tstDevPdmLoadR0RcModGetImport, pMod);
-                if (RT_FAILURE(rc))
+                if (RT_SUCCESS(rc))
+                {
+                    /* Resolve module init entry and call it. */
+                    PFNR0MODULEINIT pfnR0ModuleInit;
+                    rc = RTLdrGetSymbolEx(pMod->hLdrMod, pMod->R0Rc.pvBits, (uintptr_t)pMod->R0Rc.pvBits,
+                                          UINT32_MAX, "ModuleInit", (PRTLDRADDR)&pfnR0ModuleInit);
+                    if (RT_SUCCESS(rc))
+                        rc = pfnR0ModuleInit(pMod);
+                }
+                else
                     RTMemFreeEx(pMod->R0Rc.pbTrampoline, pMod->R0Rc.cbBits);
             }
 
@@ -864,6 +866,7 @@ static int tstDevPdmDevCreate(const char *pszName, bool fR0Enabled, bool fRCEnab
             pPciDev->u32Magic           = PDMPCIDEV_MAGIC;
         }
 
+        RTCritSectInit(&pCritSect->s.CritSect);
         rc = pPdmDev->pReg->pfnConstruct(pDevIns, 0, pDevIns->pCfg);
         if (RT_SUCCESS(rc))
             pDut->pDevIns = pDevIns;
@@ -958,6 +961,7 @@ int main(int argc, char *argv[])
 
         /* Register builtin tests. */
         tstDevRegisterTestcase(NULL, &g_TestcaseSsmFuzz);
+        tstDevRegisterTestcase(NULL, &g_TestcaseIoFuzz);
 
         PCTSTDEVCFG pDevTstCfg = NULL;
         rc = tstDevCfgLoad(argv[1], NULL, &pDevTstCfg);

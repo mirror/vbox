@@ -1507,7 +1507,8 @@ endif
  	testcase/tstDeviceCfg.cpp \
  	testcase/tstDevicePdmDevHlp.cpp \
  	testcase/tstDevicePdmThread.cpp \
- 	testcase/tstDeviceSsmFuzz.cpp
+ 	testcase/tstDeviceSsmFuzz.cpp \
+ 	testcase/tstDeviceIoFuzz.cpp
  endif
 
 endif # !VBOX_ONLY_EXTPACKS && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
