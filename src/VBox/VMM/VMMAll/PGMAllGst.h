@@ -187,7 +187,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
         uint32_t const fEffectiveEpt = ((uint32_t)Pml4e.u & EPT_PML4E_ATTR_MASK) << PGMPTWALK_EFF_EPT_ATTR_SHIFT;
         uint8_t const fReadWrite = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_R)
-                                 | RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_W);
+                                 & RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_W);
         uint8_t const fExecute   = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_X_SUPER);
         uint8_t const fAccessed  = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_A);
         pWalk->Core.fEffective = fEffective = RT_BF_MAKE(PGM_BF_PTWALK_EFF_X,  fExecute)
