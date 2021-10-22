@@ -140,81 +140,37 @@ bool UIWizardCloneVM::cloneVM()
     /* Prepare machine for cloning: */
     CMachine srcMachine = m_machine;
 
-    /* If the user like to create a linked clone from the current machine, we
-     * have to take a little bit more action. First we create an snapshot, so
-     * that new differencing images on the source VM are created. Based on that
-     * we could use the new snapshot machine for cloning. */
+    /* If the user like to create a linked clone from the current machine, we have to take a little bit more action.
+     * First we create an snapshot, so that new differencing images on the source VM are created. Based on that we
+     * could use the new snapshot machine for cloning. */
     if (m_fLinkedClone && m_snapshot.isNull())
     {
-        /* Acquire machine name beforehand: */
-        const QString strMachineName = m_machine.GetName();
-
-        /* Open session: */
-        CSession comSession = uiCommon().openSession(m_machine.GetId());
-        if (comSession.isNull())
-            return false;
-
-        /* Acquire session machine: */
-        CMachine comSessionMachine = comSession.GetMachine();
+        /* Compose snapshot name: */
+        const QString strSnapshotName = tr("Linked Base for %1 and %2").arg(m_machine.GetName()).arg(m_strCloneName);
 
         /* Take the snapshot: */
-        const QString strSnapshotName = tr("Linked Base for %1 and %2").arg(strMachineName).arg(m_strCloneName);
-        QUuid uSnapshotId;
-        CProgress comProgress = comSessionMachine.TakeSnapshot(strSnapshotName, "", true, uSnapshotId);
-        if (!comSessionMachine.isOk())
+        UINotificationProgressSnapshotTake *pNotification = new UINotificationProgressSnapshotTake(srcMachine,
+                                                                                                   strSnapshotName,
+                                                                                                   QString());
+        UINotificationReceiver receiver;
+        connect(pNotification, &UINotificationProgressSnapshotTake::sigSnapshotTaken,
+                &receiver, &UINotificationReceiver::setReceiverProperty);
+        if (!handleNotificationProgressNow(pNotification))
+            return false;
+
+        /* Acquire created snapshot id: */
+        QUuid uSnapshotId = receiver.property("received_value").toUuid();
+
+        /* Look for created snapshot: */
+        const CSnapshot comCreatedSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
+        if (comCreatedSnapshot.isNull())
         {
-            msgCenter().cannotTakeSnapshot(comSessionMachine, strMachineName, this);
+            msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
             return false;
         }
-        else
-        {
-            /* Make sure progress initially valid: */
-            if (!comProgress.isNull() && !comProgress.GetCompleted())
-            {
-                /* Create take snapshot progress object: */
-                QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
-                if (pObject)
-                {
-                    connect(pObject.data(), &UIProgressObject::sigProgressChange,
-                            this, &UIWizardCloneVM::sltHandleProgressChange);
-                    connect(pObject.data(), &UIProgressObject::sigProgressComplete,
-                            this, &UIWizardCloneVM::sltHandleProgressFinished);
-                    sltHandleProgressStarted();
-                    pObject->exec();
-                    if (pObject)
-                        delete pObject;
-                    else
-                    {
-                        // Premature application shutdown,
-                        // exit immediately:
-                        return false;
-                    }
-                }
-            }
 
-            /* Check progress for errors: */
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotTakeSnapshot(comProgress, strMachineName, this);
-                return false;
-            }
-            else
-            {
-                /* Look for created snapshot: */
-                const CSnapshot comCreatedSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
-                if (comCreatedSnapshot.isNull())
-                {
-                    msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
-                    return false;
-                }
-
-                /* Update machine for cloning finally: */
-                srcMachine = comCreatedSnapshot.GetMachine();
-            }
-        }
-
-        /* Unlock machine finally: */
-        comSession.UnlockMachine();
+        /* Update machine for cloning finally: */
+        srcMachine = comCreatedSnapshot.GetMachine();
     }
 
     /* Get VBox object: */
