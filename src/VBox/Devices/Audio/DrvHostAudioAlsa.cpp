@@ -840,7 +840,7 @@ static DECLCALLBACK(int) drvHstAudAlsaHA_StreamDestroy(PPDMIHOSTAUDIO pInterface
      *        what the caller does... */
     int rc = drvHstAudAlsaStreamClose(&pStreamALSA->hPCM);
 
-    LogRelFlowFunc(("returns %Rrc (state %s)\n", rc, snd_pcm_state_name(snd_pcm_state(pStreamALSA->hPCM))));
+    LogRelFlowFunc(("returns %Rrc\n", rc));
 
     return rc;
 }
