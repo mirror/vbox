@@ -1340,57 +1340,66 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
  * Signals the host that clipboard data from the guest has been received.
  *
  * @returns VBox status code. Returns VERR_NOT_FOUND when related event ID was not found.
- * @param   pClient             Client the guest clipboard data was received for.
- * @param   pCmdCtx             Client command context to use.
+ * @param   pClient             Client the guest clipboard data was received from.
+ * @param   pCmdCtx             Client command context.
  * @param   uFormat             Clipboard format of data received.
- * @param   pvData              Pointer to clipboard data received.
+ * @param   pvData              Pointer to clipboard data received.  This can be
+ *                              NULL if @a cbData is zero.
  * @param   cbData              Size (in bytes) of clipboard data received.
+ *                              This can be zero.
  */
-int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                           SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
+int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
-    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvData,  VERR_INVALID_POINTER);
-
+    LogFlowFuncEnter();
     RT_NOREF(uFormat);
 
-    LogFlowFuncEnter();
+    /*
+     * Validate intput.
+     */
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
+    if (cbData > 0)
+        AssertPtrReturn(pvData, VERR_INVALID_POINTER);
 
     const SHCLEVENTID idEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
+    AssertMsgReturn(idEvent != NIL_SHCLEVENTID, ("NIL event in context ID %#RX64\n", pCmdCtx->uContextID), VERR_WRONG_ORDER);
+    AssertMsg(ShClEventGet(&pClient->EventSrc, idEvent) != NULL, ("Event %#x not found\n", idEvent));
 
-    AssertMsgReturn(idEvent != NIL_SHCLEVENTID,
-                    ("Event %RU64 empty within supplied context ID\n", idEvent), VERR_WRONG_ORDER);
-#ifdef VBOX_STRICT
-    AssertMsgReturn(ShClEventGet(&pClient->EventSrc, idEvent) != NULL,
-                    ("Event %RU64 not found, even if context ID was around\n", idEvent), VERR_NOT_FOUND);
-#endif
-
+    /*
+     * Make a copy of the data so we can attach it to the signal.
+     *
+     * Note! We still signal the waiter should we run out of memory,
+     *       because otherwise it will be stuck waiting.
+     */
     int rc = VINF_SUCCESS;
-
     PSHCLEVENTPAYLOAD pPayload = NULL;
-    if (cbData)
+    if (cbData > 0)
         rc = ShClPayloadAlloc(idEvent, pvData, cbData, &pPayload);
 
-    if (RT_SUCCESS(rc))
+    /*
+     * Signal the event.
+     */
+    RTCritSectEnter(&pClient->CritSect);
+    int rc2 = ShClEventSignal(&pClient->EventSrc, idEvent, pPayload);
+    RTCritSectLeave(&pClient->CritSect);
+    if (RT_FAILURE(rc2))
     {
-        RTCritSectEnter(&pClient->CritSect);
-        rc = ShClEventSignal(&pClient->EventSrc, idEvent, pPayload);
-        RTCritSectLeave(&pClient->CritSect);
-        if (RT_FAILURE(rc))
-            ShClPayloadFree(pPayload);
-
-        /* No one holding a reference to the event anymore? Unregister it. */
-        if (ShClEventGetRefs(&pClient->EventSrc, idEvent) == 0)
-        {
-            int rc2 = ShClEventUnregister(&pClient->EventSrc, idEvent);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
+        rc = rc2;
+        ShClPayloadFree(pPayload);
+        LogRel(("Shared Clipboard: Signalling of guest clipboard data to the host failed: %Rrc\n", rc));
     }
 
-    if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Signalling of guest clipboard data to the host failed with %Rrc\n", rc));
+    /*
+     * No one holding a reference to the event anymore? Unregister it.
+     */
+    /** @todo r=bird: This isn't how reference counting is supposed to be
+     *        implemented, is it now? */
+    if (ShClEventGetRefs(&pClient->EventSrc, idEvent) == 0)
+    {
+        rc2 = ShClEventUnregister(&pClient->EventSrc, idEvent);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
