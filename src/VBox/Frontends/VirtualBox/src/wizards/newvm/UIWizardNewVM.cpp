@@ -31,6 +31,7 @@
 #include "UIWizardNewVMSummaryPage.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CAudioAdapter.h"
@@ -190,50 +191,20 @@ bool UIWizardNewVM::createVirtualDisk()
     }
 
     /* Create base storage for the new virtual-disk: */
-    CProgress comProgress = newVirtualDisk.CreateBaseStorage(m_uMediumSize, mediumVariants());
-    if (!newVirtualDisk.isOk())
-        msgCenter().cannotCreateHardDiskStorage(newVirtualDisk, m_strMediumPath, this);
-    else
-    {
-        /* Make sure progress initially valid: */
-        if (!comProgress.isNull() && !comProgress.GetCompleted())
-        {
-            /* Create take snapshot progress object: */
-            QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
-            if (pObject)
-            {
-                connect(pObject.data(), &UIProgressObject::sigProgressChange,
-                        this, &UIWizardNewVM::sltHandleProgressChange);
-                connect(pObject.data(), &UIProgressObject::sigProgressComplete,
-                        this, &UIWizardNewVM::sltHandleProgressFinished);
-                sltHandleProgressStarted();
-                pObject->exec();
-                if (pObject)
-                    delete pObject;
-                else
-                {
-                    // Premature application shutdown,
-                    // exit immediately:
-                    return fResult;
-                }
-            }
-        }
+    UINotificationProgressMediumCreate *pNotification = new UINotificationProgressMediumCreate(newVirtualDisk,
+                                                                                               m_uMediumSize,
+                                                                                               mediumVariants());
+    if (!handleNotificationProgressNow(pNotification))
+        return fResult;
 
-        /* Check for progress errors: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotCreateHardDiskStorage(comProgress, m_strMediumPath, this);
-        else
-        {
-            /* Inform UICommon about it: */
-            uiCommon().createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    /* Inform UICommon about it: */
+    uiCommon().createMedium(UIMedium(newVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
-            /* Remember created virtual-disk: */
-            m_virtualDisk = newVirtualDisk;
+    /* Remember created virtual-disk: */
+    m_virtualDisk = newVirtualDisk;
 
-            /* True finally: */
-            fResult = true;
-        }
-    }
+    /* True finally: */
+    fResult = true;
 
     /* Return result: */
     return fResult;
@@ -245,53 +216,13 @@ void UIWizardNewVM::deleteVirtualDisk()
     if (m_virtualDisk.isNull())
         return;
 
-    /* Remember virtual-disk attributes: */
-    QString strLocation = m_virtualDisk.GetLocation();
-    if (!m_virtualDisk.isOk())
-    {
-        msgCenter().cannotAcquireHardDiskLocation(m_virtualDisk, this);
-        return;
-    }
-
     /* Delete storage of existing disk: */
-    CProgress comProgress = m_virtualDisk.DeleteStorage();
-    if (!m_virtualDisk.isOk())
-        msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, this);
-    else
-    {
-        /* Make sure progress initially valid: */
-        if (!comProgress.isNull() && !comProgress.GetCompleted())
-        {
-            /* Create take snapshot progress object: */
-            QPointer<UIProgressObject> pObject = new UIProgressObject(comProgress, this);
-            if (pObject)
-            {
-                connect(pObject.data(), &UIProgressObject::sigProgressChange,
-                        this, &UIWizardNewVM::sltHandleProgressChange);
-                connect(pObject.data(), &UIProgressObject::sigProgressComplete,
-                        this, &UIWizardNewVM::sltHandleProgressFinished);
-                sltHandleProgressStarted();
-                pObject->exec();
-                if (pObject)
-                    delete pObject;
-                else
-                {
-                    // Premature application shutdown,
-                    // exit immediately:
-                    return;
-                }
-            }
-        }
+    UINotificationProgressMediumDeletingStorage *pNotification = new UINotificationProgressMediumDeletingStorage(m_virtualDisk);
+    if (!handleNotificationProgressNow(pNotification))
+        return;
 
-        /* Check for progress errors: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotDeleteHardDiskStorage(comProgress, strLocation, this);
-        else
-        {
-            /* Detach virtual-disk anyway: */
-            m_virtualDisk.detach();
-        }
-    }
+    /* Detach virtual-disk finally: */
+    m_virtualDisk.detach();
 }
 
 void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
