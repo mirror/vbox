@@ -619,7 +619,6 @@ void UIFilePathSelector::sltRecentMediaListUpdated(UIMediumDeviceType enmMediumT
     while (count() > m_iRecentListSeparatorPosition)
         removeItem(count() - 1);
 
-
     if (enmMediumType != m_enmRecentMediaListType)
         return;
     QStringList recentMedia;
@@ -639,10 +638,18 @@ void UIFilePathSelector::sltRecentMediaListUpdated(UIMediumDeviceType enmMediumT
             break;
     }
 
-    if (recentMedia.isEmpty())
+    /* Remove the media which is not there not not readable: */
+    QStringList existingMedia;
+    foreach (QString strMediaPath, recentMedia)
+    {
+        QFileInfo info(strMediaPath);
+        if (info.exists() && info.isReadable())
+            existingMedia << strMediaPath;
+    }
+    if (existingMedia.isEmpty())
         return;
 
     insertSeparator(m_iRecentListSeparatorPosition);
-    foreach (const QString strPath, recentMedia)
+    foreach (const QString strPath, existingMedia)
         addItem(strPath);
 }
