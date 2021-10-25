@@ -952,7 +952,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     {
         if (!fNoAudioOk)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Testing driver stack failed: %Rrc\n", rc);
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Warning: Testing driver stack not possible (%Rrc), but --no-audio-ok was specified. Running on a server without audio hardware?\n");
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                     "Warning: Testing driver stack not possible (%Rrc), but --no-audio-ok was specified. Running on a server without audio hardware?\n", rc);
     }
 
     AUDIOTESTDRVSTACK DrvStack;
@@ -966,7 +967,8 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     {
         if (!fNoAudioOk)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unable to init driver stack: %Rrc\n", rc);
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Warning: Initializing driver stack not possible (%Rrc), but --no-audio-ok was specified. Running on a server without audio hardware?\n");
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                     "Warning: Initializing driver stack not possible (%Rrc), but --no-audio-ok was specified. Running on a server without audio hardware?\n", rc);
     }
 
     PPDMAUDIOHOSTDEV pDev;
