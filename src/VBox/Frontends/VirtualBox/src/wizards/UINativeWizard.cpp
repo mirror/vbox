@@ -535,18 +535,18 @@ void UINativeWizard::prepare()
                 /* Connect buttons: */
                 if (wizardButton(WizardButtonType_Help))
                 {
-                    connect(wizardButton(WizardButtonType_Help), &QPushButton::pressed,
+                    connect(wizardButton(WizardButtonType_Help), &QPushButton::clicked,
                             &(msgCenter()), &UIMessageCenter::sltHandleHelpRequest);
                     wizardButton(WizardButtonType_Help)->setShortcut(QKeySequence::HelpContents);
                     uiCommon().setHelpKeyword(wizardButton(WizardButtonType_Help), m_strHelpHashtag);
                 }
-                connect(wizardButton(WizardButtonType_Expert), &QPushButton::pressed,
+                connect(wizardButton(WizardButtonType_Expert), &QPushButton::clicked,
                         this, &UINativeWizard::sltExpert);
-                connect(wizardButton(WizardButtonType_Back), &QPushButton::pressed,
+                connect(wizardButton(WizardButtonType_Back), &QPushButton::clicked,
                         this, &UINativeWizard::sltPrevious);
-                connect(wizardButton(WizardButtonType_Next), &QPushButton::pressed,
+                connect(wizardButton(WizardButtonType_Next), &QPushButton::clicked,
                         this, &UINativeWizard::sltNext);
-                connect(wizardButton(WizardButtonType_Cancel), &QPushButton::pressed,
+                connect(wizardButton(WizardButtonType_Cancel), &QPushButton::clicked,
                         this, &UINativeWizard::reject);
             }
 
