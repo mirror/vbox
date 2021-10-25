@@ -1568,6 +1568,13 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      * Initialize the invalid paging entry masks, assuming NX is disabled.
      */
     uint64_t fMbzPageFrameMask = pVM->pgm.s.GCPhysInvAddrMask & UINT64_C(0x000ffffffffff000);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    uint64_t const fEptVpidCap = CPUMGetGuestIa32VmxEptVpidCap(pVM->apCpusR3[0]);   /* should be identical for all VCPUs. */
+    uint64_t const fGstEptMbzBigPdeMask   = EPT_PDE2M_MBZ_MASK
+                                          | (RT_BF_GET(fEptVpidCap, VMX_BF_EPT_VPID_CAP_PDE_2M) ^ 1) << EPT_E_BIT_LEAF;
+    uint64_t const fGstEptMbzBigPdpteMask = EPT_PDPTE1G_MBZ_MASK
+                                          | (RT_BF_GET(fEptVpidCap, VMX_BF_EPT_VPID_CAP_PDPTE_1G) ^ 1) << EPT_E_BIT_LEAF;
+#endif
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
@@ -1601,9 +1608,9 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         pVCpu->pgm.s.fGstEptMbzPteMask        = fMbzPageFrameMask | EPT_PTE_MBZ_MASK;
         pVCpu->pgm.s.fGstEptMbzPdeMask        = fMbzPageFrameMask | EPT_PDE_MBZ_MASK;
-        pVCpu->pgm.s.fGstEptMbzBigPdeMask     = fMbzPageFrameMask | EPT_PDE2M_MBZ_MASK;
-        pVCpu->pgm.s.fGstEptMbzPdpeMask       = fMbzPageFrameMask | EPT_PDPTE_MBZ_MASK;
-        pVCpu->pgm.s.fGstEptMbzBigPdpeMask    = fMbzPageFrameMask | EPT_PDPTE1G_MBZ_MASK;
+        pVCpu->pgm.s.fGstEptMbzBigPdeMask     = fMbzPageFrameMask | fGstEptMbzBigPdeMask;
+        pVCpu->pgm.s.fGstEptMbzPdpteMask      = fMbzPageFrameMask | EPT_PDPTE_MBZ_MASK;
+        pVCpu->pgm.s.fGstEptMbzBigPdpteMask   = fMbzPageFrameMask | fGstEptMbzBigPdpteMask;
         pVCpu->pgm.s.fGstEptMbzPml4eMask      = fMbzPageFrameMask | EPT_PML4E_MBZ_MASK;
 
         /* If any of the features (in the assert below) are enabled, we might have to shadow the relevant bits. */

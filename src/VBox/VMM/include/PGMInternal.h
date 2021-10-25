@@ -2412,21 +2412,32 @@ typedef struct PGMPTWALKCORE
 /** Effective execute access for supervisor-mode - EPT only. */
 #define PGM_BF_PTWALK_EFF_X_SUPER_SHIFT             14
 #define PGM_BF_PTWALK_EFF_X_SUPER_MASK              UINT32_C(0x00004000)
-/** Reserved (bits 21:15) unused. */
-#define PGM_BF_PTWALK_EFF_RSVD_21_15_SHIFT          15
-#define PGM_BF_PTWALK_EFF_RSVD_21_15_MASK           UINT32_C(0x003f8000)
+/** Effective EPT memory type - EPT only. */
+#define PGM_BF_PTWALK_EFF_MEMTYPE_SHIFT             15
+#define PGM_BF_PTWALK_EFF_MEMTYPE_MASK              UINT32_C(0x00038000)
+/** Effective ignore PAT memory type - EPT only. */
+#define PGM_BF_PTWALK_EFF_IGNORE_PAT_SHIFT          18
+#define PGM_BF_PTWALK_EFF_IGNORE_PAT_MASK           UINT32_C(0x00040000)
+/** Reserved (bits 21:19) unused. */
+#define PGM_BF_PTWALK_EFF_RSVD_21_19_SHIFT          19
+#define PGM_BF_PTWALK_EFF_RSVD_21_19_MASK           UINT32_C(0x00380000)
 /** Effective execute access for user-mode - EPT only. */
 #define PGM_BF_PTWALK_EFF_X_USER_SHIFT              22
 #define PGM_BF_PTWALK_EFF_X_USER_MASK               UINT32_C(0x00400000)
-/** Reserved (bits 31:23). */
+/** Reserved (bits 31:23) - unused. */  /** @todo When implementing SUPER_SHW_STACK, Suppress \#VE put them in bits 24, 25 which corresponds to bit 12, 13 of EPT attributes. */
 #define PGM_BF_PTWALK_EFF_RSVD_31_23_SHIFT          23
 #define PGM_BF_PTWALK_EFF_RSVD_31_23_MASK           UINT32_C(0xff800000)
+RT_BF_ASSERT_COMPILE_CHECKS(PGM_BF_PTWALK_EFF_, UINT32_C(0), UINT32_MAX,
+                            (X, RW, US, PWT, PCD, A, D, PAT, G, RSVD_11_9, R, W, X_SUPER, MEMTYPE, IGNORE_PAT, RSVD_21_19,
+                             X_USER, RSVD_31_23));
 
 /** The bit count where the EPT specific bits begin. */
 #define PGMPTWALK_EFF_EPT_ATTR_SHIFT                PGM_BF_PTWALK_EFF_R_SHIFT
+/** The mask of EPT bits (bits 31:ATTR_SHIFT). In the future we might choose to
+ *  use higher unused EPT bits for something else, in that case reduce this mask. */
+#define PGMPTWALK_EFF_EPT_ATTR_MASK                 UINT32_C(0xfffff000)
 
-RT_BF_ASSERT_COMPILE_CHECKS(PGM_BF_PTWALK_EFF_, UINT32_C(0), UINT32_MAX,
-                            (X, RW, US, PWT, PCD, A, D, PAT, G, RSVD_11_9, R, W, X_SUPER, RSVD_21_15, X_USER, RSVD_31_23));
+/* Verify bits match the regular PT bits. */
 AssertCompile(PGM_BF_PTWALK_EFF_RW_SHIFT  == X86_PTE_BIT_RW);
 AssertCompile(PGM_BF_PTWALK_EFF_US_SHIFT  == X86_PTE_BIT_US);
 AssertCompile(PGM_BF_PTWALK_EFF_PWT_SHIFT == X86_PTE_BIT_PWT);
@@ -2434,19 +2445,30 @@ AssertCompile(PGM_BF_PTWALK_EFF_PCD_SHIFT == X86_PTE_BIT_PCD);
 AssertCompile(PGM_BF_PTWALK_EFF_A_SHIFT   == X86_PTE_BIT_A);
 AssertCompile(PGM_BF_PTWALK_EFF_D_SHIFT   == X86_PTE_BIT_D);
 AssertCompile(PGM_BF_PTWALK_EFF_PAT_SHIFT == X86_PTE_BIT_PAT);
-AssertCompile(PGM_BF_PTWALK_EFF_G_SHIFT  == X86_PTE_BIT_G);
-AssertCompile(PGM_BF_PTWALK_EFF_RW_MASK  == X86_PTE_RW);
-AssertCompile(PGM_BF_PTWALK_EFF_US_MASK  == X86_PTE_US);
-AssertCompile(PGM_BF_PTWALK_EFF_PWT_MASK == X86_PTE_PWT);
-AssertCompile(PGM_BF_PTWALK_EFF_PCD_MASK == X86_PTE_PCD);
-AssertCompile(PGM_BF_PTWALK_EFF_A_MASK   == X86_PTE_A);
-AssertCompile(PGM_BF_PTWALK_EFF_D_MASK   == X86_PTE_D);
-AssertCompile(PGM_BF_PTWALK_EFF_PAT_MASK == X86_PTE_PAT);
-AssertCompile(PGM_BF_PTWALK_EFF_G_MASK   == X86_PTE_G);
-AssertCompile(PGM_BF_PTWALK_EFF_R_SHIFT       - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_READ);
-AssertCompile(PGM_BF_PTWALK_EFF_W_SHIFT       - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_WRITE);
-AssertCompile(PGM_BF_PTWALK_EFF_X_SUPER_SHIFT - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_EXECUTE);
-AssertCompile(PGM_BF_PTWALK_EFF_X_USER_SHIFT  - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_USER_EXECUTE);
+AssertCompile(PGM_BF_PTWALK_EFF_G_SHIFT   == X86_PTE_BIT_G);
+AssertCompile(PGM_BF_PTWALK_EFF_RW_MASK   == X86_PTE_RW);
+AssertCompile(PGM_BF_PTWALK_EFF_US_MASK   == X86_PTE_US);
+AssertCompile(PGM_BF_PTWALK_EFF_PWT_MASK  == X86_PTE_PWT);
+AssertCompile(PGM_BF_PTWALK_EFF_PCD_MASK  == X86_PTE_PCD);
+AssertCompile(PGM_BF_PTWALK_EFF_A_MASK    == X86_PTE_A);
+AssertCompile(PGM_BF_PTWALK_EFF_D_MASK    == X86_PTE_D);
+AssertCompile(PGM_BF_PTWALK_EFF_PAT_MASK  == X86_PTE_PAT);
+AssertCompile(PGM_BF_PTWALK_EFF_G_MASK    == X86_PTE_G);
+
+/*
+ * The following bits map 1:1 (left shifted by PGMPTWALK_EFF_EPT_ATTR_SHIFT bits) with
+ * VMX EPT attribute bits because these are unique to EPT and fit within 32-bits:
+ *   - R, W, X_SUPER, MEMTYPE, IGNORE_PAT, X_USER.
+ *
+ * The following bits are moved to the regular PT bit positions because they already
+ * exist for regular page tables:
+ *   - A, D.
+ */
+AssertCompile(PGM_BF_PTWALK_EFF_R_SHIFT          - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_READ);
+AssertCompile(PGM_BF_PTWALK_EFF_W_SHIFT          - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_WRITE);
+AssertCompile(PGM_BF_PTWALK_EFF_X_SUPER_SHIFT    - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_EXECUTE);
+AssertCompile(PGM_BF_PTWALK_EFF_IGNORE_PAT_SHIFT - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_IGNORE_PAT);
+AssertCompile(PGM_BF_PTWALK_EFF_X_USER_SHIFT     - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_USER_EXECUTE);
 /** @} */
 
 
@@ -3577,18 +3599,18 @@ typedef struct PGMCPU
     R3PTRTYPE(PEPTPML4)             pGstEptPml4R3;
     /** The guest's page directory pointer table, R0 pointer. */
     R0PTRTYPE(PEPTPML4)             pGstEptPml4R0;
-    /** The guest's EPT pointer. */
+    /** The guest's EPT pointer (copy of virtual VMCS). */
     uint64_t                        uEptPtr;
     /** Mask containing the MBZ PTE bits. */
     uint64_t                        fGstEptMbzPteMask;
     /** Mask containing the MBZ PDE bits. */
     uint64_t                        fGstEptMbzPdeMask;
-    /** Mask containing the MBZ big page PDE bits. */
+    /** Mask containing the MBZ big page (2M) PDE bits. */
     uint64_t                        fGstEptMbzBigPdeMask;
-    /** Mask containing the MBZ PDPE bits. */
-    uint64_t                        fGstEptMbzPdpeMask;
-    /** Mask containing the MBZ big page PDPE bits. */
-    uint64_t                        fGstEptMbzBigPdpeMask;
+    /** Mask containing the MBZ PDPTE bits. */
+    uint64_t                        fGstEptMbzPdpteMask;
+    /** Mask containing the MBZ big page (1G) PDPTE bits. */
+    uint64_t                        fGstEptMbzBigPdpteMask;
     /** Mask containing the MBZ PML4E bits. */
     uint64_t                        fGstEptMbzPml4eMask;
     /** Mask to determine whether an entry is present. */

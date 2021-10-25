@@ -185,12 +185,14 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 4);
 
         Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
-        uint32_t const fEffectiveEpt = ((uint32_t)Pml4e.u & EPT_PML4E_ATTR_MASK) << PGMPTWALK_EFF_EPT_ATTR_SHIFT;
-        uint8_t const fExecute   = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_X_SUPER);
-        uint8_t const fWrite     = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_W);
-        uint8_t const fAccessed  = RT_BF_GET(fEffectiveEpt, PGM_BF_PTWALK_EFF_A);
+        uint64_t const fEptAttrs     = Pml4e.u & EPT_PML4E_ATTR_MASK;
+        uint8_t const fExecute       = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
+        uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
+        uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+        uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
+        uint32_t const fEffectiveEpt = ((uint32_t)fEptAttrs << PGMPTWALK_EFF_EPT_ATTR_SHIFT) & PGMPTWALK_EFF_EPT_ATTR_MASK;
         pWalk->Core.fEffective = fEffective = RT_BF_MAKE(PGM_BF_PTWALK_EFF_X,  fExecute)
-                                            | RT_BF_MAKE(PGM_BF_PTWALK_EFF_RW, fWrite)
+                                            | RT_BF_MAKE(PGM_BF_PTWALK_EFF_RW, fRead & fWrite)
                                             | RT_BF_MAKE(PGM_BF_PTWALK_EFF_US, 1)
                                             | RT_BF_MAKE(PGM_BF_PTWALK_EFF_A,  fAccessed)
                                             | fEffectiveEpt;
@@ -232,6 +234,63 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         rc = pgmGstGet32bitPDPtrEx(pVCpu, &pWalk->pPd);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
+
+# elif PGM_GST_TYPE == PGM_TYPE_EPT
+        PEPTPDPTE pPdpte;
+        pWalk->pPdpte = pPdpte = &pWalk->pPdpt->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
+        EPTPDPTE  Pdpte;
+        pWalk->Pdpte.u = Pdpte.u = pPdpte->u;
+
+        if (GST_IS_PGENTRY_PRESENT(pVCpu, Pdpte)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 3);
+
+        /* The order of the following 2 "if" statements matter. */
+        if (GST_IS_PDPE_VALID(pVCpu, Pdpte))
+        {
+            uint64_t const fEptAttrs = Pdpte.u & EPT_PDPTE_ATTR_MASK;
+            uint8_t const fExecute   = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
+            uint8_t const fWrite     = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+            uint8_t const fAccessed  = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
+            uint32_t const fEffectiveEpt = ((uint32_t)fEptAttrs << PGMPTWALK_EFF_EPT_ATTR_SHIFT) & PGMPTWALK_EFF_EPT_ATTR_MASK;
+            fEffective &= RT_BF_MAKE(PGM_BF_PTWALK_EFF_X,  fExecute)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_RW, fWrite)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_US, 1)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_A,  fAccessed)
+                        | fEffectiveEpt;
+            pWalk->Core.fEffective = fEffective;
+        }
+        else if (GST_IS_BIG_PDPE_VALID(pVCpu, Pdpte))
+        {
+            uint64_t const fEptAttrs  = Pdpte.u & EPT_PDPTE1G_ATTR_MASK;
+            uint8_t const fExecute    = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_EXECUTE);
+            uint8_t const fWrite      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+            uint8_t const fAccessed   = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
+            uint8_t const fDirty      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_DIRTY);
+            uint16_t const fMemType   = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_MEMTYPE);
+            uint16_t const fIgnorePat = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_IGNORE_PAT);
+            uint32_t const fEffectiveEpt = ((uint32_t)fEptAttrs << PGMPTWALK_EFF_EPT_ATTR_SHIFT) & PGMPTWALK_EFF_EPT_ATTR_MASK;
+            fEffective &= RT_BF_MAKE(PGM_BF_PTWALK_EFF_X,  fExecute)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_RW, fWrite)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_US, 1)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_A,  fAccessed)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_D,  fDirty)
+                        | fEffectiveEpt;
+            fEffective |= RT_BF_MAKE(PGM_BF_PTWALK_EFF_MEMTYPE,    fMemType)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_IGNORE_PAT, fIgnorePat);
+
+            pWalk->Core.fEffective = fEffective;
+            pWalk->Core.fEffectiveRW = RT_BOOL(fEffective & X86_PTE_RW);
+            pWalk->Core.fEffectiveUS = RT_BOOL(fEffective & X86_PTE_US);
+            pWalk->Core.fEffectiveNX = !fExecute;
+            pWalk->Core.fBigPage     = false;
+            pWalk->Core.fGigantPage  = true;
+            pWalk->Core.fSucceeded   = true;
+            pWalk->Core.GCPhys       = GST_GET_BIG_PDPE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pdpte)
+                                     | (GCPtr & GST_GIGANT_PAGE_OFFSET_MASK);
+            PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->Core.GCPhys);
+            return VINF_SUCCESS;
+        }
+        else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 3);
 # endif
     }
     {

@@ -1381,7 +1381,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVMCC pVM, PCPGMPAGE pPage, uint64
     {
         LogFlow(("SyncHandlerPte: monitored page (%R[pgmpage]) -> mark read-only\n", pPage));
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
-        pPteDst->u = PGM_PAGE_GET_HCPHYS(pPage) | EPT_E_READ | EPT_E_EXECUTE | EPT_E_TYPE_WB | EPT_E_IGNORE_PAT;
+        pPteDst->u = PGM_PAGE_GET_HCPHYS(pPage) | EPT_E_READ | EPT_E_EXECUTE | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
 # else
         if (fPteSrc & X86_PTE_A)
         {
@@ -1409,7 +1409,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncHandlerPte)(PVMCC pVM, PCPGMPAGE pPage, uint64
         /* 25.2.3.1: bits 2:0 = 010b -> EPT Misconfiguration (exit 49) */
                    | EPT_E_WRITE
         /* 25.2.3.1: leaf && 2:0 != 0 && u3Emt in {2, 3, 7} -> EPT Misconfiguration */
-                   | EPT_E_TYPE_INVALID_3;
+                   | EPT_E_MEMTYPE_INVALID_3;
 #   else
         /* Set high page frame bits that MBZ (bankers on PAE, CPU dependent on AMD64).  */
         SHW_PTE_SET(*pPteDst, pVM->pgm.s.HCPhysInvMmioPg | X86_PTE_PAE_MBZ_MASK_NO_NX | X86_PTE_P);
@@ -1567,7 +1567,7 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
                     STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,DirtyPageSkipped));
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
                     PteDst.u = PGM_PAGE_GET_HCPHYS(pPage)
-                             | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_TYPE_WB | EPT_E_IGNORE_PAT;
+                             | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
 # else
                     SHW_PTE_SET(PteDst, fGstShwPteFlags | PGM_PAGE_GET_HCPHYS(pPage));
 # endif
@@ -2904,7 +2904,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
             if (HCPhys != NIL_RTHCPHYS)
             {
 #  if PGM_SHW_TYPE == PGM_TYPE_EPT
-                PdeDst.u = HCPhys | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_LEAF | EPT_E_IGNORE_PAT | EPT_E_TYPE_WB
+                PdeDst.u = HCPhys | EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_LEAF | EPT_E_IGNORE_PAT | EPT_E_MEMTYPE_WB
                          | (PdeDst.u & X86_PDE_AVL_MASK) /** @todo do we need this? */;
 #  else
                 PdeDst.u = HCPhys | X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_PS

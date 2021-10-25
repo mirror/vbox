@@ -414,27 +414,27 @@
 /** Bits 3-5 - Memory type mask (leaf only, MBZ).
  * The memory type is only applicable for leaf entries and MBZ for
  * non-leaf (causes miconfiguration exit). */
-#define EPT_E_TYPE_MASK         UINT64_C(0x0038)
+#define EPT_E_MEMTYPE_MASK      UINT64_C(0x0038)
 /** Bits 3-5 - Memory type shifted mask. */
-#define EPT_E_TYPE_SMASK        UINT64_C(0x0007)
+#define EPT_E_MEMTYPE_SMASK     UINT64_C(0x0007)
 /** Bits 3-5 - Memory type shift count. */
-#define EPT_E_TYPE_SHIFT        3
+#define EPT_E_MEMTYPE_SHIFT     3
 /** Bits 3-5 - Memory type: UC. */
-#define EPT_E_TYPE_UC           (UINT64_C(0) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_UC        (UINT64_C(0) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WC. */
-#define EPT_E_TYPE_WC           (UINT64_C(1) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_WC        (UINT64_C(1) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (2). */
-#define EPT_E_TYPE_INVALID_2    (UINT64_C(2) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_2 (UINT64_C(2) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (3). */
-#define EPT_E_TYPE_INVALID_3    (UINT64_C(3) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_3 (UINT64_C(3) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WT. */
-#define EPT_E_TYPE_WT           (UINT64_C(4) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_WT        (UINT64_C(4) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WP. */
-#define EPT_E_TYPE_WP           (UINT64_C(5) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_WP        (UINT64_C(5) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WB. */
-#define EPT_E_TYPE_WB           (UINT64_C(6) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_WB        (UINT64_C(6) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (7). */
-#define EPT_E_TYPE_INVALID_7    (UINT64_C(7) << EPT_E_TYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_7 (UINT64_C(7) << EPT_E_MEMTYPE_SHIFT)
 
 /** Bit 6 - Ignore page attribute table (leaf, MBZ). */
 #define EPT_E_BIT_IGNORE_PAT    6
@@ -467,10 +467,57 @@
 
 /* Bit 61, 62 are always ignored at time of writing. */
 
-/** Bit 63 - Supress \#VE (leaf only, ignored).
+/** Bit 63 - Suppress \#VE (leaf only, ignored).
  * @note Ignored if EPT violation to \#VE conversion is disabled. */
-#define EPT_E_BIT_IGNORE_VE     63
-#define EPT_E_IGNORE_VE         RT_BIT_64(EPT_E_BIT_IGNORE_VE)     /**< @see EPT_E_BIT_IGNORE_VE*/
+#define EPT_E_BIT_SUPPRESS_VE   63
+#define EPT_E_SUPPRESS_VE       RT_BIT_64(EPT_E_BIT_SUPPRESS_VE)     /**< @see EPT_E_BIT_SUPPRESS_VE*/
+/** @} */
+
+
+/**@name Bit fields for common EPT attributes.
+ @{ */
+/** Read access. */
+#define VMX_BF_EPT_PT_READ_SHIFT                        0
+#define VMX_BF_EPT_PT_READ_MASK                         UINT64_C(0x0000000000000001)
+/** Write access. */
+#define VMX_BF_EPT_PT_WRITE_SHIFT                       1
+#define VMX_BF_EPT_PT_WRITE_MASK                        UINT64_C(0x0000000000000002)
+/** Execute access or execute access for supervisor-mode linear-addresses. */
+#define VMX_BF_EPT_PT_EXECUTE_SHIFT                     2
+#define VMX_BF_EPT_PT_EXECUTE_MASK                      UINT64_C(0x0000000000000004)
+/** EPT memory type. */
+#define VMX_BF_EPT_PT_MEMTYPE_SHIFT                     3
+#define VMX_BF_EPT_PT_MEMTYPE_MASK                      UINT64_C(0x0000000000000038)
+/** Ignore PAT. */
+#define VMX_BF_EPT_PT_IGNORE_PAT_SHIFT                  6
+#define VMX_BF_EPT_PT_IGNORE_PAT_MASK                   UINT64_C(0x0000000000000040)
+/** Ignored (bit 7). */
+#define VMX_BF_EPT_PT_IGN_7_SHIFT                       7
+#define VMX_BF_EPT_PT_IGN_7_MASK                        UINT64_C(0x0000000000000080)
+/** Accessed flag. */
+#define VMX_BF_EPT_PT_ACCESSED_SHIFT                    8
+#define VMX_BF_EPT_PT_ACCESSED_MASK                     UINT64_C(0x0000000000000100)
+/** Dirty flag. */
+#define VMX_BF_EPT_PT_DIRTY_SHIFT                       9
+#define VMX_BF_EPT_PT_DIRTY_MASK                        UINT64_C(0x0000000000000200)
+/** Execute access for user-mode linear addresses. */
+#define VMX_BF_EPT_PT_EXECUTE_USER_SHIFT                10
+#define VMX_BF_EPT_PT_EXECUTE_USER_MASK                 UINT64_C(0x0000000000000400)
+/** Ignored (bit 59:11). */
+#define VMX_BF_EPT_PT_IGN_59_11_SHIFT                   11
+#define VMX_BF_EPT_PT_IGN_59_11_MASK                    UINT64_C(0x0ffffffffffff800)
+/** Supervisor shadow stack. */
+#define VMX_BF_EPT_PT_SUPER_SHW_STACK_SHIFT             60
+#define VMX_BF_EPT_PT_SUPER_SHW_STACK_MASK              UINT64_C(0x1000000000000000)
+/** Ignored (bits 62:61). */
+#define VMX_BF_EPT_PT_IGN_62_61_SHIFT                   61
+#define VMX_BF_EPT_PT_IGN_62_61_MASK                    UINT64_C(0x6000000000000000)
+/** Suppress \#VE. */
+#define VMX_BF_EPT_PT_SUPPRESS_VE_SHIFT                 63
+#define VMX_BF_EPT_PT_SUPPRESS_VE_MASK                  UINT64_C(0x8000000000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_PT_, UINT64_C(0), UINT64_MAX,
+                            (READ, WRITE, EXECUTE, MEMTYPE, IGNORE_PAT, IGN_7, ACCESSED, DIRTY, EXECUTE_USER, IGN_59_11,
+                            SUPER_SHW_STACK, IGN_62_61, SUPPRESS_VE));
 /** @} */
 
 
@@ -581,16 +628,26 @@ typedef struct EPTPDPTEBITS
 } EPTPDPTEBITS;
 AssertCompileSize(EPTPDPTEBITS, 8);
 
+/** Bit 7 - - EPT - PDPTE maps a 1GB page. */
+#define EPT_PDPTE1G_SIZE_MASK       RT_BIT_64(7)
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PDPTE_PG_MASK       X86_PDPE_PG_MASK
+#define EPT_PDPTE_PG_MASK           X86_PDPE_PG_MASK
+/** Bits 12-51 - - EPT - Physical Page number of the next level. */
+#define EPT_PDPTE1G_PG_MASK         X86_PDPE_PG_MASK
+
 /** The page shift to get the PDPT index. */
-#define EPT_PDPT_SHIFT          X86_PDPT_SHIFT
+#define EPT_PDPT_SHIFT              X86_PDPT_SHIFT
 /** The PDPT index mask (apply to a shifted page address). */
-#define EPT_PDPT_MASK           X86_PDPT_MASK_AMD64
+#define EPT_PDPT_MASK               X86_PDPT_MASK_AMD64
 /** Bits 3-7 - - EPT - PDPTE MBZ Mask. */
-#define EPT_PDPTE_MBZ_MASK      UINT64_C(0x00000000000000f8)
+#define EPT_PDPTE_MBZ_MASK          UINT64_C(0x00000000000000f8)
 /** Bits 12-29 - - EPT - 1GB PDPTE MBZ Mask. */
-#define EPT_PDPTE1G_MBZ_MASK    UINT64_C(0x000000003ffff000)
+#define EPT_PDPTE1G_MBZ_MASK        UINT64_C(0x000000003ffff000)
+/** Mask of all possible EPT PDPTE (1GB) attribute bits. */
+#define EPT_PDPTE1G_ATTR_MASK       (  EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT \
+                                     | EPT_E_ACCESSED | EPT_E_DIRTY | EPT_E_USER_EXECUTE)
+/** Mask of all possible EPT PDPTE attribute bits. */
+#define EPT_PDPTE_ATTR_MASK         (EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED | EPT_E_USER_EXECUTE)
 /** */
 
 /**
@@ -664,7 +721,6 @@ AssertCompileSize(EPTPDEBITS, 8);
 #define EPT_PD_MASK             X86_PD_PAE_MASK
 /** Bits 3-7 - EPT - PDE MBZ Mask. */
 #define EPT_PDE_MBZ_MASK        UINT64_C(0x00000000000000f8)
-
 
 
 /**
@@ -818,6 +874,8 @@ typedef EPTPT *PEPTPT;
 /** Pointer to a const extended table. */
 typedef const EPTPT *PCEPTPT;
 
+/** EPTP page mask for the EPT PML4 table. */
+#define EPT_EPTP_PG_MASK        X86_CR3_AMD64_PAGE_MASK
 /** @} */
 
 /**
