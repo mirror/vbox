@@ -131,6 +131,8 @@ static int drvHstAudAlsaStreamClose(snd_pcm_t **phPCM)
     if (!phPCM || !*phPCM)
         return VINF_SUCCESS;
 
+    LogRelFlowFuncEnter();
+
     int rc;
     int rc2 = snd_pcm_close(*phPCM);
     if (rc2 == 0)
@@ -144,7 +146,7 @@ static int drvHstAudAlsaStreamClose(snd_pcm_t **phPCM)
         LogRel(("ALSA: Closing PCM descriptor failed: %s (%d, %Rrc)\n", snd_strerror(rc2), rc2, rc));
     }
 
-    LogFlowFuncLeaveRC(rc);
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
