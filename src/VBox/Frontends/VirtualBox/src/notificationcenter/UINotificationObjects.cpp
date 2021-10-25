@@ -1154,7 +1154,8 @@ UINotificationMessage::~UINotificationMessage()
 void UINotificationMessage::createMessage(const QString &strName,
                                           const QString &strDetails,
                                           const QString &strInternalName /* = QString() */,
-                                          const QString &strHelpKeyword /* = QString() */)
+                                          const QString &strHelpKeyword /* = QString() */,
+                                          UINotificationCenter *pParent /* = 0 */)
 {
     /* Check if message suppressed: */
     if (isSuppressed(strInternalName))
@@ -1164,24 +1165,31 @@ void UINotificationMessage::createMessage(const QString &strName,
         && m_messages.contains(strInternalName))
         return;
 
+    /* Choose effective parent: */
+    UINotificationCenter *pEffectiveParent = pParent ? pParent : gpNotificationCenter;
+
     /* Create message finally: */
-    const QUuid uId = gpNotificationCenter->append(new UINotificationMessage(strName,
-                                                                             strDetails,
-                                                                             strInternalName,
-                                                                             strHelpKeyword));
+    const QUuid uId = pEffectiveParent->append(new UINotificationMessage(strName,
+                                                                         strDetails,
+                                                                         strInternalName,
+                                                                         strHelpKeyword));
     if (!strInternalName.isEmpty())
         m_messages[strInternalName] = uId;
 }
 
 /* static */
-void UINotificationMessage::destroyMessage(const QString &strInternalName)
+void UINotificationMessage::destroyMessage(const QString &strInternalName,
+                                           UINotificationCenter *pParent /* = 0 */)
 {
     /* Check if message really exists: */
     if (!m_messages.contains(strInternalName))
         return;
 
+    /* Choose effective parent: */
+    UINotificationCenter *pEffectiveParent = pParent ? pParent : gpNotificationCenter;
+
     /* Destroy message finally: */
-    gpNotificationCenter->revoke(m_messages.value(strInternalName));
+    pEffectiveParent->revoke(m_messages.value(strInternalName));
     m_messages.remove(strInternalName);
 }
 
