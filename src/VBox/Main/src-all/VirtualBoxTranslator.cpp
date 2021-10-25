@@ -67,7 +67,7 @@ static DECLCALLBACK(void) freeThreadCache(void *pvValue) RT_NOTHROW_DEF
 /**
  * @callback_method_impl{FNRTONCECLEANUP, Destroys TLS index during the process termination.}
  */
-DECLCALLBACK(void) uninitTls(void *pvUser, bool fLazyCleanUpOk)
+static DECLCALLBACK(void) uninitTls(void *pvUser, bool fLazyCleanUpOk)
 {
     RT_NOREF(pvUser);
     if (fLazyCleanUpOk && g_idxTls != NIL_RTTLS)
