@@ -2042,7 +2042,8 @@ void UIExtraDataManager::hotloadMachineExtraDataMap(const QUuid &uID)
     /* Search for corresponding machine: */
     CVirtualBox vbox = uiCommon().virtualBox();
     CMachine machine = vbox.FindMachine(uID.toString());
-    AssertReturnVoid(vbox.isOk() && !machine.isNull());
+    if (machine.isNull())
+        return;
 
     /* Make sure at least empty map is created: */
     m_data[uID] = ExtraDataMap();
