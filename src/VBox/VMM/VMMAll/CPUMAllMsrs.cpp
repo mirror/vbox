@@ -1439,11 +1439,24 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPUCC pVCpu
 }
 
 
+/**
+ * Get fixed IA32_VMX_EPT_VPID_CAP value for PGM and cpumMsrRd_Ia32VmxEptVpidCap.
+ *
+ * @returns Fixed IA32_VMX_EPT_VPID_CAP value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxEptVpidCap(PCVMCPU pVCpu)
+{
+    RT_NOREF_PV(pVCpu);
+    return pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64EptVpidCaps;
+}
+
+
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEptVpidCap(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64EptVpidCaps;
+    *puValue = CPUMGetGuestIa32VmxEptVpidCap(pVCpu);
     return VINF_SUCCESS;
 }
 
