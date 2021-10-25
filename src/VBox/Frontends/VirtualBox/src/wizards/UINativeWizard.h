@@ -79,6 +79,8 @@ class SHARED_LIBRARY_STUFF UINativeWizard : public QIWithRetranslateUI<QDialog>
 
 public:
 
+    /** Returns local notification-center reference. */
+    UINotificationCenter *notificationCenter() const;
     /** Immediately handles notification @a pProgress object. */
     bool handleNotificationProgressNow(UINotificationProgress *pProgress);
 
