@@ -329,7 +329,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
                              pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
         }
         else
-            RTTestFailed(g_hTest, "Test #%RU32/%RU16 (%RU16/%RU16): AudioTestSvcClientToneRecord() failed with %Rrc\n",
+            RTTestFailed(g_hTest, "Test #%RU32 (%RU16/%RU16): AudioTestSvcClientToneRecord() failed with %Rrc\n",
                          pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
 
         if (RT_SUCCESS(rc))
