@@ -8049,15 +8049,15 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
      * -NOT- check if CPUMCTX_EXTRN_CR3 is set!
      *
      * The longjmp exit path can't check these CR3 force-flags and call code that takes a lock again. We cover for it here.
+     *
+     * The force-flag is checked first as it's cheaper for potential superfluous calls to this function.
      */
-    if (VMMRZCallRing3IsEnabled(pVCpu))
+    if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3)
+        && VMMRZCallRing3IsEnabled(pVCpu))
     {
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
-        {
-            Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
-            PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu), false /* fPdpesMapped */);
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-        }
+        Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
+        PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu), false /* fPdpesMapped */);
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
     }
 
     return VINF_SUCCESS;
@@ -13935,10 +13935,9 @@ static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo
 /**
  * VM-exit helper for MOV to CRx (CRx write).
  */
-static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
 {
-    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
-    AssertRCReturn(rc, rc);
+    HMVMX_CPUMCTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, cbInstr, iCrReg, iGReg);
     AssertMsg(   rcStrict == VINF_SUCCESS
@@ -15668,7 +15667,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(   iCrReg != 8
                    || !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
 
-            rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmcsInfo, pVmxTransient->cbExitInstr, iGReg, iCrReg);
+            rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->cbExitInstr, iGReg, iCrReg);
             AssertMsg(   rcStrict == VINF_SUCCESS
                       || rcStrict == VINF_PGM_SYNC_CR3, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
@@ -17136,7 +17135,11 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
                 rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
             }
             else
-                rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->cbExitInstr, iGReg, iCrReg);
+            {
+                int const rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+                AssertRCReturn(rc, rc);
+                rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->cbExitInstr, iGReg, iCrReg);
+            }
             break;
         }
 
