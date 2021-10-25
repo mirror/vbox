@@ -36,6 +36,7 @@
 static RTONCE               g_Once = RTONCE_INITIALIZER;
 RTCRITSECTRW                VirtualBoxTranslator::s_instanceRwLock;
 VirtualBoxTranslator       *VirtualBoxTranslator::s_pInstance = NULL;
+static RTONCE               g_tlsOnce = RTONCE_INITIALIZER;
 static RTTLS                g_idxTls = NIL_RTTLS;
 
 typedef std::pair<const char *, const char *> LastTranslation;
@@ -63,6 +64,31 @@ static DECLCALLBACK(void) freeThreadCache(void *pvValue) RT_NOTHROW_DEF
 }
 
 
+/**
+ * @callback_method_impl{FNRTONCECLEANUP, Destroys TLS index during the process termination.}
+ */
+DECLCALLBACK(void) uninitTls(void *pvUser, bool fLazyCleanUpOk)
+{
+    RT_NOREF(pvUser);
+    if (fLazyCleanUpOk && g_idxTls != NIL_RTTLS)
+    {
+        RTTlsFree(g_idxTls);
+        g_idxTls = NIL_RTTLS;
+    }
+}
+
+
+/**
+ * @callback_method_impl{FNRTONCE}
+ */
+static DECLCALLBACK(int32_t) initTls(void *pvUser)
+{
+    RT_NOREF(pvUser);
+    RTTlsAllocEx(&g_idxTls, &freeThreadCache);
+    return VINF_SUCCESS;
+}
+
+
 VirtualBoxTranslator::VirtualBoxTranslator()
     : util::RWLockHandle(util::LOCKCLASS_TRANSLATOR)
     , m_cInstanceRefs(0)
@@ -70,7 +96,6 @@ VirtualBoxTranslator::VirtualBoxTranslator()
     , m_strLanguage("C")
     , m_hStrCache(NIL_RTSTRCACHE)
 {
-    RTTlsAllocEx(&g_idxTls, &freeThreadCache);
     int rc = RTStrCacheCreate(&m_hStrCache, "API Translation");
     m_rcCache = rc;
     if (RT_FAILURE(rc))
@@ -89,8 +114,6 @@ VirtualBoxTranslator::~VirtualBoxTranslator()
             freeThreadCache(pvTlsValue);
             RTTlsSet(g_idxTls, NULL);
         }
-        RTTlsFree(g_idxTls);
-        g_idxTls = NIL_RTTLS;
     }
 
     m_pDefaultComponent = NULL;
@@ -445,7 +468,8 @@ const char *VirtualBoxTranslator::translate(PTRCOMPONENT aComponent,
 
 static LastTranslation *getTlsEntry() RT_NOEXCEPT
 {
-    if (RT_LIKELY(g_idxTls != NIL_RTTLS))
+    int rc = RTOnceEx(&g_tlsOnce, initTls, uninitTls, NULL);
+    if (RT_SUCCESS(rc) && RT_LIKELY(g_idxTls != NIL_RTTLS))
     {
         LastTranslation *pEntry = (LastTranslation *)RTTlsGet(g_idxTls);
         if (pEntry != NULL)
@@ -456,7 +480,7 @@ static LastTranslation *getTlsEntry() RT_NOEXCEPT
         {
             pEntry = new LastTranslation();
             pEntry->first = pEntry->second = "";
-            int rc = RTTlsSet(g_idxTls, pEntry);
+            rc = RTTlsSet(g_idxTls, pEntry);
             if (RT_SUCCESS(rc))
                 return pEntry;
             delete pEntry;
