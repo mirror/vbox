@@ -11944,7 +11944,7 @@
       <desc>
         Proxy server URL for the <link to="ProxyMode_Manual" /> proxy mode.
 
-        The format is: [{type}"://"][{userid}[@{password}]:]{server}[":"{port}]
+        The format is: [{type}"://"][{userid}[:{password}]@]{server}[":"{port}]
 
         Valid types are: http (default), https, socks4, socks4a, socks5, socks5h and direct.
         Please note that these are proxy types defining how the proxy operates rather than
