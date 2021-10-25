@@ -11944,7 +11944,7 @@
       <desc>
         Proxy server URL for the <link to="ProxyMode_Manual" /> proxy mode.
 
-        The format is: [{type}"://"][{userid}[:{password}]@]{server}[":"{port}]
+        The format is: [{type}"://"][{userid}[@{password}]:]{server}[":"{port}]
 
         Valid types are: http (default), https, socks4, socks4a, socks5, socks5h and direct.
         Please note that these are proxy types defining how the proxy operates rather than
@@ -12398,9 +12398,9 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="966303d0-36a8-4180-8971-18650b0d1055"
+    uuid="14233bf3-4609-4abd-99c5-b1d99d30c9dc"
     wsmap="struct"
-    reservedAttributes="16"
+    reservedAttributes="15"
     >
     <desc>
     </desc>
@@ -12547,11 +12547,6 @@
 
     <attribute name="recommendedSecureBoot" type="boolean" readonly="yes">
       <desc>Returns @c true if EFI secure boot is recommended for this OS type.</desc>
-    </attribute>
-
-    <attribute name="recommendedWDDMGraphics" type="boolean" readonly="yes">
-      <desc>Returns @c true if this OS usually has a WDDM graphics driver
-        from guest additions.</desc>
     </attribute>
 
   </interface>
