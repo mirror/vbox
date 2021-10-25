@@ -126,6 +126,7 @@ enum
     VKAT_TEST_OPT_HOST_ATS_ADDR,
     VKAT_TEST_OPT_HOST_ATS_PORT,
     VKAT_TEST_OPT_MODE,
+    VKAT_TEST_OPT_NO_AUDIO_OK,
     VKAT_TEST_OPT_NO_VERIFY,
     VKAT_TEST_OPT_OUTDIR,
     VKAT_TEST_OPT_PAUSE,
@@ -193,6 +194,7 @@ static const RTGETOPTDEF g_aCmdTestOptions[] =
     { "--pcm-signed",        VKAT_TEST_OPT_PCM_SIGNED,          RTGETOPT_REQ_BOOL    },
     { "--probe-backends",    VKAT_TEST_OPT_PROBE_BACKENDS,      RTGETOPT_REQ_NOTHING },
     { "--mode",              VKAT_TEST_OPT_MODE,                RTGETOPT_REQ_STRING  },
+    { "--no-audio-ok",       VKAT_TEST_OPT_NO_AUDIO_OK,         RTGETOPT_REQ_NOTHING },
     { "--no-verify",         VKAT_TEST_OPT_NO_VERIFY,           RTGETOPT_REQ_NOTHING },
     { "--tag",               VKAT_TEST_OPT_TAG,                 RTGETOPT_REQ_STRING  },
     { "--tempdir",           VKAT_TEST_OPT_TEMPDIR,             RTGETOPT_REQ_STRING  },
@@ -716,6 +718,7 @@ static DECLCALLBACK(const char *) audioTestCmdTestHelp(PCRTGETOPTDEF pOpt)
         case VKAT_TEST_OPT_HOST_ATS_PORT:       return "Port of host ATS to connect to\n"
                                                        "    Default: 6052"; /* ATS_TCP_DEF_BIND_PORT_VALKIT */
         case VKAT_TEST_OPT_MODE:                return "Test mode to use when running the tests";
+        case VKAT_TEST_OPT_NO_AUDIO_OK:         return "Enables running without any found audio hardware (e.g. servers)";
         case VKAT_TEST_OPT_NO_VERIFY:           return "Skips the verification step";
         case VKAT_TEST_OPT_OUTDIR:              return "Output directory to use";
         case VKAT_TEST_OPT_PAUSE:               return "Not yet implemented";
@@ -760,6 +763,7 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     uint32_t    uPcmHz         = 0;
     bool        fPcmSigned     = true;
     bool        fProbeBackends = false;
+    bool        fNoAudioOk     = false;
 
     const char *pszGuestTcpAddr  = NULL;
     uint16_t    uGuestTcpPort    = ATS_TCP_DEF_BIND_PORT_GUEST;
@@ -813,6 +817,10 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
                 if (TstEnv.enmMode != AUDIOTESTMODE_UNKNOWN)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Test mode (guest / host) already specified");
                 TstEnv.enmMode = RTStrICmp(ValueUnion.psz, "guest") == 0 ? AUDIOTESTMODE_GUEST : AUDIOTESTMODE_HOST;
+                break;
+
+            case VKAT_TEST_OPT_NO_AUDIO_OK:
+                fNoAudioOk = true;
                 break;
 
             case VKAT_TEST_OPT_NO_VERIFY:
@@ -941,7 +949,11 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
     /* Do this first before everything else below. */
     rc = AudioTestDriverStackPerformSelftest();
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Testing driver stack failed: %Rrc\n", rc);
+    {
+        if (!fNoAudioOk)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Testing driver stack failed: %Rrc\n", rc);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Warning: Testing driver stack not possible (%Rrc), but --no-audio-ok was specified. Running on a server without audio hardware?\n");
+    }
 
     AUDIOTESTDRVSTACK DrvStack;
     if (fProbeBackends)
@@ -951,12 +963,19 @@ static DECLCALLBACK(RTEXITCODE) audioTestMain(PRTGETOPTSTATE pGetState)
         rc = audioTestDriverStackInitEx(&DrvStack, pDrvReg,
                                         true /* fEnabledIn */, true /* fEnabledOut */, TstEnv.IoOpts.fWithDrvAudio); /** @todo Make in/out configurable, too. */
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unable to init driver stack: %Rrc\n", rc);
+    {
+        if (!fNoAudioOk)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unable to init driver stack: %Rrc\n", rc);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Warning: Initializing driver stack not possible (%Rrc), but --no-audio-ok was specified. Running on a server without audio hardware?\n");
+    }
 
     PPDMAUDIOHOSTDEV pDev;
     rc = audioTestDevicesEnumerateAndCheck(&DrvStack, TstEnv.szDev, &pDev);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Enumerating device(s) failed: %Rrc\n", rc);
+    {
+        if (!fNoAudioOk)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Enumerating device(s) failed: %Rrc\n", rc);
+    }
 
     /* For now all tests have the same test environment and driver stack. */
     rc = audioTestEnvCreate(&TstEnv, &DrvStack);

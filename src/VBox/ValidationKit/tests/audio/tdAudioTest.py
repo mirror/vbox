@@ -568,7 +568,8 @@ class tdAudioTest(vbox.TestDriver):
         asArgs = [ sVkatExe, 'test', '--mode', 'host', '--probe-backends', \
                              '--tempdir', sPathAudioTemp, '--outdir', sPathAudioOut, '-a', \
                              '--tag', sTag, \
-                             '--no-verify' ]; # We do the verification separately in the step below.
+                             '--no-audio-ok', \ # Enables running on hosts which do not have any audio hardware.
+                             '--no-verify' ];   # We do the verification separately in the step below.
 
         for _ in range(1, reporter.getVerbosity()): # Verbosity always is initialized at 1.
             asArgs.extend([ '-v' ]);
