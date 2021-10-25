@@ -702,7 +702,8 @@ void UIChooserAbstractModel::sltLocalMachineRegistrationChanged(const QUuid &uMa
         {
             /* Add new machine-item: */
             const CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
-            addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
+            if (comMachine.isNotNull())
+                addLocalMachineIntoTheTree(comMachine, true /* make it visible */);
         }
     }
 }
