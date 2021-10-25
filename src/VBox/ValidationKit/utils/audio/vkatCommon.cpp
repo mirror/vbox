@@ -583,7 +583,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
             uint32_t const cbCanWrite = AudioTestMixStreamGetWritable(&pStream->Mix);
             if (cbCanWrite)
             {
-                if (g_uVerbosity)
+                if (g_uVerbosity >= 3)
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Stream is writable with %RU32ms (%RU32 bytes)\n",
                                  PDMAudioPropsBytesToMilli(pMix->pProps, cbCanWrite), cbCanWrite);
 
@@ -786,7 +786,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
             uint32_t const cbCanRead = AudioTestMixStreamGetReadable(pMix);
             if (cbCanRead)
             {
-                if (g_uVerbosity)
+                if (g_uVerbosity >= 3)
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Stream is readable with %RU32ms (%RU32 bytes)\n",
                                  PDMAudioPropsBytesToMilli(pMix->pProps, cbCanRead), cbCanRead);
 
@@ -811,7 +811,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
             {
                 RTMSINTERVAL const msSleep = RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256);
 
-                if (!nsLastMsgCantRead || nsNow - nsLastMsgCantRead > RT_NS_10SEC) /* Don't spam the output too much. */
+                if (   g_uVerbosity >= 3
+                    && (!nsLastMsgCantRead || nsNow - nsLastMsgCantRead > RT_NS_10SEC)) /* Don't spam the output too much. */
                 {
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be readable again ...\n", msSleep);
                     nsLastMsgCantRead = nsNow;
