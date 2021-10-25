@@ -508,12 +508,7 @@ bool UIWizardNewVMSummaryPage::validatePage()
             return fResult;
     }
 
-    fResult = pWizard->createVM();
-    /* Try to delete the hard disk: */
-    if (!fResult)
-        pWizard->deleteVirtualDisk();
-
-    return fResult;
+    return pWizard->createVM();
 }
 
 

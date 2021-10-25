@@ -639,12 +639,7 @@ bool UIWizardNewVMExpertPage::validatePage()
             return fResult;
     }
 
-    fResult = pWizard->createVM();
-    /* Try to delete the hard disk: */
-    if (!fResult)
-        pWizard->deleteVirtualDisk();
-
-    return fResult;
+    return pWizard->createVM();
 }
 
 bool UIWizardNewVMExpertPage::isProductKeyWidgetEnabled() const

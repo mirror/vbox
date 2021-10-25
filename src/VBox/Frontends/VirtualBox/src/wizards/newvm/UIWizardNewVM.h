@@ -78,7 +78,6 @@ public:
 
     bool createVM();
     bool createVirtualDisk();
-    void deleteVirtualDisk();
 
     CMedium &virtualDisk();
     void setVirtualDisk(const CMedium &medium);
@@ -188,6 +187,7 @@ private:
     void setUnattendedPageVisible(bool fVisible);
     /** Returns the Id of newly created VM. */
     QUuid createdMachineId() const;
+    void deleteVirtualDisk();
 
     /** @name Variables
      * @{ */

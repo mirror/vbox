@@ -131,6 +131,9 @@ bool UIWizardNewVM::createVM()
         m_machine = vbox.CreateMachine(m_strMachineFilePath,
                                        m_strMachineBaseName,
                                        groups, strTypeId, QString());
+        /* Try to delete the hard disk: */
+        deleteVirtualDisk();
+
         if (!vbox.isOk())
         {
             msgCenter().cannotCreateMachine(vbox, this);
@@ -163,6 +166,8 @@ bool UIWizardNewVM::createVM()
     vbox.RegisterMachine(m_machine);
     if (!vbox.isOk())
     {
+        /* Try to delete the hard disk: */
+        deleteVirtualDisk();
         msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
         return false;
     }
@@ -440,20 +445,20 @@ bool UIWizardNewVM::attachDefaultDevices()
     {
         CVirtualBox vbox = uiCommon().virtualBox();
         /* Unregister on failure */
-        QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_UnregisterOnly);   /// @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
+        QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
         if (vbox.isOk())
         {
             CProgress progress = m_machine.DeleteConfig(aMedia);
             progress.WaitForCompletion(-1);         /// @todo do this nicely with a progress dialog, this can delete lots of files
         }
-        return false;
     }
 
-    /* Ensure we don't try to delete a newly created virtual hard drive on success: */
+    /* Make sure we detach CMedium wrapper from IMedium pointer to avoid deletion of IMedium as m_virtualDisk is deallocated: */
+    /* Or in case of IMachine::DeleteConfig IMedium has been already deleted so detach in this case as well:*/
     if (!m_virtualDisk.isNull())
         m_virtualDisk.detach();
 
-    return true;
+    return success;
 }
 
 void UIWizardNewVM::sltHandleWizardCancel()
