@@ -363,7 +363,7 @@ QString UIWizardImportAppSource::path(UIEmptyFilePathSelector *pFileSelector)
     AssertPtrReturn(pFileSelector, QString());
 
     /* Give the actual result: */
-    return pFileSelector->path().toLower();
+    return pFileSelector->path();
 }
 
 QString UIWizardImportAppSource::profileName(QIComboBox *pCombo)
