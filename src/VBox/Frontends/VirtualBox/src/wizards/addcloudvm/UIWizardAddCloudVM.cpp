@@ -17,7 +17,6 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIWizardAddCloudVM.h"
 #include "UIWizardAddCloudVMPageExpert.h"

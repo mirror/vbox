@@ -27,7 +27,6 @@
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardAddCloudVM.h"
