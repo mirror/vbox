@@ -432,7 +432,7 @@ void UIChooserModel::makeSureNoItemWithCertainIdSelected(const QUuid &uId)
         setSelectedItem(findClosestUnselectedItem());
 
     /* If global item is currently chosen, selection should be invalidated: */
-    if (firstSelectedItem()->type() == UIChooserNodeType_Global)
+    if (firstSelectedItem() && firstSelectedItem()->type() == UIChooserNodeType_Global)
         emit sigSelectionInvalidated();
 }
 
@@ -1152,11 +1152,14 @@ void UIChooserModel::sltLocalMachineRegistrationChanged(const QUuid &uMachineId,
         if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
         {
             /* Rebuild tree for main root: */
-            buildTreeForMainRoot(false /* preserve selection */);
-            /* Select newly added item: */
-            setSelectedItem(root()->searchForItem(uMachineId.toString(),
-                                                  UIChooserItemSearchFlag_Machine |
-                                                  UIChooserItemSearchFlag_ExactId));
+            buildTreeForMainRoot(true /* preserve selection */);
+            /* Search for newly added item: */
+            UIChooserItem *pNewItem = root()->searchForItem(uMachineId.toString(),
+                                                            UIChooserItemSearchFlag_Machine |
+                                                            UIChooserItemSearchFlag_ExactId);
+            /* Select newly added item if any: */
+            if (pNewItem)
+                setSelectedItem(pNewItem);
         }
     }
 }
