@@ -133,7 +133,7 @@ int AudioTestDriverStackPerformSelftest(void)
     AUDIOTESTDRVSTACK DrvStack;
     int rc = audioTestDriverStackProbe(&DrvStack, pDrvReg,
                                        true /* fEnabledIn */, true /* fEnabledOut */, false /* fWithDrvAudio */);
-    AssertRCReturn(rc, rc);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
 
     AUDIOTESTIOOPTS IoOpts;
     audioTestIoOptsInitDefaults(&IoOpts);
@@ -146,17 +146,17 @@ int AudioTestDriverStackPerformSelftest(void)
     AssertRCReturn(rc, rc);
 
     rc = audioTestDriverStackStreamEnable(&DrvStack, pStream);
-    AssertRCReturn(rc, rc);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
 
-    AssertReturn(audioTestDriverStackStreamIsOkay(&DrvStack, pStream), VERR_AUDIO_STREAM_NOT_READY);
+    RTTEST_CHECK_RET(g_hTest, audioTestDriverStackStreamIsOkay(&DrvStack, pStream), VERR_AUDIO_STREAM_NOT_READY);
 
     uint8_t abBuf[_4K];
     memset(abBuf, 0x42, sizeof(abBuf));
 
     uint32_t cbWritten;
     rc = audioTestDriverStackStreamPlay(&DrvStack, pStream, abBuf, sizeof(abBuf), &cbWritten);
-    AssertRCReturn(rc, rc);
-    AssertReturn(cbWritten == sizeof(abBuf), VERR_AUDIO_STREAM_NOT_READY);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
+    RTTEST_CHECK_RET(g_hTest, cbWritten == sizeof(abBuf), VERR_AUDIO_STREAM_NOT_READY);
 
     audioTestDriverStackStreamDrain(&DrvStack, pStream, true /* fSync */);
     audioTestDriverStackStreamDestroy(&DrvStack, pStream);
@@ -198,13 +198,13 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
 
     /* Generate tag for guest side. */
     int rc = RTStrCopy(pTstEnvGst->szTag, sizeof(pTstEnvGst->szTag), pCtx->szTag);
-    AssertRCReturn(rc, rc);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
 
     rc = AudioTestPathCreateTemp(pTstEnvGst->szPathTemp, sizeof(pTstEnvGst->szPathTemp), "selftest-guest");
-    AssertRCReturn(rc, rc);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
 
     rc = AudioTestPathCreateTemp(pTstEnvGst->szPathOut, sizeof(pTstEnvGst->szPathOut), "selftest-out");
-    AssertRCReturn(rc, rc);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
 
     pTstEnvGst->enmMode = AUDIOTESTMODE_GUEST;
 
@@ -213,7 +213,9 @@ static DECLCALLBACK(int) audioTestSelftestGuestAtsThread(RTTHREAD hThread, void 
     {
         RTThreadUserSignal(hThread);
 
-        audioTestWorker(pTstEnvGst);
+        rc = audioTestWorker(pTstEnvGst);
+        RTTEST_CHECK_RC_OK_RET(g_hTest, rc, rc);
+
         audioTestEnvDestroy(pTstEnvGst);
     }
 
@@ -232,7 +234,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 
     /* Generate a common tag for guest and host side. */
     int rc = AudioTestGenTag(pCtx->szTag, sizeof(pCtx->szTag));
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, RTEXITCODE_FAILURE);
 
     PAUDIOTESTENV pTstEnvHst = &pCtx->Host.TstEnv;
 
@@ -247,13 +249,13 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
 
     /* Generate tag for host side. */
     rc = RTStrCopy(pTstEnvHst->szTag, sizeof(pTstEnvHst->szTag), pCtx->szTag);
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, RTEXITCODE_FAILURE);
 
     rc = AudioTestPathCreateTemp(pTstEnvHst->szPathTemp, sizeof(pTstEnvHst->szPathTemp), "selftest-tmp");
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, RTEXITCODE_FAILURE);
 
     rc = AudioTestPathCreateTemp(pTstEnvHst->szPathOut, sizeof(pTstEnvHst->szPathOut), "selftest-out");
-    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTTEST_CHECK_RC_OK_RET(g_hTest, rc, RTEXITCODE_FAILURE);
 
     /*
      * Step 1.
@@ -286,10 +288,7 @@ RTEXITCODE audioTestDoSelftest(PSELFTESTCTX pCtx)
              * Step 4.
              */
             rc = audioTestWorker(pTstEnvHst);
-            if (RT_SUCCESS(rc))
-            {
-
-            }
+            RTTEST_CHECK_RC_OK(g_hTest, rc);
 
             audioTestEnvDestroy(pTstEnvHst);
         }
