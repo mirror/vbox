@@ -2240,7 +2240,11 @@ class TestDriver(base.TestDriver):                                              
                 else:
                     reporter.log("    hostInterface:  %s" % (oNic.hostInterface,));
             else:
-                if self.fpApiVer >= 4.1:
+                if self.fpApiVer >= 7.0:
+                    if oNic.attachmentType == vboxcon.NetworkAttachmentType_HostOnlyNetwork:
+                        reporter.log("    attachmentType: HostOnlyNetwork (%s)" % (oNic.attachmentType,));
+                        reporter.log("    hostonly-net: %s" % (oNic.hostOnlyNetwork,));
+                elif self.fpApiVer >= 4.1:
                     if oNic.attachmentType == vboxcon.NetworkAttachmentType_Generic:
                         reporter.log("    attachmentType: Generic (%s)" % (oNic.attachmentType,));
                         reporter.log("    generic-driver: %s" % (oNic.GenericDriver,));

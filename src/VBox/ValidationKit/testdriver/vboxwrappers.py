@@ -1492,6 +1492,21 @@ class SessionWrapper(TdTaskBase):
                     return '';
                 reporter.log("Created host only NIC: '%s'" % (sRetName,));
 
+        elif self.fpApiVer >= 7.0 and eAttachmentType == vboxcon.NetworkAttachmentType_HostOnlyNetwork:
+            aoHostNetworks = self.oVBoxMgr.getArray(self.oVBox, 'hostOnlyNetworks');
+            if aoHostNetworks:
+                sRetName = aoHostNetworks[0].networkName;
+            else:
+                try:
+                    oHostOnlyNet = self.oVBox.createHostOnlyNetwork('Host-only Test Network');
+                    oHostOnlyNet.lowerIP = '192.168.56.1';
+                    oHostOnlyNet.upperIP = '192.168.56.199';
+                    oHostOnlyNet.networkMask = '255.255.255.0';
+                    sRetName = oHostOnlyNet.networkName;
+                except:
+                    reporter.errorXcpt();
+                    return '';
+
         elif eAttachmentType == vboxcon.NetworkAttachmentType_Internal:
             sRetName = 'VBoxTest';
 
@@ -1570,6 +1585,13 @@ class SessionWrapper(TdTaskBase):
                             oNic.hostInterface = sName;
                     except:
                         reporter.errorXcpt('failed to set the internalNetwork property on slot %s to "%s" for VM "%s"'
+                                           % (iNic, sName, self.sName,));
+                        return False;
+                elif self.fpApiVer >= 7.0 and eAttachmentType == vboxcon.NetworkAttachmentType_HostOnlyNetwork:
+                    try:
+                        oNic.hostOnlyNetwork = sName;
+                    except:
+                        reporter.errorXcpt('failed to set the hostOnlyNetwork property on slot %s to "%s" for VM "%s"'
                                            % (iNic, sName, self.sName,));
                         return False;
                 elif eAttachmentType == vboxcon.NetworkAttachmentType_Internal:

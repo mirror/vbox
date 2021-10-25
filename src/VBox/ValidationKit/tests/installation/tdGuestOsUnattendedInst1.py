@@ -242,6 +242,14 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
             if self.sKind in ('WindowsXP','WindowsXP_64',):
                 eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
 
+        #
+        # Use host-only networks instead of host-only adapters for trunk builds on Mac OS.
+        #
+        if eNic0AttachType == vboxcon.NetworkAttachmentType_HostOnly \
+            and utils.getHostOs() == 'darwin' \
+            and oTestDrv.fpApiVer >= 7.0:
+            eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnlyNetwork;
+
         return vboxtestvms.BaseTestVm._createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage);
 
 
