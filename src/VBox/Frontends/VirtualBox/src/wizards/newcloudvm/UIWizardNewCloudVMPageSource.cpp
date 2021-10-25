@@ -28,7 +28,7 @@
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardNewCloudVM.h"
@@ -216,6 +216,7 @@ void UIWizardNewCloudVMSource::populateSourceImages(QListWidget *pList,
 }
 
 void UIWizardNewCloudVMSource::populateFormProperties(CVirtualSystemDescription comVSD,
+                                                      UIWizardNewCloudVM *pWizard,
                                                       QTabBar *pTabBar,
                                                       const QString &strImageId)
 {
@@ -233,7 +234,7 @@ void UIWizardNewCloudVMSource::populateFormProperties(CVirtualSystemDescription 
         default: break;
     }
     if (!comVSD.isOk())
-        msgCenter().cannotAddVirtualSystemDescriptionValue(comVSD);
+        UINotificationMessage::cannotChangeVirtualSystemDescriptionParameter(comVSD, pWizard->notificationCenter());
 }
 
 void UIWizardNewCloudVMSource::updateComboToolTip(QIComboBox *pCombo)
@@ -516,7 +517,7 @@ bool UIWizardNewCloudVMPageSource::validatePage()
 
     /* Populate vsd and form properties: */
     wizard()->setVSD(createVirtualSystemDescription(wizard()));
-    populateFormProperties(wizard()->vsd(), m_pSourceTabBar, m_strSourceImageId);
+    populateFormProperties(wizard()->vsd(), wizard(), m_pSourceTabBar, m_strSourceImageId);
     wizard()->createVSDForm();
 
     /* And make sure they are not NULL: */

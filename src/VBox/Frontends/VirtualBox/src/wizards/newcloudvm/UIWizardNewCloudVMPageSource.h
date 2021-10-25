@@ -61,11 +61,23 @@ namespace UIWizardNewCloudVMSource
     /** Populates @a pCombo with known profiles.
       * @param  strProviderShortName  Brings the short name of provider profiles related to.
       * @param  strProfileName        Brings the name of profile to be chosen by default. */
-    void populateProfiles(QIComboBox *pCombo, const QString &strProviderShortName, const QString &strProfileName);
-    /** Populates @a pList with source images from tab of @a pTabBar available in @a comClient. */
-    void populateSourceImages(QListWidget *pList, QTabBar *pTabBar, const CCloudClient &comClient);
-    /** Populates @a comVSD with form property suitable for tab of @a pTabBar with @a strImageId value. */
-    void populateFormProperties(CVirtualSystemDescription comVSD, QTabBar *pTabBar, const QString &strImageId);
+    void populateProfiles(QIComboBox *pCombo,
+                          const QString &strProviderShortName,
+                          const QString &strProfileName);
+    /** Populates @a pList with source images.
+      @param  pTabBar    Brings the tab-bar source images should be acquired for.
+      @param  comClient  Brings the cloud client source images should be acquired from. */
+    void populateSourceImages(QListWidget *pList,
+                              QTabBar *pTabBar,
+                              const CCloudClient &comClient);
+    /** Populates @a comVSD with form property.
+      * @param  pWizard     Brings the wizard used as parent for warnings inside.
+      * @param  pTabBar     Brings the tab-bar property should gather according to.
+      * @param  strImageId  Brings the image id which should be added as property. */
+    void populateFormProperties(CVirtualSystemDescription comVSD,
+                                UIWizardNewCloudVM *pWizard,
+                                QTabBar *pTabBar,
+                                const QString &strImageId);
 
     /** Updates @a pCombo tool-tips. */
     void updateComboToolTip(QIComboBox *pCombo);

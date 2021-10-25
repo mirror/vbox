@@ -22,7 +22,7 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UIFormEditorWidget.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageProperties.h"
 
@@ -140,7 +140,7 @@ bool UIWizardNewCloudVMPageProperties::validatePage()
         comForm.GetVirtualSystemDescription();
         fResult = comForm.isOk();
         if (!fResult)
-            msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+            UINotificationMessage::cannotAcquireVirtualSystemDescriptionFormParameter(comForm, wizard()->notificationCenter());
     }
 
     /* Try to create cloud VM: */

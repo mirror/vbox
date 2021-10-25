@@ -619,12 +619,24 @@ void UINotificationMessage::cannotAcquireNATNetworkParameter(const CNATNetwork &
         UIErrorString::formatErrorInfo(comNetwork));
 }
 
+/* static */
 void UINotificationMessage::cannotAcquireDispayParameter(const CDisplay &comDisplay)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Display failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire display parameter.") +
         UIErrorString::formatErrorInfo(comDisplay));
+}
+
+/* static */
+void UINotificationMessage::cannotAcquireVirtualSystemDescriptionFormParameter(const CVirtualSystemDescriptionForm &comVsdForm,
+                                                                               UINotificationCenter *pParent)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "VSD form failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire virtual system description form parameter.") +
+        UIErrorString::formatErrorInfo(comVsdForm),
+        QString(), QString(), pParent);
 }
 
 /* static */
@@ -708,6 +720,17 @@ void UINotificationMessage::cannotChangeCloudProfileParameter(const CCloudProfil
         QApplication::translate("UIMessageCenter", "Cloud profile failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to assign cloud profile parameter.") +
         UIErrorString::formatErrorInfo(comProfile));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
+                                                                          UINotificationCenter *pParent)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "VSD failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to assign virtual system description parameter.") +
+        UIErrorString::formatErrorInfo(comVsd),
+        QString(), QString(), pParent);
 }
 
 /* static */
