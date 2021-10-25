@@ -18,7 +18,6 @@
 /* GUI includes: */
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
-#include "UIProgressObject.h"
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageSource.h"
 #include "UIWizardNewCloudVMPageProperties.h"

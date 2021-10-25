@@ -21,7 +21,6 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIProgressObject.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMNameOSTypePage.h"
 #include "UIWizardNewVMUnattendedPage.h"

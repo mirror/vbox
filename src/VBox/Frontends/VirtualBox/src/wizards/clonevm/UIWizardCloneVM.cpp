@@ -19,7 +19,6 @@
 #include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
-#include "UIProgressObject.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMNamePathPage.h"
 #include "UIWizardCloneVMTypePage.h"

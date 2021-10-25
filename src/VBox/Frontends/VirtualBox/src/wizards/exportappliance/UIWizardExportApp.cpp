@@ -25,7 +25,6 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
-#include "UIProgressObject.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppPageExpert.h"
 #include "UIWizardExportAppPageFormat.h"
