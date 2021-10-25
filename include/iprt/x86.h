@@ -2612,6 +2612,8 @@ typedef const X86PDPAE *PCX86PDPAE;
 #define X86_PDPE_AVL_MASK                   (RT_BIT_32(9) | RT_BIT_32(10) | RT_BIT_32(11))
 /** Bits 12-51 - - PAE - Physical Page number of the next level. */
 #define X86_PDPE_PG_MASK                    UINT64_C(0x000ffffffffff000)
+/** Bits 30-51 - - PG - Physical address of the 1GB page referenced by this entry. */
+#define X86_PDPE1G_PG_MASK                  UINT64_C(0x000fffffc0000000)
 /** Bits 63-52, 8-5, 2-1 - - PAE - MBZ bits (NX is long mode only). */
 #define X86_PDPE_PAE_MBZ_MASK               UINT64_C(0xfff00000000001e6)
 /** Bits 63 - NX - LM - No execution flag. Long Mode only. */
