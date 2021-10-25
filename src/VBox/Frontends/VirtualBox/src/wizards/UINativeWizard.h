@@ -79,6 +79,17 @@ class SHARED_LIBRARY_STUFF UINativeWizard : public QIWithRetranslateUI<QDialog>
 
 public:
 
+    /** Constructs wizard passing @a pParent to the base-class.
+      * @param  enmType         Brings the wizard type.
+      * @param  enmMode         Brings the wizard mode.
+      * @param  strHelpHashtag  Brings the wizard help hashtag. */
+    UINativeWizard(QWidget *pParent,
+                   WizardType enmType,
+                   WizardMode enmMode = WizardMode_Auto,
+                   const QString &strHelpHashtag = QString());
+    /** Destructs wizard. */
+    virtual ~UINativeWizard() /* override */;
+
     /** Returns local notification-center reference. */
     UINotificationCenter *notificationCenter() const;
     /** Immediately handles notification @a pProgress object. */
@@ -91,15 +102,6 @@ public slots:
     virtual int exec() /* final */;
 
 protected:
-
-    /** Constructs wizard passing @a pParent to the base-class.
-      * @param  enmType         Brings the wizard type.
-      * @param  enmMode         Brings the wizard mode.
-      * @param  strHelpHashtag  Brings the wizard help hashtag. */
-    UINativeWizard(QWidget *pParent,
-                   WizardType enmType,
-                   WizardMode enmMode = WizardMode_Auto,
-                   const QString &strHelpHashtag = QString());
 
     /** Returns wizard type. */
     WizardType type() const { return m_enmType; }
@@ -165,6 +167,8 @@ private:
     void cleanup();
     /** Inits all. */
     void init();
+    /** Deinits all. */
+    void deinit();
 
     /** Performs pages translation. */
     void retranslatePages();

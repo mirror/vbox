@@ -79,25 +79,6 @@ void UIFrame::paintEvent(QPaintEvent *pEvent)
 #endif /* VBOX_WS_MAC */
 
 
-UINotificationCenter *UINativeWizard::notificationCenter() const
-{
-    return m_pNotificationCenter;
-}
-
-bool UINativeWizard::handleNotificationProgressNow(UINotificationProgress *pProgress)
-{
-    return m_pNotificationCenter->handleNow(pProgress);
-}
-
-int UINativeWizard::exec()
-{
-    /* Init wizard: */
-    init();
-
-    /* Call to base-class: */
-    return QIWithRetranslateUI<QDialog>::exec();
-}
-
 UINativeWizard::UINativeWizard(QWidget *pParent,
                                WizardType enmType,
                                WizardMode enmMode /* = WizardMode_Auto */,
@@ -116,6 +97,30 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
     , m_pNotificationCenter(0)
 {
     prepare();
+}
+
+UINativeWizard::~UINativeWizard()
+{
+    cleanup();
+}
+
+UINotificationCenter *UINativeWizard::notificationCenter() const
+{
+    return m_pNotificationCenter;
+}
+
+bool UINativeWizard::handleNotificationProgressNow(UINotificationProgress *pProgress)
+{
+    return m_pNotificationCenter->handleNow(pProgress);
+}
+
+int UINativeWizard::exec()
+{
+    /* Init wizard: */
+    init();
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QDialog>::exec();
 }
 
 QPushButton *UINativeWizard::wizardButton(const WizardButtonType &enmType) const
@@ -324,8 +329,8 @@ void UINativeWizard::sltExpert()
     }
     gEDataManager->setModeForWizardType(m_enmType, m_enmMode);
 
-    /* Cleanup/init again: */
-    cleanup();
+    /* Reinit everything: */
+    deinit();
     init();
 }
 
@@ -564,22 +569,6 @@ void UINativeWizard::cleanup()
     /* Cleanup local notification-center: */
     delete m_pNotificationCenter;
     m_pNotificationCenter = 0;
-
-    /* Remove all the pages: */
-    m_pWidgetStack->blockSignals(true);
-    while (m_pWidgetStack->count() > 0)
-    {
-        QWidget *pLastWidget = m_pWidgetStack->widget(m_pWidgetStack->count() - 1);
-        m_pWidgetStack->removeWidget(pLastWidget);
-        delete pLastWidget;
-    }
-    m_pWidgetStack->blockSignals(false);
-
-    /* Update last index: */
-    m_iLastIndex = -1;
-    /* Update invisible pages: */
-    m_invisiblePages.clear();
-    wizardClean();
 }
 
 void UINativeWizard::init()
@@ -597,6 +586,25 @@ void UINativeWizard::init()
 
     /* Make sure current page initialized: */
     sltCurrentIndexChanged();
+}
+
+void UINativeWizard::deinit()
+{
+    /* Remove all the pages: */
+    m_pWidgetStack->blockSignals(true);
+    while (m_pWidgetStack->count() > 0)
+    {
+        QWidget *pLastWidget = m_pWidgetStack->widget(m_pWidgetStack->count() - 1);
+        m_pWidgetStack->removeWidget(pLastWidget);
+        delete pLastWidget;
+    }
+    m_pWidgetStack->blockSignals(false);
+
+    /* Update last index: */
+    m_iLastIndex = -1;
+    /* Update invisible pages: */
+    m_invisiblePages.clear();
+    wizardClean();
 }
 
 void UINativeWizard::retranslatePages()
