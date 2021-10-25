@@ -4861,7 +4861,7 @@
         that goes online to fetch the packages (e.g. debian-*-netinst.iso) or
         to fetch updates during the install process.
 
-        Format: [schema=]schema://[login@password:]proxy[:port][;...]
+        Format: [schema=]schema://[login[:password]@]proxy[:port][;...]
 
         The default is taken from the host proxy configuration (once implemented).
       </desc>
