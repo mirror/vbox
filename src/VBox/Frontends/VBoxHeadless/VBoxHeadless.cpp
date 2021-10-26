@@ -484,7 +484,8 @@ static void parse_environ(uint32_t *pulFrameWidth, uint32_t *pulFrameHeight,
 }
 #endif /* VBOX_WITH_RECORDING defined */
 
-#ifdef RT_OS_DARWIN
+/* This should be done in the hardening code already and it fails on Monterey. */
+#if 0 //def RT_OS_DARWIN
 
 # include <unistd.h>
 # include <stdio.h>
@@ -1159,7 +1160,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     const char *pcszNameOrUUID = NULL;
 
-#ifdef RT_OS_DARWIN
+#if 0 //def RT_OS_DARWIN - see above
     hideSetUidRootFromAppKit();
 #endif
 
