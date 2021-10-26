@@ -670,6 +670,15 @@ class tdAudioTest(vbox.TestDriver):
                                   ],
                                   fIgnoreErrors = True);
 
+        # A bit of diagnosis on error.
+        ## @todo Remove this later when stuff runs stable.
+        if not fRc:
+            reporter.log('Kernel messages:');
+            sCmdDmesg = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'dmesg');
+            oTxsSession.syncExec(sCmdDmesg, (sCmdDmesg), fIgnoreErrors = True);
+            reporter.log('Loaded kernel modules:');
+            sCmdLsMod = oTestVm.pathJoin(self.getGuestSystemAdminDir(oTestVm), 'lsmod');
+            oTxsSession.syncExec(sCmdLsMod, (sCmdLsMod), fIgnoreErrors = True);
 
         # Always attach the VM log to the test report, as we want to see what the Validation Kit audio driver does.
         oSession.addLogsToReport();
