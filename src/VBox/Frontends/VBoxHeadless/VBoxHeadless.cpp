@@ -1365,7 +1365,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         sigaction(SIGINT,  &sa, NULL);
         sigaction(SIGTERM, &sa, NULL);
         sigaction(SIGUSR1, &sa, NULL);
-        /* Don't touch SIGUSR2 as IPRT could be using it. */
+        /* Don't touch SIGUSR2 as IPRT could be using it for RTThreadPoke(). */
 
 #else /* RT_OS_WINDOWS */
         /*
