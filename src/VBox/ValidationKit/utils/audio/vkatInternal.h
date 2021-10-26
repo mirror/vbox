@@ -357,12 +357,6 @@ extern PRTLOGGER        g_pRelLogger;
 
 /** The test handle. */
 extern RTTEST           g_hTest;
-extern unsigned         g_uVerbosity;
-extern bool             g_fDrvAudioDebug;
-extern const char      *g_pszDrvAudioDebug;
-
-/** The test handle. */
-extern RTTEST           g_hTest;
 /** The current verbosity level. */
 extern unsigned         g_uVerbosity;
 /** DrvAudio: Enable debug (or not). */
