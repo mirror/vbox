@@ -269,11 +269,12 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
             uint16_t const fMemType   = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_MEMTYPE);
             uint16_t const fIgnorePat = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_IGNORE_PAT);
             uint32_t const fEffectiveEpt = ((uint32_t)fEptAttrs << PGMPTWALK_EFF_EPT_ATTR_SHIFT) & PGMPTWALK_EFF_EPT_ATTR_MASK;
-            fEffective &= RT_BF_MAKE(PGM_BF_PTWALK_EFF_X,  fExecute)
-                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_RW, fWrite)
-                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_US, 1)
-                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_A,  fAccessed)
-                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_D,  fDirty)
+            fEffective &= RT_BF_MAKE(PGM_BF_PTWALK_EFF_X,       fExecute)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_RW,      fWrite)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_US,      1)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_A,       fAccessed)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_D,       fDirty)
+                        | RT_BF_MAKE(PGM_BF_PTWALK_EFF_MEMTYPE, 0)
                         | fEffectiveEpt;
             fEffective |= RT_BF_MAKE(PGM_BF_PTWALK_EFF_MEMTYPE,    fMemType)
                         | RT_BF_MAKE(PGM_BF_PTWALK_EFF_IGNORE_PAT, fIgnorePat);
