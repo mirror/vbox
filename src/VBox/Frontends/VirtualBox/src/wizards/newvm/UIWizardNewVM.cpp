@@ -443,18 +443,21 @@ bool UIWizardNewVM::attachDefaultDevices()
     }
     if (!success)
     {
-        CVirtualBox vbox = uiCommon().virtualBox();
-        /* Unregister on failure */
-        QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
-        if (vbox.isOk())
+        /* Unregister VM on failure: */
+        const QVector<CMedium> media = m_machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
+        if (!m_machine.isOk())
+            UINotificationMessage::cannotRemoveMachine(m_machine, notificationCenter());
+        else
         {
-            CProgress progress = m_machine.DeleteConfig(aMedia);
-            progress.WaitForCompletion(-1);         /// @todo do this nicely with a progress dialog, this can delete lots of files
+            UINotificationProgressMachineMediaRemove *pNotification =
+                new UINotificationProgressMachineMediaRemove(m_machine, media);
+            handleNotificationProgressNow(pNotification);
         }
     }
 
-    /* Make sure we detach CMedium wrapper from IMedium pointer to avoid deletion of IMedium as m_virtualDisk is deallocated: */
-    /* Or in case of IMachine::DeleteConfig IMedium has been already deleted so detach in this case as well:*/
+    /* Make sure we detach CMedium wrapper from IMedium pointer to avoid deletion of IMedium as m_virtualDisk
+     * is deallocated.  Or in case of UINotificationProgressMachineMediaRemove handling, IMedium has been
+     * already deleted so detach in this case as well. */
     if (!m_virtualDisk.isNull())
         m_virtualDisk.detach();
 

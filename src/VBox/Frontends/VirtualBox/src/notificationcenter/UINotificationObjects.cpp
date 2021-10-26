@@ -979,13 +979,14 @@ void UINotificationMessage::cannotDiscardSavedState(const CMachine &comMachine)
 }
 
 /* static */
-void UINotificationMessage::cannotRemoveMachine(const CMachine &comMachine)
+void UINotificationMessage::cannotRemoveMachine(const CMachine &comMachine, UINotificationCenter *pParent /* = 0 */)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't remove machine ..."),
         QApplication::translate("UIMessageCenter", "Failed to remove the virtual machine <b>%1</b>.")
                                                    .arg(CMachine(comMachine).GetName()) +
-        UIErrorString::formatErrorInfo(comMachine));
+        UIErrorString::formatErrorInfo(comMachine),
+        QString(), QString(), pParent);
 }
 
 /* static */

@@ -393,7 +393,7 @@ public:
         static void cannotDiscardSavedState(const CMachine &comMachine);
         /** Notifies about inability to remove machine.
           * @param  comMachine  Brings machine being removed. */
-        static void cannotRemoveMachine(const CMachine &comMachine);
+        static void cannotRemoveMachine(const CMachine &comMachine, UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to find snapshot by ID.
           * @param  comMachine  Brings the machine being searched for particular snapshot.
