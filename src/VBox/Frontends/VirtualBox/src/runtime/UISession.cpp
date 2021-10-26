@@ -1773,9 +1773,11 @@ bool UISession::preprocessInitialization()
                 case KNetworkAttachmentType_Bridged:
                     strIfName = na.GetBridgedInterface();
                     break;
+#ifndef VBOX_WITH_VMNET
                 case KNetworkAttachmentType_HostOnly:
                     strIfName = na.GetHostOnlyInterface();
                     break;
+#endif /* !VBOX_WITH_VMNET */
                 default: break; /* Shut up, MSC! */
             }
 
