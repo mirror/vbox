@@ -23,6 +23,7 @@
   <xsl:output method="text" version="1.0" encoding="utf-8" indent="yes"/>
   <xsl:strip-space elements="*"/>
 
+<xsl:param name="g_sMode" select="not-specified"/>
 
 <!-- Default operation is to supress output -->
 <xsl:template match="node()|@*">
@@ -37,7 +38,8 @@
 Output header and footer.
 -->
 <xsl:template match="/">
-  <xsl:text>&lt;?xml version="1.0"?&gt;
+  <xsl:if test="$g_sMode = 'first'">
+    <xsl:text>&lt;?xml version="1.0"?&gt;
 &lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" &gt;
 &lt;xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" /&gt;
 &lt;xsl:template match="node()|@*"&gt;
@@ -47,10 +49,13 @@ Output header and footer.
 &lt;/xsl:template&gt;
 
 </xsl:text>
+  </xsl:if>
   <xsl:apply-templates/>
-  <xsl:text>
+  <xsl:if test="$g_sMode = 'last'">
+    <xsl:text>
 &lt;/xsl:stylesheet&gt;
 </xsl:text>
+  </xsl:if>
 </xsl:template>
 
 
@@ -120,6 +125,17 @@ Produce the transformation templates:
 </xsl:text>
   <xsl:apply-templates/>
 </xsl:template>
+
+<xsl:template match="refentry[@id]/refentryinfo/title">
+  <xsl:text>&lt;xsl:template match="xref[@linkend='</xsl:text>
+  <xsl:value-of select="../../@id"/><xsl:text>']"&gt;
+  &lt;xsl:text&gt; &quot;</xsl:text>
+  <xsl:value-of select="normalize-space()"/><xsl:text>&quot;&lt;/xsl:text&gt;
+&lt;/xsl:template&gt;
+</xsl:text>
+  <xsl:apply-templates/>
+</xsl:template>
+
 
 <!--
   Debug/Diagnostics: Return the path to the specified node (by default the current).

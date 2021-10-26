@@ -348,7 +348,11 @@ $(VBOX_XML_XREF_TO_TEXT) + $(VBOX_XML_XREF_TO_TEXT).cat: \
 		'  <nextCatalog catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG)"/>' \
 		'</catalog>'
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT, -E "XML_CATALOG_FILES=$(VBOX_XML_XREF_TO_TEXT).cat") \
-		--output "$@" "$<" $(filter %UserManual.xml,$^)
+		--stringparam 'g_sMode' 'first' --output "$@" "$<" $(filter %UserManual.xml,$^)
+	$(foreach x, $(VBOX_MANUAL_XML_REFENTRY_FILES)\
+		,$(NLTAB)$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT, -ato "$@") --stringparam 'g_sMode' 'append' \
+			"$<" "$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)")
+	$(QUIET)$(APPEND) -n "$@" '' '</xsl:stylesheet>'
 
 #
 # Generate rules for editing the refentry to C/H style sheets.
