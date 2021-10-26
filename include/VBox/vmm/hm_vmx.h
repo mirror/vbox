@@ -840,6 +840,9 @@ AssertCompileSize(EPTPTEBITS, 8);
 #define EPT_PT_MASK             X86_PT_PAE_MASK
 /** No bits - - EPT - PTE MBZ bits. */
 #define EPT_PTE_MBZ_MASK        UINT64_C(0x0000000000000000)
+/** Mask of all possible EPT PTE attribute bits. */
+#define EPT_PTE_ATTR_MASK       (  EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT \
+                                 | EPT_E_ACCESSED | EPT_E_USER_EXECUTE)
 
 
 /**
