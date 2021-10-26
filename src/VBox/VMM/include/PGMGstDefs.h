@@ -285,7 +285,7 @@
 # define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde)  ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPde4PteMask )                   // TODO
 # define GST_IS_PTE_VALID(pVCpu, Pte)           (!( (Pte).u   & (pVCpu)->pgm.s.fGstAmd64MbzPteMask ))                            // TODO
 # define GST_IS_PDE_VALID(pVCpu, Pde)           (!( (Pde).u   & (pVCpu)->pgm.s.fGstAmd64MbzPdeMask ))                            // TODO
-# define GST_IS_BIG_PDE_VALID(pVCpu, Pde)       (!( (Pde).u   & (pVCpu)->pgm.s.fGstAmd64MbzBigPdeMask ))                         // TODO
+# define GST_IS_BIG_PDE_VALID(pVCpu, Pde)       (!( (Pde).u   & (pVCpu)->pgm.s.fGstEptMbzBigPdeMask ))
 # define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstEptMbzPdpteMask ))
 # define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstEptMbzBigPdpteMask ))
 # define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (!( (Pml4e).u & (pVCpu)->pgm.s.fGstEptMbzPml4eMask ))
