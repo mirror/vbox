@@ -290,7 +290,7 @@
 # define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstEptMbzBigPdpteMask ))
 # define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (!( (Pml4e).u & (pVCpu)->pgm.s.fGstEptMbzPml4eMask ))
 # define GST_IS_PGENTRY_PRESENT(pVCpu, Pge)     ((Pge).u & (pVCpu)->pgm.s.fGstEptPresentMask)
-# define GST_IS_PSE_ACTIVE(pVCpu)               (true)
+# define GST_IS_PSE_ACTIVE(pVCpu)               (!((pVCpu)->pgm.s.fGstEptMbzBigPdeMask & EPT_E_BIT_LEAF))
 # define GST_IS_NX_ACTIVE(pVCpu)                (pgmGstIsNoExecuteActive(pVCpu))
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
 #endif
