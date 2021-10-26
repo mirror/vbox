@@ -32,12 +32,35 @@
 
 RT_C_DECLS_BEGIN
 
+#define PDM_MAX_DEVICE_INSTANCE_SIZE      _4M
 
 /** Converts PDM device instance to the device under test structure. */
 #define TSTDEV_PDMDEVINS_2_DUT(a_pDevIns) ((a_pDevIns)->Internal.s.pDut)
 
 /** Forward declaration of internal test device instance data. */
 typedef struct TSTDEVDUTINT *PTSTDEVDUTINT;
+
+
+/** Pointer to a const PDM module descriptor. */
+typedef const struct TSTDEVPDMMOD *PCTSTDEVPDMMOD;
+
+
+/**
+ * PDM device descriptor.
+ */
+typedef struct TSTDEVPDMDEV
+{
+    /** Node for the known device list. */
+    RTLISTNODE                      NdPdmDevs;
+    /** Pointer to the PDM module containing the device. */
+    PCTSTDEVPDMMOD                  pPdmMod;
+    /** Device registration structure. */
+    const struct PDMDEVREGR3        *pReg;
+} TSTDEVPDMDEV;
+/** Pointer to a PDM device descriptor .*/
+typedef TSTDEVPDMDEV *PTSTDEVPDMDEV;
+/** Pointer to a constant PDM device descriptor .*/
+typedef const TSTDEVPDMDEV *PCTSTDEVPDMDEV;
 
 
 /**
@@ -333,6 +356,7 @@ typedef RTDEVDUTMMIO *PRTDEVDUTMMIO;
 typedef const RTDEVDUTMMIO *PCRTDEVDUTMMIO;
 
 
+#ifdef IN_RING3
 /**
  * Registered SSM handlers.
  */
@@ -356,6 +380,7 @@ typedef struct TSTDEVDUTSSM
 typedef TSTDEVDUTSSM *PTSTDEVDUTSSM;
 /** Pointer to a const SSM handler. */
 typedef const TSTDEVDUTSSM *PCTSTDEVDUTSSM;
+#endif
 
 
 /**
@@ -441,8 +466,12 @@ typedef struct TSTDEVDUTINT
 {
     /** Pointer to the test this device is running under. */
     PCTSTDEVTEST                    pTest;
+    /** The PDM device registration record. */
+    PCTSTDEVPDMDEV                  pPdmDev;
     /** Pointer to the PDM device instance. */
-    PPDMDEVINS                      pDevIns;
+    struct PDMDEVINSR3             *pDevIns;
+    /** Pointer to the PDM R0 device instance. */
+    struct PDMDEVINSR0             *pDevInsR0;
     /** CFGM root config node for the device. */
     CFGMNODE                        Cfg;
     /** Current device context. */
@@ -477,7 +506,11 @@ typedef struct TSTDEVDUTINT
 } TSTDEVDUTINT;
 
 
+#ifdef IN_RING3
 extern const PDMDEVHLPR3 g_tstDevPdmDevHlpR3;
+#elif defined(IN_RING0)
+//extern const PDMDEVHLPR0 g_tstDevPdmDevHlpR0;
+#endif
 
 
 DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PTSTDEVDUTINT pThis, const char *pszMod, TSTDEVPDMMODTYPE enmModType,
@@ -524,6 +557,12 @@ DECLHIDDEN(int) tstDevPdmR3ThreadIAmRunning(PPDMTHREAD pThread);
 DECLHIDDEN(int) tstDevPdmR3ThreadSleep(PPDMTHREAD pThread, RTMSINTERVAL cMillies);
 DECLHIDDEN(int) tstDevPdmR3ThreadSuspend(PPDMTHREAD pThread);
 DECLHIDDEN(int) tstDevPdmR3ThreadResume(PPDMTHREAD pThread);
+
+
+DECLHIDDEN(PCTSTDEVPDMDEV) tstDevPdmDeviceFind(const char *pszName, PCPDMDEVREGR0 *ppR0Reg);
+DECLHIDDEN(int) tstDevPdmDeviceR3Construct(PTSTDEVDUTINT pDut);
+
+DECLHIDDEN(int) tstDevPdmDevR0R3Create(const char *pszName, bool fRCEnabled, PTSTDEVDUTINT pDut);
 
 
 RT_C_DECLS_END
