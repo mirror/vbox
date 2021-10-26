@@ -976,8 +976,9 @@ bool GlobalNetworkPermissionsConfig::forbids(NetworkAddress& address)
     char *pszToken, szLine[1024];
     for (int line = 1; fgets(szLine, sizeof(szLine), fp); ++line)
     {
+        pszToken = strtok(szLine, " \t\n");
         /* Skip anything except '*' lines */
-        if (strcmp("*", strtok(szLine, " \t\n")))
+        if (pszToken == NULL || strcmp("*", pszToken))
             continue;
         /* Match the specified address against each network */
         while ((pszToken = strtok(NULL, " \t\n")) != NULL)
