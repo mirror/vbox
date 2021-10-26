@@ -2424,7 +2424,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 60, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 61, 0)
 
 /**
  * PDM Device API.
@@ -2842,6 +2842,24 @@ typedef struct PDMDEVHLPR3
                                               PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
                                               PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
                                               PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone));
+
+    /**
+     * Register a save state data unit for backward compatibility.
+     *
+     * This is for migrating from an old device name to a new one or for merging
+     * devices.  It will only help loading old saved states.
+     *
+     * @returns VBox status.
+     * @param   pDevIns             The device instance.
+     * @param   pszOldName          The old unit name.
+     * @param   pfnLoadPrep         Prepare load callback, optional.
+     * @param   pfnLoadExec         Execute load callback, optional.
+     * @param   pfnLoadDone         Done load callback, optional.
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSSMRegisterLegacy,(PPDMDEVINS pDevIns, const char *pszOldName, PFNSSMDEVLOADPREP pfnLoadPrep,
+                                                    PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone));
 
     /** @name Exported SSM Functions
      * @{ */
@@ -6830,6 +6848,15 @@ DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, si
                                            pfnLivePrep, pfnLiveExec, pfnLiveVote,
                                            pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                            pfnLoadPrep, pfnLoadExec, pfnLoadDone);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSSMRegisterLegacy
+ */
+DECLINLINE(int) PDMDevHlpSSMRegisterLegacy(PPDMDEVINS pDevIns, const char *pszOldName, PFNSSMDEVLOADPREP pfnLoadPrep,
+                                           PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
+{
+    return pDevIns->pHlpR3->pfnSSMRegisterLegacy(pDevIns, pszOldName, pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 }
 
 /**

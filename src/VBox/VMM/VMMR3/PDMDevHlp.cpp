@@ -444,7 +444,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uV
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: uVersion=%#x cbGuess=%#x pszBefore=%p:{%s}\n"
-             "    pfnLivePrep=%p pfnLiveExec=%p pfnLiveVote=%p pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoadDone=%p\n",
+             "    pfnLivePrep=%p pfnLiveExec=%p pfnLiveVote=%p pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pfnLoadPrep=%p pfnLoadExec=%p pfnLoadDone=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uVersion, cbGuess, pszBefore, pszBefore,
              pfnLivePrep, pfnLiveExec, pfnLiveVote,
              pfnSavePrep, pfnSaveExec, pfnSaveDone,
@@ -457,6 +457,26 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uV
                                  pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 
     LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnSSMRegisterLegacy} */
+static DECLCALLBACK(int) pdmR3DevHlp_SSMRegisterLegacy(PPDMDEVINS pDevIns, const char *pszOldName, PFNSSMDEVLOADPREP pfnLoadPrep,
+                                                       PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_SSMRegisterLegacy: caller='%s'/%d: pszOldName=%p:{%s} pfnLoadPrep=%p pfnLoadExec=%p pfnLoadDone=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pszOldName, pszOldName, pfnLoadPrep, pfnLoadExec, pfnLoadDone));
+
+    int rc = SSMR3RegisterDevice(pDevIns->Internal.s.pVMR3, pDevIns, pszOldName, pDevIns->iInstance,
+                                 0 /*uVersion*/, 0 /*cbGuess*/, NULL /*pszBefore*/,
+                                 NULL, NULL, NULL,
+                                 NULL, NULL, NULL,
+                                 pfnLoadPrep, pfnLoadExec, pfnLoadDone);
+
+    LogFlow(("pdmR3DevHlp_SSMRegisterLegacy: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -4784,6 +4804,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
+    pdmR3DevHlp_SSMRegisterLegacy,
     SSMR3PutStruct,
     SSMR3PutStructEx,
     SSMR3PutBool,
@@ -5177,6 +5198,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTracing =
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
+    pdmR3DevHlp_SSMRegisterLegacy,
     SSMR3PutStruct,
     SSMR3PutStructEx,
     SSMR3PutBool,
@@ -5884,6 +5906,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
+    pdmR3DevHlp_SSMRegisterLegacy,
     SSMR3PutStruct,
     SSMR3PutStructEx,
     SSMR3PutBool,
