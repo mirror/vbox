@@ -1365,7 +1365,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         sigaction(SIGINT,  &sa, NULL);
         sigaction(SIGTERM, &sa, NULL);
         sigaction(SIGUSR1, &sa, NULL);
-        sigaction(SIGUSR2, &sa, NULL);
+        /* Don't touch SIGUSR2 as IPRT could be using it. */
+
 #else /* RT_OS_WINDOWS */
         /*
          * Register windows console signal handler to react to Ctrl-C,
