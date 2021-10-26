@@ -663,8 +663,9 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
             {
                 RTMSINTERVAL const msSleep = RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256);
 
-                if (   !nsLastMsgCantWrite
-                    || nsNow - nsLastMsgCantWrite > RT_NS_10SEC) /* Don't spam the output too much. */
+                if (   g_uVerbosity >= 3
+                    && (   !nsLastMsgCantWrite
+                        || (nsNow - nsLastMsgCantWrite) > RT_NS_10SEC) /* Don't spam the output too much. */
                 {
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be writable again (last write %RU64ns ago) ...\n",
                                  msSleep, nsNow - nsLastWrite);
@@ -812,7 +813,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                 RTMSINTERVAL const msSleep = RT_MIN(RT_MAX(1, pStream->Cfg.Device.cMsSchedulingHint), 256);
 
                 if (   g_uVerbosity >= 3
-                    && (!nsLastMsgCantRead || nsNow - nsLastMsgCantRead > RT_NS_10SEC)) /* Don't spam the output too much. */
+                    && (   !nsLastMsgCantRead
+                        || (nsNow - nsLastMsgCantRead) > RT_NS_10SEC)) /* Don't spam the output too much. */
                 {
                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be readable again ...\n", msSleep);
                     nsLastMsgCantRead = nsNow;

@@ -702,7 +702,12 @@ static int alsaStreamSetHwParams(snd_pcm_t *hPCM, snd_pcm_format_t enmAlsaFmt,
     {
         err = snd_pcm_set_chmap(hPCM, &u.Map);
         if (err < 0)
-            LogRel2(("ALSA: snd_pcm_set_chmap failed: %s (%d)\n", snd_strerror(err), err));
+        {
+            if (err == -ENXIO)
+                LogRel2(("ALSA: Audio device does not support channel maps, skipping\n"));
+            else
+                LogRel2(("ALSA: snd_pcm_set_chmap failed: %s (%d)\n", snd_strerror(err), err));
+        }
     }
 
     return 0;
