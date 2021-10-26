@@ -538,14 +538,14 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
 
     Log3Func(("%RU32 -> %zu\n", pPktHdr->cb, cbToSend));
 
-    LogRelFlowFunc(("pClient=%RTsock\n", pClient->hTcpClient));
-    LogRelFlowFunc(("Header:\n"
-                    "%.*Rhxd\n", RT_MIN(sizeof(ATSPKTHDR), cbToSend), pPktHdr));
+    LogRel4(("pClient=%RTsock\n", pClient->hTcpClient));
+    LogRel4(("Header:\n"
+             "%.*Rhxd\n", RT_MIN(sizeof(ATSPKTHDR), cbToSend), pPktHdr));
 
     if (cbToSend > sizeof(ATSPKTHDR))
-        LogRelFlowFunc(("Payload:\n"
-                        "%.*Rhxd\n",
-                        RT_MIN(64, cbToSend - sizeof(ATSPKTHDR)), (uint8_t *)pPktHdr + sizeof(ATSPKTHDR)));
+        LogRel4(("Payload:\n"
+                 "%.*Rhxd\n",
+                 RT_MIN(64, cbToSend - sizeof(ATSPKTHDR)), (uint8_t *)pPktHdr + sizeof(ATSPKTHDR)));
 
     int rc = RTTcpWrite(pClient->hTcpClient, pPktHdr, cbToSend);
     if (    RT_FAILURE(rc)
@@ -556,9 +556,7 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
         atsTcpDisconnectClient(pThis, pClient);
     }
 
-    LogRelFlowFunc(("pClient=%RTsock, cbSent=%zu -> %Rrc\n",
-                    pClient->hTcpClient, cbToSend, rc));
-
+    LogRel3(("pClient=%RTsock, achOpcode=%.8s, cbSent=%zu -> %Rrc\n", pClient->hTcpClient, (const char *)pPktHdr->achOpcode, cbToSend, rc));
     return rc;
 }
 
@@ -570,8 +568,8 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
     int rc = VINF_SUCCESS;
     *ppPktHdr = NULL;
 
-    LogRelFlowFunc(("pClient=%RTsock (cbTcpStashed=%zu, cbTcpStashedAlloced=%zu)\n",
-                    pClient->hTcpClient, pClient->cbTcpStashed, pClient->cbTcpStashedAlloced));
+    LogRel4(("pClient=%RTsock (cbTcpStashed=%zu, cbTcpStashedAlloced=%zu)\n",
+             pClient->hTcpClient, pClient->cbTcpStashed, pClient->cbTcpStashedAlloced));
 
     /*
      * Read state.
@@ -660,13 +658,13 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
                     offData += cbRead;
                 }
 
-                LogRelFlowFunc(("Header:\n"
-                                "%.*Rhxd\n", sizeof(ATSPKTHDR), pbData));
+                LogRel4(("Header:\n"
+                         "%.*Rhxd\n", sizeof(ATSPKTHDR), pbData));
 
                 if (   RT_SUCCESS(rc)
                     && cbData > sizeof(ATSPKTHDR))
-                    LogRelFlowFunc(("Payload:\n"
-                                    "%.*Rhxd\n", RT_MIN(64, cbData - sizeof(ATSPKTHDR)), (uint8_t *)pbData + sizeof(ATSPKTHDR)));
+                    LogRel4(("Payload:\n"
+                             "%.*Rhxd\n", RT_MIN(64, cbData - sizeof(ATSPKTHDR)), (uint8_t *)pbData + sizeof(ATSPKTHDR)));
             }
         }
         else
@@ -699,8 +697,9 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
         }
     }
 
-    LogRelFlowFunc(("pClient=%RTsock, cbData=%zu -> %Rrc\n",
-                    pClient->hTcpClient, cbData, rc));
+    PATSPKTHDR pPktHdr = (PATSPKTHDR)pbData;
+    LogRel3(("pClient=%RTsock, achOpcode=%.8s, cbRead=%zu -> %Rrc\n",
+             pClient->hTcpClient, pPktHdr ? (const char *)pPktHdr->achOpcode : "<None>", cbData, rc));
     return rc;
 }
 
