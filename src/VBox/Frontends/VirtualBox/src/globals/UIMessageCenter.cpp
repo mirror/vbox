@@ -2213,30 +2213,6 @@ void UIMessageCenter::cannotImportAppliance(const CProgress &progress, const QSt
           UIErrorString::formatErrorInfo(progress));
 }
 
-bool UIMessageCenter::cannotCheckFiles(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to check files."),
-          UIErrorString::formatErrorInfo(comAppliance));
-    return false;
-}
-
-bool UIMessageCenter::cannotCheckFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to check files."),
-          UIErrorString::formatErrorInfo(comVFSExplorer));
-    return false;
-}
-
-bool UIMessageCenter::cannotCheckFiles(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to check files."),
-          UIErrorString::formatErrorInfo(comProgress));
-    return false;
-}
-
 bool UIMessageCenter::cannotRemoveFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -2265,40 +2241,6 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machin
                              .arg(machineNames.join(", ")),
                           0 /* auto-confirm id */,
                           tr("Continue"));
-}
-
-bool UIMessageCenter::cannotExportAppliance(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to prepare the export of the appliance <b>%1</b>.")
-             .arg(CAppliance(comAppliance).GetPath()),
-          UIErrorString::formatErrorInfo(comAppliance));
-    return false;
-}
-
-void UIMessageCenter::cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to prepare the export of the appliance <b>%1</b>.")
-             .arg(strPath),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-bool UIMessageCenter::cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to export appliance <b>%1</b>.")
-             .arg(strPath),
-          UIErrorString::formatErrorInfo(comProgress));
-    return false;
-}
-
-bool UIMessageCenter::cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent /* = 0 */)
-{
-    error(pParent, MessageType_Error,
-          tr("Bad password or authentication failure."),
-          UIErrorString::formatErrorInfo(comAppliance));
-    return false;
 }
 
 void UIMessageCenter::cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent /* = 0 */)

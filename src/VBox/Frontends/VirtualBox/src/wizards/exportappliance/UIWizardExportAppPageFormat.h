@@ -98,6 +98,7 @@ namespace UIWizardExportAppFormat
                                           bool fIsFormatCloudOne);
     /** Refresh local stuff. */
     void refreshLocalStuff(CAppliance &comLocalAppliance,
+                           UIWizardExportApp *pWizard,
                            const QList<QUuid> &machineIDs,
                            const QString &strUri);
 
@@ -118,6 +119,7 @@ namespace UIWizardExportAppFormat
                            CCloudClient &comCloudClient,
                            CVirtualSystemDescription &comCloudVsd,
                            CVirtualSystemDescriptionForm &comCloudVsdExportForm,
+                           UIWizardExportApp *pWizard,
                            const CCloudProfile &comCloudProfile,
                            const QList<QUuid> &machineIDs,
                            const QString &strUri,

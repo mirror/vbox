@@ -265,7 +265,7 @@ public:
         /** Notifies about inability to acquire IVirtualSystemDescriptionForm parameter.
           * @param  comVsdForm  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualSystemDescriptionFormParameter(const CVirtualSystemDescriptionForm &comVsdForm,
-                                                                       UINotificationCenter *pParent);
+                                                                       UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to change IMedium parameter.
           * @param  comMedium  Brings the object parameter being changed for. */
@@ -297,7 +297,7 @@ public:
         /** Notifies about inability to change IVirtualSystemDescription parameter.
           * @param  comVsd  Brings the object parameter being changed for. */
         static void cannotChangeVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
-                                                                  UINotificationCenter *pParent);
+                                                                  UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to enumerate host USB devices.
           * @param  comHost  Brings the host devices enumerated for. */
@@ -320,6 +320,15 @@ public:
 
     /** @name COM VirtualBox Manager warnings.
       * @{ */
+        /** Notifies about inability to create appliance.
+          * @param  comVBox  Brings common VBox object trying to create appliance. */
+        static void cannotCreateAppliance(const CVirtualBox &comVBox, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to find machine by ID.
+          * @param  comVBox     Brings common VBox object trying to find machine.
+          * @param  uMachineId  Brings the machine ID. */
+        static void cannotFindMachineById(const CVirtualBox &comVBox,
+                                          const QUuid &uMachineId,
+                                          UINotificationCenter *pParent = 0);
         /** Notifies about inability to open known medium.
           * @param  comVBox    Brings common VBox object trying to open medium.
           * @param  uMediumId  Brings the medium ID. */
@@ -331,6 +340,13 @@ public:
         /** Notifies about inability to get ext pack manager.
           * @param  comVBox      Brings common VBox object trying to open machine. */
         static void cannotGetExtensionPackManager(const CVirtualBox &comVBox);
+
+        /** Notifies about inability to create VFS explorer.
+          * @param  comAppliance  Brings appliance trying to create VFS explorer. */
+        static void cannotCreateVfsExplorer(const CAppliance &comAppliance, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to add disk scryption password.
+          * @param  comAppliance  Brings appliance trying to add disk scryption password. */
+        static void cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to open extension pack.
           * @param  comExtPackManager  Brings extension pack manager trying to open extension pack.
@@ -394,6 +410,9 @@ public:
         /** Notifies about inability to remove machine.
           * @param  comMachine  Brings machine being removed. */
         static void cannotRemoveMachine(const CMachine &comMachine, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to export appliance.
+          * @param  comMachine  Brings machine trying to export appliance. */
+        static void cannotExportMachine(const CMachine &comMachine, UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to find snapshot by ID.
           * @param  comMachine  Brings the machine being searched for particular snapshot.

@@ -143,7 +143,10 @@ bool UIWizardExportApp::exportAppliance()
         /* Initialize VFS explorer: */
         CVFSExplorer comExplorer = comAppliance.CreateVFSExplorer(uri(false /* fWithFile */));
         if (!comAppliance.isOk())
-            return msgCenter().cannotCheckFiles(comAppliance, this);
+        {
+            UINotificationMessage::cannotCreateVfsExplorer(comAppliance, notificationCenter());
+            return false;
+        }
 
         /* Update VFS explorer: */
         UINotificationProgressVFSExplorerUpdate *pNotification =
@@ -286,7 +289,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
                                   encryptionPasswords.values().toVector());
         if (!comAppliance.isOk())
         {
-            msgCenter().cannotAddDiskEncryptionPassword(comAppliance);
+            UINotificationMessage::cannotAddDiskEncryptionPassword(comAppliance, notificationCenter());
             return false;
         }
     }

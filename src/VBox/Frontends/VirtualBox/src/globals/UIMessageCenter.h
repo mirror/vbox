@@ -479,16 +479,9 @@ public:
         void cannotAcquireVirtualSystemDescriptionFormProperty(const CVirtualSystemDescriptionForm &comForm, QWidget *pParent = 0) const;
         void cannotImportAppliance(CAppliance &appliance, QWidget *pParent = 0) const;
         void cannotImportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent = 0) const;
-        bool cannotCheckFiles(const CAppliance &comAppliance, QWidget *pParent = 0) const;
-        bool cannotCheckFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent = 0) const;
-        bool cannotCheckFiles(const CProgress &comProgress, QWidget *pParent = 0) const;
         bool cannotRemoveFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent = 0) const;
         bool cannotRemoveFiles(const CProgress &comProgress, QWidget *pParent = 0) const;
         bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent = 0) const;
-        bool cannotExportAppliance(const CAppliance &comAppliance, QWidget *pParent = 0) const;
-        void cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent = 0) const;
-        bool cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent = 0) const;
-        bool cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent = 0);
         void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
         bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0) const;
         bool confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0) const;

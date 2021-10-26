@@ -630,7 +630,7 @@ void UINotificationMessage::cannotAcquireDispayParameter(const CDisplay &comDisp
 
 /* static */
 void UINotificationMessage::cannotAcquireVirtualSystemDescriptionFormParameter(const CVirtualSystemDescriptionForm &comVsdForm,
-                                                                               UINotificationCenter *pParent)
+                                                                               UINotificationCenter *pParent /* = 0 */)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "VSD form failure ..."),
@@ -724,7 +724,7 @@ void UINotificationMessage::cannotChangeCloudProfileParameter(const CCloudProfil
 
 /* static */
 void UINotificationMessage::cannotChangeVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
-                                                                          UINotificationCenter *pParent)
+                                                                          UINotificationCenter *pParent /* = 0 */)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "VSD failure ..."),
@@ -796,6 +796,30 @@ void UINotificationMessage::cannotACPIShutdownMachine(const CConsole &comConsole
 }
 
 /* static */
+void UINotificationMessage::cannotCreateAppliance(const CVirtualBox &comVBox,
+                                                  UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create appliance ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create appliance.") +
+        UIErrorString::formatErrorInfo(comVBox),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotFindMachineById(const CVirtualBox &comVBox,
+                                                  const QUuid &uMachineId,
+                                                  UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to find the machine with following ID: <nobr><b>%1</b></nobr>.")
+                                                   .arg(uMachineId.toString()) +
+        UIErrorString::formatErrorInfo(comVBox),
+        QString(), QString(), pParent);
+}
+
+/* static */
 void UINotificationMessage::cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId)
 {
     createMessage(
@@ -822,6 +846,26 @@ void UINotificationMessage::cannotGetExtensionPackManager(const CVirtualBox &com
         QApplication::translate("UIMessageCenter", "Can't get EP Manager ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire Extension Pack Manager.") +
         UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotCreateVfsExplorer(const CAppliance &comAppliance, UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create VFS explorer ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create VFS explorer to check files.") +
+        UIErrorString::formatErrorInfo(comAppliance),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Bad password ..."),
+        QApplication::translate("UIMessageCenter", "Bad password or authentication failure.") +
+        UIErrorString::formatErrorInfo(comAppliance),
+        QString(), QString(), pParent);
 }
 
 /* static */
@@ -984,6 +1028,17 @@ void UINotificationMessage::cannotRemoveMachine(const CMachine &comMachine, UINo
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't remove machine ..."),
         QApplication::translate("UIMessageCenter", "Failed to remove the virtual machine <b>%1</b>.")
+                                                   .arg(CMachine(comMachine).GetName()) +
+        UIErrorString::formatErrorInfo(comMachine),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotExportMachine(const CMachine &comMachine, UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't export machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to export virtual machine <b>%1</b>.")
                                                    .arg(CMachine(comMachine).GetName()) +
         UIErrorString::formatErrorInfo(comMachine),
         QString(), QString(), pParent);

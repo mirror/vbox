@@ -25,7 +25,7 @@
 #include "UIApplianceExportEditorWidget.h"
 #include "UICommon.h"
 #include "UIFormEditorWidget.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppPageSettings.h"
 
@@ -222,7 +222,7 @@ bool UIWizardExportAppPageSettings::validatePage()
             comForm.GetVirtualSystemDescription();
             fResult = comForm.isOk();
             if (!fResult)
-                msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+                UINotificationMessage::cannotAcquireVirtualSystemDescriptionFormParameter(comForm, wizard()->notificationCenter());
         }
 
         /* Final stage? */
