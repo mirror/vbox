@@ -2022,7 +2022,7 @@ class TestVmManager(object):
                sNic0AttachType = 'nat'),
 
         # Audio testing.
-        TestVm('tst-audio-debian10-64',     kfGrpStdSmoke,       sHd = '6.1/audio/debian10-amd64-3.vdi',
+        TestVm('tst-audio-debian10-64',     kfGrpStdSmoke,       sHd = '6.1/audio/debian10-amd64-4.vdi',
                sKind = 'Debian_64', acCpusSup = range(1, 33), fIoApic = True),
 
         # DOS and Old Windows.
