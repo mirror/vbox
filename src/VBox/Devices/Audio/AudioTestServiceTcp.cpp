@@ -556,7 +556,7 @@ static DECLCALLBACK(int) atsTcpSendPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
         atsTcpDisconnectClient(pThis, pClient);
     }
 
-    LogRel3(("pClient=%RTsock, achOpcode=%.8s, cbSent=%zu -> %Rrc\n", pClient->hTcpClient, (const char *)pPktHdr->achOpcode, cbToSend, rc));
+    LogRel3(("atsTcpSendPkt: pClient=%RTsock, achOpcode=%.8s, cbSent=%zu -> %Rrc\n", pClient->hTcpClient, (const char *)pPktHdr->achOpcode, cbToSend, rc));
     return rc;
 }
 
@@ -698,8 +698,8 @@ static DECLCALLBACK(int) atsTcpRecvPkt(PATSTRANSPORTINST pThis, PATSTRANSPORTCLI
     }
 
     PATSPKTHDR pPktHdr = (PATSPKTHDR)pbData;
-    LogRel3(("pClient=%RTsock, achOpcode=%.8s, cbRead=%zu -> %Rrc\n",
-             pClient->hTcpClient, pPktHdr ? (const char *)pPktHdr->achOpcode : "<None>", cbData, rc));
+    LogRel3(("atsTcpRecvPkt: pClient=%RTsock, achOpcode=%.8s, cbRead=%zu -> %Rrc\n",
+             pClient->hTcpClient, pPktHdr ? (const char *)pPktHdr->achOpcode : "NONE    ", cbData, rc));
     return rc;
 }
 
