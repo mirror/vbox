@@ -388,7 +388,7 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
         }
         dispatch_semaphore_signal(operation_done);
     });
-    dispatch_semaphore_wait(operation_done, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(operation_done, dispatch_time(DISPATCH_TIME_NOW, RT_NS_10SEC));
 
     if (vmnet_status != VMNET_SUCCESS)
         return vmnet_status;
@@ -421,7 +421,7 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
             packets.vm_flags = 0;
             rc = vmnet_read(pThis->Interface, &packets, &packet_count);
             if (rc != VMNET_SUCCESS)
-                Log(("Failed to read packets, rc=%d\n", rc));
+                Log(("Failed to read packets with error code %d\n", rc));
             else
             {
                 Log3(("Successfully read %d packets:\n", packet_count));
