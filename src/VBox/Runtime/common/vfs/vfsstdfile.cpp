@@ -142,7 +142,11 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
         if (off < 0)
             rc = RTFileRead(  pThis->hFile,      pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
         else
+        {
             rc = RTFileReadAt(pThis->hFile, off, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
+            if (RT_SUCCESS(rc)) /* RTFileReadAt() doesn't increment the file-position indicator on some platforms */
+                rc = RTFileSeek(pThis->hFile, off + (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg), RTFILE_SEEK_BEGIN, NULL);
+        }
         if (rc == VINF_SUCCESS && pcbRead)
             rc = rtVfsStdFile_ReadFixRC(pThis, off, pSgBuf->paSegs[0].cbSeg, *pcbRead);
     }
@@ -162,7 +166,11 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
             if (off < 0)
                 rc = RTFileRead(  pThis->hFile,      pvSeg, cbSeg, pcbRead ? &cbReadSeg : NULL);
             else
+            {
                 rc = RTFileReadAt(pThis->hFile, off, pvSeg, cbSeg, pcbRead ? &cbReadSeg : NULL);
+                if (RT_SUCCESS(rc)) /* RTFileReadAt() doesn't increment the file-position indicator on some platforms */
+                    rc = RTFileSeek(pThis->hFile, off + cbReadSeg, RTFILE_SEEK_BEGIN, NULL);
+            }
             if (RT_FAILURE(rc))
                 break;
             if (off >= 0)
@@ -198,7 +206,12 @@ static DECLCALLBACK(int) rtVfsStdFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
         if (off < 0)
             rc = RTFileWrite(pThis->hFile, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbWritten);
         else
+        {
             rc = RTFileWriteAt(pThis->hFile, off, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbWritten);
+            if (RT_SUCCESS(rc)) /* RTFileWriteAt() doesn't increment the file-position indicator on some platforms */
+                rc = RTFileSeek(pThis->hFile, off + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg), RTFILE_SEEK_BEGIN,
+                                NULL);
+        }
     }
     else
     {
@@ -218,7 +231,12 @@ static DECLCALLBACK(int) rtVfsStdFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
             else
             {
                 rc = RTFileWriteAt(pThis->hFile, off, pvSeg, cbSeg, pcbWrittenSeg);
-                off += cbSeg;
+                if (RT_SUCCESS(rc))
+                {
+                    off += pcbWrittenSeg ? *pcbWrittenSeg : cbSeg;
+                    /* RTFileWriteAt() doesn't increment the file-position indicator on some platforms */
+                    rc = RTFileSeek(pThis->hFile, off, RTFILE_SEEK_BEGIN, NULL);
+                }
             }
             if (RT_FAILURE(rc))
                 break;
