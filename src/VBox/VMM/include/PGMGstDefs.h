@@ -131,6 +131,7 @@
 # define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (true)
 # define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (true)
 # define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (true)
+# define GST_IS_PGENTRY_PRESENT(pVCpu, Pge)     ((Pge.u) & X86_PTE_P)
 # define GST_IS_PSE_ACTIVE(pVCpu)               (false && This_should_not_be_used_in_this_context)
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -172,6 +173,7 @@
 //# define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (false)
 //# define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (false)
 //# define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (false)
+# define GST_IS_PGENTRY_PRESENT(pVCpu, Pge)     ((Pge.u) & X86_PTE_P)
 # define GST_IS_PSE_ACTIVE(pVCpu)               pgmGst32BitIsPageSizeExtActive(pVCpu)
 # define GST_IS_NX_ACTIVE(pVCpu)                (false)
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
@@ -235,6 +237,7 @@
 #  define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)    (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstAmd64MbzBigPdpeMask ))
 #  define GST_IS_PML4E_VALID(pVCpu, Pml4e)      (!( (Pml4e).u & (pVCpu)->pgm.s.fGstAmd64MbzPml4eMask ))
 # endif
+# define GST_IS_PGENTRY_PRESENT(pVCpu, Pge)     ((Pge.u) & X86_PTE_P)
 # define GST_PT_SHIFT                           X86_PT_PAE_SHIFT
 # define GST_PT_MASK                            X86_PT_PAE_MASK
 # define GST_IS_PSE_ACTIVE(pVCpu)               (true)
@@ -286,7 +289,7 @@
 # define GST_IS_PDPE_VALID(pVCpu, Pdpe)         (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstEptMbzPdpteMask ))
 # define GST_IS_BIG_PDPE_VALID(pVCpu, Pdpe)     (!( (Pdpe).u  & (pVCpu)->pgm.s.fGstEptMbzBigPdpteMask ))
 # define GST_IS_PML4E_VALID(pVCpu, Pml4e)       (!( (Pml4e).u & (pVCpu)->pgm.s.fGstEptMbzPml4eMask ))
-# define GST_IS_PGENTRY_PRESENT(pVCpu, Entry)   (!( (Entry).u & (pVCpu)->pgm.s.fGstEptPresentMask ))
+# define GST_IS_PGENTRY_PRESENT(pVCpu, Pge)     ((Pge).u & (pVCpu)->pgm.s.fGstEptPresentMask)
 # define GST_IS_PSE_ACTIVE(pVCpu)               (true)
 # define GST_IS_NX_ACTIVE(pVCpu)                (pgmGstIsNoExecuteActive(pVCpu))
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)

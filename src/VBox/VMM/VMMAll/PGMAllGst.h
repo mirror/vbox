@@ -147,7 +147,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         X86PML4E  Pml4e;
         pWalk->Pml4e.u = Pml4e.u = pPml4e->u;
 
-        if (Pml4e.u & X86_PML4E_P) { /* probable */ }
+        if (GST_IS_PGENTRY_PRESENT(pVCpu, Pml4e)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 4);
 
         if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
@@ -209,7 +209,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         X86PDPE  Pdpe;
         pWalk->Pdpe.u = Pdpe.u = pPdpe->u;
 
-        if (Pdpe.u & X86_PDPE_P) { /* probable */ }
+        if (GST_IS_PGENTRY_PRESENT(pVCpu, Pdpe)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 3);
 
         if (RT_LIKELY(GST_IS_PDPE_VALID(pVCpu, Pdpe))) { /* likely */ }
@@ -299,7 +299,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         pWalk->pPde  = pPde  = &pWalk->pPd->a[(GCPtr >> GST_PD_SHIFT) & GST_PD_MASK];
         GSTPDE  Pde;
         pWalk->Pde.u = Pde.u = pPde->u;
-        if (Pde.u & X86_PDE_P) { /* probable */ }
+        if (GST_IS_PGENTRY_PRESENT(pVCpu, Pde)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 2);
         if ((Pde.u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu))
         {
@@ -357,7 +357,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         GSTPTE  Pte;
         pWalk->Pte.u = Pte.u = pPte->u;
 
-        if (Pte.u & X86_PTE_P) { /* probable */ }
+        if (GST_IS_PGENTRY_PRESENT(pVCpu, Pte)) { /* probable */ }
         else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 1);
 
         if (RT_LIKELY(GST_IS_PTE_VALID(pVCpu, Pte))) { /* likely */ }
