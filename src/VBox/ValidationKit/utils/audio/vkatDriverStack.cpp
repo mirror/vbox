@@ -677,7 +677,8 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PCPDMA
             RTMsgInfo("Created backend stream: %s\n", PDMAudioStrmCfgToString(pCfgReq, szTmp, sizeof(szTmp)));
             return rc;
         }
-        RTTestFailed(g_hTest, "pfnStreamCreate failed: %Rrc", rc);
+        /* else: Don't set RTTestFailed(...) here, as test boxes (servers) don't have any audio hardware.
+         *       Caller has check the rc then. */
     }
     else
     {
@@ -746,8 +747,8 @@ static int audioTestDriverStackStreamCreate(PAUDIOTESTDRVSTACK pDrvStack, PCPDMA
                         }
                         pDrvStack->pIHostAudio->pfnStreamDestroy(pDrvStack->pIHostAudio, &pStreamAt->Backend, true /*fImmediate*/);
                     }
-                    else
-                        RTTestFailed(g_hTest, "pfnStreamCreate failed: %Rrc\n", rc);
+                    /* else: Don't set RTTestFailed(...) here, as test boxes (servers) don't have any audio hardware.
+                     *       Caller has check the rc then. */
                 }
                 else
                 {
