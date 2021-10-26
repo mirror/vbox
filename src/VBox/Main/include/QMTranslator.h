@@ -43,7 +43,7 @@ public:
      * @returns Pointer to a translation (UTF-8 encoding), source string on failure.
      */
     const char *translate(const char *pszContext, const char *pszSource, const char **ppszSafeSource,
-                          const char *pszDisamb = NULL, const size_t aNum = (~(size_t)0)) const RT_NOEXCEPT;
+                          const char *pszDisamb = NULL, const size_t aNum = ~(size_t)0) const RT_NOEXCEPT;
 
     /**
      * Loads and parses QM file

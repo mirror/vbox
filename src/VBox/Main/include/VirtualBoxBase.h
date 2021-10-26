@@ -578,7 +578,7 @@ public:
 # define DECLARE_TRANSLATE_METHODS(cls) \
     static inline const char *tr(const char  *aSourceText, \
                                  const char  *aComment = NULL, \
-                                 const size_t aNum = (~(size_t)0)) \
+                                 const size_t aNum = ~(size_t)0) \
     { \
         return VirtualBoxTranslator::translate(NULL, #cls, aSourceText, aComment, aNum); \
     }
@@ -586,7 +586,7 @@ public:
 # define DECLARE_TRANSLATE_METHODS(cls) \
     static inline const char *tr(const char *aSourceText, \
                                  const char *aComment = NULL, \
-                                 const size_t aNum = (~(size_t)0)) \
+                                 const size_t aNum = ~(size_t)0) \
     { \
         RT_NOREF(aComment, aNum); \
         return aSourceText; \

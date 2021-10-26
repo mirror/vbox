@@ -94,7 +94,7 @@ public:
                                  const char  *aContext,
                                  const char  *aSourceText,
                                  const char  *aComment = NULL,
-                                 const size_t aNum = (~(size_t)0)) RT_NOEXCEPT;
+                                 const size_t aNum = ~(size_t)0) RT_NOEXCEPT;
 
     /**
      * Returns source text stored in the cache if exists.
@@ -143,7 +143,7 @@ private:
                             const char   *aContext,
                             const char   *aSourceText,
                             const char   *aComment = NULL,
-                            const size_t aNum = (~(size_t)0)) RT_NOEXCEPT;
+                            const size_t aNum = ~(size_t)0) RT_NOEXCEPT;
 };
 
 /** Pointer to a translator component. */

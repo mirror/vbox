@@ -33,7 +33,7 @@
 # define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
 {\
-   static const char *tr(const char *pszSource, const char *pszComment = NULL, const size_t aNum = (~(size_t)0)) \
+   static const char *tr(const char *pszSource, const char *pszComment = NULL, const size_t aNum = ~(size_t)0) \
    { \
        return VirtualBoxTranslator::translate(NULL, #ctx, pszSource, pszComment, aNum); \
    } \
@@ -42,7 +42,7 @@ struct ctx \
 # define DECLARE_TRANSLATION_CONTEXT(ctx) \
 struct ctx \
 {\
-   static const char *tr(const char *pszSource, const char *pszComment = NULL, const size_t aNum = (~(size_t)0)) \
+   static const char *tr(const char *pszSource, const char *pszComment = NULL, const size_t aNum = ~(size_t)0) \
    { \
        NOREF(pszComment); \
        NOREF(aNum);       \

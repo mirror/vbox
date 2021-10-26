@@ -346,7 +346,7 @@ public:
 
     size_t plural(size_t aNum) const
     {
-        if (aNum == (~(size_t)0) || m_pluralRules.empty())
+        if (aNum == ~(size_t)0 || m_pluralRules.empty())
             return 0;
 
         size_t   uPluralNumber = 0;
@@ -611,7 +611,7 @@ QMTranslator::QMTranslator() : m_impl(new QMTranslator_Impl) {}
 QMTranslator::~QMTranslator() { delete m_impl; }
 
 const char *QMTranslator::translate(const char *pszContext, const char *pszSource, const char **ppszSafeSource,
-                                    const char *pszDisamb /*== NULL*/, const size_t aNum /* = (~(size_t)0) */) const RT_NOEXCEPT
+                                    const char *pszDisamb /*= NULL*/, const size_t aNum /*= ~(size_t)0*/) const RT_NOEXCEPT
 
 {
     return m_impl->translate(pszContext, pszSource, pszDisamb, aNum, ppszSafeSource);
