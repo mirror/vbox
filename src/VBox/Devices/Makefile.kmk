@@ -1504,9 +1504,10 @@ endif
   tstDevice_DEFS        += IN_SUP_R3
   tstDevice_SOURCES     = \
  	testcase/tstDevice.cpp \
-    testcase/tstDeviceR0.cpp \
+ 	testcase/tstDeviceR0.cpp \
  	testcase/tstDeviceCfg.cpp \
  	testcase/tstDevicePdmDevHlp.cpp \
+ 	testcase/tstDevicePdmDevHlpR0.cpp \
  	testcase/tstDevicePdmThread.cpp \
  	testcase/tstDeviceSsmFuzz.cpp \
  	testcase/tstDeviceIoFuzz.cpp

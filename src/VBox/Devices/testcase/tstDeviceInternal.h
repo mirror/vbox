@@ -508,10 +508,8 @@ typedef struct TSTDEVDUTINT
 
 #ifdef IN_RING3
 extern const PDMDEVHLPR3 g_tstDevPdmDevHlpR3;
-#elif defined(IN_RING0)
-//extern const PDMDEVHLPR0 g_tstDevPdmDevHlpR0;
 #endif
-
+extern const PDMDEVHLPR0 g_tstDevPdmDevHlpR0;
 
 DECLHIDDEN(int) tstDevPdmLdrGetSymbol(PTSTDEVDUTINT pThis, const char *pszMod, TSTDEVPDMMODTYPE enmModType,
                                       const char *pszSymbol, PFNRT *ppfn);
