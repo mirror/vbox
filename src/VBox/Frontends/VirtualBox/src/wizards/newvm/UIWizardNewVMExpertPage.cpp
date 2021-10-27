@@ -611,7 +611,9 @@ bool UIWizardNewVMExpertPage::validatePage()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
-    bool fResult = true;
+    bool fResult = UIWizardNewVMNameOSTypeCommon::createMachineFolder(m_pNameAndSystemEditor, this, wizardWindow<UIWizardNewVM>());
+    if (!fResult)
+        return false;
 
     if (pWizard->diskSource() == SelectedDiskSource_New)
     {
