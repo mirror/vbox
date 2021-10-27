@@ -212,6 +212,17 @@ void UINotificationMessage::cannotAcquireCloudMachineSettings(const QString &str
 }
 
 /* static */
+void UINotificationMessage::cannotOverwriteMediumStorage(const QString &strPath,
+                                                         UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't overwrite medium ..."),
+        QApplication::translate("UIMessageCenter", "Failed to overwrite medium storage at <nobr><b>%1</b></nobr>.")
+                                                   .arg(strPath),
+        QString(), QString(), pParent);
+}
+
+/* static */
 void UINotificationMessage::cannotOpenLicenseFile(const QString &strPath)
 {
     createMessage(
@@ -842,22 +853,35 @@ void UINotificationMessage::cannotFindMachineById(const CVirtualBox &comVBox,
 }
 
 /* static */
-void UINotificationMessage::cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Can't open medium ..."),
-        QApplication::translate("UIMessageCenter", "Failed to open the medium with following ID: <nobr><b>%1</b></nobr>.")
-                                                   .arg(uMediumId.toString()) +
-        UIErrorString::formatErrorInfo(comVBox));
-}
-
-/* static */
 void UINotificationMessage::cannotOpenMachine(const CVirtualBox &comVBox, const QString &strLocation)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't open machine ..."),
         QApplication::translate("UIMessageCenter", "Failed to open virtual machine located in %1.")
                                                    .arg(strLocation) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotCreateMediumStorage(const CVirtualBox &comVBox,
+                                                      const QString &strPath,
+                                                      UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create medium storage ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create medium storage at <nobr><b>%1</b></nobr>.")
+                                                   .arg(strPath) +
+        UIErrorString::formatErrorInfo(comVBox),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't open medium ..."),
+        QApplication::translate("UIMessageCenter", "Failed to open the medium with following ID: <nobr><b>%1</b></nobr>.")
+                                                   .arg(uMediumId.toString()) +
         UIErrorString::formatErrorInfo(comVBox));
 }
 

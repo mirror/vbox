@@ -21,7 +21,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDExpertPage.h"
 #include "UIWizardDiskEditors.h"
@@ -178,7 +178,7 @@ bool UIWizardCloneVDExpertPage::validatePage()
 
     if (QFileInfo(strMediumPath).exists())
     {
-        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+        UINotificationMessage::cannotOverwriteMediumStorage(strMediumPath, wizard()->notificationCenter());
         return false;
     }
     return pWizard->copyVirtualDisk();

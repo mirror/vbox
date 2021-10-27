@@ -18,7 +18,6 @@
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIMedium.h"
-#include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDFormatPage.h"
@@ -67,7 +66,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
     CMedium comVirtualDisk = comVBox.CreateMedium(m_comMediumFormat.GetName(), m_strMediumPath, KAccessMode_ReadWrite, m_enmDeviceType);
     if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateMediumStorage(comVBox, m_strMediumPath, this);
+        UINotificationMessage::cannotCreateMediumStorage(comVBox, m_strMediumPath, notificationCenter());
         return false;
     }
 
