@@ -212,6 +212,17 @@ void UINotificationMessage::cannotAcquireCloudMachineSettings(const QString &str
 }
 
 /* static */
+void UINotificationMessage::cannotCreateMediumStorageInFAT(const QString &strPath,
+                                                           UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create medium ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create medium storage at <nobr><b>%1</b></nobr>.")
+                                                   .arg(strPath),
+        QString(), QString(), pParent);
+}
+
+/* static */
 void UINotificationMessage::cannotOverwriteMediumStorage(const QString &strPath,
                                                          UINotificationCenter *pParent /* = 0 */)
 {

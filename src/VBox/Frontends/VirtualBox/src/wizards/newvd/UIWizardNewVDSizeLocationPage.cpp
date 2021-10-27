@@ -23,7 +23,7 @@
 #include "UIWizardNewVDSizeLocationPage.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIWizardDiskEditors.h"
 
 /* COM includes: */
@@ -153,7 +153,7 @@ bool UIWizardNewVDSizeLocationPage::validatePage()
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
     {
-        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+        UINotificationMessage::cannotOverwriteMediumStorage(strMediumPath, wizard()->notificationCenter());
         return fResult;
     }
 
@@ -163,7 +163,7 @@ bool UIWizardNewVDSizeLocationPage::validatePage()
                                      pWizard->mediumSize());
     if (!fResult)
     {
-        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+        UINotificationMessage::cannotCreateMediumStorageInFAT(strMediumPath, wizard()->notificationCenter());
         return fResult;
     }
 

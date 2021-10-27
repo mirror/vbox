@@ -24,7 +24,7 @@
 #include "UIWizardNewVDExpertPage.h"
 #include "UIWizardNewVD.h"
 #include "UICommon.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -189,7 +189,7 @@ bool UIWizardNewVDExpertPage::validatePage()
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
     {
-        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
+        UINotificationMessage::cannotOverwriteMediumStorage(strMediumPath, wizard()->notificationCenter());
         return fResult;
     }
 
@@ -199,7 +199,7 @@ bool UIWizardNewVDExpertPage::validatePage()
                                                           pWizard->mediumSize());
     if (!fResult)
     {
-        msgCenter().cannotCreateHardDiskStorageInFAT(strMediumPath, this);
+        UINotificationMessage::cannotCreateMediumStorageInFAT(strMediumPath, wizard()->notificationCenter());
         return fResult;
     }
 

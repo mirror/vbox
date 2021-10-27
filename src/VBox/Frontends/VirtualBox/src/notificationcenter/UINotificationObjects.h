@@ -131,6 +131,10 @@ public:
           * @param  strErrorDetails  Brings the error details. */
         static void cannotAcquireCloudMachineSettings(const QString &strErrorDetails);
 
+        /** Notifies about inability to create medium storage in FAT.
+          * @param  strPath  Brings the medium path. */
+        static void cannotCreateMediumStorageInFAT(const QString &strPath,
+                                                   UINotificationCenter *pParent = 0);
         /** Notifies about inability to overwrite medium storage.
           * @param  strPath  Brings the medium path. */
         static void cannotOverwriteMediumStorage(const QString &strPath,
