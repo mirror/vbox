@@ -132,8 +132,9 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-    /** Wizard specific cleaning such as folder deletion in case of wizard mode change in new vm wizard etc. */
-    virtual void wizardClean();
+    /** Performs wizard-specific cleanup in case of wizard-mode change
+      * such as folder deletion in New VM wizard etc. */
+    virtual void cleanWizard() {}
 
 protected slots:
 

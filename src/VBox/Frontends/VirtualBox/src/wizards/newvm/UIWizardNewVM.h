@@ -172,7 +172,7 @@ protected:
 
     /** Populates pages. */
     virtual void populatePages() /* final override */;
-    virtual void wizardClean() /* final override */;
+    virtual void cleanWizard() /* final override */;
     void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
     bool attachDefaultDevices();
 

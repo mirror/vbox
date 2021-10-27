@@ -112,7 +112,7 @@ void UIWizardNewVM::populatePages()
     }
 }
 
-void UIWizardNewVM::wizardClean()
+void UIWizardNewVM::cleanWizard()
 {
     /* Try to delete the hard disk in case we have created one: */
     deleteVirtualDisk();
@@ -137,7 +137,7 @@ bool UIWizardNewVM::createVM()
         if (!vbox.isOk())
         {
             msgCenter().cannotCreateMachine(vbox, this);
-            wizardClean();
+            cleanWizard();
             return false;
         }
     }
@@ -168,7 +168,7 @@ bool UIWizardNewVM::createVM()
     if (!vbox.isOk())
     {
         msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
-        wizardClean();
+        cleanWizard();
         return false;
     }
     return attachDefaultDevices();
@@ -466,7 +466,7 @@ bool UIWizardNewVM::attachDefaultDevices()
 
 void UIWizardNewVM::sltHandleWizardCancel()
 {
-    wizardClean();
+    cleanWizard();
 }
 
 void UIWizardNewVM::retranslateUi()
