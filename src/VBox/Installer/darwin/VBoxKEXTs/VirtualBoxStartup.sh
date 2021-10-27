@@ -70,7 +70,7 @@ StartService()
     VBOX_RC=0
     VBOXDRV="VBoxDrv"
     VBOXUSB="VBoxUSB"
-    MACOS_VERS=$(sw_vers -productVersion)
+    MACOS_VERSION_MAJOR=$(sw_vers -productVersion | /usr/bin/sed -e 's/^\([0-9]*\).*$/\1/')
 
     #
     # Check that all the directories exist first.
@@ -97,7 +97,7 @@ StartService()
     # (Try stop the service if this is the case.)
     #
     if [ $VBOX_RC -eq 0 ]; then
-        if [[ ${MACOS_VERS} != 11.* ]]; then
+        if [[ ${MACOS_VERSION_MAJOR} -lt 11 ]]; then
             if kextstat -lb org.virtualbox.kext.VBoxDrv 2>&1 | grep -q org.virtualbox.kext.VBoxDrv; then
                 ConsoleMessage "Error: ${VBOXDRV}.kext is already loaded"
                 VBOX_RC=1
@@ -142,7 +142,7 @@ StartService()
     # Load the drivers.
     #
     if [ $VBOX_RC -eq 0 ]; then
-        if [[ ${MACOS_VERS} != 11.* ]]; then
+        if [[ ${MACOS_VERSION_MAJOR} -lt 11 ]]; then
             ConsoleMessage "Loading ${VBOXDRV}.kext"
             if ! kextload "/Library/Application Support/VirtualBox/${VBOXDRV}.kext"; then
                 ConsoleMessage "Error: Failed to load /Library/Application Support/VirtualBox/${VBOXDRV}.kext"
@@ -220,9 +220,9 @@ StopService()
     VBOX_RC=0
     VBOXDRV="VBoxDrv"
     VBOXUSB="VBoxUSB"
-    MACOS_VERS=$(sw_vers -productVersion)
+    MACOS_VERSION_MAJOR=$(sw_vers -productVersion | /usr/bin/sed -e 's/^\([0-9]*\).*$/\1/')
 
-    if [[ ${MACOS_VERS} != 11.* ]]; then
+    if [[ ${MACOS_VERSION_MAJOR} -lt 11 ]]; then
         if kextstat -lb org.virtualbox.kext.VBoxUSB 2>&1 | grep -q org.virtualbox.kext.VBoxUSB; then
             ConsoleMessage "Unloading ${VBOXUSB}.kext"
             if ! kextunload -m org.virtualbox.kext.VBoxUSB; then
