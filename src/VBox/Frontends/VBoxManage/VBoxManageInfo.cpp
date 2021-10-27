@@ -1148,6 +1148,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             case StorageControllerType_USB:
                 pszCtl = "USB";
                 break;
+            case StorageControllerType_NVMe:
+                pszCtl = "NVMe";
+                break;
+            case StorageControllerType_VirtioSCSI:
+                pszCtl = "VirtioSCSI";
+                break;
 
             default:
                 pszCtl = "unknown";
