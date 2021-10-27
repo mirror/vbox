@@ -17,7 +17,6 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMNamePathPage.h"
@@ -164,7 +163,7 @@ bool UIWizardCloneVM::cloneVM()
         const CSnapshot comCreatedSnapshot = m_machine.FindSnapshot(uSnapshotId.toString());
         if (comCreatedSnapshot.isNull())
         {
-            msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
+            UINotificationMessage::cannotFindSnapshotByName(m_machine, strSnapshotName, notificationCenter());
             return false;
         }
 
@@ -178,7 +177,7 @@ bool UIWizardCloneVM::cloneVM()
     CMachine cloneMachine = comVBox.CreateMachine(m_strCloneFilePath, m_strCloneName, QVector<QString>(), QString(), QString());
     if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateMachine(comVBox, this);
+        UINotificationMessage::cannotCreateMachine(comVBox, notificationCenter());
         return false;
     }
 

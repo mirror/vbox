@@ -818,6 +818,17 @@ void UINotificationMessage::cannotCreateAppliance(const CVirtualBox &comVBox,
 }
 
 /* static */
+void UINotificationMessage::cannotCreateMachine(const CVirtualBox &comVBox,
+                                                UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create machine.") +
+        UIErrorString::formatErrorInfo(comVBox),
+        QString(), QString(), pParent);
+}
+
+/* static */
 void UINotificationMessage::cannotFindMachineById(const CVirtualBox &comVBox,
                                                   const QUuid &uMachineId,
                                                   UINotificationCenter *pParent /* = 0 */)
@@ -1073,6 +1084,19 @@ void UINotificationMessage::cannotFindSnapshotById(const CMachine &comMachine, c
         QApplication::translate("UIMessageCenter", "Can't find snapshot with ID=<b>%1</b>.")
                                                    .arg(uId.toString()) +
         UIErrorString::formatErrorInfo(comMachine));
+}
+
+/* static */
+void UINotificationMessage::cannotFindSnapshotByName(const CMachine &comMachine,
+                                                     const QString &strName,
+                                                     UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find snapshot ..."),
+        QApplication::translate("UIMessageCenter", "Can't find snapshot with name=<b>%1</b>.")
+                                                   .arg(strName) +
+        UIErrorString::formatErrorInfo(comMachine),
+        QString(), QString(), pParent);
 }
 
 /* static */

@@ -327,6 +327,9 @@ public:
         /** Notifies about inability to create appliance.
           * @param  comVBox  Brings common VBox object trying to create appliance. */
         static void cannotCreateAppliance(const CVirtualBox &comVBox, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to create machine.
+          * @param  comVBox  Brings common VBox object trying to create machine. */
+        static void cannotCreateMachine(const CVirtualBox &comVBox, UINotificationCenter *pParent = 0);
         /** Notifies about inability to find machine by ID.
           * @param  comVBox     Brings common VBox object trying to find machine.
           * @param  uMachineId  Brings the machine ID. */
@@ -425,6 +428,10 @@ public:
           * @param  comMachine  Brings the machine being searched for particular snapshot.
           * @param  uId         Brings the required snapshot ID. */
         static void cannotFindSnapshotById(const CMachine &comMachine, const QUuid &uId);
+        /** Notifies about inability to find snapshot by name.
+          * @param  comMachine  Brings the machine being searched for particular snapshot.
+          * @param  strName     Brings the required snapshot name. */
+        static void cannotFindSnapshotByName(const CMachine &comMachine, const QString &strName, UINotificationCenter *pParent = 0);
         /** Notifies about inability to change snapshot.
           * @param  comSnapshot      Brings the snapshot being changed.
           * @param  strSnapshotName  Brings snapshot name.
