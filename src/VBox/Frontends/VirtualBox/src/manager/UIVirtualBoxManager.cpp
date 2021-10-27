@@ -94,18 +94,6 @@
 #include <iprt/buildconfig.h>
 #include <VBox/version.h>
 
-#define checkUnattendedInstallError(comUnattendedInstaller) \
-    do { \
-        if (!comUnattendedInstaller.isOk())      \
-        { \
-        COMErrorInfo comErrorInfo =  comUnattendedInstaller.errorInfo(); \
-        QString strErrorInfo = UIErrorString::formatErrorInfo(comErrorInfo); \
-        msgCenter().cannotRunUnattendedGuestInstall(comUnattendedInstaller); \
-        return; \
-        } \
-    } while (0)
-
-
 /** QDialog extension used to ask for a public key for console connection needs. */
 class UIAcquirePublicKeyDialog : public QIWithRetranslateUI<QDialog>
 {
@@ -2430,6 +2418,18 @@ bool UIVirtualBoxManager::isCloudProfileUpdateInProgress() const
     return m_pWidget->isCloudProfileUpdateInProgress();
 }
 
+bool UIVirtualBoxManager::checkUnattendedInstallError(CUnattended &comUnattendedInstaller) const
+{
+    if (!comUnattendedInstaller.isOk())
+    {
+        COMErrorInfo comErrorInfo =  comUnattendedInstaller.errorInfo();
+        QString strErrorInfo = UIErrorString::formatErrorInfo(comErrorInfo);
+        msgCenter().cannotRunUnattendedGuestInstall(comUnattendedInstaller);
+        return false;
+    }
+    return true;
+}
+
 void UIVirtualBoxManager::openAddMachineDialog(const QString &strFileName /* = QString() */)
 {
     /* Initialize variables: */
@@ -2541,27 +2541,27 @@ void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInsta
     }
 
     comUnattendedInstaller.SetIsoPath(unattendedData.m_strISOPath);
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.SetMachine(comMachine);
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.SetUser(unattendedData.m_strUserName);
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.SetPassword(unattendedData.m_strPassword);
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.SetHostname(unattendedData.m_strHostnameDomainName);
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.SetProductKey(unattendedData.m_strProductKey);
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.SetInstallGuestAdditions(unattendedData.m_fInstallGuestAdditions);
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.SetAdditionsIsoPath(unattendedData.m_strGuestAdditionsISOPath);
 
     comUnattendedInstaller.Prepare();
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.ConstructMedia();
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
     comUnattendedInstaller.ReconfigureVM();
-    checkUnattendedInstallError(comUnattendedInstaller);
+    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
 
     UICommon::LaunchMode enmLaunchMode = UICommon::LaunchMode_Default;
     if (unattendedData.m_fStartHeadless)
