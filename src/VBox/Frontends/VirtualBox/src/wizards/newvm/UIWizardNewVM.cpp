@@ -131,12 +131,11 @@ bool UIWizardNewVM::createVM()
         m_machine = vbox.CreateMachine(m_strMachineFilePath,
                                        m_strMachineBaseName,
                                        groups, strTypeId, QString());
-        /* Try to delete the hard disk: */
-        deleteVirtualDisk();
-
         if (!vbox.isOk())
         {
             msgCenter().cannotCreateMachine(vbox, this);
+            /* Try to delete the hard disk: */
+            deleteVirtualDisk();
             return false;
         }
     }
