@@ -3824,14 +3824,14 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                         }
 
                         /*
-                         * Note! Was defined in DWARF 4.  But... Watcom used it
-                         *       for setting the segment in DWARF 2, creating
-                         *       an incompatibility with the newer standard.
+                         * Note! Was defined in DWARF 4.  But... Watcom used it for setting the
+                         *       segment in DWARF 2, creating an incompatibility with the newer
+                         *       standard.  And gcc 10 uses v3 for these.
                          */
                         case DW_LNE_set_descriminator:
                             if (pLnState->Hdr.uVer != 2)
                             {
-                                Assert(pLnState->Hdr.uVer >= 4);
+                                Assert(pLnState->Hdr.uVer >= 3);
                                 pLnState->Regs.uDiscriminator = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
                                 Log2(("%08x: DW_LNE_set_descriminator: %u\n", offOpCode, pLnState->Regs.uDiscriminator));
                             }
@@ -5159,7 +5159,7 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                 Log5(("label %s %#x:%#llx\n", pLabel->pszName, pLabel->uSegment, pLabel->Address.uAddress));
                 if (pThis->iWatcomPass == 1)
                     rc = rtDbgModDwarfRecordSegOffset(pThis, pLabel->uSegment, pLabel->Address.uAddress);
-                else
+                else if (pLabel->pszName && *pLabel->pszName != '\0') /* Seen empty labels with isolinux. */
                 {
                     RTDBGSEGIDX iSeg;
                     RTUINTPTR   offSeg;
