@@ -226,6 +226,10 @@ public:
         /** Notifies about inability to acquire IVirtualBox parameter.
           * @param  comVBox  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox);
+        /** Notifies about inability to acquire IAppliance parameter.
+          * @param  comVBox  Brings the object parameter get acquired from. */
+        static void cannotAcquireApplianceParameter(const CAppliance &comAppliance,
+                                                    UINotificationCenter *pParent = 0);
         /** Notifies about inability to acquire IExtPackManager parameter.
           * @param  comVBox  Brings the object parameter get acquired from. */
         static void cannotAcquireExtensionPackManagerParameter(const CExtPackManager &comEPManager);
@@ -347,6 +351,9 @@ public:
         /** Notifies about inability to add disk scryption password.
           * @param  comAppliance  Brings appliance trying to add disk scryption password. */
         static void cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to interpret appliance.
+          * @param  comAppliance  Brings appliance we are trying to interpret. */
+        static void cannotInterpretAppliance(const CAppliance &comAppliance, UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to open extension pack.
           * @param  comExtPackManager  Brings extension pack manager trying to open extension pack.

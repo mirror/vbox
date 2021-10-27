@@ -35,7 +35,7 @@
 #include "UIFilePathSelector.h"
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UIToolBox.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
@@ -464,7 +464,7 @@ bool UIWizardImportAppPageExpert::validatePage()
             comForm.GetVirtualSystemDescription();
             fResult = comForm.isOk();
             if (!fResult)
-                msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+                UINotificationMessage::cannotAcquireVirtualSystemDescriptionFormParameter(comForm, wizard()->notificationCenter());
         }
     }
     else

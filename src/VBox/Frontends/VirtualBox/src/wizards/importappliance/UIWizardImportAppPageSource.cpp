@@ -28,7 +28,6 @@
 #include "UICloudNetworkingStuff.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
@@ -320,10 +319,7 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
     CVirtualBox comVBox = uiCommon().virtualBox();
     CAppliance comAppliance = comVBox.CreateAppliance();
     if (!comVBox.isOk())
-    {
-        msgCenter().cannotCreateAppliance(comVBox, pWizard);
-        return;
-    }
+        return UINotificationMessage::cannotCreateAppliance(comVBox, pWizard->notificationCenter());
 
     /* Remember appliance: */
     comCloudAppliance = comAppliance;
@@ -338,10 +334,7 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
     /* Acquire virtual system description: */
     QVector<CVirtualSystemDescription> descriptions = comCloudAppliance.GetVirtualSystemDescriptions();
     if (!comCloudAppliance.isOk())
-    {
-        msgCenter().cannotAcquireVirtualSystemDescription(comCloudAppliance, pWizard);
-        return;
-    }
+        return UINotificationMessage::cannotAcquireApplianceParameter(comCloudAppliance, pWizard->notificationCenter());
 
     /* Make sure there is at least one virtual system description created: */
     AssertReturnVoid(!descriptions.isEmpty());
