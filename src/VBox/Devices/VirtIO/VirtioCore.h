@@ -139,14 +139,15 @@ typedef struct VIRTIOPCIPARAMS
     uint16_t  uInterruptPin;                                     /**< PCI Cfg Interrupt pin                     */
 } VIRTIOPCIPARAMS, *PVIRTIOPCIPARAMS;
 
-/* Virtio Platform Indepdented Reserved Feature Bits (see 1.1 specification section 6) */
+
+/* Virtio Platform Independent Reserved Feature Bits (see 1.1 specification section 6) */
 
 #define VIRTIO_F_NOTIFY_ON_EMPTY            RT_BIT_64(24)        /**< Legacy feature: Force intr if no AVAIL    */
 #define VIRTIO_F_ANY_LAYOUT                 RT_BIT_64(27)        /**< Doc bug: Goes under two names in spec     */
-#define VIRTIO_F_INDIRECT_DESC              RT_BIT_64(28)        /**< Allow descs to point to list of descs     */
 #define VIRTIO_F_RING_INDIRECT_DESC         RT_BIT_64(28)        /**< Doc bug: Goes under two names in spec     */
-#define VIRTIO_F_EVENT_IDX                  RT_BIT_64(29)        /**< Allow notification disable for n elems    */
+#define VIRTIO_F_INDIRECT_DESC              RT_BIT_64(28)        /**< Allow descs to point to list of descs     */
 #define VIRTIO_F_RING_EVENT_IDX             RT_BIT_64(29)        /**< Doc bug: Goes under two names in spec     */
+#define VIRTIO_F_EVENT_IDX                  RT_BIT_64(29)        /**< Allow notification disable for n elems    */
 #define VIRTIO_F_BAD_FEATURE                RT_BIT_64(30)        /**< QEMU kludge.  UNUSED as of >= VirtIO 1.0  */
 #define VIRTIO_F_VERSION_1                  RT_BIT_64(32)        /**< Required feature bit for 1.0 devices      */
 #define VIRTIO_F_ACCESS_PLATFORM            RT_BIT_64(33)        /**< Funky guest mem access   (VirtIO 1.1 NYI) */
@@ -155,6 +156,20 @@ typedef struct VIRTIOPCIPARAMS
 #define VIRTIO_F_ORDER_PLATFORM             RT_BIT_64(36)        /**< Host mem access honored  (VirtIO 1.1 NYI) */
 #define VIRTIO_F_SR_IOV                     RT_BIT_64(37)        /**< Dev Single Root I/O virt (VirtIO 1.1 NYI) */
 #define VIRTIO_F_NOTIFICAITON_DATA          RT_BIT_64(38)        /**< Driver passes extra data (VirtIO 1.1 NYI) */
+
+typedef struct VIRTIO_FEATURES_LIST
+{
+    uint64_t fFeatureBit;
+    const char *pcszDesc;
+} VIRTIO_FEATURES_LIST, *PVIRTIO_FEATURES_LIST;
+
+static const VIRTIO_FEATURES_LIST s_aCoreFeatures[] =
+{
+    { VIRTIO_F_RING_INDIRECT_DESC,      "   RING_INDIRECT_DESC   Driver can use descriptors with VIRTQ_DESC_F_INDIRECT flag set\n" },
+    { VIRTIO_F_RING_EVENT_IDX,          "   RING_EVENT_IDX       Enables use_event and avail_event fields described in 2.4.7, 2.4.8\n" },
+    { VIRTIO_F_VERSION_1,               "   VERSION              Used to detect legacy drivers.\n" },
+};
+
 
 #define VIRTIO_DEV_INDEPENDENT_FEATURES_OFFERED ( 0 )            /**< TBD: Add VIRTIO_F_INDIRECT_DESC           */
 #define VIRTIO_DEV_INDEPENDENT_LEGACY_FEATURES_OFFERED ( 0 )     /**< Only offered to legacy drivers            */
@@ -186,6 +201,8 @@ typedef enum VIRTIOVMSTATECHANGED
     kvirtIoVmStateChangedResume,
     kvirtIoVmStateChangedFor32BitHack = 0x7fffffff
 } VIRTIOVMSTATECHANGED;
+
+
 
 /** @def Virtio Device PCI Capabilities type codes */
 #define VIRTIO_PCI_CAP_COMMON_CFG                       1        /**< Common configuration PCI capability ID    */
@@ -228,8 +245,10 @@ typedef struct virtio_legacy_pci_common_cfg
     uint16_t  uQueueNotify;                                      /**< RO (offset into virtqueue; see spec)      */
     uint8_t   fDeviceStatus;                                     /**< RW (driver writes device status, 0=reset) */
     uint8_t   fIsrStatus;                                        /**< RW (driver writes ISR status, 0=reset)    */
-//    uint16_t  uMsixConfig;                                       /**< RW (driver sets MSI-X config vector)      */
-//    uint16_t  uMsixVector;                                       /**< RW (driver sets MSI-X config vector)      */
+#ifdef LEGACY_MSIX_SUPPORTED
+    uint16_t  uMsixConfig;                                       /**< RW (driver sets MSI-X config vector)      */
+    uint16_t  uMsixVector;                                       /**< RW (driver sets MSI-X config vector)      */
+#endif
 } VIRTIO_LEGACY_PCI_COMMON_CFG_T, *PVIRTIO_LEGACY_PCI_COMMON_CFG_T;
 
 /**
@@ -322,8 +341,8 @@ typedef struct VIRTIOCORE
     uint8_t                     uPciCfgDataOff;                   /**< Offset to PCI configuration data area     */
     uint8_t                     uISR;                             /**< Interrupt Status Register.                */
     uint8_t                     fMsiSupport;                      /**< Flag set if using MSI instead of ISR      */
-    uint8_t                     fLegacyDriver;                    /**< Set if guest driver < VirtIO 1.0          */
     uint16_t                    uVirtqSelect;                     /**< (MMIO) queue selector               GUEST */
+    uint32_t                    fLegacyDriver;                    /**< Set if guest driver < VirtIO 1.0          */
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
      * @{ */
@@ -355,6 +374,7 @@ typedef struct VIRTIOCORE
     STAMPROFILEADV              StatWriteRC;                       /** I/O port and MMIO R3 Write profiling      */
 #endif
 
+
     /** @} */
 } VIRTIOCORE;
 
@@ -367,6 +387,21 @@ typedef struct VIRTIOCORER3
 {
     /** @name Callbacks filled by the device before calling virtioCoreR3Init.
      * @{  */
+    /**
+     * Implementation-specific client callback to report VirtIO version as modern or legacy.
+     * That's the only meaningful distinction in the VirtIO specification. Beyond that
+     * versioning is loosely discernable through feature negotiation. There will be two callbacks,
+     * the first indicates the guest driver is considered legacy VirtIO, as it is critical to
+     * assume that initially. A 2nd callback will occur during feature negotiation
+     * which will indicate the guest is modern, if the guest acknowledges VIRTIO_F_VERSION_1,
+     * feature, or legacy if the feature isn't negotiated. That 2nd callback allows
+     * the device-specific code to configure its behavior in terms of both guest version and features.
+     *
+     * @param   pVirtio    Pointer to the shared virtio state.
+     * @param   fModern    True if guest driver identified itself as modern (e.g. VirtIO 1.0 featured)
+     */
+    DECLCALLBACKMEMBER(void, pfnGuestVersionHandler,(PVIRTIOCORE pVirtio, uint32_t fModern));
+
     /**
      * Implementation-specific client callback to notify client of significant device status
      * changes.
@@ -390,7 +425,7 @@ typedef struct VIRTIOCORER3
     DECLCALLBACKMEMBER(int, pfnDevCapRead,(PPDMDEVINS pDevIns, uint32_t offCap, void *pvBuf, uint32_t cbToRead));
 
     /**
-     * Implementation-specific client ballback to access VirtIO Device-specific capabilities
+     * Implementation-specific client callback to access VirtIO Device-specific capabilities
      * (other VirtIO capabilities and features are handled in VirtIO implementation)
      *
      * @param   pDevIns    The device instance.
@@ -545,14 +580,22 @@ void  virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, bool 
 void  virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
 
 /**
- * Displays the VirtIO spec-related features offered by the core component,
- * as well as which features have been negotiated and accepted or declined by the guest driver,
- * providing a summary view of the configuration the device is operating with.
+ * Displays the VirtIO spec-related features offered and their accepted/declined status
+ * by both the VirtIO core and dev-specific device code (which invokes this function).
+ * The result is a comprehensive list of available features the VirtIO specification
+ * defines, which ones were actually offered by the device, and which ones were accepted
+ * by the guest driver, thus providing a legible summary view of the configuration
+ * the device is operating with.
  *
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   pHlp        Pointer to the debug info hlp struct
+ * @param   s_aDevSpecificFeatures
+ *                      Features specification lists for device-specific implementation
+ *                      (i.e: net controller, scsi controller ...)
+ * @param   cFeatures   Number of features in aDevSpecificFeatures
  */
-void  virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp);
+void  virtioCorePrintDeviceFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp,
+    const VIRTIO_FEATURES_LIST *aDevSpecificFeatures, int cFeatures);
 
 /*
  * Debuging assist feature displays the state of the VirtIO core code, which includes
@@ -710,8 +753,8 @@ int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
  * Checks to see if guest has acknowledged device's VIRTIO_F_VERSION_1 feature.
  * If not, it's presumed to be a VirtIO legacy guest driver. Note that legacy drivers
  * may start using the device prematurely, as opposed to the rigorously sane protocol
- * prescribed by the "modern" VirtIO spec. Doing so is suggestive of a legacy driver.
- * Therefore legacy mode is the assumption un proven otherwise.
+ * prescribed by the "modern" VirtIO spec. Early access implies a legacy driver.
+ * Therefore legacy mode is the assumption until feature negotiation.
  *
  * @param   pVirtio      Pointer to the virtio state.
  */

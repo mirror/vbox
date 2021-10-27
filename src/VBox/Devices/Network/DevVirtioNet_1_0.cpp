@@ -85,6 +85,31 @@
 #define VIRTIONET_F_CTRL_MAC_ADDR        RT_BIT_64(23)         /**< Set MAC address through control channel         */
 /** @} */
 
+static const VIRTIO_FEATURES_LIST s_aDevSpecificFeatures[] =
+{
+    { VIRTIONET_F_CSUM,                "   CSUM                 Host handles packets with partial checksum.\n" },
+    { VIRTIONET_F_GUEST_CSUM,          "   GUEST_CSUM           Guest handles packets with partial checksum.\n" },
+    { VIRTIONET_F_CTRL_GUEST_OFFLOADS, "   CTRL_GUEST_OFFLOADS  Control channel offloads reconfiguration support.\n" },
+    { VIRTIONET_F_MAC,                 "   MAC                  Host has given MAC address.\n" },
+    { VIRTIONET_F_GUEST_TSO4,          "   GUEST_TSO4           Guest can receive TSOv4.\n" },
+    { VIRTIONET_F_GUEST_TSO6,          "   GUEST_TSO6           Guest can receive TSOv6.\n" },
+    { VIRTIONET_F_GUEST_ECN,           "   GUEST_ECN            Guest can receive TSO with ECN.\n" },
+    { VIRTIONET_F_GUEST_UFO,           "   GUEST_UFO            Guest can receive UFO.\n" },
+    { VIRTIONET_F_HOST_TSO4,           "   HOST_TSO4            Host can receive TSOv4.\n" },
+    { VIRTIONET_F_HOST_TSO6,           "   HOST_TSO6            Host can receive TSOv6.\n" },
+    { VIRTIONET_F_HOST_ECN,            "   HOST_ECN             Host can receive TSO with ECN.\n" },
+    { VIRTIONET_F_HOST_UFO,            "   HOST_UFO             Host can receive UFO.\n" },
+    { VIRTIONET_F_MRG_RXBUF,           "   MRG_RXBUF            Guest can merge receive buffers.\n" },
+    { VIRTIONET_F_STATUS,              "   STATUS               Configuration status field is available.\n" },
+    { VIRTIONET_F_CTRL_VQ,             "   CTRL_VQ              Control channel is available.\n" },
+    { VIRTIONET_F_CTRL_RX,             "   CTRL_RX              Control channel RX mode support.\n" },
+    { VIRTIONET_F_CTRL_VLAN,           "   CTRL_VLAN            Control channel VLAN filtering.\n" },
+    { VIRTIONET_F_GUEST_ANNOUNCE,      "   GUEST_ANNOUNCE       Guest can send gratuitous packets.\n" },
+    { VIRTIONET_F_MQ,                  "   MQ                   Host supports multiqueue with automatic receive steering.\n" },
+    { VIRTIONET_F_CTRL_MAC_ADDR,       "   CTRL_MAC_ADDR        Set MAC address through control channel.\n" },
+};
+
+
 #ifdef VIRTIONET_WITH_GSO
 # define VIRTIONET_HOST_FEATURES_GSO    \
       VIRTIONET_F_CSUM                  \
@@ -292,6 +317,14 @@ uint64_t    uOffloads;                                          /**< offloads   
 #define VIRTIONET_CTRL_GUEST_OFFLOADS_SET         0            /** Apply new offloads configuration                */
 /** @} */
 
+typedef enum VIRTIONETPKTHDRTYPE
+{
+    kVirtioNetModernPktHdr_1_0          = 0,
+    kVirtioNetLegacyPktHdr              = 1,
+    kVirtioNetLegacyPktHdrWithoutMrgRx  = 2,
+    kVirtioNetFor32BitHack              = 0x7fffffff
+} VIRTIONETPKTHDRTYPE;
+
 /**
  * device-specific queue info
  */
@@ -436,6 +469,12 @@ typedef struct VIRTIONET
     /** No broadcast mode - Supresses broadcast receive */
     uint8_t                 fNoBroadcast;
 
+    /** Type of network pkt header based on guest driver version/features */
+    VIRTIONETPKTHDRTYPE     ePktHdrType;
+
+    /** Size of network pkt header based on guest driver version/features */
+    uint16_t                cbPktHdr;
+
     /** True if physical cable is attached in configuration. */
     bool                    fCableConnected;
 
@@ -549,32 +588,6 @@ typedef CTX_SUFF(PVIRTIONET) PVIRTIONETCC;
 #ifdef IN_RING3
 static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread);
 static int virtioNetR3CreateWorkerThreads(PPDMDEVINS, PVIRTIONET, PVIRTIONETCC);
-
-typedef enum VIRTIONETPKTHDRTYPE
-{
-    kVirtioNetModernPktHdr_1_0          = 0,
-    kVirtioNetLegacyPktHdr              = 1,
-    kVirtioNetLegacyPktHdrWithoutMrgRx  = 2,
-    kVirtioNetFor32BitHack              = 0x7fffffff
-} VIRTIONETPKTHDRTYPE;
-
-DECLINLINE(int) virtioNetPktHdrType(PVIRTIOCORE pVirtio, PVIRTIONET pThis)
-{
-    if (!virtioCoreIsLegacyMode(pVirtio))
-        return kVirtioNetModernPktHdr_1_0;
-    else /* legacy mode */
-        if (FEATURE_ENABLED(MRG_RXBUF))
-            return kVirtioNetLegacyPktHdrWithoutMrgRx;
-    return kVirtioNetLegacyPktHdr;
-}
-
-DECLINLINE(size_t) virtioNetCalcPktHdrSize(PVIRTIOCORE pVirtio, PVIRTIONET pThis)
-{
-    size_t cbHdr = sizeof(VIRTIONETPKTHDR);
-    if (virtioCoreIsLegacyMode(pVirtio) & !FEATURE_ENABLED(MRG_RXBUF))
-        cbHdr -= RT_SIZEOFMEMB(VIRTIONETPKTHDR, uNumBuffers);
-    return cbHdr;
-}
 
 DECLINLINE(const char *) virtioNetThreadStateName(PPDMTHREAD pThread)
 {
@@ -719,64 +732,6 @@ DECLINLINE(void) virtioNetR3PacketDump(PVIRTIONET pThis, const uint8_t *pbPacket
     vboxEthPacketDump(pThis->szInst, pszText, pbPacket, (uint32_t)cb);
 }
 
-DECLINLINE(void) virtioNetPrintFeatures(VIRTIONET *pThis, PCDBGFINFOHLP pHlp)
-{
-    static struct
-    {
-        uint64_t fFeatureBit;
-        const char *pcszDesc;
-    } const s_aFeatures[] =
-    {
-        { VIRTIONET_F_CSUM,                "   CSUM                 Host handles packets with partial checksum.\n" },
-        { VIRTIONET_F_GUEST_CSUM,          "   GUEST_CSUM           Guest handles packets with partial checksum.\n" },
-        { VIRTIONET_F_CTRL_GUEST_OFFLOADS, "   CTRL_GUEST_OFFLOADS  Control channel offloads reconfiguration support.\n" },
-        { VIRTIONET_F_MAC,                 "   MAC                  Host has given MAC address.\n" },
-        { VIRTIONET_F_GUEST_TSO4,          "   GUEST_TSO4           Guest can receive TSOv4.\n" },
-        { VIRTIONET_F_GUEST_TSO6,          "   GUEST_TSO6           Guest can receive TSOv6.\n" },
-        { VIRTIONET_F_GUEST_ECN,           "   GUEST_ECN            Guest can receive TSO with ECN.\n" },
-        { VIRTIONET_F_GUEST_UFO,           "   GUEST_UFO            Guest can receive UFO.\n" },
-        { VIRTIONET_F_HOST_TSO4,           "   HOST_TSO4            Host can receive TSOv4.\n" },
-        { VIRTIONET_F_HOST_TSO6,           "   HOST_TSO6            Host can receive TSOv6.\n" },
-        { VIRTIONET_F_HOST_ECN,            "   HOST_ECN             Host can receive TSO with ECN.\n" },
-        { VIRTIONET_F_HOST_UFO,            "   HOST_UFO             Host can receive UFO.\n" },
-        { VIRTIONET_F_MRG_RXBUF,           "   MRG_RXBUF            Guest can merge receive buffers.\n" },
-        { VIRTIONET_F_STATUS,              "   STATUS               Configuration status field is available.\n" },
-        { VIRTIONET_F_CTRL_VQ,             "   CTRL_VQ              Control channel is available.\n" },
-        { VIRTIONET_F_CTRL_RX,             "   CTRL_RX              Control channel RX mode support.\n" },
-        { VIRTIONET_F_CTRL_VLAN,           "   CTRL_VLAN            Control channel VLAN filtering.\n" },
-        { VIRTIONET_F_GUEST_ANNOUNCE,      "   GUEST_ANNOUNCE       Guest can send gratuitous packets.\n" },
-        { VIRTIONET_F_MQ,                  "   MQ                   Host supports multiqueue with automatic receive steering.\n" },
-        { VIRTIONET_F_CTRL_MAC_ADDR,       "   CTRL_MAC_ADDR        Set MAC address through control channel.\n" }
-    };
-
-#define MAXLINE 80
-    /* Display as a single buf to prevent interceding log messages */
-    uint64_t fFeaturesOfferedMask = VIRTIONET_HOST_FEATURES_OFFERED;
-    uint16_t cbBuf = RT_ELEMENTS(s_aFeatures) * 132;
-    char *pszBuf = (char *)RTMemAllocZ(cbBuf);
-    Assert(pszBuf);
-    char *cp = pszBuf;
-    for (unsigned i = 0; i < RT_ELEMENTS(s_aFeatures); ++i)
-    {
-        uint64_t isOffered = fFeaturesOfferedMask & s_aFeatures[i].fFeatureBit;
-        uint64_t isNegotiated = pThis->fNegotiatedFeatures & s_aFeatures[i].fFeatureBit;
-        cp += RTStrPrintf(cp, cbBuf - (cp - pszBuf), "        %s       %s   %s",
-                          isOffered ? "+" : "-", isNegotiated ? "x" : " ", s_aFeatures[i].pcszDesc);
-    }
-    if (pHlp)
-        pHlp->pfnPrintf(pHlp, "VirtIO Net Features Configuration\n\n"
-              "    Offered  Accepted  Feature              Description\n"
-              "    -------  --------  -------              -----------\n"
-              "%s\n", pszBuf);
-#ifdef LOG_ENABLED
-    else
-        Log3(("VirtIO Net Features Configuration\n\n"
-              "    Offered  Accepted  Feature              Description\n"
-              "    -------  --------  -------              -----------\n"
-              "%s\n", pszBuf));
-#endif
-    RTMemFree(pszBuf);
-}
 
 #ifdef LOG_ENABLED
 void virtioNetDumpGcPhysRxBuf(PPDMDEVINS pDevIns, PVIRTIONETPKTHDR pRxPktHdr,
@@ -842,8 +797,8 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     /* Show offered/unoffered, accepted/rejected features */
     if (fAll || fFeatures)
     {
-        virtioCorePrintFeatures(&pThis->Virtio, pHlp);
-        virtioNetPrintFeatures(pThis, pHlp);
+        virtioCorePrintDeviceFeatures(&pThis->Virtio, pHlp, s_aDevSpecificFeatures,
+            RT_ELEMENTS(s_aDevSpecificFeatures));
         pHlp->pfnPrintf(pHlp, "\n");
     }
 
@@ -1583,8 +1538,6 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
     uint16_t cVirtqBufs  = 0;
     uint64_t uOffset = 0;
 
-    int uPktHdrType = virtioNetPktHdrType(&pThis->Virtio,  pThis);
-
     while (uOffset < cb)
     {
         PVIRTQBUF pVirtqBuf = NULL;
@@ -1603,9 +1556,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
          * virtio_net_header.num_buffers, to facilitate deferring updating GCPhys memory.
          * Re-visit if needed */
 
-        size_t cbPktHdr = virtioNetCalcPktHdrSize(&pThis->Virtio, pThis);
-
-        AssertMsgReturn(pVirtqBuf->pSgPhysReturn->paSegs[0].cbSeg >= cbPktHdr,
+        AssertMsgReturn(pVirtqBuf->pSgPhysReturn->paSegs[0].cbSeg >= pThis->cbPktHdr,
                             ("Out of Memory"), VERR_NO_MEMORY);
 
         size_t cbBufRemaining = pVirtqBuf->cbPhysReturn;
@@ -1617,14 +1568,14 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
             if (fAddPktHdr)
             {
                 /* Lead with packet header */
-                paVirtSegsToGuest[0].cbSeg = cbPktHdr;
-                paVirtSegsToGuest[0].pvSeg = RTMemAlloc(cbPktHdr);
+                paVirtSegsToGuest[0].cbSeg = pThis->cbPktHdr;
+                paVirtSegsToGuest[0].pvSeg = RTMemAlloc(pThis->cbPktHdr);
                 AssertReturn(paVirtSegsToGuest[0].pvSeg, VERR_NO_MEMORY);
-                cbBufRemaining -= cbPktHdr;
+                cbBufRemaining -= pThis->cbPktHdr;
 
-                memcpy(paVirtSegsToGuest[0].pvSeg, rxPktHdr, cbPktHdr);
+                memcpy(paVirtSegsToGuest[0].pvSeg, rxPktHdr, pThis->cbPktHdr);
 
-                if (uPktHdrType != kVirtioNetLegacyPktHdrWithoutMrgRx)
+                if (pThis->ePktHdrType != kVirtioNetLegacyPktHdrWithoutMrgRx)
                 {
                     /* Calculate & cache GCPhys addr of field to update after final value is known */
                     GCPhysPktHdrNumBuffers = pVirtqBuf->pSgPhysReturn->paSegs[0].GCPhys
@@ -1671,7 +1622,7 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, con
     }
 
 
-    if (uPktHdrType != kVirtioNetLegacyPktHdrWithoutMrgRx)
+    if (pThis->ePktHdrType != kVirtioNetLegacyPktHdrWithoutMrgRx)
     {
         /* Fix-up pkthdr (in guest phys. memory) with number buffers (descriptors) processed */
         int rc = virtioCoreGCPhysWrite(&pThis->Virtio, pDevIns, GCPhysPktHdrNumBuffers, &cVirtqBufs, sizeof(cVirtqBufs));
@@ -2195,8 +2146,7 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
 
 static int virtioNetR3ReadHeader(PVIRTIOCORE pVirtio, PVIRTIONET pThis, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, PVIRTIONETPKTHDR pPktHdr, size_t cbFrame)
 {
-    size_t cbPktHdr = virtioNetCalcPktHdrSize(pVirtio, pThis);
-    int rc = virtioCoreGCPhysRead(pVirtio, pDevIns, GCPhys, pPktHdr, cbPktHdr);
+    int rc = virtioCoreGCPhysRead(pVirtio, pDevIns, GCPhys, pPktHdr, pThis->cbPktHdr);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2364,13 +2314,11 @@ static int virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pThi
         uint32_t cSegsFromGuest = pSgPhysSend->cSegs;
         size_t uSize = 0;
 
-        size_t cbPktHdr = virtioNetCalcPktHdrSize(pVirtio, pThis);
-
-        AssertMsgReturn(paSegsFromGuest[0].cbSeg >= cbPktHdr,
+        AssertMsgReturn(paSegsFromGuest[0].cbSeg >= pThis->cbPktHdr,
                         ("Desc chain's first seg has insufficient space for pkt header!\n"),
                         VERR_INTERNAL_ERROR);
 
-        PVIRTIONETPKTHDR pPktHdr = (PVIRTIONETPKTHDR)RTMemAllocZ(cbPktHdr);
+        PVIRTIONETPKTHDR pPktHdr = (PVIRTIONETPKTHDR)RTMemAllocZ(pThis->cbPktHdr);
         AssertMsgReturn(pPktHdr, ("Out of Memory\n"), VERR_NO_MEMORY);
 
         /* Compute total frame size. */
@@ -2388,11 +2336,11 @@ static int virtioNetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVIRTIONET pThi
         {
             uint64_t uOffset;
 
-            uSize -= cbPktHdr;
+            uSize -= pThis->cbPktHdr;
             rc = virtioNetR3ReadHeader(pVirtio, pThis, pDevIns, paSegsFromGuest[0].GCPhys, pPktHdr, uSize);
             if (RT_FAILURE(rc))
                 return rc;
-            virtioCoreGCPhysChainAdvance(pSgPhysSend, cbPktHdr);
+            virtioCoreGCPhysChainAdvance(pSgPhysSend, pThis->cbPktHdr);
 
             PDMNETWORKGSO  Gso, *pGso = virtioNetR3SetupGsoCtx(&Gso, pPktHdr);
 
@@ -2786,6 +2734,7 @@ static DECLCALLBACK(int) virtioNetR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD 
     return VINF_SUCCESS;
 }
 
+
 /**
  * @callback_method_impl{VIRTIOCORER3,pfnStatusChanged}
  */
@@ -2803,10 +2752,9 @@ static DECLCALLBACK(void) virtioNetR3StatusChg(PVIRTIOCORE pVirtio, PVIRTIOCOREC
                  __FUNCTION__, pThis->szInst));
 
         pThis->fNegotiatedFeatures = virtioCoreGetNegotiatedFeatures(pVirtio);
-
 #ifdef LOG_ENABLED
-        virtioCorePrintFeatures(pVirtio, NULL);
-        virtioNetPrintFeatures(pThis, NULL);
+        virtioCorePrintDeviceFeatures(&pThis->Virtio, NULL, s_aDevSpecificFeatures,
+            RT_ELEMENTS(s_aDevSpecificFeatures));
 #endif
 
         pThis->virtioNetConfig.uStatus = pThis->fCableConnected ? VIRTIONET_F_LINK_UP : 0;
@@ -2856,6 +2804,28 @@ static DECLCALLBACK(void) virtioNetR3StatusChg(PVIRTIOCORE pVirtio, PVIRTIOCOREC
             pThis->aVirtqs[uVirtqNbr].fAttachedToVirtioCore = false;
     }
 }
+
+static DECLCALLBACK(void) virtioGuestVersionHandler(PVIRTIOCORE pVirtio, uint32_t fModern)
+{
+    LogFunc(("Guest Driver version is %s\n", fModern ? "modern" : "legacy"));
+
+    PVIRTIONET pThis = RT_FROM_MEMBER(pVirtio, VIRTIONET, Virtio);
+
+    /* Calculate network packet header type and size based on what we know now */
+    pThis->cbPktHdr = sizeof(VIRTIONETPKTHDR);
+
+    if (fModern)
+        pThis->ePktHdrType = kVirtioNetModernPktHdr_1_0;
+    else if (FEATURE_DISABLED(MRG_RXBUF))
+    {
+        pThis->ePktHdrType = kVirtioNetLegacyPktHdrWithoutMrgRx;
+        pThis->cbPktHdr -= RT_SIZEOFMEMB(VIRTIONETPKTHDR, uNumBuffers);
+    }
+    else /* Legacy guest with MRG_RX feature enabled */
+        pThis->ePktHdrType = kVirtioNetLegacyPktHdr;
+}
+
+
 #endif /* IN_RING3 */
 
 /**
@@ -2926,7 +2896,7 @@ static DECLCALLBACK(int) virtioNetR3QueryStatusLed(PPDMILEDPORTS pInterface, uns
 
 
 /**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface,
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) virtioNetR3QueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
@@ -3044,7 +3014,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
 #   endif
 
     pThis->virtioNetConfig.uMaxVirtqPairs   = VIRTIONET_MAX_QPAIRS;
-
+    pThisCC->Virtio.pfnGuestVersionHandler  = virtioGuestVersionHandler;
     pThisCC->Virtio.pfnVirtqNotified        = virtioNetVirtqNotified;
     pThisCC->Virtio.pfnStatusChanged        = virtioNetR3StatusChg;
     pThisCC->Virtio.pfnDevCapRead           = virtioNetR3DevCapRead;
@@ -3124,7 +3094,11 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
+    {
                     Log(("[%s] No attached driver!\n", pThis->szInst));
+                    AssertRCReturn(rc, rc);
+    }
+
     /*
      * Status driver
      */

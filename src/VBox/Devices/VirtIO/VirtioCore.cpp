@@ -328,47 +328,48 @@ uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, u
 
 #ifdef IN_RING3
 
-/** API Function: See header file*/
-void virtioCorePrintFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp)
+void virtioCoreR3FeatureDump(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp, const VIRTIO_FEATURES_LIST *s_aFeatures, int cFeatures, int fBanner)
 {
-    static struct
-    {
-        uint64_t fFeatureBit;
-        const char *pcszDesc;
-    } const s_aFeatures[] =
-    {
-        { VIRTIO_F_RING_INDIRECT_DESC,      "   RING_INDIRECT_DESC   Driver can use descriptors with VIRTQ_DESC_F_INDIRECT flag set\n" },
-        { VIRTIO_F_RING_EVENT_IDX,          "   RING_EVENT_IDX       Enables use_event and avail_event fields described in 2.4.7, 2.4.8\n" },
-        { VIRTIO_F_VERSION_1,               "   VERSION              Used to detect legacy drivers.\n" },
-    };
-
 #define MAXLINE 80
     /* Display as a single buf to prevent interceding log messages */
-    uint16_t cbBuf = RT_ELEMENTS(s_aFeatures) * 132;
+    uint16_t cbBuf = cFeatures * 132;
     char *pszBuf = (char *)RTMemAllocZ(cbBuf);
     Assert(pszBuf);
     char *cp = pszBuf;
-    for (unsigned i = 0; i < RT_ELEMENTS(s_aFeatures); ++i)
+    for (int i = 0; i < cFeatures; ++i)
     {
         bool isOffered    = RT_BOOL(pVirtio->uDeviceFeatures & s_aFeatures[i].fFeatureBit);
         bool isNegotiated = RT_BOOL(pVirtio->uDriverFeatures & s_aFeatures[i].fFeatureBit);
         cp += RTStrPrintf(cp, cbBuf - (cp - pszBuf), "        %s       %s   %s",
                           isOffered ? "+" : "-", isNegotiated ? "x" : " ", s_aFeatures[i].pcszDesc);
     }
-    if (pHlp)
-        pHlp->pfnPrintf(pHlp, "VirtIO Core Features Configuration\n\n"
-              "    Offered  Accepted  Feature              Description\n"
-              "    -------  --------  -------              -----------\n"
-              "%s\n", pszBuf);
+    if (pHlp) {
+        if (fBanner)
+            pHlp->pfnPrintf(pHlp, "VirtIO Features Configuration\n\n"
+                  "    Offered  Accepted  Feature              Description\n"
+                  "    -------  --------  -------              -----------\n");
+        pHlp->pfnPrintf(pHlp, "%s\n", pszBuf);
+    }
 #ifdef LOG_ENABLED
     else
-        Log3(("VirtIO Core Features Configuration\n\n"
-              "    Offered  Accepted  Feature              Description\n"
-              "    -------  --------  -------              -----------\n"
-              "%s\n", pszBuf));
+    {
+        if (fBanner)
+            Log(("VirtIO Features Configuration\n\n"
+                  "    Offered  Accepted  Feature              Description\n"
+                  "    -------  --------  -------              -----------\n"));
+        Log(("%s\n", pszBuf));
+    }
 #endif
     RTMemFree(pszBuf);
 }
+
+/** API Function: See header file*/
+void  virtioCorePrintDeviceFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp,
+    const VIRTIO_FEATURES_LIST *s_aDevSpecificFeatures, int cFeatures) {
+    virtioCoreR3FeatureDump(pVirtio, pHlp, s_aCoreFeatures, RT_ELEMENTS(s_aCoreFeatures), 1 /*fBanner */);
+    virtioCoreR3FeatureDump(pVirtio, pHlp, s_aDevSpecificFeatures, cFeatures, 0 /*fBanner */);
+}
+
 #endif
 
 #ifdef LOG_ENABLED
@@ -1231,7 +1232,15 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
                 case 1:
                     memcpy((char *)&pVirtio->uDriverFeatures + sizeof(uint32_t), pv, cb);
                     if (pVirtio->uDriverFeatures & VIRTIO_F_VERSION_1)
+                    {
+#ifdef IN_RING0
+                        return VINF_IOM_R3_MMIO_WRITE;
+#endif
+#ifdef IN_RING3
                         pVirtio->fLegacyDriver = 0;
+                        pVirtioCC->pfnGuestVersionHandler(pVirtio, 1 /* fModern */);
+#endif
+                    }
                     VIRTIO_DEV_CONFIG_LOG_ACCESS(uDriverFeatures, VIRTIO_PCI_COMMON_CFG_T, uOffsetOfAccess + sizeof(uint32_t));
                     break;
                 default:
@@ -1387,7 +1396,6 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortIn(PPDMDEVINS pDevIns, void 
     STAM_PROFILE_ADV_START(&pVirtio->CTX_SUFF(StatRead), a);
 
     RT_NOREF(pvUser);
-//    LogFunc((" Read from port offset=%RTiop cb=%#x\n",  offPort, cb));
 
     void *pv = pu32; /* To use existing macros */
     int fWrite = 0;  /* To use existing macros */
@@ -2017,8 +2025,9 @@ void virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmSta
         case kvirtIoVmStateChangedResume:
             for (int uVirtq = 0; uVirtq < VIRTQ_MAX_COUNT; uVirtq++)
             {
-                if (!pVirtio->fLegacyDriver || pVirtio->aVirtqueues[uVirtq].uEnable)
-                    virtioCoreNotifyGuestDriver(pVirtio->pDevInsR3, pVirtio, uVirtq);
+                if ((!pVirtio->fLegacyDriver && pVirtio->aVirtqueues[uVirtq].uEnable)
+                    | pVirtio->aVirtqueues[uVirtq].GCPhysVirtqDesc)
+                        virtioCoreNotifyGuestDriver(pVirtio->pDevInsR3, pVirtio, uVirtq);
             }
             break;
         default:
@@ -2049,8 +2058,6 @@ void virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVi
 int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
                      const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg)
 {
-
-
     /*
      * The pVirtio state must be the first member of the shared device instance
      * data, otherwise we cannot get our bearings in the PCI configuration callbacks.
@@ -2065,6 +2072,7 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
      */
     AssertReturn(pVirtioCC->pfnStatusChanged, VERR_INVALID_POINTER);
     AssertReturn(pVirtioCC->pfnVirtqNotified, VERR_INVALID_POINTER);
+    AssertReturn(pVirtioCC->pfnGuestVersionHandler,  VERR_INVALID_POINTER);
     AssertReturn(VIRTQ_SIZE > 0 && VIRTQ_SIZE <= 32768,  VERR_OUT_OF_RANGE); /* VirtIO specification-defined limit */
 
 #if 0 /* Until pdmR3DvHlp_PCISetIrq() impl is fixed and Assert that limits vec to 0 is removed
@@ -2075,6 +2083,8 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
 # endif
 #endif
 
+    /* Tell the device-specific code that guest is in legacy mode (for now) */
+    pVirtioCC->pfnGuestVersionHandler(pVirtio, false /* fModern */);
 
     /*
      * The host features offered include both device-specific features
