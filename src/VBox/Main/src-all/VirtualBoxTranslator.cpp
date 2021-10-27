@@ -36,10 +36,8 @@
 static RTONCE               g_Once = RTONCE_INITIALIZER;
 RTCRITSECTRW                VirtualBoxTranslator::s_instanceRwLock;
 VirtualBoxTranslator       *VirtualBoxTranslator::s_pInstance = NULL;
-static RTONCE               g_tlsOnce = RTONCE_INITIALIZER;
-static RTTLS                g_idxTls = NIL_RTTLS;
-
-typedef std::pair<const char *, const char *> LastTranslation;
+static RTTLS                g_idxTlsTr = NIL_RTTLS;
+static RTTLS                g_idxTlsSrc = NIL_RTTLS;
 
 /**
  * @callback_method_impl{FNRTONCE}
@@ -51,44 +49,6 @@ static DECLCALLBACK(int32_t) initLock(void *pvUser)
 }
 
 
-/**
- * @callback_method_impl{FNRTTLSDTOR, Destroys the cache during thread termination.}
- */
-static DECLCALLBACK(void) freeThreadCache(void *pvValue) RT_NOTHROW_DEF
-{
-    if (pvValue != NULL)
-    {
-        LastTranslation *pCache = (LastTranslation *)pvValue;
-        delete pCache;
-    }
-}
-
-
-/**
- * @callback_method_impl{FNRTONCECLEANUP, Destroys TLS index during the process termination.}
- */
-static DECLCALLBACK(void) uninitTls(void *pvUser, bool fLazyCleanUpOk)
-{
-    RT_NOREF(pvUser);
-    if (fLazyCleanUpOk && g_idxTls != NIL_RTTLS)
-    {
-        RTTlsFree(g_idxTls);
-        g_idxTls = NIL_RTTLS;
-    }
-}
-
-
-/**
- * @callback_method_impl{FNRTONCE}
- */
-static DECLCALLBACK(int32_t) initTls(void *pvUser)
-{
-    RT_NOREF(pvUser);
-    RTTlsAllocEx(&g_idxTls, &freeThreadCache);
-    return VINF_SUCCESS;
-}
-
-
 VirtualBoxTranslator::VirtualBoxTranslator()
     : util::RWLockHandle(util::LOCKCLASS_TRANSLATOR)
     , m_cInstanceRefs(0)
@@ -96,6 +56,8 @@ VirtualBoxTranslator::VirtualBoxTranslator()
     , m_strLanguage("C")
     , m_hStrCache(NIL_RTSTRCACHE)
 {
+    RTTlsAllocEx(&g_idxTlsTr, NULL);
+    RTTlsAllocEx(&g_idxTlsSrc, NULL);
     int rc = RTStrCacheCreate(&m_hStrCache, "API Translation");
     m_rcCache = rc;
     if (RT_FAILURE(rc))
@@ -105,15 +67,15 @@ VirtualBoxTranslator::VirtualBoxTranslator()
 
 VirtualBoxTranslator::~VirtualBoxTranslator()
 {
-    if (g_idxTls != NIL_RTTLS)
+    if (g_idxTlsTr != NIL_RTTLS)
     {
-        void *pvTlsValue = NULL;
-        int rc = RTTlsGetEx(g_idxTls, &pvTlsValue);
-        if (RT_SUCCESS(rc))
-        {
-            freeThreadCache(pvTlsValue);
-            RTTlsSet(g_idxTls, NULL);
-        }
+        RTTlsFree(g_idxTlsTr);
+        g_idxTlsTr = NIL_RTTLS;
+    }
+    if (g_idxTlsSrc != NIL_RTTLS)
+    {
+        RTTlsFree(g_idxTlsSrc);
+        g_idxTlsSrc = NIL_RTTLS;
     }
 
     m_pDefaultComponent = NULL;
@@ -466,33 +428,6 @@ const char *VirtualBoxTranslator::translate(PTRCOMPONENT aComponent,
 }
 
 
-static LastTranslation *getTlsEntry() RT_NOEXCEPT
-{
-    int rc = RTOnceEx(&g_tlsOnce, initTls, uninitTls, NULL);
-    if (RT_SUCCESS(rc) && RT_LIKELY(g_idxTls != NIL_RTTLS))
-    {
-        LastTranslation *pEntry = (LastTranslation *)RTTlsGet(g_idxTls);
-        if (pEntry != NULL)
-            return pEntry; /* likely */
-
-        /* Create a new entry. */
-        try
-        {
-            pEntry = new LastTranslation();
-            pEntry->first = pEntry->second = "";
-            rc = RTTlsSet(g_idxTls, pEntry);
-            if (RT_SUCCESS(rc))
-                return pEntry;
-            delete pEntry;
-        }
-        catch (std::bad_alloc &)
-        {
-        }
-    }
-    return NULL;
-}
-
-
 const char *VirtualBoxTranslator::i_translate(PTRCOMPONENT aComponent,
                                               const char  *aContext,
                                               const char  *aSourceText,
@@ -512,11 +447,13 @@ const char *VirtualBoxTranslator::i_translate(PTRCOMPONENT aComponent,
     const char *pszTranslation = aComponent->pTranslator->translate(aContext, aSourceText, &pszSafeSource, aComment, aNum);
     if (pszSafeSource)
     {
-        LastTranslation *pEntry = getTlsEntry();
-        if (pEntry)
+        if (g_idxTlsSrc != NIL_RTTLS && g_idxTlsTr != NIL_RTTLS)
         {
-            pEntry->first = pszTranslation;
-            pEntry->second = pszSafeSource;
+            int vrc = RTTlsSet(g_idxTlsTr, (void*)pszTranslation);
+            if (RT_SUCCESS(vrc))
+                vrc = RTTlsSet(g_idxTlsSrc, (void*)pszSafeSource);
+            if (RT_FAILURE(vrc))
+                RTTlsSet(g_idxTlsTr, NULL);
         }
     }
 
@@ -530,11 +467,20 @@ const char *VirtualBoxTranslator::trSource(const char *aTranslation) RT_NOEXCEPT
     VirtualBoxTranslator *pCurInstance = VirtualBoxTranslator::tryInstance(); /* paranoia */
     if (pCurInstance != NULL)
     {
-        LastTranslation *pEntry = getTlsEntry();
-        if (   pEntry != NULL
-            && (   pEntry->first == aTranslation
-                || strcmp(pEntry->first, aTranslation) == 0) )
-            pszSource = pEntry->second;
+        if (g_idxTlsSrc != NIL_RTTLS && g_idxTlsTr != NIL_RTTLS)
+        {
+            const char *pszTranslationTls = NULL;
+            const char *pszSourceTls = NULL;
+            int vrc =RTTlsGetEx(g_idxTlsTr, (void**)&pszTranslationTls);
+            if (   RT_SUCCESS(vrc)
+                && (   pszTranslationTls == aTranslation
+                    || strcmp(pszTranslationTls, aTranslation) == 0))
+            {
+                vrc = RTTlsGetEx(g_idxTlsSrc, (void**)&pszSourceTls);
+                if (RT_SUCCESS(vrc))
+                    pszSource = pszSourceTls;
+            }
+        }
         pCurInstance->release();
     }
     return pszSource;
