@@ -2385,6 +2385,20 @@ static int RTLDRELF_NAME(ValidateAndProcessDynamicInfo)(PRTLDRMODELF pModElf, ui
                 Elf_Addr        uAddr   = pPhdr->p_vaddr;
                 Elf_Xword       cbMem   = pPhdr->p_memsz;
                 Elf_Xword       cbFile  = pPhdr->p_filesz;
+
+                /* HACK to allow loading isolinux-debug.elf where program headers aren't
+                   sorted by virtual address. */
+                if (   (fFlags & RTLDR_O_FOR_DEBUG)
+                    && uAddr != paShdrs[iLoadShdr].sh_addr)
+                {
+                    for (unsigned iShdr = 1; iShdr < pModElf->Ehdr.e_shnum; iShdr++)
+                        if (uAddr == paShdrs[iShdr].sh_addr)
+                        {
+                            iLoadShdr = iShdr;
+                            break;
+                        }
+                }
+
                 while (cbMem > 0)
                 {
                     if (iLoadShdr < pModElf->Ehdr.e_shnum)
@@ -2472,9 +2486,11 @@ static int RTLDRELF_NAME(ValidateAndProcessDynamicInfo)(PRTLDRMODELF pModElf, ui
                         && (  paShdrs[iLoadShdr].sh_type != SHT_NOBITS
                             ?    off    == paShdrs[iLoadShdr].sh_offset
                               && cbFile >= paShdrs[iLoadShdr].sh_size /* this might be too strict... */
-                            : cbFile == 0) )
+                            :    cbFile == 0
+                              || cbMem > paShdrs[iLoadShdr].sh_size /* isolinux.elf: linker merge no-bits and progbits sections */) )
                     {
-                        if (paShdrs[iLoadShdr].sh_type != SHT_NOBITS)
+                        if (   paShdrs[iLoadShdr].sh_type != SHT_NOBITS
+                            || cbFile != 0)
                         {
                             off    += paShdrs[iLoadShdr].sh_size;
                             cbFile -= paShdrs[iLoadShdr].sh_size;
@@ -2756,8 +2772,9 @@ static int RTLDRELF_NAME(ValidateAndProcessDynamicInfo)(PRTLDRMODELF pModElf, ui
                 ONLY_FOR_DEBUG_OR_VALIDATION_RET("DT_PREINIT_ARRAYSZ");
                 break;
             default:
-                if (   paDynamic[i].d_un.d_val < DT_ENCODING
-                    || (paDynamic[i].d_un.d_val & 1))
+                if (   paDynamic[i].d_tag <  DT_ENCODING
+                    || paDynamic[i].d_tag >= DT_LOOS
+                    || (paDynamic[i].d_tag & 1))
                     Log3(("RTLdrELF: DT[%u]: %#010RX64       %#RX64%s\n", i, (uint64_t)paDynamic[i].d_tag,
                           (uint64_t)paDynamic[i].d_un.d_val, paDynamic[i].d_un.d_val >= DT_ENCODING ? " (val)" : ""));
                 else
