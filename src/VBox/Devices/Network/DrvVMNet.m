@@ -374,6 +374,17 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
                 Log(("drvVMNetAttachBridged: Failed to convert '%s' to MAC address (%Rrc)\n", pcszMacAddress ? pcszMacAddress : "(null)", rc));
 #endif
             max_packet_size = xpc_dictionary_get_uint64(interface_param, vmnet_max_packet_size_key);
+            if (max_packet_size == 0)
+            {
+                max_packet_size = 1518;
+                LogRel(("VMNet: Failed to retrieve max packet size, assuming %d bytes.\n", max_packet_size));
+                LogRel(("VMNet: Avaliable interface parameter keys:\n"));
+                xpc_dictionary_apply(interface_param, ^bool(const char * _Nonnull key, xpc_object_t  _Nonnull value) {
+                    RT_NOREF(value);
+                    LogRel(("VMNet:   %s\n", key));
+                    return true;
+                });
+            }
 #ifdef LOG_ENABLED
             // Log(("MAC address: %s\n", xpc_dictionary_get_string(interface_param, vmnet_mac_address_key)));
             Log(("Max packet size: %zu\n", max_packet_size));
@@ -399,7 +410,7 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
         return VMNET_FAILURE;
     }
 
-    LogRel(("VMNET: Max packet size is %zu\n", max_packet_size));
+    LogRel(("VMNet: Max packet size is %zu\n", max_packet_size));
 
     vmnet_interface_set_event_callback(pThis->Interface, VMNET_INTERFACE_PACKETS_AVAILABLE, pThis->InterfaceQueue, ^(interface_event_t event_mask, xpc_object_t  _Nonnull event) {
         if (event_mask & VMNET_INTERFACE_PACKETS_AVAILABLE)
