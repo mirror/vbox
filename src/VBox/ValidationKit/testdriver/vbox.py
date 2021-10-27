@@ -2923,10 +2923,11 @@ class TestDriver(base.TestDriver):                                              
         # Needed to reach the host (localhost) from the guest. See xTracker #9896.
         for iSlot in range(0, 32):
             try:
-                sNetAdpName = self.oVBoxMgr.getEnumValueName('NetworkAdapterType', oVM.getNetworkAdapter(iSlot).adapterType)
-                self.oVBox.setExtraData(f'VBoxInternal/Devices/{sNetAdpName}/0/LUN#0/Config/LocalhostReachable', 'true');
+                sKey = 'VBoxInternal/Devices/%s/0/LUN#0/Config/LocalhostReachable' % \
+                       (self.oVBoxMgr.getEnumValueName('NetworkAdapterType', oVM.getNetworkAdapter(iSlot).adapterType));
+                self.oVBox.setExtraData(sKey, 'true');
             except:
-                break
+                break;
 
         # The UUID for the name.
         try:
