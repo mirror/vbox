@@ -2008,14 +2008,6 @@ void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pPar
           UIErrorString::formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to register the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(vbox));
-}
-
 void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     alert(pParent, MessageType_Info,
@@ -2079,32 +2071,6 @@ void UIMessageCenter::cannotCreateMediumStorage(const CProgress &comProgress, co
           tr("Failed to create the virtual disk image storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotRemoveMachineFolder(const QString &strFolderName, QWidget *pParent /* = 0*/) const
-{
-    alert(pParent, MessageType_Critical,
-          tr("<p>Cannot remove the machine folder <nobr><b>%1</b>.</nobr></p>"
-             "<p>Please check that this folder really exists and that you have permissions to remove it.</p>")
-             .arg(QFileInfo(strFolderName).fileName()));
-}
-
-void UIMessageCenter::cannotRewriteMachineFolder(const QString &strFolderName, QWidget *pParent /* = 0*/) const
-{
-    QFileInfo fi(strFolderName);
-    alert(pParent, MessageType_Critical,
-          tr("<p>Cannot create the machine folder <b>%1</b> in the parent folder <nobr><b>%2</b>.</nobr></p>"
-             "<p>This folder already exists and possibly belongs to another machine.</p>")
-             .arg(fi.fileName()).arg(fi.absolutePath()));
-}
-
-void UIMessageCenter::cannotCreateMachineFolder(const QString &strFolderName, QWidget *pParent /* = 0*/) const
-{
-    QFileInfo fi(strFolderName);
-    alert(pParent, MessageType_Critical,
-          tr("<p>Cannot create the machine folder <b>%1</b> in the parent folder <nobr><b>%2</b>.</nobr></p>"
-             "<p>Please check that the parent really exists and that you have permissions to create the machine folder.</p>")
-             .arg(fi.fileName()).arg(fi.absolutePath()));
 }
 
 void UIMessageCenter::cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const

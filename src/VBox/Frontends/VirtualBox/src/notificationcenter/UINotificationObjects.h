@@ -117,6 +117,19 @@ public:
 
     /** @name Simple VirtualBox Manager warnings.
       * @{ */
+        /** Notifies about inability to create machine folder.
+          * @param  strPath  Brings the machine folder path. */
+        static void cannotCreateMachineFolder(const QString &strPath,
+                                              UINotificationCenter *pParent = 0);
+        /** Notifies about inability to overwrite machine folder.
+          * @param  strPath  Brings the machine folder path. */
+        static void cannotOverwriteMachineFolder(const QString &strPath,
+                                                 UINotificationCenter *pParent = 0);
+        /** Notifies about inability to remove machine folder.
+          * @param  strPath  Brings the machine folder path. */
+        static void cannotRemoveMachineFolder(const QString &strPath,
+                                              UINotificationCenter *pParent = 0);
+
         /** Notifies about inability to register existing machine.
           * @param  streName     Brings the machine name.
           * @param  strLocation  Brings the machine location. */
@@ -318,7 +331,8 @@ public:
         /** Notifies about inability to open medium.
           * @param  comVBox      Brings common VBox object trying to open medium.
           * @param  strLocation  Brings the medium location. */
-        static void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation);
+        static void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation,
+                                     UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to pause machine.
           * @param  comConsole  Brings console trying to pause machine. */
@@ -336,6 +350,10 @@ public:
         /** Notifies about inability to create appliance.
           * @param  comVBox  Brings common VBox object trying to create appliance. */
         static void cannotCreateAppliance(const CVirtualBox &comVBox, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to register machine.
+          * @param  comVBox  Brings common VBox object trying to register machine.
+          * @param  strName  Brings the name of VM being registered. */
+        static void cannotRegisterMachine(const CVirtualBox &comVBox, const QString &strName, UINotificationCenter *pParent = 0);
         /** Notifies about inability to create machine.
           * @param  comVBox  Brings common VBox object trying to create machine. */
         static void cannotCreateMachine(const CVirtualBox &comVBox, UINotificationCenter *pParent = 0);
@@ -438,6 +456,13 @@ public:
         /** Notifies about inability to export appliance.
           * @param  comMachine  Brings machine trying to export appliance. */
         static void cannotExportMachine(const CMachine &comMachine, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to attach device.
+          * @param  comMachine  Brings machine trying to attach device. */
+        static void cannotAttachDevice(const CMachine &comMachine,
+                                       UIMediumDeviceType enmType,
+                                       const QString &strLocation,
+                                       const StorageSlot &storageSlot,
+                                       UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to find snapshot by ID.
           * @param  comMachine  Brings the machine being searched for particular snapshot.
@@ -492,7 +517,7 @@ public:
 
         /** Notifies about inability to save machine settings.
           * @param  comMachine  Brings the machine trying to save settings. */
-        static void cannotSaveMachineSettings(const CMachine &comMachine);
+        static void cannotSaveMachineSettings(const CMachine &comMachine, UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to toggle audio input.
           * @param  comAdapter      Brings the adapter input being toggled for.

@@ -34,9 +34,7 @@ class UIWizardNewVM;
 namespace UIWizardNewVMNameOSTypeCommon
 {
     bool guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
-    bool createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
-                             UINativeWizardPage *pCaller,
-                             UIWizardNewVM *pWizard);
+    bool createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor, UIWizardNewVM *pWizard);
 
     /** Removes a previously created folder (if exists) before creating a new one.
      *  used during page cleanup and new folder creation. Called upon page Next/Back and

@@ -20,6 +20,7 @@
 #include <QFileInfo>
 
 /* GUI includes: */
+#include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
@@ -180,6 +181,39 @@ void UINotificationMessage::cannotValidateExtentionPackSHA256Sum(const QString &
                                                    .arg(strExtPackName, strFrom, strTo));
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+/* static */
+void UINotificationMessage::cannotCreateMachineFolder(const QString &strPath,
+                                                      UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create machine folder ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create machine folder at <nobr><b>%1</b></nobr>.")
+                                                   .arg(strPath),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotOverwriteMachineFolder(const QString &strPath,
+                                                         UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't overwrite machine folder ..."),
+        QApplication::translate("UIMessageCenter", "Failed to overwrite machine folder at <nobr><b>%1</b></nobr>.")
+                                                   .arg(strPath),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotRemoveMachineFolder(const QString &strPath,
+                                                      UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't remove machine folder ..."),
+        QApplication::translate("UIMessageCenter", "Failed to remove machine folder at <nobr><b>%1</b></nobr>.")
+                                                   .arg(strPath),
+        QString(), QString(), pParent);
+}
 
 /* static */
 void UINotificationMessage::cannotReregisterExistingMachine(const QString &strName, const QString &strLocation)
@@ -789,13 +823,16 @@ void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
 }
 
 /* static */
-void UINotificationMessage::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation)
+void UINotificationMessage::cannotOpenMedium(const CVirtualBox &comVBox,
+                                             const QString &strLocation,
+                                             UINotificationCenter *pParent /* = 0 */)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't open medium ..."),
         QApplication::translate("UIMessageCenter", "Failed to open the disk image file <nobr><b>%1</b></nobr>.")
                                                    .arg(strLocation) +
-        UIErrorString::formatErrorInfo(comVBox));
+        UIErrorString::formatErrorInfo(comVBox),
+        QString(), QString(), pParent);
 }
 
 /* static */
@@ -835,6 +872,19 @@ void UINotificationMessage::cannotCreateAppliance(const CVirtualBox &comVBox,
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't create appliance ..."),
         QApplication::translate("UIMessageCenter", "Failed to create appliance.") +
+        UIErrorString::formatErrorInfo(comVBox),
+        QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotRegisterMachine(const CVirtualBox &comVBox,
+                                                  const QString &strName,
+                                                  UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't register machine ..."),
+        QApplication::translate("UIMessageCenter", "Failed to register machine <b>%1</b>.")
+                                                   .arg(strName) +
         UIErrorString::formatErrorInfo(comVBox),
         QString(), QString(), pParent);
 }
@@ -1112,6 +1162,52 @@ void UINotificationMessage::cannotExportMachine(const CMachine &comMachine, UINo
 }
 
 /* static */
+void UINotificationMessage::cannotAttachDevice(const CMachine &comMachine,
+                                               UIMediumDeviceType enmType,
+                                               const QString &strLocation,
+                                               const StorageSlot &storageSlot,
+                                               UINotificationCenter *pParent /* = 0 */)
+{
+    QString strMessage;
+    switch (enmType)
+    {
+        case UIMediumDeviceType_HardDisk:
+        {
+            strMessage = QApplication::translate("UIMessageCenter", "Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to "
+                                                                    "the slot <i>%2</i> of the machine <b>%3</b>.")
+                                                                    .arg(strLocation)
+                                                                    .arg(gpConverter->toString(storageSlot))
+                                                                    .arg(CMachine(comMachine).GetName());
+            break;
+        }
+        case UIMediumDeviceType_DVD:
+        {
+            strMessage = QApplication::translate("UIMessageCenter", "Failed to attach the optical drive (<nobr><b>%1</b></nobr>) "
+                                                                    "to the slot <i>%2</i> of the machine <b>%3</b>.")
+                                                                    .arg(strLocation)
+                                                                    .arg(gpConverter->toString(storageSlot))
+                                                                    .arg(CMachine(comMachine).GetName());
+            break;
+        }
+        case UIMediumDeviceType_Floppy:
+        {
+            strMessage = QApplication::translate("UIMessageCenter", "Failed to attach the floppy drive (<nobr><b>%1</b></nobr>) "
+                                                                    "to the slot <i>%2</i> of the machine <b>%3</b>.")
+                                                                    .arg(strLocation)
+                                                                    .arg(gpConverter->toString(storageSlot))
+                                                                    .arg(CMachine(comMachine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't attach device ..."),
+        strMessage + UIErrorString::formatErrorInfo(comMachine),
+        QString(), QString(), pParent);
+}
+
+/* static */
 void UINotificationMessage::cannotFindSnapshotById(const CMachine &comMachine, const QUuid &uId)
 {
     createMessage(
@@ -1211,7 +1307,7 @@ void UINotificationMessage::cannotDetachWebCam(const CEmulatedUSB &comDispatcher
 }
 
 /* static */
-void UINotificationMessage::cannotSaveMachineSettings(const CMachine &comMachine)
+void UINotificationMessage::cannotSaveMachineSettings(const CMachine &comMachine, UINotificationCenter *pParent /* = 0 */)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't save machine settings ..."),
@@ -1219,7 +1315,8 @@ void UINotificationMessage::cannotSaveMachineSettings(const CMachine &comMachine
                                                    "<b><nobr>%2</nobr></b>.")
                                                    .arg(CMachine(comMachine).GetName(),
                                                         CMachine(comMachine).GetSettingsFilePath()) +
-        UIErrorString::formatErrorInfo(comMachine));
+        UIErrorString::formatErrorInfo(comMachine),
+        QString(), QString(), pParent);
 }
 
 /* static */

@@ -29,7 +29,6 @@
 #include "UIMediaComboBox.h"
 #include "UIMediumSelector.h"
 #include "UIMediumSizeEditor.h"
-#include "UIMessageCenter.h"
 #include "UICommon.h"
 #include "UIWizardNewVMDiskPage.h"
 #include "UIWizardDiskEditors.h"

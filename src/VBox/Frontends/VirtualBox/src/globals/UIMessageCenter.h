@@ -454,7 +454,6 @@ public:
         /// @todo move to notification-center after wizards get theirs.. :)
         bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
         void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0) const;
-        void cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent = 0) const;
         void cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
         void cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation,QWidget *pParent = 0) const;
         void cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
@@ -463,9 +462,6 @@ public:
         void cannotCreateMediumStorage(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent = 0) const;
         void cannotCreateMediumStorage(const CMedium &comMedium, const QString &strLocation, QWidget *pParent = 0) const;
         void cannotCreateMediumStorage(const CProgress &comProgress, const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotRemoveMachineFolder(const QString &strFolderName, QWidget *pParent = 0) const;
-        void cannotRewriteMachineFolder(const QString &strFolderName, QWidget *pParent = 0) const;
-        void cannotCreateMachineFolder(const QString &strFolderName, QWidget *pParent = 0) const;
         void cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
         void cannotCreateVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent = 0) const;
         bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent = 0) const;

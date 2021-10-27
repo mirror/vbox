@@ -2873,7 +2873,7 @@ void UICommon::sltHandleMachineCreated(const CMachine &comMachine)
     CVirtualBox comVBox = virtualBox();
     comVBox.RegisterMachine(comMachine);
     if (!comVBox.isOk())
-        msgCenter().cannotRegisterMachine(comVBox, comMachine.GetName());
+        UINotificationMessage::cannotRegisterMachine(comVBox, comMachine.GetName());
 }
 
 void UICommon::sltHandleCloudMachineAdded(const QString &strProviderShortName,

@@ -21,6 +21,8 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIMedium.h"
+#include "UINotificationCenter.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMNameOSTypePage.h"
 #include "UIWizardNewVMUnattendedPage.h"
@@ -28,9 +30,6 @@
 #include "UIWizardNewVMDiskPage.h"
 #include "UIWizardNewVMExpertPage.h"
 #include "UIWizardNewVMSummaryPage.h"
-#include "UIMessageCenter.h"
-#include "UIMedium.h"
-#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CAudioAdapter.h"
@@ -136,7 +135,7 @@ bool UIWizardNewVM::createVM()
                                        groups, strTypeId, QString());
         if (!vbox.isOk())
         {
-            msgCenter().cannotCreateMachine(vbox, this);
+            UINotificationMessage::cannotCreateMachine(vbox, notificationCenter());
             cleanWizard();
             return false;
         }
@@ -167,7 +166,7 @@ bool UIWizardNewVM::createVM()
     vbox.RegisterMachine(m_machine);
     if (!vbox.isOk())
     {
-        msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
+        UINotificationMessage::cannotRegisterMachine(vbox, m_machine.GetName(), notificationCenter());
         cleanWizard();
         return false;
     }
@@ -190,7 +189,7 @@ bool UIWizardNewVM::createVirtualDisk()
     CMedium newVirtualDisk = comVBox.CreateMedium(m_comMediumFormat.GetName(), m_strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
     if (!comVBox.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(comVBox, m_strMediumPath, this);
+        UINotificationMessage::cannotCreateMediumStorage(comVBox, m_strMediumPath, notificationCenter());
         return fResult;
     }
 
@@ -392,8 +391,8 @@ bool UIWizardNewVM::attachDefaultDevices()
             {
                 machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, m_virtualDisk);
                 if (!machine.isOk())
-                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, m_strMediumPath,
-                                                   StorageSlot(enmHDDBus, 0, 0), this);
+                    UINotificationMessage::cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, m_strMediumPath,
+                                                              StorageSlot(enmHDDBus, 0, 0), notificationCenter());
             }
         }
 
@@ -408,14 +407,14 @@ bool UIWizardNewVM::attachDefaultDevices()
             {
                 CVirtualBox vbox = uiCommon().virtualBox();
                 opticalDisk =
-                    vbox.OpenMedium(strISOFilePath, KDeviceType_DVD,  KAccessMode_ReadWrite, false);
+                    vbox.OpenMedium(strISOFilePath, KDeviceType_DVD, KAccessMode_ReadWrite, false);
                 if (!vbox.isOk())
-                    msgCenter().cannotOpenMedium(vbox, strISOFilePath, this);
+                    UINotificationMessage::cannotOpenMedium(vbox, strISOFilePath, notificationCenter());
             }
             machine.AttachDevice(comDVDController.GetName(), 1, 0, KDeviceType_DVD, opticalDisk);
             if (!machine.isOk())
-                msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(),
-                                               StorageSlot(enmDVDBus, 1, 0), this);
+                UINotificationMessage::cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(),
+                                                          StorageSlot(enmDVDBus, 1, 0), notificationCenter());
         }
 
         /* Attach an empty floppy drive if recommended */
@@ -425,8 +424,8 @@ bool UIWizardNewVM::attachDefaultDevices()
             {
                 machine.AttachDevice(comFloppyController.GetName(), 0, 0, KDeviceType_Floppy, CMedium());
                 if (!machine.isOk())
-                    msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_Floppy, QString(),
-                                                   StorageSlot(KStorageBus_Floppy, 0, 0), this);
+                    UINotificationMessage::cannotAttachDevice(machine, UIMediumDeviceType_Floppy, QString(),
+                                                              StorageSlot(KStorageBus_Floppy, 0, 0), notificationCenter());
             }
         }
 
@@ -436,7 +435,7 @@ bool UIWizardNewVM::attachDefaultDevices()
             if (machine.isOk())
                 success = true;
             else
-                msgCenter().cannotSaveMachineSettings(machine, this);
+                UINotificationMessage::cannotSaveMachineSettings(machine, notificationCenter());
         }
 
         session.UnlockMachine();

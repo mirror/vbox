@@ -23,8 +23,8 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "UICommon.h"
-#include "UIMessageCenter.h"
 #include "UINameAndSystemEditor.h"
+#include "UINotificationCenter.h"
 #include "UIWizardNewVMNameOSTypePage.h"
 #include "UIWizardNewVM.h"
 
@@ -220,7 +220,6 @@ void UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(UINameAndSystemEditor
 }
 
 bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor,
-                                                        UINativeWizardPage *pCaller,
                                                         UIWizardNewVM *pWizard)
 {
     if (!pNameAndSystemEditor || !pWizard)
@@ -231,7 +230,7 @@ bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *p
     /* Cleanup previosly created folder if any: */
     if (!cleanupMachineFolder(pWizard))
     {
-        msgCenter().cannotRemoveMachineFolder(strMachineFolder, pCaller);
+        UINotificationMessage::cannotRemoveMachineFolder(strMachineFolder, pWizard->notificationCenter());
         return false;
     }
 
@@ -244,7 +243,7 @@ bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *p
         /* The folder is there but not because of this wizard. Avoid overwriting a existing machine's folder */
         else
         {
-            msgCenter().cannotRewriteMachineFolder(strMachineFolder, pCaller);
+            UINotificationMessage::cannotOverwriteMachineFolder(strMachineFolder, pWizard->notificationCenter());
             return false;
         }
     }
@@ -253,7 +252,7 @@ bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *p
     bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
     if (!fMachineFolderCreated)
     {
-        msgCenter().cannotCreateMachineFolder(strMachineFolder, pCaller);
+        UINotificationMessage::cannotCreateMachineFolder(strMachineFolder, pWizard->notificationCenter());
         return false;
     }
     pWizard->setCreatedMachineFolder(strMachineFolder);
@@ -441,7 +440,7 @@ void UIWizardNewVMNameOSTypePage::initializePage()
 bool UIWizardNewVMNameOSTypePage::validatePage()
 {
     /* Try to create machine folder: */
-    return UIWizardNewVMNameOSTypeCommon::createMachineFolder(m_pNameAndSystemEditor, this, wizardWindow<UIWizardNewVM>());
+    return UIWizardNewVMNameOSTypeCommon::createMachineFolder(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
 }
 
 void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
