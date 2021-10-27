@@ -2001,55 +2001,6 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) cons
                           tr("Go Back", "no hard disk attached"));
 }
 
-void UIMessageCenter::cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire hard disk location."), UIErrorString::formatErrorInfo(comMedium));
-}
-
-void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(medium));
-}
-
-void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-             .arg(strMachineName),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotFindSnapshotByName(const CMachine &comMachine,
-                                               const QString &strName,
-                                               QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Can't find snapshot named <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
 void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
@@ -2166,67 +2117,6 @@ void UIMessageCenter::cannotCreateVirtualSystemDescription(const CAppliance &com
 {
     error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual system description.</p>"),
           UIErrorString::formatErrorInfo(comAppliance));
-}
-
-void UIMessageCenter::cannotAcquireVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual system description.</p>"),
-          UIErrorString::formatErrorInfo(comAppliance));
-}
-
-void UIMessageCenter::cannotAddVirtualSystemDescriptionValue(const CVirtualSystemDescription &comDescription,
-                                                             QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Critical, tr("<p>Cannot add a virtual system description value.</p>"),
-          UIErrorString::formatErrorInfo(comDescription));
-}
-
-void UIMessageCenter::cannotAcquireVirtualSystemDescriptionFormProperty(const CVirtualSystemDescriptionForm &comForm,
-                                                                        QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Critical, tr("<p>Cannot acquire a virtual system description property.</p>"),
-          UIErrorString::formatErrorInfo(comForm));
-}
-
-void UIMessageCenter::cannotImportAppliance(CAppliance &appliance, QWidget *pParent /* = 0*/) const
-{
-    /* Preserve error-info: */
-    QString strErrorInfo = UIErrorString::formatErrorInfo(appliance);
-    /* Add the warnings in the case of an early error: */
-    QString strWarningInfo;
-    foreach(const QString &strWarning, appliance.GetWarnings())
-        strWarningInfo += QString("<br />Warning: %1").arg(strWarning);
-    if (!strWarningInfo.isEmpty())
-        strWarningInfo = "<br />" + strWarningInfo;
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to open/interpret appliance <b>%1</b>.")
-             .arg(appliance.GetPath()),
-          strWarningInfo + strErrorInfo);
-}
-
-void UIMessageCenter::cannotImportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to import appliance <b>%1</b>.")
-             .arg(strPath),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-bool UIMessageCenter::cannotRemoveFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove file."),
-          UIErrorString::formatErrorInfo(comVFSExplorer));
-    return false;
-}
-
-bool UIMessageCenter::cannotRemoveFiles(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to remove file."),
-          UIErrorString::formatErrorInfo(comProgress));
-    return false;
 }
 
 bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /* = 0*/) const

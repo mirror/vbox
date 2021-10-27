@@ -452,12 +452,6 @@ public:
     /** @name VirtualBox Manager / Wizard warnings.
       * @{ */
         /// @todo move to notification-center after wizards get theirs.. :)
-        void cannotAcquireHardDiskLocation(const CMedium &comMedium, QWidget *pParent = 0) const;
-        void cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent = 0) const;
-        void cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
-        void cannotFindSnapshotByName(const CMachine &comMachine, const QString &strName, QWidget *pParent = 0) const;
         bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
         void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0) const;
         void cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent = 0) const;
@@ -474,13 +468,6 @@ public:
         void cannotCreateMachineFolder(const QString &strFolderName, QWidget *pParent = 0) const;
         void cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
         void cannotCreateVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent = 0) const;
-        void cannotAcquireVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent = 0) const;
-        void cannotAddVirtualSystemDescriptionValue(const CVirtualSystemDescription &comDescription, QWidget *pParent = 0) const;
-        void cannotAcquireVirtualSystemDescriptionFormProperty(const CVirtualSystemDescriptionForm &comForm, QWidget *pParent = 0) const;
-        void cannotImportAppliance(CAppliance &appliance, QWidget *pParent = 0) const;
-        void cannotImportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent = 0) const;
-        bool cannotRemoveFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent = 0) const;
-        bool cannotRemoveFiles(const CProgress &comProgress, QWidget *pParent = 0) const;
         bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent = 0) const;
         void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
         bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0) const;
