@@ -503,6 +503,18 @@ findso:
     LogFlowFunc(("(leave) findso: %R[natsock]\n", so));
 
     /*
+     * Check whether the packet is targeting CTL_ALIAS and drop it if the connection wasn't
+     * initiated by localhost (so == NULL), see @bugref{9896}.
+     */
+    if (   (RT_N2H_U32(ti->ti_dst.s_addr) & ~pData->netmask) == CTL_ALIAS
+        && !pData->fLocalhostReachable
+        && !so)
+    {
+        LogFlowFunc(("Packet for CTL_ALIAS and fLocalhostReachable=false so=NULL -> drop\n"));
+        goto drop;
+    }
+
+    /*
      * If the state is CLOSED (i.e., TCB does not exist) then
      * all data in the incoming segment is discarded.
      * If the TCB exists but is in CLOSED state, it is embryonic,

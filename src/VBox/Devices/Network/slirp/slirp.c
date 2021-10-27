@@ -298,7 +298,7 @@ static int slirpVerifyAndFreeSocket(PNATState pData, struct socket *pSocket)
 
 int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
                bool fPassDomain, bool fUseHostResolver, int i32AliasMode,
-               int iIcmpCacheLimit, void *pvUser)
+               int iIcmpCacheLimit, bool fLocalhostReachable, void *pvUser)
 {
     int rc;
     PNATState pData;
@@ -315,6 +315,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->fPassDomain = !fUseHostResolver ? fPassDomain : false;
     pData->fUseHostResolver = fUseHostResolver;
     pData->fUseHostResolverPermanent = fUseHostResolver;
+    pData->fLocalhostReachable = fLocalhostReachable;
     pData->pvUser = pvUser;
     pData->netmask = u32Netmask;
 
@@ -1352,6 +1353,12 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 || CTL_CHECK(ip4TargetAddress, CTL_ALIAS)
                 || CTL_CHECK(ip4TargetAddress, CTL_TFTP))
             {
+#if 0 /* Dropping ARP requests destined for CTL_ALIAS breaks all outgoing traffic completely, so don't do that... */
+                /* Don't reply to ARP requests for the hosts loopback interface if it is disabled. */
+                if (   CTL_CHECK(ip4TargetAddress, CTL_ALIAS)
+                    && !pData->fLocalhostReachable)
+                    break;
+#endif
                 slirp_update_guest_addr_guess(pData, *(uint32_t *)pARPHeader->ar_sip, "arp request");
                 arp_output(pData, pEtherHeader->h_source, pARPHeader, ip4TargetAddress);
                 break;

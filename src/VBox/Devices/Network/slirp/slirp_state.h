@@ -286,6 +286,9 @@ typedef struct NATState
     struct request *request_hash[1 << HASHSIZE];
     /* this field control behaviour of DHCP server */
     bool fUseDnsProxy;
+    /** Flag whether the guest can contact services on the host's
+     * loopback interface (127.0.0.1/localhost). */
+    bool fLocalhostReachable;
 
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     int    i32AliasMode;

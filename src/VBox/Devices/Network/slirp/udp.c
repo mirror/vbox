@@ -232,6 +232,14 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     }
 
     /*
+     * Drop UDP packets destind for CTL_ALIAS (i.e. the hosts loopback interface)
+     * if it is disabled.
+     */
+    if (   CTL_CHECK(ip->ip_dst.s_addr, CTL_ALIAS)
+        && !pData->fLocalhostReachable)
+        goto done_free_mbuf;
+
+    /*
      * Locate pcb for datagram.
      */
     so = udp_last_so;
