@@ -1278,7 +1278,9 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     /*
      * Some state init.
      */
+#ifdef NEM_WIN_WITH_A20
     pVM->nem.s.fA20Enabled = true;
+#endif
 #if 0
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -1813,8 +1815,12 @@ int nemR3NativeTerm(PVM pVM)
  */
 void nemR3NativeReset(PVM pVM)
 {
+#if 0
     /* Unfix the A20 gate. */
     pVM->nem.s.fA20Fixed = false;
+#else
+    RT_NOREF(pVM);
+#endif
 }
 
 
@@ -1827,6 +1833,7 @@ void nemR3NativeReset(PVM pVM)
  */
 void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 {
+#ifdef NEM_WIN_WITH_A20
     /* Lock the A20 gate if INIT IPI, make sure it's enabled.  */
     if (fInitIpi && pVCpu->idCpu > 0)
     {
@@ -1836,6 +1843,9 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
         pVM->nem.s.fA20Enabled = true;
         pVM->nem.s.fA20Fixed   = true;
     }
+#else
+    RT_NOREF(pVCpu, fInitIpi);
+#endif
 }
 
 
@@ -1885,10 +1895,21 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 }
 
 
-bool nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu)
 {
-    NOREF(pVM); NOREF(pVCpu);
+    Assert(VM_IS_NEM_ENABLED(pVM));
+
+#ifndef NEM_WIN_WITH_A20
+    /*
+     * Only execute when the A20 gate is enabled because this lovely Hyper-V
+     * blackbox does not seem to have any way to enable or disable A20.
+     */
+    RT_NOREF(pVM);
+    return PGMPhysIsA20Enabled(pVCpu);
+#else
+    RT_NOREF(pVM, pVCpu);
     return true;
+#endif
 }
 
 
@@ -2022,6 +2043,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
         Assert(!(fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2));
         *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
     }
+    RT_NOREF(pvRam);
 
 #else
     RT_NOREF(pVM, GCPhys, cb, pvRam, pvMmio2);
@@ -2205,6 +2227,7 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
 }
 
 
+#ifdef NEM_WIN_WITH_A20
 /**
  * Unmaps a page from Hyper-V for the purpose of emulating A20 gate behavior.
  *
@@ -2219,6 +2242,7 @@ static int nemR3WinUnmapPageForA20Gate(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     return PGMPhysNemPageInfoChecker(pVM, pVCpu, GCPhys, false /*fMakeWritable*/, &Info,
                                      nemR3WinUnsetForA20CheckerCallback, NULL);
 }
+#endif
 
 
 /**
@@ -2231,9 +2255,11 @@ static int nemR3WinUnmapPageForA20Gate(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
  * @param   pVCpu           The CPU the A20 state changed on.
  * @param   fEnabled        Whether it was enabled (true) or disabled.
  */
-void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
+VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
 {
     Log(("nemR3NativeNotifySetA20: fEnabled=%RTbool\n", fEnabled));
+    Assert(VM_IS_NEM_ENABLED(pVCpu->CTX_SUFF(pVM)));
+#ifdef NEM_WIN_WITH_A20
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (!pVM->nem.s.fA20Fixed)
     {
@@ -2241,6 +2267,9 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
         for (RTGCPHYS GCPhys = _1M; GCPhys < _1M + _64K; GCPhys += X86_PAGE_SIZE)
             nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys);
     }
+#else
+    RT_NOREF(pVCpu, fEnabled);
+#endif
 }
 
 
@@ -2445,9 +2474,11 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   A20M# pin (present on 486 and later) is near impossible for SMP setups
  *   (e.g. possiblity of two CPUs with different A20 status).
  *
- *   Workaround: Only do A20 on CPU 0, restricting the emulation to HMA.  We
- *   unmap all pages related to HMA (0x100000..0x10ffff) when the A20 state
- *   changes, lazily syncing the right pages back when accessed.
+ *   Workaround #1 (obsolete): Only do A20 on CPU 0, restricting the emulation
+ *   to HMA. We unmap all pages related to HMA (0x100000..0x10ffff) when the A20
+ *   state changes, lazily syncing the right pages back when accessed.
+ *
+ *   Workaround #2 (used): Use IEM when the A20 gate is disabled.
  *
  *
  * - WHVRunVirtualProcessor wastes time converting VID/Hyper-V messages to its

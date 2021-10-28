@@ -405,16 +405,13 @@ VMMR3_INT_DECL(VBOXSTRICTRC) NEMR3RunGC(PVM pVM, PVMCPU pVCpu)
 }
 
 
+#ifndef VBOX_WITH_NATIVE_NEM
 VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(VM_IS_NEM_ENABLED(pVM));
-#ifdef VBOX_WITH_NATIVE_NEM
-    return nemR3NativeCanExecuteGuest(pVM, pVCpu);
-#else
-    NOREF(pVM); NOREF(pVCpu);
+    RT_NOREF(pVM, pVCpu);
     return false;
-#endif
 }
+#endif
 
 
 VMMR3_INT_DECL(bool) NEMR3SetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
@@ -440,13 +437,10 @@ VMMR3_INT_DECL(void) NEMR3NotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 }
 
 
+#ifndef VBOX_WITH_NATIVE_NEM
 VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
 {
-#ifdef VBOX_WITH_NATIVE_NEM
-    if (pVCpu->pVMR3->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
-        nemR3NativeNotifySetA20(pVCpu, fEnabled);
-#else
-    NOREF(pVCpu); NOREF(fEnabled);
-#endif
+    RT_NOREF(pVCpu, fEnabled);
 }
+#endif
 

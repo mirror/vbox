@@ -166,10 +166,12 @@ typedef struct NEM
     bool                        fExtendedXcptExit : 1;
     /** Set if we're using the ring-0 API to do the work. */
     bool                        fUseRing0Runloop : 1;
+# ifdef NEM_WIN_WITH_A20
     /** Set if we've started more than one CPU and cannot mess with A20. */
     bool                        fA20Fixed : 1;
     /** Set if A20 is enabled. */
     bool                        fA20Enabled : 1;
+# endif
     /** The reported CPU vendor.   */
     CPUMCPUVENDOR               enmCpuVendor;
     /** Cache line flush size as a power of two. */
@@ -458,8 +460,6 @@ VBOXSTRICTRC    nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu);
 bool            nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu);
 bool            nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 void            nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
-
-void    nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled);
 #endif
 
 void    nemHCNativeNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
