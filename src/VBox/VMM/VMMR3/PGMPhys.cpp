@@ -1760,8 +1760,14 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
      */
     if (VM_IS_NEM_ENABLED(pVM))
     {
-        int rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, pNew->cb, pNew->pvR3);
-        if (RT_FAILURE(rc))
+        uint8_t u2State = UINT8_MAX;
+        int rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, pNew->cb, pNew->pvR3, &u2State);
+        if (RT_SUCCESS(rc))
+        {
+            if (u2State != UINT8_MAX)
+                pgmPhysSetNemStateForPages(&pNew->aPages[0], cPages, u2State);
+        }
+        else
             pgmR3PhysUnlinkRamRange2(pVM, pNew, pPrev);
         return rc;
     }
