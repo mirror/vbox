@@ -1909,11 +1909,11 @@ class TestDriver(base.TestDriver):                                              
         if    oNic.adapterType == vboxcon.NetworkAdapterType_Am79C970A \
            or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C973 \
            or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C960:
-           return 'pcnet'
+            return 'pcnet'
         elif    oNic.adapterType == vboxcon.NetworkAdapterType_I82540EM \
              or oNic.adapterType == vboxcon.NetworkAdapterType_I82543GC \
              or oNic.adapterType == vboxcon.NetworkAdapterType_I82545EM:
-           return  'e1000'
+            return  'e1000'
         elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio:
             return 'virtio-net'
         elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio_1_0:
