@@ -2941,19 +2941,21 @@ class TestDriver(base.TestDriver):                                              
             except:
                 reporter.logXcpt();
 
-        # Needed to reach the host (localhost) from the guest. See xTracker #9896.
-        for iSlot in range(0, 32):
-            try:
-                oNic = oVM.getNetworkAdapter(iSlot);
-                if not oNic.enabled:
+        if self.fpApiVer >= 7.0:
+            # Needed to reach the host (localhost) from the guest. See xTracker #9896.
+            for iSlot in range(0, 32):
+                try:
+                    oNic = oVM.getNetworkAdapter(iSlot);
+                    if not oNic.enabled:
+                        continue;
+                    if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
+                        sAdpName = self.getNetworkAdapterNameFromType(oNic);
+                        reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d' % (sAdpName, iSlot));
+                        sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % \
+                               iSlot, sAdpName;
+                        self.oVBox.setExtraData(sKey, '1');
+                except:
                     continue;
-                if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
-                    reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter in slot %d' % (iSlot));
-                    sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % \
-                           iSlot, self.getNetworkAdapterNameFromType(oNic);
-                    self.oVBox.setExtraData(sKey, '1');
-            except:
-                continue;
 
         # The UUID for the name.
         try:
