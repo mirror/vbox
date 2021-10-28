@@ -95,8 +95,18 @@ static DECLCALLBACK(int) pdmR0DevHlp_IoPortSetUpContextEx(PPDMDEVINS pDevIns, IO
     LogFlow(("pdmR0DevHlp_IoPortSetUpContextEx: caller='%s'/%d: hIoPorts=%#x pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p pvUser=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts, pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    int rc = VINF_SUCCESS;
+    PRTDEVDUTIOPORT pIoPort = (PRTDEVDUTIOPORT)hIoPorts;
+    if (RT_LIKELY(pIoPort))
+    {
+        pIoPort->pvUserR0    = pvUser;
+        pIoPort->pfnOutR0    = pfnOut;
+        pIoPort->pfnInR0     = pfnIn;
+        pIoPort->pfnOutStrR0 = pfnOutStr;
+        pIoPort->pfnInStrR0  = pfnInStr;
+    }
+    else
+        AssertReleaseFailed();
 
     LogFlow(("pdmR0DevHlp_IoPortSetUpContextEx: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -111,8 +121,17 @@ static DECLCALLBACK(int) pdmR0DevHlp_MmioSetUpContextEx(PPDMDEVINS pDevIns, IOMM
     LogFlow(("pdmR0DevHlp_MmioSetUpContextEx: caller='%s'/%d: hRegion=%#x pfnWrite=%p pfnRead=%p pfnFill=%p pvUser=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hRegion, pfnWrite, pfnRead, pfnFill, pvUser));
 
-    int rc = VERR_NOT_IMPLEMENTED;
-    AssertFailed();
+    int rc = VINF_SUCCESS;
+    PRTDEVDUTMMIO pMmio = (PRTDEVDUTMMIO)hRegion;
+    if (RT_LIKELY(pMmio))
+    {
+        pMmio->pvUserR0    = pvUser;
+        pMmio->pfnWriteR0  = pfnWrite;
+        pMmio->pfnReadR0   = pfnRead;
+        pMmio->pfnFillR0   = pfnFill;
+    }
+    else
+        AssertReleaseFailed();
 
     LogFlow(("pdmR0DevHlp_MmioSetUpContextEx: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -725,10 +744,8 @@ static DECLCALLBACK(uint32_t) pdmR0DevHlp_SUPSemEventMultiGetResolution(PPDMDEVI
 static DECLCALLBACK(PPDMCRITSECT) pdmR0DevHlp_CritSectGetNop(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    //PGVM pGVM = pDevIns->Internal.s.pGVM;
 
-    AssertFailed();
-    PPDMCRITSECT pCritSect = NULL; //&pGVM->pdm.s.NopCritSect;
+    PPDMCRITSECT pCritSect = &pDevIns->Internal.s.pDut->CritSectNop;
     LogFlow(("pdmR0DevHlp_CritSectGetNop: caller='%s'/%d: return %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pCritSect));
     return pCritSect;
 }
@@ -747,20 +764,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
     AssertPtrReturn(pCritSect, VERR_INVALID_POINTER);
     LogFlow(("pdmR0DevHlp_SetDeviceCritSect: caller='%s'/%d: pCritSect=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pCritSect));
-#if 0
-    AssertReturn(PDMCritSectIsInitialized(pCritSect), VERR_INVALID_PARAMETER);
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
+    AssertReturn(RTCritSectIsInitialized(&pCritSect->s.CritSect), VERR_INVALID_PARAMETER);
 
-    VM_ASSERT_EMT(pGVM);
-    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
-
-    /*
-     * Check that ring-3 has already done this, then effect the change.
-     */
-    AssertReturn(pDevIns->pDevInsForR3R0->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_CHANGED_CRITSECT, VERR_WRONG_ORDER);
     pDevIns->pCritSectRoR0 = pCritSect;
-#endif
-    AssertFailed();
 
     LogFlow(("pdmR0DevHlp_SetDeviceCritSect: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;

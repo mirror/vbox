@@ -903,7 +903,6 @@ DECLHIDDEN(int) tstDevPdmDeviceR3Construct(PTSTDEVDUTINT pDut)
     PPDMDEVINS pDevInsR3 = pDut->pDevIns;
 
     pDevInsR3->pReg                     = pDut->pPdmDev->pReg;
-    pDevInsR3->pvInstanceDataR3         = &pDevInsR3->achInstanceData[0];
     pDevInsR3->pHlpR3                   = &g_tstDevPdmDevHlpR3;
     pDevInsR3->pCfg                     = &pDut->Cfg;
     pDevInsR3->Internal.s.pDut          = pDut;

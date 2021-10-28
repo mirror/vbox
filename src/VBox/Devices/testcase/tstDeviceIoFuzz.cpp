@@ -132,13 +132,47 @@ static DECLCALLBACK(int) tstDevIoFuzzEntry(TSTDEVDUT hDut, PCTSTDEVCFGITEM paCfg
 
                 RTGCPHYS offRegion = RTRandAdvU64Ex(hRnd, 0, pMmio->cbRegion);
                 bool fRead = RT_BOOL(uMin == uMax ? uMin : RTRandAdvU32Ex(hRnd, uMin, uMax));
+                bool fRing0 = false;
+
+                if (   (   fRead
+                        && pMmio->pfnReadR0)
+                    || (   !fRead
+                        && pMmio->pfnWriteR0))
+                    fRing0 = RT_BOOL(RTRandAdvU32Ex(hRnd, 0, 1));
+
                 uint64_t u64Value = fRead ? 0 : RTRandAdvU64(hRnd);
                 uint32_t cbValue = g_aAccWidths[RTRandAdvU32Ex(hRnd, 0, 2)];
 
                 if (fRead)
-                    pMmio->pfnReadR3(hDut->pDevIns, pMmio->pvUserR3, offRegion, &u64Value, cbValue);
+                {
+                    if (fRing0)
+                    {
+                        VBOXSTRICTRC rcStrict = pMmio->pfnReadR0((PPDMDEVINS)hDut->pDevInsR0, pIoPort->pvUserR0, offRegion, &u64Value, cbValue);
+                        if (VBOXSTRICTRC_VAL(rcStrict) == VINF_IOM_R3_MMIO_READ)
+                        {
+                            AssertRelease(pMmio->pfnReadR3);
+                            pMmio->pfnReadR3(hDut->pDevIns, pIoPort->pvUserR3, offRegion, &u64Value, cbValue);
+                        }
+
+                    }
+                    else
+                        pMmio->pfnReadR3(hDut->pDevIns, pMmio->pvUserR3, offRegion, &u64Value, cbValue);
+                }
                 else
-                    pMmio->pfnWriteR3(hDut->pDevIns, pMmio->pvUserR3, offRegion, &u64Value, cbValue);
+                {
+                    if (fRing0)
+                    {
+                        VBOXSTRICTRC rcStrict = pMmio->pfnWriteR0((PPDMDEVINS)hDut->pDevInsR0, pIoPort->pvUserR0, offRegion, &u64Value, cbValue);
+                        if (VBOXSTRICTRC_VAL(rcStrict) == VINF_IOM_R3_MMIO_WRITE)
+                        {
+                            AssertRelease(pMmio->pfnWriteR3);
+                            pMmio->pfnWriteR3(hDut->pDevIns, pIoPort->pvUserR3, offRegion, &u64Value, cbValue);
+                        }
+
+                    }
+                    else
+                        pMmio->pfnWriteR3(hDut->pDevIns, pMmio->pvUserR3, offRegion, &u64Value, cbValue);
+                }
             }
             else
             {
@@ -155,13 +189,47 @@ static DECLCALLBACK(int) tstDevIoFuzzEntry(TSTDEVDUT hDut, PCTSTDEVCFGITEM paCfg
 
                 uint32_t offPort = RTRandAdvU32Ex(hRnd, 0, pIoPort->cPorts);
                 bool fRead = RT_BOOL(uMin == uMax ? uMin : RTRandAdvU32Ex(hRnd, uMin, uMax));
+                bool fRing0 = false;
+
+                if (   (   fRead
+                        && pIoPort->pfnInR0)
+                    || (   !fRead
+                        && pIoPort->pfnOutR3))
+                    fRing0 = RT_BOOL(RTRandAdvU32Ex(hRnd, 0, 1));
+
                 uint32_t u32Value = fRead ? 0 : RTRandAdvU32(hRnd);
                 uint32_t cbValue = g_aAccWidths[RTRandAdvU32Ex(hRnd, 0, 2)];
 
                 if (fRead)
-                    pIoPort->pfnInR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, &u32Value, cbValue);
+                {
+                    if (fRing0)
+                    {
+                        VBOXSTRICTRC rcStrict = pIoPort->pfnInR0((PPDMDEVINS)hDut->pDevInsR0, pIoPort->pvUserR0, offPort, &u32Value, cbValue);
+                        if (VBOXSTRICTRC_VAL(rcStrict) == VINF_IOM_R3_IOPORT_READ)
+                        {
+                            AssertRelease(pIoPort->pfnInR3);
+                            pIoPort->pfnInR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, &u32Value, cbValue);
+                        }
+
+                    }
+                    else
+                        pIoPort->pfnInR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, &u32Value, cbValue);
+                }
                 else
-                    pIoPort->pfnOutR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, u32Value, cbValue);
+                {
+                    if (fRing0)
+                    {
+                        VBOXSTRICTRC rcStrict = pIoPort->pfnOutR0((PPDMDEVINS)hDut->pDevInsR0, pIoPort->pvUserR0, offPort, u32Value, cbValue);
+                        if (VBOXSTRICTRC_VAL(rcStrict) == VINF_IOM_R3_IOPORT_WRITE)
+                        {
+                            AssertRelease(pIoPort->pfnOutR3);
+                            pIoPort->pfnOutR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, u32Value, cbValue);
+                        }
+
+                    }
+                    else
+                        pIoPort->pfnOutR3(hDut->pDevIns, pIoPort->pvUserR3, offPort, u32Value, cbValue);
+                }
             }
 
             cFuzzedInputs++;
