@@ -749,104 +749,17 @@ class NetworkAddress
         virtual const char *defaultNetwork() = 0;
     protected:
         bool m_fValid;
-
-        int RTNetStrToIPv4CidrWithZeroPrefixAllowed(const char *pcszAddr, PRTNETADDRIPV4 pAddr, int *piPrefix);
-        int RTNetStrToIPv6CidrWithZeroPrefixAllowed(const char *pcszAddr, PRTNETADDRIPV6 pAddr, int *piPrefix);
 };
-
-int NetworkAddress::RTNetStrToIPv4CidrWithZeroPrefixAllowed(const char *pcszAddr, PRTNETADDRIPV4 pAddr, int *piPrefix)
-{
-    RTNETADDRIPV4 addr;
-    char *pszNext;
-
-    AssertPtrReturn(pcszAddr, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pAddr, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(piPrefix, VERR_INVALID_PARAMETER);
-
-    pcszAddr = RTStrStripL(pcszAddr);
-    int rc = RTNetStrToIPv4AddrEx(pcszAddr, &addr, &pszNext);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * If the prefix is missing, treat is as exact (/32) address
-     * specification.
-     */
-    if (*pszNext == '\0' || rc == VWRN_TRAILING_SPACES)
-    {
-        *pAddr = addr;
-        *piPrefix = 32;
-        return VINF_SUCCESS;
-    }
-
-    if (*pszNext == '/')
-        ++pszNext;
-    else
-        return VERR_INVALID_PARAMETER;
-
-    uint32_t prefix;
-    rc = RTStrToUInt32Ex(pszNext, &pszNext, 0, &prefix);
-    if ((rc == VINF_SUCCESS || rc == VWRN_TRAILING_SPACES) && prefix == 0)
-    {
-        *pAddr = addr;
-        *piPrefix = 0;
-        return VINF_SUCCESS;
-    }
-    return RTNetStrToIPv4Cidr(pcszAddr, pAddr, piPrefix);
-}
-
-int NetworkAddress::RTNetStrToIPv6CidrWithZeroPrefixAllowed(const char *pcszAddr, PRTNETADDRIPV6 pAddr, int *piPrefix)
-{
-    RTNETADDRIPV6 Addr;
-    uint8_t u8Prefix;
-    char *pszNext;
-    int rc;
-
-    AssertPtrReturn(pcszAddr, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pAddr, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(piPrefix, VERR_INVALID_PARAMETER);
-
-    pcszAddr = RTStrStripL(pcszAddr);
-    rc = RTNetStrToIPv6AddrEx(pcszAddr, &Addr, &pszNext);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * If the prefix is missing, treat is as exact (/128) address
-     * specification.
-     */
-    if (*pszNext == '\0' || rc == VWRN_TRAILING_SPACES)
-    {
-        *pAddr = Addr;
-        *piPrefix = 128;
-        return VINF_SUCCESS;
-    }
-
-    if (*pszNext != '/')
-        return VERR_INVALID_PARAMETER;
-
-    ++pszNext;
-    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &u8Prefix);
-    if (RT_FAILURE(rc) || rc == VWRN_TRAILING_CHARS)
-        return VERR_INVALID_PARAMETER;
-
-    if (u8Prefix > 128)
-        return VERR_INVALID_PARAMETER;
-
-    *pAddr = Addr;
-    *piPrefix = u8Prefix;
-    return VINF_SUCCESS;
-}
 
 bool NetworkAddress::isValidString(const char *pcszNetwork)
 {
     RTNETADDRIPV4 addrv4;
     RTNETADDRIPV6 addrv6;
     int prefix;
-    int rc = RTNetStrToIPv4CidrWithZeroPrefixAllowed(pcszNetwork, &addrv4, &prefix);
+    int rc = RTNetStrToIPv4Cidr(pcszNetwork, &addrv4, &prefix);
     if (RT_SUCCESS(rc))
         return true;
-    rc = RTNetStrToIPv6CidrWithZeroPrefixAllowed(pcszNetwork, &addrv6, &prefix);
+    rc = RTNetStrToIPv6Cidr(pcszNetwork, &addrv6, &prefix);
     return RT_SUCCESS(rc);
 }
 
@@ -885,7 +798,7 @@ bool NetworkAddressIPv4::matches(const char *pcszNetwork)
 {
     RTNETADDRIPV4 allowedNet, allowedMask;
     int allowedPrefix;
-    int rc = RTNetStrToIPv4CidrWithZeroPrefixAllowed(pcszNetwork, &allowedNet, &allowedPrefix);
+    int rc = RTNetStrToIPv4Cidr(pcszNetwork, &allowedNet, &allowedPrefix);
     if (RT_SUCCESS(rc))
         rc = RTNetPrefixToMaskIPv4(allowedPrefix, &allowedMask);
     if (RT_FAILURE(rc))
@@ -914,7 +827,7 @@ bool NetworkAddressIPv6::matches(const char *pcszNetwork)
 {
     RTNETADDRIPV6 allowedNet, allowedMask;
     int allowedPrefix;
-    int rc = RTNetStrToIPv6CidrWithZeroPrefixAllowed(pcszNetwork, &allowedNet, &allowedPrefix);
+    int rc = RTNetStrToIPv6Cidr(pcszNetwork, &allowedNet, &allowedPrefix);
     if (RT_SUCCESS(rc))
         rc = RTNetPrefixToMaskIPv6(allowedPrefix, &allowedMask);
     if (RT_FAILURE(rc))
