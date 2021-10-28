@@ -2950,7 +2950,8 @@ class TestDriver(base.TestDriver):                                              
                         continue;
                     if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
                         sAdpName = self.getNetworkAdapterNameFromType(oNic);
-                        reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d' % (sAdpName, iSlot));
+                        reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d' % \
+                                      (sAdpName, iSlot));
                         sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % \
                                iSlot, sAdpName;
                         self.oVBox.setExtraData(sKey, '1');
