@@ -354,8 +354,9 @@ private:
         /** Returns whether at least one cloud profile currently being updated. */
         bool isCloudProfileUpdateInProgress() const;
 
-        /* Checks if @p comUnattendedInstaller has any errors. If so shows an error message and return false, else returns true. */
-        bool checkUnattendedInstallError(CUnattended &comUnattendedInstaller) const;
+        /** Checks if @a comUnattended has any errors.
+          * If so shows an error notification and returns false, else returns true. */
+        bool checkUnattendedInstallError(const CUnattended &comUnattended) const;
     /** @} */
 
     /** @name Various VM helpers.

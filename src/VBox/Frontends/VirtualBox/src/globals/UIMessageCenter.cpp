@@ -2027,14 +2027,6 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machin
                           tr("Continue"));
 }
 
-void UIMessageCenter::cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent /* = 0 */)
-{
-    COMErrorInfo comErrorInfo =  comUnattendedInstall.errorInfo();    \
-    error(pParent, MessageType_Error,
-          tr("An error has occured during unattended guest install setup."),
-          UIErrorString::formatErrorInfo(comErrorInfo));
-}
-
 bool UIMessageCenter::confirmOverridingFile(const QString &strPath, QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Question,

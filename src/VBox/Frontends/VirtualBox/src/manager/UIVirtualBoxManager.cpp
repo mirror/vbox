@@ -2418,13 +2418,11 @@ bool UIVirtualBoxManager::isCloudProfileUpdateInProgress() const
     return m_pWidget->isCloudProfileUpdateInProgress();
 }
 
-bool UIVirtualBoxManager::checkUnattendedInstallError(CUnattended &comUnattendedInstaller) const
+bool UIVirtualBoxManager::checkUnattendedInstallError(const CUnattended &comUnattended) const
 {
-    if (!comUnattendedInstaller.isOk())
+    if (!comUnattended.isOk())
     {
-        COMErrorInfo comErrorInfo =  comUnattendedInstaller.errorInfo();
-        QString strErrorInfo = UIErrorString::formatErrorInfo(comErrorInfo);
-        msgCenter().cannotRunUnattendedGuestInstall(comUnattendedInstaller);
+        UINotificationMessage::cannotRunUnattendedGuestInstall(comUnattended);
         return false;
     }
     return true;

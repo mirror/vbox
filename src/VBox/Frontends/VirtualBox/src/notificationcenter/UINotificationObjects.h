@@ -55,6 +55,7 @@ class CNetworkAdapter;
 class CVirtualBox;
 class CVirtualBoxErrorInfo;
 class CVRDEServer;
+class CUnattended;
 
 /** UINotificationObject extension for message functionality. */
 class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
@@ -477,6 +478,10 @@ public:
           * @param  strSnapshotName  Brings snapshot name.
           * @param  strMachineName   Brings machine name. */
         static void cannotChangeSnapshot(const CSnapshot &comSnapshot, const QString &strSnapshotName, const QString &strMachineName);
+
+        /** Notifies about inability to run unattended guest install.
+          * @param  comUnattended  Brings the unattended being running guest install. */
+        static void cannotRunUnattendedGuestInstall(const CUnattended &comUnattended);
     /** @} */
 
     /** @name COM Runtime UI warnings.
