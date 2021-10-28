@@ -2001,78 +2001,6 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) cons
                           tr("Go Back", "no hard disk attached"));
 }
 
-void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create a new virtual machine."),
-          UIErrorString::formatErrorInfo(vbox));
-}
-
-void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    alert(pParent, MessageType_Info,
-          tr("<p>The hard disk storage unit at location <b>%1</b> already exists. "
-             "You cannot create a new virtual hard disk that uses this location "
-             "because it can be already used by another virtual hard disk.</p>"
-             "<p>Please specify a different location.</p>")
-             .arg(strLocation));
-}
-
-void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(vbox));
-}
-
-void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(medium));
-}
-
-void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(progress));
-}
-
-void UIMessageCenter::cannotCreateHardDiskStorageInFAT(const QString &strLocation, QWidget *pParent /* = 0 */) const
-{
-    alert(pParent, MessageType_Info,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr> FAT file systems have 4GB file size limit.")
-          .arg(strLocation));
-}
-
-void UIMessageCenter::cannotCreateMediumStorage(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the virtual disk image storage <nobr><b>%1</b>.</nobr>")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotCreateMediumStorage(const CMedium &comMedium, const QString &strLocation, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the virtual disk image storage <nobr><b>%1</b>.</nobr>")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(comMedium));
-}
-
-void UIMessageCenter::cannotCreateMediumStorage(const CProgress &comProgress, const QString &strLocation, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create the virtual disk image storage <nobr><b>%1</b>.</nobr>")
-             .arg(strLocation),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
 void UIMessageCenter::cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual appliance.</p>"),
@@ -2137,6 +2065,14 @@ bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, Q
                               false /* ok button by default? */);
     else
         return true;
+}
+
+void UIMessageCenter::cannotCreateMediumStorage(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create the virtual disk image storage <nobr><b>%1</b>.</nobr>")
+             .arg(strLocation),
+          UIErrorString::formatErrorInfo(comVBox));
 }
 
 void UIMessageCenter::sltShowHelpWebDialog()

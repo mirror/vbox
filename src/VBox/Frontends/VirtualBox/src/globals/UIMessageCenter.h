@@ -453,21 +453,17 @@ public:
       * @{ */
         /// @todo move to notification-center after wizards get theirs.. :)
         bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
-        void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0) const;
-        void cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation,QWidget *pParent = 0) const;
-        void cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotCreateHardDiskStorageInFAT(const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotCreateMediumStorage(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotCreateMediumStorage(const CMedium &comMedium, const QString &strLocation, QWidget *pParent = 0) const;
-        void cannotCreateMediumStorage(const CProgress &comProgress, const QString &strLocation, QWidget *pParent = 0) const;
         void cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
         void cannotCreateVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent = 0) const;
         bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent = 0) const;
         void cannotRunUnattendedGuestInstall(const CUnattended &comUnattendedInstall, QWidget *pParent = 0);
         bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0) const;
         bool confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0) const;
+    /** @} */
+
+    /** @name VirtualBox Manager / FD Creation Dialog warnings.
+      * @{ */
+        void cannotCreateMediumStorage(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent = 0) const;
     /** @} */
 
 public slots:
