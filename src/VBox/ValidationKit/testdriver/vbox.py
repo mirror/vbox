@@ -1900,6 +1900,26 @@ class TestDriver(base.TestDriver):                                              
     def completeOptions(self):
         return base.TestDriver.completeOptions(self);
 
+    def getNetworkAdapterNameFromType(self, oNic):
+        """
+        Returns the network adapter name from a given adapter type.
+
+        Returns an empty string if not found / invalid.
+        """
+        if    oNic.adapterType == vboxcon.NetworkAdapterType_Am79C970A \
+           or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C973 \
+           or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C960:
+           return 'pcnet'
+        elif    oNic.adapterType == vboxcon.NetworkAdapterType_I82540EM \
+             or oNic.adapterType == vboxcon.NetworkAdapterType_I82543GC \
+             or oNic.adapterType == vboxcon.NetworkAdapterType_I82545EM:
+           return  'e1000'
+        elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio:
+            return 'virtio-net'
+        elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio_1_0:
+            return 'virtio-net-1-dot-0'
+        return ''
+
     def getResourceSet(self):
         asRsrcs = [];
         if self.oTestVmSet is not None:
@@ -2926,11 +2946,13 @@ class TestDriver(base.TestDriver):                                              
                 oNic = oVM.getNetworkAdapter(iSlot);
                 if not oNic.enabled:
                     continue;
-                sKey = 'VBoxInternal/Devices/%s/0/LUN#0/Config/LocalhostReachable' % \
-                       (self.oVBoxMgr.getEnumValueName('NetworkAdapterType', oNic.adapterType));
-                self.oVBox.setExtraData(sKey, '1');
+                if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
+                    reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter in slot %d' % (iSlot));
+                    sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % \
+                           iSlot, self.getNetworkAdapterNameFromType(oNic);
+                    self.oVBox.setExtraData(sKey, '1');
             except:
-                break;
+                continue;
 
         # The UUID for the name.
         try:
