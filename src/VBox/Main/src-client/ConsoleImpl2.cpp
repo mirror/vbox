@@ -5609,7 +5609,7 @@ int Console::i_configNetwork(const char *pszDevice,
                 {
                     switch (hrc)
                     {
-                        case VERR_ACCESS_DENIED:
+                        case E_ACCESSDENIED:
                             return VMSetError(VMR3GetVM(mpUVM), VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
                                             "Failed to open '/dev/net/tun' for read/write access. Please check the "
                                             "permissions of that node. Either run 'chmod 0666 /dev/net/tun' or "
@@ -5658,7 +5658,7 @@ int Console::i_configNetwork(const char *pszDevice,
                 }
 
 # if defined(RT_OS_DARWIN)
-                /* The name is on the form 'ifX: long name', chop it off at the colon. */
+                /* The name is in the format 'ifX: long name', chop it off at the colon. */
                 char szTrunk[INTNET_MAX_TRUNK_NAME];
                 RTStrCopy(szTrunk, sizeof(szTrunk), pszBridgedIfName);
                 char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
@@ -5681,7 +5681,7 @@ int Console::i_configNetwork(const char *pszDevice,
                 const char *pszTrunk = szTrunk;
 
 # elif defined(RT_OS_SOLARIS)
-                /* The name is on the form format 'ifX[:1] - long name, chop it off at space. */
+                /* The name is in the format 'ifX[:1] - long name, chop it off at space. */
                 char szTrunk[256];
                 strlcpy(szTrunk, pszBridgedIfName, sizeof(szTrunk));
                 char *pszSpace = (char *)memchr(szTrunk, ' ', sizeof(szTrunk));
