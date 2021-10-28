@@ -361,6 +361,10 @@ time on documenting it. -->
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
+      <arg>--natlocalhostreachable<replaceable>N</replaceable>=<group choice="plain">
+          <arg choice="plain">on</arg>
+          <arg choice="plain">off</arg>
+        </group></arg>
       <arg>--natsettings<replaceable>N</replaceable>=[<replaceable>mtu</replaceable>],[<replaceable>socksnd</replaceable>],[<replaceable>sockrcv</replaceable>],[<replaceable>tcpsnd</replaceable>],[<replaceable>tcprcv</replaceable>]</arg>
       <arg>--nataliasmode<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">default</arg>
@@ -1672,6 +1676,13 @@ it unless this changes. -->
               Specifies whether the NAT engine uses the host system's
               resolver mechanisms to handle DNS requests. See
               <xref linkend="nat-adv-dns" />.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--natlocalhostreachable<replaceable>N</replaceable>=on | off</option></term>
+          <listitem><para>
+              Specifies whether the NAT engine allows traffic from the guest directed to
+              10.0.2.2 to pass to the host's loopback interface, i.e. localhost or 127.0.0.1.
             </para></listitem>
         </varlistentry>
         <varlistentry>

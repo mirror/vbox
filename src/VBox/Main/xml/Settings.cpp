@@ -1473,6 +1473,17 @@ bool ConfigFileBase::fileExists()
 }
 
 /**
+ * Returns the settings file version
+ *
+ * @returns Settings file version enum.
+ */
+SettingsVersion_T ConfigFileBase::getSettingsVersion()
+{
+    return m->sv;
+}
+
+
+/**
  * Copies the base variables from another instance. Used by Machine::saveSettings
  * so that the settings version does not get lost when a copy of the Machine settings
  * file is made to see if settings have actually changed.
@@ -3029,7 +3040,8 @@ NAT::NAT() :
     fDNSUseHostResolver(false),
     fAliasLog(false),
     fAliasProxyOnly(false),
-    fAliasUseSamePorts(false)
+    fAliasUseSamePorts(false),
+    fLocalhostReachable(true) /* Historically this value is true. */
 {
 }
 
@@ -3060,10 +3072,26 @@ bool NAT::areTFTPDefaultSettings() const
 }
 
 /**
+ * Check whether the localhost-reachable setting is the default for the given settings version.
+ */
+bool NAT::areLocalhostReachableDefaultSettings(SettingsVersion_T sv) const
+{
+    return    (   fLocalhostReachable
+                && sv < SettingsVersion_v1_19)
+           || (   !fLocalhostReachable
+                && sv >= SettingsVersion_v1_19);
+}
+
+/**
  * Check if all settings have default values.
  */
-bool NAT::areDefaultSettings() const
+bool NAT::areDefaultSettings(SettingsVersion_T sv) const
 {
+    /*
+     * Before settings version 1.19 localhost was reachable by default
+     * when using NAT which was changed with version 1.19+, see @bugref{9896}
+     * for more information.
+     */
     return strNetwork.isEmpty()
         && strBindIP.isEmpty()
         && u32Mtu == 0
@@ -3074,7 +3102,8 @@ bool NAT::areDefaultSettings() const
         && areDNSDefaultSettings()
         && areAliasDefaultSettings()
         && areTFTPDefaultSettings()
-        && mapRules.size() == 0;
+        && mapRules.size() == 0
+        && areLocalhostReachableDefaultSettings(sv);
 }
 
 /**
@@ -3101,6 +3130,7 @@ bool NAT::operator==(const NAT &n) const
             && fAliasLog           == n.fAliasLog
             && fAliasProxyOnly     == n.fAliasProxyOnly
             && fAliasUseSamePorts  == n.fAliasUseSamePorts
+            && fLocalhostReachable == n.fLocalhostReachable
             && mapRules            == n.mapRules);
 }
 
@@ -3144,7 +3174,7 @@ bool NetworkAdapter::areDefaultSettings(SettingsVersion_T sv) const
         && ulLineSpeed == 0
         && enmPromiscModePolicy == NetworkAdapterPromiscModePolicy_Deny
         && mode == NetworkAttachmentType_Null
-        && nat.areDefaultSettings()
+        && nat.areDefaultSettings(sv)
         && strBridgedName.isEmpty()
         && strInternalNetworkName.isEmpty()
 #ifdef VBOX_WITH_VMNET
@@ -3161,9 +3191,9 @@ bool NetworkAdapter::areDefaultSettings(SettingsVersion_T sv) const
 /**
  * Special check if settings of the non-current attachment type have default values.
  */
-bool NetworkAdapter::areDisabledDefaultSettings() const
+bool NetworkAdapter::areDisabledDefaultSettings(SettingsVersion_T sv) const
 {
-    return (mode != NetworkAttachmentType_NAT ? nat.areDefaultSettings() : true)
+    return (mode != NetworkAttachmentType_NAT ? nat.areDefaultSettings(sv) : true)
         && (mode != NetworkAttachmentType_Bridged ? strBridgedName.isEmpty() : true)
         && (mode != NetworkAttachmentType_Internal ? strInternalNetworkName.isEmpty() : true)
 #ifdef VBOX_WITH_VMNET
@@ -4176,6 +4206,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         elmMode.getAttributeValue("socksnd", nic.nat.u32SockSnd);
         elmMode.getAttributeValue("tcprcv", nic.nat.u32TcpRcv);
         elmMode.getAttributeValue("tcpsnd", nic.nat.u32TcpSnd);
+        elmMode.getAttributeValue("localhost-reachable", nic.nat.fLocalhostReachable);
         const xml::ElementNode *pelmDNS;
         if ((pelmDNS = elmMode.findChildElement("DNS")))
         {
@@ -6862,7 +6893,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 else
                 {
                     /* m->sv >= SettingsVersion_v1_10 */
-                    if (!nic.areDisabledDefaultSettings())
+                    if (!nic.areDisabledDefaultSettings(m->sv))
                     {
                         xml::ElementNode *pelmDisabledNode = pelmAdapter->createChild("DisabledModes");
                         if (nic.mode != NetworkAttachmentType_NAT)
@@ -7250,11 +7281,11 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
         case NetworkAttachmentType_NAT:
             // For the currently active network attachment type we have to
             // generate the tag, otherwise the attachment type is lost.
-            if (fEnabled || !nic.nat.areDefaultSettings())
+            if (fEnabled || !nic.nat.areDefaultSettings(m->sv))
             {
                 xml::ElementNode *pelmNAT = elmParent.createChild("NAT");
 
-                if (!nic.nat.areDefaultSettings())
+                if (!nic.nat.areDefaultSettings(m->sv))
                 {
                     if (nic.nat.strNetwork.length())
                         pelmNAT->setAttribute("network", nic.nat.strNetwork);
@@ -7270,6 +7301,8 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                         pelmNAT->setAttribute("tcprcv", nic.nat.u32TcpRcv);
                     if (nic.nat.u32TcpSnd)
                         pelmNAT->setAttribute("tcpsnd", nic.nat.u32TcpSnd);
+                    if (!nic.nat.areLocalhostReachableDefaultSettings(m->sv))
+                        pelmNAT->setAttribute("localhost-reachable", nic.nat.fLocalhostReachable);
                     if (!nic.nat.areDNSDefaultSettings())
                     {
                         xml::ElementNode *pelmDNS = pelmNAT->createChild("DNS");
@@ -7960,6 +7993,20 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         {
             m->sv = SettingsVersion_v1_19;
             return;
+        }
+
+        NetworkAdaptersList::const_iterator netit;
+        for (netit = hardwareMachine.llNetworkAdapters.begin();
+             netit != hardwareMachine.llNetworkAdapters.end();
+             ++netit)
+        {
+            if (   netit->fEnabled
+                && netit->mode == NetworkAttachmentType_NAT
+                && !netit->nat.fLocalhostReachable)
+            {
+                m->sv = SettingsVersion_v1_19;
+                break;
+            }
         }
     }
 

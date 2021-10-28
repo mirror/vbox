@@ -221,6 +221,7 @@ class ConfigFileBase
 {
 public:
     bool fileExists();
+    SettingsVersion_T getSettingsVersion();
 
     void copyBaseFrom(const ConfigFileBase &b);
 
@@ -773,7 +774,8 @@ struct NAT
     bool areDNSDefaultSettings() const;
     bool areAliasDefaultSettings() const;
     bool areTFTPDefaultSettings() const;
-    bool areDefaultSettings() const;
+    bool areLocalhostReachableDefaultSettings(SettingsVersion_T sv) const;
+    bool areDefaultSettings(SettingsVersion_T sv) const;
 
     bool operator==(const NAT &n) const;
 
@@ -793,6 +795,7 @@ struct NAT
     bool                    fAliasLog;
     bool                    fAliasProxyOnly;
     bool                    fAliasUseSamePorts;
+    bool                    fLocalhostReachable;
     NATRulesMap             mapRules;
 };
 
@@ -807,7 +810,7 @@ struct NetworkAdapter
 
     bool areGenericDriverDefaultSettings() const;
     bool areDefaultSettings(SettingsVersion_T sv) const;
-    bool areDisabledDefaultSettings() const;
+    bool areDisabledDefaultSettings(SettingsVersion_T sv) const;
 
     bool operator==(const NetworkAdapter &n) const;
 

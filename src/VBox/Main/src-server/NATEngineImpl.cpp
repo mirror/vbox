@@ -187,7 +187,7 @@ void NATEngine::i_applyDefaults()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* so far nothing to do */
+    mData->m->fLocalhostReachable = false; /* Applies to new VMs only, see @bugref{9896} */
 }
 
 bool NATEngine::i_hasDefaults()
@@ -198,7 +198,7 @@ bool NATEngine::i_hasDefaults()
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return mData->m->areDefaultSettings();
+    return mData->m->areDefaultSettings(mParent->i_getSettingsVersion());
 }
 
 HRESULT NATEngine::getNetworkSettings(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULONG *aTcpWndSnd, ULONG *aTcpWndRcv)
@@ -430,6 +430,26 @@ HRESULT NATEngine::getHostIP(com::Utf8Str &aBindIP)
 
     if (!mData->m->strBindIP.isEmpty())
         aBindIP = mData->m->strBindIP;
+    return S_OK;
+}
+
+HRESULT NATEngine::setLocalhostReachable(BOOL fLocalhostReachable)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->m->fLocalhostReachable != RT_BOOL(fLocalhostReachable))
+    {
+        mData->m.backup();
+        mData->m->fLocalhostReachable = RT_BOOL(fLocalhostReachable);
+        mParent->i_setModified(Machine::IsModified_NetworkAdapters);
+    }
+    return S_OK;
+}
+
+HRESULT NATEngine::getLocalhostReachable(BOOL *pfLocalhostReachable)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *pfLocalhostReachable = mData->m->fLocalhostReachable;
     return S_OK;
 }
 

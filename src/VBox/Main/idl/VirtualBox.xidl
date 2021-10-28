@@ -24306,7 +24306,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INATEngine" extends="$unknown"
-    uuid="8faef61e-6e15-4f71-a6a5-94e707fafbcc"
+    uuid="a06253a7-dcd2-44e3-8689-9c9c4b6b6234"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -24353,6 +24353,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="redirects" type="wstring" readonly="yes" safearray="yes">
       <desc>Array of NAT port-forwarding rules in string representation, in the following
         format: "name,protocol id,host ip,host port,guest ip,guest port".</desc>
+    </attribute>
+    <attribute name="LocalhostReachable" type="boolean">
+      <desc>Whether traffic from the guest directed to 10.0.2.2 will reach the
+        host's loopback interface, i.e. localhost or 127.0.0.1.</desc>
     </attribute>
     <method name="setNetworkSettings">
       <desc>Sets network configuration of the NAT engine.</desc>

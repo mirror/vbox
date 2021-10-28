@@ -547,6 +547,7 @@ public:
     Utf8Str i_getHardeningLogFilename(void);
     Utf8Str i_getDefaultNVRAMFilename();
     Utf8Str i_getSnapshotNVRAMFilename();
+    SettingsVersion_T i_getSettingsVersion(void);
 
     void i_composeSavedStateFilename(Utf8Str &strStateFilePath);
 

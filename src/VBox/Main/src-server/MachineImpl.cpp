@@ -7313,6 +7313,19 @@ Utf8Str Machine::i_getSnapshotNVRAMFilename()
 }
 
 /**
+ * Returns the version of the settings file.
+ */
+SettingsVersion_T Machine::i_getSettingsVersion(void)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), SettingsVersion_Null);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    return mData->pMachineConfigFile->getSettingsVersion();
+}
+
+/**
  * Composes a unique saved state filename based on the current system time. The filename is
  * granular to the second so this will work so long as no more than one snapshot is taken on
  * a machine per second.

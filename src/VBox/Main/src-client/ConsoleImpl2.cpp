@@ -5514,6 +5514,10 @@ int Console::i_configNetwork(const char *pszDevice,
                 hrc = natEngine->COMGETTER(AliasMode)(&aliasMode);                          H();
                 InsertConfigInteger(pCfg, "AliasMode", aliasMode);
 
+                BOOL fLocalhostReachable;
+                hrc = natEngine->COMGETTER(LocalhostReachable)(&fLocalhostReachable);       H();
+                InsertConfigInteger(pCfg, "LocalhostReachable", fLocalhostReachable);
+
                 /* port-forwarding */
                 SafeArray<BSTR> pfs;
                 hrc = natEngine->COMGETTER(Redirects)(ComSafeArrayAsOutParam(pfs));         H();
