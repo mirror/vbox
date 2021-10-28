@@ -341,14 +341,16 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     {
         STAM_PROFILE_ADV_START(&pVCpu->em.s.StatNEMEntry, a);
 
-#if 0
-        /* Check if a forced reschedule is pending. */
-        if (NEMR3IsRescheduleRequired(pVCpu))
+        /*
+         * Check that we can execute in NEM mode.
+         */
+        if (NEMR3CanExecuteGuest(pVM, pVCpu))
+        { /* likely */ }
+        else
         {
-            rcStrict = VINF_EM_RESCHEDULE;
+            rcStrict = VINF_EM_RESCHEDULE_REM;
             break;
         }
-#endif
 
         /*
          * Process high priority pre-execution raw-mode FFs.
