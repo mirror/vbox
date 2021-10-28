@@ -1906,19 +1906,20 @@ class TestDriver(base.TestDriver):                                              
 
         Returns an empty string if not found / invalid.
         """
+        sAdpName = '';
         if    oNic.adapterType == vboxcon.NetworkAdapterType_Am79C970A \
-           or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C973 \
-           or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C960:
-            return 'pcnet'
+            or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C973 \
+            or oNic.adapterType == vboxcon.NetworkAdapterType_Am79C960:
+            sAdpName = 'pcnet';
         elif    oNic.adapterType == vboxcon.NetworkAdapterType_I82540EM \
-             or oNic.adapterType == vboxcon.NetworkAdapterType_I82543GC \
-             or oNic.adapterType == vboxcon.NetworkAdapterType_I82545EM:
-            return  'e1000'
+            or oNic.adapterType == vboxcon.NetworkAdapterType_I82543GC \
+            or oNic.adapterType == vboxcon.NetworkAdapterType_I82545EM:
+            sAdpName = 'e1000';
         elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio:
-            return 'virtio-net'
+            sAdpName = 'virtio-net';
         elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio_1_0:
-            return 'virtio-net-1-dot-0'
-        return ''
+            sAdpName = 'virtio-net-1-dot-0';
+        return sAdpName;
 
     def getResourceSet(self):
         asRsrcs = [];
