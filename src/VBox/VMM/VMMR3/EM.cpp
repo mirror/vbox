@@ -1143,7 +1143,12 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             EMSTATE enmCheck = emR3Reschedule(pVM, pVCpu);
             if (   enmCheck != EMSTATE_REM
                 && enmCheck != EMSTATE_IEM_THEN_REM)
+            {
+                LogFlow(("emR3RemExecute: emR3Reschedule -> %d -> VINF_EM_RESCHEDULE\n", enmCheck));
+                STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatREMTotal, a);
                 return VINF_EM_RESCHEDULE;
+            }
+            Log2(("emR3RemExecute: emR3Reschedule -> %d\n", enmCheck));
         }
 
     } /* The Inner Loop, recompiled execution mode version. */
@@ -2047,6 +2052,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                             CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
                             /** @todo this really isn't nice, should properly handle this */
                             /* Note! This can still cause a VM-exit (on Intel). */
+                            LogFlow(("Calling TRPMR3InjectEvent: %04x:%08RX64 efl=%#x\n",
+                                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.eflags));
                             rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT, &fInjected);
                             fWakeupPending = true;
                             if (   pVM->em.s.fIemExecutesAll
