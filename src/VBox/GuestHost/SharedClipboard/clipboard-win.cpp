@@ -82,7 +82,7 @@ int SharedClipboardWinOpen(HWND hWnd)
     {
         const DWORD dwLastErr = GetLastError();
         rc = RTErrConvertFromWin32(dwLastErr);
-        LogFunc(("Failed to open clipboard, rc=%Rrc (0x%x)\n", rc, dwLastErr));
+        LogRel(("Failed to open clipboard, rc=%Rrc (0x%x)\n", rc, dwLastErr));
     }
 
     return rc;
