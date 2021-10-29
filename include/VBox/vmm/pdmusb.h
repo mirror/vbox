@@ -434,7 +434,7 @@ typedef PDMUSBREG *PPDMUSBREG;
 typedef PDMUSBREG const *PCPDMUSBREG;
 
 /** Current USBREG version number. */
-#define PDM_USBREG_VERSION                      PDM_VERSION_MAKE(0xeeff, 1, 0)
+#define PDM_USBREG_VERSION                      PDM_VERSION_MAKE(0xeeff, 2, 0)
 
 /** PDM USB Device Flags.
  * @{ */
@@ -862,6 +862,16 @@ typedef struct PDMUSBHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnThreadCreate,(PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADUSB pfnThread,
                                                PFNPDMTHREADWAKEUPUSB pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
+
+    /** @name Exported PDM Thread Functions
+     * @{ */
+    DECLR3CALLBACKMEMBER(int, pfnThreadDestroy,(PPDMTHREAD pThread, int *pRcThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadIAmSuspending,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadIAmRunning,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadSleep,(PPDMTHREAD pThread, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnThreadSuspend,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadResume,(PPDMTHREAD pThread));
+    /** @} */
 
     /**
      * Set up asynchronous handling of a suspend, reset or power off notification.
