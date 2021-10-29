@@ -329,7 +329,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu)
  * @param   pDevIns     The device instance owning the region.
  * @param   hMmio2      Handle to look up.
  */
-DECLINLINE(PPGMREGMMIO2RANGE) pgmR0PhysMMIOExFind(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
+DECLINLINE(PPGMREGMMIO2RANGE) pgmR0PhysMmio2Find(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
 {
     /*
      * We use the lookup table here as list walking is tedious in ring-0 when using
@@ -341,7 +341,6 @@ DECLINLINE(PPGMREGMMIO2RANGE) pgmR0PhysMMIOExFind(PGVM pGVM, PPDMDEVINS pDevIns,
         if (pCur && pCur->pDevInsR3 == pDevIns->pDevInsForR3)
         {
             Assert(pCur->idMmio2 == hMmio2);
-            AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_MMIO2, NULL);
             return pCur;
         }
         Assert(!pCur);
@@ -370,7 +369,7 @@ VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMM
     /*
      * Translate hRegion into a range pointer.
      */
-    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR0PhysMMIOExFind(pGVM, pDevIns, hMmio2);
+    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR0PhysMmio2Find(pGVM, pDevIns, hMmio2);
     AssertReturn(pFirstRegMmio, VERR_NOT_FOUND);
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
     uint8_t * const pvR0  = (uint8_t *)pFirstRegMmio->pvR0;
