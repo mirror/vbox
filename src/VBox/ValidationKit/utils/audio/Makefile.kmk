@@ -90,6 +90,20 @@ vkat_SOURCES  = \
 	$(VKAT_PATH_AUDIO)/AudioMixBuffer.cpp \
 	$(VKAT_PATH_AUDIO)/AudioHlp.cpp
 
+SANITIZE = \
+    -fsanitize=undefined \
+    -fsanitize=address \
+    -fsanitize=return \
+    -fsanitize=bounds \
+    -fsanitize=object-size \
+    -fno-sanitize=alignment \
+    -fno-sanitize=vptr \
+    -fno-common
+
+vkat_CXXFLAGS.linux += $(SANITIZE)
+vkat_CFLAGS.linux   += $(SANITIZE)
+vkat_LDFLAGS.linux  += $(SANITIZE)
+
 # Debug stuff.
 ifdef VBOX_WITH_AUDIO_DEBUG
  vkat_DEFS    += VBOX_WITH_AUDIO_DEBUG
