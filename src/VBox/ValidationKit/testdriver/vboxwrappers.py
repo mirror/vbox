@@ -1613,7 +1613,7 @@ class SessionWrapper(TdTaskBase):
 
         if not self.setupNatForwardingForTxs(iNic):
             return False;
-        reporter.log('set NIC type on slot %s to %s for VM "%s"' % (iNic, eAttachmentType, self.sName));
+        reporter.log('set NIC attachment type on slot %s to %s for VM "%s"' % (iNic, eAttachmentType, self.sName));
         return True;
 
     def setNicMacAddress(self, sMacAddr, iNic = 0):
