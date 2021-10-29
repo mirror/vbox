@@ -20,14 +20,17 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "UICloudMachineSettingsDialog.h"
 #include "UICloudMachineSettingsDialogPage.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
 
 
-UICloudMachineSettingsDialogPage::UICloudMachineSettingsDialogPage(QWidget *pParent, bool fFullScale /* = true */)
+UICloudMachineSettingsDialogPage::UICloudMachineSettingsDialogPage(QWidget *pParent,
+                                                                   bool fFullScale /* = true */)
     : QWidget(pParent)
+    , m_pParent(qobject_cast<UICloudMachineSettingsDialog*>(pParent))
     , m_fFullScale(fFullScale)
 {
     prepare();
@@ -60,7 +63,7 @@ void UICloudMachineSettingsDialogPage::prepare()
         pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Prepare form editor widget: */
-        m_pFormEditor = new UIFormEditorWidget(this);
+        m_pFormEditor = new UIFormEditorWidget(this, m_pParent ? m_pParent->notificationCenter() : 0);
         if (m_pFormEditor)
         {
             /* Make form-editor fit 12 sections in height by default: */

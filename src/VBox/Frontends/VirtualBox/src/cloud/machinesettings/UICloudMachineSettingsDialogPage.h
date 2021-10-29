@@ -32,6 +32,9 @@
 #include "COMEnums.h"
 #include "CForm.h"
 
+/* Forward declarations: */
+class UICloudMachineSettingsDialog;
+
 /** Cloud machine settings dialog page. */
 class UICloudMachineSettingsDialogPage : public QWidget
 {
@@ -70,6 +73,9 @@ private:
 
     /** Updates editor. */
     void updateEditor();
+
+    /** Holds the parent cloud machine settings dialog reference. */
+    UICloudMachineSettingsDialog *m_pParent;
 
     /** Holds whether this page is full-scale and should reflect at least 12 fields. */
     bool  m_fFullScale;

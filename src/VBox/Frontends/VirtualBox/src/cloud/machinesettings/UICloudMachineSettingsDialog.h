@@ -36,6 +36,7 @@
 
 /* Forward declarations: */
 class QIDialogButtonBox;
+class UINotificationCenter;
 
 /** Cloud machine settings dialog. */
 class UICloudMachineSettingsDialog : public QIWithRetranslateUI<QDialog>
@@ -46,6 +47,11 @@ public:
 
     /** Constructs @a comCloudMachine settings dialog passing @a pParent to the base-class. */
     UICloudMachineSettingsDialog(QWidget *pParent, const CCloudMachine &comCloudMachine);
+    /** Destructs cloud machine settings dialog. */
+    virtual ~UICloudMachineSettingsDialog() /* override final */;
+
+    /** Returns local notification-center reference. */
+    UINotificationCenter *notificationCenter() const { return m_pNotificationCenter; }
 
 public slots:
 
@@ -72,6 +78,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the cloud machine object reference. */
     CCloudMachine  m_comCloudMachine;
@@ -84,6 +92,9 @@ private:
     UISafePointerCloudMachineSettingsDialogPage  m_pPage;
     /** Holds the dialog button-box instance. */
     QIDialogButtonBox                           *m_pButtonBox;
+
+    /** Holds the local notification-center instance. */
+    UINotificationCenter *m_pNotificationCenter;
 };
 
 /** Safe pointer to cloud machine settings dialog. */

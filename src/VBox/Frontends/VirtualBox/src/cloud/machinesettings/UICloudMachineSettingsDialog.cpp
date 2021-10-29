@@ -21,10 +21,10 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
-#include "UIMessageCenter.h"
 #include "UICloudMachineSettingsDialog.h"
 #include "UICloudMachineSettingsDialogPage.h"
 #include "UICloudNetworkingStuff.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CProgress.h"
@@ -35,8 +35,14 @@ UICloudMachineSettingsDialog::UICloudMachineSettingsDialog(QWidget *pParent, con
     , m_comCloudMachine(comCloudMachine)
     , m_pPage(0)
     , m_pButtonBox(0)
+    , m_pNotificationCenter(0)
 {
     prepare();
+}
+
+UICloudMachineSettingsDialog::~UICloudMachineSettingsDialog()
+{
+    cleanup();
 }
 
 int UICloudMachineSettingsDialog::exec()
@@ -99,6 +105,9 @@ void UICloudMachineSettingsDialog::sltRefresh()
 
 void UICloudMachineSettingsDialog::prepare()
 {
+    /* Prepare local notification-center (parent to be assigned in the end): */
+    m_pNotificationCenter = new UINotificationCenter(0);
+
     /* Prepare layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
@@ -127,6 +136,16 @@ void UICloudMachineSettingsDialog::prepare()
         }
     }
 
+    /* Assign notification-center parent (after everything else is done): */
+    m_pNotificationCenter->setParent(this);
+
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UICloudMachineSettingsDialog::cleanup()
+{
+    /* Cleanup local notification-center: */
+    delete m_pNotificationCenter;
+    m_pNotificationCenter = 0;
 }
