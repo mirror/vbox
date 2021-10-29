@@ -64,13 +64,15 @@ freebsd-misc_SOURCES = \
 freebsd-misc_CLEAN = $(freebsd-misc_0_OUTDIR)/virtualbox.desktop
 freebsd-misc_CLEAN += $(freebsd-misc_0_OUTDIR)/virtualboxvm.desktop
 
-$$(PATH_freebsd-misc)/virtualbox.desktop: $(PATH_SUB_CURRENT)/virtualbox.desktop $(VBOX_VERSION_STAMP) | $$(dir $$@)
+$$(PATH_freebsd-misc)/virtualbox.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
-$$(PATH_freebsd-misc)/virtualboxvm.desktop: $(PATH_SUB_CURRENT)/virtualboxvm.desktop $(VBOX_VERSION_STAMP) | $$(dir $$@)
+	$(QUIET)$(SED) -e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+		--output $@ $<
+
+$$(PATH_freebsd-misc)/virtualboxvm.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualboxvm.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
-
-
-
+	$(QUIET)$(SED) -e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
+		--output $@ $<
 #
 # The files residing in bin/ that we'll ship.
 #
