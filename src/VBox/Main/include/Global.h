@@ -48,6 +48,7 @@
 #define VBOXOSHINT_EFI_SECUREBOOT       RT_BIT(16)
 #define VBOXOSHINT_TPM                  RT_BIT(17)
 #define VBOXOSHINT_TPM2                 RT_BIT(18)
+#define VBOXOSHINT_WDDM_GRAPHICS        RT_BIT(19)
 
 /** The VBoxVRDP kludge extension pack name.
  *

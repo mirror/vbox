@@ -449,4 +449,12 @@ HRESULT GuestOSType::getRecommendedSecureBoot(BOOL *aRecommendedSecureBoot)
     return S_OK;
 }
 
+HRESULT GuestOSType::getRecommendedWDDMGraphics(BOOL *aRecommendedWDDMGraphics)
+{
+    /* Value is constant during life time, no need to lock */
+    *aRecommendedWDDMGraphics = !!(mOSHint & VBOXOSHINT_WDDM_GRAPHICS);
+
+    return S_OK;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

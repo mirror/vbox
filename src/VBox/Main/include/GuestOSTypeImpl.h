@@ -91,6 +91,7 @@ private:
     HRESULT getRecommendedCPUCount(ULONG *aRecommendedCPUCount);
     HRESULT getRecommendedTpmType(TpmType_T *aRecommendedTpmType);
     HRESULT getRecommendedSecureBoot(BOOL *aRecommendedSecureBoot);
+    HRESULT getRecommendedWDDMGraphics(BOOL *aRecommendedWDDMGraphics);
 
 
     const Utf8Str mFamilyID;
