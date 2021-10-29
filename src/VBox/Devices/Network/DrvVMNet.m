@@ -327,7 +327,7 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
 {
     xpc_object_t interface_desc;
     dispatch_semaphore_t operation_done;
-    __block vmnet_return_t vmnet_status = VMNET_SUCCESS;
+    __block vmnet_return_t vmnet_status = VMNET_FAILURE;
     __block size_t max_packet_size = 0;
     //__block RTMAC MacAddress;
 
@@ -399,7 +399,11 @@ static vmnet_return_t drvVMNetAttach(PDRVVMNET pThis)
         }
         dispatch_semaphore_signal(operation_done);
     });
-    dispatch_semaphore_wait(operation_done, dispatch_time(DISPATCH_TIME_NOW, RT_NS_10SEC));
+    if (dispatch_semaphore_wait(operation_done, dispatch_time(DISPATCH_TIME_NOW, RT_NS_10SEC)))
+    {
+        LogRel(("VMNet: Failed to start VMNET interface due to time out!\n"));
+        return VMNET_FAILURE;
+    }
 
     if (vmnet_status != VMNET_SUCCESS)
         return vmnet_status;
