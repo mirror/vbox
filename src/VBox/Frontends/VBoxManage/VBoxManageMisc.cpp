@@ -27,6 +27,7 @@
 # include <VBox/com/ErrorInfo.h>
 # include <VBox/com/errorprint.h>
 # include <VBox/com/VirtualBox.h>
+# include <VBox/com/NativeEventQueue.h>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/asm.h>
@@ -1051,6 +1052,21 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
     {
         Bstr bstrLanguage(a->argv[1]);
         CHECK_ERROR(systemProperties, COMSETTER(LanguageId)(bstrLanguage.raw()));
+
+        /* Kudge alert! Make sure the language change notification is processed,
+                        otherwise it may arrive as (XP)COM shuts down and cause
+                        trouble in debug builds. */
+# ifdef DEBUG
+        uint64_t const tsStart = RTTimeNanoTS();
+# endif
+        unsigned cMsgs = 0;
+        int vrc;
+        while (   RT_SUCCESS(vrc = NativeEventQueue::getMainEventQueue()->processEventQueue(32 /*ms*/))
+               || vrc == VERR_INTERRUPTED)
+            cMsgs++;
+# ifdef DEBUG
+        RTPrintf("vrc=%Rrc cMsgs=%u nsElapsed=%'RU64\n", vrc, cMsgs, RTTimeNanoTS() - tsStart);
+# endif
     }
 #endif
     else
