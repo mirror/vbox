@@ -16,12 +16,21 @@
     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 -->
 
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:stylesheet
+  version="1.0"
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:str="http://xsltsl.org/string"
+  exclude-result-prefixes="str"
+>
+<!-- The exclude-result-prefixes attribute is needed since otherwise the <tt>
+  tag added for the ID in interface and enum descriptions would get the
+  namespace, confusing doxygen completely. -->
+
+<xsl:import href="string.xsl"/>
+
 <xsl:output method="html" indent="yes"/>
 
 <xsl:strip-space elements="*"/>
-
-<xsl:include href="typemap-shared.inc.xsl" />
 
 
 <!--
@@ -45,6 +54,21 @@
   <xsl:copy>
     <xsl:apply-templates/>
   </xsl:copy>
+</xsl:template>
+
+<!--
+ * special treatment of <tt>, making sure that Doxygen will not interpret its
+ * contents (assuming it is a leaf tag)
+-->
+<xsl:template match="desc//tt/text()">
+  <xsl:variable name="subst1">
+    <xsl:call-template name="str:subst">
+      <xsl:with-param name="text" select="." />
+      <xsl:with-param name="replace" select="'::'" />
+      <xsl:with-param name="with" select="'\::'" />
+    </xsl:call-template>
+  </xsl:variable>
+  <xsl:value-of select="$subst1"/>
 </xsl:template>
 
 <!--
@@ -234,8 +258,8 @@
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
 @par Interface ID:
-<tt>{<xsl:call-template name="string-to-upper">
-    <xsl:with-param name="str" select="../@uuid"/>
+<tt>{<xsl:call-template name="str:to-upper">
+    <xsl:with-param name="text" select="../@uuid"/>
   </xsl:call-template>}</tt>
   <xsl:text>&#x0A;*/&#x0A;</xsl:text>
 </xsl:template>
@@ -302,8 +326,8 @@ owns the object will most likely fail or crash your application.
   <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="." mode="middle"/>
 @par Interface ID:
-<tt>{<xsl:call-template name="string-to-upper">
-    <xsl:with-param name="str" select="../@uuid"/>
+<tt>{<xsl:call-template name="str:to-upper">
+    <xsl:with-param name="text" select="../@uuid"/>
   </xsl:call-template>}</tt>
   <xsl:text>&#x0A;*/&#x0A;</xsl:text>
 </xsl:template>

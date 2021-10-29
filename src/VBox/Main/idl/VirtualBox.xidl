@@ -2153,8 +2153,8 @@
       <desc>Value format is specific to the option and generally user friendly.</desc>
     </const>
     <const name="Hex"                    value="1">
-      <desc>Value format is a series of hex bytes (09314f3200fe), optionally colons
-        as byte separators (9:31:4f:32::fe).</desc>
+      <desc>Value format is a series of hex bytes (<tt>09314f3200fe</tt>),
+        optionally colons as byte separators (<tt>9:31:4f:32::fe</tt>).</desc>
     </const>
   </enum>
 
