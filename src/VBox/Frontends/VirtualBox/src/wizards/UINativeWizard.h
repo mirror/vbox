@@ -135,7 +135,7 @@ protected:
       * such as folder deletion in New VM wizard etc. */
     virtual void cleanWizard() {}
 
-protected slots:
+private slots:
 
     /** Handles current-page change to page with @a iIndex. */
     void sltCurrentIndexChanged(int iIndex = -1);
