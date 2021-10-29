@@ -391,7 +391,11 @@ public:
 
     /** @name VirtualBox Manager / Cloud machine settings warnings.
       * @{ */
-        void cannotAssignFormValue(const QString &strError, QWidget *pParent = 0) const;
+        void cannotAssignFormValue(const CBooleanFormValue &comValue, QWidget *pParent = 0) const;
+        void cannotAssignFormValue(const CStringFormValue &comValue, QWidget *pParent = 0) const;
+        void cannotAssignFormValue(const CChoiceFormValue &comValue, QWidget *pParent = 0) const;
+        void cannotAssignFormValue(const CRangedIntegerFormValue &comValue, QWidget *pParent = 0) const;
+        void cannotAssignFormValue(const CProgress &comProgress, QWidget *pParent = 0) const;
     /** @} */
 
     /** @name VirtualBox Manager / Downloading warnings.

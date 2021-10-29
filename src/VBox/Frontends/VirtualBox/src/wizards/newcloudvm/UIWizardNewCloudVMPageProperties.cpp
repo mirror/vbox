@@ -78,14 +78,6 @@ UIWizardNewCloudVMPageProperties::UIWizardNewCloudVMPageProperties()
             pLayoutMain->addWidget(m_pFormEditor);
         }
     }
-
-    /* Setup connections: */
-    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
-            this, &UIWizardNewCloudVMPageProperties::sigProgressStarted);
-    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
-            this, &UIWizardNewCloudVMPageProperties::sigProgressChange);
-    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
-            this, &UIWizardNewCloudVMPageProperties::sigProgressFinished);
 }
 
 UIWizardNewCloudVM *UIWizardNewCloudVMPageProperties::wizard() const

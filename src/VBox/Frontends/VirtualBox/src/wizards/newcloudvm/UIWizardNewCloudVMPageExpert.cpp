@@ -201,12 +201,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
             this, &UIWizardNewCloudVMPageExpert::sltHandleSourceTabBarChange);
     connect(m_pSourceImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange);
-    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressStarted,
-            this, &UIWizardNewCloudVMPageExpert::sigProgressStarted);
-    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressChange,
-            this, &UIWizardNewCloudVMPageExpert::sigProgressChange);
-    connect(m_pFormEditor, &UIFormEditorWidget::sigProgressFinished,
-            this, &UIWizardNewCloudVMPageExpert::sigProgressFinished);
 }
 
 UIWizardNewCloudVM *UIWizardNewCloudVMPageExpert::wizard() const
