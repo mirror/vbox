@@ -19,7 +19,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPainter>
-#include <QProgressBar>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QStyle>
@@ -92,8 +91,6 @@ UINativeWizard::UINativeWizard(QWidget *pParent,
     , m_pLayoutRight(0)
     , m_pLabelPageTitle(0)
     , m_pWidgetStack(0)
-    , m_pProgressStack(0)
-    , m_pProgressBar(0)
     , m_pNotificationCenter(0)
 {
     prepare();
@@ -172,12 +169,6 @@ int UINativeWizard::addPage(UINativeWizardPage *pPage)
     /* Make sure wizard is aware of page validity changes: */
     connect(pPage, &UINativeWizardPage::completeChanged,
             this, &UINativeWizard::sltCompleteChanged);
-    connect(pPage, &UINativeWizardPage::sigProgressStarted,
-            this, &UINativeWizard::sltHandleProgressStarted);
-    connect(pPage, &UINativeWizardPage::sigProgressChange,
-            this, &UINativeWizard::sltHandleProgressChange);
-    connect(pPage, &UINativeWizardPage::sigProgressFinished,
-            this, &UINativeWizard::sltHandleProgressFinished);
 
     /* Returns added page index: */
     return iIndex;
@@ -238,23 +229,6 @@ void UINativeWizard::retranslateUi()
     AssertMsgReturnVoid(pButtonCancel, ("No Cancel wizard button found!\n"));
     pButtonCancel->setText(tr("&Cancel"));
     pButtonCancel->setToolTip(tr("Cancel wizard execution."));
-}
-
-void UINativeWizard::sltHandleProgressStarted()
-{
-    m_pProgressStack->setCurrentIndex(1);
-}
-
-void UINativeWizard::sltHandleProgressChange(ulong uPercent)
-{
-    m_pProgressBar->setMinimum(0);
-    m_pProgressBar->setValue(uPercent);
-    m_pProgressBar->setMaximum(100);
-}
-
-void UINativeWizard::sltHandleProgressFinished()
-{
-    m_pProgressStack->setCurrentIndex(0);
 }
 
 void UINativeWizard::sltCurrentIndexChanged(int iIndex /* = -1 */)
@@ -507,28 +481,7 @@ void UINativeWizard::prepare()
                     if (pButton)
                         pLayoutBottom->addWidget(pButton);
                     if (enmType == WizardButtonType_Help)
-                    {
-                        /* Prepare progress-stack: */
-                        m_pProgressStack = new QStackedWidget(pWidgetBottom);
-                        if (m_pProgressStack)
-                        {
-                            /* Prepare stretch: */
-                            QWidget *pStretch = new QWidget(m_pProgressStack);
-                            if (pStretch)
-                                m_pProgressStack->addWidget(pStretch);
-
-                            /* Prepare progress-bar: */
-                            m_pProgressBar = new QProgressBar(m_pProgressStack);
-                            if (m_pProgressBar)
-                            {
-                                m_pProgressBar->setMaximum(0);
-                                m_pProgressStack->addWidget(m_pProgressBar);
-                            }
-
-                            /* Add to layout: */
-                            pLayoutBottom->addWidget(m_pProgressStack);
-                        }
-                    }
+                        pLayoutBottom->addStretch(1);
                     if (   pButton
                         && enmType == WizardButtonType_Next)
                         pButton->setDefault(true);
