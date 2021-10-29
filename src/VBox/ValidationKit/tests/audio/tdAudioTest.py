@@ -745,6 +745,15 @@ class tdAudioTest(vbox.TestDriver):
                         enmAudioControllerType = vboxcon.AudioControllerType_SB16;
                     assert enmAudioControllerType is not None;
 
+                # For now we're encforcing to test the HDA emulation only, regardless of
+                # what the recommended audio controller type from above was.
+                ## @todo Make other emulations work as well.
+                fEncforceHDA = True;
+
+                if fEncforceHDA:
+                    enmAudioControllerType = vboxcon.AudioControllerType_HDA;
+                    reporter.log('Enforcing audio controller type to HDA');
+
                 reporter.log('Setting user-defined audio controller type to %d' % (enmAudioControllerType));
                 oSession.setupAudio(enmAudioControllerType,
                                     fEnable = True, fEnableIn = True, fEnableOut = True);
