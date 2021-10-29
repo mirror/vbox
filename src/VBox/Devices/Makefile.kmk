@@ -874,7 +874,6 @@ endif
 
  VBoxDD_LIBS            += \
  	$(PATH_STAGE_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
-    $(LIB_VMM) \
  	$(LIB_RUNTIME)
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_LIBS           += \
@@ -1173,7 +1172,6 @@ endif
 	  $(if $(VBOX_WITH_INTEL_PXE),\
 	    $(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),\
 	    $(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
- 	$(LIB_VMM) \
  	$(LIB_RUNTIME)
  VBoxDD2_LIBS.darwin    += $(LIB_REM)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
