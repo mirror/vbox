@@ -15,6 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_VIRTUALBOXCLIENT /** @todo add separate logging group! */
+#include "LoggingNew.h"
+
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
@@ -30,8 +37,16 @@
 #include "QMTranslator.h"
 #include "VirtualBoxTranslator.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define TRANSLATOR_CACHE_SIZE 32
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** Init once for the critical section. */
 static RTONCE               g_Once = RTONCE_INITIALIZER;
 RTCRITSECTRW                VirtualBoxTranslator::s_instanceRwLock;
@@ -40,6 +55,8 @@ VirtualBoxTranslator       *VirtualBoxTranslator::s_pInstance = NULL;
 static RTTLS                g_idxTlsTr = NIL_RTTLS;
 /** TLS index that points to the original text. */
 static RTTLS                g_idxTlsSrc = NIL_RTTLS;
+
+
 
 /**
  * @callback_method_impl{FNRTONCE}
@@ -64,11 +81,18 @@ VirtualBoxTranslator::VirtualBoxTranslator()
     m_rcCache = rc;
     if (RT_FAILURE(rc))
         m_hStrCache = NIL_RTSTRCACHE; /* (loadLanguage will fail) */
+    LogFlowFunc(("m_rcCache=%Rrc g_idxTlsTr=%#x g_idxTlsSrc=%#x\n", m_rcCache, g_idxTlsTr, g_idxTlsSrc));
 }
 
 
 VirtualBoxTranslator::~VirtualBoxTranslator()
 {
+    LogFlowFunc(("enter\n"));
+
+    /* Write-lock the object as we could be racing language change
+       notifications processing during XPCOM shutdown. (risky?) */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     RTTlsFree(g_idxTlsTr);
     g_idxTlsTr = NIL_RTTLS;
     RTTlsFree(g_idxTlsSrc);
@@ -90,6 +114,7 @@ VirtualBoxTranslator::~VirtualBoxTranslator()
         m_hStrCache = NIL_RTSTRCACHE;
         m_rcCache = VERR_WRONG_ORDER;
     }
+    LogFlowFunc(("returns\n"));
 }
 
 
@@ -202,6 +227,7 @@ HRESULT VirtualBoxTranslator::loadLanguage(ComPtr<IVirtualBox> aVirtualBox)
 
 int VirtualBoxTranslator::i_loadLanguage(const char *pszLang)
 {
+    LogFlowFunc(("pszLang=%s\n", pszLang));
     int  rc = VINF_SUCCESS;
     char szLocale[256];
     if (pszLang == NULL || *pszLang == '\0')
@@ -240,6 +266,8 @@ int VirtualBoxTranslator::i_loadLanguage(const char *pszLang)
 int VirtualBoxTranslator::i_loadLanguageForComponent(TranslatorComponent *aComponent, const char *aLang)
 {
     AssertReturn(aComponent, VERR_INVALID_PARAMETER);
+    LogFlow(("aComponent=%s aLang=%s\n", aComponent->strPath.c_str(), aLang));
+
     int rc;
     if (strcmp(aLang, "C") != 0)
     {
