@@ -35,7 +35,7 @@
 #include "QIWithRetranslateUI.h"
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "CBooleanFormValue.h"
@@ -319,8 +319,9 @@ class UIFormEditorRow : public QITableViewRow
 
 public:
 
-    /** Constructs table row on the basis of certain @a comValue, passing @a pParent to the base-class. */
-    UIFormEditorRow(QITableView *pParent, const CFormValue &comValue);
+    /** Constructs table row on the basis of certain @a comValue, passing @a pParent to the base-class.
+      * @param  pFormEditorWidget  Brings the root form-editor widget reference. */
+    UIFormEditorRow(QITableView *pParent, UIFormEditorWidget *pFormEditorWidget, const CFormValue &comValue);
     /** Destructs table row. */
     virtual ~UIFormEditorRow() /* override */;
 
@@ -383,6 +384,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
+    /** Holds the root form-editor widget reference. */
+    UIFormEditorWidget *m_pFormEditorWidget;
+
     /** Holds the row value. */
     CFormValue  m_comValue;
 
@@ -418,7 +422,7 @@ class UIFormEditorModel : public QAbstractTableModel
 public:
 
     /** Constructs Form Editor model passing @a pParent to the base-class. */
-    UIFormEditorModel(QITableView *pParent);
+    UIFormEditorModel(UIFormEditorWidget *pParent);
     /** Destructs Port Forwarding model. */
     virtual ~UIFormEditorModel() /* override */;
 
@@ -467,6 +471,9 @@ private:
 
     /** Returns icon hint for specified @a strItemName. */
     QIcon iconHint(const QString &strItemName) const;
+
+    /** Holds the root form-editor widget reference. */
+    UIFormEditorWidget *m_pFormEditorWidget;
 
     /** Holds the Form Editor row list. */
     QList<UIFormEditorRow*>  m_dataList;
@@ -671,8 +678,9 @@ UIFormEditorCell::UIFormEditorCell(QITableViewRow *pParent, const QString &strTe
 *   Class UIFormEditorRow implementation.                                                                                        *
 *********************************************************************************************************************************/
 
-UIFormEditorRow::UIFormEditorRow(QITableView *pParent, const CFormValue &comValue)
+UIFormEditorRow::UIFormEditorRow(QITableView *pParent, UIFormEditorWidget *pFormEditorWidget, const CFormValue &comValue)
     : QITableViewRow(pParent)
+    , m_pFormEditorWidget(pFormEditorWidget)
     , m_comValue(comValue)
     , m_enmValueType(KFormValueType_Max)
     , m_iGeneration(0)
@@ -721,24 +729,12 @@ void UIFormEditorRow::setBool(bool fBool)
 {
     AssertReturnVoid(valueType() == KFormValueType_Boolean);
     CBooleanFormValue comValue(m_comValue);
-    CProgress comProgress = comValue.SetSelected(fBool);
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    UINotificationProgressVsdFormValueSet *pNotification = new UINotificationProgressVsdFormValueSet(comValue,
+                                                                                                     fBool);
+    UINotificationCenter *pCenter = m_pFormEditorWidget->notificationCenter()
+                                  ? m_pFormEditorWidget->notificationCenter() : gpNotificationCenter;
+    pCenter->handleNow(pNotification);
+    updateValueCells();
 }
 
 bool UIFormEditorRow::isMultilineString() const
@@ -757,24 +753,12 @@ void UIFormEditorRow::setText(const TextData &text)
 {
     AssertReturnVoid(valueType() == KFormValueType_String);
     CStringFormValue comValue(m_comValue);
-    CProgress comProgress = comValue.SetString(text.text());
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    UINotificationProgressVsdFormValueSet *pNotification = new UINotificationProgressVsdFormValueSet(comValue,
+                                                                                                     text.text());
+    UINotificationCenter *pCenter = m_pFormEditorWidget->notificationCenter()
+                                  ? m_pFormEditorWidget->notificationCenter() : gpNotificationCenter;
+    pCenter->handleNow(pNotification);
+    updateValueCells();
 }
 
 QString UIFormEditorRow::toString() const
@@ -787,24 +771,12 @@ void UIFormEditorRow::setString(const QString &strString)
 {
     AssertReturnVoid(valueType() == KFormValueType_String);
     CStringFormValue comValue(m_comValue);
-    CProgress comProgress = comValue.SetString(strString);
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    UINotificationProgressVsdFormValueSet *pNotification = new UINotificationProgressVsdFormValueSet(comValue,
+                                                                                                     strString);
+    UINotificationCenter *pCenter = m_pFormEditorWidget->notificationCenter()
+                                  ? m_pFormEditorWidget->notificationCenter() : gpNotificationCenter;
+    pCenter->handleNow(pNotification);
+    updateValueCells();
 }
 
 ChoiceData UIFormEditorRow::toChoice() const
@@ -821,24 +793,12 @@ void UIFormEditorRow::setChoice(const ChoiceData &choice)
 
     AssertReturnVoid(valueType() == KFormValueType_Choice);
     CChoiceFormValue comValue(m_comValue);
-    CProgress comProgress = comValue.SetSelectedIndex(choice.selectedIndex());
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    UINotificationProgressVsdFormValueSet *pNotification = new UINotificationProgressVsdFormValueSet(comValue,
+                                                                                                     choice.selectedIndex());
+    UINotificationCenter *pCenter = m_pFormEditorWidget->notificationCenter()
+                                  ? m_pFormEditorWidget->notificationCenter() : gpNotificationCenter;
+    pCenter->handleNow(pNotification);
+    updateValueCells();
 }
 
 RangedIntegerData UIFormEditorRow::toRangedInteger() const
@@ -851,24 +811,12 @@ void UIFormEditorRow::setRangedInteger(const RangedIntegerData &rangedInteger)
 {
     AssertReturnVoid(valueType() == KFormValueType_RangedInteger);
     CRangedIntegerFormValue comValue(m_comValue);
-    CProgress comProgress = comValue.SetInteger(rangedInteger.integer());
-
-    /* Show error message if necessary: */
-    if (!comValue.isOk())
-        msgCenter().cannotAssignFormValue(comValue, table()->window());
-    else
-    {
-        /* Show "Acquire export form" progress: */
-        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value ..."),
-                                            ":/progress_refresh_90px.png",
-                                            table()->window(), 0 /* duration */);
-
-        /* Show error message if necessary: */
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAssignFormValue(comProgress, table()->window());
-        else
-            updateValueCells();
-    }
+    UINotificationProgressVsdFormValueSet *pNotification = new UINotificationProgressVsdFormValueSet(comValue,
+                                                                                                     rangedInteger.integer());
+    UINotificationCenter *pCenter = m_pFormEditorWidget->notificationCenter()
+                                  ? m_pFormEditorWidget->notificationCenter() : gpNotificationCenter;
+    pCenter->handleNow(pNotification);
+    updateValueCells();
 }
 
 void UIFormEditorRow::updateValueCells()
@@ -977,8 +925,9 @@ void UIFormEditorRow::cleanup()
 *   Class UIFormEditorModel implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIFormEditorModel::UIFormEditorModel(QITableView *pParent)
+UIFormEditorModel::UIFormEditorModel(UIFormEditorWidget *pParent)
     : QAbstractTableModel(pParent)
+    , m_pFormEditorWidget(pParent)
 {
     prepare();
 }
@@ -1006,7 +955,7 @@ void UIFormEditorModel::setFormValues(const CFormValueVector &values)
     /* Add new lines: */
     beginInsertRows(QModelIndex(), 0, values.size() - 1);
     foreach (const CFormValue &comValue, values)
-        m_dataList << new UIFormEditorRow(parentTable(), comValue);
+        m_dataList << new UIFormEditorRow(parentTable(), m_pFormEditorWidget, comValue);
     endInsertRows();
 }
 
@@ -1428,8 +1377,10 @@ QITableViewRow *UIFormEditorView::childItem(int iIndex) const
 *   Class UIFormEditorWidget implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIFormEditorWidget::UIFormEditorWidget(QWidget *pParent /* = 0 */)
+UIFormEditorWidget::UIFormEditorWidget(QWidget *pParent /* = 0 */,
+                                       UINotificationCenter *pNotificationCenter /* = 0 */)
     : QWidget(pParent)
+    , m_pNotificationCenter(pNotificationCenter)
     , m_pTableView(0)
     , m_pTableModel(0)
 {
@@ -1511,28 +1462,24 @@ void UIFormEditorWidget::prepare()
     {
         pLayout->setContentsMargins(0, 0, 0, 0);
 
+        /* Create model: */
+        m_pTableModel = new UIFormEditorModel(this);
+
+        /* Create proxy-model: */
+        UIFormEditorProxyModel *pProxyModel = new UIFormEditorProxyModel(this);
+        if (pProxyModel)
+            pProxyModel->setSourceModel(m_pTableModel);
+
         /* Create view: */
         m_pTableView = new UIFormEditorView(this);
         if (m_pTableView)
         {
+            m_pTableView->setModel(pProxyModel);
             m_pTableView->setTabKeyNavigation(false);
             m_pTableView->verticalHeader()->hide();
             m_pTableView->verticalHeader()->setDefaultSectionSize((int)(m_pTableView->verticalHeader()->minimumSectionSize() * 1.33));
             m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
             m_pTableView->installEventFilter(this);
-
-            /* Create model: */
-            m_pTableModel = new UIFormEditorModel(m_pTableView);
-            if (m_pTableModel)
-            {
-                /* Create proxy-model: */
-                UIFormEditorProxyModel *pProxyModel = new UIFormEditorProxyModel(m_pTableView);
-                if (pProxyModel)
-                {
-                    pProxyModel->setSourceModel(m_pTableModel);
-                    m_pTableView->setModel(pProxyModel);
-                }
-            }
 
             /* We certainly have abstract item delegate: */
             QAbstractItemDelegate *pAbstractItemDelegate = m_pTableView->itemDelegate();

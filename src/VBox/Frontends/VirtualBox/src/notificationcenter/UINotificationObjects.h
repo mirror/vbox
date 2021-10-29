@@ -36,6 +36,7 @@
 #include "CConsole.h"
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
+#include "CFormValue.h"
 #include "CGuest.h"
 #include "CHost.h"
 #include "CHostNetworkInterface.h"
@@ -1962,6 +1963,60 @@ private:
     QUuid    m_uInterfaceId;
     /** Holds the network interface name. */
     QString  m_strInterfaceName;
+};
+
+/** UINotificationProgress extension for virtual system description form value set functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressVsdFormValueSet : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs virtual system description form value set notification-progress.
+      * @param  comValue  Brings our value being set.
+      * @param  fBool     Brings the value our value being set to. */
+    UINotificationProgressVsdFormValueSet(const CBooleanFormValue &comValue, bool fBool);
+
+    /** Constructs virtual system description form value set notification-progress.
+      * @param  comValue   Brings our value being set.
+      * @param  strString  Brings the value our value being set to. */
+    UINotificationProgressVsdFormValueSet(const CStringFormValue &comValue, const QString &strString);
+
+    /** Constructs virtual system description form value set notification-progress.
+      * @param  comValue  Brings our value being set.
+      * @param  iChoice   Brings the value our value being set to. */
+    UINotificationProgressVsdFormValueSet(const CChoiceFormValue &comValue, int iChoice);
+
+    /** Constructs virtual system description form value set notification-progress.
+      * @param  comValue  Brings our value being set.
+      * @param  iInteger  Brings the value our value being set to. */
+    UINotificationProgressVsdFormValueSet(const CRangedIntegerFormValue &comValue, int iInteger);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Value type. */
+    KFormValueType  m_enmType;
+
+    /** Holds our value being set. */
+    CFormValue  m_comValue;
+
+    /** Holds the bool value. */
+    bool     m_fBool;
+    /** Holds the string value. */
+    QString  m_strString;
+    /** Holds the choice value. */
+    int      m_iChoice;
+    /** Holds the integer value. */
+    int      m_iInteger;
 };
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER

@@ -36,18 +36,22 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CBooleanFormValue.h"
+#include "CChoiceFormValue.h"
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CConsole.h"
 #include "CDHCPServer.h"
 #include "CDisplay.h"
+#include "CEmulatedUSB.h"
 #include "CExtPack.h"
 #include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
-#include "CEmulatedUSB.h"
 #include "CMediumAttachment.h"
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
+#include "CRangedIntegerFormValue.h"
+#include "CStringFormValue.h"
 #include "CUnattended.h"
 #include "CVRDEServer.h"
 
@@ -3382,6 +3386,115 @@ void UINotificationProgressHostOnlyNetworkInterfaceRemove::sltHandleProgressFini
 {
     if (error().isEmpty())
         emit sigHostOnlyNetworkInterfaceRemoved(m_strInterfaceName);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressVsdFormValueSet implementation.                                                                  *
+*********************************************************************************************************************************/
+
+UINotificationProgressVsdFormValueSet::UINotificationProgressVsdFormValueSet(const CBooleanFormValue &comValue,
+                                                                             bool fBool)
+    : m_enmType(KFormValueType_Boolean)
+    , m_comValue(comValue)
+    , m_fBool(fBool)
+{
+}
+
+UINotificationProgressVsdFormValueSet::UINotificationProgressVsdFormValueSet(const CStringFormValue &comValue,
+                                                                             const QString &strString)
+    : m_enmType(KFormValueType_String)
+    , m_comValue(comValue)
+    , m_strString(strString)
+{
+}
+
+UINotificationProgressVsdFormValueSet::UINotificationProgressVsdFormValueSet(const CChoiceFormValue &comValue,
+                                                                             int iChoice)
+    : m_enmType(KFormValueType_Choice)
+    , m_comValue(comValue)
+    , m_iChoice(iChoice)
+{
+}
+
+UINotificationProgressVsdFormValueSet::UINotificationProgressVsdFormValueSet(const CRangedIntegerFormValue &comValue,
+                                                                             int iInteger)
+    : m_enmType(KFormValueType_RangedInteger)
+    , m_comValue(comValue)
+    , m_iInteger(iInteger)
+{
+}
+
+QString UINotificationProgressVsdFormValueSet::name() const
+{
+    return UINotificationProgress::tr("Set VSD form value ...");
+}
+
+QString UINotificationProgressVsdFormValueSet::details() const
+{
+    /* Handle known types: */
+    switch (m_enmType)
+    {
+        case KFormValueType_Boolean: return UINotificationProgress::tr("<b>Value:</b> %1").arg(m_fBool);
+        case KFormValueType_String: return UINotificationProgress::tr("<b>Value:</b> %1").arg(m_strString);
+        case KFormValueType_Choice: return UINotificationProgress::tr("<b>Value:</b> %1").arg(m_iChoice);
+        case KFormValueType_RangedInteger: return UINotificationProgress::tr("<b>Value:</b> %1").arg(m_iInteger);
+        default: break;
+    }
+    /* Null-string by default: */
+    return QString();
+}
+
+CProgress UINotificationProgressVsdFormValueSet::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress;
+
+    /* Handle known types: */
+    switch (m_enmType)
+    {
+        case KFormValueType_Boolean:
+        {
+            /* Set value: */
+            CBooleanFormValue comValue(m_comValue);
+            comProgress = comValue.SetSelected(m_fBool);
+            /* Store COM result: */
+            comResult = comValue;
+            break;
+        }
+        case KFormValueType_String:
+        {
+            /* Set value: */
+            CStringFormValue comValue(m_comValue);
+            comProgress = comValue.SetString(m_strString);
+            /* Store COM result: */
+            comResult = comValue;
+            break;
+        }
+        case KFormValueType_Choice:
+        {
+            /* Set value: */
+            CChoiceFormValue comValue(m_comValue);
+            comProgress = comValue.SetSelectedIndex(m_iChoice);
+            /* Store COM result: */
+            comResult = comValue;
+            break;
+        }
+        case KFormValueType_RangedInteger:
+        {
+            /* Set value: */
+            CRangedIntegerFormValue comValue(m_comValue);
+            comProgress = comValue.SetInteger(m_iInteger);
+            /* Store COM result: */
+            comResult = comValue;
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Return progress-wrapper: */
+    return comProgress;
 }
 
 

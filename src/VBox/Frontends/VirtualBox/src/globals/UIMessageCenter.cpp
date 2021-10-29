@@ -1490,41 +1490,6 @@ void UIMessageCenter::cannotAcquireCloudMachineParameter(const CProgress &comPro
           UIErrorString::formatErrorInfo(comProgress));
 }
 
-void UIMessageCenter::cannotAssignFormValue(const CBooleanFormValue &comValue, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign form value."),
-          UIErrorString::formatErrorInfo(comValue));
-}
-
-void UIMessageCenter::cannotAssignFormValue(const CStringFormValue &comValue, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign form value."),
-          UIErrorString::formatErrorInfo(comValue));
-}
-
-void UIMessageCenter::cannotAssignFormValue(const CChoiceFormValue &comValue, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign form value."),
-          UIErrorString::formatErrorInfo(comValue));
-}
-
-void UIMessageCenter::cannotAssignFormValue(const CRangedIntegerFormValue &comValue, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign form value."),
-          UIErrorString::formatErrorInfo(comValue));
-}
-
-void UIMessageCenter::cannotAssignFormValue(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to assign form value."),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIMessageCenter::confirmLookingForGuestAdditions() const
 {
