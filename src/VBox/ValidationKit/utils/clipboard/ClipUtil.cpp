@@ -49,8 +49,13 @@
 #include <iprt/utf16.h>
 #include <iprt/zero.h>
 
-#ifdef RT_OS_WINDOWS
+#ifdef RT_OS_DARWIN
+/** @todo   */
+#elif defined(RT_OS_WINDOWS)
 # include <iprt/nt/nt-and-windows.h>
+#elif !defined(RT_OS_OS2)
+# include <X11/Xlib.h>
+# include <X11/Xatom.h>
 #endif
 
 
@@ -59,8 +64,10 @@
 *********************************************************************************************************************************/
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2) || defined(RT_OS_DARWIN)
 # undef MULTI_TARGET_CLIPBOARD
+# undef CU_X11
 #else
 # define MULTI_TARGET_CLIPBOARD
+# define CU_X11
 #endif
 
 
@@ -91,6 +98,10 @@ typedef struct CLIPUTILFORMAT
     /** Native format (flavor). */
     CFStringRef *hStrFormat;
 #else
+    /** The X11 atom for the format. */
+    Atom        uAtom;
+    /** The X11 atom name if uAtom must be termined dynamically. */
+    const char *pszAtomName;
     /** @todo X11 */
 #endif
 
@@ -104,8 +115,11 @@ typedef CLIPUTILFORMAT const *PCCLIPUTILFORMAT;
 
 /** Convert to/from UTF-8.  */
 #define CLIPUTILFORMAT_F_CONVERT_UTF8       RT_BIT_32(0)
+/** Ad hoc entry.  */
+#define CLIPUTILFORMAT_F_AD_HOC             RT_BIT_32(1)
 
 
+#ifdef MULTI_TARGET_CLIPBOARD
 /**
  * Clipboard target descriptor.
  */
@@ -113,11 +127,16 @@ typedef struct CLIPUTILTARGET
 {
     /** Target name.   */
     const char *pszName;
+    /** The X11 atom for the target. */
+    Atom        uAtom;
+    /** The X11 atom name if uAtom must be termined dynamically. */
+    const char *pszAtomName;
     /** Description. */
     const char *pszDesc;
 } CLIPUTILTARGET;
 /** Pointer to clipboard target descriptor. */
 typedef CLIPUTILTARGET const *PCCLIPUTILTARGET;
+#endif /* MULTI_TARGET_CLIPBOARD */
 
 
 /*********************************************************************************************************************************
@@ -145,7 +164,7 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 };
 
 /** Format descriptors. */
-static const CLIPUTILFORMAT g_aFormats[] =
+static CLIPUTILFORMAT g_aFormats[] =
 {
 #if defined(RT_OS_WINDOWS)
     { "text/ansi",                  CF_TEXT, NULL,              "ANSI text", 0 },
@@ -164,30 +183,57 @@ static const CLIPUTILFORMAT g_aFormats[] =
     { "text/utf-16",                kUTTypeUTF16PlainText,      "UTF-16 text", 0 },
 #else
     /** @todo X11   */
-    { "text/utf-8",                        "UTF-8 text", 0 },
+    { "text/utf-8",                 None, "UTF8_STRING",       "UTF-8 text", 0 },
 #endif
 };
 
+#ifdef MULTI_TARGET_CLIPBOARD
 /** Target descriptors. */
-static const CLIPUTILTARGET g_aTargets[] =
+static CLIPUTILTARGET g_aTargets[] =
 {
-#ifndef MULTI_TARGET_CLIPBOARD
-    { "default", "placeholder" }
-#else
-    { "default", "default" }, /** @todo X11 */
-#endif
+    { "clipboard", 0, "CLIPBOARD",     "XA_CLIPBOARD: The clipboard (default)" },
+    { "primary",   XA_PRIMARY,   NULL, "XA_PRIMARY:   Primary selected text (middle mouse button)" },
+    { "secondary", XA_SECONDARY, NULL, "XA_SECONDARY: Secondary selected text (with ctrl)" },
 };
+
+/** The current clipboard target. */
+static CLIPUTILTARGET *g_pTarget = &g_aTargets[0];
+#endif /* MULTI_TARGET_CLIPBOARD */
 
 /** The -v/-q state. */
 static unsigned g_uVerbosity = 1;
 
-#ifdef RT_OS_WINDOWS
+#ifdef RT_OS_DARWIN
+
+#elif defined(RT_OS_OS2)
+/** Anchorblock handle. */
+static HAB      g_hOs2Hab = NULLHANDLE;
+/** The message queue handle.   */
+static HMQ      g_hOs2MsgQueue = NULLHANDLE;
+/** Set if we've opened the clipboard. */
+static bool     g_fOs2OpenedClipboard = false;
+
+#elif defined(RT_OS_WINDOWS)
+/** Set if we've opened the clipboard. */
 static bool     g_fOpenedClipboard = false;
+
+#else
+/** Number of errors (incremented by error handle callback). */
+static uint32_t volatile g_cX11Errors;
+/** The X11 display. */
+static Display *g_pX11Display = NULL;
+/** The X11 dummy window.   */
+static Window   g_hX11Window = 0;
+/** TARGETS */
+static Atom     g_uX11AtomTargets;
+/** MULTIPLE */
+static Atom     g_uX11AtomMultiple;
+
 #endif
 
 
 /**
- * Gets a format descriptor, complaining if unknown format.
+ * Gets a format descriptor, complaining if invalid format.
  *
  * @returns Pointer to the descriptor if found, NULL + msg if not.
  * @param   pszFormat           The format to get.
@@ -195,13 +241,137 @@ static bool     g_fOpenedClipboard = false;
 static PCCLIPUTILFORMAT GetFormatDesc(const char *pszFormat)
 {
     for (size_t i = 0; i < RT_ELEMENTS(g_aFormats); i++)
-        if (strcmp(pszFormat, g_aFormats[i].pszName))
+        if (strcmp(pszFormat, g_aFormats[i].pszName) == 0)
+        {
+#if defined(RT_OS_DARWIN)
+            /** @todo   */
+
+#elif defined(RT_OS_OS2)
+            if (g_aFormats[i].pszFormat && g_aFormats[i].fFormat == 0)
+            {
+                g_aFormats[i].fFormat = WinAddAtom(WinQuerySystemAtomTable(), g_aFormats[i].pszFormat);
+                if (g_aFormats[i].fFormat == 0)
+                    RTMsgError("WinAddAtom(,%s) failed: %u (%#x)", g_aFormats[i].pszFormat, WinGetLastError(), WinGetLastError());
+            }
+
+#elif defined(RT_OS_WINDOWS)
+            if (g_aFormats[i].pwszFormat && g_aFormats[i].fFormat == 0)
+            {
+                g_aFormats[i].fFormat = RegisterClipboardFormatW(pFmtDesc->pwszFormat);
+                if (g_aFormats[i].fFormat == 0)
+                    RTMsgError("RegisterClipboardFormatW(%ls) failed: %u (%#x)",
+                               g_aFormats[i].pwszFormat, GetLastError(), GetLastError());
+            }
+#elif defined(CU_X11)
+            if (g_aFormats[i].pszAtomName && g_aFormats[i].uAtom == 0)
+                g_aFormats[i].uAtom = XInternAtom(g_pX11Display, g_aFormats[i].pszAtomName, False);
+#endif
             return &g_aFormats[i];
-    RTMsgError("Unknown format '%s'", pszFormat);
-    return NULL;
+        }
+
+    /*
+     * Try register the format.
+     */
+    static CLIPUTILFORMAT AdHoc;
+    AdHoc.pszName     = pszFormat;
+    AdHoc.pszDesc     = pszFormat;
+    AdHoc.fFlags      = CLIPUTILFORMAT_F_AD_HOC;
+#ifdef RT_OS_DARWIN
+/** @todo   */
+
+#elif defined(RT_OS_OS2)
+    AdHoc.pszFormat   = pszDesc;
+    AdHoc.fFormat     = WinAddAtom(WinQuerySystemAtomTable(), pwszDesc);
+    if (AdHoc.fFormat == 0)
+    {
+        RTMsgError("Invalid format '%s' (%u (%#x))", pszFormat, WinGetLastError(), WinGetLastError());
+        return NULL;
+    }
+
+#elif defined(RT_OS_WINDOWS)
+    AdHoc.pwszFormat  = NULL;
+    AdHoc.fFormat     = RegisterClipboardFormatA(pszFormat);
+    if (AdHoc.fFormat == 0)
+    {
+        RTMsgError("RegisterClipboardFormatA(%s) failed: %u (%#x)", pszFormat, GetLastError(), GetLastError());
+        return NULL;
+    }
+
+#else
+    AdHoc.pszAtomName = pszFormat;
+    AdHoc.uAtom       = XInternAtom(g_pX11Display, pszFormat, False);
+    if (AdHoc.uAtom == None)
+    {
+        RTMsgError("Invalid format '%s' or out of memory for X11 atoms", pszFormat);
+        return NULL;
+    }
+
+#endif
+    return &AdHoc;
 }
 
-#ifdef RT_OS_WINDOWS
+
+#ifdef RT_OS_DARWIN
+
+/** @todo   */
+
+
+#elif defined(RT_OS_OS2)
+
+/**
+ * Initialize the OS/2 bits.
+ */
+static RTEXITCODE CuOs2Init(void)
+{
+    g_hOs2Hab = WinInitialize(0);
+    if (g_hOs2Hab == NULLHANDLE)
+        return RTMsgErrorExitFailure("WinInitialize failed: %u", WinGetLastError());
+
+    g_hOs2MsgQueue = WinCreateMsgQueue(g_hOs2Hab, 10);
+    if (g_hOs2MsgQueue == NULLHANDLE)
+        return RTMsgErrorExitFailure("WinCreateMsgQueue failed: %u", WinGetLastError());
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Terminates the OS/2 bits.
+ */
+static RTEXITCODE CuOs2Term(void)
+{
+    if (g_fOs2OpenedClipboard)
+    {
+        if (!WinCloseClipbrd(g_hOs2Hab))
+            return RTMsgErrorExitFailure("WinCloseClipbrd failed: %u", WinGetLastError());
+        g_fOs2OpenedClipboard = false;
+    }
+
+    WinDestroyMsgQueue(g_hOs2Hab, g_hOs2MsgQueue);
+    g_hOs2MsgQueue = NULLHANDLE;
+
+    WinTerminate(g_hOs2Hab);
+    g_hOs2Hab = NULLHANDLE;
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+#elif defined(RT_OS_WINDOWS)
+
+/**
+ * Terminates the Windows bits.
+ */
+static RTEXITCODE CuWinTerm(void)
+{
+    if (g_fOpenedClipboard)
+    {
+        if (!CloseClipboard())
+            return RTMsgErrorExitFailure("CloseClipboard failed: %u (%#x)", GetLastError(), GetLastError());
+        g_fOpenedClipboard = false;
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
 
 /**
  * Opens the window clipboard.
@@ -219,22 +389,65 @@ static RTEXITCODE WinOpenClipboardIfNecessary(void)
 }
 
 
+#else /* X11: */
+
 /**
- * Wrapper that automatically registers non-standard formats.
+ * Error handler callback.
  */
-static UINT FormatDescToWindows(PCCLIPUTILFORMAT pFmtDesc)
+static int CuX11ErrorCallback(Display *pX11Display, XErrorEvent *pErrEvt)
 {
-    if (pFmtDesc->fFormat)
-        return pFmtDesc->fFormat;
-    Assert(pFmtDesc->pwszFormat);
-    UINT fFormat = RegisterClipboardFormatW(pFmtDesc->pwszFormat);
-    if (fFormat == 0)
-        RTMsgError("RegisterClipboardFormatW(%ls) failed: %u (%#x)", pFmtDesc->pwszFormat, GetLastError(), GetLastError());
-    return fFormat;
+    g_cX11Errors++;
+    char szErr[2048];
+    XGetErrorText(pX11Display, pErrEvt->error_code, szErr, sizeof(szErr));
+    RTMsgError("An X Window protocol error occurred: %s\n"
+               "  Request code: %u\n"
+               "  Minor code:   %u\n"
+               "  Serial number of the failed request: %u\n",
+               szErr, pErrEvt->request_code, pErrEvt->minor_code, pErrEvt->serial);
+    return 0;
 }
 
-#endif /* RT_OS_WINDOWS */
 
+/**
+ * Initialize the X11 bits.
+ */
+static RTEXITCODE CuX11Init(void)
+{
+    /*
+     * Open the X11 display and create a little dummy window.
+     */
+    XSetErrorHandler(CuX11ErrorCallback);
+    g_pX11Display = XOpenDisplay(NULL);
+    if (!g_pX11Display)
+        return RTMsgErrorExitFailure("XOpenDisplay failed");
+
+    int const iDefaultScreen = DefaultScreen(g_pX11Display);
+    g_hX11Window = XCreateSimpleWindow(g_pX11Display,
+                                       RootWindow(g_pX11Display, iDefaultScreen),
+                                       0 /*x*/, 0 /*y*/,
+                                       1 /*cx*/, 1 /*cy*/,
+                                       0 /*cPxlBorder*/,
+                                       BlackPixel(g_pX11Display, iDefaultScreen) /*Border*/,
+                                       WhitePixel(g_pX11Display, iDefaultScreen) /*Background*/);
+
+    /*
+     * Resolve any unknown atom values we might need later.
+     */
+    for (size_t i = 0; i < RT_ELEMENTS(g_aTargets); i++)
+        if (g_aTargets[i].pszAtomName)
+        {
+            g_aTargets[i].uAtom = XInternAtom(g_pX11Display, g_aTargets[i].pszAtomName, False);
+            if (g_uVerbosity > 2)
+                RTPrintf("target %s atom=%#x\n", g_aTargets[i].pszName, g_aTargets[i].uAtom);
+        }
+
+    g_uX11AtomTargets = XInternAtom(g_pX11Display, "TARGETS", False);
+    g_uX11AtomMultiple = XInternAtom(g_pX11Display, "MULTIPLE", False);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+#endif /* X11 */
 
 
 /**
@@ -281,9 +494,9 @@ static RTEXITCODE ListClipboardContent(void)
                         break;
                 }
                 if (pszName)
-                    RTPrintf("#%u: %#06x - %s\n", idx, fFormat, pszName);
+                    RTPrintf("#%02u: %#06x - %s\n", idx, fFormat, pszName);
                 else
-                    RTPrintf("#%u: %#06x\n", idx, fFormat);
+                    RTPrintf("#%02u: %#06x\n", idx, fFormat);
             }
 
             idx++;
@@ -292,6 +505,60 @@ static RTEXITCODE ListClipboardContent(void)
             RTPrintf("Empty\n");
     }
     return rcExit;
+
+#elif defined(CU_X11)
+
+    Atom uAtomDst = g_uX11AtomTargets;
+    int rc = XConvertSelection(g_pX11Display, g_pTarget->uAtom, g_uX11AtomTargets, uAtomDst, g_hX11Window, CurrentTime);
+    if (g_uVerbosity > 1)
+        RTPrintf("XConvertSelection -> %d\n", rc);
+
+    for (;;)
+    {
+        XEvent Evt = {0};
+        rc = XNextEvent(g_pX11Display, &Evt);
+        if (Evt.type == SelectionNotify)
+        {
+            if (g_uVerbosity > 1)
+                RTPrintf("XNextEvent -> %d; type=SelectionNotify\n", rc);
+            if (Evt.xselection.selection == g_pTarget->uAtom)
+            {
+                if (Evt.xselection.property == None)
+                    return RTMsgErrorExitFailure("XConvertSelection(,%s,TARGETS,) failed", g_pTarget->pszName);
+
+                Atom            uAtomRetType = 0;
+                int             iActualFmt   = 0;
+                unsigned long   cbLeftToRead = 0;
+                unsigned long   cItems       = 0;
+                unsigned char  *pbData       = NULL;
+                rc = XGetWindowProperty(g_pX11Display, g_hX11Window, uAtomDst,
+                                        0 /*offset*/, sizeof(Atom) * 4096 /* should be enough */, True /*fDelete*/, XA_ATOM,
+                                        &uAtomRetType, &iActualFmt, &cItems, &cbLeftToRead, &pbData);
+                if (g_uVerbosity > 1)
+                    RTPrintf("XConvertSelection -> %d; uAtomRetType=%u iActualFmt=%d cItems=%lu cbLeftToRead=%lu pbData=%p\n",
+                             rc, uAtomRetType, iActualFmt, cItems, cbLeftToRead, pbData);
+                if (pbData && cItems > 0)
+                {
+                    Atom const *paTargets = (Atom const *)pbData;
+                    for (unsigned long i = 0; i < cItems; i++)
+                    {
+                        const char *pszName = XGetAtomName(g_pX11Display, paTargets[i]);
+                        if (pszName)
+                            RTPrintf("#%02u: %#06x - %s\n", i, paTargets[i], pszName);
+                        else
+                            RTPrintf("#%02u: %#06x\n", i, paTargets[i]);
+                    }
+                }
+                else
+                    RTMsgInfo("Empty");
+                if (pbData)
+                    XFree(pbData);
+                return RTEXITCODE_SUCCESS;
+            }
+        }
+        else if (g_uVerbosity > 1)
+            RTPrintf("XNextEvent -> %d; type=%d\n", rc, Evt.type);
+    }
 
 #else
     return RTMsgErrorExitFailure("ListClipboardContent is not implemented");
@@ -312,11 +579,12 @@ static RTEXITCODE ReadClipboardData(PCCLIPUTILFORMAT pFmtDesc, void **ppvData, s
 {
     *ppvData = NULL;
     *pcbData = 0;
+
 #ifdef RT_OS_WINDOWS
     RTEXITCODE rcExit = WinOpenClipboardIfNecessary();
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        HANDLE hData = GetClipboardData(FormatDescToWindows(pFmtDesc));
+        HANDLE hData = GetClipboardData(pFmtDesc->fFormat);
         if (hData != NULL)
         {
             SIZE_T const cbData = GlobalSize(hData);
@@ -360,6 +628,60 @@ static RTEXITCODE ReadClipboardData(PCCLIPUTILFORMAT pFmtDesc, void **ppvData, s
                                            pFmtDesc->pszName, GetLastError(), GetLastError());
     }
     return rcExit;
+
+#elif defined(CU_X11)
+
+    /* Request the data: */
+    Atom const uAtomDst = pFmtDesc->uAtom;
+    int rc = XConvertSelection(g_pX11Display, g_pTarget->uAtom, pFmtDesc->uAtom, uAtomDst, g_hX11Window, CurrentTime);
+    if (g_uVerbosity > 1)
+        RTPrintf("XConvertSelection -> %d\n", rc);
+
+    /* Wait for the reply: */
+    for (;;)
+    {
+        XEvent Evt = {0};
+        rc = XNextEvent(g_pX11Display, &Evt);
+        if (Evt.type == SelectionNotify)
+        {
+            if (g_uVerbosity > 1)
+                RTPrintf("XNextEvent -> %d; type=SelectionNotify\n", rc);
+            if (Evt.xselection.selection == g_pTarget->uAtom)
+            {
+                if (Evt.xselection.property == None)
+                    return RTMsgErrorExitFailure("XConvertSelection(,%s,%s,) failed", g_pTarget->pszName, pFmtDesc->pszName);
+
+                /*
+                 * Retrieve the data.
+                 */
+                Atom            uAtomRetType   = 0;
+                int             cBitsActualFmt = 0;
+                unsigned long   cbLeftToRead   = 0;
+                unsigned long   cItems         = 0;
+                unsigned char  *pbData         = NULL;
+                rc = XGetWindowProperty(g_pX11Display, g_hX11Window, uAtomDst,
+                                        0 /*offset*/, _64M, False/*fDelete*/, AnyPropertyType,
+                                        &uAtomRetType, &cBitsActualFmt, &cItems, &cbLeftToRead, &pbData);
+                if (g_uVerbosity > 1)
+                    RTPrintf("XConvertSelection -> %d; uAtomRetType=%u cBitsActualFmt=%d cItems=%lu cbLeftToRead=%lu pbData=%p\n",
+                             rc, uAtomRetType, cBitsActualFmt, cItems, cbLeftToRead, pbData);
+                RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+                if (pbData && cItems > 0)
+                {
+                    *pcbData = cItems * (cBitsActualFmt / 8);
+                    *ppvData = RTMemDup(pbData, *pcbData);
+                    if (!*ppvData)
+                        rcExit = RTMsgErrorExitFailure("Out of memory allocating %#zx bytes.", *pcbData);
+                }
+                if (pbData)
+                    XFree(pbData);
+                XDeleteProperty(g_pX11Display, g_hX11Window, uAtomDst);
+                return rcExit;
+            }
+        }
+        else if (g_uVerbosity > 1)
+            RTPrintf("XNextEvent -> %d; type=%d\n", rc, Evt.type);
+    }
 
 #else
     RT_NOREF(pFmtDesc);
@@ -421,7 +743,7 @@ static RTEXITCODE WriteClipboardData(PCCLIPUTILFORMAT pFmtDesc, void const *pvDa
             }
             if (rcExit == RTEXITCODE_SUCCESS)
             {
-                if (!SetClipboardData(FormatDescToWindows(pFmtDesc), hDstData))
+                if (!SetClipboardData(pFmtDesc->fFormat, hDstData))
                 {
                     rcExit = RTMsgErrorExitFailure("SetClipboardData(%s) failed: %u (%#x)\n",
                                                    pFmtDesc->pszName, GetLastError(), GetLastError());
@@ -622,7 +944,7 @@ static RTEXITCODE CheckFormatNotOnClipboard(PCCLIPUTILFORMAT pFmtDesc)
     RTEXITCODE rcExit = WinOpenClipboardIfNecessary();
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        if (IsClipboardFormatAvailable(FormatDescToWindows(pFmtDesc)))
+        if (IsClipboardFormatAvailable(pFmtDesc->fFormat))
             rcExit = RTMsgErrorExitFailure("Format '%s' is present");
     }
     return rcExit;
@@ -685,7 +1007,7 @@ static void Usage(PRTSTREAM pStrm)
             case 'n':   pszHelp = "Checks that the given format is not on the clipboard."; break;
             case 'z':   pszHelp = "Zaps the clipboard content."; break;
 #ifdef MULTI_TARGET_CLIPBOARD
-            case 't':   pszHelp = "Selects the target clipboard." break;
+            case 't':   pszHelp = "Selects the target clipboard."; break;
 #endif
             case 'v':   pszHelp = "More verbose execution."; break;
             case 'q':   pszHelp = "Quiet execution."; break;
@@ -729,9 +1051,23 @@ int main(int argc, char *argv[])
         return RTMsgInitFailure(rc);
 
     /*
+     * Host specific init.
+     */
+#ifdef RT_OS_DARWIN
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+#elif defined(RT_OS_OS2)
+    RTEXITCODE rcExit = CuOs2Init();
+#elif defined(RT_OS_WINDOWS)
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+#else
+    RTEXITCODE rcExit = CuX11Init();
+#endif
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    /*
      * Process options (in order).
      */
-    RTEXITCODE    rcExit = RTEXITCODE_SUCCESS;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aCmdOptions, RT_ELEMENTS(g_aCmdOptions), 1, 0 /* fFlags */);
@@ -763,7 +1099,7 @@ int main(int argc, char *argv[])
                     if (RT_SUCCESS(rc))
                         rcExit2 = ClipboardContentToFile(pFmtDesc, ValueUnion.psz);
                     else
-                        return RTMsgError("No filename given with --get-file");
+                        return RTMsgErrorExitFailure("No filename given with --get-file");
                 }
                 else
                     rcExit2 = RTEXITCODE_FAILURE;
@@ -779,7 +1115,7 @@ int main(int argc, char *argv[])
                     if (RT_SUCCESS(rc))
                         rcExit2 = PutStringOnClipboard(pFmtDesc, ValueUnion.psz);
                     else
-                        return RTMsgError("No data string given with --put");
+                        return RTMsgErrorExitFailure("No data string given with --put");
                 }
                 else
                     rcExit2 = RTEXITCODE_FAILURE;
@@ -795,7 +1131,7 @@ int main(int argc, char *argv[])
                     if (RT_SUCCESS(rc))
                         rcExit2 = PutFileOnClipboard(pFmtDesc, ValueUnion.psz);
                     else
-                        return RTMsgError("No filename given with --put-file");
+                        return RTMsgErrorExitFailure("No filename given with --put-file");
                 }
                 else
                     rcExit2 = RTEXITCODE_FAILURE;
@@ -811,7 +1147,7 @@ int main(int argc, char *argv[])
                     if (RT_SUCCESS(rc))
                         rcExit2 = CheckStringAgainstClipboard(pFmtDesc, ValueUnion.psz);
                     else
-                        return RTMsgError("No data string given with --check");
+                        return RTMsgErrorExitFailure("No data string given with --check");
                 }
                 else
                     rcExit2 = RTEXITCODE_FAILURE;
@@ -827,7 +1163,7 @@ int main(int argc, char *argv[])
                     if (RT_SUCCESS(rc))
                         rcExit2 = CheckFileAgainstClipboard(pFmtDesc, ValueUnion.psz);
                     else
-                        return RTMsgError("No filename given with --check-file");
+                        return RTMsgErrorExitFailure("No filename given with --check-file");
                 }
                 else
                     rcExit2 = RTEXITCODE_FAILURE;
@@ -848,6 +1184,25 @@ int main(int argc, char *argv[])
             case 'z':
                 rcExit2 = ZapAllClipboardData();
                 break;
+
+#ifdef MULTI_TARGET_CLIPBOARD
+            case 't':
+            {
+                CLIPUTILTARGET *pNewTarget = NULL;
+                for (size_t i = 0; i < RT_ELEMENTS(g_aTargets); i++)
+                    if (strcmp(ValueUnion.psz, g_aTargets[i].pszName) == 0)
+                    {
+                        pNewTarget = &g_aTargets[i];
+                        break;
+                    }
+                if (!pNewTarget)
+                    return RTMsgErrorExitFailure("Unknown target '%s'", ValueUnion.psz);
+                if (pNewTarget != g_pTarget && g_uVerbosity > 0)
+                    RTMsgInfo("Switching from '%s' to '%s'\n", g_pTarget->pszName, pNewTarget->pszName);
+                g_pTarget = pNewTarget;
+                break;
+            }
+#endif
 
             case 'q':
                 g_uVerbosity = 0;
@@ -880,13 +1235,15 @@ int main(int argc, char *argv[])
     /*
      * Host specific cleanup.
      */
-#ifdef RT_OS_WINDOWS
-    if (g_fOpenedClipboard)
-    {
-        if (!CloseClipboard())
-            rcExit = RTMsgErrorExitFailure("CloseClipboard failed: %u (%#x)", GetLastError(), GetLastError());
-    }
+#if defined(RT_OS_OS2)
+    RTEXITCODE rcExit2 = CuOs2Term();
+#elif defined(RT_OS_WINDOWS)
+    RTEXITCODE rcExit2 = CuWinTerm();
+#else
+    RTEXITCODE rcExit2 = RTEXITCODE_SUCCESS;
 #endif
+    if (rcExit2 != RTEXITCODE_SUCCESS && rcExit != RTEXITCODE_SUCCESS)
+        rcExit = rcExit2;
 
     return rcExit;
 }

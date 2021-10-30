@@ -33,6 +33,10 @@ include $(KBUILD_PATH)/subheader.kmk
 PROGRAMS += ClipUtil
 ClipUtil_TEMPLATE = VBoxValidationKitR3
 ClipUtil_SOURCES  = ClipUtil.cpp
+ifn1of ($(KBUILD_TARGET), darwin os2 windows)
+ClipUtil_LIBPATH  = $(VBOX_LIBPATH_X11)
+ClipUtil_LIBS     = X11 Xmu
+endif
 
 $(evalcall def_vbox_validationkit_process_python_sources)
 include $(FILE_KBUILD_SUB_FOOTER)
