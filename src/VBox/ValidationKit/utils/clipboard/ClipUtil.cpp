@@ -257,7 +257,7 @@ static PCCLIPUTILFORMAT GetFormatDesc(const char *pszFormat)
 #elif defined(RT_OS_WINDOWS)
             if (g_aFormats[i].pwszFormat && g_aFormats[i].fFormat == 0)
             {
-                g_aFormats[i].fFormat = RegisterClipboardFormatW(pFmtDesc->pwszFormat);
+                g_aFormats[i].fFormat = RegisterClipboardFormatW(g_aFormats[i].pwszFormat);
                 if (g_aFormats[i].fFormat == 0)
                     RTMsgError("RegisterClipboardFormatW(%ls) failed: %u (%#x)",
                                g_aFormats[i].pwszFormat, GetLastError(), GetLastError());
