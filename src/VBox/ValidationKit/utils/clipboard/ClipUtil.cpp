@@ -139,6 +139,25 @@ typedef CLIPUTILTARGET const *PCCLIPUTILTARGET;
 #endif /* MULTI_TARGET_CLIPBOARD */
 
 
+#ifdef RT_OS_OS2
+/** Header for Odin32 specific clipboard entries.
+ * (Used to get the correct size of the data.)
+ */
+typedef struct _Odin32ClipboardHeader
+{
+    /** Magic (CLIPHEADER_MAGIC) */
+    char        achMagic[8];
+    /** Size of the following data.
+     * (The interpretation depends on the type.) */
+    unsigned    cbData;
+    /** Odin32 format number. */
+    unsigned    uFormat;
+} CLIPHEADER, *PCLIPHEADER;
+
+#define CLIPHEADER_MAGIC "Odin\1\0\1"
+#endif
+
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -210,8 +229,12 @@ static unsigned g_uVerbosity = 1;
 static HAB      g_hOs2Hab = NULLHANDLE;
 /** The message queue handle.   */
 static HMQ      g_hOs2MsgQueue = NULLHANDLE;
+/** Windows that becomes clipboard owner when setting data. */
+static HWND     g_hOs2Wnd = NULLHANDLE;
 /** Set if we've opened the clipboard. */
 static bool     g_fOs2OpenedClipboard = false;
+/** Set if we're the clipboard owner. */
+static bool     g_fOs2ClipboardOwner = false;
 
 #elif defined(RT_OS_WINDOWS)
 /** Set if we've opened the clipboard. */
@@ -251,7 +274,7 @@ static PCCLIPUTILFORMAT GetFormatDesc(const char *pszFormat)
             {
                 g_aFormats[i].fFormat = WinAddAtom(WinQuerySystemAtomTable(), g_aFormats[i].pszFormat);
                 if (g_aFormats[i].fFormat == 0)
-                    RTMsgError("WinAddAtom(,%s) failed: %u (%#x)", g_aFormats[i].pszFormat, WinGetLastError(), WinGetLastError());
+                    RTMsgError("WinAddAtom(,%s) failed: %#x", g_aFormats[i].pszFormat, WinGetLastError(g_hOs2Hab));
             }
 
 #elif defined(RT_OS_WINDOWS)
@@ -280,11 +303,11 @@ static PCCLIPUTILFORMAT GetFormatDesc(const char *pszFormat)
 /** @todo   */
 
 #elif defined(RT_OS_OS2)
-    AdHoc.pszFormat   = pszDesc;
-    AdHoc.fFormat     = WinAddAtom(WinQuerySystemAtomTable(), pwszDesc);
+    AdHoc.pszFormat   = pszFormat;
+    AdHoc.fFormat     = WinAddAtom(WinQuerySystemAtomTable(), pszFormat);
     if (AdHoc.fFormat == 0)
     {
-        RTMsgError("Invalid format '%s' (%u (%#x))", pszFormat, WinGetLastError(), WinGetLastError());
+        RTMsgError("Invalid format '%s' (%#x)", pszFormat, WinGetLastError(g_hOs2Hab));
         return NULL;
     }
 
@@ -319,17 +342,109 @@ static PCCLIPUTILFORMAT GetFormatDesc(const char *pszFormat)
 #elif defined(RT_OS_OS2)
 
 /**
+ * The window procedure for the object window.
+ *
+ * @returns Message result.
+ *
+ * @param   hwnd    The window handle.
+ * @param   msg     The message.
+ * @param   mp1     Message parameter 1.
+ * @param   mp2     Message parameter 2.
+ */
+static MRESULT EXPENTRY CuOs2WinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
+{
+    if (g_uVerbosity > 2)
+        RTMsgInfo("CuOs2WinProc: hwnd=%#lx msg=%#lx mp1=%#lx mp2=%#lx\n", hwnd, msg, mp1, mp2);
+
+    switch (msg)
+    {
+        case WM_CREATE:
+            return NULL; /* FALSE(/NULL) == Continue*/
+        case WM_DESTROY:
+            break;
+
+        /*
+         * Clipboard viewer message - the content has been changed.
+         * This is sent *after* releasing the clipboard sem
+         * and during the WinSetClipbrdViewer call.
+         */
+        case WM_DRAWCLIPBOARD:
+            break;
+
+        /*
+         * Clipboard owner message - the content was replaced.
+         * This is sent by someone with an open clipboard, so don't try open it now.
+         */
+        case WM_DESTROYCLIPBOARD:
+            break;
+
+        /*
+         * Clipboard owner message - somebody is requesting us to render a format.
+         * This is called by someone which owns the clipboard, but that's fine.
+         */
+        case WM_RENDERFMT:
+            break;
+
+        /*
+         * Clipboard owner message - we're about to quit and should render all formats.
+         */
+        case WM_RENDERALLFMTS:
+            break;
+
+        /*
+         * Clipboard owner messages dealing with owner drawn content.
+         * We shouldn't be seeing any of these.
+         */
+        case WM_PAINTCLIPBOARD:
+        case WM_SIZECLIPBOARD:
+        case WM_HSCROLLCLIPBOARD:
+        case WM_VSCROLLCLIPBOARD:
+            AssertMsgFailed(("msg=%lx (%ld)\n", msg, msg));
+            break;
+
+        /*
+         * We shouldn't be seeing any other messages according to the docs.
+         * But for whatever reason, PM sends us a WM_ADJUSTWINDOWPOS message
+         * during WinCreateWindow. So, ignore that and assert on anything else.
+         */
+        default:
+            AssertMsgFailed(("msg=%lx (%ld)\n", msg, msg));
+        case WM_ADJUSTWINDOWPOS:
+            break;
+    }
+    return NULL;
+}
+
+/**
  * Initialize the OS/2 bits.
  */
 static RTEXITCODE CuOs2Init(void)
 {
     g_hOs2Hab = WinInitialize(0);
     if (g_hOs2Hab == NULLHANDLE)
-        return RTMsgErrorExitFailure("WinInitialize failed: %u", WinGetLastError());
+        return RTMsgErrorExitFailure("WinInitialize failed!");
 
     g_hOs2MsgQueue = WinCreateMsgQueue(g_hOs2Hab, 10);
     if (g_hOs2MsgQueue == NULLHANDLE)
-        return RTMsgErrorExitFailure("WinCreateMsgQueue failed: %u", WinGetLastError());
+        return RTMsgErrorExitFailure("WinCreateMsgQueue failed: %#x", WinGetLastError(g_hOs2Hab));
+
+    static char s_szClass[] = "VBox-ClipUtilClipboardClass";
+    if (!WinRegisterClass(g_hOs2Wnd, (PCSZ)s_szClass, CuOs2WinProc, 0, 0))
+        return RTMsgErrorExitFailure("WinRegisterClass failed: %#x", WinGetLastError(g_hOs2Hab));
+
+    g_hOs2Wnd = WinCreateWindow(HWND_OBJECT,                             /* hwndParent */
+                                (PCSZ)s_szClass,                         /* pszClass */
+                                (PCSZ)"VirtualBox Clipboard Utility",    /* pszName */
+                                0,                                       /* flStyle */
+                                0, 0, 0, 0,                              /* x, y, cx, cy */
+                                NULLHANDLE,                              /* hwndOwner */
+                                HWND_BOTTOM,                             /* hwndInsertBehind */
+                                42,                                      /* id */
+                                NULL,                                    /* pCtlData */
+                                NULL);                                   /* pPresParams */
+    if (g_hOs2Wnd == NULLHANDLE)
+        return RTMsgErrorExitFailure("WinCreateWindow failed: %#x", WinGetLastError(g_hOs2Hab));
+
     return RTEXITCODE_SUCCESS;
 }
 
@@ -342,17 +457,36 @@ static RTEXITCODE CuOs2Term(void)
     if (g_fOs2OpenedClipboard)
     {
         if (!WinCloseClipbrd(g_hOs2Hab))
-            return RTMsgErrorExitFailure("WinCloseClipbrd failed: %u", WinGetLastError());
+            return RTMsgErrorExitFailure("WinCloseClipbrd failed: %#x", WinGetLastError(g_hOs2Hab));
         g_fOs2OpenedClipboard = false;
     }
 
-    WinDestroyMsgQueue(g_hOs2Hab, g_hOs2MsgQueue);
+    WinDestroyWindow(g_hOs2Wnd);
+    g_hOs2Wnd = NULLHANDLE;
+
+    WinDestroyMsgQueue(g_hOs2MsgQueue);
     g_hOs2MsgQueue = NULLHANDLE;
 
     WinTerminate(g_hOs2Hab);
     g_hOs2Hab = NULLHANDLE;
 
     return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Opens the OS/2 clipboard.
+ */
+static RTEXITCODE CuOs2OpenClipboardIfNecessary(void)
+{
+    if (g_fOs2OpenedClipboard)
+        return RTEXITCODE_SUCCESS;
+    if (WinOpenClipbrd(g_hOs2Hab))
+    {
+        g_fOs2OpenedClipboard = true;
+        return RTEXITCODE_SUCCESS;
+    }
+    return RTMsgErrorExitFailure("WinOpenClipbrd failed: %#x", WinGetLastError(g_hOs2Hab));
 }
 
 
@@ -455,7 +589,47 @@ static RTEXITCODE CuX11Init(void)
  */
 static RTEXITCODE ListClipboardContent(void)
 {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_OS2)
+    RTEXITCODE rcExit = CuOs2OpenClipboardIfNecessary();
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        HATOMTBL const hAtomTbl  = WinQuerySystemAtomTable();
+        uint32_t       idx       = 0;
+        ULONG          fFormat   = 0;
+        while ((fFormat = WinEnumClipbrdFmts(g_hOs2Hab)) != 0)
+        {
+            char szName[256] = {0};
+            ULONG cchRet = WinQueryAtomName(hAtomTbl, fFormat, szName, sizeof(szName));
+            if (cchRet != 0)
+                RTPrintf("#%u: %#06x - %s\n", idx, fFormat, szName);
+            else
+            {
+                const char *pszName = NULL;
+                switch (fFormat)
+                {
+                    case CF_TEXT: pszName = "CF_TEXT"; break;
+                    case CF_BITMAP: pszName = "CF_BITMAP"; break;
+                    case CF_DSPTEXT: pszName = "CF_DSPTEXT"; break;
+                    case CF_DSPBITMAP: pszName = "CF_DSPBITMAP"; break;
+                    case CF_METAFILE: pszName = "CF_METAFILE"; break;
+                    case CF_DSPMETAFILE: pszName = "CF_DSPMETAFILE"; break;
+                    case CF_PALETTE: pszName = "CF_PALETTE"; break;
+                    default:
+                        break;
+                }
+                if (pszName)
+                    RTPrintf("#%02u: %#06x - %s\n", idx, fFormat, pszName);
+                else
+                    RTPrintf("#%02u: %#06x\n", idx, fFormat);
+            }
+
+            idx++;
+        }
+    }
+
+    return rcExit;
+
+#elif defined(RT_OS_WINDOWS)
     RTEXITCODE rcExit = WinOpenClipboardIfNecessary();
     if (rcExit == RTEXITCODE_SUCCESS)
     {
@@ -507,12 +681,13 @@ static RTEXITCODE ListClipboardContent(void)
     return rcExit;
 
 #elif defined(CU_X11)
-
+    /* Request the TARGETS property: */
     Atom uAtomDst = g_uX11AtomTargets;
     int rc = XConvertSelection(g_pX11Display, g_pTarget->uAtom, g_uX11AtomTargets, uAtomDst, g_hX11Window, CurrentTime);
     if (g_uVerbosity > 1)
         RTPrintf("XConvertSelection -> %d\n", rc);
 
+    /* Wait for the reply: */
     for (;;)
     {
         XEvent Evt = {0};
@@ -526,6 +701,7 @@ static RTEXITCODE ListClipboardContent(void)
                 if (Evt.xselection.property == None)
                     return RTMsgErrorExitFailure("XConvertSelection(,%s,TARGETS,) failed", g_pTarget->pszName);
 
+                /* Get the TARGETS property data: */
                 Atom            uAtomRetType = 0;
                 int             iActualFmt   = 0;
                 unsigned long   cbLeftToRead = 0;
@@ -539,6 +715,7 @@ static RTEXITCODE ListClipboardContent(void)
                              rc, uAtomRetType, iActualFmt, cItems, cbLeftToRead, pbData);
                 if (pbData && cItems > 0)
                 {
+                    /* Display the TARGETS: */
                     Atom const *paTargets = (Atom const *)pbData;
                     for (unsigned long i = 0; i < cItems; i++)
                     {
@@ -580,7 +757,66 @@ static RTEXITCODE ReadClipboardData(PCCLIPUTILFORMAT pFmtDesc, void **ppvData, s
     *ppvData = NULL;
     *pcbData = 0;
 
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_OS2)
+    RTEXITCODE rcExit = CuOs2OpenClipboardIfNecessary();
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        ULONG fFmtInfo = 0;
+        if (WinQueryClipbrdFmtInfo(g_hOs2Hab, pFmtDesc->fFormat, &fFmtInfo))
+        {
+            ULONG uData = WinQueryClipbrdData(g_hOs2Hab, pFmtDesc->fFormat);
+            if (fFmtInfo & CFI_POINTER)
+            {
+                PCLIPHEADER pOdinHdr = (PCLIPHEADER)uData;
+                if (pFmtDesc->fFormat == CF_TEXT)
+                {
+                    if (pFmtDesc->fFlags & CLIPUTILFORMAT_F_CONVERT_UTF8)
+                    {
+                        char *pszUtf8 = NULL;
+                        int rc = RTStrCurrentCPToUtf8(&pszUtf8, (const char *)uData);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *pcbData = strlen(pszUtf8) + 1;
+                            *ppvData = RTMemDup(pszUtf8, *pcbData);
+                            RTStrFree(pszUtf8);
+                        }
+                        else
+                            return RTMsgErrorExitFailure("RTStrCurrentCPToUtf8 failed: %Rrc", rc);
+                    }
+                    else
+                    {
+                        *pcbData = strlen((const char *)uData) + 1;
+                        *ppvData = RTMemDup((const char *)uData, *pcbData);
+                    }
+                }
+                else if (   strcmp(pFmtDesc->pszFormat, "Odin32 UnicodeText") == 0
+                         && memcmp(pOdinHdr->achMagic, CLIPHEADER_MAGIC, sizeof(pOdinHdr->achMagic)) == 0)
+                {
+                    *pcbData = pOdinHdr->cbData;
+                    *ppvData = RTMemDup(pOdinHdr + 1, pOdinHdr->cbData);
+                }
+                else
+                {
+                    /* We could use DosQueryMem here to figure out the size of the allocation... */
+                    *pcbData = PAGE_SIZE - (uData & PAGE_OFFSET_MASK);
+                    *ppvData = RTMemDup((void const *)uData, *pcbData);
+                }
+            }
+            else
+            {
+                *pcbData = sizeof(uData);
+                *ppvData = RTMemDup(&uData, sizeof(uData));
+            }
+            if (!*ppvData)
+                rcExit = RTMsgErrorExitFailure("Out of memory allocating %#zx bytes.", *pcbData);
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("WinQueryClipbrdFmtInfo(,%s,) failed: %#x\n",
+                                           pFmtDesc->pszName, WinGetLastError(g_hOs2Hab));
+    }
+    return rcExit;
+
+#elif defined(RT_OS_WINDOWS)
     RTEXITCODE rcExit = WinOpenClipboardIfNecessary();
     if (rcExit == RTEXITCODE_SUCCESS)
     {
@@ -700,7 +936,51 @@ static RTEXITCODE ReadClipboardData(PCCLIPUTILFORMAT pFmtDesc, void **ppvData, s
  */
 static RTEXITCODE WriteClipboardData(PCCLIPUTILFORMAT pFmtDesc, void const *pvData, size_t cbData)
 {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_OS2)
+    RTEXITCODE rcExit = CuOs2OpenClipboardIfNecessary();
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /** @todo do we need to become owner? */
+
+        /* Convert to local code page if needed: */
+        char *pszLocale = NULL;
+        if (pFmtDesc->fFlags & CLIPUTILFORMAT_F_CONVERT_UTF8)
+        {
+            int rc = RTStrUtf8ToCurrentCPEx(&pszLocale, (char *)pvData, cbData);
+            if (RT_SUCCESS(rc))
+            {
+                pvData = pszLocale;
+                cbData = strlen(pszLocale) + 1;
+            }
+            else
+                return RTMsgErrorExitFailure("RTStrUtf8ToCurrentCPEx failed: %Rrc\n", rc);
+        }
+
+        /* Allocate a bunch of shared memory for the object. */
+        PVOID  pvShared = NULL;
+        APIRET orc = DosAllocSharedMem(&pvShared, NULL, cbData,
+                                       OBJ_GIVEABLE | OBJ_GETTABLE | OBJ_TILE | PAG_READ | PAG_WRITE | PAG_COMMIT);
+        if (orc == NO_ERROR)
+        {
+            memcpy(pvShared, pvData, cbData);
+
+            if (WinSetClipbrdData(g_hOs2Hab, (uintptr_t)pvShared, pFmtDesc->fFormat, CFI_POINTER))
+                rcExit = RTEXITCODE_SUCCESS;
+            else
+            {
+                rcExit = RTMsgErrorExitFailure("WinSetClipbrdData(,%p LB %#x,%s,) failed: %#x\n",
+                                               pvShared, cbData, pFmtDesc->pszName, WinGetLastError(g_hOs2Hab));
+                DosFreeMem(pvShared);
+            }
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("DosAllocSharedMem(,, %#x,) -> %u", cbData, orc);
+        RTStrFree(pszLocale);
+    }
+    return rcExit;
+
+
+#elif defined(RT_OS_WINDOWS)
     RTEXITCODE rcExit = WinOpenClipboardIfNecessary();
     if (rcExit == RTEXITCODE_SUCCESS)
     {
@@ -940,7 +1220,17 @@ static RTEXITCODE CheckFileAgainstClipboard(PCCLIPUTILFORMAT pFmtDesc, const cha
  */
 static RTEXITCODE CheckFormatNotOnClipboard(PCCLIPUTILFORMAT pFmtDesc)
 {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_OS2)
+    RTEXITCODE rcExit = CuOs2OpenClipboardIfNecessary();
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        ULONG fFmtInfo = 0;
+        if (WinQueryClipbrdFmtInfo(g_hOs2Hab, pFmtDesc->fFormat, &fFmtInfo))
+            rcExit = RTMsgErrorExitFailure("Format '%s' is present");
+    }
+    return rcExit;
+
+#elif defined(RT_OS_WINDOWS)
     RTEXITCODE rcExit = WinOpenClipboardIfNecessary();
     if (rcExit == RTEXITCODE_SUCCESS)
     {
@@ -963,7 +1253,23 @@ static RTEXITCODE CheckFormatNotOnClipboard(PCCLIPUTILFORMAT pFmtDesc)
  */
 static RTEXITCODE ZapAllClipboardData(void)
 {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_OS2)
+    RTEXITCODE rcExit = CuOs2OpenClipboardIfNecessary();
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        ULONG fFmtInfo = 0;
+        if (WinEmptyClipbrd(g_hOs2Hab))
+        {
+            WinSetClipbrdOwner(g_hOs2Hab, g_hOs2Wnd); /* Probably unnecessary? */
+            WinSetClipbrdOwner(g_hOs2Hab, NULLHANDLE);
+            g_fOs2ClipboardOwner = false;
+        }
+        else
+            rcExit = RTMsgErrorExitFailure("WinEmptyClipbrd() failed: %#x\n", WinGetLastError(g_hOs2Hab));
+    }
+    return rcExit;
+
+#elif defined(RT_OS_WINDOWS)
     RTEXITCODE rcExit = WinOpenClipboardIfNecessary();
     if (rcExit == RTEXITCODE_SUCCESS)
     {
