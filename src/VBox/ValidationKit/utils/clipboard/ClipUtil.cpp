@@ -601,7 +601,7 @@ static RTEXITCODE ListClipboardContent(void)
             char szName[256] = {0};
             ULONG cchRet = WinQueryAtomName(hAtomTbl, fFormat, szName, sizeof(szName));
             if (cchRet != 0)
-                RTPrintf("#%u: %#06x - %s\n", idx, fFormat, szName);
+                RTPrintf("#%02u: %#06x - %s\n", idx, fFormat, szName);
             else
             {
                 const char *pszName = NULL;
@@ -641,7 +641,7 @@ static RTEXITCODE ListClipboardContent(void)
             WCHAR wszName[256];
             int   cchName = GetClipboardFormatNameW(fFormat, wszName, RT_ELEMENTS(wszName));
             if (cchName > 0)
-                RTPrintf("#%u: %#06x - %ls\n", idx, fFormat, wszName);
+                RTPrintf("#%02u: %#06x - %ls\n", idx, fFormat, wszName);
             else
             {
                 const char *pszName = NULL;
