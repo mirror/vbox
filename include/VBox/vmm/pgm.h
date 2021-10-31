@@ -702,7 +702,7 @@ VMMR3DECL(int)      PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS c
  * @see PGMR3PhysMmio2Register, PDMDevHlpMmio2Create
  * @{ */
 /** Track dirty pages.
- * @see PGMR3PhysMmio2QueryAndResetDirtyBitmap(), PGMR3PhysMmio2ControlDirtyPageTracking(). */ 
+ * @see PGMR3PhysMmio2QueryAndResetDirtyBitmap(), PGMR3PhysMmio2ControlDirtyPageTracking(). */
 #define PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES       RT_BIT_32(0)
 /** Valid flags. */
 #define PGMPHYS_MMIO2_FLAGS_VALID_MASK              UINT32_C(0x00000001)
