@@ -311,25 +311,35 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
 
             if (pCurType->CTX_SUFF(pfnPfHandler))
             {
-                PPGMPOOL    pPool  = pVM->pgm.s.CTX_SUFF(pPool);
-                void       *pvUser = pCur->CTX_SUFF(pvUser);
-
                 STAM_PROFILE_START(&pCur->Stat, h);
-                if (pCur->hType != pPool->hAccessHandlerType)
-                {
-                    PGM_UNLOCK(pVM);
-                    *pfLockTaken = false;
-                }
 
-                rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
+                if (pCurType->fKeepPgmLock)
+                {
+                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault,
+                                                                pCur->CTX_SUFF(pvUser));
 
 #  ifdef VBOX_WITH_STATISTICS
-                PGM_LOCK_VOID(pVM);
-                pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
-                if (pCur)
-                    STAM_PROFILE_STOP(&pCur->Stat, h);
-                PGM_UNLOCK(pVM);
+                    pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault); /* paranoia in case the handler deregistered itself */
+                    if (pCur)
+                        STAM_PROFILE_STOP(&pCur->Stat, h);
 #  endif
+                }
+                else
+                {
+                    void * const pvUser = pCur->CTX_SUFF(pvUser);
+                    PGM_UNLOCK(pVM);
+                    *pfLockTaken = false;
+
+                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
+
+#  ifdef VBOX_WITH_STATISTICS
+                    PGM_LOCK_VOID(pVM);
+                    pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
+                    if (pCur)
+                        STAM_PROFILE_STOP(&pCur->Stat, h);
+                    PGM_UNLOCK(pVM);
+#  endif
+                }
             }
             else
                 rcStrict = VINF_EM_RAW_EMULATE_INSTR;

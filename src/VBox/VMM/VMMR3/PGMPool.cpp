@@ -279,7 +279,7 @@ int pgmR3PoolInit(PVM pVM)
     pPool->fCacheEnabled = fCacheEnabled;
 
     pPool->hAccessHandlerType = NIL_PGMPHYSHANDLERTYPE;
-    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
+    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE, true /*fKeepPgmLock*/,
                                           pgmPoolAccessHandler,
                                           NULL, "pgmPoolAccessHandler", "pgmRZPoolAccessPfHandler",
                                           NULL, "pgmPoolAccessHandler", "pgmRZPoolAccessPfHandler",

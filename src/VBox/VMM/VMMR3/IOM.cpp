@@ -158,7 +158,7 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     /*
      * Register the MMIO access handler type.
      */
-    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_MMIO,
+    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_MMIO, false /*fKeepPgmLock*/,
                                           iomMmioHandlerNew,
                                           NULL, "iomMmioHandlerNew", "iomMmioPfHandlerNew",
                                           NULL, "iomMmioHandlerNew", "iomMmioPfHandlerNew",

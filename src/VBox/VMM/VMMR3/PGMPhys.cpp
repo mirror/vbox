@@ -2684,6 +2684,11 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
 }
 
 
+
+/*********************************************************************************************************************************
+*   MMIO2                                                                                                                        *
+*********************************************************************************************************************************/
+
 /**
  * Locate a MMIO2 range.
  *
@@ -2737,6 +2742,54 @@ DECLINLINE(PPGMREGMMIO2RANGE) pgmR3PhysMmio2Find(PVM pVM, PPDMDEVINS pDevIns, ui
 
 
 /**
+ * Worker for PGMR3PhysMmio2ControlDirtyPageTracking and PGMR3PhysMmio2Map.
+ */
+static int pgmR3PhysMmio2EnableDirtyPageTracing(PVM pVM, PPGMREGMMIO2RANGE pFirstMmio2)
+{
+    int rc = VINF_SUCCESS;
+    for (PPGMREGMMIO2RANGE pCurMmio2 = pFirstMmio2; pCurMmio2; pCurMmio2 = pCurMmio2->pNextR3)
+    {
+        Assert(!(pCurMmio2->fFlags & PGMREGMMIO2RANGE_F_IS_TRACKING));
+        int rc2 = pgmHandlerPhysicalExRegister(pVM, pCurMmio2->pPhysHandlerR3, pCurMmio2->RamRange.GCPhys,
+                                               pCurMmio2->RamRange.GCPhysLast);
+        AssertLogRelMsgRC(rc2, ("%#RGp-%#RGp %s failed -> %Rrc\n", pCurMmio2->RamRange.GCPhys, pCurMmio2->RamRange.GCPhysLast,
+                                pCurMmio2->RamRange.pszDesc, rc2));
+        if (RT_SUCCESS(rc2))
+            pCurMmio2->fFlags |= PGMREGMMIO2RANGE_F_IS_TRACKING;
+        else if (RT_SUCCESS(rc))
+            rc = rc2;
+        if (pCurMmio2->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+            return rc;
+    }
+    AssertFailed();
+    return rc;
+}
+
+
+/**
+ * Worker for PGMR3PhysMmio2ControlDirtyPageTracking and PGMR3PhysMmio2Unmap.
+ */
+static int pgmR3PhysMmio2DisableDirtyPageTracing(PVM pVM, PPGMREGMMIO2RANGE pFirstMmio2)
+{
+    for (PPGMREGMMIO2RANGE pCurMmio2 = pFirstMmio2; pCurMmio2; pCurMmio2 = pCurMmio2->pNextR3)
+    {
+        if (pCurMmio2->fFlags & PGMREGMMIO2RANGE_F_IS_TRACKING)
+        {
+            int rc2 = pgmHandlerPhysicalExDeregister(pVM, pCurMmio2->pPhysHandlerR3);
+            AssertLogRelMsgRC(rc2, ("%#RGp-%#RGp %s failed -> %Rrc\n", pCurMmio2->RamRange.GCPhys, pCurMmio2->RamRange.GCPhysLast,
+                                    pCurMmio2->RamRange.pszDesc, rc2));
+            pCurMmio2->fFlags &= ~PGMREGMMIO2RANGE_F_IS_TRACKING;
+        }
+        if (pCurMmio2->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+            return VINF_SUCCESS;
+    }
+    AssertFailed();
+    return VINF_SUCCESS;
+
+}
+
+
+/**
  * Calculates the number of chunks
  *
  * @returns Number of registration chunk needed.
@@ -2756,10 +2809,13 @@ static uint16_t pgmR3PhysMmio2CalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pcP
      *
      * Note! In additions, we've got a 24 bit sub-page range for MMIO2 ranges, leaving
      *       us with an absolute maximum of 16777215 pages per chunk (close to 64 GB).
+     *
+     * P.S. If we want to include a dirty bitmap, we'd have to drop down to 1040384 pages.
      */
     uint32_t cbChunk = 16U*_1M;
-    uint32_t cPagesPerChunk = 1048048; /* max ~1048059 */
-    AssertCompile(sizeof(PGMREGMMIO2RANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
+    uint32_t cPagesPerChunk = 1048000; /* max ~1048059 */
+    Assert(cPagesPerChunk / 64 * 64 == cPagesPerChunk); /* (NEM requirement) */
+    AssertCompile(sizeof(PGMREGMMIO2RANGE) + sizeof(PGMPAGE) * 1048000 < 16U*_1M - PAGE_SIZE * 2);
     AssertRelease(cPagesPerChunk <= PGM_MMIO2_MAX_PAGE_COUNT); /* See above note. */
     AssertRelease(RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
     if (pcbChunk)
@@ -2794,14 +2850,16 @@ static uint16_t pgmR3PhysMmio2CalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pcP
  *                          region. Otherwise it can be any number safe
  *                          UINT8_MAX.
  * @param   cb              The size of the region.  Must be page aligned.
+ * @param   fFlags          PGMPHYS_MMIO2_FLAGS_XXX. 
+ * @param   idMmio2         The MMIO2 ID for the first chunk.
  * @param   pszDesc         The description.
  * @param   ppHeadRet       Where to return the pointer to the first
  *                          registration chunk.
  *
  * @thread  EMT
  */
-static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb,
-                                const char *pszDesc, PPGMREGMMIO2RANGE *ppHeadRet)
+static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags,
+                                uint8_t idMmio2, const char *pszDesc, PPGMREGMMIO2RANGE *ppHeadRet)
 {
     /*
      * Figure out how many chunks we need and of which size.
@@ -2818,7 +2876,7 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
 
     int rc = VINF_SUCCESS;
     uint32_t cPagesLeft = cb >> X86_PAGE_SHIFT;
-    for (uint16_t iChunk = 0; iChunk < cChunks && RT_SUCCESS(rc); iChunk++)
+    for (uint16_t iChunk = 0; iChunk < cChunks && RT_SUCCESS(rc); iChunk++, idMmio2++)
     {
         /*
          * We currently do a single RAM range for the whole thing.  This will
@@ -2874,15 +2932,16 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
         pNew->pDevInsR3             = pDevIns;
         //pNew->pvR3                = NULL;
         //pNew->pNext               = NULL;
-        //pNew->fFlags              = 0;
         if (iChunk == 0)
             pNew->fFlags |= PGMREGMMIO2RANGE_F_FIRST_CHUNK;
         if (iChunk + 1 == cChunks)
             pNew->fFlags |= PGMREGMMIO2RANGE_F_LAST_CHUNK;
+        if (fFlags & PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES)
+            pNew->fFlags |= PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES;
         pNew->iSubDev               = iSubDev;
         pNew->iRegion               = iRegion;
         pNew->idSavedState          = UINT8_MAX;
-        pNew->idMmio2               = UINT8_MAX;
+        pNew->idMmio2               = idMmio2;
         //pNew->pPhysHandlerR3      = NULL;
         //pNew->paLSPages           = NULL;
         pNew->RamRange.GCPhys       = NIL_RTGCPHYS;
@@ -2897,6 +2956,16 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
         ASMCompilerBarrier();
         cPagesLeft -= cPagesTrackedByChunk;
         ppNext = &pNew->pNextR3;
+
+        /*
+         * Pre-allocate a handler if we're tracking dirty pages.
+         */
+        if (fFlags & PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES)
+        {
+            rc = pgmHandlerPhysicalExCreate(pVM, pVM->pgm.s.hMmio2DirtyPhysHandlerType,
+                                            (RTR3PTR)(uintptr_t)idMmio2, idMmio2, idMmio2, pszDesc, &pNew->pPhysHandlerR3);
+            AssertLogRelMsgRCBreak(rc, ("idMmio2=%zu\n", idMmio2));
+        }
     }
     Assert(cPagesLeft == 0);
 
@@ -2913,6 +2982,12 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
     {
         PPGMREGMMIO2RANGE pFree = *ppHeadRet;
         *ppHeadRet = pFree->pNextR3;
+
+        if (pFree->pPhysHandlerR3)
+        {
+            pgmHandlerPhysicalExDestroy(pVM, pFree->pPhysHandlerR3);
+            pFree->pPhysHandlerR3 = NULL;
+        }
 
         if (pFree->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING)
         {
@@ -3035,7 +3110,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
     AssertReturn(pgmR3PhysMmio2Find(pVM, pDevIns, iSubDev, iRegion, NIL_PGMMMIO2HANDLE) == NULL, VERR_ALREADY_EXISTS);
     AssertReturn(!(cb & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(cb, VERR_INVALID_PARAMETER);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~PGMPHYS_MMIO2_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     const uint32_t cPages = cb >> PAGE_SHIFT;
     AssertLogRelReturn(((RTGCPHYS)cPages << PAGE_SHIFT) == cb, VERR_INVALID_PARAMETER);
@@ -3059,9 +3134,11 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
      * the IDs goes from 1 thru PGM_MMIO2_MAX_RANGES.
      */
     unsigned cChunks = pgmR3PhysMmio2CalcChunkCount(pVM, cb, NULL, NULL);
+
     PGM_LOCK_VOID(pVM);
-    uint8_t  idMmio2 = pVM->pgm.s.cMmio2Regions + 1;
-    unsigned cNewMmio2Regions = pVM->pgm.s.cMmio2Regions + cChunks;
+    AssertCompile(PGM_MMIO2_MAX_RANGES < 255);
+    uint8_t const  idMmio2          = pVM->pgm.s.cMmio2Regions + 1;
+    unsigned const cNewMmio2Regions = pVM->pgm.s.cMmio2Regions + cChunks;
     if (cNewMmio2Regions > PGM_MMIO2_MAX_RANGES)
     {
         PGM_UNLOCK(pVM);
@@ -3095,7 +3172,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
                  * Create the registered MMIO range record for it.
                  */
                 PPGMREGMMIO2RANGE pNew;
-                rc = pgmR3PhysMmio2Create(pVM, pDevIns, iSubDev, iRegion, cb, pszDesc, &pNew);
+                rc = pgmR3PhysMmio2Create(pVM, pDevIns, iSubDev, iRegion, cb, fFlags, idMmio2, pszDesc, &pNew);
                 if (RT_SUCCESS(rc))
                 {
                     if (phRegion)
@@ -3110,7 +3187,6 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
                         pCur->pvR0          = pvPagesR0 + (iSrcPage << PAGE_SHIFT);
 #endif
                         pCur->RamRange.pvR3 = pbCurPages;
-                        pCur->idMmio2       = idMmio2;
 
                         uint32_t iDstPage = pCur->RamRange.cb >> X86_PAGE_SHIFT;
                         while (iDstPage-- > 0)
@@ -3124,7 +3200,6 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
                         /* advance. */
                         iSrcPage   += pCur->RamRange.cb >> X86_PAGE_SHIFT;
                         pbCurPages += pCur->RamRange.cb;
-                        idMmio2++;
                     }
 
                     RTMemTmpFree(paPages);
@@ -3213,7 +3288,8 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Deregister(PVM pVM, PPDMDEVINS pDevIns, PGMMMI
             pCur->pNextR3 = NULL;
 
             uint8_t idMmio2 = pCur->idMmio2;
-            if (idMmio2 != UINT8_MAX)
+            Assert(idMmio2 <= RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3));
+            if (idMmio2 <= RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3))
             {
                 Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] == pCur);
                 pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] = NULL;
@@ -3233,6 +3309,12 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Deregister(PVM pVM, PPDMDEVINS pDevIns, PGMMMI
             AssertRC(rc2);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
+
+            if (pCur->pPhysHandlerR3)
+            {
+                pgmHandlerPhysicalExDestroy(pVM, pCur->pPhysHandlerR3);
+                pCur->pPhysHandlerR3 = NULL;
+            }
 
             /* we're leaking hyper memory here if done at runtime. */
 #ifdef VBOX_STRICT
@@ -3516,66 +3598,18 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Map(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDL
         }
     }
 
-#if 0 /* will be reused */
     /*
-     * Register the access handler if plain MMIO.
+     * If the range have dirty page monitoring enabled, enable that.
      *
-     * We must register access handlers for each range since the access handler
-     * code refuses to deal with multiple ranges (and we can).
+     * We ignore failures here for now because if we fail, the whole mapping
+     * will have to be reversed and we'll end up with nothing at all on the
+     * screen and a grumpy guest, whereas if we just go on, we'll only have
+     * visual distortions to gripe about.  There will be something in the
+     * release log.
      */
-    if (!(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2))
-    {
-        AssertFailed();
-        int rc = VINF_SUCCESS;
-        for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
-        {
-            Assert(!(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED));
-            rc = pgmHandlerPhysicalExRegister(pVM, pCurMmio->pPhysHandlerR3, pCurMmio->RamRange.GCPhys,
-                                              pCurMmio->RamRange.GCPhysLast);
-            if (RT_FAILURE(rc))
-                break;
-            pCurMmio->fFlags |= PGMREGMMIO2RANGE_F_MAPPED; /* Use this to mark that the handler is registered. */
-            if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
-                break;
-        }
-        if (RT_FAILURE(rc))
-        {
-            /* Almost impossible, but try clean up properly and get out of here. */
-            for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
-            {
-                if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED)
-                {
-                    pCurMmio->fFlags &= ~PGMREGMMIO2RANGE_F_MAPPED;
-                    pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3);
-                }
-
-                if (!fRamExists)
-                    pgmR3PhysUnlinkRamRange(pVM, &pCurMmio->RamRange);
-                else
-                {
-                    Assert(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK); /* Only one chunk */
-
-                    uint32_t cPagesLeft = pCurMmio->RamRange.cb >> PAGE_SHIFT;
-                    PPGMPAGE pPageDst = &pRam->aPages[(pCurMmio->RamRange.GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
-                    while (cPagesLeft-- > 0)
-                    {
-                        PGM_PAGE_INIT_ZERO(pPageDst, pVM, PGMPAGETYPE_RAM);
-                        pPageDst++;
-                    }
-                }
-
-                pCurMmio->RamRange.GCPhys     = NIL_RTGCPHYS;
-                pCurMmio->RamRange.GCPhysLast = NIL_RTGCPHYS;
-                if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
-                    break;
-            }
-
-            /** @todo NEM notification cleanup */
-            PGM_UNLOCK(pVM);
-            return rc;
-        }
-    }
-#endif
+    if (   pFirstMmio->pPhysHandlerR3
+        && (pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
+        pgmR3PhysMmio2EnableDirtyPageTracing(pVM, pFirstMmio);
 
     /*
      * We're good, set the flags and invalid the mapping TLB.
@@ -3673,25 +3707,12 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Unmap(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HAN
     uint16_t const fOldFlags = pFirstMmio->fFlags;
     AssertReturnStmt(fOldFlags & PGMREGMMIO2RANGE_F_MAPPED, PGM_UNLOCK(pVM), VERR_WRONG_ORDER);
 
-#if 0 /* will be reused */
     /*
-     * If plain MMIO, we must deregister the handlers first.
+     * If monitoring dirty pages, we must deregister the handlers first.
      */
-    if (!(fOldFlags & PGMREGMMIO2RANGE_F_MMIO2))
-    {
-        AssertFailed();
-
-        PPGMREGMMIO2RANGE pCurMmio = pFirstMmio;
-        rc = pgmHandlerPhysicalExDeregister(pVM, pFirstMmio->pPhysHandlerR3);
-        AssertRCReturnStmt(rc, PGM_UNLOCK(pVM), rc);
-        while (!(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK))
-        {
-            pCurMmio = pCurMmio->pNextR3;
-            rc = pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3);
-            AssertRCReturnStmt(rc, PGM_UNLOCK(pVM), VERR_PGM_PHYS_MMIO_EX_IPE);
-        }
-    }
-#endif
+    if (   pFirstMmio->pPhysHandlerR3
+        && (fOldFlags & PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
+        pgmR3PhysMmio2DisableDirtyPageTracing(pVM, pFirstMmio);
 
     /*
      * Unmap it.
@@ -3841,6 +3862,16 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Reduce(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HA
             AssertLogRelMsgStmt(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK,
                                 ("%s: %#x\n", pFirstMmio->RamRange.pszDesc, pFirstMmio->fFlags),
                                 rc = VERR_NOT_SUPPORTED);
+
+#ifdef VBOX_WITH_PGM_NEM_MODE
+            /*
+             * Currently not supported for NEM in simple memory mode.
+             */
+            /** @todo implement this for NEM. */
+            if (RT_SUCCESS(rc))
+                AssertLogRelMsgStmt(VM_IS_NEM_ENABLED(pVM), ("%s: %#x\n", pFirstMmio->RamRange.pszDesc),
+                                    rc = VERR_PGM_NOT_SUPPORTED_FOR_NEM_MODE);
+#endif
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -3917,6 +3948,242 @@ VMMR3_INT_DECL(RTGCPHYS) PGMR3PhysMmio2GetMappingAddress(PVM pVM, PPDMDEVINS pDe
         return pFirstRegMmio->RamRange.GCPhys;
     return NIL_RTGCPHYS;
 }
+
+
+/**
+ * Worker for PGMR3PhysMmio2QueryAndResetDirtyBitmap.
+ *
+ * Called holding the PGM lock.
+ */
+static int pgmR3PhysMmio2QueryAndResetDirtyBitmapLocked(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
+                                                        void *pvBitmap, size_t cbBitmap)
+{
+    /*
+     * Continue validation.
+     */
+    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR3PhysMmio2Find(pVM, pDevIns, UINT32_MAX, UINT32_MAX, hMmio2);
+    AssertReturn(pFirstRegMmio, VERR_INVALID_HANDLE);
+    AssertReturn(   (pFirstRegMmio->fFlags & (PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES | PGMREGMMIO2RANGE_F_FIRST_CHUNK))
+                 ==                          (PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES | PGMREGMMIO2RANGE_F_FIRST_CHUNK),
+                 VERR_INVALID_FUNCTION);
+    AssertReturn(pDevIns == pFirstRegMmio->pDevInsR3, VERR_NOT_OWNER);
+
+    RTGCPHYS cbTotal     = 0;
+    uint16_t fTotalDirty = 0;
+    for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio;;)
+    {
+        cbTotal     += pCur->cbReal; /** @todo good question for NEM... */
+        fTotalDirty |= pCur->fFlags;
+        if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+            break;
+        pCur = pCur->pNextR3;
+        AssertPtrReturn(pCur, VERR_INTERNAL_ERROR_5);
+        AssertReturn(   (pCur->fFlags & (PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES | PGMREGMMIO2RANGE_F_FIRST_CHUNK))
+                     ==                  PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES,
+                     VERR_INTERNAL_ERROR_4);
+    }
+    size_t const cbTotalBitmap = RT_ALIGN_T(cbTotal, PAGE_SIZE * 64, RTGCPHYS) / PAGE_SIZE / 8;
+
+    if (cbBitmap)
+    {
+        AssertPtrReturn(pvBitmap, VERR_INVALID_POINTER);
+        AssertReturn(RT_ALIGN_P(pvBitmap, sizeof(uint64_t)) == pvBitmap, VERR_INVALID_POINTER);
+        AssertReturn(cbBitmap == cbTotalBitmap, VERR_INVALID_PARAMETER);
+    }
+
+    /*
+     * Do the work.
+     */
+    int rc = VINF_SUCCESS;
+    if (pvBitmap)
+    {
+        if (fTotalDirty & PGMREGMMIO2RANGE_F_IS_DIRTY)
+        {
+            if (   (pFirstRegMmio->fFlags & (PGMREGMMIO2RANGE_F_MAPPED | PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
+                ==                          (PGMREGMMIO2RANGE_F_MAPPED | PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
+            {
+                /*
+                 * Reset each chunk, gathering dirty bits.
+                 */
+                RT_BZERO(pvBitmap, cbBitmap); /* simpler for now. */
+                uint32_t iPageNo = 0;
+                for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio; pCur; pCur = pCur->pNextR3)
+                {
+                    if (pCur->fFlags & PGMREGMMIO2RANGE_F_IS_DIRTY)
+                    {
+                        int rc2 = pgmHandlerPhysicalResetMmio2WithBitmap(pVM, pCur->RamRange.GCPhys, pvBitmap, iPageNo);
+                        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                            rc = rc2;
+                        pCur->fFlags &= ~PGMREGMMIO2RANGE_F_IS_DIRTY;
+                    }
+                    if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+                        break;
+                    iPageNo += pCur->RamRange.cb >> PAGE_SHIFT;
+                }
+            }
+            else
+            {
+                /*
+                 * If not mapped or tracking is disabled, we return the
+                 * PGMREGMMIO2RANGE_F_IS_DIRTY status for all pages.  We cannot
+                 * get more accurate data than that after unmapping or disabling.
+                 */
+                RT_BZERO(pvBitmap, cbBitmap);
+                uint32_t iPageNo = 0;
+                for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio; pCur; pCur = pCur->pNextR3)
+                {
+                    if (pCur->fFlags & PGMREGMMIO2RANGE_F_IS_DIRTY)
+                    {
+                        ASMBitSetRange(pvBitmap, iPageNo, iPageNo + (pCur->RamRange.cb >> PAGE_SHIFT));
+                        pCur->fFlags &= ~PGMREGMMIO2RANGE_F_IS_DIRTY;
+                    }
+                    if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+                        break;
+                    iPageNo += pCur->RamRange.cb >> PAGE_SHIFT;
+                }
+            }
+        }
+        /*
+         * No dirty chunks.
+         */
+        else
+            RT_BZERO(pvBitmap, cbBitmap);
+    }
+    /*
+     * No bitmap. Reset the region if tracking is currently enabled.
+     */
+    else if (   (pFirstRegMmio->fFlags & (PGMREGMMIO2RANGE_F_MAPPED | PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
+             ==                          (PGMREGMMIO2RANGE_F_MAPPED | PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
+        rc = PGMHandlerPhysicalReset(pVM, pFirstRegMmio->RamRange.GCPhys);
+
+    return rc;
+}
+
+
+/**
+ * Queries the dirty page bitmap and resets the monitoring.
+ *
+ * The PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES flag must be specified when
+ * creating the range for this to work.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INVALID_FUNCTION if not created using
+ *          PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES.
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device owning the MMIO2 handle.
+ * @param   hMmio2      The region handle.
+ * @param   pvBitmap    The output bitmap.  Must be 8-byte aligned.  Ignored
+ *                      when @a cbBitmap is zero.
+ * @param   cbBitmap    The size of the bitmap.  Must be the size of the whole
+ *                      MMIO2 range, rounded up to the nearest 8 bytes.
+ *                      When zero only a reset is done.
+ */
+VMMR3_INT_DECL(int) PGMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
+                                                           void *pvBitmap, size_t cbBitmap)
+{
+    /*
+     * Do some basic validation before grapping the PGM lock and continuing.
+     */
+    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
+    AssertReturn(RT_ALIGN_Z(cbBitmap, sizeof(uint64_t)) == cbBitmap, VERR_INVALID_PARAMETER);
+    int rc = PGM_LOCK(pVM);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pgmR3PhysMmio2QueryAndResetDirtyBitmapLocked(pVM, pDevIns, hMmio2, pvBitmap, cbBitmap);
+        PGM_UNLOCK(pVM);
+    }
+    return rc;
+}
+
+/**
+ * Worker for PGMR3PhysMmio2ControlDirtyPageTracking
+ *
+ * Called owning the PGM lock.
+ */
+static int pgmR3PhysMmio2ControlDirtyPageTrackingLocked(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, bool fEnabled)
+{
+    /*
+     * Continue validation.
+     */
+    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR3PhysMmio2Find(pVM, pDevIns, UINT32_MAX, UINT32_MAX, hMmio2);
+    AssertReturn(pFirstRegMmio, VERR_INVALID_HANDLE);
+    AssertReturn(   (pFirstRegMmio->fFlags & (PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES | PGMREGMMIO2RANGE_F_FIRST_CHUNK))
+                 ==                          (PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES | PGMREGMMIO2RANGE_F_FIRST_CHUNK)
+                 , VERR_INVALID_FUNCTION);
+    AssertReturn(pDevIns == pFirstRegMmio->pDevInsR3, VERR_NOT_OWNER);
+
+    /*
+     * Anyting needing doing?
+     */
+    if (fEnabled != RT_BOOL(pFirstRegMmio->fFlags & PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
+    {
+        LogFlowFunc(("fEnabled=%RTbool %s\n", fEnabled, pFirstRegMmio->RamRange.pszDesc));
+
+        /*
+         * Update the PGMREGMMIO2RANGE_F_TRACKING_ENABLED flag.
+         */
+        for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio;;)
+        {
+            if (fEnabled)
+                pCur->fFlags |= PGMREGMMIO2RANGE_F_TRACKING_ENABLED;
+            else
+                pCur->fFlags &= ~PGMREGMMIO2RANGE_F_TRACKING_ENABLED;
+            if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+                break;
+            pCur = pCur->pNextR3;
+            AssertPtrReturn(pCur, VERR_INTERNAL_ERROR_5);
+            AssertReturn(   (pCur->fFlags & (PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES | PGMREGMMIO2RANGE_F_FIRST_CHUNK))
+                         ==                  PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES
+                         , VERR_INTERNAL_ERROR_4);
+        }
+
+        /*
+         * Enable/disable handlers if currently mapped.
+         *
+         * We ignore status codes here as we've already changed the flags and
+         * returning a failure status now would be confusing.  Besides, the two
+         * functions will continue past failures.  As argued in the mapping code,
+         * it's in the release log.
+         */
+        if (pFirstRegMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED)
+        {
+            if (fEnabled)
+                pgmR3PhysMmio2EnableDirtyPageTracing(pVM, pFirstRegMmio);
+            else
+                pgmR3PhysMmio2DisableDirtyPageTracing(pVM, pFirstRegMmio);
+        }
+    }
+    else
+        LogFlowFunc(("fEnabled=%RTbool %s - no change\n", fEnabled, pFirstRegMmio->RamRange.pszDesc));
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Controls the dirty page tracking for an MMIO2 range.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device owning the MMIO2 memory.
+ * @param   hMmio2      The handle of the region.
+ * @param   fEnabled    The new tracking state.
+ */
+VMMR3_INT_DECL(int) PGMR3PhysMmio2ControlDirtyPageTracking(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2, bool fEnabled)
+{
+    /*
+     * Do some basic validation before grapping the PGM lock and continuing.
+     */
+    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
+    int rc = PGM_LOCK(pVM);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pgmR3PhysMmio2ControlDirtyPageTrackingLocked(pVM, pDevIns, hMmio2, fEnabled);
+        PGM_UNLOCK(pVM);
+    }
+    return rc;
+}
+
 
 /**
  * Changes the region number of an MMIO2 region.

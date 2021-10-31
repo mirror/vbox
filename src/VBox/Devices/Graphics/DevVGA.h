@@ -348,12 +348,10 @@ typedef struct VGAState
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
     /** Bitmap tracking dirty pages. */
-    uint32_t                    au32DirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 32];
+    uint64_t                    bmDirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 64];
 
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
     bool                        fHasDirtyBits;
-    /** LFB was updated flag. */
-    bool                        fLFBUpdated;
     /** Flag indicating that the VGA memory in the 0xa0000-0xbffff region has been remapped to allow direct access. */
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
@@ -368,9 +366,9 @@ typedef struct VGAState
     bool                        fVMSVGA10;
     bool                        fVMSVGAPciId;
     bool                        fVMSVGAPciBarLayout;
-    bool                        Padding4[2];
+    bool                        Padding4[3];
 #else
-    bool                        Padding4[4+2];
+    bool                        Padding4[4+3];
 #endif
 
     struct {
@@ -381,9 +379,6 @@ typedef struct VGAState
         uint32_t                    iFIFO;
 #endif
     } pciRegions;
-
-    /** Physical access type for the linear frame buffer dirty page tracking. */
-    PGMPHYSHANDLERTYPE          hLfbAccessHandlerType;
 
     /** The physical address the VRAM was assigned. */
     RTGCPHYS                    GCPhysVRAM;

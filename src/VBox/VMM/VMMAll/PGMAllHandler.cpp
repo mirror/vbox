@@ -48,7 +48,8 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int  pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVMCC pVM, PPGMPHYSHANDLER pCur, PPGMRAMRANGE pRam);
+static int  pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVMCC pVM, PPGMPHYSHANDLER pCur, PPGMRAMRANGE pRam,
+                                                           void *pvBitmap, uint32_t offBitmap);
 static void pgmHandlerPhysicalDeregisterNotifyNEM(PVMCC pVM, PPGMPHYSHANDLER pCur);
 static void pgmHandlerPhysicalResetRamFlags(PVMCC pVM, PPGMPHYSHANDLER pCur);
 
@@ -285,7 +286,7 @@ int pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPH
     PGM_LOCK_VOID(pVM);
     if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pPhysHandler->Core))
     {
-        int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pPhysHandler, pRam);
+        int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pPhysHandler, pRam, NULL /*pvBitmap*/, 0 /*offBitmap*/);
         if (rc == VINF_PGM_SYNC_CR3)
             rc = VINF_PGM_GCPHYS_ALIASED;
 
@@ -364,11 +365,14 @@ VMMDECL(int) PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
  * @retval  VINF_SUCCESS when shadow PTs was successfully updated.
  * @retval  VINF_PGM_SYNC_CR3 when the shadow PTs could be updated because
  *          the guest page aliased or/and mapped by multiple PTs. FFs set.
- * @param   pVM     The cross context VM structure.
- * @param   pCur    The physical handler.
- * @param   pRam    The RAM range.
+ * @param   pVM         The cross context VM structure.
+ * @param   pCur        The physical handler.
+ * @param   pRam        The RAM range.
+ * @param   pvBitmap    Dirty bitmap. Optional.
+ * @param   offBitmap   Dirty bitmap offset.
  */
-static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVMCC pVM, PPGMPHYSHANDLER pCur, PPGMRAMRANGE pRam)
+static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVMCC pVM, PPGMPHYSHANDLER pCur, PPGMRAMRANGE pRam,
+                                                          void *pvBitmap, uint32_t offBitmap)
 {
     /*
      * Iterate the guest ram pages updating the flags and flushing PT entries
@@ -409,12 +413,15 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVMCC pVM, PPGMPHYSHAN
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
 #endif
+            if (pvBitmap)
+                ASMBitSet(pvBitmap, offBitmap);
         }
 
         /* next */
         if (--cPages == 0)
             break;
         i++;
+        offBitmap++;
     }
 
     if (fFlushTLBs)
@@ -904,7 +911,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHY
                     /*
                      * Set ram flags, flush shadow PT entries and finally tell REM about this.
                      */
-                    rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
+                    rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam, NULL, 0);
 
                     /** @todo NEM: not sure we need this notification... */
                     NEMHCNotifyHandlerPhysicalModify(pVM, enmKind, GCPhysCurrent, GCPhys, cb, fRestoreAsRAM);
@@ -1214,7 +1221,7 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
                     /*
                      * Set the flags and flush shadow PT entries.
                      */
-                    rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
+                    rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam, NULL /*pvBitmap*/, 0 /*offBitmap*/);
                 }
 
                 pCur->cAliasedPages = 0;
@@ -1240,6 +1247,71 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
     }
 
     PGM_UNLOCK(pVM);
+    return rc;
+}
+
+
+/**
+ * Special version of PGMHandlerPhysicalReset used by MMIO2 w/ dirty page
+ * tracking.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   GCPhys      The start address of the handler region.
+ * @param   pvBitmap    Dirty bitmap. Caller has cleared this already, only
+ *                      dirty bits will be set. Caller also made sure it's big
+ *                      enough.
+ * @param   offBitmap   Dirty bitmap offset.
+ * @remarks Caller must own the PGM critical section.
+ */
+DECLHIDDEN(int) pgmHandlerPhysicalResetMmio2WithBitmap(PVMCC pVM, RTGCPHYS GCPhys, void *pvBitmap, uint32_t offBitmap)
+{
+    LogFlow(("pgmHandlerPhysicalResetMmio2WithBitmap GCPhys=%RGp\n", GCPhys));
+    PGM_LOCK_ASSERT_OWNER(pVM);
+
+    /*
+     * Find the handler.
+     */
+    int rc;
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+    if (RT_LIKELY(pCur))
+    {
+        /*
+         * Validate kind.
+         */
+        PPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
+        if (pCurType->enmKind == PGMPHYSHANDLERKIND_WRITE)
+        {
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PhysHandlerReset));
+
+            PPGMRAMRANGE pRam = pgmPhysGetRange(pVM, GCPhys);
+            Assert(pRam);
+            Assert(pRam->GCPhys     <= pCur->Core.Key);
+            Assert(pRam->GCPhysLast >= pCur->Core.KeyLast);
+
+            /*
+             * Set the flags and flush shadow PT entries.
+             */
+            if (pCur->cTmpOffPages > 0)
+            {
+                rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam, pvBitmap, offBitmap);
+                pCur->cTmpOffPages  = 0;
+            }
+            else
+                rc = VINF_SUCCESS;
+        }
+        else
+        {
+            AssertFailed();
+            rc = VERR_WRONG_TYPE;
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("Didn't find MMIO Range starting at %#x\n", GCPhys));
+        rc = VERR_PGM_HANDLER_NOT_FOUND;
+    }
+
     return rc;
 }
 

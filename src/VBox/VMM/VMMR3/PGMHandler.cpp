@@ -64,6 +64,8 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   enmKind         The kind of access handler.
+ * @param   fKeepPgmLock    Whether to hold the PGM lock while calling the
+ *                          handler or not.  Mainly for PGM callers.
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
  * @param   pfnHandlerR0    Pointer to the ring-0 handler callback.
  * @param   pfnPfHandlerR0  Pointer to the ring-0 \#PF handler callback.
@@ -72,7 +74,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
  * @param   phType          Where to return the type handle (cross context
  *                          safe).
  */
-VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind,
+VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind, bool fKeepPgmLock,
                                                        PFNPGMPHYSHANDLER pfnHandlerR3,
                                                        R0PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR0,
                                                        R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
@@ -96,6 +98,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
         pType->enmKind          = enmKind;
         pType->uState           = enmKind == PGMPHYSHANDLERKIND_WRITE
                                 ? PGM_PAGE_HNDL_PHYS_STATE_WRITE : PGM_PAGE_HNDL_PHYS_STATE_ALL;
+        pType->fKeepPgmLock     = fKeepPgmLock;
         pType->pfnHandlerR3     = pfnHandlerR3;
         pType->pfnHandlerR0     = pfnHandlerR0;
         pType->pfnPfHandlerR0   = pfnPfHandlerR0;
@@ -121,6 +124,8 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   enmKind         The kind of access handler.
+ * @param   fKeepPgmLock    Whether to hold the PGM lock while calling the
+ *                          handler or not.  Mainly for PGM callers.
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
  * @param   pszModR0        The name of the ring-0 module, NULL is an alias for
  *                          the main ring-0 module.
@@ -138,7 +143,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
  * @param   phType          Where to return the type handle (cross context
  *                          safe).
  */
-VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind,
+VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, bool fKeepPgmLock,
                                                 R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
                                                 const char *pszModR0, const char *pszHandlerR0, const char *pszPfHandlerR0,
                                                 const char *pszModRC, const char *pszHandlerRC, const char *pszPfHandlerRC,
@@ -193,7 +198,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmK
 
             }
             if (RT_SUCCESS(rc))
-                return PGMR3HandlerPhysicalTypeRegisterEx(pVM, enmKind, pfnHandlerR3,
+                return PGMR3HandlerPhysicalTypeRegisterEx(pVM, enmKind, fKeepPgmLock, pfnHandlerR3,
                                                           pfnHandlerR0, pfnPfHandlerR0, pszDesc, phType);
         }
         else

@@ -308,7 +308,7 @@ static uint8_t expand4to8[16];
 DECLINLINE(void) vgaR3MarkDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
 {
     AssertMsg(offVRAM < pThis->vram_size, ("offVRAM = %p, pThis->vram_size = %p\n", offVRAM, pThis->vram_size));
-    ASMBitSet(&pThis->au32DirtyBitmap[0], offVRAM >> PAGE_SHIFT);
+    ASMBitSet(&pThis->bmDirtyBitmap[0], offVRAM >> PAGE_SHIFT);
     pThis->fHasDirtyBits = true;
 }
 
@@ -323,10 +323,11 @@ DECLINLINE(void) vgaR3MarkDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
 DECLINLINE(bool) vgaIsDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
 {
     AssertMsg(offVRAM < pThis->vram_size, ("offVRAM = %p, pThis->vram_size = %p\n", offVRAM, pThis->vram_size));
-    return ASMBitTest(&pThis->au32DirtyBitmap[0], offVRAM >> PAGE_SHIFT);
+    return ASMBitTest(&pThis->bmDirtyBitmap[0], offVRAM >> PAGE_SHIFT);
 }
 
 #ifdef IN_RING3
+
 /**
  * Reset dirty flags in a give range.
  *
@@ -339,8 +340,73 @@ DECLINLINE(void) vgaR3ResetDirty(PVGASTATE pThis, RTGCPHYS offVRAMStart, RTGCPHY
     Assert(offVRAMStart < pThis->vram_size);
     Assert(offVRAMEnd <= pThis->vram_size);
     Assert(offVRAMStart < offVRAMEnd);
-    ASMBitClearRange(&pThis->au32DirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
+    ASMBitClearRange(&pThis->bmDirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
 }
+
+
+/**
+ * Queries the VRAM dirty bits and resets the monitoring.
+ */
+static void vgaR3UpdateDirtyBitsAndResetMonitoring(PPDMDEVINS pDevIns, PVGASTATE pThis)
+{
+    size_t const cbBitmap = RT_ALIGN_Z(RT_MIN(pThis->vram_size, VGA_VRAM_MAX), PAGE_SIZE * 64) / PAGE_SIZE / 8;
+
+    /*
+     * If we don't have any dirty bits from MMIO accesses, we can just query
+     * straight into the dirty buffer.
+     */
+    if (!pThis->fHasDirtyBits)
+    {
+        int rc = PDMDevHlpMmio2QueryAndResetDirtyBitmap(pDevIns, pThis->hMmio2VRam, pThis->bmDirtyBitmap, cbBitmap);
+        AssertRC(rc);
+    }
+    /*
+     * Otherwise we'll have to query and merge the two.
+     */
+    else
+    {
+        uint64_t bmDirtyPages[VGA_VRAM_MAX / PAGE_SIZE / 64]; /* (256 MB VRAM -> 8KB bitmap) */
+        int rc = PDMDevHlpMmio2QueryAndResetDirtyBitmap(pDevIns, pThis->hMmio2VRam, bmDirtyPages, cbBitmap);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo could use ORPS or VORPS here, I think. */
+            uint64_t     *pbmDst      = pThis->bmDirtyBitmap;
+            size_t const  cTodo       = cbBitmap / sizeof(uint64_t);
+
+            /* Do 64 bytes at a time first. */
+            size_t const  cTodoFirst  = cTodo & ~(size_t)7;
+            size_t        idx;
+            for (idx = 0; idx < cTodoFirst; idx += 8)
+            {
+                pbmDst[idx + 0] |= bmDirtyPages[idx + 0];
+                pbmDst[idx + 1] |= bmDirtyPages[idx + 1];
+                pbmDst[idx + 2] |= bmDirtyPages[idx + 2];
+                pbmDst[idx + 3] |= bmDirtyPages[idx + 3];
+                pbmDst[idx + 4] |= bmDirtyPages[idx + 4];
+                pbmDst[idx + 5] |= bmDirtyPages[idx + 5];
+                pbmDst[idx + 6] |= bmDirtyPages[idx + 6];
+                pbmDst[idx + 7] |= bmDirtyPages[idx + 7];
+            }
+
+            /* Then do a mopup of anything remaining. */
+            switch (cTodo - idx)
+            {
+                case 7:     pbmDst[idx + 6] |= bmDirtyPages[idx + 6]; RT_FALL_THRU();
+                case 6:     pbmDst[idx + 5] |= bmDirtyPages[idx + 5]; RT_FALL_THRU();
+                case 5:     pbmDst[idx + 4] |= bmDirtyPages[idx + 4]; RT_FALL_THRU();
+                case 4:     pbmDst[idx + 3] |= bmDirtyPages[idx + 3]; RT_FALL_THRU();
+                case 3:     pbmDst[idx + 2] |= bmDirtyPages[idx + 2]; RT_FALL_THRU();
+                case 2:     pbmDst[idx + 1] |= bmDirtyPages[idx + 1]; RT_FALL_THRU();
+                case 1:     pbmDst[idx]     |= bmDirtyPages[idx];     break;
+                case 0:     break;
+                default:    AssertFailedBreak();
+            }
+
+            pThis->fHasDirtyBits = false;
+        }
+    }
+}
+
 #endif /* IN_RING3 */
 
 /* Update the values needed for calculating Vertical Retrace and
@@ -2479,8 +2545,7 @@ static int vgaR3DrawBlank(PVGASTATE pThis, PVGASTATER3 pThisCC, bool full_update
         page_min = (pThis->start_addr * 4) & ~PAGE_OFFSET_MASK;
         /* round up page_max by one page, as otherwise this can be -PAGE_SIZE,
          * which causes assertion trouble in vgaR3ResetDirty. */
-        page_max = (  pThis->start_addr * 4 + pThis->line_offset * pThis->last_scr_height
-                    - 1 + PAGE_SIZE) & ~PAGE_OFFSET_MASK;
+        page_max = (pThis->start_addr * 4 + pThis->line_offset * pThis->last_scr_height - 1 + PAGE_SIZE) & ~PAGE_OFFSET_MASK;
         vgaR3ResetDirty(pThis, page_min, page_max + PAGE_SIZE);
     }
     if (pDrv->pbData == pThisCC->pbVRam) /* Do not clear the VRAM itself. */
@@ -2515,7 +2580,7 @@ static int vgaR3DrawBlank(PVGASTATE pThis, PVGASTATER3 pThisCC, bool full_update
 #endif
 
 /**
- * Worker for vgaR3PortUpdateDisplay(), vboxR3UpdateDisplayAllInternal() and
+ * Worker for vgaR3PortUpdateDisplay(), vgaR3UpdateDisplayAllInternal() and
  * vgaR3PortTakeScreenshot().
  */
 static int vgaR3UpdateDisplay(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisCC, bool fUpdateAll,
@@ -3613,106 +3678,6 @@ static DECLCALLBACK(VBOXSTRICTRC) vgaMmioWrite(PPDMDEVINS pDevIns, void *pvUser,
 }
 
 
-/**
- * Handle LFB access.
- *
- * @returns Strict VBox status code.
- * @param   pVM         VM handle.
- * @param   pDevIns     The device instance.
- * @param   pThis       The shared VGA instance data.
- * @param   GCPhys      The access physical address.
- * @param   GCPtr       The access virtual address (only GC).
- */
-static VBOXSTRICTRC vgaLFBAccess(PVMCC pVM, PPDMDEVINS pDevIns, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr)
-{
-    RT_NOREF(pVM);
-
-    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VINF_EM_RAW_EMULATE_INSTR);
-    if (rc == VINF_SUCCESS)
-    {
-        /*
-         * Set page dirty bit.
-         */
-        vgaR3MarkDirty(pThis, GCPhys - pThis->GCPhysVRAM);
-        pThis->fLFBUpdated = true;
-
-        /*
-         * Turn of the write handler for this particular page and make it R/W.
-         * Then return telling the caller to restart the guest instruction.
-         * ASSUME: the guest always maps video memory RW.
-         */
-        rc = PDMDevHlpPGMHandlerPhysicalPageTempOff(pDevIns, pThis->GCPhysVRAM, GCPhys);
-        if (RT_SUCCESS(rc))
-        {
-#ifndef IN_RING3
-            rc = PGMShwMakePageWritable(PDMDevHlpGetVMCPU(pDevIns), GCPtr,
-                                        PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT);
-            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
-            AssertMsgReturn(    rc == VINF_SUCCESS
-                            /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
-                            ||  rc == VERR_PAGE_TABLE_NOT_PRESENT
-                            ||  rc == VERR_PAGE_NOT_PRESENT,
-                            ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, VBOXSTRICTRC_VAL(rc)),
-                            rc);
-#else  /* IN_RING3 - We don't have any virtual page address of the access here. */
-            PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
-            Assert(GCPtr == 0);
-            RT_NOREF1(GCPtr);
-#endif
-            return VINF_SUCCESS;
-        }
-
-        PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
-        AssertMsgFailed(("PGMHandlerPhysicalPageTempOff -> rc=%d\n", VBOXSTRICTRC_VAL(rc)));
-    }
-    return rc;
-}
-
-
-#ifndef IN_RING3
-/**
- * @callback_method_impl{FNPGMRCPHYSHANDLER, \#PF Handler for VBE LFB access.}
- */
-PDMBOTHCBDECL(VBOXSTRICTRC) vgaLbfAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                                  RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
-{
-    PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
-    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    //PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
-    Assert(GCPhysFault >= pThis->GCPhysVRAM);
-    AssertMsg(uErrorCode & X86_TRAP_PF_RW, ("uErrorCode=%#x\n", uErrorCode));
-    RT_NOREF3(pVCpu, pRegFrame, uErrorCode);
-
-    return vgaLFBAccess(pVM, pDevIns, pThis, GCPhysFault, pvFault);
-}
-#endif /* !IN_RING3 */
-
-
-/**
- * @callback_method_impl{FNPGMPHYSHANDLER,
- *      VBE LFB write access handler for the dirty tracking.}
- */
-PGM_ALL_CB_DECL(VBOXSTRICTRC) vgaLFBAccessHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
-                                                  void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
-                                                  PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
-    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    //PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
-    Assert(GCPhys >= pThis->GCPhysVRAM);
-    RT_NOREF(pVCpu, pvPhys, pvBuf, cbBuf, enmAccessType, enmOrigin);
-
-    VBOXSTRICTRC rc = vgaLFBAccess(pVM, pDevIns, pThis, GCPhys, 0);
-    if (rc == VINF_SUCCESS)
-        rc = VINF_PGM_HANDLER_DO_DEFAULT;
-#ifdef IN_RING3
-    else
-        AssertMsg(rc < VINF_SUCCESS, ("rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
-#endif
-    return rc;
-}
-
-
 /* -=-=-=-=-=- All rings: VGA BIOS I/Os -=-=-=-=-=- */
 
 /**
@@ -4784,11 +4749,10 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 # endif /* VBOX_WITH_HGSMI */
 
     STAM_COUNTER_INC(&pThis->StatUpdateDisp);
-    if (pThis->fHasDirtyBits && pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS)
-    {
-        PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pThis->GCPhysVRAM);
-        pThis->fHasDirtyBits = false;
-    }
+
+    if (pThis->GCPhysVRAM != 0 && pThis->GCPhysVRAM != NIL_RTGCPHYS)
+        vgaR3UpdateDirtyBitsAndResetMonitoring(pDevIns, pThis);
+
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
@@ -4805,18 +4769,18 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 /**
  * Internal vgaR3PortUpdateDisplayAll worker called under pThis->CritSect.
  */
-/** @todo Why the 'vboxR3' prefix? */
-static int vboxR3UpdateDisplayAllInternal(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, bool fFailOnResize)
+static int vgaR3UpdateDisplayAllInternal(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, bool fFailOnResize)
 {
 # ifdef VBOX_WITH_VMSVGA
     if (   !pThis->svga.fEnabled
         || pThis->svga.fTraces)
 # endif
     {
-        /* The dirty bits array has been just cleared, reset handlers as well. */
-        if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS)
-            PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pThis->GCPhysVRAM);
+        /* Update the dirty bits. */
+        if (pThis->GCPhysVRAM != 0 && pThis->GCPhysVRAM != NIL_RTGCPHYS)
+            vgaR3UpdateDirtyBitsAndResetMonitoring(pDevIns, pThis);
     }
+
     if (pThis->fRemappedVGA)
     {
         PDMDevHlpMmioResetRegion(pDevIns, pThis->hMmioLegacy);
@@ -4848,7 +4812,7 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRCReturn(rc, rc);
 
-    rc = vboxR3UpdateDisplayAllInternal(pDevIns, pThis, pThisCC, fFailOnResize);
+    rc = vgaR3UpdateDisplayAllInternal(pDevIns, pThis, pThisCC, fFailOnResize);
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
@@ -4925,7 +4889,7 @@ static DECLCALLBACK(int) vgaR3PortTakeScreenshot(PPDMIDISPLAYPORT pInterface, ui
 
     /*
      * Get screenshot. This function will fail if a resize is required.
-     * So there is not need to do a 'vboxR3UpdateDisplayAllInternal' before taking screenshot.
+     * So there is not need to do a 'vgaR3UpdateDisplayAllInternal' before taking screenshot.
      */
 
     /*
@@ -5499,12 +5463,9 @@ static DECLCALLBACK(void) vgaR3TimerRefresh(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
  */
 int vgaR3RegisterVRAMHandler(PPDMDEVINS pDevIns, PVGASTATE pThis, uint64_t cbFrameBuffer)
 {
-    Assert(pThis->GCPhysVRAM);
-    int rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns,
-                                                 pThis->GCPhysVRAM, pThis->GCPhysVRAM + (cbFrameBuffer - 1),
-                                                 pThis->hLfbAccessHandlerType, pDevIns, pDevIns->pDevInsR0RemoveMe,
-                                                 pDevIns->pDevInsForRC, "VGA LFB");
-
+    Assert(pThis->GCPhysVRAM != 0 && pThis->GCPhysVRAM != NIL_RTGCPHYS);
+    int rc = PDMDevHlpMmio2ControlDirtyPageTracking(pDevIns, pThis->hMmio2VRam, true /*fEnabled*/);
+    RT_NOREF(cbFrameBuffer);
     AssertRC(rc);
     return rc;
 }
@@ -5515,8 +5476,8 @@ int vgaR3RegisterVRAMHandler(PPDMDEVINS pDevIns, PVGASTATE pThis, uint64_t cbFra
  */
 int vgaR3UnregisterVRAMHandler(PPDMDEVINS pDevIns, PVGASTATE pThis)
 {
-    Assert(pThis->GCPhysVRAM);
-    int rc = PDMDevHlpPGMHandlerPhysicalDeregister(pDevIns, pThis->GCPhysVRAM);
+    Assert(pThis->GCPhysVRAM != 0 && pThis->GCPhysVRAM != NIL_RTGCPHYS);
+    int rc = PDMDevHlpMmio2ControlDirtyPageTracking(pDevIns, pThis->hMmio2VRam, false /*fEnabled*/);
     AssertRC(rc);
     return rc;
 }
@@ -5556,26 +5517,23 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
     if (GCPhysAddress != NIL_RTGCPHYS)
     {
         /*
-         * Mapping the VRAM.
+         * Make sure the dirty page tracking state is up to date before mapping it.
+         */
+# ifdef VBOX_WITH_VMSVGA
+        rc = PDMDevHlpMmio2ControlDirtyPageTracking(pDevIns, pThis->hMmio2VRam,
+                                                    !pThis->svga.fEnabled ||(pThis->svga.fEnabled && pThis->svga.fVRAMTracking));
+# else
+        rc = PDMDevHlpMmio2ControlDirtyPageTracking(pDevIns, pThis->hMmio2VRam, true /*fEnabled*/);
+# endif
+        AssertLogRelRC(rc);
+
+        /*
+         * Map the VRAM.
          */
         rc = PDMDevHlpMmio2Map(pDevIns, pThis->hMmio2VRam, GCPhysAddress);
         AssertLogRelRC(rc);
         if (RT_SUCCESS(rc))
         {
-# ifdef VBOX_WITH_VMSVGA
-            if (    !pThis->svga.fEnabled
-                ||  (   pThis->svga.fEnabled
-                     && pThis->svga.fVRAMTracking
-                    )
-               )
-# endif
-            {
-                rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns, GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
-                                                         pThis->hLfbAccessHandlerType, pDevIns, pDevIns->pDevInsR0RemoveMe,
-                                                         pDevIns->pDevInsForRC, "VGA LFB");
-                AssertLogRelRC(rc);
-            }
-
             pThis->GCPhysVRAM = GCPhysAddress;
             pThis->vbe_regs[VBE_DISPI_INDEX_FB_BASE_HI] = GCPhysAddress >> 16;
 
@@ -5586,25 +5544,10 @@ static DECLCALLBACK(int) vgaR3PciIORegionVRamMapUnmap(PPDMDEVINS pDevIns, PPDMPC
     {
         /*
          * Unmapping of the VRAM in progress (caller will do that).
-         * Deregister the access handler so PGM doesn't get upset.
          */
         Assert(pThis->GCPhysVRAM);
-# ifdef VBOX_WITH_VMSVGA
-        if (    !pThis->svga.fEnabled
-            ||  (   pThis->svga.fEnabled
-                 && pThis->svga.fVRAMTracking
-                )
-           )
-# endif
-        {
-            rc = PDMDevHlpPGMHandlerPhysicalDeregister(pDevIns, pThis->GCPhysVRAM);
-            AssertRC(rc);
-        }
-# ifdef VBOX_WITH_VMSVGA
-        else
-            rc = VINF_SUCCESS;
-# endif
         pThis->GCPhysVRAM = 0;
+        rc = VINF_SUCCESS;
         /* NB: VBE_DISPI_INDEX_FB_BASE_HI is left unchanged here. */
     }
     return rc;
@@ -6048,13 +5991,15 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     /*
      * Reset the LFB mapping.
      */
-    pThis->fLFBUpdated = false;
-    if (    (   pDevIns->fRCEnabled
-             || pDevIns->fR0Enabled)
-        &&  pThis->GCPhysVRAM
-        &&  pThis->GCPhysVRAM != NIL_RTGCPHYS)
+    if (   (   pDevIns->fRCEnabled
+            || pDevIns->fR0Enabled)
+        && pThis->GCPhysVRAM != 0
+        && pThis->GCPhysVRAM != NIL_RTGCPHYS)
     {
-        int rc = PDMDevHlpPGMHandlerPhysicalReset(pDevIns, pThis->GCPhysVRAM);
+        /** @todo r=bird: This used to be a PDMDevHlpPGMHandlerPhysicalReset call.
+         *        Not quite sure if it was/is needed. Besides, where do we reset the
+         *        dirty bitmap (bmDirtyBitmap)? */
+        int rc = PDMDevHlpMmio2ResetDirtyBitmap(pDevIns, pThis->hMmio2VRam);
         AssertRC(rc);
     }
     if (pThis->fRemappedVGA)
@@ -6605,20 +6550,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Allocate VRAM and create a PCI region for it.
      */
     rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, pThis->pciRegions.iVRAM, pThis->vram_size,
-                                           PCI_ADDRESS_SPACE_MEM_PREFETCH, 0 /*fFlags*/, vgaR3PciIORegionVRamMapUnmap,
-                                           "VRam", (void **)&pThisCC->pbVRam, &pThis->hMmio2VRam);
+                                           PCI_ADDRESS_SPACE_MEM_PREFETCH, PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES,
+                                           vgaR3PciIORegionVRamMapUnmap, "VRam", (void **)&pThisCC->pbVRam, &pThis->hMmio2VRam);
     AssertLogRelRCReturn(rc, PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                                  N_("Failed to allocate %u bytes of VRAM"), pThis->vram_size));
-
-    /*
-     * Register access handler types for tracking dirty VRAM pages.
-     */
-    rc = PDMDevHlpPGMHandlerPhysicalTypeRegister(pDevIns, PGMPHYSHANDLERKIND_WRITE,
-                                                 vgaLFBAccessHandler,
-                                                 "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
-                                                 "vgaLFBAccessHandler", "vgaLbfAccessPfHandler",
-                                                 "VGA LFB", &pThis->hLfbAccessHandlerType);
-    AssertRCReturn(rc, rc);
 
     /*
      * Register I/O ports.

@@ -488,7 +488,10 @@ typedef struct PGMPHYSHANDLERTYPEINT
     /** The kind of accesses we're handling. */
     PGMPHYSHANDLERKIND                  enmKind;
     /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
-    uint32_t                            uState;
+    uint8_t                             uState;
+    /** Whether to keep the PGM lock when calling the handler. */
+    bool                                fKeepPgmLock;
+    bool                                afPadding[2];
     /** Pointer to R3 callback function. */
     R3PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandlerR3;
     /** Pointer to R0 callback function. */
@@ -1431,13 +1434,21 @@ typedef PGMREGMMIO2RANGE *PPGMREGMMIO2RANGE;
 /** @name PGMREGMMIO2RANGE_F_XXX - Registered MMIO2 range flags.
  * @{ */
 /** Set if this is the first chunk in the MMIO2 range. */
-#define PGMREGMMIO2RANGE_F_FIRST_CHUNK      UINT16_C(0x0001)
+#define PGMREGMMIO2RANGE_F_FIRST_CHUNK          UINT16_C(0x0001)
 /** Set if this is the last chunk in the MMIO2 range. */
-#define PGMREGMMIO2RANGE_F_LAST_CHUNK       UINT16_C(0x0002)
+#define PGMREGMMIO2RANGE_F_LAST_CHUNK           UINT16_C(0x0002)
 /** Set if the whole range is mapped. */
-#define PGMREGMMIO2RANGE_F_MAPPED           UINT16_C(0x0004)
+#define PGMREGMMIO2RANGE_F_MAPPED               UINT16_C(0x0004)
 /** Set if it's overlapping, clear if not. */
-#define PGMREGMMIO2RANGE_F_OVERLAPPING      UINT16_C(0x0008)
+#define PGMREGMMIO2RANGE_F_OVERLAPPING          UINT16_C(0x0008)
+/** This mirrors the PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES creation flag.*/
+#define PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES    UINT16_C(0x0010)
+/** Set if the access handler is registered.   */
+#define PGMREGMMIO2RANGE_F_IS_TRACKING          UINT16_C(0x0020)
+/** Set if dirty page tracking is currently enabled. */
+#define PGMREGMMIO2RANGE_F_TRACKING_ENABLED     UINT16_C(0x0040)
+/** Set if there are dirty pages in the range.   */
+#define PGMREGMMIO2RANGE_F_IS_DIRTY             UINT16_C(0x0080)
 /** @} */
 
 
@@ -3042,8 +3053,8 @@ typedef struct PGM
 
     /** Physical access handler type for ROM protection. */
     PGMPHYSHANDLERTYPE              hRomPhysHandlerType;
-    /** Alignment padding.   */
-    uint32_t                        u32Padding;
+    /** Physical access handler type for MMIO2 dirty page tracing. */
+    PGMPHYSHANDLERTYPE              hMmio2DirtyPhysHandlerType;
 
     /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
     RTGCPHYS                        GCPhys4MBPSEMask;
@@ -3738,6 +3749,7 @@ int             pgmHandlerPhysicalExDestroy(PVMCC pVM, PPGMPHYSHANDLER pHandler)
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
 bool            pgmHandlerPhysicalIsAll(PVMCC pVM, RTGCPHYS GCPhys);
 void            pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, PPGMRAMRANGE pRam, bool fDoAccounting);
+DECLHIDDEN(int) pgmHandlerPhysicalResetMmio2WithBitmap(PVMCC pVM, RTGCPHYS GCPhys, void *pvBitmap, uint32_t offBitmap);
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
@@ -3759,10 +3771,12 @@ int             pgmPhysGCPhys2CCPtrInternal(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS 
 int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
 void            pgmPhysReleaseInternalPageMappingLock(PVMCC pVM, PPGMPAGEMAPLOCK pLock);
 PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) pgmPhysRomWriteHandler;
+PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) pgmPhysMmio2WriteHandler;
 #ifndef IN_RING3
 DECLEXPORT(FNPGMPHYSHANDLER)        pgmPhysHandlerRedirectToHC;
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysPfHandlerRedirectToHC;
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysRomWritePfHandler;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysMmio2WritePfHandler;
 #endif
 int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys,
                                 PGMPAGETYPE enmNewType);

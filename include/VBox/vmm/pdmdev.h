@@ -2424,7 +2424,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 61, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 62, 0)
 
 /**
  * PDM Device API.
@@ -2642,7 +2642,7 @@ typedef struct PDMDEVHLPR3
      *                              it's not associated with the PCI device, then
      *                              any number up to UINT8_MAX is fine.
      * @param   cbRegion            The size (in bytes) of the region.
-     * @param   fFlags              Reserved for future use, must be zero.
+     * @param   fFlags              PGMPHYS_MMIO2_FLAGS_XXX (see pgm.h).
      * @param   pszDesc             Pointer to description string. This must not be
      *                              freed.
      * @param   ppvMapping          Where to store the address of the ring-3 mapping
@@ -2722,6 +2722,40 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(RTGCPHYS, pfnMmio2GetMappingAddress,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion));
 
     /**
+     * Queries and resets the dirty bitmap for an MMIO2 region.
+     *
+     * The MMIO2 region must have been created with the
+     * PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES flag for this to work.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   hRegion     The MMIO2 region handle.
+     * @param   pvBitmap    Where to return the bitmap.  Must be 8-byte aligned.
+     *                      Can be NULL if only resetting the tracking is desired.
+     * @param   cbBitmap    The bitmap size.  One bit per page in the region,
+     *                      rounded up to 8-bytes.  If pvBitmap is NULL this must
+     *                      also be zero.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2QueryAndResetDirtyBitmap, (PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion,
+                                                                 void *pvBitmap, size_t cbBitmap));
+
+    /**
+     * Controls the dirty page tracking for an MMIO2 region.
+     *
+     * The MMIO2 region must have been created with the
+     * PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES flag for this to work.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   hRegion     The MMIO2 region handle.
+     * @param   fEnabled    When set to @c true the dirty page tracking will be
+     *                      enabled if currently disabled (bitmap is reset).  When
+     *                      set to @c false the dirty page tracking will be
+     *                      disabled.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2ControlDirtyPageTracking, (PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, bool fEnabled));
+
+    /**
      * Changes the number of an MMIO2 or pre-registered MMIO region.
      *
      * This should only be used to deal with saved state problems, so there is no
@@ -2791,7 +2825,7 @@ typedef struct PDMDEVHLPR3
      * @param   pvBinary            Pointer to the binary data backing the ROM image.
      * @param   cbBinary            The size of the binary pointer.  This must
      *                              be equal or smaller than @a cbRange.
-     * @param   fFlags              Shadow ROM flags, PGMPHYS_ROM_FLAGS_* in pgm.h.
+     * @param   fFlags              PGMPHYS_ROM_FLAGS_XXX (see pgm.h).
      * @param   pszDesc             Pointer to description string. This must not be freed.
      *
      * @remark  There is no way to remove the rom, automatically on device cleanup or
@@ -6745,6 +6779,38 @@ DECLINLINE(RTGCPHYS) PDMDevHlpMmio2GetMappingAddress(PPDMDEVINS pDevIns, PGMMMIO
     return pDevIns->pHlpR3->pfnMmio2GetMappingAddress(pDevIns, hRegion);
 }
 
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmio2QueryAndResetDirtyBitmap
+ */
+DECLINLINE(int) PDMDevHlpMmio2QueryAndResetDirtyBitmap(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion,
+                                                       void *pvBitmap, size_t cbBitmap)
+{
+    return pDevIns->pHlpR3->pfnMmio2QueryAndResetDirtyBitmap(pDevIns, hRegion, pvBitmap, cbBitmap);
+}
+
+/**
+ * Reset the dirty bitmap tracking for an MMIO2 region.
+ *
+ * The MMIO2 region must have been created with the
+ * PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES flag for this to work.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   hRegion     The MMIO2 region handle.
+ */
+DECLINLINE(int) PDMDevHlpMmio2ResetDirtyBitmap(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion)
+{
+    return pDevIns->pHlpR3->pfnMmio2QueryAndResetDirtyBitmap(pDevIns, hRegion, NULL, 0);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmio2ControlDirtyPageTracking
+ */
+DECLINLINE(int) PDMDevHlpMmio2ControlDirtyPageTracking(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, bool fEnabled)
+{
+    return pDevIns->pHlpR3->pfnMmio2ControlDirtyPageTracking(pDevIns, hRegion, fEnabled);
+}
+
 #endif /* IN_RING3 */
 
 /**
@@ -7902,7 +7968,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2(PPDMDEVINS pDevIns, uint32_t iPc
  * @param   enmType         PCI_ADDRESS_SPACE_MEM or
  *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
  *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
- * @param   fMmio2Flags     To be defined, must be zero.
+ * @param   fMmio2Flags     PGMPHYS_MMIO2_FLAGS_XXX (see pgm.h).
  * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
  *                          callback will be invoked holding only the PDM lock.
  *                          The device lock will _not_ be taken (due to lock

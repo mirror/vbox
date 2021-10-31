@@ -325,6 +325,98 @@ pgmPhysRomWriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
 
 
 /**
+ * Common worker for pgmPhysMmio2WriteHandler and pgmPhysMmio2WritePfHandler.
+ */
+static VBOXSTRICTRC pgmPhysMmio2WriteHandlerCommon(PVMCC pVM, PVMCPUCC pVCpu, uintptr_t hMmio2, RTGCPHYS GCPhys, RTGCPTR GCPtr)
+{
+    /*
+     * Get the MMIO2 range.
+     */
+    AssertReturn(hMmio2 < RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3), VERR_INTERNAL_ERROR_3);
+    AssertReturn(hMmio2 != 0, VERR_INTERNAL_ERROR_3);
+    PPGMREGMMIO2RANGE pMmio2 = pVM->pgm.s.CTX_SUFF(apMmio2Ranges)[hMmio2 - 1];
+    Assert(pMmio2->idMmio2 == hMmio2);
+    AssertReturn((pMmio2->fFlags & PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES) == PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES,
+                 VERR_INTERNAL_ERROR_4);
+
+    /*
+     * Get the page and make sure it's an MMIO2 page.
+     */
+    PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
+    AssertReturn(pPage, VINF_EM_RAW_EMULATE_INSTR);
+    AssertReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2, VINF_EM_RAW_EMULATE_INSTR);
+
+    /*
+     * Set the dirty flag so we can avoid scanning all the pages when it isn't dirty.
+     * (The PGM_PAGE_HNDL_PHYS_STATE_DISABLED handler state indicates that a single
+     * page is dirty, saving the need for additional storage (bitmap).)
+     */
+    pMmio2->fFlags |= PGMREGMMIO2RANGE_F_IS_DIRTY;
+
+    /*
+     * Disable the handler for this page.
+     */
+    int rc = PGMHandlerPhysicalPageTempOff(pVM, pMmio2->RamRange.GCPhys, GCPhys & X86_PTE_PG_MASK);
+    AssertRC(rc);
+#ifndef IN_RING3
+    if (RT_SUCCESS(rc) && GCPtr != ~(RTGCPTR)0)
+    {
+        rc = PGMShwMakePageWritable(pVCpu, GCPtr, PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT);
+        AssertMsgReturn(rc == VINF_SUCCESS, ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc), rc);
+    }
+#else
+    RT_NOREF(pVCpu, GCPtr);
+#endif
+    return VINF_SUCCESS;
+}
+
+
+#ifndef IN_RING3
+/**
+ * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
+ *      \#PF access handler callback for guest MMIO2 dirty page tracing.}
+ *
+ * @remarks The @a pvUser is the MMIO2 index.
+ */
+DECLEXPORT(VBOXSTRICTRC) pgmPhysMmio2WritePfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                    RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+{
+    RT_NOREF(pVCpu, uErrorCode, pRegFrame);
+    VBOXSTRICTRC rcStrict = PGM_LOCK(pVM); /* We should already have it, but just make sure we do. */
+    if (RT_SUCCESS(rcStrict))
+    {
+        rcStrict = pgmPhysMmio2WriteHandlerCommon(pVM, pVCpu, (uintptr_t)pvUser, GCPhysFault, pvFault);
+        PGM_UNLOCK(pVM);
+    }
+    return rcStrict;
+}
+#endif /* !IN_RING3 */
+
+
+/**
+ * @callback_method_impl{FNPGMPHYSHANDLER,
+ *      Access handler callback for MMIO2 dirty page tracing.}
+ *
+ * @remarks The @a pvUser is the MMIO2 index.
+ */
+PGM_ALL_CB2_DECL(VBOXSTRICTRC)
+pgmPhysMmio2WriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    VBOXSTRICTRC rcStrict = PGM_LOCK(pVM); /* We should already have it, but just make sure we do. */
+    if (RT_SUCCESS(rcStrict))
+    {
+        rcStrict = pgmPhysMmio2WriteHandlerCommon(pVM, pVCpu, (uintptr_t)pvUser, GCPhys, ~(RTGCPTR)0);
+        PGM_UNLOCK(pVM);
+        if (rcStrict == VINF_SUCCESS)
+            rcStrict = VINF_PGM_HANDLER_DO_DEFAULT;
+    }
+    RT_NOREF(pvPhys, pvBuf, cbBuf, enmAccessType, enmOrigin);
+    return rcStrict;
+}
+
+
+/**
  * Invalidates the RAM range TLBs.
  *
  * @param   pVM                 The cross context VM structure.
@@ -2576,15 +2668,23 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
             rcStrict = VINF_SUCCESS;
         if (RT_SUCCESS(rcStrict))
         {
-            PFNPGMPHYSHANDLER pfnHandler = PGMPHYSHANDLER_GET_TYPE(pVM, pCur)->CTX_SUFF(pfnHandler);
-            void *pvUser = pCur->CTX_SUFF(pvUser);
+            PPGMPHYSHANDLERTYPEINT const pCurType   = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
+            PFNPGMPHYSHANDLER const      pfnHandler = pCurType->CTX_SUFF(pfnHandler);
+            void * const                 pvUser     = pCur->CTX_SUFF(pvUser);
             STAM_PROFILE_START(&pCur->Stat, h);
 
-            /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
+            /* Most handlers will want to release the PGM lock for deadlock prevention
+               (esp. MMIO), though some PGM internal ones like the page pool and MMIO2
+               dirty page trackers will want to keep it for performance reasons. */
             PGM_LOCK_ASSERT_OWNER(pVM);
-            PGM_UNLOCK(pVM);
-            rcStrict = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
-            PGM_LOCK_VOID(pVM);
+            if (pCurType->fKeepPgmLock)
+                rcStrict = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
+            else
+            {
+                PGM_UNLOCK(pVM);
+                rcStrict = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
+                PGM_LOCK_VOID(pVM);
+            }
 
 #ifdef VBOX_WITH_STATISTICS
             pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2693,17 +2793,25 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
             if (cbRange > offPhysLast + 1)
                 cbRange = offPhysLast + 1;
 
-            PFNPGMPHYSHANDLER pfnHandler = PGMPHYSHANDLER_GET_TYPE(pVM, pPhys)->CTX_SUFF(pfnHandler);
-            void *pvUser = pPhys->CTX_SUFF(pvUser);
+            PPGMPHYSHANDLERTYPEINT const pCurType   = PGMPHYSHANDLER_GET_TYPE(pVM, pPhys);
+            PFNPGMPHYSHANDLER const      pfnHandler = pCurType->CTX_SUFF(pfnHandler);
+            void * const                 pvUser     = pPhys->CTX_SUFF(pvUser);
 
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pPhys->pszDesc) ));
             STAM_PROFILE_START(&pPhys->Stat, h);
 
-            /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
+            /* Most handlers will want to release the PGM lock for deadlock prevention
+               (esp. MMIO), though some PGM internal ones like the page pool and MMIO2
+               dirty page trackers will want to keep it for performance reasons. */
             PGM_LOCK_ASSERT_OWNER(pVM);
-            PGM_UNLOCK(pVM);
-            rcStrict2 = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
-            PGM_LOCK_VOID(pVM);
+            if (pCurType->fKeepPgmLock)
+                rcStrict2 = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
+            else
+            {
+                PGM_UNLOCK(pVM);
+                rcStrict2 = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
+                PGM_LOCK_VOID(pVM);
+            }
 
 #ifdef VBOX_WITH_STATISTICS
             pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
