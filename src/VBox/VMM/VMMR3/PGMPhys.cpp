@@ -2850,7 +2850,7 @@ static uint16_t pgmR3PhysMmio2CalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pcP
  *                          region. Otherwise it can be any number safe
  *                          UINT8_MAX.
  * @param   cb              The size of the region.  Must be page aligned.
- * @param   fFlags          PGMPHYS_MMIO2_FLAGS_XXX. 
+ * @param   fFlags          PGMPHYS_MMIO2_FLAGS_XXX.
  * @param   idMmio2         The MMIO2 ID for the first chunk.
  * @param   pszDesc         The description.
  * @param   ppHeadRet       Where to return the pointer to the first
