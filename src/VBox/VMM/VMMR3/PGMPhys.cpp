@@ -55,6 +55,11 @@
 #define PGMPHYS_FREE_PAGE_BATCH_SIZE    128
 
 
+
+/*********************************************************************************************************************************
+*   Reading and Writing Guest Pysical Memory                                                                                     *
+*********************************************************************************************************************************/
+
 /*
  * PGMR3PhysReadU8-64
  * PGMR3PhysWriteU8-64
@@ -352,6 +357,10 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
     return VINF_SUCCESS;
 }
 
+
+/*********************************************************************************************************************************
+*   Mapping Guest Physical Memory                                                                                                *
+*********************************************************************************************************************************/
 
 /**
  * VMR3ReqCall worker for PGMR3PhysGCPhys2CCPtrExternal to make pages writable.
@@ -876,6 +885,114 @@ VMMR3DECL(int) PGMR3PhysBulkGCPhys2CCPtrReadOnlyExternal(PVM pVM, uint32_t cPage
 }
 
 
+/**
+ * Converts a GC physical address to a HC ring-3 pointer, with some
+ * additional checks.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_PGM_PHYS_TLB_CATCH_WRITE and *ppv set if the page has a write
+ *          access handler of some kind.
+ * @retval  VERR_PGM_PHYS_TLB_CATCH_ALL if the page has a handler catching all
+ *          accesses or is odd in any way.
+ * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   GCPhys      The GC physical address to convert.  Since this is only
+ *                      used for filling the REM TLB, the A20 mask must be
+ *                      applied before calling this API.
+ * @param   fWritable   Whether write access is required.
+ * @param   ppv         Where to store the pointer corresponding to GCPhys on
+ *                      success.
+ */
+VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv)
+{
+    PGM_LOCK_VOID(pVM);
+    PGM_A20_ASSERT_MASKED(VMMGetCpu(pVM), GCPhys);
+
+    PPGMRAMRANGE pRam;
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageAndRangeEx(pVM, GCPhys, &pPage, &pRam);
+    if (RT_SUCCESS(rc))
+    {
+        if (PGM_PAGE_IS_BALLOONED(pPage))
+            rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+        else if (!PGM_PAGE_HAS_ANY_HANDLERS(pPage))
+            rc = VINF_SUCCESS;
+        else
+        {
+            if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
+                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+            else if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+            {
+                /** @todo Handle TLB loads of virtual handlers so ./test.sh can be made to work
+                 *        in -norawr0 mode. */
+                if (fWritable)
+                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            }
+            else
+            {
+                /* Temporarily disabled physical handler(s), since the recompiler
+                   doesn't get notified when it's reset we'll have to pretend it's
+                   operating normally. */
+                if (pgmHandlerPhysicalIsAll(pVM, GCPhys))
+                    rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+                else
+                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            int rc2;
+
+            /* Make sure what we return is writable. */
+            if (fWritable)
+                switch (PGM_PAGE_GET_STATE(pPage))
+                {
+                    case PGM_PAGE_STATE_ALLOCATED:
+                        break;
+                    case PGM_PAGE_STATE_BALLOONED:
+                        AssertFailed();
+                        break;
+                    case PGM_PAGE_STATE_ZERO:
+                    case PGM_PAGE_STATE_SHARED:
+                        if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
+                            break;
+                        RT_FALL_THRU();
+                    case PGM_PAGE_STATE_WRITE_MONITORED:
+                        rc2 = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
+                        AssertLogRelRCReturn(rc2, rc2);
+                        break;
+                }
+
+            /* Get a ring-3 mapping of the address. */
+            PPGMPAGER3MAPTLBE pTlbe;
+            rc2 = pgmPhysPageQueryTlbe(pVM, GCPhys, &pTlbe);
+            AssertLogRelRCReturn(rc2, rc2);
+            *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
+            /** @todo mapping/locking hell; this isn't horribly efficient since
+             *        pgmPhysPageLoadIntoTlb will repeat the lookup we've done here. */
+
+            Log6(("PGMR3PhysTlbGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage] *ppv=%p\n", GCPhys, rc, pPage, *ppv));
+        }
+        else
+            Log6(("PGMR3PhysTlbGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage]\n", GCPhys, rc, pPage));
+
+        /* else: handler catching all access, no pointer returned. */
+    }
+    else
+        rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
+
+    PGM_UNLOCK(pVM);
+    return rc;
+}
+
+
+
+/*********************************************************************************************************************************
+*   RAM Range Management                                                                                                         *
+*********************************************************************************************************************************/
+
 #define MAKE_LEAF(a_pNode) \
     do { \
         (a_pNode)->pLeftR3  = NIL_RTR3PTR; \
@@ -1150,6 +1267,216 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
 
 
 /**
+ * Gets the number of ram ranges.
+ *
+ * @returns Number of ram ranges.  Returns UINT32_MAX if @a pVM is invalid.
+ * @param   pVM             The cross context VM structure.
+ */
+VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+
+    PGM_LOCK_VOID(pVM);
+    uint32_t cRamRanges = 0;
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRangesX); pCur; pCur = pCur->CTX_SUFF(pNext))
+        cRamRanges++;
+    PGM_UNLOCK(pVM);
+    return cRamRanges;
+}
+
+
+/**
+ * Get information about a range.
+ *
+ * @returns VINF_SUCCESS or VERR_OUT_OF_RANGE.
+ * @param   pVM             The cross context VM structure.
+ * @param   iRange          The ordinal of the range.
+ * @param   pGCPhysStart    Where to return the start of the range. Optional.
+ * @param   pGCPhysLast     Where to return the address of the last byte in the
+ *                          range. Optional.
+ * @param   ppszDesc        Where to return the range description. Optional.
+ * @param   pfIsMmio        Where to indicate that this is a pure MMIO range.
+ *                          Optional.
+ */
+VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStart, PRTGCPHYS pGCPhysLast,
+                                 const char **ppszDesc, bool *pfIsMmio)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    PGM_LOCK_VOID(pVM);
+    uint32_t iCurRange = 0;
+    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRangesX); pCur; pCur = pCur->CTX_SUFF(pNext), iCurRange++)
+        if (iCurRange == iRange)
+        {
+            if (pGCPhysStart)
+                *pGCPhysStart = pCur->GCPhys;
+            if (pGCPhysLast)
+                *pGCPhysLast  = pCur->GCPhysLast;
+            if (ppszDesc)
+                *ppszDesc     = pCur->pszDesc;
+            if (pfIsMmio)
+                *pfIsMmio     = !!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO);
+
+            PGM_UNLOCK(pVM);
+            return VINF_SUCCESS;
+        }
+    PGM_UNLOCK(pVM);
+    return VERR_OUT_OF_RANGE;
+}
+
+
+/*********************************************************************************************************************************
+*   RAM                                                                                                                          *
+*********************************************************************************************************************************/
+
+/**
+ * Frees the specified RAM page and replaces it with the ZERO page.
+ *
+ * This is used by ballooning, remapping MMIO2, RAM reset and state loading.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pReq            Pointer to the request.  This is NULL when doing a
+ *                          bulk free in NEM memory mode.
+ * @param   pcPendingPages  Where the number of pages waiting to be freed are
+ *                          kept.  This will normally be incremented.  This is
+ *                          NULL when doing a bulk free in NEM memory mode.
+ * @param   pPage           Pointer to the page structure.
+ * @param   GCPhys          The guest physical address of the page, if applicable.
+ * @param   enmNewType      New page type for NEM notification, since several
+ *                          callers will change the type upon successful return.
+ *
+ * @remarks The caller must own the PGM lock.
+ */
+int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys,
+                    PGMPAGETYPE enmNewType)
+{
+    /*
+     * Assert sanity.
+     */
+    PGM_LOCK_ASSERT_OWNER(pVM);
+    if (RT_UNLIKELY(    PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM
+                    &&  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_ROM_SHADOW))
+    {
+        AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
+        return VMSetError(pVM, VERR_PGM_PHYS_NOT_RAM, RT_SRC_POS, "GCPhys=%RGp type=%d", GCPhys, PGM_PAGE_GET_TYPE(pPage));
+    }
+
+    /** @todo What about ballooning of large pages??! */
+    Assert(   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
+           && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+
+    if (    PGM_PAGE_IS_ZERO(pPage)
+        ||  PGM_PAGE_IS_BALLOONED(pPage))
+        return VINF_SUCCESS;
+
+    const uint32_t idPage = PGM_PAGE_GET_PAGEID(pPage);
+    Log3(("pgmPhysFreePage: idPage=%#x GCPhys=%RGp pPage=%R[pgmpage]\n", idPage, GCPhys, pPage));
+    if (RT_UNLIKELY(!PGM_IS_IN_NEM_MODE(pVM)
+                    ?    idPage == NIL_GMM_PAGEID
+                      ||  idPage > GMM_PAGEID_LAST
+                      ||  PGM_PAGE_GET_CHUNKID(pPage) == NIL_GMM_CHUNKID
+                    :    idPage != NIL_GMM_PAGEID))
+    {
+        AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
+        return VMSetError(pVM, VERR_PGM_PHYS_INVALID_PAGE_ID, RT_SRC_POS, "GCPhys=%RGp idPage=%#x", GCPhys, pPage);
+    }
+#ifdef VBOX_WITH_NATIVE_NEM
+    const RTHCPHYS HCPhysPrev = PGM_PAGE_GET_HCPHYS(pPage);
+#endif
+
+    /* update page count stats. */
+    if (PGM_PAGE_IS_SHARED(pPage))
+        pVM->pgm.s.cSharedPages--;
+    else
+        pVM->pgm.s.cPrivatePages--;
+    pVM->pgm.s.cZeroPages++;
+
+    /* Deal with write monitored pages. */
+    if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
+    {
+        PGM_PAGE_SET_WRITTEN_TO(pVM, pPage);
+        pVM->pgm.s.cWrittenToPages++;
+    }
+
+    /*
+     * pPage = ZERO page.
+     */
+    PGM_PAGE_SET_HCPHYS(pVM, pPage, pVM->pgm.s.HCPhysZeroPg);
+    PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ZERO);
+    PGM_PAGE_SET_PAGEID(pVM, pPage, NIL_GMM_PAGEID);
+    PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_DONTCARE);
+    PGM_PAGE_SET_PTE_INDEX(pVM, pPage, 0);
+    PGM_PAGE_SET_TRACKING(pVM, pPage, 0);
+
+    /* Flush physical page map TLB entry. */
+    pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
+
+#ifdef VBOX_WITH_PGM_NEM_MODE
+    /*
+     * Skip the rest if we're doing a bulk free in NEM memory mode.
+     */
+    if (!pReq)
+        return VINF_SUCCESS;
+    AssertLogRelReturn(!pVM->pgm.s.fNemMode, VERR_PGM_NOT_SUPPORTED_FOR_NEM_MODE);
+#endif
+
+#ifdef VBOX_WITH_NATIVE_NEM
+    /* Notify NEM. */
+    /** @todo Remove this one? */
+    if (VM_IS_NEM_ENABLED(pVM))
+    {
+        uint8_t u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+        NEMHCNotifyPhysPageChanged(pVM, GCPhys, HCPhysPrev, pVM->pgm.s.HCPhysZeroPg, pVM->pgm.s.pvZeroPgR3,
+                                   pgmPhysPageCalcNemProtection(pPage, enmNewType), enmNewType, &u2State);
+        PGM_PAGE_SET_NEM_STATE(pPage, u2State);
+    }
+#else
+    RT_NOREF(enmNewType);
+#endif
+
+    /*
+     * Make sure it's not in the handy page array.
+     */
+    for (uint32_t i = pVM->pgm.s.cHandyPages; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
+    {
+        if (pVM->pgm.s.aHandyPages[i].idPage == idPage)
+        {
+            pVM->pgm.s.aHandyPages[i].idPage = NIL_GMM_PAGEID;
+            break;
+        }
+        if (pVM->pgm.s.aHandyPages[i].idSharedPage == idPage)
+        {
+            pVM->pgm.s.aHandyPages[i].idSharedPage = NIL_GMM_PAGEID;
+            break;
+        }
+    }
+
+    /*
+     * Push it onto the page array.
+     */
+    uint32_t iPage = *pcPendingPages;
+    Assert(iPage < PGMPHYS_FREE_PAGE_BATCH_SIZE);
+    *pcPendingPages += 1;
+
+    pReq->aPages[iPage].idPage = idPage;
+
+    if (iPage + 1 < PGMPHYS_FREE_PAGE_BATCH_SIZE)
+        return VINF_SUCCESS;
+
+    /*
+     * Flush the pages.
+     */
+    int rc = GMMR3FreePagesPerform(pVM, pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        GMMR3FreePagesRePrep(pVM, pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+        *pcPendingPages = 0;
+    }
+    return rc;
+}
+
+
+/**
  * Frees a range of pages, replacing them with ZERO pages of the specified type.
  *
  * @returns VBox status code.
@@ -1246,444 +1573,6 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
     GMMR3FreePagesCleanup(pReq);
 
     return rc;
-}
-
-#if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
-
-/**
- * Rendezvous callback used by PGMR3ChangeMemBalloon that changes the memory balloon size
- *
- * This is only called on one of the EMTs while the other ones are waiting for
- * it to complete this function.
- *
- * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
- * @param   pvUser      User parameter
- */
-static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
-{
-    uintptr_t          *paUser          = (uintptr_t *)pvUser;
-    bool                fInflate        = !!paUser[0];
-    unsigned            cPages          = paUser[1];
-    RTGCPHYS           *paPhysPage      = (RTGCPHYS *)paUser[2];
-    uint32_t            cPendingPages   = 0;
-    PGMMFREEPAGESREQ    pReq;
-    int                 rc;
-
-    Log(("pgmR3PhysChangeMemBalloonRendezvous: %s %x pages\n", (fInflate) ? "inflate" : "deflate", cPages));
-    PGM_LOCK_VOID(pVM);
-
-    if (fInflate)
-    {
-        /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
-        pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
-
-        /* Replace pages with ZERO pages. */
-        rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
-        if (RT_FAILURE(rc))
-        {
-            PGM_UNLOCK(pVM);
-            AssertLogRelRC(rc);
-            return rc;
-        }
-
-        /* Iterate the pages. */
-        for (unsigned i = 0; i < cPages; i++)
-        {
-            PPGMPAGE pPage = pgmPhysGetPage(pVM, paPhysPage[i]);
-            if (    pPage == NULL
-                ||  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM)
-            {
-                Log(("pgmR3PhysChangeMemBalloonRendezvous: invalid physical page %RGp pPage->u3Type=%d\n", paPhysPage[i], pPage ? PGM_PAGE_GET_TYPE(pPage) : 0));
-                break;
-            }
-
-            LogFlow(("balloon page: %RGp\n", paPhysPage[i]));
-
-            /* Flush the shadow PT if this page was previously used as a guest page table. */
-            pgmPoolFlushPageByGCPhys(pVM, paPhysPage[i]);
-
-            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, paPhysPage[i], (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage));
-            if (RT_FAILURE(rc))
-            {
-                PGM_UNLOCK(pVM);
-                AssertLogRelRC(rc);
-                return rc;
-            }
-            Assert(PGM_PAGE_IS_ZERO(pPage));
-            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_BALLOONED);
-        }
-
-        if (cPendingPages)
-        {
-            rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
-            if (RT_FAILURE(rc))
-            {
-                PGM_UNLOCK(pVM);
-                AssertLogRelRC(rc);
-                return rc;
-            }
-        }
-        GMMR3FreePagesCleanup(pReq);
-    }
-    else
-    {
-        /* Iterate the pages. */
-        for (unsigned i = 0; i < cPages; i++)
-        {
-            PPGMPAGE pPage = pgmPhysGetPage(pVM, paPhysPage[i]);
-            AssertBreak(pPage && PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
-
-            LogFlow(("Free ballooned page: %RGp\n", paPhysPage[i]));
-
-            Assert(PGM_PAGE_IS_BALLOONED(pPage));
-
-            /* Change back to zero page.  (NEM does not need to be informed.) */
-            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ZERO);
-        }
-
-        /* Note that we currently do not map any ballooned pages in our shadow page tables, so no need to flush the pgm pool. */
-    }
-
-    /* Notify GMM about the balloon change. */
-    rc = GMMR3BalloonedPages(pVM, (fInflate) ? GMMBALLOONACTION_INFLATE : GMMBALLOONACTION_DEFLATE, cPages);
-    if (RT_SUCCESS(rc))
-    {
-        if (!fInflate)
-        {
-            Assert(pVM->pgm.s.cBalloonedPages >= cPages);
-            pVM->pgm.s.cBalloonedPages -= cPages;
-        }
-        else
-            pVM->pgm.s.cBalloonedPages += cPages;
-    }
-
-    PGM_UNLOCK(pVM);
-
-    /* Flush the recompiler's TLB as well. */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        CPUMSetChangedFlags(pVM->apCpusR3[i], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
-
-    AssertLogRelRC(rc);
-    return rc;
-}
-
-
-/**
- * Frees a range of ram pages, replacing them with ZERO pages; helper for PGMR3PhysFreeRamPages
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   fInflate    Inflate or deflate memory balloon
- * @param   cPages      Number of pages to free
- * @param   paPhysPage  Array of guest physical addresses
- */
-static DECLCALLBACK(void) pgmR3PhysChangeMemBalloonHelper(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
-{
-    uintptr_t paUser[3];
-
-    paUser[0] = fInflate;
-    paUser[1] = cPages;
-    paUser[2] = (uintptr_t)paPhysPage;
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysChangeMemBalloonRendezvous, (void *)paUser);
-    AssertRC(rc);
-
-    /* Made a copy in PGMR3PhysFreeRamPages; free it here. */
-    RTMemFree(paPhysPage);
-}
-
-#endif /* 64-bit host && (Windows || Solaris || Linux || FreeBSD) */
-
-/**
- * Inflate or deflate a memory balloon
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   fInflate    Inflate or deflate memory balloon
- * @param   cPages      Number of pages to free
- * @param   paPhysPage  Array of guest physical addresses
- */
-VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
-{
-    /* This must match GMMR0Init; currently we only support memory ballooning on all 64-bit hosts except Mac OS X */
-#if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
-    int rc;
-
-    /* Older additions (ancient non-functioning balloon code) pass wrong physical addresses. */
-    AssertReturn(!(paPhysPage[0] & 0xfff), VERR_INVALID_PARAMETER);
-
-    /* We own the IOM lock here and could cause a deadlock by waiting for another VCPU that is blocking on the IOM lock.
-     * In the SMP case we post a request packet to postpone the job.
-     */
-    if (pVM->cCpus > 1)
-    {
-        unsigned cbPhysPage = cPages * sizeof(paPhysPage[0]);
-        RTGCPHYS *paPhysPageCopy = (RTGCPHYS *)RTMemAlloc(cbPhysPage);
-        AssertReturn(paPhysPageCopy, VERR_NO_MEMORY);
-
-        memcpy(paPhysPageCopy, paPhysPage, cbPhysPage);
-
-        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysChangeMemBalloonHelper, 4, pVM, fInflate, cPages, paPhysPageCopy);
-        AssertRC(rc);
-    }
-    else
-    {
-        uintptr_t paUser[3];
-
-        paUser[0] = fInflate;
-        paUser[1] = cPages;
-        paUser[2] = (uintptr_t)paPhysPage;
-        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysChangeMemBalloonRendezvous, (void *)paUser);
-        AssertRC(rc);
-    }
-    return rc;
-
-#else
-    NOREF(pVM); NOREF(fInflate); NOREF(cPages); NOREF(paPhysPage);
-    return VERR_NOT_IMPLEMENTED;
-#endif
-}
-
-
-/**
- * Rendezvous callback used by PGMR3WriteProtectRAM that write protects all
- * physical RAM.
- *
- * This is only called on one of the EMTs while the other ones are waiting for
- * it to complete this function.
- *
- * @returns VINF_SUCCESS (VBox strict status code).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
- * @param   pvUser      User parameter, unused.
- */
-static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    NOREF(pvUser); NOREF(pVCpu);
-
-    PGM_LOCK_VOID(pVM);
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-    pgmPoolResetDirtyPages(pVM);
-#endif
-
-    /** @todo pointless to write protect the physical page pointed to by RSP. */
-
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        uint32_t cPages = pRam->cb >> PAGE_SHIFT;
-        for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        {
-            PPGMPAGE    pPage = &pRam->aPages[iPage];
-            PGMPAGETYPE enmPageType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
-
-            if (    RT_LIKELY(enmPageType == PGMPAGETYPE_RAM)
-                ||  enmPageType == PGMPAGETYPE_MMIO2)
-            {
-                /*
-                 * A RAM page.
-                 */
-                switch (PGM_PAGE_GET_STATE(pPage))
-                {
-                    case PGM_PAGE_STATE_ALLOCATED:
-                        /** @todo Optimize this: Don't always re-enable write
-                         * monitoring if the page is known to be very busy. */
-                        if (PGM_PAGE_IS_WRITTEN_TO(pPage))
-                            PGM_PAGE_CLEAR_WRITTEN_TO(pVM, pPage);
-
-                        pgmPhysPageWriteMonitor(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
-                        break;
-
-                    case PGM_PAGE_STATE_SHARED:
-                        AssertFailed();
-                        break;
-
-                    case PGM_PAGE_STATE_WRITE_MONITORED:    /* nothing to change. */
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-    pgmR3PoolWriteProtectPages(pVM);
-    PGM_INVL_ALL_VCPU_TLBS(pVM);
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
-
-    PGM_UNLOCK(pVM);
-    return rc;
-}
-
-/**
- * Protect all physical RAM to monitor writes
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-VMMR3DECL(int) PGMR3PhysWriteProtectRAM(PVM pVM)
-{
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysWriteProtectRAMRendezvous, NULL);
-    AssertRC(rc);
-    return rc;
-}
-
-
-/**
- * Gets the number of ram ranges.
- *
- * @returns Number of ram ranges.  Returns UINT32_MAX if @a pVM is invalid.
- * @param   pVM             The cross context VM structure.
- */
-VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM)
-{
-    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
-
-    PGM_LOCK_VOID(pVM);
-    uint32_t cRamRanges = 0;
-    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRangesX); pCur; pCur = pCur->CTX_SUFF(pNext))
-        cRamRanges++;
-    PGM_UNLOCK(pVM);
-    return cRamRanges;
-}
-
-
-/**
- * Get information about a range.
- *
- * @returns VINF_SUCCESS or VERR_OUT_OF_RANGE.
- * @param   pVM             The cross context VM structure.
- * @param   iRange          The ordinal of the range.
- * @param   pGCPhysStart    Where to return the start of the range. Optional.
- * @param   pGCPhysLast     Where to return the address of the last byte in the
- *                          range. Optional.
- * @param   ppszDesc        Where to return the range description. Optional.
- * @param   pfIsMmio        Where to indicate that this is a pure MMIO range.
- *                          Optional.
- */
-VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStart, PRTGCPHYS pGCPhysLast,
-                                 const char **ppszDesc, bool *pfIsMmio)
-{
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-
-    PGM_LOCK_VOID(pVM);
-    uint32_t iCurRange = 0;
-    for (PPGMRAMRANGE pCur = pVM->pgm.s.CTX_SUFF(pRamRangesX); pCur; pCur = pCur->CTX_SUFF(pNext), iCurRange++)
-        if (iCurRange == iRange)
-        {
-            if (pGCPhysStart)
-                *pGCPhysStart = pCur->GCPhys;
-            if (pGCPhysLast)
-                *pGCPhysLast  = pCur->GCPhysLast;
-            if (ppszDesc)
-                *ppszDesc     = pCur->pszDesc;
-            if (pfIsMmio)
-                *pfIsMmio     = !!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO);
-
-            PGM_UNLOCK(pVM);
-            return VINF_SUCCESS;
-        }
-    PGM_UNLOCK(pVM);
-    return VERR_OUT_OF_RANGE;
-}
-
-
-/**
- * Query the amount of free memory inside VMMR0
- *
- * @returns VBox status code.
- * @param   pUVM                The user mode VM handle.
- * @param   pcbAllocMem         Where to return the amount of memory allocated
- *                              by VMs.
- * @param   pcbFreeMem          Where to return the amount of memory that is
- *                              allocated from the host but not currently used
- *                              by any VMs.
- * @param   pcbBallonedMem      Where to return the sum of memory that is
- *                              currently ballooned by the VMs.
- * @param   pcbSharedMem        Where to return the amount of memory that is
- *                              currently shared.
- */
-VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem,
-                                           uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem)
-{
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
-
-    uint64_t cAllocPages   = 0;
-    uint64_t cFreePages    = 0;
-    uint64_t cBalloonPages = 0;
-    uint64_t cSharedPages  = 0;
-    int rc = GMMR3QueryHypervisorMemoryStats(pUVM->pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
-    AssertRCReturn(rc, rc);
-
-    if (pcbAllocMem)
-        *pcbAllocMem    = cAllocPages * _4K;
-
-    if (pcbFreeMem)
-        *pcbFreeMem     = cFreePages * _4K;
-
-    if (pcbBallonedMem)
-        *pcbBallonedMem = cBalloonPages * _4K;
-
-    if (pcbSharedMem)
-        *pcbSharedMem   = cSharedPages * _4K;
-
-    Log(("PGMR3QueryVMMMemoryStats: all=%llx free=%llx ballooned=%llx shared=%llx\n",
-         cAllocPages, cFreePages, cBalloonPages, cSharedPages));
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Query memory stats for the VM.
- *
- * @returns VBox status code.
- * @param   pUVM                The user mode VM handle.
- * @param   pcbTotalMem         Where to return total amount memory the VM may
- *                              possibly use.
- * @param   pcbPrivateMem       Where to return the amount of private memory
- *                              currently allocated.
- * @param   pcbSharedMem        Where to return the amount of actually shared
- *                              memory currently used by the VM.
- * @param   pcbZeroMem          Where to return the amount of memory backed by
- *                              zero pages.
- *
- * @remarks The total mem is normally larger than the sum of the three
- *          components.  There are two reasons for this, first the amount of
- *          shared memory is what we're sure is shared instead of what could
- *          possibly be shared with someone.  Secondly, because the total may
- *          include some pure MMIO pages that doesn't go into any of the three
- *          sub-counts.
- *
- * @todo Why do we return reused shared pages instead of anything that could
- *       potentially be shared?  Doesn't this mean the first VM gets a much
- *       lower number of shared pages?
- */
-VMMR3DECL(int) PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem,
-                                     uint64_t *pcbSharedMem, uint64_t *pcbZeroMem)
-{
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-
-    if (pcbTotalMem)
-        *pcbTotalMem    = (uint64_t)pVM->pgm.s.cAllPages            * PAGE_SIZE;
-
-    if (pcbPrivateMem)
-        *pcbPrivateMem  = (uint64_t)pVM->pgm.s.cPrivatePages        * PAGE_SIZE;
-
-    if (pcbSharedMem)
-        *pcbSharedMem   = (uint64_t)pVM->pgm.s.cReusedSharedPages   * PAGE_SIZE;
-
-    if (pcbZeroMem)
-        *pcbZeroMem     = (uint64_t)pVM->pgm.s.cZeroPages           * PAGE_SIZE;
-
-    Log(("PGMR3QueryMemoryStats: all=%x private=%x reused=%x zero=%x\n", pVM->pgm.s.cAllPages, pVM->pgm.s.cPrivatePages, pVM->pgm.s.cReusedSharedPages, pVM->pgm.s.cZeroPages));
-    return VINF_SUCCESS;
 }
 
 
@@ -2347,6 +2236,11 @@ int pgmR3PhysRamTerm(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
+
+/*********************************************************************************************************************************
+*   MMIO                                                                                                                         *
+*********************************************************************************************************************************/
 
 /**
  * This is the interface IOM is using to register an MMIO region.
@@ -4231,6 +4125,11 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2ChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, PG
 }
 
 
+
+/*********************************************************************************************************************************
+*   ROM                                                                                                                          *
+*********************************************************************************************************************************/
+
 /**
  * Worker for PGMR3PhysRomRegister.
  *
@@ -5062,41 +4961,403 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
 }
 
 
+
+/*********************************************************************************************************************************
+*   Ballooning                                                                                                                   *
+*********************************************************************************************************************************/
+
+#if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
+
 /**
- * Sets the Address Gate 20 state.
+ * Rendezvous callback used by PGMR3ChangeMemBalloon that changes the memory balloon size
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   fEnable     True if the gate should be enabled.
- *                      False if the gate should be disabled.
+ * This is only called on one of the EMTs while the other ones are waiting for
+ * it to complete this function.
+ *
+ * @returns VINF_SUCCESS (VBox strict status code).
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
+ * @param   pvUser      User parameter
  */
-VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
+static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    LogFlow(("PGMR3PhysSetA20 %d (was %d)\n", fEnable, pVCpu->pgm.s.fA20Enabled));
-    if (pVCpu->pgm.s.fA20Enabled != fEnable)
+    uintptr_t          *paUser          = (uintptr_t *)pvUser;
+    bool                fInflate        = !!paUser[0];
+    unsigned            cPages          = paUser[1];
+    RTGCPHYS           *paPhysPage      = (RTGCPHYS *)paUser[2];
+    uint32_t            cPendingPages   = 0;
+    PGMMFREEPAGESREQ    pReq;
+    int                 rc;
+
+    Log(("pgmR3PhysChangeMemBalloonRendezvous: %s %x pages\n", (fInflate) ? "inflate" : "deflate", cPages));
+    PGM_LOCK_VOID(pVM);
+
+    if (fInflate)
     {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        PCCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-        if (   CPUMIsGuestInVmxRootMode(pCtx)
-            && !fEnable)
+        /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
+        pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
+
+        /* Replace pages with ZERO pages. */
+        rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+        if (RT_FAILURE(rc))
         {
-            Log(("Cannot enter A20M mode while in VMX root mode\n"));
-            return;
+            PGM_UNLOCK(pVM);
+            AssertLogRelRC(rc);
+            return rc;
         }
-#endif
-        pVCpu->pgm.s.fA20Enabled = fEnable;
-        pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!fEnable << 20);
-        if (VM_IS_NEM_ENABLED(pVCpu->CTX_SUFF(pVM)))
-            NEMR3NotifySetA20(pVCpu, fEnable);
-#ifdef PGM_WITH_A20
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-        pgmR3RefreshShadowModeAfterA20Change(pVCpu);
-        HMFlushTlb(pVCpu);
-#endif
-        IEMTlbInvalidateAllPhysical(pVCpu);
-        STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
+
+        /* Iterate the pages. */
+        for (unsigned i = 0; i < cPages; i++)
+        {
+            PPGMPAGE pPage = pgmPhysGetPage(pVM, paPhysPage[i]);
+            if (    pPage == NULL
+                ||  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM)
+            {
+                Log(("pgmR3PhysChangeMemBalloonRendezvous: invalid physical page %RGp pPage->u3Type=%d\n", paPhysPage[i], pPage ? PGM_PAGE_GET_TYPE(pPage) : 0));
+                break;
+            }
+
+            LogFlow(("balloon page: %RGp\n", paPhysPage[i]));
+
+            /* Flush the shadow PT if this page was previously used as a guest page table. */
+            pgmPoolFlushPageByGCPhys(pVM, paPhysPage[i]);
+
+            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, paPhysPage[i], (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage));
+            if (RT_FAILURE(rc))
+            {
+                PGM_UNLOCK(pVM);
+                AssertLogRelRC(rc);
+                return rc;
+            }
+            Assert(PGM_PAGE_IS_ZERO(pPage));
+            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_BALLOONED);
+        }
+
+        if (cPendingPages)
+        {
+            rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+            if (RT_FAILURE(rc))
+            {
+                PGM_UNLOCK(pVM);
+                AssertLogRelRC(rc);
+                return rc;
+            }
+        }
+        GMMR3FreePagesCleanup(pReq);
     }
+    else
+    {
+        /* Iterate the pages. */
+        for (unsigned i = 0; i < cPages; i++)
+        {
+            PPGMPAGE pPage = pgmPhysGetPage(pVM, paPhysPage[i]);
+            AssertBreak(pPage && PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
+
+            LogFlow(("Free ballooned page: %RGp\n", paPhysPage[i]));
+
+            Assert(PGM_PAGE_IS_BALLOONED(pPage));
+
+            /* Change back to zero page.  (NEM does not need to be informed.) */
+            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ZERO);
+        }
+
+        /* Note that we currently do not map any ballooned pages in our shadow page tables, so no need to flush the pgm pool. */
+    }
+
+    /* Notify GMM about the balloon change. */
+    rc = GMMR3BalloonedPages(pVM, (fInflate) ? GMMBALLOONACTION_INFLATE : GMMBALLOONACTION_DEFLATE, cPages);
+    if (RT_SUCCESS(rc))
+    {
+        if (!fInflate)
+        {
+            Assert(pVM->pgm.s.cBalloonedPages >= cPages);
+            pVM->pgm.s.cBalloonedPages -= cPages;
+        }
+        else
+            pVM->pgm.s.cBalloonedPages += cPages;
+    }
+
+    PGM_UNLOCK(pVM);
+
+    /* Flush the recompiler's TLB as well. */
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        CPUMSetChangedFlags(pVM->apCpusR3[i], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+
+    AssertLogRelRC(rc);
+    return rc;
 }
 
+
+/**
+ * Frees a range of ram pages, replacing them with ZERO pages; helper for PGMR3PhysFreeRamPages
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   fInflate    Inflate or deflate memory balloon
+ * @param   cPages      Number of pages to free
+ * @param   paPhysPage  Array of guest physical addresses
+ */
+static DECLCALLBACK(void) pgmR3PhysChangeMemBalloonHelper(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
+{
+    uintptr_t paUser[3];
+
+    paUser[0] = fInflate;
+    paUser[1] = cPages;
+    paUser[2] = (uintptr_t)paPhysPage;
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysChangeMemBalloonRendezvous, (void *)paUser);
+    AssertRC(rc);
+
+    /* Made a copy in PGMR3PhysFreeRamPages; free it here. */
+    RTMemFree(paPhysPage);
+}
+
+#endif /* 64-bit host && (Windows || Solaris || Linux || FreeBSD) */
+
+/**
+ * Inflate or deflate a memory balloon
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   fInflate    Inflate or deflate memory balloon
+ * @param   cPages      Number of pages to free
+ * @param   paPhysPage  Array of guest physical addresses
+ */
+VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
+{
+    /* This must match GMMR0Init; currently we only support memory ballooning on all 64-bit hosts except Mac OS X */
+#if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
+    int rc;
+
+    /* Older additions (ancient non-functioning balloon code) pass wrong physical addresses. */
+    AssertReturn(!(paPhysPage[0] & 0xfff), VERR_INVALID_PARAMETER);
+
+    /* We own the IOM lock here and could cause a deadlock by waiting for another VCPU that is blocking on the IOM lock.
+     * In the SMP case we post a request packet to postpone the job.
+     */
+    if (pVM->cCpus > 1)
+    {
+        unsigned cbPhysPage = cPages * sizeof(paPhysPage[0]);
+        RTGCPHYS *paPhysPageCopy = (RTGCPHYS *)RTMemAlloc(cbPhysPage);
+        AssertReturn(paPhysPageCopy, VERR_NO_MEMORY);
+
+        memcpy(paPhysPageCopy, paPhysPage, cbPhysPage);
+
+        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysChangeMemBalloonHelper, 4, pVM, fInflate, cPages, paPhysPageCopy);
+        AssertRC(rc);
+    }
+    else
+    {
+        uintptr_t paUser[3];
+
+        paUser[0] = fInflate;
+        paUser[1] = cPages;
+        paUser[2] = (uintptr_t)paPhysPage;
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysChangeMemBalloonRendezvous, (void *)paUser);
+        AssertRC(rc);
+    }
+    return rc;
+
+#else
+    NOREF(pVM); NOREF(fInflate); NOREF(cPages); NOREF(paPhysPage);
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+
+/*********************************************************************************************************************************
+*   Write Monitoring                                                                                                             *
+*********************************************************************************************************************************/
+
+/**
+ * Rendezvous callback used by PGMR3WriteProtectRAM that write protects all
+ * physical RAM.
+ *
+ * This is only called on one of the EMTs while the other ones are waiting for
+ * it to complete this function.
+ *
+ * @returns VINF_SUCCESS (VBox strict status code).
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT. Unused.
+ * @param   pvUser      User parameter, unused.
+ */
+static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    NOREF(pvUser); NOREF(pVCpu);
+
+    PGM_LOCK_VOID(pVM);
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    pgmPoolResetDirtyPages(pVM);
+#endif
+
+    /** @todo pointless to write protect the physical page pointed to by RSP. */
+
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
+         pRam;
+         pRam = pRam->CTX_SUFF(pNext))
+    {
+        uint32_t cPages = pRam->cb >> PAGE_SHIFT;
+        for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        {
+            PPGMPAGE    pPage = &pRam->aPages[iPage];
+            PGMPAGETYPE enmPageType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+
+            if (    RT_LIKELY(enmPageType == PGMPAGETYPE_RAM)
+                ||  enmPageType == PGMPAGETYPE_MMIO2)
+            {
+                /*
+                 * A RAM page.
+                 */
+                switch (PGM_PAGE_GET_STATE(pPage))
+                {
+                    case PGM_PAGE_STATE_ALLOCATED:
+                        /** @todo Optimize this: Don't always re-enable write
+                         * monitoring if the page is known to be very busy. */
+                        if (PGM_PAGE_IS_WRITTEN_TO(pPage))
+                            PGM_PAGE_CLEAR_WRITTEN_TO(pVM, pPage);
+
+                        pgmPhysPageWriteMonitor(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        break;
+
+                    case PGM_PAGE_STATE_SHARED:
+                        AssertFailed();
+                        break;
+
+                    case PGM_PAGE_STATE_WRITE_MONITORED:    /* nothing to change. */
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+    pgmR3PoolWriteProtectPages(pVM);
+    PGM_INVL_ALL_VCPU_TLBS(pVM);
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+
+    PGM_UNLOCK(pVM);
+    return rc;
+}
+
+/**
+ * Protect all physical RAM to monitor writes
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ */
+VMMR3DECL(int) PGMR3PhysWriteProtectRAM(PVM pVM)
+{
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysWriteProtectRAMRendezvous, NULL);
+    AssertRC(rc);
+    return rc;
+}
+
+
+/*********************************************************************************************************************************
+*   Stats.                                                                                                                       *
+*********************************************************************************************************************************/
+
+/**
+ * Query the amount of free memory inside VMMR0
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pcbAllocMem         Where to return the amount of memory allocated
+ *                              by VMs.
+ * @param   pcbFreeMem          Where to return the amount of memory that is
+ *                              allocated from the host but not currently used
+ *                              by any VMs.
+ * @param   pcbBallonedMem      Where to return the sum of memory that is
+ *                              currently ballooned by the VMs.
+ * @param   pcbSharedMem        Where to return the amount of memory that is
+ *                              currently shared.
+ */
+VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem,
+                                           uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+
+    uint64_t cAllocPages   = 0;
+    uint64_t cFreePages    = 0;
+    uint64_t cBalloonPages = 0;
+    uint64_t cSharedPages  = 0;
+    int rc = GMMR3QueryHypervisorMemoryStats(pUVM->pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
+    AssertRCReturn(rc, rc);
+
+    if (pcbAllocMem)
+        *pcbAllocMem    = cAllocPages * _4K;
+
+    if (pcbFreeMem)
+        *pcbFreeMem     = cFreePages * _4K;
+
+    if (pcbBallonedMem)
+        *pcbBallonedMem = cBalloonPages * _4K;
+
+    if (pcbSharedMem)
+        *pcbSharedMem   = cSharedPages * _4K;
+
+    Log(("PGMR3QueryVMMMemoryStats: all=%llx free=%llx ballooned=%llx shared=%llx\n",
+         cAllocPages, cFreePages, cBalloonPages, cSharedPages));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Query memory stats for the VM.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pcbTotalMem         Where to return total amount memory the VM may
+ *                              possibly use.
+ * @param   pcbPrivateMem       Where to return the amount of private memory
+ *                              currently allocated.
+ * @param   pcbSharedMem        Where to return the amount of actually shared
+ *                              memory currently used by the VM.
+ * @param   pcbZeroMem          Where to return the amount of memory backed by
+ *                              zero pages.
+ *
+ * @remarks The total mem is normally larger than the sum of the three
+ *          components.  There are two reasons for this, first the amount of
+ *          shared memory is what we're sure is shared instead of what could
+ *          possibly be shared with someone.  Secondly, because the total may
+ *          include some pure MMIO pages that doesn't go into any of the three
+ *          sub-counts.
+ *
+ * @todo Why do we return reused shared pages instead of anything that could
+ *       potentially be shared?  Doesn't this mean the first VM gets a much
+ *       lower number of shared pages?
+ */
+VMMR3DECL(int) PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint64_t *pcbPrivateMem,
+                                     uint64_t *pcbSharedMem, uint64_t *pcbZeroMem)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    if (pcbTotalMem)
+        *pcbTotalMem    = (uint64_t)pVM->pgm.s.cAllPages            * PAGE_SIZE;
+
+    if (pcbPrivateMem)
+        *pcbPrivateMem  = (uint64_t)pVM->pgm.s.cPrivatePages        * PAGE_SIZE;
+
+    if (pcbSharedMem)
+        *pcbSharedMem   = (uint64_t)pVM->pgm.s.cReusedSharedPages   * PAGE_SIZE;
+
+    if (pcbZeroMem)
+        *pcbZeroMem     = (uint64_t)pVM->pgm.s.cZeroPages           * PAGE_SIZE;
+
+    Log(("PGMR3QueryMemoryStats: all=%x private=%x reused=%x zero=%x\n", pVM->pgm.s.cAllPages, pVM->pgm.s.cPrivatePages, pVM->pgm.s.cReusedSharedPages, pVM->pgm.s.cZeroPages));
+    return VINF_SUCCESS;
+}
+
+
+
+/*********************************************************************************************************************************
+*   Chunk Mappings and Page Allocation                                                                                           *
+*********************************************************************************************************************************/
 
 /**
  * Tree enumeration callback for dealing with age rollover.
@@ -5739,252 +6000,42 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
 }
 
 
-/**
- * Frees the specified RAM page and replaces it with the ZERO page.
- *
- * This is used by ballooning, remapping MMIO2, RAM reset and state loading.
- *
- * @param   pVM             The cross context VM structure.
- * @param   pReq            Pointer to the request.  This is NULL when doing a
- *                          bulk free in NEM memory mode.
- * @param   pcPendingPages  Where the number of pages waiting to be freed are
- *                          kept.  This will normally be incremented.  This is
- *                          NULL when doing a bulk free in NEM memory mode.
- * @param   pPage           Pointer to the page structure.
- * @param   GCPhys          The guest physical address of the page, if applicable.
- * @param   enmNewType      New page type for NEM notification, since several
- *                          callers will change the type upon successful return.
- *
- * @remarks The caller must own the PGM lock.
- */
-int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys,
-                    PGMPAGETYPE enmNewType)
-{
-    /*
-     * Assert sanity.
-     */
-    PGM_LOCK_ASSERT_OWNER(pVM);
-    if (RT_UNLIKELY(    PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM
-                    &&  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_ROM_SHADOW))
-    {
-        AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
-        return VMSetError(pVM, VERR_PGM_PHYS_NOT_RAM, RT_SRC_POS, "GCPhys=%RGp type=%d", GCPhys, PGM_PAGE_GET_TYPE(pPage));
-    }
-
-    /** @todo What about ballooning of large pages??! */
-    Assert(   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
-           && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED);
-
-    if (    PGM_PAGE_IS_ZERO(pPage)
-        ||  PGM_PAGE_IS_BALLOONED(pPage))
-        return VINF_SUCCESS;
-
-    const uint32_t idPage = PGM_PAGE_GET_PAGEID(pPage);
-    Log3(("pgmPhysFreePage: idPage=%#x GCPhys=%RGp pPage=%R[pgmpage]\n", idPage, GCPhys, pPage));
-    if (RT_UNLIKELY(!PGM_IS_IN_NEM_MODE(pVM)
-                    ?    idPage == NIL_GMM_PAGEID
-                      ||  idPage > GMM_PAGEID_LAST
-                      ||  PGM_PAGE_GET_CHUNKID(pPage) == NIL_GMM_CHUNKID
-                    :    idPage != NIL_GMM_PAGEID))
-    {
-        AssertMsgFailed(("GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
-        return VMSetError(pVM, VERR_PGM_PHYS_INVALID_PAGE_ID, RT_SRC_POS, "GCPhys=%RGp idPage=%#x", GCPhys, pPage);
-    }
-#ifdef VBOX_WITH_NATIVE_NEM
-    const RTHCPHYS HCPhysPrev = PGM_PAGE_GET_HCPHYS(pPage);
-#endif
-
-    /* update page count stats. */
-    if (PGM_PAGE_IS_SHARED(pPage))
-        pVM->pgm.s.cSharedPages--;
-    else
-        pVM->pgm.s.cPrivatePages--;
-    pVM->pgm.s.cZeroPages++;
-
-    /* Deal with write monitored pages. */
-    if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
-    {
-        PGM_PAGE_SET_WRITTEN_TO(pVM, pPage);
-        pVM->pgm.s.cWrittenToPages++;
-    }
-
-    /*
-     * pPage = ZERO page.
-     */
-    PGM_PAGE_SET_HCPHYS(pVM, pPage, pVM->pgm.s.HCPhysZeroPg);
-    PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ZERO);
-    PGM_PAGE_SET_PAGEID(pVM, pPage, NIL_GMM_PAGEID);
-    PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_DONTCARE);
-    PGM_PAGE_SET_PTE_INDEX(pVM, pPage, 0);
-    PGM_PAGE_SET_TRACKING(pVM, pPage, 0);
-
-    /* Flush physical page map TLB entry. */
-    pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
-
-#ifdef VBOX_WITH_PGM_NEM_MODE
-    /*
-     * Skip the rest if we're doing a bulk free in NEM memory mode.
-     */
-    if (!pReq)
-        return VINF_SUCCESS;
-    AssertLogRelReturn(!pVM->pgm.s.fNemMode, VERR_PGM_NOT_SUPPORTED_FOR_NEM_MODE);
-#endif
-
-#ifdef VBOX_WITH_NATIVE_NEM
-    /* Notify NEM. */
-    /** @todo Remove this one? */
-    if (VM_IS_NEM_ENABLED(pVM))
-    {
-        uint8_t u2State = PGM_PAGE_GET_NEM_STATE(pPage);
-        NEMHCNotifyPhysPageChanged(pVM, GCPhys, HCPhysPrev, pVM->pgm.s.HCPhysZeroPg, pVM->pgm.s.pvZeroPgR3,
-                                   pgmPhysPageCalcNemProtection(pPage, enmNewType), enmNewType, &u2State);
-        PGM_PAGE_SET_NEM_STATE(pPage, u2State);
-    }
-#else
-    RT_NOREF(enmNewType);
-#endif
-
-    /*
-     * Make sure it's not in the handy page array.
-     */
-    for (uint32_t i = pVM->pgm.s.cHandyPages; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
-    {
-        if (pVM->pgm.s.aHandyPages[i].idPage == idPage)
-        {
-            pVM->pgm.s.aHandyPages[i].idPage = NIL_GMM_PAGEID;
-            break;
-        }
-        if (pVM->pgm.s.aHandyPages[i].idSharedPage == idPage)
-        {
-            pVM->pgm.s.aHandyPages[i].idSharedPage = NIL_GMM_PAGEID;
-            break;
-        }
-    }
-
-    /*
-     * Push it onto the page array.
-     */
-    uint32_t iPage = *pcPendingPages;
-    Assert(iPage < PGMPHYS_FREE_PAGE_BATCH_SIZE);
-    *pcPendingPages += 1;
-
-    pReq->aPages[iPage].idPage = idPage;
-
-    if (iPage + 1 < PGMPHYS_FREE_PAGE_BATCH_SIZE)
-        return VINF_SUCCESS;
-
-    /*
-     * Flush the pages.
-     */
-    int rc = GMMR3FreePagesPerform(pVM, pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE);
-    if (RT_SUCCESS(rc))
-    {
-        GMMR3FreePagesRePrep(pVM, pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
-        *pcPendingPages = 0;
-    }
-    return rc;
-}
-
+/*********************************************************************************************************************************
+*   Other Stuff                                                                                                                  *
+*********************************************************************************************************************************/
 
 /**
- * Converts a GC physical address to a HC ring-3 pointer, with some
- * additional checks.
+ * Sets the Address Gate 20 state.
  *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success.
- * @retval  VINF_PGM_PHYS_TLB_CATCH_WRITE and *ppv set if the page has a write
- *          access handler of some kind.
- * @retval  VERR_PGM_PHYS_TLB_CATCH_ALL if the page has a handler catching all
- *          accesses or is odd in any way.
- * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
- *
- * @param   pVM         The cross context VM structure.
- * @param   GCPhys      The GC physical address to convert.  Since this is only
- *                      used for filling the REM TLB, the A20 mask must be
- *                      applied before calling this API.
- * @param   fWritable   Whether write access is required.
- * @param   ppv         Where to store the pointer corresponding to GCPhys on
- *                      success.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   fEnable     True if the gate should be enabled.
+ *                      False if the gate should be disabled.
  */
-VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv)
+VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 {
-    PGM_LOCK_VOID(pVM);
-    PGM_A20_ASSERT_MASKED(VMMGetCpu(pVM), GCPhys);
-
-    PPGMRAMRANGE pRam;
-    PPGMPAGE pPage;
-    int rc = pgmPhysGetPageAndRangeEx(pVM, GCPhys, &pPage, &pRam);
-    if (RT_SUCCESS(rc))
+    LogFlow(("PGMR3PhysSetA20 %d (was %d)\n", fEnable, pVCpu->pgm.s.fA20Enabled));
+    if (pVCpu->pgm.s.fA20Enabled != fEnable)
     {
-        if (PGM_PAGE_IS_BALLOONED(pPage))
-            rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
-        else if (!PGM_PAGE_HAS_ANY_HANDLERS(pPage))
-            rc = VINF_SUCCESS;
-        else
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        PCCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        if (   CPUMIsGuestInVmxRootMode(pCtx)
+            && !fEnable)
         {
-            if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
-                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
-            else if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-            {
-                /** @todo Handle TLB loads of virtual handlers so ./test.sh can be made to work
-                 *        in -norawr0 mode. */
-                if (fWritable)
-                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
-            }
-            else
-            {
-                /* Temporarily disabled physical handler(s), since the recompiler
-                   doesn't get notified when it's reset we'll have to pretend it's
-                   operating normally. */
-                if (pgmHandlerPhysicalIsAll(pVM, GCPhys))
-                    rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
-                else
-                    rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
-            }
+            Log(("Cannot enter A20M mode while in VMX root mode\n"));
+            return;
         }
-        if (RT_SUCCESS(rc))
-        {
-            int rc2;
-
-            /* Make sure what we return is writable. */
-            if (fWritable)
-                switch (PGM_PAGE_GET_STATE(pPage))
-                {
-                    case PGM_PAGE_STATE_ALLOCATED:
-                        break;
-                    case PGM_PAGE_STATE_BALLOONED:
-                        AssertFailed();
-                        break;
-                    case PGM_PAGE_STATE_ZERO:
-                    case PGM_PAGE_STATE_SHARED:
-                        if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
-                            break;
-                        RT_FALL_THRU();
-                    case PGM_PAGE_STATE_WRITE_MONITORED:
-                        rc2 = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
-                        AssertLogRelRCReturn(rc2, rc2);
-                        break;
-                }
-
-            /* Get a ring-3 mapping of the address. */
-            PPGMPAGER3MAPTLBE pTlbe;
-            rc2 = pgmPhysPageQueryTlbe(pVM, GCPhys, &pTlbe);
-            AssertLogRelRCReturn(rc2, rc2);
-            *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
-            /** @todo mapping/locking hell; this isn't horribly efficient since
-             *        pgmPhysPageLoadIntoTlb will repeat the lookup we've done here. */
-
-            Log6(("PGMR3PhysTlbGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage] *ppv=%p\n", GCPhys, rc, pPage, *ppv));
-        }
-        else
-            Log6(("PGMR3PhysTlbGCPhys2Ptr: GCPhys=%RGp rc=%Rrc pPage=%R[pgmpage]\n", GCPhys, rc, pPage));
-
-        /* else: handler catching all access, no pointer returned. */
+#endif
+        pVCpu->pgm.s.fA20Enabled = fEnable;
+        pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!fEnable << 20);
+        if (VM_IS_NEM_ENABLED(pVCpu->CTX_SUFF(pVM)))
+            NEMR3NotifySetA20(pVCpu, fEnable);
+#ifdef PGM_WITH_A20
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        pgmR3RefreshShadowModeAfterA20Change(pVCpu);
+        HMFlushTlb(pVCpu);
+#endif
+        IEMTlbInvalidateAllPhysical(pVCpu);
+        STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cA20Changes);
     }
-    else
-        rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
-
-    PGM_UNLOCK(pVM);
-    return rc;
 }
 
