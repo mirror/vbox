@@ -61,19 +61,53 @@ VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(bool) NEMR3SetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 VMMR3_INT_DECL(void) NEMR3NotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
 
-VMMR3_INT_DECL(int)  NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvR3, uint8_t *pu2State);
+/**
+ * Checks if dirty page tracking for MMIO2 ranges is supported.
+ *
+ * If it is, PGM will not install a physical write access handler for the MMIO2
+ * region and instead just forward dirty bit queries NEMR3QueryMmio2DirtyBits.
+ * The enable/disable control of the tracking will be ignored, and PGM will
+ * always set NEM_NOTIFY_PHYS_MMIO_EX_F_TRACK_DIRTY_PAGES for such ranges.
+ *
+ * @retval  true if supported.
+ * @retval  false if not.
+ * @param   pVM     The cross context VM structure.
+ */
+VMMR3_INT_DECL(bool) NEMR3IsMmio2DirtyPageTrackingSupported(PVM pVM);
+
+/**
+ * Worker for PGMR3PhysMmio2QueryAndResetDirtyBitmap.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   GCPhys      The address of the MMIO2 range.
+ * @param   cb          The size of the MMIO2 range.
+ * @param   uNemRange   The NEM internal range number.
+ * @param   pvBitmap    The output bitmap.  Must be 8-byte aligned.  Ignored
+ *                      when @a cbBitmap is zero.
+ * @param   cbBitmap    The size of the bitmap.  Must be the size of the whole
+ *                      MMIO2 range, rounded up to the nearest 8 bytes.
+ *                      When zero only a reset is done.
+ */
+VMMR3_INT_DECL(int)  NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t uNemRange,
+                                                            void *pvBitmap, size_t cbBitmap);
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvR3,
+                                                uint8_t *pu2State, uint32_t *puNemRange);
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
-                                                   void *pvRam, void *pvMmio2, uint8_t *pu2State);
+                                                   void *pvRam, void *pvMmio2, uint8_t *pu2State, uint32_t *puNemRange);
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMapLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
-                                                  void *pvRam, void *pvMmio2);
+                                                  void *pvRam, void *pvMmio2, uint32_t *puNemRange);
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
                                                 void *pvRam, void *pvMmio2, uint8_t *pu2State);
 /** @name Flags for NEMR3NotifyPhysMmioExMap and NEMR3NotifyPhysMmioExUnmap.
  * @{ */
-/** Set if it's MMIO2 being mapped or unmapped. */
-#define NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2     RT_BIT(0)
 /** Set if the range is replacing RAM rather that unused space. */
-#define NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE   RT_BIT(1)
+#define NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE               RT_BIT(0)
+/** Set if it's MMIO2 being mapped or unmapped. */
+#define NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2                 RT_BIT(1)
+/** Set if MMIO2 and dirty page tracking is configured. */
+#define NEM_NOTIFY_PHYS_MMIO_EX_F_TRACK_DIRTY_PAGES     RT_BIT(2)
 /** @} */
 
 /**

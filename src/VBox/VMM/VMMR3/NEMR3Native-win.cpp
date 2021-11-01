@@ -59,6 +59,11 @@
 #include <iprt/system.h>
 #include <iprt/utf16.h>
 
+#ifndef NTDDI_WIN10_VB /* Present in W10 2004 SDK, quite possibly earlier. */
+HRESULT WINAPI WHvQueryGpaRangeDirtyBitmap(WHV_PARTITION_HANDLE, WHV_GUEST_PHYSICAL_ADDRESS, UINT64, UINT64 *, UINT32);
+# define WHvMapGpaRangeFlagTrackDirtyPages      ((WHV_MAP_GPA_RANGE_FLAGS)0x00000008)
+#endif
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -95,6 +100,7 @@ static decltype(WHvSetPartitionProperty) *          g_pfnWHvSetPartitionProperty
 static decltype(WHvMapGpaRange) *                   g_pfnWHvMapGpaRange;
 static decltype(WHvUnmapGpaRange) *                 g_pfnWHvUnmapGpaRange;
 static decltype(WHvTranslateGva) *                  g_pfnWHvTranslateGva;
+static decltype(WHvQueryGpaRangeDirtyBitmap) *      g_pfnWHvQueryGpaRangeDirtyBitmap;
 #ifndef NEM_WIN_USE_OUR_OWN_RUN_API
 static decltype(WHvCreateVirtualProcessor) *        g_pfnWHvCreateVirtualProcessor;
 static decltype(WHvDeleteVirtualProcessor) *        g_pfnWHvDeleteVirtualProcessor;
@@ -146,6 +152,7 @@ static const struct
     NEM_WIN_IMPORT(0, false, WHvMapGpaRange),
     NEM_WIN_IMPORT(0, false, WHvUnmapGpaRange),
     NEM_WIN_IMPORT(0, false, WHvTranslateGva),
+    NEM_WIN_IMPORT(0, true,  WHvQueryGpaRangeDirtyBitmap),
 #ifndef NEM_WIN_USE_OUR_OWN_RUN_API
     NEM_WIN_IMPORT(0, false, WHvCreateVirtualProcessor),
     NEM_WIN_IMPORT(0, false, WHvDeleteVirtualProcessor),
@@ -221,6 +228,7 @@ static const HV_X64_INTERCEPT_MESSAGE_HEADER *g_pX64MsgHdr;
 # define WHvMapGpaRange                             g_pfnWHvMapGpaRange
 # define WHvUnmapGpaRange                           g_pfnWHvUnmapGpaRange
 # define WHvTranslateGva                            g_pfnWHvTranslateGva
+# define WHvQueryGpaRangeDirtyBitmap                g_pfnWHvQueryGpaRangeDirtyBitmap
 # define WHvCreateVirtualProcessor                  g_pfnWHvCreateVirtualProcessor
 # define WHvDeleteVirtualProcessor                  g_pfnWHvDeleteVirtualProcessor
 # define WHvRunVirtualProcessor                     g_pfnWHvRunVirtualProcessor
@@ -521,7 +529,13 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
         for (unsigned i = 0; i < RT_ELEMENTS(g_aImports); i++)
         {
             int rc2 = RTLdrGetSymbol(ahMods[g_aImports[i].idxDll], g_aImports[i].pszName, (void **)g_aImports[i].ppfn);
-            if (RT_FAILURE(rc2))
+            if (RT_SUCCESS(rc2))
+            {
+                if (g_aImports[i].fOptional)
+                    LogRel(("NEM:  info: Found optional import %s!%s.\n",
+                            s_apszDllNames[g_aImports[i].idxDll], g_aImports[i].pszName));
+            }
+            else
             {
                 *g_aImports[i].ppfn = NULL;
 
@@ -1369,6 +1383,20 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         STAMR3Register(pVM, (void *)&pVM->nem.s.StatUnmapAllPages, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesUnmapAll", STAMUNIT_PAGES, "Times we had to unmap all the pages");
 #endif
+#ifdef VBOX_WITH_PGM_NEM_MODE
+                        STAMR3Register(pVM, &pVM->nem.s.StatProfMapGpaRange, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesMapGpaRange", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvMapGpaRange for bigger stuff");
+                        STAMR3Register(pVM, &pVM->nem.s.StatProfUnmapGpaRange, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesUnmapGpaRange", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvUnmapGpaRange for bigger stuff");
+                        STAMR3Register(pVM, &pVM->nem.s.StatProfQueryGpaRangeDirtyBitmap, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesQueryGpaRangeDirtyBitmap", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvQueryGpaRangeDirtyBitmap (MMIO2/VRAM)");
+#  endif
+#  ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+                        STAMR3Register(pVM, &pVM->nem.s.StatProfMapGpaRangePage, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesMapGpaRangePage", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvMapGpaRange for single pages");
+                        STAMR3Register(pVM, &pVM->nem.s.StatProfUnmapGpaRangePage, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                                       "/NEM/PagesUnmapGpaRangePage", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvUnmapGpaRange for single pages");
+#  endif
 
                         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                         {
@@ -1971,21 +1999,29 @@ DECLINLINE(int) nemR3NativeGCPhys2R3PtrWriteable(PVM pVM, RTGCPHYS GCPhys, void 
 }
 
 
-VMMR3_INT_DECL(int) NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvR3, uint8_t *pu2State)
+VMMR3_INT_DECL(int) NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvR3,
+                                               uint8_t *pu2State, uint32_t *puNemRange)
 {
-    Log5(("NEMR3NotifyPhysRamRegister: %RGp LB %RGp, pvR3=%p\n", GCPhys, cb, pvR3));
+    Log5(("NEMR3NotifyPhysRamRegister: %RGp LB %RGp, pvR3=%p pu2State=%p (%d) puNemRange=%p (%d)\n",
+          GCPhys, cb, pvR3, pu2State, pu2State, puNemRange, *puNemRange));
+
     *pu2State = UINT8_MAX;
+    RT_NOREF(puNemRange);
+
 #if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
     if (pvR3)
     {
+        STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRange, a);
         HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvR3, GCPhys, cb,
                                      WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfMapGpaRange, a);
         if (SUCCEEDED(hrc))
             *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
         else
         {
             LogRel(("NEMR3NotifyPhysRamRegister: GCPhys=%RGp LB %RGp pvR3=%p hrc=%Rhrc (%#x) Last=%#x/%u\n",
                     GCPhys, cb, pvR3, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPageFailed);
             return VERR_NEM_MAP_PAGES_FAILED;
         }
     }
@@ -1996,11 +2032,19 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
 }
 
 
-VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
-                                                  void *pvRam, void *pvMmio2, uint8_t *pu2State)
+VMMR3_INT_DECL(bool) NEMR3IsMmio2DirtyPageTrackingSupported(PVM pVM)
 {
-    Log5(("NEMR3NotifyPhysMmioExMapEarly: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p (%d)\n",
-          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, *pu2State));
+    RT_NOREF(pVM);
+    return g_pfnWHvQueryGpaRangeDirtyBitmap != NULL;
+}
+
+
+VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
+                                                  void *pvRam, void *pvMmio2, uint8_t *pu2State, uint32_t *puNemRange)
+{
+    Log5(("NEMR3NotifyPhysMmioExMapEarly: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p (%d) puNemRange=%p (%#x)\n",
+          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, *pu2State, puNemRange, puNemRange ? *puNemRange : UINT32_MAX));
+    RT_NOREF(puNemRange);
 
 #if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
     /*
@@ -2008,7 +2052,9 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
      */
     if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
     {
+        STAM_REL_PROFILE_START(&pVM->nem.s.StatProfUnmapGpaRange, a);
         HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, cb);
+        STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfUnmapGpaRange, a);
         if (SUCCEEDED(hrc))
         { /* likely */ }
         else if (pvMmio2)
@@ -2018,6 +2064,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
         {
             LogRel(("NEMR3NotifyPhysMmioExMapEarly: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> hrc=%Rhrc (%#x) Last=%#x/%u\n",
                     GCPhys, cb, fFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
             return VERR_NEM_UNMAP_PAGES_FAILED;
         }
     }
@@ -2028,14 +2075,19 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
     if (pvMmio2)
     {
         Assert(fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2);
-        HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvMmio2, GCPhys, cb,
-                                     WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        WHV_MAP_GPA_RANGE_FLAGS fWHvFlags = WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute;
+        if ((fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_TRACK_DIRTY_PAGES) && g_pfnWHvQueryGpaRangeDirtyBitmap)
+            fWHvFlags |= WHvMapGpaRangeFlagTrackDirtyPages;
+        STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRange, a);
+        HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvMmio2, GCPhys, cb, fWHvFlags);
+        STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfMapGpaRange, a);
         if (SUCCEEDED(hrc))
             *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
         else
         {
-            LogRel(("NEMR3NotifyPhysMmioExMapEarly: GCPhys=%RGp LB %RGp fFlags=%#x pvMmio2=%p: Map -> hrc=%Rhrc (%#x) Last=%#x/%u\n",
-                    GCPhys, cb, fFlags, pvMmio2, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            LogRel(("NEMR3NotifyPhysMmioExMapEarly: GCPhys=%RGp LB %RGp fFlags=%#x pvMmio2=%p fWHvFlags=%#x: Map -> hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                    GCPhys, cb, fFlags, pvMmio2, fWHvFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+            STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPageFailed);
             return VERR_NEM_MAP_PAGES_FAILED;
         }
     }
@@ -2055,9 +2107,9 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
 
 
 VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
-                                                 void *pvRam, void *pvMmio2)
+                                                 void *pvRam, void *pvMmio2, uint32_t *puNemRange)
 {
-    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2);
+    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2, puNemRange);
     return VINF_SUCCESS;
 }
 
@@ -2077,12 +2129,15 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
      *        we may have more stuff to unmap even in case of pure MMIO... */
     if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2)
     {
+        STAM_REL_PROFILE_START(&pVM->nem.s.StatProfUnmapGpaRange, a);
         HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, cb);
+        STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfUnmapGpaRange, a);
         if (FAILED(hrc))
         {
             LogRel2(("NEMR3NotifyPhysMmioExUnmap: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> hrc=%Rhrc (%#x) Last=%#x/%u (ignored)\n",
                      GCPhys, cb, fFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
             rc = VERR_NEM_UNMAP_PAGES_FAILED;
+            STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
         }
     }
 
@@ -2092,8 +2147,10 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
     if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
     {
         AssertPtr(pvRam);
+        STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRange, a);
         HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvRam, GCPhys, cb,
                                      WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfMapGpaRange, a);
         if (SUCCEEDED(hrc))
         { /* likely */ }
         else
@@ -2101,6 +2158,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
             LogRel(("NEMR3NotifyPhysMmioExUnmap: GCPhys=%RGp LB %RGp pvMmio2=%p hrc=%Rhrc (%#x) Last=%#x/%u\n",
                     GCPhys, cb, pvMmio2, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
             rc = VERR_NEM_MAP_PAGES_FAILED;
+            STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPageFailed);
         }
         if (pu2State)
             *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
@@ -2116,6 +2174,33 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
         *pu2State = UINT8_MAX;
 #endif
     return rc;
+}
+
+
+VMMR3_INT_DECL(int) NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t uNemRange,
+                                                           void *pvBitmap, size_t cbBitmap)
+{
+#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+    Assert(VM_IS_NEM_ENABLED(pVM));
+    AssertReturn(g_pfnWHvQueryGpaRangeDirtyBitmap, VERR_INTERNAL_ERROR_2);
+    Assert(cbBitmap == (uint32_t)cbBitmap);
+    RT_NOREF(uNemRange);
+
+    STAM_REL_PROFILE_START(&pVM->nem.s.StatProfQueryGpaRangeDirtyBitmap, a);
+    HRESULT hrc = WHvQueryGpaRangeDirtyBitmap(pVM->nem.s.hPartition, GCPhys, cb, (UINT64 *)pvBitmap, (uint32_t)cbBitmap);
+    STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfQueryGpaRangeDirtyBitmap, a);
+    if (SUCCEEDED(hrc))
+        return VINF_SUCCESS;
+
+    AssertLogRelMsgFailed(("GCPhys=%RGp LB %RGp pvBitmap=%p LB %#zx hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                           GCPhys, cb, pvBitmap, cbBitmap, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+    return VERR_NEM_QUERY_DIRTY_BITMAP_FAILED;
+
+#else
+    RT_NOREF(pVM, GCPhys, cb, uNemRange, pvBitmap, cbBitmap);
+    AssertFailed();
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
@@ -2170,13 +2255,16 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
      * (Re-)map readonly.
      */
     AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
+    STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRange, a);
     HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvPages, GCPhys, cb, WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute);
+    STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfMapGpaRange, a);
     if (SUCCEEDED(hrc))
         *pu2State = NEM_WIN_PAGE_STATE_READABLE;
     else
     {
         LogRel(("nemR3NativeNotifyPhysRomRegisterEarly: GCPhys=%RGp LB %RGp pvPages=%p fFlags=%#x hrc=%Rhrc (%#x) Last=%#x/%u\n",
                 GCPhys, cb, pvPages, fFlags, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+        STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPageFailed);
         return VERR_NEM_MAP_PAGES_FAILED;
     }
     RT_NOREF(fFlags);
@@ -2186,6 +2274,7 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
     return VINF_SUCCESS;
 }
 
+#ifdef NEM_WIN_WITH_A20
 
 /**
  * @callback_method_impl{FNPGMPHYSNEMCHECKPAGE}
@@ -2228,7 +2317,6 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
 }
 
 
-#ifdef NEM_WIN_WITH_A20
 /**
  * Unmaps a page from Hyper-V for the purpose of emulating A20 gate behavior.
  *
@@ -2243,8 +2331,8 @@ static int nemR3WinUnmapPageForA20Gate(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     return PGMPhysNemPageInfoChecker(pVM, pVCpu, GCPhys, false /*fMakeWritable*/, &Info,
                                      nemR3WinUnsetForA20CheckerCallback, NULL);
 }
-#endif
 
+#endif /* NEM_WIN_WITH_A20 */
 
 /**
  * Called when the A20 state changes.

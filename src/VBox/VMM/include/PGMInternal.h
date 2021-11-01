@@ -1178,7 +1178,8 @@ typedef struct PGMRAMRANGE
     R0PTRTYPE(struct PGMRAMRANGE *)     pNextR0;
     /** PGM_RAM_RANGE_FLAGS_* flags. */
     uint32_t                            fFlags;
-    uint32_t                            fPadding1;
+    /** NEM specific info, UINT32_MAX if not used. */
+    uint32_t                            uNemRange;
     /** Last address in the range (inclusive). Page aligned (-1). */
     RTGCPHYS                            GCPhysLast;
     /** Start of the HC mapping of the range. This is only used for MMIO2 and in NEM mode. */
@@ -1420,7 +1421,9 @@ typedef struct PGMREGMMIO2RANGE
      * This may be larger than indicated by RamRange.cb if the range has been
      * reduced during saved state loading. */
     RTGCPHYS                            cbReal;
-    /** Pointer to the physical handler for MMIO. */
+    /** Pointer to the physical handler for MMIO.
+     * If NEM is responsible for tracking dirty pages in simple memory mode, this
+     * will be NULL. */
     R3PTRTYPE(PPGMPHYSHANDLER)          pPhysHandlerR3;
     /** Live save per page tracking data for MMIO2. */
     R3PTRTYPE(PPGMLIVESAVEMMIO2PAGE)    paLSPages;

@@ -1503,7 +1503,7 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
         uint8_t         u2State    = 0; /* (We don't support UINT8_MAX here.) */
         int rc = NEMR3NotifyPhysMmioExMapEarly(pVM, GCPhys, GCPhysLast - GCPhys + 1, fNemNotify,
                                                pRam->pvR3 ? (uint8_t *)pRam->pvR3 + GCPhys - pRam->GCPhys : NULL,
-                                               pvMmio2, &u2State);
+                                               pvMmio2, &u2State, NULL /*puNemRange*/);
         AssertLogRelRCReturn(rc, rc);
 
         /* Iterate the pages. */
@@ -1541,7 +1541,8 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
     if (VM_IS_NEM_ENABLED(pVM))
     {
         uint32_t const fNemNotify = (pvMmio2 ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2 : 0) | NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE;
-        rc = NEMR3NotifyPhysMmioExMapEarly(pVM, GCPhys, GCPhysLast - GCPhys + 1, fNemNotify, NULL, pvMmio2, &u2State);
+        rc = NEMR3NotifyPhysMmioExMapEarly(pVM, GCPhys, GCPhysLast - GCPhys + 1, fNemNotify, NULL, pvMmio2,
+                                           &u2State, NULL /*puNemRange*/);
         AssertLogRelRCReturnStmt(rc, GMMR3FreePagesCleanup(pReq), rc);
     }
 #endif
@@ -1604,6 +1605,7 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
     pNew->cb            = GCPhysLast - GCPhys + 1;
     pNew->pszDesc       = pszDesc;
     pNew->fFlags        = fFlags;
+    pNew->uNemRange     = UINT32_MAX;
     pNew->pvR3          = NULL;
     pNew->paLSPages     = NULL;
 
@@ -1650,7 +1652,7 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
     if (VM_IS_NEM_ENABLED(pVM))
     {
         uint8_t u2State = UINT8_MAX;
-        int rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, pNew->cb, pNew->pvR3, &u2State);
+        int rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, pNew->cb, pNew->pvR3, &u2State, &pNew->uNemRange);
         if (RT_SUCCESS(rc))
         {
             if (u2State != UINT8_MAX)
@@ -2362,7 +2364,8 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
         uint8_t u2State = 0; /* (must have valid state as there can't be anything to preserve) */
         if (VM_IS_NEM_ENABLED(pVM))
         {
-            rc = NEMR3NotifyPhysMmioExMapEarly(pVM, GCPhys, cPages << PAGE_SHIFT, 0 /*fFlags*/, NULL, NULL, &u2State);
+            rc = NEMR3NotifyPhysMmioExMapEarly(pVM, GCPhys, cPages << PAGE_SHIFT, 0 /*fFlags*/, NULL, NULL,
+                                               &u2State, &pNew->uNemRange);
             AssertLogRelRCReturnStmt(rc, MMHyperFree(pVM, pNew), rc);
         }
 #endif
@@ -2408,7 +2411,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
             uint32_t const fNemNotify = (fRamExists ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
             rc = NEMR3NotifyPhysMmioExMapLate(pVM, GCPhys, GCPhysLast - GCPhys + 1, fNemNotify,
                                               fRamExists ? (uint8_t *)pRam->pvR3 + (uintptr_t)(GCPhys - pRam->GCPhys) : NULL,
-                                              NULL);
+                                              NULL, !fRamExists ? &pRam->uNemRange : NULL);
             AssertLogRelRCReturn(rc, rc);
         }
 #endif
@@ -2843,6 +2846,7 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
         pNew->RamRange.pszDesc      = pszDesc;
         pNew->RamRange.cb           = pNew->cbReal = (RTGCPHYS)cPagesTrackedByChunk << X86_PAGE_SHIFT;
         pNew->RamRange.fFlags      |= PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO_EX;
+        pNew->RamRange.uNemRange    = UINT32_MAX;
         //pNew->RamRange.pvR3       = NULL;
         //pNew->RamRange.paLSPages  = NULL;
 
@@ -2852,9 +2856,14 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
         ppNext = &pNew->pNextR3;
 
         /*
-         * Pre-allocate a handler if we're tracking dirty pages.
+         * Pre-allocate a handler if we're tracking dirty pages, unless NEM takes care of this.
          */
-        if (fFlags & PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES)
+        if (   (fFlags & PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES)
+#ifdef VBOX_WITH_PGM_NEM_MODE
+            && !NEMR3IsMmio2DirtyPageTrackingSupported(pVM)
+#endif
+            )
+
         {
             rc = pgmHandlerPhysicalExCreate(pVM, pVM->pgm.s.hMmio2DirtyPhysHandlerType,
                                             (RTR3PTR)(uintptr_t)idMmio2, idMmio2, idMmio2, pszDesc, &pNew->pPhysHandlerR3);
@@ -3461,8 +3470,11 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Map(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDL
             {
                 int rc = NEMR3NotifyPhysMmioExMapEarly(pVM, pCurMmio->RamRange.GCPhys,
                                                        pCurMmio->RamRange.GCPhysLast - pCurMmio->RamRange.GCPhys + 1,
-                                                       NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2,
-                                                       NULL /*pvRam*/, pCurMmio->RamRange.pvR3, &u2NemState);
+                                                       NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2
+                                                       | (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES
+                                                          ? NEM_NOTIFY_PHYS_MMIO_EX_F_TRACK_DIRTY_PAGES : 0),
+                                                       NULL /*pvRam*/, pCurMmio->RamRange.pvR3,
+                                                       &u2NemState, &pCurMmio->RamRange.uNemRange);
                 AssertLogRelRCReturnStmt(rc, PGM_UNLOCK(pVM), rc);
             }
 #endif
@@ -3528,16 +3540,19 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Map(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDL
     {
         int rc;
         uint32_t fNemFlags = NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2;
+        if (pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES)
+            fNemFlags |= NEM_NOTIFY_PHYS_MMIO_EX_F_TRACK_DIRTY_PAGES;
         if (fRamExists)
             rc = NEMR3NotifyPhysMmioExMapLate(pVM, GCPhys, GCPhysLast - GCPhys + 1, fNemFlags | NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE,
-                                              pRam->pvR3 ? (uint8_t *)pRam->pvR3 + GCPhys - pRam->GCPhys : NULL, pFirstMmio->pvR3);
+                                              pRam->pvR3 ? (uint8_t *)pRam->pvR3 + GCPhys - pRam->GCPhys : NULL, pFirstMmio->pvR3,
+                                              NULL /*puNemRange*/);
         else
         {
             rc = VINF_SUCCESS;
             for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
             {
                 rc = NEMR3NotifyPhysMmioExMapLate(pVM, pCurMmio->RamRange.GCPhys, pCurMmio->RamRange.cb, fNemFlags,
-                                                  NULL, pCurMmio->RamRange.pvR3);
+                                                  NULL, pCurMmio->RamRange.pvR3, &pCurMmio->RamRange.uNemRange);
                 if ((pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK) || RT_FAILURE(rc))
                     break;
             }
@@ -3613,7 +3628,9 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Unmap(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HAN
      */
     int            rcRet     = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM
-    uint32_t const fNemFlags = NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2;
+    uint32_t const fNemFlags = NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2
+                             | (fOldFlags & PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES
+                                ? NEM_NOTIFY_PHYS_MMIO_EX_F_TRACK_DIRTY_PAGES : 0);
 #endif
     if (fOldFlags & PGMREGMMIO2RANGE_F_OVERLAPPING)
     {
@@ -3756,16 +3773,6 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Reduce(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HA
             AssertLogRelMsgStmt(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK,
                                 ("%s: %#x\n", pFirstMmio->RamRange.pszDesc, pFirstMmio->fFlags),
                                 rc = VERR_NOT_SUPPORTED);
-
-#ifdef VBOX_WITH_PGM_NEM_MODE
-            /*
-             * Currently not supported for NEM in simple memory mode.
-             */
-            /** @todo implement this for NEM. */
-            if (RT_SUCCESS(rc))
-                AssertLogRelMsgStmt(VM_IS_NEM_ENABLED(pVM), ("%s: %#x\n", pFirstMmio->RamRange.pszDesc),
-                                    rc = VERR_PGM_NOT_SUPPORTED_FOR_NEM_MODE);
-#endif
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -3866,7 +3873,7 @@ static int pgmR3PhysMmio2QueryAndResetDirtyBitmapLocked(PVM pVM, PPDMDEVINS pDev
     uint16_t fTotalDirty = 0;
     for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio;;)
     {
-        cbTotal     += pCur->cbReal; /** @todo good question for NEM... */
+        cbTotal     += pCur->RamRange.cb; /* Not using cbReal here, because NEM is not in on the creating, only the mapping. */
         fTotalDirty |= pCur->fFlags;
         if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
             break;
@@ -3891,6 +3898,26 @@ static int pgmR3PhysMmio2QueryAndResetDirtyBitmapLocked(PVM pVM, PPDMDEVINS pDev
     int rc = VINF_SUCCESS;
     if (pvBitmap)
     {
+#ifdef VBOX_WITH_PGM_NEM_MODE
+        if (pFirstRegMmio->pPhysHandlerR3 == NULL)
+        {
+            AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_INTERNAL_ERROR_4);
+            uint8_t *pbBitmap = (uint8_t *)pvBitmap;
+            for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio; pCur; pCur = pCur->pNextR3)
+            {
+                size_t const cbBitmapChunk = pCur->RamRange.cb / PAGE_SIZE / 8;
+                Assert((RTGCPHYS)cbBitmapChunk * PAGE_SIZE * 8 == pCur->RamRange.cb);
+                int rc2 = NEMR3PhysMmio2QueryAndResetDirtyBitmap(pVM, pCur->RamRange.GCPhys, pCur->RamRange.cb,
+                                                                 pCur->RamRange.uNemRange, pbBitmap, cbBitmapChunk);
+                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    rc = rc2;
+                if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+                    break;
+                pbBitmap += pCur->RamRange.cb / PAGE_SIZE / 8;
+            }
+        }
+        else
+#endif
         if (fTotalDirty & PGMREGMMIO2RANGE_F_IS_DIRTY)
         {
             if (   (pFirstRegMmio->fFlags & (PGMREGMMIO2RANGE_F_MAPPED | PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
@@ -3948,7 +3975,35 @@ static int pgmR3PhysMmio2QueryAndResetDirtyBitmapLocked(PVM pVM, PPDMDEVINS pDev
      */
     else if (   (pFirstRegMmio->fFlags & (PGMREGMMIO2RANGE_F_MAPPED | PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
              ==                          (PGMREGMMIO2RANGE_F_MAPPED | PGMREGMMIO2RANGE_F_TRACKING_ENABLED))
-        rc = PGMHandlerPhysicalReset(pVM, pFirstRegMmio->RamRange.GCPhys);
+    {
+#ifdef VBOX_WITH_PGM_NEM_MODE
+        if (pFirstRegMmio->pPhysHandlerR3 == NULL)
+        {
+            AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_INTERNAL_ERROR_4);
+            for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio; pCur; pCur = pCur->pNextR3)
+            {
+                int rc2 = NEMR3PhysMmio2QueryAndResetDirtyBitmap(pVM, pCur->RamRange.GCPhys, pCur->RamRange.cb,
+                                                                 pCur->RamRange.uNemRange, NULL, 0);
+                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    rc = rc2;
+                if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+                    break;
+            }
+        }
+        else
+#endif
+        {
+            for (PPGMREGMMIO2RANGE pCur = pFirstRegMmio; pCur; pCur = pCur->pNextR3)
+            {
+                pCur->fFlags &= ~PGMREGMMIO2RANGE_F_IS_DIRTY;
+                int rc2 = PGMHandlerPhysicalReset(pVM, pCur->RamRange.GCPhys);
+                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    rc = rc2;
+                if (pCur->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+                    break;
+            }
+        }
+    }
 
     return rc;
 }
@@ -4005,6 +4060,18 @@ static int pgmR3PhysMmio2ControlDirtyPageTrackingLocked(PVM pVM, PPDMDEVINS pDev
                  ==                          (PGMREGMMIO2RANGE_F_TRACK_DIRTY_PAGES | PGMREGMMIO2RANGE_F_FIRST_CHUNK)
                  , VERR_INVALID_FUNCTION);
     AssertReturn(pDevIns == pFirstRegMmio->pDevInsR3, VERR_NOT_OWNER);
+
+#ifdef VBOX_WITH_PGM_NEM_MODE
+    /*
+     * This is a nop if NEM is responsible for doing the tracking, we simply
+     * leave the tracking on all the time there.
+     */
+    if (pFirstRegMmio->pPhysHandlerR3 == NULL)
+    {
+        AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_INTERNAL_ERROR_4);
+        return VINF_SUCCESS;
+    }
+#endif
 
     /*
      * Anyting needing doing?

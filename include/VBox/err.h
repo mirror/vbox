@@ -3010,6 +3010,8 @@
 #define VERR_NEM_MISSING_KERNEL_API_4               (-6814)
 /** NEM init failed because of missing kernel API (\#5). */
 #define VERR_NEM_MISSING_KERNEL_API_5               (-6815)
+/** NEM failed to query dirty page bitmap. */
+#define VERR_NEM_QUERY_DIRTY_BITMAP_FAILED          (-6816)
 
 /** NEM internal processing error \#0. */
 #define VERR_NEM_IPE_0                              (-6890)

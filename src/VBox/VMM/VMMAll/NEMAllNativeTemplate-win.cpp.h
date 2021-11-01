@@ -1600,7 +1600,9 @@ nemHCWinUnmapOnePageCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, uint8_t
     if (RT_SUCCESS(rc))
 # else
     RT_NOREF_PV(pVCpu);
+    STAM_REL_PROFILE_START(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
     HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
+    STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
     if (SUCCEEDED(hrc))
 # endif
     {
@@ -1795,7 +1797,9 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHY
     if (RT_SUCCESS(rc))
 # else
     /** @todo figure out whether we mess up the state or if it's WHv.   */
+    STAM_REL_PROFILE_START(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
     HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
+    STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
     if (SUCCEEDED(hrc))
 # endif
     {
@@ -4647,8 +4651,10 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLE
 #if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE) && defined(IN_RING3)
     if (pvMemR3)
     {
+        STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRange, a);
         HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvMemR3, GCPhys, cb,
                                      WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute | WHvMapGpaRangeFlagWrite);
+        STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfMapGpaRange, a);
         if (SUCCEEDED(hrc))
             *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
         else
@@ -4812,7 +4818,9 @@ NEM_TMPL_STATIC int nemHCNativeSetPhysPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS G
                 return rc;
             }
 #  else
+            STAM_REL_PROFILE_START(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
             HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhysDst, X86_PAGE_SIZE);
+            STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
             if (SUCCEEDED(hrc))
             {
                 *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
@@ -4907,8 +4915,10 @@ NEM_TMPL_STATIC int nemHCNativeSetPhysPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS G
         int rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhysSrc, &pvPage);
         if (RT_SUCCESS(rc))
         {
+            STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRangePage, a);
             HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, (void *)pvPage, GCPhysDst, X86_PAGE_SIZE,
                                          WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute);
+            STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfMapGpaRangePage, a);
             if (SUCCEEDED(hrc))
             {
                 *pu2State = NEM_WIN_PAGE_STATE_READABLE;
@@ -4962,7 +4972,9 @@ NEM_TMPL_STATIC int nemHCJustUnmapPageFromHyperV(PVMCC pVM, RTGCPHYS GCPhysDst, 
     return rc;
 
 #elif defined(IN_RING3)
+    STAM_REL_PROFILE_START(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
     HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE);
+    STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
     if (SUCCEEDED(hrc))
     {
         STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPage);
