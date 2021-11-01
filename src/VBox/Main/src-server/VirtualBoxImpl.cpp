@@ -1471,7 +1471,16 @@ HRESULT VirtualBox::createHostOnlyNetwork(const com::Utf8Str &aNetworkName,
 
     m->allHostOnlyNetworks.addChild(HostOnlyNetwork);
 
-    HostOnlyNetwork.queryInterfaceTo(aNetwork.asOutParam());
+    {
+        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
+        rc = i_saveSettings();
+        vboxLock.release();
+
+        if (FAILED(rc))
+            m->allHostOnlyNetworks.removeChild(HostOnlyNetwork);
+        else
+            HostOnlyNetwork.queryInterfaceTo(aNetwork.asOutParam());
+    }
 
     return rc;
 #else /* !VBOX_WITH_VMNET */
