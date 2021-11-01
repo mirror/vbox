@@ -505,8 +505,6 @@ enum
             \
             case 'v': \
                 g_uVerbosity++; \
-                if (g_pRelLogger) \
-                    RTLogGroupSettings(g_pRelLogger, g_uVerbosity == 1 ? "all.e.l" : g_uVerbosity == 2 ? "all.e.l.f" : "all=~0"); \
                 break; \
             \
             case 'V': \

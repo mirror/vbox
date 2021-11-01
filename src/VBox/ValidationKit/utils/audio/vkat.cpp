@@ -1483,7 +1483,7 @@ int main(int argc, char **argv)
                     RT_FALL_THROUGH();
                 default:
                     rc = RTLogGroupSettings(g_pRelLogger,
-                                            "drv_audio.e.l.l2.l3.f+audio_mixer.e.l.l2.l3.f+audio_test.e.l.l2.l3.f");
+                                            "drv_audio.e.l.l2.l3.l4.f+audio_mixer.e.l.l2.l3.l4.f+audio_test.e.l.l2.l3.l4.f");
                     break;
             }
             if (RT_FAILURE(rc))
