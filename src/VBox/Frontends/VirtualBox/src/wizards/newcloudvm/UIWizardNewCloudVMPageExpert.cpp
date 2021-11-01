@@ -240,6 +240,8 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
 
 void UIWizardNewCloudVMPageExpert::initializePage()
 {
+    /* Make sure form-editor knows notification-center: */
+    m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Populate providers: */
     populateProviders(m_pProviderComboBox);
     /* Translate providers: */

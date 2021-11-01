@@ -50,6 +50,8 @@ public:
 
     /** Returns the notification-center reference. */
     UINotificationCenter *notificationCenter() const { return m_pNotificationCenter; }
+    /** Defines the @a pNotificationCenter reference. */
+    void setNotificationCenter(UINotificationCenter *pNotificationCenter) { m_pNotificationCenter = pNotificationCenter; }
 
     /** Returns horizontal header reference. */
     QHeaderView *horizontalHeader() const;

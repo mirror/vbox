@@ -99,6 +99,8 @@ void UIWizardNewCloudVMPageProperties::retranslateUi()
 
 void UIWizardNewCloudVMPageProperties::initializePage()
 {
+    /* Make sure form-editor knows notification-center: */
+    m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Generate VSD form, asynchronously: */
     QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
 }

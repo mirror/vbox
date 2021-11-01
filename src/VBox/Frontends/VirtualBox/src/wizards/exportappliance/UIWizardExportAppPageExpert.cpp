@@ -527,6 +527,8 @@ void UIWizardExportAppPageExpert::retranslateUi()
 
 void UIWizardExportAppPageExpert::initializePage()
 {
+    /* Make sure form-editor knows notification-center: */
+    m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Choose 1st tool to be chosen initially: */
     m_pToolBox->setCurrentPage(0);
     /* Populate VM items: */

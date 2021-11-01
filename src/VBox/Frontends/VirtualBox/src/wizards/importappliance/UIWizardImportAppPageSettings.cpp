@@ -484,6 +484,8 @@ void UIWizardImportAppPageSettings::retranslateUi()
 
 void UIWizardImportAppPageSettings::initializePage()
 {
+    /* Make sure form-editor knows notification-center: */
+    m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Translate page: */
     retranslateUi();
 

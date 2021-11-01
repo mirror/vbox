@@ -174,6 +174,8 @@ void UIWizardExportAppPageSettings::retranslateUi()
 
 void UIWizardExportAppPageSettings::initializePage()
 {
+    /* Make sure form-editor knows notification-center: */
+    m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Translate page: */
     retranslateUi();
 
