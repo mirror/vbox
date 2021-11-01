@@ -1407,6 +1407,8 @@ int main(int argc, char **argv)
                 fDaemonized = true;
                 break;
 
+            /* Has to be defined here and not in AUDIO_TEST_COMMON_OPTION_CASES, to get the logger
+             * configured before the specific command handlers down below come into play. */
             case 'v':
                 g_uVerbosity++;
                 break;

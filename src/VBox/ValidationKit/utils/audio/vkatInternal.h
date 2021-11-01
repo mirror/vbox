@@ -504,7 +504,7 @@ enum
                 break; \
             \
             case 'v': \
-                g_uVerbosity++; \
+                /* No-op here, has been handled by main() already. */ \
                 break; \
             \
             case 'V': \
