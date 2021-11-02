@@ -341,7 +341,7 @@ void D3DCamera::TimeAdvance(float dt)
 
 void D3DCamera::computeView(void)
 {
-    /* Vectors of the ñamera coordinate system must be orthonormal. */
+    /* Vectors of the Ã±amera coordinate system must be orthonormal. */
     d3dVectorNormalize(&mLook);
 
     d3dVectorCross(&mUp, &mLook, &mRight);
