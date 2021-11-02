@@ -1461,7 +1461,7 @@ HRESULT VirtualBox::getExtensionPackManager(ComPtr<IExtPackManager> &aExtensionP
  * Host Only Network
  */
 HRESULT VirtualBox::createHostOnlyNetwork(const com::Utf8Str &aNetworkName,
-                                       ComPtr<IHostOnlyNetwork> &aNetwork)
+                                          ComPtr<IHostOnlyNetwork> &aNetwork)
 {
 #ifdef VBOX_WITH_VMNET
     ComObjPtr<HostOnlyNetwork> HostOnlyNetwork;
@@ -4611,15 +4611,15 @@ bool VirtualBox::i_isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType)
  * Called from Machine::prepareSaveSettings() when it has detected
  * that a machine has been renamed. Such renames will require
  * updating the global media registry during the
- * VirtualBox::saveSettings() that follows later.
+ * VirtualBox::i_saveSettings() that follows later.
 *
  * When a machine is renamed, there may well be media (in particular,
  * diff images for snapshots) in the global registry that will need
  * to have their paths updated. Before 3.2, Machine::saveSettings
- * used to call VirtualBox::saveSettings implicitly, which was both
+ * used to call VirtualBox::i_saveSettings implicitly, which was both
  * unintuitive and caused locking order problems. Now, we remember
  * such pending name changes with this method so that
- * VirtualBox::saveSettings() can process them properly.
+ * VirtualBox::i_saveSettings() can process them properly.
  */
 void VirtualBox::i_rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
                                                      const Utf8Str &strNewConfigDir)
@@ -4702,7 +4702,7 @@ DECLCALLBACK(int) fntSaveMediaRegistries(void *pvUser)
  *
  * This gets called from two contexts:
  *
- *  -- VirtualBox::saveSettings() with the UUID of the global registry
+ *  -- VirtualBox::i_saveSettings() with the UUID of the global registry
  *     (VirtualBox::Data.uuidRegistry); this will save those media
  *     which had been loaded from the global registry or have been
  *     attached to a "legacy" machine which can't save its own registry;
