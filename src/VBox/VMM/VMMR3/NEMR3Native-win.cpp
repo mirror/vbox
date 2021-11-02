@@ -1388,8 +1388,6 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                        "/NEM/PagesMapGpaRange", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvMapGpaRange for bigger stuff");
                         STAMR3Register(pVM, &pVM->nem.s.StatProfUnmapGpaRange, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesUnmapGpaRange", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvUnmapGpaRange for bigger stuff");
-                        STAMR3Register(pVM, &pVM->nem.s.StatProfQueryGpaRangeDirtyBitmap, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
-                                       "/NEM/PagesQueryGpaRangeDirtyBitmap", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvQueryGpaRangeDirtyBitmap (MMIO2/VRAM)");
 #  endif
 #  ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
                         STAMR3Register(pVM, &pVM->nem.s.StatProfMapGpaRangePage, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
@@ -2186,9 +2184,8 @@ VMMR3_INT_DECL(int) NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCP
     Assert(cbBitmap == (uint32_t)cbBitmap);
     RT_NOREF(uNemRange);
 
-    STAM_REL_PROFILE_START(&pVM->nem.s.StatProfQueryGpaRangeDirtyBitmap, a);
+    /* This is being profiled by PGM, see /PGM/Mmio2QueryAndResetDirtyBitmap. */
     HRESULT hrc = WHvQueryGpaRangeDirtyBitmap(pVM->nem.s.hPartition, GCPhys, cb, (UINT64 *)pvBitmap, (uint32_t)cbBitmap);
-    STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfQueryGpaRangeDirtyBitmap, a);
     if (SUCCEEDED(hrc))
         return VINF_SUCCESS;
 

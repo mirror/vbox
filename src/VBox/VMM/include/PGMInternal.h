@@ -3281,6 +3281,8 @@ typedef struct PGM
     STAMCOUNTER                     StatLargePageRecheck;   /**< The number of times we rechecked a disabled large page.*/
 
     STAMPROFILE                     StatShModCheck;         /**< Profiles shared module checks. */
+
+    STAMPROFILE                     StatMmio2QueryAndResetDirtyBitmap; /**< Profiling PGMR3PhysMmio2QueryAndResetDirtyBitmap. */
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS

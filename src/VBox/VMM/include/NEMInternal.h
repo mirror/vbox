@@ -219,7 +219,6 @@ typedef struct NEM
 #  ifdef VBOX_WITH_PGM_NEM_MODE
     STAMPROFILE                 StatProfMapGpaRange;
     STAMPROFILE                 StatProfUnmapGpaRange;
-    STAMPROFILE                 StatProfQueryGpaRangeDirtyBitmap;
 #  endif
 #  ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     STAMPROFILE                 StatProfMapGpaRangePage;
