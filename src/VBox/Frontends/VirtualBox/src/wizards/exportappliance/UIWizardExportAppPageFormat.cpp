@@ -51,13 +51,10 @@ using namespace UIWizardExportAppFormat;
 *   Class UIWizardExportAppFormat implementation.                                                                                *
 *********************************************************************************************************************************/
 
-void UIWizardExportAppFormat::populateFormats(QIComboBox *pCombo, bool fExportToOCIByDefault)
+void UIWizardExportAppFormat::populateFormats(QIComboBox *pCombo, UINotificationCenter *pCenter, bool fExportToOCIByDefault)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
-    /* We need top-level parent as well: */
-    QWidget *pParent = pCombo->window();
-    AssertPtrReturnVoid(pParent);
 
     /* Remember current item data to be able to restore it: */
     QString strOldData;
@@ -92,18 +89,18 @@ void UIWizardExportAppFormat::populateFormats(QIComboBox *pCombo, bool fExportTo
     }
 
     /* Iterate through existing providers: */
-    foreach (const CCloudProvider &comProvider, listCloudProviders(pParent))
+    foreach (const CCloudProvider &comProvider, listCloudProviders(pCenter))
     {
         /* Skip if we have nothing to populate (file missing?): */
         if (comProvider.isNull())
             continue;
         /* Acquire provider name: */
         QString strProviderName;
-        if (!cloudProviderName(comProvider, strProviderName, pParent))
+        if (!cloudProviderName(comProvider, strProviderName, pCenter))
             continue;
         /* Acquire provider short name: */
         QString strProviderShortName;
-        if (!cloudProviderShortName(comProvider, strProviderShortName, pParent))
+        if (!cloudProviderShortName(comProvider, strProviderShortName, pCenter))
             continue;
 
         /* Compose empty item, fill it's data: */
@@ -363,6 +360,7 @@ void UIWizardExportAppFormat::refreshLocalStuff(CAppliance &comLocalAppliance,
 }
 
 void UIWizardExportAppFormat::refreshProfileCombo(QIComboBox *pCombo,
+                                                  UINotificationCenter *pCenter,
                                                   const QString &strFormat,
                                                   bool fIsFormatCloudOne)
 {
@@ -372,11 +370,8 @@ void UIWizardExportAppFormat::refreshProfileCombo(QIComboBox *pCombo,
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
     {
-        /* We need top-level parent as well: */
-        QWidget *pParent = pCombo->window();
-        AssertPtrReturnVoid(pParent);
         /* Acquire provider: */
-        CCloudProvider comProvider = cloudProviderByShortName(strFormat, pParent);
+        CCloudProvider comProvider = cloudProviderByShortName(strFormat, pCenter);
         AssertReturnVoid(comProvider.isNotNull());
 
         /* Remember current item data to be able to restore it: */
@@ -391,14 +386,14 @@ void UIWizardExportAppFormat::refreshProfileCombo(QIComboBox *pCombo,
         pCombo->clear();
 
         /* Iterate through existing profile names: */
-        foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pParent))
+        foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pCenter))
         {
             /* Skip if we have nothing to populate (wtf happened?): */
             if (comProfile.isNull())
                 continue;
             /* Acquire profile name: */
             QString strProfileName;
-            if (!cloudProfileName(comProfile, strProfileName, pParent))
+            if (!cloudProfileName(comProfile, strProfileName, pCenter))
                 continue;
 
             /* Compose item, fill it's data: */
@@ -435,13 +430,14 @@ void UIWizardExportAppFormat::refreshProfileCombo(QIComboBox *pCombo,
 }
 
 void UIWizardExportAppFormat::refreshCloudProfile(CCloudProfile &comCloudProfile,
+                                                  UINotificationCenter *pCenter,
                                                   const QString &strShortProviderName,
                                                   const QString &strProfileName,
                                                   bool fIsFormatCloudOne)
 {
     /* If format is cloud one: */
     if (fIsFormatCloudOne)
-        comCloudProfile = cloudProfileByName(strShortProviderName, strProfileName);
+        comCloudProfile = cloudProfileByName(strShortProviderName, strProfileName, pCenter);
     /* If format is local one: */
     else
         comCloudProfile = CCloudProfile();
@@ -989,7 +985,7 @@ void UIWizardExportAppPageFormat::retranslateUi()
 void UIWizardExportAppPageFormat::initializePage()
 {
     /* Populate formats: */
-    populateFormats(m_pFormatComboBox, m_fExportToOCIByDefault);
+    populateFormats(m_pFormatComboBox, wizard()->notificationCenter(), m_fExportToOCIByDefault);
     /* Populate MAC address policies: */
     populateMACAddressPolicies(m_pMACComboBox);
     /* Translate page: */
@@ -1065,7 +1061,7 @@ void UIWizardExportAppPageFormat::sltHandleFormatComboChange()
     refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
     refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
     refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
-    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
+    refreshProfileCombo(m_pProfileComboBox, wizard()->notificationCenter(), wizard()->format(), wizard()->isFormatCloudOne());
     refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
 
     /* Update profile: */
@@ -1112,6 +1108,7 @@ void UIWizardExportAppPageFormat::sltHandleProfileComboChange()
 
     /* Update export settings: */
     refreshCloudProfile(m_comCloudProfile,
+                        wizard()->notificationCenter(),
                         wizard()->format(),
                         wizard()->profileName(),
                         wizard()->isFormatCloudOne());

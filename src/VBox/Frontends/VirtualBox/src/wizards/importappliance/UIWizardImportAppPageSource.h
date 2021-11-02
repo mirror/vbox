@@ -33,6 +33,7 @@ class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 class UIEmptyFilePathSelector;
+class UINotificationCenter;
 class UIWizardImportApp;
 class CAppliance;
 class CVirtualSystemDescriptionForm;
@@ -56,6 +57,7 @@ namespace UIWizardImportAppSource
 {
     /** Populates sources. */
     void populateSources(QIComboBox *pCombo,
+                         UINotificationCenter *pCenter,
                          bool fImportFromOCIByDefault,
                          const QString &strSource);
 
@@ -70,11 +72,13 @@ namespace UIWizardImportAppSource
 
     /** Refresh profile combo. */
     void refreshProfileCombo(QIComboBox *pCombo,
+                             UINotificationCenter *pCenter,
                              const QString &strSource,
                              const QString &strProfileName,
                              bool fIsSourceCloudOne);
     /** Refresh profile instances. */
     void refreshCloudProfileInstances(QListWidget *pListWidget,
+                                      UINotificationCenter *pCenter,
                                       const QString &strSource,
                                       const QString &strProfileName,
                                       bool fIsSourceCloudOne);

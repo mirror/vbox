@@ -48,14 +48,12 @@ using namespace UIWizardImportAppSource;
 *********************************************************************************************************************************/
 
 void UIWizardImportAppSource::populateSources(QIComboBox *pCombo,
+                                              UINotificationCenter *pCenter,
                                               bool fImportFromOCIByDefault,
                                               const QString &strSource)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
-    /* We need top-level parent as well: */
-    QWidget *pParent = pCombo->window();
-    AssertPtrReturnVoid(pParent);
 
     /* Remember current item data to be able to restore it: */
     QString strOldData;
@@ -88,18 +86,18 @@ void UIWizardImportAppSource::populateSources(QIComboBox *pCombo,
     }
 
     /* Iterate through existing providers: */
-    foreach (const CCloudProvider &comProvider, listCloudProviders(pParent))
+    foreach (const CCloudProvider &comProvider, listCloudProviders(pCenter))
     {
         /* Skip if we have nothing to populate (file missing?): */
         if (comProvider.isNull())
             continue;
         /* Acquire provider name: */
         QString strProviderName;
-        if (!cloudProviderName(comProvider, strProviderName, pParent))
+        if (!cloudProviderName(comProvider, strProviderName, pCenter))
             continue;
         /* Acquire provider short name: */
         QString strProviderShortName;
-        if (!cloudProviderShortName(comProvider, strProviderShortName, pParent))
+        if (!cloudProviderShortName(comProvider, strProviderShortName, pCenter))
             continue;
 
         /* Compose empty item, fill it's data: */
@@ -157,6 +155,7 @@ void UIWizardImportAppSource::refreshStackedWidget(QStackedWidget *pStackedWidge
 }
 
 void UIWizardImportAppSource::refreshProfileCombo(QIComboBox *pCombo,
+                                                  UINotificationCenter *pCenter,
                                                   const QString &strSource,
                                                   const QString &strProfileName,
                                                   bool fIsSourceCloudOne)
@@ -167,11 +166,8 @@ void UIWizardImportAppSource::refreshProfileCombo(QIComboBox *pCombo,
     /* If source is cloud one: */
     if (fIsSourceCloudOne)
     {
-        /* We need top-level parent as well: */
-        QWidget *pParent = pCombo->window();
-        AssertPtrReturnVoid(pParent);
         /* Acquire provider: */
-        CCloudProvider comProvider = cloudProviderByShortName(strSource, pParent);
+        CCloudProvider comProvider = cloudProviderByShortName(strSource, pCenter);
         AssertReturnVoid(comProvider.isNotNull());
 
         /* Remember current item data to be able to restore it: */
@@ -188,14 +184,14 @@ void UIWizardImportAppSource::refreshProfileCombo(QIComboBox *pCombo,
         pCombo->clear();
 
         /* Iterate through existing profile names: */
-        foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pParent))
+        foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pCenter))
         {
             /* Skip if we have nothing to populate (wtf happened?): */
             if (comProfile.isNull())
                 continue;
             /* Acquire profile name: */
             QString strCurrentProfileName;
-            if (!cloudProfileName(comProfile, strCurrentProfileName, pParent))
+            if (!cloudProfileName(comProfile, strCurrentProfileName, pCenter))
                 continue;
 
             /* Compose item, fill it's data: */
@@ -232,6 +228,7 @@ void UIWizardImportAppSource::refreshProfileCombo(QIComboBox *pCombo,
 }
 
 void UIWizardImportAppSource::refreshCloudProfileInstances(QListWidget *pListWidget,
+                                                           UINotificationCenter *pCenter,
                                                            const QString &strSource,
                                                            const QString &strProfileName,
                                                            bool fIsSourceCloudOne)
@@ -246,7 +243,7 @@ void UIWizardImportAppSource::refreshCloudProfileInstances(QListWidget *pListWid
         QWidget *pParent = pListWidget->window();
         AssertPtrReturnVoid(pParent);
         /* Acquire client: */
-        CCloudClient comClient = cloudClientByName(strSource, strProfileName, pParent);
+        CCloudClient comClient = cloudClientByName(strSource, strProfileName, pCenter);
         AssertReturnVoid(comClient.isNotNull());
 
         /* Block signals while updating: */
@@ -311,7 +308,7 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
     /* We need top-level parent as well: */
     AssertPtrReturnVoid(pWizard);
     /* Acquire client: */
-    CCloudClient comClient = cloudClientByName(strSource, strProfileName, pWizard);
+    CCloudClient comClient = cloudClientByName(strSource, strProfileName, pWizard->notificationCenter());
     AssertReturnVoid(comClient.isNotNull());
 
     /* Create appliance: */
@@ -693,6 +690,7 @@ void UIWizardImportAppPageSource::initializePage()
 {
     /* Populate sources: */
     populateSources(m_pSourceComboBox,
+                    wizard()->notificationCenter(),
                     m_fImportFromOCIByDefault,
                     m_strSource);
     /* Translate page: */
@@ -766,6 +764,7 @@ void UIWizardImportAppPageSource::sltHandleSourceComboChange()
     refreshStackedWidget(m_pSettingsWidget1,
                          wizard()->isSourceCloudOne());
     refreshProfileCombo(m_pProfileComboBox,
+                        wizard()->notificationCenter(),
                         source(m_pSourceComboBox),
                         m_strProfileName,
                         wizard()->isSourceCloudOne());
@@ -781,6 +780,7 @@ void UIWizardImportAppPageSource::sltHandleProfileComboChange()
 {
     /* Refresh required settings: */
     refreshCloudProfileInstances(m_pProfileInstanceList,
+                                 wizard()->notificationCenter(),
                                  source(m_pSourceComboBox),
                                  profileName(m_pProfileComboBox),
                                  wizard()->isSourceCloudOne());

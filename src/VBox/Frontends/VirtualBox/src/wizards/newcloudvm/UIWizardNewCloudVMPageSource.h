@@ -36,6 +36,7 @@ class QTabBar;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
+class UINotificationCenter;
 class UIWizardNewCloudVM;
 class CCloudClient;
 class CCloudProvider;
@@ -57,11 +58,12 @@ enum
 namespace UIWizardNewCloudVMSource
 {
     /** Populates @a pCombo with known providers. */
-    void populateProviders(QIComboBox *pCombo);
+    void populateProviders(QIComboBox *pCombo, UINotificationCenter *pCenter);
     /** Populates @a pCombo with known profiles.
       * @param  strProviderShortName  Brings the short name of provider profiles related to.
       * @param  strProfileName        Brings the name of profile to be chosen by default. */
     void populateProfiles(QIComboBox *pCombo,
+                          UINotificationCenter *pCenter,
                           const QString &strProviderShortName,
                           const QString &strProfileName);
     /** Populates @a pList with source images.

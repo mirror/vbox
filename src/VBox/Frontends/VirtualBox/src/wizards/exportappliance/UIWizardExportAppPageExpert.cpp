@@ -534,7 +534,7 @@ void UIWizardExportAppPageExpert::initializePage()
     /* Populate VM items: */
     populateVMItems(m_pVMSelector, m_selectedVMNames);
     /* Populate formats: */
-    populateFormats(m_pFormatComboBox, m_fExportToOCIByDefault);
+    populateFormats(m_pFormatComboBox, wizard()->notificationCenter(), m_fExportToOCIByDefault);
     /* Populate MAC address policies: */
     populateMACAddressPolicies(m_pMACComboBox);
     /* Translate page: */
@@ -710,7 +710,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     refreshFileSelectorPath(m_pFileSelector, m_strFileSelectorName, m_strFileSelectorExt, wizard()->isFormatCloudOne());
     refreshManifestCheckBoxAccess(m_pManifestCheckbox, wizard()->isFormatCloudOne());
     refreshIncludeISOsCheckBoxAccess(m_pIncludeISOsCheckbox, wizard()->isFormatCloudOne());
-    refreshProfileCombo(m_pProfileComboBox, wizard()->format(), wizard()->isFormatCloudOne());
+    refreshProfileCombo(m_pProfileComboBox, wizard()->notificationCenter(), wizard()->format(), wizard()->isFormatCloudOne());
     refreshCloudExportMode(m_exportModeButtons, wizard()->isFormatCloudOne());
 
     /* Update local stuff: */
@@ -759,6 +759,7 @@ void UIWizardExportAppPageExpert::sltHandleProfileComboChange()
 
     /* Update export settings: */
     refreshCloudProfile(m_comCloudProfile,
+                        wizard()->notificationCenter(),
                         wizard()->format(),
                         wizard()->profileName(),
                         wizard()->isFormatCloudOne());

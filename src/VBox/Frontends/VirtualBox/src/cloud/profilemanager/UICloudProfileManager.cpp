@@ -270,7 +270,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
     const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
     /* Look for corresponding provider: */
-    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName);
     if (comCloudProvider.isNotNull())
     {
         /* Get old/new data: */
@@ -278,7 +278,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
         UIDataCloudProfile newData = m_pDetailsWidget->data();
 
         /* Look for corresponding profile: */
-        CCloudProfile comCloudProfile = cloudProfileByName(strShortName, oldData.m_strName, this);
+        CCloudProfile comCloudProfile = cloudProfileByName(strShortName, oldData.m_strName);
         if (comCloudProfile.isNotNull())
         {
             /* Set profile name, if necessary: */
@@ -354,7 +354,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
     const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
     /* Look for corresponding provider: */
-    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName);
     if (comCloudProvider.isNotNull())
     {
         /* Create new profile: */
@@ -391,7 +391,7 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
     const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
     /* Look for corresponding provider: */
-    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName);
     if (comCloudProvider.isNotNull())
     {
         /* Import profiles: */
@@ -423,11 +423,11 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
     const QString strShortName = pProviderItem->data(Column_Name, Data_ProviderShortName).toString();
 
     /* Look for corresponding provider: */
-    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName, this);
+    CCloudProvider comCloudProvider = cloudProviderByShortName(strShortName);
     if (comCloudProvider.isNotNull())
     {
         /* Look for corresponding profile: */
-        CCloudProfile comCloudProfile = cloudProfileByName(strShortName, strProfileName, this);
+        CCloudProfile comCloudProfile = cloudProfileByName(strShortName, strProfileName);
         if (comCloudProfile.isNotNull())
         {
             /* Remove current profile: */
@@ -800,7 +800,7 @@ void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comPro
 {
     /* Gather provider settings: */
     if (comProvider.isOk())
-        cloudProviderId(comProvider, providerData.m_uId, this);
+        cloudProviderId(comProvider, providerData.m_uId);
     if (comProvider.isOk())
         cloudProviderShortName(comProvider, providerData.m_strShortName);
     if (comProvider.isOk())

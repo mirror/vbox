@@ -35,6 +35,7 @@ class QListWidget;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
+class UINotificationCenter;
 class UIWizardAddCloudVM;
 
 /** Provider combo data fields. */
@@ -54,11 +55,11 @@ enum
 namespace UIWizardAddCloudVMSource
 {
     /** Populates @a pCombo with known providers. */
-    void populateProviders(QIComboBox *pCombo);
+    void populateProviders(QIComboBox *pCombo, UINotificationCenter *pCenter);
     /** Populates @a pCombo with known profiles.
       * @param  strProviderShortName  Brings the short name of provider profiles related to.
       * @param  strProfileName        Brings the name of profile to be chosen by default. */
-    void populateProfiles(QIComboBox *pCombo, const QString &strProviderShortName, const QString &strProfileName);
+    void populateProfiles(QIComboBox *pCombo, UINotificationCenter *pCenter, const QString &strProviderShortName, const QString &strProfileName);
     /** Populates @a pList with profile instances available in @a comClient. */
     void populateProfileInstances(QListWidget *pList, const CCloudClient &comClient);
 

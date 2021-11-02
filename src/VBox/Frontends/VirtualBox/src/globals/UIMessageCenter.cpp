@@ -1413,55 +1413,6 @@ bool UIMessageCenter::confirmCloudConsoleProfileRemoval(const QString &strName, 
                           false /* ok button by default? */);
 }
 
-void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud provider manager."),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to find cloud provider with following uuid: <b>%1</b>.").arg(uId.toString()),
-          UIErrorString::formatErrorInfo(comManager));
-}
-
-void UIMessageCenter::cannotFindCloudProfile(const CCloudProvider &comProvider, const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to find cloud profile with following name: <b>%1</b>.").arg(strName),
-          UIErrorString::formatErrorInfo(comProvider));
-}
-
-void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to create cloud client."),
-          UIErrorString::formatErrorInfo(comProfile));
-}
-
-void UIMessageCenter::cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud provider manager parameter."),
-          UIErrorString::formatErrorInfo(comManager));
-}
-
-void UIMessageCenter::cannotAcquireCloudProviderParameter(const CCloudProvider &comProvider, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud provider parameter."),
-          UIErrorString::formatErrorInfo(comProvider));
-}
-
-void UIMessageCenter::cannotAcquireCloudProfileParameter(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud profile parameter."),
-          UIErrorString::formatErrorInfo(comProfile));
-}
-
 void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -1992,18 +1943,6 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) cons
                           0 /* auto-confirm id */,
                           tr("Continue", "no hard disk attached"),
                           tr("Go Back", "no hard disk attached"));
-}
-
-void UIMessageCenter::cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual appliance.</p>"),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotCreateVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual system description.</p>"),
-          UIErrorString::formatErrorInfo(comAppliance));
 }
 
 bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /* = 0*/) const

@@ -243,7 +243,7 @@ void UIWizardNewCloudVMPageExpert::initializePage()
     /* Make sure form-editor knows notification-center: */
     m_pFormEditor->setNotificationCenter(wizard()->notificationCenter());
     /* Populate providers: */
-    populateProviders(m_pProviderComboBox);
+    populateProviders(m_pProviderComboBox, wizard()->notificationCenter());
     /* Translate providers: */
     retranslateUi();
     /* Make image list focused by default: */
@@ -313,7 +313,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleProviderComboChange()
     wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
 
     /* Update profiles: */
-    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
+    populateProfiles(m_pProfileComboBox, wizard()->notificationCenter(), wizard()->providerShortName(), wizard()->profileName());
     sltHandleProfileComboChange();
 
     /* Notify about changes: */
@@ -324,7 +324,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleProfileComboChange()
 {
     /* Update wizard fields: */
     wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
+    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()->notificationCenter()));
 
     /* Update source: */
     sltHandleSourceTabBarChange();
@@ -353,7 +353,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleSourceImageChange()
 {
     /* Update source image & VSD form: */
     m_strSourceImageId = currentListWidgetData(m_pSourceImageList);
-    wizard()->setVSD(createVirtualSystemDescription(wizard()));
+    wizard()->setVSD(createVirtualSystemDescription(wizard()->notificationCenter()));
     populateFormProperties(wizard()->vsd(), wizard(), m_pSourceTabBar, m_strSourceImageId);
     wizard()->createVSDForm();
     updatePropertiesTable();

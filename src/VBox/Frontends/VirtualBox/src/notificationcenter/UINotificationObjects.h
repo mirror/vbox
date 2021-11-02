@@ -51,6 +51,9 @@
 /* Forward declarations: */
 class UINotificationCenter;
 class CAudioAdapter;
+class CCloudProviderManager;
+class CCloudProvider;
+class CCloudProfile;
 class CEmulatedUSB;
 class CNetworkAdapter;
 class CVirtualBox;
@@ -249,7 +252,8 @@ public:
       * @{ */
         /** Notifies about inability to acquire IVirtualBox parameter.
           * @param  comVBox  Brings the object parameter get acquired from. */
-        static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox);
+        static void cannotAcquireVirtualBoxParameter(const CVirtualBox &comVBox,
+                                                     UINotificationCenter *pParent = 0);
         /** Notifies about inability to acquire IAppliance parameter.
           * @param  comVBox  Brings the object parameter get acquired from. */
         static void cannotAcquireApplianceParameter(const CAppliance &comAppliance,
@@ -294,6 +298,18 @@ public:
           * @param  comVsdForm  Brings the object parameter get acquired from. */
         static void cannotAcquireVirtualSystemDescriptionFormParameter(const CVirtualSystemDescriptionForm &comVsdForm,
                                                                        UINotificationCenter *pParent = 0);
+        /** Notifies about inability to acquire ICloudProviderManager parameter.
+          * @param  comCloudProviderManager  Brings the object parameter get acquired from. */
+        static void cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comCloudProviderManager,
+                                                               UINotificationCenter *pParent = 0);
+        /** Notifies about inability to acquire ICloudProvider parameter.
+          * @param  comCloudProvider  Brings the object parameter get acquired from. */
+        static void cannotAcquireCloudProviderParameter(const CCloudProvider &comCloudProvider,
+                                                        UINotificationCenter *pParent = 0);
+        /** Notifies about inability to acquire ICloudProfile parameter.
+          * @param  comCloudProfile  Brings the object parameter get acquired from. */
+        static void cannotAcquireCloudProfileParameter(const CCloudProfile &comCloudProfile,
+                                                       UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to change IMedium parameter.
           * @param  comMedium  Brings the object parameter being changed for. */
@@ -392,6 +408,9 @@ public:
         /** Notifies about inability to interpret appliance.
           * @param  comAppliance  Brings appliance we are trying to interpret. */
         static void cannotInterpretAppliance(const CAppliance &comAppliance, UINotificationCenter *pParent = 0);
+        /** Notifies about inability to create VSD.
+          * @param  comAppliance  Brings appliance trying to create VSD. */
+        static void cannotCreateVirtualSystemDescription(const CAppliance &comAppliance, UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to open extension pack.
           * @param  comExtPackManager  Brings extension pack manager trying to open extension pack.
@@ -444,6 +463,9 @@ public:
         /** Notifies about inability to refresh cloud machine.
           * @param  comProgress  Brings the progress of machine being refreshed. */
         static void cannotRefreshCloudMachine(const CProgress &comProgress);
+        /** Notifies about inability to create cloud client.
+          * @param  comProfile  Brings the profile client being created for. */
+        static void cannotCreateCloudClient(const CCloudProfile &comProfile, UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to open machine.
           * @param  comMedium  Brings the medium being closed. */

@@ -44,13 +44,10 @@ using namespace UIWizardAddCloudVMSource;
 *   Namespace UIWizardAddCloudVMSource implementation.                                                                           *
 *********************************************************************************************************************************/
 
-void UIWizardAddCloudVMSource::populateProviders(QIComboBox *pCombo)
+void UIWizardAddCloudVMSource::populateProviders(QIComboBox *pCombo, UINotificationCenter *pCenter)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
-    /* We need top-level parent as well: */
-    QWidget *pParent = pCombo->window();
-    AssertPtrReturnVoid(pParent);
 
     /* Remember current item data to be able to restore it: */
     QString strOldData;
@@ -67,18 +64,18 @@ void UIWizardAddCloudVMSource::populateProviders(QIComboBox *pCombo)
     pCombo->clear();
 
     /* Iterate through existing providers: */
-    foreach (const CCloudProvider &comProvider, listCloudProviders(pParent))
+    foreach (const CCloudProvider &comProvider, listCloudProviders(pCenter))
     {
         /* Skip if we have nothing to populate (file missing?): */
         if (comProvider.isNull())
             continue;
         /* Acquire provider name: */
         QString strProviderName;
-        if (!cloudProviderName(comProvider, strProviderName, pParent))
+        if (!cloudProviderName(comProvider, strProviderName, pCenter))
             continue;
         /* Acquire provider short name: */
         QString strProviderShortName;
-        if (!cloudProviderShortName(comProvider, strProviderShortName, pParent))
+        if (!cloudProviderShortName(comProvider, strProviderShortName, pCenter))
             continue;
 
         /* Compose empty item, fill the data: */
@@ -103,16 +100,14 @@ void UIWizardAddCloudVMSource::populateProviders(QIComboBox *pCombo)
 }
 
 void UIWizardAddCloudVMSource::populateProfiles(QIComboBox *pCombo,
+                                                UINotificationCenter *pCenter,
                                                 const QString &strProviderShortName,
                                                 const QString &strProfileName)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pCombo);
-    /* We need top-level parent as well: */
-    QWidget *pParent = pCombo->window();
-    AssertPtrReturnVoid(pParent);
     /* Acquire provider: */
-    CCloudProvider comProvider = cloudProviderByShortName(strProviderShortName, pParent);
+    CCloudProvider comProvider = cloudProviderByShortName(strProviderShortName, pCenter);
     AssertReturnVoid(comProvider.isNotNull());
 
     /* Remember current item data to be able to restore it: */
@@ -129,14 +124,14 @@ void UIWizardAddCloudVMSource::populateProfiles(QIComboBox *pCombo,
     pCombo->clear();
 
     /* Iterate through existing profiles: */
-    foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pParent))
+    foreach (const CCloudProfile &comProfile, listCloudProfiles(comProvider, pCenter))
     {
         /* Skip if we have nothing to populate (wtf happened?): */
         if (comProfile.isNull())
             continue;
         /* Acquire current profile name: */
         QString strCurrentProfileName;
-        if (!cloudProfileName(comProfile, strCurrentProfileName, pParent))
+        if (!cloudProfileName(comProfile, strCurrentProfileName, pCenter))
             continue;
 
         /* Compose item, fill the data: */
@@ -421,7 +416,7 @@ void UIWizardAddCloudVMPageSource::retranslateUi()
 void UIWizardAddCloudVMPageSource::initializePage()
 {
     /* Populate providers: */
-    populateProviders(m_pProviderComboBox);
+    populateProviders(m_pProviderComboBox, wizard()->notificationCenter());
     /* Translate providers: */
     retranslateUi();
     /* Fetch it, asynchronously: */
@@ -465,7 +460,7 @@ void UIWizardAddCloudVMPageSource::sltHandleProviderComboChange()
     wizard()->setProviderShortName(m_pProviderComboBox->currentData(ProviderData_ShortName).toString());
 
     /* Update profiles: */
-    populateProfiles(m_pProfileComboBox, wizard()->providerShortName(), wizard()->profileName());
+    populateProfiles(m_pProfileComboBox, wizard()->notificationCenter(), wizard()->providerShortName(), wizard()->profileName());
     sltHandleProfileComboChange();
 
     /* Notify about changes: */
@@ -476,7 +471,7 @@ void UIWizardAddCloudVMPageSource::sltHandleProfileComboChange()
 {
     /* Update wizard fields: */
     wizard()->setProfileName(m_pProfileComboBox->currentData(ProfileData_Name).toString());
-    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()));
+    wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()->notificationCenter()));
 
     /* Update profile instances: */
     populateProfileInstances(m_pSourceInstanceList, wizard()->client());

@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
+#include "UINotificationCenter.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -38,14 +39,14 @@ namespace UICloudNetworkingStuff
 {
     /** Acquires cloud provider manager,
       * using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF CCloudProviderManager cloudProviderManager(QWidget *pParent = 0);
+    SHARED_LIBRARY_STUFF CCloudProviderManager cloudProviderManager(UINotificationCenter *pParent = 0);
     /** Acquires cloud provider manager,
       * using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF CCloudProviderManager cloudProviderManager(QString &strErrorMessage);
     /** Acquires cloud provider specified by @a strProviderShortName,
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudProvider cloudProviderByShortName(const QString &strProviderShortName,
-                                                                 QWidget *pParent = 0);
+                                                                 UINotificationCenter *pParent = 0);
     /** Acquires cloud provider specified by @a strProviderShortName,
       * using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF CCloudProvider cloudProviderByShortName(const QString &strProviderShortName,
@@ -54,7 +55,7 @@ namespace UICloudNetworkingStuff
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudProfile cloudProfileByName(const QString &strProviderShortName,
                                                           const QString &strProfileName,
-                                                          QWidget *pParent = 0);
+                                                          UINotificationCenter *pParent = 0);
     /** Acquires cloud profile specified by @a strProviderShortName and @a strProfileName,
       * using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF CCloudProfile cloudProfileByName(const QString &strProviderShortName,
@@ -63,7 +64,7 @@ namespace UICloudNetworkingStuff
     /** Acquires cloud client created for @a comProfile,
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudClient cloudClient(CCloudProfile comProfile,
-                                                  QWidget *pParent = 0);
+                                                  UINotificationCenter *pParent = 0);
     /** Acquires cloud client created for @a comProfile,
       * using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF CCloudClient cloudClient(CCloudProfile comProfile,
@@ -72,7 +73,7 @@ namespace UICloudNetworkingStuff
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudClient cloudClientByName(const QString &strProviderShortName,
                                                         const QString &strProfileName,
-                                                        QWidget *pParent = 0);
+                                                        UINotificationCenter *pParent = 0);
     /** Acquires cloud client specified by @a strProviderShortName and @a strProfileName,
       * using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF CCloudClient cloudClientByName(const QString &strProviderShortName,
@@ -80,37 +81,37 @@ namespace UICloudNetworkingStuff
                                                         QString &strErrorMessage);
 
     /** Creates virtual system description, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF CVirtualSystemDescription createVirtualSystemDescription(QWidget *pParent = 0);
+    SHARED_LIBRARY_STUFF CVirtualSystemDescription createVirtualSystemDescription(UINotificationCenter *pParent = 0);
 
     /** Acquires cloud providers, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudProvider> listCloudProviders(QWidget *pParent = 0);
+    SHARED_LIBRARY_STUFF QVector<CCloudProvider> listCloudProviders(UINotificationCenter *pParent = 0);
 
     /** Acquires @a comCloudProvider ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudProviderId(const CCloudProvider &comCloudProvider,
                                               QUuid &uResult,
-                                              QWidget *pParent = 0);
+                                              UINotificationCenter *pParent = 0);
     /** Acquires @a comCloudProvider short name as a @a strResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudProviderShortName(const CCloudProvider &comCloudProvider,
                                                      QString &strResult,
-                                                     QWidget *pParent = 0);
+                                                     UINotificationCenter *pParent = 0);
     /** Acquires @a comCloudProvider name as a @a strResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudProviderName(const CCloudProvider &comCloudProvider,
                                                 QString &strResult,
-                                                QWidget *pParent = 0);
+                                                UINotificationCenter *pParent = 0);
 
     /** Acquires cloud profiles of certain @a comCloudProvider, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudProfile> listCloudProfiles(CCloudProvider comCloudProvider,
-                                                                  QWidget *pParent = 0);
+                                                                  UINotificationCenter *pParent = 0);
 
     /** Acquires @a comCloudProfile name as a @a strResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudProfileName(const CCloudProfile &comCloudProfile,
                                                QString &strResult,
-                                               QWidget *pParent = 0);
+                                               UINotificationCenter *pParent = 0);
     /** Acquires @a comCloudProfile properties as a @a keys/values using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudProfileProperties(const CCloudProfile &comCloudProfile,
                                                      QVector<QString> &keys,
                                                      QVector<QString> &values,
-                                                     QWidget *pParent = 0);
+                                                     UINotificationCenter *pParent = 0);
 
     /** Acquires cloud images of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudImages(const CCloudClient &comCloudClient,
