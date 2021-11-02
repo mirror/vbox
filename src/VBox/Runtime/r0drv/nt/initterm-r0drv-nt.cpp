@@ -365,7 +365,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
 
 
     /*
-     * HACK ALERT! (and dÈj‡ vu warning - remember win32k.sys on OS/2?)
+     * HACK ALERT! (and d√©j√† vu warning - remember win32k.sys on OS/2?)
      *
      * Try find _KPRCB::QuantumEnd and _KPRCB::[DpcData.]DpcQueueDepth.
      * For purpose of verification we use the VendorString member (12+1 chars).
