@@ -21,7 +21,7 @@
  * VirtualBox Guest Additions for Haiku.
  *
  * Copyright 2008-2010, Ingo Weinhold, ingo_weinhold@gmx.de.
- * Copyright 2002-2009, Axel Dörfler, axeld@pinc-software.de.
+ * Copyright 2002-2009, Axel DÃ¶rfler, axeld@pinc-software.de.
  * Copyright 2001-2002, Travis Geiselbrecht. All rights reserved.
  * Distributed under the terms of the MIT License.
  */

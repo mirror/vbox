@@ -19,7 +19,7 @@
  *
  * VirtualBox Guest Additions for Haiku.
  * Copyright (c) 2011 Mike Smith <mike@scgtrp.net>
- *                    Fran�ois Revol <revol@free.fr>
+ *                    François Revol <revol@free.fr>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -59,7 +59,7 @@ resource app_version {
     internal = VBOX_SVN_REV,
 
     short_info = VBOX_PRODUCT,
-    long_info = VBOX_PRODUCT " " VBOX_VERSION_STRING " ©2009-" VBOX_C_YEAR " " VBOX_VENDOR
+    long_info = VBOX_PRODUCT " " VBOX_VERSION_STRING " Â©2009-" VBOX_C_YEAR " " VBOX_VENDOR
 };
 */
 

@@ -20,7 +20,7 @@
  *
  * VirtualBox Guest Additions for Haiku. C++ in the kernel.
  *
- * Copyright 2002-2009, Axel Dörfler, axeld@pinc-software.de.
+ * Copyright 2002-2009, Axel DÃ¶rfler, axeld@pinc-software.de.
  * Distributed under the terms of the MIT License.
  */
 

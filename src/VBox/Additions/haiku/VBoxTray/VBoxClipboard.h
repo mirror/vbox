@@ -20,7 +20,7 @@
  *
  * VirtualBox Guest Additions for Haiku.
  * Copyright (c) 2011 Mike Smith <mike@scgtrp.net>
- *                    François Revol <revol@free.fr>
+ *                    FranÃ§ois Revol <revol@free.fr>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
