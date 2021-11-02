@@ -42,14 +42,6 @@ namespace UICloudNetworkingStuff
     /** Acquires cloud provider manager,
       * using @a strErrorMessage to store messages to. */
     SHARED_LIBRARY_STUFF CCloudProviderManager cloudProviderManager(QString &strErrorMessage);
-    /** Acquires cloud provider specified by @a uProviderId,
-      * using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF CCloudProvider cloudProviderById(const QUuid &uProviderId,
-                                                          QWidget *pParent = 0);
-    /** Acquires cloud provider specified by @a uProviderId,
-      * using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF CCloudProvider cloudProviderById(const QUuid &uProviderId,
-                                                          QString &strErrorMessage);
     /** Acquires cloud provider specified by @a strProviderShortName,
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CCloudProvider cloudProviderByShortName(const QString &strProviderShortName,
@@ -86,28 +78,12 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF CCloudClient cloudClientByName(const QString &strProviderShortName,
                                                         const QString &strProfileName,
                                                         QString &strErrorMessage);
-    /** Acquires cloud machine specified by @a strProviderShortName, @a strProfileName and @a uMachineId,
-      * using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF CCloudMachine cloudMachineById(const QString &strProviderShortName,
-                                                        const QString &strProfileName,
-                                                        const QUuid &uMachineId,
-                                                        QWidget *pParent = 0);
-    /** Acquires cloud machine specified by @a strProviderShortName, @a strProfileName and @a uMachineId,
-      * using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF CCloudMachine cloudMachineById(const QString &strProviderShortName,
-                                                        const QString &strProfileName,
-                                                        const QUuid &uMachineId,
-                                                        QString &strErrorMessage);
 
     /** Creates virtual system description, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF CVirtualSystemDescription createVirtualSystemDescription(QWidget *pParent = 0);
-    /** Creates virtual system description, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF CVirtualSystemDescription createVirtualSystemDescription(QString &strErrorMessage);
 
     /** Acquires cloud providers, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudProvider> listCloudProviders(QWidget *pParent = 0);
-    /** Acquires cloud providers, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudProvider> listCloudProviders(QString &strErrorMessage);
 
     /** Acquires @a comCloudProvider ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudProviderId(const CCloudProvider &comCloudProvider,
@@ -125,9 +101,6 @@ namespace UICloudNetworkingStuff
     /** Acquires cloud profiles of certain @a comCloudProvider, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF QVector<CCloudProfile> listCloudProfiles(CCloudProvider comCloudProvider,
                                                                   QWidget *pParent = 0);
-    /** Acquires cloud profiles of certain @a comCloudProvider, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudProfile> listCloudProfiles(CCloudProvider comCloudProvider,
-                                                                  QString &strErrorMessage);
 
     /** Acquires @a comCloudProfile name as a @a strResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudProfileName(const CCloudProfile &comCloudProfile,
@@ -144,44 +117,16 @@ namespace UICloudNetworkingStuff
                                               CStringArray &comNames,
                                               CStringArray &comIDs,
                                               QWidget *pParent = 0);
-    /** Acquires cloud images of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF bool listCloudImages(const CCloudClient &comCloudClient,
-                                              CStringArray &comNames,
-                                              CStringArray &comIDs,
-                                              QString &strErrorMessage);
     /** Acquires cloud source boot volumes of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
                                                          CStringArray &comNames,
                                                          CStringArray &comIDs,
                                                          QWidget *pParent = 0);
-    /** Acquires cloud source boot volumes of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF bool listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
-                                                         CStringArray &comNames,
-                                                         CStringArray &comIDs,
-                                                         QString &strErrorMessage);
     /** Acquires cloud source instances of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudSourceInstances(const CCloudClient &comCloudClient,
                                                        CStringArray &comNames,
                                                        CStringArray &comIDs,
                                                        QWidget *pParent = 0);
-    /** Acquires cloud source instances of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF bool listCloudSourceInstances(const CCloudClient &comCloudClient,
-                                                       CStringArray &comNames,
-                                                       CStringArray &comIDs,
-                                                       QString &strErrorMessage);
-
-    /** Acquires cloud machines of certain @a comCloudClient, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
-                                                                  QWidget *pParent = 0);
-    /** Acquires cloud machines of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachines(CCloudClient comCloudClient,
-                                                                  QString &strErrorMessage);
-    /** Acquires cloud machine stubs of certain @a comCloudClient, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachineStubs(CCloudClient comCloudClient,
-                                                                      QWidget *pParent = 0);
-    /** Acquires cloud machine stubs of certain @a comCloudClient, using @a strErrorMessage to store messages to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudMachine> listCloudMachineStubs(CCloudClient comCloudClient,
-                                                                      QString &strErrorMessage);
 
     /** Acquires @a comCloudClient export description form as a @a comResult, using @a pParent to show messages according to.
       * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
@@ -189,24 +134,12 @@ namespace UICloudNetworkingStuff
                                                     CVirtualSystemDescription comDescription,
                                                     CVirtualSystemDescriptionForm &comResult,
                                                     QWidget *pParent = 0);
-    /** Acquires @a comCloudClient export description form as a @a comResult, using @a strErrorMessage to store messages to.
-      * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
-    SHARED_LIBRARY_STUFF bool exportDescriptionForm(CCloudClient comCloudClient,
-                                                    CVirtualSystemDescription comDescription,
-                                                    CVirtualSystemDescriptionForm &comResult,
-                                                    QString &strErrorMessage);
     /** Acquires @a comCloudClient import description form as a @a comResult, using @a pParent to show messages according to.
       * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
     SHARED_LIBRARY_STUFF bool importDescriptionForm(CCloudClient comCloudClient,
                                                     CVirtualSystemDescription comDescription,
                                                     CVirtualSystemDescriptionForm &comResult,
                                                     QWidget *pParent = 0);
-    /** Acquires @a comCloudClient import description form as a @a comResult, using @a strErrorMessage to store messages to.
-      * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
-    SHARED_LIBRARY_STUFF bool importDescriptionForm(CCloudClient comCloudClient,
-                                                    CVirtualSystemDescription comDescription,
-                                                    CVirtualSystemDescriptionForm &comResult,
-                                                    QString &strErrorMessage);
 
     /** Acquires @a comCloudMachine ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineId(const CCloudMachine &comCloudMachine,
@@ -256,44 +189,11 @@ namespace UICloudNetworkingStuff
                                                             QWidget *pParent = 0);
 
     /** Acquires instance map.
-      * @param  comCloudClient   Brings cloud client object.
-      * @param  strErrorMessage  Brings error message container.
-      * @param  pWidget          Brings parent widget to show messages according to,
-      *                          if no parent set, progress will be executed in blocking way. */
+      * @param  comCloudClient  Brings cloud client object.
+      * @param  pWidget         Brings parent widget to show messages according to,
+      *                         if no parent set, progress will be executed in blocking way. */
     SHARED_LIBRARY_STUFF QMap<QString, QString> listInstances(const CCloudClient &comCloudClient,
-                                                              QString &strErrorMessage,
                                                               QWidget *pParent = 0);
-    /** Acquires instance info as a map.
-      * @param  comCloudClient   Brings cloud client object.
-      * @param  strId            Brings cloud instance id.
-      * @param  strErrorMessage  Brings error message container.
-      * @param  pWidget          Brings parent widget to show messages according to,
-      *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF QMap<KVirtualSystemDescriptionType, QString> getInstanceInfo(const CCloudClient &comCloudClient,
-                                                                                      const QString &strId,
-                                                                                      QString &strErrorMessage,
-                                                                                      QWidget *pParent = 0);
-    /** Acquires instance info of certain @a enmType as a string.
-      * @param  comCloudClient   Brings cloud client object.
-      * @param  strId            Brings cloud instance id.
-      * @param  strErrorMessage  Brings error message container.
-      * @param  pWidget          Brings parent widget to show messages according to,
-      *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF QString getInstanceInfo(KVirtualSystemDescriptionType enmType,
-                                                 const CCloudClient &comCloudClient,
-                                                 const QString &strId,
-                                                 QString &strErrorMessage,
-                                                 QWidget *pParent = 0);
-    /** Acquires image info as a map.
-      * @param  comCloudClient   Brings cloud client object.
-      * @param  strId            Brings cloud image id.
-      * @param  strErrorMessage  Brings error message container.
-      * @param  pWidget          Brings parent widget to show messages according to,
-      *                          if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF QMap<QString, QString> getImageInfo(const CCloudClient &comCloudClient,
-                                                             const QString &strId,
-                                                             QString &strErrorMessage,
-                                                             QWidget *pParent = 0);
 }
 
 /* Using across any module who included us: */

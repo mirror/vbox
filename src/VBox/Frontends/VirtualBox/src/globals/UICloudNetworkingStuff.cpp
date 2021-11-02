@@ -65,42 +65,6 @@ CCloudProviderManager UICloudNetworkingStuff::cloudProviderManager(QString &strE
     return CCloudProviderManager();
 }
 
-CCloudProvider UICloudNetworkingStuff::cloudProviderById(const QUuid &uProviderId,
-                                                         QWidget *pParent /* = 0 */)
-{
-    /* Acquire cloud provider manager: */
-    CCloudProviderManager comProviderManager = cloudProviderManager(pParent);
-    if (comProviderManager.isNotNull())
-    {
-        /* Acquire cloud provider: */
-        CCloudProvider comProvider = comProviderManager.GetProviderById(uProviderId);
-        if (!comProviderManager.isOk())
-            msgCenter().cannotFindCloudProvider(comProviderManager, uProviderId, pParent);
-        else
-            return comProvider;
-    }
-    /* Null by default: */
-    return CCloudProvider();
-}
-
-CCloudProvider UICloudNetworkingStuff::cloudProviderById(const QUuid &uProviderId,
-                                                         QString &strErrorMessage)
-{
-    /* Acquire cloud provider manager: */
-    CCloudProviderManager comProviderManager = cloudProviderManager(strErrorMessage);
-    if (comProviderManager.isNotNull())
-    {
-        /* Acquire cloud provider: */
-        CCloudProvider comProvider = comProviderManager.GetProviderById(uProviderId);
-        if (!comProviderManager.isOk())
-            strErrorMessage = UIErrorString::formatErrorInfo(comProviderManager);
-        else
-            return comProvider;
-    }
-    /* Null by default: */
-    return CCloudProvider();
-}
-
 CCloudProvider UICloudNetworkingStuff::cloudProviderByShortName(const QString &strProviderShortName,
                                                                 QWidget *pParent /* = 0 */)
 {
@@ -225,46 +189,6 @@ CCloudClient UICloudNetworkingStuff::cloudClientByName(const QString &strProvide
     return CCloudClient();
 }
 
-CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProviderShortName,
-                                                       const QString &strProfileName,
-                                                       const QUuid &uMachineId,
-                                                       QWidget *pParent /* = 0 */)
-{
-    /* Acquire cloud client: */
-    CCloudClient comClient = cloudClientByName(strProviderShortName, strProfileName, pParent);
-    if (comClient.isNotNull())
-    {
-        /* Acquire cloud machine: */
-        CCloudMachine comMachine = comClient.GetCloudMachine(uMachineId);
-        if (!comClient.isOk())
-            msgCenter().cannotAcquireCloudClientParameter(comClient, pParent);
-        else
-            return comMachine;
-    }
-    /* Null by default: */
-    return CCloudMachine();
-}
-
-CCloudMachine UICloudNetworkingStuff::cloudMachineById(const QString &strProviderShortName,
-                                                       const QString &strProfileName,
-                                                       const QUuid &uMachineId,
-                                                       QString &strErrorMessage)
-{
-    /* Acquire cloud client: */
-    CCloudClient comClient = cloudClientByName(strProviderShortName, strProfileName, strErrorMessage);
-    if (comClient.isNotNull())
-    {
-        /* Acquire cloud machine: */
-        CCloudMachine comMachine = comClient.GetCloudMachine(uMachineId);
-        if (!comClient.isOk())
-            strErrorMessage = UIErrorString::formatErrorInfo(comClient);
-        else
-            return comMachine;
-    }
-    /* Null by default: */
-    return CCloudMachine();
-}
-
 CVirtualSystemDescription UICloudNetworkingStuff::createVirtualSystemDescription(QWidget *pParent /* = 0 */)
 {
     /* Acquire VBox: */
@@ -294,35 +218,6 @@ CVirtualSystemDescription UICloudNetworkingStuff::createVirtualSystemDescription
     return CVirtualSystemDescription();
 }
 
-CVirtualSystemDescription UICloudNetworkingStuff::createVirtualSystemDescription(QString &strErrorMessage)
-{
-    /* Acquire VBox: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
-    if (comVBox.isNotNull())
-    {
-        /* Create appliance: */
-        CAppliance comAppliance = comVBox.CreateAppliance();
-        if (!comVBox.isOk())
-            strErrorMessage = UIErrorString::formatErrorInfo(comVBox);
-        else
-        {
-            /* Append it with one (1) description we need: */
-            comAppliance.CreateVirtualSystemDescriptions(1);
-            if (!comAppliance.isOk())
-                strErrorMessage = UIErrorString::formatErrorInfo(comAppliance);
-            else
-            {
-                /* Get received description: */
-                QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
-                AssertReturn(!descriptions.isEmpty(), CVirtualSystemDescription());
-                return descriptions.at(0);
-            }
-        }
-    }
-    /* Null by default: */
-    return CVirtualSystemDescription();
-}
-
 QVector<CCloudProvider> UICloudNetworkingStuff::listCloudProviders(QWidget *pParent /* = 0 */)
 {
     /* Acquire cloud provider manager: */
@@ -333,23 +228,6 @@ QVector<CCloudProvider> UICloudNetworkingStuff::listCloudProviders(QWidget *pPar
         QVector<CCloudProvider> providers = comProviderManager.GetProviders();
         if (!comProviderManager.isOk())
             msgCenter().cannotAcquireCloudProviderManagerParameter(comProviderManager, pParent);
-        else
-            return providers;
-    }
-    /* Return empty list by default: */
-    return QVector<CCloudProvider>();
-}
-
-QVector<CCloudProvider> UICloudNetworkingStuff::listCloudProviders(QString &strErrorMessage)
-{
-    /* Acquire cloud provider manager: */
-    CCloudProviderManager comProviderManager = cloudProviderManager();
-    if (comProviderManager.isNotNull())
-    {
-        /* Acquire cloud providers: */
-        QVector<CCloudProvider> providers = comProviderManager.GetProviders();
-        if (!comProviderManager.isOk())
-            strErrorMessage = UIErrorString::formatErrorInfo(comProviderManager);
         else
             return providers;
     }
@@ -419,23 +297,6 @@ QVector<CCloudProfile> UICloudNetworkingStuff::listCloudProfiles(CCloudProvider 
     return QVector<CCloudProfile>();
 }
 
-QVector<CCloudProfile> UICloudNetworkingStuff::listCloudProfiles(CCloudProvider comCloudProvider,
-                                                                 QString &strErrorMessage)
-{
-    /* Check cloud provider: */
-    if (comCloudProvider.isNotNull())
-    {
-        /* Acquire cloud providers: */
-        QVector<CCloudProfile> profiles = comCloudProvider.GetProfiles();
-        if (!comCloudProvider.isOk())
-            strErrorMessage = UIErrorString::formatErrorInfo(comCloudProvider);
-        else
-            return profiles;
-    }
-    /* Return empty list by default: */
-    return QVector<CCloudProfile>();
-}
-
 bool UICloudNetworkingStuff::cloudProfileName(const CCloudProfile &comCloudProfile,
                                               QString &strResult,
                                               QWidget *pParent /* = 0 */)
@@ -498,31 +359,6 @@ bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
     return false;
 }
 
-bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
-                                             CStringArray &comNames,
-                                             CStringArray &comIDs,
-                                             QString &strErrorMessage)
-{
-    /* Currently we are interested in Available images only: */
-    const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
-                                                     << KCloudImageState_Available;
-    /* Execute ListImages async method: */
-    CProgress comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
-    if (!comCloudClient.isOk())
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    else
-    {
-        /* Wait for "Acquire cloud images" progress: */
-        comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        else
-            return true;
-    }
-    /* Return false by default: */
-    return false;
-}
-
 bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
                                                         CStringArray &comNames,
                                                         CStringArray &comIDs,
@@ -540,28 +376,6 @@ bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comC
                                             ":/progress_reading_appliance_90px.png", pParent, 0);
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-        else
-            return true;
-    }
-    /* Return false by default: */
-    return false;
-}
-
-bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
-                                                        CStringArray &comNames,
-                                                        CStringArray &comIDs,
-                                                        QString &strErrorMessage)
-{
-    /* Execute ListSourceBootVolumes async method: */
-    CProgress comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
-    if (!comCloudClient.isOk())
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    else
-    {
-        /* Wait for "Acquire cloud source boot volumes" progress: */
-        comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
         else
             return true;
     }
@@ -593,112 +407,6 @@ bool UICloudNetworkingStuff::listCloudSourceInstances(const CCloudClient &comClo
     return false;
 }
 
-bool UICloudNetworkingStuff::listCloudSourceInstances(const CCloudClient &comCloudClient,
-                                                      CStringArray &comNames,
-                                                      CStringArray &comIDs,
-                                                      QString &strErrorMessage)
-{
-    /* Execute ListSourceInstances async method: */
-    CProgress comProgress = comCloudClient.ListSourceInstances(comNames, comIDs);
-    if (!comCloudClient.isOk())
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    else
-    {
-        /* Wait for "Acquire cloud source instances" progress: */
-        comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        else
-            return true;
-    }
-    /* Return false by default: */
-    return false;
-}
-
-QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
-                                                                 QWidget *pParent /* = 0 */)
-{
-    /* Execute ReadCloudMachineList async method: */
-    CProgress comProgress = comCloudClient.ReadCloudMachineList();
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-    else
-    {
-        /* Show "Read cloud machines" progress: */
-        msgCenter().showModalProgressDialog(comProgress,
-                                            QString(),
-                                            ":/progress_reading_appliance_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-        else
-            return comCloudClient.GetCloudMachineList();
-    }
-    /* Return empty list by default: */
-    return QVector<CCloudMachine>();
-}
-
-QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachines(CCloudClient comCloudClient,
-                                                                 QString &strErrorMessage)
-{
-    /* Execute ReadCloudMachineList async method: */
-    CProgress comProgress = comCloudClient.ReadCloudMachineList();
-    if (!comCloudClient.isOk())
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    else
-    {
-        /* Show "Read cloud machines" progress: */
-        comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        else
-            return comCloudClient.GetCloudMachineList();
-    }
-    /* Return empty list by default: */
-    return QVector<CCloudMachine>();
-}
-
-QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachineStubs(CCloudClient comCloudClient,
-                                                                     QWidget *pParent /* = 0 */)
-{
-    /* Execute ReadCloudMachineStubList async method: */
-    CProgress comProgress = comCloudClient.ReadCloudMachineStubList();
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-    else
-    {
-        /* Show "Read cloud machine stubs" progress: */
-        msgCenter().showModalProgressDialog(comProgress,
-                                            QString(),
-                                            ":/progress_reading_appliance_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-        else
-            return comCloudClient.GetCloudMachineStubList();
-    }
-    /* Return empty list by default: */
-    return QVector<CCloudMachine>();
-}
-
-QVector<CCloudMachine> UICloudNetworkingStuff::listCloudMachineStubs(CCloudClient comCloudClient,
-                                                                     QString &strErrorMessage)
-{
-    /* Execute ReadCloudMachineStubList async method: */
-    CProgress comProgress = comCloudClient.ReadCloudMachineStubList();
-    if (!comCloudClient.isOk())
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    else
-    {
-        /* Show "Read cloud machine stubs" progress: */
-        comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        else
-            return comCloudClient.GetCloudMachineStubList();
-    }
-    /* Return empty list by default: */
-    return QVector<CCloudMachine>();
-}
-
 bool UICloudNetworkingStuff::exportDescriptionForm(CCloudClient comCloudClient,
                                                    CVirtualSystemDescription comDescription,
                                                    CVirtualSystemDescriptionForm &comResult,
@@ -723,28 +431,6 @@ bool UICloudNetworkingStuff::exportDescriptionForm(CCloudClient comCloudClient,
     return false;
 }
 
-bool UICloudNetworkingStuff::exportDescriptionForm(CCloudClient comCloudClient,
-                                                   CVirtualSystemDescription comDescription,
-                                                   CVirtualSystemDescriptionForm &comResult,
-                                                   QString &strErrorMessage)
-{
-    /* Execute GetExportDescriptionForm async method: */
-    CProgress comProgress = comCloudClient.GetExportDescriptionForm(comDescription, comResult);
-    if (!comCloudClient.isOk())
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    else
-    {
-        /* Show "Get Export Description Form" progress: */
-        comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        else
-            return true;
-    }
-    /* False by default: */
-    return false;
-}
-
 bool UICloudNetworkingStuff::importDescriptionForm(CCloudClient comCloudClient,
                                                    CVirtualSystemDescription comDescription,
                                                    CVirtualSystemDescriptionForm &comResult,
@@ -762,28 +448,6 @@ bool UICloudNetworkingStuff::importDescriptionForm(CCloudClient comCloudClient,
                                             ":/progress_refresh_90px.png", pParent, 0);
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             msgCenter().cannotAcquireCloudClientParameter(comProgress);
-        else
-            return true;
-    }
-    /* False by default: */
-    return false;
-}
-
-bool UICloudNetworkingStuff::importDescriptionForm(CCloudClient comCloudClient,
-                                                   CVirtualSystemDescription comDescription,
-                                                   CVirtualSystemDescriptionForm &comResult,
-                                                   QString &strErrorMessage)
-{
-    /* Execute GetImportDescriptionForm async method: */
-    CProgress comProgress = comCloudClient.GetImportDescriptionForm(comDescription, comResult);
-    if (!comCloudClient.isOk())
-        strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    else
-    {
-        /* Show "Get Import Description Form" progress: */
-        comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
         else
             return true;
     }
@@ -995,7 +659,6 @@ bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(CCloudMachine comClou
 }
 
 QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient &comCloudClient,
-                                                             QString &strErrorMessage,
                                                              QWidget *pParent /* = 0 */)
 {
     /* Prepare VM names, ids and states.
@@ -1012,8 +675,6 @@ QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient 
     {
         if (pParent)
             msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-        else
-            strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
     }
     else
     {
@@ -1030,8 +691,6 @@ QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient 
             {
                 if (pParent)
                     msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-                else
-                    strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
             }
             else
             {
@@ -1048,147 +707,4 @@ QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient 
 
     /* Return empty map by default: */
     return QMap<QString, QString>();
-}
-
-QMap<KVirtualSystemDescriptionType, QString> UICloudNetworkingStuff::getInstanceInfo(const CCloudClient &comCloudClient,
-                                                                                     const QString &strId,
-                                                                                     QString &strErrorMessage,
-                                                                                     QWidget *pParent /* = 0 */)
-{
-    /* Prepare result: */
-    QMap<KVirtualSystemDescriptionType, QString> resultMap;
-
-    /* Get VirtualBox object: */
-    CVirtualBox comVBox = uiCommon().virtualBox();
-
-    /* Create appliance: */
-    CAppliance comAppliance = comVBox.CreateAppliance();
-    if (!comVBox.isOk())
-    {
-        if (pParent)
-            msgCenter().cannotCreateAppliance(comVBox, pParent);
-        else
-            strErrorMessage = UIErrorString::formatErrorInfo(comVBox);
-    }
-    else
-    {
-        /* Append it with one (1) description we need: */
-        comAppliance.CreateVirtualSystemDescriptions(1);
-        if (!comAppliance.isOk())
-        {
-            if (pParent)
-                msgCenter().cannotCreateVirtualSystemDescription(comAppliance, pParent);
-            else
-                strErrorMessage = UIErrorString::formatErrorInfo(comAppliance);
-        }
-        else
-        {
-            /* Get received description: */
-            QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
-            AssertReturn(!descriptions.isEmpty(), resultMap);
-            CVirtualSystemDescription comDescription = descriptions.at(0);
-
-            /* Now execute GetInstanceInfo async method: */
-            CProgress comProgress = comCloudClient.GetInstanceInfo(strId, comDescription);
-            if (!comCloudClient.isOk())
-            {
-                if (pParent)
-                    msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-                else
-                    strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-            }
-            else
-            {
-                /* Show "Acquire instance info" progress: */
-                if (pParent)
-                    msgCenter().showModalProgressDialog(comProgress,
-                                                        QString(),
-                                                        ":/progress_reading_appliance_90px.png", pParent, 0);
-                else
-                    comProgress.WaitForCompletion(-1);
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                {
-                    if (pParent)
-                        msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-                    else
-                        strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-                }
-                else
-                {
-                    /* Now acquire description of certain type: */
-                    QVector<KVirtualSystemDescriptionType> types;
-                    QVector<QString> refs, origValues, configValues, extraConfigValues;
-                    comDescription.GetDescription(types, refs, origValues, configValues, extraConfigValues);
-
-                    /* Make sure key & value vectors have the same size: */
-                    AssertReturn(!types.isEmpty() && types.size() == configValues.size(), resultMap);
-                    /* Append resulting map with key/value pairs we have: */
-                    for (int i = 0; i < types.size(); ++i)
-                        resultMap[types.at(i)] = configValues.at(i);
-                }
-            }
-        }
-    }
-
-    /* Return result: */
-    return resultMap;
-}
-
-QString UICloudNetworkingStuff::getInstanceInfo(KVirtualSystemDescriptionType enmType,
-                                                const CCloudClient &comCloudClient,
-                                                const QString &strId,
-                                                QString &strErrorMessage,
-                                                QWidget *pParent /* = 0 */)
-{
-    return getInstanceInfo(comCloudClient, strId, strErrorMessage, pParent).value(enmType, QString());
-}
-
-QMap<QString, QString> UICloudNetworkingStuff::getImageInfo(const CCloudClient &comCloudClient,
-                                                            const QString &strId,
-                                                            QString &strErrorMessage,
-                                                            QWidget *pParent /* = 0 */)
-{
-    /* Prepare result: */
-    QMap<QString, QString> resultMap;
-
-    /* Execute GetImageInfo async method: */
-    CStringArray comStringArray;
-    CProgress comProgress = comCloudClient.GetImageInfo(strId, comStringArray);
-    if (!comCloudClient.isOk())
-    {
-        if (pParent)
-            msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-        else
-            strErrorMessage = UIErrorString::formatErrorInfo(comCloudClient);
-    }
-    else
-    {
-        /* Show "Acquire image info" progress: */
-        if (pParent)
-            msgCenter().showModalProgressDialog(comProgress,
-                                                QString(),
-                                                ":/progress_reading_appliance_90px.png", pParent, 0);
-        else
-            comProgress.WaitForCompletion(-1);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-        {
-            if (pParent)
-                msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-            else
-                strErrorMessage = UIErrorString::formatErrorInfo(comProgress);
-        }
-        else
-        {
-            /* Append resulting list values we have, split them by pairs: */
-            foreach (const QString &strPair, comStringArray.GetValues())
-            {
-                const QList<QString> pair = strPair.split(" = ");
-                AssertReturn(pair.size() == 2, resultMap);
-                resultMap[pair.at(0)] = pair.at(1);
-            }
-        }
-    }
-
-    /* Return result: */
-    return resultMap;
 }

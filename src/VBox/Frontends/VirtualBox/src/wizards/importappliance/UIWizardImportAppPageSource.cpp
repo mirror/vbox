@@ -257,8 +257,7 @@ void UIWizardImportAppSource::refreshCloudProfileInstances(QListWidget *pListWid
 
         /* Gather VM names, ids and states.
          * Currently we are interested in Running and Stopped VMs only. */
-        QString strErrorMessage;
-        const QMap<QString, QString> instances = listInstances(comClient, strErrorMessage, pParent);
+        const QMap<QString, QString> instances = listInstances(comClient, pParent);
 
         /* Push acquired names to list rows: */
         foreach (const QString &strId, instances.keys())
