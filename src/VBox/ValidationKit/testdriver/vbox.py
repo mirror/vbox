@@ -2948,12 +2948,17 @@ class TestDriver(base.TestDriver):                                              
                     oNic = oVM.getNetworkAdapter(iSlot);
                     if not oNic.enabled:
                         continue;
+                    sAdpName = self.getNetworkAdapterNameFromType(oNic);
+                    sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
                     if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
-                        sAdpName = self.getNetworkAdapterNameFromType(oNic);
-                        sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
                         reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
                                       (sAdpName, iSlot, sKey));
                         self.oVBox.setExtraData(sKey, '1');
+                    else:
+                        # Other attachments will fail if 'LocalhostReachable' extra data override is present
+                        reporter.log2('Disabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
+                                      (sAdpName, iSlot, sKey));
+                        self.oVBox.setExtraData(sKey, '');
                 except:
                     pass;
 
