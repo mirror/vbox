@@ -38,6 +38,10 @@
 /slirp/bsd/*:               --external-copyright --no-convert-tabs --dont-set-svn-keywords
 /slirp/*:                   --no-fix-header-guards
 
+# Not UTF-8 sources with latin-1/whatever chars in them (mostly names):
+/slirp/bsd/kern/subr_sbuf.c:            --skip-unicode-checks
+/slirp/bsd/sys/sbuf.h:                  --skip-unicode-checks
+
 # well...
 /lwipopts.h: --external-copyright
 

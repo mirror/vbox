@@ -78,6 +78,11 @@
 /BaseTools/Source/C/VfrCompile/Pccts/*.r:      --treat-as .h
 /BaseTools/BuildEnv:                           --treat-as .sh
 
+# Files that aren't UTF-8.
+/BaseTools/Source/C/VfrCompile/Pccts/antlr/antlr.r:      --skip-unicode-checks
+/BaseTools/Source/C/VfrCompile/Pccts/antlr/AntlrPPC.mak: --skip-unicode-checks
+/BaseTools/Source/C/VfrCompile/Pccts/dlg/DlgPPC.mak:     --skip-unicode-checks
+
 # Some normal makefiles (external code, convenience, ...)
 /*.mak:        --treat-as Makefile
 /*/makefile1:  --treat-as Makefile

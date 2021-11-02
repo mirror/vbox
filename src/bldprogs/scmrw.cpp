@@ -1063,6 +1063,76 @@ bool rewrite_SvnSyncProcess(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut,
 }
 
 /**
+ * Checks the that there is no bidirectional unicode fun in the file.
+ *
+ * @returns false - the state carries these kinds of changes.
+ * @param   pState              The rewriter state.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_UnicodeChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    RT_NOREF2(pIn, pOut);
+    if (pSettings->fSkipUnicodeChecks)
+        return false;
+
+    /*
+     * Just scan the input for weird stuff and fail if we find anything we don't like.
+     */
+    uint32_t    iLine = 0;
+    SCMEOL      enmEol;
+    size_t      cchLine;
+    const char *pchLine;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        iLine++;
+        const char *pchCur  = pchLine;
+        size_t      cchLeft = cchLine;
+        while (cchLeft > 0)
+        {
+            RTUNICP uc = 0;
+            int rc = RTStrGetCpNEx(&pchCur, &cchLeft, &uc);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pszWhat;
+                switch (uc)
+                {
+                    default:
+                        continue;
+
+                    /* Potentially evil bi-directional control codes (Table I, trojan-source.pdf):  */
+                    case 0x202a: pszWhat = "LRE - left-to-right embedding"; break;
+                    case 0x202b: pszWhat = "RLE - right-to-left embedding"; break;
+                    case 0x202d: pszWhat = "LRO - left-to-right override"; break;
+                    case 0x202e: pszWhat = "RLO - right-to-left override"; break;
+                    case 0x2066: pszWhat = "LRI - left-to-right isolate"; break;
+                    case 0x2067: pszWhat = "RLI - right-to-left isolate"; break;
+                    case 0x2068: pszWhat = "FSI - first strong isolate"; break;
+                    case 0x202c: pszWhat = "PDF - pop directional formatting (LRE, RLE, LRO, RLO)"; break;
+                    case 0x2069: pszWhat = "PDI - pop directional isolate (LRI, RLI)"; break;
+
+                    /** @todo add checks for homoglyphs too. */
+                }
+#if 1
+                ScmError(pState, rc, "%u:%zu: Evil unicode codepoint: %s\n", iLine, pchCur - pchLine, pszWhat);
+#else
+                ScmVerbose(pState, 0, "%u:%zu: Evil unicode codepoint: %s\n", iLine, pchCur - pchLine, pszWhat);
+#endif
+            }
+            else
+#if 1
+                ScmError(pState, rc, "%u:%zu: Invalid UTF-8 encoding: %Rrc\n", iLine, pchCur - pchLine, rc);
+#else
+                ScmVerbose(pState, 0, "%u:%zu: Invalid UTF-8 encoding: %Rrc\n", iLine, pchCur - pchLine, rc);
+#endif
+        }
+    }
+
+    return false;
+}
+
+/**
  * Compares two strings word-by-word, ignoring spaces, punctuation and case.
  *
  * Assumes ASCII strings.

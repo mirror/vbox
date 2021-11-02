@@ -100,3 +100,8 @@
 --filter-out-files /ipxe/contrib/vm/serial-console.1
 --filter-out-dirs  /ipxe/contrib/rom-o-matic/.
 
+# Not UTF-8 encoded but contains non-ASCII characters (pico, quotes)
+/ipxe/src/drivers/bus/eisa.c:                   --skip-unicode-checks
+/ipxe/src/drivers/infiniband/MT25408_PRM.h:     --skip-unicode-checks
+/ipxe/src/drivers/net/smc9000.c:                --skip-unicode-checks
+/ipxe/src/drivers/net/smc9000.h:                --skip-unicode-checks

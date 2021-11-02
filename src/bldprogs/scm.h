@@ -249,6 +249,7 @@ FNSCMREWRITER rewrite_SvnNoEolStyle;
 FNSCMREWRITER rewrite_SvnBinary;
 FNSCMREWRITER rewrite_SvnKeywords;
 FNSCMREWRITER rewrite_SvnSyncProcess;
+FNSCMREWRITER rewrite_UnicodeChecks;
 FNSCMREWRITER rewrite_Copyright_CstyleComment;
 FNSCMREWRITER rewrite_Copyright_HashComment;
 FNSCMREWRITER rewrite_Copyright_PythonComment;
@@ -373,6 +374,8 @@ typedef struct SCMSETTINGSBASE
     bool            fSetSvnKeywords;
     /** Skip checking svn:sync-process. */
     bool            fSkipSvnSyncProcess;
+    /** Skip the unicode checks. */
+    bool            fSkipUnicodeChecks;
     /** Tab size. */
     uint8_t         cchTab;
     /** Optimal source code width. */
