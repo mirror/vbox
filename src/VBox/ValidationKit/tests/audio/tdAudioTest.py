@@ -770,7 +770,7 @@ class tdAudioTest(vbox.TestDriver):
         reporter.testDone();
 
         reporter.log('Waiting for any OS startup sounds getting played (to skip those) ...');
-        time.sleep(90);
+        time.sleep(5);
 
         if  oSession is not None:
             self.addTask(oTxsSession);
