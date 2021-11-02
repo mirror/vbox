@@ -75,7 +75,7 @@ VMMDECL(RTGCPTR) SELMToFlat(PVMCC pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, 
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
-       (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
+       (Intel(r) 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
     if (    pCtxCore->cs.Attr.n.u1Long
         &&  CPUMIsGuestInLongMode(pVCpu))
     {
@@ -140,7 +140,7 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
-       (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
+       (Intel(r) 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
     RTGCPTR  pvFlat;
     bool     fCheckLimit   = true;
     if (    pCtxCore->cs.Attr.n.u1Long
@@ -298,7 +298,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
             &&  (pSRegCS->Attr.n.u4Type & X86_SEL_TYPE_CODE))
         {
             /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
-               (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
+               (Intel(r) 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
             if (    pSRegCS->Attr.n.u1Long
                 &&  CPUMIsGuestInLongMode(pVCpu))
             {
