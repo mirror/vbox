@@ -47,8 +47,7 @@
         <arg choice="plain">--ovf20</arg>
       </group>
       <arg>--manifest</arg>
-      <arg>--iso</arg>
-      <arg>--options=<group choice="plain">
+      <arg>--options=<group choice="plain" rep="repeat">
           <arg choice="plain">manifest</arg>
           <arg choice="plain">iso</arg>
           <arg choice="plain">nomacs</arg>
@@ -181,13 +180,7 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--iso</option></term>
-          <listitem><para>
-              Creates an ISO file.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--options=<replaceable>argument</replaceable></option></term>
+          <term><option>--options=<replaceable>argument</replaceable>,...</option></term>
           <listitem><para>
               Specifies information to control the exact content of the
               appliance file. Specify one or more comma-separated
