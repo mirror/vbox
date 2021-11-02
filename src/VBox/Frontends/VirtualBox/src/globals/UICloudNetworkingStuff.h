@@ -145,26 +145,10 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF bool cloudMachineId(const CCloudMachine &comCloudMachine,
                                              QUuid &uResult,
                                              QWidget *pParent = 0);
-    /** Acquires @a comCloudMachine accessible state as a @a fResult, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF bool cloudMachineAccessible(const CCloudMachine &comCloudMachine,
-                                                     bool &fResult,
-                                                     QWidget *pParent = 0);
-    /** Acquires @a comCloudMachine accessible error as a @a comResult, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF bool cloudMachineAccessError(const CCloudMachine &comCloudMachine,
-                                                      CVirtualBoxErrorInfo &comResult,
-                                                      QWidget *pParent = 0);
     /** Acquires @a comCloudMachine name as a @a strResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineName(const CCloudMachine &comCloudMachine,
                                                QString &strResult,
                                                QWidget *pParent = 0);
-    /** Acquires @a comCloudMachine OS type ID as a @a strResult, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF bool cloudMachineOSTypeId(const CCloudMachine &comCloudMachine,
-                                                   QString &strResult,
-                                                   QWidget *pParent = 0);
-    /** Acquires @a comCloudMachine state as a @a enmResult, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF bool cloudMachineState(const CCloudMachine &comCloudMachine,
-                                                KCloudMachineState &enmResult,
-                                                QWidget *pParent = 0);
     /** Acquires @a comCloudMachine console connection fingerprint as a @a strResult,
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineConsoleConnectionFingerprint(const CCloudMachine &comCloudMachine,
