@@ -4,7 +4,7 @@
  */
 
 /*
- * Includes contributions from François Revol
+ * Includes contributions from FranÃ§ois Revol
  *
  * Copyright (C) 2008-2020 Oracle Corporation
  *
