@@ -1663,7 +1663,7 @@ GVMMR0DECL(int) GVMMR0RegisterWorkerThread(PGVM pGVM, GVMMWORKERTHREAD enmWorker
 }
 
 
-/** 
+/**
  * Deregisters a workinger thread (caller).
  *
  * The worker thread cannot be re-created and re-registered, instead the given
