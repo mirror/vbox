@@ -1111,9 +1111,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
             {
                 /* Whether we count all silence as recorded data or not.
                  * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
-                bool const fCountAllSilenceAsData = false;
-                if (   !fIsAllSilence
-                    || (fIsAllSilence == fCountAllSilenceAsData))
+                if (!fIsAllSilence)
                     pTst->t.TestTone.u.Play.cbRead += cbBuf;
 
                 const bool fComplete = pTst->t.TestTone.u.Play.cbRead >= pTst->t.TestTone.u.Play.cbToRead;

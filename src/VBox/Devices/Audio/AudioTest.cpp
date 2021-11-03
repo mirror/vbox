@@ -2472,48 +2472,16 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
             && pauBuf[i + 2] == byBeacon
             && pauBuf[i + 3] == byBeacon)
         {
-            //if (pBeacon->cbProcessed)
-            //{
-                //LogRel(("AudioTestBeaconAddConsecutive: Beacon %s started (last was %RU32@%zu)\n", AudioTestBeaconTypeGetName(pBeacon->enmType), cbBeacon, i));
-                if (offGap)
-                {
-                    pBeacon->cbProcessed = 0;
-                }
-                pBeacon->cbProcessed += cbStep;
-                offGap = 0;
-                //fInBeacon = true;
-                //offLastBeacon = i;
-            //}
-            //cbBeacon += cbFrameSize;
+            if (offGap)
+            {
+                pBeacon->cbProcessed = 0;
+            }
+            pBeacon->cbProcessed += cbStep;
+            offGap = 0;
         }
         else
-        {
-        #if 0
-            if (fInBeacon)
-            {
-                //LogRel(("AudioTestBeaconAddConsecutive: Beacon %s ended (%RU32@%zu)\n", AudioTestBeaconTypeGetName(pBeacon->enmType), cbBeacon, offLastBeacon));
-                fInBeacon = false;
-                continue;
-            }
-        #endif
             offGap  = i;
-        }
     }
-
-#if 0
-    if (   cbBeacon
-        && (   fInBeacon
-            || offLastBeacon == 0)
-       )
-    {
-        pBeacon->cbProcessed += cbBeacon;
-        Assert(pBeacon->cbProcessed <= pBeacon->cbToProcess);
-    }
-
-    if (cbBeacon)
-        LogRel(("AudioTestBeaconAddConsecutive: %s in=%RTbool cb=%RU32 -> cbProc=%RU32\n", AudioTestBeaconTypeGetName(pBeacon->enmType), fInBeacon, cbBeacon, pBeacon->cbProcessed));
-//LogRel(("AudioTestBeaconAddConsecutive: Beacon proc finished (last was cbBuf=%RU32, fInBeacon=%RTbool, cbBeacon=%RU32, cbProc=%RU32)\n", cbBuf, fInBeacon, cbBeacon, pBeacon->cbProcessed));
-#endif
 
     Assert(pBeacon->cbProcessed >= cbProcessedInitial);
     return pBeacon->cbProcessed - cbProcessedInitial;
