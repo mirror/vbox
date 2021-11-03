@@ -192,33 +192,6 @@ pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT o
 
 
 /**
- * @callback_method_impl{FNIOMMMIONEWWRITE, Ignores writes to the reserved memory.}
- * @note    off is an absolute address.
- */
-static DECLCALLBACK(VBOXSTRICTRC)
-pcarchReservedMemoryWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
-{
-    Log2(("pcarchReservedMemoryRead: %#RGp LB %#x %.*Rhxs\n", off, cb, RT_MIN(cb, 16), pv));
-    RT_NOREF(pDevIns, pvUser, off, pv, cb);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @callback_method_impl{FNIOMMMIONEWREAD, The reserved memory reads as 0xff.}
- * @note    off is an absolute address.
- */
-static DECLCALLBACK(VBOXSTRICTRC)
-pcarchReservedMemoryRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
-{
-    Log2(("pcarchReservedMemoryRead: %#RGp LB %#x\n", off, cb));
-    RT_NOREF(pDevIns, pvUser, off);
-    memset(pv, 0xff, cb);
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
