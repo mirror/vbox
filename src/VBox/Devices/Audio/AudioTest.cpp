@@ -2446,6 +2446,17 @@ const char *AudioTestBeaconTypeGetName(AUDIOTESTTONEBEACONTYPE enmType)
     AssertMsgFailedReturn(("Invalid beacon type: #%x\n", enmType), "illegal");
 }
 
+/**
+ * Adds audio data to a given beacon.
+ *
+ * @returns Bytes added to the beacon, or 0 if invalid / nothing was added.
+ * @param   pBeacon             Beacon to add data for.
+ * @param   pauBuf              Buffer of audio data to add.
+ * @param   cbBuf               Size (in bytes) of \a pauBuf.
+ *
+ * @note    The audio data must be a) match the beacon type and b) consecutive, that is, without any gaps,
+ *          to be added as valid to the beacon.
+ */
 uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *pauBuf, size_t cbBuf)
 {
     uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pBeacon->Props); /* Use the audio frame size as chunk size. */
@@ -2454,7 +2465,7 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
         return 0;
 
     AssertMsgReturn(cbBuf % cbFrameSize == 0,
-                    ("Buffer size must be frame-aligned"), VERR_INVALID_PARAMETER);
+                    ("Buffer size must be frame-aligned"), 0);
 
     uint8_t const byBeacon      = AudioTestBeaconByteFromType(pBeacon->enmType);
     /*bool          fInBeacon     = false;
@@ -2480,7 +2491,7 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
             offGap = 0;
         }
         else
-            offGap  = i;
+            offGap = i;
     }
 
     Assert(pBeacon->cbProcessed >= cbProcessedInitial);
