@@ -219,41 +219,6 @@ pcarchReservedMemoryRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *p
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnInitComplete,
- *      Turn RAM pages between 0xa0000 and 0xfffff into reserved memory.}
- */
-static DECLCALLBACK(int) pcarchInitComplete(PPDMDEVINS pDevIns)
-{
-    int             iRegion   = 0;
-    RTGCPHYS const  GCPhysEnd = 0x100000;
-    RTGCPHYS        GCPhysCur = 0x0a0000;
-    do
-    {
-        if (!PDMDevHlpPhysIsGCPhysNormal(pDevIns, GCPhysCur))
-            GCPhysCur += X86_PAGE_SIZE;
-        else
-        {
-            RTGCPHYS const GCPhysStart = GCPhysCur;
-            do
-                GCPhysCur += X86_PAGE_SIZE;
-            while (GCPhysCur < GCPhysEnd && PDMDevHlpPhysIsGCPhysNormal(pDevIns, GCPhysCur));
-
-            IOMMMIOHANDLE hMmioRegion;
-            int rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysStart, GCPhysCur - GCPhysStart,
-                                               pcarchReservedMemoryWrite, pcarchReservedMemoryRead,
-                                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU | IOMMMIO_FLAGS_ABS,
-                                               PDMDevHlpMMHeapAPrintf(pDevIns, MM_TAG_PGM_PHYS /* bad bird*/, "PC Arch Reserved #%u", iRegion),
-                                               &hMmioRegion);
-            AssertLogRelRCReturn(rc, rc);
-            iRegion++;
-        }
-    } while (GCPhysCur < GCPhysEnd);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)  pcarchConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -323,7 +288,7 @@ const PDMDEVREG g_DevicePcArch =
     /* .pfnAttach = */              NULL,
     /* .pfnDetach = */              NULL,
     /* .pfnQueryInterface = */      NULL,
-    /* .pfnInitComplete = */        pcarchInitComplete,
+    /* .pfnInitComplete = */        NULL,
     /* .pfnPowerOff = */            NULL,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
