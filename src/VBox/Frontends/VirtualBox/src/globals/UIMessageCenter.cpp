@@ -708,20 +708,6 @@ void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget
           UIErrorString::formatErrorInfo(machine));
 }
 
-void UIMessageCenter::cannotApplyCloudMachineFormSettings(const CForm &comForm, const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save the settings of the cloud virtual machine <b>%1</b>.").arg(strName),
-          UIErrorString::formatErrorInfo(comForm));
-}
-
-void UIMessageCenter::cannotApplyCloudMachineFormSettings(const CProgress &comProgress, const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save the settings of the cloud virtual machine <b>%1</b>.").arg(strName),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
 void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)
 {
     error(0, MessageType_Error,
@@ -1411,34 +1397,6 @@ bool UIMessageCenter::confirmCloudConsoleProfileRemoval(const QString &strName, 
                           tr("Remove") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
-}
-
-void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud client parameter."),
-          UIErrorString::formatErrorInfo(comClient));
-}
-
-void UIMessageCenter::cannotAcquireCloudClientParameter(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud client parameter."),
-          UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotAcquireCloudMachineParameter(const CCloudMachine &comMachine, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud machine parameter."),
-          UIErrorString::formatErrorInfo(comMachine));
-}
-
-void UIMessageCenter::cannotAcquireCloudMachineParameter(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to acquire cloud machine parameter."),
-          UIErrorString::formatErrorInfo(comProgress));
 }
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER

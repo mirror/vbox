@@ -71,6 +71,7 @@ namespace UIWizardNewCloudVMSource
       @param  comClient  Brings the cloud client source images should be acquired from. */
     void populateSourceImages(QListWidget *pList,
                               QTabBar *pTabBar,
+                              UINotificationCenter *pCenter,
                               const CCloudClient &comClient);
     /** Populates @a comVSD with form property.
       * @param  pWizard     Brings the wizard used as parent for warnings inside.

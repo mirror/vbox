@@ -100,7 +100,7 @@ namespace UICloudNetworkingStuff
                                                 UINotificationCenter *pParent = 0);
 
     /** Acquires cloud profiles of certain @a comCloudProvider, using @a pParent to show messages according to. */
-    SHARED_LIBRARY_STUFF QVector<CCloudProfile> listCloudProfiles(CCloudProvider comCloudProvider,
+    SHARED_LIBRARY_STUFF QVector<CCloudProfile> listCloudProfiles(const CCloudProvider &comCloudProvider,
                                                                   UINotificationCenter *pParent = 0);
 
     /** Acquires @a comCloudProfile name as a @a strResult, using @a pParent to show messages according to. */
@@ -117,68 +117,62 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF bool listCloudImages(const CCloudClient &comCloudClient,
                                               CStringArray &comNames,
                                               CStringArray &comIDs,
-                                              QWidget *pParent = 0);
+                                              UINotificationCenter *pParent = 0);
     /** Acquires cloud source boot volumes of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
                                                          CStringArray &comNames,
                                                          CStringArray &comIDs,
-                                                         QWidget *pParent = 0);
+                                                         UINotificationCenter *pParent = 0);
+    /** Acquires cloud instances of certain @a comCloudClient, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool listCloudInstances(const CCloudClient &comCloudClient,
+                                                 CStringArray &comNames,
+                                                 CStringArray &comIDs,
+                                                 UINotificationCenter *pParent = 0);
     /** Acquires cloud source instances of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudSourceInstances(const CCloudClient &comCloudClient,
                                                        CStringArray &comNames,
                                                        CStringArray &comIDs,
-                                                       QWidget *pParent = 0);
+                                                       UINotificationCenter *pParent = 0);
 
-    /** Acquires @a comCloudClient export description form as a @a comResult, using @a pParent to show messages according to.
-      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
-    SHARED_LIBRARY_STUFF bool exportDescriptionForm(CCloudClient comCloudClient,
-                                                    CVirtualSystemDescription comDescription,
+    /** Acquires @a comCloudClient export description form as a @a comResult, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool exportDescriptionForm(const CCloudClient &comCloudClient,
+                                                    const CVirtualSystemDescription &comDescription,
                                                     CVirtualSystemDescriptionForm &comResult,
-                                                    QWidget *pParent = 0);
-    /** Acquires @a comCloudClient import description form as a @a comResult, using @a pParent to show messages according to.
-      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
-    SHARED_LIBRARY_STUFF bool importDescriptionForm(CCloudClient comCloudClient,
-                                                    CVirtualSystemDescription comDescription,
+                                                    UINotificationCenter *pParent = 0);
+    /** Acquires @a comCloudClient import description form as a @a comResult, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool importDescriptionForm(const CCloudClient &comCloudClient,
+                                                    const CVirtualSystemDescription &comDescription,
                                                     CVirtualSystemDescriptionForm &comResult,
-                                                    QWidget *pParent = 0);
+                                                    UINotificationCenter *pParent = 0);
 
     /** Acquires @a comCloudMachine ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineId(const CCloudMachine &comCloudMachine,
                                              QUuid &uResult,
-                                             QWidget *pParent = 0);
+                                             UINotificationCenter *pParent = 0);
     /** Acquires @a comCloudMachine name as a @a strResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineName(const CCloudMachine &comCloudMachine,
                                                QString &strResult,
-                                               QWidget *pParent = 0);
+                                               UINotificationCenter *pParent = 0);
     /** Acquires @a comCloudMachine console connection fingerprint as a @a strResult,
       * using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineConsoleConnectionFingerprint(const CCloudMachine &comCloudMachine,
                                                                        QString &strResult,
-                                                                       QWidget *pParent = 0);
+                                                                       UINotificationCenter *pParent = 0);
 
-    /** Acquires @a comCloudMachine settings form as a @a comResult, using @a pParent to show messages according to.
-      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
-    SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine comCloudMachine,
+    /** Acquires @a comCloudMachine settings form as a @a comResult, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
                                                        CForm &comResult,
-                                                       QWidget *pParent = 0);
+                                                       UINotificationCenter *pParent = 0);
     /** Acquires @a comCloudMachine settings form as a @a comResult, using @a strErrorMessage to store messages to.
       * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
     SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine comCloudMachine,
                                                        CForm &comResult,
                                                        QString &strErrorMessage);
 
-    /** Applies @a comCloudMachine @a comForm settings, using @a pParent to show messages according to.
-      * @note  Be aware, this is a blocking function, corresponding progress dialog will be executed. */
-    SHARED_LIBRARY_STUFF bool applyCloudMachineSettingsForm(CCloudMachine comCloudMachine,
-                                                            CForm comForm,
-                                                            QWidget *pParent = 0);
-
-    /** Acquires instance map.
-      * @param  comCloudClient  Brings cloud client object.
-      * @param  pWidget         Brings parent widget to show messages according to,
-      *                         if no parent set, progress will be executed in blocking way. */
-    SHARED_LIBRARY_STUFF QMap<QString, QString> listInstances(const CCloudClient &comCloudClient,
-                                                              QWidget *pParent = 0);
+    /** Applies @a comCloudMachine @a comForm settings, using @a pParent to show messages according to. */
+    SHARED_LIBRARY_STUFF bool applyCloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
+                                                            const CForm &comForm,
+                                                            UINotificationCenter *pParent = 0);
 }
 
 /* Using across any module who included us: */

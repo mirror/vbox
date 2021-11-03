@@ -157,15 +157,13 @@ void UIWizardNewCloudVMSource::populateProfiles(QIComboBox *pCombo,
 
 void UIWizardNewCloudVMSource::populateSourceImages(QListWidget *pList,
                                                     QTabBar *pTabBar,
+                                                    UINotificationCenter *pCenter,
                                                     const CCloudClient &comClient)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(pList);
     AssertPtrReturnVoid(pTabBar);
     AssertReturnVoid(comClient.isNotNull());
-    /* We need top-level parent as well: */
-    QWidget *pParent = pList->window();
-    AssertPtrReturnVoid(pParent);
 
     /* Block signals while updating: */
     pList->blockSignals(true);
@@ -180,9 +178,9 @@ void UIWizardNewCloudVMSource::populateSourceImages(QListWidget *pList,
     switch (pTabBar->currentIndex())
     {
         /* Ask for cloud images, currently we are interested in Available images only: */
-        case 0: fResult = listCloudImages(comClient, comNames, comIDs, pParent); break;
+        case 0: fResult = listCloudImages(comClient, comNames, comIDs, pCenter); break;
         /* Ask for cloud boot-volumes, currently we are interested in Source boot-volumes only: */
-        case 1: fResult = listCloudSourceBootVolumes(comClient, comNames, comIDs, pParent); break;
+        case 1: fResult = listCloudSourceBootVolumes(comClient, comNames, comIDs, pCenter); break;
         default: break;
     }
     if (fResult)
@@ -561,7 +559,7 @@ void UIWizardNewCloudVMPageSource::sltHandleProfileButtonClick()
 void UIWizardNewCloudVMPageSource::sltHandleSourceTabBarChange()
 {
     /* Update source type: */
-    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->client());
+    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->notificationCenter(), wizard()->client());
     sltHandleSourceImageChange();
 
     /* Notify about changes: */

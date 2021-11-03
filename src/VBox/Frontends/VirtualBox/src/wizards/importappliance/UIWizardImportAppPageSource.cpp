@@ -252,19 +252,23 @@ void UIWizardImportAppSource::refreshCloudProfileInstances(QListWidget *pListWid
         /* Clear list initially: */
         pListWidget->clear();
 
-        /* Gather VM names, ids and states.
-         * Currently we are interested in Running and Stopped VMs only. */
-        const QMap<QString, QString> instances = listInstances(comClient, pParent);
-
-        /* Push acquired names to list rows: */
-        foreach (const QString &strId, instances.keys())
+        /* Gather instance names and ids: */
+        CStringArray comNames;
+        CStringArray comIDs;
+        if (listCloudInstances(comClient, comNames, comIDs, pCenter))
         {
-            /* Create list item: */
-            QListWidgetItem *pItem = new QListWidgetItem(instances.value(strId), pListWidget);
-            if (pItem)
+            /* Push acquired names to list rows: */
+            const QVector<QString> names = comNames.GetValues();
+            const QVector<QString> ids = comIDs.GetValues();
+            for (int i = 0; i < names.size(); ++i)
             {
-                pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
-                pItem->setData(Qt::UserRole, strId);
+                /* Create list item: */
+                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), pListWidget);
+                if (pItem)
+                {
+                    pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                    pItem->setData(Qt::UserRole, ids.at(i));
+                }
             }
         }
 
@@ -338,7 +342,7 @@ void UIWizardImportAppSource::refreshCloudStuff(CAppliance &comCloudAppliance,
 
     /* Read Cloud Client description form: */
     CVirtualSystemDescriptionForm comVsdImportForm;
-    bool fSuccess = importDescriptionForm(comClient, comDescription, comVsdImportForm, pWizard);
+    bool fSuccess = importDescriptionForm(comClient, comDescription, comVsdImportForm, pWizard->notificationCenter());
     if (!fSuccess)
         return;
 

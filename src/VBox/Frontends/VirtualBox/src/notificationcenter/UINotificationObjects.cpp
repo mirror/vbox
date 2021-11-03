@@ -748,6 +748,17 @@ void UINotificationMessage::cannotAcquireCloudProfileParameter(const CCloudProfi
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireCloudMachineParameter(const CCloudMachine &comCloudMachine,
+                                                               UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Cloud failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire cloud machine parameter.") +
+        UIErrorString::formatErrorInfo(comCloudMachine),
+        QString(), QString(), pParent);
+}
+
+/* static */
 void UINotificationMessage::cannotChangeMediumParameter(const CMedium &comMedium)
 {
     createMessage(
@@ -2394,6 +2405,257 @@ void UINotificationProgressLaunchVSDFormCreate::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressExportVSDFormCreate implementation.                                                              *
+*********************************************************************************************************************************/
+
+UINotificationProgressExportVSDFormCreate::UINotificationProgressExportVSDFormCreate(const CCloudClient &comClient,
+                                                                                     const CVirtualSystemDescription &comVSD)
+    : m_comClient(comClient)
+    , m_comVSD(comVSD)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressExportVSDFormCreate::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressExportVSDFormCreate::name() const
+{
+    return UINotificationProgress::tr("Creating export VSD form ...");
+}
+
+QString UINotificationProgressExportVSDFormCreate::details() const
+{
+    return QString();
+}
+
+CProgress UINotificationProgressExportVSDFormCreate::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.GetExportDescriptionForm(m_comVSD, m_comVSDForm);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressExportVSDFormCreate::sltHandleProgressFinished()
+{
+    if (m_comVSDForm.isNotNull())
+        emit sigVSDFormCreated(QVariant::fromValue(m_comVSDForm));
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressImportVSDFormCreate implementation.                                                              *
+*********************************************************************************************************************************/
+
+UINotificationProgressImportVSDFormCreate::UINotificationProgressImportVSDFormCreate(const CCloudClient &comClient,
+                                                                                     const CVirtualSystemDescription &comVSD)
+    : m_comClient(comClient)
+    , m_comVSD(comVSD)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressImportVSDFormCreate::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressImportVSDFormCreate::name() const
+{
+    return UINotificationProgress::tr("Creating import VSD form ...");
+}
+
+QString UINotificationProgressImportVSDFormCreate::details() const
+{
+    return QString();
+}
+
+CProgress UINotificationProgressImportVSDFormCreate::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.GetImportDescriptionForm(m_comVSD, m_comVSDForm);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressImportVSDFormCreate::sltHandleProgressFinished()
+{
+    if (m_comVSDForm.isNotNull())
+        emit sigVSDFormCreated(QVariant::fromValue(m_comVSDForm));
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudImageList implementation.                                                                   *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudImageList::UINotificationProgressCloudImageList(const CCloudClient &comClient,
+                                                                           const QVector<KCloudImageState> &cloudImageStates)
+    : m_comClient(comClient)
+    , m_cloudImageStates(cloudImageStates)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressCloudImageList::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressCloudImageList::name() const
+{
+    return UINotificationProgress::tr("Listing cloud images ...");
+}
+
+QString UINotificationProgressCloudImageList::details() const
+{
+    return QString();
+}
+
+CProgress UINotificationProgressCloudImageList::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.ListImages(m_cloudImageStates, m_comNames, m_comIds);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressCloudImageList::sltHandleProgressFinished()
+{
+    if (m_comNames.isNotNull() && m_comIds.isNotNull())
+    {
+        emit sigImageNamesReceived(QVariant::fromValue(m_comNames));
+        emit sigImageIdsReceived(QVariant::fromValue(m_comIds));
+    }
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudSourceBootVolumeList implementation.                                                        *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudSourceBootVolumeList::UINotificationProgressCloudSourceBootVolumeList(const CCloudClient &comClient)
+    : m_comClient(comClient)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressCloudSourceBootVolumeList::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressCloudSourceBootVolumeList::name() const
+{
+    return UINotificationProgress::tr("Listing cloud source boot volumes ...");
+}
+
+QString UINotificationProgressCloudSourceBootVolumeList::details() const
+{
+    return QString();
+}
+
+CProgress UINotificationProgressCloudSourceBootVolumeList::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.ListSourceBootVolumes(m_comNames, m_comIds);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressCloudSourceBootVolumeList::sltHandleProgressFinished()
+{
+    if (m_comNames.isNotNull() && m_comIds.isNotNull())
+    {
+        emit sigImageNamesReceived(QVariant::fromValue(m_comNames));
+        emit sigImageIdsReceived(QVariant::fromValue(m_comIds));
+    }
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudInstanceList implementation.                                                                *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudInstanceList::UINotificationProgressCloudInstanceList(const CCloudClient &comClient)
+    : m_comClient(comClient)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressCloudInstanceList::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressCloudInstanceList::name() const
+{
+    return UINotificationProgress::tr("Listing cloud instances ...");
+}
+
+QString UINotificationProgressCloudInstanceList::details() const
+{
+    return QString();
+}
+
+CProgress UINotificationProgressCloudInstanceList::createProgress(COMResult &comResult)
+{
+    /* Currently we are interested in Running and Stopped VMs only: */
+    const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
+                                                         << KCloudMachineState_Running
+                                                         << KCloudMachineState_Stopped;
+
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.ListInstances(cloudMachineStates, m_comNames, m_comIds);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressCloudInstanceList::sltHandleProgressFinished()
+{
+    if (m_comNames.isNotNull() && m_comIds.isNotNull())
+    {
+        emit sigImageNamesReceived(QVariant::fromValue(m_comNames));
+        emit sigImageIdsReceived(QVariant::fromValue(m_comIds));
+    }
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudSourceInstanceList implementation.                                                          *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudSourceInstanceList::UINotificationProgressCloudSourceInstanceList(const CCloudClient &comClient)
+    : m_comClient(comClient)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressCloudSourceInstanceList::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressCloudSourceInstanceList::name() const
+{
+    return UINotificationProgress::tr("Listing cloud source instances ...");
+}
+
+QString UINotificationProgressCloudSourceInstanceList::details() const
+{
+    return QString();
+}
+
+CProgress UINotificationProgressCloudSourceInstanceList::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.ListSourceInstances(m_comNames, m_comIds);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressCloudSourceInstanceList::sltHandleProgressFinished()
+{
+    if (m_comNames.isNotNull() && m_comIds.isNotNull())
+    {
+        emit sigImageNamesReceived(QVariant::fromValue(m_comNames));
+        emit sigImageIdsReceived(QVariant::fromValue(m_comIds));
+    }
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressCloudMachineAdd implementation.                                                                  *
 *********************************************************************************************************************************/
 
@@ -2708,6 +2970,78 @@ CProgress UINotificationProgressCloudMachineTerminate::createProgress(COMResult 
     CProgress comProgress = m_comMachine.Terminate();
     /* Store COM result: */
     comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudMachineSettingsFormCreate implementation.                                                   *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudMachineSettingsFormCreate::UINotificationProgressCloudMachineSettingsFormCreate(const CCloudMachine &comMachine,
+                                                                                                           const QString &strMachineName)
+    : m_comMachine(comMachine)
+    , m_strMachineName(strMachineName)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressCloudMachineSettingsFormCreate::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressCloudMachineSettingsFormCreate::name() const
+{
+    return UINotificationProgress::tr("Creating cloud VM settings form ...");
+}
+
+QString UINotificationProgressCloudMachineSettingsFormCreate::details() const
+{
+    return UINotificationProgress::tr("<b>Cloud VM Name:</b> %1").arg(m_strMachineName);
+}
+
+CProgress UINotificationProgressCloudMachineSettingsFormCreate::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comMachine.GetSettingsForm(m_comForm);
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressCloudMachineSettingsFormCreate::sltHandleProgressFinished()
+{
+    if (m_comForm.isNotNull())
+        emit sigSettingsFormCreated(QVariant::fromValue(m_comForm));
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressCloudMachineSettingsFormApply implementation.                                                    *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudMachineSettingsFormApply::UINotificationProgressCloudMachineSettingsFormApply(const CForm &comForm,
+                                                                                                         const QString &strMachineName)
+    : m_comForm(comForm)
+    , m_strMachineName(strMachineName)
+{
+}
+
+QString UINotificationProgressCloudMachineSettingsFormApply::name() const
+{
+    return UINotificationProgress::tr("Applying cloud VM settings form ...");
+}
+
+QString UINotificationProgressCloudMachineSettingsFormApply::details() const
+{
+    return UINotificationProgress::tr("<b>Cloud VM Name:</b> %1").arg(m_strMachineName);
+}
+
+CProgress UINotificationProgressCloudMachineSettingsFormApply::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comForm.Apply();
+    /* Store COM result: */
+    comResult = m_comForm;
     /* Return progress-wrapper: */
     return comProgress;
 }

@@ -227,7 +227,7 @@ void UIWizardAddCloudVMPageExpert::sltHandleProfileComboChange()
     wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()->notificationCenter()));
 
     /* Update profile instances: */
-    populateProfileInstances(m_pSourceInstanceList, wizard()->client());
+    populateProfileInstances(m_pSourceInstanceList, wizard()->notificationCenter(), wizard()->client());
     sltHandleSourceInstanceChange();
 
     /* Notify about changes: */

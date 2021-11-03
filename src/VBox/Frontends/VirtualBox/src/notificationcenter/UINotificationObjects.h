@@ -36,6 +36,7 @@
 #include "CConsole.h"
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
+#include "CForm.h"
 #include "CFormValue.h"
 #include "CGuest.h"
 #include "CHost.h"
@@ -44,6 +45,7 @@
 #include "CMedium.h"
 #include "CSession.h"
 #include "CSnapshot.h"
+#include "CStringArray.h"
 #include "CVFSExplorer.h"
 #include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
@@ -309,6 +311,10 @@ public:
         /** Notifies about inability to acquire ICloudProfile parameter.
           * @param  comCloudProfile  Brings the object parameter get acquired from. */
         static void cannotAcquireCloudProfileParameter(const CCloudProfile &comCloudProfile,
+                                                       UINotificationCenter *pParent = 0);
+        /** Notifies about inability to acquire ICloudMachine parameter.
+          * @param  comCloudMachine  Brings the object parameter get acquired from. */
+        static void cannotAcquireCloudMachineParameter(const CCloudMachine &comCloudMachine,
                                                        UINotificationCenter *pParent = 0);
 
         /** Notifies about inability to change IMedium parameter.
@@ -1186,6 +1192,264 @@ private:
     QString                        m_strProfileName;
 };
 
+/** UINotificationProgress extension for export VSD form create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressExportVSDFormCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about VSD @a comForm created.
+      * @param  form  Brings created VSD form. */
+    void sigVSDFormCreated(const QVariant &form);
+
+public:
+
+    /** Constructs export VSD form create notification-progress.
+      * @param  comClient  Brings the cloud client being creating VSD form.
+      * @param  comVsd     Brings the VSD, form being created for. */
+    UINotificationProgressExportVSDFormCreate(const CCloudClient &comClient,
+                                              const CVirtualSystemDescription &comVSD);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being creating VSD form. */
+    CCloudClient                   m_comClient;
+    /** Holds the VSD, form being created for. */
+    CVirtualSystemDescription      m_comVSD;
+    /** Holds the VSD form being created. */
+    CVirtualSystemDescriptionForm  m_comVSDForm;
+};
+
+/** UINotificationProgress extension for import VSD form create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressImportVSDFormCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about VSD @a comForm created.
+      * @param  form  Brings created VSD form. */
+    void sigVSDFormCreated(const QVariant &form);
+
+public:
+
+    /** Constructs import VSD form create notification-progress.
+      * @param  comClient  Brings the cloud client being creating VSD form.
+      * @param  comVsd     Brings the VSD, form being created for. */
+    UINotificationProgressImportVSDFormCreate(const CCloudClient &comClient,
+                                              const CVirtualSystemDescription &comVSD);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being creating VSD form. */
+    CCloudClient                   m_comClient;
+    /** Holds the VSD, form being created for. */
+    CVirtualSystemDescription      m_comVSD;
+    /** Holds the VSD form being created. */
+    CVirtualSystemDescriptionForm  m_comVSDForm;
+};
+
+/** UINotificationProgress extension for cloud image list functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudImageList : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about image @a names received. */
+    void sigImageNamesReceived(const QVariant &names);
+    /** Notifies listeners about image @a ids received. */
+    void sigImageIdsReceived(const QVariant &ids);
+
+public:
+
+    /** Constructs cloud images list notification-progress.
+      * @param  comClient         Brings the cloud client being listing images.
+      * @param  cloudImageStates  Brings the image states we are interested in. */
+    UINotificationProgressCloudImageList(const CCloudClient &comClient,
+                                         const QVector<KCloudImageState> &cloudImageStates);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being listing images. */
+    CCloudClient               m_comClient;
+    /** Holds the image states we are interested in. */
+    QVector<KCloudImageState>  m_cloudImageStates;
+    /** Holds the listed names. */
+    CStringArray               m_comNames;
+    /** Holds the listed ids. */
+    CStringArray               m_comIds;
+};
+
+/** UINotificationProgress extension for cloud source boot volume list functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudSourceBootVolumeList : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about source boot volume @a names received. */
+    void sigImageNamesReceived(const QVariant &names);
+    /** Notifies listeners about source boot volume @a ids received. */
+    void sigImageIdsReceived(const QVariant &ids);
+
+public:
+
+    /** Constructs cloud source boot volumes list notification-progress.
+      * @param  comClient  Brings the cloud client being listing source boot volumes. */
+    UINotificationProgressCloudSourceBootVolumeList(const CCloudClient &comClient);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being listing source boot volumes. */
+    CCloudClient  m_comClient;
+    /** Holds the listed names. */
+    CStringArray  m_comNames;
+    /** Holds the listed ids. */
+    CStringArray  m_comIds;
+};
+
+/** UINotificationProgress extension for cloud instance list functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudInstanceList : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about instance @a names received. */
+    void sigImageNamesReceived(const QVariant &names);
+    /** Notifies listeners about instance @a ids received. */
+    void sigImageIdsReceived(const QVariant &ids);
+
+public:
+
+    /** Constructs cloud instances list notification-progress.
+      * @param  comClient  Brings the cloud client being listing instances. */
+    UINotificationProgressCloudInstanceList(const CCloudClient &comClient);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being listing instances. */
+    CCloudClient  m_comClient;
+    /** Holds the listed names. */
+    CStringArray  m_comNames;
+    /** Holds the listed ids. */
+    CStringArray  m_comIds;
+};
+
+/** UINotificationProgress extension for cloud source instance list functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudSourceInstanceList : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about source instance @a names received. */
+    void sigImageNamesReceived(const QVariant &names);
+    /** Notifies listeners about source instance @a ids received. */
+    void sigImageIdsReceived(const QVariant &ids);
+
+public:
+
+    /** Constructs cloud source instances list notification-progress.
+      * @param  comClient  Brings the cloud client being listing source instances. */
+    UINotificationProgressCloudSourceInstanceList(const CCloudClient &comClient);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud client being listing source instances. */
+    CCloudClient  m_comClient;
+    /** Holds the listed names. */
+    CStringArray  m_comNames;
+    /** Holds the listed ids. */
+    CStringArray  m_comIds;
+};
+
 /** UINotificationProgress extension for cloud machine add functionality. */
 class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineAdd : public UINotificationProgress
 {
@@ -1463,6 +1727,79 @@ private:
     CCloudMachine  m_comMachine;
     /** Holds the machine name. */
     QString        m_strName;
+};
+
+/** UINotificationProgress extension for cloud machine settings form create functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineSettingsFormCreate : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about settings @a comForm created.
+      * @param  form  Brings created VSD form. */
+    void sigSettingsFormCreated(const QVariant &form);
+
+public:
+
+    /** Constructs cloud machine settings form create notification-progress.
+      * @param  comMachine      Brings the machine form being created for.
+      * @param  strMachineName  Brings the machine name. */
+    UINotificationProgressCloudMachineSettingsFormCreate(const CCloudMachine &comMachine,
+                                                         const QString &strMachineName);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the machine form being created for. */
+    CCloudMachine  m_comMachine;
+    /** Holds the machine name. */
+    QString        m_strMachineName;
+    /** Holds the form being created. */
+    CForm          m_comForm;
+};
+
+/** UINotificationProgress extension for cloud machine settings form apply functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudMachineSettingsFormApply : public UINotificationProgress
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs cloud machine settings form apply notification-progress.
+      * @param  comForm         Brings the form being applied.
+      * @param  strMachineName  Brings the machine name. */
+    UINotificationProgressCloudMachineSettingsFormApply(const CForm &comForm,
+                                                        const QString &strMachineName);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private:
+
+    /** Holds the machine form being created for. */
+    CForm    m_comForm;
+    /** Holds the machine name. */
+    QString  m_strMachineName;
 };
 
 /** UINotificationProgress extension for cloud console connection create functionality. */

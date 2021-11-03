@@ -538,7 +538,7 @@ void UIWizardExportAppFormat::refreshCloudStuff(CAppliance &comCloudAppliance,
 
     /* Read Cloud Client Export description form: */
     CVirtualSystemDescriptionForm comVsdExportForm;
-    bool fResult = exportDescriptionForm(comCloudClient, comCloudVsd, comVsdExportForm);
+    bool fResult = exportDescriptionForm(comCloudClient, comCloudVsd, comVsdExportForm, pWizard->notificationCenter());
     if (!fResult)
         return;
 

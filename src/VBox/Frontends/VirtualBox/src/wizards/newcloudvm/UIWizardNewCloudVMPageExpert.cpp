@@ -342,7 +342,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleProfileButtonClick()
 void UIWizardNewCloudVMPageExpert::sltHandleSourceTabBarChange()
 {
     /* Update source type: */
-    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->client());
+    populateSourceImages(m_pSourceImageList, m_pSourceTabBar, wizard()->notificationCenter(), wizard()->client());
     sltHandleSourceImageChange();
 
     /* Notify about changes: */

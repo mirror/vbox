@@ -280,7 +280,7 @@ bool UICloudNetworkingStuff::cloudProviderName(const CCloudProvider &comCloudPro
     return false;
 }
 
-QVector<CCloudProfile> UICloudNetworkingStuff::listCloudProfiles(CCloudProvider comCloudProvider,
+QVector<CCloudProfile> UICloudNetworkingStuff::listCloudProfiles(const CCloudProvider &comCloudProvider,
                                                                  UINotificationCenter *pParent /* = 0 */)
 {
     /* Check cloud provider: */
@@ -335,26 +335,28 @@ bool UICloudNetworkingStuff::cloudProfileProperties(const CCloudProfile &comClou
 bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
                                              CStringArray &comNames,
                                              CStringArray &comIDs,
-                                             QWidget *pParent /* = 0 */)
+                                             UINotificationCenter *pParent /* = 0 */)
 {
     /* Currently we are interested in Available images only: */
     const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
                                                      << KCloudImageState_Available;
-    /* Execute ListImages async method: */
-    CProgress comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-    else
+
+    /* List cloud images: */
+    UINotificationProgressCloudImageList *pNotification =
+        new UINotificationProgressCloudImageList(comCloudClient, cloudImageStates);
+    UINotificationReceiver receiver1;
+    UINotificationReceiver receiver2;
+    QObject::connect(pNotification, &UINotificationProgressCloudImageList::sigImageNamesReceived,
+                     &receiver1, &UINotificationReceiver::setReceiverProperty);
+    QObject::connect(pNotification, &UINotificationProgressCloudImageList::sigImageIdsReceived,
+                     &receiver2, &UINotificationReceiver::setReceiverProperty);
+    if (pParent->handleNow(pNotification))
     {
-        /* Show "Acquire cloud images" progress: */
-        msgCenter().showModalProgressDialog(comProgress,
-                                            QString(),
-                                            ":/progress_reading_appliance_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-        else
-            return true;
+        comNames = receiver1.property("received_value").value<CStringArray>();
+        comIDs = receiver2.property("received_value").value<CStringArray>();
+        return true;
     }
+
     /* Return false by default: */
     return false;
 }
@@ -362,23 +364,49 @@ bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
 bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
                                                         CStringArray &comNames,
                                                         CStringArray &comIDs,
-                                                        QWidget *pParent /* = 0 */)
+                                                        UINotificationCenter *pParent /* = 0 */)
 {
-    /* Execute ListSourceBootVolumes async method: */
-    CProgress comProgress = comCloudClient.ListSourceBootVolumes(comNames, comIDs);
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-    else
+    /* List cloud source boot volumes: */
+    UINotificationProgressCloudSourceBootVolumeList *pNotification =
+        new UINotificationProgressCloudSourceBootVolumeList(comCloudClient);
+    UINotificationReceiver receiver1;
+    UINotificationReceiver receiver2;
+    QObject::connect(pNotification, &UINotificationProgressCloudSourceBootVolumeList::sigImageNamesReceived,
+                     &receiver1, &UINotificationReceiver::setReceiverProperty);
+    QObject::connect(pNotification, &UINotificationProgressCloudSourceBootVolumeList::sigImageIdsReceived,
+                     &receiver2, &UINotificationReceiver::setReceiverProperty);
+    if (pParent->handleNow(pNotification))
     {
-        /* Show "Acquire cloud source boot volumes" progress: */
-        msgCenter().showModalProgressDialog(comProgress,
-                                            QString(),
-                                            ":/progress_reading_appliance_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-        else
-            return true;
+        comNames = receiver1.property("received_value").value<CStringArray>();
+        comIDs = receiver2.property("received_value").value<CStringArray>();
+        return true;
     }
+
+    /* Return false by default: */
+    return false;
+}
+
+bool UICloudNetworkingStuff::listCloudInstances(const CCloudClient &comCloudClient,
+                                                CStringArray &comNames,
+                                                CStringArray &comIDs,
+                                                UINotificationCenter *pParent /* = 0 */)
+{
+    /* List cloud instances: */
+    UINotificationProgressCloudInstanceList *pNotification =
+        new UINotificationProgressCloudInstanceList(comCloudClient);
+    UINotificationReceiver receiver1;
+    UINotificationReceiver receiver2;
+    QObject::connect(pNotification, &UINotificationProgressCloudInstanceList::sigImageNamesReceived,
+                     &receiver1, &UINotificationReceiver::setReceiverProperty);
+    QObject::connect(pNotification, &UINotificationProgressCloudInstanceList::sigImageIdsReceived,
+                     &receiver2, &UINotificationReceiver::setReceiverProperty);
+    if (pParent->handleNow(pNotification))
+    {
+        comNames = receiver1.property("received_value").value<CStringArray>();
+        comIDs = receiver2.property("received_value").value<CStringArray>();
+        return true;
+    }
+
     /* Return false by default: */
     return false;
 }
@@ -386,82 +414,77 @@ bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comC
 bool UICloudNetworkingStuff::listCloudSourceInstances(const CCloudClient &comCloudClient,
                                                       CStringArray &comNames,
                                                       CStringArray &comIDs,
-                                                      QWidget *pParent /* = 0 */)
+                                                      UINotificationCenter *pParent /* = 0 */)
 {
-    /* Execute ListSourceInstances async method: */
-    CProgress comProgress = comCloudClient.ListSourceInstances(comNames, comIDs);
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-    else
+    /* List cloud source instances: */
+    UINotificationProgressCloudSourceInstanceList *pNotification =
+        new UINotificationProgressCloudSourceInstanceList(comCloudClient);
+    UINotificationReceiver receiver1;
+    UINotificationReceiver receiver2;
+    QObject::connect(pNotification, &UINotificationProgressCloudSourceInstanceList::sigImageNamesReceived,
+                     &receiver1, &UINotificationReceiver::setReceiverProperty);
+    QObject::connect(pNotification, &UINotificationProgressCloudSourceInstanceList::sigImageIdsReceived,
+                     &receiver2, &UINotificationReceiver::setReceiverProperty);
+    if (pParent->handleNow(pNotification))
     {
-        /* Show "Acquire cloud source instances" progress: */
-        msgCenter().showModalProgressDialog(comProgress,
-                                            QString(),
-                                            ":/progress_reading_appliance_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-        else
-            return true;
+        comNames = receiver1.property("received_value").value<CStringArray>();
+        comIDs = receiver2.property("received_value").value<CStringArray>();
+        return true;
     }
+
     /* Return false by default: */
     return false;
 }
 
-bool UICloudNetworkingStuff::exportDescriptionForm(CCloudClient comCloudClient,
-                                                   CVirtualSystemDescription comDescription,
+bool UICloudNetworkingStuff::exportDescriptionForm(const CCloudClient &comCloudClient,
+                                                   const CVirtualSystemDescription &comDescription,
                                                    CVirtualSystemDescriptionForm &comResult,
-                                                   QWidget *pParent /* = 0 */)
+                                                   UINotificationCenter *pParent /* = 0 */)
 {
-    /* Execute GetExportDescriptionForm async method: */
-    CProgress comProgress = comCloudClient.GetExportDescriptionForm(comDescription, comResult);
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
-    else
+    /* Prepare export VSD form: */
+    UINotificationProgressExportVSDFormCreate *pNotification =
+        new UINotificationProgressExportVSDFormCreate(comCloudClient, comDescription);
+    UINotificationReceiver receiver;
+    QObject::connect(pNotification, &UINotificationProgressExportVSDFormCreate::sigVSDFormCreated,
+                     &receiver, &UINotificationReceiver::setReceiverProperty);
+    if (pParent->handleNow(pNotification))
     {
-        /* Show "Get Export Description Form" progress: */
-        msgCenter().showModalProgressDialog(comProgress,
-                                            QString(),
-                                            ":/progress_refresh_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress);
-        else
-            return true;
+        comResult = receiver.property("received_value").value<CVirtualSystemDescriptionForm>();
+        return true;
     }
+
     /* False by default: */
     return false;
 }
 
-bool UICloudNetworkingStuff::importDescriptionForm(CCloudClient comCloudClient,
-                                                   CVirtualSystemDescription comDescription,
+bool UICloudNetworkingStuff::importDescriptionForm(const CCloudClient &comCloudClient,
+                                                   const CVirtualSystemDescription &comDescription,
                                                    CVirtualSystemDescriptionForm &comResult,
-                                                   QWidget *pParent /* = 0 */)
+                                                   UINotificationCenter *pParent /* = 0 */)
 {
-    /* Execute GetImportDescriptionForm async method: */
-    CProgress comProgress = comCloudClient.GetImportDescriptionForm(comDescription, comResult);
-    if (!comCloudClient.isOk())
-        msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
-    else
+    /* Prepare import VSD form: */
+    UINotificationProgressImportVSDFormCreate *pNotification =
+        new UINotificationProgressImportVSDFormCreate(comCloudClient, comDescription);
+    UINotificationReceiver receiver;
+    QObject::connect(pNotification, &UINotificationProgressImportVSDFormCreate::sigVSDFormCreated,
+                     &receiver, &UINotificationReceiver::setReceiverProperty);
+    if (pParent->handleNow(pNotification))
     {
-        /* Show "Get Import Description Form" progress: */
-        msgCenter().showModalProgressDialog(comProgress,
-                                            QString(),
-                                            ":/progress_refresh_90px.png", pParent, 0);
-        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            msgCenter().cannotAcquireCloudClientParameter(comProgress);
-        else
-            return true;
+        comResult = receiver.property("received_value").value<CVirtualSystemDescriptionForm>();
+        return true;
     }
+
     /* False by default: */
     return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineId(const CCloudMachine &comCloudMachine,
                                             QUuid &uResult,
-                                            QWidget *pParent /* = 0 */)
+                                            UINotificationCenter *pParent /* = 0 */)
 {
     const QUuid uId = comCloudMachine.GetId();
     if (!comCloudMachine.isOk())
-        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        UINotificationMessage::cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
     else
     {
         uResult = uId;
@@ -472,11 +495,11 @@ bool UICloudNetworkingStuff::cloudMachineId(const CCloudMachine &comCloudMachine
 
 bool UICloudNetworkingStuff::cloudMachineName(const CCloudMachine &comCloudMachine,
                                               QString &strResult,
-                                              QWidget *pParent /* = 0 */)
+                                              UINotificationCenter *pParent /* = 0 */)
 {
     const QString strName = comCloudMachine.GetName();
     if (!comCloudMachine.isOk())
-        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        UINotificationMessage::cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
     else
     {
         strResult = strName;
@@ -487,11 +510,11 @@ bool UICloudNetworkingStuff::cloudMachineName(const CCloudMachine &comCloudMachi
 
 bool UICloudNetworkingStuff::cloudMachineConsoleConnectionFingerprint(const CCloudMachine &comCloudMachine,
                                                                       QString &strResult,
-                                                                      QWidget *pParent /* = 0 */)
+                                                                      UINotificationCenter *pParent /* = 0 */)
 {
     const QString strConsoleConnectionFingerprint = comCloudMachine.GetConsoleConnectionFingerprint();
     if (!comCloudMachine.isOk())
-        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
+        UINotificationMessage::cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
     else
     {
         strResult = strConsoleConnectionFingerprint;
@@ -500,41 +523,29 @@ bool UICloudNetworkingStuff::cloudMachineConsoleConnectionFingerprint(const CClo
     return false;
 }
 
-bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMachine,
+bool UICloudNetworkingStuff::cloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
                                                       CForm &comResult,
-                                                      QWidget *pParent /* = 0 */)
+                                                      UINotificationCenter *pParent /* = 0 */)
 {
     /* Acquire machine name first: */
     QString strMachineName;
     if (!cloudMachineName(comCloudMachine, strMachineName))
         return false;
 
-    /* Prepare settings form: */
-    CForm comForm;
-
-    /* Now execute GetSettingsForm async method: */
-    CProgress comProgress = comCloudMachine.GetSettingsForm(comForm);
-    if (!comCloudMachine.isOk())
+    /* Prepare VM settings form: */
+    UINotificationProgressCloudMachineSettingsFormCreate *pNotification =
+        new UINotificationProgressCloudMachineSettingsFormCreate(comCloudMachine, strMachineName);
+    UINotificationReceiver receiver;
+    QObject::connect(pNotification, &UINotificationProgressCloudMachineSettingsFormCreate::sigSettingsFormCreated,
+                     &receiver, &UINotificationReceiver::setReceiverProperty);
+    if (pParent->handleNow(pNotification))
     {
-        msgCenter().cannotAcquireCloudMachineParameter(comCloudMachine, pParent);
-        return false;
+        comResult = receiver.property("received_value").value<CForm>();
+        return true;
     }
 
-    /* Show "Get settings form" progress: */
-    msgCenter().showModalProgressDialog(comProgress,
-                                        strMachineName,
-                                        ":/progress_settings_90px.png", pParent, 0);
-    if (comProgress.GetCanceled())
-        return false;
-    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-    {
-        msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-        return false;
-    }
-
-    /* Return result: */
-    comResult = comForm;
-    return true;
+    /* False by default: */
+    return false;
 }
 
 bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMachine,
@@ -567,84 +578,17 @@ bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMach
     return true;
 }
 
-bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(CCloudMachine comCloudMachine,
-                                                           CForm comForm,
-                                                           QWidget *pParent /* = 0 */)
+bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
+                                                           const CForm &comForm,
+                                                           UINotificationCenter *pParent /* = 0 */)
 {
     /* Acquire machine name first: */
     QString strMachineName;
     if (!cloudMachineName(comCloudMachine, strMachineName))
         return false;
 
-    /* Now execute Apply async method: */
-    CProgress comProgress = comForm.Apply();
-    if (!comForm.isOk())
-    {
-        msgCenter().cannotApplyCloudMachineFormSettings(comForm, strMachineName, pParent);
-        return false;
-    }
-
-    /* Show "Apply" progress: */
-    msgCenter().showModalProgressDialog(comProgress,
-                                        strMachineName,
-                                        ":/progress_settings_90px.png", pParent, 0);
-    if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-    {
-        msgCenter().cannotApplyCloudMachineFormSettings(comProgress, strMachineName, pParent);
-        return false;
-    }
-
-    /* Return result: */
-    return true;
-}
-
-QMap<QString, QString> UICloudNetworkingStuff::listInstances(const CCloudClient &comCloudClient,
-                                                             QWidget *pParent /* = 0 */)
-{
-    /* Prepare VM names, ids and states.
-     * Currently we are interested in Running and Stopped VMs only. */
-    CStringArray comNames;
-    CStringArray comIDs;
-    const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
-                                                         << KCloudMachineState_Running
-                                                         << KCloudMachineState_Stopped;
-
-    /* Now execute ListInstances async method: */
-    CProgress comProgress = comCloudClient.ListInstances(cloudMachineStates, comNames, comIDs);
-    if (!comCloudClient.isOk())
-    {
-        if (pParent)
-            msgCenter().cannotAcquireCloudClientParameter(comCloudClient, pParent);
-    }
-    else
-    {
-        /* Show "Acquire cloud instances" progress: */
-        if (pParent)
-            msgCenter().showModalProgressDialog(comProgress,
-                                                QString(),
-                                                ":/progress_reading_appliance_90px.png", pParent, 0);
-        else
-            comProgress.WaitForCompletion(-1);
-        if (!comProgress.GetCanceled())
-        {
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            {
-                if (pParent)
-                    msgCenter().cannotAcquireCloudClientParameter(comProgress, pParent);
-            }
-            else
-            {
-                /* Fetch acquired objects to map: */
-                const QVector<QString> instanceIds = comIDs.GetValues();
-                const QVector<QString> instanceNames = comNames.GetValues();
-                QMap<QString, QString> resultMap;
-                for (int i = 0; i < instanceIds.size(); ++i)
-                    resultMap[instanceIds.at(i)] = instanceNames.at(i);
-                return resultMap;
-            }
-        }
-    }
-
-    /* Return empty map by default: */
-    return QMap<QString, QString>();
+    /* Apply VM settings form: */
+    UINotificationProgressCloudMachineSettingsFormApply *pNotification =
+        new UINotificationProgressCloudMachineSettingsFormApply(comForm, strMachineName);
+    return pParent->handleNow(pNotification);
 }

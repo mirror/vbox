@@ -62,7 +62,7 @@ void UICloudMachineSettingsDialog::accept()
 
     /* Apply form: */
     AssertReturnVoid(m_comForm.isNotNull());
-    if (!applyCloudMachineSettingsForm(m_comCloudMachine, m_comForm, this))
+    if (!applyCloudMachineSettingsForm(m_comCloudMachine, m_comForm, notificationCenter()))
         return;
 
     /* Call to base-class: */
@@ -89,14 +89,14 @@ void UICloudMachineSettingsDialog::setOkButtonEnabled(bool fEnabled)
 void UICloudMachineSettingsDialog::sltRefresh()
 {
     /* Update name: */
-    if (!cloudMachineName(m_comCloudMachine, m_strName, this))
+    if (!cloudMachineName(m_comCloudMachine, m_strName, notificationCenter()))
         reject();
 
     /* Retranslate title: */
     retranslateUi();
 
     /* Update form: */
-    if (!cloudMachineSettingsForm(m_comCloudMachine, m_comForm, this))
+    if (!cloudMachineSettingsForm(m_comCloudMachine, m_comForm, notificationCenter()))
         reject();
 
     /* Assign page with form: */
