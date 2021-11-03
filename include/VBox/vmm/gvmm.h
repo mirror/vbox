@@ -169,6 +169,20 @@ typedef DECLCALLBACKTYPE(int, FNGVMMR0ENUMCALLBACK,(PGVM pGVM, void *pvUser));
 /** Pointer to an VM enumeration callback function. */
 typedef FNGVMMR0ENUMCALLBACK *PFNGVMMR0ENUMCALLBACK;
 
+/**
+ * Worker thread IDs.
+ */
+typedef enum GVMMWORKERTHREAD
+{
+    /** The usual invalid zero value. */
+    GVMMWORKERTHREAD_INVALID = 0,
+    /** PGM handy page allocator thread. */
+    GVMMWORKERTHREAD_PGM_ALLOCATOR,
+    /** End of valid worker thread values. */
+    GVMMWORKERTHREAD_END,
+    /** Make sure the type size is 32 bits. */
+    GVMMWORKERTHREAD_32_BIT_HACK = 0x7fffffff
+} GVMMWORKERTHREAD;
 
 GVMMR0DECL(int)     GVMMR0Init(void);
 GVMMR0DECL(void)    GVMMR0Term(void);
@@ -182,12 +196,16 @@ GVMMR0DECL(bool)    GVMMR0DoingTermVM(PGVM pGVM);
 GVMMR0DECL(int)     GVMMR0DestroyVM(PGVM pGVM);
 GVMMR0DECL(int)     GVMMR0RegisterVCpu(PGVM pGVM, VMCPUID idCpu);
 GVMMR0DECL(int)     GVMMR0DeregisterVCpu(PGVM pGVM, VMCPUID idCpu);
+GVMMR0DECL(int)     GVMMR0RegisterWorkerThread(PGVM pGVM, GVMMWORKERTHREAD enmWorker, uintptr_t hThreadR3);
+GVMMR0DECL(int)     GVMMR0DeregisterWorkerThread(PGVM pGVM, GVMMWORKERTHREAD enmWorker);
 GVMMR0DECL(PGVM)    GVMMR0ByHandle(uint32_t hGVM);
 GVMMR0DECL(int)     GVMMR0ValidateGVM(PGVM pGVM);
 GVMMR0DECL(int)     GVMMR0ValidateGVMandEMT(PGVM pGVM, VMCPUID idCpu);
+GVMMR0DECL(int)     GVMMR0ValidateGVMandEMTorWorker(PGVM pGVM, VMCPUID idCpu, GVMMWORKERTHREAD enmWorker);
 GVMMR0DECL(PVMCC)   GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT);
 GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByEMT(RTNATIVETHREAD hEMT);
 GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByGVMandEMT(PGVM pGVM, RTNATIVETHREAD hEMT);
+GVMMR0DECL(RTNATIVETHREAD) GVMMR0GetRing3ThreadForSelf(PGVM pGVM);
 GVMMR0DECL(RTHCPHYS) GVMMR0ConvertGVMPtr2HCPhys(PGVM pGVM, void *pv);
 GVMMR0DECL(int)     GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGipTime);
 GVMMR0DECL(int)     GVMMR0SchedHaltReq(PGVM pGVM, VMCPUID idCpu, uint64_t u64ExpireGipTime);
@@ -225,6 +243,20 @@ typedef struct GVMMCREATEVMREQ
 typedef GVMMCREATEVMREQ *PGVMMCREATEVMREQ;
 
 GVMMR0DECL(int)     GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq, PSUPDRVSESSION pSession);
+
+
+/**
+ * Request packet for calling GVMMR0RegisterWorkerThread.
+ */
+typedef struct GVMMREGISTERWORKERTHREADREQ
+{
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** Ring-3 native thread handle of the caller. (IN)   */
+    RTNATIVETHREAD  hNativeThreadR3;
+} GVMMREGISTERWORKERTHREADREQ;
+/** Pointer to a GVMMR0RegisterWorkerThread request packet. */
+typedef GVMMREGISTERWORKERTHREADREQ *PGVMMREGISTERWORKERTHREADREQ;
 
 
 /**
@@ -283,6 +315,12 @@ typedef struct GVMMRESETSTATISTICSSREQ
 typedef GVMMRESETSTATISTICSSREQ *PGVMMRESETSTATISTICSSREQ;
 
 GVMMR0DECL(int)     GVMMR0ResetStatisticsReq(PGVM pGVM, PGVMMRESETSTATISTICSSREQ pReq, PSUPDRVSESSION pSession);
+
+
+#ifdef IN_RING3
+VMMR3_INT_DECL(int)  GVMMR3RegisterWorkerThread(PVM pVM, GVMMWORKERTHREAD enmWorker);
+VMMR3_INT_DECL(int)  GVMMR3DeregisterWorkerThread(PVM pVM, GVMMWORKERTHREAD enmWorker);
+#endif
 
 
 /** @} */

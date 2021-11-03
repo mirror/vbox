@@ -1591,6 +1591,134 @@ GVMMR0DECL(int) GVMMR0DeregisterVCpu(PGVM pGVM, VMCPUID idCpu)
 
 
 /**
+ * Registers the caller as a given worker thread.
+ *
+ * This enables the thread to operate critical sections in ring-0.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   enmWorker       The worker thread this is supposed to be.
+ * @param   hNativeSelfR3   The ring-3 native self of the caller.
+ */
+GVMMR0DECL(int) GVMMR0RegisterWorkerThread(PGVM pGVM, GVMMWORKERTHREAD enmWorker, RTNATIVETHREAD hNativeSelfR3)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(enmWorker > GVMMWORKERTHREAD_INVALID && enmWorker < GVMMWORKERTHREAD_END, VERR_INVALID_PARAMETER);
+    AssertReturn(hNativeSelfR3 != NIL_RTNATIVETHREAD, VERR_INVALID_HANDLE);
+    RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
+    AssertReturn(hNativeSelf != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR_3);
+    PGVMM pGVMM;
+    int rc = gvmmR0ByGVM(pGVM, &pGVMM, false /*fTakeUsedLock*/);
+    AssertRCReturn(rc, rc);
+    AssertReturn(pGVM->enmVMState < VMSTATE_DESTROYING, VERR_VM_INVALID_VM_STATE);
+
+    /*
+     * Grab the big lock and check the VM state again.
+     */
+    uint32_t const hSelf = pGVM->hSelf;
+    gvmmR0CreateDestroyLock(pGVMM); /** @todo per-VM lock? */
+    if (   hSelf < RT_ELEMENTS(pGVMM->aHandles)
+        && pGVMM->aHandles[hSelf].pvObj != NULL
+        && pGVMM->aHandles[hSelf].pGVM  == pGVM
+        && pGVMM->aHandles[hSelf].ProcId == RTProcSelf())
+    {
+        if (pGVM->enmVMState < VMSTATE_DESTROYING)
+        {
+            /*
+             * Check that the thread isn't an EMT or serving in some other worker capacity.
+             */
+            for (VMCPUID iCpu = 0; iCpu < pGVM->cCpus; iCpu++)
+                AssertBreakStmt(pGVM->aCpus[iCpu].hEMT != hNativeSelf, rc = VERR_INVALID_PARAMETER);
+            for (size_t idx = 0; idx < RT_ELEMENTS(pGVM->gvmm.s.aWorkerThreads); idx++)
+                AssertBreakStmt(idx != (size_t)enmWorker && pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread != hNativeSelf,
+                                rc = VERR_INVALID_PARAMETER);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Do the registration.
+                 */
+                if (   pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread   == NIL_RTNATIVETHREAD
+                    && pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThreadR3 == NIL_RTNATIVETHREAD)
+                {
+                    pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread   = hNativeSelf;
+                    pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThreadR3 = hNativeSelfR3;
+                    rc = VINF_SUCCESS;
+                }
+                else if (   pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread   == hNativeSelf
+                         && pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThreadR3 == hNativeSelfR3)
+                    rc = VERR_ALREADY_EXISTS;
+                else
+                    rc = VERR_RESOURCE_BUSY;
+            }
+        }
+        else
+            rc = VERR_VM_INVALID_VM_STATE;
+    }
+    else
+        rc = VERR_INVALID_VM_HANDLE;
+    gvmmR0CreateDestroyUnlock(pGVMM);
+    return rc;
+}
+
+
+/** 
+ * Deregisters a workinger thread (caller).
+ *
+ * The worker thread cannot be re-created and re-registered, instead the given
+ * @a enmWorker slot becomes invalid.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   enmWorker       The worker thread this is supposed to be.
+ */
+GVMMR0DECL(int)  GVMMR0DeregisterWorkerThread(PGVM pGVM, GVMMWORKERTHREAD enmWorker)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(enmWorker > GVMMWORKERTHREAD_INVALID && enmWorker < GVMMWORKERTHREAD_END, VERR_INVALID_PARAMETER);
+    RTNATIVETHREAD const hNativeThread = RTThreadNativeSelf();
+    AssertReturn(hNativeThread != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR_3);
+    PGVMM pGVMM;
+    int rc = gvmmR0ByGVM(pGVM, &pGVMM, false /*fTakeUsedLock*/);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Grab the big lock and check the VM state again.
+     */
+    uint32_t const hSelf = pGVM->hSelf;
+    gvmmR0CreateDestroyLock(pGVMM); /** @todo per-VM lock? */
+    if (   hSelf < RT_ELEMENTS(pGVMM->aHandles)
+        && pGVMM->aHandles[hSelf].pvObj != NULL
+        && pGVMM->aHandles[hSelf].pGVM  == pGVM
+        && pGVMM->aHandles[hSelf].ProcId == RTProcSelf())
+    {
+        /*
+         * Do the deregistration.
+         * This will prevent any other threads register as the worker later.
+         */
+        if (pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread == hNativeThread)
+        {
+            pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread   = GVMM_RTNATIVETHREAD_DESTROYED;
+            pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThreadR3 = GVMM_RTNATIVETHREAD_DESTROYED;
+            rc = VINF_SUCCESS;
+        }
+        else if (   pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread   == GVMM_RTNATIVETHREAD_DESTROYED
+                 && pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThreadR3 == GVMM_RTNATIVETHREAD_DESTROYED)
+            rc = VINF_SUCCESS;
+        else
+            rc = VERR_NOT_OWNER;
+    }
+    else
+        rc = VERR_INVALID_VM_HANDLE;
+    gvmmR0CreateDestroyUnlock(pGVMM);
+    return rc;
+}
+
+
+/**
  * Lookup a GVM structure by its handle.
  *
  * @returns The GVM pointer on success, NULL on failure.
@@ -1924,6 +2052,7 @@ GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByGVMandEMT(PGVM pGVM, RTNATIVETHREAD hEMT)
 
     /*
      * Find the matching hash table entry.
+     * See similar code in GVMMR0GetRing3ThreadForSelf.
      */
     uint32_t idxHash = GVMM_EMT_HASH_1(hEMT);
     if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt == hEMT)
@@ -1962,6 +2091,77 @@ GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByGVMandEMT(PGVM pGVM, RTNATIVETHREAD hEMT)
     Assert(pGVCpu->hNativeThreadR0   == hEMT);
     Assert(pGVCpu->gvmm.s.idxEmtHash == idxHash);
     return pGVCpu;
+}
+
+
+/**
+ * Get the native ring-3 thread handle for the caller.
+ *
+ * This works for EMTs and registered workers.
+ *
+ * @returns ring-3 native thread handle or NIL_RTNATIVETHREAD.
+ * @param   pGVM    The global (ring-0) VM structure.
+ */
+GVMMR0DECL(RTNATIVETHREAD) GVMMR0GetRing3ThreadForSelf(PGVM pGVM)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtr(pGVM);
+    AssertReturn(pGVM->u32Magic == GVM_MAGIC, NIL_RTNATIVETHREAD);
+    RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
+    AssertReturn(hNativeSelf != NIL_RTNATIVETHREAD, NIL_RTNATIVETHREAD);
+
+    /*
+     * Find the matching hash table entry.
+     * See similar code in GVMMR0GetGVCpuByGVMandEMT.
+     */
+    uint32_t idxHash = GVMM_EMT_HASH_1(hNativeSelf);
+    if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt == hNativeSelf)
+    { /* likely */ }
+    else
+    {
+#ifdef VBOX_STRICT
+        unsigned       cCollisions = 0;
+#endif
+        uint32_t const idxHash2    = GVMM_EMT_HASH_2(hNativeSelf);
+        for (;;)
+        {
+            Assert(cCollisions++ < GVMM_EMT_HASH_SIZE);
+            idxHash = (idxHash + idxHash2) % GVMM_EMT_HASH_SIZE;
+            if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt == hNativeSelf)
+                break;
+            if (pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt == NIL_RTNATIVETHREAD)
+            {
+#ifdef VBOX_STRICT
+                uint32_t idxCpu = pGVM->cCpus;
+                AssertStmt(idxCpu < VMM_MAX_CPU_COUNT, idxCpu = VMM_MAX_CPU_COUNT);
+                while (idxCpu-- > 0)
+                    Assert(pGVM->aCpus[idxCpu].hNativeThreadR0 != hNativeSelf);
+#endif
+
+                /*
+                 * Not an EMT, so see if it's a worker thread.
+                 */
+                size_t idx = RT_ELEMENTS(pGVM->gvmm.s.aWorkerThreads);
+                while (--idx > GVMMWORKERTHREAD_INVALID)
+                    if (pGVM->gvmm.s.aWorkerThreads[idx].hNativeThread == hNativeSelf)
+                        return pGVM->gvmm.s.aWorkerThreads[idx].hNativeThreadR3;
+
+                return NIL_RTNATIVETHREAD;
+            }
+        }
+    }
+
+    /*
+     * Validate the VCpu number and translate it into a pointer.
+     */
+    VMCPUID const idCpu = pGVM->gvmm.s.aEmtHash[idxHash].idVCpu;
+    AssertReturn(idCpu < pGVM->cCpus, NIL_RTNATIVETHREAD);
+    PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+    Assert(pGVCpu->hNativeThreadR0   == hNativeSelf);
+    Assert(pGVCpu->gvmm.s.idxEmtHash == idxHash);
+    return pGVCpu->hNativeThread;
 }
 
 

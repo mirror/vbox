@@ -251,6 +251,10 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GVMM_REGISTER_VMCPU,
     /** Call GVMMR0DeregisterVCpu(). */
     VMMR0_DO_GVMM_DEREGISTER_VMCPU,
+    /** Call GVMMR0RegisterWorkerThread(). */
+    VMMR0_DO_GVMM_REGISTER_WORKER_THREAD,
+    /** Call GVMMR0DeregisterWorkerThread(). */
+    VMMR0_DO_GVMM_DEREGISTER_WORKER_THREAD,
     /** Call GVMMR0SchedHalt(). */
     VMMR0_DO_GVMM_SCHED_HALT,
     /** Call GVMMR0SchedWakeUp(). */
@@ -512,9 +516,18 @@ VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(int)  VMMR0EmtPrepareToBlock(PVMCPUCC pVCpu, int rcBusy, const char *pszCaller, void *pvLock,
                                             PVMMR0EMTBLOCKCTX pCtx);
 VMMR0_INT_DECL(void) VMMR0EmtResumeAfterBlocking(PVMCPUCC pVCpu, PVMMR0EMTBLOCKCTX pCtx);
-VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)  VMMR0EmtWaitEventInner(PGVMCPU pGVCpu, uint32_t fFlags, RTSEMEVENT hEvent, RTMSINTERVAL cMsTimeout);
+VMMR0_INT_DECL(int)  VMMR0EmtSignalSupEvent(PGVM pGVM, PGVMCPU pGVCpu, SUPSEMEVENT hEvent);
+VMMR0_INT_DECL(int)  VMMR0EmtSignalSupEventByGVM(PGVM pGVM, SUPSEMEVENT hEvent);
+
+/** @name VMMR0EMTWAIT_F_XXX - flags for VMMR0EmtWaitEventInner and friends.
+ * @{ */
+/** Try suppress VERR_INTERRUPTED for a little while (~10 sec). */
+#define VMMR0EMTWAIT_F_TRY_SUPPRESS_INTERRUPTED     RT_BIT_32(0)
+/** @} */
 #endif /* IN_RING0 */
 
+VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu);
 /** @} */
 
 

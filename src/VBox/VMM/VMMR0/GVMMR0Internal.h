@@ -106,6 +106,15 @@ typedef struct GVMMPERVM
     bool                fDoneVMMR0Term;
     bool                afPadding[6];
 
+    /** Worker thread registrations. */
+    struct
+    {
+        /** The native ring-0 thread handle. */
+        RTNATIVETHREAD  hNativeThread;
+        /** The native ring-3 thread handle. */
+        RTNATIVETHREAD  hNativeThreadR3;
+    } aWorkerThreads[GVMMWORKERTHREAD_END];
+
     /** EMT lookup hash table. */
     GVMMEMTHASHENTRY    aEmtHash[GVMM_EMT_HASH_SIZE];
 } GVMMPERVM;

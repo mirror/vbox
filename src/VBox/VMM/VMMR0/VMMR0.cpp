@@ -1739,6 +1739,21 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
                 rc = VERR_INVALID_PARAMETER;
             break;
 
+        case VMMR0_DO_GVMM_REGISTER_WORKER_THREAD:
+            if (pGVM != NULL && pReqHdr && pReqHdr->cbReq == sizeof(GVMMREGISTERWORKERTHREADREQ))
+                rc = GVMMR0RegisterWorkerThread(pGVM, (GVMMWORKERTHREAD)(unsigned)u64Arg,
+                                                ((PGVMMREGISTERWORKERTHREADREQ)(pReqHdr))->hNativeThreadR3);
+            else
+                rc = VERR_INVALID_PARAMETER;
+            break;
+
+        case VMMR0_DO_GVMM_DEREGISTER_WORKER_THREAD:
+            if (pGVM != NULL)
+                rc = GVMMR0DeregisterWorkerThread(pGVM, (GVMMWORKERTHREAD)(unsigned)u64Arg);
+            else
+                rc = VERR_INVALID_PARAMETER;
+            break;
+
         case VMMR0_DO_GVMM_SCHED_HALT:
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
@@ -2591,11 +2606,6 @@ VMMR0_INT_DECL(void) VMMR0EmtResumeAfterBlocking(PVMCPUCC pVCpu, PVMMR0EMTBLOCKC
     pCtx->uMagic = VMMR0EMTBLOCKCTX_MAGIC_DEAD;
 }
 
-/** @name VMMR0EMTWAIT_F_XXX - flags for VMMR0EmtWaitEventInner and friends.
- * @{ */
-/** Try suppress VERR_INTERRUPTED for a little while (~10 sec). */
-#define VMMR0EMTWAIT_F_TRY_SUPPRESS_INTERRUPTED     RT_BIT_32(0)
-/** @} */
 
 /**
  * Helper for waiting on an RTSEMEVENT, caller did VMMR0EmtPrepareToBlock.
@@ -2610,7 +2620,7 @@ VMMR0_INT_DECL(void) VMMR0EmtResumeAfterBlocking(PVMCPUCC pVCpu, PVMMR0EMTBLOCKC
  * @param   hEvent      The event to wait on.
  * @param   cMsTimeout  The timeout or RT_INDEFINITE_WAIT.
  */
-VMMR0DECL(int) VMMR0EmtWaitEventInner(PGVMCPU pGVCpu, uint32_t fFlags, RTSEMEVENT hEvent, RTMSINTERVAL cMsTimeout)
+VMMR0_INT_DECL(int) VMMR0EmtWaitEventInner(PGVMCPU pGVCpu, uint32_t fFlags, RTSEMEVENT hEvent, RTMSINTERVAL cMsTimeout)
 {
     AssertReturn(pGVCpu->hEMT == RTThreadNativeSelf(), VERR_VM_THREAD_NOT_EMT);
 
@@ -2677,6 +2687,65 @@ VMMR0DECL(int) VMMR0EmtWaitEventInner(PGVMCPU pGVCpu, uint32_t fFlags, RTSEMEVEN
             return rcWait;
     }
     /* not reached */
+}
+
+
+/**
+ * Helper for signalling an SUPSEMEVENT.
+ *
+ * This may temporarily leave the HM context if the host requires that for
+ * signalling SUPSEMEVENT objects.
+ *
+ * @returns VBox status code (see VMMR0EmtPrepareToBlock)
+ * @param   pGVM        The ring-0 VM structure.
+ * @param   pGVCpu      The ring-0 virtual CPU structure.
+ * @param   hEvent      The event to signal.
+ */
+VMMR0_INT_DECL(int) VMMR0EmtSignalSupEvent(PGVM pGVM, PGVMCPU pGVCpu, SUPSEMEVENT hEvent)
+{
+    AssertReturn(pGVCpu->hEMT == RTThreadNativeSelf(), VERR_VM_THREAD_NOT_EMT);
+    if (RTSemEventIsSignalSafe())
+        return SUPSemEventSignal(pGVM->pSession, hEvent);
+
+    VMMR0EMTBLOCKCTX Ctx;
+    int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, __FUNCTION__, (void *)(uintptr_t)hEvent, &Ctx);
+    if (RT_SUCCESS(rc))
+    {
+        rc = SUPSemEventSignal(pGVM->pSession, hEvent);
+        VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
+    }
+    return rc;
+}
+
+
+/**
+ * Helper for signalling an SUPSEMEVENT, variant supporting non-EMTs.
+ *
+ * This may temporarily leave the HM context if the host requires that for
+ * signalling SUPSEMEVENT objects.
+ *
+ * @returns VBox status code (see VMMR0EmtPrepareToBlock)
+ * @param   pGVM        The ring-0 VM structure.
+ * @param   hEvent      The event to signal.
+ */
+VMMR0_INT_DECL(int) VMMR0EmtSignalSupEventByGVM(PGVM pGVM, SUPSEMEVENT hEvent)
+{
+    if (!RTSemEventIsSignalSafe())
+    {
+        PGVMCPU pGVCpu = GVMMR0GetGVCpuByGVMandEMT(pGVM, NIL_RTNATIVETHREAD);
+        if (pGVCpu)
+        {
+            VMMR0EMTBLOCKCTX Ctx;
+            int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, __FUNCTION__, (void *)(uintptr_t)hEvent, &Ctx);
+            if (RT_SUCCESS(rc))
+            {
+                rc = SUPSemEventSignal(pGVM->pSession, hEvent);
+                VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
+            }
+            return rc;
+        }
+    }
+    return SUPSemEventSignal(pGVM->pSession, hEvent);
 }
 
 
