@@ -428,8 +428,8 @@ typedef struct GMMCHUNK
     PGMMCHUNKMAP        paMappingsX;
     /** The number of mappings.  (Chunk mtx.) */
     uint16_t            cMappingsX;
-    /** The mapping lock this chunk is using using.  UINT16_MAX if nobody is
-     *  mapping or freeing anything.  (Giant mtx.) */
+    /** The mapping lock this chunk is using using.  UINT8_MAX if nobody is mapping
+     * or freeing anything.  (Giant mtx.) */
     uint8_t volatile    iChunkMtx;
     /** GMM_CHUNK_FLAGS_XXX. (Giant mtx.) */
     uint8_t             fFlags;
@@ -450,6 +450,9 @@ typedef struct GMMCHUNK
     uint16_t            cPrivate;
     /** The number of shared pages.  (Giant mtx.) */
     uint16_t            cShared;
+    /** The UID this chunk is associated with. */
+    RTUID               uidOwner;
+    uint32_t            u32Padding;
     /** The pages.  (Giant mtx.) */
     GMMPAGE             aPages[GMM_CHUNK_SIZE >> PAGE_SHIFT];
 } GMMCHUNK;
@@ -2218,6 +2221,7 @@ static uint32_t gmmR0AllocatePagesFromChunk(PGMMCHUNK pChunk, uint16_t const hGV
  * @param   hMemObj     The memory object for the chunk.
  * @param   hGVM        The affinity of the chunk. NIL_GVM_HANDLE for no
  *                      affinity.
+ * @param   pSession    Same as @a hGVM.
  * @param   fChunkFlags The chunk flags, GMM_CHUNK_FLAGS_XXX.
  * @param   ppChunk     Chunk address (out).  Optional.
  *
@@ -2225,8 +2229,8 @@ static uint32_t gmmR0AllocatePagesFromChunk(PGMMCHUNK pChunk, uint16_t const hGV
  *          The giant GMM mutex will be acquired and returned acquired in
  *          the success path.   On failure, no locks will be held.
  */
-static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemObj, uint16_t hGVM, uint16_t fChunkFlags,
-                              PGMMCHUNK *ppChunk)
+static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemObj, uint16_t hGVM, PSUPDRVSESSION pSession,
+                              uint16_t fChunkFlags, PGMMCHUNK *ppChunk)
 {
     Assert(pGMM->hMtxOwner != RTThreadNativeSelf());
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
@@ -2277,6 +2281,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
         pChunk->idNumaNode  = gmmR0GetCurrentNumaNodeId();
         pChunk->iChunkMtx   = UINT8_MAX;
         pChunk->fFlags      = fChunkFlags;
+        pChunk->uidOwner    = pSession ? SUPR0GetSessionUid(pSession) : NIL_RTUID;
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
         {
             pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
@@ -2371,7 +2376,7 @@ static int gmmR0AllocateChunkNew(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, ui
          *        free pages first and then unchaining them right afterwards. Instead
          *        do as much work as possible without holding the giant lock. */
         PGMMCHUNK pChunk;
-        rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, pGVM->hSelf, 0 /*fChunkFlags*/, &pChunk);
+        rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, pGVM->hSelf, pGVM->pSession, 0 /*fChunkFlags*/, &pChunk);
         if (RT_SUCCESS(rc))
         {
             *piPage = gmmR0AllocatePagesFromChunk(pChunk, pGVM->hSelf, *piPage, cPages, paPages);
@@ -2395,11 +2400,12 @@ static int gmmR0AllocateChunkNew(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, ui
  * @returns The new page descriptor table index.
  * @param   pSet        The set to pick from.
  * @param   pGVM        Pointer to the global VM structure.
+ * @param   uidSelf     The UID of the caller.
  * @param   iPage       The current page descriptor table index.
  * @param   cPages      The total number of pages to allocate.
  * @param   paPages     The page descriptor table (input + ouput).
  */
-static uint32_t gmmR0AllocatePagesIndiscriminately(PGMMCHUNKFREESET pSet, PGVM pGVM,
+static uint32_t gmmR0AllocatePagesIndiscriminately(PGMMCHUNKFREESET pSet, PGVM pGVM, RTUID uidSelf,
                                                    uint32_t iPage, uint32_t cPages, PGMMPAGEDESC paPages)
 {
     unsigned iList = RT_ELEMENTS(pSet->apLists);
@@ -2409,10 +2415,14 @@ static uint32_t gmmR0AllocatePagesIndiscriminately(PGMMCHUNKFREESET pSet, PGVM p
         while (pChunk)
         {
             PGMMCHUNK pNext = pChunk->pFreeNext;
-
-            iPage = gmmR0AllocatePagesFromChunk(pChunk, pGVM->hSelf, iPage, cPages, paPages);
-            if (iPage >= cPages)
-                return iPage;
+            if (   pChunk->uidOwner == uidSelf
+                || (   pChunk->cMappingsX == 0
+                    && pChunk->cFree == (GMM_CHUNK_SIZE >> PAGE_SHIFT)))
+            {
+                iPage = gmmR0AllocatePagesFromChunk(pChunk, pGVM->hSelf, iPage, cPages, paPages);
+                if (iPage >= cPages)
+                    return iPage;
+            }
 
             pChunk = pNext;
         }
@@ -2427,11 +2437,12 @@ static uint32_t gmmR0AllocatePagesIndiscriminately(PGMMCHUNKFREESET pSet, PGVM p
  * @returns The new page descriptor table index.
  * @param   pSet        The set to pick from.
  * @param   pGVM        Pointer to the global VM structure.
+ * @param   uidSelf     The UID of the caller.
  * @param   iPage       The current page descriptor table index.
  * @param   cPages      The total number of pages to allocate.
  * @param   paPages     The page descriptor table (input + ouput).
  */
-static uint32_t gmmR0AllocatePagesFromEmptyChunksOnSameNode(PGMMCHUNKFREESET pSet, PGVM pGVM,
+static uint32_t gmmR0AllocatePagesFromEmptyChunksOnSameNode(PGMMCHUNKFREESET pSet, PGVM pGVM, RTUID uidSelf,
                                                             uint32_t iPage, uint32_t cPages, PGMMPAGEDESC paPages)
 {
     PGMMCHUNK pChunk = pSet->apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST];
@@ -2442,9 +2453,12 @@ static uint32_t gmmR0AllocatePagesFromEmptyChunksOnSameNode(PGMMCHUNKFREESET pSe
         {
             PGMMCHUNK pNext = pChunk->pFreeNext;
 
-            if (pChunk->idNumaNode == idNumaNode)
+            if (   pChunk->idNumaNode == idNumaNode
+                && (   pChunk->uidOwner == uidSelf
+                    || pChunk->cMappingsX == 0))
             {
-                pChunk->hGVM = pGVM->hSelf;
+                pChunk->hGVM     = pGVM->hSelf;
+                pChunk->uidOwner = uidSelf;
                 iPage = gmmR0AllocatePagesFromChunk(pChunk, pGVM->hSelf, iPage, cPages, paPages);
                 if (iPage >= cPages)
                 {
@@ -2466,11 +2480,12 @@ static uint32_t gmmR0AllocatePagesFromEmptyChunksOnSameNode(PGMMCHUNKFREESET pSe
  * @returns The new page descriptor table index.
  * @param   pSet        The set to pick from.
  * @param   pGVM        Pointer to the global VM structure.
+ * @param   uidSelf     The UID of the caller.
  * @param   iPage       The current page descriptor table index.
  * @param   cPages      The total number of pages to allocate.
  * @param   paPages     The page descriptor table (input + ouput).
  */
-static uint32_t gmmR0AllocatePagesFromSameNode(PGMMCHUNKFREESET pSet, PGVM pGVM,
+static uint32_t gmmR0AllocatePagesFromSameNode(PGMMCHUNKFREESET pSet, PGVM pGVM, RTUID const uidSelf,
                                                uint32_t iPage, uint32_t cPages, PGMMPAGEDESC paPages)
 {
     /** @todo start by picking from chunks with about the right size first?  */
@@ -2483,7 +2498,8 @@ static uint32_t gmmR0AllocatePagesFromSameNode(PGMMCHUNKFREESET pSet, PGVM pGVM,
         {
             PGMMCHUNK pNext = pChunk->pFreeNext;
 
-            if (pChunk->idNumaNode == idNumaNode)
+            if (   pChunk->idNumaNode == idNumaNode
+                && pChunk->uidOwner   == uidSelf)
             {
                 iPage = gmmR0AllocatePagesFromChunk(pChunk, pGVM->hSelf, iPage, cPages, paPages);
                 if (iPage >= cPages)
@@ -2764,6 +2780,8 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
      */
     else
     {
+        RTUID const uidSelf = SUPR0GetSessionUid(pGVM->pSession);
+
         /* Pick the most optimal pages first. */
         iPage = gmmR0AllocatePagesAssociatedWithVM(pGMM, pGVM, &pGMM->PrivateX, iPage, cPages, paPages);
         if (iPage < cPages)
@@ -2773,26 +2791,26 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             bool fTriedOnSameAlready = false;
             if (gmmR0ShouldAllocatePagesInOtherChunksBecauseOfLimits(pGVM))
             {
-                iPage = gmmR0AllocatePagesFromSameNode(&pGMM->PrivateX, pGVM, iPage, cPages, paPages);
+                iPage = gmmR0AllocatePagesFromSameNode(&pGMM->PrivateX, pGVM, uidSelf, iPage, cPages, paPages);
                 fTriedOnSameAlready = true;
             }
 
             /* Allocate memory from empty chunks. */
             if (iPage < cPages)
-                iPage = gmmR0AllocatePagesFromEmptyChunksOnSameNode(&pGMM->PrivateX, pGVM, iPage, cPages, paPages);
+                iPage = gmmR0AllocatePagesFromEmptyChunksOnSameNode(&pGMM->PrivateX, pGVM, uidSelf, iPage, cPages, paPages);
 
             /* Grab empty shared chunks. */
             if (iPage < cPages)
-                iPage = gmmR0AllocatePagesFromEmptyChunksOnSameNode(&pGMM->Shared, pGVM, iPage, cPages, paPages);
+                iPage = gmmR0AllocatePagesFromEmptyChunksOnSameNode(&pGMM->Shared, pGVM, uidSelf, iPage, cPages, paPages);
 
             /* If there is a lof of free pages spread around, try not waste
                system memory on more chunks. (Should trigger defragmentation.) */
             if (   !fTriedOnSameAlready
                 && gmmR0ShouldAllocatePagesInOtherChunksBecauseOfLotsFree(pGMM))
             {
-                iPage = gmmR0AllocatePagesFromSameNode(&pGMM->PrivateX, pGVM, iPage, cPages, paPages);
+                iPage = gmmR0AllocatePagesFromSameNode(&pGMM->PrivateX, pGVM, uidSelf, iPage, cPages, paPages);
                 if (iPage < cPages)
-                    iPage = gmmR0AllocatePagesIndiscriminately(&pGMM->PrivateX, pGVM, iPage, cPages, paPages);
+                    iPage = gmmR0AllocatePagesIndiscriminately(&pGMM->PrivateX, pGVM, uidSelf, iPage, cPages, paPages);
             }
 
             /*
@@ -2804,6 +2822,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
                     rc = gmmR0AllocateChunkNew(pGMM, pGVM, &pGMM->PrivateX, cPages, paPages, &iPage);
                 while (iPage < cPages && RT_SUCCESS(rc));
 
+#if 0 /* We cannot mix chunks with different UIDs. */
                 /* If the host is out of memory, take whatever we can get. */
                 if (   (rc == VERR_NO_MEMORY || rc == VERR_NO_PHYS_MEMORY)
                     && pGMM->PrivateX.cFreePages + pGMM->Shared.cFreePages >= cPages - iPage)
@@ -2814,6 +2833,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
                     AssertRelease(iPage == cPages);
                     rc = VINF_SUCCESS;
                 }
+#endif
             }
         }
     }
@@ -3244,7 +3264,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
         {
             PGMMCHUNKFREESET pSet = pGMM->fBoundMemoryMode ? &pGVM->gmm.s.Private : &pGMM->PrivateX;
             PGMMCHUNK pChunk;
-            rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, pGVM->hSelf, GMM_CHUNK_FLAGS_LARGE_PAGE, &pChunk);
+            rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, pGVM->hSelf, pGVM->pSession, GMM_CHUNK_FLAGS_LARGE_PAGE, &pChunk);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -4519,7 +4539,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3)
     rc = RTR0MemObjLockUser(&hMemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
-        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, hMemObj, pGVM->hSelf, GMM_CHUNK_FLAGS_SEEDED, NULL);
+        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, hMemObj, pGVM->hSelf, pGVM->pSession, GMM_CHUNK_FLAGS_SEEDED, NULL);
         if (RT_SUCCESS(rc))
             gmmR0MutexRelease(pGMM);
         else
