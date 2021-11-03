@@ -31,10 +31,14 @@
 #define AUDIOTEST_ERROR_DESC_MAX        256
 /** Prefix for audio test (set) directories. */
 #define AUDIOTEST_PATH_PREFIX_STR       "vkat"
-/** Audio beacon data (single byte) to use for the post beacon (intro). */
-#define AUDIOTEST_BEACON_BYTE_PRE       0x42
-/** Audio beacon data (single byte) to use for the post beacon (outro). */
-#define AUDIOTEST_BEACON_BYTE_POST      0x24
+/** Audio beacon data (single byte) to use for the playback pre beacon (intro). */
+#define AUDIOTEST_BEACON_BYTE_PLAY_PRE  0x42
+/** Audio beacon data (single byte) to use for the playback post beacon (outro). */
+#define AUDIOTEST_BEACON_BYTE_PLAY_POST 0x24
+/** Audio beacon data (single byte) to use for the recording pre beacon (intro). */
+#define AUDIOTEST_BEACON_BYTE_REC_PRE   0x75
+/** Audio beacon data (single byte) to use for the recording post beacon (outro). */
+#define AUDIOTEST_BEACON_BYTE_REC_POST  0x57
 /** Pre / post audio beacon size (in audio frames). */
 #define AUDIOTEST_BEACON_SIZE_FRAMES    1024
 
@@ -115,6 +119,50 @@ typedef struct AUDIOTESTTONEPARMS
 } AUDIOTESTTONEPARMS;
 /** Pointer to audio test tone parameters. */
 typedef AUDIOTESTTONEPARMS *PAUDIOTESTTONEPARMS;
+
+/**
+ * Enumeration defining an audio test beacon type.
+ */
+typedef enum AUDIOTESTTONEBEACONTYPE
+{
+    /** Invalid type. */
+    AUDIOTESTTONEBEACONTYPE_INVALID = 0,
+    /** Playback beacon (pre). */
+    AUDIOTESTTONEBEACONTYPE_PLAY_PRE = 1,
+    /** Playback beacon (post). */
+    AUDIOTESTTONEBEACONTYPE_PLAY_POST = 2,
+    /** Recording beacon (pre). */
+    AUDIOTESTTONEBEACONTYPE_REC_PRE = 3,
+    /** Recording beacon (post). */
+    AUDIOTESTTONEBEACONTYPE_REC_POST = 4,
+    /** The usual 32-bit hack. */
+    OTESTTONEBEACONTYPE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTTONEBEACONTYPE;
+
+/**
+ * Structure defining an audio test tone beacon.
+ *
+ * This is being used for (optionally) marking beginning/ending of audio test data.
+ */
+typedef struct AUDIOTESTTONEBEACON
+{
+    /** The beacon type. */
+    AUDIOTESTTONEBEACONTYPE enmType;
+    /** PCM properties to use for this beacon. */
+    PDMAUDIOPCMPROPS        Props;
+    /** Beacon bytes to process.
+     *  When doing test tone playback: Beacon bytes to write.
+     *  When doing test tone recording: Beacon bytes to read. */
+    uint32_t                cbToProcess;
+    /** Beacon bytes already processed.
+     *  When doing test tone playback: Beacon bytes written.
+     *  When doing test tone recording: Beacon bytes read. */
+    uint32_t                cbProcessed;
+} AUDIOTESTTONEBEACON;
+/** Pointer to audio test tone beacon. */
+typedef AUDIOTESTTONEBEACON *PAUDIOTESTTONEBEACON;
+/** Pointer (const) to audio test tone beacon. */
+typedef AUDIOTESTTONEBEACON const *PCAUDIOTESTTONEBEACON;
 
 /**
  * Enumeration for the test set mode.
@@ -308,6 +356,16 @@ double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double 
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
 double AudioTestToneGetRandomFreq(void);
 int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
+
+void   AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, AUDIOTESTTONEBEACONTYPE enmType, PPDMAUDIOPCMPROPS pProps);
+uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *auBuf, size_t cbBuf);
+int    AudioTestBeaconWrite(PAUDIOTESTTONEBEACON pBeacon, void *pvBuf, uint32_t cbBuf);
+uint32_t AudioTestBeaconGetSize(PCAUDIOTESTTONEBEACON pBeacon);
+const char *AudioTestBeaconTypeGetName(AUDIOTESTTONEBEACONTYPE enmType);
+AUDIOTESTTONEBEACONTYPE AudioTestBeaconGetType(PCAUDIOTESTTONEBEACON pBeacon);
+uint32_t AudioTestBeaconGetRemaining(PCAUDIOTESTTONEBEACON pBeacon);
+uint32_t AudioTestBeaconGetUsed(PCAUDIOTESTTONEBEACON pBeacon);
+bool   AudioTestBeaconIsComplete(PCAUDIOTESTTONEBEACON pBeacon);
 
 int    AudioTestGenTag(char *pszTag, size_t cbTag);
 

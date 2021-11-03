@@ -155,6 +155,8 @@ typedef struct AUDIOTESTOBJINT
     /** Name of the test object.
      *  Must not contain a path and has to be able to serialize to disk. */
     char                 szName[256];
+    /** The test type. */
+    AUDIOTESTTYPE        enmTestType;
     /** The object type. */
     AUDIOTESTOBJTYPE     enmType;
     /** Meta data list. */
@@ -2321,31 +2323,246 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
 }
 
 /**
+ * Initializes a audio test audio beacon.
+ *
+ * @returns VBox status code.
+ * @param   pBeacon             Audio test beacon to (re-)initialize.
+ * @param   enmType             Beacon type to set.
+ * @param   pProps              PCM properties to use for producing audio beacon data.
+ */
+void AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, AUDIOTESTTONEBEACONTYPE enmType, PPDMAUDIOPCMPROPS pProps)
+{
+    AssertReturnVoid(PDMAudioPropsFrameSize(pProps) == 4); /** @todo Make this more dynamic. */
+
+    RT_BZERO(pBeacon, sizeof(AUDIOTESTTONEBEACON));
+
+    pBeacon->enmType = enmType;
+    memcpy(&pBeacon->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
+
+    pBeacon->cbToProcess = PDMAudioPropsFramesToBytes(&pBeacon->Props, AUDIOTEST_BEACON_SIZE_FRAMES);
+}
+
+/**
+ * Returns the beacon byte of a beacon type.
+ *
+ * @returns Beacon byte if found, 0 otherwise.
+ * @param   enmType             Beacon type to get beacon byte for.
+ */
+DECLINLINE(uint8_t) AudioTestBeaconByteFromType(AUDIOTESTTONEBEACONTYPE enmType)
+{
+    switch (enmType)
+    {
+        case AUDIOTESTTONEBEACONTYPE_PLAY_PRE:  return AUDIOTEST_BEACON_BYTE_PLAY_PRE;
+        case AUDIOTESTTONEBEACONTYPE_PLAY_POST: return AUDIOTEST_BEACON_BYTE_PLAY_POST;
+        case AUDIOTESTTONEBEACONTYPE_REC_PRE:   return AUDIOTEST_BEACON_BYTE_REC_PRE;
+        case AUDIOTESTTONEBEACONTYPE_REC_POST:  return AUDIOTEST_BEACON_BYTE_REC_POST;
+        default:                                break;
+    }
+
+    AssertFailedReturn(0);
+    return 0; /* Never reached. */
+}
+
+/**
+ * Returns the total expected (total) size of an audio beacon (in bytes).
+ *
+ * @returns  Beacon size in bytes.
+ * @param   pBeacon             Beacon to get beacon size for.
+ */
+uint32_t AudioTestBeaconGetSize(PCAUDIOTESTTONEBEACON pBeacon)
+{
+    return pBeacon->cbToProcess;
+}
+
+/**
+ * Returns the beacon type of an audio beacon.
+ *
+ * @returns Beacon type.
+ * @param   pBeacon             Beacon to get beacon size for.
+ */
+AUDIOTESTTONEBEACONTYPE AudioTestBeaconGetType(PCAUDIOTESTTONEBEACON pBeacon)
+{
+    return pBeacon->enmType;
+}
+
+/**
+ * Returns the remaining bytes (to be complete) of an audio beacon.
+ *
+ * @returns Remaining bytes.
+ * @param   pBeacon             Beacon to get remaining size for.
+ */
+uint32_t AudioTestBeaconGetRemaining(PCAUDIOTESTTONEBEACON pBeacon)
+{
+    return pBeacon->cbToProcess - pBeacon->cbProcessed;
+}
+
+/**
+ * Returns the already used (received) bytes (to be complete) of an audio beacon.
+ *
+ * @returns Used bytes.
+ * @param   pBeacon             Beacon to get remaining size for.
+ */
+uint32_t AudioTestBeaconGetUsed(PCAUDIOTESTTONEBEACON pBeacon)
+{
+    return pBeacon->cbProcessed;
+}
+
+/**
+ * Writes audio beacon data to a given buffer.
+ *
+ * @returns VBox status code.
+ * @param   pBeacon             Beacon to write to buffer.
+ * @param   pvBuf               Buffer to write to.
+ * @param   cbBuf               Size (in bytes) of buffer to write to.
+ */
+int AudioTestBeaconWrite(PAUDIOTESTTONEBEACON pBeacon, void *pvBuf, uint32_t cbBuf)
+{
+    AssertReturn(pBeacon->cbProcessed + cbBuf <= pBeacon->cbToProcess, VERR_BUFFER_OVERFLOW);
+
+    memset(pvBuf, AudioTestBeaconByteFromType(pBeacon->enmType), cbBuf);
+
+    pBeacon->cbProcessed += cbBuf;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Converts an audio beacon type to a string.
+ *
+ * @returns Pointer to read-only audio beacon type string on success,
+ *          "illegal" if invalid command value.
+ * @param   enmType             The type to convert.
+ */
+const char *AudioTestBeaconTypeGetName(AUDIOTESTTONEBEACONTYPE enmType)
+{
+    switch (enmType)
+    {
+        case AUDIOTESTTONEBEACONTYPE_PLAY_PRE:  return "pre-playback";
+        case AUDIOTESTTONEBEACONTYPE_PLAY_POST: return "post-playback";
+        case AUDIOTESTTONEBEACONTYPE_REC_PRE:   return "pre-recording";
+        case AUDIOTESTTONEBEACONTYPE_REC_POST:  return "post-recording";
+        default:                                break;
+    }
+    AssertMsgFailedReturn(("Invalid beacon type: #%x\n", enmType), "illegal");
+}
+
+uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *pauBuf, size_t cbBuf)
+{
+    uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pBeacon->Props); /* Use the audio frame size as chunk size. */
+
+    if (cbBuf < cbFrameSize)
+        return 0;
+
+    AssertMsgReturn(cbBuf % cbFrameSize == 0,
+                    ("Buffer size must be frame-aligned"), VERR_INVALID_PARAMETER);
+
+    uint8_t const byBeacon      = AudioTestBeaconByteFromType(pBeacon->enmType);
+    /*bool          fInBeacon     = false;
+    uint32_t      cbBeacon      = 0;
+    size_t        offLastBeacon = 0;*/
+    size_t offGap = 0;
+
+    unsigned const cbStep             = cbFrameSize;
+    uint32_t const cbProcessedInitial = pBeacon->cbProcessed;
+
+    for (size_t i = 0; i < cbBuf; i += cbStep)
+    {
+        if (   pauBuf[i]     == byBeacon
+            && pauBuf[i + 1] == byBeacon
+            && pauBuf[i + 2] == byBeacon
+            && pauBuf[i + 3] == byBeacon)
+        {
+            //if (pBeacon->cbProcessed)
+            //{
+                //LogRel(("AudioTestBeaconAddConsecutive: Beacon %s started (last was %RU32@%zu)\n", AudioTestBeaconTypeGetName(pBeacon->enmType), cbBeacon, i));
+                if (offGap)
+                {
+                    pBeacon->cbProcessed = 0;
+                }
+                pBeacon->cbProcessed += cbStep;
+                offGap = 0;
+                //fInBeacon = true;
+                //offLastBeacon = i;
+            //}
+            //cbBeacon += cbFrameSize;
+        }
+        else
+        {
+        #if 0
+            if (fInBeacon)
+            {
+                //LogRel(("AudioTestBeaconAddConsecutive: Beacon %s ended (%RU32@%zu)\n", AudioTestBeaconTypeGetName(pBeacon->enmType), cbBeacon, offLastBeacon));
+                fInBeacon = false;
+                continue;
+            }
+        #endif
+            offGap  = i;
+        }
+    }
+
+#if 0
+    if (   cbBeacon
+        && (   fInBeacon
+            || offLastBeacon == 0)
+       )
+    {
+        pBeacon->cbProcessed += cbBeacon;
+        Assert(pBeacon->cbProcessed <= pBeacon->cbToProcess);
+    }
+
+    if (cbBeacon)
+        LogRel(("AudioTestBeaconAddConsecutive: %s in=%RTbool cb=%RU32 -> cbProc=%RU32\n", AudioTestBeaconTypeGetName(pBeacon->enmType), fInBeacon, cbBeacon, pBeacon->cbProcessed));
+//LogRel(("AudioTestBeaconAddConsecutive: Beacon proc finished (last was cbBuf=%RU32, fInBeacon=%RTbool, cbBeacon=%RU32, cbProc=%RU32)\n", cbBuf, fInBeacon, cbBeacon, pBeacon->cbProcessed));
+#endif
+
+    Assert(pBeacon->cbProcessed >= cbProcessedInitial);
+    return pBeacon->cbProcessed - cbProcessedInitial;
+}
+
+/**
+ * Returns whether a beacon is considered to be complete or not.
+ *
+ * A complete beacon means that all data for it has been retrieved.
+ *
+ * @returns \c true if complete, or \c false if not.
+ * @param   pBeacon             Beacon to get completion status for.
+ */
+bool AudioTestBeaconIsComplete(PCAUDIOTESTTONEBEACON pBeacon)
+{
+    AssertReturn(pBeacon->cbProcessed <= pBeacon->cbToProcess, true);
+    return (pBeacon->cbProcessed == pBeacon->cbToProcess);
+}
+
+/**
  * Verifies a pre/post beacon of a test tone.
  *
  * @returns VBox status code, VERR_NOT_FOUND if beacon was not found.
  * @param   pVerJob             Verification job to verify PCM data for.
+ * @param   fIn                 Set to \c true for recording, \c false for playback.
  * @param   fPre                Set to \c true to verify a pre beacon, or \c false to verify a post beacon.
  * @param   pCmp                File comparison parameters to file to verify beacon for.
  * @param   pToneParms          Tone parameters to use for verification.
  * @param   puOff               Where to return the absolute file offset (in bytes) right after the found beacon on success.
  */
 static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
-                                     bool fPre, PAUDIOTESTFILECMPPARMS pCmp, PAUDIOTESTTONEPARMS pToneParms, uint64_t *puOff)
+                                     bool fIn, bool fPre, PAUDIOTESTFILECMPPARMS pCmp, PAUDIOTESTTONEPARMS pToneParms,
+                                     uint64_t *puOff)
 {
     int rc = RTFileSeek(pCmp->hFile, pCmp->offStart, RTFILE_SEEK_BEGIN, NULL);
     AssertRCReturn(rc, rc);
 
+    AUDIOTESTTONEBEACON Beacon;
+    AudioTestBeaconInit(&Beacon,
+                          fIn
+                        ? (fPre ? AUDIOTESTTONEBEACONTYPE_PLAY_PRE : AUDIOTESTTONEBEACONTYPE_PLAY_POST)
+                        : (fPre ? AUDIOTESTTONEBEACONTYPE_REC_PRE  : AUDIOTESTTONEBEACONTYPE_REC_POST), &pToneParms->Props);
+
+    LogRel2(("Verifying %s beacon @ %RU64\n", AudioTestBeaconTypeGetName(Beacon.enmType), pCmp->offStart));
+
     uint8_t        auBuf[64];
     uint64_t       cbToCompare   = pCmp->cbSize;
-    uint32_t const cbFrameSize   = PDMAudioPropsFrameSize(&pToneParms->Props); /* Use the audio frame size as chunk size. */
-    bool           fInBeacon     = false;
-    uint32_t       cbBeacon      = 0;
-    size_t         offLastBeacon = 0; /* Offset (in bytes) of last beacon read. */
-
-    uint8_t const  byBeacon    = fPre ? AUDIOTEST_BEACON_BYTE_PRE : AUDIOTEST_BEACON_BYTE_POST;
-
-    AssertReturn(cbFrameSize == 4, VERR_NOT_SUPPORTED); /* Otherwise the stuff below won't work. */
+    uint32_t const cbFrameSize   = PDMAudioPropsFrameSize(&Beacon.Props);
+    uint64_t       offBeaconLast = 0;
 
     /* Slow as heck, but does the job for now. */
     while (cbToCompare)
@@ -2357,52 +2574,38 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
         if (cbRead < cbFrameSize)
             break;
 
-        for (size_t i = 0; i < cbRead; i += cbFrameSize)
-        {
-            if (   auBuf[i]     == byBeacon
-                && auBuf[i + 1] == byBeacon
-                && auBuf[i + 2] == byBeacon
-                && auBuf[i + 3] == byBeacon)
-            {
-                if (!fInBeacon)
-                {
-                    cbBeacon  = 0;
-                    fInBeacon = true;
-                }
-                cbBeacon += cbFrameSize;
-            }
-            else
-            {
-                if (fInBeacon)
-                {
-                    fInBeacon     = false;
-                    offLastBeacon = RTFileTell(pCmp->hFile);
-                    continue;
-                }
-            }
-        }
+        const uint32_t cbAdded = AudioTestBeaconAddConsecutive(&Beacon, auBuf, cbRead);
+        if (cbAdded)
+            offBeaconLast = RTFileTell(pCmp->hFile);
 
+        Assert(cbToCompare >= cbRead);
         cbToCompare -= cbRead;
     }
 
-    uint32_t const cbBeaconExpected = PDMAudioPropsFramesToBytes(&pToneParms->Props, AUDIOTEST_BEACON_SIZE_FRAMES);
-    bool     const fValid           = cbBeacon == cbBeaconExpected;
-    if (!fValid)
+    uint32_t const cbBeacon = AudioTestBeaconGetUsed(&Beacon);
+
+    if (!AudioTestBeaconIsComplete(&Beacon))
     {
         int rc2 = audioTestErrorDescAddError(pVerJob->pErr, pVerJob->idxTest, "File '%s': %s beacon %s (got %RU32 bytes, expected %RU32)",
                                              pCmp->pszName,
-                                             fPre ? "Pre" : "Post", cbBeacon ? "found" : "not found", cbBeacon, cbBeaconExpected);
+                                             AudioTestBeaconTypeGetName(Beacon.enmType),
+                                             cbBeacon ? "found" : "not found", cbBeacon,
+                                             AudioTestBeaconGetSize(&Beacon));
         AssertRC(rc2);
         return VERR_NOT_FOUND;
     }
     else
     {
-        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s': %s beacon found and valid",
-                                            pCmp->pszName, fPre ? "Pre" : "Post");
+        AssertReturn(AudioTestBeaconGetRemaining(&Beacon) == 0, VERR_INTERNAL_ERROR);
+        AssertReturn(offBeaconLast >= AudioTestBeaconGetSize(&Beacon), VERR_INTERNAL_ERROR);
+
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s': %s beacon found at offset %RU64 and valid",
+                                            pCmp->pszName, AudioTestBeaconTypeGetName(Beacon.enmType),
+                                            offBeaconLast - AudioTestBeaconGetSize(&Beacon));
         AssertRC(rc2);
 
         if (puOff)
-            *puOff = offLastBeacon;
+            *puOff = offBeaconLast;
     }
 
     return rc;
@@ -2551,20 +2754,24 @@ static int audioTestVerifyTestToneData(PAUDIOTESTVERIFYJOB pVerJob, PAUDIOTESTOB
     int rc2;
 
     uint64_t offBeaconAbs;
-    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileA, &ToneParmsA, &offBeaconAbs);
+    rc = audioTestToneVerifyBeacon(pVerJob, phTestA->enmTestType == AUDIOTESTTYPE_TESTTONE_PLAY /* fIn */,
+                                   true /* fPre */, &FileA, &ToneParmsA, &offBeaconAbs);
     if (RT_SUCCESS(rc))
     {
         FileA.offStart = offBeaconAbs;
         FileA.cbSize   = cbFileSizeA - FileA.offStart;
-        rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileA, &ToneParmsA, NULL);
+        rc = audioTestToneVerifyBeacon(pVerJob, phTestA->enmTestType == AUDIOTESTTYPE_TESTTONE_PLAY /* fIn */,
+                                       false /* fPre */, &FileA, &ToneParmsA, NULL);
     }
 
-    rc = audioTestToneVerifyBeacon(pVerJob, true  /* fPre */,  &FileB, &ToneParmsB, &offBeaconAbs);
+    rc = audioTestToneVerifyBeacon(pVerJob, phTestB->enmTestType == AUDIOTESTTYPE_TESTTONE_RECORD /* fIn */,
+                                   true  /* fPre */,  &FileB, &ToneParmsB, &offBeaconAbs);
     if (RT_SUCCESS(rc))
     {
         FileB.offStart = offBeaconAbs;
         FileB.cbSize   = cbFileSizeB - FileB.offStart;
-        rc = audioTestToneVerifyBeacon(pVerJob, false /* fPost */, &FileB, &ToneParmsB, NULL);
+        rc = audioTestToneVerifyBeacon(pVerJob, phTestB->enmTestType == AUDIOTESTTYPE_TESTTONE_RECORD /* fIn */,
+                                       false /* fPre */, &FileB, &ToneParmsB, NULL);
     }
 
     if (RT_SUCCESS(rc))
@@ -2730,33 +2937,31 @@ int AudioTestSetVerifyEx(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTVER
         rc = audioTestSetGetTest(VerJob.pSetB, i, &hTestB);
         CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test B not found");
 
-        AUDIOTESTTYPE enmTestTypeA = AUDIOTESTTYPE_INVALID;
-        rc = audioTestObjGetUInt32(&hTestA, "test_type", (uint32_t *)&enmTestTypeA);
+        rc = audioTestObjGetUInt32(&hTestA, "test_type", (uint32_t *)&hTestA.enmTestType);
         CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test type A not found");
 
-        AUDIOTESTTYPE enmTestTypeB = AUDIOTESTTYPE_INVALID;
-        rc = audioTestObjGetUInt32(&hTestB, "test_type", (uint32_t *)&enmTestTypeB);
+        rc = audioTestObjGetUInt32(&hTestB, "test_type", (uint32_t *)&hTestB.enmTestType);
         CHECK_RC_MSG_MAYBE_RET(rc, pVerJob, "Test type B not found");
 
-        switch (enmTestTypeA)
+        switch (hTestA.enmTestType)
         {
             case AUDIOTESTTYPE_TESTTONE_PLAY:
             {
-                if (enmTestTypeB == AUDIOTESTTYPE_TESTTONE_RECORD)
+                if (hTestB.enmTestType == AUDIOTESTTYPE_TESTTONE_RECORD)
                     rc = audioTestVerifyTestTone(&VerJob, &hTestA, &hTestB);
                 else
                     rc = audioTestErrorDescAddError(pErrDesc, i, "Playback test types don't match (set A=%#x, set B=%#x)",
-                                                    enmTestTypeA, enmTestTypeB);
+                                                    hTestA.enmTestType, hTestB.enmTestType);
                 break;
             }
 
             case AUDIOTESTTYPE_TESTTONE_RECORD:
             {
-                if (enmTestTypeB == AUDIOTESTTYPE_TESTTONE_PLAY)
+                if (hTestB.enmTestType == AUDIOTESTTYPE_TESTTONE_PLAY)
                     rc = audioTestVerifyTestTone(&VerJob, &hTestB, &hTestA);
                 else
                     rc = audioTestErrorDescAddError(pErrDesc, i, "Recording test types don't match (set A=%#x, set B=%#x)",
-                                                    enmTestTypeA, enmTestTypeB);
+                                                    hTestA.enmTestType, hTestB.enmTestType);
                 break;
             }
 
