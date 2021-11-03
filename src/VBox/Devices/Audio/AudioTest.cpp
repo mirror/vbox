@@ -2359,8 +2359,8 @@ DECLINLINE(uint8_t) AudioTestBeaconByteFromType(AUDIOTESTTONEBEACONTYPE enmType)
         default:                                break;
     }
 
-    AssertFailedReturn(0);
-    return 0; /* Never reached. */
+    AssertFailed();
+    return 0;
 }
 
 /**
