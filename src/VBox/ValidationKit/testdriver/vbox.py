@@ -2949,13 +2949,15 @@ class TestDriver(base.TestDriver):                                              
                     if not oNic.enabled:
                         continue;
                     sAdpName = self.getNetworkAdapterNameFromType(oNic);
-                    sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
                     if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
-                        reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
-                                      (sAdpName, iSlot, sKey));
-                        self.oVBox.setExtraData(sKey, '1');
+                        reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d' % \
+                                      (sAdpName, iSlot));
+                        oNatEngine = oNic.NATEngine;
+                        oNatEngine.LocalhostReachable = True;
                     else:
                         # Other attachments will fail if 'LocalhostReachable' extra data override is present
+                        ## @todo r=andy Is this still needed, as we now have the API (see above) in place?
+                        sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
                         reporter.log2('Disabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
                                       (sAdpName, iSlot, sKey));
                         self.oVBox.setExtraData(sKey, '');
