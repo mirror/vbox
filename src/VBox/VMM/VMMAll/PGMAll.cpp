@@ -61,7 +61,7 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
 # define PGM_SLAT_TYPE               PGM_SLAT_TYPE_EPT
 # define PGM_GST_TYPE                PGM_TYPE_EPT
 # include "PGMGstDefs.h"
-# include "PGMAllGstSlatEpt.h"
+# include "PGMAllGstSlatEpt.cpp.h"
 # undef PGM_GST_TYPE
 #endif
 
