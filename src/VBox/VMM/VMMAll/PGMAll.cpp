@@ -49,8 +49,21 @@
 *********************************************************************************************************************************/
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALKGST pWalk);
+#endif
 static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/* Guest - EPT SLAT is identical for all guest paging mode. */
+# define PGM_SLAT_TYPE               PGM_SLAT_TYPE_EPT
+# define PGM_GST_TYPE                PGM_TYPE_EPT
+# include "PGMGstDefs.h"
+# include "PGMAllGstSlatEpt.h"
+# undef PGM_GST_TYPE
+#endif
 
 
 /*
@@ -488,21 +501,6 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
 # undef PGM_GST_NAME
 #endif /* VBOX_WITH_64_BITS_GUESTS */
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-/* Guest - EPT mode */
-# define PGM_GST_TYPE               PGM_TYPE_EPT
-# define PGM_GST_NAME(name)         PGM_GST_NAME_EPT(name)
-# define PGM_BTH_NAME(name)         PGM_BTH_NAME_EPT_EPT(name)
-# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_EPT_PT_FOR_PHYS
-# include "PGMGstDefs.h"
-# include "PGMAllGst.h"
-# include "PGMAllBth.h"
-# undef BTH_PGMPOOLKIND_PT_FOR_PT
-# undef PGM_BTH_NAME
-# undef PGM_GST_TYPE
-# undef PGM_GST_NAME
-#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
-
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
 
@@ -628,21 +626,6 @@ PGMMODEDATAGST const g_aPgmGuestModeData[PGM_GUEST_MODE_DATA_ARRAY_SIZE] =
         PGM_GST_NAME_AMD64(Relocate),
 # endif
     },
-#endif
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    { UINT32_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_NESTED_32BIT */
-    { UINT32_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_NESTED_PAE   */
-    { UINT32_MAX, NULL, NULL, NULL, NULL }, /* PGM_TYPE_NESTED_AMD64 */
-    {
-        PGM_TYPE_EPT,
-        PGM_GST_NAME_EPT(GetPage),
-        PGM_GST_NAME_EPT(ModifyPage),
-        PGM_GST_NAME_EPT(Enter),
-        PGM_GST_NAME_EPT(Exit),
-# ifdef IN_RING3
-        PGM_GST_NAME_EPT(Relocate),
-# endif
-    }
 #endif
 };
 
@@ -892,11 +875,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_32BIT - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_PAE   - illegal */
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NESTED_AMD64 - illegal */
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    PGMMODEDATABTH_ENTRY(PGM_TYPE_EPT, PGM_TYPE_EPT, PGM_BTH_NAME_EPT_EPT),
-#else
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_EPT          - illegal */
-#endif
     PGMMODEDATABTH_NULL_ENTRY(), /* PGM_TYPE_NONE, PGM_TYPE_NONE         - illegal */
 
 
@@ -1965,13 +1944,7 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
             pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
             return VERR_PGM_NOT_USED_IN_MODE;
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         case PGMMODE_EPT:
-            pWalk->enmType = PGMPTWALKGSTTYPE_EPT;
-            return PGM_GST_NAME_EPT(Walk)(pVCpu, GCPtr, &pWalk->u.Ept);
-#else
-        case PGMMODE_EPT:
-#endif
         case PGMMODE_NESTED_32BIT:
         case PGMMODE_NESTED_PAE:
         case PGMMODE_NESTED_AMD64:
@@ -1981,6 +1954,49 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
             return VERR_PGM_NOT_USED_IN_MODE;
     }
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Performs a guest second-level address translation (SLAT).
+ *
+ * The guest paging mode must be 32-bit, PAE or AMD64 when making a call to this
+ * function.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT on failure.  Check pWalk for details.
+ * @retval  VERR_PGM_NOT_USED_IN_MODE if not paging isn't enabled. @a pWalk is
+ *          not valid, except enmType is PGMPTWALKGSTTYPE_INVALID.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPhysNested        The nested-guest physical address being translated
+ *                              (input).
+ * @param   fIsLinearAddrValid  Whether the linear address in @a GCPtrNested is
+ *                              valid. This indicates the SLAT is caused when
+ *                              translating a nested-guest linear address.
+ * @param   GCPtrNested         The nested-guest virtual address that initiated the
+ *                              SLAT. If none, pass NIL_RTGCPTR.
+ * @param   pWalk               Where to return the walk result. This is valid for
+ *                              some error codes as well.
+ */
+static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
+                          PPGMPTWALKGST pWalk)
+{
+    Assert(pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_DIRECT);
+    switch (pVCpu->pgm.s.enmGuestSlatMode)
+    {
+        case PGMSLAT_EPT:
+            pWalk->enmType = PGMPTWALKGSTTYPE_EPT;
+            return PGM_GST_SLAT_NAME_EPT(Walk)(pVCpu, GCPhysNested, fIsLinearAddrValid, GCPtrNested, &pWalk->u.Ept);
+
+        default:
+            AssertFailed();
+            pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
+            return VERR_PGM_NOT_USED_IN_MODE;
+    }
+}
+#endif
 
 
 /**
@@ -2905,11 +2921,6 @@ VMMDECL(int) PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t 
      *       special AMD-V paged real mode (APM vol 2, rev 3.28, 15.9).
      */
     PGMMODE enmGuestMode;
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
-        enmGuestMode = PGMMODE_EPT;
-    else
-#endif
     if (cr0 & X86_CR0_PG)
     {
         if (!(cr4 & X86_CR4_PAE))
@@ -3115,13 +3126,6 @@ static PGMMODE pgmCalcShadowMode(PVMCC pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                     AssertLogRelMsgFailedReturn(("enmHostMode=%d\n", enmHostMode), PGMMODE_INVALID);
             }
             break;
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        case PGMMODE_EPT:
-            /* Nested paging is a requirement for nested VT-x. */
-            Assert(enmHostMode == PGMMODE_EPT);
-            break;
-#endif
 
         default:
             AssertLogRelMsgFailedReturn(("enmGuestMode=%d\n", enmGuestMode), PGMMODE_INVALID);
@@ -3339,6 +3343,19 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
             AssertLogRelMsgFailedReturn(("enmGuestMode=%d\n", enmGuestMode), VERR_PGM_MODE_IPE);
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    /* Update the guest SLAT mode if it's a nested-guest. */
+    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    {
+        if (PGMMODE_WITH_PAGING(enmGuestMode))
+            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
+        else
+            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_DIRECT;
+    }
+    else
+        Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT);
+#endif
+
     /* Enter the new guest mode.  */
     pVCpu->pgm.s.enmGuestMode = enmGuestMode;
     int rc = g_aPgmGuestModeData[idxNewGst].pfnEnter(pVCpu, GCPhysCR3);
@@ -3481,6 +3498,28 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
         default:                    return "unknown mode value";
     }
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Gets the SLAT mode name.
+ *
+ * @returns The read-only SLAT mode descriptive string.
+ * @param   enmSlatMode     The SLAT mode value.
+ */
+VMM_INT_DECL(const char *) PGMGetSlatModeName(PGMSLAT enmSlatMode)
+{
+    switch (enmSlatMode)
+    {
+        case PGMSLAT_DIRECT:        return "Direct";
+        case PGMSLAT_EPT:           return "EPT";
+        case PGMSLAT_32BIT:         return "32-bit";
+        case PGMSLAT_PAE:           return "PAE";
+        case PGMSLAT_AMD64:         return "AMD64";
+        default:                    return "Unknown";
+    }
+}
+#endif
 
 
 /**
@@ -3838,6 +3877,14 @@ VMMDECL(unsigned) PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t
  */
 VMM_INT_DECL(void) PGMSetGuestEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr)
 {
-    pVCpu->pgm.s.uEptPtr = uEptPtr;
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    PGM_LOCK_VOID(pVM);
+    if (pVCpu->pgm.s.uEptPtr != uEptPtr)
+    {
+        pVCpu->pgm.s.uEptPtr = uEptPtr;
+        pVCpu->pgm.s.pGstEptPml4R0 = NIL_RTR0PTR;
+        pVCpu->pgm.s.pGstEptPml4R3 = NIL_RTR3PTR;
+    }
+    PGM_UNLOCK(pVM);
 }
 

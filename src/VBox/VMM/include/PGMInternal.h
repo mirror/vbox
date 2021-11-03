@@ -200,6 +200,15 @@
 #define PGM_TYPE_FIRST_SHADOW           PGM_TYPE_32BIT /**< The first type used by shadow paging. */
 /** @} */
 
+/** @name Defines used to indicate the second-level
+ * address translation (SLAT) modes in the templates.
+ * @{ */
+#define PGM_SLAT_TYPE_EPT               (PGM_TYPE_END + 1)
+#define PGM_SLAT_TYPE_32BIT             (PGM_TYPE_END + 2)
+#define PGM_SLAT_TYPE_PAE               (PGM_TYPE_END + 3)
+#define PGM_SLAT_TYPE_AMD64             (PGM_TYPE_END + 4)
+/** @} */
+
 /** Macro for checking if the guest is using paging.
  * @param   uGstType   PGM_TYPE_*
  * @param   uShwType   PGM_TYPE_*
@@ -2330,12 +2339,22 @@ typedef struct PGMPTWALKCORE
      *  (input). */
     RTGCPTR         GCPtr;
 
+    /** The nested-guest physical address that is being resolved if this is a
+     *  second-level walk (input).
+     *  @remarks only valid if fIsSlat is set. */
+    RTGCPHYS        GCPhysNested;
+
     /** The guest physical address that is the result of the walk.
      * @remarks only valid if fSucceeded is set. */
     RTGCPHYS        GCPhys;
 
     /** Set if the walk succeeded, i.d. GCPhys is valid. */
     bool            fSucceeded;
+    /** Whether this is a second-level translation. */
+    bool            fIsSlat;
+    /** Whether the linear address (GCPtr) is valid and thus the cause for the
+     *  second-level translation. */
+    bool            fIsLinearAddrValid;
     /** The level problem arrised at.
      * PTE is level 1, PDE is level 2, PDPE is level 3, PML4 is level 4, CR3 is
      * level 8.  This is 0 on success. */
@@ -2356,7 +2375,6 @@ typedef struct PGMPTWALKCORE
     bool            fEffectiveRW;
     /** The effective X86_PTE_NX flag for the address. */
     bool            fEffectiveNX;
-    bool            afPadding1[2];
     /** Effective flags thus far: RW, US, PWT, PCD, A, ~NX >> 63.
      * The NX bit is inverted and shifted down 63 places to bit 0. */
     uint32_t        fEffective;
@@ -2512,7 +2530,6 @@ typedef PGMPTWALKGSTAMD64 *PPGMPTWALKGSTAMD64;
 /** Pointer to a const AMD64 guest page table walk. */
 typedef PGMPTWALKGSTAMD64 const *PCPGMPTWALKGSTAMD64;
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 /**
  * Guest page table walk for the EPT mode.
  */
@@ -2541,7 +2558,6 @@ typedef struct PGMPTWALKGSTEPT
 typedef PGMPTWALKGSTEPT *PPGMPTWALKGSTEPT;
 /** Pointer to a const EPT guest page table walk. */
 typedef PGMPTWALKGSTEPT const *PCPGMPTWALKGSTEPT;
-#endif
 
 /**
  * Guest page table walk for the PAE mode.
@@ -2624,10 +2640,8 @@ typedef struct PGMPTWALKGST
         /** The page walker for 32-bit paging (called legacy due to C naming
          * convension). */
         PGMPTWALKGST32BIT   Legacy;
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        /** The page walker for EPT. */
+        /** The page walker for EPT (SLAT). */
         PGMPTWALKGSTEPT     Ept;
-#endif
     } u;
     /** Indicates which part of the union is valid. */
     PGMPTWALKGSTTYPE        enmType;
@@ -2668,12 +2682,12 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_GST_NAME_AMD64(name)                        PGM_CTX(pgm,GstAMD64##name)
 #define PGM_GST_NAME_RC_AMD64_STR(name)                 "pgmRCGstAMD64" #name
 #define PGM_GST_NAME_R0_AMD64_STR(name)                 "pgmR0GstAMD64" #name
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-# define PGM_GST_NAME_EPT(name)                         PGM_CTX(pgm,GstEPT##name)
-# define PGM_GST_NAME_RC_EPT_STR(name)                  "pgmRCGstEPT" #name
-# define PGM_GST_NAME_R0_EPT_STR(name)                  "pgmR0GstEPT" #name
-#endif
 #define PGM_GST_DECL(type, name)                        PGM_CTX_DECL(type) PGM_GST_NAME(name)
+
+#define PGM_GST_SLAT_NAME_EPT(name)                     PGM_CTX(pgm,GstSlatEpt##name)
+#define PGM_GST_SLAT_NAME_RC_EPT_STR(name)              "pgmRCGstSlatEpt" #name
+#define PGM_GST_SLAT_NAME_R0_EPT_STR(name)              "pgmR0GstSlatEpt" #name
+#define PGM_GST_SLAT_DECL(type, name)                   PGM_CTX_DECL(type) PGM_GST_SLAT_NAME(name)
 
 #define PGM_SHW_NAME_32BIT(name)                        PGM_CTX(pgm,Shw32Bit##name)
 #define PGM_SHW_NAME_RC_32BIT_STR(name)                 "pgmRCShw32Bit" #name
@@ -2731,9 +2745,6 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_NAME_EPT_32BIT(name)                    PGM_CTX(pgm,BthEPT32Bit##name)
 #define PGM_BTH_NAME_EPT_PAE(name)                      PGM_CTX(pgm,BthEPTPAE##name)
 #define PGM_BTH_NAME_EPT_AMD64(name)                    PGM_CTX(pgm,BthEPTAMD64##name)
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-# define PGM_BTH_NAME_EPT_EPT(name)                     PGM_CTX(pgm,BthEPTEPT##name)
-#endif
 #define PGM_BTH_NAME_NONE_REAL(name)                    PGM_CTX(pgm,BthNoneReal##name)
 #define PGM_BTH_NAME_NONE_PROT(name)                    PGM_CTX(pgm,BthNoneProt##name)
 #define PGM_BTH_NAME_NONE_32BIT(name)                   PGM_CTX(pgm,BthNone32Bit##name)
@@ -2768,9 +2779,6 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_NAME_RC_EPT_32BIT_STR(name)             "pgmRCBthEPT32Bit" #name
 #define PGM_BTH_NAME_RC_EPT_PAE_STR(name)               "pgmRCBthEPTPAE" #name
 #define PGM_BTH_NAME_RC_EPT_AMD64_STR(name)             "pgmRCBthEPTAMD64" #name
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-# define PGM_BTH_NAME_RC_EPT_EPT_STR(name)              "pgmRCBthEPTEPT" #name
-#endif
 
 #define PGM_BTH_NAME_R0_32BIT_REAL_STR(name)            "pgmR0Bth32BitReal" #name
 #define PGM_BTH_NAME_R0_32BIT_PROT_STR(name)            "pgmR0Bth32BitProt" #name
@@ -2801,9 +2809,6 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 #define PGM_BTH_NAME_R0_EPT_32BIT_STR(name)             "pgmR0BthEPT32Bit" #name
 #define PGM_BTH_NAME_R0_EPT_PAE_STR(name)               "pgmR0BthEPTPAE" #name
 #define PGM_BTH_NAME_R0_EPT_AMD64_STR(name)             "pgmR0BthEPTAMD64" #name
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-# define PGM_BTH_NAME_R0_EPT_EPT_STR(name)              "pgmR0BthEPTEPT" #name
-#endif
 
 #define PGM_BTH_DECL(type, name)        PGM_CTX_DECL(type) PGM_BTH_NAME(name)
 /** @} */
@@ -2826,9 +2831,7 @@ typedef struct PGMMODEDATAGST
 } PGMMODEDATAGST;
 
 /** The length of g_aPgmGuestModeData. */
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-# define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_EPT + 1)
-#elif defined(VBOX_WITH_64_BITS_GUESTS)
+#if VBOX_WITH_64_BITS_GUESTS
 # define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_AMD64 + 1)
 #else
 # define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_PAE + 1)
@@ -3516,6 +3519,8 @@ typedef struct PGMCPU
     PGMMODE                         enmShadowMode;
     /** The guest paging mode. */
     PGMMODE                         enmGuestMode;
+    /** The guest second level address translation mode. */
+    PGMSLAT                         enmGuestSlatMode;
     /** Guest mode data table index (PGM_TYPE_XXX). */
     uint8_t volatile                idxGuestModeData;
     /** Shadow mode data table index (PGM_TYPE_XXX). */
@@ -3523,7 +3528,7 @@ typedef struct PGMCPU
     /** Both mode data table index (complicated). */
     uint8_t volatile                idxBothModeData;
     /** Alignment padding. */
-    uint8_t                         abPadding[5];
+    uint8_t                         abPadding[1];
 
     /** The current physical address represented in the guest CR3 register. */
     RTGCPHYS                        GCPhysCR3;

@@ -797,6 +797,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
         pPGM->enmShadowMode     = PGMMODE_INVALID;
         pPGM->enmGuestMode      = PGMMODE_INVALID;
+        pPGM->enmGuestSlatMode  = PGMSLAT_INVALID;
         pPGM->idxGuestModeData  = UINT8_MAX;
         pPGM->idxShadowModeData = UINT8_MAX;
         pPGM->idxBothModeData   = UINT8_MAX;
@@ -1075,6 +1076,7 @@ static int pgmR3InitPaging(PVM pVM)
 
         pVCpu->pgm.s.enmShadowMode     = PGMMODE_INVALID;
         pVCpu->pgm.s.enmGuestMode      = PGMMODE_INVALID;
+        pVCpu->pgm.s.enmGuestSlatMode  = PGMSLAT_INVALID;
         pVCpu->pgm.s.idxGuestModeData  = UINT8_MAX;
         pVCpu->pgm.s.idxShadowModeData = UINT8_MAX;
         pVCpu->pgm.s.idxBothModeData   = UINT8_MAX;
@@ -1986,9 +1988,16 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 
     /* print info. */
     if (fGuest)
+    {
         pHlp->pfnPrintf(pHlp, "Guest paging mode (VCPU #%u):  %s (changed %RU64 times), A20 %s (changed %RU64 times)\n",
                         pVCpu->idCpu, PGMGetModeName(pVCpu->pgm.s.enmGuestMode), pVCpu->pgm.s.cGuestModeChanges.c,
                         pVCpu->pgm.s.fA20Enabled ? "enabled" : "disabled", pVCpu->pgm.s.cA20Changes.c);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_INVALID)
+            pHlp->pfnPrintf(pHlp, "Guest SLAT mode (VCPU #%u): %s\n", pVCpu->idCpu,
+                            PGMGetSlatModeName(pVCpu->pgm.s.enmGuestSlatMode));
+#endif
+    }
     if (fShadow)
         pHlp->pfnPrintf(pHlp, "Shadow paging mode (VCPU #%u): %s\n", pVCpu->idCpu, PGMGetModeName(pVCpu->pgm.s.enmShadowMode));
     if (fHost)

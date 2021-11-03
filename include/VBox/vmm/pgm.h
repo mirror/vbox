@@ -273,6 +273,27 @@ typedef enum PGMMODE
     PGMMODE_32BIT_HACK = 0x7fffffff
 } PGMMODE;
 
+/**
+ * Second level address translation mode.
+ */
+typedef enum PGMSLAT
+{
+    /** The usual invalid value. */
+    PGMSLAT_INVALID = 0,
+    /** No second level translation. */
+    PGMSLAT_DIRECT,
+    /** Intel Extended Page Tables (EPT). */
+    PGMSLAT_EPT,
+    /** AMD-V Nested Paging 32-bit. */
+    PGMSLAT_32BIT,
+    /** AMD-V Nested Paging PAE. */
+    PGMSLAT_PAE,
+    /** AMD-V Nested Paging 64-bit. */
+    PGMSLAT_AMD64,
+    /** 32bit hackishness. */
+    PGMSLAT_32BIT_HACK = 0x7fffffff
+} PGMSLAT;
+
 /** Macro for checking if the guest is using paging.
  * @param enmMode   PGMMODE_*.
  * @remark  ASSUMES certain order of the PGMMODE_* values.
@@ -350,6 +371,9 @@ VMMDECL(PGMMODE)    PGMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(PGMMODE)    PGMGetShadowMode(PVMCPU pVCpu);
 VMMDECL(PGMMODE)    PGMGetHostMode(PVM pVM);
 VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+VMM_INT_DECL(const char *) PGMGetSlatModeName(PGMSLAT enmSlatMode);
+#endif
 VMM_INT_DECL(RTGCPHYS) PGMGetGuestCR3Phys(PVMCPU pVCpu);
 VMM_INT_DECL(void)  PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe);
 VMMDECL(bool)       PGMHasDirtyPages(PVM pVM);
