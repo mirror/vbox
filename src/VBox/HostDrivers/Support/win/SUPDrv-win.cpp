@@ -91,7 +91,7 @@
 
 /** Enables generating UID from NT SIDs so the GMM can share free memory
  *  among VMs running as the same user. */
-//#define VBOXDRV_WITH_SID_TO_UID_MAPPING
+#define VBOXDRV_WITH_SID_TO_UID_MAPPING
 
 /* Missing if we're compiling against older WDKs. */
 #ifndef NonPagedPoolNx
@@ -874,7 +874,7 @@ static int supdrvNtUserIdMakeForSession(PSUPDRVSESSION pSession)
          * avoid needing to deal with races.
          */
         UNICODE_STRING UniStr = RTNT_NULL_UNISTR();
-        rcNt = RtlConvertSidToUnicodeString(&UniStr, &pTokenUser->User.Sid, TRUE /*AllocateDesitnationString*/);
+        rcNt = RtlConvertSidToUnicodeString(&UniStr, pTokenUser->User.Sid, TRUE /*AllocateDesitnationString*/);
         if (NT_SUCCESS(rcNt))
         {
             size_t cchSid = 0;
@@ -891,6 +891,7 @@ static int supdrvNtUserIdMakeForSession(PSUPDRVSESSION pSession)
                         pNtUserIdNew->HashCore.Key = RTStrHash1(pNtUserIdNew->szSid);
                         pNtUserIdNew->cchSid       = (uint16_t)cchSid;
                         pNtUserIdNew->cRefs        = 1;
+                        Log5Func(("pNtUserId=%p cchSid=%u hash=%#x '%s'\n", pNtUserIdNew, cchSid, pNtUserIdNew->HashCore.Key, pszSid));
 
                         /*
                          * Do the lookup / insert.
@@ -909,9 +910,10 @@ static int supdrvNtUserIdMakeForSession(PSUPDRVSESSION pSession)
                             if (pNtUserId)
                             {
                                 /* Found matching: Retain reference and free the new entry we prepared. */
-                                uint32_t cRefs = ASMAtomicIncU32(&pNtUserId->cRefs);
-                                Assert(cRefs < _16K);
+                                uint32_t const cRefs = ASMAtomicIncU32(&pNtUserId->cRefs);
+                                Assert(cRefs < _16K); RT_NOREF(cRefs);
                                 RTSpinlockRelease(g_hNtUserIdLock);
+                                Log5Func(("Using %p / %#x instead\n", pNtUserId, pNtUserId->UidCore.Key));
                             }
                             else
                             {
@@ -923,6 +925,10 @@ static int supdrvNtUserIdMakeForSession(PSUPDRVSESSION pSession)
                                     pNtUserId = pNtUserIdNew;
                                 }
                                 RTSpinlockRelease(g_hNtUserIdLock);
+                                if (pNtUserId)
+                                    Log5Func(("Using %p / %#x (the prepared one)\n", pNtUserId, pNtUserId->UidCore.Key));
+                                else
+                                    LogRelFunc(("supdrvNtUserIdMakeForSession: failed to insert new\n"));
                             }
                         }
                         else
@@ -935,6 +941,10 @@ static int supdrvNtUserIdMakeForSession(PSUPDRVSESSION pSession)
                                 pNtUserId = pNtUserIdNew;
                             }
                             RTSpinlockRelease(g_hNtUserIdLock);
+                            if (pNtUserId)
+                                Log5Func(("Using %p / %#x (the prepared one, no conflict)\n", pNtUserId, pNtUserId->UidCore.Key));
+                            else
+                                LogRelFunc(("failed to insert!! WTF!?!\n"));
                         }
 
                         if (pNtUserId != pNtUserIdNew)
@@ -955,11 +965,17 @@ static int supdrvNtUserIdMakeForSession(PSUPDRVSESSION pSession)
             RtlFreeUnicodeString(&UniStr);
         }
         else
+        {
             rc = RTErrConvertFromNtStatus(rcNt);
+            LogFunc(("RtlConvertSidToUnicodeString failed: %#x / %Rrc\n", rcNt, rc));
+        }
         ExFreePool(pTokenUser);
     }
     else
+    {
         rc = RTErrConvertFromNtStatus(rcNt);
+        LogFunc(("SeQueryInformationToken failed: %#x / %Rrc\n", rcNt, rc));
+    }
 
     SeReleaseSubjectContext(&Ctx);
     return rc;
@@ -975,7 +991,8 @@ static void supdrvNtUserIdRelease(PSUPDRVNTUSERID pNtUserId)
 {
     if (pNtUserId)
     {
-        uint32_t cRefs = ASMAtomicDecU32(&pNtUserId->cRefs);
+        uint32_t const cRefs = ASMAtomicDecU32(&pNtUserId->cRefs);
+        Log5Func(("%p / %#x: cRefs=%d\n", pNtUserId, pNtUserId->cRefs));
         Assert(cRefs < _8K);
         if (cRefs == 0)
         {
