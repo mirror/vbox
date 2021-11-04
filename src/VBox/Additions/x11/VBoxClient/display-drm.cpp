@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
             VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
     }
 
-    /* @todo: this code never executed since we do not have yet a clean way to exit
+    /** @todo: this code never executed since we do not have yet a clean way to exit
      * main event loop above. */
     VBClLogInfo("VBoxDRMClient: releasing PID file lock\n");
     VbglR3ClosePidFile(szPidFile, hPidFile);
