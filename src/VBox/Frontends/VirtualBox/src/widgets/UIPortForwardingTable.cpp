@@ -791,6 +791,7 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
     , m_pLayout(0)
     , m_pTableView(0)
     , m_pToolBar(0)
+    , m_pNewItemEditorFactory(0)
     , m_pTableModel(0)
     , m_pActionAdd(0)
     , m_pActionCopy(0)
@@ -798,6 +799,11 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
 {
     /* Prepare: */
     prepare();
+}
+
+UIPortForwardingTable::~UIPortForwardingTable()
+{
+    delete m_pNewItemEditorFactory;
 }
 
 UIPortForwardingDataList UIPortForwardingTable::rules() const
@@ -1117,39 +1123,39 @@ void UIPortForwardingTable::prepareTableDelegates()
         if (pStyledItemDelegate)
         {
             /* Create new item editor factory: */
-            QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
-            if (pNewItemEditorFactory)
+            m_pNewItemEditorFactory = new QItemEditorFactory;
+            if (m_pNewItemEditorFactory)
             {
                 /* Register NameEditor as the NameData editor: */
                 int iNameId = qRegisterMetaType<NameData>();
                 QStandardItemEditorCreator<NameEditor> *pNameEditorItemCreator = new QStandardItemEditorCreator<NameEditor>();
-                pNewItemEditorFactory->registerEditor((QVariant::Type)iNameId, pNameEditorItemCreator);
+                m_pNewItemEditorFactory->registerEditor((QVariant::Type)iNameId, pNameEditorItemCreator);
 
                 /* Register ProtocolEditor as the KNATProtocol editor: */
                 int iProtocolId = qRegisterMetaType<KNATProtocol>();
                 QStandardItemEditorCreator<ProtocolEditor> *pProtocolEditorItemCreator = new QStandardItemEditorCreator<ProtocolEditor>();
-                pNewItemEditorFactory->registerEditor((QVariant::Type)iProtocolId, pProtocolEditorItemCreator);
+                m_pNewItemEditorFactory->registerEditor((QVariant::Type)iProtocolId, pProtocolEditorItemCreator);
 
                 /* Register IPv4Editor/IPv6Editor as the IpData editor: */
                 int iIpId = qRegisterMetaType<IpData>();
                 if (!m_fIPv6)
                 {
                     QStandardItemEditorCreator<IPv4Editor> *pIPv4EditorItemCreator = new QStandardItemEditorCreator<IPv4Editor>();
-                    pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv4EditorItemCreator);
+                    m_pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv4EditorItemCreator);
                 }
                 else
                 {
                     QStandardItemEditorCreator<IPv6Editor> *pIPv6EditorItemCreator = new QStandardItemEditorCreator<IPv6Editor>();
-                    pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv6EditorItemCreator);
+                    m_pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv6EditorItemCreator);
                 }
 
                 /* Register PortEditor as the PortData editor: */
                 int iPortId = qRegisterMetaType<PortData>();
                 QStandardItemEditorCreator<PortEditor> *pPortEditorItemCreator = new QStandardItemEditorCreator<PortEditor>();
-                pNewItemEditorFactory->registerEditor((QVariant::Type)iPortId, pPortEditorItemCreator);
+                m_pNewItemEditorFactory->registerEditor((QVariant::Type)iPortId, pPortEditorItemCreator);
 
                 /* Set newly created item editor factory for table delegate: */
-                pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+                pStyledItemDelegate->setItemEditorFactory(m_pNewItemEditorFactory);
             }
         }
     }
