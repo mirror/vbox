@@ -1060,7 +1060,8 @@ int AudioTestSetDestroy(PAUDIOTESTSET pSet)
     if (!pSet)
         return VINF_SUCCESS;
 
-    AssertReturn(pSet->cTestsRunning == 0, VERR_WRONG_ORDER); /* Make sure no tests sill are running. */
+    /* No more validation (no / still running tests) here -- just pack all stuff we got so far
+     * and let the verification routine deal with it later. */
 
     int rc = AudioTestSetClose(pSet);
     if (RT_FAILURE(rc))
