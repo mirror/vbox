@@ -153,11 +153,11 @@ typedef struct AUDIOTESTTONEBEACON
     /** Beacon bytes to process.
      *  When doing test tone playback: Beacon bytes to write.
      *  When doing test tone recording: Beacon bytes to read. */
-    uint32_t                cbToProcess;
+    uint32_t                cbSize;
     /** Beacon bytes already processed.
      *  When doing test tone playback: Beacon bytes written.
      *  When doing test tone recording: Beacon bytes read. */
-    uint32_t                cbProcessed;
+    uint32_t                cbUsed;
 } AUDIOTESTTONEBEACON;
 /** Pointer to audio test tone beacon. */
 typedef AUDIOTESTTONEBEACON *PAUDIOTESTTONEBEACON;

@@ -2347,7 +2347,7 @@ void AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, AUDIOTESTTONEBEACONTYPE e
     pBeacon->enmType = enmType;
     memcpy(&pBeacon->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
 
-    pBeacon->cbToProcess = PDMAudioPropsFramesToBytes(&pBeacon->Props, AUDIOTEST_BEACON_SIZE_FRAMES);
+    pBeacon->cbSize = PDMAudioPropsFramesToBytes(&pBeacon->Props, AUDIOTEST_BEACON_SIZE_FRAMES);
 }
 
 /**
@@ -2379,7 +2379,7 @@ DECLINLINE(uint8_t) AudioTestBeaconByteFromType(AUDIOTESTTONEBEACONTYPE enmType)
  */
 uint32_t AudioTestBeaconGetSize(PCAUDIOTESTTONEBEACON pBeacon)
 {
-    return pBeacon->cbToProcess;
+    return pBeacon->cbSize;
 }
 
 /**
@@ -2401,7 +2401,7 @@ AUDIOTESTTONEBEACONTYPE AudioTestBeaconGetType(PCAUDIOTESTTONEBEACON pBeacon)
  */
 uint32_t AudioTestBeaconGetRemaining(PCAUDIOTESTTONEBEACON pBeacon)
 {
-    return pBeacon->cbToProcess - pBeacon->cbProcessed;
+    return pBeacon->cbSize - pBeacon->cbUsed;
 }
 
 /**
@@ -2412,7 +2412,7 @@ uint32_t AudioTestBeaconGetRemaining(PCAUDIOTESTTONEBEACON pBeacon)
  */
 uint32_t AudioTestBeaconGetUsed(PCAUDIOTESTTONEBEACON pBeacon)
 {
-    return pBeacon->cbProcessed;
+    return pBeacon->cbUsed;
 }
 
 /**
@@ -2425,11 +2425,11 @@ uint32_t AudioTestBeaconGetUsed(PCAUDIOTESTTONEBEACON pBeacon)
  */
 int AudioTestBeaconWrite(PAUDIOTESTTONEBEACON pBeacon, void *pvBuf, uint32_t cbBuf)
 {
-    AssertReturn(pBeacon->cbProcessed + cbBuf <= pBeacon->cbToProcess, VERR_BUFFER_OVERFLOW);
+    AssertReturn(pBeacon->cbUsed + cbBuf <= pBeacon->cbSize, VERR_BUFFER_OVERFLOW);
 
     memset(pvBuf, AudioTestBeaconByteFromType(pBeacon->enmType), cbBuf);
 
-    pBeacon->cbProcessed += cbBuf;
+    pBeacon->cbUsed += cbBuf;
 
     return VINF_SUCCESS;
 }
@@ -2482,7 +2482,7 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
     size_t offGap = 0;
 
     unsigned const cbStep             = cbFrameSize;
-    uint32_t const cbProcessedInitial = pBeacon->cbProcessed;
+    uint32_t const cbProcessedInitial = pBeacon->cbUsed;
 
     for (size_t i = 0; i < cbBuf; i += cbStep)
     {
@@ -2493,17 +2493,17 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
         {
             if (offGap)
             {
-                pBeacon->cbProcessed = 0;
+                pBeacon->cbUsed = 0;
             }
-            pBeacon->cbProcessed += cbStep;
+            pBeacon->cbUsed += cbStep;
             offGap = 0;
         }
         else
             offGap = i;
     }
 
-    Assert(pBeacon->cbProcessed >= cbProcessedInitial);
-    return pBeacon->cbProcessed - cbProcessedInitial;
+    Assert(pBeacon->cbUsed >= cbProcessedInitial);
+    return pBeacon->cbUsed - cbProcessedInitial;
 }
 
 /**
@@ -2516,8 +2516,8 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
  */
 bool AudioTestBeaconIsComplete(PCAUDIOTESTTONEBEACON pBeacon)
 {
-    AssertReturn(pBeacon->cbProcessed <= pBeacon->cbToProcess, true);
-    return (pBeacon->cbProcessed == pBeacon->cbToProcess);
+    AssertReturn(pBeacon->cbUsed <= pBeacon->cbSize, true);
+    return (pBeacon->cbUsed == pBeacon->cbSize);
 }
 
 /**
