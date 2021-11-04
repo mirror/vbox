@@ -195,6 +195,24 @@ int main(int argc, char *argv[])
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
     bool fAck = false;
+
+    /** The name and handle of the PID file. */
+    static const char szPidFile[RTPATH_MAX] = "/var/run/VBoxDRMClient";
+    RTFILE hPidFile;
+
+    /* Check PID file before attempting to initialize anything. */
+    rc = VbglR3PidFile(szPidFile, &hPidFile);
+    if (rc == VERR_FILE_LOCK_VIOLATION)
+    {
+        VBClLogInfo("VBoxDRMClient: already running, exiting\n");
+        return RTEXITCODE_SUCCESS;
+    }
+    else if (RT_FAILURE(rc))
+    {
+        VBClLogError("VBoxDRMClient: unable to lock PID file (%Rrc), exiting\n", rc);
+        return RTEXITCODE_FAILURE;
+    }
+
     drmConnect(&drmContext);
     if (drmContext.hDevice == NIL_RTFILE)
         return VERR_OPEN_FAILED;
@@ -278,5 +296,11 @@ int main(int argc, char *argv[])
         if (RT_FAILURE(rc))
             VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
     }
+
+    /* ToDo: this code never executed since we do not have yet a clean way to exit
+     * main event loop above. */
+    VBClLogInfo("VBoxDRMClient: releasing PID file lock\n");
+    VbglR3ClosePidFile(szPidFile, hPidFile);
+
     return 0;
 }
