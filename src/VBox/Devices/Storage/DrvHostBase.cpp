@@ -858,9 +858,11 @@ static DECLCALLBACK(int) drvHostBaseLock(PPDMIMOUNT pInterface)
     if (!pThis->fLocked)
     {
         if (pThis->pfnDoLock)
+        {
             rc = pThis->pfnDoLock(pThis, true);
-        if (RT_SUCCESS(rc))
-            pThis->fLocked = true;
+            if (RT_SUCCESS(rc))
+                pThis->fLocked = true;
+        }
     }
     else
         LogFlow(("%s-%d: drvHostBaseLock: already locked\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
