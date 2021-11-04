@@ -46,7 +46,7 @@
  */
 typedef struct DRVHOSTDVD
 {
-    /** Base drivr data. */
+    /** Base driver data. */
     DRVHOSTBASE             Core;
     /** The current tracklist of the loaded medium if passthrough is used. */
     PTRACKLIST              pTrackList;
@@ -498,6 +498,25 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     return rc;
 }
 
+/**
+ * Reset a host dvd drive driver instance.
+ *
+ * @copydoc FNPDMDRVRESET
+ */
+static DECLCALLBACK(void) drvHostDvdReset(PPDMDRVINS pDrvIns)
+{
+    PDRVHOSTDVD pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTDVD);
+
+    if (pThis->pTrackList)
+    {
+        ATAPIPassthroughTrackListDestroy(pThis->pTrackList);
+        pThis->pTrackList = NULL;
+    }
+
+    int rc = drvHostBaseDoLockOs(&pThis->Core, false);
+    RT_NOREF(rc);
+}
+
 
 /**
  * Block driver registration record.
@@ -533,7 +552,7 @@ const PDMDRVREG g_DrvHostDVD =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    drvHostDvdReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
