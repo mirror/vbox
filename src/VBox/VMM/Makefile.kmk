@@ -235,6 +235,17 @@ VMMR3/NEMR3Native-win.cpp_DEFS.amd64 = _AMD64_
 VMMR3/NEMR3Native-win.cpp_INCS = \
 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
+
+VBoxVMM_SOURCES.darwin.amd64 += \
+	VMMR3/NEMR3Native-darwin.cpp
+VBoxVMM_DEFS.darwin.amd64    += VBOX_WITH_NATIVE_NEM
+VMMR3/NEMR3Native-darwin.cpp_CXXFLAGS = \
+	-F$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks
+VMMR3/NEMR3Native-darwin.cpp_INCS = \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
+VBoxVMM_LDFLAGS.darwin.amd64 += \
+	-F$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks \
+	-framework Hypervisor
 endif
 
 VBoxVMM_LIBS = \
@@ -580,6 +591,10 @@ VMMR0_SOURCES.win.amd64 += \
 	VMMR0/NEMR0NativeA-win.asm
 VMMR0_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM VBOX_WITH_NEM_R0
 VMMR0/NEMR0Native-win.cpp_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
+
+VMMR0_SOURCES.darwin.amd64 += \
+	VMMR0/NEMR0Native-stubs.cpp
+VMMR0_DEFS.darwin.amd64    += VBOX_WITH_NATIVE_NEM VBOX_WITH_NEM_R0
  endif
 
 $(call VBOX_SET_VER_INFO_R0,VMMR0,VirtualBox VMM - ring-0 context parts) # Version info / description.
