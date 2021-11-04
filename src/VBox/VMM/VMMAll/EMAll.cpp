@@ -783,7 +783,6 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryAddExit(PVMCPUCC pVCpu, uint32_t uFlagsAndTyp
 }
 
 
-#ifdef IN_RING0
 /**
  * Interface that VT-x uses to supply the PC of an exit when CS:RIP is being read.
  *
@@ -791,8 +790,10 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryAddExit(PVMCPUCC pVCpu, uint32_t uFlagsAndTyp
  * @param   uFlatPC         The flattened program counter (RIP).
  * @param   fFlattened      Set if RIP was subjected to CS.BASE, clear if not.
  */
-VMMR0_INT_DECL(void) EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fFlattened)
+VMM_INT_DECL(void) EMHistoryUpdatePC(PVMCPUCC pVCpu, uint64_t uFlatPC, bool fFlattened)
 {
+    VMCPU_ASSERT_EMT(pVCpu);
+
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
     uint64_t     uExitNo    = pVCpu->em.s.iNextExit - 1;
     PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)uExitNo & 0xff];
@@ -802,7 +803,6 @@ VMMR0_INT_DECL(void) EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fF
     else
         pHistEntry->uFlagsAndType |= EMEXIT_F_UNFLATTENED_PC;
 }
-#endif
 
 
 /**
