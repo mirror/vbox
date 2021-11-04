@@ -1209,6 +1209,10 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
         PAUDIOTESTOBJINT pObj;
         RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJINT, Node)
         {
+            /* First, close the object.
+             * This also does some needed finalization. */
+            rc = AudioTestObjClose(pObj);
+            AssertRCReturn(rc, rc);
             rc = audioTestManifestWrite(pSet, "\n");
             AssertRCReturn(rc, rc);
             char szUuid[AUDIOTEST_MAX_SEC_LEN];
@@ -1257,9 +1261,12 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
             }
         }
 
-        rc = RTFileClose(pSet->f.hFile);
-        if (RT_SUCCESS(rc))
+        int rc2 = RTFileClose(pSet->f.hFile);
+        if (RT_SUCCESS(rc2))
             pSet->f.hFile = NIL_RTFILE;
+
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
     else if (pSet->enmMode == AUDIOTESTSETMODE_VERIFY)
     {
@@ -1619,8 +1626,8 @@ int AudioTestSetPack(PAUDIOTESTSET pSet, const char *pszOutDir, char *pszFileNam
     AssertReturn(!pszFileName || cbFileName, VERR_INVALID_PARAMETER);
     AssertReturn(!audioTestManifestIsOpen(pSet), VERR_WRONG_ORDER);
 
-    AssertMsgReturn(pSet->cTests, ("No tests run yet"), VERR_INVALID_STATE);
-    AssertMsgReturn(pSet->cTestsRunning == 0 , ("Some tests are still running"), VERR_INVALID_STATE);
+    /* No more validation (no / still running tests) here -- just pack all stuff we got so far
+     * and let the verification routine deal with it later. */
 
     /** @todo Check and deny if \a pszOutDir is part of the set's path. */
 
