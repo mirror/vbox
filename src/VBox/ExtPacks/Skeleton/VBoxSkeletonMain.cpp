@@ -96,7 +96,7 @@ static const VBOXEXTPACKREG g_vboxSkeletonExtPackReg =
     /* .pfnReserved4 =      */  NULL,
     /* .pfnReserved5 =      */  NULL,
     /* .pfnReserved6 =      */  NULL,
-    /* .u32Reserved7 =      */  0,
+    /* .uReserved7 =        */  0,
     VBOXEXTPACKREG_VERSION
 };
 
