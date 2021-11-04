@@ -176,6 +176,10 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 #ifdef MULTI_TARGET_CLIPBOARD
     { "--target",                   't',                            RTGETOPT_REQ_STRING  },
 #endif
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+    { "--close",                    'k',                            RTGETOPT_REQ_NOTHING },
+#endif
+    { "--wait",                     'w',                            RTGETOPT_REQ_UINT32 },
     { "--quiet",                    'q',                            RTGETOPT_REQ_NOTHING },
     { "--verbose",                  'v',                            RTGETOPT_REQ_NOTHING },
     { "--version",                  'V',                            RTGETOPT_REQ_NOTHING },
@@ -226,7 +230,7 @@ static unsigned g_uVerbosity = 1;
 
 #elif defined(RT_OS_OS2)
 /** Anchorblock handle. */
-static HAB      g_hOs2Hab = NULLHANDLE;
+static HAB      g_hOs2Ab = NULLHANDLE;
 /** The message queue handle.   */
 static HMQ      g_hOs2MsgQueue = NULLHANDLE;
 /** Windows that becomes clipboard owner when setting data. */
@@ -235,10 +239,16 @@ static HWND     g_hOs2Wnd = NULLHANDLE;
 static bool     g_fOs2OpenedClipboard = false;
 /** Set if we're the clipboard owner. */
 static bool     g_fOs2ClipboardOwner = false;
+/** Set when we receive a WM_TIMER message during DoWait(). */
+static bool volatile g_fOs2TimerTicked = false;
 
 #elif defined(RT_OS_WINDOWS)
 /** Set if we've opened the clipboard. */
-static bool     g_fOpenedClipboard = false;
+static bool     g_fWinOpenedClipboard = false;
+/** Set when we receive a WM_TIMER message during DoWait(). */
+static bool volatile g_fWinTimerTicked = false;
+/** Window that becomes clipboard owner when setting data. */
+static HWND     g_hWinWnd = NULL;
 
 #else
 /** Number of errors (incremented by error handle callback). */
@@ -274,7 +284,7 @@ static PCCLIPUTILFORMAT GetFormatDesc(const char *pszFormat)
             {
                 g_aFormats[i].fFormat = WinAddAtom(WinQuerySystemAtomTable(), g_aFormats[i].pszFormat);
                 if (g_aFormats[i].fFormat == 0)
-                    RTMsgError("WinAddAtom(,%s) failed: %#x", g_aFormats[i].pszFormat, WinGetLastError(g_hOs2Hab));
+                    RTMsgError("WinAddAtom(,%s) failed: %#x", g_aFormats[i].pszFormat, WinGetLastError(g_hOs2Ab));
             }
 
 #elif defined(RT_OS_WINDOWS)
@@ -307,7 +317,7 @@ static PCCLIPUTILFORMAT GetFormatDesc(const char *pszFormat)
     AdHoc.fFormat     = WinAddAtom(WinQuerySystemAtomTable(), pszFormat);
     if (AdHoc.fFormat == 0)
     {
-        RTMsgError("Invalid format '%s' (%#x)", pszFormat, WinGetLastError(g_hOs2Hab));
+        RTMsgError("Invalid format '%s' (%#x)", pszFormat, WinGetLastError(g_hOs2Ab));
         return NULL;
     }
 
@@ -411,26 +421,35 @@ static MRESULT EXPENTRY CuOs2WinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp
             AssertMsgFailed(("msg=%lx (%ld)\n", msg, msg));
         case WM_ADJUSTWINDOWPOS:
             break;
+
+        /*
+         * We use this window fielding WM_TIMER during DoWait.
+         */
+        case WM_TIMER:
+            if (SHORT1FROMMP(mp1) == 1)
+                g_fOs2TimerTicked = true;
+            break;
     }
     return NULL;
 }
+
 
 /**
  * Initialize the OS/2 bits.
  */
 static RTEXITCODE CuOs2Init(void)
 {
-    g_hOs2Hab = WinInitialize(0);
-    if (g_hOs2Hab == NULLHANDLE)
+    g_hOs2Ab = WinInitialize(0);
+    if (g_hOs2Ab == NULLHANDLE)
         return RTMsgErrorExitFailure("WinInitialize failed!");
 
-    g_hOs2MsgQueue = WinCreateMsgQueue(g_hOs2Hab, 10);
+    g_hOs2MsgQueue = WinCreateMsgQueue(g_hOs2Ab, 10);
     if (g_hOs2MsgQueue == NULLHANDLE)
-        return RTMsgErrorExitFailure("WinCreateMsgQueue failed: %#x", WinGetLastError(g_hOs2Hab));
+        return RTMsgErrorExitFailure("WinCreateMsgQueue failed: %#x", WinGetLastError(g_hOs2Ab));
 
     static char s_szClass[] = "VBox-ClipUtilClipboardClass";
     if (!WinRegisterClass(g_hOs2Wnd, (PCSZ)s_szClass, CuOs2WinProc, 0, 0))
-        return RTMsgErrorExitFailure("WinRegisterClass failed: %#x", WinGetLastError(g_hOs2Hab));
+        return RTMsgErrorExitFailure("WinRegisterClass failed: %#x", WinGetLastError(g_hOs2Ab));
 
     g_hOs2Wnd = WinCreateWindow(HWND_OBJECT,                             /* hwndParent */
                                 (PCSZ)s_szClass,                         /* pszClass */
@@ -443,7 +462,7 @@ static RTEXITCODE CuOs2Init(void)
                                 NULL,                                    /* pCtlData */
                                 NULL);                                   /* pPresParams */
     if (g_hOs2Wnd == NULLHANDLE)
-        return RTMsgErrorExitFailure("WinCreateWindow failed: %#x", WinGetLastError(g_hOs2Hab));
+        return RTMsgErrorExitFailure("WinCreateWindow failed: %#x", WinGetLastError(g_hOs2Ab));
 
     return RTEXITCODE_SUCCESS;
 }
@@ -456,8 +475,8 @@ static RTEXITCODE CuOs2Term(void)
 {
     if (g_fOs2OpenedClipboard)
     {
-        if (!WinCloseClipbrd(g_hOs2Hab))
-            return RTMsgErrorExitFailure("WinCloseClipbrd failed: %#x", WinGetLastError(g_hOs2Hab));
+        if (!WinCloseClipbrd(g_hOs2Ab))
+            return RTMsgErrorExitFailure("WinCloseClipbrd failed: %#x", WinGetLastError(g_hOs2Ab));
         g_fOs2OpenedClipboard = false;
     }
 
@@ -467,8 +486,8 @@ static RTEXITCODE CuOs2Term(void)
     WinDestroyMsgQueue(g_hOs2MsgQueue);
     g_hOs2MsgQueue = NULLHANDLE;
 
-    WinTerminate(g_hOs2Hab);
-    g_hOs2Hab = NULLHANDLE;
+    WinTerminate(g_hOs2Ab);
+    g_hOs2Ab = NULLHANDLE;
 
     return RTEXITCODE_SUCCESS;
 }
@@ -481,29 +500,99 @@ static RTEXITCODE CuOs2OpenClipboardIfNecessary(void)
 {
     if (g_fOs2OpenedClipboard)
         return RTEXITCODE_SUCCESS;
-    if (WinOpenClipbrd(g_hOs2Hab))
+    if (WinOpenClipbrd(g_hOs2Ab))
     {
+        if (g_uVerbosity > 0)
+            RTMsgInfo("Opened the clipboard\n");
         g_fOs2OpenedClipboard = true;
         return RTEXITCODE_SUCCESS;
     }
-    return RTMsgErrorExitFailure("WinOpenClipbrd failed: %#x", WinGetLastError(g_hOs2Hab));
+    return RTMsgErrorExitFailure("WinOpenClipbrd failed: %#x", WinGetLastError(g_hOs2Ab));
 }
 
 
 #elif defined(RT_OS_WINDOWS)
 
 /**
+ * Window procedure for the clipboard owner window on Windows.
+ */
+static LRESULT CALLBACK CuWinWndProc(HWND hWnd, UINT idMsg, WPARAM wParam, LPARAM lParam) RT_NOTHROW_DEF
+{
+    if (g_uVerbosity > 2)
+        RTMsgInfo("CuWinWndProc: hWnd=%p idMsg=%#05x wParam=%#zx lParam=%#zx\n", hWnd, idMsg, wParam, lParam);
+
+    switch (idMsg)
+    {
+        case WM_TIMER:
+            if (wParam == 1)
+                g_fWinTimerTicked = true;
+            break;
+    }
+    return DefWindowProc(hWnd, idMsg, wParam, lParam);
+}
+
+
+/**
+ * Initialize the Windows bits.
+ */
+static RTEXITCODE CuWinInit(void)
+{
+    /* Register the window class: */
+    static wchar_t s_wszClass[] = L"VBox-ClipUtilClipboardClass";
+    WNDCLASSW WndCls = {0};
+    WndCls.style            = CS_NOCLOSE;
+    WndCls.lpfnWndProc      = CuWinWndProc;
+    WndCls.cbClsExtra       = 0;
+    WndCls.cbWndExtra       = 0;
+    WndCls.hInstance        = (HINSTANCE)GetModuleHandle(NULL);
+    WndCls.hIcon            = NULL;
+    WndCls.hCursor          = NULL;
+    WndCls.hbrBackground    = (HBRUSH)(COLOR_BACKGROUND + 1);
+    WndCls.lpszMenuName     = NULL;
+    WndCls.lpszClassName    = s_wszClass;
+
+    ATOM uAtomWndClass      = RegisterClassW(&WndCls);
+    if (!uAtomWndClass)
+        return RTMsgErrorExitFailure("RegisterClassW failed: %u (%#x)", GetLastError(), GetLastError());
+
+    /* Create the clipboard owner window: */
+    g_hWinWnd = CreateWindowExW(WS_EX_TRANSPARENT,                      /* fExStyle */
+                                s_wszClass,                             /* pwszClass */
+                                L"VirtualBox Clipboard Utility",        /* pwszName */
+                                0,                                      /* fStyle */
+                                0, 0, 0, 0,                             /* x, y, cx, cy */
+                                HWND_MESSAGE,                           /* hWndParent */
+                                NULL,                                   /* hMenu */
+                                (HINSTANCE)GetModuleHandle(NULL),       /* hinstance */
+                                NULL);                                  /* pParam */
+    if (g_hWinWnd == NULL)
+        return RTMsgErrorExitFailure("CreateWindowExW failed: %u (%#x)", GetLastError(), GetLastError());
+
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
  * Terminates the Windows bits.
  */
 static RTEXITCODE CuWinTerm(void)
 {
-    if (g_fOpenedClipboard)
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    if (g_fWinOpenedClipboard)
     {
-        if (!CloseClipboard())
-            return RTMsgErrorExitFailure("CloseClipboard failed: %u (%#x)", GetLastError(), GetLastError());
-        g_fOpenedClipboard = false;
+        if (CloseClipboard())
+            g_fWinOpenedClipboard = false;
+        else
+            rcExit = RTMsgErrorExitFailure("CloseClipboard failed: %u (%#x)", GetLastError(), GetLastError());
     }
-    return RTEXITCODE_SUCCESS;
+
+    if (g_hWinWnd != NULL)
+    {
+        if (!DestroyWindow(g_hWinWnd))
+            rcExit = RTMsgErrorExitFailure("DestroyWindow failed: %u (%#x)", GetLastError(), GetLastError());
+        g_hWinWnd = NULL;
+    }
+
+    return rcExit;
 }
 
 
@@ -512,11 +601,13 @@ static RTEXITCODE CuWinTerm(void)
  */
 static RTEXITCODE WinOpenClipboardIfNecessary(void)
 {
-    if (g_fOpenedClipboard)
+    if (g_fWinOpenedClipboard)
         return RTEXITCODE_SUCCESS;
-    if (OpenClipboard(NULL))
+    if (OpenClipboard(g_hWinWnd))
     {
-        g_fOpenedClipboard = true;
+        if (g_uVerbosity > 0)
+            RTMsgInfo("Opened the clipboard\n");
+        g_fWinOpenedClipboard = true;
         return RTEXITCODE_SUCCESS;
     }
     return RTMsgErrorExitFailure("OpenClipboard failed: %u (%#x)", GetLastError(), GetLastError());
@@ -584,6 +675,39 @@ static RTEXITCODE CuX11Init(void)
 #endif /* X11 */
 
 
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+/**
+ * Closes the clipboard if open.
+ */
+static RTEXITCODE CuCloseClipboard(void)
+{
+# if defined(RT_OS_OS2)
+    if (g_fOs2OpenedClipboard)
+    {
+        if (!WinCloseClipbrd(g_hOs2Ab))
+            return RTMsgErrorExitFailure("WinCloseClipbrd failed: %#x", WinGetLastError(g_hOs2Ab));
+        g_fOs2OpenedClipboard = false;
+        if (g_uVerbosity > 0)
+            RTMsgInfo("Closed the clipboard.\n");
+    }
+# else
+    if (g_fWinOpenedClipboard)
+    {
+        if (!CloseClipboard())
+            return RTMsgErrorExitFailure("CloseClipboard failed: %u (%#x)", GetLastError(), GetLastError());
+        g_fWinOpenedClipboard = false;
+        if (g_uVerbosity > 0)
+            RTMsgInfo("Closed the clipboard.\n");
+    }
+# endif
+    else if (g_uVerbosity > 0)
+        RTMsgInfo("No need to close clipboard, not opened.\n");
+
+    return RTEXITCODE_SUCCESS;
+}
+#endif /* RT_OS_OS2 || RT_OS_WINDOWS */
+
+
 /**
  * Lists the clipboard format.
  */
@@ -596,7 +720,7 @@ static RTEXITCODE ListClipboardContent(void)
         HATOMTBL const hAtomTbl  = WinQuerySystemAtomTable();
         uint32_t       idx       = 0;
         ULONG          fFormat   = 0;
-        while ((fFormat = WinEnumClipbrdFmts(g_hOs2Hab)) != 0)
+        while ((fFormat = WinEnumClipbrdFmts(g_hOs2Ab)) != 0)
         {
             char szName[256] = {0};
             ULONG cchRet = WinQueryAtomName(hAtomTbl, fFormat, szName, sizeof(szName));
@@ -762,9 +886,9 @@ static RTEXITCODE ReadClipboardData(PCCLIPUTILFORMAT pFmtDesc, void **ppvData, s
     if (rcExit == RTEXITCODE_SUCCESS)
     {
         ULONG fFmtInfo = 0;
-        if (WinQueryClipbrdFmtInfo(g_hOs2Hab, pFmtDesc->fFormat, &fFmtInfo))
+        if (WinQueryClipbrdFmtInfo(g_hOs2Ab, pFmtDesc->fFormat, &fFmtInfo))
         {
-            ULONG uData = WinQueryClipbrdData(g_hOs2Hab, pFmtDesc->fFormat);
+            ULONG uData = WinQueryClipbrdData(g_hOs2Ab, pFmtDesc->fFormat);
             if (fFmtInfo & CFI_POINTER)
             {
                 PCLIPHEADER pOdinHdr = (PCLIPHEADER)uData;
@@ -812,7 +936,7 @@ static RTEXITCODE ReadClipboardData(PCCLIPUTILFORMAT pFmtDesc, void **ppvData, s
         }
         else
             rcExit = RTMsgErrorExitFailure("WinQueryClipbrdFmtInfo(,%s,) failed: %#x\n",
-                                           pFmtDesc->pszName, WinGetLastError(g_hOs2Hab));
+                                           pFmtDesc->pszName, WinGetLastError(g_hOs2Ab));
     }
     return rcExit;
 
@@ -964,12 +1088,16 @@ static RTEXITCODE WriteClipboardData(PCCLIPUTILFORMAT pFmtDesc, void const *pvDa
         {
             memcpy(pvShared, pvData, cbData);
 
-            if (WinSetClipbrdData(g_hOs2Hab, (uintptr_t)pvShared, pFmtDesc->fFormat, CFI_POINTER))
+            if (WinSetClipbrdData(g_hOs2Ab, (uintptr_t)pvShared, pFmtDesc->fFormat, CFI_POINTER))
+            {
+                if (g_uVerbosity > 0)
+                    RTMsgInfo("Put '%s' on the clipboard: %p LB %zu\n", pFmtDesc->pszName, pvShared, cbData);
                 rcExit = RTEXITCODE_SUCCESS;
+            }
             else
             {
                 rcExit = RTMsgErrorExitFailure("WinSetClipbrdData(,%p LB %#x,%s,) failed: %#x\n",
-                                               pvShared, cbData, pFmtDesc->pszName, WinGetLastError(g_hOs2Hab));
+                                               pvShared, cbData, pFmtDesc->pszName, WinGetLastError(g_hOs2Ab));
                 DosFreeMem(pvShared);
             }
         }
@@ -1023,7 +1151,12 @@ static RTEXITCODE WriteClipboardData(PCCLIPUTILFORMAT pFmtDesc, void const *pvDa
             }
             if (rcExit == RTEXITCODE_SUCCESS)
             {
-                if (!SetClipboardData(pFmtDesc->fFormat, hDstData))
+                if (SetClipboardData(pFmtDesc->fFormat, hDstData))
+                {
+                    if (g_uVerbosity > 0)
+                        RTMsgInfo("Put '%s' on the clipboard: %p LB %zu\n", pFmtDesc->pszName, hDstData, cbData + cbZeroPadding);
+                }
+                else
                 {
                     rcExit = RTMsgErrorExitFailure("SetClipboardData(%s) failed: %u (%#x)\n",
                                                    pFmtDesc->pszName, GetLastError(), GetLastError());
@@ -1225,7 +1358,7 @@ static RTEXITCODE CheckFormatNotOnClipboard(PCCLIPUTILFORMAT pFmtDesc)
     if (rcExit == RTEXITCODE_SUCCESS)
     {
         ULONG fFmtInfo = 0;
-        if (WinQueryClipbrdFmtInfo(g_hOs2Hab, pFmtDesc->fFormat, &fFmtInfo))
+        if (WinQueryClipbrdFmtInfo(g_hOs2Ab, pFmtDesc->fFormat, &fFmtInfo))
             rcExit = RTMsgErrorExitFailure("Format '%s' is present");
     }
     return rcExit;
@@ -1258,14 +1391,14 @@ static RTEXITCODE ZapAllClipboardData(void)
     if (rcExit == RTEXITCODE_SUCCESS)
     {
         ULONG fFmtInfo = 0;
-        if (WinEmptyClipbrd(g_hOs2Hab))
+        if (WinEmptyClipbrd(g_hOs2Ab))
         {
-            WinSetClipbrdOwner(g_hOs2Hab, g_hOs2Wnd); /* Probably unnecessary? */
-            WinSetClipbrdOwner(g_hOs2Hab, NULLHANDLE);
+            WinSetClipbrdOwner(g_hOs2Ab, g_hOs2Wnd); /* Probably unnecessary? */
+            WinSetClipbrdOwner(g_hOs2Ab, NULLHANDLE);
             g_fOs2ClipboardOwner = false;
         }
         else
-            rcExit = RTMsgErrorExitFailure("WinEmptyClipbrd() failed: %#x\n", WinGetLastError(g_hOs2Hab));
+            rcExit = RTMsgErrorExitFailure("WinEmptyClipbrd() failed: %#x\n", WinGetLastError(g_hOs2Ab));
     }
     return rcExit;
 
@@ -1285,18 +1418,96 @@ static RTEXITCODE ZapAllClipboardData(void)
 
 
 /**
+ * Waits/delays at least @a cMsWait milliseconds.
+ *
+ * @returns Success indicator.
+ * @param   cMsWait     Minimum wait/delay time in milliseconds.
+ */
+static RTEXITCODE DoWait(uint32_t cMsWait)
+{
+    uint64_t const msStart = RTTimeMilliTS();
+    if (g_uVerbosity > 1)
+        RTMsgInfo("Waiting %u ms...\n", cMsWait);
+
+#if defined(RT_OS_OS2)
+    /*
+     * Arm a timer which will timeout after the desired period and
+     * quit when we've dispatched it.
+     */
+    g_fOs2TimerTicked = false;
+    if (WinStartTimer(g_hOs2Ab, g_hOs2Wnd, 1 /*idEvent*/, cMsWait + 1) != 0)
+    {
+        QMSG Msg;
+        while (WinGetMsg(g_hOs2Ab, &Msg, NULL, 0, 0))
+        {
+            WinDispatchMsg(g_hOs2Ab, &Msg);
+            if (g_fOs2TimerTicked || RTTimeMilliTS() - msStart >= cMsWait)
+                break;
+        }
+
+        if (!WinStopTimer(g_hOs2Ab, g_hOs2Wnd, 1 /*idEvent*/))
+            RTMsgWarning("WinStopTimer failed: %#x", WinGetLastError(g_hOs2Ab));
+    }
+    else
+        return RTMsgErrorExitFailure("WinStartTimer(,,,%u ms) failed: %#x", cMsWait + 1, WinGetLastError(g_hOs2Ab));
+
+#elif defined(RT_OS_WINDOWS)
+    /*
+     * Arm a timer which will timeout after the desired period and
+     * quit when we've dispatched it.
+     */
+    g_fWinTimerTicked = false;
+    if (SetTimer(g_hWinWnd, 1 /*idEvent*/, cMsWait + 1, NULL /*pfnTimerProc*/) != 0)
+    {
+        MSG Msg;
+        while (GetMessageW(&Msg, NULL, 0, 0))
+        {
+            TranslateMessage(&Msg);
+            DispatchMessageW(&Msg);
+            if (g_fWinTimerTicked || RTTimeMilliTS() - msStart >= cMsWait)
+                break;
+        }
+
+        if (!KillTimer(g_hWinWnd, 1 /*idEvent*/))
+            RTMsgWarning("KillTimer failed: %u (%#x)", GetLastError(), GetLastError());
+    }
+    else
+        return RTMsgErrorExitFailure("SetTimer(,,%u ms,) failed: %u (%#x)", cMsWait + 1, GetLastError(), GetLastError());
+
+#else
+/** @todo X11 needs to run it's message queue too, because if we're offering
+ *        things on the "clipboard" we must reply to requests for them.  */
+    /*
+     * Just a plain simple RTThreadSleep option (will probably not be used in the end):
+     */
+    for (;;)
+    {
+        uint64_t cMsElapsed = RTTimeMilliTS() - msStart;
+        if (cMsElapsed >= cMsWait)
+            break;
+        RTThreadSleep(cMsWait - cMsElapsed);
+    }
+#endif
+
+    if (g_uVerbosity > 2)
+        RTMsgInfo("Done waiting after %u ms.\n", RTTimeMilliTS() - msStart);
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
  * Display the usage to @a pStrm.
  */
 static void Usage(PRTSTREAM pStrm)
 {
     RTStrmPrintf(pStrm,
                  "usage: %s [--get <fmt> [--get ...]] [--get-file <fmt> <file> [--get-file ...]]\n"
-                 "       %s [--zap] [--put <fmt> <content> [--put ...]] [--put-file <fmt> <file> [--put-file ...]]\n"
+                 "       %s [--zap] [--put <fmt> <content> [--put ...]] [--put-file <fmt> <file> [--put-file ...]] [--wait <ms>]\n"
                  "       %s [--check <fmt> <expected> [--check ...]] [--check-file <fmt> <file> [--check-file ...]]\n"
                  "           [--check-no <fmt> [--check-no ...]]\n"
                  , RTProcShortName(), RTProcShortName(), RTProcShortName());
     RTStrmPrintf(pStrm, "\n");
-    RTStrmPrintf(pStrm, "Options: \n");
+    RTStrmPrintf(pStrm, "Actions/Options:\n");
 
     for (unsigned i = 0; i < RT_ELEMENTS(g_aCmdOptions); i++)
     {
@@ -1315,6 +1526,10 @@ static void Usage(PRTSTREAM pStrm)
 #ifdef MULTI_TARGET_CLIPBOARD
             case 't':   pszHelp = "Selects the target clipboard."; break;
 #endif
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+            case 'k':   pszHelp = "Closes the clipboard if open (win,os2)."; break;
+#endif
+            case 'w':   pszHelp = "Waits a given number of milliseconds before continuing."; break;
             case 'v':   pszHelp = "More verbose execution."; break;
             case 'q':   pszHelp = "Quiet execution."; break;
             case 'h':   pszHelp = "Displays this help and exit"; break;
@@ -1333,7 +1548,9 @@ static void Usage(PRTSTREAM pStrm)
         else
             RTStrmPrintf(pStrm, "  %-19s %s\n", g_aCmdOptions[i].pszLong, pszHelp);
     }
-    RTStrmPrintf(pStrm, "Note! Options are processed in the order they are given.\n");
+    RTStrmPrintf(pStrm,
+                 "\n"
+                 "Note! Options are processed in the order they are given.\n");
 
     RTStrmPrintf(pStrm, "\nFormats:\n");
     for (size_t i = 0; i < RT_ELEMENTS(g_aFormats); i++)
@@ -1364,7 +1581,7 @@ int main(int argc, char *argv[])
 #elif defined(RT_OS_OS2)
     RTEXITCODE rcExit = CuOs2Init();
 #elif defined(RT_OS_WINDOWS)
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    RTEXITCODE rcExit = CuWinInit();
 #else
     RTEXITCODE rcExit = CuX11Init();
 #endif
@@ -1382,6 +1599,12 @@ int main(int argc, char *argv[])
         RTEXITCODE rcExit2 = RTEXITCODE_SUCCESS;
         switch (rc)
         {
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+            case 'k':
+                rcExit2 = CuCloseClipboard();
+                break;
+#endif
+
             case 'l':
                 rcExit2 = ListClipboardContent();
                 break;
@@ -1509,6 +1732,10 @@ int main(int argc, char *argv[])
                 break;
             }
 #endif
+
+            case 'w':
+                rcExit2 = DoWait(ValueUnion.u32);
+                break;
 
             case 'q':
                 g_uVerbosity = 0;
