@@ -352,6 +352,25 @@ typedef AUDIOTESTERRORDESC *PAUDIOTESTERRORDESC;
 /** Const pointer to an audio test error description. */
 typedef AUDIOTESTERRORDESC const *PCAUDIOTESTERRORDESC;
 
+/**
+ * Enumeration specifying an internal test state.
+ */
+typedef enum AUDIOTESTSTATE
+{
+    /** Test is initializing. */
+    AUDIOTESTSTATE_INIT = 0,
+    /** Test is in pre-run phase. */
+    AUDIOTESTSTATE_PRE,
+    /** Test is running */
+    AUDIOTESTSTATE_RUN,
+    /** Test is in post-run phase. */
+    AUDIOTESTSTATE_POST,
+    /** Test has been run. */
+    AUDIOTESTSTATE_DONE,
+    /** The usual 32-bit hack. */
+    AUDIOTESTSTATE_32BIT_HACK = 0x7fffffff
+} AUDIOTESTSTATE;
+
 double AudioTestToneInit(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps, double dbFreq);
 double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
 double AudioTestToneGetRandomFreq(void);
@@ -409,6 +428,8 @@ uint32_t AudioTestErrorDescCount(PCAUDIOTESTERRORDESC pErr);
 bool   AudioTestErrorDescFailed(PCAUDIOTESTERRORDESC pErr);
 
 void   AudioTestErrorDescDestroy(PAUDIOTESTERRORDESC pErr);
+
+const char *AudioTestStateToStr(AUDIOTESTSTATE enmState);
 
 /** @name Wave File Accessors
  * @{ */

@@ -98,23 +98,6 @@ typedef struct VALKITTESTTONEDATA
 } VALKITTESTTONEDATA;
 
 /**
- * Enumeration specifying an internal test state.
- */
-typedef enum VALKITTESTSTATE
-{
-    /** Test is initializing. */
-    VALKITTESTSTATE_INIT = 0,
-    /** Test is in pre-run phase. */
-    VALKITTESTSTATE_PRE,
-    /** Test is running */
-    VALKITTESTSTATE_RUN,
-    /** Test is in post-run phase. */
-    VALKITTESTSTATE_POST,
-    /** Test has been run. */
-    VALKITTESTSTATE_DONE
-} VALKITTESTSTATE;
-
-/**
  * Structure keeping a single Validation Kit test.
  */
 typedef struct VALKITTESTDATA
@@ -126,7 +109,7 @@ typedef struct VALKITTESTDATA
     /** Current test set entry to process. */
     PAUDIOTESTENTRY        pEntry;
     /** Current test state. */
-    VALKITTESTSTATE        enmState;
+    AUDIOTESTSTATE         enmState;
     /** Current test object to process. */
     AUDIOTESTOBJ           Obj;
     /** Stream configuration to use for this test. */
@@ -213,28 +196,6 @@ typedef DRVHOSTVALKITAUDIO *PDRVHOSTVALKITAUDIO;
 /*********************************************************************************************************************************
 *   Internal test handling code                                                                                                  *
 *********************************************************************************************************************************/
-
-/**
- * Converts an internal test state enum value to a string.
- *
- * @returns Pointer to read-only internal test state string on success,
- *          "illegal" if invalid command value.
- * @param   enmState            The state to convert.
- */
-DECLINLINE(const char *) drvHostValKitTestStatusToStr(VALKITTESTSTATE enmState)
-{
-    switch (enmState)
-    {
-        case VALKITTESTSTATE_INIT: return "init";
-        case VALKITTESTSTATE_PRE:  return "pre";
-        case VALKITTESTSTATE_RUN:  return "run";
-        case VALKITTESTSTATE_POST: return "post";
-        case VALKITTESTSTATE_DONE: return "done";
-        /* no default: */
-            break;
-    }
-    AssertMsgFailedReturn(("Invalid test state: #%x\n", enmState), "illegal");
-}
 
 /**
  * Unregisters a ValKit test, common code.
@@ -332,9 +293,9 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
     PVALKITTESTDATA pTst, pTstNext;
     RTListForEachSafe(&pThis->lstTestsRec, pTst, pTstNext, VALKITTESTDATA, Node)
     {
-        if (pTst->enmState != VALKITTESTSTATE_DONE)
+        if (pTst->enmState != AUDIOTESTSTATE_DONE)
             LogRel(("ValKit: \tWarning: Test #%RU32 (recording) not done yet (state is '%s')\n",
-                    pTst->idxTest, drvHostValKitTestStatusToStr(pTst->enmState)));
+                    pTst->idxTest, AudioTestStateToStr(pTst->enmState)));
 
         size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
         if (cbOutstanding)
@@ -349,9 +310,9 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
 
     RTListForEachSafe(&pThis->lstTestsPlay, pTst, pTstNext, VALKITTESTDATA, Node)
     {
-        if (pTst->enmState != VALKITTESTSTATE_DONE)
+        if (pTst->enmState != AUDIOTESTSTATE_DONE)
             LogRel(("ValKit: \tWarning: Test #%RU32 (playback) not done yet (state is '%s')\n",
-                    pTst->idxTest, drvHostValKitTestStatusToStr(pTst->enmState)));
+                    pTst->idxTest, AudioTestStateToStr(pTst->enmState)));
 
         size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
         if (cbOutstanding)
@@ -448,7 +409,7 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
             if (RT_SUCCESS(rc))
             {
                 LogRel(("ValKit: Waiting for all tests of set '%s' to end ...\n", pszTag));
-                rc = RTSemEventWait(pThis->EventSemEnded, RT_MS_1MIN);
+                rc = RTSemEventWait(pThis->EventSemEnded, RT_MS_5SEC);
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("ValKit: Waiting for tests of set '%s' to end failed with %Rrc\n", pszTag, rc));
@@ -527,7 +488,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
     PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
     AssertPtrReturn(pTestData, VERR_NO_MEMORY);
 
-    pTestData->enmState = VALKITTESTSTATE_INIT;
+    pTestData->enmState = AUDIOTESTSTATE_INIT;
 
     memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
@@ -584,7 +545,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
     AssertPtrReturn(pTestData, VERR_NO_MEMORY);
 
-    pTestData->enmState = VALKITTESTSTATE_INIT;
+    pTestData->enmState = AUDIOTESTSTATE_INIT;
 
     memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
@@ -878,7 +839,7 @@ static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAU
     }
 
     if (   pTst
-        && pTst->enmState == VALKITTESTSTATE_INIT) /* Test not started yet? */
+        && pTst->enmState == AUDIOTESTSTATE_INIT) /* Test not started yet? */
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
@@ -908,7 +869,7 @@ static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAU
         pStrmValKit->cbAvail += AudioTestBeaconGetSize(&pTst->t.TestTone.Beacon); /* Add beacon data, if any. */
         LogRel2(("ValKit: Now total of %RU32 bytes available for capturing\n", pStrmValKit->cbAvail));
 
-        pTst->enmState = VALKITTESTSTATE_PRE;
+        pTst->enmState = AUDIOTESTSTATE_PRE;
     }
 
     return pStrmValKit->cbAvail;
@@ -1036,7 +997,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         pThis->cbPlayedSilence = 0;
     }
 
-    if (pTst->enmState == VALKITTESTSTATE_INIT) /* Test not started yet? */
+    if (pTst->enmState == AUDIOTESTSTATE_INIT) /* Test not started yet? */
     {
         AUDIOTESTPARMS Parms;
         RT_ZERO(Parms);
@@ -1060,7 +1021,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
             RTTimeToString(&Parms.TestTone.Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
             LogRel(("ValKit: Test created (caller UTC): %s\n", szTimeCreated));
 
-            pTst->enmState = VALKITTESTSTATE_PRE;
+            pTst->enmState = AUDIOTESTSTATE_PRE;
         }
     }
 
@@ -1074,9 +1035,9 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
         switch (pTst->enmState)
         {
-            case VALKITTESTSTATE_PRE:
+            case AUDIOTESTSTATE_PRE:
                 RT_FALL_THROUGH();
-            case VALKITTESTSTATE_POST:
+            case AUDIOTESTSTATE_POST:
             {
                 PAUDIOTESTTONEBEACON pBeacon = &pTst->t.TestTone.Beacon;
                 if (    AudioTestBeaconGetSize(pBeacon)
@@ -1084,30 +1045,33 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 {
                     bool const fStarted = AudioTestBeaconGetRemaining(pBeacon) == AudioTestBeaconGetSize(pBeacon);
 
+                    /* Limit adding data to the beacon size. */
                     uint32_t const cbToAddMax = RT_MIN(cbBuf, AudioTestBeaconGetRemaining(pBeacon));
 
                     AudioTestBeaconAddConsecutive(pBeacon, (uint8_t *)pvBuf, cbToAddMax);
+                    /** @todo Take left-over data into account (and stash them away for the test tone)? */
 
                     if (fStarted)
-                        LogRel2(("ValKit: Test #%RU32: Detection of %s playback beacon started (%RU32ms played so far)\n",
+                        LogRel2(("ValKit: Test #%RU32: Detection of %s beacon started (%RU32ms played so far)\n",
                                  pTst->idxTest, AudioTestBeaconTypeGetName(pBeacon->enmType),
                                  PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedTotal)));
                     if (AudioTestBeaconIsComplete(pBeacon))
                     {
-                        LogRel2(("ValKit: Test #%RU32: Detection of %s playback beacon ended\n",
+                        LogRel2(("ValKit: Test #%RU32: Detection of %s beacon ended\n",
                                  pTst->idxTest, AudioTestBeaconTypeGetName(pBeacon->enmType)));
 
-                        if (pTst->enmState == VALKITTESTSTATE_PRE)
-                            pTst->enmState = VALKITTESTSTATE_RUN;
-                        else if (pTst->enmState == VALKITTESTSTATE_POST)
-                            pTst->enmState = VALKITTESTSTATE_DONE;
+                        if (pTst->enmState == AUDIOTESTSTATE_PRE)
+                            pTst->enmState = AUDIOTESTSTATE_RUN;
+                        else if (pTst->enmState == AUDIOTESTSTATE_POST)
+                            pTst->enmState = AUDIOTESTSTATE_DONE;
                     }
                 }
-
+                else /* Go to the next state. */
+                    pTst->enmState = AUDIOTESTSTATE_RUN;
                 break;
             }
 
-            case VALKITTESTSTATE_RUN:
+            case AUDIOTESTSTATE_RUN:
             {
                 /* Whether we count all silence as recorded data or not.
                  * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
@@ -1124,14 +1088,14 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                         LogRel(("ValKit: Warning: Test #%RU32 read %RU32 bytes more than announced\n",
                                 pTst->idxTest, pTst->t.TestTone.u.Play.cbRead - pTst->t.TestTone.u.Play.cbToRead));
 
-                    pTst->enmState = VALKITTESTSTATE_POST;
+                    pTst->enmState = AUDIOTESTSTATE_POST;
                     /* Re-use the beacon object, but this time it's the post beacon. */
                     AudioTestBeaconInit(&pTst->t.TestTone.Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_POST, &pTst->t.TestTone.Parms.Props);
                 }
                 break;
             }
 
-            case VALKITTESTSTATE_DONE:
+            case AUDIOTESTSTATE_DONE:
             {
                 /* Handled below. */
                 break;
@@ -1146,7 +1110,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         cbWritten = cbBuf;
     }
 
-    if (pTst->enmState == VALKITTESTSTATE_DONE)
+    if (pTst->enmState == AUDIOTESTSTATE_DONE)
     {
         AudioTestSetTestDone(pTst->pEntry);
 
@@ -1237,9 +1201,9 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
 
     switch (pTst->enmState)
     {
-        case VALKITTESTSTATE_PRE:
+        case AUDIOTESTSTATE_PRE:
             RT_FALL_THROUGH();
-        case VALKITTESTSTATE_POST:
+        case AUDIOTESTSTATE_POST:
         {
             PAUDIOTESTTONEBEACON pBeacon = &pTst->t.TestTone.Beacon;
             if (    AudioTestBeaconGetSize(pBeacon)
@@ -1265,16 +1229,18 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                     LogRel2(("ValKit: Test #%RU32: Writing %s beacon end\n",
                              pTst->idxTest, AudioTestBeaconTypeGetName(pBeacon->enmType)));
 
-                    if (pTst->enmState == VALKITTESTSTATE_PRE)
-                        pTst->enmState = VALKITTESTSTATE_RUN;
-                    else if (pTst->enmState == VALKITTESTSTATE_POST)
-                        pTst->enmState = VALKITTESTSTATE_DONE;
+                    if (pTst->enmState == AUDIOTESTSTATE_PRE)
+                        pTst->enmState = AUDIOTESTSTATE_RUN;
+                    else if (pTst->enmState == AUDIOTESTSTATE_POST)
+                        pTst->enmState = AUDIOTESTSTATE_DONE;
                 }
             }
+            else /* Go to the next state. */
+                pTst->enmState = AUDIOTESTSTATE_RUN;
             break;
         }
 
-        case VALKITTESTSTATE_RUN:
+        case AUDIOTESTSTATE_RUN:
         {
             uint32_t const cbToWrite = RT_MIN(cbBuf, pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten);
             if (cbToWrite)
@@ -1300,7 +1266,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                 LogRel(("ValKit: Test #%RU32: Recording done (took %RU32ms)\n",
                         pTst->idxTest, RTTimeMilliTS() - pTst->msStartedTS));
 
-                pTst->enmState = VALKITTESTSTATE_POST;
+                pTst->enmState = AUDIOTESTSTATE_POST;
                 /* Re-use the beacon object, but this time it's the post beacon. */
                 AudioTestBeaconInit(&pTst->t.TestTone.Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_POST, &pTst->t.TestTone.Parms.Props);
                 pStrmValKit->cbAvail += AudioTestBeaconGetSize(&pTst->t.TestTone.Beacon);
@@ -1308,7 +1274,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
             break;
         }
 
-        case VALKITTESTSTATE_DONE:
+        case AUDIOTESTSTATE_DONE:
         {
             /* Handled below. */
             break;
@@ -1326,7 +1292,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
             pStrmValKit->cbAvail -= RT_MIN(pStrmValKit->cbAvail, cbWritten);
     }
 
-    if (pTst->enmState == VALKITTESTSTATE_DONE)
+    if (pTst->enmState == AUDIOTESTSTATE_DONE)
     {
         AudioTestSetTestDone(pTst->pEntry);
 

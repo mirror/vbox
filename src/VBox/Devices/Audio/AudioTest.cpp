@@ -2469,20 +2469,15 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
 {
     uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pBeacon->Props); /* Use the audio frame size as chunk size. */
 
-    if (cbBuf < cbFrameSize)
+    if (cbBuf < cbFrameSize) /* Fend-off data which isn't at least one full frame. */
         return 0;
 
     AssertMsgReturn(cbBuf % cbFrameSize == 0,
                     ("Buffer size must be frame-aligned"), 0);
 
-    uint8_t const byBeacon      = AudioTestBeaconByteFromType(pBeacon->enmType);
-    /*bool          fInBeacon     = false;
-    uint32_t      cbBeacon      = 0;
-    size_t        offLastBeacon = 0;*/
-    size_t offGap = 0;
-
-    unsigned const cbStep             = cbFrameSize;
-    uint32_t const cbProcessedInitial = pBeacon->cbUsed;
+    uint8_t  const byBeacon      = AudioTestBeaconByteFromType(pBeacon->enmType);
+    unsigned const cbStep        = cbFrameSize;
+    uint32_t const cbUsedInitial = pBeacon->cbUsed;
 
     for (size_t i = 0; i < cbBuf; i += cbStep)
     {
@@ -2491,19 +2486,24 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
             && pauBuf[i + 2] == byBeacon
             && pauBuf[i + 3] == byBeacon)
         {
-            if (offGap)
-            {
-                pBeacon->cbUsed = 0;
-            }
             pBeacon->cbUsed += cbStep;
-            offGap = 0;
+
+            if (pBeacon->cbUsed > pBeacon->cbSize)
+                pBeacon->cbUsed -= pBeacon->cbSize;
         }
         else
-            offGap = i;
+        {
+            /* If beacon is not complete yet, we detected a gap here. Start all over then. */
+            if (pBeacon->cbUsed < pBeacon->cbSize)
+                pBeacon->cbUsed = 0;
+        }
     }
 
-    Assert(pBeacon->cbUsed >= cbProcessedInitial);
-    return pBeacon->cbUsed - cbProcessedInitial;
+    if (!pBeacon->cbUsed)
+        return 0;
+
+    AssertMsg(pBeacon->cbUsed >= cbUsedInitial, ("cbUsed (%RU32) < cbUsedInitial (%RU32)\n", pBeacon->cbUsed, cbUsedInitial));
+    return pBeacon->cbUsed - cbUsedInitial;
 }
 
 /**
@@ -3040,6 +3040,28 @@ int AudioTestSetVerify(PAUDIOTESTSET pSetA, PAUDIOTESTSET pSetB, PAUDIOTESTERROR
 
 #undef CHECK_RC_MAYBE_RET
 #undef CHECK_RC_MSG_MAYBE_RET
+
+/**
+ * Converts an audio test state enum value to a string.
+ *
+ * @returns Pointer to read-only internal test state string on success,
+ *          "illegal" if invalid command value.
+ * @param   enmState            The state to convert.
+ */
+const char *AudioTestStateToStr(AUDIOTESTSTATE enmState)
+{
+    switch (enmState)
+    {
+        case AUDIOTESTSTATE_INIT: return "init";
+        case AUDIOTESTSTATE_PRE:  return "pre";
+        case AUDIOTESTSTATE_RUN:  return "run";
+        case AUDIOTESTSTATE_POST: return "post";
+        case AUDIOTESTSTATE_DONE: return "done";
+        case AUDIOTESTSTATE_32BIT_HACK:
+            break;
+    }
+    AssertMsgFailedReturn(("Invalid test state: #%x\n", enmState), "illegal");
+}
 
 
 /*********************************************************************************************************************************
