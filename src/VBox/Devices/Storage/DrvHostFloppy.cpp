@@ -50,7 +50,7 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init instance data.
      */
-    int rc = DRVHostBaseInit(pDrvIns, pCfg, "Path\0ReadOnly\0Interval\0Locked\0BIOSVisible\0",
+    int rc = DRVHostBaseInit(pDrvIns, pCfg, "Path\0ReadOnly\0Interval\0BIOSVisible\0",
                              PDMMEDIATYPE_FLOPPY_1_44);
     LogFlow(("drvHostFloppyConstruct: returns %Rrc\n", rc));
     return rc;
