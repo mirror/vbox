@@ -169,7 +169,23 @@ VMMR3_INT_DECL(int) NEMR3Init(PVM pVM, bool fFallback, bool fForced)
         if (RT_SUCCESS(rc))
         {
             if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
-                LogRel(("NEM: NEMR3Init: Active.\n"));
+            {
+#ifdef RT_OS_WINDOWS /* The WHv* API is extremely slow at handling VM exits. The AppleHv and
+                        KVM APIs are much faster, thus the different mode name. :-) */
+                LogRel(("NEM:\n"
+                        "NEM: NEMR3Init: Snail execution mode is active!\n"
+                        "NEM: Note! VirtualBox is not able to run at its full potential in this execution mode.\n"
+                        "NEM:       To see VirtualBox run at max speed you need to disable all Windows features\n"
+                        "NEM:       making use of Hyper-V.  That is a moving target, so google how and carefully\n"
+                        "NEM:       consider the consequences of disabling these features.\n"
+                        "NEM:\n"));
+#else
+                LogRel(("NEM:\n"
+                        "NEM: NEMR3Init: Turtle execution mode is active!\n"
+                        "NEM: Note! VirtualBox is not able to run at its full potential in this execution mode.\n"
+                        "NEM:\n"));
+#endif
+            }
             else
             {
                 LogRel(("NEM: NEMR3Init: Not available.\n"));
