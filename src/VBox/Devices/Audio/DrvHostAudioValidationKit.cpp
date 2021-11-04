@@ -332,9 +332,13 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
     PVALKITTESTDATA pTst, pTstNext;
     RTListForEachSafe(&pThis->lstTestsRec, pTst, pTstNext, VALKITTESTDATA, Node)
     {
+        if (pTst->enmState != VALKITTESTSTATE_DONE)
+            LogRel(("ValKit: \tWarning: Test #%RU32 (recording) not done yet (state is '%s')\n",
+                    pTst->idxTest, drvHostValKitTestStatusToStr(pTst->enmState)));
+
         size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
         if (cbOutstanding)
-            LogRel(("ValKit: \tRecording test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+            LogRel(("ValKit: \tWarning: Recording test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
                     pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
                     100 - (pTst->t.TestTone.u.Rec.cbWritten * 100) / RT_MAX(pTst->t.TestTone.u.Rec.cbToWrite, 1)));
         drvHostValKiUnregisterRecTest(pThis, pTst);
@@ -345,9 +349,13 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
 
     RTListForEachSafe(&pThis->lstTestsPlay, pTst, pTstNext, VALKITTESTDATA, Node)
     {
+        if (pTst->enmState != VALKITTESTSTATE_DONE)
+            LogRel(("ValKit: \tWarning: Test #%RU32 (playback) not done yet (state is '%s')\n",
+                    pTst->idxTest, drvHostValKitTestStatusToStr(pTst->enmState)));
+
         size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
         if (cbOutstanding)
-            LogRel(("ValKit: \tPlayback test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+            LogRel(("ValKit: \tWarning: Playback test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
                     pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
                     100 - (pTst->t.TestTone.u.Play.cbRead * 100) / RT_MAX(pTst->t.TestTone.u.Play.cbToRead, 1)));
         drvHostValKiUnregisterPlayTest(pThis, pTst);
@@ -430,14 +438,6 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
                 AudioTestSetGetTestsTotal(pSet), AudioTestSetGetTestsRunning(pSet), AudioTestSetGetTotalFailures(pSet)));
         LogRel(("ValKit: %RU32 tests still registered total (%RU32 play, %RU32 record)\n",
                 pThis->cTestsTotal, pThis->cTestsPlay, pThis->cTestsRec));
-
-        PVALKITTESTDATA pTst;
-        RTListForEach(&pThis->lstTestsRec, pTst, VALKITTESTDATA, Node)
-        {
-            if (pTst->enmState != VALKITTESTSTATE_DONE)
-                LogRel(("ValKit: Warning: Test #%RU32 not done yet (state is '%s')\n",
-                        pTst->idxTest, drvHostValKitTestStatusToStr(pTst->enmState)));
-        }
 
         if (   AudioTestSetIsRunning(pSet)
             || pThis->cTestsTotal)
