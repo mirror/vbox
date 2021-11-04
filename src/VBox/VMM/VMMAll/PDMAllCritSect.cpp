@@ -79,11 +79,15 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PVMCC pVM, PCPDMCRITS
 #ifdef IN_RING3
     RT_NOREF(pVM, pCritSect);
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
-#else
+
+#elif defined(IN_RING0)
     AssertMsgReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%RX32\n", pCritSect->s.Core.u32Magic),
                     NIL_RTNATIVETHREAD);
-    PVMCPUCC        pVCpu       = VMMGetCpu(pVM);                                       AssertPtr(pVCpu);
-    RTNATIVETHREAD  hNativeSelf = pVCpu ? pVCpu->hNativeThread : NIL_RTNATIVETHREAD;    Assert(hNativeSelf != NIL_RTNATIVETHREAD);
+    RTNATIVETHREAD  hNativeSelf = GVMMR0GetRing3ThreadForSelf(pVM);
+    Assert(hNativeSelf != NIL_RTNATIVETHREAD);
+
+#else
+# error "Invalid context"
 #endif
     return hNativeSelf;
 }
