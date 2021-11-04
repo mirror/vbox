@@ -3054,7 +3054,11 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
      * Try reserve and allocate the backing memory first as this is what is
      * most likely to fail.
      */
-    int rc = MMR3AdjustFixedReservation(pVM, cPages, pszDesc);
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_PGM_NEM_MODE
+    if (!pVM->pgm.s.fNemMode)
+#endif
+        rc = MMR3AdjustFixedReservation(pVM, cPages, pszDesc);
     if (RT_SUCCESS(rc))
     {
         PSUPPAGE paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(SUPPAGE));
@@ -3062,10 +3066,27 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
         {
             void *pvPages;
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
-            RTR0PTR pvPagesR0;
-            rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, &pvPagesR0, paPages);
+            RTR0PTR pvPagesR0 = NIL_RTR0PTR;
+#endif
+
+#ifdef VBOX_WITH_PGM_NEM_MODE
+            if (!pVM->pgm.s.fNemMode)
+#endif
+            {
+#ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+                rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, &pvPagesR0, paPages);
 #else
-            rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, NULL /*pR0Ptr*/, paPages);
+                rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, NULL /*pR0Ptr*/, paPages);
+#endif
+            }
+#ifdef VBOX_WITH_PGM_NEM_MODE
+            else
+            {
+                rc = SUPR3PageAlloc(cPages, &pvPages);
+                if (RT_SUCCESS(rc))
+                    for (uint32_t i = 0; i < cPages; i++)
+                        paPages[i].Phys = UINT64_C(0x0000fffffffff000);
+            }
 #endif
             if (RT_SUCCESS(rc))
             {
@@ -3203,15 +3224,29 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Deregister(PVM pVM, PPDMDEVINS pDevIns, PGMMMI
              * Free the memory.
              */
             uint32_t const cPages   = pCur->cbReal >> PAGE_SHIFT;
-            int rc2 = SUPR3PageFreeEx(pCur->pvR3, cPages);
-            AssertRC(rc2);
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-                rc = rc2;
+#ifdef VBOX_WITH_PGM_NEM_MODE
+            if (!pVM->pgm.s.fNemMode)
+#endif
+            {
+                int rc2 = SUPR3PageFreeEx(pCur->pvR3, cPages);
+                AssertRC(rc2);
+                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    rc = rc2;
 
-            rc2 = MMR3AdjustFixedReservation(pVM, -(int32_t)cPages, pCur->RamRange.pszDesc);
-            AssertRC(rc2);
-            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-                rc = rc2;
+                rc2 = MMR3AdjustFixedReservation(pVM, -(int32_t)cPages, pCur->RamRange.pszDesc);
+                AssertRC(rc2);
+                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+#ifdef VBOX_WITH_PGM_NEM_MODE
+            else
+            {
+                int rc2 = SUPR3PageFree(pCur->pvR3, cPages);
+                AssertRC(rc2);
+                if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+#endif
 
             if (pCur->pPhysHandlerR3)
             {
