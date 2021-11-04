@@ -412,13 +412,7 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const 
                 sv = SettingsVersion_v1_18;
             else if (uMinor == 19)
                 sv = SettingsVersion_v1_19;
-#ifndef VBOX_WITH_VMNET
             else if (uMinor > 19)
-#else /* VBOX_WITH_VMNET */
-            else if (uMinor == 20)
-                sv = SettingsVersion_v1_20;
-            else if (uMinor > 20)
-#endif /* VBOX_WITH_VMNET */
                 sv = SettingsVersion_Future;
         }
         else if (uMajor > 1)
@@ -1054,12 +1048,6 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.19";
             break;
 
-#ifdef VBOX_WITH_VMNET
-        case SettingsVersion_v1_20:
-            pcszVersion = "1.20";
-            break;
-#endif /* VBOX_WITH_VMNET */
-
         default:
             // catch human error: the assertion below will trigger in debug
             // or dbgopt builds, so hopefully this will get noticed sooner in
@@ -1082,13 +1070,8 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
                 // for "forgotten settings" this may not be the best choice,
                 // but as it's an omission of someone who changed this file
                 // it's the only generic possibility.
-#ifndef VBOX_WITH_VMNET
                 pcszVersion = "1.19";
                 m->sv = SettingsVersion_v1_19;
-#else /* VBOX_WITH_VMNET */
-                pcszVersion = "1.20";
-                m->sv = SettingsVersion_v1_20;
-#endif /* VBOX_WITH_VMNET */
             }
             break;
     }
@@ -2413,11 +2396,11 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 void MainConfigFile::bumpSettingsVersionIfNeeded()
 {
 #ifdef VBOX_WITH_VMNET
-    if (m->sv < SettingsVersion_v1_20)
+    if (m->sv < SettingsVersion_v1_19)
     {
         // VirtualBox 7.0 adds support for host-only networks.
         if (!llHostOnlyNetworks.empty())
-            m->sv = SettingsVersion_v1_20;
+            m->sv = SettingsVersion_v1_19;
     }
 #endif /* VBOX_WITH_VMNET */
 #ifdef VBOX_WITH_CLOUD_NET
@@ -7961,33 +7944,16 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
-#ifdef VBOX_WITH_VMNET
-    if (m->sv < SettingsVersion_v1_20)
-    {
-        // VirtualBox 7.0 adds a host-only network attachment.
-        NetworkAdaptersList::const_iterator netit;
-        for (netit = hardwareMachine.llNetworkAdapters.begin();
-             netit != hardwareMachine.llNetworkAdapters.end();
-             ++netit)
-        {
-            if (netit->mode == NetworkAttachmentType_HostOnlyNetwork)
-            {
-                m->sv = SettingsVersion_v1_20;
-                break;
-            }
-        }
-    }
-#endif /* VBOX_WITH_VMNET */
     if (m->sv < SettingsVersion_v1_19)
     {
-        // VirtualBox 6.2 adds iommu device.
+        // VirtualBox 7.0 adds iommu device.
         if (hardwareMachine.iommuType != IommuType_None)
         {
             m->sv = SettingsVersion_v1_19;
             return;
         }
 
-        // VirtualBox 6.2 adds a Trusted Platform Module.
+        // VirtualBox 7.0 adds a Trusted Platform Module.
         if (   hardwareMachine.tpmSettings.tpmType != TpmType_None
             || hardwareMachine.tpmSettings.strLocation.isNotEmpty())
         {
@@ -8000,6 +7966,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              netit != hardwareMachine.llNetworkAdapters.end();
              ++netit)
         {
+            // VirtualBox 7.0 adds a flag if NAT can reach localhost.
             if (   netit->fEnabled
                 && netit->mode == NetworkAttachmentType_NAT
                 && !netit->nat.fLocalhostReachable)
@@ -8007,6 +7974,15 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 m->sv = SettingsVersion_v1_19;
                 break;
             }
+
+#ifdef VBOX_WITH_VMNET
+            // VirtualBox 7.0 adds a host-only network attachment.
+            if (netit->mode == NetworkAttachmentType_HostOnlyNetwork)
+            {
+                m->sv = SettingsVersion_v1_19;
+                break;
+            }
+#endif /* VBOX_WITH_VMNET */
         }
     }
 

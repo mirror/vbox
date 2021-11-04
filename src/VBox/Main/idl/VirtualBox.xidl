@@ -610,20 +610,15 @@
       -->
     </const>
     <const name="v1_19" value="21">
-      <desc>Settings version "1.19", written by VirtualBox 6.2.x.</desc>
-      <!--
-          Machine changes: IOMMU device.
-      -->
-    </const>
-    <const name="v1_20" value="22">
-      <desc>Settings version "1.20", written by VirtualBox 7.0.x.</desc>
+      <desc>Settings version "1.19", written by VirtualBox 7.0.x.</desc>
       <!--
           VirtualBox.xml additions: HostOnlyNetworks in NetserviceRegistry
-          NetworkAdapter changes: HostOnlyNetwork mode.
+          Machine changes: IOMMU device, HostOnlyNetwork mode for
+          NetworkAdapter.
       -->
     </const>
     <const name="Future" value="99999">
-      <desc>Settings version greater than "1.20", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.19", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
