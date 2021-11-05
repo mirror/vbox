@@ -2457,27 +2457,30 @@ const char *AudioTestBeaconTypeGetName(AUDIOTESTTONEBEACONTYPE enmType)
 /**
  * Adds audio data to a given beacon.
  *
- * @returns Bytes added to the beacon, or 0 if invalid / nothing was added.
+ * @returns VBox status code, VERR_NOT_FOUND if not beacon data was not found.
  * @param   pBeacon             Beacon to add data for.
  * @param   pauBuf              Buffer of audio data to add.
  * @param   cbBuf               Size (in bytes) of \a pauBuf.
+ * @param   pOff                Where to return the offset within \a pauBuf where beacon ended on success.
+ *                              Optional and can be NULL.
  *
  * @note    The audio data must be a) match the beacon type and b) consecutive, that is, without any gaps,
  *          to be added as valid to the beacon.
  */
-uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *pauBuf, size_t cbBuf)
+int AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *pauBuf, size_t cbBuf, size_t *pOff)
 {
+    AssertPtrReturn(pBeacon, VERR_INVALID_POINTER);
+    AssertPtrReturn(pauBuf,  VERR_INVALID_POINTER);
+    /* pOff is optional. */
+
+    size_t         offBeacon   = UINT64_MAX;
     uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pBeacon->Props); /* Use the audio frame size as chunk size. */
-
-    if (cbBuf < cbFrameSize) /* Fend-off data which isn't at least one full frame. */
-        return 0;
-
-    AssertMsgReturn(cbBuf % cbFrameSize == 0,
-                    ("Buffer size must be frame-aligned"), 0);
 
     uint8_t  const byBeacon      = AudioTestBeaconByteFromType(pBeacon->enmType);
     unsigned const cbStep        = cbFrameSize;
-    uint32_t const cbUsedInitial = pBeacon->cbUsed;
+
+    /* Make sure that we do frame-aligned reads. */
+    cbBuf = PDMAudioPropsFloorBytesToFrame(&pBeacon->Props, cbBuf);
 
     for (size_t i = 0; i < cbBuf; i += cbStep)
     {
@@ -2486,24 +2489,29 @@ uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8
             && pauBuf[i + 2] == byBeacon
             && pauBuf[i + 3] == byBeacon)
         {
-            pBeacon->cbUsed += cbStep;
-
-            if (pBeacon->cbUsed > pBeacon->cbSize)
-                pBeacon->cbUsed -= pBeacon->cbSize;
+            /* Make sure to handle overflows and let beacon start from scratch. */
+            pBeacon->cbUsed = (pBeacon->cbUsed + cbStep) % pBeacon->cbSize;
+            if (pBeacon->cbUsed == 0) /* Beacon complete (see module line above)? */
+            {
+                pBeacon->cbUsed = pBeacon->cbSize;
+                offBeacon       = i + cbStep; /* Point to data right *after* the beacon. */
+            }
         }
         else
         {
             /* If beacon is not complete yet, we detected a gap here. Start all over then. */
-            if (pBeacon->cbUsed < pBeacon->cbSize)
+            if (RT_LIKELY(pBeacon->cbUsed != pBeacon->cbSize))
                 pBeacon->cbUsed = 0;
         }
     }
 
-    if (!pBeacon->cbUsed)
-        return 0;
+    if (offBeacon != UINT32_MAX)
+    {
+        if (pOff)
+            *pOff = offBeacon;
+    }
 
-    AssertMsg(pBeacon->cbUsed >= cbUsedInitial, ("cbUsed (%RU32) < cbUsedInitial (%RU32)\n", pBeacon->cbUsed, cbUsedInitial));
-    return pBeacon->cbUsed - cbUsedInitial;
+    return offBeacon == UINT64_MAX ? VERR_NOT_FOUND : VINF_SUCCESS;
 }
 
 /**
@@ -2530,6 +2538,7 @@ bool AudioTestBeaconIsComplete(PCAUDIOTESTTONEBEACON pBeacon)
  * @param   pCmp                File comparison parameters to file to verify beacon for.
  * @param   pToneParms          Tone parameters to use for verification.
  * @param   puOff               Where to return the absolute file offset (in bytes) right after the found beacon on success.
+ *                              Optional and can be NULL.
  */
 static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
                                      bool fIn, bool fPre, PAUDIOTESTFILECMPPARMS pCmp, PAUDIOTESTTONEPARMS pToneParms,
@@ -2544,26 +2553,29 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
                         ? (fPre ? AUDIOTESTTONEBEACONTYPE_PLAY_PRE : AUDIOTESTTONEBEACONTYPE_PLAY_POST)
                         : (fPre ? AUDIOTESTTONEBEACONTYPE_REC_PRE  : AUDIOTESTTONEBEACONTYPE_REC_POST), &pToneParms->Props);
 
-    LogRel2(("Verifying %s beacon @ %RU64\n", AudioTestBeaconTypeGetName(Beacon.enmType), pCmp->offStart));
-
-    uint8_t        auBuf[64];
+    uint8_t        auBuf[_64K];
     uint64_t       cbToCompare   = pCmp->cbSize;
     uint32_t const cbFrameSize   = PDMAudioPropsFrameSize(&Beacon.Props);
-    uint64_t       offBeaconLast = 0;
+    uint64_t       offBeaconLast = UINT64_MAX;
 
-    /* Slow as heck, but does the job for now. */
+    Assert(sizeof(auBuf) % cbFrameSize == 0);
+
     while (cbToCompare)
     {
         size_t cbRead;
-        rc = RTFileRead(pCmp->hFile, auBuf, RT_MIN(cbToCompare, cbFrameSize), &cbRead);
+        rc = RTFileRead(pCmp->hFile, auBuf, RT_MIN(cbToCompare, sizeof(auBuf)), &cbRead);
         AssertRCBreak(rc);
 
         if (cbRead < cbFrameSize)
             break;
 
-        const uint32_t cbAdded = AudioTestBeaconAddConsecutive(&Beacon, auBuf, cbRead);
-        if (cbAdded)
-            offBeaconLast = RTFileTell(pCmp->hFile);
+        size_t uOff;
+        int rc2 = AudioTestBeaconAddConsecutive(&Beacon, auBuf, cbRead, &uOff);
+        if (RT_SUCCESS(rc2))
+        {
+            /* Save the last found (absolute bytes, in file) position of a (partially) found beacon. */
+            offBeaconLast = RTFileTell(pCmp->hFile) - (cbRead - uOff);
+        }
 
         Assert(cbToCompare >= cbRead);
         cbToCompare -= cbRead;
@@ -2584,6 +2596,7 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
     else
     {
         AssertReturn(AudioTestBeaconGetRemaining(&Beacon) == 0, VERR_INTERNAL_ERROR);
+        AssertReturn(offBeaconLast != UINT32_MAX, VERR_INTERNAL_ERROR);
         AssertReturn(offBeaconLast >= AudioTestBeaconGetSize(&Beacon), VERR_INTERNAL_ERROR);
 
         int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "File '%s': %s beacon found at offset %RU64 and valid",
@@ -2980,11 +2993,9 @@ void AudioTestSetVerifyOptsInitStrict(PAUDIOTESTVERIFYOPTS pOpts)
     pOpts->fKeepGoing      = true;
     pOpts->fNormalize      = false; /* Skip normalization by default now, as we now use the OS' master volume to play/record tones. */
     pOpts->cMaxDiff        = 0;     /* By default we're very strict and consider any diff as being erroneous. */
-    pOpts->uMaxSizePercent = 1;     /* 1% is okay for us; might be due to any buffering / setup phase. */
-
-    /* We use a search window of 10ms by default for finding (non-)silent parts. */
-    pOpts->msSearchWindow  = 10;
-
+    pOpts->uMaxSizePercent = 10;    /* 10% is okay for us for now; might be due to any buffering / setup phase.
+                                       Anything above this is suspicious and should be reported for further investigation. */
+    pOpts->msSearchWindow  = 10;    /* We use a search window of 10ms by default for finding (non-)silent parts. */
 }
 
 /**

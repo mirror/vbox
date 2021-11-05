@@ -297,11 +297,14 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
             LogRel(("ValKit: \tWarning: Test #%RU32 (recording) not done yet (state is '%s')\n",
                     pTst->idxTest, AudioTestStateToStr(pTst->enmState)));
 
-        size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
-        if (cbOutstanding)
-            LogRel(("ValKit: \tWarning: Recording test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
-                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
-                    100 - (pTst->t.TestTone.u.Rec.cbWritten * 100) / RT_MAX(pTst->t.TestTone.u.Rec.cbToWrite, 1)));
+        if (pTst->t.TestTone.u.Rec.cbToWrite > pTst->t.TestTone.u.Rec.cbWritten)
+        {
+            size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
+            if (cbOutstanding)
+                LogRel(("ValKit: \tWarning: Recording test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+                        pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
+                        100 - (pTst->t.TestTone.u.Rec.cbWritten * 100) / RT_MAX(pTst->t.TestTone.u.Rec.cbToWrite, 1)));
+        }
         drvHostValKiUnregisterRecTest(pThis, pTst);
     }
 
@@ -314,11 +317,14 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
             LogRel(("ValKit: \tWarning: Test #%RU32 (playback) not done yet (state is '%s')\n",
                     pTst->idxTest, AudioTestStateToStr(pTst->enmState)));
 
-        size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
-        if (cbOutstanding)
-            LogRel(("ValKit: \tWarning: Playback test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
-                    pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
-                    100 - (pTst->t.TestTone.u.Play.cbRead * 100) / RT_MAX(pTst->t.TestTone.u.Play.cbToRead, 1)));
+        if (pTst->t.TestTone.u.Play.cbToRead > pTst->t.TestTone.u.Play.cbRead)
+        {
+            size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+            if (cbOutstanding)
+                LogRel(("ValKit: \tWarning: Playback test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+                        pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
+                        100 - (pTst->t.TestTone.u.Play.cbRead * 100) / RT_MAX(pTst->t.TestTone.u.Play.cbToRead, 1)));
+        }
         drvHostValKiUnregisterPlayTest(pThis, pTst);
     }
 
@@ -1029,10 +1035,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     if (RT_SUCCESS(rc))
     {
-        /* Always write (record) everything, no matter if the current audio contains complete silence or not.
-         * Might be also become handy later if we want to have a look at start/stop timings and so on. */
-        rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbBuf);
-
         switch (pTst->enmState)
         {
             case AUDIOTESTSTATE_PRE:
@@ -1045,11 +1047,18 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 {
                     bool const fStarted = AudioTestBeaconGetRemaining(pBeacon) == AudioTestBeaconGetSize(pBeacon);
 
-                    /* Limit adding data to the beacon size. */
-                    uint32_t const cbToAddMax = RT_MIN(cbBuf, AudioTestBeaconGetRemaining(pBeacon));
-
-                    AudioTestBeaconAddConsecutive(pBeacon, (uint8_t *)pvBuf, cbToAddMax);
-                    /** @todo Take left-over data into account (and stash them away for the test tone)? */
+                    size_t uOff; /* Points at the data right *after the found beacon data. */
+                    rc2 = AudioTestBeaconAddConsecutive(pBeacon, (uint8_t *)pvBuf, cbBuf, &uOff);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        /*
+                         * When being in the AUDIOTESTSTATE_PRE state, we might get more audio data
+                         * than we need for the pre-beacon to complete. In other words, that "more data"
+                         * needs to be counted to the actual recorded test tone data then.
+                         */
+                        if (pTst->enmState == AUDIOTESTSTATE_PRE)
+                            pTst->t.TestTone.u.Play.cbRead += cbBuf - (uint32_t)uOff; /* Add data after pre-beacon */
+                    }
 
                     if (fStarted)
                         LogRel2(("ValKit: Test #%RU32: Detection of %s beacon started (%RU32ms played so far)\n",
@@ -1076,7 +1085,17 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 /* Whether we count all silence as recorded data or not.
                  * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
                 if (!fIsAllSilence)
+                {
+                    uint32_t const cbToAddMax = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+
+                    /* Don't read more than we're told to.
+                     * After the actual test tone data there might come a post beacon which also
+                     * needs to be handled in the AUDIOTESTSTATE_POST state then. */
+                    if (cbBuf > cbToAddMax)
+                        cbBuf = cbToAddMax;
+
                     pTst->t.TestTone.u.Play.cbRead += cbBuf;
+                }
 
                 const bool fComplete = pTst->t.TestTone.u.Play.cbRead >= pTst->t.TestTone.u.Play.cbToRead;
                 if (fComplete)
@@ -1105,6 +1124,11 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 AssertFailed();
                 break;
         }
+
+        /* Always write (record) everything, no matter if the current audio contains complete silence or not.
+         * Might be also become handy later if we want to have a look at start/stop timings and so on. */
+        rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbBuf);
+        AssertRC(rc);
 
         /* Always report everything as being played. */
         cbWritten = cbBuf;

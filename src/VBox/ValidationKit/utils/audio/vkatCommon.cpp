@@ -802,11 +802,6 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
                     cbRecTotal += cbRecorded; /* Do a bit of accounting. */
 
-                    /* Always write (record) everything, no matter if the current audio contains complete silence or not.
-                     * Might be also become handy later if we want to have a look at start/stop timings and so on. */
-                    rc = AudioTestObjWrite(Obj, abSamples, cbRecorded);
-                    AssertRCBreak(rc);
-
                     switch (enmState)
                     {
                         case AUDIOTESTSTATE_PRE:
@@ -818,11 +813,18 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                             {
                                 bool const fStarted = AudioTestBeaconGetRemaining(&Beacon) == AudioTestBeaconGetSize(&Beacon);
 
-                                /* Limit adding data to the beacon size. */
-                                uint32_t const cbToAddMax = RT_MIN(cbRecorded, AudioTestBeaconGetRemaining(&Beacon));
-
-                                AudioTestBeaconAddConsecutive(&Beacon, abSamples, cbToAddMax);
-                                /** @todo Take left-over data into account (and stash them away for the test tone)? */
+                                size_t uOff;
+                                rc = AudioTestBeaconAddConsecutive(&Beacon, abSamples, cbRecorded, &uOff);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                     * When being in the AUDIOTESTSTATE_PRE state, we might get more audio data
+                                     * than we need for the pre-beacon to complete. In other words, that "more data"
+                                     * needs to be counted to the actual recorded test tone data then.
+                                     */
+                                    if (enmState == AUDIOTESTSTATE_PRE)
+                                        cbTestRec += cbRecorded - (uint32_t)uOff;
+                                }
 
                                 if (   fStarted
                                     && g_uVerbosity >= 2)
@@ -851,7 +853,17 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                             /* Whether we count all silence as recorded data or not.
                              * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
                             if (!fIsAllSilence)
+                            {
+                                uint32_t const cbToAddMax = cbTestToRec - cbTestRec;
+
+                                /* Don't read more than we're told to.
+                                 * After the actual test tone data there might come a post beacon which also
+                                 * needs to be handled in the AUDIOTESTSTATE_POST state then. */
+                                if (cbRecorded > cbToAddMax)
+                                    cbRecorded = cbToAddMax;
+
                                 cbTestRec += cbRecorded;
+                            }
 
                             if (cbTestToRec - cbTestRec == 0) /* Done recording the test tone? */
                             {
@@ -873,7 +885,15 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                     }
                 }
 
-                if (enmState == AUDIOTESTSTATE_DONE)
+                if (cbRecorded)
+                {
+                    /* Always write (record) everything, no matter if the current audio contains complete silence or not.
+                     * Might be also become handy later if we want to have a look at start/stop timings and so on. */
+                    rc = AudioTestObjWrite(Obj, abSamples, cbRecorded);
+                    AssertRCBreak(rc);
+                }
+
+                if (enmState == AUDIOTESTSTATE_DONE) /* Bail out when in state "done". */
                     break;
             }
             else if (AudioTestMixStreamIsOkay(pMix))

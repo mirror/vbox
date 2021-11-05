@@ -377,7 +377,7 @@ double AudioTestToneGetRandomFreq(void);
 int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 
 void   AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, AUDIOTESTTONEBEACONTYPE enmType, PPDMAUDIOPCMPROPS pProps);
-uint32_t AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *auBuf, size_t cbBuf);
+int    AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *auBuf, size_t cbBuf, size_t *pOff);
 int    AudioTestBeaconWrite(PAUDIOTESTTONEBEACON pBeacon, void *pvBuf, uint32_t cbBuf);
 uint32_t AudioTestBeaconGetSize(PCAUDIOTESTTONEBEACON pBeacon);
 const char *AudioTestBeaconTypeGetName(AUDIOTESTTONEBEACONTYPE enmType);
