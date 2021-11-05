@@ -2934,29 +2934,6 @@ class TestDriver(base.TestDriver):                                              
             except:
                 reporter.logXcpt();
 
-        if self.fpApiVer >= 7.0:
-            # Needed to reach the host (localhost) from the guest. See xTracker #9896.
-            for iSlot in range(0, self.oVBox.systemProperties.getMaxNetworkAdapters(oVM.chipsetType)):
-                try:
-                    oNic = oVM.getNetworkAdapter(iSlot);
-                    if not oNic.enabled:
-                        continue;
-                    sAdpName = self.getNetworkAdapterNameFromType(oNic);
-                    if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
-                        reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d' % \
-                                      (sAdpName, iSlot));
-                        oNatEngine = oNic.NATEngine;
-                        oNatEngine.LocalhostReachable = True;
-                    else:
-                        # Other attachments will fail if 'LocalhostReachable' extra data override is present
-                        ## @todo r=andy Is this still needed, as we now have the API (see above) in place?
-                        sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
-                        reporter.log2('Disabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
-                                      (sAdpName, iSlot, sKey));
-                        self.oVBox.setExtraData(sKey, '');
-                except:
-                    reporter.logXcpt();
-
         # The UUID for the name.
         try:
             sUuid = oVM.id;
@@ -3051,7 +3028,7 @@ class TestDriver(base.TestDriver):                                              
                 oTmp = SessionWrapper(oSession, oVM, self.oVBox, self.oVBoxMgr, self, True, sName, sLogFile);
                 oTmp.addLogsToReport();
 
-                # Try to collect a stack trace of the process for fruther investigation of any startup hangs.
+                # Try to collect a stack trace of the process for further investigation of any startup hangs.
                 uPid = oTmp.getPid();
                 if uPid is not None:
                     sHostProcessInfoHung = utils.processGetInfo(uPid, fSudo = True);
@@ -3088,6 +3065,30 @@ class TestDriver(base.TestDriver):                                              
         self.addTask(oWrapped);
 
         reporter.log2('startVmEx: oSession=%s, oSessionWrapper=%s, oProgress=%s' % (oSession, oWrapped, oProgress));
+
+        if self.fpApiVer >= 7.0:
+            # Needed to reach the host (localhost) from the guest. See xTracker #9896.
+            # Note: Do this right *after* the VM has been started.
+            for iSlot in range(0, self.oVBox.systemProperties.getMaxNetworkAdapters(oVM.chipsetType)):
+                try:
+                    oNic = oVM.getNetworkAdapter(iSlot);
+                    if not oNic.enabled:
+                        continue;
+                    sAdpName = self.getNetworkAdapterNameFromType(oNic);
+                    if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
+                        reporter.log2('Enabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d' % \
+                                      (sAdpName, iSlot));
+                        oNatEngine = oNic.NATEngine;
+                        oNatEngine.LocalhostReachable = True;
+                    else:
+                        # Other attachments will fail if 'LocalhostReachable' extra data override is present
+                        ## @todo r=andy Is this still needed, as we now have the API (see above) in place?
+                        sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
+                        reporter.log2('Disabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
+                                      (sAdpName, iSlot, sKey));
+                        self.oVBox.setExtraData(sKey, '');
+                except:
+                    reporter.logXcpt();
 
         from testdriver.vboxwrappers import ProgressWrapper;
         return (oWrapped, ProgressWrapper(oProgress, self.oVBoxMgr, self,
