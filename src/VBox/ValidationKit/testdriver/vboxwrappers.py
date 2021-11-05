@@ -1616,6 +1616,52 @@ class SessionWrapper(TdTaskBase):
         reporter.log('set NIC attachment type on slot %s to %s for VM "%s"' % (iNic, eAttachmentType, self.sName));
         return True;
 
+    def setNicLocalhostReachable(self, fReachable, iNic = 0):
+        """
+        Sets whether the specified NIC can reach the host or not.
+        Only affects (enabled) NICs configured to NAT at the moment.
+
+        Returns True on success and False on failure.  Error information is logged.
+        """
+        try:
+            oNic = self.o.machine.getNetworkAdapter(iNic);
+        except:
+            return reporter.errorXcpt('getNetworkAdapter(%s) failed for "%s"' % (iNic, self.sName,));
+
+        try:
+            if not oNic.enabled: # NIC not enabled? Nothing to do here.
+                return True;
+        except:
+            return reporter.errorXcpt('NIC enabled status (%s) failed for "%s"' % (iNic, self.sName,));
+
+        try:
+            sAdpName = self.oTstDrv.getNetworkAdapterNameFromType(oNic);
+            ## @todo Remove this check once we have more attachment types that support this.
+            if oNic.attachmentType != vboxcon.NetworkAttachmentType_NAT:
+                # Other attachments will fail if 'LocalhostReachable' extra data override is present
+                ## @todo r=andy Is this still needed, as we now have the API (see above) in place?
+                sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
+                reporter.log2('Disabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
+                              (sAdpName, iSlot, sKey));
+                self.setExtraData(sKey, '');
+                return True;
+        except:
+            return reporter.errorXcpt('NIC adapter type failed for "%s"' % (iNic, self.sName,));
+
+        reporter.log('Setting "LocalhostReachable" for network adapter "%s" in slot %d to %s' % (sAdpName, iNic, fReachable));
+
+        try:
+            oNatEngine = oNic.NATEngine;
+        except:
+            return reporter.errorXcpt('Getting NIC NAT engine failed for "%s"' % (iNic, self.sName,));
+
+        try:
+            oNatEngine.LocalhostReachable = fReachable;
+        except:
+            return reporter.errorXcpt('LocalhostReachable failed for "%s"' % (iNic, self.sName,));
+
+        return True;
+
     def setNicMacAddress(self, sMacAddr, iNic = 0):
         """
         Sets the MAC address of the specified NIC.
