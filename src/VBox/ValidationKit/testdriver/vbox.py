@@ -2936,7 +2936,7 @@ class TestDriver(base.TestDriver):                                              
 
         if self.fpApiVer >= 7.0:
             # Needed to reach the host (localhost) from the guest. See xTracker #9896.
-            for iSlot in range(0, 32):
+            for iSlot in range(0, self.oVBox.systemProperties.getMaxNetworkAdapters(oVM.chipsetType)):
                 try:
                     oNic = oVM.getNetworkAdapter(iSlot);
                     if not oNic.enabled:
@@ -2955,7 +2955,7 @@ class TestDriver(base.TestDriver):                                              
                                       (sAdpName, iSlot, sKey));
                         self.oVBox.setExtraData(sKey, '');
                 except:
-                    pass;
+                    reporter.logXcpt();
 
         # The UUID for the name.
         try:
