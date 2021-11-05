@@ -1071,6 +1071,14 @@ static void gvmmR0InitPerVMData(PGVM pGVM, int16_t hSelf, VMCPUID cCpus, PSUPDRV
     pGVM->gvmm.s.VMPagesMapObj  = NIL_RTR0MEMOBJ;
     pGVM->gvmm.s.fDoneVMMR0Init = false;
     pGVM->gvmm.s.fDoneVMMR0Term = false;
+
+    for (size_t i = 0; i < RT_ELEMENTS(pGVM->gvmm.s.aWorkerThreads); i++)
+    {
+        pGVM->gvmm.s.aWorkerThreads[i].hNativeThread   = NIL_RTNATIVETHREAD;
+        pGVM->gvmm.s.aWorkerThreads[i].hNativeThreadR3 = NIL_RTNATIVETHREAD;
+    }
+    pGVM->gvmm.s.aWorkerThreads[0].hNativeThread = GVMM_RTNATIVETHREAD_DESTROYED; /* invalid entry */
+
     for (size_t i = 0; i < RT_ELEMENTS(pGVM->gvmm.s.aEmtHash); i++)
     {
         pGVM->gvmm.s.aEmtHash[i].hNativeEmt = NIL_RTNATIVETHREAD;
@@ -1632,7 +1640,7 @@ GVMMR0DECL(int) GVMMR0RegisterWorkerThread(PGVM pGVM, GVMMWORKERTHREAD enmWorker
             for (VMCPUID iCpu = 0; iCpu < pGVM->cCpus; iCpu++)
                 AssertBreakStmt(pGVM->aCpus[iCpu].hEMT != hNativeSelf, rc = VERR_INVALID_PARAMETER);
             for (size_t idx = 0; idx < RT_ELEMENTS(pGVM->gvmm.s.aWorkerThreads); idx++)
-                AssertBreakStmt(idx != (size_t)enmWorker && pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread != hNativeSelf,
+                AssertBreakStmt(idx == (size_t)enmWorker || pGVM->gvmm.s.aWorkerThreads[enmWorker].hNativeThread != hNativeSelf,
                                 rc = VERR_INVALID_PARAMETER);
             if (RT_SUCCESS(rc))
             {
