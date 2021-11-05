@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * GVMM - Global VM Manager, ring-3 request wrappers..
+ * GVMM - Global VM Manager, ring-3 request wrappers.
  */
 
 /*
@@ -24,13 +24,6 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/vmcc.h>
 #include <VBox/sup.h>
-#include <VBox/param.h>
-
-#include <iprt/assert.h>
-#include <iprt/errcore.h>
-#include <VBox/log.h>
-#include <iprt/mem.h>
-#include <iprt/string.h>
 
 
 /**
