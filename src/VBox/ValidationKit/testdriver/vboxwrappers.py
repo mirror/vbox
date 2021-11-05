@@ -1640,9 +1640,9 @@ class SessionWrapper(TdTaskBase):
             if oNic.attachmentType != vboxcon.NetworkAttachmentType_NAT:
                 # Other attachments will fail if 'LocalhostReachable' extra data override is present
                 ## @todo r=andy Is this still needed, as we now have the API (see above) in place?
-                sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iSlot);
+                sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iNic);
                 reporter.log2('Disabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
-                              (sAdpName, iSlot, sKey));
+                              (sAdpName, iNic, sKey));
                 self.setExtraData(sKey, '');
                 return True;
         except:
