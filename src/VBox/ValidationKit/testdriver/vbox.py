@@ -1980,13 +1980,6 @@ class TestDriver(base.TestDriver):                                              
             for sSuff in [ '.1', '.2', '.3', '.4', '.5', '.6', '.7', '.8' ]:
                 if os.path.isfile(sVBoxSvcRelLog + sSuff):
                     reporter.addLogFile(sVBoxSvcRelLog + sSuff, 'log/release/svc', 'Release log file for VBoxSVC');
-            # Testbox debugging - START - TEMPORARY, REMOVE ASAP.
-            if self.sHost in ('darwin', 'freebsd', 'linux', 'solaris', ):
-                try:
-                    reporter.log('> ls -R -la %s' % (self.sScratchPath,));
-                    utils.processCall(['ls', '-R', '-la', self.sScratchPath]);
-                except: pass;
-            # Testbox debugging - END   - TEMPORARY, REMOVE ASAP.
 
         # Finally, call the base driver to wipe the scratch space.
         fRc = base.TestDriver.actionCleanupAfter(self);
