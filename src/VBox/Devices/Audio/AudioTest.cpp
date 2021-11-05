@@ -2473,14 +2473,14 @@ int AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *p
     AssertPtrReturn(pauBuf,  VERR_INVALID_POINTER);
     /* pOff is optional. */
 
-    size_t         offBeacon   = UINT64_MAX;
+    uint64_t       offBeacon   = UINT64_MAX;
     uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pBeacon->Props); /* Use the audio frame size as chunk size. */
 
     uint8_t  const byBeacon      = AudioTestBeaconByteFromType(pBeacon->enmType);
     unsigned const cbStep        = cbFrameSize;
 
     /* Make sure that we do frame-aligned reads. */
-    cbBuf = PDMAudioPropsFloorBytesToFrame(&pBeacon->Props, cbBuf);
+    cbBuf = PDMAudioPropsFloorBytesToFrame(&pBeacon->Props, (uint32_t)cbBuf);
 
     for (size_t i = 0; i < cbBuf; i += cbStep)
     {
