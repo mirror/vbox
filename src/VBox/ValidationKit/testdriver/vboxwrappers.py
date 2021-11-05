@@ -1646,19 +1646,19 @@ class SessionWrapper(TdTaskBase):
                 self.setExtraData(sKey, '');
                 return True;
         except:
-            return reporter.errorXcpt('NIC adapter type failed for "%s"' % (iNic, self.sName,));
+            return reporter.errorXcpt('NIC adapter type (%s) failed for "%s"' % (iNic, self.sName,));
 
         reporter.log('Setting "LocalhostReachable" for network adapter "%s" in slot %d to %s' % (sAdpName, iNic, fReachable));
 
         try:
             oNatEngine = oNic.NATEngine;
         except:
-            return reporter.errorXcpt('Getting NIC NAT engine failed for "%s"' % (iNic, self.sName,));
+            return reporter.errorXcpt('Getting NIC NAT engine (%s) failed for "%s"' % (iNic, self.sName,));
 
         try:
             oNatEngine.LocalhostReachable = fReachable;
         except:
-            return reporter.errorXcpt('LocalhostReachable failed for "%s"' % (iNic, self.sName,));
+            return reporter.errorXcpt('LocalhostReachable (%s) failed for "%s"' % (iNic, self.sName,));
 
         return True;
 
