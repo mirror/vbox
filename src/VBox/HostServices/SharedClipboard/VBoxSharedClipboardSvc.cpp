@@ -2048,7 +2048,11 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     int rc = shClSvcClientInit(pClient, u32ClientID);
     if (RT_SUCCESS(rc))
     {
-        /* Assign weak pointer to client map .*/
+        /* Assign weak pointer to client map. */
+        /** @todo r=bird: The g_mapClients is only there for looking up
+         *        g_ExtState.uClientID (unserialized btw), so why not use store the
+         *        pClient value directly in g_ExtState instead of the ID?  It cannot
+         *        crash any worse that racing map insertion/removal. */
         g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
 
         rc = ShClBackendConnect(pClient, ShClSvcGetHeadless());
@@ -2056,18 +2060,6 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
         {
             /* Sync the host clipboard content with the client. */
             rc = ShClBackendSync(pClient);
-            if (rc == VINF_NO_CHANGE)
-            {
-                /*
-                 * The sync could return VINF_NO_CHANGE if nothing has changed on the host, but older
-                 * Guest Additions rely on the fact that only VINF_SUCCESS indicates a successful connect
-                 * to the host service (instead of using RT_SUCCESS()).
-                 *
-                 * So implicitly set VINF_SUCCESS here to not break older Guest Additions.
-                 */
-                rc = VINF_SUCCESS;
-            }
-
             if (RT_SUCCESS(rc))
             {
                 /* For now we ASSUME that the first client that connects is in charge for
@@ -2077,8 +2069,12 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
                 if (g_ExtState.uClientID == 0)
                     g_ExtState.uClientID = u32ClientID;
 
-                LogFunc(("Successfully connected client %#x\n", u32ClientID));
-                return rc;
+                /* The sync could return VINF_NO_CHANGE if nothing has changed on the host, but
+                   older Guest Additions didn't use RT_SUCCESS to but == VINF_SUCCESS to check for
+                   success.  So just return VINF_SUCCESS here to not break older Guest Additions. */
+                LogFunc(("Successfully connected client %#x%s\n",
+                         u32ClientID, g_ExtState.uClientID == u32ClientID ? " - Use by ExtState too" : ""));
+                return VINF_SUCCESS;
             }
 
             LogFunc(("ShClBackendSync failed: %Rrc\n", rc));
