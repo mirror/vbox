@@ -495,7 +495,7 @@ static int shClSvcMsgSetOldWaitReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDs
  */
 void shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
 {
-    Assert(RTCritSectIsOwned(&pClient->CritSect));
+    Assert(RTCritSectIsOwner(&pClient->CritSect));
     AssertPtr(pMsg);
 
     LogFlowFunc(("idMsg=%s (%RU32) cParms=%RU32 fAppend=%RTbool\n",
@@ -521,7 +521,7 @@ void shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
  */
 int shClSvcMsgAddAndWakeupClient(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
 {
-    Assert(RTCritSectIsOwned(&pClient->CritSect));
+    Assert(RTCritSectIsOwner(&pClient->CritSect));
     AssertPtr(pMsg);
     AssertPtr(pClient);
     LogFlowFunc(("idMsg=%s (%u) cParms=%u\n", ShClHostMsgToStr(pMsg->idMsg), pMsg->idMsg, pMsg->cParms));
@@ -2070,22 +2070,26 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
 
             if (RT_SUCCESS(rc))
             {
-                /* For now we ASSUME that the first client ever connected is in charge for
-                 * communicating withe the service extension.
-                 *
-                 ** @todo This needs to be fixed ASAP w/o breaking older guest / host combos. */
+                /* For now we ASSUME that the first client that connects is in charge for
+                   communicating with the service extension. */
+                /** @todo This isn't optimal, but only the guest really knows which client is in
+                 *        focus on the console. See @bugref{10115} for details. */
                 if (g_ExtState.uClientID == 0)
                     g_ExtState.uClientID = u32ClientID;
+
+                LogFunc(("Successfully connected client %#x\n", u32ClientID));
+                return rc;
             }
-        }
 
-        if (RT_FAILURE(rc))
-        {
-            shClSvcClientDestroy(pClient);
+            LogFunc(("ShClBackendSync failed: %Rrc\n", rc));
+            ShClBackendDisconnect(pClient);
         }
-
+        else
+            LogFunc(("ShClBackendConnect failed: %Rrc\n", rc));
+        shClSvcClientDestroy(pClient);
     }
-
+    else
+        LogFunc(("shClSvcClientInit failed: %Rrc\n", rc));
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
