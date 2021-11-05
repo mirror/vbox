@@ -27,7 +27,7 @@
 
 
 /**
- * @see GMMR0RegisterWorkerThread
+ * @see GVMMR0RegisterWorkerThread
  */
 VMMR3_INT_DECL(int)  GVMMR3RegisterWorkerThread(PVM pVM, GVMMWORKERTHREAD enmWorker)
 {
@@ -41,7 +41,7 @@ VMMR3_INT_DECL(int)  GVMMR3RegisterWorkerThread(PVM pVM, GVMMWORKERTHREAD enmWor
 
 
 /**
- * @see GMMR0DeregisterWorkerThread
+ * @see GVMMR0DeregisterWorkerThread
  */
 VMMR3_INT_DECL(int)  GVMMR3DeregisterWorkerThread(PVM pVM, GVMMWORKERTHREAD enmWorker)
 {
