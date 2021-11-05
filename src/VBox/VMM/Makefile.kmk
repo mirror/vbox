@@ -133,6 +133,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/IOMR3IoPort.cpp \
 	VMMR3/IOMR3Mmio.cpp \
 	VMMR3/GMM.cpp \
+	VMMR3/GVMMR3.cpp \
 	VMMR3/MM.cpp \
 	VMMR3/MMHeap.cpp \
 	VMMR3/MMHyper.cpp \
