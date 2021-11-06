@@ -459,6 +459,7 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    7,  RTR0MemObjMapUserTag),
     SUPEXP_STK_BACK(    4,  RTR0MemObjProtect),
     SUPEXP_STK_OKAY(    1,  RTR0MemObjSize),
+    SUPEXP_STK_OKAY(    1,  RTR0MemObjWasZeroInitialized),
     SUPEXP_STK_BACK(    3,  RTR0MemUserCopyFrom),
     SUPEXP_STK_BACK(    3,  RTR0MemUserCopyTo),
     SUPEXP_STK_BACK(    1,  RTR0MemUserIsValidAddr),
