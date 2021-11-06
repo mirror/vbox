@@ -180,6 +180,11 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 
+/* This is 64-bit only code now. */
+#if HC_ARCH_BITS != 64 || ARCH_BITS != 64
+# error "This is 64-bit only code"
+#endif
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -203,16 +208,11 @@ typedef struct GMMCHUNKFREESET *PGMMCHUNKFREESET;
 /**
  * The per-page tracking structure employed by the GMM.
  *
- * On 32-bit hosts we'll some trickery is necessary to compress all
- * the information into 32-bits. When the fSharedFree member is set,
- * the 30th bit decides whether it's a free page or not.
- *
- * Because of the different layout on 32-bit and 64-bit hosts, macros
- * are used to get and set some of the data.
+ * Because of the different layout on 32-bit and 64-bit hosts in earlier
+ * versions of the code, macros are used to get and set some of the data.
  */
 typedef union GMMPAGE
 {
-#if HC_ARCH_BITS == 64
     /** Unsigned integer view. */
     uint64_t u;
 
@@ -263,50 +263,6 @@ typedef union GMMPAGE
         /** The page state. */
         uint32_t    u2State : 2;
     } Free;
-
-#else /* 32-bit */
-    /** Unsigned integer view. */
-    uint32_t u;
-
-    /** The common view. */
-    struct GMMPAGECOMMON
-    {
-        uint32_t    uStuff : 30;
-        /** The page state. */
-        uint32_t    u2State : 2;
-    } Common;
-
-    /** The view of a private page. */
-    struct GMMPAGEPRIVATE
-    {
-        /** The guest page frame number. (Max addressable: 2 ^ 36) */
-        uint32_t    pfn : 24;
-        /** The GVM handle. (127 VMs) */
-        uint32_t    hGVM : 7;
-        /** The top page state bit, MBZ. */
-        uint32_t    fZero : 1;
-    } Private;
-
-    /** The view of a shared page. */
-    struct GMMPAGESHARED
-    {
-        /** The reference count. */
-        uint32_t    cRefs : 30;
-        /** The page state. */
-        uint32_t    u2State : 2;
-    } Shared;
-
-    /** The view of a free page. */
-    struct GMMPAGEFREE
-    {
-        /** The index of the next page in the free list. UINT16_MAX is NIL. */
-        uint32_t    iNext : 16;
-        /** Reserved. Checksum or something? */
-        uint32_t    u14Reserved : 14;
-        /** The page state. */
-        uint32_t    u2State : 2;
-    } Free;
-#endif
 } GMMPAGE;
 AssertCompileSize(GMMPAGE, sizeof(RTHCUINTPTR));
 /** Pointer to a GMMPAGE. */
@@ -317,9 +273,6 @@ typedef GMMPAGE *PGMMPAGE;
  * @{ */
 /** A private page. */
 #define GMM_PAGE_STATE_PRIVATE          0
-/** A private page - alternative value used on the 32-bit implementation.
- * This will never be used on 64-bit hosts. */
-#define GMM_PAGE_STATE_PRIVATE_32       1
 /** A shared page. */
 #define GMM_PAGE_STATE_SHARED           2
 /** A free page. */
@@ -332,11 +285,7 @@ typedef GMMPAGE *PGMMPAGE;
  * @returns true if private, false if not.
  * @param   pPage       The GMM page.
  */
-#if HC_ARCH_BITS == 64
-# define GMM_PAGE_IS_PRIVATE(pPage) ( (pPage)->Common.u2State == GMM_PAGE_STATE_PRIVATE )
-#else
-# define GMM_PAGE_IS_PRIVATE(pPage) ( (pPage)->Private.fZero == 0 )
-#endif
+#define GMM_PAGE_IS_PRIVATE(pPage)  ( (pPage)->Common.u2State == GMM_PAGE_STATE_PRIVATE )
 
 /** @def GMM_PAGE_IS_SHARED
  *
@@ -357,21 +306,13 @@ typedef GMMPAGE *PGMMPAGE;
  * @remark Some of the values outside the range has special meaning,
  *         see GMM_PAGE_PFN_UNSHAREABLE.
  */
-#if HC_ARCH_BITS == 64
-# define GMM_PAGE_PFN_LAST           UINT32_C(0xfffffff0)
-#else
-# define GMM_PAGE_PFN_LAST           UINT32_C(0x00fffff0)
-#endif
-AssertCompile(GMM_PAGE_PFN_LAST        == (GMM_GCPHYS_LAST >> PAGE_SHIFT));
+#define GMM_PAGE_PFN_LAST            UINT32_C(0xfffffff0)
+AssertCompile(GMM_PAGE_PFN_LAST == (GMM_GCPHYS_LAST >> PAGE_SHIFT));
 
 /** @def GMM_PAGE_PFN_UNSHAREABLE
  * Indicates that this page isn't used for normal guest memory and thus isn't shareable.
  */
-#if HC_ARCH_BITS == 64
-# define GMM_PAGE_PFN_UNSHAREABLE   UINT32_C(0xfffffff1)
-#else
-# define GMM_PAGE_PFN_UNSHAREABLE   UINT32_C(0x00fffff1)
-#endif
+#define GMM_PAGE_PFN_UNSHAREABLE    UINT32_C(0xfffffff1)
 AssertCompile(GMM_PAGE_PFN_UNSHAREABLE == (GMM_GCPHYS_UNSHAREABLE >> PAGE_SHIFT));
 
 
@@ -3645,7 +3586,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
             {
                 Assert(pGVM->gmm.s.Stats.cSharedPages);
                 Assert(pPage->Shared.cRefs);
-#if defined(VBOX_WITH_PAGE_SHARING) && defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+#if defined(VBOX_WITH_PAGE_SHARING) && defined(VBOX_STRICT)
                 if (pPage->Shared.u14Checksum)
                 {
                     uint32_t uChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
@@ -4209,7 +4150,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSe
 
 
 
-#if defined(VBOX_WITH_PAGE_SHARING) || (defined(VBOX_STRICT) && HC_ARCH_BITS == 64)
+#if defined(VBOX_WITH_PAGE_SHARING) || defined(VBOX_STRICT)
 /**
  * Check if a chunk is mapped into the specified VM
  *
@@ -4237,7 +4178,7 @@ static bool gmmR0IsChunkMapped(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR 
     gmmR0ChunkMutexRelease(&MtxState, pChunk);
     return false;
 }
-#endif /* VBOX_WITH_PAGE_SHARING || (VBOX_STRICT && 64-BIT) */
+#endif /* VBOX_WITH_PAGE_SHARING || VBOX_STRICT */
 
 
 /**
@@ -5338,7 +5279,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PGVM pGVM, VMCPUID idCpu)
 #endif
 }
 
-#if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+#ifdef VBOX_STRICT
 
 /**
  * Worker for GMMR0FindDuplicatePageReq.
@@ -5448,7 +5389,7 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PGMMFINDDUPLICATEPAGEREQ pRe
     return rc;
 }
 
-#endif /* VBOX_STRICT && HC_ARCH_BITS == 64 */
+#endif /* VBOX_STRICT */
 
 
 /**
