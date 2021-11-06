@@ -326,7 +326,7 @@ RT_EXPORT_SYMBOL(RTR0MemObjGetPagePhysAddr);
  *          one allocation it will return true for all other similarly made
  *          allocations.
  */
-RTR0DECL(bool) RTR0MemObjWasZeroInitialized(PRTR0MEMOBJ hMemObj)
+RTR0DECL(bool) RTR0MemObjWasZeroInitialized(RTR0MEMOBJ hMemObj)
 {
     PRTR0MEMOBJINTERNAL pMem;
 

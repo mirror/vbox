@@ -124,7 +124,7 @@ RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage);
  *          one allocation it will return true for all other similarly made
  *          allocations.
  */
-RTR0DECL(bool) RTR0MemObjWasZeroInitialized(PRTR0MEMOBJ hMemObj);
+RTR0DECL(bool) RTR0MemObjWasZeroInitialized(RTR0MEMOBJ hMemObj);
 
 /**
  * Frees a ring-0 memory object.
