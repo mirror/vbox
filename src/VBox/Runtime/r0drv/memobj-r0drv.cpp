@@ -343,7 +343,6 @@ RTR0DECL(bool) RTR0MemObjWasZeroInitialized(PRTR0MEMOBJ hMemObj)
     /* return the alloc init state. */
     return (pMem->fFlags & (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC))
         ==                  RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
-
 }
 RT_EXPORT_SYMBOL(RTR0MemObjWasZeroInitialized);
 
