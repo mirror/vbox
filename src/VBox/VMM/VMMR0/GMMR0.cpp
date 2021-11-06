@@ -193,11 +193,6 @@
 # define VBOX_USE_CRIT_SECT_FOR_GIANT
 #endif
 
-#if defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM) && !defined(RT_OS_DARWIN) && 0
-/** Enable the legacy mode code (will be dropped soon). */
-# define GMM_WITH_LEGACY_MODE
-#endif
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -464,10 +459,6 @@ typedef struct GMMCHUNK
  * @{ */
 /** Indicates that the chunk is a large page (2MB). */
 #define GMM_CHUNK_FLAGS_LARGE_PAGE  UINT16_C(0x0001)
-#ifdef GMM_WITH_LEGACY_MODE
-/** Indicates that the chunk was locked rather than allocated directly. */
-# define GMM_CHUNK_FLAGS_SEEDED     UINT16_C(0x0002)
-#endif
 /** @}  */
 
 
@@ -578,17 +569,11 @@ typedef struct GMM
     /** The number of current ballooned pages. */
     uint64_t            cBalloonedPages;
 
-#ifndef GMM_WITH_LEGACY_MODE
-# ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
     /** Whether #RTR0MemObjAllocPhysNC works.   */
     bool                fHasWorkingAllocPhysNC;
-# else
-    bool                fPadding;
-# endif
 #else
-    /** The legacy allocation mode indicator.
-     * This is determined at initialization time. */
-    bool                fLegacyAllocationMode;
+    bool                fPadding;
 #endif
     /** The bound memory mode indicator.
      * When set, the memory will be bound to a specific VM and never
@@ -828,13 +813,12 @@ GMMR0DECL(int) GMMR0Init(void)
             rc = RTSpinlockCreate(&pGMM->hSpinLockTree, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "gmm-chunk-tree");
         if (RT_SUCCESS(rc))
         {
-#ifndef GMM_WITH_LEGACY_MODE
             /*
              * Figure out how we're going to allocate stuff (only applicable to
              * host with linear physical memory mappings).
              */
             pGMM->fBoundMemoryMode = false;
-# ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
             pGMM->fHasWorkingAllocPhysNC = false;
 
             RTR0MEMOBJ hMemObj;
@@ -848,38 +832,6 @@ GMMR0DECL(int) GMMR0Init(void)
             else if (rc != VERR_NOT_SUPPORTED)
                 SUPR0Printf("GMMR0Init: Warning! RTR0MemObjAllocPhysNC(, %u, NIL_RTHCPHYS) -> %d!\n", GMM_CHUNK_SIZE, rc);
 # endif
-#else /* GMM_WITH_LEGACY_MODE */
-            /*
-             * Check and see if RTR0MemObjAllocPhysNC works.
-             */
-# if 0 /* later, see @bufref{3170}. */
-            RTR0MEMOBJ MemObj;
-            rc = RTR0MemObjAllocPhysNC(&MemObj, _64K, NIL_RTHCPHYS);
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTR0MemObjFree(MemObj, true);
-                AssertRC(rc);
-            }
-            else if (rc == VERR_NOT_SUPPORTED)
-                pGMM->fLegacyAllocationMode = pGMM->fBoundMemoryMode = true;
-            else
-                SUPR0Printf("GMMR0Init: RTR0MemObjAllocPhysNC(,64K,Any) -> %d!\n", rc);
-# else
-#  if defined(RT_OS_WINDOWS) || (defined(RT_OS_SOLARIS) && ARCH_BITS == 64) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-            pGMM->fLegacyAllocationMode = false;
-#   if ARCH_BITS == 32
-            /* Don't reuse possibly partial chunks because of the virtual
-               address space limitation. */
-            pGMM->fBoundMemoryMode      = true;
-#   else
-            pGMM->fBoundMemoryMode      = false;
-#   endif
-#  else
-            pGMM->fLegacyAllocationMode = true;
-            pGMM->fBoundMemoryMode      = true;
-#  endif
-# endif
-#endif /* GMM_WITH_LEGACY_MODE */
 
             /*
              * Query system page count and guess a reasonable cMaxPages value.
@@ -893,9 +845,7 @@ GMMR0DECL(int) GMMR0Init(void)
             pGMM->idFreeGeneration = UINT64_MAX / 4 - 128;
 
             g_pGMM = pGMM;
-#ifdef GMM_WITH_LEGACY_MODE
-            LogFlow(("GMMInit: pGMM=%p fLegacyAllocationMode=%RTbool fBoundMemoryMode=%RTbool\n", pGMM, pGMM->fLegacyAllocationMode, pGMM->fBoundMemoryMode));
-#elif defined(VBOX_WITH_LINEAR_HOST_PHYS_MEM)
+#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
             LogFlow(("GMMInit: pGMM=%p fBoundMemoryMode=%RTbool fHasWorkingAllocPhysNC=%RTbool\n", pGMM, pGMM->fBoundMemoryMode, pGMM->fHasWorkingAllocPhysNC));
 #else
             LogFlow(("GMMInit: pGMM=%p fBoundMemoryMode=%RTbool\n", pGMM, pGMM->fBoundMemoryMode));
@@ -2212,7 +2162,7 @@ static uint32_t gmmR0AllocatePagesFromChunk(PGMMCHUNK pChunk, uint16_t const hGV
 /**
  * Registers a new chunk of memory.
  *
- * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk.
+ * This is called by gmmR0AllocateOneChunk.
  *
  * @returns VBox status code.  On success, the giant GMM lock will be held, the
  *          caller must release it (ugly).
@@ -2234,21 +2184,13 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
 {
     Assert(pGMM->hMtxOwner != RTThreadNativeSelf());
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
-#ifdef GMM_WITH_LEGACY_MODE
-    Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE || fChunkFlags == GMM_CHUNK_FLAGS_SEEDED);
-#else
     Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE);
-#endif
 
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
     /*
      * Get a ring-0 mapping of the object.
      */
-# ifdef GMM_WITH_LEGACY_MODE
-    uint8_t *pbMapping = !(fChunkFlags & GMM_CHUNK_FLAGS_SEEDED) ? (uint8_t *)RTR0MemObjAddress(hMemObj) : NULL;
-# else
     uint8_t *pbMapping = (uint8_t *)RTR0MemObjAddress(hMemObj);
-# endif
     if (!pbMapping)
     {
         RTR0MEMOBJ hMapObj;
@@ -2359,17 +2301,13 @@ static int gmmR0AllocateChunkNew(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, ui
     gmmR0MutexRelease(pGMM);
 
     RTR0MEMOBJ hMemObj;
-#ifndef GMM_WITH_LEGACY_MODE
     int rc;
-# ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
     if (pGMM->fHasWorkingAllocPhysNC)
         rc = RTR0MemObjAllocPhysNC(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
     else
-# endif
-        rc = RTR0MemObjAllocPage(&hMemObj, GMM_CHUNK_SIZE, false /*fExecutable*/);
-#else
-    int rc = RTR0MemObjAllocPhysNC(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
 #endif
+        rc = RTR0MemObjAllocPage(&hMemObj, GMM_CHUNK_SIZE, false /*fExecutable*/);
     if (RT_SUCCESS(rc))
     {
         /** @todo Duplicate gmmR0RegisterChunk here so we can avoid chaining up the
@@ -2655,8 +2593,6 @@ static bool gmmR0ShouldAllocatePagesInOtherChunksBecauseOfLotsFree(PGMM pGMM)
  *
  * @returns VBox status code:
  * @retval  VINF_SUCCESS on success.
- * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk or
- *          gmmR0AllocateMoreChunks is necessary.
  * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
@@ -2720,19 +2656,6 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
-#ifdef GMM_WITH_LEGACY_MODE
-    /*
-     * If we're in legacy memory mode, it's easy to figure if we have
-     * sufficient number of pages up-front.
-     */
-    if (   pGMM->fLegacyAllocationMode
-        && pGVM->gmm.s.Private.cFreePages < cPages)
-    {
-        Assert(pGMM->fBoundMemoryMode);
-        return VERR_GMM_SEED_ME;
-    }
-#endif
-
     /*
      * Update the accounts before we proceed because we might be leaving the
      * protection of the global mutex and thus run the risk of permitting
@@ -2747,18 +2670,6 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
     }
     pGVM->gmm.s.Stats.cPrivatePages += cPages;
     pGMM->cAllocatedPages           += cPages;
-
-#ifdef GMM_WITH_LEGACY_MODE
-    /*
-     * Part two of it's-easy-in-legacy-memory-mode.
-     */
-    if (pGMM->fLegacyAllocationMode)
-    {
-        uint32_t iPage = gmmR0AllocatePagesInBoundMode(pGVM, 0, cPages, paPages);
-        AssertReleaseReturn(iPage == cPages, VERR_GMM_ALLOC_PAGES_IPE);
-        return VINF_SUCCESS;
-    }
-#endif
 
     /*
      * Bound mode is also relatively straightforward.
@@ -2902,7 +2813,6 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
  *          shared page.
  * @retval  VERR_GMM_NOT_PAGE_OWNER if one of the pages to be updated wasn't
  *          owned by the VM.
- * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
  * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
@@ -3099,7 +3009,6 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
  * @returns VBox status code:
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_OWNER if the caller is not an EMT.
- * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
  * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
  * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
  *          that is we're trying to allocate more than we've reserved.
@@ -3227,12 +3136,6 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
     if (RT_FAILURE(rc))
         return rc;
 
-#ifdef GMM_WITH_LEGACY_MODE
-    // /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
-    // if (pGMM->fLegacyAllocationMode)
-    //     return VERR_NOT_SUPPORTED;
-#endif
-
     *pHCPhys = NIL_RTHCPHYS;
     *pIdPage = NIL_GMM_PAGEID;
 
@@ -3329,12 +3232,6 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t idPage)
     int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_FAILURE(rc))
         return rc;
-
-#ifdef GMM_WITH_LEGACY_MODE
-    // /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
-    // if (pGMM->fLegacyAllocationMode)
-    //     return VERR_NOT_SUPPORTED;
-#endif
 
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
@@ -3477,11 +3374,7 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
      * Cleanup hack! Unmap the chunk from the callers address space.
      * This shouldn't happen, so screw lock contention...
      */
-    if (    pChunk->cMappingsX
-#ifdef GMM_WITH_LEGACY_MODE
-        &&  (!pGMM->fLegacyAllocationMode || (pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
-#endif
-        &&  pGVM)
+    if (pChunk->cMappingsX && pGVM)
         gmmR0UnmapChunkLocked(pGMM, pGVM, pChunk);
 
     /*
@@ -3621,10 +3514,6 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, uint32_t
                   || pChunk->pFreeNext == NULL
                   || pChunk->pFreePrev == NULL /** @todo this is probably misfiring, see reset... */))
     { /* likely */ }
-#ifdef GMM_WITH_LEGACY_MODE
-    else if (RT_LIKELY(pGMM->fLegacyAllocationMode && !(pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE)))
-    { /* likely */ }
-#endif
     else
         gmmR0FreeChunk(pGMM, NULL, pChunk, false);
 
@@ -4149,9 +4038,6 @@ GMMR0DECL(int) GMMR0QueryMemoryStatsReq(PGVM pGVM, VMCPUID idCpu, PGMMMEMSTATSRE
 static int gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 {
     RT_NOREF_PV(pGMM);
-#ifdef GMM_WITH_LEGACY_MODE
-    Assert(!pGMM->fLegacyAllocationMode || (pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE));
-#endif
 
     /*
      * Find the mapping and try unmapping it.
@@ -4197,31 +4083,18 @@ static int gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  */
 static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem)
 {
-#ifdef GMM_WITH_LEGACY_MODE
-    if (!pGMM->fLegacyAllocationMode || (pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
+    /*
+     * Lock the chunk and if possible leave the giant GMM lock.
+     */
+    GMMR0CHUNKMTXSTATE MtxState;
+    int rc = gmmR0ChunkMutexAcquire(&MtxState, pGMM, pChunk,
+                                    fRelaxedSem ? GMMR0CHUNK_MTX_RETAKE_GIANT : GMMR0CHUNK_MTX_KEEP_GIANT);
+    if (RT_SUCCESS(rc))
     {
-#endif
-        /*
-         * Lock the chunk and if possible leave the giant GMM lock.
-         */
-        GMMR0CHUNKMTXSTATE MtxState;
-        int rc = gmmR0ChunkMutexAcquire(&MtxState, pGMM, pChunk,
-                                        fRelaxedSem ? GMMR0CHUNK_MTX_RETAKE_GIANT : GMMR0CHUNK_MTX_KEEP_GIANT);
-        if (RT_SUCCESS(rc))
-        {
-            rc = gmmR0UnmapChunkLocked(pGMM, pGVM, pChunk);
-            gmmR0ChunkMutexRelease(&MtxState, pChunk);
-        }
-        return rc;
-#ifdef GMM_WITH_LEGACY_MODE
+        rc = gmmR0UnmapChunkLocked(pGMM, pGVM, pChunk);
+        gmmR0ChunkMutexRelease(&MtxState, pChunk);
     }
-
-    if (pChunk->hGVM == pGVM->hSelf)
-        return VINF_SUCCESS;
-
-    Log(("gmmR0UnmapChunk: Chunk %#x is not mapped into pGVM=%p/%#x (legacy)\n", pChunk->Core.Key, pGVM, pGVM->hSelf));
-    return VERR_GMM_CHUNK_NOT_MAPPED;
-#endif
+    return rc;
 }
 
 
@@ -4238,24 +4111,7 @@ static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
  */
 static int gmmR0MapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
 {
-#ifdef GMM_WITH_LEGACY_MODE
-    /*
-     * If we're in legacy mode this is simple.
-     */
-    if (pGMM->fLegacyAllocationMode && !(pChunk->fFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
-    {
-        if (pChunk->hGVM != pGVM->hSelf)
-        {
-            Log(("gmmR0MapChunk: chunk %#x is already mapped at %p!\n", pChunk->Core.Key, *ppvR3));
-            return VERR_GMM_CHUNK_NOT_FOUND;
-        }
-
-        *ppvR3 = RTR0MemObjAddressR3(pChunk->hMemObj);
-        return VINF_SUCCESS;
-    }
-#else
     RT_NOREF(pGMM);
-#endif
 
     /*
      * Check to see if the chunk is already mapped.
@@ -4496,62 +4352,6 @@ GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PGVM pGVM, PGMMMAPUNMAPCHUNKREQ pReq)
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     return GMMR0MapUnmapChunk(pGVM, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
-}
-
-
-/**
- * Legacy mode API for supplying pages.
- *
- * The specified user address points to a allocation chunk sized block that
- * will be locked down and used by the GMM when the GM asks for pages.
- *
- * @returns VBox status code.
- * @param   pGVM        The global (ring-0) VM structure.
- * @param   idCpu       The VCPU id.
- * @param   pvR3        Pointer to the chunk size memory block to lock down.
- */
-GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3)
-{
-#ifdef GMM_WITH_LEGACY_MODE
-    /*
-     * Validate input and get the basics.
-     */
-    PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
-    AssertReturn(!(PAGE_OFFSET_MASK & pvR3), VERR_INVALID_POINTER);
-
-    if (!pGMM->fLegacyAllocationMode)
-    {
-        Log(("GMMR0SeedChunk: not in legacy allocation mode!\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-
-    /*
-     * Lock the memory and add it as new chunk with our hGVM.
-     * (The GMM locking is done inside gmmR0RegisterChunk.)
-     */
-    RTR0MEMOBJ hMemObj;
-    rc = RTR0MemObjLockUser(&hMemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
-    if (RT_SUCCESS(rc))
-    {
-        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, hMemObj, pGVM->hSelf, pGVM->pSession, GMM_CHUNK_FLAGS_SEEDED, NULL);
-        if (RT_SUCCESS(rc))
-            gmmR0MutexRelease(pGMM);
-        else
-            RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
-    }
-
-    LogFlow(("GMMR0SeedChunk: rc=%d (pvR3=%p)\n", rc, pvR3));
-    return rc;
-#else
-    RT_NOREF(pGVM, idCpu, pvR3);
-    return VERR_NOT_SUPPORTED;
-#endif
 }
 
 

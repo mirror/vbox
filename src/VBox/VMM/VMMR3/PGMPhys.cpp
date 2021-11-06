@@ -5961,20 +5961,6 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     int rcAlloc = VINF_SUCCESS;
     int rcSeed  = VINF_SUCCESS;
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
-    while (rc == VERR_GMM_SEED_ME)
-    {
-        void *pvChunk;
-        rcAlloc = rc = SUPR3PageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
-        if (RT_SUCCESS(rc))
-        {
-            rcSeed = rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
-            if (RT_FAILURE(rc))
-                SUPR3PageFree(pvChunk, GMM_CHUNK_SIZE >> PAGE_SHIFT);
-        }
-        if (RT_SUCCESS(rc))
-            rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
-    }
-
     /** @todo we should split this up into an allocate and flush operation. sometimes you want to flush and not allocate more (which will trigger the vm account limit error) */
     if (    rc == VERR_GMM_HIT_VM_ACCOUNT_LIMIT
         &&  pVM->pgm.s.cHandyPages > 0)

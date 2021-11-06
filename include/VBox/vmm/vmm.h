@@ -317,8 +317,6 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_BALLOONED_PAGES,
     /** Call GMMR0MapUnmapChunk(). */
     VMMR0_DO_GMM_MAP_UNMAP_CHUNK,
-    /** Call GMMR0SeedChunk(). */
-    VMMR0_DO_GMM_SEED_CHUNK,
     /** Call GMMR0RegisterSharedModule. */
     VMMR0_DO_GMM_REGISTER_SHARED_MODULE,
     /** Call GMMR0UnregisterSharedModule. */

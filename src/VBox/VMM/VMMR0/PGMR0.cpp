@@ -176,7 +176,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
 
         pGVM->pgm.s.cHandyPages = RT_ELEMENTS(pGVM->pgm.s.aHandyPages);
     }
-    else if (rc != VERR_GMM_SEED_ME)
+    else
     {
         if (    (   rc == VERR_GMM_HIT_GLOBAL_LIMIT
                  || rc == VERR_GMM_HIT_VM_ACCOUNT_LIMIT)
@@ -231,13 +231,12 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
             }
         }
 
-        if (RT_FAILURE(rc) && rc != VERR_GMM_SEED_ME)
+        if (RT_FAILURE(rc))
         {
             LogRel(("PGMR0PhysAllocateHandyPages: rc=%Rrc iFirst=%d cPages=%d\n", rc, iFirst, cPages));
             VM_FF_SET(pGVM, VM_FF_PGM_NO_MEMORY);
         }
     }
-
 
     LogFlow(("PGMR0PhysAllocateHandyPages: cPages=%d rc=%Rrc\n", cPages, rc));
     return rc;

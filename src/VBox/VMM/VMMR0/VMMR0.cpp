@@ -1959,12 +1959,6 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
             rc = GMMR0MapUnmapChunkReq(pGVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
             break;
 
-        case VMMR0_DO_GMM_SEED_CHUNK:
-            if (pReqHdr)
-                return VERR_INVALID_PARAMETER;
-            rc = GMMR0SeedChunk(pGVM, idCpu, (RTR3PTR)u64Arg);
-            break;
-
         case VMMR0_DO_GMM_REGISTER_SHARED_MODULE:
             if (idCpu == NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;

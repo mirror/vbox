@@ -103,38 +103,17 @@ GMMR3DECL(int) GMMR3AllocatePagesPrepare(PVM pVM, PGMMALLOCATEPAGESREQ *ppReq, u
  */
 GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
 {
-    for (unsigned i = 0; ; i++)
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_ALLOCATE_PAGES, 0, &pReq->Hdr);
+    if (RT_SUCCESS(rc))
     {
-        int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_ALLOCATE_PAGES, 0, &pReq->Hdr);
-        if (RT_SUCCESS(rc))
-        {
 #ifdef LOG_ENABLED
-            for (uint32_t iPage = 0; iPage < pReq->cPages; iPage++)
-                Log3(("GMMR3AllocatePagesPerform: idPage=%#x HCPhys=%RHp\n",
-                      pReq->aPages[iPage].idPage, pReq->aPages[iPage].HCPhysGCPhys));
+        for (uint32_t iPage = 0; iPage < pReq->cPages; iPage++)
+            Log3(("GMMR3AllocatePagesPerform: idPage=%#x HCPhys=%RHp\n",
+                  pReq->aPages[iPage].idPage, pReq->aPages[iPage].HCPhysGCPhys));
 #endif
-            return rc;
-        }
-        if (rc != VERR_GMM_SEED_ME)
-            return VMSetError(pVM, rc, RT_SRC_POS,
-                              N_("GMMR0AllocatePages failed to allocate %u pages"),
-                              pReq->cPages);
-        Assert(i < pReq->cPages);
-
-        /*
-         * Seed another chunk.
-         */
-        void *pvChunk;
-        rc = SUPR3PageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
-        if (RT_FAILURE(rc))
-            return VMSetError(pVM, rc, RT_SRC_POS,
-                              N_("Out of memory (SUPR3PageAlloc) seeding a %u pages allocation request"),
-                              pReq->cPages);
-
-        rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
-        if (RT_FAILURE(rc))
-            return VMSetError(pVM, rc, RT_SRC_POS, N_("GMM seeding failed"));
+        return rc;
     }
+    return VMSetError(pVM, rc, RT_SRC_POS, N_("GMMR0AllocatePages failed to allocate %u pages"), pReq->cPages);
 }
 
 
@@ -374,15 +353,6 @@ GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage)
     Req.Hdr.cbReq = sizeof(Req);
     Req.idPage = idPage;
     return VMMR3CallR0(pVM, VMMR0_DO_GMM_FREE_LARGE_PAGE, 0, &Req.Hdr);
-}
-
-
-/**
- * @see GMMR0SeedChunk
- */
-GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3)
-{
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvR3, NULL);
 }
 
 

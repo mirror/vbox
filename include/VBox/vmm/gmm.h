@@ -414,7 +414,6 @@ GMMR0DECL(int)  GMMR0FreePages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages, PGMMFR
 GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t idPage);
 GMMR0DECL(int)  GMMR0BalloonedPages(PGVM pGVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR0DECL(int)  GMMR0MapUnmapChunk(PGVM pGVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
-GMMR0DECL(int)  GMMR0SeedChunk(PGVM pGVM, VMCPUID idCpu, RTR3PTR pvR3);
 GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv);
 GMMR0DECL(int)  GMMR0RegisterSharedModule(PGVM pGVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
                                           char *pszVersion, RTGCPTR GCBaseAddr,  uint32_t cbModule, uint32_t cRegions,
@@ -790,7 +789,6 @@ GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAll
 GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage);
 GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
-GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
 GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages, uint64_t *puTotalBalloonSize);
 GMMR3DECL(int)  GMMR3QueryMemoryStats(PVM pVM, uint64_t *pcAllocPages, uint64_t *pcMaxPages, uint64_t *pcBalloonPages);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
