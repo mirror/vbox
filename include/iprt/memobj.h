@@ -110,6 +110,23 @@ RTR0DECL(size_t) RTR0MemObjSize(RTR0MEMOBJ MemObj);
 RTR0DECL(RTHCPHYS) RTR0MemObjGetPagePhysAddr(RTR0MEMOBJ MemObj, size_t iPage);
 
 /**
+ * Checks whether the allocation was zero initialized or not.
+ *
+ * This only works on allocations.  It is not meaningful for mappings, reserved
+ * memory and entered physical address, and will return false for these.
+ *
+ * @returns true if the allocation was initialized to zero at allocation time,
+ *          false if not or query not meaningful to the object type.
+ * @param   hMemObj             The ring-0 memory object to be freed.
+ *
+ * @remarks It can be expected that memory allocated in the same fashion will
+ *          have the same initialization state.  So, if this returns true for
+ *          one allocation it will return true for all other similarly made
+ *          allocations.
+ */
+RTR0DECL(bool) RTR0MemObjWasZeroInitialized(PRTR0MEMOBJ hMemObj);
+
+/**
  * Frees a ring-0 memory object.
  *
  * @returns IPRT status code.

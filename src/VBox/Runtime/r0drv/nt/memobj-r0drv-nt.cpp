@@ -282,6 +282,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                         PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PAGE, pv, cb, pszTag);
                         if (pMemNt)
                         {
+                            pMemNt->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
                             pMemNt->fAllocatedPagesForMdl = true;
                             pMemNt->cMdls = 1;
                             pMemNt->apMdls[0] = pMdl;
@@ -332,6 +333,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
             PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PAGE, pv, cb, pszTag);
             if (pMemNt)
             {
+                pMemNt->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
                 pMemNt->cMdls = 1;
                 pMemNt->apMdls[0] = pMdl;
                 *ppMem = &pMemNt->Core;
@@ -440,6 +442,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb
                         PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PAGE, pv, cb, pszTag);
                         if (pMemNt)
                         {
+                            pMemNt->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
                             pMemNt->fAllocatedPagesForMdl = true;
                             pMemNt->cMdls = 1;
                             pMemNt->apMdls[0] = pMdl;
@@ -524,6 +527,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
                         PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_LOW, pv, cb, pszTag);
                         if (pMemNt)
                         {
+                            pMemNt->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
                             pMemNt->fAllocatedPagesForMdl = true;
                             pMemNt->cMdls = 1;
                             pMemNt->apMdls[0] = pMdl;
@@ -606,6 +610,7 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
         PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_CONT, pv, cb, pszTag);
         if (pMemNt)
         {
+            pMemNt->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
             pMemNt->Core.u.Cont.Phys = (RTHCPHYS)*MmGetMdlPfnArray(pMdl) << PAGE_SHIFT;
             pMemNt->cMdls = 1;
             pMemNt->apMdls[0] = pMdl;
@@ -667,6 +672,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                     PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS, NULL, cb, pszTag);
                     if (pMemNt)
                     {
+                        pMemNt->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
                         pMemNt->Core.u.Phys.fAllocated = true;
                         pMemNt->Core.u.Phys.PhysBase = (RTHCPHYS)paPfns[0] << PAGE_SHIFT;
                         pMemNt->fAllocatedPagesForMdl = true;
@@ -704,6 +710,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t c
                 PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_PHYS_NC, NULL, cb, pszTag);
                 if (pMemNt)
                 {
+                    pMemNt->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
                     pMemNt->fAllocatedPagesForMdl = true;
                     pMemNt->cMdls = 1;
                     pMemNt->apMdls[0] = pMdl;

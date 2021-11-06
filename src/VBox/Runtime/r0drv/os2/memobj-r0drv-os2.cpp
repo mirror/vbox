@@ -143,25 +143,27 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
                                                            RTR0MEMOBJTYPE_PAGE, NULL, cb, pszTag);
-    if (!pMemOs2)
-        return VERR_NO_MEMORY;
-
-    /* do the allocation. */
-    int rc = KernVMAlloc(cb, VMDHA_FIXED, &pMemOs2->Core.pv, (PPVOID)-1, NULL);
-    if (!rc)
+    if (pMemOs2)
     {
-        ULONG cPagesRet = cPages;
-        rc = KernLinToPageList(pMemOs2->Core.pv, cb, &pMemOs2->aPages[0], &cPagesRet);
+        /* do the allocation. */
+        int rc = KernVMAlloc(cb, VMDHA_FIXED, &pMemOs2->Core.pv, (PPVOID)-1, NULL);
         if (!rc)
         {
-            rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
-            *ppMem = &pMemOs2->Core;
-            return VINF_SUCCESS;
+            ULONG cPagesRet = cPages;
+            rc = KernLinToPageList(pMemOs2->Core.pv, cb, &pMemOs2->aPages[0], &cPagesRet);
+            if (!rc)
+            {
+                rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
+                pMemOs2->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC; /* doesn't seem to be possible to zero anything */
+                *ppMem = &pMemOs2->Core;
+                return VINF_SUCCESS;
+            }
+            KernVMFree(pMemOs2->Core.pv);
         }
-        KernVMFree(pMemOs2->Core.pv);
+        rtR0MemObjDelete(&pMemOs2->Core);
+        return RTErrConvertFromOS2(rc);
     }
-    rtR0MemObjDelete(&pMemOs2->Core);
-    return RTErrConvertFromOS2(rc);
+    return VERR_NO_MEMORY;
 }
 
 
@@ -180,26 +182,28 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
                                                            RTR0MEMOBJTYPE_LOW, NULL, cb, pszTag);
-    if (!pMemOs2)
-        return VERR_NO_MEMORY;
-
-    /* do the allocation. */
-    int rc = KernVMAlloc(cb, VMDHA_FIXED, &pMemOs2->Core.pv, (PPVOID)-1, NULL);
-    if (!rc)
+    if (pMemOs2)
     {
-        ULONG cPagesRet = cPages;
-        rc = KernLinToPageList(pMemOs2->Core.pv, cb, &pMemOs2->aPages[0], &cPagesRet);
+        /* do the allocation. */
+        int rc = KernVMAlloc(cb, VMDHA_FIXED, &pMemOs2->Core.pv, (PPVOID)-1, NULL);
         if (!rc)
         {
-            rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
-            *ppMem = &pMemOs2->Core;
-            return VINF_SUCCESS;
+            ULONG cPagesRet = cPages;
+            rc = KernLinToPageList(pMemOs2->Core.pv, cb, &pMemOs2->aPages[0], &cPagesRet);
+            if (!rc)
+            {
+                rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
+                pMemOs2->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC; /* doesn't seem to be possible to zero anything */
+                *ppMem = &pMemOs2->Core;
+                return VINF_SUCCESS;
+            }
+            KernVMFree(pMemOs2->Core.pv);
         }
-        KernVMFree(pMemOs2->Core.pv);
+        rtR0MemObjDelete(&pMemOs2->Core);
+        rc = RTErrConvertFromOS2(rc);
+        return rc == VERR_NO_MEMORY ? VERR_NO_LOW_MEMORY : rc;
     }
-    rtR0MemObjDelete(&pMemOs2->Core);
-    rc = RTErrConvertFromOS2(rc);
-    return rc == VERR_NO_MEMORY ? VERR_NO_LOW_MEMORY : rc;
+    return VERR_NO_MEMORY;
 }
 
 
@@ -210,21 +214,23 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     /* create the object. */
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_CONT,
                                                            NULL, cb, pszTag);
-    if (!pMemOs2)
-        return VERR_NO_MEMORY;
-
-    /* do the allocation. */
-    ULONG ulPhys = ~0UL;
-    int rc = KernVMAlloc(cb, VMDHA_FIXED | VMDHA_CONTIG, &pMemOs2->Core.pv, (PPVOID)&ulPhys, NULL);
-    if (!rc)
+    if (pMemOs2)
     {
-        Assert(ulPhys != ~0UL);
-        pMemOs2->Core.u.Cont.Phys = ulPhys;
-        *ppMem = &pMemOs2->Core;
-        return VINF_SUCCESS;
+        /* do the allocation. */
+        ULONG ulPhys = ~0UL;
+        int rc = KernVMAlloc(cb, VMDHA_FIXED | VMDHA_CONTIG, &pMemOs2->Core.pv, (PPVOID)&ulPhys, NULL);
+        if (!rc)
+        {
+            Assert(ulPhys != ~0UL);
+            pMemOs2->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC; /* doesn't seem to be possible to zero anything */
+            pMemOs2->Core.u.Cont.Phys = ulPhys;
+            *ppMem = &pMemOs2->Core;
+            return VINF_SUCCESS;
+        }
+        rtR0MemObjDelete(&pMemOs2->Core);
+        return RTErrConvertFromOS2(rc);
     }
-    rtR0MemObjDelete(&pMemOs2->Core);
-    return RTErrConvertFromOS2(rc);
+    return VERR_NO_MEMORY;
 }
 
 
@@ -240,22 +246,25 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     /* create the object. */
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS,
                                                            NULL, cb, pszTag);
-    if (!pMemOs2)
-        return VERR_NO_MEMORY;
-
-    /* do the allocation. */
-    ULONG ulPhys = ~0UL;
-    int rc = KernVMAlloc(cb, VMDHA_FIXED | VMDHA_CONTIG | (PhysHighest < _4G ? VMDHA_16M : 0), &pMemOs2->Core.pv, (PPVOID)&ulPhys, NULL);
-    if (!rc)
+    if (pMemOs2)
     {
-        Assert(ulPhys != ~0UL);
-        pMemOs2->Core.u.Phys.fAllocated = true;
-        pMemOs2->Core.u.Phys.PhysBase = ulPhys;
-        *ppMem = &pMemOs2->Core;
-        return VINF_SUCCESS;
+        /* do the allocation. */
+        ULONG ulPhys = ~0UL;
+        int rc = KernVMAlloc(cb, VMDHA_FIXED | VMDHA_CONTIG | (PhysHighest < _4G ? VMDHA_16M : 0),
+                             &pMemOs2->Core.pv, (PPVOID)&ulPhys, NULL);
+        if (!rc)
+        {
+            Assert(ulPhys != ~0UL);
+            pMemOs2->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC; /* doesn't seem to be possible to zero anything */
+            pMemOs2->Core.u.Phys.fAllocated = true;
+            pMemOs2->Core.u.Phys.PhysBase = ulPhys;
+            *ppMem = &pMemOs2->Core;
+            return VINF_SUCCESS;
+        }
+        rtR0MemObjDelete(&pMemOs2->Core);
+        return RTErrConvertFromOS2(rc);
     }
-    rtR0MemObjDelete(&pMemOs2->Core);
-    return RTErrConvertFromOS2(rc);
+    return VERR_NO_MEMORY;
 }
 
 
@@ -274,15 +283,16 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
     /* create the object. */
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS,
                                                            NULL, cb, pszTag);
-    if (!pMemOs2)
-        return VERR_NO_MEMORY;
-
-    /* there is no allocation here, right? it needs to be mapped somewhere first. */
-    pMemOs2->Core.u.Phys.fAllocated = false;
-    pMemOs2->Core.u.Phys.PhysBase = Phys;
-    pMemOs2->Core.u.Phys.uCachePolicy = uCachePolicy;
-    *ppMem = &pMemOs2->Core;
-    return VINF_SUCCESS;
+    if (pMemOs2)
+    {
+        /* there is no allocation here, right? it needs to be mapped somewhere first. */
+        pMemOs2->Core.u.Phys.fAllocated = false;
+        pMemOs2->Core.u.Phys.PhysBase = Phys;
+        pMemOs2->Core.u.Phys.uCachePolicy = uCachePolicy;
+        *ppMem = &pMemOs2->Core;
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
 }
 
 
@@ -295,24 +305,25 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
                                                            RTR0MEMOBJTYPE_LOCK, (void *)R3Ptr, cb, pszTag);
-    if (!pMemOs2)
-        return VERR_NO_MEMORY;
-
-    /* lock it. */
-    ULONG cPagesRet = cPages;
-    int rc = KernVMLock(VMDHL_LONG | (fAccess & RTMEM_PROT_WRITE ? VMDHL_WRITE : 0),
-                        (void *)R3Ptr, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
-    if (!rc)
+    if (pMemOs2)
     {
-        rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
-        Assert(cb == pMemOs2->Core.cb);
-        Assert(R3Ptr == (RTR3PTR)pMemOs2->Core.pv);
-        pMemOs2->Core.u.Lock.R0Process = R0Process;
-        *ppMem = &pMemOs2->Core;
-        return VINF_SUCCESS;
+        /* lock it. */
+        ULONG cPagesRet = cPages;
+        int rc = KernVMLock(VMDHL_LONG | (fAccess & RTMEM_PROT_WRITE ? VMDHL_WRITE : 0),
+                            (void *)R3Ptr, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
+        if (!rc)
+        {
+            rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
+            Assert(cb == pMemOs2->Core.cb);
+            Assert(R3Ptr == (RTR3PTR)pMemOs2->Core.pv);
+            pMemOs2->Core.u.Lock.R0Process = R0Process;
+            *ppMem = &pMemOs2->Core;
+            return VINF_SUCCESS;
+        }
+        rtR0MemObjDelete(&pMemOs2->Core);
+        return RTErrConvertFromOS2(rc);
     }
-    rtR0MemObjDelete(&pMemOs2->Core);
-    return RTErrConvertFromOS2(rc);
+    return VERR_NO_MEMORY;
 }
 
 
@@ -322,22 +333,23 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
     const ULONG cPages = cb >> PAGE_SHIFT;
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJOS2, aPages[cPages]),
                                                            RTR0MEMOBJTYPE_LOCK, pv, cb, pszTag);
-    if (!pMemOs2)
-        return VERR_NO_MEMORY;
-
-    /* lock it. */
-    ULONG cPagesRet = cPages;
-    int rc = KernVMLock(VMDHL_LONG | (fAccess & RTMEM_PROT_WRITE ? VMDHL_WRITE : 0),
-                        pv, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
-    if (!rc)
+    if (pMemOs2)
     {
-        rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
-        pMemOs2->Core.u.Lock.R0Process = NIL_RTR0PROCESS;
-        *ppMem = &pMemOs2->Core;
-        return VINF_SUCCESS;
+        /* lock it. */
+        ULONG cPagesRet = cPages;
+        int rc = KernVMLock(VMDHL_LONG | (fAccess & RTMEM_PROT_WRITE ? VMDHL_WRITE : 0),
+                            pv, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
+        if (!rc)
+        {
+            rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
+            pMemOs2->Core.u.Lock.R0Process = NIL_RTR0PROCESS;
+            *ppMem = &pMemOs2->Core;
+            return VINF_SUCCESS;
+        }
+        rtR0MemObjDelete(&pMemOs2->Core);
+        return RTErrConvertFromOS2(rc);
     }
-    rtR0MemObjDelete(&pMemOs2->Core);
-    return RTErrConvertFromOS2(rc);
+    return VERR_NO_MEMORY;
 }
 
 

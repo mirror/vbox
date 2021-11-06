@@ -653,20 +653,21 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 {
     /* Create the object. */
     PRTR0MEMOBJSOL pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_PAGE, NULL, cb, pszTag);
-    if (RT_UNLIKELY(!pMemSolaris))
-        return VERR_NO_MEMORY;
-
-    void *pvMem = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
-    if (RT_UNLIKELY(!pvMem))
+    if (pMemSolaris)
     {
+        void *pvMem = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
+        if (pvMem)
+        {
+            pMemSolaris->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
+            pMemSolaris->Core.pv  = pvMem;
+            pMemSolaris->pvHandle = NULL;
+            *ppMem = &pMemSolaris->Core;
+            return VINF_SUCCESS;
+        }
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_NO_PAGE_MEMORY;
     }
-
-    pMemSolaris->Core.pv  = pvMem;
-    pMemSolaris->pvHandle = NULL;
-    *ppMem = &pMemSolaris->Core;
-    return VINF_SUCCESS;
+    return VERR_NO_MEMORY;
 }
 
 
@@ -683,21 +684,23 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
 
     /* Create the object */
     PRTR0MEMOBJSOL pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_LOW, NULL, cb, pszTag);
-    if (!pMemSolaris)
-        return VERR_NO_MEMORY;
-
-    /* Allocate physically low page-aligned memory. */
-    uint64_t uPhysHi = _4G - 1;
-    void *pvMem = rtR0SolMemAlloc(uPhysHi, NULL /* puPhys */, cb, PAGE_SIZE, false /* fContig */);
-    if (RT_UNLIKELY(!pvMem))
+    if (pMemSolaris)
     {
+        /* Allocate physically low page-aligned memory. */
+        uint64_t uPhysHi = _4G - 1;
+        void *pvMem = rtR0SolMemAlloc(uPhysHi, NULL /* puPhys */, cb, PAGE_SIZE, false /* fContig */);
+        if (pvMem)
+        {
+            pMemSolaris->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
+            pMemSolaris->Core.pv = pvMem;
+            pMemSolaris->pvHandle = NULL;
+            *ppMem = &pMemSolaris->Core;
+            return VINF_SUCCESS;
+        }
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_NO_LOW_MEMORY;
     }
-    pMemSolaris->Core.pv = pvMem;
-    pMemSolaris->pvHandle = NULL;
-    *ppMem = &pMemSolaris->Core;
-    return VINF_SUCCESS;
+    return VERR_NO_MEMORY;
 }
 
 
@@ -712,51 +715,51 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t c
 {
 #if HC_ARCH_BITS == 64
     PRTR0MEMOBJSOL pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_PHYS_NC, NULL, cb, pszTag);
-    if (RT_UNLIKELY(!pMemSolaris))
-        return VERR_NO_MEMORY;
-
-    if (PhysHighest == NIL_RTHCPHYS)
+    if (pMemSolaris)
     {
-        uint64_t PhysAddr = UINT64_MAX;
-        void *pvPages = rtR0MemObjSolPagesAlloc(&PhysAddr, cb);
-        if (!pvPages)
+        if (PhysHighest == NIL_RTHCPHYS)
         {
-            LogRel(("rtR0MemObjNativeAllocPhysNC: rtR0MemObjSolPagesAlloc failed for cb=%u.\n", cb));
-            rtR0MemObjDelete(&pMemSolaris->Core);
-            return VERR_NO_MEMORY;
-        }
-        Assert(PhysAddr != UINT64_MAX);
-        Assert(!(PhysAddr & PAGE_OFFSET_MASK));
+            uint64_t PhysAddr = UINT64_MAX;
+            void *pvPages = rtR0MemObjSolPagesAlloc(&PhysAddr, cb);
+            if (!pvPages)
+            {
+                LogRel(("rtR0MemObjNativeAllocPhysNC: rtR0MemObjSolPagesAlloc failed for cb=%u.\n", cb));
+                rtR0MemObjDelete(&pMemSolaris->Core);
+                return VERR_NO_MEMORY;
+            }
+            Assert(PhysAddr != UINT64_MAX);
+            Assert(!(PhysAddr & PAGE_OFFSET_MASK));
 
-        pMemSolaris->Core.pv     = NULL;
-        pMemSolaris->pvHandle    = pvPages;
-        pMemSolaris->fIndivPages = true;
+            pMemSolaris->Core.pv     = NULL;
+            pMemSolaris->pvHandle    = pvPages;
+            pMemSolaris->fIndivPages = true;
+        }
+        else
+        {
+            /*
+             * If we must satisfy an upper limit constraint, it isn't feasible to grab individual pages.
+             * We fall back to using contig_alloc().
+             */
+            uint64_t PhysAddr = UINT64_MAX;
+            void *pvMem = rtR0SolMemAlloc(PhysHighest, &PhysAddr, cb, PAGE_SIZE, false /* fContig */);
+            if (!pvMem)
+            {
+                LogRel(("rtR0MemObjNativeAllocPhysNC: rtR0SolMemAlloc failed for cb=%u PhysHighest=%RHp.\n", cb, PhysHighest));
+                rtR0MemObjDelete(&pMemSolaris->Core);
+                return VERR_NO_MEMORY;
+            }
+            Assert(PhysAddr != UINT64_MAX);
+            Assert(!(PhysAddr & PAGE_OFFSET_MASK));
+
+            pMemSolaris->Core.pv     = pvMem;
+            pMemSolaris->pvHandle    = NULL;
+            pMemSolaris->fIndivPages = false;
+        }
+        pMemSolaris->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
         *ppMem = &pMemSolaris->Core;
         return VINF_SUCCESS;
     }
-    else
-    {
-        /*
-         * If we must satisfy an upper limit constraint, it isn't feasible to grab individual pages.
-         * We fall back to using contig_alloc().
-         */
-        uint64_t PhysAddr = UINT64_MAX;
-        void *pvMem = rtR0SolMemAlloc(PhysHighest, &PhysAddr, cb, PAGE_SIZE, false /* fContig */);
-        if (!pvMem)
-        {
-            LogRel(("rtR0MemObjNativeAllocPhysNC: rtR0SolMemAlloc failed for cb=%u PhysHighest=%RHp.\n", cb, PhysHighest));
-            rtR0MemObjDelete(&pMemSolaris->Core);
-            return VERR_NO_MEMORY;
-        }
-        Assert(PhysAddr != UINT64_MAX);
-        Assert(!(PhysAddr & PAGE_OFFSET_MASK));
-
-        pMemSolaris->Core.pv     = pvMem;
-        pMemSolaris->pvHandle    = NULL;
-        pMemSolaris->fIndivPages = false;
-        *ppMem = &pMemSolaris->Core;
-        return VINF_SUCCESS;
-    }
+    return VERR_NO_MEMORY;
 
 #else /* 32 bit: */
     return VERR_NOT_SUPPORTED; /* see the RTR0MemObjAllocPhysNC specs */
@@ -797,6 +800,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         if (RT_LIKELY(pvPages))
         {
             AssertMsg(!(PhysAddr & (cb - 1)), ("%RHp\n", PhysAddr));
+            pMemSolaris->Core.fFlags           |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC; /*?*/
             pMemSolaris->Core.pv                = NULL;
             pMemSolaris->Core.u.Phys.PhysBase   = PhysAddr;
             pMemSolaris->Core.u.Phys.fAllocated = true;
@@ -821,6 +825,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
             Assert(PhysAddr < PhysHighest);
             Assert(PhysAddr + cb <= PhysHighest);
 
+            pMemSolaris->Core.fFlags           |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
             pMemSolaris->Core.pv                = pvMem;
             pMemSolaris->Core.u.Phys.PhysBase   = PhysAddr;
             pMemSolaris->Core.u.Phys.fAllocated = true;

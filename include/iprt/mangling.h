@@ -1863,6 +1863,7 @@
 # define RTR0MemObjReserveKernelTag                     RT_MANGLER(RTR0MemObjReserveKernelTag) /* r0drv */
 # define RTR0MemObjReserveUserTag                       RT_MANGLER(RTR0MemObjReserveUserTag)   /* r0drv */
 # define RTR0MemObjSize                                 RT_MANGLER(RTR0MemObjSize)             /* r0drv */
+# define RTR0MemObjWasZeroInitialized                   RT_MANGLER(RTR0MemObjWasZeroInitialized)/* r0drv */
 # define RTR0MemUserCopyFrom                            RT_MANGLER(RTR0MemUserCopyFrom)        /* r0drv */
 # define RTR0MemUserCopyTo                              RT_MANGLER(RTR0MemUserCopyTo)          /* r0drv */
 # define RTR0MemUserIsValidAddr                         RT_MANGLER(RTR0MemUserIsValidAddr)     /* r0drv */

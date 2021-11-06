@@ -352,6 +352,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
                                                             NULL, cb, pszTag);
     if (!pMemLnx)
         return VERR_NO_MEMORY;
+    pMemLnx->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
     pMemLnx->cPages = cPages;
 
      if (cPages > 255)

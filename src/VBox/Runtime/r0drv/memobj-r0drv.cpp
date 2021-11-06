@@ -312,11 +312,49 @@ RT_EXPORT_SYMBOL(RTR0MemObjGetPagePhysAddr);
 
 
 /**
+ * Checks whether the allocation was zero initialized or not.
+ *
+ * This only works on allocations.  It is not meaningful for mappings, reserved
+ * memory and entered physical address, and will return false for these.
+ *
+ * @returns true if the allocation was initialized to zero at allocation time,
+ *          false if not or query not meaningful to the object type.
+ * @param   hMemObj             The ring-0 memory object to be freed.
+ *
+ * @remarks It can be expected that memory allocated in the same fashion will
+ *          have the same initialization state.  So, if this returns true for
+ *          one allocation it will return true for all other similarly made
+ *          allocations.
+ */
+RTR0DECL(bool) RTR0MemObjWasZeroInitialized(PRTR0MEMOBJ hMemObj)
+{
+    PRTR0MEMOBJINTERNAL pMem;
+
+    /* Validate the object handle. */
+    if (RT_UNLIKELY(hMemObj == NIL_RTR0MEMOBJ))
+        return false;
+    AssertPtrReturn(hMemObj, false);
+    pMem = (PRTR0MEMOBJINTERNAL)hMemObj;
+    AssertMsgReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, ("%p: %#x\n", pMem, pMem->u32Magic), false);
+    AssertMsgReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, ("%p: %d\n", pMem, pMem->enmType), false);
+    Assert(   (pMem->fFlags & (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC))
+           !=                 (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC));
+
+    /* return the alloc init state. */
+    return (pMem->fFlags & (RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC | RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC))
+        ==                  RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
+
+}
+RT_EXPORT_SYMBOL(RTR0MemObjWasZeroInitialized);
+
+
+/**
  * Frees a ring-0 memory object.
  *
  * @returns IPRT status code.
  * @retval  VERR_INVALID_HANDLE if
- * @param   MemObj          The ring-0 memory object to be freed. NULL is accepted.
+ * @param   MemObj          The ring-0 memory object to be freed. NIL is
+ *                          accepted.
  * @param   fFreeMappings   Whether or not to free mappings of the object.
  */
 RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)

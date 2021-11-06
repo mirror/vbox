@@ -91,7 +91,11 @@ typedef enum RTR0MEMOBJTYPE
 /** @name RTR0MEMOBJINTERNAL::fFlags
  * @{ */
 /** Page level protection was changed. */
-#define RTR0MEMOBJ_FLAGS_PROT_CHANGED       RT_BIT_32(0)
+#define RTR0MEMOBJ_FLAGS_PROT_CHANGED               RT_BIT_32(0)
+/** Zero initialized at allocation. */
+#define RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC              RT_BIT_32(1)
+/** Uninitialized at allocation. */
+#define RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC     RT_BIT_32(2)
 /** @} */
 
 

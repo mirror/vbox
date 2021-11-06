@@ -743,6 +743,10 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
                 PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), enmType, pv, cb, pszTag);
                 if (pMemDarwin)
                 {
+                    if (fOptions & kIOMemoryKernelUserShared)
+                        pMemDarwin->Core.fFlags |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
+                    else
+                        pMemDarwin->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
                     if (fContiguous)
                     {
 #ifdef __LP64__
