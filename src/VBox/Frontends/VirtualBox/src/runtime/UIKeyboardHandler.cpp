@@ -1310,13 +1310,55 @@ LRESULT CALLBACK UIKeyboardHandler::winKeyboardProc(int nCode, WPARAM wParam, LP
 
 bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
 {
-    /* Check what related machine-view was NOT unregistered yet: */
+    /* Check that related machine-view was NOT unregistered yet: */
     if (!m_views.contains(m_iKeyboardHookViewIndex))
+        return false;
+
+    /* HACK ALERT! Check that we're not in cleanup, as we're using gEDataManger
+       to get host key combinations and it as probably been cleaned up already.
+       We don't want to cause it to re-instantiate, with all the COM traffic
+       that might involve.  Sample assertion stack (IPRT not windbg, sorry):
+
+       !!Assertion Failed!!
+       Expression: mRC != RPC_E_CANTCALLOUT_ININPUTSYNCCALL
+       Location  : E:\vbox\svn\trunk\out\win.amd64\debug\obj\UICommon\include\COMWrappers.cpp(3857) class QVector<class QString> __cdecl CVirtualBox::GetExtraDataKeys(void)
+       Stack     :
+       00007fff39aa6634 VBoxRT.dll!RTAssertMsg1+0x274 (rva:0x246634)
+         [E:\vbox\svn\trunk\src\VBox\Runtime\common\misc\assert.cpp:159]
+       00007fff39aa542f VBoxRT.dll!RTAssertMsg1Weak+0x2f (rva:0x24542f)
+         [E:\vbox\svn\trunk\src\VBox\Runtime\common\misc\RTAssertMsg1Weak.cpp:40 (+0x0)]
+       00007fff36e5c00f UICommon.dll!CVirtualBox::GetExtraDataKeys+0x23f (rva:0x3fc00f)
+         [E:\vbox\svn\trunk\out\win.amd64\debug\obj\UICommon\include\COMWrappers.cpp:3857]
+       00007fff36ac2cc9 UICommon.dll!UIExtraDataManager::prepareGlobalExtraDataMap+0xb9 (rva:0x62cc9)
+         [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\extradata\UIExtraDataManager.cpp:4845]
+       00007fff36ac2bf8 UICommon.dll!UIExtraDataManager::prepare+0x28 (rva:0x62bf8)
+         [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\extradata\UIExtraDataManager.cpp:4833 (+0x0)]
+       00007fff36ab1896 UICommon.dll!UIExtraDataManager::instance+0x66 (rva:0x51896)
+         [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\extradata\UIExtraDataManager.cpp:2011 (+0x0)]
+       00007ff771b05b06 VirtualBoxVM.exe!UIKeyboardHandler::winKeyboardEvent+0xe6 (rva:0x35b06)
+         [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\runtime\UIKeyboardHandler.cpp:1324]
+       00007ff771b059ec VirtualBoxVM.exe!UIKeyboardHandler::winKeyboardProc+0x4c (rva:0x359ec)
+         [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\runtime\UIKeyboardHandler.cpp:1304]
+       00007fff763311f2 USER32.dll!GetDlgCtrlID+0x232 (rva:0x211f2)
+       00007fff7639ac89 USER32.dll!CreateSystemThreads+0xa29 (rva:0x8ac89)
+       00007fff76b30ba4 ntdll.dll!KiUserCallbackDispatcher+0x24 (rva:0xa0ba4)
+       00007fff749b1064 win32u.dll!NtUserPeekMessage+0x14 (rva:0x1064)
+       00007fff7631a553 USER32.dll!PeekMessageW+0x1e3 (rva:0xa553)
+       00007fff7631a4b3 USER32.dll!PeekMessageW+0x143 (rva:0xa4b3)
+       00007e11000270dc ConEmuHk64.dll!SetLoadLibraryCallback+0xc3ac (rva:0x270dc)
+       00007fff759be71b combase.dll!CoRegisterPSClsid+0x82b (rva:0x6e71b)
+       00007fff759be685 combase.dll!CoRegisterPSClsid+0x795 (rva:0x6e685)
+       00007fff759bcec1 combase.dll!Ordinal87+0x2851 (rva:0x6cec1)
+       00007fff759bcbbb combase.dll!Ordinal87+0x254b (rva:0x6cbbb)
+       00007fff75994956 combase.dll!RoGetApartmentIdentifier+0x55f6 (rva:0x44956)
+       cccccccccccccccc  */
+    if (UICommon::instance()->isCleaningUp())
         return false;
 
     /* It's possible that a key has been pressed while the keyboard was not
      * captured, but is being released under the capture. Detect this situation
      * and do not pass on the key press to the virtual machine. */
+/** @todo r=bird: Why do this complicated test before the simple m_fIsKeyboardCaptured one? */
     uint8_t what_pressed =      (event.flags & 0x01)
                              && (event.vkCode != VK_RSHIFT)
                            ? IsExtKeyPressed : IsKeyPressed;
