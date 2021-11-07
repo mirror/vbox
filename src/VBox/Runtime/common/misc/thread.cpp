@@ -997,12 +997,15 @@ RT_EXPORT_SYMBOL(RTThreadSetName);
  */
 RTDECL(bool) RTThreadIsMain(RTTHREAD hThread)
 {
-    PRTTHREADINT pThread = rtThreadGet(hThread);
-    if (pThread)
+    if (hThread != NIL_RTTHREAD)
     {
-        bool fRc = !!(pThread->fIntFlags & RTTHREADINT_FLAGS_MAIN);
-        rtThreadRelease(pThread);
-        return fRc;
+        PRTTHREADINT pThread = rtThreadGet(hThread);
+        if (pThread)
+        {
+            bool fRc = !!(pThread->fIntFlags & RTTHREADINT_FLAGS_MAIN);
+            rtThreadRelease(pThread);
+            return fRc;
+        }
     }
     return false;
 }
