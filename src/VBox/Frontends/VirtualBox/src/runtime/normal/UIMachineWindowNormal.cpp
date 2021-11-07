@@ -541,11 +541,57 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
             {
                 killTimer(m_iGeometrySaveTimerId);
                 m_iGeometrySaveTimerId = -1;
-                LogRel2(("GUI: UIMachineWindowNormal: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
-                         m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
-                gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
-                                                        m_uScreenId, m_geometry,
-                                                        isMaximizedChecked(), uiCommon().managedVMUuid());
+
+                /* HACK ALERT! Just ignore this if it arrives to late to be handled.  I typically get
+                   these when the COM shutdown on windows flushes pending queue events.  The result
+                   is typically a bunch of assertions, but sometimes a NULL pointer dereference for
+                   variety.  Going forward here will probably re-instantiate some global objects
+                   which were already cleaned up, so generally a bad idea.
+
+                   A sample assertion stack:
+                    # Child-SP          RetAddr           Call Site
+                   00 00000052`300fe370 00007fff`36ac2cc9 UICommon!CVirtualBox::GetExtraDataKeys+0x80 [E:\vbox\svn\trunk\out\win.amd64\debug\obj\UICommon\include\COMWrappers.cpp @ 3851]
+                   01 00000052`300fe430 00007fff`36ac2bf8 UICommon!UIExtraDataManager::prepareGlobalExtraDataMap+0xb9 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\extradata\UIExtraDataManager.cpp @ 4845]
+                   02 00000052`300fe590 00007fff`36ab1896 UICommon!UIExtraDataManager::prepare+0x28 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\extradata\UIExtraDataManager.cpp @ 4833]
+                   03 00000052`300fe5c0 00007ff7`69db2897 UICommon!UIExtraDataManager::instance+0x66 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\extradata\UIExtraDataManager.cpp @ 2011]
+                   04 00000052`300fe610 00007fff`35274990 VirtualBoxVM!UIMachineWindowNormal::event+0x4b7 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\runtime\normal\UIMachineWindowNormal.cpp @ 546]
+                   05 00000052`300fe6e0 00007fff`35273a13 Qt5WidgetsVBox!QApplicationPrivate::notify_helper+0x110
+                   06 00000052`300fe710 00007fff`3cc3240a Qt5WidgetsVBox!QApplication::notify+0x18b3
+                   07 00000052`300fec50 00007fff`3cc7cd09 Qt5CoreVBox!QCoreApplication::notifyInternal2+0xba
+                   08 00000052`300fecc0 00007fff`3cc7bf7a Qt5CoreVBox!QEventDispatcherWin32Private::sendTimerEvent+0xf9
+                   09 00000052`300fed10 00007fff`7631e7e8 Qt5CoreVBox!QEventDispatcherWin32::processEvents+0xc4a
+                   0a 00000052`300fee30 00007fff`7631e229 USER32!UserCallWinProcCheckWow+0x2f8
+                   0b 00000052`300fefc0 00007fff`370c2075 USER32!DispatchMessageWorker+0x249
+                   0c 00000052`300ff040 00007fff`370c20e5 UICommon!com::NativeEventQueue::dispatchMessageOnWindows+0x145 [E:\vbox\svn\trunk\src\VBox\Main\glue\NativeEventQueue.cpp @ 416]
+                   0d 00000052`300ff090 00007fff`370c1b19 UICommon!com::processPendingEvents+0x55 [E:\vbox\svn\trunk\src\VBox\Main\glue\NativeEventQueue.cpp @ 435]
+                   0e 00000052`300ff130 00007fff`370c1ebd UICommon!com::NativeEventQueue::processEventQueue+0x149 [E:\vbox\svn\trunk\src\VBox\Main\glue\NativeEventQueue.cpp @ 562]
+                   0f 00000052`300ff1d0 00007fff`370bfa9a UICommon!com::NativeEventQueue::uninit+0x2d [E:\vbox\svn\trunk\src\VBox\Main\glue\NativeEventQueue.cpp @ 260]
+                   10 00000052`300ff210 00007fff`36b098e4 UICommon!com::Shutdown+0x5a [E:\vbox\svn\trunk\src\VBox\Main\glue\initterm.cpp @ 746]
+                   11 00000052`300ff250 00007fff`36b88c43 UICommon!COMBase::CleanupCOM+0x74 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\globals\COMDefs.cpp @ 168]
+                   12 00000052`300ff2c0 00007fff`36a700c8 UICommon!UICommon::cleanup+0x313 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\globals\UICommon.cpp @ 849]
+                   13 00000052`300ff340 00007fff`36a82ab1 UICommon!UICommon::sltCleanup+0x28 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\globals\UICommon.h @ 580]
+                   14 00000052`300ff370 00007fff`36a81a9c UICommon!QtPrivate::FunctorCall<QtPrivate::IndexesList<>,QtPrivate::List<>,void,void (__cdecl UIMessageCenter::*)(void)>::call+0x31 [E:\vbox\svn\trunk\tools\win.amd64\qt\v5.15.2-r349\include\QtCore\qobjectdefs_impl.h @ 152]
+                   15 00000052`300ff3b0 00007fff`36a82e45 UICommon!QtPrivate::FunctionPointer<void (__cdecl UIMessageCenter::*)(void)>::call<QtPrivate::List<>,void>+0x3c [E:\vbox\svn\trunk\tools\win.amd64\qt\v5.15.2-r349\include\QtCore\qobjectdefs_impl.h @ 186]
+                   16 00000052`300ff3e0 00007fff`3cc51689 UICommon!QtPrivate::QSlotObject<void (__cdecl UIMessageCenter::*)(void),QtPrivate::List<>,void>::impl+0x95 [E:\vbox\svn\trunk\tools\win.amd64\qt\v5.15.2-r349\include\QtCore\qobjectdefs_impl.h @ 419]
+                   17 00000052`300ff430 00007fff`3cc31465 Qt5CoreVBox!QObject::qt_static_metacall+0x1409
+                   18 00000052`300ff580 00007fff`3cc313ef Qt5CoreVBox!QCoreApplicationPrivate::execCleanup+0x55
+                   19 00000052`300ff5c0 00007ff7`69ce3b7a Qt5CoreVBox!QCoreApplication::exec+0x16f
+                   1a 00000052`300ff620 00007ff7`69ce4174 VirtualBoxVM!TrustedMain+0x47a [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\main.cpp @ 570]
+                   1b 00000052`300ff8b0 00007ff7`69e08af8 VirtualBoxVM!main+0x4a4 [E:\vbox\svn\trunk\src\VBox\Frontends\VirtualBox\src\main.cpp @ 739]
+                   1c (Inline Function) --------`-------- VirtualBoxVM!invoke_main+0x22 [d:\A01\_work\6\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl @ 78]
+                   1d 00000052`300ffa00 00007fff`75107034 VirtualBoxVM!__scrt_common_main_seh+0x10c [d:\A01\_work\6\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl @ 288]
+                   1e 00000052`300ffa40 00007fff`76ae2651 KERNEL32!BaseThreadInitThunk+0x14
+                   1f 00000052`300ffa70 00000000`00000000 ntdll!RtlUserThreadStart+0x21 */
+                if (!UICommon::instance()->isCleaningUp())
+                {
+                    LogRel2(("GUI: UIMachineWindowNormal: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+                             m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+                    gEDataManager->setMachineWindowGeometry(machineLogic()->visualStateType(),
+                                                            m_uScreenId, m_geometry,
+                                                            isMaximizedChecked(), uiCommon().managedVMUuid());
+                }
+                else
+                    LogRel2(("GUI: UIMachineWindowNormal: Ignoring geometry save timer arriving during cleanup\n"));
             }
             break;
         }
