@@ -3950,8 +3950,77 @@ BS3_MODE_PROTO_NOSB(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries
  */
 BS3_MODE_PROTO_NOSB(void, Bs3TestDoModesByMax,(PCBS3TESTMODEBYMAXENTRY paEntries, size_t cEntries));
 
+/** @} */
+
+
+/** @defgroup grp_bs3kit_bios_int15     BIOS - int 15h
+ * @{ */
+
+/** An INT15E820 data entry. */
+typedef struct INT15E820ENTRY
+{
+    uint64_t    uBaseAddr;
+    uint64_t    cbRange;
+    /** Memory type this entry describes, see INT15E820_TYPE_XXX. */
+    uint32_t    uType;
+    /** Optional.   */
+    uint32_t    fAcpi3;
+} INT15E820ENTRY;
+AssertCompileSize(INT15E820ENTRY,24);
+
+
+/** @name INT15E820_TYPE_XXX - Memory types returned by int 15h function 0xe820.
+ * @{ */
+#define INT15E820_TYPE_USABLE               1 /**< Usable RAM. */
+#define INT15E820_TYPE_RESERVED             2 /**< Reserved by the system, unusable. */
+#define INT15E820_TYPE_ACPI_RECLAIMABLE     3 /**< ACPI reclaimable memory, whatever that means. */
+#define INT15E820_TYPE_ACPI_NVS             4 /**< ACPI non-volatile storage? */
+#define INT15E820_TYPE_BAD                  5 /**< Bad memory, unusable. */
+/** @} */
+
+
+/**
+ * Performs an int 15h function 0xe820 call.
+ *
+ * @returns Success indicator.
+ * @param   pEntry              The return buffer.
+ * @param   pcbEntry            Input: The size of the buffer (min 20 bytes);
+ *                              Output: The size of the returned data.
+ * @param   puContinuationValue Where to get and return the continuation value (EBX)
+ *                              Set to zero the for the first call.  Returned as zero
+ *                              after the last entry.
+ */
+BS3_MODE_PROTO_STUB(bool, Bs3BiosInt15hE820,(INT15E820ENTRY BS3_FAR *pEntry, uint32_t BS3_FAR *pcbEntry,
+                                             uint32_t BS3_FAR *puContinuationValue));
+
+/**
+ * Performs an int 15h function 0x88 call.
+ *
+ * @returns UINT32_MAX on failure, number of KBs above 1MB otherwise.
+ */
+#if ARCH_BITS != 16 || !defined(BS3_BIOS_INLINE_RM)
+BS3_MODE_PROTO_STUB(uint32_t, Bs3BiosInt15h88,(void));
+#else
+BS3_DECL(uint32_t) Bs3BiosInt15h88(void);
+# pragma aux Bs3BiosInt15h88 = \
+    ".286" \
+    "clc" \
+    "mov    ax, 08800h" \
+    "int    15h" \
+    "jc     failed" \
+    "xor    dx, dx" \
+    "jmp    done" \
+    "failed:" \
+    "xor    ax, ax" \
+    "dec    ax" \
+    "mov    dx, ax" \
+    "done:" \
+    value [ax dx] \
+    modify exact [ax bx cx dx es];
+#endif
 
 /** @} */
+
 
 /** @} */
 

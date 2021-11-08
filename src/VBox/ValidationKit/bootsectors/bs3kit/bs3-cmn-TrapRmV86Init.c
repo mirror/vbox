@@ -92,9 +92,11 @@ BS3_CMN_DEF(void, Bs3TrapRmV86InitEx,(bool f386Plus))
      *       Turns out we must not hook INT 6Dh either then, as some real VGA
      *       BIOS installs their INT 10h handler there as well, and seemingly
      *       must be using it internally or something.
+     *
+     *       We also keep 15h working for memory interfaces (see bs3-mode-BiosInt15*).
      */
     for (iIvt = 0; iIvt < 256; iIvt++)
-        if (iIvt != 0x10 && iIvt != 0x6d && iIvt != BS3_TRAP_SYSCALL)
+        if (iIvt != 0x10 && iIvt != 0x15 && iIvt != 0x6d && iIvt != BS3_TRAP_SYSCALL)
         {
             paIvt[iIvt].off = (uint16_t)(uintptr_t)Bs3TrapRmV86GenericEntries + iIvt * 8;
             paIvt[iIvt].sel = BS3_SEL_TEXT16;

@@ -355,6 +355,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-TestDoModesByOne.c \
 	bs3-mode-TestDoModesByMax.c \
 	bs3-mode-TestDoModesHlp.asm \
+	bs3-mode-BiosInt15hE820.asm \
 
 # The 16-bit real mode BS3Kit library.
 LIBRARIES += bs3kit-rm

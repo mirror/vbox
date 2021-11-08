@@ -197,6 +197,8 @@
 #undef Bs3UtilSetFullGdtr
 #undef Bs3UtilSetFullIdtr
 #ifndef BS3_CMN_ONLY
+# undef Bs3BiosInt15h88
+# undef Bs3BiosInt15hE820
 # undef Bs3CpuDetect
 # undef Bs3SwitchTo32BitAndCallC
 # undef Bs3TestDoModes

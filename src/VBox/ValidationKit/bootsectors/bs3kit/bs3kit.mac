@@ -688,8 +688,8 @@ BS3_GLOBAL_NAME_EX %1 %+ _EndProc, function hidden, (%1 %+ _EndProc - %1)
 ;; @{
 %define BS3_PBC_NEAR          1 ;;< Only near.
 %define BS3_PBC_FAR           2 ;;< Only far.
-%define BS3_PBC_HYBRID        3 ;;< Hybrid near/far procedure, trashing AX
-%define BS3_PBC_HYBRID_SAFE   4 ;;< Hybrid near/far procedure, no trashing but slower.
+%define BS3_PBC_HYBRID        3 ;;< Hybrid near/far procedure, trashing AX. Use BS3_HYBRID_RET to return.
+%define BS3_PBC_HYBRID_SAFE   4 ;;< Hybrid near/far procedure, no trashing but slower. Use BS3_HYBRID_RET to return.
 %define BS3_PBC_HYBRID_0_ARGS 5 ;;< Hybrid near/far procedure, no parameters so separate far stub, no trashing, fast near calls.
 ;; @}
 

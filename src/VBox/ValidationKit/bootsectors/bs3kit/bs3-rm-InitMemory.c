@@ -29,95 +29,12 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define BS3_USE_RM_TEXT_SEG 1
+#define BS3_BIOS_INLINE_RM
 #include "bs3kit-template-header.h"
 #include "bs3-cmn-memory.h"
 #include <iprt/asm.h>
 #include <VBox/VMMDevTesting.h>
 
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-
-typedef struct INT15E820ENTRY
-{
-    uint64_t    uBaseAddr;
-    uint64_t    cbRange;
-    /** Memory type this entry describes, see INT15E820_TYPE_XXX. */
-    uint32_t    uType;
-    uint32_t    fAcpi3;
-} INT15E820ENTRY;
-AssertCompileSize(INT15E820ENTRY,24);
-
-
-/** @name INT15E820_TYPE_XXX - Memory types returned by int 15h function 0xe820.
- * @{ */
-#define INT15E820_TYPE_USABLE               1 /**< Usable RAM. */
-#define INT15E820_TYPE_RESERVED             2 /**< Reserved by the system, unusable. */
-#define INT15E820_TYPE_ACPI_RECLAIMABLE     3 /**< ACPI reclaimable memory, whatever that means. */
-#define INT15E820_TYPE_ACPI_NVS             4 /**< ACPI non-volatile storage? */
-#define INT15E820_TYPE_BAD                  5 /**< Bad memory, unusable. */
-/** @} */
-
-
-/**
- * Performs a int 15h function 0xe820 call.
- *
- * @returns Continuation value on success, 0 on failure.
- *          (Because of the way the API works, EBX should never be zero when
- *          data is returned.)
- * @param   pEntry              The return buffer.
- * @param   cbEntry             The size of the buffer (min 20 bytes).
- * @param   uContinuationValue  Zero the first time, the return value from the
- *                              previous call after that.
- */
-BS3_DECL(uint32_t) Bs3BiosInt15hE820(INT15E820ENTRY BS3_FAR *pEntry, size_t cbEntry, uint32_t uContinuationValue);
-#pragma aux Bs3BiosInt15hE820 = \
-    ".386" \
-    "shl    ebx, 10h" \
-    "mov    bx, ax" /* ebx = continutation */ \
-    "movzx  ecx, cx" \
-    "movzx  edi, di" \
-    "mov    edx, 0534d4150h" /*SMAP*/ \
-    "mov    eax, 0xe820" \
-    "int    15h" \
-    "jc     failed" \
-    "cmp    eax, 0534d4150h" \
-    "jne    failed" \
-    "cmp    cx, 20" \
-    "jb     failed" \
-    "mov    ax, bx" \
-    "shr    ebx, 10h" /* ax:bx = continuation */ \
-    "jmp    done" \
-    "failed:" \
-    "xor    ax, ax" \
-    "xor    bx, bx" \
-    "done:" \
-    parm [es di] [cx] [ax bx] \
-    value [ax bx] \
-    modify exact [ax bx cx dx di es];
-
-/**
- * Performs a int 15h function 0x88 call.
- *
- * @returns UINT32_MAX on failure, number of KBs above 1MB otherwise.
- */
-BS3_DECL(uint32_t) Bs3BiosInt15h88(void);
-#pragma aux Bs3BiosInt15h88 = \
-    ".286" \
-    "clc" \
-    "mov    ax, 08800h" \
-    "int    15h" \
-    "jc     failed" \
-    "xor    dx, dx" \
-    "jmp    done" \
-    "failed:" \
-    "xor    ax, ax" \
-    "dec    ax" \
-    "mov    dx, ax" \
-    "done:" \
-    value [ax dx] \
-    modify exact [ax bx cx dx es];
 
 
 /*********************************************************************************************************************************
@@ -249,10 +166,12 @@ static void bs3InitMemoryAddRange32(uint32_t uRange, uint32_t cbRange)
 
 BS3_DECL(void) BS3_FAR_CODE Bs3InitMemory_rm_far(void)
 {
+    INT15E820ENTRY      Entry   = { 0, 0, 0, 0 };
+    uint32_t            cbEntry = sizeof(Entry);
+    uint32_t            uCont   = 0;
     uint16_t            i;
     uint16_t            cPages;
     uint32_t            u32;
-    INT15E820ENTRY      Entry;
     uint32_t BS3_FAR   *pu32Mmio;
 
     /*
@@ -315,20 +234,27 @@ BS3_DECL(void) BS3_FAR_CODE Bs3InitMemory_rm_far(void)
        and BS3_SEL_TILED_AREA_SIZE present.  This means we're only interested
        in entries describing usable memory, ASSUMING of course no overlaps. */
     if (   (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386
-        && Bs3BiosInt15hE820(&Entry, sizeof(Entry), 0) != 0)
+        && Bs3BiosInt15hE820_rm_far(&Entry, &cbEntry, &uCont))
     {
-        uint32_t uCont = 0;
-        i = 0;
-        while (   (uCont = Bs3BiosInt15hE820(&Entry, sizeof(Entry), uCont)) != 0
-               && i++ < 2048)
+        unsigned i = 0;
+        do
+        {
             if (Entry.uType == INT15E820_TYPE_USABLE)
                 if (!(Entry.uBaseAddr >> 32))
                     /* Convert from 64-bit to 32-bit value and record it. */
                     bs3InitMemoryAddRange32((uint32_t)Entry.uBaseAddr,
                                             (Entry.cbRange >> 32) ? UINT32_C(0xfffff000) : (uint32_t)Entry.cbRange);
+
+            /* next */
+            Entry.uType = 0;
+            cbEntry = sizeof(Entry);
+            i++;
+        } while (   uCont != 0
+                 && i < 2048
+                 && Bs3BiosInt15hE820_rm_far(&Entry, &cbEntry, &uCont));
     }
     /* Try the 286+ API for getting memory above 1MB and (usually) below 16MB. */
-    else if (   (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386
+    else if (   (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80286
              && (u32 = Bs3BiosInt15h88()) != UINT32_MAX
              && u32 > 0)
         bs3InitMemoryAddRange32(_1M, u32 * _1K);

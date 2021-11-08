@@ -197,6 +197,8 @@
 #define Bs3UtilSetFullGdtr BS3_CMN_MANGLER(Bs3UtilSetFullGdtr)
 #define Bs3UtilSetFullIdtr BS3_CMN_MANGLER(Bs3UtilSetFullIdtr)
 #ifndef BS3_CMN_ONLY
+# define Bs3BiosInt15h88 BS3_MODE_MANGLER(Bs3BiosInt15h88)
+# define Bs3BiosInt15hE820 BS3_MODE_MANGLER(Bs3BiosInt15hE820)
 # define Bs3CpuDetect BS3_MODE_MANGLER(Bs3CpuDetect)
 # define Bs3SwitchTo32BitAndCallC BS3_MODE_MANGLER(Bs3SwitchTo32BitAndCallC)
 # define Bs3TestDoModes BS3_MODE_MANGLER(Bs3TestDoModes)
