@@ -108,4 +108,3 @@ BS3_CMN_DEF(int, Bs3PagingMapRamAbove4GForLM,(uint64_t *puFailurePoint))
     return VINF_SUCCESS;
 }
 
-
