@@ -2330,6 +2330,170 @@ typedef struct PGMTREES
 typedef PGMTREES *PPGMTREES;
 
 
+/** @name PGMPTATTRS
+ *
+ * PGM page-table attributes.
+ *
+ * This is VirtualBox's combined page table attributes. It combines regular page
+ * table and Intel EPT attributes. It's 64-bit in size so there's ample room for
+ * bits added in the future to EPT or regular page tables (for e.g. Protection Key).
+ *
+ * The following bits map 1:1 (shifted by PGM_PTATTRS_EPT_SHIFT) to the Intel EPT
+ * attributes as these are unique to EPT and fit within 64-bits despite the shift:
+ *   - R           (Read access).
+ *   - W           (Write access).
+ *   - X_SUPER     (Execute or execute access for supervisor-mode linear addresses).
+ *   - EPT_MEMTYPE (EPT memory type).
+ *   - IGNORE_PAT  (Ignore PAT memory type).
+ *   - X_USER      (Execute access for user-mode linear addresses).
+ *
+ * The following EPT attributes are mapped to the following positions because they
+ * exist in the regular page tables at these positions OR are exclusive to EPT and
+ * have been mapped to arbitrarily chosen positions:
+ *   - A                (Accessed)                - EPT bit  8 maps to bit  5.
+ *   - D                (Dirty)                   - EPT bit  9 maps to bit  6.
+ *   - SUPER_SHW_STACK  (Supervisor Shadow Stack) - EPT bit 60 maps to bit 24.
+ *   - SUPPRESS_VE_XCPT (Suppress \#VE exception) - EPT bit 63 maps to bit 25.
+ *
+ * Bits 11:9 and bit 43 are deliberately kept unused (they correspond to bits 11:9
+ * in the page-table structures and to bit 11 in the EPT structures respectively) as
+ * they're reserved for use by software and we may want to preserve them in the
+ * future.
+ *
+ * @{ */
+typedef uint64_t PGMPTATTRS;
+/** Pointer to a PGMPTATTRS type. */
+typedef PGMPTATTRS *PPGMPTATTRS;
+
+/** Execute bit (!NX). */
+#define PGM_PTATTRS_X_SHIFT                         0
+#define PGM_PTATTRS_X_MASK                          RT_BIT_64(PGM_PTATTRS_X_SHIFT)
+/** Read and write access bit. */
+#define PGM_PTATTRS_RW_SHIFT                        1
+#define PGM_PTATTRS_RW_MASK                         RT_BIT_64(PGM_PTATTRS_RW_SHIFT)
+/** User-mode access bit. */
+#define PGM_PTATTRS_US_SHIFT                        2
+#define PGM_PTATTRS_US_MASK                         RT_BIT_64(PGM_PTATTRS_US_SHIFT)
+/** Write through cache bit. */
+#define PGM_PTATTRS_PWT_SHIFT                       3
+#define PGM_PTATTRS_PWT_MASK                        RT_BIT_64(PGM_PTATTRS_PWT_SHIFT)
+/** Cache disabled bit. */
+#define PGM_PTATTRS_PCD_SHIFT                       4
+#define PGM_PTATTRS_PCD_MASK                        RT_BIT_64(PGM_PTATTRS_PCD_SHIFT)
+/** Accessed bit. */
+#define PGM_PTATTRS_A_SHIFT                         5
+#define PGM_PTATTRS_A_MASK                          RT_BIT_64(PGM_PTATTRS_A_SHIFT)
+/** Dirty bit. */
+#define PGM_PTATTRS_D_SHIFT                         6
+#define PGM_PTATTRS_D_MASK                          RT_BIT_64(PGM_PTATTRS_D_SHIFT)
+/** The PAT bit. */
+#define PGM_PTATTRS_PAT_SHIFT                       7
+#define PGM_PTATTRS_PAT_MASK                        RT_BIT_64(PGM_PTATTRS_PAT_SHIFT)
+/** The global bit. */
+#define PGM_PTATTRS_G_SHIFT                         8
+#define PGM_PTATTRS_G_MASK                          RT_BIT_64(PGM_PTATTRS_G_SHIFT)
+/** Reserved (bits 11:9) unused. */
+#define PGM_PTATTRS_RSVD_11_9_SHIFT                 9
+#define PGM_PTATTRS_RSVD_11_9_MASK                  UINT64_C(0x0000000000000e00)
+/** Read access bit - EPT only. */
+#define PGM_PTATTRS_EPT_R_SHIFT                     12
+#define PGM_PTATTRS_EPT_R_MASK                      RT_BIT_64(PGM_PTATTRS_EPT_R_SHIFT)
+/** Write access bit - EPT only. */
+#define PGM_PTATTRS_EPT_W_SHIFT                     13
+#define PGM_PTATTRS_EPT_W_MASK                      RT_BIT_64(PGM_PTATTRS_EPT_W_SHIFT)
+/** Execute or execute access for supervisor-mode linear addresses - EPT only. */
+#define PGM_PTATTRS_EPT_X_SUPER_SHIFT               14
+#define PGM_PTATTRS_EPT_X_SUPER_MASK                RT_BIT_64(PGM_PTATTRS_EPT_X_SUPER_SHIFT)
+/** EPT memory type - EPT only. */
+#define PGM_PTATTRS_EPT_MEMTYPE_SHIFT               15
+#define PGM_PTATTRS_EPT_MEMTYPE_MASK                UINT64_C(0x0000000000038000)
+/** Ignore PAT memory type - EPT only. */
+#define PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT            18
+#define PGM_PTATTRS_EPT_IGNORE_PAT_MASK             RT_BIT_64(PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT)
+/** Reserved (bits 21:19) unused. */
+#define PGM_PTATTRS_RSVD_21_19_SHIFT                19
+#define PGM_PTATTRS_RSVD_21_19_MASK                 UINT64_C(0x0000000000380000)
+/** Execute access for user-mode linear addresses - EPT only. */
+#define PGM_PTATTRS_EPT_X_USER_SHIFT                22
+#define PGM_PTATTRS_EPT_X_USER_MASK                 RT_BIT_64(PGM_PTATTRS_EPT_X_USER_SHIFT)
+/** Reserved (bit 23) - unused. */
+#define PGM_PTATTRS_RSVD_23_SHIFT                   23
+#define PGM_PTATTRS_RSVD_23_MASK                    UINT64_C(0x0000000000800000)
+/** Supervisor shadow stack - EPT only. */
+#define PGM_PTATTRS_EPT_SUPER_SHW_STACK_SHIFT       24
+#define PGM_PTATTRS_EPT_SUPER_SHW_STACK_MASK        RT_BIT_64(PGM_PTATTRS_EPT_SUPER_SHW_STACK_SHIFT)
+/** Suppress \#VE exception - EPT only. */
+#define PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_SHIFT      25
+#define PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_MASK       RT_BIT_64(PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_SHIFT)
+/** Reserved (bits 63:26) - unused. */
+#define PGM_PTATTRS_RSVD_63_26_SHIFT                26
+#define PGM_PTATTRS_RSVD_63_26_MASK                 UINT64_C(0xfffffffffc000000)
+RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
+                            (X, RW, US, PWT, PCD, A, D, PAT, G, RSVD_11_9, EPT_R, EPT_W, EPT_X_SUPER, EPT_MEMTYPE, EPT_IGNORE_PAT,
+                             RSVD_21_19, EPT_X_USER, RSVD_23, EPT_SUPER_SHW_STACK, EPT_SUPPRESS_VE_XCPT, RSVD_63_26));
+
+/** The bit position where the EPT specific attributes begin. */
+#define PGM_PTATTRS_EPT_SHIFT                   PGM_PTATTRS_EPT_R_SHIFT
+/** The mask of EPT bits (bits 63:ATTR_SHIFT). In the future we might choose to
+ *  use higher unused bits for something else, in that case adjust this mask. */
+#define PGM_PTATTRS_EPT_MASK                        UINT64_C(0xfffffffffffff000)
+
+/** The mask of all PGM page attribute bits for regular page-tables. */
+#define PGM_PTATTRS_PT_VALID_MASK                   (  PGM_PTATTRS_X_MASK \
+                                                     | PGM_PTATTRS_RW_MASK \
+                                                     | PGM_PTATTRS_US_MASK \
+                                                     | PGM_PTATTRS_PWT_MASK \
+                                                     | PGM_PTATTRS_PCD_MASK \
+                                                     | PGM_PTATTRS_A_MASK \
+                                                     | PGM_PTATTRS_D_MASK \
+                                                     | PGM_PTATTRS_PAT_MASK \
+                                                     | PGM_PTATTRS_G_MASK)
+
+/** The mask of all PGM page attribute bits for EPT. */
+#define PGM_PTATTRS_EPT_VALID_MASK                  (  PGM_PTATTRS_X_MASK \
+                                                     | PGM_PTATTRS_RW_MASK \
+                                                     | PGM_PTATTRS_US_MASK \
+                                                     | PGM_PTATTRS_A_MASK \
+                                                     | PGM_PTATTRS_D_MASK \
+                                                     | PGM_PTATTRS_R_MASK \
+                                                     | PGM_PTATTRS_W_MASK \
+                                                     | PGM_PTATTRS_EPT_X_SUPER \
+                                                     | PGM_PTATTRS_EPT_MEMTYPE \
+                                                     | PGM_PTATTRS_EPT_IGNORE_PAT \
+                                                     | PGM_PTATTRS_EPT_X_USER \
+                                                     | PGM_PTATTRS_EPT_SUPER_SHW_STACK \
+                                                     | PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT)
+
+/* The mask of all PGM page attribute bits (combined). */
+#define PGM_PTATTRS_VALID_MASK                      (PGM_PTATTRS_PT_VALID_MASK | PGM_PTATTRS_PT_VALID_MASK)
+
+/* Verify bits match the regular PT bits. */
+AssertCompile(PGM_PTATTRS_RW_SHIFT  == X86_PTE_BIT_RW);
+AssertCompile(PGM_PTATTRS_US_SHIFT  == X86_PTE_BIT_US);
+AssertCompile(PGM_PTATTRS_PWT_SHIFT == X86_PTE_BIT_PWT);
+AssertCompile(PGM_PTATTRS_PCD_SHIFT == X86_PTE_BIT_PCD);
+AssertCompile(PGM_PTATTRS_A_SHIFT   == X86_PTE_BIT_A);
+AssertCompile(PGM_PTATTRS_D_SHIFT   == X86_PTE_BIT_D);
+AssertCompile(PGM_PTATTRS_PAT_SHIFT == X86_PTE_BIT_PAT);
+AssertCompile(PGM_PTATTRS_G_SHIFT   == X86_PTE_BIT_G);
+AssertCompile(PGM_PTATTRS_RW_MASK   == X86_PTE_RW);
+AssertCompile(PGM_PTATTRS_US_MASK   == X86_PTE_US);
+AssertCompile(PGM_PTATTRS_PWT_MASK  == X86_PTE_PWT);
+AssertCompile(PGM_PTATTRS_PCD_MASK  == X86_PTE_PCD);
+AssertCompile(PGM_PTATTRS_A_MASK    == X86_PTE_A);
+AssertCompile(PGM_PTATTRS_D_MASK    == X86_PTE_D);
+AssertCompile(PGM_PTATTRS_PAT_MASK  == X86_PTE_PAT);
+AssertCompile(PGM_PTATTRS_G_MASK    == X86_PTE_G);
+
+/* Verify those EPT bits that must map 1:1 (after shifting). */
+AssertCompile(PGM_PTATTRS_EPT_R_SHIFT          - PGM_PTATTRS_EPT_SHIFT == EPT_E_BIT_READ);
+AssertCompile(PGM_PTATTRS_EPT_W_SHIFT          - PGM_PTATTRS_EPT_SHIFT == EPT_E_BIT_WRITE);
+AssertCompile(PGM_PTATTRS_EPT_X_SUPER_SHIFT    - PGM_PTATTRS_EPT_SHIFT == EPT_E_BIT_EXECUTE);
+AssertCompile(PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT - PGM_PTATTRS_EPT_SHIFT == EPT_E_BIT_IGNORE_PAT);
+AssertCompile(PGM_PTATTRS_EPT_X_USER_SHIFT     - PGM_PTATTRS_EPT_SHIFT == EPT_E_BIT_USER_EXECUTE);
+/** @} */
+
+
 /**
  * Page fault guest state for the AMD64 paging mode.
  */
@@ -2375,131 +2539,11 @@ typedef struct PGMPTWALKCORE
     bool            fEffectiveRW;
     /** The effective X86_PTE_NX flag for the address. */
     bool            fEffectiveNX;
+    bool            afPadding[4];
     /** Effective flags thus far: RW, US, PWT, PCD, A, ~NX >> 63.
      * The NX bit is inverted and shifted down 63 places to bit 0. */
-    uint32_t        fEffective;
+    PGMPTATTRS      fEffective;
 } PGMPTWALKCORE;
-
-/** @name PGMPTWALKCORE::fEffective bits.
- * @{ */
-#if 0
-/** Effective execute bit (!NX).   */
-#define PGMPTWALK_EFF_X     UINT32_C(1)
-/** Effective read+write access bit. */
-#define PGMPTWALK_EFF_RW    X86_PTE_RW
-/** Effective user-mode access bit. */
-#define PGMPTWALK_EFF_US    X86_PTE_US
-/** Effective write through cache bit. */
-#define PGMPTWALK_EFF_PWT   X86_PTE_PWT
-/** Effective cache disabled bit. */
-#define PGMPTWALK_EFF_PCD   X86_PTE_PCD
-/** Effective accessed bit. */
-#define PGMPTWALK_EFF_A     X86_PTE_A
-/** The dirty bit of the final entry. */
-#define PGMPTWALK_EFF_D     X86_PTE_D
-/** The PAT bit of the final entry. */
-#define PGMPTWALK_EFF_PAT   X86_PTE_PAT
-/** The global bit of the final entry. */
-#define PGMPTWALK_EFF_G     X86_PTE_G
-#endif
-/** Effective execute bit (!NX). */
-#define PGM_BF_PTWALK_EFF_X_SHIFT                   0
-#define PGM_BF_PTWALK_EFF_X_MASK                    UINT32_C(0x00000001)
-/** Effective read+write access bit. */
-#define PGM_BF_PTWALK_EFF_RW_SHIFT                  1
-#define PGM_BF_PTWALK_EFF_RW_MASK                   UINT32_C(0x00000002)
-/** Effective user-mode access bit. */
-#define PGM_BF_PTWALK_EFF_US_SHIFT                  2
-#define PGM_BF_PTWALK_EFF_US_MASK                   UINT32_C(0x00000004)
-/** Effective write through cache bit. */
-#define PGM_BF_PTWALK_EFF_PWT_SHIFT                 3
-#define PGM_BF_PTWALK_EFF_PWT_MASK                  UINT32_C(0x00000008)
-/** Effective cache disabled bit. */
-#define PGM_BF_PTWALK_EFF_PCD_SHIFT                 4
-#define PGM_BF_PTWALK_EFF_PCD_MASK                  UINT32_C(0x00000010)
-/** Effective accessed bit. */
-#define PGM_BF_PTWALK_EFF_A_SHIFT                   5
-#define PGM_BF_PTWALK_EFF_A_MASK                    UINT32_C(0x00000020)
-/** The dirty bit of the final entry. */
-#define PGM_BF_PTWALK_EFF_D_SHIFT                   6
-#define PGM_BF_PTWALK_EFF_D_MASK                    UINT32_C(0x00000040)
-/** The PAT bit of the final entry. */
-#define PGM_BF_PTWALK_EFF_PAT_SHIFT                 7
-#define PGM_BF_PTWALK_EFF_PAT_MASK                  UINT32_C(0x00000080)
-/** The global bit of the final entry. */
-#define PGM_BF_PTWALK_EFF_G_SHIFT                   8
-#define PGM_BF_PTWALK_EFF_G_MASK                    UINT32_C(0x00000100)
-/** Reserved (bits 11:9) unused. */
-#define PGM_BF_PTWALK_EFF_RSVD_11_9_SHIFT           9
-#define PGM_BF_PTWALK_EFF_RSVD_11_9_MASK            UINT32_C(0x00000e00)
-/** Effective read access bit - EPT only. */
-#define PGM_BF_PTWALK_EFF_R_SHIFT                   12
-#define PGM_BF_PTWALK_EFF_R_MASK                    UINT32_C(0x00001000)
-/** Effective write access bit - EPT only. */
-#define PGM_BF_PTWALK_EFF_W_SHIFT                   13
-#define PGM_BF_PTWALK_EFF_W_MASK                    UINT32_C(0x00002000)
-/** Effective execute access for supervisor-mode - EPT only. */
-#define PGM_BF_PTWALK_EFF_X_SUPER_SHIFT             14
-#define PGM_BF_PTWALK_EFF_X_SUPER_MASK              UINT32_C(0x00004000)
-/** Effective EPT memory type - EPT only. */
-#define PGM_BF_PTWALK_EFF_MEMTYPE_SHIFT             15
-#define PGM_BF_PTWALK_EFF_MEMTYPE_MASK              UINT32_C(0x00038000)
-/** Effective ignore PAT memory type - EPT only. */
-#define PGM_BF_PTWALK_EFF_IGNORE_PAT_SHIFT          18
-#define PGM_BF_PTWALK_EFF_IGNORE_PAT_MASK           UINT32_C(0x00040000)
-/** Reserved (bits 21:19) unused. */
-#define PGM_BF_PTWALK_EFF_RSVD_21_19_SHIFT          19
-#define PGM_BF_PTWALK_EFF_RSVD_21_19_MASK           UINT32_C(0x00380000)
-/** Effective execute access for user-mode - EPT only. */
-#define PGM_BF_PTWALK_EFF_X_USER_SHIFT              22
-#define PGM_BF_PTWALK_EFF_X_USER_MASK               UINT32_C(0x00400000)
-/** Reserved (bits 31:23) - unused. */  /** @todo When implementing SUPER_SHW_STACK, Suppress \#VE put them in bits 24, 25 which corresponds to bit 12, 13 of EPT attributes. */
-#define PGM_BF_PTWALK_EFF_RSVD_31_23_SHIFT          23
-#define PGM_BF_PTWALK_EFF_RSVD_31_23_MASK           UINT32_C(0xff800000)
-RT_BF_ASSERT_COMPILE_CHECKS(PGM_BF_PTWALK_EFF_, UINT32_C(0), UINT32_MAX,
-                            (X, RW, US, PWT, PCD, A, D, PAT, G, RSVD_11_9, R, W, X_SUPER, MEMTYPE, IGNORE_PAT, RSVD_21_19,
-                             X_USER, RSVD_31_23));
-
-/** The bit count where the EPT specific bits begin. */
-#define PGMPTWALK_EFF_EPT_ATTR_SHIFT                PGM_BF_PTWALK_EFF_R_SHIFT
-/** The mask of EPT bits (bits 31:ATTR_SHIFT). In the future we might choose to
- *  use higher unused EPT bits for something else, in that case reduce this mask. */
-#define PGMPTWALK_EFF_EPT_ATTR_MASK                 UINT32_C(0xfffff000)
-
-/* Verify bits match the regular PT bits. */
-AssertCompile(PGM_BF_PTWALK_EFF_RW_SHIFT  == X86_PTE_BIT_RW);
-AssertCompile(PGM_BF_PTWALK_EFF_US_SHIFT  == X86_PTE_BIT_US);
-AssertCompile(PGM_BF_PTWALK_EFF_PWT_SHIFT == X86_PTE_BIT_PWT);
-AssertCompile(PGM_BF_PTWALK_EFF_PCD_SHIFT == X86_PTE_BIT_PCD);
-AssertCompile(PGM_BF_PTWALK_EFF_A_SHIFT   == X86_PTE_BIT_A);
-AssertCompile(PGM_BF_PTWALK_EFF_D_SHIFT   == X86_PTE_BIT_D);
-AssertCompile(PGM_BF_PTWALK_EFF_PAT_SHIFT == X86_PTE_BIT_PAT);
-AssertCompile(PGM_BF_PTWALK_EFF_G_SHIFT   == X86_PTE_BIT_G);
-AssertCompile(PGM_BF_PTWALK_EFF_RW_MASK   == X86_PTE_RW);
-AssertCompile(PGM_BF_PTWALK_EFF_US_MASK   == X86_PTE_US);
-AssertCompile(PGM_BF_PTWALK_EFF_PWT_MASK  == X86_PTE_PWT);
-AssertCompile(PGM_BF_PTWALK_EFF_PCD_MASK  == X86_PTE_PCD);
-AssertCompile(PGM_BF_PTWALK_EFF_A_MASK    == X86_PTE_A);
-AssertCompile(PGM_BF_PTWALK_EFF_D_MASK    == X86_PTE_D);
-AssertCompile(PGM_BF_PTWALK_EFF_PAT_MASK  == X86_PTE_PAT);
-AssertCompile(PGM_BF_PTWALK_EFF_G_MASK    == X86_PTE_G);
-
-/*
- * The following bits map 1:1 (left shifted by PGMPTWALK_EFF_EPT_ATTR_SHIFT bits) with
- * VMX EPT attribute bits because these are unique to EPT and fit within 32-bits:
- *   - R, W, X_SUPER, MEMTYPE, IGNORE_PAT, X_USER.
- *
- * The following bits are moved to the regular PT bit positions because they already
- * exist for regular page tables:
- *   - A, D.
- */
-AssertCompile(PGM_BF_PTWALK_EFF_R_SHIFT          - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_READ);
-AssertCompile(PGM_BF_PTWALK_EFF_W_SHIFT          - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_WRITE);
-AssertCompile(PGM_BF_PTWALK_EFF_X_SUPER_SHIFT    - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_EXECUTE);
-AssertCompile(PGM_BF_PTWALK_EFF_IGNORE_PAT_SHIFT - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_IGNORE_PAT);
-AssertCompile(PGM_BF_PTWALK_EFF_X_USER_SHIFT     - PGMPTWALK_EFF_EPT_ATTR_SHIFT == EPT_E_BIT_USER_EXECUTE);
-/** @} */
-
 
 /**
  * Guest page table walk for the AMD64 mode.

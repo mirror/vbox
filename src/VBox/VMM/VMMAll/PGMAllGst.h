@@ -148,7 +148,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 8);
 # endif
 
-    uint32_t fEffective = X86_PTE_RW | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | 1;
+    uint64_t fEffective = X86_PTE_RW | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | 1;
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
         /*
@@ -169,8 +169,8 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
         else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 4);
 
-        pWalk->Core.fEffective = fEffective = ((uint32_t)Pml4e.u & (X86_PML4E_RW  | X86_PML4E_US | X86_PML4E_PWT | X86_PML4E_PCD | X86_PML4E_A))
-                                            | ((uint32_t)(Pml4e.u >> 63) ^ 1) /*NX */;
+        pWalk->Core.fEffective = fEffective = (Pml4e.u & (X86_PML4E_RW | X86_PML4E_US | X86_PML4E_PWT | X86_PML4E_PCD | X86_PML4E_A))
+                                            | ((Pml4e.u >> 63) ^ 1) /*NX */;
 
         /*
          * The PDPT.
@@ -203,12 +203,12 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 3);
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
-        pWalk->Core.fEffective = fEffective &= ((uint32_t)Pdpe.u & (X86_PDPE_RW  | X86_PDPE_US | X86_PDPE_PWT | X86_PDPE_PCD | X86_PDPE_A))
-                                             | ((uint32_t)(Pdpe.u >> 63) ^ 1) /*NX */;
+        pWalk->Core.fEffective = fEffective &= (Pdpe.u & (X86_PDPE_RW | X86_PDPE_US | X86_PDPE_PWT | X86_PDPE_PCD | X86_PDPE_A))
+                                             | ((Pdpe.u >> 63) ^ 1) /*NX */;
 # else
         pWalk->Core.fEffective = fEffective  = X86_PDPE_RW  | X86_PDPE_US | X86_PDPE_A
-                                             | ((uint32_t)Pdpe.u & (X86_PDPE_PWT | X86_PDPE_PCD))
-                                             | ((uint32_t)(Pdpe.u >> 63) ^ 1) /*NX */;
+                                             | (Pdpe.u & (X86_PDPE_PWT | X86_PDPE_PCD))
+                                             | ((Pdpe.u >> 63) ^ 1) /*NX */;
 # endif
 
         /*
@@ -244,13 +244,13 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
              * We're done.
              */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-            fEffective &= Pde.u & (X86_PDE4M_RW  | X86_PDE4M_US | X86_PDE4M_PWT | X86_PDE4M_PCD | X86_PDE4M_A);
+            fEffective &=  Pde.u & (X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PWT | X86_PDE4M_PCD | X86_PDE4M_A);
 # else
-            fEffective &= ((uint32_t)Pde.u & (X86_PDE4M_RW  | X86_PDE4M_US | X86_PDE4M_PWT | X86_PDE4M_PCD | X86_PDE4M_A))
-                        | ((uint32_t)(Pde.u >> 63) ^ 1) /*NX */;
+            fEffective &= (Pde.u & (X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PWT | X86_PDE4M_PCD | X86_PDE4M_A))
+                        | ((Pde.u >> 63) ^ 1) /*NX */;
 # endif
-            fEffective |= (uint32_t)Pde.u & (X86_PDE4M_D | X86_PDE4M_G);
-            fEffective |= (uint32_t)(Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT;
+            fEffective |= Pde.u & (X86_PDE4M_D | X86_PDE4M_G);
+            fEffective |= (Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT;
             pWalk->Core.fEffective = fEffective;
 
             pWalk->Core.fEffectiveRW = !!(fEffective & X86_PTE_RW);
@@ -276,10 +276,10 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         if (RT_UNLIKELY(!GST_IS_PDE_VALID(pVCpu, Pde)))
             return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 2);
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-        pWalk->Core.fEffective = fEffective &= Pde.u & (X86_PDE_RW  | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD | X86_PDE_A);
+        pWalk->Core.fEffective = fEffective &= Pde.u & (X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD | X86_PDE_A);
 # else
-        pWalk->Core.fEffective = fEffective &= ((uint32_t)Pde.u & (X86_PDE_RW  | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD | X86_PDE_A))
-                                             | ((uint32_t)(Pde.u >> 63) ^ 1) /*NX */;
+        pWalk->Core.fEffective = fEffective &= (Pde.u & (X86_PDE_RW | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD | X86_PDE_A))
+                                             | ((Pde.u >> 63) ^ 1) /*NX */;
 # endif
 
         /*
@@ -309,12 +309,12 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
          * We're done.
          */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-        fEffective &= Pte.u & (X86_PTE_RW  | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A);
+        fEffective &= Pte.u & (X86_PTE_RW | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A);
 # else
-        fEffective &= ((uint32_t)Pte.u & (X86_PTE_RW  | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A))
-                   | ((uint32_t)(Pte.u >> 63) ^ 1) /*NX */;
+        fEffective &= (Pte.u & (X86_PTE_RW | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A))
+                   |  ((Pte.u >> 63) ^ 1) /*NX */;
 # endif
-        fEffective |= (uint32_t)Pte.u & (X86_PTE_D | X86_PTE_PAT | X86_PTE_G);
+        fEffective |= Pte.u & (X86_PTE_D | X86_PTE_PAT | X86_PTE_G);
         pWalk->Core.fEffective = fEffective;
 
         pWalk->Core.fEffectiveRW = !!(fEffective & X86_PTE_RW);
