@@ -255,7 +255,9 @@ bs3-cpu-basic-2-template.o:: \
 	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3-cpu-basic-2-asm.o16
 
+#
 # CPU weird stuff #1.
+#
 MISCBINS += bs3-cpu-weird-1
 bs3-cpu-weird-1_TEMPLATE = VBoxBS3KitImg
 bs3-cpu-weird-1_INCS  = .
@@ -265,7 +267,9 @@ bs3-cpu-weird-1_SOURCES = \
 	bs3-cpu-weird-1-x0.c \
 	bs3-cpu-weird-1-asm.asm
 
+#
 # 64-bit CPU state #1.
+#
 MISCBINS += bs3-cpu-state64-1
 bs3-cpu-state64-1_TEMPLATE = VBoxBS3KitImg
 bs3-cpu-state64-1_INCS  = .
@@ -274,7 +278,9 @@ bs3-cpu-state64-1_SOURCES = \
 	bs3-cpu-state64-1.c64 \
 	bs3-cpu-state64-1-asm.asm
 
+#
 # FPU state corruption checker.
+#
 MISCBINS += bs3-fpustate-1
 bs3-fpustate-1_TEMPLATE = VBoxBS3KitImg
 bs3-fpustate-1_INCS  = .
@@ -293,7 +299,9 @@ bs3-fpustate-1-template.o:: \
 	$$(bs3-fpustate-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 	$$(bs3-fpustate-1_0_OUTDIR)/bs3-fpustate-1-asm.o16
 
+#
 # CPU instruction decoding experiments.
+#
 MISCBINS += bs3-cpu-decoding-1
 bs3-cpu-decoding-1_TEMPLATE = VBoxBS3KitImg
 bs3-cpu-decoding-1_INCS  = .
@@ -313,7 +321,9 @@ bs3-cpu-decoding-1-template.o:: \
 #	$$(bs3-cpu-decoding-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 
 
+#
 # CPU instructions #2 (first being bootsector2-cpu-instr-1).
+#
 MISCBINS += bs3-cpu-instr-2
 bs3-cpu-instr-2_TEMPLATE = VBoxBS3KitImg
 bs3-cpu-instr-2_INCS  = .
@@ -332,7 +342,9 @@ bs3-cpu-instr-2-template.o:: \
 	$$(bs3-cpu-instr-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 	$$(bs3-cpu-instr-2_0_OUTDIR)/bs3-cpu-instr-2-asm.o16
 
+#
 # CPU generated instruction tests #1
+#
 MISCBINS += bs3-cpu-generated-1
 bs3-cpu-generated-1_TEMPLATE = VBoxBS3KitImg
 bs3-cpu-generated-1_INCS = .
@@ -360,7 +372,23 @@ $$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16: \
                | $$(dir $$@)
 	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $< $@
 
+#
+# Memory allocation.
+#
+MISCBINS += bs3-memalloc-1
+bs3-memalloc-1_TEMPLATE = VBoxBS3KitImg
+bs3-memalloc-1_INCS  = .
+ ifeq ($(KBUILD_HOST),win)
+bs3-memalloc-1_DEFS += HAVE_OMF_CONVERTER
+ endif
+bs3-memalloc-1_SOURCES = \
+	bs3kit/bs3-first-init-all-lm64.asm \
+	bs3-memalloc-1.c64
+
+
+#
 # Timer Interrupts
+#
 MISCBINS += bs3-timers-1
 bs3-timers-1_TEMPLATE = VBoxBS3KitImg
 bs3-timers-1_INCS  = .
@@ -373,16 +401,10 @@ bs3-timers-1_SOURCES = \
 	bs3kit/bs3-first-rm.asm \
 	bs3-timers-1.c \
 	bs3-timers-1-x0.c
-#       bs3kit/bs3-cmn-instantiate-x0.c16 \
-#       bs3kit/bs3-cmn-instantiate.c32 \
-#       bs3kit/bs3-cmn-instantiate.c64
-#bs3-timers-1-template.o:: \
-#	$$(bs3-timers-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
-#	$$(bs3-timers-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
-#	$$(bs3-timers-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
-#	$$(bs3-timers-1_0_OUTDIR)/bs3-timers-1-asm.o16
 
+#
 # Timing
+#
 MISCBINS += bs3-timing-1
 bs3-timing-1_TEMPLATE = VBoxBS3KitImg
 bs3-timing-1_INCS  = .
@@ -396,7 +418,9 @@ bs3-timing-1_SOURCES = \
 	bs3-timing-1.c \
 	bs3-timing-1-32.c32
 
+#
 # Lock contention and interruption.
+#
 MISCBINS += bs3-locking-1
 bs3-locking-1_TEMPLATE = VBoxBS3KitImg
 bs3-locking-1_INCS  = .
@@ -409,6 +433,10 @@ bs3-locking-1_SOURCES = \
 
 endif # VBOX_WITH_BS3KIT
 
+
+#
+# Executable version of the bs3-timing-1 bootsector.
+#
 PROGRAMS += bs3-timing-1-exe
 bs3-timing-1-exe_TEMPLATE = VBoxValidationKitR3
 bs3-timing-1-exe_NAME     = bs3-timing-1
