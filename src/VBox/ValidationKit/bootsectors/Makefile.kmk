@@ -236,9 +236,6 @@ bs3-cpu-basic-2_TEMPLATE = VBoxBS3KitImg
 bs3-cpu-basic-2_INCS  = .
 bs3-cpu-basic-2_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
 bs3-cpu-basic-2_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-cpu-basic-2-template.c
- ifeq ($(KBUILD_HOST),win)
-bs3-cpu-basic-2_DEFS += HAVE_OMF_CONVERTER
- endif
 bs3-cpu-basic-2_SOURCES = \
 	bs3kit/bs3-first-rm.asm \
 	bs3-cpu-basic-2.c \
@@ -378,9 +375,6 @@ $$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16: \
 MISCBINS += bs3-memalloc-1
 bs3-memalloc-1_TEMPLATE = VBoxBS3KitImg
 bs3-memalloc-1_INCS  = .
- ifeq ($(KBUILD_HOST),win)
-bs3-memalloc-1_DEFS += HAVE_OMF_CONVERTER
- endif
 bs3-memalloc-1_SOURCES = \
 	bs3kit/bs3-first-init-all-lm64.asm \
 	bs3-memalloc-1.c64
@@ -394,9 +388,6 @@ bs3-timers-1_TEMPLATE = VBoxBS3KitImg
 bs3-timers-1_INCS  = .
 bs3-timers-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-timers-1-template.c
 bs3-timers-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-timers-1-template.c
- ifeq ($(KBUILD_HOST),win)
-bs3-timers-1_DEFS += HAVE_OMF_CONVERTER
- endif
 bs3-timers-1_SOURCES = \
 	bs3kit/bs3-first-rm.asm \
 	bs3-timers-1.c \
@@ -410,9 +401,6 @@ bs3-timing-1_TEMPLATE = VBoxBS3KitImg
 bs3-timing-1_INCS  = .
 bs3-timing-1_DEFS  =  BS3_CMN_INSTANTIATE_FILE1=bs3-timing-1-template.c
 bs3-timing-1_DEFS += BS3_MODE_INSTANTIATE_FILE1=bs3-timing-1-template.c
- ifeq ($(KBUILD_HOST),win)
-bs3-timing-1_DEFS += HAVE_OMF_CONVERTER
- endif
 bs3-timing-1_SOURCES = \
 	bs3kit/bs3-first-rm.asm \
 	bs3-timing-1.c \
@@ -424,9 +412,6 @@ bs3-timing-1_SOURCES = \
 MISCBINS += bs3-locking-1
 bs3-locking-1_TEMPLATE = VBoxBS3KitImg
 bs3-locking-1_INCS  = .
- ifeq ($(KBUILD_HOST),win)
-bs3-locking-1_DEFS += HAVE_OMF_CONVERTER
- endif
 bs3-locking-1_SOURCES = \
 	bs3kit/bs3-first-rm.asm \
 	bs3-locking-1.c
