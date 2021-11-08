@@ -1720,6 +1720,22 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def setLargePages(self, fUseLargePages):
+        """
+        Configures whether the VM should use large pages or not.
+        Returns True on success and False on failure.  Error information is logged.
+        """
+        fRc = True;
+        try:
+            self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_LargePages, fUseLargePages);
+        except:
+            reporter.errorXcpt('failed to set large pages of "%s" to %s' % (self.sName, fUseLargePages));
+            fRc = False;
+        else:
+            reporter.log('set the large pages of "%s" to %s' % (self.sName, fUseLargePages));
+        self.oTstDrv.processPendingEvents();
+        return fRc;
+
     def setVRamSize(self, cMB):
         """
         Set the RAM size of the VM.
