@@ -591,28 +591,28 @@ typedef struct {
     uint32_t    type;
 } mem_range_t;
 
-void set_e820_range(uint16_t reg_ES, uint16_t reg_DI, uint32_t start, uint32_t end,
-                    uint8_t extra_start, uint8_t extra_end, uint16_t type)
+void set_e820_range(uint16_t reg_ES, uint16_t reg_DI, uint32_t start, uint32_t end, uint8_t type)
 {
-    mem_range_t __far   *range;
+    mem_range_t __far *fpRange = reg_ES :> (mem_range_t *)reg_DI;
+    fpRange->start  = start;
+    fpRange->len    = end - start;
+    fpRange->type   = type;
+    fpRange->xlen   = 0;
+    fpRange->xstart = 0;
+}
 
-    range = reg_ES :> (mem_range_t *)reg_DI;
-    range->start  = start;
-    range->xstart = extra_start;
-    end -= start;
-    extra_end -= extra_start;
-    range->len    = end;
-    range->xlen   = extra_end;
-    range->type   = type;
+void set_e820_range_above_4g(uint16_t reg_ES, uint16_t reg_DI, uint16_t c64k_above_4G_low, uint16_t c64k_above_4G_high)
+{
+    mem_range_t __far *fpRange = reg_ES :> (mem_range_t *)reg_DI;
+    fpRange->start  = 0;        /* Starts at 4G, so low start address dword is zero */
+    fpRange->xstart = 1;        /* And the high start dword is 1. */
+    fpRange->len    = (uint32_t)c64k_above_4G_low << 16;
+    fpRange->xlen   = c64k_above_4G_high;
+    fpRange->type   = 1;        /* type is usable */
 }
 
 void BIOSCALL int15_function32(sys32_regs_t r)
 {
-    uint32_t    extended_memory_size=0; // 64bits long
-    uint32_t    extra_lowbits_memory_size=0;
-    uint8_t     extra_highbits_memory_size=0;
-    uint32_t    mcfgStart, mcfgSize;
-
     BX_DEBUG_INT15("int15 AX=%04x\n",AX);
 
     switch (GET_AH()) {
@@ -634,8 +634,15 @@ void BIOSCALL int15_function32(sys32_regs_t r)
         switch(GET_AL()) {
         case 0x20: // coded by osmaker aka K.J.
             if(EDX == 0x534D4150) {
-                extended_memory_size = inb_cmos(0x35);
-                extended_memory_size <<= 8;
+                uint32_t extended_memory_size; // 64bits long
+                uint16_t c64k_above_4G_low;
+                uint16_t c64k_above_4G_high;
+                uint32_t mcfgStart, mcfgSize;
+
+                /** @todo r=bird: I think we can do the first bit here in 16-bit, then decide
+                 * whether we need to use 0x31 & 0x30 before blowing it up to 32-bit.  Only, I'm
+                 * a little bit too tired to think straight... */
+                extended_memory_size  = (uint16_t)inb_cmos(0x35) << 8;
                 extended_memory_size |= inb_cmos(0x34);
                 extended_memory_size *= 64;
 #ifndef VBOX /* The following excludes 0xf0000000 thru 0xffffffff. Trust DevPcBios.cpp to get this right. */
@@ -645,37 +652,34 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                 }
 #endif /* !VBOX */
                 extended_memory_size *= 1024;
-                extended_memory_size += (16L * 1024 * 1024);
+                extended_memory_size += 16L * 1024 * 1024;
 
                 if(extended_memory_size <= (16L * 1024 * 1024)) {
-                    extended_memory_size = inb_cmos(0x31);
-                    extended_memory_size <<= 8;
+                    extended_memory_size = (uint16_t)inb_cmos(0x31) << 8;
                     extended_memory_size |= inb_cmos(0x30);
                     extended_memory_size *= 1024;
                     extended_memory_size += (1L * 1024 * 1024);
                 }
 
                 /* This is the amount of memory above 4GB measured in 64KB units. */
-                extra_lowbits_memory_size = inb_cmos(0x62);
-                extra_lowbits_memory_size <<= 8;
-                extra_lowbits_memory_size |= inb_cmos(0x61);
-                extra_lowbits_memory_size <<= 16;
-                extra_highbits_memory_size = inb_cmos(0x63);
-                /* 0x64 and 0x65 can be used if we need to dig 1 TB or more at a later point. */
+                c64k_above_4G_low   = (uint16_t)inb_cmos(0x62) << 8;
+                c64k_above_4G_low  |= inb_cmos(0x61);
 
-                mcfgStart = 0;
+                c64k_above_4G_high  = (uint16_t)inb_cmos(0x64) << 8;
+                c64k_above_4G_high |= inb_cmos(0x63);
+                /* 0x65 can be used if we need to go beyond 255 TiB */
+
+                mcfgStart = 0; /// @todo implement mcfg reporting
                 mcfgSize  = 0;
 
                 switch(BX)
                 {
                     case 0:
-                        set_e820_range(ES, DI,
-                                       0x0000000L, 0x0009fc00L, 0, 0, 1);
+                        set_e820_range(ES, DI, 0x0000000L, 0x0009fc00L, 1);
                         EBX = 1;
                         break;
                     case 1:
-                        set_e820_range(ES, DI,
-                                       0x0009fc00L, 0x000a0000L, 0, 0, 2);
+                        set_e820_range(ES, DI, 0x0009fc00L, 0x000a0000L, 2);
                         EBX = 2;
                         break;
                     case 2:
@@ -690,56 +694,44 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                          * they trigger the "Too many similar traps" assertion)
                          * a single reserved range from 0xd0000 to 0xffffff.
                          * A 128K area starting from 0xd0000 works. */
-                        set_e820_range(ES, DI,
-                                       0x000f0000L, 0x00100000L, 0, 0, 2);
+                        set_e820_range(ES, DI, 0x000f0000L, 0x00100000L, 2);
                         EBX = 3;
                         break;
                     case 3:
-                        set_e820_range(ES, DI,
-                                       0x00100000L,
-                                       extended_memory_size - ACPI_DATA_SIZE, 0, 0, 1);
+                        set_e820_range(ES, DI, 0x00100000L,
+                                       extended_memory_size - ACPI_DATA_SIZE, 1);
                         EBX = 4;
                         break;
                     case 4:
                         set_e820_range(ES, DI,
                                        extended_memory_size - ACPI_DATA_SIZE,
-                                       extended_memory_size, 0, 0, 3); // ACPI RAM
+                                       extended_memory_size, 3); // ACPI RAM
                         EBX = 5;
                         break;
                     case 5:
-                        set_e820_range(ES, DI,
-                                       0xfec00000,
-                                       0xfec00000 + 0x1000, 0, 0, 2); // I/O APIC
+                        set_e820_range(ES, DI, 0xfec00000, 0xfec00000 + 0x1000, 2); // I/O APIC
                         EBX = 6;
                         break;
                     case 6:
-                        set_e820_range(ES, DI,
-                                       0xfee00000,
-                                       0xfee00000 + 0x1000, 0, 0, 2); // Local APIC
+                        set_e820_range(ES, DI, 0xfee00000, 0xfee00000 + 0x1000, 2); // Local APIC
                         EBX = 7;
                         break;
                     case 7:
                         /* 256KB BIOS area at the end of 4 GB */
                         /* We don't set the end to 1GB here and rely on the 32-bit
                            unsigned wrap around effect (0-0xfffc0000L). */
-                        set_e820_range(ES, DI,
-                                       0xfffc0000L, 0x00000000L, 0, 0, 2);
+                        set_e820_range(ES, DI, 0xfffc0000L, 0x00000000L, 2);
                         if (mcfgStart != 0)
                             EBX = 8;
+                        else if (c64k_above_4G_low || c64k_above_4G_high)
+                            EBX = 9;
                         else
-                        {
-                            if (extra_highbits_memory_size || extra_lowbits_memory_size)
-                                EBX = 9;
-                            else
-                                EBX = 0;
-                        }
+                            EBX = 0;
                         break;
                      case 8:
                         /* PCI MMIO config space (MCFG) */
-                        set_e820_range(ES, DI,
-                                       mcfgStart, mcfgStart + mcfgSize, 0, 0, 2);
-
-                        if (extra_highbits_memory_size || extra_lowbits_memory_size)
+                        set_e820_range(ES, DI, mcfgStart, mcfgStart + mcfgSize, 2);
+                        if (c64k_above_4G_low || c64k_above_4G_high)
                             EBX = 9;
                         else
                             EBX = 0;
@@ -750,11 +742,9 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                                   subtraction because of the nice numbers.
                            Note2* works only up to 1TB because of uint8_t for
                                   the upper bits!*/
-                        if (extra_highbits_memory_size || extra_lowbits_memory_size)
+                        if (c64k_above_4G_low || c64k_above_4G_high)
                         {
-                            set_e820_range(ES, DI,
-                                           0x00000000L, extra_lowbits_memory_size,
-                                           1 /*x4GB*/, extra_highbits_memory_size + 1 /*x4GB*/, 1);
+                            set_e820_range_above_4g(ES, DI, c64k_above_4G_low, c64k_above_4G_high);
                             EBX = 0;
                             break;
                         }
