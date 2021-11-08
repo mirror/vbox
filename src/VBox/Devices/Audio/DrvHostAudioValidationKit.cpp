@@ -401,6 +401,17 @@ static DECLCALLBACK(int) drvHostValKitTestSetEnd(void const *pvUser, const char 
     {
         const PAUDIOTESTSET pSet = &pThis->Set;
 
+        const char *pszTagSet = AudioTestSetGetTag(pSet);
+        if (RTStrCmp(pszTagSet, pszTag) != 0)
+        {
+            LogRel(("ValKit: Error: Current test does not match test set to end ('%s' vs '%s')\n", pszTagSet, pszTag));
+
+            int rc2 = RTCritSectLeave(&pThis->CritSect);
+            AssertRC(rc2);
+
+            return VERR_NOT_FOUND; /* Return to the caller. */
+        }
+
         LogRel(("ValKit: Test set has %RU32 tests total, %RU32 (still) running, %RU32 failures total so far\n",
                 AudioTestSetGetTestsTotal(pSet), AudioTestSetGetTestsRunning(pSet), AudioTestSetGetTotalFailures(pSet)));
         LogRel(("ValKit: %RU32 tests still registered total (%RU32 play, %RU32 record)\n",
