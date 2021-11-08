@@ -25,7 +25,6 @@
 #include "QILineEdit.h"
 #include "QIToolButton.h"
 #include "UIVisoConfigurationPanel.h"
-#include "UIVisoCreator.h"
 
 UIVisoConfigurationPanel::UIVisoConfigurationPanel(QWidget *pParent /* =0 */)
     : UIDialogPanel(pParent)

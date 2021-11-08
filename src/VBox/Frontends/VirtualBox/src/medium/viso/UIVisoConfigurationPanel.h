@@ -29,7 +29,6 @@ class QComboBox;
 class QILabel;
 class QILineEdit;
 class QIToolButton;
-class UIVisoCreator;
 
 class UIVisoConfigurationPanel : public UIDialogPanel
 {
