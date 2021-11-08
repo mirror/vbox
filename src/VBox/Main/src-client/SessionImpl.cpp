@@ -264,20 +264,20 @@ HRESULT Session::getRemoteConsole(ComPtr<IConsole> &aConsole)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
 #ifndef VBOX_COM_INPROC_API_CLIENT
-    AssertMsgReturn(mType == SessionType_WriteLock && !!mConsole,
-                    ("This is not a direct session!\n"),
-                    VBOX_E_INVALID_OBJECT_STATE);
+    if (mType == SessionType_WriteLock && !!mConsole)
+    {
+        /* return a failure if the session already transitioned to Closing
+         * but the server hasn't processed Machine::OnSessionEnd() yet. */
+        if (mState == SessionState_Locked)
+        {
+            mConsole.queryInterfaceTo(aConsole.asOutParam());
 
-    /* return a failure if the session already transitioned to Closing
-     * but the server hasn't processed Machine::OnSessionEnd() yet. */
-    if (mState != SessionState_Locked)
+            LogFlowThisFuncLeave();
+            return S_OK;
+        }
         return VBOX_E_INVALID_VM_STATE;
-
-    mConsole.queryInterfaceTo(aConsole.asOutParam());
-
-    LogFlowThisFuncLeave();
-
-    return S_OK;
+    }
+    return setError(VBOX_E_INVALID_OBJECT_STATE, "This is not a direct session");
 
 #else  /* VBOX_COM_INPROC_API_CLIENT */
     RT_NOREF(aConsole);
