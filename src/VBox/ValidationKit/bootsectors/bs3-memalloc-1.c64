@@ -48,6 +48,13 @@ static uint64_t       g_uInterestingStart = UINT64_MAX;
 static uint64_t       g_uInterestingEnd = 0;
 
 
+/**
+ * For subsequence touch iterations that doesn't allocate any RAM.
+ *
+ * This may cause page pool activitiy if we've got more memory than we have room
+ * for in the pool.  This depends on amount of guest RAM and how much could be
+ * backed by large pages.
+ */
 static uint64_t CheckTouchedMemory(void)
 {
     unsigned iEntry;
@@ -55,12 +62,13 @@ static uint64_t CheckTouchedMemory(void)
     uint64_t cErrors = 0;
     for (iEntry = 0; iEntry < g_cEntries; iEntry++)
     {
-        uint64_t *pu64Cur = (uint64_t *)g_aEntries[iEntry].uBaseAddr;
-        uint64_t  cbLeft  = g_aEntries[iEntry].cbRange;
+        uint64_t volatile *pu64Cur = (uint64_t *)g_aEntries[iEntry].uBaseAddr;
+        uint64_t           cbLeft  = g_aEntries[iEntry].cbRange;
         while (cbLeft >= X86_PAGE_SIZE)
         {
-            if (   pu64Cur[0] == iPage
-                && pu64Cur[1] == iPage)
+            /* Check first. */
+            if (RT_LIKELY(   pu64Cur[0] == iPage
+                          && pu64Cur[1] == iPage))
             { /* likely */ }
             else
             {
@@ -68,6 +76,11 @@ static uint64_t CheckTouchedMemory(void)
                 cErrors++;
             }
 
+            /* Then write again. */
+            pu64Cur[0] = iPage;
+            pu64Cur[1] = iPage;
+
+            /* Advance. */
             iPage++;
             pu64Cur += X86_PAGE_SIZE / sizeof(*pu64Cur);
             cbLeft  -= X86_PAGE_SIZE;
@@ -77,21 +90,33 @@ static uint64_t CheckTouchedMemory(void)
 }
 
 
-static uint64_t TouchMemory(void)
+/**
+ * First touching of memory, assuming content is ZERO.
+ */
+static uint64_t FirstTouchMemory(void)
 {
     unsigned iEntry;
     uint64_t iPage = 0;
     for (iEntry = 0; iEntry < g_cEntries; iEntry++)
     {
-        uint64_t *pu64Cur = (uint64_t *)g_aEntries[iEntry].uBaseAddr;
-        uint64_t  cbLeft  = g_aEntries[iEntry].cbRange;
+        uint64_t volatile *pu64Cur = (uint64_t volatile *)g_aEntries[iEntry].uBaseAddr;
+        uint64_t           cbLeft  = g_aEntries[iEntry].cbRange;
         while (cbLeft >= X86_PAGE_SIZE)
         {
+            /*
+             * Write to the page first so we won't waste time mapping the zero
+             * page and get straight to the actual page allocation.
+             */
             pu64Cur[0] = iPage;
-            if (pu64Cur[1] != 0)
+
+            /* Then check that the 2nd qword is zero before writing it. */
+            if (RT_LIKELY(pu64Cur[1] == 0))
+            { /* likely */ }
+            else
                 Bs3TestFailedF("%p: %#llx, expected zero\n", pu64Cur, pu64Cur[1]);
             pu64Cur[1] = iPage;
 
+            /* Advance. */
             iPage++;
             pu64Cur += X86_PAGE_SIZE / sizeof(*pu64Cur);
             cbLeft  -= X86_PAGE_SIZE;
@@ -173,6 +198,11 @@ BS3_DECL(void) Main_lm64()
                       "From %#llx to %#llx\n",
                       g_cEntries, g_cbInteresting, (unsigned)(g_cbInteresting / _1G), g_uInterestingStart, g_uInterestingEnd);
 
+        if (g_uBs3EndOfRamAbove4G < g_uInterestingEnd)
+            Bs3TestFailedF("g_uBs3EndOfRamAbove4G (%#llx) is lower than g_uInterestingEnd (%#llx)!\n",
+                           g_uBs3EndOfRamAbove4G, g_uInterestingEnd);
+
+
         /*
          * Map all the memory (Bs3Kit only maps memory below 4G).
          */
@@ -183,28 +213,53 @@ BS3_DECL(void) Main_lm64()
             Bs3TestFailedF("PSE was not enabled!\n");
         else if (RT_SUCCESS(rc = Bs3PagingMapRamAbove4GForLM(&uFailurePoint)))
         {
+#define PAGES_2_MB(a_cPages) ((a_cPages) / (_1M / X86_PAGE_SIZE))
+            uint64_t cTotalPages;
+
+            /*
+             * Time touching all the memory.
+             */
             Bs3TestSub("Allocation speed");
             {
-                /*
-                 * Time touching all the memory.
-                 */
                 uint64_t const  nsStart       = Bs3TestNow();
                 uint64_t const  uTscStart     = ASMReadTSC();
-                uint64_t const  cPages        = TouchMemory();
+                uint64_t const  cPages        = FirstTouchMemory();
                 uint64_t const  cTicksElapsed = ASMReadTSC() - uTscStart;
                 uint64_t const  cNsElapsed    = Bs3TestNow() - nsStart;
                 uint64_t uThruput;
-#define PAGES_2_MB(a_cPages) ((a_cPages) / (_1M / X86_PAGE_SIZE))
                 Bs3TestValue("Pages",                       cPages,                 VMMDEV_TESTING_UNIT_PAGES);
                 Bs3TestValue("MiBs",                        PAGES_2_MB(cPages),     VMMDEV_TESTING_UNIT_MEGABYTES);
-                Bs3TestValue("Elapsed",                     cNsElapsed,             VMMDEV_TESTING_UNIT_NS);
-                Bs3TestValue("Elapsed in ticks",            cTicksElapsed,          VMMDEV_TESTING_UNIT_TICKS);
+                Bs3TestValue("Alloc elapsed",               cNsElapsed,             VMMDEV_TESTING_UNIT_NS);
+                Bs3TestValue("Alloc elapsed in ticks",      cTicksElapsed,          VMMDEV_TESTING_UNIT_TICKS);
                 Bs3TestValue("Page alloc time",             cNsElapsed / cPages,    VMMDEV_TESTING_UNIT_NS_PER_PAGE);
                 Bs3TestValue("Page alloc time in ticks",    cTicksElapsed / cPages, VMMDEV_TESTING_UNIT_TICKS_PER_PAGE);
                 uThruput = cPages * RT_NS_1SEC / cNsElapsed;
-                Bs3TestValue("Thruput",                     uThruput,               VMMDEV_TESTING_UNIT_PAGES_PER_SEC);
-                Bs3TestValue("Thruput in MiBs",             PAGES_2_MB(uThruput),   VMMDEV_TESTING_UNIT_MEGABYTES_PER_SEC);
-                CheckTouchedMemory();
+                Bs3TestValue("Alloc thruput",               uThruput,               VMMDEV_TESTING_UNIT_PAGES_PER_SEC);
+                Bs3TestValue("Alloc thruput in MiBs",       PAGES_2_MB(uThruput),   VMMDEV_TESTING_UNIT_MEGABYTES_PER_SEC);
+                cTotalPages = cPages;
+            }
+
+            /*
+             * Time accessing all the memory again.  This might give a clue as to page pool performance.
+             */
+            for (unsigned iLoop = 0; iLoop < 2; iLoop++)
+            {
+                Bs3TestSub(iLoop == 0 ? "2nd access" : "3rd access");
+                {
+                    uint64_t const  nsStart       = Bs3TestNow();
+                    uint64_t const  uTscStart     = ASMReadTSC();
+                    uint64_t const  cErrors       = CheckTouchedMemory();
+                    uint64_t const  cTicksElapsed = ASMReadTSC() - uTscStart;
+                    uint64_t const  cNsElapsed    = Bs3TestNow() - nsStart;
+                    uint64_t uThruput;
+                    Bs3TestValue("Access elapsed",              cNsElapsed,             VMMDEV_TESTING_UNIT_NS);
+                    Bs3TestValue("Access elapsed in ticks",     cTicksElapsed,          VMMDEV_TESTING_UNIT_TICKS);
+                    Bs3TestValue("Page access time",            cNsElapsed / cTotalPages, VMMDEV_TESTING_UNIT_NS_PER_PAGE);
+                    Bs3TestValue("Page access time in ticks",   cTicksElapsed / cTotalPages, VMMDEV_TESTING_UNIT_TICKS_PER_PAGE);
+                    uThruput = cTotalPages * RT_NS_1SEC / cNsElapsed;
+                    Bs3TestValue("Access thruput",              uThruput,               VMMDEV_TESTING_UNIT_PAGES_PER_SEC);
+                    Bs3TestValue("Access thruput in MiBs",      PAGES_2_MB(uThruput),   VMMDEV_TESTING_UNIT_MEGABYTES_PER_SEC);
+                }
             }
         }
         else
