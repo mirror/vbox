@@ -469,12 +469,12 @@ RTR3DECL(int) RTTestSkippedV(RTTEST hTest, const char *pszFormat, va_list va) RT
  *          older versions of this header and other components using the same
  *          contant values.
  * @remarks When adding a new item:
- *              - Always add at the end of the list - do NOT group it.
+ *              - Always add at the end of the list.
  *              - Add it to rtTestUnitName in r3/test.cpp.
- *              - include/VBox/VMMDevTesting.h (VMMDEV_TESTING_UNIT_XXX).
+ *              - Add it as VMMDEV_TESTING_UNIT_ in include/VBox/VMMDevTesting.h.
  *              - Add it to g_aszBs2TestUnitNames in
- *                TestSuite/bootsectors/bootsector2-common-routines.mac.
- *
+ *                ValidationKit/bootsectors/bootsector2-common-routines.mac.
+ *              - Add it to g_aszBs3TestUnitNames in bs3kit/bs3-cmn-TestData.c.
  */
 typedef enum RTTESTUNIT
 {
@@ -512,12 +512,20 @@ typedef enum RTTESTUNIT
     RTTESTUNIT_PP10K,                           /**< Parts per ten thousand (10^-4). */
     RTTESTUNIT_PPM,                             /**< Parts per million (10^-6). */
     RTTESTUNIT_PPB,                             /**< Parts per billion (10^-9). */
+    RTTESTUNIT_TICKS,                           /**< CPU ticks. */
+    RTTESTUNIT_TICKS_PER_CALL,                  /**< CPU ticks per call. */
+    RTTESTUNIT_TICKS_PER_OCCURENCE,             /**< CPU ticks per occurence. */
+    RTTESTUNIT_PAGES,                           /**< Page count. */
+    RTTESTUNIT_PAGES_PER_SEC,                   /**< Pages per second. */
+    RTTESTUNIT_TICKS_PER_PAGE,                  /**< CPU ticks per page. */
+    RTTESTUNIT_NS_PER_PAGE,                     /**< Nanoseconds per page. */
 
     /** The end of valid units. */
     RTTESTUNIT_END
 } RTTESTUNIT;
-AssertCompile(RTTESTUNIT_INSTRS == 0x19);
-AssertCompile(RTTESTUNIT_NONE   == 0x1b);
+AssertCompile(RTTESTUNIT_INSTRS      == 0x19);
+AssertCompile(RTTESTUNIT_NONE        == 0x1b);
+AssertCompile(RTTESTUNIT_NS_PER_PAGE == 0x26);
 
 /**
  * Report a named test result value.

@@ -141,6 +141,7 @@
 /** @} */
 
 /** @name Value units
+ * @note Same as RTTESTUNIT, see rules here for adding new units.
  * @{ */
 #define VMMDEV_TESTING_UNIT_PCT                 UINT8_C(0x01)   /**< Percentage. */
 #define VMMDEV_TESTING_UNIT_BYTES               UINT8_C(0x02)   /**< Bytes. */
@@ -169,6 +170,17 @@
 #define VMMDEV_TESTING_UNIT_INSTRS              UINT8_C(0x19)   /**< Instructions. */
 #define VMMDEV_TESTING_UNIT_INSTRS_PER_SEC      UINT8_C(0x1a)   /**< Instructions per second. */
 #define VMMDEV_TESTING_UNIT_NONE                UINT8_C(0x1b)   /**< No unit. */
+#define VMMDEV_TESTING_UNIT_PP1K                UINT8_C(0x1c)   /**< Parts per thousand (10^-3). */
+#define VMMDEV_TESTING_UNIT_PP10K               UINT8_C(0x1d)   /**< Parts per ten thousand (10^-4). */
+#define VMMDEV_TESTING_UNIT_PPM                 UINT8_C(0x1e)   /**< Parts per million (10^-6). */
+#define VMMDEV_TESTING_UNIT_PPB                 UINT8_C(0x1f)   /**< Parts per billion (10^-9). */
+#define VMMDEV_TESTING_UNIT_TICKS               UINT8_C(0x20)   /**< CPU ticks. */
+#define VMMDEV_TESTING_UNIT_TICKS_PER_CALL      UINT8_C(0x21)   /**< CPU ticks per call. */
+#define VMMDEV_TESTING_UNIT_TICKS_PER_OCCURENCE UINT8_C(0x22)   /**< CPU ticks per occurence. */
+#define VMMDEV_TESTING_UNIT_PAGES               UINT8_C(0x23)   /**< Page count. */
+#define VMMDEV_TESTING_UNIT_PAGES_PER_SEC       UINT8_C(0x24)   /**< Pages per second. */
+#define VMMDEV_TESTING_UNIT_TICKS_PER_PAGE      UINT8_C(0x25)   /**< CPU ticks per page. */
+#define VMMDEV_TESTING_UNIT_NS_PER_PAGE         UINT8_C(0x26)   /**< Nanoseconds per page. */
 /** @}  */
 
 /** What the NOP accesses returns. */

@@ -1591,6 +1591,13 @@ static const char *rtTestUnitName(RTTESTUNIT enmUnit)
         case RTTESTUNIT_PP10K:                  return "pp10k";
         case RTTESTUNIT_PPM:                    return "ppm";
         case RTTESTUNIT_PPB:                    return "ppb";
+        case RTTESTUNIT_TICKS:                  return "ticks";
+        case RTTESTUNIT_TICKS_PER_CALL:         return "ticks/call";
+        case RTTESTUNIT_TICKS_PER_OCCURENCE:    return "ticks/occ";
+        case RTTESTUNIT_PAGES:                  return "pages";
+        case RTTESTUNIT_PAGES_PER_SEC:          return "pages/s";
+        case RTTESTUNIT_TICKS_PER_PAGE:         return "ticks/page";
+        case RTTESTUNIT_NS_PER_PAGE:            return "ns/page";
 
         /* No default so gcc helps us keep this up to date. */
         case RTTESTUNIT_INVALID:

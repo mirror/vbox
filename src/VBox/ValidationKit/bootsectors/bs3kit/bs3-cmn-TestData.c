@@ -61,7 +61,7 @@ uint16_t    g_cusBs3SubTests = 0;
 uint16_t    g_cusBs3SubTestsFailed = 0;
 
 /** VMMDEV_TESTING_UNIT_XXX -> string */
-char const  g_aszBs3TestUnitNames[][16] =
+char const  g_aszBs3TestUnitNames[][12] =
 {
     "inv",
     "%",
@@ -95,6 +95,13 @@ char const  g_aszBs3TestUnitNames[][16] =
     "pp10k",
     "ppm",
     "ppb",
+    "ticks",
+    "ticks/call",
+    "ticks/occ",
+    "pages",
+    "pages/s",
+    "ticks/page",
+    "ns/page",
 };
 
 
