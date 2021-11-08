@@ -183,7 +183,7 @@ BS3_DECL(void) Main_lm64()
             Bs3TestFailedF("PSE was not enabled!\n");
         else if (RT_SUCCESS(rc = Bs3PagingMapRamAbove4GForLM(&uFailurePoint)))
         {
-            Bs3TestSub("Allocation apeed");
+            Bs3TestSub("Allocation speed");
             {
                 /*
                  * Time touching all the memory.
