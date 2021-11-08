@@ -1177,16 +1177,20 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
     {
         /* Update number of bound test objects. */
         PAUDIOTESTENTRY pTest;
+        uint32_t        cTests = 0;
         RTListForEach(&pSet->lstTest, pTest, AUDIOTESTENTRY, Node)
         {
             rc = RTFileSeek(pSet->f.hFile, pTest->offObjCount, RTFILE_SEEK_BEGIN, NULL);
             AssertRCReturn(rc, rc);
             rc = audioTestManifestWrite(pSet, "%04RU32", pTest->cObj);
             AssertRCReturn(rc, rc);
+            cTests++; /* Sanity checking. */
         }
 
+        AssertMsgReturn(pSet->cTests == cTests, ("Test count and list don't match"), VERR_INTERNAL_ERROR);
+
         /*
-         * Update number of ran tests.
+         * Update number of total objects.
          */
         rc = RTFileSeek(pSet->f.hFile, pSet->offObjCount, RTFILE_SEEK_BEGIN, NULL);
         AssertRCReturn(rc, rc);
@@ -1194,7 +1198,7 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
         AssertRCReturn(rc, rc);
 
         /*
-         * Update number of ran tests.
+         * Update number of total tests.
          */
         rc = RTFileSeek(pSet->f.hFile, pSet->offTestCount, RTFILE_SEEK_BEGIN, NULL);
         AssertRCReturn(rc, rc);
@@ -1208,6 +1212,7 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
         AssertRCReturn(rc, rc);
 
         PAUDIOTESTOBJINT pObj;
+        uint32_t         cObj = 0;
         RTListForEach(&pSet->lstObj, pObj, AUDIOTESTOBJINT, Node)
         {
             /* First, close the object.
@@ -1260,7 +1265,11 @@ int AudioTestSetClose(PAUDIOTESTSET pSet)
                         break;
                 }
             }
+
+            cObj++; /* Sanity checking. */
         }
+
+        AssertMsgReturn(pSet->cObj == cObj, ("Object count and list don't match"), VERR_INTERNAL_ERROR);
 
         int rc2 = RTFileClose(pSet->f.hFile);
         if (RT_SUCCESS(rc2))
