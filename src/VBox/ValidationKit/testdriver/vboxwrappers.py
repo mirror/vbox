@@ -2368,7 +2368,6 @@ class SessionWrapper(TdTaskBase):
 
         if self.fpApiVer >= 7.0:
             # Needed to reach the host (localhost) from the guest. See xTracker #9896.
-            # Note: Do this right *after* the VM has been started.
             for iSlot in range(0, self.oVBox.systemProperties.getMaxNetworkAdapters(self.o.machine.chipsetType)):
                 try:
                     self.setNicLocalhostReachable(True, iSlot);
