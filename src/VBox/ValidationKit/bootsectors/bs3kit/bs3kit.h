@@ -2185,8 +2185,10 @@ BS3_CMN_PROTO_STUB(void, Bs3MemGuardedTestPageFree,(void BS3_FAR *pvGuardedPage)
  */
 BS3_CMN_PROTO_STUB(void, Bs3MemPrintInfo, (void));
 
-/** Highes RAM byte below 4G. */
+/** The end RAM address below 4GB (approximately). */
 extern uint32_t  g_uBs3EndOfRamBelow4G;
+/** The end RAM address above 4GB, zero if no memory above 4GB. */
+extern uint64_t  g_uBs3EndOfRamAbove4G;
 
 
 /**
@@ -2245,6 +2247,30 @@ BS3_CMN_PROTO_STUB(int, Bs3PagingInitRootForPAE,(void));
  * @remarks Must not be called in real-mode!
  */
 BS3_CMN_PROTO_STUB(int, Bs3PagingInitRootForLM,(void));
+
+/**
+ * Maps all RAM above 4GB into the long mode page tables.
+ *
+ * This requires Bs3PagingInitRootForLM to have been called first.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_WRONG_ORDER if Bs3PagingInitRootForLM wasn't called.
+ * @retval  VINF_ALREADY_INITIALIZED if already called or someone mapped
+ *          something else above 4GiB already.
+ * @retval  VERR_OUT_OF_RANGE if too much RAM (more than 2^47 bytes).
+ * @retval  VERR_NO_MEMORY if no more memory for paging structures.
+ * @retval  VERR_UNSUPPORTED_ALIGNMENT if the bs3kit allocator malfunctioned and
+ *          didn't give us page aligned memory as it should.
+ *
+ * @param   puFailurePoint      Where to return the address where we encountered
+ *                              a failure.  Optional.
+ *
+ * @remarks Must be called in 32-bit or 64-bit mode as paging structures will be
+ *          allocated using BS3MEMKIND_FLAT32, as there might not be sufficient
+ *          BS3MEMKIND_TILED memory around.  (Also, too it's simply too much of
+ *          a bother to deal with 16-bit for something that's long-mode only.)
+ */
+BS3_CMN_PROTO_STUB(int, Bs3PagingMapRamAbove4GForLM,(uint64_t *puFailurePoint));
 
 /**
  * Modifies the page table protection of an address range.

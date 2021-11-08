@@ -64,6 +64,7 @@
 #define Bs3PagingInitRootForLM BS3_CMN_MANGLER(Bs3PagingInitRootForLM)
 #define Bs3PagingInitRootForPAE BS3_CMN_MANGLER(Bs3PagingInitRootForPAE)
 #define Bs3PagingInitRootForPP BS3_CMN_MANGLER(Bs3PagingInitRootForPP)
+#define Bs3PagingMapRamAbove4GForLM BS3_CMN_MANGLER(Bs3PagingMapRamAbove4GForLM)
 #define Bs3PagingProtect BS3_CMN_MANGLER(Bs3PagingProtect)
 #define Bs3PagingProtectPtr BS3_CMN_MANGLER(Bs3PagingProtectPtr)
 #define Bs3PagingQueryAddressInfo BS3_CMN_MANGLER(Bs3PagingQueryAddressInfo)

@@ -289,6 +289,7 @@ bs3kit-common-32_INSTTYPE = none
 bs3kit-common-32_DEFS     = TMPL_PE32 BS3_CMN_ONLY
 bs3kit-common-32_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-32_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
+       bs3-cmn-PagingMapRamAbove4GForLM.c \
        bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
 	bs3-cmn-UInt64Div.c \
 	bs3-wc32-U8D.asm \
@@ -306,6 +307,7 @@ bs3kit-common-64_INSTTYPE = none
 bs3kit-common-64_DEFS     = TMPL_LM64 BS3_CMN_ONLY
 bs3kit-common-64_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
+       bs3-cmn-PagingMapRamAbove4GForLM.c \
        bs3-cmn-SwitchHlpConvFlatRetToRetfProtMode.asm \
        bs3-c64-Trap64Generic.asm \
        ../../../Runtime/common/asm/ASMGetIDTR.asm \

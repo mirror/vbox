@@ -93,9 +93,10 @@ uint16_t const          g_cbBs3SlabCtlSizesforLists[BS3_MEM_SLAB_LIST_COUNT] =
 };
 
 
-/** The last RAM address below 4GB (approximately). */
+/** The end RAM address below 4GB (approximately). */
 uint32_t                g_uBs3EndOfRamBelow4G = 0;
-
+/** The end RAM address above 4GB, zero if no memory above 4GB. */
+uint64_t                g_uBs3EndOfRamAbove4G = 0;
 
 
 /**
@@ -240,10 +241,18 @@ BS3_DECL(void) BS3_FAR_CODE Bs3InitMemory_rm_far(void)
         do
         {
             if (Entry.uType == INT15E820_TYPE_USABLE)
+            {
                 if (!(Entry.uBaseAddr >> 32))
                     /* Convert from 64-bit to 32-bit value and record it. */
                     bs3InitMemoryAddRange32((uint32_t)Entry.uBaseAddr,
                                             (Entry.cbRange >> 32) ? UINT32_C(0xfffff000) : (uint32_t)Entry.cbRange);
+                else
+                {
+                    uint64_t uEnd = Entry.uBaseAddr + Entry.cbRange;
+                    if (uEnd > g_uBs3EndOfRamAbove4G)
+                        g_uBs3EndOfRamAbove4G = uEnd;
+                }
+            }
 
             /* next */
             Entry.uType = 0;

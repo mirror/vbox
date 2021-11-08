@@ -64,6 +64,7 @@
 #undef Bs3PagingInitRootForLM
 #undef Bs3PagingInitRootForPAE
 #undef Bs3PagingInitRootForPP
+#undef Bs3PagingMapRamAbove4GForLM
 #undef Bs3PagingProtect
 #undef Bs3PagingProtectPtr
 #undef Bs3PagingQueryAddressInfo
