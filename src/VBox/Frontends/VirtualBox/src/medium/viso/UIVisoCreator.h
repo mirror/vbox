@@ -42,13 +42,13 @@ class UIVisoConfigurationPanel;
 /** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
   * for VISO file system. It has the main menu, main toolbar, and a vertical toolbar and corresponding
   * actions. */
-class UIVisoCreator : public QIWithRetranslateUI<QIMainDialog>
+class UIVisoCreatorDialog : public QIWithRetranslateUI<QIMainDialog>
 {
     Q_OBJECT;
 
 public:
 
-    UIVisoCreator(QWidget *pParent = 0, const QString& strMachineName = QString());
+    UIVisoCreatorDialog(QWidget *pParent = 0, const QString& strMachineName = QString());
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
     const QString     &visoName() const;

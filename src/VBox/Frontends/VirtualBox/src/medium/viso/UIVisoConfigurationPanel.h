@@ -41,7 +41,7 @@ signals:
     void sigCustomVisoOptionsChanged(const QStringList &customVisoOptions);
 
 public:
-    UIVisoConfigurationPanel(UIVisoCreator *pCreator, QWidget *pParent = 0);
+    UIVisoConfigurationPanel(QWidget *pParent = 0);
     ~UIVisoConfigurationPanel();
     virtual QString panelName() const /* override */;
     void setVisoName(const QString& strVisoName);
@@ -49,7 +49,6 @@ public:
 
 protected:
 
-    bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     void retranslateUi() /* override */;
 
 private slots:
@@ -63,9 +62,6 @@ private:
     void prepareConnections();
     void addCustomVisoOption();
     void emitCustomVisoOptions();
-
-    /** Holds the parent creator reference. */
-    UIVisoCreator *m_pCreator;
 
     QILabel      *m_pVisoNameLabel;
     QILabel      *m_pCustomOptionsLabel;

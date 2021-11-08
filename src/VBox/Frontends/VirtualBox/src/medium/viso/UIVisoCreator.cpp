@@ -38,7 +38,7 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
-UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachineName /* = QString() */)
+UIVisoCreatorDialog::UIVisoCreatorDialog(QWidget *pParent /* =0 */, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_pActionConfiguration(0)
     , m_pActionOptions(0)
@@ -68,38 +68,38 @@ UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachin
     retranslateUi();
 }
 
-QStringList UIVisoCreator::entryList() const
+QStringList UIVisoCreatorDialog::entryList() const
 {
     if (!m_pVisoBrowser)
         return QStringList();
     return m_pVisoBrowser->entryList();
 }
 
-const QString &UIVisoCreator::visoName() const
+const QString &UIVisoCreatorDialog::visoName() const
 {
     return m_visoOptions.m_strVisoName;
 }
 
-const QStringList &UIVisoCreator::customOptions() const
+const QStringList &UIVisoCreatorDialog::customOptions() const
 {
     return m_visoOptions.m_customOptions;
 }
 
-QString UIVisoCreator::currentPath() const
+QString UIVisoCreatorDialog::currentPath() const
 {
     if (!m_pHostBrowser)
         return QString();
     return m_pHostBrowser->currentPath();
 }
 
-void UIVisoCreator::setCurrentPath(const QString &strPath)
+void UIVisoCreatorDialog::setCurrentPath(const QString &strPath)
 {
     if (!m_pHostBrowser)
         return;
     m_pHostBrowser->setCurrentPath(strPath);
 }
 
-void UIVisoCreator::retranslateUi()
+void UIVisoCreatorDialog::retranslateUi()
 {
     if (!m_strMachineName.isEmpty())
         setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("VISO Creator")));
@@ -152,13 +152,13 @@ void UIVisoCreator::retranslateUi()
         m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(QApplication::translate("UIVisoCreator", "Opens the help browser and navigates to the related section"));
 }
 
-void UIVisoCreator::sltHandleAddObjectsToViso(QStringList pathList)
+void UIVisoCreatorDialog::sltHandleAddObjectsToViso(QStringList pathList)
 {
     if (m_pVisoBrowser)
         m_pVisoBrowser->addObjectsToViso(pathList);
 }
 
-void UIVisoCreator::sltPanelActionToggled(bool fChecked)
+void UIVisoCreatorDialog::sltPanelActionToggled(bool fChecked)
 {
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if (!pSenderAction)
@@ -179,7 +179,7 @@ void UIVisoCreator::sltPanelActionToggled(bool fChecked)
         hidePanel(pPanel);
 }
 
-void UIVisoCreator::sltHandleVisoNameChanged(const QString &strVisoName)
+void UIVisoCreatorDialog::sltHandleVisoNameChanged(const QString &strVisoName)
 {
     if (m_visoOptions.m_strVisoName == strVisoName)
         return;
@@ -188,14 +188,14 @@ void UIVisoCreator::sltHandleVisoNameChanged(const QString &strVisoName)
         m_pVisoBrowser->setVisoName(m_visoOptions.m_strVisoName);
 }
 
-void UIVisoCreator::sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions)
+void UIVisoCreatorDialog::sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions)
 {
     if (m_visoOptions.m_customOptions == customVisoOptions)
         return;
     m_visoOptions.m_customOptions = customVisoOptions;
 }
 
-void UIVisoCreator::sltHandleShowHiddenObjectsChange(bool fShow)
+void UIVisoCreatorDialog::sltHandleShowHiddenObjectsChange(bool fShow)
 {
     if (m_browserOptions.m_fShowHiddenObjects == fShow)
         return;
@@ -203,30 +203,30 @@ void UIVisoCreator::sltHandleShowHiddenObjectsChange(bool fShow)
     m_pHostBrowser->showHideHiddenObjects(fShow);
 }
 
-void UIVisoCreator::sltHandleHidePanel(UIDialogPanel *pPanel)
+void UIVisoCreatorDialog::sltHandleHidePanel(UIDialogPanel *pPanel)
 {
     hidePanel(pPanel);
 }
 
-void UIVisoCreator::sltHandleBrowserTreeViewVisibilityChanged(bool fVisible)
+void UIVisoCreatorDialog::sltHandleBrowserTreeViewVisibilityChanged(bool fVisible)
 {
     Q_UNUSED(fVisible);
     manageEscapeShortCut();
 }
 
-void UIVisoCreator::sltHandleHostBrowserTableSelectionChanged(bool fIsSelectionEmpty)
+void UIVisoCreatorDialog::sltHandleHostBrowserTableSelectionChanged(bool fIsSelectionEmpty)
 {
     if (m_pAddAction)
         m_pAddAction->setEnabled(!fIsSelectionEmpty);
 }
 
-void UIVisoCreator::sltHandleContentBrowserTableSelectionChanged(bool fIsSelectionEmpty)
+void UIVisoCreatorDialog::sltHandleContentBrowserTableSelectionChanged(bool fIsSelectionEmpty)
 {
     if (m_pRemoveAction)
         m_pRemoveAction->setEnabled(!fIsSelectionEmpty);
 }
 
-void UIVisoCreator::sltHandleShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point)
+void UIVisoCreatorDialog::sltHandleShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point)
 {
     if (!pContextMenuRequester)
         return;
@@ -247,7 +247,7 @@ void UIVisoCreator::sltHandleShowContextMenu(const QWidget *pContextMenuRequeste
     menu.exec(pContextMenuRequester->mapToGlobal(point));
 }
 
-void UIVisoCreator::prepareWidgets()
+void UIVisoCreatorDialog::prepareWidgets()
 {
     m_pCentralWidget = new QWidget;
     if (!m_pCentralWidget)
@@ -341,56 +341,56 @@ void UIVisoCreator::prepareWidgets()
     }
 }
 
-void UIVisoCreator::prepareConnections()
+void UIVisoCreatorDialog::prepareConnections()
 {
     if (m_pHostBrowser)
     {
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
-                this, &UIVisoCreator::sltHandleAddObjectsToViso);
+                this, &UIVisoCreatorDialog::sltHandleAddObjectsToViso);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigTreeViewVisibilityChanged,
-                this, &UIVisoCreator::sltHandleBrowserTreeViewVisibilityChanged);
+                this, &UIVisoCreatorDialog::sltHandleBrowserTreeViewVisibilityChanged);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigTableSelectionChanged,
-                this, &UIVisoCreator::sltHandleHostBrowserTableSelectionChanged);
+                this, &UIVisoCreatorDialog::sltHandleHostBrowserTableSelectionChanged);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigCreateFileTableViewContextMenu,
-                this, &UIVisoCreator::sltHandleShowContextMenu);
+                this, &UIVisoCreatorDialog::sltHandleShowContextMenu);
     }
 
     if (m_pVisoBrowser)
     {
         connect(m_pVisoBrowser, &UIVisoContentBrowser::sigTableSelectionChanged,
-                this, &UIVisoCreator::sltHandleContentBrowserTableSelectionChanged);
+                this, &UIVisoCreatorDialog::sltHandleContentBrowserTableSelectionChanged);
         connect(m_pVisoBrowser, &UIVisoContentBrowser::sigCreateFileTableViewContextMenu,
-                this, &UIVisoCreator::sltHandleShowContextMenu);
+                this, &UIVisoCreatorDialog::sltHandleShowContextMenu);
     }
 
     if (m_pButtonBox)
     {
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoCreator::close);
-        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoCreator::accept);
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoCreatorDialog::close);
+        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoCreatorDialog::accept);
     }
 
     if (m_pActionConfiguration)
-        connect(m_pActionConfiguration, &QAction::triggered, this, &UIVisoCreator::sltPanelActionToggled);
+        connect(m_pActionConfiguration, &QAction::triggered, this, &UIVisoCreatorDialog::sltPanelActionToggled);
     if (m_pActionOptions)
-        connect(m_pActionOptions, &QAction::triggered, this, &UIVisoCreator::sltPanelActionToggled);
+        connect(m_pActionOptions, &QAction::triggered, this, &UIVisoCreatorDialog::sltPanelActionToggled);
 
     if (m_pConfigurationPanel)
     {
         connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigVisoNameChanged,
-                this, &UIVisoCreator::sltHandleVisoNameChanged);
+                this, &UIVisoCreatorDialog::sltHandleVisoNameChanged);
         connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigCustomVisoOptionsChanged,
-                this, &UIVisoCreator::sltHandleCustomVisoOptionsChanged);
+                this, &UIVisoCreatorDialog::sltHandleCustomVisoOptionsChanged);
         connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigHidePanel,
-                this, &UIVisoCreator::sltHandleHidePanel);
+                this, &UIVisoCreatorDialog::sltHandleHidePanel);
         m_panelActionMap.insert(m_pConfigurationPanel, m_pActionConfiguration);
     }
 
     if (m_pCreatorOptionsPanel)
     {
         connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigShowHiddenObjects,
-                this, &UIVisoCreator::sltHandleShowHiddenObjectsChange);
+                this, &UIVisoCreatorDialog::sltHandleShowHiddenObjectsChange);
         connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigHidePanel,
-                this, &UIVisoCreator::sltHandleHidePanel);
+                this, &UIVisoCreatorDialog::sltHandleHidePanel);
         m_panelActionMap.insert(m_pCreatorOptionsPanel, m_pActionOptions);
     }
 
@@ -412,7 +412,7 @@ void UIVisoCreator::prepareConnections()
                 m_pVisoBrowser,&UIVisoContentBrowser::sltHandleItemRenameAction);
 }
 
-void UIVisoCreator::prepareActions()
+void UIVisoCreatorDialog::prepareActions()
 {
     m_pActionConfiguration = new QAction(this);
     if (m_pActionConfiguration)
@@ -478,7 +478,7 @@ void UIVisoCreator::prepareActions()
     }
 }
 
-void UIVisoCreator::populateMenuMainToolbar()
+void UIVisoCreatorDialog::populateMenuMainToolbar()
 {
     if (!m_pMainMenu || !m_pToolBar)
         return;
@@ -495,7 +495,7 @@ void UIVisoCreator::populateMenuMainToolbar()
     m_pMainMenu->addAction(m_pResetAction);
 }
 
-void UIVisoCreator::hidePanel(UIDialogPanel* panel)
+void UIVisoCreatorDialog::hidePanel(UIDialogPanel* panel)
 {
     if (panel && panel->isVisible())
         panel->setVisible(false);
@@ -509,7 +509,7 @@ void UIVisoCreator::hidePanel(UIDialogPanel* panel)
     manageEscapeShortCut();
 }
 
-void UIVisoCreator::showPanel(UIDialogPanel* panel)
+void UIVisoCreatorDialog::showPanel(UIDialogPanel* panel)
 {
     if (panel && panel->isHidden())
         panel->setVisible(true);
@@ -524,7 +524,7 @@ void UIVisoCreator::showPanel(UIDialogPanel* panel)
     manageEscapeShortCut();
 }
 
-void UIVisoCreator::manageEscapeShortCut()
+void UIVisoCreatorDialog::manageEscapeShortCut()
 {
     /* Take the escape key from m_pButtonBox and from the panels in case treeview(s) in
        host and/or content browser is open. We use the escape key to close those first: */
@@ -555,7 +555,7 @@ void UIVisoCreator::manageEscapeShortCut()
     m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }
 
-void UIVisoCreator::prepareVerticalToolBar()
+void UIVisoCreatorDialog::prepareVerticalToolBar()
 {
     m_pVerticalToolBar = new QIToolBar;
     if (!m_pVerticalToolBar)
