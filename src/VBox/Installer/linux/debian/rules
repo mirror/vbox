@@ -229,6 +229,7 @@ binary: build $(if $(NOMODS),,$(bldbase)/modules-stamp)
 	install -d -g 0 -o 0 $(prefix)/usr/lib
 	install -d -g 0 -o 0 $(prefix)/usr/bin
 	install -d -g 0 -o 0 $(prefix)/usr/share/$(package)
+	mv $(archdir)/UnattendedTemplates $(prefix)/usr/share/$(package)/
 	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(verpkg)
 	$(if $(NOQT),,mv $(archdir)/virtualbox.desktop \
 	   $(prefix)/usr/share/applications/virtualbox.desktop)

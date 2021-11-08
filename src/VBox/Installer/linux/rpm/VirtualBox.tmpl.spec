@@ -101,6 +101,7 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
   %{vbox_python} ./vboxapisetup.py install --prefix %{_prefix} --root $RPM_BUILD_ROOT)
 %endif
 rm -rf sdk/installer
+mv UnattendedTemplates $RPM_BUILD_ROOT/usr/share/virtualbox
 mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
 cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBox.sh $RPM_BUILD_ROOT/usr/bin/VBox
