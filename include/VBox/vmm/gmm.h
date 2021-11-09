@@ -88,10 +88,8 @@ RT_C_DECLS_BEGIN
 #define GMM_CHUNKID_SHIFT               (GMM_CHUNK_SHIFT - PAGE_SHIFT)
 /** The last valid Chunk ID value. */
 #define GMM_CHUNKID_LAST                (GMM_PAGEID_LAST >> GMM_CHUNKID_SHIFT)
-/** The last valid Page ID value.
- * The current limit is 2^28 - 1, or almost 1TB if you like.
- * The constraints are currently dictated by PGMPAGE. */
-#define GMM_PAGEID_LAST                 (RT_BIT_32(28) - 1)
+/** The last valid Page ID value. */
+#define GMM_PAGEID_LAST                 UINT32_C(0xfffffff0)
 /** Mask out the page index from the Page ID. */
 #define GMM_PAGEID_IDX_MASK             ((1U << GMM_CHUNKID_SHIFT) - 1)
 /** The NIL Chunk ID value. */
