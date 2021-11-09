@@ -267,6 +267,7 @@ extern  void        put_str(uint16_t action, const char __far *s);
 extern  void        put_str_near(uint16_t action, const char __near *s);
 extern  uint8_t     inb_cmos(uint8_t cmos_reg);
 extern  void        outb_cmos(uint8_t cmos_reg, uint8_t val);
+extern  uint16_t    get_cmos_word(uint8_t idxFirst);
 extern  uint16_t    cdrom_boot(void);
 extern  void        show_logo(void);
 extern  void        delay_boot(uint16_t secs);

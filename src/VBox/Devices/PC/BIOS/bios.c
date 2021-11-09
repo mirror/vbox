@@ -83,6 +83,15 @@ void outb_cmos(uint8_t cmos_reg, uint8_t val)
     outb(cmos_port + 1, val);
 }
 
+/**
+ * Reads two adjacent cmos bytes and return their values as a 16-bit word.
+ */
+uint16_t get_cmos_word(uint8_t idxFirst)
+{
+    return ((uint16_t)inb_cmos(idxFirst + 1) << 8)
+         |            inb_cmos(idxFirst);
+}
+
 void BIOSCALL dummy_isr_function(pusha_regs_t regs, uint16_t es,
                                  uint16_t ds, iret_addr_t iret_addr)
 {

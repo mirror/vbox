@@ -467,7 +467,7 @@ void BIOSCALL int15_function(sys_regs_t r)
     case 0x88:
         // Get the amount of extended memory (above 1M)
 #if VBOX_BIOS_CPU >= 80286
-        AX = (inb_cmos(0x31) << 8) | inb_cmos(0x30);
+        AX = get_cmos_word(0x30 /*, 0x31*/);
 
 #if VBOX_BIOS_CPU >= 80386
         // According to Ralf Brown's interrupt the limit should be 15M,
@@ -614,15 +614,6 @@ static void set_e820_range_above_4g(uint16_t reg_ES, uint16_t reg_DI, uint16_t c
     fpRange->type   = 1;        /* type is usable */
 }
 
-/**
- * Reads two adjacent cmos bytes and return their values as a 16-bit word.
- */
-static uint16_t get_cmos_word(uint8_t idxFirst)
-{
-    return ((uint16_t)inb_cmos(idxFirst + 1) << 8)
-         |            inb_cmos(idxFirst);
-}
-
 void BIOSCALL int15_function32(sys32_regs_t r)
 {
     BX_DEBUG_INT15("int15 AX=%04x\n",AX);
@@ -654,7 +645,7 @@ void BIOSCALL int15_function32(sys32_regs_t r)
 #endif
 
                 /* Go for the amount of memory above 16MB first. */
-                extended_memory_size  = get_cmos_word(0x34 /*+ 0x35*/);
+                extended_memory_size  = get_cmos_word(0x34 /*, 0x35*/);
                 if (extended_memory_size > 0)
                 {
                     extended_memory_size  += _16M / _64K;
@@ -663,15 +654,15 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                 else
                 {
                     /* No memory above 16MB, query memory above 1MB ASSUMING we have at least 1MB. */
-                    extended_memory_size  = get_cmos_word(0x30 /*+ 0x31*/);
+                    extended_memory_size  = get_cmos_word(0x30 /*, 0x31*/);
                     extended_memory_size += _1M / _1K;
                     extended_memory_size *= _1K;
                 }
 
                 /* This is the amount of memory above 4GB measured in 64KB units.
                    Note! 0x65 can be used when we need to go beyond 255 TiB */
-                c64k_above_4G_low  = get_cmos_word(0x61 /*+ 0x62*/);
-                c64k_above_4G_high = get_cmos_word(0x63 /*+ 0x64*/);
+                c64k_above_4G_low  = get_cmos_word(0x61 /*, 0x62*/);
+                c64k_above_4G_high = get_cmos_word(0x63 /*, 0x64*/);
 
 #ifdef BIOS_WITH_MCFG_E820 /** @todo Actually implement the mcfg reporting. */
                 mcfgStart = 0;
@@ -775,14 +766,14 @@ void BIOSCALL int15_function32(sys32_regs_t r)
             // regs.u.r16.bx = 0;
 
             // Get the amount of extended memory (above 1M)
-            CX = (inb_cmos(0x31) << 8) | inb_cmos(0x30);
+            CX = get_cmos_word(0x30 /*, 0x31*/);
 
             // limit to 15M
             if(CX > 0x3c00)
                 CX = 0x3c00;
 
             // Get the amount of extended memory above 16M in 64k blocks
-            DX = (inb_cmos(0x35) << 8) | inb_cmos(0x34);
+            DX = get_cmos_word(0x34 /*, 0x35*/);
 
             // Set configured memory equal to extended memory
             AX = CX;

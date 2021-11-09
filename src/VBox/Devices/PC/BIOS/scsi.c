@@ -386,7 +386,7 @@ static void scsi_enumerate_attached_devices(uint16_t hba_seg, uint8_t idx_hba)
                 if (cmos_base && inb_cmos(cmos_base + 7))
                 {
                     /* If provided, grab the logical geometry from CMOS. */
-                    cylinders         = inb_cmos(cmos_base + 0) + (inb_cmos(cmos_base + 1) << 8);
+                    cylinders         = get_cmos_word(cmos_base /*, cmos_base + 1*/);
                     heads             = inb_cmos(cmos_base + 2);
                     sectors_per_track = inb_cmos(cmos_base + 7);
                 }

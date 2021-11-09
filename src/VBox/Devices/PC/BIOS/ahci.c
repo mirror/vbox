@@ -750,7 +750,7 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 }
                 if (idxCmosChsBase && inb_cmos(idxCmosChsBase+7))
                 {
-                    lgeo.cylinders = inb_cmos(idxCmosChsBase + 0) + (inb_cmos(idxCmosChsBase + 1) << 8);
+                    lgeo.cylinders = get_cmos_word(idxCmosChsBase /*, idxCmosChsBase+1*/);
                     lgeo.heads     = inb_cmos(idxCmosChsBase + 2);
                     lgeo.spt       = inb_cmos(idxCmosChsBase + 7);
                 }

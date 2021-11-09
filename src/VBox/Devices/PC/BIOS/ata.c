@@ -587,7 +587,7 @@ void BIOSCALL ata_detect(void)
             }
             if (chsgeo_base)
             {
-                lgeo.cylinders = inb_cmos(chsgeo_base) + (inb_cmos(chsgeo_base + 1) << 8);
+                lgeo.cylinders = get_cmos_word(chsgeo_base /*, chsgeo_base + 1*/);
                 lgeo.heads     = inb_cmos(chsgeo_base + 2);
                 lgeo.spt       = inb_cmos(chsgeo_base + 7);
             }
