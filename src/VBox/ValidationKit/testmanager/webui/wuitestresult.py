@@ -538,7 +538,7 @@ class WuiTestResult(WuiContentBase):
         cSecCfgTimeout = oTestCaseEx.cSecTimeout if oTestVarEx.cSecTimeout is None else oTestVarEx.cSecTimeout;
         cSecEffTimeout = cSecCfgTimeout * oTestBox.pctScaleTimeout / 100;
         aoResultRows.append([ 'Timeout:',
-                              '%s (%s sec)' % (utils.formatIntervalSeconds(cSecEffTimeout), cSecEffTimeout,) ]);
+                              '%s (%s sec)' % (utils.formatIntervalSeconds2(cSecEffTimeout), cSecEffTimeout,) ]);
         if cSecEffTimeout != cSecCfgTimeout:
             aoResultRows.append([ 'Cfg Timeout:',
                                   '%s (%s sec)' % (utils.formatIntervalSeconds(cSecCfgTimeout), cSecCfgTimeout,) ]);
