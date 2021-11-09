@@ -1248,12 +1248,18 @@ class FileWrapper(object):
         return None;
 
 class FileWrapperTestPipe(object):
-    """ File like class for the test pipe (TXS EXEC and similar). """
+    """
+    File like class for the test pipe (TXS EXEC and similar).
+
+    This is also used to submit XML test result files.
+    """
     def __init__(self):
         self.sPrefix    = '';
         self.fStarted   = False;
         self.fClosed    = False;
         self.sTagBuffer = None;
+        self.cTestDepth = 0;
+        self.acTestErrors = [];
 
     def __del__(self):
         self.close();
@@ -1262,6 +1268,20 @@ class FileWrapperTestPipe(object):
         """ file.close """
         if self.fStarted is True and self.fClosed is False:
             self.fClosed = True;
+
+            # Close open <Test> elements:
+            if self.cTestDepth > 0:
+                sNow = utils.getIsoTimestamp()
+                cErrors = 0;
+                while self.cTestDepth > 0:
+                    self.cTestDepth -= 1;
+                    if self.acTestErrors:
+                        cErrors += self.acTestErrors.pop();
+                    cErrors += 1;
+                    g_oReporter.subXmlWrite(self, '  <Failed timestamp="%s"/ errors="%s">\n</Test>\n' % (sNow, cErrors),
+                                            utils.getCallerName());
+
+            # Tell the reporter that the XML input is done.
             try:    g_oReporter.subXmlEnd(self);
             except:
                 try:    traceback.print_exc();
@@ -1299,52 +1319,53 @@ class FileWrapperTestPipe(object):
                 except: pass;
 
         try:
+            #
+            # Write the XML to the reporter.
+            #
             g_oReporter.subXmlWrite(self, sText, utils.getCallerName());
+
+            #
             # Parse the supplied text and look for <Failed.../> tags to keep track of the
             # error counter. This is only a very lazy aproach.
-            sText.strip();
+            #
             idxText = 0;
             while sText:
                 if self.sTagBuffer is None:
                     # Look for the start of a tag.
-                    idxStart = sText[idxText:].find('<');
+                    idxStart = sText.find('<', idxText);
                     if idxStart != -1:
-                        # Look for the end of the tag.
-                        idxEnd = sText[idxStart:].find('>');
-
                         # If the end was found inside the current buffer, parse the line,
-                        # else we have to save it for later.
+                        # otherwise we have to save it for later.
+                        idxEnd = sText.find('>', idxStart);
                         if idxEnd != -1:
-                            idxEnd += idxStart + 1;
-                            self._processXmlElement(sText[idxStart:idxEnd]);
+                            self._processXmlElement(sText[idxStart:idxEnd+1]);
                             idxText = idxEnd;
                         else:
                             self.sTagBuffer = sText[idxStart:];
-                            idxText = len(sText);
+                            break;
                     else:
-                        idxText = len(sText);
+                        break;
                 else:
                     # Search for the end of the tag and parse the whole tag.
-                    idxEnd = sText[idxText:].find('>');
+                    assert(idxText == 0);
+                    idxEnd = sText.find('>');
                     if idxEnd != -1:
-                        idxEnd += idxStart + 1;
-                        self._processXmlElement(self.sTagBuffer + sText[idxText:idxEnd]);
+                        self._processXmlElement(self.sTagBuffer + sText[:idxEnd+1]);
                         self.sTagBuffer = None;
                         idxText = idxEnd;
                     else:
                         self.sTagBuffer = self.sTagBuffer + sText[idxText:];
-                        idxText = len(sText);
-
-                sText = sText[idxText:];
-                sText = sText.lstrip();
+                        break;
         except:
             traceback.print_exc();
         return None;
 
     def _processXmlElement(self, sElement):
         """
-        Processes a complete XML tag (so far we only search for the Failed to tag
-        to keep track of the error counter.
+        Processes a complete XML tag.
+
+        We handle the 'Failed' tag to keep track of the error counter.
+        We also track 'Test' tags to make sure we close with all of them properly closed.
         """
         # Make sure we don't parse any space between < and the element name.
         sElement = sElement.strip();
@@ -1352,19 +1373,34 @@ class FileWrapperTestPipe(object):
         # Find the end of the name
         idxEndName = sElement.find(' ');
         if idxEndName == -1:
-            idxEndName = sElement.find('/');
-        if idxEndName == -1:
             idxEndName = sElement.find('>');
+            if idxEndName >= 0:
+                if sElement[idxEndName - 1] == '/':
+                    idxEndName -= 1;
+            else:
+                idxEndName = len(sElement);
+        sElementName = sElement[1:idxEndName];
 
-        if idxEndName != -1:
-            if sElement[1:idxEndName] == 'Failed':
-                g_oLock.acquire();
-                try:
-                    g_oReporter.testIncErrors();
-                finally:
-                    g_oLock.release();
-        else:
-            error('_processXmlElement(%s)' % sElement);
+        # <Failed>:
+        if sElementName == 'Failed':
+            g_oLock.acquire();
+            try:
+                g_oReporter.testIncErrors();
+            finally:
+                g_oLock.release();
+            if self.acTestErrors:
+                self.acTestErrors[-1] += 1; # get errors attrib
+        # <Test>
+        elif sElementName == 'Test':
+            self.cTestDepth += 1;
+            self.acTestErrors.append(0);
+        # </Test>
+        elif sElementName == '/Test':
+            self.cTestDepth -= 1;
+            if self.acTestErrors:
+                cErrors = self.acTestErrors.pop();
+                if self.acTestErrors:
+                    self.acTestErrors[-1] += cErrors;
 
 
 #
