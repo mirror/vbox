@@ -55,6 +55,8 @@ public:
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const = 0;
+    /** Returns whether object is done. */
+    virtual bool isDone() const = 0;
     /** Returns object name. */
     virtual QString name() const = 0;
     /** Returns object details. */
@@ -95,6 +97,8 @@ protected:
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const /* override */;
+    /** Returns whether object is done. */
+    virtual bool isDone() const /* override */;
     /** Returns object name. */
     virtual QString name() const /* override final */;
     /** Returns object details. */
@@ -148,8 +152,6 @@ public:
     /** Creates and returns started progress-wrapper. */
     virtual CProgress createProgress(COMResult &comResult) = 0;
 
-    /** Returns whether progress is finished. */
-    bool isFinished() const;
     /** Returns current progress percentage value. */
     ulong percent() const;
     /** Returns whether progress is cancelable. */
@@ -159,6 +161,8 @@ public:
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const /* override */;
+    /** Returns whether object is done. */
+    virtual bool isDone() const /* override */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
     /** Returns object help heyword. */
@@ -184,10 +188,10 @@ private:
     /** Holds the instance of progress-task being wrapped by this notification-progress. */
     UINotificationProgressTask *m_pTask;
 
-    /** Holds whether progress is finished. */
-    bool   m_fFinished;
     /** Holds the last cached progress percentage value. */
     ulong  m_uPercent;
+    /** Holds whether current progress is done. */
+    bool   m_fDone;
 };
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -227,6 +231,8 @@ public:
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const /* override */;
+    /** Returns whether object is done. */
+    virtual bool isDone() const /* override */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
     /** Returns object help heyword. */
@@ -261,6 +267,8 @@ private:
     ulong    m_uPercent;
     /** Holds the error message is any. */
     QString  m_strError;
+    /** Holds whether current progress is done. */
+    bool     m_fDone;
 };
 
 /** UINotificationObject extension for notification-new-version-checker. */
@@ -287,13 +295,13 @@ public:
     /** Creates and returns started checker-wrapper. */
     virtual UINewVersionChecker *createChecker() = 0;
 
-    /** Returns whether current progress is done. */
-    bool isDone() const;
     /** Returns error-message if any. */
     QString error() const;
 
     /** Returns whether object is critical. */
     virtual bool isCritical() const /* override */;
+    /** Returns whether object is done. */
+    virtual bool isDone() const /* override */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
     /** Returns object help heyword. */
@@ -321,10 +329,10 @@ private:
     /** Holds the instance of checker being wrapped by this notification-new-version-checker. */
     UINewVersionChecker *m_pChecker;
 
-    /** Holds whether current progress is done. */
-    bool     m_fDone;
     /** Holds the error message is any. */
     QString  m_strError;
+    /** Holds whether current progress is done. */
+    bool     m_fDone;
 };
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 

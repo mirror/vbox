@@ -66,6 +66,11 @@ bool UINotificationSimple::isCritical() const
     return m_fCritical;
 }
 
+bool UINotificationSimple::isDone() const
+{
+    return true;
+}
+
 QString UINotificationSimple::name() const
 {
     return m_strName;
@@ -110,8 +115,8 @@ bool UINotificationSimple::isSuppressed(const QString &strInternalName)
 
 UINotificationProgress::UINotificationProgress()
     : m_pTask(0)
-    , m_fFinished(false)
     , m_uPercent(0)
+    , m_fDone(false)
 {
 }
 
@@ -119,11 +124,6 @@ UINotificationProgress::~UINotificationProgress()
 {
     delete m_pTask;
     m_pTask = 0;
-}
-
-bool UINotificationProgress::isFinished() const
-{
-    return m_fFinished;
 }
 
 ulong UINotificationProgress::percent() const
@@ -144,6 +144,11 @@ QString UINotificationProgress::error() const
 bool UINotificationProgress::isCritical() const
 {
     return true;
+}
+
+bool UINotificationProgress::isDone() const
+{
+    return m_fDone;
 }
 
 QString UINotificationProgress::internalName() const
@@ -191,8 +196,8 @@ void UINotificationProgress::sltHandleProgressChange(ulong uPercent)
 
 void UINotificationProgress::sltHandleProgressFinished()
 {
-    m_fFinished = true;
     m_uPercent = 100;
+    m_fDone = true;
     emit sigProgressFinished();
 
     /* If there was no error and no reason to keep progress alive, - finish him! */
@@ -211,6 +216,8 @@ void UINotificationProgress::sltHandleProgressFinished()
 
 UINotificationDownloader::UINotificationDownloader()
     : m_pDownloader(0)
+    , m_uPercent(0)
+    , m_fDone(false)
 {
 }
 
@@ -233,6 +240,11 @@ QString UINotificationDownloader::error() const
 bool UINotificationDownloader::isCritical() const
 {
     return true;
+}
+
+bool UINotificationDownloader::isDone() const
+{
+    return m_fDone;
 }
 
 QString UINotificationDownloader::internalName() const
@@ -291,6 +303,7 @@ void UINotificationDownloader::sltHandleProgressFailed(const QString &strError)
     delete m_pDownloader;
     m_pDownloader = 0;
     m_strError = strError;
+    m_fDone = true;
     emit sigProgressFailed();
 }
 
@@ -298,6 +311,7 @@ void UINotificationDownloader::sltHandleProgressCanceled()
 {
     delete m_pDownloader;
     m_pDownloader = 0;
+    m_fDone = true;
     emit sigProgressCanceled();
 }
 
@@ -305,6 +319,7 @@ void UINotificationDownloader::sltHandleProgressFinished()
 {
     delete m_pDownloader;
     m_pDownloader = 0;
+    m_fDone = true;
     emit sigProgressFinished();
 }
 
@@ -325,11 +340,6 @@ UINotificationNewVersionChecker::~UINotificationNewVersionChecker()
     m_pChecker = 0;
 }
 
-bool UINotificationNewVersionChecker::isDone() const
-{
-    return m_fDone;
-}
-
 QString UINotificationNewVersionChecker::error() const
 {
     return m_strError;
@@ -338,6 +348,11 @@ QString UINotificationNewVersionChecker::error() const
 bool UINotificationNewVersionChecker::isCritical() const
 {
     return m_pChecker ? m_pChecker->isItForcedCall() : true;
+}
+
+bool UINotificationNewVersionChecker::isDone() const
+{
+    return m_fDone;
 }
 
 QString UINotificationNewVersionChecker::internalName() const
