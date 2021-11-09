@@ -119,7 +119,7 @@ g_asNames = \
     'ticks/call',
     'ticks/occ',
     'pages',
-    'pages/sec',
+    'pages/s',
     'ticks/page',
     'ns/page',
 ];
