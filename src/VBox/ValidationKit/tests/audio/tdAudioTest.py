@@ -682,9 +682,6 @@ class tdAudioTest(vbox.TestDriver):
             sCmdLsMod = oTestVm.pathJoin(self.getGuestSystemAdminDir(oTestVm), 'lsmod');
             oTxsSession.syncExec(sCmdLsMod, (sCmdLsMod), fIgnoreErrors = True);
 
-        # Always attach the VM log to the test report, as we want to see what the Validation Kit audio driver does.
-        oSession.addLogsToReport();
-
         return fRc;
 
     def testOneVmConfig(self, oVM, oTestVm):
