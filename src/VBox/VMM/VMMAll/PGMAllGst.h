@@ -383,20 +383,20 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRT
     {
         if (!Walk.Core.fBigPage)
             *pfFlags = (Walk.Pte.u & ~(GST_PTE_PG_MASK | X86_PTE_RW | X86_PTE_US))                      /* NX not needed */
-                     | (Walk.Core.fEffectiveRW ? X86_PTE_RW : 0)
-                     | (Walk.Core.fEffectiveUS ? X86_PTE_US : 0)
+                     | (Walk.Core.fEffective & (  PGM_PTATTRS_RW_MASK
+                                                | PGM_PTATTRS_US_MASK))
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
-                     | (Walk.Core.fEffectiveNX ? X86_PTE_PAE_NX : 0)
+                     | (RT_BF_GET(Walk.Core.fEffective, PGM_PTATTRS_X) << X86_PTE_PAE_BIT_NX)
 # endif
                      ;
         else
         {
             *pfFlags = (Walk.Pde.u & ~(GST_PTE_PG_MASK | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PS))   /* NX not needed */
-                     | ((Walk.Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT)
-                     | (Walk.Core.fEffectiveRW ? X86_PTE_RW : 0)
-                     | (Walk.Core.fEffectiveUS ? X86_PTE_US : 0)
+                     | (Walk.Core.fEffective & (  PGM_PTATTRS_RW_MASK
+                                                | PGM_PTATTRS_US_MASK
+                                                | PGM_PTATTRS_PAT_MASK))
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
-                     | (Walk.Core.fEffectiveNX ? X86_PTE_PAE_NX : 0)
+                     | (RT_BF_GET(Walk.Core.fEffective, PGM_PTATTRS_X) << X86_PTE_PAE_BIT_NX)
 # endif
                      ;
         }
