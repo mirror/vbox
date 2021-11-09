@@ -591,17 +591,19 @@ typedef struct {
     uint32_t    type;
 } mem_range_t;
 
-void set_e820_range(uint16_t reg_ES, uint16_t reg_DI, uint32_t start, uint32_t end, uint8_t type)
+static void set_e820_range_len(uint16_t reg_ES, uint16_t reg_DI, uint32_t start, uint32_t len, uint8_t type)
 {
     mem_range_t __far *fpRange = reg_ES :> (mem_range_t *)reg_DI;
     fpRange->start  = start;
-    fpRange->len    = end - start;
+    fpRange->len    = len;
     fpRange->type   = type;
     fpRange->xlen   = 0;
     fpRange->xstart = 0;
 }
 
-void set_e820_range_above_4g(uint16_t reg_ES, uint16_t reg_DI, uint16_t c64k_above_4G_low, uint16_t c64k_above_4G_high)
+#define set_e820_range_end(reg_ES, reg_DI, start, end, type) set_e820_range_len(reg_ES, reg_DI, start, end - start, type)
+
+static void set_e820_range_above_4g(uint16_t reg_ES, uint16_t reg_DI, uint16_t c64k_above_4G_low, uint16_t c64k_above_4G_high)
 {
     mem_range_t __far *fpRange = reg_ES :> (mem_range_t *)reg_DI;
     fpRange->start  = 0;        /* Starts at 4G, so low start address dword is zero */
@@ -637,7 +639,9 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                 uint32_t extended_memory_size; // 64bits long
                 uint16_t c64k_above_4G_low;
                 uint16_t c64k_above_4G_high;
+#ifdef BIOS_WITH_MCFG_E820
                 uint32_t mcfgStart, mcfgSize;
+#endif
 
                 /** @todo r=bird: I think we can do the first bit here in 16-bit, then decide
                  * whether we need to use 0x31 & 0x30 before blowing it up to 32-bit.  Only, I'm
@@ -669,17 +673,18 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                 c64k_above_4G_high |= inb_cmos(0x63);
                 /* 0x65 can be used if we need to go beyond 255 TiB */
 
-                mcfgStart = 0; /// @todo implement mcfg reporting
+#ifdef BIOS_WITH_MCFG_E820 /** @todo Actually implement the mcfg reporting. */
+                mcfgStart = 0;
                 mcfgSize  = 0;
-
-                switch(BX)
+#endif
+                switch (BX)
                 {
                     case 0:
-                        set_e820_range(ES, DI, 0x0000000L, 0x0009fc00L, 1);
+                        set_e820_range_end(ES, DI, 0x0000000L, 0x0009fc00L, 1);
                         EBX = 1;
                         break;
                     case 1:
-                        set_e820_range(ES, DI, 0x0009fc00L, 0x000a0000L, 2);
+                        set_e820_range_end(ES, DI, 0x0009fc00L, 0x000a0000L, 2);
                         EBX = 2;
                         break;
                     case 2:
@@ -694,54 +699,50 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                          * they trigger the "Too many similar traps" assertion)
                          * a single reserved range from 0xd0000 to 0xffffff.
                          * A 128K area starting from 0xd0000 works. */
-                        set_e820_range(ES, DI, 0x000f0000L, 0x00100000L, 2);
+                        set_e820_range_end(ES, DI, 0x000f0000L, 0x00100000L, 2);
                         EBX = 3;
                         break;
                     case 3:
-                        set_e820_range(ES, DI, 0x00100000L,
-                                       extended_memory_size - ACPI_DATA_SIZE, 1);
+                        set_e820_range_end(ES, DI, 0x00100000L, extended_memory_size - ACPI_DATA_SIZE, 1);
                         EBX = 4;
                         break;
                     case 4:
-                        set_e820_range(ES, DI,
-                                       extended_memory_size - ACPI_DATA_SIZE,
-                                       extended_memory_size, 3); // ACPI RAM
+                        set_e820_range_len(ES, DI, extended_memory_size - ACPI_DATA_SIZE, ACPI_DATA_SIZE, 3); // ACPI RAM
                         EBX = 5;
                         break;
                     case 5:
-                        set_e820_range(ES, DI, 0xfec00000, 0xfec00000 + 0x1000, 2); // I/O APIC
+                        set_e820_range_len(ES, DI, 0xfec00000, 0x1000, 2); // I/O APIC
                         EBX = 6;
                         break;
                     case 6:
-                        set_e820_range(ES, DI, 0xfee00000, 0xfee00000 + 0x1000, 2); // Local APIC
+                        set_e820_range_len(ES, DI, 0xfee00000, 0x1000, 2); // Local APIC
                         EBX = 7;
                         break;
                     case 7:
                         /* 256KB BIOS area at the end of 4 GB */
-                        /* We don't set the end to 1GB here and rely on the 32-bit
-                           unsigned wrap around effect (0-0xfffc0000L). */
-                        set_e820_range(ES, DI, 0xfffc0000L, 0x00000000L, 2);
+                        set_e820_range_len(ES, DI, 0xfffc0000L, 0x40000, 2);
+#ifdef BIOS_WITH_MCFG_E820
                         if (mcfgStart != 0)
                             EBX = 8;
-                        else if (c64k_above_4G_low || c64k_above_4G_high)
-                            EBX = 9;
                         else
-                            EBX = 0;
-                        break;
-                     case 8:
-                        /* PCI MMIO config space (MCFG) */
-                        set_e820_range(ES, DI, mcfgStart, mcfgStart + mcfgSize, 2);
+#endif
                         if (c64k_above_4G_low || c64k_above_4G_high)
                             EBX = 9;
                         else
                             EBX = 0;
                         break;
+#ifdef BIOS_WITH_MCFG_E820
+                     case 8:
+                        /* PCI MMIO config space (MCFG) */
+                        set_e820_range_len(ES, DI, mcfgStart, mcfgSize, 2);
+                        if (c64k_above_4G_low || c64k_above_4G_high)
+                            EBX = 9;
+                        else
+                            EBX = 0;
+                        break;
+#endif
                     case 9:
-                        /* Mapping of memory above 4 GB if present.
-                           Note1: set_e820_range needs do no borrowing in the
-                                  subtraction because of the nice numbers.
-                           Note2* works only up to 1TB because of uint8_t for
-                                  the upper bits!*/
+                        /* Mapping of memory above 4 GB if present. */
                         if (c64k_above_4G_low || c64k_above_4G_high)
                         {
                             set_e820_range_above_4g(ES, DI, c64k_above_4G_low, c64k_above_4G_high);
