@@ -2514,7 +2514,7 @@ int AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *p
         }
     }
 
-    if (offBeacon != UINT32_MAX)
+    if (offBeacon != UINT64_MAX)
     {
         if (pOff)
             *pOff = offBeacon;
