@@ -247,7 +247,7 @@ bool UINotificationCenter::handleNow(UINotificationProgress *pProgress)
     if (guardProgress.isNull())
         return m_fLastResult;
     /* Is progress still running? */
-    if (guardProgress->isFinished())
+    if (guardProgress->isDone())
         return m_fLastResult;
 
     /* Create a local event-loop: */
