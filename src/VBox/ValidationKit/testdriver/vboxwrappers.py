@@ -84,7 +84,6 @@ def _nameMachineState(eState):
     if eState == vboxcon.MachineState_Saved: return 'Saved';
     if eState == vboxcon.MachineState_Teleported: return 'Teleported';
     if eState == vboxcon.MachineState_Aborted: return 'Aborted';
-    if eState == vboxcon.MachineState_AbortedSaved: return 'Aborted-Saved';
     if eState == vboxcon.MachineState_Running: return 'Running';
     if eState == vboxcon.MachineState_Paused: return 'Paused';
     if eState == vboxcon.MachineState_Stuck: return 'GuruMeditation';
@@ -103,6 +102,8 @@ def _nameMachineState(eState):
     if eState == vboxcon.MachineState_SettingUp: return 'SettingUp';
     if hasattr(vboxcon, 'MachineState_FaultTolerantSyncing'):
         if eState == vboxcon.MachineState_FaultTolerantSyncing: return 'FaultTolerantSyncing';
+    if hasattr(vboxcon, 'MachineState_AbortedSaved'): # since r147033 / 7.0
+        if eState == vboxcon.MachineState_AbortedSaved: return 'Aborted-Saved';
     return 'Unknown-%s' % (eState,);
 
 
