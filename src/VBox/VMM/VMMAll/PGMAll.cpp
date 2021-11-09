@@ -1454,33 +1454,30 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
         if (pVM->pgm.s.fNestedPaging || !CPUMIsGuestPagingEnabled(pVCpu))
         {
             /* AMD-V nested paging or real/protected mode without paging. */
-            GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
+            GCPdPt  = GCPtr & ~(RT_BIT_64(X86_PDPT_SHIFT) - 1);
             enmKind = PGMPOOLKIND_PAE_PD_PHYS;
         }
-        else
+        else if (CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE)
         {
-            if (CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE)
+            if (!(uGstPdpe & X86_PDPE_P))
             {
-                if (!(uGstPdpe & X86_PDPE_P))
-                {
-                    /* PD not present; guest must reload CR3 to change it.
-                     * No need to monitor anything in this case. */
-                    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
-                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
-                    enmKind = PGMPOOLKIND_PAE_PD_PHYS;
-                    Assert(uGstPdpe & X86_PDPE_P); /* caller should do this already */
-                }
-                else
-                {
-                    GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
-                    enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
-                }
+                /* PD not present; guest must reload CR3 to change it.
+                 * No need to monitor anything in this case. */
+                Assert(VM_IS_RAW_MODE_ENABLED(pVM));
+                GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
+                enmKind = PGMPOOLKIND_PAE_PD_PHYS;
+                Assert(uGstPdpe & X86_PDPE_P); /* caller should do this already */
             }
             else
             {
-                GCPdPt  = CPUMGetGuestCR3(pVCpu);
-                enmKind = (PGMPOOLKIND)(PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD + iPdPt);
+                GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
+                enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
             }
+        }
+        else
+        {
+            GCPdPt  = CPUMGetGuestCR3(pVCpu);
+            enmKind = (PGMPOOLKIND)(PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD + iPdPt);
         }
 
         /* Create a reference back to the PDPT by using the index in its shadow page. */
@@ -1642,7 +1639,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
         if (fNestedPagingOrNoGstPaging)
         {
             /* AMD-V nested paging or real/protected mode without paging */
-            GCPdPt  = (RTGCPTR64)iPdPt << X86_PDPT_SHIFT;
+            GCPdPt  = GCPtr & ~(RT_BIT_64(iPdPt << X86_PDPT_SHIFT) - 1);
             enmKind = PGMPOOLKIND_64BIT_PD_FOR_PHYS;
         }
         else
@@ -1739,7 +1736,6 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
     /*
      * PML4 level.
      */
-
     PEPTPML4 pPml4 = (PEPTPML4)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
     Assert(pPml4);
 
@@ -1753,7 +1749,6 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
         if (!(Pml4e.u & (EPT_E_PG_MASK | EPT_E_READ)))
         {
             RTGCPTR64 GCPml4 = (RTGCPTR64)iPml4 << EPT_PML4_SHIFT;
-
             rc = pgmPoolAlloc(pVM, GCPml4, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                               pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4, false /*fLockPage*/,
                               &pShwPage);
@@ -1792,7 +1787,7 @@ static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, 
     Pdpe.u = pPdpe->u;
     if (!(Pdpe.u & (EPT_E_PG_MASK | EPT_E_READ)))
     {
-        RTGCPTR64 GCPdPt = (RTGCPTR64)iPdPt << EPT_PDPT_SHIFT;
+        RTGCPTR64 const GCPdPt = GCPtr & ~(RT_BIT_64(EPT_PDPT_SHIFT) - 1);
         rc = pgmPoolAlloc(pVM, GCPdPt, PGMPOOLKIND_EPT_PD_FOR_PHYS, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
                           pShwPage->idx, iPdPt, false /*fLockPage*/,
                           &pShwPage);
