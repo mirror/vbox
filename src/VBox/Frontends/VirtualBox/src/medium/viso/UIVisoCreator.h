@@ -42,13 +42,13 @@ class UIVisoConfigurationPanel;
 /** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
   * for VISO file system. It has the main menu, main toolbar, and a vertical toolbar and corresponding
   * actions. */
-class UIVisoCreatorDialog : public QIWithRetranslateUI<QIMainDialog>
+class UIVisoCreatorWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIVisoCreatorDialog(QWidget *pParent = 0, const QString& strMachineName = QString());
+    UIVisoCreatorWidget(QWidget *pParent = 0, const QString& strMachineName = QString());
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
     const QString     &visoName() const;
@@ -137,12 +137,11 @@ private:
     QGridLayout          *m_pMainLayout;
     UIVisoHostBrowser    *m_pHostBrowser;
     UIVisoContentBrowser *m_pVisoBrowser;
-    QIDialogButtonBox    *m_pButtonBox;
+
     QIToolBar            *m_pToolBar;
     QIToolBar            *m_pVerticalToolBar;
     VisoOptions           m_visoOptions;
     BrowserOptions        m_browserOptions;
-    QWidget              *m_pCentralWidget;
     QMenu                *m_pMainMenu;
     QString               m_strMachineName;
     UIVisoCreatorOptionsPanel *m_pCreatorOptionsPanel;
@@ -151,4 +150,28 @@ private:
     QList<UIDialogPanel*>          m_visiblePanelsList;
 };
 
+
+class UIVisoCreatorDialog : public QIWithRetranslateUI<QIMainDialog>
+{
+    Q_OBJECT;
+
+public:
+
+    UIVisoCreatorDialog(QWidget *pParent = 0, const QString& strMachineName = QString());
+
+    QStringList  entryList() const;
+    QString visoName() const;
+    QStringList customOptions() const;
+    QString currentPath() const;
+    void    setCurrentPath(const QString &strPath);
+
+private:
+    void prepareWidgets();
+    void prepareConnections();
+    virtual void retranslateUi() final override;
+
+    QString m_strMachineName;
+    UIVisoCreatorWidget *m_pVisoCreatorWidget;
+    QIDialogButtonBox    *m_pButtonBox;
+};
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreator_h */
