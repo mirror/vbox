@@ -398,6 +398,11 @@ void UINotificationNewVersionChecker::sltHandleProgressFinished()
     m_pChecker = 0;
     m_fDone = true;
     emit sigProgressFinished();
+
+    /* If there was no error and no reason to keep progress alive, - finish him! */
+    if (   error().isEmpty()
+        && !gEDataManager->keepSuccessfullNotificationProgresses())
+        close();
 }
 
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
