@@ -96,9 +96,13 @@ class tdBenchmark2(vbox.TestDriver):
 
         cMbHostAvail -= cMbHostAvail // 7; # Rough 14% safety/overhead margin.
         if cMbMaxGuestRam < cMbHostAvail:
-            # Currently: 2048 GiB, 1536 GiB, 1024 GiB, 512 GiB, 256 GiB, 128 GiB
+            # Currently: 2048 GiB, 1536 GiB, 1024 GiB, 512 GiB, 256 GiB, 128 GiB, 64 GiB, 32 GiB
             acMbRam = [ cMbMaxGuestRam, cMbMaxGuestRam // 4 * 3, cMbMaxGuestRam // 2, cMbMaxGuestRam // 4,
-                        cMbMaxGuestRam // 8, cMbMaxGuestRam // 16 ];
+                        cMbMaxGuestRam // 8, cMbMaxGuestRam // 16  ];
+            if acMbRam[-1] > 64*1024:
+                acMbRam[-1].append(64*1024);
+            if acMbRam[-1] > 32*1024:
+                acMbRam[-1].append(32*1024);
         elif cMbHostAvail > 8*1024:
             # First entry is available memory rounded down to the nearest 8 GiB
             cMbHostAvail = cMbHostAvail & ~(8 * 1024 - 1);
