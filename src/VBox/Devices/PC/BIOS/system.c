@@ -53,6 +53,7 @@
  */
 
 
+#include <iprt/cdefs.h>
 #include <stdint.h>
 #include "biosint.h"
 #include "inlines.h"
@@ -613,6 +614,15 @@ static void set_e820_range_above_4g(uint16_t reg_ES, uint16_t reg_DI, uint16_t c
     fpRange->type   = 1;        /* type is usable */
 }
 
+/**
+ * Reads two adjacent cmos bytes and return their values as a 16-bit word.
+ */
+static uint16_t get_cmos_word(uint8_t idxFirst)
+{
+    return ((uint16_t)inb_cmos(idxFirst + 1) << 8)
+         |            inb_cmos(idxFirst);
+}
+
 void BIOSCALL int15_function32(sys32_regs_t r)
 {
     BX_DEBUG_INT15("int15 AX=%04x\n",AX);
@@ -643,35 +653,25 @@ void BIOSCALL int15_function32(sys32_regs_t r)
                 uint32_t mcfgStart, mcfgSize;
 #endif
 
-                /** @todo r=bird: I think we can do the first bit here in 16-bit, then decide
-                 * whether we need to use 0x31 & 0x30 before blowing it up to 32-bit.  Only, I'm
-                 * a little bit too tired to think straight... */
-                extended_memory_size  = (uint16_t)inb_cmos(0x35) << 8;
-                extended_memory_size |= inb_cmos(0x34);
-                extended_memory_size *= 64;
-#ifndef VBOX /* The following excludes 0xf0000000 thru 0xffffffff. Trust DevPcBios.cpp to get this right. */
-                // greater than EFF00000???
-                if(extended_memory_size > 0x3bc000) {
-                    extended_memory_size = 0x3bc000; // everything after this is reserved memory until we get to 0x100000000
+                /* Go for the amount of memory above 16MB first. */
+                extended_memory_size  = get_cmos_word(0x34 /*+ 0x35*/);
+                if (extended_memory_size > 0)
+                {
+                    extended_memory_size  += _16M / _64K;
+                    extended_memory_size <<= 16;
                 }
-#endif /* !VBOX */
-                extended_memory_size *= 1024;
-                extended_memory_size += 16L * 1024 * 1024;
-
-                if(extended_memory_size <= (16L * 1024 * 1024)) {
-                    extended_memory_size = (uint16_t)inb_cmos(0x31) << 8;
-                    extended_memory_size |= inb_cmos(0x30);
-                    extended_memory_size *= 1024;
-                    extended_memory_size += (1L * 1024 * 1024);
+                else
+                {
+                    /* No memory above 16MB, query memory above 1MB ASSUMING we have at least 1MB. */
+                    extended_memory_size  = get_cmos_word(0x30 /*+ 0x31*/);
+                    extended_memory_size += _1M / _1K;
+                    extended_memory_size *= _1K;
                 }
 
-                /* This is the amount of memory above 4GB measured in 64KB units. */
-                c64k_above_4G_low   = (uint16_t)inb_cmos(0x62) << 8;
-                c64k_above_4G_low  |= inb_cmos(0x61);
-
-                c64k_above_4G_high  = (uint16_t)inb_cmos(0x64) << 8;
-                c64k_above_4G_high |= inb_cmos(0x63);
-                /* 0x65 can be used if we need to go beyond 255 TiB */
+                /* This is the amount of memory above 4GB measured in 64KB units.
+                   Note! 0x65 can be used when we need to go beyond 255 TiB */
+                c64k_above_4G_low  = get_cmos_word(0x61 /*+ 0x62*/);
+                c64k_above_4G_high = get_cmos_word(0x63 /*+ 0x64*/);
 
 #ifdef BIOS_WITH_MCFG_E820 /** @todo Actually implement the mcfg reporting. */
                 mcfgStart = 0;
