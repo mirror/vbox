@@ -38,8 +38,9 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+
 /*********************************************************************************************************************************
-*   UIVisoCreatorWidget implementation.                                                                                        *
+*   UIVisoCreatorWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
 
 UIVisoCreatorWidget::UIVisoCreatorWidget(QWidget *pParent /* =0 */, const QString& strMachineName /* = QString() */)
@@ -546,8 +547,9 @@ void UIVisoCreatorWidget::prepareVerticalToolBar()
     m_pVerticalToolBar->addWidget(bottomSpacerWidget);
 }
 
+
 /*********************************************************************************************************************************
-*   UIVisoCreatorDialog implementation.                                                                                        *
+*   UIVisoCreatorDialog implementation.                                                                                          *
 *********************************************************************************************************************************/
 UIVisoCreatorDialog::UIVisoCreatorDialog(QWidget *pParent /* = 0 */, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIMainDialog>(pParent)
