@@ -69,7 +69,14 @@ PP1K                    = 0x1c;
 PP10K                   = 0x1d;
 PPM                     = 0x1e;
 PPB                     = 0x1f;
-END                     = 0x20;
+TICKS                   = 0x20;
+TICKS_PER_CALL          = 0x21;
+TICKS_PER_OCCURENCE     = 0x22;
+PAGES                   = 0x23;
+PAGES_PER_SEC           = 0x24;
+TICKS_PER_PAGE          = 0x25;
+NS_PER_PAGE             = 0x26;
+END                     = 0x27;
 ## @}
 
 
@@ -108,8 +115,16 @@ g_asNames = \
     'pp10k',
     'ppm',
     'ppb',
+    'ticks',
+    'ticks/call',
+    'ticks/occ',
+    'pages',
+    'pages/sec',
+    'ticks/page',
+    'ns/page',
 ];
 assert g_asNames[PP1K] == 'pp1k';
+assert g_asNames[NS_PER_PAGE] == 'ns/page';
 
 
 ## Translation table for XML -> number.
