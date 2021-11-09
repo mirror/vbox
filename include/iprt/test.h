@@ -475,6 +475,10 @@ RTR3DECL(int) RTTestSkippedV(RTTEST hTest, const char *pszFormat, va_list va) RT
  *              - Add it to g_aszBs2TestUnitNames in
  *                ValidationKit/bootsectors/bootsector2-common-routines.mac.
  *              - Add it to g_aszBs3TestUnitNames in bs3kit/bs3-cmn-TestData.c.
+ *              - Add it to ValidationKit/common/constants/valueunit.py both as
+ *                a constant (strip RTTESTUNIT_) and as a name (same as what
+ *                rtTestUnitName returns) for mapping.  Testmanager must be
+ *                updated.
  */
 typedef enum RTTESTUNIT
 {
