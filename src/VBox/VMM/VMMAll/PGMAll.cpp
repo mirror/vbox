@@ -1459,19 +1459,20 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
         }
         else if (CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE)
         {
-            if (!(uGstPdpe & X86_PDPE_P))
+            if (uGstPdpe & X86_PDPE_P)
+            {
+                GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
+                enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
+            }
+            else
             {
                 /* PD not present; guest must reload CR3 to change it.
                  * No need to monitor anything in this case. */
+                /** @todo r=bird: WTF is hit?!?   */
                 Assert(VM_IS_RAW_MODE_ENABLED(pVM));
                 GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                 enmKind = PGMPOOLKIND_PAE_PD_PHYS;
                 Assert(uGstPdpe & X86_PDPE_P); /* caller should do this already */
-            }
-            else
-            {
-                GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
-                enmKind = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
             }
         }
         else
@@ -1587,7 +1588,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT
             if (fNestedPagingOrNoGstPaging)
             {
                 /* AMD-V nested paging or real/protected mode without paging */
-                GCPml4  = (RTGCPTR64)iPml4 << X86_PML4_SHIFT;
+                GCPml4  = (RTGCPTR64)iPml4 << X86_PML4_SHIFT; /** @todo bogus calculation for PML5 */
                 enmKind = PGMPOOLKIND_64BIT_PDPT_FOR_PHYS;
             }
             else
