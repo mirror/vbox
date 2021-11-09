@@ -1278,7 +1278,9 @@ class FileWrapperTestPipe(object):
                     if self.acTestErrors:
                         cErrors += self.acTestErrors.pop();
                     cErrors += 1;
-                    g_oReporter.subXmlWrite(self, '  <Failed timestamp="%s"/ errors="%s">\n</Test>\n' % (sNow, cErrors),
+                    g_oReporter.subXmlWrite(self,
+                                            '\n%s  <Failed timestamp="%s" errors="%s">\n%s</Test>\n'
+                                            % ('  ' * self.cTestDepth, sNow, cErrors, '  ' * self.cTestDepth),
                                             utils.getCallerName());
 
             # Tell the reporter that the XML input is done.
