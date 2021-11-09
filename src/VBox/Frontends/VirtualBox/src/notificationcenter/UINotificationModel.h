@@ -56,6 +56,8 @@ public:
     void revokeObject(const QUuid &uId);
     /** Returns whether there is a notification object referenced by @a uId. */
     bool hasObject(const QUuid &uId) const;
+    /** Revokes finished notification objects. */
+    void revokeFinishedObjects();
 
     /** Returns a list of registered notification object IDs. */
     QList<QUuid> ids() const;

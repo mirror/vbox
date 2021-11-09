@@ -73,6 +73,27 @@ bool UINotificationModel::hasObject(const QUuid &uId) const
     return m_objects.contains(uId);
 }
 
+void UINotificationModel::revokeFinishedObjects()
+{
+    /* Check whether there are done objects: */
+    bool fChanged = false;
+    foreach (const QUuid &uId, m_ids)
+    {
+        UINotificationObject *pObject = m_objects.value(uId);
+        AssertPtrReturnVoid(pObject);
+        if (pObject->isDone())
+        {
+            /* Remove ID and object: */
+            delete m_objects.take(uId);
+            m_ids.removeAll(uId);
+            fChanged = true;
+        }
+    }
+    /* Notify listeners: */
+    if (fChanged)
+        emit sigChanged();
+}
+
 QList<QUuid> UINotificationModel::ids() const
 {
     return m_ids;

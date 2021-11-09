@@ -104,6 +104,8 @@ private slots:
     void sltHandleOpenButtonToggled(bool fToggled);
     /** Toggles notification-progresses keep approach. */
     void sltHandleKeepButtonToggled(bool fToggled);
+    /** Removes finished notifications. */
+    void sltHandleRemoveFinishedButtonClicked();
 
     /** Handles open-timer timeout. */
     void sltHandleOpenTimerTimeout();
@@ -153,10 +155,12 @@ private:
     QVBoxLayout  *m_pLayoutMain;
     /** Holds the buttons layout instance. */
     QHBoxLayout  *m_pLayoutButtons;
-    /** Holds the open button instance. */
+    /** Holds the open-button instance. */
     QIToolButton *m_pOpenButton;
-    /** Holds the keep button instance. */
+    /** Holds the keep-button instance. */
     QIToolButton *m_pKeepButton;
+    /** Holds the remove-finished-button instance. */
+    QIToolButton *m_pRemoveFinishedButton;
     /** Holds the items layout instance. */
     QVBoxLayout  *m_pLayoutItems;
 

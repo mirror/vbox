@@ -151,6 +151,7 @@ UINotificationCenter::UINotificationCenter(QWidget *pParent)
     , m_pLayoutButtons(0)
     , m_pOpenButton(0)
     , m_pKeepButton(0)
+    , m_pRemoveFinishedButton(0)
     , m_pLayoutItems(0)
     , m_pStateMachineSliding(0)
     , m_iAnimatedValue(0)
@@ -278,6 +279,8 @@ void UINotificationCenter::retranslateUi()
         m_pOpenButton->setToolTip(tr("Open notification center"));
     if (m_pKeepButton)
         m_pKeepButton->setToolTip(tr("Keep finished progresses"));
+    if (m_pRemoveFinishedButton)
+        m_pRemoveFinishedButton->setToolTip(tr("Delete finished notifications"));
 }
 
 bool UINotificationCenter::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -359,6 +362,11 @@ void UINotificationCenter::sltHandleOpenButtonToggled(bool fToggled)
 void UINotificationCenter::sltHandleKeepButtonToggled(bool fToggled)
 {
     gEDataManager->setKeepSuccessfullNotificationProgresses(fToggled);
+}
+
+void UINotificationCenter::sltHandleRemoveFinishedButtonClicked()
+{
+    m_pModel->revokeFinishedObjects();
 }
 
 void UINotificationCenter::sltHandleOpenTimerTimeout()
@@ -469,6 +477,9 @@ void UINotificationCenter::prepareWidgets()
                 m_pLayoutButtons->addWidget(m_pOpenButton);
             }
 
+            /* Add stretch: */
+            m_pLayoutButtons->addStretch(1);
+
             /* Prepare keep-button: */
             m_pKeepButton = new QIToolButton(this);
             if (m_pKeepButton)
@@ -480,7 +491,14 @@ void UINotificationCenter::prepareWidgets()
                 m_pLayoutButtons->addWidget(m_pKeepButton);
             }
 
-            m_pLayoutButtons->addStretch();
+            /* Prepare remove-finished-button: */
+            m_pRemoveFinishedButton = new QIToolButton(this);
+            if (m_pRemoveFinishedButton)
+            {
+                m_pRemoveFinishedButton->setIcon(UIIconPool::iconSet(":/edata_remove_16px_x3.png"));
+                connect(m_pRemoveFinishedButton, &QIToolButton::clicked, this, &UINotificationCenter::sltHandleRemoveFinishedButtonClicked);
+                m_pLayoutButtons->addWidget(m_pRemoveFinishedButton);
+            }
 
             /* Add to layout: */
             m_pLayoutMain->addLayout(m_pLayoutButtons);
