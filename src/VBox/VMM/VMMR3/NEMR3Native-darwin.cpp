@@ -67,6 +67,8 @@
 NEM_TMPL_STATIC const char * const g_apszPageStates[4] = { "not-set", "unmapped", "readable", "writable" };
 /** MSRs. */
 SUPHWVIRTMSRS           g_HmMsrs;
+/** VMX: Set if swapping EFER is supported.  */
+static bool             g_fHmVmxSupportsVmcsEfer = false;
 
 
 /*********************************************************************************************************************************
@@ -408,233 +410,26 @@ DECLINLINE(int) nemR3DarwinWriteVmcs64(PVMCPUCC pVCpu, uint32_t uFieldEnc, uint6
     return nemR3DarwinHvSts2Rc(hrc);
 }
 
-
-static int nemR3DarwinCopyStateToHv(PVMCC pVM, PVMCPUCC pVCpu)
+#if 0 /* unused */
+DECLINLINE(int) nemR3DarwinMsrRead(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t *pu64Val)
 {
-#define WRITE_GREG(a_GReg, a_Value) \
-    do \
-    { \
-        hrc = hv_vcpu_write_register(pVCpu->nem.s.hVCpuId, (a_GReg), (a_Value)); \
-        if (RT_LIKELY(hrc == HV_SUCCESS)) \
-        { /* likely */ } \
-        else \
-            return VERR_INTERNAL_ERROR; \
-    } while(0)
-#define WRITE_VMCS_FIELD(a_Field, a_Value) \
-    do \
-    { \
-        hrc = hv_vmx_vcpu_write_vmcs(pVCpu->nem.s.hVCpuId, (a_Field), (a_Value)); \
-        if (RT_LIKELY(hrc == HV_SUCCESS)) \
-        { /* likely */ } \
-        else \
-            return VERR_INTERNAL_ERROR; \
-    } while(0)
-
-    RT_NOREF(pVM);
-
-    uint64_t const fWhat = ~pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
-    if (!fWhat)
+    hv_return_t hrc = hv_vcpu_read_msr(pVCpu->nem.s.hVCpuId, idMsr, pu64Val);
+    if (RT_LIKELY(hrc == HV_SUCCESS))
         return VINF_SUCCESS;
 
-    hv_return_t hrc;
-    if (fWhat & CPUMCTX_EXTRN_GPRS_MASK)
-    {
-        if (fWhat & CPUMCTX_EXTRN_RAX)
-            WRITE_GREG(HV_X86_RAX, pVCpu->cpum.GstCtx.rax);
-        if (fWhat & CPUMCTX_EXTRN_RCX)
-            WRITE_GREG(HV_X86_RCX, pVCpu->cpum.GstCtx.rcx);
-        if (fWhat & CPUMCTX_EXTRN_RDX)
-            WRITE_GREG(HV_X86_RDX, pVCpu->cpum.GstCtx.rdx);
-        if (fWhat & CPUMCTX_EXTRN_RBX)
-            WRITE_GREG(HV_X86_RBX, pVCpu->cpum.GstCtx.rbx);
-        if (fWhat & CPUMCTX_EXTRN_RSP)
-            WRITE_GREG(HV_X86_RSP, pVCpu->cpum.GstCtx.rsp);
-        if (fWhat & CPUMCTX_EXTRN_RBP)
-            WRITE_GREG(HV_X86_RBP, pVCpu->cpum.GstCtx.rbp);
-        if (fWhat & CPUMCTX_EXTRN_RSI)
-            WRITE_GREG(HV_X86_RSI, pVCpu->cpum.GstCtx.rsi);
-        if (fWhat & CPUMCTX_EXTRN_RDI)
-            WRITE_GREG(HV_X86_RDI, pVCpu->cpum.GstCtx.rdi);
-        if (fWhat & CPUMCTX_EXTRN_R8_R15)
-        {
-            WRITE_GREG(HV_X86_R8, pVCpu->cpum.GstCtx.r8);
-            WRITE_GREG(HV_X86_R9, pVCpu->cpum.GstCtx.r9);
-            WRITE_GREG(HV_X86_R10, pVCpu->cpum.GstCtx.r10);
-            WRITE_GREG(HV_X86_R11, pVCpu->cpum.GstCtx.r11);
-            WRITE_GREG(HV_X86_R12, pVCpu->cpum.GstCtx.r12);
-            WRITE_GREG(HV_X86_R13, pVCpu->cpum.GstCtx.r13);
-            WRITE_GREG(HV_X86_R14, pVCpu->cpum.GstCtx.r14);
-            WRITE_GREG(HV_X86_R15, pVCpu->cpum.GstCtx.r15);
-        }
-    }
-
-    /* RIP & Flags */
-    if (fWhat & CPUMCTX_EXTRN_RIP)
-        WRITE_GREG(HV_X86_RIP, pVCpu->cpum.GstCtx.rip);
-    if (fWhat & CPUMCTX_EXTRN_RFLAGS)
-        WRITE_GREG(HV_X86_RFLAGS, pVCpu->cpum.GstCtx.rflags.u);
-
-    /* Segments */
-#define ADD_SEG(a_enmName, a_SReg) \
-        do { \
-            WRITE_VMCS_FIELD(VMX_VMCS16_GUEST_ ## a_enmName ## _SEL,           (a_SReg).Sel); \
-            WRITE_VMCS_FIELD(VMX_VMCS32_GUEST_ ## a_enmName ## _LIMIT,         (a_SReg).u32Limit); \
-            WRITE_VMCS_FIELD(VMX_VMCS32_GUEST_ ## a_enmName ## _ACCESS_RIGHTS, (a_SReg).Attr.u); \
-            WRITE_VMCS_FIELD(VMX_VMCS_GUEST_ ## a_enmName ## _BASE,            (a_SReg).u64Base); \
-        } while (0)
-    if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
-    {
-        if (fWhat & CPUMCTX_EXTRN_ES)
-            ADD_SEG(ES, pVCpu->cpum.GstCtx.es);
-        if (fWhat & CPUMCTX_EXTRN_CS)
-            ADD_SEG(CS, pVCpu->cpum.GstCtx.cs);
-        if (fWhat & CPUMCTX_EXTRN_SS)
-            ADD_SEG(SS, pVCpu->cpum.GstCtx.ss);
-        if (fWhat & CPUMCTX_EXTRN_DS)
-            ADD_SEG(DS, pVCpu->cpum.GstCtx.ds);
-        if (fWhat & CPUMCTX_EXTRN_FS)
-            ADD_SEG(FS, pVCpu->cpum.GstCtx.fs);
-        if (fWhat & CPUMCTX_EXTRN_GS)
-            ADD_SEG(GS, pVCpu->cpum.GstCtx.gs);
-    }
-
-    /* Descriptor tables & task segment. */
-    if (fWhat & CPUMCTX_EXTRN_TABLE_MASK)
-    {
-        if (fWhat & CPUMCTX_EXTRN_LDTR)
-            ADD_SEG(LDTR, pVCpu->cpum.GstCtx.ldtr);
-        if (fWhat & CPUMCTX_EXTRN_TR)
-            ADD_SEG(TR,   pVCpu->cpum.GstCtx.tr);
-        if (fWhat & CPUMCTX_EXTRN_IDTR)
-        {
-            WRITE_VMCS_FIELD(VMCS_GUEST_IDTR_LIMIT, pVCpu->cpum.GstCtx.idtr.cbIdt);
-            WRITE_VMCS_FIELD(VMCS_GUEST_IDTR_BASE,  pVCpu->cpum.GstCtx.idtr.pIdt);
-        }
-        if (fWhat & CPUMCTX_EXTRN_GDTR)
-        {
-            WRITE_VMCS_FIELD(VMCS_GUEST_GDTR_LIMIT, pVCpu->cpum.GstCtx.gdtr.cbGdt);
-            WRITE_VMCS_FIELD(VMCS_GUEST_GDTR_BASE,  pVCpu->cpum.GstCtx.gdtr.pGdt);
-        }
-    }
-
-    /* Control registers. */
-    if (fWhat & CPUMCTX_EXTRN_CR_MASK)
-    {
-        if (fWhat & CPUMCTX_EXTRN_CR0)
-        {
-            uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
-
-            /* Apply the hardware specified CR0 fixed bits and enable caching. */
-            u64GuestCr0 |= VMX_V_CR0_FIXED0_UX;
-            u64GuestCr0 &= ~0;
-            u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
-            WRITE_GREG(HV_X86_CR0, u64GuestCr0);
-        }
-        if (fWhat & CPUMCTX_EXTRN_CR2)
-            WRITE_GREG(HV_X86_CR2, pVCpu->cpum.GstCtx.cr2);
-        if (fWhat & CPUMCTX_EXTRN_CR3)
-            WRITE_GREG(HV_X86_CR3, pVCpu->cpum.GstCtx.cr3);
-        if (fWhat & CPUMCTX_EXTRN_CR4)
-        {
-            uint64_t u64GuestCr4 = pVCpu->cpum.GstCtx.cr4;
-
-            u64GuestCr4 |= VMX_V_CR4_FIXED0;
-            u64GuestCr4 &= ~0;
-
-            WRITE_GREG(HV_X86_CR4, u64GuestCr4);
-        }
-    }
-    if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
-        WRITE_GREG(HV_X86_TPR, CPUMGetGuestCR8(pVCpu));
-
-    /* Debug registers. */
-    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
-    {
-        WRITE_GREG(HV_X86_DR0, pVCpu->cpum.GstCtx.dr[0]); // CPUMGetHyperDR0(pVCpu));
-        WRITE_GREG(HV_X86_DR1, pVCpu->cpum.GstCtx.dr[1]); // CPUMGetHyperDR1(pVCpu));
-        WRITE_GREG(HV_X86_DR2, pVCpu->cpum.GstCtx.dr[2]); // CPUMGetHyperDR2(pVCpu));
-        WRITE_GREG(HV_X86_DR3, pVCpu->cpum.GstCtx.dr[3]); // CPUMGetHyperDR3(pVCpu));
-    }
-    if (fWhat & CPUMCTX_EXTRN_DR6)
-        WRITE_GREG(HV_X86_DR6, pVCpu->cpum.GstCtx.dr[6]); // CPUMGetHyperDR6(pVCpu));
-    if (fWhat & CPUMCTX_EXTRN_DR7)
-        WRITE_GREG(HV_X86_DR7, pVCpu->cpum.GstCtx.dr[7]); // CPUMGetHyperDR7(pVCpu));
-
-    /* MSRs */
-    // WHvX64RegisterTsc - don't touch
-    if (fWhat & CPUMCTX_EXTRN_EFER)
-        WRITE_VMCS_FIELD(VMCS_GUEST_IA32_EFER, pVCpu->cpum.GstCtx.msrEFER);
-#if 0
-    if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
-        ADD_REG64(WHvX64RegisterKernelGsBase, pVCpu->cpum.GstCtx.msrKERNELGSBASE);
-    if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
-    {
-        ADD_REG64(WHvX64RegisterSysenterCs, pVCpu->cpum.GstCtx.SysEnter.cs);
-        ADD_REG64(WHvX64RegisterSysenterEip, pVCpu->cpum.GstCtx.SysEnter.eip);
-        ADD_REG64(WHvX64RegisterSysenterEsp, pVCpu->cpum.GstCtx.SysEnter.esp);
-    }
-    if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
-    {
-        ADD_REG64(WHvX64RegisterStar, pVCpu->cpum.GstCtx.msrSTAR);
-        ADD_REG64(WHvX64RegisterLstar, pVCpu->cpum.GstCtx.msrLSTAR);
-        ADD_REG64(WHvX64RegisterCstar, pVCpu->cpum.GstCtx.msrCSTAR);
-        ADD_REG64(WHvX64RegisterSfmask, pVCpu->cpum.GstCtx.msrSFMASK);
-    }
-    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
-    {
-        ADD_REG64(WHvX64RegisterApicBase, APICGetBaseMsrNoCheck(pVCpu));
-        ADD_REG64(WHvX64RegisterPat, pVCpu->cpum.GstCtx.msrPAT);
-#if 0 /** @todo check if WHvX64RegisterMsrMtrrCap works here... */
-        ADD_REG64(WHvX64RegisterMsrMtrrCap, CPUMGetGuestIa32MtrrCap(pVCpu));
-#endif
-        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
-        ADD_REG64(WHvX64RegisterMsrMtrrDefType, pCtxMsrs->msr.MtrrDefType);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix64k00000, pCtxMsrs->msr.MtrrFix64K_00000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix16k80000, pCtxMsrs->msr.MtrrFix16K_80000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix16kA0000, pCtxMsrs->msr.MtrrFix16K_A0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC0000,  pCtxMsrs->msr.MtrrFix4K_C0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC8000,  pCtxMsrs->msr.MtrrFix4K_C8000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD0000,  pCtxMsrs->msr.MtrrFix4K_D0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD8000,  pCtxMsrs->msr.MtrrFix4K_D8000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE0000,  pCtxMsrs->msr.MtrrFix4K_E0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE8000,  pCtxMsrs->msr.MtrrFix4K_E8000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF0000,  pCtxMsrs->msr.MtrrFix4K_F0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF8000,  pCtxMsrs->msr.MtrrFix4K_F8000);
-        ADD_REG64(WHvX64RegisterTscAux, pCtxMsrs->msr.TscAux);
-#if 0 /** @todo these registers aren't available? Might explain something.. .*/
-        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pVM);
-        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
-        {
-            ADD_REG64(HvX64RegisterIa32MiscEnable, pCtxMsrs->msr.MiscEnable);
-            ADD_REG64(HvX64RegisterIa32FeatureControl, CPUMGetGuestIa32FeatureControl(pVCpu));
-        }
-#endif
-    }
-#endif
-
-    WRITE_VMCS_FIELD(VMX_VMCS_CTRL_CR0_MASK, 0x60000000);
-    WRITE_VMCS_FIELD(VMX_VMCS_CTRL_CR0_READ_SHADOW, 0x00000000);
-
-    WRITE_VMCS_FIELD(VMX_VMCS_CTRL_CR4_MASK,        VMX_V_CR4_FIXED0);
-    WRITE_VMCS_FIELD(VMX_VMCS_CTRL_CR4_READ_SHADOW, 0);
-
-    WRITE_VMCS_FIELD(VMX_VMCS64_GUEST_DEBUGCTL_FULL, MSR_IA32_DEBUGCTL_LBR);
-
-#if 0 /** @todo */
-    WRITE_GREG(HV_X86_TSS_BASE, );
-    WRITE_GREG(HV_X86_TSS_LIMIT, );
-    WRITE_GREG(HV_X86_TSS_AR, );
-    WRITE_GREG(HV_X86_XCR0, );
-#endif
-
-    hv_vcpu_invalidate_tlb(pVCpu->nem.s.hVCpuId);
-    hv_vcpu_flush(pVCpu->nem.s.hVCpuId);
-
-    pVCpu->cpum.GstCtx.fExtrn |= CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK | CPUMCTX_EXTRN_KEEPER_NEM;
-    return VINF_SUCCESS;
-#undef WRITE_GREG
-#undef WRITE_VMCS_FIELD
+    return nemR3DarwinHvSts2Rc(hrc);
 }
+
+
+DECLINLINE(int) nemR3DarwinMsrWrite(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t u64Val)
+{
+    hv_return_t hrc = hv_vcpu_write_msr(pVCpu->nem.s.hVCpuId, idMsr, u64Val);
+    if (RT_LIKELY(hrc == HV_SUCCESS))
+        return VINF_SUCCESS;
+
+    return nemR3DarwinHvSts2Rc(hrc);
+}
+#endif
 
 
 static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
@@ -676,6 +471,15 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         { (a_Value) = (uint32_t)u64Data; } \
         else \
             return VERR_INTERNAL_ERROR; \
+    } while(0)
+#define READ_MSR(a_Msr, a_Value) \
+    do \
+    { \
+        hrc = hv_vcpu_read_msr(pVCpu->nem.s.hVCpuId, (a_Msr), &(a_Value)); \
+        if (RT_LIKELY(hrc == HV_SUCCESS)) \
+        { /* likely */ } \
+        else \
+            AssertFailedReturn(VERR_INTERNAL_ERROR); \
     } while(0)
 
     RT_NOREF(pVM);
@@ -862,69 +666,16 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
             CPUMSetGuestDR6(pVCpu, u64Dr6);
     }
 
-#if 0
-    /* Floating point state. */
-    if (fWhat & CPUMCTX_EXTRN_X87)
-    {
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[0].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[0].au64[1], WHvX64RegisterFpMmx0);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[1].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[1].au64[1], WHvX64RegisterFpMmx1);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[2].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[2].au64[1], WHvX64RegisterFpMmx2);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[3].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[3].au64[1], WHvX64RegisterFpMmx3);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[4].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[4].au64[1], WHvX64RegisterFpMmx4);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[5].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[5].au64[1], WHvX64RegisterFpMmx5);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[6].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[6].au64[1], WHvX64RegisterFpMmx6);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aRegs[7].au64[0], pVCpu->cpum.GstCtx.XState.x87.aRegs[7].au64[1], WHvX64RegisterFpMmx7);
-
-        Assert(aenmNames[iReg] == WHvX64RegisterFpControlStatus);
-        pVCpu->cpum.GstCtx.XState.x87.FCW        = aValues[iReg].FpControlStatus.FpControl;
-        pVCpu->cpum.GstCtx.XState.x87.FSW        = aValues[iReg].FpControlStatus.FpStatus;
-        pVCpu->cpum.GstCtx.XState.x87.FTW        = aValues[iReg].FpControlStatus.FpTag
-                                        /*| (aValues[iReg].FpControlStatus.Reserved << 8)*/;
-        pVCpu->cpum.GstCtx.XState.x87.FOP        = aValues[iReg].FpControlStatus.LastFpOp;
-        pVCpu->cpum.GstCtx.XState.x87.FPUIP      = (uint32_t)aValues[iReg].FpControlStatus.LastFpRip;
-        pVCpu->cpum.GstCtx.XState.x87.CS         = (uint16_t)(aValues[iReg].FpControlStatus.LastFpRip >> 32);
-        pVCpu->cpum.GstCtx.XState.x87.Rsrvd1     = (uint16_t)(aValues[iReg].FpControlStatus.LastFpRip >> 48);
-        iReg++;
-    }
-
     if (fWhat & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX))
     {
-        Assert(aenmNames[iReg] == WHvX64RegisterXmmControlStatus);
-        if (fWhat & CPUMCTX_EXTRN_X87)
-        {
-            pVCpu->cpum.GstCtx.XState.x87.FPUDP  = (uint32_t)aValues[iReg].XmmControlStatus.LastFpRdp;
-            pVCpu->cpum.GstCtx.XState.x87.DS     = (uint16_t)(aValues[iReg].XmmControlStatus.LastFpRdp >> 32);
-            pVCpu->cpum.GstCtx.XState.x87.Rsrvd2 = (uint16_t)(aValues[iReg].XmmControlStatus.LastFpRdp >> 48);
-        }
-        pVCpu->cpum.GstCtx.XState.x87.MXCSR      = aValues[iReg].XmmControlStatus.XmmStatusControl;
-        pVCpu->cpum.GstCtx.XState.x87.MXCSR_MASK = aValues[iReg].XmmControlStatus.XmmStatusControlMask; /** @todo ??? (Isn't this an output field?) */
-        iReg++;
+        hrc = hv_vcpu_read_fpstate(pVCpu->nem.s.hVCpuId, &pVCpu->cpum.GstCtx.XState, sizeof(pVCpu->cpum.GstCtx.XState));
+        if (hrc == HV_SUCCESS)
+        { /* likely */ }
+        else
+            return nemR3DarwinHvSts2Rc(hrc);
     }
-
-    /* Vector state. */
-    if (fWhat & CPUMCTX_EXTRN_SSE_AVX)
-    {
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 0].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 0].uXmm.s.Hi, WHvX64RegisterXmm0);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 1].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 1].uXmm.s.Hi, WHvX64RegisterXmm1);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 2].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 2].uXmm.s.Hi, WHvX64RegisterXmm2);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 3].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 3].uXmm.s.Hi, WHvX64RegisterXmm3);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 4].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 4].uXmm.s.Hi, WHvX64RegisterXmm4);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 5].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 5].uXmm.s.Hi, WHvX64RegisterXmm5);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 6].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 6].uXmm.s.Hi, WHvX64RegisterXmm6);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 7].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 7].uXmm.s.Hi, WHvX64RegisterXmm7);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 8].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 8].uXmm.s.Hi, WHvX64RegisterXmm8);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[ 9].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[ 9].uXmm.s.Hi, WHvX64RegisterXmm9);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[10].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[10].uXmm.s.Hi, WHvX64RegisterXmm10);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[11].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[11].uXmm.s.Hi, WHvX64RegisterXmm11);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[12].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[12].uXmm.s.Hi, WHvX64RegisterXmm12);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[13].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[13].uXmm.s.Hi, WHvX64RegisterXmm13);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[14].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[14].uXmm.s.Hi, WHvX64RegisterXmm14);
-        GET_REG128(pVCpu->cpum.GstCtx.XState.x87.aXMM[15].uXmm.s.Lo, pVCpu->cpum.GstCtx.XState.x87.aXMM[15].uXmm.s.Hi, WHvX64RegisterXmm15);
-    }
-#endif
 
     /* MSRs */
-    // WHvX64RegisterTsc - don't touch
     if (fWhat & CPUMCTX_EXTRN_EFER)
     {
         uint64_t u64Efer;
@@ -939,22 +690,27 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
             fMaybeChangedMode = true;
         }
     }
-#if 0
+
     if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrKERNELGSBASE, WHvX64RegisterKernelGsBase, "MSR KERNEL_GS_BASE");
+        READ_MSR(MSR_K8_KERNEL_GS_BASE, pVCpu->cpum.GstCtx.msrKERNELGSBASE);
     if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
     {
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.SysEnter.cs,  WHvX64RegisterSysenterCs,  "MSR SYSENTER.CS");
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.SysEnter.eip, WHvX64RegisterSysenterEip, "MSR SYSENTER.EIP");
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.SysEnter.esp, WHvX64RegisterSysenterEsp, "MSR SYSENTER.ESP");
+        uint64_t u64Tmp;
+        READ_MSR(MSR_IA32_SYSENTER_EIP, u64Tmp);
+        pVCpu->cpum.GstCtx.SysEnter.eip = u64Tmp;
+        READ_MSR(MSR_IA32_SYSENTER_ESP, u64Tmp);
+        pVCpu->cpum.GstCtx.SysEnter.esp = u64Tmp;
+        READ_MSR(MSR_IA32_SYSENTER_CS, u64Tmp);
+        pVCpu->cpum.GstCtx.SysEnter.cs = u64Tmp;
     }
     if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
     {
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrSTAR,   WHvX64RegisterStar,   "MSR STAR");
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrLSTAR,  WHvX64RegisterLstar,  "MSR LSTAR");
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrCSTAR,  WHvX64RegisterCstar,  "MSR CSTAR");
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrSFMASK, WHvX64RegisterSfmask, "MSR SFMASK");
+        READ_MSR(MSR_K6_STAR, pVCpu->cpum.GstCtx.msrSTAR);
+        READ_MSR(MSR_K8_LSTAR, pVCpu->cpum.GstCtx.msrLSTAR);
+        READ_MSR(MSR_K8_CSTAR, pVCpu->cpum.GstCtx.msrCSTAR);
+        READ_MSR(MSR_K8_SF_MASK, pVCpu->cpum.GstCtx.msrSFMASK);
     }
+#if 0
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         Assert(aenmNames[iReg] == WHvX64RegisterApicBase);
@@ -988,38 +744,11 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         GET_REG64_LOG7(pCtxMsrs->msr.TscAux,           WHvX64RegisterTscAux,             "MSR TSC_AUX");
         /** @todo look for HvX64RegisterIa32MiscEnable and HvX64RegisterIa32FeatureControl? */
     }
-
-    /* Interruptibility. */
-    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
-    {
-        Assert(aenmNames[iReg] == WHvRegisterInterruptState);
-        Assert(aenmNames[iReg + 1] == WHvX64RegisterRip);
-
-        if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
-        {
-            pVCpu->nem.s.fLastInterruptShadow = aValues[iReg].InterruptState.InterruptShadow;
-            if (aValues[iReg].InterruptState.InterruptShadow)
-                EMSetInhibitInterruptsPC(pVCpu, aValues[iReg + 1].Reg64);
-            else
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-        }
-
-        if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
-        {
-            if (aValues[iReg].InterruptState.NmiMasked)
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-            else
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
-        }
-
-        fWhat |= CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
-        iReg += 2;
-    }
 #endif
 
     /* Almost done, just update extrn flags and maybe change PGM mode. */
     pVCpu->cpum.GstCtx.fExtrn &= ~fWhat;
-    if (!(pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT))))
+    if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL))
         pVCpu->cpum.GstCtx.fExtrn = 0;
 
     /* Typical. */
@@ -1049,26 +778,7 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 #undef READ_VMCS_FIELD
 #undef READ_VMCS32_FIELD
 #undef READ_SEG
-}
-
-
-/**
- * Wrapper around nemR3DarwinCopyStateFromHv.
- *
- * Unlike the wrapped APIs, this checks whether it's necessary.
- *
- * @returns VBox strict status code.
- * @param   pVCpu           The cross context per CPU structure.
- * @param   fWhat           What to import.
- */
-DECLINLINE(VBOXSTRICTRC) nemR3DarwinImportStateIfNeededStrict(PVMCPUCC pVCpu, uint64_t fWhat)
-{
-    if (pVCpu->cpum.GstCtx.fExtrn & fWhat)
-    {
-        int rc = nemR3DarwinCopyStateFromHv(pVCpu->pVMR3, pVCpu, fWhat);
-        AssertRCReturn(rc, rc);
-    }
-    return VINF_SUCCESS;
+#undef READ_MSR
 }
 
 
@@ -1189,11 +899,51 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
 }
 
 
+DECL_FORCE_INLINE(bool) vmxHCShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
+{
+    RT_NOREF(pVCpu, pVmxTransient);
+    return true;
+}
+
+
+DECL_FORCE_INLINE(bool) nemR3DarwinIsUnrestrictedGuest(PCVMCC pVM)
+{
+    RT_NOREF(pVM);
+    return true;
+}
+
+
+DECL_FORCE_INLINE(bool) nemR3DarwinIsNestedPaging(PCVMCC pVM)
+{
+    RT_NOREF(pVM);
+    return true;
+}
+
+
+DECL_FORCE_INLINE(bool) nemR3DarwinIsPreemptTimerUsed(PCVMCC pVM)
+{
+    RT_NOREF(pVM);
+    return false;
+}
+
+
+DECL_FORCE_INLINE(bool) nemR3DarwinIsVmxLbr(PCVMCC pVM)
+{
+    RT_NOREF(pVM);
+    return false;
+}
+
+
 /*
  * Instantiate the code we share with ring-0.
  */
-#define HMVMX_ALWAYS_TRAP_ALL_XCPTS
-#define VCPU_2_VMXSTATE(a_pVCpu) (a_pVCpu)->nem.s
+//#define HMVMX_ALWAYS_TRAP_ALL_XCPTS
+#define HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
+#define VCPU_2_VMXSTATE(a_pVCpu)            (a_pVCpu)->nem.s
+#define VM_IS_VMX_UNRESTRICTED_GUEST(a_pVM) nemR3DarwinIsUnrestrictedGuest((a_pVM))
+#define VM_IS_VMX_NESTED_PAGING(a_pVM)      nemR3DarwinIsNestedPaging((a_pVM))
+#define VM_IS_VMX_PREEMPT_TIMER_USED(a_pVM) nemR3DarwinIsPreemptTimerUsed((a_pVM))
+#define VM_IS_VMX_LBR(a_pVM)                nemR3DarwinIsVmxLbr((a_pVM))
 
 #define VMX_VMCS_WRITE_16(a_pVCpu, a_FieldEnc, a_Val) nemR3DarwinWriteVmcs16((a_pVCpu), (a_FieldEnc), (a_Val))
 #define VMX_VMCS_WRITE_32(a_pVCpu, a_FieldEnc, a_Val) nemR3DarwinWriteVmcs32((a_pVCpu), (a_FieldEnc), (a_Val))
@@ -1217,6 +967,385 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
 #undef VMX_VMCS_READ_64
 #undef VMX_VMCS_READ_NW
 
+#undef VM_IS_VMX_PREEMPT_TIMER_USED
+#undef VM_IS_VMX_NESTED_PAGING
+#undef VM_IS_VMX_UNRESTRICTED_GUEST
+#undef VCPU_2_VMXSTATE
+
+
+/**
+ * Exports the guest GP registers to HV for execution.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ */
+static int nemR3DarwinExportGuestGprs(PVMCPUCC pVCpu)
+{
+#define WRITE_GREG(a_GReg, a_Value) \
+    do \
+    { \
+        hv_return_t hrc = hv_vcpu_write_register(pVCpu->nem.s.hVCpuId, (a_GReg), (a_Value)); \
+        if (RT_LIKELY(hrc == HV_SUCCESS)) \
+        { /* likely */ } \
+        else \
+            return VERR_INTERNAL_ERROR; \
+    } while(0)
+
+    uint64_t fCtxChanged = ASMAtomicUoReadU64(&pVCpu->nem.s.fCtxChanged);
+    if (fCtxChanged & HM_CHANGED_GUEST_GPRS_MASK)
+    {
+        if (fCtxChanged & HM_CHANGED_GUEST_RAX)
+            WRITE_GREG(HV_X86_RAX, pVCpu->cpum.GstCtx.rax);
+        if (fCtxChanged & HM_CHANGED_GUEST_RCX)
+            WRITE_GREG(HV_X86_RCX, pVCpu->cpum.GstCtx.rcx);
+        if (fCtxChanged & HM_CHANGED_GUEST_RDX)
+            WRITE_GREG(HV_X86_RDX, pVCpu->cpum.GstCtx.rdx);
+        if (fCtxChanged & HM_CHANGED_GUEST_RBX)
+            WRITE_GREG(HV_X86_RBX, pVCpu->cpum.GstCtx.rbx);
+        if (fCtxChanged & HM_CHANGED_GUEST_RSP)
+            WRITE_GREG(HV_X86_RSP, pVCpu->cpum.GstCtx.rsp);
+        if (fCtxChanged & HM_CHANGED_GUEST_RBP)
+            WRITE_GREG(HV_X86_RBP, pVCpu->cpum.GstCtx.rbp);
+        if (fCtxChanged & HM_CHANGED_GUEST_RSI)
+            WRITE_GREG(HV_X86_RSI, pVCpu->cpum.GstCtx.rsi);
+        if (fCtxChanged & HM_CHANGED_GUEST_RDI)
+            WRITE_GREG(HV_X86_RDI, pVCpu->cpum.GstCtx.rdi);
+        if (fCtxChanged & HM_CHANGED_GUEST_R8_R15)
+        {
+            WRITE_GREG(HV_X86_R8, pVCpu->cpum.GstCtx.r8);
+            WRITE_GREG(HV_X86_R9, pVCpu->cpum.GstCtx.r9);
+            WRITE_GREG(HV_X86_R10, pVCpu->cpum.GstCtx.r10);
+            WRITE_GREG(HV_X86_R11, pVCpu->cpum.GstCtx.r11);
+            WRITE_GREG(HV_X86_R12, pVCpu->cpum.GstCtx.r12);
+            WRITE_GREG(HV_X86_R13, pVCpu->cpum.GstCtx.r13);
+            WRITE_GREG(HV_X86_R14, pVCpu->cpum.GstCtx.r14);
+            WRITE_GREG(HV_X86_R15, pVCpu->cpum.GstCtx.r15);
+        }
+
+        ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_GPRS_MASK);
+    }
+
+    if (fCtxChanged & HM_CHANGED_GUEST_CR2)
+    {
+        WRITE_GREG(HV_X86_CR2, pVCpu->cpum.GstCtx.cr2);
+        ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_CR2);
+    }
+
+    return VINF_SUCCESS;
+#undef WRITE_GREG
+}
+
+
+/**
+ * Converts the given CPUM externalized bitmask to the appropriate HM changed bitmask.
+ *
+ * @returns Bitmask of HM changed flags.
+ * @param   fCpumExtrn      The CPUM extern bitmask.
+ */
+static uint64_t nemR3DarwinCpumExtrnToHmChanged(uint64_t fCpumExtrn)
+{
+    uint64_t fHmChanged = 0;
+
+    /* Invert to gt a mask of things which are kept in CPUM. */
+    uint64_t fCpumIntern = ~fCpumExtrn;
+
+    if (fCpumIntern & CPUMCTX_EXTRN_GPRS_MASK)
+    {
+        if (fCpumIntern & CPUMCTX_EXTRN_RAX)
+            fHmChanged |= HM_CHANGED_GUEST_RAX;
+        if (fCpumIntern & CPUMCTX_EXTRN_RCX)
+            fHmChanged |= HM_CHANGED_GUEST_RCX;
+        if (fCpumIntern & CPUMCTX_EXTRN_RDX)
+            fHmChanged |= HM_CHANGED_GUEST_RDX;
+        if (fCpumIntern & CPUMCTX_EXTRN_RBX)
+            fHmChanged |= HM_CHANGED_GUEST_RBX;
+        if (fCpumIntern & CPUMCTX_EXTRN_RSP)
+            fHmChanged |= HM_CHANGED_GUEST_RSP;
+        if (fCpumIntern & CPUMCTX_EXTRN_RBP)
+            fHmChanged |= HM_CHANGED_GUEST_RBP;
+        if (fCpumIntern & CPUMCTX_EXTRN_RSI)
+            fHmChanged |= HM_CHANGED_GUEST_RSI;
+        if (fCpumIntern & CPUMCTX_EXTRN_RDI)
+            fHmChanged |= HM_CHANGED_GUEST_RDI;
+        if (fCpumIntern & CPUMCTX_EXTRN_R8_R15)
+            fHmChanged |= HM_CHANGED_GUEST_R8_R15;
+    }
+
+    /* RIP & Flags */
+    if (fCpumIntern & CPUMCTX_EXTRN_RIP)
+        fHmChanged |= HM_CHANGED_GUEST_RIP;
+    if (fCpumIntern & CPUMCTX_EXTRN_RFLAGS)
+        fHmChanged |= HM_CHANGED_GUEST_RFLAGS;
+
+    /* Segments */
+    if (fCpumIntern & CPUMCTX_EXTRN_SREG_MASK)
+    {
+        if (fCpumIntern & CPUMCTX_EXTRN_ES)
+            fHmChanged |= HM_CHANGED_GUEST_ES;
+        if (fCpumIntern & CPUMCTX_EXTRN_CS)
+            fHmChanged |= HM_CHANGED_GUEST_CS;
+        if (fCpumIntern & CPUMCTX_EXTRN_SS)
+            fHmChanged |= HM_CHANGED_GUEST_SS;
+        if (fCpumIntern & CPUMCTX_EXTRN_DS)
+            fHmChanged |= HM_CHANGED_GUEST_DS;
+        if (fCpumIntern & CPUMCTX_EXTRN_FS)
+            fHmChanged |= HM_CHANGED_GUEST_FS;
+        if (fCpumIntern & CPUMCTX_EXTRN_GS)
+            fHmChanged |= HM_CHANGED_GUEST_GS;
+    }
+
+    /* Descriptor tables & task segment. */
+    if (fCpumIntern & CPUMCTX_EXTRN_TABLE_MASK)
+    {
+        if (fCpumIntern & CPUMCTX_EXTRN_LDTR)
+            fHmChanged |= HM_CHANGED_GUEST_LDTR;
+        if (fCpumIntern & CPUMCTX_EXTRN_TR)
+            fHmChanged |= HM_CHANGED_GUEST_TR;
+        if (fCpumIntern & CPUMCTX_EXTRN_IDTR)
+            fHmChanged |= HM_CHANGED_GUEST_IDTR;
+        if (fCpumIntern & CPUMCTX_EXTRN_GDTR)
+            fHmChanged |= HM_CHANGED_GUEST_GDTR;
+    }
+
+    /* Control registers. */
+    if (fCpumIntern & CPUMCTX_EXTRN_CR_MASK)
+    {
+        if (fCpumIntern & CPUMCTX_EXTRN_CR0)
+            fHmChanged |= HM_CHANGED_GUEST_CR0;
+        if (fCpumIntern & CPUMCTX_EXTRN_CR2)
+            fHmChanged |= HM_CHANGED_GUEST_CR2;
+        if (fCpumIntern & CPUMCTX_EXTRN_CR3)
+            fHmChanged |= HM_CHANGED_GUEST_CR3;
+        if (fCpumIntern & CPUMCTX_EXTRN_CR4)
+            fHmChanged |= HM_CHANGED_GUEST_CR4;
+    }
+    if (fCpumIntern & CPUMCTX_EXTRN_APIC_TPR)
+        fHmChanged |= HM_CHANGED_GUEST_APIC_TPR;
+
+    /* Debug registers. */
+    if (fCpumIntern & CPUMCTX_EXTRN_DR0_DR3)
+        fHmChanged |= HM_CHANGED_GUEST_DR0_DR3;
+    if (fCpumIntern & CPUMCTX_EXTRN_DR6)
+        fHmChanged |= HM_CHANGED_GUEST_DR6;
+    if (fCpumIntern & CPUMCTX_EXTRN_DR7)
+        fHmChanged |= HM_CHANGED_GUEST_DR7;
+
+    /* Floating point state. */
+    if (fCpumIntern & CPUMCTX_EXTRN_X87)
+        fHmChanged |= HM_CHANGED_GUEST_X87;
+    if (fCpumIntern & CPUMCTX_EXTRN_SSE_AVX)
+        fHmChanged |= HM_CHANGED_GUEST_SSE_AVX;
+    if (fCpumIntern & CPUMCTX_EXTRN_OTHER_XSAVE)
+        fHmChanged |= HM_CHANGED_GUEST_OTHER_XSAVE;
+    if (fCpumIntern & CPUMCTX_EXTRN_XCRx)
+        fHmChanged |= HM_CHANGED_GUEST_XCRx;
+
+    /* MSRs */
+    if (fCpumIntern & CPUMCTX_EXTRN_EFER)
+        fHmChanged |= HM_CHANGED_GUEST_EFER_MSR;
+    if (fCpumIntern & CPUMCTX_EXTRN_KERNEL_GS_BASE)
+        fHmChanged |= HM_CHANGED_GUEST_KERNEL_GS_BASE;
+    if (fCpumIntern & CPUMCTX_EXTRN_SYSENTER_MSRS)
+        fHmChanged |= HM_CHANGED_GUEST_SYSENTER_MSR_MASK;
+    if (fCpumIntern & CPUMCTX_EXTRN_SYSCALL_MSRS)
+        fHmChanged |= HM_CHANGED_GUEST_SYSCALL_MSRS;
+    if (fCpumIntern & CPUMCTX_EXTRN_TSC_AUX)
+        fHmChanged |= HM_CHANGED_GUEST_TSC_AUX;
+    if (fCpumIntern & CPUMCTX_EXTRN_OTHER_MSRS)
+        fHmChanged |= HM_CHANGED_GUEST_OTHER_MSRS;
+
+    return fHmChanged;
+}
+
+
+/**
+ * Exports the guest state to HV for execution.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   pVmxTransient   The transient VMX structure.
+ */
+static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+#define WRITE_GREG(a_GReg, a_Value) \
+    do \
+    { \
+        hv_return_t hrc = hv_vcpu_write_register(pVCpu->nem.s.hVCpuId, (a_GReg), (a_Value)); \
+        if (RT_LIKELY(hrc == HV_SUCCESS)) \
+        { /* likely */ } \
+        else \
+            return VERR_INTERNAL_ERROR; \
+    } while(0)
+#define WRITE_VMCS_FIELD(a_Field, a_Value) \
+    do \
+    { \
+        hv_return_t hrc = hv_vmx_vcpu_write_vmcs(pVCpu->nem.s.hVCpuId, (a_Field), (a_Value)); \
+        if (RT_LIKELY(hrc == HV_SUCCESS)) \
+        { /* likely */ } \
+        else \
+            return VERR_INTERNAL_ERROR; \
+    } while(0)
+#define WRITE_MSR(a_Msr, a_Value) \
+    do \
+    { \
+        hv_return_t hrc = hv_vcpu_write_msr(pVCpu->nem.s.hVCpuId, (a_Msr), (a_Value)); \
+        if (RT_LIKELY(hrc == HV_SUCCESS)) \
+        { /* likely */ } \
+        else \
+            AssertFailedReturn(VERR_INTERNAL_ERROR); \
+    } while(0)
+
+    RT_NOREF(pVM);
+
+    uint64_t const fWhat = ~pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL;
+    if (!fWhat)
+        return VINF_SUCCESS;
+
+    pVCpu->nem.s.fCtxChanged |= nemR3DarwinCpumExtrnToHmChanged(pVCpu->cpum.GstCtx.fExtrn);
+
+    int rc = vmxHCExportGuestEntryExitCtls(pVCpu, pVmxTransient);
+    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+
+    rc = nemR3DarwinExportGuestGprs(pVCpu);
+    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+
+    rc = vmxHCExportGuestCR0(pVCpu, pVmxTransient);
+    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+
+    VBOXSTRICTRC rcStrict = vmxHCExportGuestCR3AndCR4(pVCpu, pVmxTransient);
+    if (rcStrict == VINF_SUCCESS)
+    { /* likely */ }
+    else
+    {
+        Assert(rcStrict == VINF_EM_RESCHEDULE_REM || RT_FAILURE_NP(rcStrict));
+        return VBOXSTRICTRC_VAL(rcStrict);
+    }
+
+    vmxHCExportGuestXcptIntercepts(pVCpu, pVmxTransient);
+    vmxHCExportGuestRip(pVCpu);
+    //vmxHCExportGuestRsp(pVCpu);
+    vmxHCExportGuestRflags(pVCpu, pVmxTransient);
+
+    rc = vmxHCExportGuestSegRegsXdtr(pVCpu, pVmxTransient);
+    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+
+    if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
+        WRITE_GREG(HV_X86_TPR, CPUMGetGuestCR8(pVCpu));
+
+    /* Debug registers. */
+    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+    {
+        WRITE_GREG(HV_X86_DR0, pVCpu->cpum.GstCtx.dr[0]); // CPUMGetHyperDR0(pVCpu));
+        WRITE_GREG(HV_X86_DR1, pVCpu->cpum.GstCtx.dr[1]); // CPUMGetHyperDR1(pVCpu));
+        WRITE_GREG(HV_X86_DR2, pVCpu->cpum.GstCtx.dr[2]); // CPUMGetHyperDR2(pVCpu));
+        WRITE_GREG(HV_X86_DR3, pVCpu->cpum.GstCtx.dr[3]); // CPUMGetHyperDR3(pVCpu));
+    }
+    if (fWhat & CPUMCTX_EXTRN_DR6)
+        WRITE_GREG(HV_X86_DR6, pVCpu->cpum.GstCtx.dr[6]); // CPUMGetHyperDR6(pVCpu));
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+        WRITE_GREG(HV_X86_DR7, pVCpu->cpum.GstCtx.dr[7]); // CPUMGetHyperDR7(pVCpu));
+
+    if (fWhat & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX))
+    {
+        hv_return_t hrc = hv_vcpu_write_fpstate(pVCpu->nem.s.hVCpuId, &pVCpu->cpum.GstCtx.XState, sizeof(pVCpu->cpum.GstCtx.XState));
+        if (hrc == HV_SUCCESS)
+        { /* likely */ }
+        else
+            return nemR3DarwinHvSts2Rc(hrc);
+    }
+
+    /* MSRs */
+    if (fWhat & CPUMCTX_EXTRN_EFER)
+        WRITE_VMCS_FIELD(VMX_VMCS64_GUEST_EFER_FULL, pVCpu->cpum.GstCtx.msrEFER);
+    if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
+        WRITE_MSR(MSR_K8_KERNEL_GS_BASE, pVCpu->cpum.GstCtx.msrKERNELGSBASE);
+    if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
+    {
+        WRITE_MSR(MSR_IA32_SYSENTER_CS, pVCpu->cpum.GstCtx.SysEnter.cs);
+        WRITE_MSR(MSR_IA32_SYSENTER_EIP, pVCpu->cpum.GstCtx.SysEnter.eip);
+        WRITE_MSR(MSR_IA32_SYSENTER_ESP, pVCpu->cpum.GstCtx.SysEnter.esp);
+    }
+    if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
+    {
+        WRITE_MSR(MSR_K6_STAR, pVCpu->cpum.GstCtx.msrSTAR);
+        WRITE_MSR(MSR_K8_LSTAR, pVCpu->cpum.GstCtx.msrLSTAR);
+        WRITE_MSR(MSR_K8_CSTAR, pVCpu->cpum.GstCtx.msrCSTAR);
+        WRITE_MSR(MSR_K8_SF_MASK, pVCpu->cpum.GstCtx.msrSFMASK);
+    }
+    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    {
+#if 0
+        hv_return_t hrc = hv_vmx_vcpu_set_apic_address(pVCpu->nem.s.hVCpuId, APICGetBaseMsrNoCheck(pVCpu));
+        if (RT_UNLIKELY(hrc != HV_SUCCESS))
+            return nemR3DarwinHvSts2Rc(hrc);
+#endif
+
+#if 0
+        ADD_REG64(WHvX64RegisterPat, pVCpu->cpum.GstCtx.msrPAT);
+#if 0 /** @todo check if WHvX64RegisterMsrMtrrCap works here... */
+        ADD_REG64(WHvX64RegisterMsrMtrrCap, CPUMGetGuestIa32MtrrCap(pVCpu));
+#endif
+        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+        ADD_REG64(WHvX64RegisterMsrMtrrDefType, pCtxMsrs->msr.MtrrDefType);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix64k00000, pCtxMsrs->msr.MtrrFix64K_00000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix16k80000, pCtxMsrs->msr.MtrrFix16K_80000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix16kA0000, pCtxMsrs->msr.MtrrFix16K_A0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC0000,  pCtxMsrs->msr.MtrrFix4K_C0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC8000,  pCtxMsrs->msr.MtrrFix4K_C8000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD0000,  pCtxMsrs->msr.MtrrFix4K_D0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD8000,  pCtxMsrs->msr.MtrrFix4K_D8000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE0000,  pCtxMsrs->msr.MtrrFix4K_E0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE8000,  pCtxMsrs->msr.MtrrFix4K_E8000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF0000,  pCtxMsrs->msr.MtrrFix4K_F0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF8000,  pCtxMsrs->msr.MtrrFix4K_F8000);
+        ADD_REG64(WHvX64RegisterTscAux, pCtxMsrs->msr.TscAux);
+#if 0 /** @todo these registers aren't available? Might explain something.. .*/
+        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pVM);
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
+        {
+            ADD_REG64(HvX64RegisterIa32MiscEnable, pCtxMsrs->msr.MiscEnable);
+            ADD_REG64(HvX64RegisterIa32FeatureControl, CPUMGetGuestIa32FeatureControl(pVCpu));
+        }
+#endif
+#endif
+    }
+
+    WRITE_VMCS_FIELD(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0 /*MSR_IA32_DEBUGCTL_LBR*/);
+
+#if 0 /** @todo */
+    WRITE_GREG(HV_X86_TSS_BASE, );
+    WRITE_GREG(HV_X86_TSS_LIMIT, );
+    WRITE_GREG(HV_X86_TSS_AR, );
+    WRITE_GREG(HV_X86_XCR0, );
+#endif
+
+    hv_vcpu_invalidate_tlb(pVCpu->nem.s.hVCpuId);
+    hv_vcpu_flush(pVCpu->nem.s.hVCpuId);
+
+    pVCpu->cpum.GstCtx.fExtrn |= CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_NEM;
+
+    /* Clear any bits that may be set but exported unconditionally or unused/reserved bits. */
+    ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~(  (HM_CHANGED_GUEST_GPRS_MASK & ~HM_CHANGED_GUEST_RSP)
+                                                   |  HM_CHANGED_GUEST_CR2
+                                                   | (HM_CHANGED_GUEST_DR_MASK & ~HM_CHANGED_GUEST_DR7)
+                                                   |  HM_CHANGED_GUEST_X87
+                                                   |  HM_CHANGED_GUEST_SSE_AVX
+                                                   |  HM_CHANGED_GUEST_OTHER_XSAVE
+                                                   |  HM_CHANGED_GUEST_XCRx
+                                                   |  HM_CHANGED_GUEST_KERNEL_GS_BASE /* Part of lazy or auto load-store MSRs. */
+                                                   |  HM_CHANGED_GUEST_SYSCALL_MSRS   /* Part of lazy or auto load-store MSRs. */
+                                                   |  HM_CHANGED_GUEST_TSC_AUX
+                                                   |  HM_CHANGED_GUEST_OTHER_MSRS
+                                                   | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_VMX_MASK)));
+
+    return VINF_SUCCESS;
+#undef WRITE_GREG
+#undef WRITE_VMCS_FIELD
+}
+
 
 /**
  * Handles an exit from hv_vcpu_run().
@@ -1225,22 +1354,21 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure of the
  *                          calling EMT.
+ * @param   pVmxTransient   The transient VMX structure.
  */
-static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
+static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    VMXTRANSIENT VmxTransient;
-    RT_ZERO(VmxTransient);
-
     uint32_t uExitReason;
     int rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_RO_EXIT_REASON, &uExitReason);
     AssertRC(rc);
-    VmxTransient.pVmcsInfo      = &pVCpu->nem.s.VmcsInfo;
-    VmxTransient.uExitReason    = VMX_EXIT_REASON_BASIC(uExitReason);
-    VmxTransient.fVMEntryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
+    pVmxTransient->fVmcsFieldsRead = 0;
+    pVmxTransient->fIsNestedGuest  = false;
+    pVmxTransient->uExitReason     = VMX_EXIT_REASON_BASIC(uExitReason);
+    pVmxTransient->fVMEntryFailed  = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
 
-    if (RT_UNLIKELY(VmxTransient.fVMEntryFailed))
+    if (RT_UNLIKELY(pVmxTransient->fVMEntryFailed))
         AssertLogRelMsgFailedReturn(("Running guest failed for CPU #%u: %#x %u\n",
-                                    pVCpu->idCpu, VmxTransient.uExitReason, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
+                                    pVCpu->idCpu, pVmxTransient->uExitReason, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
                                     VERR_NEM_IPE_0);
 
     /** @todo Only copy the state on demand (requires changing to adhere to fCtxChanged from th VMX code
@@ -1250,9 +1378,9 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
     AssertRCReturn(rc, rc);
 
 #ifndef HMVMX_USE_FUNCTION_TABLE
-    return vmxHCHandleExit(pVCpu, &VmxTransient);
+    return vmxHCHandleExit(pVCpu, pVmxTransient);
 #else
-    return g_aVMExitHandlers[VmxTransient.uExitReason].pfn(pVCpu, &VmxTransient);
+    return g_aVMExitHandlers[pVmxTransient->uExitReason].pfn(pVCpu, pVmxTransient);
 #endif
 }
 
@@ -1301,6 +1429,11 @@ static int nemR3DarwinCapsInit(void)
         if (hrc == HV_SUCCESS)
             hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_EXIT, &g_HmMsrs.u.vmx.TrueExitCtls.u);
     }
+#else /** @todo Not available with the current SDK used (available with 11.0+) but required for setting the CRx values properly. */
+    g_HmMsrs.u.vmx.u64Cr0Fixed0 = 0x80000021;
+    g_HmMsrs.u.vmx.u64Cr0Fixed1 = 0xffffffff;
+    g_HmMsrs.u.vmx.u64Cr4Fixed0 = 0x2000;
+    g_HmMsrs.u.vmx.u64Cr4Fixed1 = 0x1767ff;
 #endif
 
     if (   hrc == HV_SUCCESS
@@ -1314,6 +1447,16 @@ static int nemR3DarwinCapsInit(void)
             hrc = hv_vmx_read_capability(HV_VMX_CAP_EPT_VPID_CAP, &g_HmMsrs.u.vmx.u64EptVpidCaps);
 #endif
         g_HmMsrs.u.vmx.u64VmFunc = 0; /* No way to read that on macOS. */
+    }
+
+    if (hrc == HV_SUCCESS)
+    {
+        /*
+         * Check for EFER swapping support.
+         */
+        g_fHmVmxSupportsVmcsEfer = true; //(g_HmMsrs.u.vmx.EntryCtls.n.allowed1 & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+                                //&& (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_LOAD_EFER_MSR)
+                                //&& (g_HmMsrs.u.vmx.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_SAVE_EFER_MSR);
     }
 
     return nemR3DarwinHvSts2Rc(hrc);
@@ -1418,6 +1561,7 @@ static int nemR3DarwinVmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
         fVal |= VMX_PROC_CTLS2_VIRT_APIC_ACCESS;
         hmR0VmxSetupVmcsApicAccessAddr(pVCpu);
     }
+#endif
 
     /* Enable the RDTSCP instruction if we expose it to the guest and is supported
        by the hardware. Without this, guest executing RDTSCP would cause a #UD. */
@@ -1425,6 +1569,7 @@ static int nemR3DarwinVmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
         && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_RDTSCP))
         fVal |= VMX_PROC_CTLS2_RDTSCP;
 
+#if 0
     /* Enable Pause-Loop exiting. */
     if (   (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
         && pVM->hm.s.vmx.cPleGapTicks
@@ -1455,6 +1600,89 @@ static int nemR3DarwinVmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
 
 
 /**
+ * Enables native access for the given MSR.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   idMsr       The MSR to enable native access for.
+ */
+static int nemR3DarwinMsrSetNative(PVMCPUCC pVCpu, uint32_t idMsr)
+{
+    hv_return_t hrc = hv_vcpu_enable_native_msr(pVCpu->nem.s.hVCpuId, idMsr, true /*enable*/);
+    if (hrc == HV_SUCCESS)
+        return VINF_SUCCESS;
+
+    return nemR3DarwinHvSts2Rc(hrc);
+}
+
+
+/**
+ * Sets up the MSR permissions which don't change through the lifetime of the VM.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ */
+static int nemR3DarwinSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
+{
+    RT_NOREF(pVmcsInfo);
+
+    /*
+     * The guest can access the following MSRs (read, write) without causing
+     * VM-exits; they are loaded/stored automatically using fields in the VMCS.
+     */
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    int rc;
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_IA32_SYSENTER_CS);  AssertRCReturn(rc, rc);
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_IA32_SYSENTER_ESP); AssertRCReturn(rc, rc);
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_IA32_SYSENTER_EIP); AssertRCReturn(rc, rc);
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K8_GS_BASE);        AssertRCReturn(rc, rc);
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K8_FS_BASE);        AssertRCReturn(rc, rc);
+
+    /*
+     * The IA32_PRED_CMD and IA32_FLUSH_CMD MSRs are write-only and has no state
+     * associated with then. We never need to intercept access (writes need to be
+     * executed without causing a VM-exit, reads will #GP fault anyway).
+     *
+     * The IA32_SPEC_CTRL MSR is read/write and has state. We allow the guest to
+     * read/write them. We swap the guest/host MSR value using the
+     * auto-load/store MSR area.
+     */
+    if (pVM->cpum.ro.GuestFeatures.fIbpb)
+    {
+        rc = nemR3DarwinMsrSetNative(pVCpu, MSR_IA32_PRED_CMD);
+        AssertRCReturn(rc, rc);
+    }
+#if 0 /* Doesn't work. */
+    if (pVM->cpum.ro.GuestFeatures.fFlushCmd)
+    {
+        rc = nemR3DarwinMsrSetNative(pVCpu, MSR_IA32_FLUSH_CMD);
+        AssertRCReturn(rc, rc);
+    }
+#endif
+    if (pVM->cpum.ro.GuestFeatures.fIbrs)
+    {
+        rc = nemR3DarwinMsrSetNative(pVCpu, MSR_IA32_SPEC_CTRL);
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Allow full read/write access for the following MSRs (mandatory for VT-x)
+     * required for 64-bit guests.
+     */
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K8_LSTAR);          AssertRCReturn(rc, rc);
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K6_STAR);           AssertRCReturn(rc, rc);
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K8_SF_MASK);        AssertRCReturn(rc, rc);
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K8_KERNEL_GS_BASE); AssertRCReturn(rc, rc);
+
+    /* Required for enabling the RDTSCP instruction. */
+    rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K8_TSC_AUX);        AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Sets up processor-based VM-execution controls in the VMCS.
  *
  * @returns VBox status code.
@@ -1463,7 +1691,7 @@ static int nemR3DarwinVmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
  */
 static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    //PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     uint32_t       fVal = g_HmMsrs.u.vmx.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
     uint32_t const fZap = g_HmMsrs.u.vmx.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
@@ -1501,15 +1729,6 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
              |  VMX_PROC_CTLS_CR8_LOAD_EXIT;             /* CR8 writes cause a VM-exit. */
     }
 
-#if 0 /** @todo */
-    /* Use MSR-bitmaps if supported by the CPU. */
-    if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
-    {
-        fVal |= VMX_PROC_CTLS_USE_MSR_BITMAPS;
-        hmR0VmxSetupVmcsMsrBitmapAddr(pVmcsInfo);
-    }
-#endif
-
     /* Use the secondary processor-based VM-execution controls if supported by the CPU. */
     if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
         fVal |= VMX_PROC_CTLS_USE_SECONDARY_CTLS;
@@ -1527,11 +1746,9 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
     AssertRC(rc);
     pVmcsInfo->u32ProcCtls = fVal;
 
-#if 0
     /* Set up MSR permissions that don't change through the lifetime of the VM. */
-    if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
-        hmR0VmxSetupVmcsMsrPermissions(pVCpu, pVmcsInfo);
-#endif
+    rc = nemR3DarwinSetupVmcsMsrPermissions(pVCpu, pVmcsInfo);
+    AssertRCReturn(rc, rc);
 
     /*
      * Set up secondary processor-based VM-execution controls
@@ -1630,8 +1847,20 @@ static int nemR3DarwinInitVmcs(PVMCPU pVCpu)
             rc = nemR3DarwinVmxSetupVmcsMiscCtls(pVCpu, &pVCpu->nem.s.VmcsInfo);
             if (RT_SUCCESS(rc))
             {
-                nemR3DarwinVmxSetupVmcsXcptBitmap(pVCpu, &pVCpu->nem.s.VmcsInfo);
-                return VINF_SUCCESS;
+                rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_CTRL_ENTRY, &pVCpu->nem.s.VmcsInfo.u32EntryCtls);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_CTRL_EXIT, &pVCpu->nem.s.VmcsInfo.u32ExitCtls);
+                    if (RT_SUCCESS(rc))
+                    {
+                        nemR3DarwinVmxSetupVmcsXcptBitmap(pVCpu, &pVCpu->nem.s.VmcsInfo);
+                        return VINF_SUCCESS;
+                    }
+                    else
+                        LogRelFunc(("Failed to read the exit controls. rc=%Rrc\n", rc));
+                }
+                else
+                    LogRelFunc(("Failed to read the entry controls. rc=%Rrc\n", rc));
             }
             else
                 LogRelFunc(("Failed to setup miscellaneous controls. rc=%Rrc\n", rc));
@@ -1762,6 +1991,8 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
     int rc = nemR3DarwinInitVmcs(pVCpu);
     AssertRCReturn(rc, rc);
 
+    ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
+
     return VINF_SUCCESS;
 }
 
@@ -1883,7 +2114,8 @@ void nemR3NativeReset(PVM pVM)
  */
 void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 {
-    RT_NOREF(pVCpu, fInitIpi);
+    RT_NOREF(fInitIpi);
+    ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 }
 
 
@@ -1913,6 +2145,11 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
      * Current approach to state updating to use the sledgehammer and sync
      * everything every time.  This will be optimized later.
      */
+
+    VMXTRANSIENT VmxTransient;
+    RT_ZERO(VmxTransient);
+    VmxTransient.pVmcsInfo = &pVCpu->nem.s.VmcsInfo;
+
     const bool      fSingleStepping = DBGFIsStepping(pVCpu);
     VBOXSTRICTRC    rcStrict        = VINF_SUCCESS;
     for (unsigned iLoop = 0;; iLoop++)
@@ -1959,8 +2196,8 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 
         /** @todo Only copy the state selectively. */
         {
-            int rc2 = nemR3DarwinCopyStateToHv(pVM, pVCpu);
-            AssertRCReturn(rc2, rc2);
+            int rc = nemR3DarwinCopyStateToHv(pVM, pVCpu, &VmxTransient);
+            AssertRCReturn(rc, rc);
         }
 
         /*
@@ -1984,7 +2221,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                     /*
                      * Deal with the message.
                      */
-                    rcStrict = nemR3DarwinHandleExit(pVM, pVCpu);
+                    rcStrict = nemR3DarwinHandleExit(pVM, pVCpu, &VmxTransient);
                     if (rcStrict == VINF_SUCCESS)
                     { /* hopefully likely */ }
                     else
@@ -1996,7 +2233,8 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                 }
                 else
                 {
-                    AssertLogRelMsgFailedReturn(("hv_vcpu_run failed for CPU #%u: %#x\n", pVCpu->idCpu, hrc),
+                    AssertLogRelMsgFailedReturn(("hv_vcpu_run()) failed for CPU #%u: %#x %u\n",
+                                                pVCpu->idCpu, hrc, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
                                                 VERR_NEM_IPE_0);
                 }
 
@@ -2048,40 +2286,40 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     if (!VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM))
         VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
 
-    if (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT)))
+    if (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL))
     {
         /* Try anticipate what we might need. */
-        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
+        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK;
         if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             || RT_FAILURE(rcStrict))
-            fImport = CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
+            fImport = CPUMCTX_EXTRN_ALL;
         else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
                                           | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
             fImport |= IEM_CPUMCTX_EXTRN_XCPT_MASK;
 
-        fImport = CPUMCTX_EXTRN_ALL;
         if (pVCpu->cpum.GstCtx.fExtrn & fImport)
         {
             /* Only import what is external currently. */
-            int rc2 = nemR3DarwinCopyStateFromHv(pVM, pVCpu, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
+            int rc2 = nemR3DarwinCopyStateFromHv(pVM, pVCpu, fImport);
             if (RT_SUCCESS(rc2))
                 pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
             else if (RT_SUCCESS(rcStrict))
                 rcStrict = rc2;
-            if (!(pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT))))
+            if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL))
+            {
                 pVCpu->cpum.GstCtx.fExtrn = 0;
+                ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
+            }
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturn);
         }
         else
-        {
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturnSkipped);
-            pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
-        }
     }
     else
     {
         STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturnSkipped);
         pVCpu->cpum.GstCtx.fExtrn = 0;
+        ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
     }
 
     LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 => %Rrc\n",
