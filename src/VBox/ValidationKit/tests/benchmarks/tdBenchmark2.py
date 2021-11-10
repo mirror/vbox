@@ -160,9 +160,9 @@ class tdBenchmark2(vbox.TestDriver):
                     self.logVmInfo(oVM);
                     oSession = self.startVm(oVM, sName = oTestVm.sVmName, asEnv = asEnv);
                     if oSession is not None:
-                        cMsTimeout = 15 * 60000 + cMbRam / 256;
+                        cMsTimeout = 15 * 60000 + cMbRam // 168;
                         if not reporter.isLocal(): ## @todo need to figure a better way of handling timeouts on the testboxes ...
-                            cMsTimeout = self.adjustTimeoutMs(180 * 60000 + cMbRam / 256);
+                            cMsTimeout = self.adjustTimeoutMs(180 * 60000 + cMbRam // 168);
 
                         oRc = self.waitForTasks(cMsTimeout);
                         if oRc == oSession:
