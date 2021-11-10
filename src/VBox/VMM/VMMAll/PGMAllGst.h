@@ -256,16 +256,14 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
             Assert(GST_IS_NX_ACTIVE(pVCpu) || !(fEffective & PGM_PTATTRS_NX_MASK));
             Assert(fEffective & PGM_PTATTRS_R_MASK);
 
-            pWalk->Core.fEffectiveUS = !!(fEffective & X86_PTE_US);
-            pWalk->Core.fBigPage     = true;
-            pWalk->Core.fSucceeded   = true;
-
+            pWalk->Core.fBigPage   = true;
+            pWalk->Core.fSucceeded = true;
             RTGCPHYS GCPhysPde = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
                                | (GCPtr & GST_BIG_PAGE_OFFSET_MASK);
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             PGM_GST_SLAT_WALK(pVCpu, GCPtr, GCPhysPde, GCPhysPde, pWalk);
 # endif
-            pWalk->Core.GCPhys       = GCPhysPde;
+            pWalk->Core.GCPhys     = GCPhysPde;
             PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->Core.GCPhys);
             return VINF_SUCCESS;
         }
@@ -318,15 +316,13 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
         Assert(GST_IS_NX_ACTIVE(pVCpu) || !(fEffective & PGM_PTATTRS_NX_MASK));
         Assert(fEffective & PGM_PTATTRS_R_MASK);
 
-        pWalk->Core.fEffectiveUS = !!(fEffective & X86_PTE_US);
-        pWalk->Core.fSucceeded   = true;
-
+        pWalk->Core.fSucceeded = true;
         RTGCPHYS GCPhysPte = GST_GET_PTE_GCPHYS(Pte)
                            | (GCPtr & PAGE_OFFSET_MASK);
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         PGM_GST_SLAT_WALK(pVCpu, GCPtr, GCPhysPte, GCPhysPte, pWalk);
 # endif
-        pWalk->Core.GCPhys       = GCPhysPte;
+        pWalk->Core.GCPhys     = GCPhysPte;
         return VINF_SUCCESS;
     }
 }

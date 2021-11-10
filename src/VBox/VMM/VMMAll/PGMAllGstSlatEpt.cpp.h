@@ -152,7 +152,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
                         | RT_BF_MAKE(PGM_PTATTRS_EPT_MEMTYPE, fMemType);
             pWalk->Core.fEffective = fEffective;
 
-            pWalk->Core.fEffectiveUS = true;
             pWalk->Core.fGigantPage  = true;
             pWalk->Core.fSucceeded   = true;
             pWalk->Core.GCPhys       = GST_GET_BIG_PDPE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pdpte)
@@ -189,7 +188,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
                         | RT_BF_MAKE(PGM_PTATTRS_EPT_MEMTYPE, fMemType);
             pWalk->Core.fEffective = fEffective;
 
-            pWalk->Core.fEffectiveUS = true;
             pWalk->Core.fBigPage     = true;
             pWalk->Core.fSucceeded   = true;
             pWalk->Core.GCPhys       = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
@@ -243,7 +241,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
                     | RT_BF_MAKE(PGM_PTATTRS_EPT_MEMTYPE, fMemType);
         pWalk->Core.fEffective = fEffective;
 
-        pWalk->Core.fEffectiveUS = true;
         pWalk->Core.fSucceeded   = true;
         pWalk->Core.GCPhys       = GST_GET_PTE_GCPHYS(Pte)
                                  | (GCPhysNested & PAGE_OFFSET_MASK);

@@ -2540,9 +2540,7 @@ typedef struct PGMPTWALKCORE
     bool            fBigPage;
     /** Set if it involves a gigantic page (1 GB). */
     bool            fGigantPage;
-    /** The effective X86_PTE_US flag for the address. */
-    bool            fEffectiveUS;
-    bool            afPadding[6];
+    bool            afPadding[7];
     /** The effective attributes, PGM_PTATTRS_XXX. */
     PGMPTATTRS      fEffective;
 } PGMPTWALKCORE;

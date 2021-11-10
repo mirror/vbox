@@ -276,8 +276,8 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
             if (   !(uErr & X86_TRAP_PF_RSVD)
                 && pCurType->enmKind != PGMPHYSHANDLERKIND_WRITE
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-                && (pGstWalk->Core.fEffective & PGM_PTATTRS_W_MASK)
-                && !pGstWalk->Core.fEffectiveUS /** @todo Remove pGstWalk->Core.fEffectiveUS and X86_PTE_US further down in the sync code. */
+                && (pGstWalk->Core.fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK))
+                                              == PGM_PTATTRS_W_MASK  /** @todo Remove pGstWalk->Core.fEffectiveUS and X86_PTE_US further down in the sync code. */
 #   endif
                )
             {
@@ -439,7 +439,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
                  && !(GstWalk.Core.fEffective & PGM_PTATTRS_W_MASK)
                  && (   (uErr & X86_TRAP_PF_US)
                      || CPUMIsGuestR0WriteProtEnabled(pVCpu)) )
-            ||  ((uErr & X86_TRAP_PF_US) && !GstWalk.Core.fEffectiveUS)
+            ||  ((uErr & X86_TRAP_PF_US) && !(GstWalk.Core.fEffective & PGM_PTATTRS_US_MASK))
             ||  ((uErr & X86_TRAP_PF_ID) && (GstWalk.Core.fEffective & PGM_PTATTRS_NX_MASK))
            )
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
@@ -796,8 +796,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
                  * bit changes to 1 (see PGMCr0WpEnabled()).
                  */
 #    if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && 1
-                if (   GstWalk.Core.fEffectiveUS
-                    && !(GstWalk.Core.fEffective & PGM_PTATTRS_W_MASK)
+                if (   (GstWalk.Core.fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK)) == PGM_PTATTRS_US_MASK
                     && (GstWalk.Core.fBigPage || (GstWalk.Pde.u & X86_PDE_RW))
                     && pVM->cCpus == 1 /* Sorry, no go on SMP. Add CFGM option? */)
                 {
@@ -817,7 +816,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
 
                 /* Interpret the access. */
                 rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault));
-                Log(("PGM #PF: WP0 emulation (pvFault=%RGp uErr=%#x cpl=%d fBig=%d fEffUs=%d)\n", pvFault, uErr, CPUMGetGuestCPL(pVCpu), GstWalk.Core.fBigPage, GstWalk.Core.fEffectiveUS));
+                Log(("PGM #PF: WP0 emulation (pvFault=%RGp uErr=%#x cpl=%d fBig=%d fEffUs=%d)\n", pvFault, uErr, CPUMGetGuestCPL(pVCpu), GstWalk.Core.fBigPage, !!(GstWalk.Core.fEffective & PGM_PTATTRS_US_MASK)));
                 if (RT_SUCCESS(rc))
                     STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eWPEmulInRZ);
                 else
@@ -879,8 +878,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
          * Check for Netware WP0+RO+US hack from above and undo it when user
          * mode accesses the page again.
          */
-        else if (    GstWalk.Core.fEffectiveUS
-                 && !(GstWalk.Core.fEffective & PGM_PTATTRS_W_MASK)
+        else if (   (GstWalk.Core.fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK)) == PGM_PTATTRS_US_MASK
                  && (GstWalk.Core.fBigPage || (GstWalk.Pde.u & X86_PDE_RW))
                  &&  pVCpu->pgm.s.cNetwareWp0Hacks > 0
                  &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG
