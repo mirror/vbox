@@ -108,8 +108,8 @@ GMMR3DECL(int) GMMR3AllocatePagesPerform(PVM pVM, PGMMALLOCATEPAGESREQ pReq)
     {
 #ifdef LOG_ENABLED
         for (uint32_t iPage = 0; iPage < pReq->cPages; iPage++)
-            Log3(("GMMR3AllocatePagesPerform: idPage=%#x HCPhys=%RHp\n",
-                  pReq->aPages[iPage].idPage, pReq->aPages[iPage].HCPhysGCPhys));
+            Log3(("GMMR3AllocatePagesPerform: idPage=%#x HCPhys=%RHp fZeroed=%d\n",
+                  pReq->aPages[iPage].idPage, pReq->aPages[iPage].HCPhysGCPhys, pReq->aPages[iPage].fZeroed));
 #endif
         return rc;
     }

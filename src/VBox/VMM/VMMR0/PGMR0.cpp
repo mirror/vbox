@@ -169,7 +169,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
             Assert(pGVM->pgm.s.aHandyPages[i].idPage != NIL_GMM_PAGEID);
             Assert(pGVM->pgm.s.aHandyPages[i].idPage <= GMM_PAGEID_LAST);
             Assert(pGVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
-            Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys != NIL_RTHCPHYS);
+            Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys != NIL_GMMPAGEDESC_PHYS);
             Assert(!(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys & ~X86_PTE_PAE_PG_MASK));
         }
 #endif
@@ -188,9 +188,10 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
             uint32_t i;
             for (i = iFirst; i < RT_ELEMENTS(pGVM->pgm.s.aHandyPages); i++)
             {
-                Assert(pGVM->pgm.s.aHandyPages[i].idPage == NIL_GMM_PAGEID);
+                Assert(pGVM->pgm.s.aHandyPages[i].idPage       == NIL_GMM_PAGEID);
                 Assert(pGVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
-                Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys == NIL_RTHCPHYS);
+                Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS);
+                Assert(pGVM->pgm.s.aHandyPages[i].fZeroed      == false);
             }
 #endif
 
@@ -215,15 +216,16 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
                     Assert(pGVM->pgm.s.aHandyPages[i].idPage != NIL_GMM_PAGEID);
                     Assert(pGVM->pgm.s.aHandyPages[i].idPage <= GMM_PAGEID_LAST);
                     Assert(pGVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
-                    Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys != NIL_RTHCPHYS);
+                    Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys != NIL_GMMPAGEDESC_PHYS);
                     Assert(!(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys & ~X86_PTE_PAE_PG_MASK));
                 }
 
                 for (i = cPages + iFirst; i < RT_ELEMENTS(pGVM->pgm.s.aHandyPages); i++)
                 {
-                    Assert(pGVM->pgm.s.aHandyPages[i].idPage == NIL_GMM_PAGEID);
+                    Assert(pGVM->pgm.s.aHandyPages[i].idPage       == NIL_GMM_PAGEID);
                     Assert(pGVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
-                    Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys == NIL_RTHCPHYS);
+                    Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS);
+                    Assert(pGVM->pgm.s.aHandyPages[i].fZeroed      == false);
                 }
 #endif
 
@@ -310,11 +312,12 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu)
     /*
      * Do the job.
      */
-    int rc = GMMR0AllocateLargePage(pGVM, idCpu, _2M,
-                                    &pGVM->pgm.s.aLargeHandyPage[0].idPage,
-                                    &pGVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys);
+    RTHCPHYS HCPhys = NIL_GMMPAGEDESC_PHYS;
+    int rc = GMMR0AllocateLargePage(pGVM, idCpu, _2M, &pGVM->pgm.s.aLargeHandyPage[0].idPage, &HCPhys);
     if (RT_SUCCESS(rc))
         pGVM->pgm.s.cLargeHandyPages = 1;
+    pGVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys = HCPhys;
+    pGVM->pgm.s.aLargeHandyPage[0].fZeroed      = true;
 
     return rc;
 }

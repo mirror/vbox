@@ -4402,7 +4402,8 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
             pReq->aPages[iPage].HCPhysGCPhys = GCPhys + (iPage << PAGE_SHIFT);
-            pReq->aPages[iPage].idPage = NIL_GMM_PAGEID;
+            pReq->aPages[iPage].fZeroed      = false;
+            pReq->aPages[iPage].idPage       = NIL_GMM_PAGEID;
             pReq->aPages[iPage].idSharedPage = NIL_GMM_PAGEID;
         }
 
@@ -5839,64 +5840,46 @@ VMMR3_INT_DECL(int) PGMR3PhysAllocateLargePage(PVM pVM, RTGCPHYS GCPhys)
 
         uint32_t idPage = pVM->pgm.s.aLargeHandyPage[0].idPage;
         RTHCPHYS HCPhys = pVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys;
+        Assert(pVM->pgm.s.aLargeHandyPage[0].fZeroed);
 
-        void *pv;
-
-        /* Map the large page into our address space.
-         *
-         * Note: assuming that within the 2 MB range:
-         * - GCPhys + PAGE_SIZE = HCPhys + PAGE_SIZE (whole point of this exercise)
-         * - user space mapping is continuous as well
-         * - page id (GCPhys) + 1 = page id (GCPhys + PAGE_SIZE)
+        /*
+         * Enter the pages into PGM.
          */
-        rc = pgmPhysPageMapByPageID(pVM, idPage, HCPhys, &pv);
-        AssertLogRelMsg(RT_SUCCESS(rc), ("idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n", idPage, HCPhys, rc));
-
-        if (RT_SUCCESS(rc))
+        STAM_PROFILE_START(&pVM->pgm.s.Stats.StatClearLargePage, b);
+        for (unsigned i = 0; i < _2M/PAGE_SIZE; i++)
         {
+            PPGMPAGE pPage;
+            rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
+            AssertRC(rc);
+
+            Assert(PGM_PAGE_IS_ZERO(pPage));
+            STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatRZPageReplaceZero);
+            pVM->pgm.s.cZeroPages--;
+
             /*
-             * Clear the pages.
+             * Do the PGMPAGE modifications.
              */
-            STAM_PROFILE_START(&pVM->pgm.s.Stats.StatClearLargePage, b);
-            for (unsigned i = 0; i < _2M/PAGE_SIZE; i++)
-            {
-                ASMMemZeroPage(pv);
+            pVM->pgm.s.cPrivatePages++;
+            PGM_PAGE_SET_HCPHYS(pVM, pPage, HCPhys);
+            PGM_PAGE_SET_PAGEID(pVM, pPage, idPage);
+            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
+            PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PDE);
+            PGM_PAGE_SET_PTE_INDEX(pVM, pPage, 0);
+            PGM_PAGE_SET_TRACKING(pVM, pPage, 0);
 
-                PPGMPAGE pPage;
-                rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
-                AssertRC(rc);
+            /* Somewhat dirty assumption that page ids are increasing. */
+            idPage++;
 
-                Assert(PGM_PAGE_IS_ZERO(pPage));
-                STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatRZPageReplaceZero);
-                pVM->pgm.s.cZeroPages--;
-
-                /*
-                 * Do the PGMPAGE modifications.
-                 */
-                pVM->pgm.s.cPrivatePages++;
-                PGM_PAGE_SET_HCPHYS(pVM, pPage, HCPhys);
-                PGM_PAGE_SET_PAGEID(pVM, pPage, idPage);
-                PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
-                PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PDE);
-                PGM_PAGE_SET_PTE_INDEX(pVM, pPage, 0);
-                PGM_PAGE_SET_TRACKING(pVM, pPage, 0);
-
-                /* Somewhat dirty assumption that page ids are increasing. */
-                idPage++;
-
-                HCPhys += PAGE_SIZE;
-                GCPhys += PAGE_SIZE;
-
-                pv = (void *)((uintptr_t)pv + PAGE_SIZE);
-
-                Log3(("PGMR3PhysAllocateLargePage: idPage=%#x HCPhys=%RGp\n", idPage, HCPhys));
-            }
-            STAM_PROFILE_STOP(&pVM->pgm.s.Stats.StatClearLargePage, b);
-
-            /* Flush all TLBs. */
-            PGM_INVL_ALL_VCPU_TLBS(pVM);
-            pgmPhysInvalidatePageMapTLB(pVM);
+            HCPhys += PAGE_SIZE;
+            GCPhys += PAGE_SIZE;
+            Log3(("PGMR3PhysAllocateLargePage: idPage=%#x HCPhys=%RGp\n", idPage, HCPhys));
         }
+        STAM_PROFILE_STOP(&pVM->pgm.s.Stats.StatClearLargePage, b);
+
+        /* Flush all TLBs. */
+        PGM_INVL_ALL_VCPU_TLBS(pVM);
+        pgmPhysInvalidatePageMapTLB(pVM);
+
         pVM->pgm.s.cLargeHandyPages = 0;
     }
 
@@ -6002,12 +5985,27 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
         while (iClear < pVM->pgm.s.cHandyPages)
         {
             PGMMPAGEDESC pPage = &pVM->pgm.s.aHandyPages[iClear];
-            void *pv;
-            rc = pgmPhysPageMapByPageID(pVM, pPage->idPage, pPage->HCPhysGCPhys, &pv);
-            AssertLogRelMsgBreak(RT_SUCCESS(rc),
-                                 ("%u/%u: idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n",
-                                  iClear, pVM->pgm.s.cHandyPages, pPage->idPage, pPage->HCPhysGCPhys, rc));
-            ASMMemZeroPage(pv);
+            if (!pPage->fZeroed)
+            {
+                void *pv;
+                rc = pgmPhysPageMapByPageID(pVM, pPage->idPage, pPage->HCPhysGCPhys, &pv);
+                AssertLogRelMsgBreak(RT_SUCCESS(rc),
+                                     ("%u/%u: idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n",
+                                      iClear, pVM->pgm.s.cHandyPages, pPage->idPage, pPage->HCPhysGCPhys, rc));
+                ASMMemZeroPage(pv);
+                pPage->fZeroed = true;
+            }
+#ifdef VBOX_STRICT
+            else
+            {
+                void *pv;
+                rc = pgmPhysPageMapByPageID(pVM, pPage->idPage, pPage->HCPhysGCPhys, &pv);
+                AssertLogRelMsgBreak(RT_SUCCESS(rc),
+                                     ("%u/%u: idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n",
+                                      iClear, pVM->pgm.s.cHandyPages, pPage->idPage, pPage->HCPhysGCPhys, rc));
+                Assert(ASMMemIsZeroPage(pv));
+            }
+#endif
             iClear++;
             Log3(("PGMR3PhysAllocateHandyPages: idPage=%#x HCPhys=%RGp\n", pPage->idPage, pPage->HCPhysGCPhys));
         }

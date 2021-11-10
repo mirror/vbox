@@ -231,19 +231,22 @@ typedef struct GMMPAGEDESC
      *
      * @input   GMMR0AllocateHandyPages expects the guest physical address
      *          to update the GMMPAGE structure with. Pass GMM_GCPHYS_UNSHAREABLE
-     *          when appropriate and NIL_RTHCPHYS when the page wasn't used
+     *          when appropriate and NIL_GMMPAGEDESC_PHYS when the page wasn't used
      *          for any specific guest address.
      *
      *          GMMR0AllocatePage expects the guest physical address to put in
      *          the GMMPAGE structure for the page it allocates for this entry.
-     *          Pass NIL_RTHCPHYS and GMM_GCPHYS_UNSHAREABLE as above.
+     *          Pass NIL_GMMPAGEDESC_PHYS and GMM_GCPHYS_UNSHAREABLE as above.
      *
      * @output  The host physical address of the allocated page.
-     *          NIL_RTHCPHYS on allocation failure.
+     *          NIL_GMMPAGEDESC_PHYS on allocation failure.
      *
-     * ASSUMES: sizeof(RTHCPHYS) >= sizeof(RTGCPHYS).
+     * ASSUMES: sizeof(RTHCPHYS) >= sizeof(RTGCPHYS) and that physical addresses are
+     *          limited to 63 or fewer bits (52 by AMD64 arch spec).
      */
-    RTHCPHYS                    HCPhysGCPhys;
+    RTHCPHYS                    HCPhysGCPhys : 63;
+    /** Set if the memory was zeroed. */
+    RTHCPHYS                    fZeroed : 1;
 
     /** The Page ID.
      *
@@ -273,6 +276,9 @@ typedef struct GMMPAGEDESC
 AssertCompileSize(GMMPAGEDESC, 16);
 /** Pointer to a page allocation. */
 typedef GMMPAGEDESC *PGMMPAGEDESC;
+
+/** Special NIL value for GMMPAGEDESC::HCPhysGCPhys. */
+#define NIL_GMMPAGEDESC_PHYS        UINT64_C(0x7fffffffffffffff)
 
 /** GMMPAGEDESC::HCPhysGCPhys value that indicates that the page is unsharable.
  * @note    This corresponds to GMM_PAGE_PFN_UNSHAREABLE. */

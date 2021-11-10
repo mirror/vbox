@@ -754,14 +754,16 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
     {
-        pVM->pgm.s.aHandyPages[i].HCPhysGCPhys  = NIL_RTHCPHYS;
+        pVM->pgm.s.aHandyPages[i].HCPhysGCPhys  = NIL_GMMPAGEDESC_PHYS;
+        pVM->pgm.s.aHandyPages[i].fZeroed       = false;
         pVM->pgm.s.aHandyPages[i].idPage        = NIL_GMM_PAGEID;
         pVM->pgm.s.aHandyPages[i].idSharedPage  = NIL_GMM_PAGEID;
     }
 
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.aLargeHandyPage); i++)
     {
-        pVM->pgm.s.aLargeHandyPage[i].HCPhysGCPhys  = NIL_RTHCPHYS;
+        pVM->pgm.s.aLargeHandyPage[i].HCPhysGCPhys  = NIL_GMMPAGEDESC_PHYS;
+        pVM->pgm.s.aLargeHandyPage[i].fZeroed       = false;
         pVM->pgm.s.aLargeHandyPage[i].idPage        = NIL_GMM_PAGEID;
         pVM->pgm.s.aLargeHandyPage[i].idSharedPage  = NIL_GMM_PAGEID;
     }

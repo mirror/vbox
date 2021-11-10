@@ -259,7 +259,9 @@ typedef union GMMPAGE
         /** Reserved. Checksum or something? */
         uint16_t    u16Reserved0;
         /** Reserved. Checksum or something? */
-        uint32_t    u30Reserved1 : 30;
+        uint32_t    u30Reserved1 : 29;
+        /** Set if the page was zeroed. */
+        uint32_t    fZeroed : 1;
         /** The page state. */
         uint32_t    u2State : 2;
     } Free;
@@ -524,17 +526,6 @@ typedef struct GMM
     /** The number of registered VMs. */
     uint16_t            cRegisteredVMs;
 
-    /** The number of freed chunks ever.  This is used a list generation to
-     *  avoid restarting the cleanup scanning when the list wasn't modified. */
-    uint32_t            cFreedChunks;
-    /** The previous allocated Chunk ID.
-     * Used as a hint to avoid scanning the whole bitmap. */
-    uint32_t            idChunkPrev;
-    /** Chunk ID allocation bitmap.
-     * Bits of allocated IDs are set, free ones are clear.
-     * The NIL id (0) is marked allocated. */
-    uint32_t            bmChunkId[(GMM_CHUNKID_LAST + 1 + 31) / 32];
-
     /** The index of the next mutex to use. */
     uint32_t            iNextChunkMtx;
     /** Chunk locks for reducing lock contention without having to allocate
@@ -546,6 +537,17 @@ typedef struct GMM
         /** The number of threads currently using this mutex. */
         uint32_t volatile   cUsers;
     } aChunkMtx[64];
+
+    /** The number of freed chunks ever.  This is used as list generation to
+     * avoid restarting the cleanup scanning when the list wasn't modified. */
+    uint32_t volatile   cFreedChunks;
+    /** The previous allocated Chunk ID.
+     * Used as a hint to avoid scanning the whole bitmap. */
+    uint32_t            idChunkPrev;
+    /** Chunk ID allocation bitmap.
+     * Bits of allocated IDs are set, free ones are clear.
+     * The NIL id (0) is marked allocated. */
+    uint32_t            bmChunkId[(GMM_CHUNKID_LAST + 1 + 31) / 32];
 } GMM;
 /** Pointer to the GMM instance. */
 typedef GMM *PGMM;
@@ -1409,8 +1411,9 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
                      * an AVL tree walk here.
                      */
                     pChunk->aPages[iPage].u = 0;
-                    pChunk->aPages[iPage].Free.iNext = pChunk->iFreeHead;
                     pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
+                    pChunk->aPages[iPage].Free.fZeroed = false;
+                    pChunk->aPages[iPage].Free.iNext   = pChunk->iFreeHead;
                     pChunk->iFreeHead = iPage;
                     pChunk->cPrivate--;
                     pChunk->cFree++;
@@ -1995,12 +1998,10 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
      * Try the next sequential one.
      */
     int32_t idChunk = ++pGMM->idChunkPrev;
-#if 0 /** @todo enable this code */
-    if (    idChunk <= GMM_CHUNKID_LAST
+    if (    (uint32_t)idChunk <= GMM_CHUNKID_LAST
         &&  idChunk > NIL_GMM_CHUNKID
-        &&  !ASMAtomicBitTestAndSet(&pVMM->bmChunkId[0], idChunk))
+        &&  !ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk))
         return idChunk;
-#endif
 
     /*
      * Scan sequentially from the last one.
@@ -2056,6 +2057,8 @@ static void gmmR0AllocatePage(PGMMCHUNK pChunk, uint32_t hGVM, PGMMPAGEDESC pPag
           pPage, iPage, (pChunk->Core.Key << GMM_CHUNKID_SHIFT) | iPage,
           pPage->Common.u2State, pChunk->iFreeHead, pPage->Free.iNext));
 
+    bool const fZeroed = pPage->Free.fZeroed;
+
     /* make the page private. */
     pPage->u = 0;
     AssertCompile(GMM_PAGE_STATE_PRIVATE == 0);
@@ -2068,10 +2071,12 @@ static void gmmR0AllocatePage(PGMMCHUNK pChunk, uint32_t hGVM, PGMMPAGEDESC pPag
         pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE; /* unshareable / unassigned - same thing. */
 
     /* update the page descriptor. */
-    pPageDesc->HCPhysGCPhys = RTR0MemObjGetPagePhysAddr(pChunk->hMemObj, iPage);
-    Assert(pPageDesc->HCPhysGCPhys != NIL_RTHCPHYS);
-    pPageDesc->idPage = (pChunk->Core.Key << GMM_CHUNKID_SHIFT) | iPage;
     pPageDesc->idSharedPage = NIL_GMM_PAGEID;
+    pPageDesc->idPage       = (pChunk->Core.Key << GMM_CHUNKID_SHIFT) | iPage;
+    RTHCPHYS const HCPhys = RTR0MemObjGetPagePhysAddr(pChunk->hMemObj, iPage);
+    Assert(HCPhys != NIL_RTHCPHYS); Assert(HCPhys < NIL_GMMPAGEDESC_PHYS);
+    pPageDesc->HCPhysGCPhys = HCPhys;
+    pPageDesc->fZeroed      = fZeroed;
 }
 
 
@@ -2165,52 +2170,81 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
         pChunk->iChunkMtx   = UINT8_MAX;
         pChunk->fFlags      = fChunkFlags;
         pChunk->uidOwner    = pSession ? SUPR0GetSessionUid(pSession) : NIL_RTUID;
+
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
         {
             pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
-            pChunk->aPages[iPage].Free.iNext = iPage + 1;
+            pChunk->aPages[iPage].Free.fZeroed = true;
+            pChunk->aPages[iPage].Free.iNext   = iPage + 1;
         }
         pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.u2State = GMM_PAGE_STATE_FREE;
+        pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.fZeroed = true;
         pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.iNext   = UINT16_MAX;
 
         /*
-         * Allocate a Chunk ID and insert it into the tree.
-         * This has to be done behind the mutex of course.
+         * Zero the memory if it wasn't zeroed by the host already.
+         * This simplifies keeping secret kernel bits from userland and brings
+         * everyone to the same level wrt allocation zeroing.
          */
-        rc = gmmR0MutexAcquire(pGMM);
+        rc = VINF_SUCCESS;
+        if (!RTR0MemObjWasZeroInitialized(hMemObj))
+        {
+#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+            for (uint32_t iPage = 0; iPage < (GMM_CHUNK_SIZE >> PAGE_SHIFT); iPage++)
+            {
+                void *pvPage = NULL;
+                rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, iPage), &pvPage);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                    RT_BZERO(pvPage, PAGE_SIZE);
+                else
+                    break;
+            }
+#else
+            RT_BZERO(pbMapping, GMM_CHUNK_SIZE);
+#endif
+        }
         if (RT_SUCCESS(rc))
         {
-            if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+            /*
+             * Allocate a Chunk ID and insert it into the tree.
+             * This has to be done behind the mutex of course.
+             */
+            rc = gmmR0MutexAcquire(pGMM);
+            if (RT_SUCCESS(rc))
             {
-                pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
-                if (   pChunk->Core.Key != NIL_GMM_CHUNKID
-                    && pChunk->Core.Key <= GMM_CHUNKID_LAST)
+                if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
                 {
-                    RTSpinlockAcquire(pGMM->hSpinLockTree);
-                    if (RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+                    pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
+                    if (   pChunk->Core.Key != NIL_GMM_CHUNKID
+                        && pChunk->Core.Key <= GMM_CHUNKID_LAST)
                     {
-                        pGMM->cChunks++;
-                        RTListAppend(&pGMM->ChunkList, &pChunk->ListNode);
+                        RTSpinlockAcquire(pGMM->hSpinLockTree);
+                        if (RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+                        {
+                            pGMM->cChunks++;
+                            RTListAppend(&pGMM->ChunkList, &pChunk->ListNode);
+                            RTSpinlockRelease(pGMM->hSpinLockTree);
+
+                            gmmR0LinkChunk(pChunk, pSet);
+
+                            LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
+
+                            if (ppChunk)
+                                *ppChunk = pChunk;
+                            GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+                            return VINF_SUCCESS;
+                        }
                         RTSpinlockRelease(pGMM->hSpinLockTree);
-
-                        gmmR0LinkChunk(pChunk, pSet);
-
-                        LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
-
-                        if (ppChunk)
-                            *ppChunk = pChunk;
-                        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
-                        return VINF_SUCCESS;
                     }
-                    RTSpinlockRelease(pGMM->hSpinLockTree);
-                }
 
-                /* bail out */
-                rc = VERR_GMM_CHUNK_INSERT;
+                    /* bail out */
+                    rc = VERR_GMM_CHUNK_INSERT;
+                }
+                else
+                    rc = VERR_GMM_IS_NOT_SANE;
+                gmmR0MutexRelease(pGMM);
             }
-            else
-                rc = VERR_GMM_IS_NOT_SANE;
-            gmmR0MutexRelease(pGMM);
         }
 
         RTMemFree(pChunk);
@@ -2545,7 +2579,7 @@ static bool gmmR0ShouldAllocatePagesInOtherChunksBecauseOfLotsFree(PGMM pGMM)
  *                      details on what is expected on input.
  * @param   enmAccount  The account to charge.
  *
- * @remarks Call takes the giant GMM lock.
+ * @remarks Caller owns the giant GMM lock.
  */
 static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
@@ -2725,7 +2759,8 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
 
             paPages[iPage].idPage       = NIL_GMM_PAGEID;
             paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
-            paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
+            paPages[iPage].HCPhysGCPhys = NIL_GMMPAGEDESC_PHYS;
+            paPages[iPage].fZeroed      = false;
         }
 
         /* Free empty chunks. */
@@ -2793,10 +2828,11 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
     {
         AssertMsgReturn(    (    paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST
                              && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK))
-                        ||  paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS
+                        ||  paPages[iPage].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS
                         ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE,
                         ("#%#x: %RHp\n", iPage, paPages[iPage].HCPhysGCPhys),
                         VERR_INVALID_PARAMETER);
+        /* ignore fZeroed here */
         AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
                         /*||  paPages[iPage].idPage == NIL_GMM_PAGEID*/,
                         ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
@@ -2807,7 +2843,8 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
 
     for (; iPage < cPagesToAlloc; iPage++)
     {
-        AssertMsgReturn(paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS,   ("#%#x: %RHp\n", iPage, paPages[iPage].HCPhysGCPhys), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS, ("#%#x: %RHp\n", iPage, paPages[iPage].HCPhysGCPhys), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].fZeroed      == false,          ("#%#x: %#x\n", iPage, paPages[iPage].fZeroed),       VERR_INVALID_PARAMETER);
         AssertMsgReturn(paPages[iPage].idPage       == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idPage),        VERR_INVALID_PARAMETER);
         AssertMsgReturn(paPages[iPage].idSharedPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage),  VERR_INVALID_PARAMETER);
     }
@@ -2843,7 +2880,8 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
                                 /* else: NIL_RTHCPHYS nothing */
 
                                 paPages[iPage].idPage       = NIL_GMM_PAGEID;
-                                paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
+                                paPages[iPage].HCPhysGCPhys = NIL_GMMPAGEDESC_PHYS;
+                                paPages[iPage].fZeroed      = false;
                             }
                             else
                             {
@@ -2913,10 +2951,11 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
 
             if (RT_SUCCESS(rc) && cPagesToAlloc > 0)
             {
-#if defined(VBOX_STRICT) && 0 /** @todo re-test this later. Appeared to be a PGM init bug. */
+#ifdef VBOX_STRICT
                 for (iPage = 0; iPage < cPagesToAlloc; iPage++)
                 {
-                    Assert(paPages[iPage].HCPhysGCPhys  == NIL_RTHCPHYS);
+                    Assert(paPages[iPage].HCPhysGCPhys  == NIL_GMMPAGEDESC_PHYS);
+                    Assert(paPages[iPage].fZeroed       == false);
                     Assert(paPages[iPage].idPage        == NIL_GMM_PAGEID);
                     Assert(paPages[iPage].idSharedPage  == NIL_GMM_PAGEID);
                 }
@@ -2983,17 +3022,21 @@ GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages, PGM
 
     for (unsigned iPage = 0; iPage < cPages; iPage++)
     {
-        AssertMsgReturn(    paPages[iPage].HCPhysGCPhys == NIL_RTHCPHYS
+        AssertMsgReturn(    paPages[iPage].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS
                         ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE
                         ||  (    enmAccount == GMMACCOUNT_BASE
                              &&  paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST
                              && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK)),
                         ("#%#x: %RHp enmAccount=%d\n", iPage, paPages[iPage].HCPhysGCPhys, enmAccount),
                         VERR_INVALID_PARAMETER);
-        AssertMsgReturn(paPages[iPage].idPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].fZeroed      == false,          ("#%#x: %#x\n", iPage, paPages[iPage].fZeroed), VERR_INVALID_PARAMETER);
+        AssertMsgReturn(paPages[iPage].idPage       == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
         AssertMsgReturn(paPages[iPage].idSharedPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage), VERR_INVALID_PARAMETER);
     }
 
+    /*
+     * Grab the giant mutex and get working.
+     */
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
@@ -3010,6 +3053,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages, PGM
     else
         rc = VERR_GMM_IS_NOT_SANE;
     gmmR0MutexRelease(pGMM);
+
     LogFlow(("GMMR0AllocatePages: returns %Rrc\n", rc));
     return rc;
 }
@@ -3043,7 +3087,7 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PGVM pGVM, VMCPUID idCpu, PGMMALLOCATEPAGES
 /**
  * Allocate a large page to represent guest RAM
  *
- * The allocated pages are not cleared and will contains random garbage.
+ * The allocated pages are zeroed upon return.
  *
  * @returns VBox status code:
  * @retval  VINF_SUCCESS on success.
@@ -3136,6 +3180,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
 
                 gmmR0LinkChunk(pChunk, pSet);
                 gmmR0MutexRelease(pGMM);
+
                 LogFlow(("GMMR0AllocateLargePage: returns VINF_SUCCESS\n"));
                 return VINF_SUCCESS;
             }
@@ -3419,6 +3464,7 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, uint32_t
      */
     pPage->u = 0;
     pPage->Free.u2State = GMM_PAGE_STATE_FREE;
+    pPage->Free.fZeroed = false;
     Assert(pChunk->iFreeHead < RT_ELEMENTS(pChunk->aPages) || pChunk->iFreeHead == UINT16_MAX);
     pPage->Free.iNext = pChunk->iFreeHead;
     pChunk->iFreeHead = pPage - &pChunk->aPages[0];
@@ -3457,7 +3503,6 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, uint32_t
     { /* likely */ }
     else
         gmmR0FreeChunk(pGMM, NULL, pChunk, false);
-
 }
 
 
