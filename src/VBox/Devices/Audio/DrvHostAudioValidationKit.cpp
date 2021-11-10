@@ -898,8 +898,58 @@ static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAU
  */
 static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
-    return UINT32_MAX;
+    PDRVHOSTVALKITAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVHOSTVALKITAUDIO, IHostAudio);
+    RT_NOREF(pStream);
+
+    uint32_t            cbWritable = UINT32_MAX;
+    PVALKITTESTDATA     pTst       = NULL;
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pTst = pThis->pTestCurPlay;
+
+        if (pTst)
+        {
+            switch (pTst->enmState)
+            {
+                case AUDIOTESTSTATE_PRE:
+                    RT_FALL_THROUGH();
+                case AUDIOTESTSTATE_POST:
+                {
+                    cbWritable = AudioTestBeaconGetRemaining(&pTst->t.TestTone.Beacon);
+                    break;
+                }
+
+                case AUDIOTESTSTATE_RUN:
+                {
+                    AssertReturn(pTst->t.TestTone.u.Play.cbToRead >= pTst->t.TestTone.u.Play.cbRead, 0);
+                    cbWritable = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+                    break;
+                }
+
+                default:
+                    break;
+            }
+
+            LogRel2(("ValKit: Test #%RU32: Reporting %RU32 bytes writable (state is '%s')\n",
+                     pTst->idxTest, cbWritable, AudioTestStateToStr(pTst->enmState)));
+
+            if (cbWritable == 0)
+            {
+                LogRel2(("ValKit: Test #%RU32: Warning: Not writable anymore (state is '%s'), returning UINT32_MAX\n",
+                         pTst->idxTest, AudioTestStateToStr(pTst->enmState)));
+                cbWritable = UINT32_MAX;
+            }
+        }
+        else
+            LogRel2(("ValKit: Reporting UINT32_MAX bytes writable (no playback test running)\n"));
+
+        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        AssertRC(rc2);
+    }
+
+    return cbWritable;
 }
 
 
@@ -963,11 +1013,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
     /* Flag indicating whether the whole block we're going to play is silence or not. */
     bool const fIsAllSilence = PDMAudioPropsIsBufferSilence(&pStream->pStream->Cfg.Props, pvBuf, cbBuf);
-
-    LogRel3(("ValKit: Playing stream '%s' (%RU32 bytes / %RU64ms -- %RU64 bytes / %RU64ms total so far) ...\n",
-             pStream->pStream->Cfg.szName,
-             cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf),
-             pThis->cbPlayedTotal, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedTotal)));
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -1042,6 +1087,11 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         }
     }
 
+    LogRel3(("ValKit: Test #%RU32: Playing stream '%s' (%RU32 bytes / %RU64ms) -- state is '%s' ...\n",
+             pTst->idxTest, pStream->pStream->Cfg.szName,
+             cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf),
+             AudioTestStateToStr(pTst->enmState)));
+
     uint32_t cbWritten = 0;
 
     if (RT_SUCCESS(rc))
@@ -1068,7 +1118,20 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                          * needs to be counted to the actual recorded test tone data then.
                          */
                         if (pTst->enmState == AUDIOTESTSTATE_PRE)
-                            pTst->t.TestTone.u.Play.cbRead += cbBuf - (uint32_t)uOff; /* Add data after pre-beacon */
+                        {
+                            uint32_t const cbRemaining = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+                            uint32_t       cbData      = cbBuf - (uint32_t)uOff;
+
+                            if (cbData > cbRemaining) /* Overflow handling -- should never happen! */
+                            {
+                                LogRel(("ValKit: Test #%RU32: Warning: Pre-beacon data contains more data than remaining test "
+                                        "expects (%RU32 bytes) -- %RU32 bytes will be *lost* !!!\n",
+                                        pTst->idxTest, cbRemaining, cbData - cbRemaining));
+                                cbData = cbRemaining;
+                            }
+
+                            pTst->t.TestTone.u.Play.cbRead += cbData;
+                        }
                     }
 
                     if (fStarted)
@@ -1097,13 +1160,18 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                  * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
                 if (!fIsAllSilence)
                 {
-                    uint32_t const cbToAddMax = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+                    uint32_t const cbRemaining = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
 
                     /* Don't read more than we're told to.
                      * After the actual test tone data there might come a post beacon which also
                      * needs to be handled in the AUDIOTESTSTATE_POST state then. */
-                    if (cbBuf > cbToAddMax)
-                        cbBuf = cbToAddMax;
+                    if (cbBuf > cbRemaining)
+                    {
+                        LogRel(("ValKit: Test #%RU32: Warning: Audio data contains more data than remaining test "
+                                "expects (%RU32 bytes) -- %RU32 bytes will be *lost* !!!\n",
+                                pTst->idxTest, cbRemaining, cbBuf - cbRemaining));
+                        cbBuf = cbRemaining;
+                    }
 
                     pTst->t.TestTone.u.Play.cbRead += cbBuf;
                 }
