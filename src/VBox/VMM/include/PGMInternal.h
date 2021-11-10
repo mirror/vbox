@@ -2340,12 +2340,12 @@ typedef PGMTREES *PPGMTREES;
  *
  * The following bits map 1:1 (shifted by PGM_PTATTRS_EPT_SHIFT) to the Intel EPT
  * attributes as these are unique to EPT and fit within 64-bits despite the shift:
- *   - EPT_R       (Read access).
- *   - EPT_W       (Write access).
- *   - EPT_X_SUPER (Execute or execute access for supervisor-mode linear addresses).
- *   - EPT_MEMTYPE (EPT memory type).
- *   - IGNORE_PAT  (Ignore PAT memory type).
- *   - X_USER      (Execute access for user-mode linear addresses).
+ *   - EPT_R         : Read access.
+ *   - EPT_W         : Write access.
+ *   - EPT_X_SUPER   : Execute or execute for supervisor-mode linear addr access.
+ *   - EPT_MEMTYPE   : EPT memory type.
+ *   - EPT_IGNORE_PAT: Ignore PAT memory type.
+ *   - EPT_X_USER    : Execute access for user-mode linear addresses.
  *
  * For regular page tables, the R bit is always 1 (same as P bit).
  * For Intel EPT, the EPT_R and EPT_W bits are copied to R and W bits respectively.
@@ -2353,10 +2353,10 @@ typedef PGMTREES *PPGMTREES;
  * The following EPT attributes are mapped to the following positions because they
  * exist in the regular page tables at these positions OR are exclusive to EPT and
  * have been mapped to arbitrarily chosen positions:
- *   - A                (Accessed)                - EPT bit  8 maps to bit  5.
- *   - D                (Dirty)                   - EPT bit  9 maps to bit  6.
- *   - SUPER_SHW_STACK  (Supervisor Shadow Stack) - EPT bit 60 maps to bit 24.
- *   - SUPPRESS_VE_XCPT (Suppress \#VE exception) - EPT bit 63 maps to bit 25.
+ *   - EPT_A               : Accessed                (EPT bit  8 maps to bit  5).
+ *   - EPT_D               : Dirty                   (EPT bit  9 maps to bit  6).
+ *   - EPT_SUPER_SHW_STACK : Supervisor Shadow Stack (EPT bit 60 maps to bit 24).
+ *   - EPT_SUPPRESS_VE_XCPT: Suppress \#VE exception (EPT bit 63 maps to bit 25).
  *
  * Bits 12, 11:9 and 43 are deliberately kept unused (correspond to bit PS and bits
  * 11:9 in the regular page-table structures and to bit 11 in the EPT structures
