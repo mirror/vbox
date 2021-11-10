@@ -808,6 +808,7 @@ static void rtTestXmlStart(PRTTESTINT pTest, const char *pszTest)
     }
 }
 
+
 /**
  * Emit an XML element that doesn't have any value and instead ends immediately.
  *
@@ -845,6 +846,7 @@ static void rtTestXmlElemV(PRTTESTINT pTest, const char *pszTag, const char *psz
         pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
     }
 }
+
 
 /**
  * Wrapper around rtTestXmlElemV.
