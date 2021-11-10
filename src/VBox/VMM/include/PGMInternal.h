@@ -2340,12 +2340,15 @@ typedef PGMTREES *PPGMTREES;
  *
  * The following bits map 1:1 (shifted by PGM_PTATTRS_EPT_SHIFT) to the Intel EPT
  * attributes as these are unique to EPT and fit within 64-bits despite the shift:
- *   - R           (Read access).
- *   - W           (Write access).
- *   - X_SUPER     (Execute or execute access for supervisor-mode linear addresses).
+ *   - EPT_R       (Read access).
+ *   - EPT_W       (Write access).
+ *   - EPT_X_SUPER (Execute or execute access for supervisor-mode linear addresses).
  *   - EPT_MEMTYPE (EPT memory type).
  *   - IGNORE_PAT  (Ignore PAT memory type).
  *   - X_USER      (Execute access for user-mode linear addresses).
+ *
+ * For regular page tables, the R bit is always 1 (same as P bit).
+ * For Intel EPT, the EPT_R and EPT_W bits are copied to R and W bits respectively.
  *
  * The following EPT attributes are mapped to the following positions because they
  * exist in the regular page tables at these positions OR are exclusive to EPT and
@@ -2365,12 +2368,12 @@ typedef uint64_t PGMPTATTRS;
 /** Pointer to a PGMPTATTRS type. */
 typedef PGMPTATTRS *PPGMPTATTRS;
 
-/** Reserved bit. */
-#define PGM_PTATTRS_RSVD_0_SHIFT                    0
-#define PGM_PTATTRS_RSVD_0_MASK                     RT_BIT_64(PGM_PTATTRS_RSVD_0_SHIFT)
-/** Read and write access bit. */
-#define PGM_PTATTRS_RW_SHIFT                        1
-#define PGM_PTATTRS_RW_MASK                         RT_BIT_64(PGM_PTATTRS_RW_SHIFT)
+/** Read bit (always 1 for regular PT, copy of EPT_R for EPT). */
+#define PGM_PTATTRS_R_SHIFT                         0
+#define PGM_PTATTRS_R_MASK                          RT_BIT_64(PGM_PTATTRS_R_SHIFT)
+/** Write access bit (aka read/write bit for regular PT). */
+#define PGM_PTATTRS_W_SHIFT                         1
+#define PGM_PTATTRS_W_MASK                          RT_BIT_64(PGM_PTATTRS_W_SHIFT)
 /** User-mode access bit. */
 #define PGM_PTATTRS_US_SHIFT                        2
 #define PGM_PTATTRS_US_MASK                         RT_BIT_64(PGM_PTATTRS_US_SHIFT)
@@ -2433,9 +2436,8 @@ typedef PGMPTATTRS *PPGMPTATTRS;
 #define PGM_PTATTRS_NX_MASK                         RT_BIT_64(PGM_PTATTRS_NX_SHIFT)
 
 RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
-                            (RSVD_0, RW, US, PWT, PCD, A, D, PAT, G, RSVD_12_9, EPT_R, EPT_W, EPT_X_SUPER, EPT_MEMTYPE,
-                             EPT_IGNORE_PAT, RSVD_22_20, EPT_X_USER, RSVD_23, EPT_SUPER_SHW_STACK, EPT_SUPPRESS_VE_XCPT,
-                             RSVD_62_27, NX));
+                            (R, W, US, PWT, PCD, A, D, PAT, G, RSVD_12_9, EPT_R, EPT_W, EPT_X_SUPER, EPT_MEMTYPE, EPT_IGNORE_PAT,
+                             RSVD_22_20, EPT_X_USER, RSVD_23, EPT_SUPER_SHW_STACK, EPT_SUPPRESS_VE_XCPT, RSVD_62_27, NX));
 
 /** The bit position where the EPT specific attributes begin. */
 #define PGM_PTATTRS_EPT_SHIFT                       PGM_PTATTRS_EPT_R_SHIFT
@@ -2444,7 +2446,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
 #define PGM_PTATTRS_EPT_MASK                        UINT64_C(0x0000000007ffe000)
 
 /** The mask of all PGM page attribute bits for regular page-tables. */
-#define PGM_PTATTRS_PT_VALID_MASK                   (  PGM_PTATTRS_RW_MASK \
+#define PGM_PTATTRS_PT_VALID_MASK                   (  PGM_PTATTRS_R_MASK \
+                                                     | PGM_PTATTRS_W_MASK \
                                                      | PGM_PTATTRS_US_MASK \
                                                      | PGM_PTATTRS_PWT_MASK \
                                                      | PGM_PTATTRS_PCD_MASK \
@@ -2455,10 +2458,12 @@ RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
                                                      | PGM_PTATTRS_NX_MASK)
 
 /** The mask of all PGM page attribute bits for EPT. */
-#define PGM_PTATTRS_EPT_VALID_MASK                  (  PGM_PTATTRS_A_MASK \
-                                                     | PGM_PTATTRS_D_MASK \
-                                                     | PGM_PTATTRS_R_MASK \
+#define PGM_PTATTRS_EPT_VALID_MASK                  (  PGM_PTATTRS_R_MASK \
                                                      | PGM_PTATTRS_W_MASK \
+                                                     | PGM_PTATTRS_A_MASK \
+                                                     | PGM_PTATTRS_D_MASK \
+                                                     | PGM_PTATTRS_EPT_R_MASK \
+                                                     | PGM_PTATTRS_EPT_W_MASK \
                                                      | PGM_PTATTRS_EPT_X_SUPER \
                                                      | PGM_PTATTRS_EPT_MEMTYPE \
                                                      | PGM_PTATTRS_EPT_IGNORE_PAT \
@@ -2470,7 +2475,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
 #define PGM_PTATTRS_VALID_MASK                      (PGM_PTATTRS_PT_VALID_MASK | PGM_PTATTRS_PT_VALID_MASK)
 
 /* Verify bits match the regular PT bits. */
-AssertCompile(PGM_PTATTRS_RW_SHIFT  == X86_PTE_BIT_RW);
+AssertCompile(PGM_PTATTRS_W_SHIFT   == X86_PTE_BIT_RW);
 AssertCompile(PGM_PTATTRS_US_SHIFT  == X86_PTE_BIT_US);
 AssertCompile(PGM_PTATTRS_PWT_SHIFT == X86_PTE_BIT_PWT);
 AssertCompile(PGM_PTATTRS_PCD_SHIFT == X86_PTE_BIT_PCD);
@@ -2478,7 +2483,7 @@ AssertCompile(PGM_PTATTRS_A_SHIFT   == X86_PTE_BIT_A);
 AssertCompile(PGM_PTATTRS_D_SHIFT   == X86_PTE_BIT_D);
 AssertCompile(PGM_PTATTRS_PAT_SHIFT == X86_PTE_BIT_PAT);
 AssertCompile(PGM_PTATTRS_G_SHIFT   == X86_PTE_BIT_G);
-AssertCompile(PGM_PTATTRS_RW_MASK   == X86_PTE_RW);
+AssertCompile(PGM_PTATTRS_W_MASK    == X86_PTE_RW);
 AssertCompile(PGM_PTATTRS_US_MASK   == X86_PTE_US);
 AssertCompile(PGM_PTATTRS_PWT_MASK  == X86_PTE_PWT);
 AssertCompile(PGM_PTATTRS_PCD_MASK  == X86_PTE_PCD);
