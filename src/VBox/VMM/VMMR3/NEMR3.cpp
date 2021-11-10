@@ -373,7 +373,7 @@ VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu, bool fInitIpi)
 VMMR3_INT_DECL(bool) NEMR3NeedSpecialTscMode(PVM pVM)
 {
 #ifdef VBOX_WITH_NATIVE_NEM
-# ifdef RT_OS_WINDOWS
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     if (VM_IS_NEM_ENABLED(pVM))
         return true;
 # endif
