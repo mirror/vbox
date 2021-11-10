@@ -276,7 +276,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
             if (   !(uErr & X86_TRAP_PF_RSVD)
                 && pCurType->enmKind != PGMPHYSHANDLERKIND_WRITE
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-                && pGstWalk->Core.fEffectiveRW
+                && (pGstWalk->Core.fEffective & PGM_PTATTRS_W_MASK)
                 && !pGstWalk->Core.fEffectiveUS /** @todo Remove pGstWalk->Core.fEffectiveUS and X86_PTE_US further down in the sync code. */
 #   endif
                )
@@ -436,7 +436,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
     if (uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_US | X86_TRAP_PF_ID))
     {
         if (    (   (uErr & X86_TRAP_PF_RW)
-                 && !GstWalk.Core.fEffectiveRW
+                 && !(GstWalk.Core.fEffective & PGM_PTATTRS_W_MASK)
                  && (   (uErr & X86_TRAP_PF_US)
                      || CPUMIsGuestR0WriteProtEnabled(pVCpu)) )
             ||  ((uErr & X86_TRAP_PF_US) && !GstWalk.Core.fEffectiveUS)
@@ -777,7 +777,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
             /*
              * Check to see if we need to emulate the instruction if CR0.WP=0.
              */
-            if (    !GstWalk.Core.fEffectiveRW
+            if (    !(GstWalk.Core.fEffective & PGM_PTATTRS_W_MASK)
                 &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG
                 &&  CPUMGetGuestCPL(pVCpu) < 3)
             {
@@ -797,7 +797,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
                  */
 #    if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && 1
                 if (   GstWalk.Core.fEffectiveUS
-                    && !GstWalk.Core.fEffectiveRW
+                    && !(GstWalk.Core.fEffective & PGM_PTATTRS_W_MASK)
                     && (GstWalk.Core.fBigPage || (GstWalk.Pde.u & X86_PDE_RW))
                     && pVM->cCpus == 1 /* Sorry, no go on SMP. Add CFGM option? */)
                 {
@@ -880,7 +880,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
          * mode accesses the page again.
          */
         else if (    GstWalk.Core.fEffectiveUS
-                 && !GstWalk.Core.fEffectiveRW
+                 && !(GstWalk.Core.fEffective & PGM_PTATTRS_W_MASK)
                  && (GstWalk.Core.fBigPage || (GstWalk.Pde.u & X86_PDE_RW))
                  &&  pVCpu->pgm.s.cNetwareWp0Hacks > 0
                  &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG

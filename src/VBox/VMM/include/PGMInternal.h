@@ -2542,9 +2542,7 @@ typedef struct PGMPTWALKCORE
     bool            fGigantPage;
     /** The effective X86_PTE_US flag for the address. */
     bool            fEffectiveUS;
-    /** The effective X86_PTE_RW flag for the address. */
-    bool            fEffectiveRW;
-    bool            afPadding[5];
+    bool            afPadding[6];
     /** The effective attributes, PGM_PTATTRS_XXX. */
     PGMPTATTRS      fEffective;
 } PGMPTWALKCORE;
