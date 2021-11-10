@@ -1383,8 +1383,14 @@ UIFormEditorWidget::UIFormEditorWidget(QWidget *pParent /* = 0 */,
     , m_pNotificationCenter(pNotificationCenter)
     , m_pTableView(0)
     , m_pTableModel(0)
+    , m_pItemEditorFactory(0)
 {
     prepare();
+}
+
+UIFormEditorWidget::~UIFormEditorWidget()
+{
+    cleanup();
 }
 
 QHeaderView *UIFormEditorWidget::horizontalHeader() const
@@ -1493,26 +1499,26 @@ void UIFormEditorWidget::prepare()
                     pStyledItemDelegate->setWatchForEditorDataCommits(true);
 
                     /* Create new item editor factory: */
-                    QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
-                    if (pNewItemEditorFactory)
+                    m_pItemEditorFactory = new QItemEditorFactory;
+                    if (m_pItemEditorFactory)
                     {
                         /* Register TextEditor as the TextData editor: */
                         int iTextId = qRegisterMetaType<TextData>();
                         QStandardItemEditorCreator<TextEditor> *pTextEditorItemCreator = new QStandardItemEditorCreator<TextEditor>();
-                        pNewItemEditorFactory->registerEditor((QVariant::Type)iTextId, pTextEditorItemCreator);
+                        m_pItemEditorFactory->registerEditor((QVariant::Type)iTextId, pTextEditorItemCreator);
 
                         /* Register ChoiceEditor as the ChoiceData editor: */
                         int iChoiceId = qRegisterMetaType<ChoiceData>();
                         QStandardItemEditorCreator<ChoiceEditor> *pChoiceEditorItemCreator = new QStandardItemEditorCreator<ChoiceEditor>();
-                        pNewItemEditorFactory->registerEditor((QVariant::Type)iChoiceId, pChoiceEditorItemCreator);
+                        m_pItemEditorFactory->registerEditor((QVariant::Type)iChoiceId, pChoiceEditorItemCreator);
 
                         /* Register RangedIntegerEditor as the RangedIntegerData editor: */
                         int iRangedIntegerId = qRegisterMetaType<RangedIntegerData>();
                         QStandardItemEditorCreator<RangedIntegerEditor> *pRangedIntegerEditorItemCreator = new QStandardItemEditorCreator<RangedIntegerEditor>();
-                        pNewItemEditorFactory->registerEditor((QVariant::Type)iRangedIntegerId, pRangedIntegerEditorItemCreator);
+                        m_pItemEditorFactory->registerEditor((QVariant::Type)iRangedIntegerId, pRangedIntegerEditorItemCreator);
 
                         /* Set newly created item editor factory for table delegate: */
-                        pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+                        pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);
                     }
                 }
             }
@@ -1521,6 +1527,12 @@ void UIFormEditorWidget::prepare()
             pLayout->addWidget(m_pTableView);
         }
     }
+}
+
+void UIFormEditorWidget::cleanup()
+{
+    delete m_pItemEditorFactory;
+    m_pItemEditorFactory = 0;
 }
 
 void UIFormEditorWidget::adjustTable()

@@ -210,7 +210,8 @@ public:
       * @param  fIPv6                Brings whether this table contains IPv6 rules, not IPv4.
       * @param  fAllowEmptyGuestIPs  Brings whether this table allows empty guest IPs. */
     UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs);
-    ~UIPortForwardingTable();
+    /** Destructs Port Forwarding table. */
+    virtual ~UIPortForwardingTable() /* override */;
     /** Returns the list of port forwarding rules. */
     UIPortForwardingDataList rules() const;
     /** Defines the list of port forwarding @a newRules.
@@ -272,6 +273,8 @@ private:
     void prepareTableDelegates();
     /** Prepares toolbar. */
     void prepareToolbar();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Holds the list of port forwarding rules. */
     UIPortForwardingDataList  m_rules;
@@ -293,7 +296,7 @@ private:
     /** Holds the tool-bar instance. */
     QIToolBar   *m_pToolBar;
     /** Holds the item editor factory instance. */
-    QItemEditorFactory *m_pNewItemEditorFactory;
+    QItemEditorFactory *m_pItemEditorFactory;
 
     /** Holds the table-model instance. */
     UIPortForwardingModel *m_pTableModel;

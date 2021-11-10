@@ -309,6 +309,8 @@ public:
       * @param  pModel         Brings the model this table is bound to.
       * @param  strObjectName  Brings the object name this table has, required for fast referencing. */
     UIShortcutConfigurationTable(QWidget *pParent, UIShortcutConfigurationModel *pModel, const QString &strObjectName);
+    /** Destructs table. */
+    virtual ~UIShortcutConfigurationTable() /* override */;
 
 protected:
 
@@ -326,6 +328,11 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
+    /** Holds the item editor factory instance. */
+    QItemEditorFactory *m_pItemEditorFactory;
 };
 
 
@@ -698,6 +705,7 @@ UIShortcutConfigurationTable::UIShortcutConfigurationTable(QWidget *pParent,
                                                            UIShortcutConfigurationModel *pModel,
                                                            const QString &strObjectName)
     : QITableView(pParent)
+    , m_pItemEditorFactory(0)
 {
     /* Set object name: */
     setObjectName(strObjectName);
@@ -706,6 +714,12 @@ UIShortcutConfigurationTable::UIShortcutConfigurationTable(QWidget *pParent,
 
     /* Prepare all: */
     prepare();
+}
+
+UIShortcutConfigurationTable::~UIShortcutConfigurationTable()
+{
+    /* Cleanup all: */
+    cleanup();
 }
 
 int UIShortcutConfigurationTable::childCount() const
@@ -760,23 +774,30 @@ void UIShortcutConfigurationTable::prepare()
         pStyledItemDelegate->setWatchForEditorDataCommits(true);
 
         /* Create new item editor factory: */
-        QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
-        if (pNewItemEditorFactory)
+        m_pItemEditorFactory = new QItemEditorFactory;
+        if (m_pItemEditorFactory)
         {
             /* Register UIHotKeyEditor as the UIHotKey editor: */
             int iHotKeyTypeId = qRegisterMetaType<UIHotKey>();
             QStandardItemEditorCreator<UIHotKeyEditor> *pHotKeyItemEditorCreator = new QStandardItemEditorCreator<UIHotKeyEditor>();
-            pNewItemEditorFactory->registerEditor((QVariant::Type)iHotKeyTypeId, pHotKeyItemEditorCreator);
+            m_pItemEditorFactory->registerEditor((QVariant::Type)iHotKeyTypeId, pHotKeyItemEditorCreator);
 
             /* Register UIHostComboEditor as the UIHostComboWrapper editor: */
             int iHostComboTypeId = qRegisterMetaType<UIHostComboWrapper>();
             QStandardItemEditorCreator<UIHostComboEditor> *pHostComboItemEditorCreator = new QStandardItemEditorCreator<UIHostComboEditor>();
-            pNewItemEditorFactory->registerEditor((QVariant::Type)iHostComboTypeId, pHostComboItemEditorCreator);
+            m_pItemEditorFactory->registerEditor((QVariant::Type)iHostComboTypeId, pHostComboItemEditorCreator);
 
             /* Assign configured item editor factory to item delegate: */
-            pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+            pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);
         }
     }
+}
+
+void UIShortcutConfigurationTable::cleanup()
+{
+    /* Cleanup item editor factory: */
+    delete m_pItemEditorFactory;
+    m_pItemEditorFactory = 0;
 }
 
 
