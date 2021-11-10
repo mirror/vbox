@@ -410,7 +410,6 @@ DECLINLINE(int) nemR3DarwinWriteVmcs64(PVMCPUCC pVCpu, uint32_t uFieldEnc, uint6
     return nemR3DarwinHvSts2Rc(hrc);
 }
 
-#if 0 /* unused */
 DECLINLINE(int) nemR3DarwinMsrRead(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t *pu64Val)
 {
     hv_return_t hrc = hv_vcpu_read_msr(pVCpu->nem.s.hVCpuId, idMsr, pu64Val);
@@ -420,7 +419,7 @@ DECLINLINE(int) nemR3DarwinMsrRead(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t *pu6
     return nemR3DarwinHvSts2Rc(hrc);
 }
 
-
+#if 0 /*unused*/
 DECLINLINE(int) nemR3DarwinMsrWrite(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t u64Val)
 {
     hv_return_t hrc = hv_vcpu_write_msr(pVCpu->nem.s.hVCpuId, idMsr, u64Val);
@@ -430,7 +429,6 @@ DECLINLINE(int) nemR3DarwinMsrWrite(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t u64
     return nemR3DarwinHvSts2Rc(hrc);
 }
 #endif
-
 
 static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 {
@@ -1277,11 +1275,9 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
     }
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
-#if 0
-        hv_return_t hrc = hv_vmx_vcpu_set_apic_address(pVCpu->nem.s.hVCpuId, APICGetBaseMsrNoCheck(pVCpu));
+        hv_return_t hrc = hv_vmx_vcpu_set_apic_address(pVCpu->nem.s.hVCpuId, APICGetBaseMsrNoCheck(pVCpu) & PAGE_BASE_GC_MASK);
         if (RT_UNLIKELY(hrc != HV_SUCCESS))
             return nemR3DarwinHvSts2Rc(hrc);
-#endif
 
 #if 0
         ADD_REG64(WHvX64RegisterPat, pVCpu->cpum.GstCtx.msrPAT);
@@ -1691,7 +1687,7 @@ static int nemR3DarwinSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
  */
 static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    //PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     uint32_t       fVal = g_HmMsrs.u.vmx.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
     uint32_t const fZap = g_HmMsrs.u.vmx.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
@@ -1711,7 +1707,6 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-#if 0 /** @todo */
     /* Use TPR shadowing if supported by the CPU. */
     if (   PDMHasApic(pVM)
         && (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
@@ -1720,10 +1715,8 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
                                                              /* CR8 writes cause a VM-exit based on TPR threshold. */
         Assert(!(fVal & VMX_PROC_CTLS_CR8_STORE_EXIT));
         Assert(!(fVal & VMX_PROC_CTLS_CR8_LOAD_EXIT));
-        hmR0VmxSetupVmcsVirtApicAddr(pVmcsInfo);
     }
     else
-#endif
     {
         fVal |= VMX_PROC_CTLS_CR8_STORE_EXIT             /* CR8 reads cause a VM-exit. */
              |  VMX_PROC_CTLS_CR8_LOAD_EXIT;             /* CR8 writes cause a VM-exit. */
@@ -2194,11 +2187,8 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
-        /** @todo Only copy the state selectively. */
-        {
-            int rc = nemR3DarwinCopyStateToHv(pVM, pVCpu, &VmxTransient);
-            AssertRCReturn(rc, rc);
-        }
+        int rc = nemR3DarwinExportGuestState(pVM, pVCpu, &VmxTransient);
+        AssertRCReturn(rc, rc);
 
         /*
          * Poll timers and run for a bit.
@@ -2711,8 +2701,23 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
     LogFlowFunc(("pVCpu=%p pcTicks=%RX64 puAux=%RX32\n", pVCpu, pcTicks, puAux));
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatQueryCpuTick);
 
-    RT_NOREF(pVCpu, pcTicks, puAux);
-    return VINF_SUCCESS;
+    int rc = nemR3DarwinMsrRead(pVCpu, MSR_IA32_TSC, pcTicks);
+    if (   RT_SUCCESS(rc)
+        && puAux)
+    {
+        if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX)
+        {
+            /** @todo Why the heck is puAux a uint32_t?. */
+            uint64_t u64Aux;
+            rc = nemR3DarwinMsrRead(pVCpu, MSR_K8_TSC_AUX, &u64Aux);
+            if (RT_SUCCESS(rc))
+                *puAux = (uint32_t)u64Aux;
+        }
+        else
+            *puAux = CPUMGetGuestTscAux(pVCpu);
+    }
+
+    return rc;
 }
 
 
@@ -2732,8 +2737,11 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
 
-    RT_NOREF(uPausedTscValue);
-    return VINF_SUCCESS;
+    hv_return_t hrc = hv_vm_sync_tsc(uPausedTscValue);
+    if (RT_LIKELY(hrc == HV_SUCCESS))
+        return VINF_SUCCESS;
+
+    return nemR3DarwinHvSts2Rc(hrc);
 }
 
 
