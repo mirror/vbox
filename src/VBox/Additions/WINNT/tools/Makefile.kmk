@@ -58,5 +58,13 @@ ifdef VBOX_SIGNING_MODE
  endif
 endif
 
+#
+# Install the registry file for bypassing the Windows 11 installer checks.
+#
+INSTALLS += AdditionsInstW11Bypass
+AdditionsInstW11Bypass_INST = $(INST_ADDITIONS)
+AdditionsInstW11Bypass_MODE = a+r,u+w
+AdditionsInstW11Bypass_SOURCES = windows11-bypass.reg
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

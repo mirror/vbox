@@ -289,12 +289,13 @@ rem TBD: that has to be converted to invoke auto-generated .cmd
         --joliet ^
         --rational-attribs ^
         --random-order-verification 2048 ^
-        /cert/vbox-sha1.cer=%_MY_SCRIPT_DIR%../bin/additions/vbox-sha1.cer ^
-        /cert/vbox-sha256.cer=%_MY_SCRIPT_DIR%../bin/additions/vbox-sha256.cer ^
+        /cert/vbox-sha1.cer=%_MY_SCRIPT_DIR%/../bin/additions/vbox-sha1.cer ^
+        /cert/vbox-sha256.cer=%_MY_SCRIPT_DIR%/../bin/additions/vbox-sha256.cer ^
+        /windows11-bypass.reg=%_MY_SCRIPT_DIR%/../bin/additions/windows11-bypass.reg ^
         /VBoxWindowsAdditions-x86.exe=%_MY_OPT_UNTAR_DIR%/win.x86/release/bin/additions/VBoxWindowsAdditions-x86.exe ^
         /VBoxWindowsAdditions.exe=%_MY_OPT_UNTAR_DIR%/win.x86/release/bin/additions/VBoxWindowsAdditions.exe ^
         /AUTORUN.INF=%_MY_OPT_SRC_DIR%/AUTORUN.INF ^
-        /cert/VBoxCertUtil.exe=%_MY_SCRIPT_DIR%../bin/additions/VBoxCertUtil.exe ^
+        /cert/VBoxCertUtil.exe=%_MY_SCRIPT_DIR%/../bin/additions/VBoxCertUtil.exe ^
         /NT3x/Readme.txt=%_MY_OPT_SRC_DIR%/NT3xReadme.txt ^
         /NT3x/VBoxGuest.sys=%_MY_OPT_UNTAR_DIR%/win.x86/release/bin/additions/VBoxGuest.sys ^
         /NT3x/VBoxGuest.cat=%_MY_OPT_UNTAR_DIR%/win.x86/release/bin/additions/VBoxGuest.cat ^
