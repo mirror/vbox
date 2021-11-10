@@ -115,6 +115,10 @@ class tdBenchmark2(vbox.TestDriver):
             while len(acMbRam) < 7 and cMb > 16 * 1024:
                 cMb //= 2;
                 acMbRam.append(cMb);
+        elif cMbHostAvail >= 16000 and cMbHostAvail > 7168:
+            # Desperate attempt at getting some darwin testruns too.  We've got two
+            # with 16 GiB and they usually end up with just short of 8GiB of free RAM.
+            acMbRam = [7168,];
         else:
             reporter.log("Less than 8GB of host RAM available for VMs, skipping test");
             return None;
