@@ -1279,7 +1279,7 @@ class FileWrapperTestPipe(object):
                         cErrors += self.acTestErrors.pop();
                     cErrors += 1;
                     g_oReporter.subXmlWrite(self,
-                                            '\n%s  <Failed timestamp="%s" errors="%s">\n%s</Test>\n'
+                                            '\n%s  <Failed timestamp="%s" errors="%s"/>\n%s</Test>\n'
                                             % ('  ' * self.cTestDepth, sNow, cErrors, '  ' * self.cTestDepth),
                                             utils.getCallerName());
 
