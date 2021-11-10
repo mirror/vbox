@@ -301,7 +301,7 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
         {
             size_t const cbOutstanding = pTst->t.TestTone.u.Rec.cbToWrite - pTst->t.TestTone.u.Rec.cbWritten;
             if (cbOutstanding)
-                LogRel(("ValKit: \tWarning: Recording test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+                LogRel(("ValKit: \tWarning: Recording test #%RU32 has %RU64 bytes (%RU64ms) outstanding (%RU8%% left)\n",
                         pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
                         100 - (pTst->t.TestTone.u.Rec.cbWritten * 100) / RT_MAX(pTst->t.TestTone.u.Rec.cbToWrite, 1)));
         }
@@ -321,7 +321,7 @@ static void drvHostValKitCleanup(PDRVHOSTVALKITAUDIO pThis)
         {
             size_t const cbOutstanding = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
             if (cbOutstanding)
-                LogRel(("ValKit: \tWarning: Playback test #%RU32 has %RU64 bytes (%RU32ms) outstanding (%RU8%% left)\n",
+                LogRel(("ValKit: \tWarning: Playback test #%RU32 has %RU64 bytes (%RU64ms) outstanding (%RU8%% left)\n",
                         pTst->idxTest, cbOutstanding, PDMAudioPropsBytesToMilli(&pTst->t.TestTone.Parms.Props, (uint32_t)cbOutstanding),
                         100 - (pTst->t.TestTone.u.Play.cbRead * 100) / RT_MAX(pTst->t.TestTone.u.Play.cbToRead, 1)));
         }
@@ -1103,6 +1103,12 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
             case AUDIOTESTSTATE_POST:
             {
                 PAUDIOTESTTONEBEACON pBeacon = &pTst->t.TestTone.Beacon;
+
+                LogRel3(("ValKit: Test #%RU32: %RU32 bytes (%RU64ms) beacon data remaining\n",
+                         pTst->idxTest,
+                         AudioTestBeaconGetRemaining(pBeacon),
+                         PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, AudioTestBeaconGetRemaining(pBeacon))));
+
                 if (    AudioTestBeaconGetSize(pBeacon)
                     && !AudioTestBeaconIsComplete(pBeacon))
                 {
@@ -1135,7 +1141,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                     }
 
                     if (fStarted)
-                        LogRel2(("ValKit: Test #%RU32: Detection of %s beacon started (%RU32ms played so far)\n",
+                        LogRel2(("ValKit: Test #%RU32: Detection of %s beacon started (%RU64ms played so far)\n",
                                  pTst->idxTest, AudioTestBeaconTypeGetName(pBeacon->enmType),
                                  PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, pThis->cbPlayedTotal)));
                     if (AudioTestBeaconIsComplete(pBeacon))
@@ -1156,12 +1162,15 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
             case AUDIOTESTSTATE_RUN:
             {
+                uint32_t const cbRemaining = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
+
+                LogRel3(("ValKit: Test #%RU32: %RU32 bytes (%RU64ms) audio data remaining\n",
+                         pTst->idxTest, cbRemaining, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbRemaining)));
+
                 /* Whether we count all silence as recorded data or not.
                  * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
                 if (!fIsAllSilence)
                 {
-                    uint32_t const cbRemaining = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
-
                     /* Don't read more than we're told to.
                      * After the actual test tone data there might come a post beacon which also
                      * needs to be handled in the AUDIOTESTSTATE_POST state then. */
