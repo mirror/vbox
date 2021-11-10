@@ -100,9 +100,9 @@ class tdBenchmark2(vbox.TestDriver):
             acMbRam = [ cMbMaxGuestRam, cMbMaxGuestRam // 4 * 3, cMbMaxGuestRam // 2, cMbMaxGuestRam // 4,
                         cMbMaxGuestRam // 8, cMbMaxGuestRam // 16  ];
             if acMbRam[-1] > 64*1024:
-                acMbRam[-1].append(64*1024);
+                acMbRam.append(64*1024);
             if acMbRam[-1] > 32*1024:
-                acMbRam[-1].append(32*1024);
+                acMbRam.append(32*1024);
         elif cMbHostAvail > 8*1024:
             # First entry is available memory rounded down to the nearest 8 GiB
             cMbHostAvail = cMbHostAvail & ~(8 * 1024 - 1);
