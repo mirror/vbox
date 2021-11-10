@@ -1095,6 +1095,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
     uint32_t cbWritten = 0;
     uint8_t *auBuf     = (uint8_t *)pvBuf;
 
+    uint64_t const msStartedTS = RTTimeMilliTS();
+
     while (cbWritten < cbBuf)
     {
         switch (pTst->enmState)
@@ -1115,12 +1117,19 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 {
                     bool const fStarted = AudioTestBeaconGetRemaining(pBeacon) == AudioTestBeaconGetSize(pBeacon);
 
-                    size_t off = 0; /* Points at the data right *after the found beacon data on return. */
+                    size_t off = 0; /* Points at the data right *after* the found beacon data on return. */
                     rc2 = AudioTestBeaconAddConsecutive(pBeacon, auBuf, cbBuf - cbWritten, &off);
                     if (RT_SUCCESS(rc2))
                     {
                         cbWritten += (uint32_t)off;
                         auBuf     += off;
+                    }
+                    else /* No beacon data found. */
+                    {
+                        LogRel2(("ValKit: Test #%RU32: Warning: Beacon data for '%s' not found (%Rrc) - Skipping ...\n",
+                                 pTst->idxTest, AudioTestBeaconTypeGetName(pBeacon->enmType), rc2));
+                        cbWritten = cbBuf; /* Skip all. */
+                        break;
                     }
 
                     if (fStarted)
@@ -1150,20 +1159,15 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 LogRel3(("ValKit: Test #%RU32: %RU32 bytes (%RU64ms) audio data remaining\n",
                          pTst->idxTest, cbRemaining, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbRemaining)));
 
-                /* Whether we count all silence as recorded data or not.
-                 * Currently we don't, as otherwise consequtively played tones will be cut off in the end. */
-                if (!fIsAllSilence)
-                {
-                    /* Don't read more than we're told to.
-                     * After the actual test tone data there might come a post beacon which also
-                     * needs to be handled in the AUDIOTESTSTATE_POST state then. */
-                    const uint32_t cbData = RT_MIN(cbBuf - cbWritten, cbRemaining);
+                /* Don't read more than we're told to.
+                 * After the actual test tone data there might come a post beacon which also
+                 * needs to be handled in the AUDIOTESTSTATE_POST state then. */
+                const uint32_t cbData = RT_MIN(cbBuf - cbWritten, cbRemaining);
 
-                    pTst->t.TestTone.u.Play.cbRead += cbData;
+                pTst->t.TestTone.u.Play.cbRead += cbData;
 
-                    cbWritten += cbData;
-                    auBuf     += cbData;
-                }
+                cbWritten += cbData;
+                auBuf     += cbData;
 
                 const bool fComplete = pTst->t.TestTone.u.Play.cbRead >= pTst->t.TestTone.u.Play.cbToRead;
                 if (fComplete)
@@ -1171,11 +1175,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                     LogRel(("ValKit: Test #%RU32: Recording audio data ended (took %RU32ms)\n",
                             pTst->idxTest, RTTimeMilliTS() - pTst->msStartedTS));
 
-                    if (pTst->t.TestTone.u.Play.cbRead > pTst->t.TestTone.u.Play.cbToRead)
-                        LogRel(("ValKit: Test #%RU32: Warning: Read %RU32 bytes more than announced\n",
-                                pTst->idxTest, pTst->t.TestTone.u.Play.cbRead - pTst->t.TestTone.u.Play.cbToRead));
-
                     pTst->enmState = AUDIOTESTSTATE_POST;
+
                     /* Re-use the beacon object, but this time it's the post beacon. */
                     AudioTestBeaconInit(&pTst->t.TestTone.Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_POST, &pTst->t.TestTone.Parms.Props);
                 }
@@ -1195,6 +1196,12 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
 
         if (pTst->enmState == AUDIOTESTSTATE_DONE)
             break;
+
+        if (RTTimeMilliTS() - msStartedTS > RT_MS_30SEC)
+        {
+            LogRel(("ValKit: Test #%RU32: Error: Playback processing timed out -- please report this bug!\n", pTst->idxTest));
+            break;
+        }
     }
 
     LogRel3(("ValKit: Test #%RU32: Played %RU32/%RU32 bytes\n", pTst->idxTest, cbWritten, cbBuf));
