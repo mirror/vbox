@@ -142,7 +142,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
 
             pWalk->Core.fEffectiveRW = !!(fEffective & PGM_PTATTRS_RW_MASK);    /** @todo RW isn't copied from EPT R, W. This will break callers who use RW for EPT attributes. */
             pWalk->Core.fEffectiveUS = true;
-            pWalk->Core.fEffectiveNX = !(fEffective & PGM_PTATTRS_EPT_X_SUPER_MASK);
             pWalk->Core.fGigantPage  = true;
             pWalk->Core.fSucceeded   = true;
             pWalk->Core.GCPhys       = GST_GET_BIG_PDPE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pdpte)
@@ -177,7 +176,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             pWalk->Core.fEffective = fEffective;
             pWalk->Core.fEffectiveRW = !!(fEffective & PGM_PTATTRS_RW_MASK); /** @todo RW isn't copied from EPT R, W. This will break callers who use RW for EPT attributes. */
             pWalk->Core.fEffectiveUS = true;
-            pWalk->Core.fEffectiveNX = !(fEffective & PGM_PTATTRS_EPT_X_SUPER_MASK);
             pWalk->Core.fBigPage     = true;
             pWalk->Core.fSucceeded   = true;
             pWalk->Core.GCPhys       = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
@@ -226,7 +224,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
 
         pWalk->Core.fEffectiveRW = !!(fEffective & PGM_PTATTRS_RW_MASK); /** @todo RW isn't copied from EPT R, W. This will break callers who use RW for EPT attributes. */
         pWalk->Core.fEffectiveUS = true;
-        pWalk->Core.fEffectiveNX = !(fEffective & PGM_PTATTRS_EPT_X_SUPER_MASK);
         pWalk->Core.fSucceeded   = true;
         pWalk->Core.GCPhys       = GST_GET_PTE_GCPHYS(Pte)
                                  | (GCPhysNested & PAGE_OFFSET_MASK);

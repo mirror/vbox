@@ -255,11 +255,6 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
 
             pWalk->Core.fEffectiveRW = !!(fEffective & X86_PTE_RW);
             pWalk->Core.fEffectiveUS = !!(fEffective & X86_PTE_US);
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-            pWalk->Core.fEffectiveNX = (fEffective & X86_PTE_PAE_NX) && GST_IS_NX_ACTIVE(pVCpu);
-# else
-            pWalk->Core.fEffectiveNX = false;
-# endif
             pWalk->Core.fBigPage     = true;
             pWalk->Core.fSucceeded   = true;
 
@@ -319,11 +314,6 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWa
 
         pWalk->Core.fEffectiveRW = !!(fEffective & X86_PTE_RW);
         pWalk->Core.fEffectiveUS = !!(fEffective & X86_PTE_US);
-# if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-        pWalk->Core.fEffectiveNX = (fEffective & X86_PTE_PAE_NX) && GST_IS_NX_ACTIVE(pVCpu);
-# else
-        pWalk->Core.fEffectiveNX = false;
-# endif
         pWalk->Core.fSucceeded   = true;
 
         RTGCPHYS GCPhysPte = GST_GET_PTE_GCPHYS(Pte)

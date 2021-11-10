@@ -440,7 +440,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRe
                  && (   (uErr & X86_TRAP_PF_US)
                      || CPUMIsGuestR0WriteProtEnabled(pVCpu)) )
             ||  ((uErr & X86_TRAP_PF_US) && !GstWalk.Core.fEffectiveUS)
-            ||  ((uErr & X86_TRAP_PF_ID) && GstWalk.Core.fEffectiveNX)
+            ||  ((uErr & X86_TRAP_PF_ID) && (GstWalk.Core.fEffective & PGM_PTATTRS_NX_MASK))
            )
             return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerGuestFault)(pVCpu, &GstWalk, uErr));
     }

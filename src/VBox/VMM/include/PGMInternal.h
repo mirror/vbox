@@ -2539,11 +2539,8 @@ typedef struct PGMPTWALKCORE
     bool            fEffectiveUS;
     /** The effective X86_PTE_RW flag for the address. */
     bool            fEffectiveRW;
-    /** The effective X86_PTE_NX flag for the address. */
-    bool            fEffectiveNX;
-    bool            afPadding[4];
-    /** Effective flags thus far: RW, US, PWT, PCD, A, ~NX >> 63.
-     * The NX bit is inverted and shifted down 63 places to bit 0. */
+    bool            afPadding[5];
+    /** The effective attributes, PGM_PTATTRS_XXX. */
     PGMPTATTRS      fEffective;
 } PGMPTWALKCORE;
 
