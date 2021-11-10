@@ -2054,8 +2054,9 @@ void UIMachineLogic::sltTakeScreenshot()
             tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
                           strFormat.toUtf8().constData());
 #else /* !VBOX_WS_X11 */
-        tmpImage.save(QDir::toNativeSeparators(QFile::encodeName(strFilename)),
-                      strFormat.toUtf8().constData());
+        QFile file(strFilename);
+        if (file.open(QIODevice::WriteOnly))
+            tmpImage.save(&file, strFormat.toUtf8().constData());
 #endif /* !VBOX_WS_X11 */
     }
     QFile::remove(strTempFile);
