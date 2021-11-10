@@ -244,8 +244,10 @@ typedef struct GMMPAGEDESC
      * ASSUMES: sizeof(RTHCPHYS) >= sizeof(RTGCPHYS) and that physical addresses are
      *          limited to 63 or fewer bits (52 by AMD64 arch spec).
      */
+    RT_GCC_EXTENSION
     RTHCPHYS                    HCPhysGCPhys : 63;
     /** Set if the memory was zeroed. */
+    RT_GCC_EXTENSION
     RTHCPHYS                    fZeroed : 1;
 
     /** The Page ID.
