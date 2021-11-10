@@ -2214,15 +2214,24 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
         if (!RTR0MemObjWasZeroInitialized(hMemObj))
         {
 #ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
-            for (uint32_t iPage = 0; iPage < (GMM_CHUNK_SIZE >> PAGE_SHIFT); iPage++)
+            if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
             {
+                for (uint32_t iPage = 0; iPage < GMM_CHUNK_NUM_PAGES; iPage++)
+                {
+                    void *pvPage = NULL;
+                    rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, iPage), &pvPage);
+                    AssertRCBreak(rc);
+                    RT_BZERO(pvPage, PAGE_SIZE);
+                }
+            }
+            else
+            {
+                /* Can do the whole large page in one go. */
                 void *pvPage = NULL;
-                rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, iPage), &pvPage);
+                rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, 0), &pvPage);
                 AssertRC(rc);
                 if (RT_SUCCESS(rc))
-                    RT_BZERO(pvPage, PAGE_SIZE);
-                else
-                    break;
+                    RT_BZERO(pvPage, GMM_CHUNK_SIZE);
             }
 #else
             RT_BZERO(pbMapping, GMM_CHUNK_SIZE);
