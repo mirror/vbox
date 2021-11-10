@@ -1115,12 +1115,12 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 {
                     bool const fStarted = AudioTestBeaconGetRemaining(pBeacon) == AudioTestBeaconGetSize(pBeacon);
 
-                    size_t uOff; /* Points at the data right *after the found beacon data. */
-                    rc2 = AudioTestBeaconAddConsecutive(pBeacon, auBuf, cbBuf - cbWritten, &uOff);
+                    size_t off = 0; /* Points at the data right *after the found beacon data on return. */
+                    rc2 = AudioTestBeaconAddConsecutive(pBeacon, auBuf, cbBuf - cbWritten, &off);
                     if (RT_SUCCESS(rc2))
                     {
-                        cbWritten += uOff;
-                        auBuf     += uOff;
+                        cbWritten += (uint32_t)off;
+                        auBuf     += off;
                     }
 
                     if (fStarted)
