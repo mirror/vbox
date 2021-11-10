@@ -2355,19 +2355,19 @@ typedef PGMTREES *PPGMTREES;
  *   - SUPER_SHW_STACK  (Supervisor Shadow Stack) - EPT bit 60 maps to bit 24.
  *   - SUPPRESS_VE_XCPT (Suppress \#VE exception) - EPT bit 63 maps to bit 25.
  *
- * Bits 11:9 and bit 43 are deliberately kept unused (they correspond to bits 11:9
- * in the page-table structures and to bit 11 in the EPT structures respectively) as
- * they're reserved for use by software and we may want to preserve them in the
- * future.
+ * Bits 12, 11:9 and 43 are deliberately kept unused (correspond to bit PS and bits
+ * 11:9 in the regular page-table structures and to bit 11 in the EPT structures
+ * respectively) as bit 12 is the page-size bit and bits 11:9 are reserved for
+ * use by software and we may want to use/preserve them in the future.
  *
  * @{ */
 typedef uint64_t PGMPTATTRS;
 /** Pointer to a PGMPTATTRS type. */
 typedef PGMPTATTRS *PPGMPTATTRS;
 
-/** Execute bit (!NX). */
-#define PGM_PTATTRS_X_SHIFT                         0
-#define PGM_PTATTRS_X_MASK                          RT_BIT_64(PGM_PTATTRS_X_SHIFT)
+/** Reserved bit. */
+#define PGM_PTATTRS_RSVD_0_SHIFT                    0
+#define PGM_PTATTRS_RSVD_0_MASK                     RT_BIT_64(PGM_PTATTRS_RSVD_0_SHIFT)
 /** Read and write access bit. */
 #define PGM_PTATTRS_RW_SHIFT                        1
 #define PGM_PTATTRS_RW_MASK                         RT_BIT_64(PGM_PTATTRS_RW_SHIFT)
@@ -2392,68 +2392,70 @@ typedef PGMPTATTRS *PPGMPTATTRS;
 /** The global bit. */
 #define PGM_PTATTRS_G_SHIFT                         8
 #define PGM_PTATTRS_G_MASK                          RT_BIT_64(PGM_PTATTRS_G_SHIFT)
-/** Reserved (bits 11:9) unused. */
-#define PGM_PTATTRS_RSVD_11_9_SHIFT                 9
-#define PGM_PTATTRS_RSVD_11_9_MASK                  UINT64_C(0x0000000000000e00)
+/** Reserved (bits 12:9) unused. */
+#define PGM_PTATTRS_RSVD_12_9_SHIFT                 9
+#define PGM_PTATTRS_RSVD_12_9_MASK                  UINT64_C(0x0000000000001e00)
 /** Read access bit - EPT only. */
-#define PGM_PTATTRS_EPT_R_SHIFT                     12
+#define PGM_PTATTRS_EPT_R_SHIFT                     13
 #define PGM_PTATTRS_EPT_R_MASK                      RT_BIT_64(PGM_PTATTRS_EPT_R_SHIFT)
 /** Write access bit - EPT only. */
-#define PGM_PTATTRS_EPT_W_SHIFT                     13
+#define PGM_PTATTRS_EPT_W_SHIFT                     14
 #define PGM_PTATTRS_EPT_W_MASK                      RT_BIT_64(PGM_PTATTRS_EPT_W_SHIFT)
 /** Execute or execute access for supervisor-mode linear addresses - EPT only. */
-#define PGM_PTATTRS_EPT_X_SUPER_SHIFT               14
+#define PGM_PTATTRS_EPT_X_SUPER_SHIFT               15
 #define PGM_PTATTRS_EPT_X_SUPER_MASK                RT_BIT_64(PGM_PTATTRS_EPT_X_SUPER_SHIFT)
 /** EPT memory type - EPT only. */
-#define PGM_PTATTRS_EPT_MEMTYPE_SHIFT               15
-#define PGM_PTATTRS_EPT_MEMTYPE_MASK                UINT64_C(0x0000000000038000)
+#define PGM_PTATTRS_EPT_MEMTYPE_SHIFT               16
+#define PGM_PTATTRS_EPT_MEMTYPE_MASK                UINT64_C(0x0000000000070000)
 /** Ignore PAT memory type - EPT only. */
-#define PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT            18
+#define PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT            19
 #define PGM_PTATTRS_EPT_IGNORE_PAT_MASK             RT_BIT_64(PGM_PTATTRS_EPT_IGNORE_PAT_SHIFT)
-/** Reserved (bits 21:19) unused. */
-#define PGM_PTATTRS_RSVD_21_19_SHIFT                19
-#define PGM_PTATTRS_RSVD_21_19_MASK                 UINT64_C(0x0000000000380000)
+/** Reserved (bits 22:20) unused. */
+#define PGM_PTATTRS_RSVD_22_20_SHIFT                20
+#define PGM_PTATTRS_RSVD_22_20_MASK                 UINT64_C(0x0000000000700000)
 /** Execute access for user-mode linear addresses - EPT only. */
-#define PGM_PTATTRS_EPT_X_USER_SHIFT                22
+#define PGM_PTATTRS_EPT_X_USER_SHIFT                23
 #define PGM_PTATTRS_EPT_X_USER_MASK                 RT_BIT_64(PGM_PTATTRS_EPT_X_USER_SHIFT)
 /** Reserved (bit 23) - unused. */
-#define PGM_PTATTRS_RSVD_23_SHIFT                   23
-#define PGM_PTATTRS_RSVD_23_MASK                    UINT64_C(0x0000000000800000)
+#define PGM_PTATTRS_RSVD_23_SHIFT                   24
+#define PGM_PTATTRS_RSVD_23_MASK                    UINT64_C(0x0000000001000000)
 /** Supervisor shadow stack - EPT only. */
-#define PGM_PTATTRS_EPT_SUPER_SHW_STACK_SHIFT       24
+#define PGM_PTATTRS_EPT_SUPER_SHW_STACK_SHIFT       25
 #define PGM_PTATTRS_EPT_SUPER_SHW_STACK_MASK        RT_BIT_64(PGM_PTATTRS_EPT_SUPER_SHW_STACK_SHIFT)
 /** Suppress \#VE exception - EPT only. */
-#define PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_SHIFT      25
+#define PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_SHIFT      26
 #define PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_MASK       RT_BIT_64(PGM_PTATTRS_EPT_SUPPRESS_VE_XCPT_SHIFT)
-/** Reserved (bits 63:26) - unused. */
-#define PGM_PTATTRS_RSVD_63_26_SHIFT                26
-#define PGM_PTATTRS_RSVD_63_26_MASK                 UINT64_C(0xfffffffffc000000)
+/** Reserved (bits 62:27) - unused. */
+#define PGM_PTATTRS_RSVD_62_27_SHIFT                27
+#define PGM_PTATTRS_RSVD_62_27_MASK                 UINT64_C(0x7ffffffff8000000)
+/** No-execute bit. */
+#define PGM_PTATTRS_NX_SHIFT                        63
+#define PGM_PTATTRS_NX_MASK                         RT_BIT_64(PGM_PTATTRS_NX_SHIFT)
+
 RT_BF_ASSERT_COMPILE_CHECKS(PGM_PTATTRS_, UINT64_C(0), UINT64_MAX,
-                            (X, RW, US, PWT, PCD, A, D, PAT, G, RSVD_11_9, EPT_R, EPT_W, EPT_X_SUPER, EPT_MEMTYPE, EPT_IGNORE_PAT,
-                             RSVD_21_19, EPT_X_USER, RSVD_23, EPT_SUPER_SHW_STACK, EPT_SUPPRESS_VE_XCPT, RSVD_63_26));
+                            (RSVD_0, RW, US, PWT, PCD, A, D, PAT, G, RSVD_12_9, EPT_R, EPT_W, EPT_X_SUPER, EPT_MEMTYPE,
+                             EPT_IGNORE_PAT, RSVD_22_20, EPT_X_USER, RSVD_23, EPT_SUPER_SHW_STACK, EPT_SUPPRESS_VE_XCPT,
+                             RSVD_62_27, NX));
 
 /** The bit position where the EPT specific attributes begin. */
-#define PGM_PTATTRS_EPT_SHIFT                   PGM_PTATTRS_EPT_R_SHIFT
-/** The mask of EPT bits (bits 63:ATTR_SHIFT). In the future we might choose to
+#define PGM_PTATTRS_EPT_SHIFT                       PGM_PTATTRS_EPT_R_SHIFT
+/** The mask of EPT bits (bits 26:ATTR_SHIFT). In the future we might choose to
  *  use higher unused bits for something else, in that case adjust this mask. */
-#define PGM_PTATTRS_EPT_MASK                        UINT64_C(0xfffffffffffff000)
+#define PGM_PTATTRS_EPT_MASK                        UINT64_C(0x0000000007ffe000)
 
 /** The mask of all PGM page attribute bits for regular page-tables. */
-#define PGM_PTATTRS_PT_VALID_MASK                   (  PGM_PTATTRS_X_MASK \
-                                                     | PGM_PTATTRS_RW_MASK \
+#define PGM_PTATTRS_PT_VALID_MASK                   (  PGM_PTATTRS_RW_MASK \
                                                      | PGM_PTATTRS_US_MASK \
                                                      | PGM_PTATTRS_PWT_MASK \
                                                      | PGM_PTATTRS_PCD_MASK \
                                                      | PGM_PTATTRS_A_MASK \
                                                      | PGM_PTATTRS_D_MASK \
                                                      | PGM_PTATTRS_PAT_MASK \
-                                                     | PGM_PTATTRS_G_MASK)
+                                                     | PGM_PTATTRS_G_MASK \
+                                                     | PGM_PTATTRS_NX_MASK)
 
 /** The mask of all PGM page attribute bits for EPT. */
-#define PGM_PTATTRS_EPT_VALID_MASK                  (  PGM_PTATTRS_X_MASK \
-                                                     | PGM_PTATTRS_RW_MASK \
-                                                     | PGM_PTATTRS_US_MASK \
-                                                     | PGM_PTATTRS_A_MASK \
+#define PGM_PTATTRS_EPT_VALID_MASK                  (  PGM_PTATTRS_A_MASK \
                                                      | PGM_PTATTRS_D_MASK \
                                                      | PGM_PTATTRS_R_MASK \
                                                      | PGM_PTATTRS_W_MASK \
