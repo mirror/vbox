@@ -1093,8 +1093,9 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
              AudioTestStateToStr(pTst->enmState)));
 
     uint32_t cbWritten = 0;
+    uint8_t *auBuf     = (uint8_t *)pvBuf;
 
-    if (RT_SUCCESS(rc))
+    while (cbWritten < cbBuf)
     {
         switch (pTst->enmState)
         {
@@ -1115,29 +1116,11 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                     bool const fStarted = AudioTestBeaconGetRemaining(pBeacon) == AudioTestBeaconGetSize(pBeacon);
 
                     size_t uOff; /* Points at the data right *after the found beacon data. */
-                    rc2 = AudioTestBeaconAddConsecutive(pBeacon, (uint8_t *)pvBuf, cbBuf, &uOff);
+                    rc2 = AudioTestBeaconAddConsecutive(pBeacon, auBuf, cbBuf - cbWritten, &uOff);
                     if (RT_SUCCESS(rc2))
                     {
-                        /*
-                         * When being in the AUDIOTESTSTATE_PRE state, we might get more audio data
-                         * than we need for the pre-beacon to complete. In other words, that "more data"
-                         * needs to be counted to the actual recorded test tone data then.
-                         */
-                        if (pTst->enmState == AUDIOTESTSTATE_PRE)
-                        {
-                            uint32_t const cbRemaining = pTst->t.TestTone.u.Play.cbToRead - pTst->t.TestTone.u.Play.cbRead;
-                            uint32_t       cbData      = cbBuf - (uint32_t)uOff;
-
-                            if (cbData > cbRemaining) /* Overflow handling -- should never happen! */
-                            {
-                                LogRel(("ValKit: Test #%RU32: Warning: Pre-beacon data contains more data than remaining test "
-                                        "expects (%RU32 bytes) -- %RU32 bytes will be *lost* !!!\n",
-                                        pTst->idxTest, cbRemaining, cbData - cbRemaining));
-                                cbData = cbRemaining;
-                            }
-
-                            pTst->t.TestTone.u.Play.cbRead += cbData;
-                        }
+                        cbWritten += uOff;
+                        auBuf     += uOff;
                     }
 
                     if (fStarted)
@@ -1174,15 +1157,12 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                     /* Don't read more than we're told to.
                      * After the actual test tone data there might come a post beacon which also
                      * needs to be handled in the AUDIOTESTSTATE_POST state then. */
-                    if (cbBuf > cbRemaining)
-                    {
-                        LogRel(("ValKit: Test #%RU32: Warning: Audio data contains more data than remaining test "
-                                "expects (%RU32 bytes) -- %RU32 bytes will be *lost* !!!\n",
-                                pTst->idxTest, cbRemaining, cbBuf - cbRemaining));
-                        cbBuf = cbRemaining;
-                    }
+                    const uint32_t cbData = RT_MIN(cbBuf - cbWritten, cbRemaining);
 
-                    pTst->t.TestTone.u.Play.cbRead += cbBuf;
+                    pTst->t.TestTone.u.Play.cbRead += cbData;
+
+                    cbWritten += cbData;
+                    auBuf     += cbData;
                 }
 
                 const bool fComplete = pTst->t.TestTone.u.Play.cbRead >= pTst->t.TestTone.u.Play.cbToRead;
@@ -1192,7 +1172,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                             pTst->idxTest, RTTimeMilliTS() - pTst->msStartedTS));
 
                     if (pTst->t.TestTone.u.Play.cbRead > pTst->t.TestTone.u.Play.cbToRead)
-                        LogRel(("ValKit: Warning: Test #%RU32 read %RU32 bytes more than announced\n",
+                        LogRel(("ValKit: Test #%RU32: Warning: Read %RU32 bytes more than announced\n",
                                 pTst->idxTest, pTst->t.TestTone.u.Play.cbRead - pTst->t.TestTone.u.Play.cbToRead));
 
                     pTst->enmState = AUDIOTESTSTATE_POST;
@@ -1213,14 +1193,14 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                 break;
         }
 
-        /* Always write (record) everything, no matter if the current audio contains complete silence or not.
-         * Might be also become handy later if we want to have a look at start/stop timings and so on. */
-        rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbBuf);
-        AssertRC(rc);
-
-        /* Always report everything as being played. */
-        cbWritten = cbBuf;
+        if (pTst->enmState == AUDIOTESTSTATE_DONE)
+            break;
     }
+
+    LogRel3(("ValKit: Test #%RU32: Played %RU32/%RU32 bytes\n", pTst->idxTest, cbWritten, cbBuf));
+
+    rc = AudioTestObjWrite(pTst->Obj, pvBuf, cbWritten);
+    AssertRC(rc);
 
     if (pTst->enmState == AUDIOTESTSTATE_DONE)
     {
