@@ -2027,7 +2027,8 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
         if ((uint32_t)idChunk < GMM_CHUNKID_LAST)
         {
             idChunk = ASMBitNextClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1, idChunk);
-            if (idChunk > NIL_GMM_CHUNKID)
+            if (   idChunk > NIL_GMM_CHUNKID
+                && (uint32_t)idChunk <= GMM_CHUNKID_LAST)
             {
                 AssertMsgReturnStmt(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk),
                                     RTSpinlockRelease(pGMM->hSpinLockChunkId), NIL_GMM_CHUNKID);
@@ -2044,7 +2045,7 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
      * We're not racing anyone, so there is no need to expect failures or have restart loops.
      */
     idChunk = ASMBitFirstClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1);
-    AssertMsgReturnStmt(idChunk > NIL_GMM_CHUNKID && idChunk <= GMM_CHUNKID_LAST, ("%#x\n", idChunk),
+    AssertMsgReturnStmt(idChunk > NIL_GMM_CHUNKID && (uint32_t)idChunk <= GMM_CHUNKID_LAST, ("%#x\n", idChunk),
                         RTSpinlockRelease(pGMM->hSpinLockChunkId), NIL_GVM_HANDLE);
     AssertMsgReturnStmt(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk),
                         RTSpinlockRelease(pGMM->hSpinLockChunkId), NIL_GMM_CHUNKID);
