@@ -28,12 +28,14 @@
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 
+
 /* Forward declarations: */
 class QMenu;
 class QGridLayout;
 class QIDialogButtonBox;
 class UIDialogPanel;
 class QIToolBar;
+class UIActionPool;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
 class UIVisoCreatorOptionsPanel;
@@ -48,7 +50,7 @@ class UIVisoCreatorWidget : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    UIVisoCreatorWidget(QWidget *pParent = 0, const QString& strMachineName = QString());
+    UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName = QString());
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
     const QString     &visoName() const;
@@ -65,7 +67,7 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() final override;
 
 private slots:
 
@@ -148,6 +150,7 @@ private:
     UIVisoConfigurationPanel  *m_pConfigurationPanel;
     QMap<UIDialogPanel*, QAction*> m_panelActionMap;
     QList<UIDialogPanel*>          m_visiblePanelsList;
+    QPointer<UIActionPool> m_pActionPool;
 };
 
 
@@ -157,7 +160,7 @@ class UIVisoCreatorDialog : public QIWithRetranslateUI<QIMainDialog>
 
 public:
 
-    UIVisoCreatorDialog(QWidget *pParent = 0, const QString& strMachineName = QString());
+    UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName = QString());
 
     QStringList  entryList() const;
     QString visoName() const;
@@ -173,5 +176,6 @@ private:
     QString m_strMachineName;
     UIVisoCreatorWidget *m_pVisoCreatorWidget;
     QIDialogButtonBox    *m_pButtonBox;
+    QPointer<UIActionPool> m_pActionPool;
 };
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreator_h */

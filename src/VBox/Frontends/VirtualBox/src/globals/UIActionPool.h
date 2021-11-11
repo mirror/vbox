@@ -137,6 +137,11 @@ enum UIActionIndex
     UIActionIndex_M_FileManager_S_Host_ShowProperties,
     UIActionIndex_M_FileManager_S_Guest_ShowProperties,
 
+    /* VISO Creator actions: */
+    UIActionIndex_M_VISOCreator,
+    UIActionIndex_M_VISOCreator_ToggleConfigPanel,
+    UIActionIndex_M_VISOCreator_ToggleOptionsPanel,
+
     /* Maximum index: */
     UIActionIndex_Max
 };

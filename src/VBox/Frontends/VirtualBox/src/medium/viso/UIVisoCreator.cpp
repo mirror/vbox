@@ -22,6 +22,7 @@
 #include <QStyle>
 
 /* GUI includes: */
+#include "UIActionPool.h"
 #include "QIDialogButtonBox.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
@@ -43,7 +44,7 @@
 *   UIVisoCreatorWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIVisoCreatorWidget::UIVisoCreatorWidget(QWidget *pParent /* =0 */, const QString& strMachineName /* = QString() */)
+UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionConfiguration(0)
     , m_pActionOptions(0)
@@ -61,6 +62,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(QWidget *pParent /* =0 */, const QStrin
     , m_strMachineName(strMachineName)
     , m_pCreatorOptionsPanel(0)
     , m_pConfigurationPanel(0)
+    , m_pActionPool(pActionPool)
 {
     m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
     prepareActions();
@@ -551,11 +553,12 @@ void UIVisoCreatorWidget::prepareVerticalToolBar()
 /*********************************************************************************************************************************
 *   UIVisoCreatorDialog implementation.                                                                                          *
 *********************************************************************************************************************************/
-UIVisoCreatorDialog::UIVisoCreatorDialog(QWidget *pParent /* = 0 */, const QString& strMachineName /* = QString() */)
+UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_strMachineName(strMachineName)
     , m_pVisoCreatorWidget(0)
     , m_pButtonBox(0)
+    , m_pActionPool(pActionPool)
 {
     prepareWidgets();
     prepareConnections();
@@ -603,7 +606,7 @@ void UIVisoCreatorDialog::prepareWidgets()
     pCentralWidget->setLayout(pMainLayout);
 
 
-    m_pVisoCreatorWidget = new UIVisoCreatorWidget(this, m_strMachineName);
+    m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, m_strMachineName);
     if (m_pVisoCreatorWidget)
     {
         pMainLayout->addWidget(m_pVisoCreatorWidget);

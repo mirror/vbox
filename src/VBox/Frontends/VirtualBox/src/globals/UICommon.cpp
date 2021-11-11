@@ -1751,7 +1751,7 @@ QUuid UICommon::createVisoMediumWithVisoCreator(QWidget *pParent, const QString 
         strVisoSaveFolder = defaultFolderPathForType(UIMediumDeviceType_DVD);
 
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pDialogParent, strMachineName);
+    UIVisoCreatorDialog *pVisoCreator = 0;//new UIVisoCreatorDialog(pDialogParent, strMachineName);
 
     if (!pVisoCreator)
         return QString();

@@ -1737,7 +1737,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Session"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager session"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open Session Pane")
+        setToolTip(  QApplication::translate("UIActionPool", "Open Session Panel")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2202,6 +2202,115 @@ protected:
     }
 };
 
+/** Menu action extension, used as 'VISO Creator' menu class. */
+class UIActionMenuVISOCreator : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreator(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("VISOCreatorMenu");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "VISO Creator"));
+    }
+};
+
+/** Toggle action extension, used to toggle 'VISO Creator configuration' panel in file manager. */
+class UIActionMenuVISOCreatorToggleConfigPanel : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorToggleConfigPanel(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        setIcon(UIIconPool::iconSetFull(":/file_manager_session_32px.png",          ":/file_manager_session_16px.png",
+                                        ":/file_manager_session_disabled_32px.png", ":/file_manager_session_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleVISOCreatorConfigurationPanel");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Configuration"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open panel for VISO Creator configuration"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Configuration Panel")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Toggle action extension, used to toggle 'VISO Creator options' panel in file manager. */
+class UIActionMenuVISOCreatorToggleOptionsPanel : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorToggleOptionsPanel(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        setIcon(UIIconPool::iconSetFull(":/file_manager_session_32px.png",          ":/file_manager_session_16px.png",
+                                        ":/file_manager_session_disabled_32px.png", ":/file_manager_session_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToggleVISOCreatorOptionsurationPanel");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Configuration"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open panel for VISO Creator options"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Options Panel")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 /** Menu action extension, used as 'Activity' menu class. */
 class UIActionMenuSelectorActivity : public UIActionMenu
 {
@@ -2581,6 +2690,11 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_S_Host_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_ShowProperties] = new UIActionMenuFileManagerShowProperties(this);
 
+    /* Create VISO Creator actions: */
+    m_pool[UIActionIndex_M_VISOCreator] = new UIActionMenuVISOCreator(this);
+    m_pool[UIActionIndex_M_VISOCreator_ToggleConfigPanel] = new UIActionMenuVISOCreatorToggleConfigPanel(this);
+    m_pool[UIActionIndex_M_VISOCreator_ToggleOptionsPanel] = new UIActionMenuVISOCreatorToggleOptionsPanel(this);
+
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC
     m_menuUpdateHandlers[UIActionIndex_M_Application].ptf = &UIActionPool::updateMenuApplication;
@@ -2958,7 +3072,6 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     /* 'Refresh' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Reload)) || fSeparator;
-
 }
 
 void UIActionPool::updateMenuVMActivityMonitor()
