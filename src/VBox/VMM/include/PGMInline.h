@@ -102,11 +102,13 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVMCC pVM, RTGCPHYS GCPhys)
 {
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)];
     RTGCPHYS off;
-    if (   !pRam
-        || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
-        return pgmPhysGetPageSlow(pVM, GCPhys);
-    STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
-    return &pRam->aPages[off >> PAGE_SHIFT];
+    if (   pRam
+        && (off = GCPhys - pRam->GCPhys) < pRam->cb)
+    {
+        STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
+        return &pRam->aPages[off >> PAGE_SHIFT];
+    }
+    return pgmPhysGetPageSlow(pVM, GCPhys);
 }
 
 

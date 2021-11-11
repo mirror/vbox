@@ -364,16 +364,13 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
     unsigned     cLeft      = _2M / PAGE_SIZE;
     while (cLeft-- > 0)
     {
-        PPGMPAGE pPage;
-        int rc2 = pgmPhysGetPageEx(pGVM, GCPhys, &pPage);
-        AssertRCReturn(rc2, rc2);
-        AssertReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, VERR_PGM_PHYS_NOT_RAM);
-        AssertReturn(PGM_PAGE_IS_ZERO(pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
+        PPGMPAGE const pPage = pgmPhysGetPage(pGVM, GCPhys);
+        AssertReturn(pPage && PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM && PGM_PAGE_IS_ZERO(pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
 
         /* Make sure there are no zero mappings. */
         uint16_t const u16Tracking = PGM_PAGE_GET_TRACKING(pPage);
         if (u16Tracking == 0)
-        { /* likely */ }
+            Assert(PGM_PAGE_GET_PTE_INDEX(pPage) == 0);
         else
         {
             STAM_REL_COUNTER_INC(&pGVM->pgm.s.StatLargePageZeroEvict);
@@ -381,18 +378,15 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
             Log(("PGMR0PhysAllocateLargePage: GCPhys=%RGp: tracking=%#x rc3=%Rrc\n", GCPhys, u16Tracking, VBOXSTRICTRC_VAL(rc3)));
             if (rc3 != VINF_SUCCESS && rc == VINF_SUCCESS)
                 rc = rc3; /** @todo not perfect... */
+            PGM_PAGE_SET_PTE_INDEX(pGVM, pPage, 0);
+            PGM_PAGE_SET_TRACKING(pGVM, pPage, 0);
         }
 
         /* Setup the new page. */
-        STAM_COUNTER_INC(&pGVM->pgm.s.Stats.StatRZPageReplaceZero);
-        pGVM->pgm.s.cZeroPages--;
-        pGVM->pgm.s.cPrivatePages++;
         PGM_PAGE_SET_HCPHYS(pGVM, pPage, HCPhys);
-        PGM_PAGE_SET_PAGEID(pGVM, pPage, idPage);
         PGM_PAGE_SET_STATE(pGVM, pPage, PGM_PAGE_STATE_ALLOCATED);
         PGM_PAGE_SET_PDE_TYPE(pGVM, pPage, PGM_PAGE_PDE_TYPE_PDE);
-        PGM_PAGE_SET_PTE_INDEX(pGVM, pPage, 0);
-        PGM_PAGE_SET_TRACKING(pGVM, pPage, 0);
+        PGM_PAGE_SET_PAGEID(pGVM, pPage, idPage);
         Log3(("PGMR0PhysAllocateLargePage: GCPhys=%RGp: idPage=%#x HCPhys=%RGp (old tracking=%#x)\n",
               GCPhys, idPage, HCPhys, u16Tracking));
 
@@ -402,11 +396,15 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
         GCPhys += PAGE_SIZE;
     }
 
+    STAM_COUNTER_ADD(&pGVM->pgm.s.Stats.StatRZPageReplaceZero, _2M / PAGE_SIZE);
+    pGVM->pgm.s.cZeroPages    -= _2M / PAGE_SIZE;
+    pGVM->pgm.s.cPrivatePages += _2M / PAGE_SIZE;
+
     /*
      * Flush all TLBs.
      */
     if (!fFlushTLBs)
-    { /* likely */ }
+    { /* likely as we shouldn't normally map zero pages */ }
     else
     {
         STAM_REL_COUNTER_INC(&pGVM->pgm.s.StatLargePageTlbFlush);
@@ -417,8 +415,7 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
     pgmPhysInvalidatePageMapTLB(pGVM);
 
     STAM_PROFILE_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
-    /** @todo returning info statuses here might not be a great idea... */
-#if 0
+#if 0 /** @todo returning info statuses here might not be a great idea... */
     LogFlow(("PGMR0PhysAllocateLargePage: returns %Rrc\n", VBOXSTRICTRC_VAL(rc) ));
     return VBOXSTRICTRC_TODO(rc);
 #else
