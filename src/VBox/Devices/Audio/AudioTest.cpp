@@ -2283,7 +2283,8 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
         AssertRCBreak(rc);
         AssertBreakStmt(cbReadA == cbReadB, rc = VERR_INVALID_PARAMETER); /** @todo Find a better rc. */
 
-        if (memcmp(auBufA, auBufB, RT_MIN(cbReadA, cbReadB)) != 0)
+        const size_t cbToCmp = RT_MIN(cbReadA, cbReadB);
+        if (memcmp(auBufA, auBufB, cbToCmp) != 0)
         {
             if (!fInDiff) /* No consequitive different chunk? Count as new then. */
             {
@@ -2296,11 +2297,23 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
         {
             if (fInDiff)
             {
+                bool const fIsAllSilenceA = PDMAudioPropsIsBufferSilence(&pToneParms->Props, auBufA, cbToCmp);
+                bool const fIsAllSilenceB = PDMAudioPropsIsBufferSilence(&pToneParms->Props, auBufB, cbToCmp);
+
                 uint32_t const cbDiff = offCur - offDiffStart;
-                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
-                                                                                     pCmpA->offStart, pCmpB->offStart, offDiffStart, offCur,
+                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x [%08RU64-%08RU64] vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
+                                                                                     pCmpA->offStart + offDiffStart, pCmpA->offStart + offDiffStart, pCmpA->offStart + offCur,
+                                                                                     pCmpB->offStart + offDiffStart, pCmpB->offStart + offDiffStart, pCmpB->offStart + offCur,
                                                                                      cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
                 AssertRC(rc2);
+                if (   fIsAllSilenceA
+                    || fIsAllSilenceB)
+                {
+                    rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunk %s @ %#x (%RU64 bytes, %RU64ms) is all silence",
+                                                                                     fIsAllSilenceA ? "A" : "B",
+                                                                                     offDiffStart, cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
+                    AssertRC(rc2);
+                }
 
                 cbDiffs += cbDiff;
             }
@@ -2316,8 +2329,9 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     if (fInDiff)
     {
         uint32_t const cbDiff = offCur - offDiffStart;
-        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
-                                                                             pCmpA->offStart, pCmpB->offStart, offDiffStart, offCur,
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x [%08RU64-%08RU64] vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
+                                                                             pCmpA->offStart + offDiffStart, pCmpA->offStart + offDiffStart, pCmpA->offStart + offCur,
+                                                                             pCmpB->offStart + offDiffStart, pCmpB->offStart + offDiffStart, pCmpB->offStart + offCur,
                                                                              cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
         AssertRC(rc2);
 
