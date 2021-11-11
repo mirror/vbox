@@ -1712,7 +1712,6 @@ DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
     return vrc;
 }
 
-
 QUuid UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enmMediumType,
                                        const QString &strDefaultFolder /* = QString() */,
                                        const QString &strMachineName /* = QString() */,
