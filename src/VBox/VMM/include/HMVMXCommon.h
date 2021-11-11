@@ -327,7 +327,7 @@ typedef struct VMXVMCSINFO
     uint64_t                    u64Cr0Mask;
     /** CR4 guest/host mask. */
     uint64_t                    u64Cr4Mask;
-#ifdef IN_RING0
+#ifndef IN_NEM_DARWIN
     /** Current VMX_VMCS_HOST_RIP value (only used in HMR0A.asm). */
     uint64_t                    uHostRip;
     /** Current VMX_VMCS_HOST_RSP value (only used in HMR0A.asm). */
@@ -353,7 +353,7 @@ typedef struct VMXVMCSINFO
     R3R0PTRTYPE(void *)         pvHostMsrLoad;
     /** @} */
 
-#ifdef IN_RING0
+#ifndef IN_NEM_DARWIN
     /** @name Host-physical address of VMCS and related data structures.
      *  @{ */
     /** The VMCS. */
@@ -393,7 +393,7 @@ AssertCompileMemberAlignment(VMXVMCSINFO, pvMsrBitmap,     8);
 AssertCompileMemberAlignment(VMXVMCSINFO, pvGuestMsrLoad,  8);
 AssertCompileMemberAlignment(VMXVMCSINFO, pvGuestMsrStore, 8);
 AssertCompileMemberAlignment(VMXVMCSINFO, pvHostMsrLoad,   8);
-#ifdef IN_RING0
+#ifndef IN_NEM_DARWIN
 AssertCompileMemberAlignment(VMXVMCSINFO, HCPhysVmcs,      8);
 AssertCompileMemberAlignment(VMXVMCSINFO, hMemObj,         8);
 #endif

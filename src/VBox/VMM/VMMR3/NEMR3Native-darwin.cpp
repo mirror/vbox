@@ -1252,6 +1252,7 @@ DECL_FORCE_INLINE(bool) nemR3DarwinIsVmxLbr(PCVMCC pVM)
 /*
  * Instantiate the code we share with ring-0.
  */
+#define IN_NEM_DARWIN
 //#define HMVMX_ALWAYS_TRAP_ALL_XCPTS
 #define HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
 #define VCPU_2_VMXSTATE(a_pVCpu)            (a_pVCpu)->nem.s
