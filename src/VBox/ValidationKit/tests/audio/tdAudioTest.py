@@ -729,7 +729,7 @@ class tdAudioTest(vbox.TestDriver):
 
             cVerbosity = reporter.getVerbosity();
             if cVerbosity >= 2: # Explicitly set verbosity via extra-data when >= level 2.
-                self.asOptExtraData.extend([ f'VBoxInternal2/Audio/Debug/Level:{cVerbosity}', ]);
+                self.asOptExtraData.extend([ f'VBoxInternal2/Audio/Debug/Level:{cVerbosity}' ]);
 
             # Set extra data.
             for sExtraData in self.asOptExtraData:
