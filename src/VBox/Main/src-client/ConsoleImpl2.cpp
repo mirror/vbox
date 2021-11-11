@@ -3297,6 +3297,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                 switch (uDebugLevel)
                 {
+                    case 0:
+                        strGroups += " drv_host_audio.e.l.l2.l3.f";
+                        break;
                     case 1:
                         RT_FALL_THROUGH();
                     case 2:
@@ -3305,12 +3308,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                         strGroups += " drv_host_audio.e.l.l2.l3.f+audio_test.e.l.l2.l3.f";
                         break;
                     case 4:
-                        strGroups += " drv_host_audio.e.l.l2.l3.l4.f+audio_test.e.l.l2.l3.l4.f";
-                        break;
-                    case 0:
                         RT_FALL_THROUGH();
                     default:
-                        strGroups += " drv_host_audio.e.l.l2.l3.f";
+                        strGroups += " drv_host_audio.e.l.l2.l3.l4.f+audio_test.e.l.l2.l3.l4.f";
                         break;
                 }
 
