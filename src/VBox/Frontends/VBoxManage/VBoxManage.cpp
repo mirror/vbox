@@ -47,7 +47,6 @@
 
 #include "VBoxManage.h"
 
-
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -81,6 +80,7 @@ typedef struct VBMGCMD
 typedef VBMGCMD const *PCVBMGCMD;
 #endif
 
+DECLARE_TRANSLATION_CONTEXT(VBoxManage);
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -235,7 +235,7 @@ HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
     hrc = progress->COMGETTER(OperationCount)(&cOperations);
     if (FAILED(hrc))
     {
-        RTStrmPrintf(g_pStdErr, "Progress object failure: %Rhrc\n", hrc);
+        RTStrmPrintf(g_pStdErr, VBoxManage::tr("Progress object failure: %Rhrc\n"), hrc);
         RTStrmFlush(g_pStdErr);
         return hrc;
     }
@@ -252,7 +252,7 @@ HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
         hrc = progress->COMGETTER(Description(bstrDescription.asOutParam()));
         if (FAILED(hrc))
         {
-            RTStrmPrintf(g_pStdErr, "Failed to get progress description: %Rhrc\n", hrc);
+            RTStrmPrintf(g_pStdErr, VBoxManage::tr("Failed to get progress description: %Rhrc\n"), hrc);
             return hrc;
         }
 
@@ -319,7 +319,7 @@ HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
                 LONG lSecsRem = 0;
                 progress->COMGETTER(TimeRemaining)(&lSecsRem);
 
-                RTStrmPrintf(g_pStdErr, "(%u/%u) %ls %02u%% => %02u%% (%d s remaining)\n", ulOperation + 1, cOperations,
+                RTStrmPrintf(g_pStdErr, VBoxManage::tr("(%u/%u) %ls %02u%% => %02u%% (%d s remaining)\n"), ulOperation + 1, cOperations,
                              bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent, lSecsRem);
                 ulLastPercent = ulCurrentPercent;
                 ulLastOperationPercent = ulCurrentOperationPercent;
@@ -389,11 +389,11 @@ HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
             }
         }
         else if (g_fCanceled)
-            RTStrmPrintf(g_pStdErr, "CANCELED\n");
+            RTStrmPrintf(g_pStdErr, VBoxManage::tr("CANCELED\n"));
         else
         {
             if (fDetailed)
-                RTStrmPrintf(g_pStdErr, "Progress state: %Rhrc\n", iRc);
+                RTStrmPrintf(g_pStdErr, VBoxManage::tr("Progress state: %Rhrc\n"), iRc);
             else if (fFlags != SHOW_PROGRESS_NONE)
                 RTStrmPrintf(g_pStdErr, "%Rhrc\n", iRc);
         }
@@ -403,7 +403,7 @@ HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
     {
         if (!fDetailed)
             RTStrmPrintf(g_pStdErr, "\n");
-        RTStrmPrintf(g_pStdErr, "Progress object failure: %Rhrc\n", hrc);
+        RTStrmPrintf(g_pStdErr, VBoxManage::tr("Progress object failure: %Rhrc\n"), hrc);
     }
     RTStrmFlush(g_pStdErr);
     return hrc;
@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
         else if (!strcmp(argv[i], "--settingspw"))
         {
             if (i >= argc - 1)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE, "Password expected");
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, VBoxManage::tr("Password expected"));
             /* password for certain settings */
             pszSettingsPw = argv[i + 1];
             iCmd += 2;
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
         else if (!strcmp(argv[i], "--settingspwfile"))
         {
             if (i >= argc-1)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE, "No password file specified");
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, VBoxManage::tr("No password file specified"));
             pszSettingsPwFile = argv[i+1];
             iCmd += 2;
         }
@@ -523,7 +523,7 @@ int main(int argc, char *argv[])
         else if (argv[i][0] == '@')
         {
             if (papszResponseFileArgs)
-                return RTMsgErrorExitFailure("Only one response file allowed");
+                return RTMsgErrorExitFailure(VBoxManage::tr("Only one response file allowed"));
 
             /* Load response file, making sure it's valid UTF-8. */
             char  *pszResponseFile;
@@ -531,12 +531,12 @@ int main(int argc, char *argv[])
             vrc = RTFileReadAllEx(&argv[i][1], 0, RTFOFF_MAX, RTFILE_RDALL_O_DENY_NONE | RTFILE_RDALL_F_TRAILING_ZERO_BYTE,
                                   (void **)&pszResponseFile, &cbResponseFile);
             if (RT_FAILURE(vrc))
-                return RTMsgErrorExitFailure("Error reading response file '%s': %Rrc", &argv[i][1], vrc);
+                return RTMsgErrorExitFailure(VBoxManage::tr("Error reading response file '%s': %Rrc"), &argv[i][1], vrc);
             vrc = RTStrValidateEncoding(pszResponseFile);
             if (RT_FAILURE(vrc))
             {
                 RTFileReadAllFree(pszResponseFile, cbResponseFile);
-                return RTMsgErrorExitFailure("Invalid response file ('%s') encoding: %Rrc", &argv[i][1], vrc);
+                return RTMsgErrorExitFailure(VBoxManage::tr("Invalid response file ('%s') encoding: %Rrc"), &argv[i][1], vrc);
             }
 
             /* Parse it. */
@@ -544,13 +544,13 @@ int main(int argc, char *argv[])
                                          RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
             RTFileReadAllFree(pszResponseFile, cbResponseFile);
             if (RT_FAILURE(vrc))
-                return RTMsgErrorExitFailure("Failed to parse response file '%s' (bourne shell style): %Rrc", &argv[i][1], vrc);
+                return RTMsgErrorExitFailure(VBoxManage::tr("Failed to parse response file '%s' (bourne shell style): %Rrc"), &argv[i][1], vrc);
 
             /* Construct new argv+argc with the response file arguments inserted. */
             int cNewArgs = argc + cResponseFileArgs;
             papszNewArgv = (char **)RTMemAllocZ((cNewArgs + 2) * sizeof(papszNewArgv[0]));
             if (!papszNewArgv)
-                return RTMsgErrorExitFailure("out of memory");
+                return RTMsgErrorExitFailure(VBoxManage::tr("out of memory"));
             memcpy(&papszNewArgv[0], &argv[0], sizeof(argv[0]) * (i + 1));
             memcpy(&papszNewArgv[i + 1], papszResponseFileArgs, sizeof(argv[0]) * cResponseFileArgs);
             memcpy(&papszNewArgv[i + 1 + cResponseFileArgs], &argv[i + 1], sizeof(argv[0]) * (argc - i - 1 + 1));
@@ -594,7 +594,7 @@ int main(int argc, char *argv[])
     {
         if (!strcmp(argv[iCmd], "commands"))
         {
-            RTPrintf("commands:\n");
+            RTPrintf(VBoxManage::tr("commands:\n"));
             for (unsigned i = 0; i < RT_ELEMENTS(g_aCommands); i++)
                 if (   i == 0  /* skip backwards compatibility entries */
                     || (g_aCommands[i].enmHelpCat != USAGE_S_NEWCMD
@@ -603,7 +603,7 @@ int main(int argc, char *argv[])
                     RTPrintf("    %s\n", g_aCommands[i].pszCommand);
             return RTEXITCODE_SUCCESS;
         }
-        return errorSyntax(USAGE_S_ALL, "Invalid command '%s'", argv[iCmd]);
+        return errorSyntax(USAGE_S_ALL, VBoxManage::tr("Invalid command '%s'"), argv[iCmd]);
     }
 
     RTEXITCODE rcExit;
@@ -622,10 +622,10 @@ int main(int argc, char *argv[])
                 char szHome[RTPATH_MAX] = "";
                 com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
                 return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                       "Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
+                       VBoxManage::tr("Failed to initialize COM because the global settings directory '%s' is not accessible!"), szHome);
             }
 # endif
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM! (hrc=%Rhrc)", hrc);
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, VBoxManage::tr("Failed to initialize COM! (hrc=%Rhrc)"), hrc);
         }
 
 
@@ -672,7 +672,7 @@ int main(int argc, char *argv[])
             else
             {
                 com::ErrorInfo info;
-                RTMsgError("Failed to create a session object!");
+                RTMsgError(VBoxManage::tr("Failed to create a session object!"));
                 if (!info.isFullAvailable() && !info.isBasicAvailable())
                     com::GluePrintRCMessage(hrc);
                 else
@@ -682,11 +682,11 @@ int main(int argc, char *argv[])
         else
         {
             com::ErrorInfo info;
-            RTMsgError("Failed to create the VirtualBox object!");
+            RTMsgError(VBoxManage::tr("Failed to create the VirtualBox object!"));
             if (!info.isFullAvailable() && !info.isBasicAvailable())
             {
                 com::GluePrintRCMessage(hrc);
-                RTMsgError("Most likely, the VirtualBox COM server is not running or failed to start.");
+                RTMsgError(VBoxManage::tr("Most likely, the VirtualBox COM server is not running or failed to start."));
             }
             else
                 com::GluePrintErrorInfo(info);

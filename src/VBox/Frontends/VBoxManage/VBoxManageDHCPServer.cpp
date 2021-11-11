@@ -43,6 +43,7 @@
 
 using namespace com;
 
+DECLARE_TRANSLATION_CONTEXT(DHCPServer);
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -60,12 +61,12 @@ using namespace com;
 #define DHCPD_CMD_COMMON_OPTION_CASES(a_pCtx, a_ch, a_pValueUnion) \
         case DHCPD_CMD_COMMON_OPT_NETWORK: \
             if ((a_pCtx)->pszInterface != NULL) \
-                return errorSyntax("Either --network or --interface, not both"); \
+                return errorSyntax(DHCPServer::tr("Either --network or --interface, not both")); \
             (a_pCtx)->pszNetwork = ValueUnion.psz; \
             break; \
         case DHCPD_CMD_COMMON_OPT_INTERFACE: \
             if ((a_pCtx)->pszNetwork != NULL) \
-                return errorSyntax("Either --interface or --network, not both"); \
+                return errorSyntax(DHCPServer::tr("Either --interface or --network, not both")); \
             (a_pCtx)->pszInterface = ValueUnion.psz; \
             break
 
@@ -175,7 +176,7 @@ static ComPtr<IDHCPServer> dhcpdFindServer(PDHCPDCMDCTX pCtx)
             CHECK_ERROR2(hrc, ptrIHost, FindHostNetworkInterfaceByName(bstrInterface.raw(), ptrIHostIf.asOutParam()));
             if (FAILED(hrc))
             {
-                errorArgument("Failed to locate host-only interface '%s'", pCtx->pszInterface);
+                errorArgument(DHCPServer::tr("Failed to locate host-only interface '%s'"), pCtx->pszInterface);
                 return ptrRet;
             }
 
@@ -189,13 +190,13 @@ static ComPtr<IDHCPServer> dhcpdFindServer(PDHCPDCMDCTX pCtx)
         if (SUCCEEDED(hrc))
             return ptrRet;
         if (pCtx->pszNetwork)
-            errorArgument("Failed to find DHCP server for network '%s'", pCtx->pszNetwork);
+            errorArgument(DHCPServer::tr("Failed to find DHCP server for network '%s'"), pCtx->pszNetwork);
         else
-            errorArgument("Failed to find DHCP server for host-only interface '%s' (network '%ls')",
+            errorArgument(DHCPServer::tr("Failed to find DHCP server for host-only interface '%s' (network '%ls')"),
                           pCtx->pszInterface, bstrNetName.raw());
     }
     else
-        errorSyntax("You need to specify either --network or --interface to identify the DHCP server");
+        errorSyntax(DHCPServer::tr("You need to specify either --network or --interface to identify the DHCP server"));
     return ptrRet;
 }
 
@@ -469,38 +470,38 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                  */
                 case 'g':   // --global     Sets the option scope to 'global'.
                     if (fNeedValueOrRemove)
-                        return errorSyntax("Incomplete option sequence preseeding '--global'");
+                        return errorSyntax(DHCPServer::tr("Incomplete option sequence preseeding '--global'"));
                     Scope.setGlobal();
                     break;
 
                 case 'G':   // --group
                     if (fNeedValueOrRemove)
-                        return errorSyntax("Incomplete option sequence preseeding '--group'");
+                        return errorSyntax(DHCPServer::tr("Incomplete option sequence preseeding '--group'"));
                     if (!*ValueUnion.psz)
-                        return errorSyntax("Group name cannot be empty");
+                        return errorSyntax(DHCPServer::tr("Group name cannot be empty"));
                     Scope.setGroup(ValueUnion.psz);
                     break;
 
                 case 'E':   // --mac-address
                     if (fNeedValueOrRemove)
-                        return errorSyntax("Incomplete option sequence preseeding '--mac-address'");
+                        return errorSyntax(DHCPServer::tr("Incomplete option sequence preseeding '--mac-address'"));
                     RTStrPrintf(szMACAddress, sizeof(szMACAddress), "%RTmac", &ValueUnion.MacAddr);
                     Scope.setMACAddress(szMACAddress);
                     break;
 
                 case 'M':   // --vm         Sets the option scope to ValueUnion.psz + 0.
                     if (fNeedValueOrRemove)
-                        return errorSyntax("Incomplete option sequence preseeding '--vm'");
+                        return errorSyntax(DHCPServer::tr("Incomplete option sequence preseeding '--vm'"));
                     Scope.setMachineNIC(ValueUnion.psz);
                     break;
 
                 case 'n':   // --nic        Sets the option scope to pszVmName + (ValueUnion.u8 - 1).
                     if (Scope.getScope() != DHCPConfigScope_MachineNIC)
-                        return errorSyntax("--nic option requires a --vm preceeding selecting the VM it should apply to");
+                        return errorSyntax(DHCPServer::tr("--nic option requires a --vm preceeding selecting the VM it should apply to"));
                     if (fNeedValueOrRemove)
-                        return errorSyntax("Incomplete option sequence preseeding '--nic=%u", ValueUnion.u8);
+                        return errorSyntax(DHCPServer::tr("Incomplete option sequence preseeding '--nic=%u"), ValueUnion.u8);
                     if (ValueUnion.u8 < 1)
-                        return errorSyntax("invalid NIC number: %u", ValueUnion.u8);
+                        return errorSyntax(DHCPServer::tr("invalid NIC number: %u"), ValueUnion.u8);
                     Scope.setMachineSlot(ValueUnion.u8 - 1);
                     break;
 
@@ -535,7 +536,8 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                     vrc = RTStrConvertHexBytesEx(ValueUnion.psz, abBuf, sizeof(abBuf), RTSTRCONVERTHEXBYTES_F_SEP_COLON,
                                                  NULL, &cbRet);
                     if (RT_FAILURE(vrc))
-                        return errorArgument("Malformed hex string given to --set-opt-hex %u: %s\n", idAddOpt, ValueUnion.psz);
+                        return errorArgument(DHCPServer::tr("Malformed hex string given to --set-opt-hex %u: %s\n"),
+                                             idAddOpt, ValueUnion.psz);
                     if (iPass == 1)
                     {
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
@@ -549,7 +551,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case 'D':   // --del-opt num
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                        return errorSyntax("--del-opt does not apply to the 'add' subcommand");
+                        return errorSyntax(DHCPServer::tr("--del-opt does not apply to the 'add' subcommand"));
                     if (iPass == 1)
                     {
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
@@ -561,11 +563,11 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case DHCP_ADDMOD_UNFORCE_OPTION:    // --unforce-opt
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                        return errorSyntax("--unforce-opt does not apply to the 'add' subcommand");
+                        return errorSyntax(DHCPServer::tr("--unforce-opt does not apply to the 'add' subcommand"));
                     RT_FALL_THROUGH();
                 case DHCP_ADDMOD_UNSUPPRESS_OPTION: // --unsupress-opt
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                        return errorSyntax("--unsuppress-opt does not apply to the 'add' subcommand");
+                        return errorSyntax(DHCPServer::tr("--unsuppress-opt does not apply to the 'add' subcommand"));
                     RT_FALL_THROUGH();
                 case DHCP_ADDMOD_FORCE_OPTION:      // --force-opt
                 case DHCP_ADDMOD_SUPPRESS_OPTION:   // --suppress-opt
@@ -623,7 +625,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case DHCP_ADDMOD_ZAP_OPTIONS:
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                        return errorSyntax("--zap-options does not apply to the 'add' subcommand");
+                        return errorSyntax(DHCPServer::tr("--zap-options does not apply to the 'add' subcommand"));
                     if (iPass == 1)
                     {
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
@@ -665,9 +667,9 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case 'R':   // --remove-config
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                        return errorSyntax("--remove-config does not apply to the 'add' subcommand");
+                        return errorSyntax(DHCPServer::tr("--remove-config does not apply to the 'add' subcommand"));
                     if (Scope.getScope() == DHCPConfigScope_Global)
-                        return errorSyntax("--remove-config cannot be applied to the global config");
+                        return errorSyntax(DHCPServer::tr("--remove-config cannot be applied to the global config"));
                     if (iPass == 1)
                     {
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
@@ -680,7 +682,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case 'f':   // --fixed-address
                     if (Scope.getScope() != DHCPConfigScope_MachineNIC && Scope.getScope() != DHCPConfigScope_MAC)
-                        return errorSyntax("--fixed-address can only be applied to a VM NIC or an MAC address");
+                        return errorSyntax(DHCPServer::tr("--fixed-address can only be applied to a VM NIC or an MAC address"));
                     if (iPass == 1)
                     {
                         ComPtr<IDHCPIndividualConfig> &ptrIndividualConfig = Scope.getIndividual(ptrDHCPServer);
@@ -714,9 +716,9 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                 case DHCP_ADDMOD_DEL_USER_WILD:
                 {
                     if (Scope.getScope() != DHCPConfigScope_Group)
-                        return errorSyntax("A group must be selected to perform condition alterations.");
+                        return errorSyntax(DHCPServer::tr("A group must be selected to perform condition alterations."));
                     if (!*ValueUnion.psz)
-                        return errorSyntax("Condition value cannot be empty"); /* or can it? */
+                        return errorSyntax(DHCPServer::tr("Condition value cannot be empty")); /* or can it? */
                     if (iPass != 1)
                         break;
 
@@ -809,7 +811,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                                 }
                             }
                         if (!fFound)
-                            rcExit = RTMsgErrorExitFailure("Could not find any condition of type %d with value '%s' to delete",
+                            rcExit = RTMsgErrorExitFailure(DHCPServer::tr("Could not find any condition of type %d with value '%s' to delete"),
                                                            enmType, ValueUnion.psz);
                     }
                     break;
@@ -817,7 +819,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case DHCP_ADDMOD_ZAP_CONDITIONS:
                     if (Scope.getScope() != DHCPConfigScope_Group)
-                        return errorSyntax("--zap-conditions can only be with a group selected");
+                        return errorSyntax(DHCPServer::tr("--zap-conditions can only be with a group selected"));
                     if (iPass == 1)
                     {
                         ComPtr<IDHCPGroupConfig> &ptrGroupConfig = Scope.getGroup(ptrDHCPServer);
@@ -836,14 +838,14 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case 'i':   // --id
                     if (fNeedValueOrRemove)
-                        return errorSyntax("Incomplete option sequence preseeding '--id=%u", ValueUnion.u8);
+                        return errorSyntax(DHCPServer::tr("Incomplete option sequence preseeding '--id=%u"), ValueUnion.u8);
                     u8OptId = ValueUnion.u8;
                     fNeedValueOrRemove = true;
                     break;
 
                 case 'p':   // --value
                     if (!fNeedValueOrRemove)
-                        return errorSyntax("--value without --id=dhcp-opt-no");
+                        return errorSyntax(DHCPServer::tr("--value without --id=dhcp-opt-no"));
                     if (iPass == 1)
                     {
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
@@ -857,9 +859,9 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
                 case 'r':   // --remove
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                        return errorSyntax("--remove does not apply to the 'add' subcommand");
+                        return errorSyntax(DHCPServer::tr("--remove does not apply to the 'add' subcommand"));
                     if (!fNeedValueOrRemove)
-                        return errorSyntax("--remove without --id=dhcp-opt-no");
+                        return errorSyntax(DHCPServer::tr("--remove without --id=dhcp-opt-no"));
 
                     if (iPass == 1)
                     {
@@ -884,18 +886,18 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
          * where needed (modify case)
          */
         if (!pCtx->pszNetwork && !pCtx->pszInterface)
-            return errorSyntax("You need to specify either --network or --interface to identify the DHCP server");
+            return errorSyntax(DHCPServer::tr("You need to specify either --network or --interface to identify the DHCP server"));
 
         if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
         {
             if (!pszServerIp)
-                rcExit = errorSyntax("Missing required option: --ip");
+                rcExit = errorSyntax(DHCPServer::tr("Missing required option: --ip"));
             if (!pszNetmask)
-                rcExit = errorSyntax("Missing required option: --netmask");
+                rcExit = errorSyntax(DHCPServer::tr("Missing required option: --netmask"));
             if (!pszLowerIp)
-                rcExit = errorSyntax("Missing required option: --lowerip");
+                rcExit = errorSyntax(DHCPServer::tr("Missing required option: --lowerip"));
             if (!pszUpperIp)
-                rcExit = errorSyntax("Missing required option: --upperip");
+                rcExit = errorSyntax(DHCPServer::tr("Missing required option: --upperip"));
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
         }
@@ -913,11 +915,11 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
             ComPtr<IHostNetworkInterface> hif;
             CHECK_ERROR(host, FindHostNetworkInterfaceByName(Bstr(pCtx->pszInterface).mutableRaw(), hif.asOutParam()));
             if (FAILED(rc))
-                return errorArgument("Could not find interface '%s'", pCtx->pszInterface);
+                return errorArgument(DHCPServer::tr("Could not find interface '%s'"), pCtx->pszInterface);
 
             CHECK_ERROR(hif, COMGETTER(NetworkName) (NetName.asOutParam()));
             if (FAILED(rc))
-                return errorArgument("Could not get network name for the interface '%s'", pCtx->pszInterface);
+                return errorArgument(DHCPServer::tr("Could not get network name for the interface '%s'"), pCtx->pszInterface);
         }
         else
         {
@@ -928,14 +930,14 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
         if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
         {
             if (SUCCEEDED(rc))
-                return errorArgument("DHCP server already exists");
+                return errorArgument(DHCPServer::tr("DHCP server already exists"));
 
             CHECK_ERROR(pCtx->pArg->virtualBox, CreateDHCPServer(NetName.mutableRaw(), ptrDHCPServer.asOutParam()));
             if (FAILED(rc))
-                return errorArgument("Failed to create the DHCP server");
+                return errorArgument(DHCPServer::tr("Failed to create the DHCP server"));
         }
         else if (FAILED(rc))
-            return errorArgument("DHCP server does not exist");
+            return errorArgument(DHCPServer::tr("DHCP server does not exist"));
 
         /*
          * Apply IDHCPServer settings:
@@ -967,7 +969,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
             CHECK_ERROR2_STMT(hrc, ptrDHCPServer, SetConfiguration(bstrServerIp.raw(), bstrNetmask.raw(),
                                                                    bstrLowerIp.raw(), bstrUpperIp.raw()),
-                              rcExit = errorArgument("Failed to set configuration (%ls, %ls, %ls, %ls)", bstrServerIp.raw(),
+                              rcExit = errorArgument(DHCPServer::tr("Failed to set configuration (%ls, %ls, %ls, %ls)"), bstrServerIp.raw(),
                                                      bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()));
         }
 
@@ -1019,7 +1021,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleRemove(PDHCPDCMDCTX pCtx, int argc, c
         CHECK_ERROR2(hrc, pCtx->pArg->virtualBox, RemoveDHCPServer(ptrDHCPServer));
         if (SUCCEEDED(hrc))
             return RTEXITCODE_SUCCESS;
-        errorArgument("Failed to remove server");
+        errorArgument(DHCPServer::tr("Failed to remove server"));
     }
     return RTEXITCODE_FAILURE;
 }
@@ -1086,7 +1088,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleStart(PDHCPDCMDCTX pCtx, int argc, ch
         HRESULT hrc = ptrDHCPServer->Start(strTrunkName.raw(), strTrunkType.raw());
         if (SUCCEEDED(hrc))
             return RTEXITCODE_SUCCESS;
-        errorArgument("Failed to start the server");
+        errorArgument(DHCPServer::tr("Failed to start the server"));
         GlueHandleComErrorNoCtx(ptrDHCPServer, hrc);
     }
     return RTEXITCODE_FAILURE;
@@ -1130,7 +1132,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleRestart(PDHCPDCMDCTX pCtx, int argc, 
         HRESULT hrc = ptrDHCPServer->Restart();
         if (SUCCEEDED(hrc))
             return RTEXITCODE_SUCCESS;
-        errorArgument("Failed to restart the server");
+        errorArgument(DHCPServer::tr("Failed to restart the server"));
         GlueHandleComErrorNoCtx(ptrDHCPServer, hrc);
     }
     return RTEXITCODE_FAILURE;
@@ -1174,7 +1176,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleStop(PDHCPDCMDCTX pCtx, int argc, cha
         HRESULT hrc = ptrDHCPServer->Stop();
         if (SUCCEEDED(hrc))
             return RTEXITCODE_SUCCESS;
-        errorArgument("Failed to stop the server");
+        errorArgument(DHCPServer::tr("Failed to stop the server"));
         GlueHandleComErrorNoCtx(ptrDHCPServer, hrc);
     }
     return RTEXITCODE_FAILURE;
@@ -1221,7 +1223,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleFindLease(PDHCPDCMDCTX pCtx, int argc
     }
 
     if (!fHaveMacAddress)
-        return errorSyntax("You need to specify a MAC address too look for");
+        return errorSyntax(DHCPServer::tr("You need to specify a MAC address too look for"));
 
     /*
      * Locate the server and perform the requested operation.
@@ -1249,12 +1251,12 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleFindLease(PDHCPDCMDCTX pCtx, int argc
         char        szExpire[RTTIME_STR_LEN];
         RTTimeToStringEx(RTTimeExplode(&Time, RTTimeSpecSetSeconds(&TimeSpec, secExpire)), szExpire, sizeof(szExpire), 0);
 
-        RTPrintf("IP Address:  %ls\n"
-                 "MAC Address: %RTmac\n"
-                 "State:       %ls\n"
-                 "Issued:      %s (%RU64)\n"
-                 "Expire:      %s (%RU64)\n"
-                 "TTL:         %RU64 sec, currently %RU64 sec left\n",
+        RTPrintf(DHCPServer::tr("IP Address:  %ls\n"
+                                "MAC Address: %RTmac\n"
+                                "State:       %ls\n"
+                                "Issued:      %s (%RU64)\n"
+                                "Expire:      %s (%RU64)\n"
+                                "TTL:         %RU64 sec, currently %RU64 sec left\n"),
                  bstrAddress.raw(),
                  &MacAddress,
                  bstrState.raw(),
@@ -1329,4 +1331,3 @@ RTEXITCODE handleDHCPServer(HandlerArg *pArg)
     }
     return errorNoSubcommand();
 }
-

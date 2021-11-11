@@ -40,6 +40,8 @@
 
 #include "VBoxManage.h"
 
+DECLARE_TRANSLATION_CONTEXT(HostOnly);
+
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
 
@@ -92,7 +94,7 @@ static RTEXITCODE handleCreate(HandlerArg *a)
     else
     {
         /*HRESULT hrc =*/ showProgress(progress);
-        CHECK_PROGRESS_ERROR_RET(progress, ("Failed to create the host-only adapter"), RTEXITCODE_FAILURE);
+        CHECK_PROGRESS_ERROR_RET(progress, (HostOnly::tr("Failed to create the host-only adapter")), RTEXITCODE_FAILURE);
     }
 
     Bstr bstrName;
@@ -101,7 +103,7 @@ static RTEXITCODE handleCreate(HandlerArg *a)
     if (fMachineReadable)
         RTPrintf("%ls", bstrName.raw());
     else
-        RTPrintf("Interface '%ls' was successfully created\n", bstrName.raw());
+        RTPrintf(HostOnly::tr("Interface '%ls' was successfully created\n"), bstrName.raw());
     return RTEXITCODE_SUCCESS;
 }
 
@@ -120,7 +122,7 @@ static RTEXITCODE  handleRemove(HandlerArg *a)
         {
             case VINF_GETOPT_NOT_OPTION:
                 if (pszName)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "Only one interface name can be specified");
+                    return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Only one interface name can be specified"));
                 pszName = ValueUnion.psz;
                 break;
 
@@ -128,7 +130,7 @@ static RTEXITCODE  handleRemove(HandlerArg *a)
                 return errorGetOpt(USAGE_HOSTONLYIFS, ch, &ValueUnion);
         }
     if (!pszName)
-        return errorSyntax(USAGE_HOSTONLYIFS, "No interface name was specified");
+        return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("No interface name was specified"));
 
     /*
      * Do the work.
@@ -146,7 +148,7 @@ static RTEXITCODE  handleRemove(HandlerArg *a)
     CHECK_ERROR2I_RET(host, RemoveHostOnlyNetworkInterface(guid.raw(), progress.asOutParam()), RTEXITCODE_FAILURE);
 
     /*HRESULT hrc =*/ showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to remove the host-only adapter"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (HostOnly::tr("Failed to remove the host-only adapter")), RTEXITCODE_FAILURE);
 
     return RTEXITCODE_SUCCESS;
 }
@@ -190,28 +192,28 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
                 break;
             case 'a':   // --ip
                 if (pszIp)
-                    RTMsgWarning("The --ip option is specified more than once");
+                    RTMsgWarning(HostOnly::tr("The --ip option is specified more than once"));
                 pszIp = ValueUnion.psz;
                 break;
             case 'm':   // --netmask
                 if (pszNetmask)
-                    RTMsgWarning("The --netmask option is specified more than once");
+                    RTMsgWarning(HostOnly::tr("The --netmask option is specified more than once"));
                 pszNetmask = ValueUnion.psz;
                 break;
             case 'b':   // --ipv6
                 if (pszIpv6)
-                    RTMsgWarning("The --ipv6 option is specified more than once");
+                    RTMsgWarning(HostOnly::tr("The --ipv6 option is specified more than once"));
                 pszIpv6 = ValueUnion.psz;
                 break;
             case 'l':   // --netmasklengthv6
                 if (fNetmasklengthv6)
-                    RTMsgWarning("The --netmasklengthv6 option is specified more than once");
+                    RTMsgWarning(HostOnly::tr("The --netmasklengthv6 option is specified more than once"));
                 fNetmasklengthv6 = true;
                 uNetmasklengthv6 = ValueUnion.u8;
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 if (pszName)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "Only one interface name can be specified");
+                    return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Only one interface name can be specified"));
                 pszName = ValueUnion.psz;
                 break;
             default:
@@ -221,9 +223,11 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
 
     /* parameter sanity check */
     if (fDhcp && (fNetmasklengthv6 || pszIpv6 || pszIp || pszNetmask))
-        return errorSyntax(USAGE_HOSTONLYIFS, "You can not use --dhcp with static ip configuration parameters: --ip, --netmask, --ipv6 and --netmasklengthv6.");
+        return errorSyntax(USAGE_HOSTONLYIFS,
+                           HostOnly::tr("You can not use --dhcp with static ip configuration parameters: --ip, --netmask, --ipv6 and --netmasklengthv6."));
     if ((pszIp || pszNetmask) && (fNetmasklengthv6 || pszIpv6))
-        return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (--ip and --netmask) with ipv6 (--ipv6 and --netmasklengthv6) simultaneously.");
+        return errorSyntax(USAGE_HOSTONLYIFS,
+                           HostOnly::tr("You can not use ipv4 configuration (--ip and --netmask) with ipv6 (--ipv6 and --netmasklengthv6) simultaneously."));
 
     ComPtr<IHost> host;
     CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), RTEXITCODE_FAILURE);
@@ -231,7 +235,7 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
     ComPtr<IHostNetworkInterface> hif;
     CHECK_ERROR2I_RET(host, FindHostNetworkInterfaceByName(Bstr(pszName).raw(), hif.asOutParam()), RTEXITCODE_FAILURE);
     if (hif.isNull())
-        return errorArgument("Could not find interface '%s'", pszName);
+        return errorArgument(HostOnly::tr("Could not find interface '%s'"), pszName);
 
     if (fDhcp)
         CHECK_ERROR2I_RET(hif, EnableDynamicIPConfig(), RTEXITCODE_FAILURE);
@@ -247,7 +251,7 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
         CHECK_ERROR2I_RET(hif, COMGETTER(IPV6Supported)(&fIpV6Supported), RTEXITCODE_FAILURE);
         if (!fIpV6Supported)
         {
-            RTMsgError("IPv6 setting is not supported for this adapter");
+            RTMsgError(HostOnly::tr("IPv6 setting is not supported for this adapter"));
             return RTEXITCODE_FAILURE;
         }
 
@@ -256,7 +260,7 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
         CHECK_ERROR2I_RET(hif, EnableStaticIPConfigV6(Bstr(pszIpv6).raw(), (ULONG)uNetmasklengthv6), RTEXITCODE_FAILURE);
     }
     else
-        return errorSyntax(USAGE_HOSTONLYIFS, "Neither -dhcp nor -ip nor -ipv6 was specfified");
+        return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Neither -dhcp nor -ip nor -ipv6 was specfified"));
 
     return RTEXITCODE_SUCCESS;
 }
@@ -265,7 +269,7 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
 RTEXITCODE handleHostonlyIf(HandlerArg *a)
 {
     if (a->argc < 1)
-        return errorSyntax(USAGE_HOSTONLYIFS, "No sub-command specified");
+        return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("No sub-command specified"));
 
     RTEXITCODE rcExit;
     if (!strcmp(a->argv[0], "ipconfig"))
@@ -277,7 +281,7 @@ RTEXITCODE handleHostonlyIf(HandlerArg *a)
         rcExit = handleRemove(a);
 #endif
     else
-        rcExit = errorSyntax(USAGE_HOSTONLYIFS, "Unknown sub-command '%s'", a->argv[0]);
+        rcExit = errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Unknown sub-command '%s'"), a->argv[0]);
     return rcExit;
 }
 
@@ -398,13 +402,13 @@ static RTEXITCODE handleNetAdd(HandlerArg *a)
     ComPtr<IHostOnlyNetwork> hostOnlyNetwork;
 
     if (options.bstrNetworkName.isEmpty())
-        return errorArgument("The --name parameter must be specified");
+        return errorArgument(HostOnly::tr("The --name parameter must be specified"));
     if (options.bstrNetworkMask.isEmpty())
-        return errorArgument("The --netmask parameter must be specified");
+        return errorArgument(HostOnly::tr("The --netmask parameter must be specified"));
     if (options.bstrLowerIp.isEmpty())
-        return errorArgument("The --lower-ip parameter must be specified");
+        return errorArgument(HostOnly::tr("The --lower-ip parameter must be specified"));
     if (options.bstrUpperIp.isEmpty())
-        return errorArgument("The --upper-ip parameter must be specified");
+        return errorArgument(HostOnly::tr("The --upper-ip parameter must be specified"));
 
     CHECK_ERROR2_RET(hrc, pVirtualBox,
                      CreateHostOnlyNetwork(options.bstrNetworkName.raw(), hostOnlyNetwork.asOutParam()),
@@ -435,7 +439,7 @@ static RTEXITCODE handleNetModify(HandlerArg *a)
                         RTEXITCODE_FAILURE);
     }
     else
-        return errorArgument("Either --name or --id parameter must be specified");
+        return errorArgument(HostOnly::tr("Either --name or --id parameter must be specified"));
 
     return createUpdateHostOnlyNetworkCommon(hostOnlyNetwork, options);
 }
@@ -491,7 +495,7 @@ static RTEXITCODE handleNetRemove(HandlerArg *a)
                         RTEXITCODE_FAILURE);
     }
     else
-        return errorArgument("Either --name or --id parameter must be specified");
+        return errorArgument(HostOnly::tr("Either --name or --id parameter must be specified"));
 
     CHECK_ERROR2_RET(hrc, pVirtualBox,
                     RemoveHostOnlyNetwork(hostOnlyNetwork),
@@ -502,7 +506,7 @@ static RTEXITCODE handleNetRemove(HandlerArg *a)
 RTEXITCODE handleHostonlyNet(HandlerArg *a)
 {
     if (a->argc < 1)
-        return errorSyntax("No sub-command specified");
+        return errorSyntax(HostOnly::tr("No sub-command specified"));
 
     RTEXITCODE rcExit;
     if (!strcmp(a->argv[0], "add"))
@@ -521,7 +525,7 @@ RTEXITCODE handleHostonlyNet(HandlerArg *a)
         rcExit = handleNetRemove(a);
     }
     else
-        rcExit = errorSyntax("Unknown sub-command '%s'", a->argv[0]);
+        rcExit = errorSyntax(HostOnly::tr("Unknown sub-command '%s'"), a->argv[0]);
     return rcExit;
 }
 #endif /* VBOX_WITH_VMNET */

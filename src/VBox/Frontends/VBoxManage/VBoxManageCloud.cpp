@@ -41,6 +41,8 @@
 
 using namespace com;//at least for Bstr
 
+DECLARE_TRANSLATION_CONTEXT(Cloud);
+
 
 /**
  * Common Cloud options.
@@ -69,12 +71,12 @@ static HRESULT checkAndSetCommonOptions(HandlerArg *a, PCLOUDCOMMONOPT pCommonOp
     /* check for required options */
     if (bstrProvider.isEmpty())
     {
-        errorSyntax(USAGE_S_NEWCMD, "Parameter --provider is required");
+        errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --provider is required"));
         return E_FAIL;
     }
     if (bstrProfile.isEmpty())
     {
-        errorSyntax(USAGE_S_NEWCMD, "Parameter --profile is required");
+        errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --profile is required"));
         return E_FAIL;
     }
 
@@ -159,7 +161,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                 else if (RTStrICmp(pszState, "terminating") == 0)
                     machineStates.push_back(CloudMachineState_Terminating);
                 else
-                    return errorArgument("Unknown cloud instance state \"%s\"", pszState);
+                    return errorArgument(Cloud::tr("Unknown cloud instance state \"%s\""), pszState);
                 break;
             }
             case 1001:
@@ -206,17 +208,18 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     }
     else
     {
-        RTPrintf("Parameter \'compartment\' is empty or absent.\n"
-                 "Trying to get the compartment from the passed cloud profile \'%s\'\n", pCommonOpts->profile.pszProfileName);
+        RTPrintf(Cloud::tr("Parameter \'compartment\' is empty or absent.\n"
+                           "Trying to get the compartment from the passed cloud profile \'%s\'\n"),
+                 pCommonOpts->profile.pszProfileName);
         Bstr bStrCompartmentId;
         CHECK_ERROR2_RET(hrc, pCloudProfile,
                          GetProperty(Bstr("compartment").raw(), bStrCompartmentId.asOutParam()),
                          RTEXITCODE_FAILURE);
         strCompartmentId = bStrCompartmentId;
         if (strCompartmentId.isNotEmpty())
-            RTPrintf("Found the compartment \'%s\':\n", strCompartmentId.c_str());
+            RTPrintf(Cloud::tr("Found the compartment \'%s\':\n"), strCompartmentId.c_str());
         else
-            return errorSyntax(USAGE_S_NEWCMD, "Parameter --compartment-id is required");
+            return errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --compartment-id is required"));
     }
 
     Bstr bstrProfileName;
@@ -233,7 +236,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     com::SafeArray<BSTR> arrayVMIds;
     ComPtr<IProgress> pProgress;
 
-    RTPrintf("Reply is in the form \'instance name\' = \'instance id\'\n");
+    RTPrintf(Cloud::tr("Reply is in the form \'instance name\' = \'instance id\'\n"));
 
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      ListInstances(ComSafeArrayAsInParam(machineStates),
@@ -242,7 +245,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                                    pProgress.asOutParam()),
                      RTEXITCODE_FAILURE);
     showProgress(pProgress);
-    CHECK_PROGRESS_ERROR_RET(pProgress, ("Failed to list instances"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(pProgress, (Cloud::tr("Failed to list instances")), RTEXITCODE_FAILURE);
 
     CHECK_ERROR2_RET(hrc,
         pVMNamesHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMNames)),
@@ -251,7 +254,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf("The list of the instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
+    RTPrintf(Cloud::tr("The list of the instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n"),
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cIds = arrayVMIds.size();
     size_t cNames = arrayVMNames.size();
@@ -319,7 +322,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
                 else if (RTStrICmp(pszState, "provisioning") == 0)
                     imageStates.push_back(CloudImageState_Provisioning);
                 else
-                    return errorArgument("Unknown cloud image state \"%s\"", pszState);
+                    return errorArgument(Cloud::tr("Unknown cloud image state \"%s\""), pszState);
                 break;
             }
             case 1001:
@@ -367,17 +370,18 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     }
     else
     {
-        RTPrintf("Parameter \'compartment\' is empty or absent.\n"
-                 "Trying to get the compartment from the passed cloud profile \'%s\'\n", pCommonOpts->profile.pszProfileName);
+        RTPrintf(Cloud::tr("Parameter \'compartment\' is empty or absent.\n"
+                           "Trying to get the compartment from the passed cloud profile \'%s\'\n"),
+                 pCommonOpts->profile.pszProfileName);
         Bstr bStrCompartmentId;
         CHECK_ERROR2_RET(hrc, pCloudProfile,
                          GetProperty(Bstr("compartment").raw(), bStrCompartmentId.asOutParam()),
                          RTEXITCODE_FAILURE);
         strCompartmentId = bStrCompartmentId;
         if (strCompartmentId.isNotEmpty())
-            RTPrintf("Found the compartment \'%s\':\n", strCompartmentId.c_str());
+            RTPrintf(Cloud::tr("Found the compartment \'%s\':\n"), strCompartmentId.c_str());
         else
-            return errorSyntax(USAGE_S_NEWCMD, "Parameter --compartment-id is required");
+            return errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --compartment-id is required"));
     }
 
     Bstr bstrProfileName;
@@ -394,7 +398,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     com::SafeArray<BSTR> arrayVMIds;
     ComPtr<IProgress> pProgress;
 
-    RTPrintf("Reply is in the form \'image name\' = \'image id\'\n");
+    RTPrintf(Cloud::tr("Reply is in the form \'image name\' = \'image id\'\n"));
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      ListImages(ComSafeArrayAsInParam(imageStates),
                                 pVMNamesHolder.asOutParam(),
@@ -402,7 +406,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
                                 pProgress.asOutParam()),
                      RTEXITCODE_FAILURE);
     showProgress(pProgress);
-    CHECK_PROGRESS_ERROR_RET(pProgress, ("Failed to list images"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(pProgress, (Cloud::tr("Failed to list images")), RTEXITCODE_FAILURE);
 
     CHECK_ERROR2_RET(hrc,
         pVMNamesHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMNames)),
@@ -411,7 +415,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf("The list of the images for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
+    RTPrintf(Cloud::tr("The list of the images for the cloud profile \'%ls\' \nand compartment \'%s\':\n"),
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cNames = arrayVMNames.size();
     size_t cIds = arrayVMIds.size();
@@ -468,7 +472,7 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -539,7 +543,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -638,14 +642,14 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         return RTEXITCODE_FAILURE;
 
     if (strPublicSSHKey.isEmpty())
-        RTPrintf("Warning!!! Public SSH key doesn't present in the passed arguments...\n");
+        RTPrintf(Cloud::tr("Warning!!! Public SSH key doesn't present in the passed arguments...\n"));
 
     if (strImageId.isNotEmpty() && strBootVolumeId.isNotEmpty())
-        return errorArgument("Parameters --image-id and --boot-volume-id are mutually exclusive. "
-                             "Only one of them must be presented.");
+        return errorArgument(Cloud::tr("Parameters --image-id and --boot-volume-id are mutually exclusive. "
+                                       "Only one of them must be presented."));
 
     if (strImageId.isEmpty() && strBootVolumeId.isEmpty())
-        return errorArgument("Missing parameter --image-id or --boot-volume-id. One of them must be presented.");
+        return errorArgument(Cloud::tr("Missing parameter --image-id or --boot-volume-id. One of them must be presented."));
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -667,7 +671,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
          * OCI API returns an error during an instance creation if the image isn't available
          * or in the inappropriate state. So the check can be omitted.
          */
-        RTPrintf("Checking the cloud image with id \'%s\'...\n", strImageId.c_str());
+        RTPrintf(Cloud::tr("Checking the cloud image with id \'%s\'...\n"), strImageId.c_str());
         CHECK_ERROR2_RET(hrc, oCloudClient,
                          GetImageInfo(Bstr(strImageId).raw(),
                                       infoArray.asOutParam(),
@@ -675,25 +679,25 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                          RTEXITCODE_FAILURE);
 
         hrc = showProgress(pProgress);
-        CHECK_PROGRESS_ERROR_RET(pProgress, ("Checking the cloud image failed"), RTEXITCODE_FAILURE);
+        CHECK_PROGRESS_ERROR_RET(pProgress, (Cloud::tr("Checking the cloud image failed")), RTEXITCODE_FAILURE);
 
         pProgress.setNull();
 #endif
 
     if (strImageId.isNotEmpty())
-        RTPrintf("Creating cloud instance with name \'%s\' from the image \'%s\'...\n",
+        RTPrintf(Cloud::tr("Creating cloud instance with name \'%s\' from the image \'%s\'...\n"),
                  strDisplayName.c_str(), strImageId.c_str());
     else
-        RTPrintf("Creating cloud instance with name \'%s\' from the boot volume \'%s\'...\n",
+        RTPrintf(Cloud::tr("Creating cloud instance with name \'%s\' from the boot volume \'%s\'...\n"),
                  strDisplayName.c_str(), strBootVolumeId.c_str());
 
     CHECK_ERROR2_RET(hrc, oCloudClient, LaunchVM(pVSD, pProgress.asOutParam()), RTEXITCODE_FAILURE);
 
     hrc = showProgress(pProgress);
-    CHECK_PROGRESS_ERROR_RET(pProgress, ("Creating cloud instance failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(pProgress, (Cloud::tr("Creating cloud instance failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud instance was created successfully\n");
+        RTPrintf(Cloud::tr("Cloud instance was created successfully\n"));
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -722,7 +726,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -737,11 +741,11 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
             case 'i':
             {
                 if (strInstanceId.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --id");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --id"));
 
                 strInstanceId = ValueUnion.psz;
                 if (strInstanceId.isEmpty())
-                    return errorArgument("Empty parameter: --id");
+                    return errorArgument(Cloud::tr("Empty parameter: --id"));
 
                 break;
             }
@@ -763,7 +767,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         return RTEXITCODE_FAILURE;
 
     if (strInstanceId.isEmpty())
-        return errorArgument("Missing parameter: --id");
+        return errorArgument(Cloud::tr("Missing parameter: --id"));
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -771,8 +775,8 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Getting information about cloud instance with id %s...\n", strInstanceId.c_str());
-    RTPrintf("Reply is in the form \'setting name\' = \'value\'\n");
+    RTPrintf(Cloud::tr("Getting information about cloud instance with id %s...\n"), strInstanceId.c_str());
+    RTPrintf(Cloud::tr("Reply is in the form \'setting name\' = \'value\'\n"));
 
     ComPtr<IAppliance> pAppliance;
     CHECK_ERROR2_RET(hrc, a->virtualBox, CreateAppliance(pAppliance.asOutParam()), RTEXITCODE_FAILURE);
@@ -793,9 +797,9 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
                      RTEXITCODE_FAILURE);
 
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Getting information about cloud instance failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Getting information about cloud instance failed")), RTEXITCODE_FAILURE);
 
-    RTPrintf("Cloud instance info (provider '%s'):\n",
+    RTPrintf(Cloud::tr("Cloud instance info (provider '%s'):\n"),
              pCommonOpts->provider.pszProviderName);
 
     struct vsdHReadable {
@@ -806,21 +810,21 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
 
     const size_t vsdHReadableArraySize = 13;//the number of items in the vsdHReadableArray
     vsdHReadable vsdHReadableArray[vsdHReadableArraySize] = {
-        {VirtualSystemDescriptionType_CloudDomain, "Availability domain = %ls\n", "Availability domain wasn't found\n"},
-        {VirtualSystemDescriptionType_Name, "Instance displayed name = %ls\n", "Instance displayed name wasn't found\n"},
-        {VirtualSystemDescriptionType_CloudInstanceState, "Instance state = %ls\n", "Instance state wasn't found\n"},
-        {VirtualSystemDescriptionType_CloudInstanceId, "Instance Id = %ls\n", "Instance Id wasn't found\n"},
-        {VirtualSystemDescriptionType_CloudInstanceDisplayName, "Instance name = %ls\n", "Instance name wasn't found\n"},
-        {VirtualSystemDescriptionType_CloudImageId, "Bootable image Id = %ls\n",
-            "Image Id whom the instance is booted up wasn't found\n"},
-        {VirtualSystemDescriptionType_CloudInstanceShape, "Shape of the instance = %ls\n",
-            "The shape of the instance wasn't found\n"},
-        {VirtualSystemDescriptionType_OS, "Type of guest OS = %ls\n", "Type of guest OS wasn't found\n"},
-        {VirtualSystemDescriptionType_Memory, "RAM = %ls MB\n", "Value for RAM wasn't found\n"},
-        {VirtualSystemDescriptionType_CPU, "CPUs = %ls\n", "Numbers of CPUs weren't found\n"},
-        {VirtualSystemDescriptionType_CloudPublicIP, "Instance public IP = %ls\n", "Public IP wasn't found\n"},
-        {VirtualSystemDescriptionType_Miscellaneous, "%ls\n", "Free-form tags or metadata weren't found\n"},
-        {VirtualSystemDescriptionType_CloudInitScriptPath, "%ls\n", "Cloud-init script wasn't found\n"}
+        {VirtualSystemDescriptionType_CloudDomain, Cloud::tr("Availability domain = %ls\n"), Cloud::tr("Availability domain wasn't found\n")},
+        {VirtualSystemDescriptionType_Name, Cloud::tr("Instance displayed name = %ls\n"), Cloud::tr("Instance displayed name wasn't found\n")},
+        {VirtualSystemDescriptionType_CloudInstanceState, Cloud::tr("Instance state = %ls\n"), Cloud::tr("Instance state wasn't found\n")},
+        {VirtualSystemDescriptionType_CloudInstanceId, Cloud::tr("Instance Id = %ls\n"), Cloud::tr("Instance Id wasn't found\n")},
+        {VirtualSystemDescriptionType_CloudInstanceDisplayName, Cloud::tr("Instance name = %ls\n"), Cloud::tr("Instance name wasn't found\n")},
+        {VirtualSystemDescriptionType_CloudImageId, Cloud::tr("Bootable image Id = %ls\n"),
+            Cloud::tr("Image Id whom the instance is booted up wasn't found\n")},
+        {VirtualSystemDescriptionType_CloudInstanceShape, Cloud::tr("Shape of the instance = %ls\n"),
+            Cloud::tr("The shape of the instance wasn't found\n")},
+        {VirtualSystemDescriptionType_OS, Cloud::tr("Type of guest OS = %ls\n"), Cloud::tr("Type of guest OS wasn't found\n")},
+        {VirtualSystemDescriptionType_Memory, Cloud::tr("RAM = %ls MB\n"), Cloud::tr("Value for RAM wasn't found\n")},
+        {VirtualSystemDescriptionType_CPU, Cloud::tr("CPUs = %ls\n"), Cloud::tr("Numbers of CPUs weren't found\n")},
+        {VirtualSystemDescriptionType_CloudPublicIP, Cloud::tr("Instance public IP = %ls\n"), Cloud::tr("Public IP wasn't found\n")},
+        {VirtualSystemDescriptionType_Miscellaneous, "%ls\n", Cloud::tr("Free-form tags or metadata weren't found\n")},
+        {VirtualSystemDescriptionType_CloudInitScriptPath, "%ls\n", Cloud::tr("Cloud-init script wasn't found\n")}
     };
 
     com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
@@ -874,7 +878,7 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -889,11 +893,11 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
             case 'i':
             {
                 if (strInstanceId.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --id");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --id"));
 
                 strInstanceId = ValueUnion.psz;
                 if (strInstanceId.isEmpty())
-                    return errorArgument("Empty parameter: --id");
+                    return errorArgument(Cloud::tr("Empty parameter: --id"));
 
                 break;
             }
@@ -915,7 +919,7 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         return RTEXITCODE_FAILURE;
 
     if (strInstanceId.isEmpty())
-        return errorArgument("Missing parameter: --id");
+        return errorArgument(Cloud::tr("Missing parameter: --id"));
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -923,17 +927,17 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Starting cloud instance with id %s...\n", strInstanceId.c_str());
+    RTPrintf(Cloud::tr("Starting cloud instance with id %s...\n"), strInstanceId.c_str());
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      StartInstance(Bstr(strInstanceId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Starting the cloud instance failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Starting the cloud instance failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud instance with id %s (provider = '%s', profile = '%s') was started\n",
+        RTPrintf(Cloud::tr("Cloud instance with id %s (provider = '%s', profile = '%s') was started\n"),
                  strInstanceId.c_str(),
                  pCommonOpts->provider.pszProviderName,
                  pCommonOpts->profile.pszProfileName);
@@ -957,7 +961,7 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -972,11 +976,11 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
             case 'i':
             {
                 if (strInstanceId.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --id");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --id"));
 
                 strInstanceId = ValueUnion.psz;
                 if (strInstanceId.isEmpty())
-                    return errorArgument("Empty parameter: --id");
+                    return errorArgument(Cloud::tr("Empty parameter: --id"));
 
                 break;
             }
@@ -998,7 +1002,7 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         return RTEXITCODE_FAILURE;
 
     if (strInstanceId.isEmpty())
-        return errorArgument("Missing parameter: --id");
+        return errorArgument(Cloud::tr("Missing parameter: --id"));
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -1006,17 +1010,17 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Pausing cloud instance with id %s...\n", strInstanceId.c_str());
+    RTPrintf(Cloud::tr("Pausing cloud instance with id %s...\n"), strInstanceId.c_str());
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      PauseInstance(Bstr(strInstanceId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Pause the cloud instance failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Pause the cloud instance failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud instance with id %s (provider = '%s', profile = '%s') was paused\n",
+        RTPrintf(Cloud::tr("Cloud instance with id %s (provider = '%s', profile = '%s') was paused\n"),
                  strInstanceId.c_str(),
                  pCommonOpts->provider.pszProviderName,
                  pCommonOpts->profile.pszProfileName);
@@ -1040,7 +1044,7 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1055,11 +1059,11 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
             case 'i':
             {
                 if (strInstanceId.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --id");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --id"));
 
                 strInstanceId = ValueUnion.psz;
                 if (strInstanceId.isEmpty())
-                    return errorArgument("Empty parameter: --id");
+                    return errorArgument(Cloud::tr("Empty parameter: --id"));
 
                 break;
             }
@@ -1081,7 +1085,7 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
         return RTEXITCODE_FAILURE;
 
     if (strInstanceId.isEmpty())
-        return errorArgument("Missing parameter: --id");
+        return errorArgument(Cloud::tr("Missing parameter: --id"));
 
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
@@ -1090,17 +1094,17 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Terminating cloud instance with id %s...\n", strInstanceId.c_str());
+    RTPrintf(Cloud::tr("Terminating cloud instance with id %s...\n"), strInstanceId.c_str());
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      TerminateInstance(Bstr(strInstanceId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Termination the cloud instance failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Termination the cloud instance failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud instance with id %s (provider = '%s', profile = '%s') was terminated\n",
+        RTPrintf(Cloud::tr("Cloud instance with id %s (provider = '%s', profile = '%s') was terminated\n"),
                  strInstanceId.c_str(),
                  pCommonOpts->provider.pszProviderName,
                  pCommonOpts->profile.pszProfileName);
@@ -1138,7 +1142,7 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
 
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1215,7 +1219,7 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1273,7 +1277,7 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         return RTEXITCODE_FAILURE;
 
     if (strInstanceId.isNotEmpty() && strObjectName.isNotEmpty())
-        return errorArgument("Conflicting parameters: --instance-id and --object-name can't be used together. Choose one.");
+        return errorArgument(Cloud::tr("Conflicting parameters: --instance-id and --object-name can't be used together. Choose one."));
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -1282,10 +1286,10 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
     if (strInstanceId.isNotEmpty())
-        RTPrintf("Creating cloud image with name \'%s\' from the instance \'%s\'...\n",
+        RTPrintf(Cloud::tr("Creating cloud image with name \'%s\' from the instance \'%s\'...\n"),
                  strDisplayName.c_str(), strInstanceId.c_str());
     else
-        RTPrintf("Creating cloud image with name \'%s\' from the object \'%s\' in the bucket \'%s\'...\n",
+        RTPrintf(Cloud::tr("Creating cloud image with name \'%s\' from the object \'%s\' in the bucket \'%s\'...\n"),
                  strDisplayName.c_str(), strObjectName.c_str(), strBucketName.c_str());
 
     ComPtr<IProgress> progress;
@@ -1293,10 +1297,10 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                      CreateImage(ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Creating cloud image failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Creating cloud image failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud image was created successfully\n");
+        RTPrintf(Cloud::tr("Cloud image was created successfully\n"));
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -1322,7 +1326,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1342,11 +1346,11 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 'b': /* --bucket-name */
             {
                 if (strBucketName.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --bucket-name");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --bucket-name"));
 
                 strBucketName = ValueUnion.psz;
                 if (strBucketName.isEmpty())
-                    return errorArgument("Empty parameter: --bucket-name");
+                    return errorArgument(Cloud::tr("Empty parameter: --bucket-name"));
 
                 break;
             }
@@ -1354,11 +1358,11 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 'o': /* --object-name */
             {
                 if (strObjectName.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --object-name");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --object-name"));
 
                 strObjectName = ValueUnion.psz;
                 if (strObjectName.isEmpty())
-                    return errorArgument("Empty parameter: --object-name");
+                    return errorArgument(Cloud::tr("Empty parameter: --object-name"));
 
                 break;
             }
@@ -1366,11 +1370,11 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 'i': /* --id */
             {
                 if (strImageId.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --id");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --id"));
 
                 strImageId = ValueUnion.psz;
                 if (strImageId.isEmpty())
-                    return errorArgument("Empty parameter: --id");
+                    return errorArgument(Cloud::tr("Empty parameter: --id"));
 
                 break;
             }
@@ -1378,11 +1382,11 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 'd': /* --display-name */
             {
                 if (strDisplayName.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --display-name");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --display-name"));
 
                 strDisplayName = ValueUnion.psz;
                 if (strDisplayName.isEmpty())
-                    return errorArgument("Empty parameter: --display-name");
+                    return errorArgument(Cloud::tr("Empty parameter: --display-name"));
 
                 break;
             }
@@ -1390,11 +1394,11 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 'm': /* --launch-mode */
             {
                 if (strLaunchMode.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --launch-mode");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --launch-mode"));
 
                 strLaunchMode = ValueUnion.psz;
                 if (strLaunchMode.isEmpty())
-                    return errorArgument("Empty parameter: --launch-mode");
+                    return errorArgument(Cloud::tr("Empty parameter: --launch-mode"));
 
                 break;
             }
@@ -1420,12 +1424,12 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     if (strImageId.isNotEmpty())
         BstrFmt("image-id=%s", strImageId.c_str()).detachTo(parameters.appendedRaw());
     else
-        return errorArgument("Missing parameter: --id");
+        return errorArgument(Cloud::tr("Missing parameter: --id"));
 
     if (strBucketName.isNotEmpty())
         BstrFmt("bucket-name=%s", strBucketName.c_str()).detachTo(parameters.appendedRaw());
     else
-        return errorArgument("Missing parameter: --bucket-name");
+        return errorArgument(Cloud::tr("Missing parameter: --bucket-name"));
 
     if (strObjectName.isNotEmpty())
         BstrFmt("object-name=%s", strObjectName.c_str()).detachTo(parameters.appendedRaw());
@@ -1445,10 +1449,10 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                      RTEXITCODE_FAILURE);
 
     if (strObjectName.isNotEmpty())
-        RTPrintf("Exporting image \'%s\' to the Cloud with name \'%s\'...\n",
+        RTPrintf(Cloud::tr("Exporting image \'%s\' to the Cloud with name \'%s\'...\n"),
                  strImageId.c_str(), strObjectName.c_str());
     else
-        RTPrintf("Exporting image \'%s\' to the Cloud with default name\n",
+        RTPrintf(Cloud::tr("Exporting image \'%s\' to the Cloud with default name\n"),
                  strImageId.c_str());
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
@@ -1476,14 +1480,14 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         if (!strImageId.compare(imageId.toString()))
         {
             fFound = true;
-            RTPrintf("Image %s was found\n", strImageId.c_str());
+            RTPrintf(Cloud::tr("Image %s was found\n"), strImageId.c_str());
             break;
         }
     }
 
     if (!fFound)
     {
-        RTPrintf("Process of exporting the image to the Cloud was interrupted. The image wasn't found.\n");
+        RTPrintf(Cloud::tr("Process of exporting the image to the Cloud was interrupted. The image wasn't found.\n"));
         return RTEXITCODE_FAILURE;
     }
 
@@ -1492,10 +1496,10 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                      ExportImage(pImage, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Export the image to the Cloud failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Export the image to the Cloud failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Export the image to the Cloud was successfull\n");
+        RTPrintf(Cloud::tr("Export the image to the Cloud was successfull\n"));
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -1518,7 +1522,7 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1569,19 +1573,19 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Creating an object \'%s\' from the cloud image \'%s\'...\n", strObjectName.c_str(), strImageId.c_str());
+    RTPrintf(Cloud::tr("Creating an object \'%s\' from the cloud image \'%s\'...\n"), strObjectName.c_str(), strImageId.c_str());
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      ImportImage(Bstr(strImageId).raw(), ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image import failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Cloud image import failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
     {
-        RTPrintf("Cloud image was imported successfully. Find the downloaded object with the name %s "
-                 "in the system temp folder (find the possible environment variables like TEMP, TMP and etc.)\n",
+        RTPrintf(Cloud::tr("Cloud image was imported successfully. Find the downloaded object with the name %s "
+                           "in the system temp folder (find the possible environment variables like TEMP, TMP and etc.)\n"),
                  strObjectName.c_str());
     }
 
@@ -1604,7 +1608,7 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1641,13 +1645,13 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Getting information about the cloud image with id \'%s\'...\n", strImageId.c_str());
+    RTPrintf(Cloud::tr("Getting information about the cloud image with id \'%s\'...\n"), strImageId.c_str());
 
     ComPtr<IStringArray> infoArray;
     com::SafeArray<BSTR> pStrInfoArray;
     ComPtr<IProgress> pProgress;
 
-    RTPrintf("Reply is in the form \'image property\' = \'value\'\n");
+    RTPrintf(Cloud::tr("Reply is in the form \'image property\' = \'value\'\n"));
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      GetImageInfo(Bstr(strImageId).raw(),
                                   infoArray.asOutParam(),
@@ -1655,13 +1659,13 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                      RTEXITCODE_FAILURE);
 
     hrc = showProgress(pProgress);
-    CHECK_PROGRESS_ERROR_RET(pProgress, ("Getting information about the cloud image failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(pProgress, (Cloud::tr("Getting information about the cloud image failed")), RTEXITCODE_FAILURE);
 
     CHECK_ERROR2_RET(hrc,
                      infoArray, COMGETTER(Values)(ComSafeArrayAsOutParam(pStrInfoArray)),
                      RTEXITCODE_FAILURE);
 
-    RTPrintf("General information about the image:\n");
+    RTPrintf(Cloud::tr("General information about the image:\n"));
     size_t cParamNames = pStrInfoArray.size();
     for (size_t k = 0; k < cParamNames; k++)
     {
@@ -1696,7 +1700,7 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1711,11 +1715,11 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 'i':
             {
                 if (strImageId.isNotEmpty())
-                    return errorArgument("Duplicate parameter: --id");
+                    return errorArgument(Cloud::tr("Duplicate parameter: --id"));
 
                 strImageId = ValueUnion.psz;
                 if (strImageId.isEmpty())
-                    return errorArgument("Empty parameter: --id");
+                    return errorArgument(Cloud::tr("Empty parameter: --id"));
 
                 break;
             }
@@ -1738,7 +1742,7 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         return RTEXITCODE_FAILURE;
 
     if (strImageId.isEmpty())
-        return errorArgument("Missing parameter: --id");
+        return errorArgument(Cloud::tr("Missing parameter: --id"));
 
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
@@ -1747,17 +1751,17 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Deleting cloud image with id %s...\n", strImageId.c_str());
+    RTPrintf(Cloud::tr("Deleting cloud image with id %s...\n"), strImageId.c_str());
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      DeleteImage(Bstr(strImageId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Deleting cloud image failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Deleting cloud image failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud image with was deleted successfully\n");
+        RTPrintf(Cloud::tr("Cloud image with was deleted successfully\n"));
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -1792,7 +1796,7 @@ static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     if (a->argc == iFirst)
     {
-        RTPrintf("Empty command parameter list, show help.\n");
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
         printHelp(g_pStdOut);
         return RTEXITCODE_SUCCESS;
     }
@@ -1940,9 +1944,9 @@ static RTEXITCODE createCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     }
 
     if (options.strNetworkName.isEmpty())
-        return errorArgument("Missing --name parameter");
+        return errorArgument(Cloud::tr("Missing --name parameter"));
     if (options.strNetworkId.isEmpty())
-        return errorArgument("Missing --network-id parameter");
+        return errorArgument(Cloud::tr("Missing --network-id parameter"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
 
@@ -1954,7 +1958,7 @@ static RTEXITCODE createCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     /* Fill out the created network */
     RTEXITCODE rc = createUpdateCloudNetworkCommon(cloudNetwork, options, pCommonOpts);
     if (RT_SUCCESS(rc))
-        RTPrintf("Cloud network was created successfully\n");
+        RTPrintf(Cloud::tr("Cloud network was created successfully\n"));
 
     return rc;
 }
@@ -1991,7 +1995,7 @@ static RTEXITCODE showCloudNetworkInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
     }
 
     if (strNetworkName.isEmpty())
-        return errorArgument("Missing --name parameter");
+        return errorArgument(Cloud::tr("Missing --name parameter"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     ComPtr<ICloudNetwork> cloudNetwork;
@@ -1999,21 +2003,21 @@ static RTEXITCODE showCloudNetworkInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
                      FindCloudNetworkByName(strNetworkName.raw(), cloudNetwork.asOutParam()),
                      RTEXITCODE_FAILURE);
 
-    RTPrintf("Name:            %ls\n", strNetworkName.raw());
+    RTPrintf(Cloud::tr("Name:            %ls\n"), strNetworkName.raw());
     BOOL fEnabled = FALSE;
     cloudNetwork->COMGETTER(Enabled)(&fEnabled);
-    RTPrintf("State:           %s\n", fEnabled ? "Enabled" : "Disabled");
+    RTPrintf(Cloud::tr("State:           %s\n"), fEnabled ? Cloud::tr("Enabled") : Cloud::tr("Disabled"));
     Bstr Provider;
     cloudNetwork->COMGETTER(Provider)(Provider.asOutParam());
-    RTPrintf("CloudProvider:   %ls\n", Provider.raw());
+    RTPrintf(Cloud::tr("CloudProvider:   %ls\n"), Provider.raw());
     Bstr Profile;
     cloudNetwork->COMGETTER(Profile)(Profile.asOutParam());
-    RTPrintf("CloudProfile:    %ls\n", Profile.raw());
+    RTPrintf(Cloud::tr("CloudProfile:    %ls\n"), Profile.raw());
     Bstr NetworkId;
     cloudNetwork->COMGETTER(NetworkId)(NetworkId.asOutParam());
-    RTPrintf("CloudNetworkId:  %ls\n", NetworkId.raw());
+    RTPrintf(Cloud::tr("CloudNetworkId:  %ls\n"), NetworkId.raw());
     Bstr netName = BstrFmt("cloud-%ls", strNetworkName.raw());
-    RTPrintf("VBoxNetworkName: %ls\n\n", netName.raw());
+    RTPrintf(Cloud::tr("VBoxNetworkName: %ls\n\n"), netName.raw());
 
     return RTEXITCODE_SUCCESS;
 }
@@ -2065,7 +2069,7 @@ static RTEXITCODE updateCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     }
 
     if (options.strNetworkName.isEmpty())
-        return errorArgument("Missing --name parameter");
+        return errorArgument(Cloud::tr("Missing --name parameter"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     ComPtr<ICloudNetwork> cloudNetwork;
@@ -2075,7 +2079,7 @@ static RTEXITCODE updateCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
     RTEXITCODE rc = createUpdateCloudNetworkCommon(cloudNetwork, options, pCommonOpts);
     if (RT_SUCCESS(rc))
-        RTPrintf("Cloud network %ls was updated successfully\n", options.strNetworkName.raw());
+        RTPrintf(Cloud::tr("Cloud network %ls was updated successfully\n"), options.strNetworkName.raw());
 
     return rc;
 }
@@ -2112,7 +2116,7 @@ static RTEXITCODE deleteCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     }
 
     if (strNetworkName.isEmpty())
-        return errorArgument("Missing --name parameter");
+        return errorArgument(Cloud::tr("Missing --name parameter"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     ComPtr<ICloudNetwork> cloudNetwork;
@@ -2125,7 +2129,7 @@ static RTEXITCODE deleteCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                      RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud network %ls was deleted successfully\n", strNetworkName.raw());
+        RTPrintf(Cloud::tr("Cloud network %ls was deleted successfully\n"), strNetworkName.raw());
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -2157,7 +2161,7 @@ static int composeTemplatePath(const char *pcszTemplate, Bstr& strFullPath)
         rc = RTPathAppendCxx(strTemplatePath, pcszTemplate);
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "Failed to compose path to the unattended installer script templates (%Rrc)", rc);
+        RTStrmPrintf(g_pStdErr, Cloud::tr("Failed to compose path to the unattended installer script templates (%Rrc)"), rc);
         RTStrmFlush(g_pStdErr);
     }
     else
@@ -2282,14 +2286,14 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     Bstr defaultMachineFolder;
     Bstr guestAdditionsISO;
     hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-    if (errorOccured(hrc, "Failed to obtain system properties."))
+    if (errorOccured(hrc, Cloud::tr("Failed to obtain system properties.")))
         return hrc;
     if (aProxy.isNotEmpty())
         strProxy = aProxy;
     else
     {
         hrc = systemProperties->COMGETTER(ProxyMode)(&enmProxyMode);
-        if (errorOccured(hrc, "Failed to obtain proxy mode."))
+        if (errorOccured(hrc, Cloud::tr("Failed to obtain proxy mode.")))
             return hrc;
         switch (enmProxyMode)
         {
@@ -2298,13 +2302,13 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
                 break;
             case ProxyMode_Manual:
                 hrc = systemProperties->COMGETTER(ProxyURL)(strProxy.asOutParam());
-                if (errorOccured(hrc, "Failed to obtain proxy URL."))
+                if (errorOccured(hrc, Cloud::tr("Failed to obtain proxy URL.")))
                     return hrc;
                 break;
             case ProxyMode_System:
                 hrc = getSystemProxyForUrl("https://dl.fedoraproject.org", strProxy);
                 if (FAILED(hrc))
-                    errorOccured(hrc, "Failed to get system proxy for https://dl.fedoraproject.org. Will use direct connection.");
+                    errorOccured(hrc, Cloud::tr("Failed to get system proxy for https://dl.fedoraproject.org. Will use direct connection."));
                 break;
             default: /* To get rid of ProxyMode_32BitHack 'warning' */
                 AssertFailed();
@@ -2313,16 +2317,16 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
 
     }
     hrc = systemProperties->COMGETTER(DefaultMachineFolder)(defaultMachineFolder.asOutParam());
-    if (errorOccured(hrc, "Failed to obtain default machine folder."))
+    if (errorOccured(hrc, Cloud::tr("Failed to obtain default machine folder.")))
         return hrc;
     if (aGuestAdditionsIso.isEmpty())
     {
         hrc = systemProperties->COMGETTER(DefaultAdditionsISO)(guestAdditionsISO.asOutParam());
-        if (errorOccured(hrc, "Failed to obtain default guest additions ISO path."))
+        if (errorOccured(hrc, Cloud::tr("Failed to obtain default guest additions ISO path.")))
             return hrc;
         if (guestAdditionsISO.isEmpty())
         {
-            errorOccured(E_INVALIDARG, "The default guest additions ISO path is empty nor it is provided as --guest-additions-iso parameter. Cannot proceed without it.");
+            errorOccured(E_INVALIDARG, Cloud::tr("The default guest additions ISO path is empty nor it is provided as --guest-additions-iso parameter. Cannot proceed without it."));
             return E_INVALIDARG;
         }
     }
@@ -2333,7 +2337,7 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     int rc = localGatewayImagePath(defaultMachineFolder, strGatewayImage);
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "Failed to compose a path to the local gateway image (%Rrc)", rc);
+        RTStrmPrintf(g_pStdErr, Cloud::tr("Failed to compose a path to the local gateway image (%Rrc)"), rc);
         RTStrmFlush(g_pStdErr);
         return E_FAIL;
     }
@@ -2341,53 +2345,53 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     /* If the image is already in place, there is nothing for us to do. */
     if (SUCCEEDED(hrc))
     {
-        RTPrintf("Local gateway image already exists, skipping image preparation step.\n");
+        RTPrintf(Cloud::tr("Local gateway image already exists, skipping image preparation step.\n"));
         return hrc;
     }
 
-    RTPrintf("Preparing unattended install of temporary local gateway machine from %ls...\n", aGatewayIso.raw());
+    RTPrintf(Cloud::tr("Preparing unattended install of temporary local gateway machine from %ls...\n"), aGatewayIso.raw());
     /* The image does not exist, let's try to open the provided ISO file. */
     ComPtr<IMedium> iso;
     hrc = virtualBox->OpenMedium(aGatewayIso.raw(), DeviceType_DVD, AccessMode_ReadOnly, FALSE, iso.asOutParam());
-    if (errorOccured(hrc, "Failed to open %ls.", aGatewayIso.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to open %ls."), aGatewayIso.raw()))
         return hrc;
 
     ComPtr<IMachine> machine;
     SafeArray<IN_BSTR> groups;
     groups.push_back(Bstr("/gateways").mutableRaw());
     hrc = virtualBox->CreateMachine(NULL, strGatewayVM.raw(), ComSafeArrayAsInParam(groups), Bstr("Oracle_64").raw(), Bstr("").raw(), machine.asOutParam());
-    if (errorOccured(hrc, "Failed to create '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to create '%ls'."), strGatewayVM.raw()))
         return hrc;
     /* Initial configuration */
     hrc = machine->ApplyDefaults(NULL);
-    if (errorOccured(hrc, "Failed to apply defaults to '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to apply defaults to '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     hrc = machine->COMSETTER(CPUCount)(2);
-    if (errorOccured(hrc, "Failed to adjust CPU count for '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to adjust CPU count for '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     hrc = machine->COMSETTER(MemorySize)(512/*MB*/);
-    if (errorOccured(hrc, "Failed to adjust memory size for '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to adjust memory size for '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     /* No need for audio -- disable it. */
     ComPtr<IAudioAdapter> audioAdapter;
     hrc = machine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-    if (errorOccured(hrc, "Failed to set attachment type for the second network adapter."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set attachment type for the second network adapter.")))
         return hrc;
 
     hrc = audioAdapter->COMSETTER(Enabled)(FALSE);
-    if (errorOccured(hrc, "Failed to disable the audio adapter."))
+    if (errorOccured(hrc, Cloud::tr("Failed to disable the audio adapter.")))
         return hrc;
     audioAdapter.setNull();
 
     hrc = virtualBox->RegisterMachine(machine);
-    if (errorOccured(hrc, "Failed to register '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to register '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     hrc = virtualBox->CreateMedium(Bstr("VDI").raw(), strGatewayImage.raw(), AccessMode_ReadWrite, DeviceType_HardDisk, hd.asOutParam());
-    if (errorOccured(hrc, "Failed to create %ls.", strGatewayImage.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to create %ls."), strGatewayImage.raw()))
         return hrc;
 
     ComPtr<IProgress> progress;
@@ -2398,96 +2402,96 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     hrc = hd->CreateBaseStorage(8ll * 1000 * 1000 * 1000 /* 8GB */,
                                 ComSafeArrayAsInParam(mediumVariant),
                                 progress.asOutParam());
-    if (errorOccured(hrc, "Failed to create base storage for local gateway image."))
+    if (errorOccured(hrc, Cloud::tr("Failed to create base storage for local gateway image.")))
         return hrc;
 
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to create base storage for local gateway image."), hrc);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Failed to create base storage for local gateway image.")), hrc);
 
     ComPtr<ISession> session;
     hrc = session.createInprocObject(CLSID_Session);
     hrc = machine->LockMachine(session, LockType_Write);
-    if (errorOccured(hrc, "Failed to lock '%ls' for modifications.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to lock '%ls' for modifications."), strGatewayVM.raw()))
         return hrc;
 
     ComPtr<IMachine> sessionMachine;
     hrc = session->COMGETTER(Machine)(sessionMachine.asOutParam());
-    if (errorOccured(hrc, "Failed to obtain a mutable machine."))
+    if (errorOccured(hrc, Cloud::tr("Failed to obtain a mutable machine.")))
         return hrc;
 
     hrc = sessionMachine->AttachDevice(Bstr("SATA").raw(), 0, 0, DeviceType_HardDisk, hd);
-    if (errorOccured(hrc, "Failed to attach HD to '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to attach HD to '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     hrc = sessionMachine->AttachDevice(Bstr("IDE").raw(), 0, 0, DeviceType_DVD, iso);
-    if (errorOccured(hrc, "Failed to attach ISO to '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to attach ISO to '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     /* Save settings */
     hrc = sessionMachine->SaveSettings();
-    if (errorOccured(hrc, "Failed to save '%ls' settings.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to save '%ls' settings."), strGatewayVM.raw()))
         return hrc;
     session->UnlockMachine();
 
     /* Prepare unattended install */
     ComPtr<IUnattended> unattended;
     hrc = virtualBox->CreateUnattendedInstaller(unattended.asOutParam());
-    if (errorOccured(hrc, "Failed to create unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to create unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(Machine)(machine);
-    if (errorOccured(hrc, "Failed to set machine for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set machine for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(IsoPath)(aGatewayIso.raw());
-    if (errorOccured(hrc, "Failed to set machine for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set machine for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(User)(strUser.raw());
-    if (errorOccured(hrc, "Failed to set user for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set user for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(Password)(strPassword.raw());
-    if (errorOccured(hrc, "Failed to set password for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set password for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(FullUserName)(strUser.raw());
-    if (errorOccured(hrc, "Failed to set full user name for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set full user name for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(InstallGuestAdditions)(TRUE);
-    if (errorOccured(hrc, "Failed to enable guest addtions for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to enable guest addtions for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(AdditionsIsoPath)(guestAdditionsISO.raw());
-    if (errorOccured(hrc, "Failed to set guest addtions ISO path for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set guest addtions ISO path for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(ScriptTemplatePath)(strInstallerScript.raw());
-    if (errorOccured(hrc, "Failed to set script template for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set script template for the unattended installer.")))
         return hrc;
 
     hrc = unattended->COMSETTER(PostInstallScriptTemplatePath)(strPostInstallScript.raw());
-    if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
+    if (errorOccured(hrc, Cloud::tr("Failed to set post install script template for the unattended installer.")))
         return hrc;
 
     if (strProxy.isNotEmpty())
     {
         hrc = unattended->COMSETTER(Proxy)(strProxy.raw());
-        if (errorOccured(hrc, "Failed to set post install script template for the unattended installer."))
+        if (errorOccured(hrc, Cloud::tr("Failed to set post install script template for the unattended installer.")))
             return hrc;
     }
 
     hrc = unattended->Prepare();
-    if (errorOccured(hrc, "Failed to prepare unattended installation."))
+    if (errorOccured(hrc, Cloud::tr("Failed to prepare unattended installation.")))
         return hrc;
 
     hrc = unattended->ConstructMedia();
-    if (errorOccured(hrc, "Failed to construct media for unattended installation."))
+    if (errorOccured(hrc, Cloud::tr("Failed to construct media for unattended installation.")))
         return hrc;
 
     hrc = unattended->ReconfigureVM();
-    if (errorOccured(hrc, "Failed to reconfigure %ls for unattended installation.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to reconfigure %ls for unattended installation."), strGatewayVM.raw()))
         return hrc;
 
 #define SHOW_ATTR(a_Attr, a_szText, a_Type, a_szFmt) do { \
@@ -2496,7 +2500,7 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
             if (SUCCEEDED(hrc2)) \
                 RTPrintf("  %32s = " a_szFmt "\n", a_szText, Value); \
             else \
-                RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+                RTPrintf(Cloud::tr("  %32s = failed: %Rhrc\n"), a_szText, hrc2); \
         } while (0)
 #define SHOW_STR_ATTR(a_Attr, a_szText) do { \
             Bstr bstrString; \
@@ -2504,7 +2508,7 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
             if (SUCCEEDED(hrc2)) \
                 RTPrintf("  %32s = %ls\n", a_szText, bstrString.raw()); \
             else \
-                RTPrintf("  %32s = failed: %Rhrc\n", a_szText, hrc2); \
+                RTPrintf(Cloud::tr("  %32s = failed: %Rhrc\n"), a_szText, hrc2); \
         } while (0)
 
     SHOW_STR_ATTR(IsoPath,                       "isoPath");
@@ -2541,14 +2545,14 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     /* 'unattended' is no longer needed. */
     unattended.setNull();
 
-    RTPrintf("Performing unattended install of temporary local gateway...\n");
+    RTPrintf(Cloud::tr("Performing unattended install of temporary local gateway...\n"));
 
     hrc = machine->LaunchVMProcess(session, Bstr("gui").raw(), ComSafeArrayNullInParam(), progress.asOutParam());
-    if (errorOccured(hrc, "Failed to launch '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to launch '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     hrc = progress->WaitForCompletion(-1);
-    if (errorOccured(hrc, "Failed to launch '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to launch '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     unsigned i = 0;
@@ -2559,12 +2563,12 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
     {
         RTThreadSleep(1000); /* One second */
         hrc = machine->COMGETTER(State)(&machineState);
-        if (errorOccured(hrc, "Failed to get machine state."))
+        if (errorOccured(hrc, Cloud::tr("Failed to get machine state.")))
             break;
         RTPrintf("\r%c", progressChars[i++ % sizeof(progressChars)]);
         if (machineState == MachineState_Aborted)
         {
-            errorOccured(E_ABORT, "Temporary local gateway VM has aborted.");
+            errorOccured(E_ABORT, Cloud::tr("Temporary local gateway VM has aborted."));
             return E_ABORT;
         }
     }
@@ -2572,25 +2576,25 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
 
     if (machineState != MachineState_PoweredOff)
     {
-        errorOccured(E_ABORT, "Timed out (40min) while waiting for unattended install to finish.");
+        errorOccured(E_ABORT, Cloud::tr("Timed out (40min) while waiting for unattended install to finish."));
         return E_ABORT;
     }
     /* Machine will still be immutable for a short while after powering off, let's wait a little. */
     RTThreadSleep(5000); /* Five seconds */
 
-    RTPrintf("\rDone.\n");
+    RTPrintf(Cloud::tr("\rDone.\n"));
 
     hrc = machine->LockMachine(session, LockType_Write);
-    if (errorOccured(hrc, "Failed to lock '%ls' for modifications.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to lock '%ls' for modifications."), strGatewayVM.raw()))
         return hrc;
 
-    RTPrintf("Detaching local gateway image...\n");
+    RTPrintf(Cloud::tr("Detaching local gateway image...\n"));
     hrc = session->COMGETTER(Machine)(sessionMachine.asOutParam());
-    if (errorOccured(hrc, "Failed to obtain a mutable machine."))
+    if (errorOccured(hrc, Cloud::tr("Failed to obtain a mutable machine.")))
         return hrc;
 
     hrc = sessionMachine->DetachDevice(Bstr("SATA").raw(), 0, 0);
-    if (errorOccured(hrc, "Failed to detach HD to '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to detach HD to '%ls'."), strGatewayVM.raw()))
         return hrc;
 
     /* Remove the image from the media registry. */
@@ -2598,31 +2602,31 @@ static HRESULT createLocalGatewayImage(ComPtr<IVirtualBox> virtualBox, const Bst
 
     /* Save settings */
     hrc = sessionMachine->SaveSettings();
-    if (errorOccured(hrc, "Failed to save '%ls' settings.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to save '%ls' settings."), strGatewayVM.raw()))
         return hrc;
     session->UnlockMachine();
 
 #if 0
     /** @todo Unregistering the temporary VM makes the image mutable again. Find out the way around it! */
-    RTPrintf("Unregistering temporary local gateway machine...\n");
+    RTPrintf(Cloud::tr("Unregistering temporary local gateway machine...\n"));
     SafeIfaceArray<IMedium> media;
     hrc = machine->Unregister(CleanupMode_DetachAllReturnNone, ComSafeArrayAsOutParam(media));
-    if (errorOccured(hrc, "Failed to unregister '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to unregister '%ls'."), strGatewayVM.raw()))
         return hrc;
     hrc = machine->DeleteConfig(ComSafeArrayAsInParam(media), progress.asOutParam());
-    if (errorOccured(hrc, "Failed to delete config for '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to delete config for '%ls'."), strGatewayVM.raw()))
         return hrc;
     hrc = progress->WaitForCompletion(-1);
-    if (errorOccured(hrc, "Failed to delete config for '%ls'.", strGatewayVM.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to delete config for '%ls'."), strGatewayVM.raw()))
         return hrc;
 #endif
 
-    RTPrintf("Making local gateway image immutable...\n");
+    RTPrintf(Cloud::tr("Making local gateway image immutable...\n"));
     hrc = virtualBox->OpenMedium(strGatewayImage.raw(), DeviceType_HardDisk, AccessMode_ReadWrite, FALSE, hd.asOutParam());
-    if (errorOccured(hrc, "Failed to open '%ls'.", strGatewayImage.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to open '%ls'."), strGatewayImage.raw()))
         return hrc;
     hd->COMSETTER(Type)(MediumType_Immutable);
-    if (errorOccured(hrc, "Failed to make '%ls' immutable.", strGatewayImage.raw()))
+    if (errorOccured(hrc, Cloud::tr("Failed to make '%ls' immutable."), strGatewayImage.raw()))
         return hrc;
 
     return S_OK;
@@ -2705,7 +2709,7 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
         return RTEXITCODE_FAILURE;
 
     if (strLocalGatewayIso.isEmpty())
-        return errorArgument("Missing --local-gateway-iso parameter");
+        return errorArgument(Cloud::tr("Missing --local-gateway-iso parameter"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
 
@@ -2713,7 +2717,7 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
     if (FAILED(hrc))
         return RTEXITCODE_FAILURE;
 
-    RTPrintf("Setting up tunnel network in the cloud...\n");
+    RTPrintf(Cloud::tr("Setting up tunnel network in the cloud...\n"));
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -2739,11 +2743,11 @@ static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOP
                      RTEXITCODE_FAILURE);
 
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Setting up cloud network environment failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Setting up cloud network environment failed")), RTEXITCODE_FAILURE);
 
     Bstr tunnelNetworkId;
     hrc = cloudNetworkEnv->COMGETTER(TunnelNetworkId)(tunnelNetworkId.asOutParam());
-    RTPrintf("Cloud network environment was set up successfully. Tunnel network id is: %ls\n", tunnelNetworkId.raw());
+    RTPrintf(Cloud::tr("Cloud network environment was set up successfully. Tunnel network id is: %ls\n"), tunnelNetworkId.raw());
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

@@ -50,28 +50,26 @@ using namespace com;
 
 #endif /* !VBOX_ONLY_DOCS */
 
+DECLARE_TRANSLATION_CONTEXT(GuestProp);
+
+
 void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2)
 {
-    RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   get <uuid|vmname>\n"
-                 "                            <property> [--verbose]\n"
-                 "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   set <uuid|vmname>\n"
-                 "                            <property> [<value> [--flags <flags>]]\n"
-                 "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   delete|unset <uuid|vmname>\n"
-                 "                            <property>\n"
-                 "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   enumerate <uuid|vmname>\n"
-                 "                            [--patterns <patterns>]\n"
-                 "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   wait <uuid|vmname> <patterns>\n"
-                 "                            [--timeout <msec>] [--fail-on-timeout]\n"
-                 "\n", pcszSep1, pcszSep2);
+    RTStrmPrintf(pStrm, GuestProp::tr("%s guestproperty %s   get <uuid|vmname>\n"
+                                "                            <property> [--verbose]\n"
+                                "\n"), pcszSep1, pcszSep2);
+    RTStrmPrintf(pStrm, GuestProp::tr("%s guestproperty %s   set <uuid|vmname>\n"
+                                "                            <property> [<value> [--flags <flags>]]\n"
+                                "\n"), pcszSep1, pcszSep2);
+    RTStrmPrintf(pStrm, GuestProp::tr("%s guestproperty %s   delete|unset <uuid|vmname>\n"
+                                "                            <property>\n"
+                                "\n"), pcszSep1, pcszSep2);
+    RTStrmPrintf(pStrm, GuestProp::tr("%s guestproperty %s   enumerate <uuid|vmname>\n"
+                                "                            [--patterns <patterns>]\n"
+                                "\n"), pcszSep1, pcszSep2);
+    RTStrmPrintf(pStrm, GuestProp::tr("%s guestproperty %s   wait <uuid|vmname> <patterns>\n"
+                                "                            [--timeout <msec>] [--fail-on-timeout]\n"
+                                "\n"), pcszSep1, pcszSep2);
 }
 
 #ifndef VBOX_ONLY_DOCS
@@ -86,7 +84,7 @@ static RTEXITCODE handleGetGuestProperty(HandlerArg *a)
              || !strcmp(a->argv[2], "-verbose")))
         verbose = true;
     else if (a->argc != 2)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
 
     ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
@@ -106,13 +104,13 @@ static RTEXITCODE handleGetGuestProperty(HandlerArg *a)
                                               value.asOutParam(),
                                               &i64Timestamp, flags.asOutParam()));
         if (value.isEmpty())
-            RTPrintf("No value set!\n");
+            RTPrintf(GuestProp::tr("No value set!\n"));
         else
-            RTPrintf("Value: %ls\n", value.raw());
+            RTPrintf(GuestProp::tr("Value: %ls\n"), value.raw());
         if (!value.isEmpty() && verbose)
         {
-            RTPrintf("Timestamp: %lld\n", i64Timestamp);
-            RTPrintf("Flags: %ls\n", flags.raw());
+            RTPrintf(GuestProp::tr("Timestamp: %lld\n"), i64Timestamp);
+            RTPrintf(GuestProp::tr("Flags: %ls\n"), flags.raw());
         }
     }
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
@@ -145,7 +143,7 @@ static RTEXITCODE handleSetGuestProperty(HandlerArg *a)
     else if (a->argc != 2)
         usageOK = false;
     if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
     /* This is always needed. */
     pszName = a->argv[1];
 
@@ -189,7 +187,7 @@ static RTEXITCODE handleDeleteGuestProperty(HandlerArg *a)
     if (a->argc != 2)
         usageOK = false;
     if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
     /* This is always needed. */
     pszName = a->argv[1];
 
@@ -231,7 +229,7 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
         ||  (   a->argc > 3
              && strcmp(a->argv[1], "--patterns")
              && strcmp(a->argv[1], "-patterns")))
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
 
     /*
      * Pack the patterns
@@ -267,9 +265,9 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
         if (SUCCEEDED(rc))
         {
             if (names.size() == 0)
-                RTPrintf("No properties found.\n");
+                RTPrintf(GuestProp::tr("No properties found.\n"));
             for (unsigned i = 0; i < names.size(); ++i)
-                RTPrintf("Name: %ls, value: %ls, timestamp: %lld, flags: %ls\n",
+                RTPrintf(GuestProp::tr("Name: %ls, value: %ls, timestamp: %lld, flags: %ls\n"),
                          names[i], values[i], timestamps[i], flags[i]);
         }
     }
@@ -318,7 +316,7 @@ static RTEXITCODE handleWaitGuestProperty(HandlerArg *a)
             usageOK = false;
     }
     if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
 
     /*
      * Set up the event listener and wait until found match or timeout.
@@ -373,7 +371,7 @@ static RTEXITCODE handleWaitGuestProperty(HandlerArg *a)
                         Bstr aNextValue, aNextFlags;
                         gpcev->COMGETTER(Value)(aNextValue.asOutParam());
                         gpcev->COMGETTER(Flags)(aNextFlags.asOutParam());
-                        RTPrintf("Name: %ls, value: %ls, flags: %ls\n",
+                        RTPrintf(GuestProp::tr("Name: %ls, value: %ls, flags: %ls\n"),
                                  aNextName.raw(), aNextValue.raw(), aNextFlags.raw());
                         fSignalled = true;
                     }
@@ -390,7 +388,7 @@ static RTEXITCODE handleWaitGuestProperty(HandlerArg *a)
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     if (!fSignalled)
     {
-        RTMsgError("Time out or interruption while waiting for a notification.");
+        RTMsgError(GuestProp::tr("Time out or interruption while waiting for a notification."));
         if (fFailOnTimeout)
             /* Hysterical rasins: We always returned 2 here, which now translates to syntax error... Which is bad. */
             rcExit = RTEXITCODE_SYNTAX;
@@ -416,7 +414,7 @@ RTEXITCODE handleGuestProperty(HandlerArg *a)
      */
 
     if (a->argc == 0)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
 
     /* switch (cmd) */
     if (strcmp(a->argv[0], "get") == 0)
@@ -431,7 +429,7 @@ RTEXITCODE handleGuestProperty(HandlerArg *a)
         return handleWaitGuestProperty(&arg);
 
     /* default: */
-    return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+    return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
 }
 
 #endif /* !VBOX_ONLY_DOCS */

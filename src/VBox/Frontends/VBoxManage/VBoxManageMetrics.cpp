@@ -40,6 +40,7 @@
 #include "VBoxManage.h"
 using namespace com;
 
+DECLARE_TRANSLATION_CONTEXT(Metrics);
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +89,7 @@ static HRESULT parseFilterParameters(int argc, char *argv[],
             }
             else
             {
-                errorArgument("Invalid machine name: '%s'", argv[0]);
+                errorArgument(Metrics::tr("Invalid machine name: '%s'"), argv[0]);
                 return rc;
             }
         }
@@ -126,7 +127,7 @@ static Bstr getObjectName(ComPtr<IUnknown> aObject)
 
     ComPtr<IHost> host = aObject;
     if (!host.isNull())
-        return Bstr("host");
+        return Bstr(Metrics::tr("host"));
 
     ComPtr<IMachine> machine = aObject;
     if (!machine.isNull())
@@ -136,7 +137,7 @@ static Bstr getObjectName(ComPtr<IUnknown> aObject)
         if (SUCCEEDED(rc))
             return name;
     }
-    return Bstr("unknown");
+    return Bstr(Metrics::tr("unknown"));
 }
 
 static void listAffectedMetrics(ComSafeArrayIn(IPerformanceMetric*, aMetrics))
@@ -147,9 +148,9 @@ static void listAffectedMetrics(ComSafeArrayIn(IPerformanceMetric*, aMetrics))
     {
         ComPtr<IUnknown> object;
         Bstr metricName;
-        RTPrintf("The following metrics were modified:\n\n"
-                 "Object     Metric\n"
-                 "---------- --------------------\n");
+        RTPrintf(Metrics::tr("The following metrics were modified:\n\n"
+                             "Object     Metric\n"
+                             "---------- --------------------\n"));
         for (size_t i = 0; i < metrics.size(); i++)
         {
             CHECK_ERROR(metrics[i], COMGETTER(Object)(object.asOutParam()));
@@ -161,7 +162,7 @@ static void listAffectedMetrics(ComSafeArrayIn(IPerformanceMetric*, aMetrics))
     }
     else
     {
-        RTMsgError("No metrics match the specified filter!");
+        RTMsgError(Metrics::tr("No metrics match the specified filter!"));
     }
 }
 
@@ -193,9 +194,9 @@ static RTEXITCODE handleMetricsList(int argc, char *argv[],
     Bstr metricName, unit, description;
     ULONG period, count;
     LONG minimum, maximum;
-    RTPrintf(
+    RTPrintf(Metrics::tr(
 "Object          Metric                                   Unit    Minimum    Maximum     Period      Count Description\n"
-"--------------- ---------------------------------------- ---- ---------- ---------- ---------- ---------- -----------\n");
+"--------------- ---------------------------------------- ---- ---------- ---------- ---------- ---------- -----------\n"));
     for (size_t i = 0; i < metricInfo.size(); i++)
     {
         CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
@@ -234,19 +235,19 @@ static RTEXITCODE handleMetricsSetup(int argc, char *argv[],
             || !strcmp(argv[i], "-period"))
         {
             if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Missing argument to '%s'"), argv[i]);
             if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &period)
                 || !period)
-                return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Invalid value for 'period' parameter: '%s'"), argv[i]);
         }
         else if (   !strcmp(argv[i], "--samples")
                  || !strcmp(argv[i], "-samples"))
         {
             if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Missing argument to '%s'"), argv[i]);
             if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &samples)
                 || !samples)
-                return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Invalid value for 'samples' parameter: '%s'"), argv[i]);
         }
         else if (   !strcmp(argv[i], "--list")
                  || !strcmp(argv[i], "-list"))
@@ -311,8 +312,9 @@ static RTEXITCODE handleMetricsQuery(int argc, char *argv[],
                                                        ComSafeArrayAsOutParam(retLengths),
                                                        ComSafeArrayAsOutParam(retData)) );
 
-    RTPrintf("Object          Metric                                   Values\n"
-             "--------------- ---------------------------------------- --------------------------------------------\n");
+    RTPrintf(Metrics::tr(
+                "Object          Metric                                   Values\n"
+                "--------------- ---------------------------------------- --------------------------------------------\n"));
     for (unsigned i = 0; i < retNames.size(); i++)
     {
         Bstr metricUnit(retUnits[i]);
@@ -400,19 +402,19 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
             || !strcmp(argv[i], "-period"))
         {
             if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Missing argument to '%s'"), argv[i]);
             if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &period)
                 || !period)
-                return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Invalid value for 'period' parameter: '%s'"), argv[i]);
         }
         else if (   !strcmp(argv[i], "--samples")
                  || !strcmp(argv[i], "-samples"))
         {
             if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Missing argument to '%s'"), argv[i]);
             if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &samples)
                 || !samples)
-                return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
+                return errorArgument(Metrics::tr("Invalid value for 'samples' parameter: '%s'"), argv[i]);
         }
         else if (   !strcmp(argv[i], "--list")
                  || !strcmp(argv[i], "-list"))
@@ -471,8 +473,8 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
 
     if (isDetached)
     {
-        RTMsgWarning("The background process holding collected metrics will shutdown\n"
-                     "in few seconds, discarding all collected data and parameters.");
+        RTMsgWarning(Metrics::tr("The background process holding collected metrics will shutdown\n"
+                                 "in few seconds, discarding all collected data and parameters."));
         return RTEXITCODE_SUCCESS;
     }
 
@@ -480,7 +482,7 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
     SetConsoleCtrlHandler(ctrlHandler, true);
 #endif /* RT_OS_WINDOWS */
 
-    RTPrintf("Time stamp   Object     Metric               Value\n");
+    RTPrintf(Metrics::tr("Time stamp   Object     Metric               Value\n"));
 
     while (g_fKeepGoing)
     {
@@ -623,7 +625,7 @@ RTEXITCODE handleMetrics(HandlerArg *a)
 {
     /* at least one option: subcommand name */
     if (a->argc < 1)
-        return errorSyntax(USAGE_METRICS, "Subcommand missing");
+        return errorSyntax(USAGE_METRICS, Metrics::tr("Subcommand missing"));
 
     ComPtr<IPerformanceCollector> performanceCollector;
     CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(PerformanceCollector)(performanceCollector.asOutParam()), RTEXITCODE_FAILURE);
@@ -642,10 +644,9 @@ RTEXITCODE handleMetrics(HandlerArg *a)
     else if (!strcmp(a->argv[0], "disable"))
         rcExit = handleMetricsDisable(a->argc, a->argv, a->virtualBox, performanceCollector);
     else
-        return errorSyntax(USAGE_METRICS, "Invalid subcommand '%s'", a->argv[0]);
+        return errorSyntax(USAGE_METRICS, Metrics::tr("Invalid subcommand '%s'"), a->argv[0]);
 
     return rcExit;
 }
 
 #endif /* !VBOX_ONLY_DOCS */
-

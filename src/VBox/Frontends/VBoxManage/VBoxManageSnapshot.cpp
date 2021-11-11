@@ -34,6 +34,8 @@
 #include "VBoxManage.h"
 using namespace com;
 
+DECLARE_TRANSLATION_CONTEXT(Snapshot);
+
 /**
  * Helper function used with "VBoxManage snapshot ... dump". Gets called to find the
  * snapshot in the machine's snapshot tree that uses a particular diff image child of
@@ -193,7 +195,7 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &pMachi
     HRESULT hrc = pMachine->FindSnapshot(Bstr().raw(), pSnapshot.asOutParam());
     if (FAILED(hrc))
     {
-        RTPrintf("This machine does not have any snapshots\n");
+        RTPrintf(Snapshot::tr("This machine does not have any snapshots\n"));
         return RTEXITCODE_FAILURE;
     }
     if (pSnapshot)
@@ -249,7 +251,7 @@ void DumpSnapshot(ComPtr<IMachine> &pMachine)
                 Bstr bstrBaseMediumName;
                 CHECK_ERROR_BREAK(pBaseMedium, COMGETTER(Name)(bstrBaseMediumName.asOutParam()));
 
-                RTPrintf("[%RI32] Images and snapshots for medium \"%ls\"\n", i, bstrBaseMediumName.raw());
+                RTPrintf(Snapshot::tr("[%RI32] Images and snapshots for medium \"%ls\"\n"), i, bstrBaseMediumName.raw());
 
                 DumpMediumWithChildren(pCurrentStateMedium,
                                        pBaseMedium,
@@ -324,7 +326,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 
     /* we need at least a VM and a command */
     if (a->argc < 2)
-        return errorSyntax("Not enough parameters");
+        return errorSyntax(Snapshot::tr("Not enough parameters"));
 
     /* the first argument must be the VM */
     Bstr bstrMachine(a->argv[0]);
@@ -354,7 +356,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             /* there must be a name */
             if (a->argc < 3)
             {
-                errorSyntax("Missing snapshot name");
+                errorSyntax(Snapshot::tr("Missing snapshot name"));
                 rc = E_FAIL;
                 break;
             }
@@ -399,7 +401,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                     case 'u':
                         vrc = parseSnapshotUniqueFlags(Value.psz, &enmUnique);
                         if (RT_FAILURE(vrc))
-                            return errorArgument("Invalid unique name description '%s'", Value.psz);
+                            return errorArgument(Snapshot::tr("Invalid unique name description '%s'"), Value.psz);
                         break;
 
                     default:
@@ -462,7 +464,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                     }
                     if (SUCCEEDED(rc))
                     {
-                        errorArgument("Failed to generate a unique snapshot name");
+                        errorArgument(Snapshot::tr("Failed to generate a unique snapshot name"));
                         rc = E_FAIL;
                         break;
                     }
@@ -478,9 +480,9 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 
             rc = showProgress(progress);
             if (SUCCEEDED(rc))
-                RTPrintf("Snapshot taken. UUID: %ls\n", snapId.raw());
+                RTPrintf(Snapshot::tr("Snapshot taken. UUID: %ls\n"), snapId.raw());
             else
-                CHECK_PROGRESS_ERROR(progress, ("Failed to take snapshot"));
+                CHECK_PROGRESS_ERROR(progress, (Snapshot::tr("Failed to take snapshot")));
         }
         else if (    (fDelete = !strcmp(a->argv[1], "delete"))
                   || (fRestore = !strcmp(a->argv[1], "restore"))
@@ -495,7 +497,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             {
                 if (a->argc > 2)
                 {
-                    errorSyntax("Too many arguments");
+                    errorSyntax(Snapshot::tr("Too many arguments"));
                     rc = E_FAIL;
                     break;
                 }
@@ -503,7 +505,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             /* exactly one parameter: snapshot name */
             else if (a->argc != 3)
             {
-                errorSyntax("Expecting snapshot name only");
+                errorSyntax(Snapshot::tr("Expecting snapshot name only"));
                 rc = E_FAIL;
                 break;
             }
@@ -515,7 +517,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                 CHECK_ERROR_BREAK(sessionMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
                 if (pSnapshot.isNull())
                 {
-                    RTPrintf("This machine does not have any snapshots\n");
+                    RTPrintf(Snapshot::tr("This machine does not have any snapshots\n"));
                     return RTEXITCODE_FAILURE;
                 }
             }
@@ -534,8 +536,8 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 
             ComPtr<IProgress> pProgress;
 
-            RTPrintf("%s snapshot '%ls' (%ls)\n",
-                     fDelete ? "Deleting" : "Restoring", bstrSnapName.raw(), bstrSnapGuid.raw());
+            RTPrintf(Snapshot::tr("%s snapshot '%ls' (%ls)\n"),
+                     fDelete ? Snapshot::tr("Deleting") : Snapshot::tr("Restoring"), bstrSnapName.raw(), bstrSnapGuid.raw());
 
             if (fDelete)
             {
@@ -549,14 +551,14 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             }
 
             rc = showProgress(pProgress);
-            CHECK_PROGRESS_ERROR(pProgress, ("Snapshot operation failed"));
+            CHECK_PROGRESS_ERROR(pProgress, (Snapshot::tr("Snapshot operation failed")));
         }
         else if (!strcmp(a->argv[1], "edit"))
         {
             setCurrentSubcommand(HELP_SCOPE_SNAPSHOT_EDIT);
             if (a->argc < 3)
             {
-                errorSyntax("Missing snapshot name");
+                errorSyntax(Snapshot::tr("Missing snapshot name"));
                 rc = E_FAIL;
                 break;
             }
@@ -589,7 +591,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                         CHECK_ERROR_BREAK(sessionMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
                         if (pSnapshot.isNull())
                         {
-                            RTPrintf("This machine does not have any snapshots\n");
+                            RTPrintf(Snapshot::tr("This machine does not have any snapshots\n"));
                             return RTEXITCODE_FAILURE;
                         }
                         break;
@@ -623,7 +625,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             /* exactly one parameter: snapshot name */
             if (a->argc != 3)
             {
-                errorSyntax("Expecting snapshot name only");
+                errorSyntax(Snapshot::tr("Expecting snapshot name only"));
                 rc = E_FAIL;
                 break;
             }
@@ -647,7 +649,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             DumpSnapshot(sessionMachine);
         else
         {
-            errorSyntax("Invalid parameter '%s'", a->argv[1]);
+            errorSyntax(Snapshot::tr("Invalid parameter '%s'"), a->argv[1]);
             rc = E_FAIL;
         }
     } while (0);
@@ -656,4 +658,3 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
-

@@ -41,6 +41,7 @@
 #include "VBoxManage.h"
 using namespace com;
 
+DECLARE_TRANSLATION_CONTEXT(Nvram);
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -119,9 +120,9 @@ static RTEXITCODE handleModifyNvramEnrollPlatformKey(HandlerArg *a, ComPtr<INvra
     }
 
     if (!pszPlatformKey)
-        return errorSyntax("No platform key file path was given to \"enrollpk\"");
+        return errorSyntax(Nvram::tr("No platform key file path was given to \"enrollpk\""));
     if (!pszOwnerUuid)
-        return errorSyntax("No owner UUID was given to \"enrollpk\"");
+        return errorSyntax(Nvram::tr("No owner UUID was given to \"enrollpk\""));
 
     RTFILE hPkFile;
     vrc = RTFileOpen(&hPkFile, pszPlatformKey, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
@@ -145,18 +146,18 @@ static RTEXITCODE handleModifyNvramEnrollPlatformKey(HandlerArg *a, ComPtr<INvra
                     return RTEXITCODE_SUCCESS;
                 }
                 else
-                    RTMsgError("Cannot read contents of file \"%s\": %Rrc", pszPlatformKey, vrc);
+                    RTMsgError(Nvram::tr("Cannot read contents of file \"%s\": %Rrc"), pszPlatformKey, vrc);
             }
             else
-                RTMsgError("File \"%s\" is bigger than 32KByte", pszPlatformKey);
+                RTMsgError(Nvram::tr("File \"%s\" is bigger than 32KByte"), pszPlatformKey);
         }
         else
-            RTMsgError("Cannot get size of file \"%s\": %Rrc", pszPlatformKey, vrc);
+            RTMsgError(Nvram::tr("Cannot get size of file \"%s\": %Rrc"), pszPlatformKey, vrc);
 
         RTFileClose(hPkFile);
     }
     else
-        RTMsgError("Cannot open file \"%s\": %Rrc", pszPlatformKey, vrc);
+        RTMsgError(Nvram::tr("Cannot open file \"%s\": %Rrc"), pszPlatformKey, vrc);
 
     return RTEXITCODE_FAILURE;
 }
@@ -248,7 +249,7 @@ static RTEXITCODE handleModifyNvramQueryUefiVar(HandlerArg *a, ComPtr<INvramStor
     }
 
     if (!pszVarName)
-        return errorSyntax("No variable name was given to \"queryvar\"");
+        return errorSyntax(Nvram::tr("No variable name was given to \"queryvar\""));
 
     ComPtr<IUefiVariableStore> uefiVarStore;
     CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
@@ -275,12 +276,12 @@ static RTEXITCODE handleModifyNvramQueryUefiVar(HandlerArg *a, ComPtr<INvramStor
         {
             vrc = RTFileWrite(hFile, aData.raw(), aData.size(), NULL /*pcbWritten*/);
             if (RT_FAILURE(vrc))
-                rcExit = RTMsgErrorExitFailure("Error writing to '%s': %Rrc", pszVarDataFilename, vrc);
+                rcExit = RTMsgErrorExitFailure(Nvram::tr("Error writing to '%s': %Rrc"), pszVarDataFilename, vrc);
 
             RTFileClose(hFile);
         }
         else
-           rcExit = RTMsgErrorExitFailure("Error opening '%s': %Rrc", pszVarDataFilename, vrc);
+           rcExit = RTMsgErrorExitFailure(Nvram::tr("Error opening '%s': %Rrc"), pszVarDataFilename, vrc);
     }
 
     return rcExit;
@@ -327,9 +328,9 @@ static RTEXITCODE handleModifyNvramDeleteUefiVar(HandlerArg *a, ComPtr<INvramSto
     }
 
     if (!pszVarName)
-        return errorSyntax("No variable name was given to \"deletevar\"");
+        return errorSyntax(Nvram::tr("No variable name was given to \"deletevar\""));
     if (!pszOwnerUuid)
-        return errorSyntax("No owner UUID was given to \"deletevar\"");
+        return errorSyntax(Nvram::tr("No owner UUID was given to \"deletevar\""));
 
     ComPtr<IUefiVariableStore> uefiVarStore;
     CHECK_ERROR2I_RET(nvramStore, COMGETTER(UefiVariableStore)(uefiVarStore.asOutParam()), RTEXITCODE_FAILURE);
@@ -379,9 +380,9 @@ static RTEXITCODE handleModifyNvramChangeUefiVar(HandlerArg *a, ComPtr<INvramSto
     }
 
     if (!pszVarName)
-        return errorSyntax("No variable name was given to \"changevar\"");
+        return errorSyntax(Nvram::tr("No variable name was given to \"changevar\""));
     if (!pszVarDataFilename)
-        return errorSyntax("No variable data filename was given to \"changevar\"");
+        return errorSyntax(Nvram::tr("No variable data filename was given to \"changevar\""));
 
     RTFILE hFile = NIL_RTFILE;
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
@@ -405,11 +406,11 @@ static RTEXITCODE handleModifyNvramChangeUefiVar(HandlerArg *a, ComPtr<INvramSto
                 CHECK_ERROR2I_RET(uefiVarStore, ChangeVariable(Bstr(pszVarName).raw(), ComSafeArrayAsInParam(aData)), RTEXITCODE_FAILURE);
             }
             else
-                rcExit = RTMsgErrorExitFailure("Error reading from '%s': %Rrc", pszVarDataFilename, vrc);
+                rcExit = RTMsgErrorExitFailure(Nvram::tr("Error reading from '%s': %Rrc"), pszVarDataFilename, vrc);
         }
     }
     else
-       rcExit = RTMsgErrorExitFailure("Error opening '%s': %Rrc", pszVarDataFilename, vrc);
+       rcExit = RTMsgErrorExitFailure(Nvram::tr("Error opening '%s': %Rrc"), pszVarDataFilename, vrc);
 
     return rcExit;
 }
@@ -496,4 +497,3 @@ leave:
 }
 
 #endif /* !VBOX_ONLY_DOCS */
-

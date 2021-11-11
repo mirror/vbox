@@ -39,6 +39,8 @@
 #include "VBoxManage.h"
 #include "VBoxManageUtils.h"
 
+DECLARE_TRANSLATION_CONTEXT(ModifyVM);
+
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
 /** @todo refine this after HDD changes; MSC 8.0/64 has trouble with handleModifyVM.  */
@@ -459,7 +461,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
 {
-    RTStrmPrintf(g_pStdErr, "Warning: '--vrdp%s' is deprecated. Use '--vrde%s'.\n", pszOption, pszOption);
+    RTStrmPrintf(g_pStdErr, ModifyVM::tr("Warning: '--vrdp%s' is deprecated. Use '--vrde%s'.\n"), pszOption, pszOption);
 }
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
@@ -535,7 +537,7 @@ static int parseNum(uint32_t uIndex, unsigned cMaxIndex, const char *pszName)
     if (   uIndex >= 1
         && uIndex <= cMaxIndex)
         return uIndex;
-    errorArgument("Invalid %s number %u", pszName, uIndex);
+    errorArgument(ModifyVM::tr("Invalid %s number %u"), pszName, uIndex);
     return 0;
 }
 
@@ -564,7 +566,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
     /* VM ID + at least one parameter. Parameter arguments are checked
      * individually. */
     if (a->argc < 2)
-        return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
+        return errorSyntax(USAGE_MODIFYVM, ModifyVM::tr("Not enough parameters"));
 
     /* try to find the given sessionMachine */
     ComPtr<IMachine> machine;
@@ -627,7 +629,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 int vrc = RTFileOpen(&iconFile, ValueUnion.psz, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                 if (RT_FAILURE(vrc))
                 {
-                    RTMsgError("Cannot open file \"%s\": %Rrc", ValueUnion.psz, vrc);
+                    RTMsgError(ModifyVM::tr("Cannot open file \"%s\": %Rrc"), ValueUnion.psz, vrc);
                     rc = E_FAIL;
                     break;
                 }
@@ -635,13 +637,13 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 vrc = RTFileQuerySize(iconFile, &cbSize);
                 if (RT_FAILURE(vrc))
                 {
-                    RTMsgError("Cannot get size of file \"%s\": %Rrc", ValueUnion.psz, vrc);
+                    RTMsgError(ModifyVM::tr("Cannot get size of file \"%s\": %Rrc"), ValueUnion.psz, vrc);
                     rc = E_FAIL;
                     break;
                 }
                 if (cbSize > _256K)
                 {
-                    RTMsgError("File \"%s\" is bigger than 256KByte", ValueUnion.psz);
+                    RTMsgError(ModifyVM::tr("File \"%s\" is bigger than 256KByte"), ValueUnion.psz);
                     rc = E_FAIL;
                     break;
                 }
@@ -649,7 +651,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 rc = RTFileRead(iconFile, icon.raw(), (size_t)cbSize, NULL);
                 if (RT_FAILURE(vrc))
                 {
-                    RTMsgError("Cannot read contents of file \"%s\": %Rrc", ValueUnion.psz, vrc);
+                    RTMsgError(ModifyVM::tr("Cannot read contents of file \"%s\": %Rrc"), ValueUnion.psz, vrc);
                     rc = E_FAIL;
                     break;
                 }
@@ -700,7 +702,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid --firmware argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --firmware argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -771,7 +773,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(sessionMachine, COMSETTER(ParavirtProvider)(ParavirtProvider_KVM));
                 else
                 {
-                    errorArgument("Invalid --paravirtprovider argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --paravirtprovider argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -799,7 +801,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 {
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM, "Missing or Invalid argument to '%s'", GetOptState.pDef->pszLong);
+                        return errorSyntax(USAGE_MODIFYVM, ModifyVM::tr("Missing or Invalid argument to '%s'"),
+                                           GetOptState.pDef->pszLong);
                     aValue[i] = ValueUnion.u32;
                 }
                 CHECK_ERROR(sessionMachine, SetCPUIDLeaf(idx, idxSub, aValue[0], aValue[1], aValue[2], aValue[3]));
@@ -942,7 +945,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 #endif
                 else
                 {
-                    errorArgument("Invalid --graphicscontroller argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --graphicscontroller argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -1008,7 +1011,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid --biosbootmenu argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --biosbootmenu argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -1032,7 +1035,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid --biosapic argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --biosapic argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -1079,7 +1082,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(sessionMachine, SetBootOrder(GetOptState.uIndex, DeviceType_Network));
                 }
                 else
-                    return errorArgument("Invalid boot device '%s'", ValueUnion.psz);
+                    return errorArgument(ModifyVM::tr("Invalid boot device '%s'"), ValueUnion.psz);
                 break;
             }
 
@@ -1159,7 +1162,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid --idecontroller argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --idecontroller argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -1189,7 +1192,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 else if (!RTStrICmp(ValueUnion.psz, "off") || !RTStrICmp(ValueUnion.psz, "disable"))
                     CHECK_ERROR(sessionMachine, RemoveStorageController(Bstr("SATA").raw()));
                 else
-                    return errorArgument("Invalid --usb argument '%s'", ValueUnion.psz);
+                    return errorArgument(ModifyVM::tr("Invalid --usb argument '%s'"), ValueUnion.psz);
                 break;
             }
 
@@ -1264,7 +1267,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
                 }
                 else
-                    return errorArgument("Invalid --scsitype argument '%s'", ValueUnion.psz);
+                    return errorArgument(ModifyVM::tr("Invalid --scsitype argument '%s'"), ValueUnion.psz);
                 break;
             }
 
@@ -1319,7 +1322,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         char szPathReal[RTPATH_MAX];
                         if (RT_FAILURE(RTPathReal(ValueUnion.psz + 5, szPathReal, sizeof(szPathReal))))
                         {
-                            errorArgument("Invalid host DVD drive name \"%s\"", ValueUnion.psz + 5);
+                            errorArgument(ModifyVM::tr("Invalid host DVD drive name \"%s\""), ValueUnion.psz + 5);
                             rc = E_FAIL;
                             break;
                         }
@@ -1327,7 +1330,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                     dvdMedium.asOutParam());
                         if (!dvdMedium)
                         {
-                            errorArgument("Invalid host DVD drive name \"%s\"", ValueUnion.psz + 5);
+                            errorArgument(ModifyVM::tr("Invalid host DVD drive name \"%s\""), ValueUnion.psz + 5);
                             rc = E_FAIL;
                             break;
                         }
@@ -1393,7 +1396,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                                                        floppyMedium.asOutParam());
                         if (!floppyMedium)
                         {
-                            errorArgument("Invalid host floppy drive name \"%s\"", ValueUnion.psz + 5);
+                            errorArgument(ModifyVM::tr("Invalid host floppy drive name \"%s\""), ValueUnion.psz + 5);
                             rc = E_FAIL;
                             break;
                         }
@@ -1473,14 +1476,15 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         }
                         else
                         {
-                            errorArgument("Invalid --nicproperty%d argument '%s'", GetOptState.uIndex, ValueUnion.psz);
+                            errorArgument(ModifyVM::tr("Invalid --nicproperty%d argument '%s'"), GetOptState.uIndex, ValueUnion.psz);
                             rc = E_FAIL;
                         }
                         RTStrFree(pszProperty);
                     }
                     else
                     {
-                        RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for --nicproperty%d '%s'\n", GetOptState.uIndex, ValueUnion.psz);
+                        RTStrmPrintf(g_pStdErr, ModifyVM::tr("Error: Failed to allocate memory for --nicproperty%d '%s'\n"),
+                                     GetOptState.uIndex, ValueUnion.psz);
                         rc = E_FAIL;
                     }
                 }
@@ -1535,7 +1539,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 #endif /* VBOX_WITH_VIRTIO_NET_1_0 */
                 else
                 {
-                    errorArgument("Invalid NIC type '%s' specified for NIC %u", ValueUnion.psz, GetOptState.uIndex);
+                    errorArgument(ModifyVM::tr("Invalid NIC type '%s' specified for NIC %u"),
+                                  ValueUnion.psz, GetOptState.uIndex);
                     rc = E_FAIL;
                 }
                 break;
@@ -1569,7 +1574,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                  */
                 if (ValueUnion.u32 > 4)
                 {
-                    errorArgument("Invalid boot priority '%u' specfied for NIC %u", ValueUnion.u32, GetOptState.uIndex);
+                    errorArgument(ModifyVM::tr("Invalid boot priority '%u' specfied for NIC %u"), ValueUnion.u32, GetOptState.uIndex);
                     rc = E_FAIL;
                 }
                 else
@@ -1591,7 +1596,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_AllowAll;
                 else
                 {
-                    errorArgument("Unknown promiscuous mode policy '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Unknown promiscuous mode policy '%s'"), ValueUnion.psz);
                     rc = E_INVALIDARG;
                     break;
                 }
@@ -1718,7 +1723,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid type '%s' specfied for NIC %u", ValueUnion.psz, GetOptState.uIndex);
+                    errorArgument(ModifyVM::tr("Invalid type '%s' specfied for NIC %u"), ValueUnion.psz, GetOptState.uIndex);
                     rc = E_FAIL;
                 }
                 break;
@@ -1889,20 +1894,20 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-#define ITERATE_TO_NEXT_TERM(ch)                                           \
-    do {                                                                   \
-        while (*ch != ',')                                                 \
-        {                                                                  \
-            if (*ch == 0)                                                  \
-            {                                                              \
-                return errorSyntax(USAGE_MODIFYVM,                         \
-                                   "Missing or Invalid argument to '%s'",  \
-                                    GetOptState.pDef->pszLong);            \
-            }                                                              \
-            ch++;                                                          \
-        }                                                                  \
-        *ch = '\0';                                                        \
-        ch++;                                                              \
+#define ITERATE_TO_NEXT_TERM(ch)                                                         \
+    do {                                                                                 \
+        while (*ch != ',')                                                               \
+        {                                                                                \
+            if (*ch == 0)                                                                \
+            {                                                                            \
+                return errorSyntax(USAGE_MODIFYVM,                                       \
+                                   ModifyVM::tr("Missing or Invalid argument to '%s'"),  \
+                                    GetOptState.pDef->pszLong);                          \
+            }                                                                            \
+            ch++;                                                                        \
+        }                                                                                \
+        *ch = '\0';                                                                      \
+        ch++;                                                                            \
     } while(0)
 
             case MODIFYVM_NATSETTINGS:
@@ -1980,7 +1985,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         proto = NATProtocol_TCP;
                     else
                     {
-                        errorArgument("Invalid proto '%s' specfied for NIC %u", ValueUnion.psz, GetOptState.uIndex);
+                        errorArgument(ModifyVM::tr("Invalid proto '%s' specfied for NIC %u"), ValueUnion.psz, GetOptState.uIndex);
                         rc = E_FAIL;
                         break;
                     }
@@ -1996,7 +2001,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     int vrc;
                     vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
+                        return errorSyntax(USAGE_MODIFYVM, ModifyVM::tr("Not enough parameters"));
                     CHECK_ERROR(engine, RemoveRedirect(Bstr(ValueUnion.psz).raw()));
                 }
                 break;
@@ -2198,7 +2203,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid type '%s' specfied for pointing device", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid type '%s' specfied for pointing device"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 if (fEnableUsb)
@@ -2243,7 +2248,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid type '%s' specfied for keyboard", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid type '%s' specfied for keyboard"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 if (fEnableUsb)
@@ -2289,7 +2294,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
                         return errorSyntax(USAGE_MODIFYVM,
-                                           "Missing or Invalid argument to '%s'",
+                                           ModifyVM::tr("Missing or Invalid argument to '%s'"),
                                            GetOptState.pDef->pszLong);
 
                     CHECK_ERROR(uart, COMSETTER(Path)(Bstr(ValueUnion.psz).raw()));
@@ -2348,7 +2353,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                     return errorSyntax(USAGE_MODIFYVM,
-                                       "Invalid argument to '%s'",
+                                       ModifyVM::tr("Invalid argument to '%s'"),
                                        GetOptState.pDef->pszLong);
                 break;
             }
@@ -2370,14 +2375,14 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32) != MODIFYVM_UART;
                     if (RT_FAILURE(vrc))
                         return errorSyntax(USAGE_MODIFYVM,
-                                           "Missing or Invalid argument to '%s'",
+                                           ModifyVM::tr("Missing or Invalid argument to '%s'"),
                                            GetOptState.pDef->pszLong);
 
                     CHECK_ERROR(uart, COMSETTER(IRQ)(ValueUnion.u32));
 
                     vrc = RTStrToUInt32Ex(pszIOBase, NULL, 0, &uVal);
                     if (vrc != VINF_SUCCESS || uVal == 0)
-                        return errorArgument("Error parsing UART I/O base '%s'", pszIOBase);
+                        return errorArgument(ModifyVM::tr("Error parsing UART I/O base '%s'"), pszIOBase);
                     CHECK_ERROR(uart, COMSETTER(IOBase)(uVal));
 
                     CHECK_ERROR(uart, COMSETTER(Enabled)(TRUE));
@@ -2414,14 +2419,14 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32) != MODIFYVM_LPT;
                     if (RT_FAILURE(vrc))
                         return errorSyntax(USAGE_MODIFYVM,
-                                           "Missing or Invalid argument to '%s'",
+                                           ModifyVM::tr("Missing or Invalid argument to '%s'"),
                                            GetOptState.pDef->pszLong);
 
                     CHECK_ERROR(lpt, COMSETTER(IRQ)(ValueUnion.u32));
 
                     vrc = RTStrToUInt32Ex(pszIOBase, NULL, 0, &uVal);
                     if (vrc != VINF_SUCCESS || uVal == 0)
-                        return errorArgument("Error parsing LPT I/O base '%s'", pszIOBase);
+                        return errorArgument(ModifyVM::tr("Error parsing LPT I/O base '%s'"), pszIOBase);
                     CHECK_ERROR(lpt, COMSETTER(IOBase)(uVal));
 
                     CHECK_ERROR(lpt, COMSETTER(Enabled)(TRUE));
@@ -2450,7 +2455,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioController)(AudioControllerType_HDA));
                 else
                 {
-                    errorArgument("Invalid --audiocontroller argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --audiocontroller argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -2472,7 +2477,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(audioAdapter, COMSETTER(AudioCodec)(AudioCodecType_STAC9221));
                 else
                 {
-                    errorArgument("Invalid --audiocodec argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --audiocodec argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -2544,7 +2549,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 #endif /* !RT_OS_DARWIN */
                 else
                 {
-                    errorArgument("Invalid --audio argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --audio argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -2584,7 +2589,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     mode = ClipboardMode_Bidirectional;
                 else
                 {
-                    errorArgument("Invalid --clipboard-mode argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --clipboard-mode argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 if (SUCCEEDED(rc))
@@ -2604,7 +2609,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     fEnabled = false;
                 else
                 {
-                    errorArgument("Invalid --clipboard-file-transfers argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --clipboard-file-transfers argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 if (SUCCEEDED(rc))
@@ -2629,7 +2634,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     mode = DnDMode_Bidirectional;
                 else
                 {
-                    errorArgument("Invalid --draganddrop argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --draganddrop argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 if (SUCCEEDED(rc))
@@ -2683,7 +2688,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         {
                             RTStrFree(pszProperty);
 
-                            errorArgument("Invalid --vrdeproperty argument '%s'", ValueUnion.psz);
+                            errorArgument(ModifyVM::tr("Invalid --vrdeproperty argument '%s'"), ValueUnion.psz);
                             rc = E_FAIL;
                             break;
                         }
@@ -2691,7 +2696,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     }
                     else
                     {
-                        RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for VRDE property '%s'\n", ValueUnion.psz);
+                        RTStrmPrintf(g_pStdErr, ModifyVM::tr("Error: Failed to allocate memory for VRDE property '%s'\n"),
+                                     ValueUnion.psz);
                         rc = E_FAIL;
                     }
                 }
@@ -2752,7 +2758,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid --vrdeauthtype argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --vrdeauthtype argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -2850,7 +2856,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
                 if (RT_FAILURE(vrc))
                     return errorSyntax(USAGE_MODIFYVM,
-                                       "Missing or Invalid argument to '%s'",
+                                       ModifyVM::tr("Missing or Invalid argument to '%s'"),
                                        GetOptState.pDef->pszLong);
                 const char *pszNewName = ValueUnion.psz;
 
@@ -2871,7 +2877,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 if (!fRenamed)
                 {
-                    errorArgument("Invalid --usbrename parameters, nothing renamed");
+                    errorArgument(ModifyVM::tr("Invalid --usbrename parameters, nothing renamed"));
                     rc = E_FAIL;
                 }
                 break;
@@ -3075,13 +3081,13 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(biosSettings, COMGETTER(IOAPICEnabled)(&fIoApic));
                     if (!fIoApic)
                     {
-                        RTStrmPrintf(g_pStdErr, "*** I/O APIC must be enabled for ICH9, enabling. ***\n");
+                        RTStrmPrintf(g_pStdErr, ModifyVM::tr("*** I/O APIC must be enabled for ICH9, enabling. ***\n"));
                         CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(TRUE));
                     }
                 }
                 else
                 {
-                    errorArgument("Invalid --chipset argument '%s' (valid: piix3,ich9)", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --chipset argument '%s' (valid: piix3,ich9)"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -3099,7 +3105,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 #ifdef VBOX_WITH_IOMMU_INTEL
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Intel));
 #else
-                    errorArgument("Invalid --iommu argument '%s' (valid: none,amd,automatic)", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --iommu argument '%s' (valid: none,amd,automatic)"), ValueUnion.psz);
                     rc = E_FAIL;
 #endif
                 }
@@ -3108,12 +3114,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Automatic));
 #ifndef VBOX_WITH_IOMMU_INTEL
                     RTStrmPrintf(g_pStdErr,
-                                 "Warning: On Intel hosts, 'automatic' will not enable an IOMMU since the Intel IOMMU device is not supported yet.\n");
+                                 ModifyVM::tr("Warning: On Intel hosts, 'automatic' will not enable an IOMMU since the Intel IOMMU device is not supported yet.\n"));
 #endif
                 }
                 else
                 {
-                    errorArgument("Invalid --iommu argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --iommu argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -3138,7 +3144,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(tpm, COMSETTER(Type)(TpmType_Swtpm));
                 else
                 {
-                    errorArgument("Invalid --tpm-type argument '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --tpm-type argument '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -3195,7 +3201,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         com::SafeArray<BOOL> screens(cMonitors);
                         if (parseScreens(ValueUnion.psz, &screens))
                         {
-                            errorArgument("Invalid list of screens specified\n");
+                            errorArgument(ModifyVM::tr("Invalid list of screens specified\n"));
                             rc = E_FAIL;
                             break;
                         }
@@ -3217,7 +3223,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             int vrc = RTPathAbs(ValueUnion.psz, szVCFileAbs, sizeof(szVCFileAbs));
                             if (RT_FAILURE(vrc))
                             {
-                                errorArgument("Cannot convert filename \"%s\" to absolute path\n", ValueUnion.psz);
+                                errorArgument(ModifyVM::tr("Cannot convert filename \"%s\" to absolute path\n"), ValueUnion.psz);
                                 rc = E_FAIL;
                                 break;
                             }
@@ -3247,7 +3253,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         int vrc = RTStrToUInt32Ex(ValueUnion.psz, &pszNext, 0, &uWidth);
                         if (RT_FAILURE(vrc) || vrc != VWRN_TRAILING_CHARS || !pszNext || *pszNext != 'x')
                         {
-                            errorArgument("Error parsing video resolution '%s' (expected <width>x<height>)", ValueUnion.psz);
+                            errorArgument(ModifyVM::tr("Error parsing video resolution '%s' (expected <width>x<height>)"),
+                                          ValueUnion.psz);
                             rc = E_FAIL;
                             break;
                         }
@@ -3255,7 +3262,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         vrc = RTStrToUInt32Ex(pszNext+1, NULL, 0, &uHeight);
                         if (vrc != VINF_SUCCESS)
                         {
-                            errorArgument("Error parsing video resolution '%s' (expected <width>x<height>)", ValueUnion.psz);
+                            errorArgument(ModifyVM::tr("Error parsing video resolution '%s' (expected <width>x<height>)"),
+                                          ValueUnion.psz);
                             rc = E_FAIL;
                             break;
                         }
@@ -3329,7 +3337,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     enmAutostopType = AutostopType_AcpiShutdown;
                 else
                 {
-                    errorArgument("Invalid --autostop-type argument '%s' (valid: disabled, savestate, poweroff, acpishutdown)", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --autostop-type argument '%s' (valid: disabled, savestate, poweroff, acpishutdown)"),
+                                  ValueUnion.psz);
                     rc = E_FAIL;
                 }
 
@@ -3348,7 +3357,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                 if (iHostAddr == -1 || iGuestAddr == -1)
                 {
-                    errorArgument("Invalid --pciattach argument '%s' (valid: 'HB:HD.HF@GB:GD.GF' or just 'HB:HD.HF')", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --pciattach argument '%s' (valid: 'HB:HD.HF@GB:GD.GF' or just 'HB:HD.HF')"),
+                                  ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 else
@@ -3365,7 +3375,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 iHostAddr = parsePci(ValueUnion.psz);
                 if (iHostAddr == -1)
                 {
-                    errorArgument("Invalid --pcidetach argument '%s' (valid: 'HB:HD.HF')", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --pcidetach argument '%s' (valid: 'HB:HD.HF')"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 else
@@ -3399,7 +3409,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 VMProcPriority_T enmPriority = nameToVMProcPriority(ValueUnion.psz);
                 if (enmPriority == VMProcPriority_Invalid)
                 {
-                    errorArgument("Invalid --vm-process-priority '%s'", ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --vm-process-priority '%s'"), ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 else

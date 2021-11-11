@@ -17,6 +17,7 @@
 
 #ifndef VBOX_ONLY_DOCS
 #include "VBoxManageUtils.h"
+#include "VBoxManage.h"
 
 #include <iprt/message.h>
 #include <iprt/string.h>
@@ -27,7 +28,7 @@
 
 using namespace com;
 
-
+DECLARE_TRANSLATION_CONTEXT(Utils);
 
 unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
                         const ComPtr<IMachine> &pMachine)
@@ -99,25 +100,25 @@ void verifyHostNetworkInterfaceName(const ComPtr<IVirtualBox> &pVirtualBox,
         switch (enmType)
         {
             case HostNetworkInterfaceType_Bridged:
-                pszTypeName = "type bridged";
+                pszTypeName = Utils::tr("type bridged");
                 break;
 
             case HostNetworkInterfaceType_HostOnly:
-                pszTypeName = "type host-only";
+                pszTypeName = Utils::tr("type host-only");
                 break;
 
             default:
                 RTStrPrintf(a_szUnknownTypeBuf, sizeof(a_szUnknownTypeBuf),
-                            "unknown type %RU32", enmType);
+                            Utils::tr("unknown type %RU32"), enmType);
                 pszTypeName = a_szUnknownTypeBuf;
                 break;
         }
 
-        RTMsgWarning("Interface \"%s\" is of %s", pszTargetName, pszTypeName);
+        RTMsgWarning(Utils::tr("Interface \"%s\" is of %s"), pszTargetName, pszTypeName);
         return;
     }
 
-    RTMsgWarning("Interface \"%s\" doesn't seem to exist", pszTargetName);
+    RTMsgWarning(Utils::tr("Interface \"%s\" doesn't seem to exist"), pszTargetName);
 }
 
 #endif  /* !VBOX_ONLY_DOCS */

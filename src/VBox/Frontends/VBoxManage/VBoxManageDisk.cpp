@@ -53,7 +53,7 @@ typedef enum MEDIUMCATEGORY
     MEDIUMCATEGORY_FLOPPY
 } MEDIUMCATEGORY;
 
-
+DECLARE_TRANSLATION_CONTEXT(Disk);
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
 {
     RT_NOREF(pvUser);
     RTMsgErrorV(pszFormat, va);
-    RTMsgError("Error code %Rrc at %s(%u) in function %s", rc, RT_SRC_POS_ARGS);
+    RTMsgError(Disk::tr("Error code %Rrc at %s(%u) in function %s"), rc, RT_SRC_POS_ARGS);
 }
 
 static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
@@ -183,7 +183,7 @@ HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
         if (RT_FAILURE(irc))
         {
             if (!fSilent)
-                RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilenameOrUuid);
+                RTMsgError(Disk::tr("Cannot convert filename \"%s\" to absolute path"), pszFilenameOrUuid);
             return E_FAIL;
         }
         pszFilenameOrUuid = szFilenameAbs;
@@ -218,7 +218,7 @@ static HRESULT createMedium(HandlerArg *a, const char *pszFormat,
         int irc = RTPathAbs(pszFilename, szFilenameAbs, sizeof(szFilenameAbs));
         if (RT_FAILURE(irc))
         {
-            RTMsgError("Cannot convert filename \"%s\" to absolute path", pszFilename);
+            RTMsgError(Disk::tr("Cannot convert filename \"%s\" to absolute path"), pszFilename);
             return E_FAIL;
         }
         pszFilename = szFilenameAbs;
@@ -287,7 +287,7 @@ private:
             m_pszFreeValue = (char *)RTMemDup(m_pszValue, m_cbValue + 1);
             if (!m_pszFreeValue)
             {
-                RTMsgError("Out of memory copying '%s'", m_pszValue);
+                RTMsgError(Disk::tr("Out of memory copying '%s'"), m_pszValue);
                 throw std::bad_alloc();
             }
         }
@@ -327,19 +327,19 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
         {
             case 'H':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CREATEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CREATEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'L':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CREATEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -370,7 +370,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 /* allocate property kvp, parse, and append to end of singly linked list */
                 char *pszValue = (char *)strchr(ValueUnion.psz, '=');
                 if (!pszValue)
-                    return RTMsgErrorExitFailure("Invalid key value pair: No '='.");
+                    return RTMsgErrorExitFailure(Disk::tr("Invalid key value pair: No '='."));
 
                 lstProperties.push_back(MediumProperty());
                 MediumProperty &rNewProp = lstProperties.back();
@@ -386,7 +386,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                     RTFILE hValueFile = NIL_RTFILE;
                     vrc = RTFileOpen(&hValueFile, pszValue, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                     if (RT_FAILURE(vrc))
-                        return RTMsgErrorExitFailure("Cannot open replacement value file '%s': %Rrc", pszValue, vrc);
+                        return RTMsgErrorExitFailure(Disk::tr("Cannot open replacement value file '%s': %Rrc"), pszValue, vrc);
 
                     uint64_t cbValue = 0;
                     vrc = RTFileQuerySize(hValueFile, &cbValue);
@@ -402,16 +402,18 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                                 if (RT_SUCCESS(vrc))
                                     rNewProp.m_pszFreeValue[rNewProp.m_cbValue] = '\0';
                                 else
-                                    RTMsgError("Error reading replacement MBR file '%s': %Rrc", pszValue, vrc);
+                                    RTMsgError(Disk::tr("Error reading replacement MBR file '%s': %Rrc"), pszValue, vrc);
                             }
                             else
-                                vrc = RTMsgErrorRc(VERR_NO_MEMORY, "Out of memory reading '%s': %Rrc", pszValue, vrc);
+                                vrc = RTMsgErrorRc(VERR_NO_MEMORY, Disk::tr("Out of memory reading '%s': %Rrc"), pszValue, vrc);
                         }
                         else
-                            vrc = RTMsgErrorRc(VERR_OUT_OF_RANGE, "Replacement value file '%s' is to big: %Rhcb, max 16MiB", pszValue, cbValue);
+                            vrc = RTMsgErrorRc(VERR_OUT_OF_RANGE,
+                                               Disk::tr("Replacement value file '%s' is to big: %Rhcb, max 16MiB"),
+                                               pszValue, cbValue);
                     }
                     else
-                        RTMsgError("Cannot get the size of the value file '%s': %Rrc", pszValue, vrc);
+                        RTMsgError(Disk::tr("Cannot get the size of the value file '%s': %Rrc"), pszValue, vrc);
                     RTFileClose(hValueFile);
                     if (RT_FAILURE(vrc))
                         return RTEXITCODE_FAILURE;
@@ -430,26 +432,26 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
             case 'm':   // --variant
                 vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
                 if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid medium variant '%s'", ValueUnion.psz);
+                    return errorArgument(Disk::tr("Invalid medium variant '%s'"), ValueUnion.psz);
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_CREATEMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_CREATEMEDIUM, "Invalid option -%c", c);
+                        return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_CREATEMEDIUM, "Invalid option case %i", c);
+                        return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_CREATEMEDIUM, "unknown option: %s\n", ValueUnion.psz);
+                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_CREATEMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_CREATEMEDIUM, "error: %Rrs", c);
+                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("error: %Rrs"), c);
         }
     }
 
@@ -460,9 +462,9 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     if (fBase)
     {
         if (!filename || !*filename)
-            return errorSyntax(USAGE_CREATEMEDIUM, "Parameters --filename is required");
+            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Parameters --filename is required"));
         if ((enmMediumVariant & MediumVariant_VmdkRawDisk) == 0 && size == 0)
-            return errorSyntax(USAGE_CREATEMEDIUM, "Parameters --size is required");
+            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Parameters --size is required"));
         if (!format || !*format)
         {
             if (cmd == CMD_DISK)
@@ -480,10 +482,10 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     {
         if (   !filename
             || !*filename)
-            return errorSyntax(USAGE_CREATEMEDIUM, "Parameters --filename is required");
+            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Parameters --filename is required"));
         size = 0;
         if (cmd != CMD_DISK)
-            return errorSyntax(USAGE_CREATEMEDIUM, "Creating a differencing medium is only supported for hard disks");
+            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Creating a differencing medium is only supported for hard disks"));
         enmMediumVariant = MediumVariant_Diff;
         if (!format || !*format)
         {
@@ -502,7 +504,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
         if (FAILED(rc))
             return RTEXITCODE_FAILURE;
         if (pParentMedium.isNull())
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid parent hard disk reference, avoiding crash");
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Invalid parent hard disk reference, avoiding crash"));
         MediumState_T state;
         CHECK_ERROR(pParentMedium, COMGETTER(State)(&state));
         if (FAILED(rc))
@@ -584,7 +586,8 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                         break;
                     }
                 if (!fPropertyFound)
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "The %s is not found in the property list of the requested medium format.",
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                          Disk::tr("The %s is not found in the property list of the requested medium format."),
                                           pszKey);
                 if (!fBinary)
                     CHECK_ERROR2I_RET(pMedium, SetProperty(Bstr(pszKey).raw(), Bstr(it->m_pszValue).raw()),
@@ -594,7 +597,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                     com::Bstr bstrBase64Value;
                     HRESULT hrc = bstrBase64Value.base64Encode(it->m_pszValue, it->m_cbValue);
                     if (FAILED(hrc))
-                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Base64 encoding of the property %s failed. (%Rhrc)",
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Base64 encoding of the property %s failed. (%Rhrc)"),
                                               pszKey, hrc);
                     CHECK_ERROR2I_RET(pMedium, SetProperty(Bstr(pszKey).raw(), bstrBase64Value.raw()), RTEXITCODE_FAILURE);
                 }
@@ -618,7 +621,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
         if (SUCCEEDED(rc) && pProgress)
         {
             rc = showProgress(pProgress);
-            CHECK_PROGRESS_ERROR(pProgress, ("Failed to create medium"));
+            CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to create medium")));
         }
     }
 
@@ -626,7 +629,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     {
         Bstr uuid;
         CHECK_ERROR(pMedium, COMGETTER(Id)(uuid.asOutParam()));
-        RTPrintf("Medium created. UUID: %s\n", Utf8Str(uuid).c_str());
+        RTPrintf(Disk::tr("Medium created. UUID: %s\n"), Utf8Str(uuid).c_str());
 
         //CHECK_ERROR(pMedium, Close());
     }
@@ -695,33 +698,33 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         {
             case 'H':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'L':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
             case 't':   // --type
                 vrc = parseMediumType(ValueUnion.psz, &enmMediumType);
                 if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid medium type '%s'", ValueUnion.psz);
+                    return errorArgument(Disk::tr("Invalid medium type '%s'"), ValueUnion.psz);
                 fModifyMediumType = true;
                 break;
 
             case 'z':   // --autoreset
                 vrc = parseBool(ValueUnion.psz, &AutoReset);
                 if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid autoreset parameter '%s'", ValueUnion.psz);
+                    return errorArgument(Disk::tr("Invalid autoreset parameter '%s'"), ValueUnion.psz);
                 fModifyAutoReset = true;
                 break;
 
@@ -744,14 +747,15 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
                     }
                     else
                     {
-                        errorArgument("Invalid --property argument '%s'", ValueUnion.psz);
+                        errorArgument(Disk::tr("Invalid --property argument '%s'"), ValueUnion.psz);
                         rc = E_FAIL;
                     }
                     RTStrFree(pszProperty);
                 }
                 else
                 {
-                    RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for medium property '%s'\n", ValueUnion.psz);
+                    RTStrmPrintf(g_pStdErr, Disk::tr("Error: Failed to allocate memory for medium property '%s'\n"),
+                                 ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;
@@ -794,23 +798,23 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_MODIFYMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_MODIFYMEDIUM, "Invalid option -%c", c);
+                        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_MODIFYMEDIUM, "Invalid option case %i", c);
+                        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, "unknown option: %s\n", ValueUnion.psz);
+                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_MODIFYMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_MODIFYMEDIUM, "error: %Rrs", c);
+                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("error: %Rrs"), c);
         }
     }
 
@@ -818,7 +822,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         cmd = CMD_DISK;
 
     if (!pszFilenameOrUuid)
-        return errorSyntax(USAGE_MODIFYMEDIUM, "Medium name or UUID required");
+        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Medium name or UUID required"));
 
     if (!fModifyMediumType
         && !fModifyAutoReset
@@ -829,7 +833,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         && !fSetNewLocation
         && !fModifyDescription
         )
-        return errorSyntax(USAGE_MODIFYMEDIUM, "No operation specified");
+        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("No operation specified"));
 
     /* Always open the medium if necessary, there is no other way. */
     if (cmd == CMD_DISK)
@@ -850,7 +854,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         return RTEXITCODE_FAILURE;
     if (pMedium.isNull())
     {
-        RTMsgError("Invalid medium reference, avoiding crash");
+        RTMsgError(Disk::tr("Invalid medium reference, avoiding crash"));
         return RTEXITCODE_FAILURE;
     }
 
@@ -871,8 +875,8 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         pMedium->COMGETTER(LogicalSize)(&logicalSize);
         if (cbResize > (uint64_t)logicalSize * 1000)
         {
-            RTMsgError("Error: Attempt to resize the medium from %RU64.%RU64 MB to %RU64.%RU64 MB. Use --resizebyte if this is intended!\n",
-                    logicalSize / _1M, (logicalSize % _1M) / (_1M / 10), cbResize / _1M, (cbResize % _1M) / (_1M / 10));
+            RTMsgError(Disk::tr("Error: Attempt to resize the medium from %RU64.%RU64 MB to %RU64.%RU64 MB. Use --resizebyte if this is intended!\n"),
+                       logicalSize / _1M, (logicalSize % _1M) / (_1M / 10), cbResize / _1M, (cbResize % _1M) / (_1M / 10));
             return RTEXITCODE_FAILURE;
         }
     }
@@ -905,13 +909,13 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         if (FAILED(rc))
         {
             if (rc == E_NOTIMPL)
-                RTMsgError("Compact medium operation is not implemented!");
+                RTMsgError(Disk::tr("Compact medium operation is not implemented!"));
             else if (rc == VBOX_E_NOT_SUPPORTED)
-                RTMsgError("Compact medium operation for this format is not implemented yet!");
+                RTMsgError(Disk::tr("Compact medium operation for this format is not implemented yet!"));
             else if (!pProgress.isNull())
-                CHECK_PROGRESS_ERROR(pProgress, ("Failed to compact medium"));
+                CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to compact medium")));
             else
-                RTMsgError("Failed to compact medium!");
+                RTMsgError(Disk::tr("Failed to compact medium!"));
         }
     }
 
@@ -924,13 +928,13 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         if (FAILED(rc))
         {
             if (!pProgress.isNull())
-                CHECK_PROGRESS_ERROR(pProgress, ("Failed to resize medium"));
+                CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to resize medium")));
             else if (rc == E_NOTIMPL)
-                RTMsgError("Resize medium operation is not implemented!");
+                RTMsgError(Disk::tr("Resize medium operation is not implemented!"));
             else if (rc == VBOX_E_NOT_SUPPORTED)
-                RTMsgError("Resize medium operation for this format is not implemented yet!");
+                RTMsgError(Disk::tr("Resize medium operation for this format is not implemented yet!"));
             else
-                RTMsgError("Failed to resize medium!");
+                RTMsgError(Disk::tr("Failed to resize medium!"));
         }
     }
 
@@ -946,13 +950,13 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
             if (SUCCEEDED(rc) && !pProgress.isNull())
             {
                 rc = showProgress(pProgress);
-                CHECK_PROGRESS_ERROR(pProgress, ("Failed to move medium"));
+                CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to move medium")));
             }
 
             Bstr uuid;
             CHECK_ERROR_BREAK(pMedium, COMGETTER(Id)(uuid.asOutParam()));
 
-            RTPrintf("Move medium with UUID %s finished\n", Utf8Str(uuid).c_str());
+            RTPrintf(Disk::tr("Move medium with UUID %s finished\n"), Utf8Str(uuid).c_str());
         }
         while (0);
     }
@@ -965,14 +969,14 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
 
         Bstr uuid;
         CHECK_ERROR(pMedium, COMGETTER(Id)(uuid.asOutParam()));
-        RTPrintf("Set new location of medium with UUID %s finished\n", Utf8Str(uuid).c_str());
+        RTPrintf(Disk::tr("Set new location of medium with UUID %s finished\n"), Utf8Str(uuid).c_str());
     }
 
     if (fModifyDescription)
     {
         CHECK_ERROR(pMedium, COMSETTER(Description)(Bstr(pszNewLocation).raw()));
 
-        RTPrintf("Medium description has been changed.\n");
+        RTPrintf(Disk::tr("Medium description has been changed.\n"));
     }
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
@@ -1020,19 +1024,19 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
         {
             case 'd':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLONEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLONEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'f':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLONEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -1055,7 +1059,7 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
             case 'm':   // --variant
                 vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
                 if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid medium variant '%s'", ValueUnion.psz);
+                    return errorArgument(Disk::tr("Invalid medium variant '%s'"), ValueUnion.psz);
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1064,34 +1068,34 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
                 else if (!pszDst)
                     pszDst = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_CLONEMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_GRAPH(c))
-                        return errorSyntax(USAGE_CLONEMEDIUM, "unhandled option: -%c", c);
+                        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("unhandled option: -%c"), c);
                     else
-                        return errorSyntax(USAGE_CLONEMEDIUM, "unhandled option: %i", c);
+                        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("unhandled option: %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_CLONEMEDIUM, "unknown option: %s", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("unknown option: %s"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_CLONEMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_CLONEMEDIUM, "error: %Rrs", c);
+                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("error: %Rrs"), c);
         }
     }
 
     if (cmd == CMD_NONE)
         cmd = CMD_DISK;
     if (!pszSrc)
-        return errorSyntax(USAGE_CLONEMEDIUM, "Mandatory UUID or input file parameter missing");
+        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Mandatory UUID or input file parameter missing"));
     if (!pszDst)
-        return errorSyntax(USAGE_CLONEMEDIUM, "Mandatory output file parameter missing");
+        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Mandatory output file parameter missing"));
     if (fExisting && (!format.isEmpty() || enmMediumVariant != MediumVariant_Standard))
-        return errorSyntax(USAGE_CLONEMEDIUM, "Specified options which cannot be used with --existing");
+        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Specified options which cannot be used with --existing"));
 
     ComPtr<IMedium> pSrcMedium;
     ComPtr<IMedium> pDstMedium;
@@ -1179,12 +1183,12 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
         CHECK_ERROR_BREAK(pSrcMedium, CloneTo(pDstMedium, ComSafeArrayAsInParam(l_variants), NULL, pProgress.asOutParam()));
 
         rc = showProgress(pProgress);
-        CHECK_PROGRESS_ERROR_BREAK(pProgress, ("Failed to clone medium"));
+        CHECK_PROGRESS_ERROR_BREAK(pProgress, (Disk::tr("Failed to clone medium")));
 
         Bstr uuid;
         CHECK_ERROR_BREAK(pDstMedium, COMGETTER(Id)(uuid.asOutParam()));
 
-        RTPrintf("Clone medium created in format '%ls'. UUID: %s\n",
+        RTPrintf(Disk::tr("Clone medium created in format '%ls'. UUID: %s\n"),
                  format.raw(), Utf8Str(uuid).c_str());
     }
     while (0);
@@ -1228,7 +1232,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
         {
             case 'u':   // --uuid
                 if (RT_FAILURE(RTUuidFromStr(&uuid, ValueUnion.psz)))
-                    return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid UUID '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CONVERTFROMRAW, Disk::tr("Invalid UUID '%s'"), ValueUnion.psz);
                 pUuid = &uuid;
                 break;
             case 'o':   // --format
@@ -1240,7 +1244,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
                 MediumVariant_T enmMediumVariant = MediumVariant_Standard;
                 rc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
                 if (RT_FAILURE(rc))
-                    return errorArgument("Invalid medium variant '%s'", ValueUnion.psz);
+                    return errorArgument(Disk::tr("Invalid medium variant '%s'"), ValueUnion.psz);
                 /// @todo cleaner solution than assuming 1:1 mapping?
                 uImageFlags = (unsigned)enmMediumVariant;
                 break;
@@ -1256,7 +1260,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
                 else if (fReadFromStdIn && !filesize)
                     filesize = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CONVERTFROMRAW, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
@@ -1265,8 +1269,8 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     }
 
     if (!srcfilename || !dstfilename || (fReadFromStdIn && !filesize))
-        return errorSyntax(USAGE_CONVERTFROMRAW, "Incorrect number of parameters");
-    RTStrmPrintf(g_pStdErr, "Converting from raw image file=\"%s\" to file=\"%s\"...\n",
+        return errorSyntax(USAGE_CONVERTFROMRAW, Disk::tr("Incorrect number of parameters"));
+    RTStrmPrintf(g_pStdErr, Disk::tr("Converting from raw image file=\"%s\" to file=\"%s\"...\n"),
                  srcfilename, dstfilename);
 
     PVDISK pDisk = NULL;
@@ -1288,7 +1292,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
         rc = RTFileOpen(&File, srcfilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
-        RTMsgError("Cannot open file \"%s\": %Rrc", srcfilename, rc);
+        RTMsgError(Disk::tr("Cannot open file \"%s\": %Rrc"), srcfilename, rc);
         goto out;
     }
 
@@ -1300,18 +1304,19 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
         rc = RTFileQuerySize(File, &cbFile);
     if (RT_FAILURE(rc))
     {
-        RTMsgError("Cannot get image size for file \"%s\": %Rrc", srcfilename, rc);
+        RTMsgError(Disk::tr("Cannot get image size for file \"%s\": %Rrc"), srcfilename, rc);
         goto out;
     }
 
-    RTStrmPrintf(g_pStdErr, "Creating %s image with size %RU64 bytes (%RU64MB)...\n",
-                 (uImageFlags & VD_IMAGE_FLAGS_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
+    RTStrmPrintf(g_pStdErr, Disk::tr("Creating %s image with size %RU64 bytes (%RU64MB)...\n"),
+                 (uImageFlags & VD_IMAGE_FLAGS_FIXED) ? Disk::tr("fixed") : Disk::tr("dynamic"),
+                 cbFile, (cbFile + _1M - 1) / _1M);
     char pszComment[256];
-    RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", srcfilename);
+    RTStrPrintf(pszComment, sizeof(pszComment), Disk::tr("Converted image from %s"), srcfilename);
     rc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
     if (RT_FAILURE(rc))
     {
-        RTMsgError("Cannot create the virtual disk container: %Rrc", rc);
+        RTMsgError(Disk::tr("Cannot create the virtual disk container: %Rrc"), rc);
         goto out;
     }
 
@@ -1329,7 +1334,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     if (RT_FAILURE(rc))
     {
-        RTMsgError("Cannot create the disk image \"%s\": %Rrc", dstfilename, rc);
+        RTMsgError(Disk::tr("Cannot create the disk image \"%s\": %Rrc"), dstfilename, rc);
         goto out;
     }
 
@@ -1339,7 +1344,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     if (!pvBuf)
     {
         rc = VERR_NO_MEMORY;
-        RTMsgError("Out of memory allocating buffers for image \"%s\": %Rrc", dstfilename, rc);
+        RTMsgError(Disk::tr("Out of memory allocating buffers for image \"%s\": %Rrc"), dstfilename, rc);
         goto out;
     }
 
@@ -1358,7 +1363,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
         rc = VDWrite(pDisk, offFile, pvBuf, cbRead);
         if (RT_FAILURE(rc))
         {
-            RTMsgError("Failed to write to disk image \"%s\": %Rrc", dstfilename, rc);
+            RTMsgError(Disk::tr("Failed to write to disk image \"%s\": %Rrc"), dstfilename, rc);
             goto out;
         }
         offFile += cbRead;
@@ -1387,46 +1392,46 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
         pMedium->COMGETTER(Id)(uuid.asOutParam());
         RTPrintf("UUID:           %ls\n", uuid.raw());
         if (pszParentUUID)
-            RTPrintf("Parent UUID:    %s\n", pszParentUUID);
+            RTPrintf(Disk::tr("Parent UUID:    %s\n"), pszParentUUID);
 
         /* check for accessibility */
         MediumState_T enmState;
         CHECK_ERROR_BREAK(pMedium, RefreshState(&enmState));
-        const char *pszState = "unknown";
+        const char *pszState = Disk::tr("unknown");
         switch (enmState)
         {
             case MediumState_NotCreated:
-                pszState = "not created";
+                pszState = Disk::tr("not created");
                 break;
             case MediumState_Created:
-                pszState = "created";
+                pszState = Disk::tr("created");
                 break;
             case MediumState_LockedRead:
-                pszState = "locked read";
+                pszState = Disk::tr("locked read");
                 break;
             case MediumState_LockedWrite:
-                pszState = "locked write";
+                pszState = Disk::tr("locked write");
                 break;
             case MediumState_Inaccessible:
-                pszState = "inaccessible";
+                pszState = Disk::tr("inaccessible");
                 break;
             case MediumState_Creating:
-                pszState = "creating";
+                pszState = Disk::tr("creating");
                 break;
             case MediumState_Deleting:
-                pszState = "deleting";
+                pszState = Disk::tr("deleting");
                 break;
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
             case MediumState_32BitHack: break; /* Shut up compiler warnings. */
 #endif
         }
-        RTPrintf("State:          %s\n", pszState);
+        RTPrintf(Disk::tr("State:          %s\n"), pszState);
 
         if (fOptLong && enmState == MediumState_Inaccessible)
         {
             Bstr err;
             CHECK_ERROR_BREAK(pMedium, COMGETTER(LastAccessError)(err.asOutParam()));
-            RTPrintf("Access Error:   %ls\n", err.raw());
+            RTPrintf(Disk::tr("Access Error:   %ls\n"), err.raw());
         }
 
         if (fOptLong)
@@ -1434,56 +1439,56 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
             Bstr description;
             pMedium->COMGETTER(Description)(description.asOutParam());
             if (!description.isEmpty())
-                RTPrintf("Description:    %ls\n", description.raw());
+                RTPrintf(Disk::tr("Description:    %ls\n"), description.raw());
         }
 
         MediumType_T type;
         pMedium->COMGETTER(Type)(&type);
-        const char *typeStr = "unknown";
+        const char *typeStr = Disk::tr("unknown");
         switch (type)
         {
             case MediumType_Normal:
                 if (pszParentUUID && Guid(pszParentUUID).isValid())
-                    typeStr = "normal (differencing)";
+                    typeStr = Disk::tr("normal (differencing)");
                 else
-                    typeStr = "normal (base)";
+                    typeStr = Disk::tr("normal (base)");
                 break;
             case MediumType_Immutable:
-                typeStr = "immutable";
+                typeStr = Disk::tr("immutable");
                 break;
             case MediumType_Writethrough:
-                typeStr = "writethrough";
+                typeStr = Disk::tr("writethrough");
                 break;
             case MediumType_Shareable:
-                typeStr = "shareable";
+                typeStr = Disk::tr("shareable");
                 break;
             case MediumType_Readonly:
-                typeStr = "readonly";
+                typeStr = Disk::tr("readonly");
                 break;
             case MediumType_MultiAttach:
-                typeStr = "multiattach";
+                typeStr = Disk::tr("multiattach");
                 break;
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
             case MediumType_32BitHack: break; /* Shut up compiler warnings. */
 #endif
         }
-        RTPrintf("Type:           %s\n", typeStr);
+        RTPrintf(Disk::tr("Type:           %s\n"), typeStr);
 
         /* print out information specific for differencing media */
         if (fOptLong && pszParentUUID && Guid(pszParentUUID).isValid())
         {
             BOOL autoReset = FALSE;
             pMedium->COMGETTER(AutoReset)(&autoReset);
-            RTPrintf("Auto-Reset:     %s\n", autoReset ? "on" : "off");
+            RTPrintf(Disk::tr("Auto-Reset:     %s\n"), autoReset ? Disk::tr("on") : Disk::tr("off"));
         }
 
         Bstr loc;
         pMedium->COMGETTER(Location)(loc.asOutParam());
-        RTPrintf("Location:       %ls\n", loc.raw());
+        RTPrintf(Disk::tr("Location:       %ls\n"), loc.raw());
 
         Bstr format;
         pMedium->COMGETTER(Format)(format.asOutParam());
-        RTPrintf("Storage format: %ls\n", format.raw());
+        RTPrintf(Disk::tr("Storage format: %ls\n"), format.raw());
 
         if (fOptLong)
         {
@@ -1494,38 +1499,38 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
             for (size_t i = 0; i < safeArray_variant.size(); i++)
                 variant |= safeArray_variant[i];
 
-            const char *variantStr = "unknown";
+            const char *variantStr = Disk::tr("unknown");
             switch (variant & ~(MediumVariant_Fixed | MediumVariant_Diff))
             {
                 case MediumVariant_VmdkSplit2G:
-                    variantStr = "split2G";
+                    variantStr = Disk::tr("split2G");
                     break;
                 case MediumVariant_VmdkStreamOptimized:
-                    variantStr = "streamOptimized";
+                    variantStr = Disk::tr("streamOptimized");
                     break;
                 case MediumVariant_VmdkESX:
-                    variantStr = "ESX";
+                    variantStr = Disk::tr("ESX");
                     break;
                 case MediumVariant_Standard:
-                    variantStr = "default";
+                    variantStr = Disk::tr("default");
                     break;
             }
-            const char *variantTypeStr = "dynamic";
+            const char *variantTypeStr = Disk::tr("dynamic");
             if (variant & MediumVariant_Fixed)
-                variantTypeStr = "fixed";
+                variantTypeStr = Disk::tr("fixed");
             else if (variant & MediumVariant_Diff)
-                variantTypeStr = "differencing";
-            RTPrintf("Format variant: %s %s\n", variantTypeStr, variantStr);
+                variantTypeStr = Disk::tr("differencing");
+            RTPrintf(Disk::tr("Format variant: %s %s\n"), variantTypeStr, variantStr);
         }
 
         LONG64 logicalSize;
         pMedium->COMGETTER(LogicalSize)(&logicalSize);
-        RTPrintf("Capacity:       %lld MBytes\n", logicalSize >> 20);
+        RTPrintf(Disk::tr("Capacity:       %lld MBytes\n"), logicalSize >> 20);
         if (fOptLong)
         {
             LONG64 actualSize;
             pMedium->COMGETTER(Size)(&actualSize);
-            RTPrintf("Size on disk:   %lld MBytes\n", actualSize >> 20);
+            RTPrintf(Disk::tr("Size on disk:   %lld MBytes\n"), actualSize >> 20);
         }
 
         Bstr strCipher;
@@ -1533,15 +1538,15 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
         HRESULT rc2 = pMedium->GetEncryptionSettings(strCipher.asOutParam(), strPasswordId.asOutParam());
         if (SUCCEEDED(rc2))
         {
-            RTPrintf("Encryption:     enabled\n");
+            RTPrintf(Disk::tr("Encryption:     enabled\n"));
             if (fOptLong)
             {
-                RTPrintf("Cipher:         %ls\n", strCipher.raw());
-                RTPrintf("Password ID:    %ls\n", strPasswordId.raw());
+                RTPrintf(Disk::tr("Cipher:         %ls\n"), strCipher.raw());
+                RTPrintf(Disk::tr("Password ID:    %ls\n"), strPasswordId.raw());
             }
         }
         else
-            RTPrintf("Encryption:     disabled\n");
+            RTPrintf(Disk::tr("Encryption:     disabled\n"));
 
         if (fOptLong)
         {
@@ -1557,7 +1562,7 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                 if (i < cValues)
                     value = values[i];
                 RTPrintf("%s%ls=%ls\n",
-                         fFirst ? "Property:       " : "                ",
+                         fFirst ? Disk::tr("Property:       ") : "                ",
                          names[i], value.raw());
                 fFirst = false;
             }
@@ -1578,7 +1583,7 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                     pMachine->COMGETTER(Name)(name.asOutParam());
                     pMachine->COMGETTER(Id)(uuid.asOutParam());
                     RTPrintf("%s%ls (UUID: %ls)",
-                             fFirst ? "In use by VMs:  " : "                ",
+                             fFirst ? Disk::tr("In use by VMs:  ") : "                ",
                              name.raw(), machineIds[i]);
                     fFirst = false;
                     com::SafeArray<BSTR> snapshotIds;
@@ -1613,7 +1618,7 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                     Bstr childUUID;
                     pChild->COMGETTER(Id)(childUUID.asOutParam());
                     RTPrintf("%s%ls\n",
-                             fFirst ? "Child UUIDs:    " : "                ",
+                             fFirst ? Disk::tr("Child UUIDs:    ") : "                ",
                              childUUID.raw());
                     fFirst = false;
                 }
@@ -1654,19 +1659,19 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
         {
             case 'd':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'f':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -1674,23 +1679,23 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_SHOWMEDIUMINFO, "Invalid option -%c", c);
+                        return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_SHOWMEDIUMINFO, "Invalid option case %i", c);
+                        return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, "unknown option: %s\n", ValueUnion.psz);
+                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_SHOWMEDIUMINFO, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, "error: %Rrs", c);
+                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("error: %Rrs"), c);
         }
     }
 
@@ -1699,7 +1704,7 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
 
     /* check for required options */
     if (!pszFilenameOrUuid)
-        return errorSyntax(USAGE_SHOWMEDIUMINFO, "Medium name or UUID required");
+        return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Medium name or UUID required"));
 
     HRESULT rc = S_OK; /* Prevents warning. */
 
@@ -1719,7 +1724,7 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
     if (FAILED(rc))
         return RTEXITCODE_FAILURE;
 
-    Utf8Str strParentUUID("base");
+    Utf8Str strParentUUID(Disk::tr("base"));
     ComPtr<IMedium> pParent;
     pMedium->COMGETTER(Parent)(pParent.asOutParam());
     if (!pParent.isNull())
@@ -1766,19 +1771,19 @@ RTEXITCODE handleCloseMedium(HandlerArg *a)
         {
             case 'd':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLOSEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLOSEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'f':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLOSEMEDIUM, "Only one command can be specified: '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -1790,23 +1795,23 @@ RTEXITCODE handleCloseMedium(HandlerArg *a)
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_CLOSEMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_CLOSEMEDIUM, "Invalid option -%c", c);
+                        return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_CLOSEMEDIUM, "Invalid option case %i", c);
+                        return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_CLOSEMEDIUM, "unknown option: %s\n", ValueUnion.psz);
+                    return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_CLOSEMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_CLOSEMEDIUM, "error: %Rrs", c);
+                    return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("error: %Rrs"), c);
         }
     }
 
@@ -1814,7 +1819,7 @@ RTEXITCODE handleCloseMedium(HandlerArg *a)
     if (cmd == CMD_NONE)
         cmd = CMD_DISK;
     if (!pszFilenameOrUuid)
-        return errorSyntax(USAGE_CLOSEMEDIUM, "Medium name or UUID required");
+        return errorSyntax(USAGE_CLOSEMEDIUM, Disk::tr("Medium name or UUID required"));
 
     ComPtr<IMedium> pMedium;
     if (cmd == CMD_DISK)
@@ -1839,10 +1844,10 @@ RTEXITCODE handleCloseMedium(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 rc = showProgress(pProgress);
-                CHECK_PROGRESS_ERROR(pProgress, ("Failed to delete medium"));
+                CHECK_PROGRESS_ERROR(pProgress, (Disk::tr("Failed to delete medium")));
             }
             else
-                RTMsgError("Failed to delete medium. Error code %Rrc", rc);
+                RTMsgError(Disk::tr("Failed to delete medium. Error code %Rrc"), rc);
         }
         CHECK_ERROR(pMedium, Close());
     }
@@ -1878,7 +1883,7 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
             cmd = CMD_FLOPPY;
         else
         {
-            AssertMsgFailed(("unexpected parameter %s\n", pszCmd));
+            AssertMsgFailed((Disk::tr("unexpected parameter %s\n"), pszCmd));
             cmd = CMD_DISK;
         }
         a->argv++;
@@ -1891,19 +1896,19 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
     }
 
     if (a->argc == 0)
-        return errorSyntax(USAGE_MEDIUMPROPERTY, "Missing action");
+        return errorSyntax(USAGE_MEDIUMPROPERTY, Disk::tr("Missing action"));
 
     pszAction = a->argv[0];
     if (   RTStrICmp(pszAction, "set")
         && RTStrICmp(pszAction, "get")
         && RTStrICmp(pszAction, "delete"))
-        return errorSyntax(USAGE_MEDIUMPROPERTY, "Invalid action given: %s", pszAction);
+        return errorSyntax(USAGE_MEDIUMPROPERTY, Disk::tr("Invalid action given: %s"), pszAction);
 
     if (   (   !RTStrICmp(pszAction, "set")
             && a->argc != 4)
         || (   RTStrICmp(pszAction, "set")
             && a->argc != 3))
-        return errorSyntax(USAGE_MEDIUMPROPERTY, "Invalid number of arguments given for action: %s", pszAction);
+        return errorSyntax(USAGE_MEDIUMPROPERTY, Disk::tr("Invalid number of arguments given for action: %s"), pszAction);
 
     pszFilenameOrUuid = a->argv[1];
     pszProperty       = a->argv[2];
@@ -2002,42 +2007,43 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_ENCRYPTMEDIUM, "Invalid option -%c", c);
+                        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_ENCRYPTMEDIUM, "Invalid option case %i", c);
+                        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "unknown option: %s\n", ValueUnion.psz);
+                    return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
                     return errorSyntax(USAGE_ENCRYPTMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "error: %Rrs", c);
+                    return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("error: %Rrs"), c);
         }
     }
 
     if (!pszFilenameOrUuid)
-        return errorSyntax(USAGE_ENCRYPTMEDIUM, "Disk name or UUID required");
+        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Disk name or UUID required"));
 
     if (!pszPasswordNew && !pszPasswordOld)
-        return errorSyntax(USAGE_ENCRYPTMEDIUM, "No password specified");
+        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("No password specified"));
 
     if (   (pszPasswordNew && !pszNewPasswordId)
         || (!pszPasswordNew && pszNewPasswordId))
-        return errorSyntax(USAGE_ENCRYPTMEDIUM, "A new password must always have a valid identifier set at the same time");
+        return errorSyntax(USAGE_ENCRYPTMEDIUM,
+                           Disk::tr("A new password must always have a valid identifier set at the same time"));
 
     if (pszPasswordNew)
     {
         if (!RTStrCmp(pszPasswordNew, "-"))
         {
             /* Get password from console. */
-            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordNew, "Enter new password:");
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordNew, Disk::tr("Enter new password:"));
             if (rcExit == RTEXITCODE_FAILURE)
                 return rcExit;
         }
@@ -2046,7 +2052,7 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
             RTEXITCODE rcExit = readPasswordFile(pszPasswordNew, &strPasswordNew);
             if (rcExit == RTEXITCODE_FAILURE)
             {
-                RTMsgError("Failed to read new password from file");
+                RTMsgError(Disk::tr("Failed to read new password from file"));
                 return rcExit;
             }
         }
@@ -2057,7 +2063,7 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
         if (!RTStrCmp(pszPasswordOld, "-"))
         {
             /* Get password from console. */
-            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordOld, "Enter old password:");
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordOld, Disk::tr("Enter old password:"));
             if (rcExit == RTEXITCODE_FAILURE)
                 return rcExit;
         }
@@ -2066,7 +2072,7 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
             RTEXITCODE rcExit = readPasswordFile(pszPasswordOld, &strPasswordOld);
             if (rcExit == RTEXITCODE_FAILURE)
             {
-                RTMsgError("Failed to read old password from file");
+                RTMsgError(Disk::tr("Failed to read old password from file"));
                 return rcExit;
             }
         }
@@ -2079,7 +2085,7 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
     if (FAILED(rc))
         return RTEXITCODE_FAILURE;
     if (hardDisk.isNull())
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid hard disk reference, avoiding crash");
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Invalid hard disk reference, avoiding crash"));
 
     ComPtr<IProgress> progress;
     CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(strPasswordOld).raw(), Bstr(pszCipher).raw(),
@@ -2090,13 +2096,13 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
     if (FAILED(rc))
     {
         if (rc == E_NOTIMPL)
-            RTMsgError("Encrypt hard disk operation is not implemented!");
+            RTMsgError(Disk::tr("Encrypt hard disk operation is not implemented!"));
         else if (rc == VBOX_E_NOT_SUPPORTED)
-            RTMsgError("Encrypt hard disk operation for this cipher is not implemented yet!");
+            RTMsgError(Disk::tr("Encrypt hard disk operation for this cipher is not implemented yet!"));
         else if (!progress.isNull())
-            CHECK_PROGRESS_ERROR(progress, ("Failed to encrypt hard disk"));
+            CHECK_PROGRESS_ERROR(progress, (Disk::tr("Failed to encrypt hard disk")));
         else
-            RTMsgError("Failed to encrypt hard disk!");
+            RTMsgError(Disk::tr("Failed to encrypt hard disk!"));
     }
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
@@ -2110,14 +2116,14 @@ RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
     Utf8Str strPassword;
 
     if (a->argc != 2)
-        return errorSyntax(USAGE_MEDIUMENCCHKPWD, "Invalid number of arguments: %d", a->argc);
+        return errorSyntax(USAGE_MEDIUMENCCHKPWD, Disk::tr("Invalid number of arguments: %d"), a->argc);
 
     pszFilenameOrUuid = a->argv[0];
 
     if (!RTStrCmp(a->argv[1], "-"))
     {
         /* Get password from console. */
-        RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter password:");
+        RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, Disk::tr("Enter password:"));
         if (rcExit == RTEXITCODE_FAILURE)
             return rcExit;
     }
@@ -2126,7 +2132,7 @@ RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
         RTEXITCODE rcExit = readPasswordFile(a->argv[1], &strPassword);
         if (rcExit == RTEXITCODE_FAILURE)
         {
-            RTMsgError("Failed to read password from file");
+            RTMsgError(Disk::tr("Failed to read password from file"));
             return rcExit;
         }
     }
@@ -2138,11 +2144,11 @@ RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
     if (FAILED(rc))
         return RTEXITCODE_FAILURE;
     if (hardDisk.isNull())
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid hard disk reference, avoiding crash");
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, Disk::tr("Invalid hard disk reference, avoiding crash"));
 
     CHECK_ERROR(hardDisk, CheckEncryptionPassword(Bstr(strPassword).raw()));
     if (SUCCEEDED(rc))
-        RTPrintf("The given password is correct\n");
+        RTPrintf(Disk::tr("The given password is correct\n"));
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
@@ -2220,7 +2226,7 @@ static RTEXITCODE mediumIOOpenMediumForIO(HandlerArg *pHandler, PCMEDIUMIOCOMMON
      * Make sure a medium was specified already.
      */
     if (pCommonOpts->enmDeviceType == DeviceType_Null)
-        return errorSyntax("No medium specified!");
+        return errorSyntax(Disk::tr("No medium specified!"));
 
     /*
      * Read the password.
@@ -2231,7 +2237,7 @@ static RTEXITCODE mediumIOOpenMediumForIO(HandlerArg *pHandler, PCMEDIUMIOCOMMON
         Utf8Str strPassword;
         RTEXITCODE rcExit;
         if (pCommonOpts->pszPasswordFile[0] == '-' && pCommonOpts->pszPasswordFile[1] == '\0')
-            rcExit = readPasswordFromConsole(&strPassword, "Enter encryption password:");
+            rcExit = readPasswordFromConsole(&strPassword, Disk::tr("Enter encryption password:"));
         else
             rcExit = readPasswordFile(pCommonOpts->pszPasswordFile, &strPassword);
         if (rcExit != RTEXITCODE_SUCCESS)
@@ -2383,7 +2389,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
         {
             int vrc = RTStrmOpen(pszOutput, fHex ? "wt" : "wb", &pOut);
             if (RT_FAILURE(vrc))
-                rcExit = RTMsgErrorExitFailure("Error opening '%s' for writing: %Rrc", pszOutput, vrc);
+                rcExit = RTMsgErrorExitFailure(Disk::tr("Error opening '%s' for writing: %Rrc"), pszOutput, vrc);
         }
         else
         {
@@ -2399,7 +2405,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
              */
             if (off >= cbMedium)
             {
-                RTMsgWarning("Specified offset (%#RX64) is beyond the end of the medium (%#RX64)", off, cbMedium);
+                RTMsgWarning(Disk::tr("Specified offset (%#RX64) is beyond the end of the medium (%#RX64)"), off, cbMedium);
                 cb = 0;
             }
             else if (   cb > cbMedium
@@ -2429,7 +2435,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                 HRESULT hrc = ptrMediumIO->Read(off, cbToRead, ComSafeArrayAsOutParam(SafeArrayBuf));
                 if (FAILED(hrc))
                 {
-                    RTStrPrintf(szLine, sizeof(szLine), "Read(%zu bytes at %#RX64)", cbToRead, off);
+                    RTStrPrintf(szLine, sizeof(szLine), Disk::tr("Read(%zu bytes at %#RX64)", "", cbToRead), cbToRead, off);
                     com::GlueHandleComError(ptrMediumIO, szLine, hrc, __FILE__, __LINE__);
                     break;
                 }
@@ -2458,7 +2464,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                             {
                                 if (cDuplicates > 0)
                                 {
-                                    RTStrmPrintf(pOut, "**********  <ditto x %RU64>\n", cDuplicates);
+                                    RTStrmPrintf(pOut, Disk::tr("**********  <ditto x %RU64>\n"), cDuplicates);
                                     cDuplicates = 0;
                                 }
 
@@ -2507,7 +2513,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                     }
                     if (RT_FAILURE(vrc))
                     {
-                        rcExit = RTMsgErrorExitFailure("Error writing to '%s': %Rrc", pszOutput, vrc);
+                        rcExit = RTMsgErrorExitFailure(Disk::tr("Error writing to '%s': %Rrc"), pszOutput, vrc);
                         break;
                     }
                 }
@@ -2515,7 +2521,8 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                 /* Advance. */
                 if (cbReturned != cbToRead)
                 {
-                    rcExit = RTMsgErrorExitFailure("Expected read() at offset %RU64 (%#RX64) to return %#zx bytes, only got %#zx!\n",
+                    rcExit = RTMsgErrorExitFailure(Disk::tr("Expected read() at offset %RU64 (%#RX64) to return %#zx bytes, only got %#zx!\n",
+                                                            "", cbReturned),
                                                    off, off, cbReturned, cbToRead);
                     break;
                 }
@@ -2530,7 +2537,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
             {
                 int vrc = RTStrmClose(pOut);
                 if (RT_FAILURE(vrc))
-                    rcExit = RTMsgErrorExitFailure("Error closing '%s': %Rrc", pszOutput, vrc);
+                    rcExit = RTMsgErrorExitFailure(Disk::tr("Error closing '%s': %Rrc"), pszOutput, vrc);
             }
             else if (!fHex)
                 RTStrmSetMode(pOut, false, -1);
@@ -2578,7 +2585,7 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
             {
                 int vrc = parseMediumVariant(ValueUnion.psz, &enmMediumVariant);
                 if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid medium variant '%s'", ValueUnion.psz);
+                    return errorArgument(Disk::tr("Invalid medium variant '%s'"), ValueUnion.psz);
                 break;
             }
 
@@ -2603,7 +2610,7 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
         {
             int vrc = RTStrmOpen(pszOutput, "wb", &pOut);
             if (RT_FAILURE(vrc))
-                rcExit = RTMsgErrorExitFailure("Error opening '%s' for writing: %Rrc", pszOutput, vrc);
+                rcExit = RTMsgErrorExitFailure(Disk::tr("Error opening '%s' for writing: %Rrc"), pszOutput, vrc);
         }
         else
         {
@@ -2647,7 +2654,7 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
                         vrc = RTStrmWrite(pOut, pbBuf, cbReturned);
                         if (RT_FAILURE(vrc))
                         {
-                            rcExit = RTMsgErrorExitFailure("Error writing to '%s': %Rrc", pszOutput, vrc);
+                            rcExit = RTMsgErrorExitFailure(Disk::tr("Error writing to '%s': %Rrc"), pszOutput, vrc);
                             break;
                         }
                     }
@@ -2668,7 +2675,7 @@ static RTEXITCODE handleMediumIOStream(HandlerArg *a, int iFirst, PMEDIUMIOCOMMO
             {
                 int vrc = RTStrmClose(pOut);
                 if (RT_FAILURE(vrc))
-                    rcExit = RTMsgErrorExitFailure("Error closing '%s': %Rrc", pszOutput, vrc);
+                    rcExit = RTMsgErrorExitFailure(Disk::tr("Error closing '%s': %Rrc"), pszOutput, vrc);
             }
             else
                 RTStrmSetMode(pOut, false, -1);

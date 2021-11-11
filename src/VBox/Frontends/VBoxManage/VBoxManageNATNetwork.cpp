@@ -57,6 +57,8 @@
 
 #ifndef VBOX_ONLY_DOCS
 
+DECLARE_TRANSLATION_CONTEXT(Nat);
+
 using namespace com;
 
 typedef enum
@@ -93,29 +95,29 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
         BOOL fVal;
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(NetworkName)(strVal.asOutParam()));
-        RTPrintf("Name:         %ls\n", strVal.raw());
+        RTPrintf(Nat::tr("Name:         %ls\n"), strVal.raw());
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(Network)(strVal.asOutParam()));
-        RTPrintf("Network:      %ls\n", strVal.raw());
+        RTPrintf(Nat::tr("Network:      %ls\n"), strVal.raw());
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(Gateway)(strVal.asOutParam()));
-        RTPrintf("Gateway:      %ls\n", strVal.raw());
+        RTPrintf(Nat::tr("Gateway:      %ls\n"), strVal.raw());
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(NeedDhcpServer)(&fVal));
-        RTPrintf("DHCP Sever:   %s\n",  fVal ? "Yes" : "No");
+        RTPrintf(Nat::tr("DHCP Sever:   %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Enabled)(&fVal));
-        RTPrintf("IPv6:         %s\n",  fVal ? "Yes" : "No");
+        RTPrintf(Nat::tr("IPv6:         %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Prefix)(strVal.asOutParam()));
-        RTPrintf("IPv6 Prefix:  %ls\n", strVal.raw());
+        RTPrintf(Nat::tr("IPv6 Prefix:  %ls\n"), strVal.raw());
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fVal));
-        RTPrintf("IPv6 Default: %s\n",  fVal ? "Yes" : "No");
+        RTPrintf(Nat::tr("IPv6 Default: %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
 
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(Enabled)(&fVal));
-        RTPrintf("Enabled:      %s\n",  fVal ? "Yes" : "No");
+        RTPrintf(Nat::tr("Enabled:      %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
         /** @todo Add more information here. */
         RTPrintf("\n");
 
@@ -128,7 +130,7 @@ static RTEXITCODE handleNATList(HandlerArg *a)
 {
     HRESULT rc;
 
-    RTPrintf("NAT Networks:\n\n");
+    RTPrintf(Nat::tr("NAT Networks:\n\n"));
 
     const char *pszFilter = NULL;
     if (a->argc > 1)
@@ -162,7 +164,7 @@ static RTEXITCODE handleNATList(HandlerArg *a)
     }
 
     if (SUCCEEDED(rc))
-        RTPrintf("%zu %s found\n", cFound, cFound == 1 ? "network" : "networks");
+        RTPrintf(Nat::tr("%zu %s found\n"), cFound, cFound == 1 ? Nat::tr("network") : Nat::tr("networks", "", cFound));
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -170,7 +172,7 @@ static RTEXITCODE handleNATList(HandlerArg *a)
 static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
 {
     if (a->argc - 1 <= 1)
-        return errorSyntax(USAGE_NATNETWORK, "Not enough parameters");
+        return errorSyntax(USAGE_NATNETWORK, Nat::tr("Not enough parameters"));
 
     const char *pNetName = NULL;
     const char *pPrefixIPv4 = NULL;
@@ -217,43 +219,43 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         {
             case 't':   // --netname
                 if (pNetName)
-                    return errorSyntax(USAGE_NATNETWORK, "You can only specify --netname only once.");
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can only specify --netname only once."));
                 pNetName = ValueUnion.psz;
                 break;
 
             case 'n':   // --network
                 if (pPrefixIPv4)
-                    return errorSyntax(USAGE_NATNETWORK, "You can only specify --network only once.");
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can only specify --network only once."));
                 pPrefixIPv4 = ValueUnion.psz;
                 break;
 
             case 'e':   // --enable
                 if (enable >= 0)
-                    return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can specify either --enable or --disable once."));
                 enable = 1;
                 break;
 
             case 'd':   // --disable
                 if (enable >= 0)
-                    return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can specify either --enable or --disable once."));
                 enable = 0;
                 break;
 
             case 'h':
                 if (dhcp != -1)
-                    return errorSyntax(USAGE_NATNETWORK, "You can specify --dhcp only once.");
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can specify --dhcp only once."));
                 dhcp = ValueUnion.f;
                 break;
 
             case '6':
                 if (ipv6 != -1)
-                    return errorSyntax(USAGE_NATNETWORK, "You can specify --ipv6 only once.");
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can specify --ipv6 only once."));
                 ipv6 = ValueUnion.f;
                 break;
 
             case NATNET_CMD_OPT_IPV6_PREFIX:
                 if (pPrefixIPv6)
-                    return errorSyntax(USAGE_NATNETWORK, "You can specify --ipv6-prefix only once.");
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can specify --ipv6-prefix only once."));
                 pPrefixIPv6 = ValueUnion.psz;
                 break;
 
@@ -264,7 +266,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                     /* deletion */
                     if (enmCode != OP_MODIFY)
                       errorSyntax(USAGE_NATNETWORK,
-                                  "loopback couldn't be deleted on modified\n");
+                                  Nat::tr("loopback couldn't be deleted on modified\n"));
                     if (c == 'L')
                         loopback6Offset = -1;
                     else
@@ -276,7 +278,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                                                  RTGETOPT_REQ_STRING);
                         if (RT_FAILURE(vrc))
                           return errorSyntax(USAGE_NATNETWORK,
-                                             "Not enough parmaters\n");
+                                             Nat::tr("Not enough parmaters\n"));
 
                         vLoopback2Delete.push_back(std::string(Addr2Delete.psz));
                     }
@@ -301,7 +303,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                     PORTFORWARDRULE Pfr;
                     int irc = netPfStrToPf(ValueUnion.psz, (c == 'P'), &Pfr);
                     if (RT_FAILURE(irc))
-                        return errorSyntax(USAGE_NATNETWORK, "Invalid port-forward rule %s\n", ValueUnion.psz);
+                        return errorSyntax(USAGE_NATNETWORK, Nat::tr("Invalid port-forward rule %s\n"), ValueUnion.psz);
 
                     vPf2Add.push_back(Pfr);
                 }
@@ -310,15 +312,15 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                     /* deletion */
                     if (enmCode != OP_MODIFY)
                         return errorSyntax(USAGE_NATNETWORK,
-                                           "Port-forward could be deleted on modify \n");
+                                           Nat::tr("Port-forward could be deleted on modify \n"));
 
                     RTGETOPTUNION NamePf2DeleteUnion;
                     int vrc = RTGetOptFetchValue(&GetState, &NamePf2DeleteUnion, RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_NATNETWORK, "Not enough parmaters\n");
+                        return errorSyntax(USAGE_NATNETWORK, Nat::tr("Not enough parmaters\n"));
 
                     if (strlen(NamePf2DeleteUnion.psz) > PF_NAMELEN)
-                        return errorSyntax(USAGE_NATNETWORK, "Port-forward rule name is too long\n");
+                        return errorSyntax(USAGE_NATNETWORK, Nat::tr("Port-forward rule name is too long\n"));
 
                     PFNAME2DELETE Name2Delete;
                     RT_ZERO(Name2Delete);
@@ -335,13 +337,13 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
     }
 
     if (!pNetName)
-        return errorSyntax(USAGE_NATNETWORK, "You need to specify the --netname option");
+        return errorSyntax(USAGE_NATNETWORK, Nat::tr("You need to specify the --netname option"));
     /* verification */
     switch (enmCode)
     {
         case OP_ADD:
             if (!pPrefixIPv4)
-                return errorSyntax(USAGE_NATNETWORK, "You need to specify the --network option");
+                return errorSyntax(USAGE_NATNETWORK, Nat::tr("You need to specify the --network option"));
             break;
         case OP_MODIFY:
         case OP_REMOVE:
@@ -349,7 +351,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         case OP_STOP:
             break;
         default:
-            AssertMsgFailedReturn(("Unknown operation (:%d)", enmCode), RTEXITCODE_FAILURE);
+            AssertMsgFailedReturn((Nat::tr("Unknown operation (:%d)"), enmCode), RTEXITCODE_FAILURE);
     }
 
     HRESULT rc;
@@ -361,14 +363,14 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
     if (enmCode == OP_ADD)
     {
         if (SUCCEEDED(rc))
-            return errorArgument("NATNetwork server already exists");
+            return errorArgument(Nat::tr("NATNetwork server already exists"));
 
         CHECK_ERROR(a->virtualBox, CreateNATNetwork(NetName.raw(), net.asOutParam()));
         if (FAILED(rc))
-            return errorArgument("Failed to create the NAT network service");
+            return errorArgument(Nat::tr("Failed to create the NAT network service"));
     }
     else if (FAILED(rc))
-        return errorArgument("NATNetwork server does not exist");
+        return errorArgument(Nat::tr("NATNetwork server does not exist"));
 
     switch (enmCode)
     {
@@ -379,13 +381,13 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             {
                 CHECK_ERROR(net, COMSETTER(Network)(Bstr(pPrefixIPv4).raw()));
                 if (FAILED(rc))
-                    return errorArgument("Failed to set configuration");
+                    return errorArgument(Nat::tr("Failed to set configuration"));
             }
             if (dhcp >= 0)
             {
                 CHECK_ERROR(net, COMSETTER(NeedDhcpServer) ((BOOL)dhcp));
                 if (FAILED(rc))
-                    return errorArgument("Failed to set configuration");
+                    return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
             /*
@@ -397,14 +399,14 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             {
                 CHECK_ERROR(net, COMSETTER(IPv6Enabled)(FALSE));
                 if (FAILED(rc))
-                    return errorArgument("Failed to set configuration");
+                    return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
             if (pPrefixIPv6)
             {
                 CHECK_ERROR(net, COMSETTER(IPv6Prefix)(Bstr(pPrefixIPv6).raw()));
                 if (FAILED(rc))
-                    return errorArgument("Failed to set configuration");
+                    return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
             /*
@@ -415,7 +417,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             {
                 CHECK_ERROR(net, COMSETTER(IPv6Enabled)(TRUE));
                 if (FAILED(rc))
-                    return errorArgument("Failed to set configuration");
+                    return errorArgument(Nat::tr("Failed to set configuration"));
             }
 
             if (!vPfName2Delete.empty())
@@ -426,7 +428,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                     CHECK_ERROR(net, RemovePortForwardRule((BOOL)(*it).fIPv6,
                                                            Bstr((*it).szName).raw()));
                     if (FAILED(rc))
-                        return errorArgument("Failed to delete pf");
+                        return errorArgument(Nat::tr("Failed to delete pf"));
                 }
             }
 
@@ -451,7 +453,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                                                         Bstr((*it).szPfrGuestAddr).raw(),
                                                         (*it).u16PfrGuestPort));
                     if (FAILED(rc))
-                        return errorArgument("Failed to add pf");
+                        return errorArgument(Nat::tr("Failed to add pf"));
                 }
             }
 
@@ -477,13 +479,13 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                     LONG lOffset = 0;
                     Bstr bstrAddress;
 
-                    AssertReturn(pos != std::string::npos, errorArgument("invalid loopback string"));
+                    AssertReturn(pos != std::string::npos, errorArgument(Nat::tr("invalid loopback string")));
 
                     address = it->substr(0, pos);
                     strOffset = it->substr(pos + 1);
 
                     lOffset = RTStrToUInt32(strOffset.c_str());
-                    AssertReturn(lOffset > 0, errorArgument("invalid loopback string"));
+                    AssertReturn(lOffset > 0, errorArgument(Nat::tr("invalid loopback string")));
 
                     bstrAddress = Bstr(address.c_str());
 
@@ -510,7 +512,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             {
                 CHECK_ERROR(net, COMSETTER(Enabled) ((BOOL)enable));
                 if (FAILED(rc))
-                    return errorArgument("Failed to set configuration");
+                    return errorArgument(Nat::tr("Failed to set configuration"));
             }
             break;
         }
@@ -518,21 +520,21 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         {
             CHECK_ERROR(a->virtualBox, RemoveNATNetwork(net));
             if (FAILED(rc))
-                return errorArgument("Failed to remove nat network");
+                return errorArgument(Nat::tr("Failed to remove nat network"));
             break;
         }
         case OP_START:
         {
             CHECK_ERROR(net, Start());
             if (FAILED(rc))
-                return errorArgument("Failed to start network");
+                return errorArgument(Nat::tr("Failed to start network"));
             break;
         }
         case OP_STOP:
         {
             CHECK_ERROR(net, Stop());
             if (FAILED(rc))
-                return errorArgument("Failed to stop network");
+                return errorArgument(Nat::tr("Failed to stop network"));
             break;
         }
         default:;
@@ -544,7 +546,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
 RTEXITCODE handleNATNetwork(HandlerArg *a)
 {
     if (a->argc < 1)
-        return errorSyntax(USAGE_NATNETWORK, "Not enough parameters");
+        return errorSyntax(USAGE_NATNETWORK, Nat::tr("Not enough parameters"));
 
     RTEXITCODE rcExit;
     if (strcmp(a->argv[0], "modify") == 0)
@@ -560,7 +562,7 @@ RTEXITCODE handleNATNetwork(HandlerArg *a)
     else if (strcmp(a->argv[0], "list") == 0)
         rcExit = handleNATList(a);
     else
-        rcExit = errorSyntax(USAGE_NATNETWORK, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
+        rcExit = errorSyntax(USAGE_NATNETWORK, Nat::tr("Invalid parameter '%s'"), Utf8Str(a->argv[0]).c_str());
     return rcExit;
 }
 

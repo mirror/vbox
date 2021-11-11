@@ -26,6 +26,8 @@
 #include <algorithm>
 #include <vector>
 
+DECLARE_TRANSLATION_CONTEXT(CloudMachine);
+
 
 struct CMachineHandlerArg
   : public HandlerArg
@@ -167,14 +169,14 @@ selectCloudProvider(ComPtr<ICloudProvider> &pProvider,
 
     if (aProviders.size() == 0)
     {
-        RTMsgError("cloud: no providers available");
+        RTMsgError(CloudMachine::tr("cloud: no providers available"));
         return VERR_NOT_FOUND;
     }
 
     if (aProviders.size() > 1)
     {
-        RTMsgError("cloud: multiple providers available,"
-                   " '--provider' option is required");
+        RTMsgError(CloudMachine::tr("cloud: multiple providers available,"
+                                    " '--provider' option is required"));
         return VERR_MISSING;
     }
 
@@ -226,14 +228,14 @@ selectCloudProfile(ComPtr<ICloudProfile> &pProfile,
 
     if (aProfiles.size() == 0)
     {
-        RTMsgError("cloud: no profiles exist");
+        RTMsgError(CloudMachine::tr("cloud: no profiles exist"));
         return VERR_NOT_FOUND;
     }
 
     if (aProfiles.size() > 1)
     {
-        RTMsgError("cloud: multiple profiles exist,"
-                   " '--profile' option is required");
+        RTMsgError(CloudMachine::tr("cloud: multiple profiles exist,"
+                                    " '--profile' option is required"));
         return VERR_MISSING;
     }
 
@@ -358,7 +360,7 @@ getMachineByName(CMachineHandlerArg *a)
                 COMGETTER(Id)(bstrId2.asOutParam()),
                     hrc);
 
-            RTMsgError("ambiguous name: %ls and %ls", bstrId1.raw(), bstrId2.raw());
+            RTMsgError(CloudMachine::tr("ambiguous name: %ls and %ls"), bstrId1.raw(), bstrId2.raw());
             return VBOX_E_OBJECT_NOT_FOUND;
         }
     }
@@ -414,7 +416,7 @@ static RTEXITCODE
 errThereCanBeOnlyOne()
 {
     return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-               "only one machine can be specified");
+                          CloudMachine::tr("only one machine can be specified"));
 }
 
 
@@ -462,7 +464,7 @@ checkMachineSpecArgument(CMachineHandlerArg *a,
             rc = RTUuidFromStr(&Uuid, pcszId);
             if (RT_FAILURE(rc))
             {
-                RTMsgError("not a valid uuid: %s", pcszId);
+                RTMsgError(CloudMachine::tr("not a valid uuid: %s"), pcszId);
                 return VERR_PARSE_ERROR;
             }
 
@@ -525,13 +527,13 @@ getMachineBySpec(CMachineHandlerArg *a)
 
     if (a->pcszSpec == NULL)
     {
-        RTMsgErrorExit(RTEXITCODE_SYNTAX, "machine not specified");
+        RTMsgErrorExit(RTEXITCODE_SYNTAX, CloudMachine::tr("machine not specified"));
         return E_FAIL;
     }
 
     if (a->pcszSpec[0] == '\0')
     {
-        RTMsgError("machine name is empty");
+        RTMsgError(CloudMachine::tr("machine name is empty"));
         return E_FAIL;
     }
 
@@ -542,7 +544,7 @@ getMachineBySpec(CMachineHandlerArg *a)
             if (FAILED(hrc))
             {
                 if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-                    RTMsgError("unable to find machine with id %s", a->pcszSpec);
+                    RTMsgError(CloudMachine::tr("unable to find machine with id %s"), a->pcszSpec);
                 return hrc;
             }
             break;
@@ -552,7 +554,7 @@ getMachineBySpec(CMachineHandlerArg *a)
             if (FAILED(hrc))
             {
                 if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-                    RTMsgError("unable to find machine with name %s", a->pcszSpec);
+                    RTMsgError(CloudMachine::tr("unable to find machine with name %s"), a->pcszSpec);
                 return hrc;
             }
             break;
@@ -562,7 +564,7 @@ getMachineBySpec(CMachineHandlerArg *a)
             if (FAILED(hrc))
             {
                 if (hrc == VBOX_E_OBJECT_NOT_FOUND)
-                    RTMsgError("unable to find machine %s", a->pcszSpec);
+                    RTMsgError(CloudMachine::tr("unable to find machine %s"), a->pcszSpec);
                 return hrc;
             }
             break;
@@ -634,7 +636,7 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
                       s_aOptions, RT_ELEMENTS(s_aOptions),
                       iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
-                           "cloud machine: RTGetOptInit: %Rra", rc));
+                                      CloudMachine::tr("cloud machine: RTGetOptInit: %Rra"), rc));
 
     int ch;
     RTGETOPTUNION Val;
@@ -649,7 +651,7 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
          */
         if (ch == VINF_GETOPT_NOT_OPTION)
             return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                       "Invalid sub-command: %s", Val.psz);
+                                  CloudMachine::tr("Invalid sub-command: %s"), Val.psz);
 
         /*
          * Allow --id/--name after "machine", before the command.
@@ -695,13 +697,13 @@ handleCloudMachineImpl(CMachineHandlerArg *a, int iFirst)
 
             default:            /* should never happen */
                 return RTMsgErrorExit(RTEXITCODE_INIT,
-                           "cloud machine: internal error: %d", ch);
+                                      CloudMachine::tr("cloud machine: internal error: %d"), ch);
         }
     }
 
     return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-               "cloud machine: command required\n"
-               "Try '--help' for more information.");
+                          CloudMachine::tr("cloud machine: command required\n"
+                                           "Try '--help' for more information."));
 }
 
 
@@ -752,7 +754,7 @@ listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst)
 
     if (a->pcszSpec != NULL)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                   "cloud machine list: unexpected machine argument");
+                              CloudMachine::tr("cloud machine list: unexpected machine argument"));
 
 
     RTGETOPTSTATE OptState;
@@ -760,7 +762,7 @@ listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst)
                       s_aOptions, RT_ELEMENTS(s_aOptions),
                       iFirst, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     AssertRCReturn(rc, RTMsgErrorExit(RTEXITCODE_INIT,
-                           "cloud machine list: RTGetOptInit: %Rra", rc));
+                                      CloudMachine::tr("cloud machine list: RTGetOptInit: %Rra"), rc));
 
     int ch;
     RTGETOPTUNION Val;
@@ -784,7 +786,7 @@ listCloudMachinesImpl(CMachineHandlerArg *a, int iFirst)
 
             case VINF_GETOPT_NOT_OPTION:
                 return RTMsgErrorExit(RTEXITCODE_SYNTAX,
-                           "Invalid sub-command: %s", Val.psz);
+                                      CloudMachine::tr("Invalid sub-command: %s"), Val.psz);
 
             default:
                 return RTGetOptPrintError(ch, &Val);
@@ -982,7 +984,7 @@ printMachineInfo(const ComPtr<ICloudMachine> &pMachine)
 
     if (!fAccessible)
     {
-        RTMsgError("machine is not accessible"); // XXX: Id?
+        RTMsgError(CloudMachine::tr("machine is not accessible")); // XXX: Id?
 
         ComPtr<IVirtualBoxErrorInfo> pErrorInfo;
         CHECK_ERROR2_RET(hrc, pMachine,
@@ -1012,43 +1014,43 @@ printMachineInfo(const ComPtr<ICloudMachine> &pMachine)
             hrc);
     switch (enmState) {
         case CloudMachineState_Invalid:
-            RTPrintf("State: Invalid (%RU32)\n", CloudMachineState_Invalid);
+            RTPrintf(CloudMachine::tr("State: Invalid (%RU32)\n"), CloudMachineState_Invalid);
             break;
 
         case CloudMachineState_Provisioning:
-            RTPrintf("State: Provisioning (%RU32)\n", CloudMachineState_Provisioning);
+            RTPrintf(CloudMachine::tr("State: Provisioning (%RU32)\n"), CloudMachineState_Provisioning);
             break;
 
         case CloudMachineState_Running:
-            RTPrintf("State: Running (%RU32)\n", CloudMachineState_Running);
+            RTPrintf(CloudMachine::tr("State: Running (%RU32)\n"), CloudMachineState_Running);
             break;
 
         case CloudMachineState_Starting:
-            RTPrintf("State: Starting (%RU32)\n", CloudMachineState_Starting);
+            RTPrintf(CloudMachine::tr("State: Starting (%RU32)\n"), CloudMachineState_Starting);
             break;
 
         case CloudMachineState_Stopping:
-            RTPrintf("State: Stopping (%RU32)\n", CloudMachineState_Stopping);
+            RTPrintf(CloudMachine::tr("State: Stopping (%RU32)\n"), CloudMachineState_Stopping);
             break;
 
         case CloudMachineState_Stopped:
-            RTPrintf("State: Stopped (%RU32)\n", CloudMachineState_Stopped);
+            RTPrintf(CloudMachine::tr("State: Stopped (%RU32)\n"), CloudMachineState_Stopped);
             break;
 
         case CloudMachineState_CreatingImage:
-            RTPrintf("State: CreatingImage (%RU32)\n", CloudMachineState_CreatingImage);
+            RTPrintf(CloudMachine::tr("State: CreatingImage (%RU32)\n"), CloudMachineState_CreatingImage);
             break;
 
         case CloudMachineState_Terminating:
-            RTPrintf("State: Terminating (%RU32)\n", CloudMachineState_Terminating);
+            RTPrintf(CloudMachine::tr("State: Terminating (%RU32)\n"), CloudMachineState_Terminating);
             break;
 
         case CloudMachineState_Terminated:
-            RTPrintf("State: Terminated (%RU32)\n", CloudMachineState_Terminated);
+            RTPrintf(CloudMachine::tr("State: Terminated (%RU32)\n"), CloudMachineState_Terminated);
             break;
 
         default:
-            RTPrintf("State: Unknown state (%RU32)\n", enmState);
+            RTPrintf(CloudMachine::tr("State: Unknown state (%RU32)\n"), enmState);
     }
 
     ComPtr<IForm> pDetails;
@@ -1057,7 +1059,7 @@ printMachineInfo(const ComPtr<ICloudMachine> &pMachine)
 
     if (RT_UNLIKELY(pDetails.isNull()))
     {
-        RTMsgError("null details"); /* better error message? */
+        RTMsgError(CloudMachine::tr("null details")); /* better error message? */
         return E_FAIL;
     }
 
@@ -1104,7 +1106,8 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdErr,
-                    "%ls: unable to convert to boolean value\n", bstrLabel.raw());
+                             CloudMachine::tr("%ls: unable to convert to boolean value\n"),
+                             bstrLabel.raw());
                 break;
             }
 
@@ -1129,7 +1132,8 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdErr,
-                    "%ls: unable to convert to string value\n", bstrLabel.raw());
+                             CloudMachine::tr("%ls: unable to convert to string value\n"),
+                             bstrLabel.raw());
                 break;
             }
 
@@ -1170,7 +1174,8 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdErr,
-                    "%ls: unable to convert to integer value\n", bstrLabel.raw());
+                             CloudMachine::tr("%ls: unable to convert to integer value\n"),
+                             bstrLabel.raw());
                 break;
             }
 
@@ -1195,7 +1200,8 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdErr,
-                    "%ls: unable to convert to choice value\n", bstrLabel.raw());
+                             CloudMachine::tr("%ls: unable to convert to choice value\n"),
+                             bstrLabel.raw());
                 break;
             }
 
@@ -1204,7 +1210,8 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdOut,
-                    "%ls: values: %Rhra", bstrLabel.raw(), hrc);
+                             CloudMachine::tr("%ls: values: %Rhra"),
+                             bstrLabel.raw(), hrc);
                 break;
             }
 
@@ -1213,14 +1220,15 @@ printFormValue(const ComPtr<IFormValue> &pValue)
             if (FAILED(hrc))
             {
                 RTStrmPrintf(g_pStdOut,
-                    "%ls: selectedIndex: %Rhra", bstrLabel.raw(), hrc);
+                             CloudMachine::tr("%ls: selectedIndex: %Rhra"),
+                             bstrLabel.raw(), hrc);
                 break;
             }
 
             if (idxSelected < 0 || (size_t)idxSelected >  aValues.size())
             {
                 RTStrmPrintf(g_pStdOut,
-                    "%ls: selected index %RI64 out of range [0, %zu)\n",
+                             CloudMachine::tr("%ls: selected index %RI64 out of range [0, %zu)\n"),
                              bstrLabel.raw(), (int64_t)idxSelected, aValues.size());
                 break;
             }
@@ -1232,7 +1240,7 @@ printFormValue(const ComPtr<IFormValue> &pValue)
 
         default:
         {
-            RTStrmPrintf(g_pStdOut, "unknown value type %RU32\n", enmType);
+            RTStrmPrintf(g_pStdOut, CloudMachine::tr("unknown value type %RU32\n"), enmType);
             break;
         }
     }

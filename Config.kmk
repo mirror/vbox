@@ -693,6 +693,11 @@ endif
 if !defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_EXTPACKS)
  VBOX_WITH_PUEL_NLS = 1
 endif
+# Whether to enable message translation in VBoxManage.
+#ifndef VBOX_ONLY_BUILD
+# VBOX_WITH_VBOXMANAGE_NLS = 1
+VBOX_WITH_VBOXMANAGE_NLS =
+#endif
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
 if1of ($(KBUILD_TARGET), linux solaris)
@@ -1287,11 +1292,12 @@ endif
 #
 # Enforce VBOX_WITH_NLS.  It controls all NLS (except the GUI at the moment).
 #
-if defined(VBOX_WITH_MAIN_NLS) || defined(VBOX_WITH_PUEL_NLS)
+if defined(VBOX_WITH_MAIN_NLS) || defined(VBOX_WITH_PUEL_NLS) || defined(VBOX_WITH_VBOXMANAGE_NLS)
  VBOX_WITH_NLS := 1
  ifndef VBOX_WITH_NLS # (We test again to account for 'override VBOX_WITH_NLS :=')
   VBOX_WITH_MAIN_NLS :=
   VBOX_WITH_PUEL_NLS :=
+  VBOX_WITH_VBOXMANAGE_NLS :=
  endif
 endif
 

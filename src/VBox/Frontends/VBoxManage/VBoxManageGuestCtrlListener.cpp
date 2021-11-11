@@ -34,6 +34,8 @@
 #include <map>
 #include <vector>
 
+DECLARE_TRANSLATION_CONTEXT(GuestCtrlLsnr);
+
 
 /** Event semaphore we're using for notification. */
 extern RTSEMEVENT g_SemEventGuestCtrlCanceled;
@@ -103,7 +105,7 @@ STDMETHODIMP GuestFileEventListener::HandleEvent(VBoxEventType_T aType, IEvent *
                 ULONG uID;
                 CHECK_ERROR_BREAK(pProcess, COMGETTER(Id)(&uID));
 
-                RTPrintf("File ID=%RU32 \"%s\" changed status to [%s]\n",
+                RTPrintf(GuestCtrlLsnr::tr("File ID=%RU32 \"%s\" changed status to [%s]\n"),
                          uID, Utf8Str(strPath).c_str(), gctlFileStatusToText(fileSts));
 
             } while (0);
@@ -159,7 +161,7 @@ STDMETHODIMP GuestProcessEventListener::HandleEvent(VBoxEventType_T aType, IEven
                 ULONG uPID;
                 CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
 
-                RTPrintf("Process PID=%RU32 \"%s\" changed status to [%s]\n",
+                RTPrintf(GuestCtrlLsnr::tr("Process PID=%RU32 \"%s\" changed status to [%s]\n"),
                          uPID, Utf8Str(strPath).c_str(), gctlProcessStatusToText(procSts));
 
             } while (0);
@@ -253,13 +255,13 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                 Bstr strPath;
                 CHECK_ERROR_BREAK(pFile, COMGETTER(Filename)(strPath.asOutParam()));
 
-                RTPrintf("File \"%s\" %s\n",
+                RTPrintf(GuestCtrlLsnr::tr("File \"%s\" %s\n"),
                          Utf8Str(strPath).c_str(),
-                         fRegistered ? "registered" : "unregistered");
+                         fRegistered ? GuestCtrlLsnr::tr("registered") : GuestCtrlLsnr::tr("unregistered"));
                 if (fRegistered)
                 {
                     if (mfVerbose)
-                        RTPrintf("Registering ...\n");
+                        RTPrintf(GuestCtrlLsnr::tr("Registering ...\n"));
 
                     /* Register for IGuestFile events. */
                     ComObjPtr<GuestFileEventListenerImpl> pListener;
@@ -282,7 +284,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                     if (itFile != mFiles.end())
                     {
                         if (mfVerbose)
-                            RTPrintf("Unregistering file ...\n");
+                            RTPrintf(GuestCtrlLsnr::tr("Unregistering file ...\n"));
 
                         if (!itFile->first.isNull())
                         {
@@ -318,13 +320,13 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                 Bstr strPath;
                 CHECK_ERROR_BREAK(pProcess, COMGETTER(ExecutablePath)(strPath.asOutParam()));
 
-                RTPrintf("Process \"%s\" %s\n",
+                RTPrintf(GuestCtrlLsnr::tr("Process \"%s\" %s\n"),
                          Utf8Str(strPath).c_str(),
-                         fRegistered ? "registered" : "unregistered");
+                         fRegistered ? GuestCtrlLsnr::tr("registered") : GuestCtrlLsnr::tr("unregistered"));
                 if (fRegistered)
                 {
                     if (mfVerbose)
-                        RTPrintf("Registering ...\n");
+                        RTPrintf(GuestCtrlLsnr::tr("Registering ...\n"));
 
                     /* Register for IGuestProcess events. */
                     ComObjPtr<GuestProcessEventListenerImpl> pListener;
@@ -347,7 +349,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                     if (itProc != mProcs.end())
                     {
                         if (mfVerbose)
-                            RTPrintf("Unregistering process ...\n");
+                            RTPrintf(GuestCtrlLsnr::tr("Unregistering process ...\n"));
 
                         if (!itProc->first.isNull())
                         {
@@ -385,7 +387,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                 Bstr strName;
                 CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
 
-                RTPrintf("Session ID=%RU32 \"%s\" changed status to [%s]\n",
+                RTPrintf(GuestCtrlLsnr::tr("Session ID=%RU32 \"%s\" changed status to [%s]\n"),
                          uID, Utf8Str(strName).c_str(), gctlGuestSessionStatusToText(sessSts));
 
             } while (0);
@@ -461,13 +463,13 @@ STDMETHODIMP GuestEventListener::HandleEvent(VBoxEventType_T aType, IEvent *aEve
                 ULONG uID;
                 CHECK_ERROR_BREAK(pSession, COMGETTER(Id)(&uID));
 
-                RTPrintf("Session ID=%RU32 \"%s\" %s\n",
+                RTPrintf(GuestCtrlLsnr::tr("Session ID=%RU32 \"%s\" %s\n"),
                          uID, Utf8Str(strName).c_str(),
-                         fRegistered ? "registered" : "unregistered");
+                         fRegistered ? GuestCtrlLsnr::tr("registered") : GuestCtrlLsnr::tr("unregistered"));
                 if (fRegistered)
                 {
                     if (mfVerbose)
-                        RTPrintf("Registering ...\n");
+                        RTPrintf(GuestCtrlLsnr::tr("Registering ...\n"));
 
                     /* Register for IGuestSession events. */
                     ComObjPtr<GuestSessionEventListenerImpl> pListener;
@@ -491,7 +493,7 @@ STDMETHODIMP GuestEventListener::HandleEvent(VBoxEventType_T aType, IEvent *aEve
                     if (itSession != mSessions.end())
                     {
                         if (mfVerbose)
-                            RTPrintf("Unregistering ...\n");
+                            RTPrintf(GuestCtrlLsnr::tr("Unregistering ...\n"));
 
                         if (!itSession->first.isNull())
                         {
@@ -554,7 +556,7 @@ STDMETHODIMP GuestAdditionsRunlevelListener::HandleEvent(VBoxEventType_T aType, 
             CHECK_ERROR_BREAK(pEvent, COMGETTER(RunLevel)(&RunLevelCur));
 
             if (mfVerbose)
-                RTPrintf("Reached run level %RU32\n", RunLevelCur);
+                RTPrintf(GuestCtrlLsnr::tr("Reached run level %RU32\n"), RunLevelCur);
 
             if (RunLevelCur == mRunLevelTarget)
             {
@@ -573,4 +575,3 @@ STDMETHODIMP GuestAdditionsRunlevelListener::HandleEvent(VBoxEventType_T aType, 
 }
 
 #endif /* !VBOX_ONLY_DOCS */
-

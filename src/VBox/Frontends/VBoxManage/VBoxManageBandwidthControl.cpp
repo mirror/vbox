@@ -39,6 +39,7 @@
 #include "VBoxManage.h"
 using namespace com;
 
+DECLARE_TRANSLATION_CONTEXT(BWControl);
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -63,7 +64,7 @@ static const char *parseLimit(const char *pcszLimit, int64_t *pLimit)
         case VINF_SUCCESS:
             break;
         case VWRN_NUMBER_TOO_BIG:
-            return "Limit is too big\n";
+            return BWControl::tr("Limit is too big\n");
         case VWRN_TRAILING_CHARS:
             switch (*pszNext)
             {
@@ -73,20 +74,20 @@ static const char *parseLimit(const char *pcszLimit, int64_t *pLimit)
                 case 'g': iMultiplier = 125000000; break;
                 case 'm': iMultiplier = 125000;    break;
                 case 'k': iMultiplier = 125;       break;
-                default:  return "Invalid unit suffix. Valid suffixes are: k, m, g, K, M, G\n";
+                default:  return BWControl::tr("Invalid unit suffix. Valid suffixes are: k, m, g, K, M, G\n");
             }
             break;
         case VWRN_TRAILING_SPACES:
-            return "Trailing spaces in limit!\n";
+            return BWControl::tr("Trailing spaces in limit!\n");
         case VERR_NO_DIGITS:
-            return "No digits in limit specifier\n";
+            return BWControl::tr("No digits in limit specifier\n");
         default:
-            return "Invalid limit specifier\n";
+            return BWControl::tr("Invalid limit specifier\n");
     }
     if (*pLimit < 0)
-        return "Limit cannot be negative\n";
+        return BWControl::tr("Limit cannot be negative\n");
     if (*pLimit > INT64_MAX / iMultiplier)
-        return "Limit is too big\n";
+        return BWControl::tr("Limit is too big\n");
     *pLimit *= iMultiplier;
 
     return NULL;
@@ -111,7 +112,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
     Bstr name(a->argv[2]);
     if (name.isEmpty())
     {
-        errorArgument("Bandwidth group name must not be empty!\n");
+        errorArgument(BWControl::tr("Bandwidth group name must not be empty!\n"));
         return RTEXITCODE_FAILURE;
     }
 
@@ -171,7 +172,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
         enmType = BandwidthGroupType_Network;
     else
     {
-        errorArgument("Invalid bandwidth group type\n");
+        errorArgument(BWControl::tr("Invalid bandwidth group type\n"));
         return RTEXITCODE_FAILURE;
     }
 
@@ -311,9 +312,9 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
     ComPtr<IBandwidthControl> bwCtrl;
 
     if (a->argc < 2)
-        return errorSyntax(USAGE_BANDWIDTHCONTROL, "Too few parameters");
+        return errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Too few parameters"));
     else if (a->argc > 7)
-        return errorSyntax(USAGE_BANDWIDTHCONTROL, "Too many parameters");
+        return errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Too many parameters"));
 
     /* try to find the given machine */
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
@@ -334,7 +335,7 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
     {
         if (fRunTime)
         {
-            errorArgument("Bandwidth groups cannot be created while the VM is running\n");
+            errorArgument(BWControl::tr("Bandwidth groups cannot be created while the VM is running\n"));
             goto leave;
         }
         rc = handleBandwidthControlAdd(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
@@ -343,7 +344,7 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
     {
         if (fRunTime)
         {
-            errorArgument("Bandwidth groups cannot be deleted while the VM is running\n");
+            errorArgument(BWControl::tr("Bandwidth groups cannot be deleted while the VM is running\n"));
             goto leave;
         }
         rc = handleBandwidthControlRemove(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
@@ -354,7 +355,7 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
         rc = handleBandwidthControlList(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else
     {
-        errorSyntax(USAGE_BANDWIDTHCONTROL, "Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());
+        errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Invalid parameter '%s'"), Utf8Str(a->argv[1]).c_str());
         rc = E_FAIL;
     }
 
@@ -370,4 +371,3 @@ leave:
 }
 
 #endif /* !VBOX_ONLY_DOCS */
-
