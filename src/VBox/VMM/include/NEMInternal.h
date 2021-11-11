@@ -276,9 +276,11 @@ typedef struct NEM
     /** Set if we've created the EMTs. */
     bool                        fCreatedEmts : 1;
     /** Set if hv_vm_create() was called successfully. */
-    bool                        fCreatedVm : 1;
-    /** Number of currently mapped pages. */
-    uint32_t volatile           cMappedPages;
+    bool                        fCreatedVm   : 1;
+    /** Set if hv_vm_space_create() was called successfully. */
+    bool                        fCreatedAsid : 1;
+    /** The ASID for this VM (only valid if fCreatedAsid is true). */
+    hv_vm_space_t               uVmAsid;
     STAMCOUNTER                 StatMapPage;
     STAMCOUNTER                 StatUnmapPage;
     STAMCOUNTER                 StatMapPageFailed;

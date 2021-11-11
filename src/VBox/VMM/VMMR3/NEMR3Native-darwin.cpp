@@ -137,6 +137,18 @@ typedef enum
     HV_VMX_CAP_PROCBASED2,
     HV_VMX_CAP_ENTRY,
     HV_VMX_CAP_EXIT,
+    HV_VMX_CAP_BASIC,                   /* Since 11.0 */
+    HV_VMX_CAP_TRUE_PINBASED,           /* Since 11.0 */
+    HV_VMX_CAP_TRUE_PROCBASED,          /* Since 11.0 */
+    HV_VMX_CAP_TRUE_ENTRY,              /* Since 11.0 */
+    HV_VMX_CAP_TRUE_EXIT,               /* Since 11.0 */
+    HV_VMX_CAP_MISC,                    /* Since 11.0 */
+    HV_VMX_CAP_CR0_FIXED0,              /* Since 11.0 */
+    HV_VMX_CAP_CR0_FIXED1,              /* Since 11.0 */
+    HV_VMX_CAP_CR4_FIXED0,              /* Since 11.0 */
+    HV_VMX_CAP_CR4_FIXED1,              /* Since 11.0 */
+    HV_VMX_CAP_VMCS_ENUM,               /* Since 11.0 */
+    HV_VMX_CAP_EPT_VPID_CAP,            /* Since 11.0 */
     HV_VMX_CAP_PREEMPTION_TIMER = 32
 } hv_vmx_capability_t;
 
@@ -421,13 +433,18 @@ DECLINLINE(int) nemR3DarwinHvSts2Rc(hv_return_t hrc)
  * Unmaps the given guest physical address range (page aligned).
  *
  * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
  * @param   GCPhys              The guest physical address to start unmapping at.
  * @param   cb                  The size of the range to unmap in bytes.
  */
-DECLINLINE(int) nemR3DarwinUnmap(RTGCPHYS GCPhys, size_t cb)
+DECLINLINE(int) nemR3DarwinUnmap(PVM pVM, RTGCPHYS GCPhys, size_t cb)
 {
     LogFlowFunc(("Unmapping %RGp LB %zu\n", GCPhys, cb));
-    hv_return_t hrc = hv_vm_unmap(GCPhys, cb);
+    hv_return_t hrc;
+    if (pVM->nem.s.fCreatedAsid)
+        hrc = hv_vm_unmap_space(pVM->nem.s.uVmAsid, GCPhys, cb);
+    else
+        hrc = hv_vm_unmap(GCPhys, cb);
     return nemR3DarwinHvSts2Rc(hrc);
 }
 
@@ -437,12 +454,13 @@ DECLINLINE(int) nemR3DarwinUnmap(RTGCPHYS GCPhys, size_t cb)
  * protection flags.
  *
  * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
  * @param   GCPhys              The guest physical address to start mapping.
  * @param   pvRam               The R3 pointer of the memory to back the range with.
  * @param   cb                  The size of the range, page aligned.
  * @param   fPageProt           The page protection flags to use for this range, combination of NEM_PAGE_PROT_XXX
  */
-DECLINLINE(int) nemR3DarwinMap(RTGCPHYS GCPhys, void *pvRam, size_t cb, uint32_t fPageProt)
+DECLINLINE(int) nemR3DarwinMap(PVM pVM, RTGCPHYS GCPhys, void *pvRam, size_t cb, uint32_t fPageProt)
 {
     LogFlowFunc(("Mapping %RGp LB %zu fProt=%#x\n", GCPhys, cb, fPageProt));
 
@@ -454,13 +472,17 @@ DECLINLINE(int) nemR3DarwinMap(RTGCPHYS GCPhys, void *pvRam, size_t cb, uint32_t
     if (fPageProt & NEM_PAGE_PROT_EXECUTE)
         fHvMemProt |= HV_MEMORY_EXEC;
 
-    hv_return_t hrc = hv_vm_map(pvRam, GCPhys, cb, fHvMemProt);
+    hv_return_t hrc;
+    if (pVM->nem.s.fCreatedAsid)
+        hrc = hv_vm_map_space(pVM->nem.s.uVmAsid, pvRam, GCPhys, cb, fHvMemProt);
+    else
+        hrc = hv_vm_map(pvRam, GCPhys, cb, fHvMemProt);
     return nemR3DarwinHvSts2Rc(hrc);
 }
 
 
 #if 0 /* unused */
-DECLINLINE(int) nemR3DarwinProtectPage(RTGCPHYS GCPhys, size_t cb, uint32_t fPageProt)
+DECLINLINE(int) nemR3DarwinProtectPage(PVM pVM, RTGCPHYS GCPhys, size_t cb, uint32_t fPageProt)
 {
     hv_memory_flags_t fHvMemProt = 0;
     if (fPageProt & NEM_PAGE_PROT_READ)
@@ -470,7 +492,11 @@ DECLINLINE(int) nemR3DarwinProtectPage(RTGCPHYS GCPhys, size_t cb, uint32_t fPag
     if (fPageProt & NEM_PAGE_PROT_EXECUTE)
         fHvMemProt |= HV_MEMORY_EXEC;
 
-    hv_return_t hrc = hv_vm_protect(GCPhys, cb, fHvMemProt);
+    if (pVM->nem.s.fCreatedAsid)
+        hrc = hv_vm_protect_space(pVM->nem.s.uVmAsid, GCPhys, cb, fHvMemProt);
+    else
+        hrc = hv_vm_protect(GCPhys, cb, fHvMemProt);
+
     return nemR3DarwinHvSts2Rc(hrc);
 }
 #endif
@@ -531,16 +557,14 @@ NEM_TMPL_STATIC int nemHCNativeSetPhysPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS G
     {
         if (u2OldState > NEM_DARWIN_PAGE_STATE_UNMAPPED)
         {
-            int rc = nemR3DarwinUnmap(GCPhysDst, X86_PAGE_SIZE);
+            int rc = nemR3DarwinUnmap(pVM, GCPhysDst, X86_PAGE_SIZE);
             if (RT_SUCCESS(rc))
             {
                 *pu2State = NEM_DARWIN_PAGE_STATE_UNMAPPED;
                 STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPage);
-                uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
                 if (u2NewState == NEM_DARWIN_PAGE_STATE_UNMAPPED)
                 {
-                    Log5(("NEM GPA unmapped/set: %RGp (was %s, cMappedPages=%u)\n",
-                          GCPhysDst, g_apszPageStates[u2OldState], cMappedPages));
+                    Log5(("NEM GPA unmapped/set: %RGp (was %s)\n", GCPhysDst, g_apszPageStates[u2OldState]));
                     return VINF_SUCCESS;
                 }
             }
@@ -562,14 +586,12 @@ NEM_TMPL_STATIC int nemHCNativeSetPhysPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS G
         int rc = nemR3NativeGCPhys2R3PtrWriteable(pVM, GCPhysSrc, &pvPage);
         if (RT_SUCCESS(rc))
         {
-            rc = nemR3DarwinMap(GCPhysDst, pvPage, X86_PAGE_SIZE, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
+            rc = nemR3DarwinMap(pVM, GCPhysDst, pvPage, X86_PAGE_SIZE, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
             if (RT_SUCCESS(rc))
             {
                 *pu2State = NEM_DARWIN_PAGE_STATE_WRITABLE;
                 STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPage);
-                uint32_t cMappedPages = ASMAtomicIncU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
-                Log5(("NEM GPA mapped/set: %RGp %s (was %s, cMappedPages=%u)\n",
-                      GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState], cMappedPages));
+                Log5(("NEM GPA mapped/set: %RGp %s (was %s)\n", GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState]));
                 return VINF_SUCCESS;
             }
             STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPageFailed);
@@ -586,14 +608,12 @@ NEM_TMPL_STATIC int nemHCNativeSetPhysPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS G
         int rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhysSrc, &pvPage);
         if (RT_SUCCESS(rc))
         {
-            rc = nemR3DarwinMap(GCPhysDst, (void *)pvPage, X86_PAGE_SIZE, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE);
+            rc = nemR3DarwinMap(pVM, GCPhysDst, (void *)pvPage, X86_PAGE_SIZE, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE);
             if (RT_SUCCESS(rc))
             {
                 *pu2State = NEM_DARWIN_PAGE_STATE_READABLE;
                 STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPage);
-                uint32_t cMappedPages = ASMAtomicIncU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
-                Log5(("NEM GPA mapped/set: %RGp %s (was %s, cMappedPages=%u)\n",
-                      GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState], cMappedPages));
+                Log5(("NEM GPA mapped/set: %RGp %s (was %s)\n", GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState]));
                 return VINF_SUCCESS;
             }
             STAM_REL_COUNTER_INC(&pVM->nem.s.StatMapPageFailed);
@@ -1196,15 +1216,14 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
      * Unmap and restart the instruction.
      * If this fails, which it does every so often, just unmap everything for now.
      */
-    rc = nemR3DarwinUnmap(GCPhys, X86_PAGE_SIZE);
+    rc = nemR3DarwinUnmap(pVM, GCPhys, X86_PAGE_SIZE);
     if (RT_SUCCESS(rc))
     {
         pState->fDidSomething = true;
         pState->fCanResume    = true;
         pInfo->u2NemState = NEM_DARWIN_PAGE_STATE_UNMAPPED;
         STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPage);
-        uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
-        Log5(("NEM GPA unmapped/exit: %RGp (was %s, cMappedPages=%u)\n", GCPhys, g_apszPageStates[u2State], cMappedPages));
+        Log5(("NEM GPA unmapped/exit: %RGp (was %s)\n", GCPhys, g_apszPageStates[u2State]));
         return VINF_SUCCESS;
     }
     STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
@@ -1773,55 +1792,63 @@ static int nemR3DarwinCapsInit(void)
     hv_return_t hrc = hv_vmx_read_capability(HV_VMX_CAP_PINBASED, &g_HmMsrs.u.vmx.PinCtls.u);
     if (hrc == HV_SUCCESS)
         hrc = hv_vmx_read_capability(HV_VMX_CAP_PROCBASED, &g_HmMsrs.u.vmx.ProcCtls.u);
-#if 0 /* Not available with our SDK. */
-    if (hrc == HV_SUCCESS)
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_BASIC, &g_HmMsrs.u.vmx.u64Basic);
-#endif
     if (hrc == HV_SUCCESS)
         hrc = hv_vmx_read_capability(HV_VMX_CAP_ENTRY, &g_HmMsrs.u.vmx.EntryCtls.u);
     if (hrc == HV_SUCCESS)
         hrc = hv_vmx_read_capability(HV_VMX_CAP_EXIT, &g_HmMsrs.u.vmx.ExitCtls.u);
-#if 0 /* Not available with our SDK. */
     if (hrc == HV_SUCCESS)
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_MISC, &g_HmMsrs.u.vmx.u64Misc);
-    if (hrc == HV_SUCCESS)
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_CR0_FIXED0, &g_HmMsrs.u.vmx.u64Cr0Fixed0);
-    if (hrc == HV_SUCCESS)
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_CR0_FIXED1, &g_HmMsrs.u.vmx.u64Cr0Fixed1);
-    if (hrc == HV_SUCCESS)
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_CR4_FIXED0, &g_HmMsrs.u.vmx.u64Cr4Fixed0);
-    if (hrc == HV_SUCCESS)
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_CR4_FIXED1, &g_HmMsrs.u.vmx.u64Cr4Fixed1);
-    if (hrc == HV_SUCCESS)
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_VMCS_ENUM, &g_HmMsrs.u.vmx.u64VmcsEnum);
-    if (   hrc == HV_SUCCESS
-        && RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
     {
-        hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_PINBASED, &g_HmMsrs.u.vmx.TruePinCtls.u);
+        hrc = hv_vmx_read_capability(HV_VMX_CAP_BASIC, &g_HmMsrs.u.vmx.u64Basic);
         if (hrc == HV_SUCCESS)
-            hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_PROCBASED, &g_HmMsrs.u.vmx.TrueProcCtls.u);
-        if (hrc == HV_SUCCESS)
-            hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_ENTRY, &g_HmMsrs.u.vmx.TrueEntryCtls.u);
-        if (hrc == HV_SUCCESS)
-            hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_EXIT, &g_HmMsrs.u.vmx.TrueExitCtls.u);
+        {
+            if (hrc == HV_SUCCESS)
+                hrc = hv_vmx_read_capability(HV_VMX_CAP_MISC, &g_HmMsrs.u.vmx.u64Misc);
+            if (hrc == HV_SUCCESS)
+                hrc = hv_vmx_read_capability(HV_VMX_CAP_CR0_FIXED0, &g_HmMsrs.u.vmx.u64Cr0Fixed0);
+            if (hrc == HV_SUCCESS)
+                hrc = hv_vmx_read_capability(HV_VMX_CAP_CR0_FIXED1, &g_HmMsrs.u.vmx.u64Cr0Fixed1);
+            if (hrc == HV_SUCCESS)
+                hrc = hv_vmx_read_capability(HV_VMX_CAP_CR4_FIXED0, &g_HmMsrs.u.vmx.u64Cr4Fixed0);
+            if (hrc == HV_SUCCESS)
+                hrc = hv_vmx_read_capability(HV_VMX_CAP_CR4_FIXED1, &g_HmMsrs.u.vmx.u64Cr4Fixed1);
+            if (hrc == HV_SUCCESS)
+                hrc = hv_vmx_read_capability(HV_VMX_CAP_VMCS_ENUM, &g_HmMsrs.u.vmx.u64VmcsEnum);
+            if (   hrc == HV_SUCCESS
+                && RT_BF_GET(g_HmMsrs.u.vmx.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
+            {
+                hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_PINBASED, &g_HmMsrs.u.vmx.TruePinCtls.u);
+                if (hrc == HV_SUCCESS)
+                    hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_PROCBASED, &g_HmMsrs.u.vmx.TrueProcCtls.u);
+                if (hrc == HV_SUCCESS)
+                    hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_ENTRY, &g_HmMsrs.u.vmx.TrueEntryCtls.u);
+                if (hrc == HV_SUCCESS)
+                    hrc = hv_vmx_read_capability(HV_VMX_CAP_TRUE_EXIT, &g_HmMsrs.u.vmx.TrueExitCtls.u);
+            }
+        }
+        else
+        {
+            /* Likely running on anything < 11.0 (BigSur) so provide some sensible defaults. */
+            g_HmMsrs.u.vmx.u64Cr0Fixed0 = 0x80000021;
+            g_HmMsrs.u.vmx.u64Cr0Fixed1 = 0xffffffff;
+            g_HmMsrs.u.vmx.u64Cr4Fixed0 = 0x2000;
+            g_HmMsrs.u.vmx.u64Cr4Fixed1 = 0x1767ff;
+            hrc = HV_SUCCESS;
+        }
     }
-#else /** @todo Not available with the current SDK used (available with 11.0+) but required for setting the CRx values properly. */
-    g_HmMsrs.u.vmx.u64Cr0Fixed0 = 0x80000021;
-    g_HmMsrs.u.vmx.u64Cr0Fixed1 = 0xffffffff;
-    g_HmMsrs.u.vmx.u64Cr4Fixed0 = 0x2000;
-    g_HmMsrs.u.vmx.u64Cr4Fixed1 = 0x1767ff;
-#endif
 
     if (   hrc == HV_SUCCESS
         && g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
     {
         hrc = hv_vmx_read_capability(HV_VMX_CAP_PROCBASED2, &g_HmMsrs.u.vmx.ProcCtls2.u);
 
-#if 0 /* Not available with our SDK. */
-        if (  hrc == HV_SUCCESS
-            & g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & (VMX_PROC_CTLS2_EPT | VMX_PROC_CTLS2_VPID))
+        if (   hrc == HV_SUCCESS
+            && g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & (VMX_PROC_CTLS2_EPT | VMX_PROC_CTLS2_VPID))
+        {
             hrc = hv_vmx_read_capability(HV_VMX_CAP_EPT_VPID_CAP, &g_HmMsrs.u.vmx.u64EptVpidCaps);
-#endif
+            if (hrc != HV_SUCCESS)
+                hrc = HV_SUCCESS; /* Probably just outdated OS. */
+        }
+
         g_HmMsrs.u.vmx.u64VmFunc = 0; /* No way to read that on macOS. */
     }
 
@@ -2281,6 +2308,17 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
         hv_return_t hrc = hv_vm_create(HV_VM_DEFAULT);
         if (hrc == HV_SUCCESS)
         {
+            if (hv_vm_space_create)
+            {
+                hrc = hv_vm_space_create(&pVM->nem.s.uVmAsid);
+                if (hrc == HV_SUCCESS)
+                {
+                    LogRel(("NEM: Successfully created ASID: %u\n", pVM->nem.s.uVmAsid));
+                    pVM->nem.s.fCreatedAsid = true;
+                }
+                else
+                    LogRel(("NEM: Failed to create ASID for VM (hrc=%#x), continuing...\n", pVM->nem.s.uVmAsid));
+            }
             pVM->nem.s.fCreatedVm = true;
 
             /* Register release statistics */
@@ -2347,6 +2385,12 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
 
     int rc = nemR3DarwinInitVmcs(pVCpu);
     AssertRCReturn(rc, rc);
+
+    if (pVM->nem.s.fCreatedAsid)
+    {
+        hv_return_t hrc = hv_vcpu_set_space(pVCpu->nem.s.hVCpuId, pVM->nem.s.uVmAsid);
+        AssertReturn(hrc == HV_SUCCESS, VERR_NEM_VM_CREATE_FAILED);
+    }
 
     ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 
@@ -2441,6 +2485,13 @@ int nemR3NativeTerm(PVM pVM)
     }
 
     pVM->nem.s.fCreatedEmts = false;
+
+    if (pVM->nem.s.fCreatedAsid)
+    {
+        hv_return_t hrc = hv_vm_space_destroy(pVM->nem.s.uVmAsid);
+        Assert(hrc == HV_SUCCESS);
+        pVM->nem.s.fCreatedAsid = false;
+    }
 
     if (pVM->nem.s.fCreatedVm)
     {
@@ -2734,7 +2785,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
 #if defined(VBOX_WITH_PGM_NEM_MODE)
     if (pvR3)
     {
-        int rc = nemR3DarwinMap(GCPhys, pvR3, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
+        int rc = nemR3DarwinMap(pVM, GCPhys, pvR3, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
         if (RT_SUCCESS(rc))
             *pu2State = NEM_DARWIN_PAGE_STATE_WRITABLE;
         else
@@ -2772,7 +2823,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
      */
     if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
     {
-        int rc = nemR3DarwinUnmap(GCPhys, cb);
+        int rc = nemR3DarwinUnmap(pVM, GCPhys, cb);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else if (pvMmio2)
@@ -2792,7 +2843,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
     if (pvMmio2)
     {
         Assert(fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2);
-        int rc = nemR3DarwinMap(GCPhys, pvMmio2, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
+        int rc = nemR3DarwinMap(pVM, GCPhys, pvMmio2, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
         if (RT_SUCCESS(rc))
             *pu2State = NEM_DARWIN_PAGE_STATE_WRITABLE;
         else
@@ -2841,7 +2892,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
      *        we may have more stuff to unmap even in case of pure MMIO... */
     if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2)
     {
-        rc = nemR3DarwinUnmap(GCPhys, cb);
+        rc = nemR3DarwinUnmap(pVM, GCPhys, cb);
         if (RT_FAILURE(rc))
         {
             LogRel2(("NEMR3NotifyPhysMmioExUnmap: GCPhys=%RGp LB %RGp fFlags=%#x: Unmap -> rc=%Rrc\n",
@@ -2856,7 +2907,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
     if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
     {
         AssertPtr(pvRam);
-        rc = nemR3DarwinMap(GCPhys, pvRam, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
+        rc = nemR3DarwinMap(pVM, GCPhys, pvRam, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -2914,7 +2965,7 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
      * (Re-)map readonly.
      */
     AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
-    int rc = nemR3DarwinMap(GCPhys, pvPages, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE);
+    int rc = nemR3DarwinMap(pVM, GCPhys, pvPages, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_EXECUTE);
     if (RT_SUCCESS(rc))
         *pu2State = NEM_DARWIN_PAGE_STATE_READABLE;
     else
@@ -2944,7 +2995,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLE
 #if defined(VBOX_WITH_PGM_NEM_MODE)
     if (pvMemR3)
     {
-        int rc = nemR3DarwinMap(GCPhys, pvMemR3, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
+        int rc = nemR3DarwinMap(pVM, GCPhys, pvMemR3, cb, NEM_PAGE_PROT_READ | NEM_PAGE_PROT_WRITE | NEM_PAGE_PROT_EXECUTE);
         if (RT_SUCCESS(rc))
             *pu2State = NEM_DARWIN_PAGE_STATE_WRITABLE;
         else
@@ -2968,13 +3019,12 @@ static int nemHCJustUnmapPage(PVMCC pVM, RTGCPHYS GCPhysDst, uint8_t *pu2State)
         return VINF_SUCCESS;
     }
 
-    int rc = nemR3DarwinUnmap(GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE);
+    int rc = nemR3DarwinUnmap(pVM, GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE);
     if (RT_SUCCESS(rc))
     {
         STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPage);
-        uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
         *pu2State = NEM_DARWIN_PAGE_STATE_UNMAPPED;
-        Log5(("nemHCJustUnmapPage: %RGp => unmapped (total %u)\n", GCPhysDst, cMappedPages));
+        Log5(("nemHCJustUnmapPage: %RGp => unmapped\n", GCPhysDst));
         return VINF_SUCCESS;
     }
     STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
