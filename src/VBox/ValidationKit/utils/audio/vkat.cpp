@@ -306,7 +306,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
         RTTIMESPEC NowTimeSpec;
         RTTimeExplode(&pToneParms->Hdr.tsCreated, RTTimeNow(&NowTimeSpec));
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32 (%RU16/%RU16): Playing test tone (%RU16Hz, %RU32ms)\n",
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32 (%RU32/%RU32): Playing test tone (%RU16Hz, %RU32ms)\n",
                      pTstParms->idxCurrent, i + 1, pTstParms->cIterations, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
 
         /*
@@ -325,11 +325,11 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling VKAT on guest to play tone ...\n");
             rc = AudioTestSvcClientTonePlay(&pTstEnv->u.Host.AtsClGuest, pToneParms);
             if (RT_FAILURE(rc))
-                RTTestFailed(g_hTest, "Test #%RU32 (%RU16/%RU16): AudioTestSvcClientTonePlay() failed with %Rrc\n",
+                RTTestFailed(g_hTest, "Test #%RU32 (%RU32/%RU32): AudioTestSvcClientTonePlay() failed with %Rrc\n",
                              pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
         }
         else
-            RTTestFailed(g_hTest, "Test #%RU32 (%RU16/%RU16): AudioTestSvcClientToneRecord() failed with %Rrc\n",
+            RTTestFailed(g_hTest, "Test #%RU32 (%RU32/%RU32): AudioTestSvcClientToneRecord() failed with %Rrc\n",
                          pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
 
         if (RT_SUCCESS(rc))
@@ -343,7 +343,7 @@ static DECLCALLBACK(int) audioTestPlayToneExec(PAUDIOTESTENV pTstEnv, void *pvCt
 
         if (RT_FAILURE(rc))
         {
-            RTTestFailed(g_hTest, "Test #%RU32 (%RU16/%RU16): Playing test tone failed with %Rrc\n",
+            RTTestFailed(g_hTest, "Test #%RU32 (%RU32/%RU32): Playing test tone failed with %Rrc\n",
                          pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
             break; /* Not worth retrying, bail out. */
         }
@@ -405,7 +405,7 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
         RTTIMESPEC NowTimeSpec;
         RTTimeExplode(&pToneParms->Hdr.tsCreated, RTTimeNow(&NowTimeSpec));
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32 (%RU16/%RU16): Recording test tone (%RU16Hz, %RU32ms)\n",
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32 (%RU32/%RU32): Recording test tone (%RU16Hz, %RU32ms)\n",
                      pTstParms->idxCurrent, i + 1, pTstParms->cIterations, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
 
         /*
@@ -421,11 +421,11 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Telling VKAT on guest to record audio ...\n");
             rc = AudioTestSvcClientToneRecord(&pTstEnv->u.Host.AtsClGuest, &pTstParms->TestTone);
             if (RT_FAILURE(rc))
-                RTTestFailed(g_hTest, "Test #%RU32 (%RU16/%RU16): AudioTestSvcClientToneRecord() failed with %Rrc\n",
+                RTTestFailed(g_hTest, "Test #%RU32 (%RU32/%RU32): AudioTestSvcClientToneRecord() failed with %Rrc\n",
                              pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
         }
         else
-            RTTestFailed(g_hTest, "Test #%RU32 (%RU16/%RU16): AudioTestSvcClientTonePlay() failed with %Rrc\n",
+            RTTestFailed(g_hTest, "Test #%RU32 (%RU32/%RU32): AudioTestSvcClientTonePlay() failed with %Rrc\n",
                          pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
 
         if (RT_SUCCESS(rc))
@@ -437,7 +437,7 @@ static DECLCALLBACK(int) audioTestRecordToneExec(PAUDIOTESTENV pTstEnv, void *pv
 
         if (RT_FAILURE(rc))
         {
-            RTTestFailed(g_hTest, "Test #%RU32 (%RU16/%RU16): Recording test tone failed with %Rrc\n",
+            RTTestFailed(g_hTest, "Test #%RU32 (%RU32/%RU32): Recording test tone failed with %Rrc\n",
                          pTstParms->idxCurrent, i + 1, pTstParms->cIterations, rc);
             break; /* Not worth retrying, bail out. */
         }
