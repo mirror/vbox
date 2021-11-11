@@ -354,19 +354,36 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
         }
     }
 
+    STAM_PROFILE_START(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
+
     /*
      * Enter the pages into PGM.
      */
-    STAM_PROFILE_START(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
-    unsigned cLeft = _2M / PAGE_SIZE;
+    bool         fFlushTLBs = false;
+    VBOXSTRICTRC rc         = VINF_SUCCESS;
+    unsigned     cLeft      = _2M / PAGE_SIZE;
     while (cLeft-- > 0)
     {
         PPGMPAGE pPage;
-        int rc = pgmPhysGetPageEx(pGVM, GCPhys, &pPage);
-        AssertRCReturn(rc, rc);
+        int rc2 = pgmPhysGetPageEx(pGVM, GCPhys, &pPage);
+        AssertRCReturn(rc2, rc2);
         AssertReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, VERR_PGM_PHYS_NOT_RAM);
         AssertReturn(PGM_PAGE_IS_ZERO(pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
 
+        /* Make sure there are no zero mappings. */
+        uint16_t const u16Tracking = PGM_PAGE_GET_TRACKING(pPage);
+        if (u16Tracking == 0)
+        { /* likely */ }
+        else
+        {
+            STAM_REL_COUNTER_INC(&pGVM->pgm.s.StatLargePageZeroEvict);
+            VBOXSTRICTRC rc3 = pgmPoolTrackUpdateGCPhys(pGVM, GCPhys, pPage, true /*fFlushPTEs*/, &fFlushTLBs);
+            Log(("PGMR0PhysAllocateLargePage: GCPhys=%RGp: tracking=%#x rc3=%Rrc\n", GCPhys, u16Tracking, VBOXSTRICTRC_VAL(rc3)));
+            if (rc3 != VINF_SUCCESS && rc == VINF_SUCCESS)
+                rc = rc3; /** @todo not perfect... */
+        }
+
+        /* Setup the new page. */
         STAM_COUNTER_INC(&pGVM->pgm.s.Stats.StatRZPageReplaceZero);
         pGVM->pgm.s.cZeroPages--;
         pGVM->pgm.s.cPrivatePages++;
@@ -376,27 +393,38 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
         PGM_PAGE_SET_PDE_TYPE(pGVM, pPage, PGM_PAGE_PDE_TYPE_PDE);
         PGM_PAGE_SET_PTE_INDEX(pGVM, pPage, 0);
         PGM_PAGE_SET_TRACKING(pGVM, pPage, 0);
-        Log3(("PGMR0PhysAllocateLargePage: GCPhys=%RGp: idPage=%#x HCPhys=%RGp\n", GCPhys, idPage, HCPhys));
+        Log3(("PGMR0PhysAllocateLargePage: GCPhys=%RGp: idPage=%#x HCPhys=%RGp (old tracking=%#x)\n",
+              GCPhys, idPage, HCPhys, u16Tracking));
 
         /* advance */
         idPage++;
         HCPhys += PAGE_SIZE;
         GCPhys += PAGE_SIZE;
     }
-    STAM_PROFILE_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
 
     /*
      * Flush all TLBs.
      */
-    /** @todo r=bird: we don't really have to flush the VCPU TLBs for this, we could
-     *        do that lazily since we've replace 512 ZERO pages meaning that writes
-     *        will trigger an exit where we could do the necessary flushing.
-     *
-     *        Will need to check the Trap0eHandler code first though. */
-    PGM_INVL_ALL_VCPU_TLBS(pGVM);
+    if (!fFlushTLBs)
+    { /* likely */ }
+    else
+    {
+        STAM_REL_COUNTER_INC(&pGVM->pgm.s.StatLargePageTlbFlush);
+        PGM_INVL_ALL_VCPU_TLBS(pGVM);
+    }
+    /** @todo this is a little expensive (~3000 ticks) since we'll have to
+     * invalidate everything.  Add a version to the TLB? */
     pgmPhysInvalidatePageMapTLB(pGVM);
 
+    STAM_PROFILE_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
+    /** @todo returning info statuses here might not be a great idea... */
+#if 0
+    LogFlow(("PGMR0PhysAllocateLargePage: returns %Rrc\n", VBOXSTRICTRC_VAL(rc) ));
+    return VBOXSTRICTRC_TODO(rc);
+#else
+    LogFlow(("PGMR0PhysAllocateLargePage: returns VINF_SUCCESS (rc=%Rrc)\n", VBOXSTRICTRC_VAL(rc) ));
     return VINF_SUCCESS;
+#endif
 }
 
 

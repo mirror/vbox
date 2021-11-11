@@ -3325,6 +3325,8 @@ typedef struct PGM
     STAMCOUNTER                     StatLargePageReused;    /**< The number of large pages we've reused.*/
     STAMCOUNTER                     StatLargePageRefused;   /**< The number of times we couldn't use a large page.*/
     STAMCOUNTER                     StatLargePageRecheck;   /**< The number of times we rechecked a disabled large page.*/
+    STAMCOUNTER                     StatLargePageTlbFlush;  /**< The number of a full VCPU TLB flush was required after allocation. */
+    STAMCOUNTER                     StatLargePageZeroEvict; /**< The number of zero page mappings we had to evict when allocating a large page. */
 
     STAMPROFILE                     StatShModCheck;         /**< Profiles shared module checks. */
 
