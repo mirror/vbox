@@ -3286,19 +3286,35 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 /*
                  * Tweak the logging groups.
                  */
-                Utf8Str strGroups("drv_host_audio.e.l.l2.l3.f"
-                                  " drv_audio.e.l.l2.l3.f"
+                Utf8Str strGroups("drv_audio.e.l.l2.l3.f"
                                   " audio_mixer.e.l.l2.l3.f"
                                   " dev_hda_codec.e.l.l2.l3.f"
                                   " dev_hda.e.l.l2.l3.f"
                                   " dev_ac97.e.l.l2.l3.f"
                                   " dev_sb16.e.l.l2.l3.f");
 
-                if (uDebugLevel)
-                    strGroups += " audio_test.e.l.l2.l3.f";
+                LogRel(("Audio: Debug level set to %RU32\n", uDebugLevel));
 
-                rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(),
-                                        strGroups.c_str());
+                switch (uDebugLevel)
+                {
+                    case 1:
+                        RT_FALL_THROUGH();
+                    case 2:
+                        RT_FALL_THROUGH();
+                    case 3:
+                        strGroups += " drv_host_audio.e.l.l2.l3.f+audio_test.e.l.l2.l3.f";
+                        break;
+                    case 4:
+                        strGroups += " drv_host_audio.e.l.l2.l3.l4.f+audio_test.e.l.l2.l3.l4.f";
+                        break;
+                    case 0:
+                        RT_FALL_THROUGH();
+                    default:
+                        strGroups += " drv_host_audio.e.l.l2.l3.f";
+                        break;
+                }
+
+                rc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), strGroups.c_str());
                 if (RT_FAILURE(rc))
                     LogRel(("Audio: Setting debug logging failed, rc=%Rrc\n", rc));
             }
