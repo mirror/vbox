@@ -567,9 +567,6 @@ VMMDECL(int)        PGMPhysSimpleWriteGCPhys(PVMCC pVM, RTGCPHYS GCPhysDst, cons
 VMMDECL(int)        PGMPhysSimpleReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleDirtyWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
-VMMDECL(int)        PGMPhysInterpretedRead(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
-VMMDECL(int)        PGMPhysInterpretedReadNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb, bool fRaiseTrap);
-VMMDECL(int)        PGMPhysInterpretedWriteNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, void const *pvSrc, size_t cb, bool fRaiseTrap);
 
 VMM_INT_DECL(int)   PGMPhysIemGCPhys2Ptr(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers, void **ppv, PPGMPAGEMAPLOCK pLock);
 VMM_INT_DECL(int)   PGMPhysIemQueryAccess(PVMCC pVM, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers);
