@@ -303,6 +303,7 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu)
  */
 int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
 {
+    STAM_PROFILE_ADV_START(&pGVM->pgm.s.Stats.StatLargePageAlloc2, a);
     PGM_LOCK_ASSERT_OWNER_EX(pGVM, &pGVM->aCpus[idCpu]);
 
     /*
@@ -354,7 +355,7 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
         }
     }
 
-    STAM_PROFILE_START(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
+    STAM_PROFILE_ADV_STOP_START(&pGVM->pgm.s.Stats.StatLargePageAlloc2, &pGVM->pgm.s.Stats.StatLargePageSetup, a);
 
     /*
      * Enter the pages into PGM.
@@ -414,7 +415,7 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
      * invalidate everything.  Add a version to the TLB? */
     pgmPhysInvalidatePageMapTLB(pGVM);
 
-    STAM_PROFILE_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
+    STAM_PROFILE_ADV_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, a);
 #if 0 /** @todo returning info statuses here might not be a great idea... */
     LogFlow(("PGMR0PhysAllocateLargePage: returns %Rrc\n", VBOXSTRICTRC_VAL(rc) ));
     return VBOXSTRICTRC_TODO(rc);

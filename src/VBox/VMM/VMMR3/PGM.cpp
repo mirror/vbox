@@ -1212,6 +1212,7 @@ static int pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pPGM->StatLargePageTlbFlush,               "/PGM/LargePage/TlbFlush",            "The number of times a full VCPU TLB flush was required after a large allocation.");
     PGM_REG_COUNTER(&pPGM->StatLargePageZeroEvict,              "/PGM/LargePage/ZeroEvict",           "The number of zero page mappings we had to evict when allocating a large page.");
 #ifdef VBOX_WITH_STATISTICS
+    PGM_REG_PROFILE(&pStats->StatLargePageAlloc2,               "/PGM/LargePage/Alloc2",              "Time spent allocating large pages.");
     PGM_REG_PROFILE(&pStats->StatLargePageSetup,                "/PGM/LargePage/Setup",               "Time spent setting up the newly allocated large pages.");
     PGM_REG_PROFILE(&pStats->StatR3IsValidLargePage,            "/PGM/LargePage/IsValidR3",           "pgmPhysIsValidLargePage profiling - R3.");
     PGM_REG_PROFILE(&pStats->StatRZIsValidLargePage,            "/PGM/LargePage/IsValidRZ",           "pgmPhysIsValidLargePage profiling - RZ.");
