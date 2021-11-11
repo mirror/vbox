@@ -301,26 +301,9 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu)
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
+int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
 {
-    /*
-     * Validate inputs.
-     */
-    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
-    AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
     PGM_LOCK_ASSERT_OWNER_EX(pGVM, &pGVM->aCpus[idCpu]);
-    Assert(!pGVM->pgm.s.cLargeHandyPages);
-
-    /* The caller might have done this already, but since we're ring-3 callable we
-       need to make sure everything is fine before starting the allocation here. */
-    for (unsigned i = 0; i < _2M / PAGE_SIZE; i++)
-    {
-        PPGMPAGE pPage;
-        int rc = pgmPhysGetPageEx(pGVM, GCPhys + i * PAGE_SIZE, &pPage);
-        AssertRCReturn(rc, rc);
-        AssertReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, VERR_PGM_PHYS_NOT_RAM);
-        AssertReturn(PGM_PAGE_IS_ZERO(pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
-    }
 
     /*
      * Allocate a large page.
@@ -414,6 +397,54 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHY
     pgmPhysInvalidatePageMapTLB(pGVM);
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Allocate a large page at @a GCPhys.
+ *
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_EM_NO_MEMORY if we're out of memory.
+ *
+ * @param   pGVM        The global (ring-0) VM structure.
+ * @param   idCpu       The ID of the calling EMT.
+ * @param   GCPhys      The guest physical address of the page.
+ *
+ * @thread  EMT(idCpu)
+ *
+ * @remarks Must be called from within the PGM critical section. The caller
+ *          must clear the new pages.
+ */
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
+{
+    /*
+     * Validate inputs.
+     */
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
+
+    int rc = PGM_LOCK(pGVM);
+    AssertRCReturn(rc, rc);
+
+    /* The caller might have done this already, but since we're ring-3 callable we
+       need to make sure everything is fine before starting the allocation here. */
+    for (unsigned i = 0; i < _2M / PAGE_SIZE; i++)
+    {
+        PPGMPAGE pPage;
+        rc = pgmPhysGetPageEx(pGVM, GCPhys + i * PAGE_SIZE, &pPage);
+        AssertRCReturnStmt(rc, PGM_UNLOCK(pGVM), rc);
+        AssertReturnStmt(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, PGM_UNLOCK(pGVM), VERR_PGM_PHYS_NOT_RAM);
+        AssertReturnStmt(PGM_PAGE_IS_ZERO(pPage), PGM_UNLOCK(pGVM), VERR_PGM_UNEXPECTED_PAGE_STATE);
+    }
+
+    /*
+     * Call common code.
+     */
+    rc = pgmR0PhysAllocateLargePage(pGVM, idCpu, GCPhys);
+
+    PGM_UNLOCK(pGVM);
+    return rc;
 }
 
 

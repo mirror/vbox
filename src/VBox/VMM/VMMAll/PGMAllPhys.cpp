@@ -993,8 +993,8 @@ int pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  * @param   pVM         The cross context VM structure.
  * @param   GCPhys      The address of the page.
  *
- * @remarks Must be called from within the PGM critical section. It may
- *          nip back to ring-3/0 in some cases.
+ * @remarks Must be called from within the PGM critical section.  It may block
+ *          on GMM and host mutexes/locks, leaving HM context.
  */
 int pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys)
 {
@@ -1003,52 +1003,62 @@ int pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys)
     Assert(!VM_IS_NEM_ENABLED(pVM)); /** @todo NEM: Large page support. */
 
     /*
-     * Prereqs.
+     * Check Prereqs.
      */
     PGM_LOCK_ASSERT_OWNER(pVM);
     Assert(PGMIsUsingLargePages(pVM));
 
+    /*
+     * All the pages must be unallocated RAM pages, i.e. mapping the ZERO page.
+     */
     PPGMPAGE pFirstPage;
     int rc = pgmPhysGetPageEx(pVM, GCPhysBase, &pFirstPage);
-    if (    RT_SUCCESS(rc)
-        &&  PGM_PAGE_GET_TYPE(pFirstPage) == PGMPAGETYPE_RAM)
+    if (   RT_SUCCESS(rc)
+        && PGM_PAGE_GET_TYPE(pFirstPage)  == PGMPAGETYPE_RAM
+        && PGM_PAGE_GET_STATE(pFirstPage) == PGM_PAGE_STATE_ZERO)
     {
+        /*
+         * Further they should have PDE type set to PGM_PAGE_PDE_TYPE_DONTCARE,
+         * since they are unallocated.
+         */
         unsigned uPDEType = PGM_PAGE_GET_PDE_TYPE(pFirstPage);
-
-        /* Don't call this function for already allocated pages. */
         Assert(uPDEType != PGM_PAGE_PDE_TYPE_PDE);
-
-        if (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
-            && PGM_PAGE_GET_STATE(pFirstPage) == PGM_PAGE_STATE_ZERO)
+        if (uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE)
         {
-            /* Lazy approach: check all pages in the 2 MB range.
-             * The whole range must be ram and unallocated. */
+            /*
+             * Now, make sure all the other pages in the 2 MB is in the same state.
+             */
             GCPhys = GCPhysBase;
-            for (unsigned iPage = 0; iPage < _2M/PAGE_SIZE; iPage++)
+            unsigned cLeft = _2M / PAGE_SIZE;
+            while (cLeft-- > 0)
             {
-                PPGMPAGE pSubPage;
-                rc = pgmPhysGetPageEx(pVM, GCPhys, &pSubPage);
-                if  (   RT_FAILURE(rc)
-                     || PGM_PAGE_GET_TYPE(pSubPage)  != PGMPAGETYPE_RAM      /* Anything other than ram implies monitoring. */
-                     || PGM_PAGE_GET_STATE(pSubPage) != PGM_PAGE_STATE_ZERO) /* Allocated, monitored or shared means we can't use a large page here */
+                PPGMPAGE pSubPage = pgmPhysGetPage(pVM, GCPhys);
+                if (   pSubPage
+                    && PGM_PAGE_GET_TYPE(pSubPage)  == PGMPAGETYPE_RAM      /* Anything other than ram implies monitoring. */
+                    && PGM_PAGE_GET_STATE(pSubPage) == PGM_PAGE_STATE_ZERO) /* Allocated, monitored or shared means we can't use a large page here */
                 {
-                    LogFlow(("Found page %RGp with wrong attributes (type=%d; state=%d); cancel check. rc=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pSubPage), PGM_PAGE_GET_STATE(pSubPage), rc));
+                    Assert(PGM_PAGE_GET_PDE_TYPE(pSubPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
+                    GCPhys += PAGE_SIZE;
+                }
+                else
+                {
+                    LogFlow(("pgmPhysAllocLargePage: Found page %RGp with wrong attributes (type=%d; state=%d); cancel check.\n",
+                             GCPhys, pSubPage ? PGM_PAGE_GET_TYPE(pSubPage) : -1, pSubPage ? PGM_PAGE_GET_STATE(pSubPage) : -1));
+
                     /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
                     STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
                     PGM_PAGE_SET_PDE_TYPE(pVM, pFirstPage, PGM_PAGE_PDE_TYPE_PT);
                     return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
                 }
-                Assert(PGM_PAGE_GET_PDE_TYPE(pSubPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
-                GCPhys += PAGE_SIZE;
             }
 
             /*
              * Do the allocation.
              */
 # ifdef IN_RING3
-            rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_PAGE, GCPhys, NULL);
+            rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_PAGE, GCPhysBase, NULL);
 # elif defined(IN_RING0)
-            rc = PGMR0PhysAllocateLargePage(pVM, VMMGetCpuId(pVM), GCPhysBase);
+            rc = pgmR0PhysAllocateLargePage(pVM, VMMGetCpuId(pVM), GCPhysBase);
 # else
 #  error "Port me"
 # endif
