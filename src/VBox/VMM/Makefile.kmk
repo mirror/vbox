@@ -240,13 +240,6 @@ VMMR3/NEMR3Native-win.cpp_INCS = \
 VBoxVMM_SOURCES.darwin.amd64 += \
 	VMMR3/NEMR3Native-darwin.cpp
 VBoxVMM_DEFS.darwin.amd64    += VBOX_WITH_NATIVE_NEM
-VMMR3/NEMR3Native-darwin.cpp_CXXFLAGS = \
-	-F$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks
-VMMR3/NEMR3Native-darwin.cpp_INCS = \
-	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
-VBoxVMM_LDFLAGS.darwin.amd64 += \
-	-F$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks \
-	-framework Hypervisor
 endif
 
 VBoxVMM_LIBS = \

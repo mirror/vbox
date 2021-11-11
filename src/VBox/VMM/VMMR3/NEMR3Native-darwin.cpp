@@ -25,11 +25,6 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
 #define VMCPU_INCL_CPUM_GST_CTX
-#include <Hypervisor/hv.h>
-#include <Hypervisor/hv_arch_x86.h>
-#include <Hypervisor/hv_arch_vmx.h>
-#include <Hypervisor/hv_vmx.h>
-
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/em.h>
@@ -60,15 +55,336 @@
 #endif
 
 
+/** @name HV return codes.
+ * @{ */
+/** Operation was successful. */
+#define HV_SUCCESS              0
+/** An error occurred during operation. */
+#define HV_ERROR                0xfae94001
+/** The operation could not be completed right now, try again. */
+#define HV_BUSY                 0xfae94002
+/** One of the parameters passed wis invalid. */
+#define HV_BAD_ARGUMENT         0xfae94003
+/** Not enough resources left to fulfill the operation. */
+#define HV_NO_RESOURCES         0xfae94005
+/** The device could not be found. */
+#define HV_NO_DEVICE            0xfae94006
+/** The operation is not supportd on this platform with this configuration. */
+#define HV_UNSUPPORTED          0xfae94007
+/** @} */
+
+
+/** @name HV memory protection flags.
+ * @{ */
+/** Memory is readable. */
+#define HV_MEMORY_READ          RT_BIT_64(0)
+/** Memory is writeable. */
+#define HV_MEMORY_WRITE         RT_BIT_64(1)
+/** Memory is executable. */
+#define HV_MEMORY_EXEC          RT_BIT_64(2)
+/** @} */
+
+
+/** @name HV shadow VMCS protection flags.
+ * @{ */
+/** Shadow VMCS field is not accessible. */
+#define HV_SHADOW_VMCS_NONE     0
+/** Shadow VMCS fild is readable. */
+#define HV_SHADOW_VMCS_READ     RT_BIT_64(0)
+/** Shadow VMCS field is writeable. */
+#define HV_SHADOW_VMCS_WRITE    RT_BIT_64(1)
+/** @} */
+
+
+/** Default VM creation flags. */
+#define HV_VM_DEFAULT           0
+/** Default guest address space creation flags. */
+#define HV_VM_SPACE_DEFAULT     0
+/** Default vCPU creation flags. */
+#define HV_VCPU_DEFAULT         0
+
+#define HV_DEADLINE_FOREVER     UINT64_MAX
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+
+/** HV return code type. */
+typedef uint32_t hv_return_t;
+/** HV capability bitmask. */
+typedef uint64_t hv_capability_t;
+/** Option bitmask type when creating a VM. */
+typedef uint64_t hv_vm_options_t;
+/** Option bitmask when creating a vCPU. */
+typedef uint64_t hv_vcpu_options_t;
+/** HV memory protection flags type. */
+typedef uint64_t hv_memory_flags_t;
+/** Shadow VMCS protection flags. */
+typedef uint64_t hv_shadow_flags_t;
+/** Guest physical address type. */
+typedef uint64_t hv_gpaddr_t;
+
+
+/**
+ * VMX Capability enumeration.
+ */
+typedef enum
+{
+    HV_VMX_CAP_PINBASED = 0,
+    HV_VMX_CAP_PROCBASED,
+    HV_VMX_CAP_PROCBASED2,
+    HV_VMX_CAP_ENTRY,
+    HV_VMX_CAP_EXIT,
+    HV_VMX_CAP_PREEMPTION_TIMER = 32
+} hv_vmx_capability_t;
+
+
+/**
+ * HV x86 register enumeration.
+ */
+typedef enum
+{
+    HV_X86_RIP = 0,
+    HV_X86_RFLAGS,
+    HV_X86_RAX,
+    HV_X86_RCX,
+    HV_X86_RDX,
+    HV_X86_RBX,
+    HV_X86_RSI,
+    HV_X86_RDI,
+    HV_X86_RSP,
+    HV_X86_RBP,
+    HV_X86_R8,
+    HV_X86_R9,
+    HV_X86_R10,
+    HV_X86_R11,
+    HV_X86_R12,
+    HV_X86_R13,
+    HV_X86_R14,
+    HV_X86_R15,
+    HV_X86_CS,
+    HV_X86_SS,
+    HV_X86_DS,
+    HV_X86_ES,
+    HV_X86_FS,
+    HV_X86_GS,
+    HV_X86_IDT_BASE,
+    HV_X86_IDT_LIMIT,
+    HV_X86_GDT_BASE,
+    HV_X86_GDT_LIMIT,
+    HV_X86_LDTR,
+    HV_X86_LDT_BASE,
+    HV_X86_LDT_LIMIT,
+    HV_X86_LDT_AR,
+    HV_X86_TR,
+    HV_X86_TSS_BASE,
+    HV_X86_TSS_LIMIT,
+    HV_X86_TSS_AR,
+    HV_X86_CR0,
+    HV_X86_CR1,
+    HV_X86_CR2,
+    HV_X86_CR3,
+    HV_X86_CR4,
+    HV_X86_DR0,
+    HV_X86_DR1,
+    HV_X86_DR2,
+    HV_X86_DR3,
+    HV_X86_DR4,
+    HV_X86_DR5,
+    HV_X86_DR6,
+    HV_X86_DR7,
+    HV_X86_TPR,
+    HV_X86_XCR0,
+    HV_X86_REGISTERS_MAX
+} hv_x86_reg_t;
+
+
+typedef hv_return_t FN_HV_CAPABILITY(hv_capability_t capability, uint64_t *valu);
+typedef hv_return_t FN_HV_VM_CREATE(hv_vm_options_t flags);
+typedef hv_return_t FN_HV_VM_DESTROY(void);
+typedef hv_return_t FN_HV_VM_SPACE_CREATE(hv_vm_space_t *asid);
+typedef hv_return_t FN_HV_VM_SPACE_DESTROY(hv_vm_space_t asid);
+typedef hv_return_t FN_HV_VM_MAP(const void *uva, hv_gpaddr_t gpa, size_t size, hv_memory_flags_t flags);
+typedef hv_return_t FN_HV_VM_UNMAP(hv_gpaddr_t gpa, size_t size);
+typedef hv_return_t FN_HV_VM_PROTECT(hv_gpaddr_t gpa, size_t size, hv_memory_flags_t flags);
+typedef hv_return_t FN_HV_VM_MAP_SPACE(hv_vm_space_t asid, const void *uva, hv_gpaddr_t gpa, size_t size, hv_memory_flags_t flags);
+typedef hv_return_t FN_HV_VM_UNMAP_SPACE(hv_vm_space_t asid, hv_gpaddr_t gpa, size_t size);
+typedef hv_return_t FN_HV_VM_PROTECT_SPACE(hv_vm_space_t asid, hv_gpaddr_t gpa, size_t size, hv_memory_flags_t flags);
+typedef hv_return_t FN_HV_VM_SYNC_TSC(uint64_t tsc);
+
+typedef hv_return_t FN_HV_VCPU_CREATE(hv_vcpuid_t *vcpu, hv_vcpu_options_t flags);
+typedef hv_return_t FN_HV_VCPU_DESTROY(hv_vcpuid_t vcpu);
+typedef hv_return_t FN_HV_VCPU_SET_SPACE(hv_vcpuid_t vcpu, hv_vm_space_t asid);
+typedef hv_return_t FN_HV_VCPU_READ_REGISTER(hv_vcpuid_t vcpu, hv_x86_reg_t reg, uint64_t *value);
+typedef hv_return_t FN_HV_VCPU_WRITE_REGISTER(hv_vcpuid_t vcpu, hv_x86_reg_t reg, uint64_t value);
+typedef hv_return_t FN_HV_VCPU_READ_FPSTATE(hv_vcpuid_t vcpu, void *buffer, size_t size);
+typedef hv_return_t FN_HV_VCPU_WRITE_FPSTATE(hv_vcpuid_t vcpu, const void *buffer, size_t size);
+typedef hv_return_t FN_HV_VCPU_ENABLE_NATIVE_MSR(hv_vcpuid_t vcpu, uint32_t msr, bool enable);
+typedef hv_return_t FN_HV_VCPU_READ_MSR(hv_vcpuid_t vcpu, uint32_t msr, uint64_t *value);
+typedef hv_return_t FN_HV_VCPU_WRITE_MSR(hv_vcpuid_t vcpu, uint32_t msr, uint64_t value);
+typedef hv_return_t FN_HV_VCPU_FLUSH(hv_vcpuid_t vcpu);
+typedef hv_return_t FN_HV_VCPU_INVALIDATE_TLB(hv_vcpuid_t vcpu);
+typedef hv_return_t FN_HV_VCPU_RUN(hv_vcpuid_t vcpu);
+typedef hv_return_t FN_HV_VCPU_RUN_UNTIL(hv_vcpuid_t vcpu, uint64_t deadline);
+typedef hv_return_t FN_HV_VCPU_INTERRUPT(hv_vcpuid_t *vcpus, unsigned int vcpu_count);
+typedef hv_return_t FN_HV_VCPU_GET_EXEC_TIME(hv_vcpuid_t *vcpus, uint64_t *time);
+
+typedef hv_return_t FN_HV_VMX_VCPU_READ_VMCS(hv_vcpuid_t vcpu, uint32_t field, uint64_t *value);
+typedef hv_return_t FN_HV_VMX_VCPU_WRITE_VMCS(hv_vcpuid_t vcpu, uint32_t field, uint64_t value);
+
+typedef hv_return_t FN_HV_VMX_VCPU_READ_SHADOW_VMCS(hv_vcpuid_t vcpu, uint32_t field, uint64_t *value);
+typedef hv_return_t FN_HV_VMX_VCPU_WRITE_SHADOW_VMCS(hv_vcpuid_t vcpu, uint32_t field, uint64_t value);
+typedef hv_return_t FN_HV_VMX_VCPU_SET_SHADOW_ACCESS(hv_vcpuid_t vcpu, uint32_t field, hv_shadow_flags_t flags);
+
+typedef hv_return_t FN_HV_VMX_READ_CAPABILITY(hv_vmx_capability_t field, uint64_t *value);
+typedef hv_return_t FN_HV_VMX_VCPU_SET_APIC_ADDRESS(hv_vcpuid_t vcpu, hv_gpaddr_t gpa);
+
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** NEM_DARWIN_PAGE_STATE_XXX names. */
 NEM_TMPL_STATIC const char * const g_apszPageStates[4] = { "not-set", "unmapped", "readable", "writable" };
 /** MSRs. */
-SUPHWVIRTMSRS           g_HmMsrs;
+static SUPHWVIRTMSRS    g_HmMsrs;
 /** VMX: Set if swapping EFER is supported.  */
 static bool             g_fHmVmxSupportsVmcsEfer = false;
+/** @name APIs imported from Hypervisor.framework.
+ * @{ */
+static FN_HV_CAPABILITY                 *g_pfnHvCapability              = NULL; /* Since 10.15 */
+static FN_HV_VM_CREATE                  *g_pfnHvVmCreate                = NULL; /* Since 10.10 */
+static FN_HV_VM_DESTROY                 *g_pfnHvVmDestroy               = NULL; /* Since 10.10 */
+static FN_HV_VM_SPACE_CREATE            *g_pfnHvVmSpaceCreate           = NULL; /* Since 10.15 */
+static FN_HV_VM_SPACE_DESTROY           *g_pfnHvVmSpaceDestroy          = NULL; /* Since 10.15 */
+static FN_HV_VM_MAP                     *g_pfnHvVmMap                   = NULL; /* Since 10.10 */
+static FN_HV_VM_UNMAP                   *g_pfnHvVmUnmap                 = NULL; /* Since 10.10 */
+static FN_HV_VM_PROTECT                 *g_pfnHvVmProtect               = NULL; /* Since 10.10 */
+static FN_HV_VM_MAP_SPACE               *g_pfnHvVmMapSpace              = NULL; /* Since 10.15 */
+static FN_HV_VM_UNMAP_SPACE             *g_pfnHvVmUnmapSpace            = NULL; /* Since 10.15 */
+static FN_HV_VM_PROTECT_SPACE           *g_pfnHvVmProtectSpace          = NULL; /* Since 10.15 */
+static FN_HV_VM_SYNC_TSC                *g_pfnHvVmSyncTsc               = NULL; /* Since 10.10 */
+
+static FN_HV_VCPU_CREATE                *g_pfnHvVCpuCreate              = NULL; /* Since 10.10 */
+static FN_HV_VCPU_DESTROY               *g_pfnHvVCpuDestroy             = NULL; /* Since 10.10 */
+static FN_HV_VCPU_SET_SPACE             *g_pfnHvVCpuSetSpace            = NULL; /* Since 10.15 */
+static FN_HV_VCPU_READ_REGISTER         *g_pfnHvVCpuReadRegister        = NULL; /* Since 10.10 */
+static FN_HV_VCPU_WRITE_REGISTER        *g_pfnHvVCpuWriteRegister       = NULL; /* Since 10.10 */
+static FN_HV_VCPU_READ_FPSTATE          *g_pfnHvVCpuReadFpState         = NULL; /* Since 10.10 */
+static FN_HV_VCPU_WRITE_FPSTATE         *g_pfnHvVCpuWriteFpState        = NULL; /* Since 10.10 */
+static FN_HV_VCPU_ENABLE_NATIVE_MSR     *g_pfnHvVCpuEnableNativeMsr     = NULL; /* Since 10.10 */
+static FN_HV_VCPU_READ_MSR              *g_pfnHvVCpuReadMsr             = NULL; /* Since 10.10 */
+static FN_HV_VCPU_WRITE_MSR             *g_pfnHvVCpuWriteMsr            = NULL; /* Since 10.10 */
+static FN_HV_VCPU_FLUSH                 *g_pfnHvVCpuFlush               = NULL; /* Since 10.10 */
+static FN_HV_VCPU_INVALIDATE_TLB        *g_pfnHvVCpuInvalidateTlb       = NULL; /* Since 10.10 */
+static FN_HV_VCPU_RUN                   *g_pfnHvVCpuRun                 = NULL; /* Since 10.10 */
+static FN_HV_VCPU_RUN_UNTIL             *g_pfnHvVCpuRunUntil            = NULL; /* Since 10.15 */
+static FN_HV_VCPU_INTERRUPT             *g_pfnHvVCpuInterrupt           = NULL; /* Since 10.10 */
+static FN_HV_VCPU_GET_EXEC_TIME         *g_pfnHvVCpuGetExecTime         = NULL; /* Since 10.10 */
+
+static FN_HV_VMX_READ_CAPABILITY        *g_pfnHvVmxReadCapability       = NULL; /* Since 10.10 */
+static FN_HV_VMX_VCPU_READ_VMCS         *g_pfnHvVmxVCpuReadVmcs         = NULL; /* Since 10.10 */
+static FN_HV_VMX_VCPU_WRITE_VMCS        *g_pfnHvVmxVCpuWriteVmcs        = NULL; /* Since 10.10 */
+static FN_HV_VMX_VCPU_READ_SHADOW_VMCS  *g_pfnHvVmxVCpuReadShadowVmcs   = NULL; /* Since 10.15 */
+static FN_HV_VMX_VCPU_WRITE_SHADOW_VMCS *g_pfnHvVmxVCpuWriteShadowVmcs  = NULL; /* Since 10.15 */
+static FN_HV_VMX_VCPU_SET_SHADOW_ACCESS *g_pfnHvVmxVCpuSetShadowAccess  = NULL; /* Since 10.15 */
+static FN_HV_VMX_VCPU_SET_APIC_ADDRESS  *g_pfnHvVmxVCpuSetApicAddress   = NULL; /* Since 10.10 */
+/** @} */
+
+
+/**
+ * Import instructions.
+ */
+static const struct
+{
+    bool        fOptional;  /**< Set if import is optional. */
+    void        **ppfn;     /**< The function pointer variable. */
+    const char  *pszName;   /**< The function name. */
+} g_aImports[] =
+{
+#define NEM_DARWIN_IMPORT(a_fOptional, a_Pfn, a_Name) { (a_fOptional), (void **)&(a_Pfn), #a_Name }
+    NEM_DARWIN_IMPORT(true,  g_pfnHvCapability,             hv_capability),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmCreate,               hv_vm_create),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmDestroy,              hv_vm_destroy),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmSpaceCreate,          hv_vm_space_create),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmSpaceDestroy,         hv_vm_space_destroy),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmMap,                  hv_vm_map),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmUnmap,                hv_vm_unmap),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmProtect,              hv_vm_protect),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmMapSpace,             hv_vm_map_space),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmUnmapSpace,           hv_vm_unmap_space),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmProtectSpace,         hv_vm_protect_space),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmSyncTsc,              hv_vm_sync_tsc),
+
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuCreate,             hv_vcpu_create),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuDestroy,            hv_vcpu_destroy),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVCpuSetSpace,           hv_vcpu_set_space),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuReadRegister,       hv_vcpu_read_register),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuWriteRegister,      hv_vcpu_write_register),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuReadFpState,        hv_vcpu_read_fpstate),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuWriteFpState,       hv_vcpu_write_fpstate),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuEnableNativeMsr,    hv_vcpu_enable_native_msr),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuReadMsr,            hv_vcpu_read_msr),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuWriteMsr,           hv_vcpu_write_msr),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuFlush,              hv_vcpu_flush),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuInvalidateTlb,      hv_vcpu_invalidate_tlb),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuRun,                hv_vcpu_run),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVCpuRunUntil,           hv_vcpu_run_until),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVCpuInterrupt,          hv_vcpu_interrupt),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVCpuGetExecTime,        hv_vcpu_get_exec_time),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmxReadCapability,      hv_vmx_read_capability),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmxVCpuReadVmcs,        hv_vmx_vcpu_read_vmcs),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmxVCpuWriteVmcs,       hv_vmx_vcpu_write_vmcs),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuReadShadowVmcs,  hv_vmx_vcpu_read_shadow_vmcs),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuWriteShadowVmcs, hv_vmx_vcpu_write_shadow_vmcs),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuSetShadowAccess, hv_vmx_vcpu_set_shadow_access),
+    NEM_DARWIN_IMPORT(false, g_pfnHvVmxVCpuSetApicAddress,  hv_vmx_vcpu_set_apic_address),
+#undef NEM_DARWIN_IMPORT
+};
+
+
+/*
+ * Let the preprocessor alias the APIs to import variables for better autocompletion.
+ */
+#ifndef IN_SLICKEDIT
+# define hv_capability                  g_pfnHvCapability
+# define hv_vm_create                   g_pfnHvVmCreate
+# define hv_vm_destroy                  g_pfnHvVmDestroy
+# define hv_vm_space_create             g_pfnHvVmSpaceCreate
+# define hv_vm_space_destroy            g_pfnHvVmSpaceDestroy
+# define hv_vm_map                      g_pfnHvVmMap
+# define hv_vm_unmap                    g_pfnHvVmUnmap
+# define hv_vm_protect                  g_pfnHvVmProtect
+# define hv_vm_map_space                g_pfnHvVmMapSpace
+# define hv_vm_unmap_space              g_pfnHvVmUnmapSpace
+# define hv_vm_protect_space            g_pfnHvVmProtectSpace
+# define hv_vm_sync_tsc                 g_pfnHvVmSyncTsc
+
+# define hv_vcpu_create                 g_pfnHvVCpuCreate
+# define hv_vcpu_destroy                g_pfnHvVCpuDestroy
+# define hv_vcpu_set_space              g_pfnHvVCpuSetSpace
+# define hv_vcpu_read_register          g_pfnHvVCpuReadRegister
+# define hv_vcpu_write_register         g_pfnHvVCpuWriteRegister
+# define hv_vcpu_read_fpstate           g_pfnHvVCpuReadFpState
+# define hv_vcpu_write_fpstate          g_pfnHvVCpuWriteFpState
+# define hv_vcpu_enable_native_msr      g_pfnHvVCpuEnableNativeMsr
+# define hv_vcpu_read_msr               g_pfnHvVCpuReadMsr
+# define hv_vcpu_write_msr              g_pfnHvVCpuWriteMsr
+# define hv_vcpu_flush                  g_pfnHvVCpuFlush
+# define hv_vcpu_invalidate_tlb         g_pfnHvVCpuInvalidateTlb
+# define hv_vcpu_run                    g_pfnHvVCpuRun
+# define hv_vcpu_run_until              g_pfnHvVCpuRunUntil
+# define hv_vcpu_interrupt              g_pfnHvVCpuInterrupt
+# define hv_vcpu_get_exec_time          g_pfnHvVCpuGetExecTime
+
+# define hv_vmx_read_capability         g_pfnHvVmxReadCapability
+# define hv_vmx_vcpu_read_vmcs          g_pfnHvVmxVCpuReadVmcs
+# define hv_vmx_vcpu_write_vmcs         g_pfnHvVmxVCpuWriteVmcs
+# define hv_vmx_vcpu_read_shadow_vmcs   g_pfnHvVmxVCpuReadShadowVmcs
+# define hv_vmx_vcpu_write_shadow_vmcs  g_pfnHvVmxVCpuWriteShadowVmcs
+# define hv_vmx_vcpu_set_shadow_access  g_pfnHvVmxVCpuSetShadowAccess
+# define hv_vmx_vcpu_set_apic_address   g_pfnHvVmxVCpuSetApicAddress
+#endif
 
 
 /*********************************************************************************************************************************
@@ -573,13 +889,13 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         }
         if (fWhat & CPUMCTX_EXTRN_IDTR)
         {
-            READ_VMCS32_FIELD(VMCS_GUEST_IDTR_LIMIT, pVCpu->cpum.GstCtx.idtr.cbIdt);
-            READ_VMCS_FIELD(VMCS_GUEST_IDTR_BASE,  pVCpu->cpum.GstCtx.idtr.pIdt);
+            READ_VMCS32_FIELD(VMX_VMCS32_GUEST_IDTR_LIMIT, pVCpu->cpum.GstCtx.idtr.cbIdt);
+            READ_VMCS_FIELD(VMX_VMCS_GUEST_IDTR_BASE,  pVCpu->cpum.GstCtx.idtr.pIdt);
         }
         if (fWhat & CPUMCTX_EXTRN_GDTR)
         {
-            READ_VMCS32_FIELD(VMCS_GUEST_GDTR_LIMIT, pVCpu->cpum.GstCtx.gdtr.cbGdt);
-            READ_VMCS_FIELD(VMCS_GUEST_GDTR_BASE,  pVCpu->cpum.GstCtx.gdtr.pGdt);
+            READ_VMCS32_FIELD(VMX_VMCS32_GUEST_GDTR_LIMIT, pVCpu->cpum.GstCtx.gdtr.cbGdt);
+            READ_VMCS_FIELD(VMX_VMCS_GUEST_GDTR_BASE,  pVCpu->cpum.GstCtx.gdtr.pGdt);
         }
     }
 
@@ -678,7 +994,7 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
     {
         uint64_t u64Efer;
 
-        READ_VMCS_FIELD(VMCS_GUEST_IA32_EFER, u64Efer);
+        READ_VMCS_FIELD(VMX_VMCS64_GUEST_EFER_FULL, u64Efer);
         if (u64Efer != pVCpu->cpum.GstCtx.msrEFER)
         {
             Log7(("NEM/%u: MSR EFER changed %RX64 -> %RX64\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.msrEFER, u64Efer));
@@ -1382,6 +1698,65 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT p
 
 
 /**
+ * Worker for nemR3NativeInit that loads the Hypervisor.framwork shared library.
+ *
+ * @returns VBox status code.
+ * @param   fForced             Whether the HMForced flag is set and we should
+ *                              fail if we cannot initialize.
+ * @param   pErrInfo            Where to always return error info.
+ */
+static int nemR3DarwinLoadHv(bool fForced, PRTERRINFO pErrInfo)
+{
+    RTLDRMOD hMod = NIL_RTLDRMOD;
+    static const char *s_pszHvPath = "/System/Library/Frameworks/Hypervisor.framework/Hypervisor";
+
+    int rc = RTLdrLoadEx(s_pszHvPath, &hMod, RTLDRLOAD_FLAGS_NO_UNLOAD | RTLDRLOAD_FLAGS_NO_SUFFIX, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aImports); i++)
+        {
+            int rc2 = RTLdrGetSymbol(hMod, g_aImports[i].pszName, (void **)g_aImports[i].ppfn);
+            if (RT_SUCCESS(rc2))
+            {
+                if (g_aImports[i].fOptional)
+                    LogRel(("NEM:  info: Found optional import Hypervisor!%s.\n",
+                            g_aImports[i].pszName));
+            }
+            else
+            {
+                *g_aImports[i].ppfn = NULL;
+
+                LogRel(("NEM:  %s: Failed to import Hypervisor!%s: %Rrc\n",
+                        g_aImports[i].fOptional ? "info" : fForced ? "fatal" : "error",
+                        g_aImports[i].pszName, rc2));
+                if (!g_aImports[i].fOptional)
+                {
+                    if (RTErrInfoIsSet(pErrInfo))
+                        RTErrInfoAddF(pErrInfo, rc2, ", Hypervisor!%s", g_aImports[i].pszName);
+                    else
+                        rc = RTErrInfoSetF(pErrInfo, rc2, "Failed to import: Hypervisor!%s", g_aImports[i].pszName);
+                    Assert(RT_FAILURE(rc));
+                }
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            Assert(!RTErrInfoIsSet(pErrInfo));
+        }
+
+        RTLdrClose(hMod);
+    }
+    else
+    {
+        RTErrInfoAddF(pErrInfo, rc, "Failed to load Hypervisor.framwork: %s: %Rrc", s_pszHvPath, rc);
+        rc = VERR_NEM_INIT_FAILED;
+    }
+
+    return rc;
+}
+
+
+/**
  * Read and initialize the global capabilities supported by this CPU.
  *
  * @returns VBox status code.
@@ -1895,55 +2270,58 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
      */
     RTERRINFOSTATIC ErrInfo;
     PRTERRINFO pErrInfo = RTErrInfoInitStatic(&ErrInfo);
-    int rc = VINF_SUCCESS;
-    hv_return_t hrc = hv_vm_create(HV_VM_DEFAULT);
-    if (hrc == HV_SUCCESS)
+    int rc = nemR3DarwinLoadHv(fForced, pErrInfo);
+    if (RT_SUCCESS(rc))
     {
-        pVM->nem.s.fCreatedVm = true;
-
-        VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
-        Log(("NEM: Marked active!\n"));
-        PGMR3EnableNemMode(pVM);
-
-        /* Register release statistics */
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        hv_return_t hrc = hv_vm_create(HV_VM_DEFAULT);
+        if (hrc == HV_SUCCESS)
         {
-            PNEMCPU pNemCpu = &pVM->apCpusR3[idCpu]->nem.s;
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitPortIo,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of port I/O exits",               "/NEM/CPU%u/ExitPortIo", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",        "/NEM/CPU%u/ExitMemUnmapped", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",     "/NEM/CPU%u/ExitMemIntercept", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitInterruptWindow", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitException,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of exception exits",              "/NEM/CPU%u/ExitException", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionBp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #BP exits",                    "/NEM/CPU%u/ExitExceptionBp", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionDb,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #DB exits",                    "/NEM/CPU%u/ExitExceptionDb", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits",                    "/NEM/CPU%u/ExitExceptionGp", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGpMesa, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits from mesa driver",   "/NEM/CPU%u/ExitExceptionGpMesa", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUd,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #UD exits",                    "/NEM/CPU%u/ExitExceptionUd", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUdHandled, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of handled #UD exits",         "/NEM/CPU%u/ExitExceptionUdHandled", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatExitUnrecoverable,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unrecoverable exits",          "/NEM/CPU%u/ExitUnrecoverable", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingAlerts,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stop alerts",      "/NEM/CPU%u/StopCpuPendingAlerts", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingOdd,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of odd pending CPU stops (see code)", "/NEM/CPU%u/StopCpuPendingOdd", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatCancelChangedState,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel changed state",         "/NEM/CPU%u/CancelChangedState", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatCancelAlertedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel alerted EMT",           "/NEM/CPU%u/CancelAlertedEMT", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPre,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pre execution FF breaks",      "/NEM/CPU%u/BreakOnFFPre", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPost,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of post execution FF breaks",     "/NEM/CPU%u/BreakOnFFPost", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnCancel,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel execution breaks",      "/NEM/CPU%u/BreakOnCancel", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnStatus,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of status code breaks",           "/NEM/CPU%u/BreakOnStatus", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnDemand,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of on-demand state imports",      "/NEM/CPU%u/ImportOnDemand", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturn,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of state imports on loop return", "/NEM/CPU%u/ImportOnReturn", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturnSkipped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of skipped state imports on loop return", "/NEM/CPU%u/ImportOnReturnSkipped", idCpu);
-            STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", idCpu);
+            pVM->nem.s.fCreatedVm = true;
+
+            VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
+            Log(("NEM: Marked active!\n"));
+            PGMR3EnableNemMode(pVM);
+
+            /* Register release statistics */
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            {
+                PNEMCPU pNemCpu = &pVM->apCpusR3[idCpu]->nem.s;
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitPortIo,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of port I/O exits",               "/NEM/CPU%u/ExitPortIo", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",        "/NEM/CPU%u/ExitMemUnmapped", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",     "/NEM/CPU%u/ExitMemIntercept", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitInterruptWindow", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitException,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of exception exits",              "/NEM/CPU%u/ExitException", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionBp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #BP exits",                    "/NEM/CPU%u/ExitExceptionBp", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionDb,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #DB exits",                    "/NEM/CPU%u/ExitExceptionDb", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits",                    "/NEM/CPU%u/ExitExceptionGp", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionGpMesa, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #GP exits from mesa driver",   "/NEM/CPU%u/ExitExceptionGpMesa", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUd,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #UD exits",                    "/NEM/CPU%u/ExitExceptionUd", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUdHandled, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of handled #UD exits",         "/NEM/CPU%u/ExitExceptionUdHandled", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatExitUnrecoverable,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unrecoverable exits",          "/NEM/CPU%u/ExitUnrecoverable", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingAlerts,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stop alerts",      "/NEM/CPU%u/StopCpuPendingAlerts", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingOdd,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of odd pending CPU stops (see code)", "/NEM/CPU%u/StopCpuPendingOdd", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatCancelChangedState,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel changed state",         "/NEM/CPU%u/CancelChangedState", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatCancelAlertedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel alerted EMT",           "/NEM/CPU%u/CancelAlertedEMT", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPre,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pre execution FF breaks",      "/NEM/CPU%u/BreakOnFFPre", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPost,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of post execution FF breaks",     "/NEM/CPU%u/BreakOnFFPost", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnCancel,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel execution breaks",      "/NEM/CPU%u/BreakOnCancel", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnStatus,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of status code breaks",           "/NEM/CPU%u/BreakOnStatus", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatImportOnDemand,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of on-demand state imports",      "/NEM/CPU%u/ImportOnDemand", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturn,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of state imports on loop return", "/NEM/CPU%u/ImportOnReturn", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturnSkipped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of skipped state imports on loop return", "/NEM/CPU%u/ImportOnReturnSkipped", idCpu);
+                STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", idCpu);
+            }
         }
+        else
+            rc = RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                               "hv_vm_create() failed: %#x", hrc);
     }
-    else
-        rc = RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
-                           "hv_vm_create() failed: %#x", hrc);
 
     /*
      * We only fail if in forced mode, otherwise just log the complaint and return.
@@ -1999,7 +2377,7 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
 static DECLCALLBACK(int) nemR3DarwinNativeTermVCpuOnEmt(PVMCPU pVCpu)
 {
     hv_return_t hrc = hv_vcpu_destroy(pVCpu->nem.s.hVCpuId);
-    Assert(hrc == HV_SUCCESS);
+    Assert(hrc == HV_SUCCESS); RT_NOREF(hrc);
     return VINF_SUCCESS;
 }
 
@@ -2037,8 +2415,6 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     }
 
     pVM->nem.s.fCreatedEmts = true;
-
-    //CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
     return VINF_SUCCESS;
 }
 
@@ -2204,7 +2580,13 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
             {
                 LogFlowFunc(("Running vCPU\n"));
                 pVCpu->nem.s.Event.fPending = false;
-                hv_return_t hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId); /** @todo Use hv_vcpu_run_until() when available (11.0+). */
+
+                hv_return_t hrc;
+                if (hv_vcpu_run_until)
+                    hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, HV_DEADLINE_FOREVER);
+                else
+                    hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
+
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 if (hrc == HV_SUCCESS)
                 {
