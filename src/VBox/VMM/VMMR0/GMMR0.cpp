@@ -544,6 +544,8 @@ typedef struct GMM
     /** The previous allocated Chunk ID.
      * Used as a hint to avoid scanning the whole bitmap. */
     uint32_t            idChunkPrev;
+    /** Spinlock protecting idChunkPrev & bmChunkId.  */
+    RTSPINLOCK          hSpinLockChunkId;
     /** Chunk ID allocation bitmap.
      * Bits of allocated IDs are set, free ones are clear.
      * The NIL id (0) is marked allocated. */
@@ -754,6 +756,9 @@ GMMR0DECL(int) GMMR0Init(void)
         pGMM->hSpinLockTree = NIL_RTSPINLOCK;
         if (RT_SUCCESS(rc))
             rc = RTSpinlockCreate(&pGMM->hSpinLockTree, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "gmm-chunk-tree");
+        pGMM->hSpinLockChunkId = NIL_RTSPINLOCK;
+        if (RT_SUCCESS(rc))
+            rc = RTSpinlockCreate(&pGMM->hSpinLockChunkId, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "gmm-chunk-id");
         if (RT_SUCCESS(rc))
         {
             /*
@@ -799,6 +804,7 @@ GMMR0DECL(int) GMMR0Init(void)
         /*
          * Bail out.
          */
+        RTSpinlockDestroy(pGMM->hSpinLockChunkId);
         RTSpinlockDestroy(pGMM->hSpinLockTree);
         while (iMtx-- > 0)
             RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
@@ -849,6 +855,8 @@ GMMR0DECL(void) GMMR0Term(void)
 #endif
     RTSpinlockDestroy(pGMM->hSpinLockTree);
     pGMM->hSpinLockTree = NIL_RTSPINLOCK;
+    RTSpinlockDestroy(pGMM->hSpinLockChunkId);
+    pGMM->hSpinLockChunkId = NIL_RTSPINLOCK;
 
     /* Free any chunks still hanging around. */
     RTAvlU32Destroy(&pGMM->pChunks, gmmR0TermDestroyChunk, pGMM);
@@ -1978,8 +1986,12 @@ DECLINLINE(void) gmmR0SelectSetAndLinkChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChu
 static void gmmR0FreeChunkId(PGMM pGMM, uint32_t idChunk)
 {
     AssertReturnVoid(idChunk != NIL_GMM_CHUNKID);
+    RTSpinlockAcquire(pGMM->hSpinLockChunkId); /* We could probably skip the locking here, I think. */
+
     AssertMsg(ASMBitTest(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk));
     ASMAtomicBitClear(&pGMM->bmChunkId[0], idChunk);
+
+    RTSpinlockRelease(pGMM->hSpinLockChunkId);
 }
 
 
@@ -1994,26 +2006,36 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
     AssertCompile(!((GMM_CHUNKID_LAST + 1) & 31)); /* must be a multiple of 32 */
     AssertCompile(NIL_GMM_CHUNKID == 0);
 
+    RTSpinlockAcquire(pGMM->hSpinLockChunkId);
+
     /*
      * Try the next sequential one.
      */
     int32_t idChunk = ++pGMM->idChunkPrev;
-    if (    (uint32_t)idChunk <= GMM_CHUNKID_LAST
-        &&  idChunk > NIL_GMM_CHUNKID
-        &&  !ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk))
-        return idChunk;
-
-    /*
-     * Scan sequentially from the last one.
-     */
-    if (    (uint32_t)idChunk < GMM_CHUNKID_LAST
-        &&  idChunk > NIL_GMM_CHUNKID)
+    if (   (uint32_t)idChunk <= GMM_CHUNKID_LAST
+        && idChunk > NIL_GMM_CHUNKID)
     {
-        idChunk = ASMBitNextClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1, idChunk - 1);
-        if (idChunk > NIL_GMM_CHUNKID)
+        if (!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk))
         {
-            AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GMM_CHUNKID);
-            return pGMM->idChunkPrev = idChunk;
+            RTSpinlockRelease(pGMM->hSpinLockChunkId);
+            return idChunk;
+        }
+
+        /*
+         * Scan sequentially from the last one.
+         */
+        if ((uint32_t)idChunk < GMM_CHUNKID_LAST)
+        {
+            idChunk = ASMBitNextClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1, idChunk);
+            if (idChunk > NIL_GMM_CHUNKID)
+            {
+                AssertMsgReturnStmt(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk),
+                                    RTSpinlockRelease(pGMM->hSpinLockChunkId), NIL_GMM_CHUNKID);
+
+                pGMM->idChunkPrev = idChunk;
+                RTSpinlockRelease(pGMM->hSpinLockChunkId);
+                return idChunk;
+            }
         }
     }
 
@@ -2022,10 +2044,14 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
      * We're not racing anyone, so there is no need to expect failures or have restart loops.
      */
     idChunk = ASMBitFirstClear(&pGMM->bmChunkId[0], GMM_CHUNKID_LAST + 1);
-    AssertMsgReturn(idChunk > NIL_GMM_CHUNKID, ("%#x\n", idChunk), NIL_GVM_HANDLE);
-    AssertMsgReturn(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk), NIL_GMM_CHUNKID);
+    AssertMsgReturnStmt(idChunk > NIL_GMM_CHUNKID && idChunk <= GMM_CHUNKID_LAST, ("%#x\n", idChunk),
+                        RTSpinlockRelease(pGMM->hSpinLockChunkId), NIL_GVM_HANDLE);
+    AssertMsgReturnStmt(!ASMAtomicBitTestAndSet(&pGMM->bmChunkId[0], idChunk), ("%#x\n", idChunk),
+                        RTSpinlockRelease(pGMM->hSpinLockChunkId), NIL_GMM_CHUNKID);
 
-    return pGMM->idChunkPrev = idChunk;
+    pGMM->idChunkPrev = idChunk;
+    RTSpinlockRelease(pGMM->hSpinLockChunkId);
+    return idChunk;
 }
 
 
@@ -2122,6 +2148,11 @@ static uint32_t gmmR0AllocatePagesFromChunk(PGMMCHUNK pChunk, uint16_t const hGV
  *                      affinity.
  * @param   pSession    Same as @a hGVM.
  * @param   fChunkFlags The chunk flags, GMM_CHUNK_FLAGS_XXX.
+ * @param   cPages      The number of pages requested.  Zero for large pages.
+ * @param   paPages     The page descriptor table (input + output).  NULL for
+ *                      large pages.
+ * @param   piPage      The pointer to the page descriptor table index variable.
+ *                      This will be updated.  NULL for large pages.
  * @param   ppChunk     Chunk address (out).
  *
  * @remarks The caller must not own the giant GMM mutex.
@@ -2131,6 +2162,9 @@ static uint32_t gmmR0AllocatePagesFromChunk(PGMMCHUNK pChunk, uint16_t const hGV
 static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemObj, uint16_t hGVM, PSUPDRVSESSION pSession,
                               uint16_t fChunkFlags, uint32_t cPages, PGMMPAGEDESC paPages, uint32_t *piPage, PGMMCHUNK *ppChunk)
 {
+    /*
+     * Validate input & state.
+     */
     Assert(pGMM->hMtxOwner != RTThreadNativeSelf());
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
     Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE);
@@ -2166,139 +2200,140 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
 #endif
 
     /*
-     * Allocate a chunk.
+     * Allocate a chunk and an ID for it.
      */
     int rc;
     PGMMCHUNK pChunk = (PGMMCHUNK)RTMemAllocZ(sizeof(*pChunk));
     if (pChunk)
     {
-        /*
-         * Initialize it.
-         */
-        pChunk->hMemObj     = hMemObj;
+        pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
+        if (   pChunk->Core.Key != NIL_GMM_CHUNKID
+            && pChunk->Core.Key <= GMM_CHUNKID_LAST)
+        {
+            /*
+             * Initialize it.
+             */
+            pChunk->hMemObj     = hMemObj;
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
-        pChunk->pbMapping   = pbMapping;
+            pChunk->pbMapping   = pbMapping;
 #endif
-        pChunk->hGVM        = hGVM;
-        pChunk->idNumaNode  = gmmR0GetCurrentNumaNodeId();
-        pChunk->iChunkMtx   = UINT8_MAX;
-        pChunk->fFlags      = fChunkFlags;
-        pChunk->uidOwner    = pSession ? SUPR0GetSessionUid(pSession) : NIL_RTUID;
-        /*pChunk->cShared   = 0; */
+            pChunk->hGVM        = hGVM;
+            pChunk->idNumaNode  = gmmR0GetCurrentNumaNodeId();
+            pChunk->iChunkMtx   = UINT8_MAX;
+            pChunk->fFlags      = fChunkFlags;
+            pChunk->uidOwner    = pSession ? SUPR0GetSessionUid(pSession) : NIL_RTUID;
+            /*pChunk->cShared   = 0; */
 
-        uint32_t const iDstPageFirst = piPage ? *piPage : cPages;
-        if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
-        {
-            /*
-             * Allocate the requested number of pages from the start of the chunk,
-             * queue the rest (if any) on the free list.
-             */
-            uint32_t const cPagesAlloc = RT_MIN(cPages - iDstPageFirst, GMM_CHUNK_NUM_PAGES);
-            pChunk->cPrivate    = cPagesAlloc;
-            pChunk->cFree       = GMM_CHUNK_NUM_PAGES - cPagesAlloc;
-            pChunk->iFreeHead   = GMM_CHUNK_NUM_PAGES > cPagesAlloc ? cPagesAlloc : UINT16_MAX;
-
-            /* Alloc pages: */
-            uint32_t iPage;
-            uint32_t iDstPage = iDstPageFirst;
-            for (iPage = 0; iPage < cPagesAlloc; iPage++, iDstPage++)
-            {
-                if (paPages[iDstPage].HCPhysGCPhys <= GMM_GCPHYS_LAST)
-                    pChunk->aPages[iPage].Private.pfn = paPages[iDstPage].HCPhysGCPhys >> PAGE_SHIFT;
-                else
-                    pChunk->aPages[iPage].Private.pfn = GMM_PAGE_PFN_UNSHAREABLE; /* unshareable / unassigned - same thing. */
-                pChunk->aPages[iPage].Private.hGVM    = hGVM;
-                pChunk->aPages[iPage].Private.u2State = GMM_PAGE_STATE_PRIVATE;
-
-                paPages[iDstPage].HCPhysGCPhys = RTR0MemObjGetPagePhysAddr(hMemObj, iPage);
-                paPages[iDstPage].fZeroed      = true;
-                paPages[iDstPage].idPage       = iPage; /* The chunk ID will be added as soon as we got one. */
-                paPages[iDstPage].idSharedPage = NIL_GMM_PAGEID;
-            }
-            *piPage = iDstPage;
-
-            /* Build free list: */
-            if (iPage < RT_ELEMENTS(pChunk->aPages))
-            {
-                Assert(pChunk->iFreeHead == iPage);
-                for (; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
-                {
-                    pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
-                    pChunk->aPages[iPage].Free.fZeroed = true;
-                    pChunk->aPages[iPage].Free.iNext   = iPage + 1;
-                }
-                pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.u2State = GMM_PAGE_STATE_FREE;
-                pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.fZeroed = true;
-                pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.iNext   = UINT16_MAX;
-            }
-            else
-                Assert(pChunk->iFreeHead == UINT16_MAX);
-        }
-        else
-        {
-            /*
-             * Large page: Mark all pages as privately allocated (watered down gmmR0AllocatePage).
-             */
-            pChunk->cFree       = 0;
-            pChunk->cPrivate    = GMM_CHUNK_NUM_PAGES;
-            pChunk->iFreeHead   = UINT16_MAX;
-
-            for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages); iPage++)
-            {
-                pChunk->aPages[iPage].Private.pfn     = GMM_PAGE_PFN_UNSHAREABLE;
-                pChunk->aPages[iPage].Private.hGVM    = hGVM;
-                pChunk->aPages[iPage].Private.u2State = GMM_PAGE_STATE_PRIVATE;
-            }
-        }
-
-        /*
-         * Zero the memory if it wasn't zeroed by the host already.
-         * This simplifies keeping secret kernel bits from userland and brings
-         * everyone to the same level wrt allocation zeroing.
-         */
-        rc = VINF_SUCCESS;
-        if (!RTR0MemObjWasZeroInitialized(hMemObj))
-        {
-#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+            uint32_t const iDstPageFirst = piPage ? *piPage : cPages;
             if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
             {
-                for (uint32_t iPage = 0; iPage < GMM_CHUNK_NUM_PAGES; iPage++)
+                /*
+                 * Allocate the requested number of pages from the start of the chunk,
+                 * queue the rest (if any) on the free list.
+                 */
+                uint32_t const cPagesAlloc = RT_MIN(cPages - iDstPageFirst, GMM_CHUNK_NUM_PAGES);
+                pChunk->cPrivate    = cPagesAlloc;
+                pChunk->cFree       = GMM_CHUNK_NUM_PAGES - cPagesAlloc;
+                pChunk->iFreeHead   = GMM_CHUNK_NUM_PAGES > cPagesAlloc ? cPagesAlloc : UINT16_MAX;
+
+                /* Alloc pages: */
+                uint32_t const idPageChunk = pChunk->Core.Key << GMM_CHUNKID_SHIFT;
+                uint32_t       iDstPage    = iDstPageFirst;
+                uint32_t       iPage;
+                for (iPage = 0; iPage < cPagesAlloc; iPage++, iDstPage++)
                 {
-                    void *pvPage = NULL;
-                    rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, iPage), &pvPage);
-                    AssertRCBreak(rc);
-                    RT_BZERO(pvPage, PAGE_SIZE);
+                    if (paPages[iDstPage].HCPhysGCPhys <= GMM_GCPHYS_LAST)
+                        pChunk->aPages[iPage].Private.pfn = paPages[iDstPage].HCPhysGCPhys >> PAGE_SHIFT;
+                    else
+                        pChunk->aPages[iPage].Private.pfn = GMM_PAGE_PFN_UNSHAREABLE; /* unshareable / unassigned - same thing. */
+                    pChunk->aPages[iPage].Private.hGVM    = hGVM;
+                    pChunk->aPages[iPage].Private.u2State = GMM_PAGE_STATE_PRIVATE;
+
+                    paPages[iDstPage].HCPhysGCPhys = RTR0MemObjGetPagePhysAddr(hMemObj, iPage);
+                    paPages[iDstPage].fZeroed      = true;
+                    paPages[iDstPage].idPage       = idPageChunk | iPage;
+                    paPages[iDstPage].idSharedPage = NIL_GMM_PAGEID;
                 }
+                *piPage = iDstPage;
+
+                /* Build free list: */
+                if (iPage < RT_ELEMENTS(pChunk->aPages))
+                {
+                    Assert(pChunk->iFreeHead == iPage);
+                    for (; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
+                    {
+                        pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
+                        pChunk->aPages[iPage].Free.fZeroed = true;
+                        pChunk->aPages[iPage].Free.iNext   = iPage + 1;
+                    }
+                    pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.u2State = GMM_PAGE_STATE_FREE;
+                    pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.fZeroed = true;
+                    pChunk->aPages[RT_ELEMENTS(pChunk->aPages) - 1].Free.iNext   = UINT16_MAX;
+                }
+                else
+                    Assert(pChunk->iFreeHead == UINT16_MAX);
             }
             else
             {
-                /* Can do the whole large page in one go. */
-                void *pvPage = NULL;
-                rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, 0), &pvPage);
-                AssertRC(rc);
-                if (RT_SUCCESS(rc))
-                    RT_BZERO(pvPage, GMM_CHUNK_SIZE);
+                /*
+                 * Large page: Mark all pages as privately allocated (watered down gmmR0AllocatePage).
+                 */
+                pChunk->cFree       = 0;
+                pChunk->cPrivate    = GMM_CHUNK_NUM_PAGES;
+                pChunk->iFreeHead   = UINT16_MAX;
+
+                for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages); iPage++)
+                {
+                    pChunk->aPages[iPage].Private.pfn     = GMM_PAGE_PFN_UNSHAREABLE;
+                    pChunk->aPages[iPage].Private.hGVM    = hGVM;
+                    pChunk->aPages[iPage].Private.u2State = GMM_PAGE_STATE_PRIVATE;
+                }
             }
-#else
-            RT_BZERO(pbMapping, GMM_CHUNK_SIZE);
-#endif
-        }
-        if (RT_SUCCESS(rc))
-        {
-            *ppChunk = pChunk;
 
             /*
-             * Allocate a Chunk ID and insert it into the tree.
-             * This has to be done behind the mutex of course.
+             * Zero the memory if it wasn't zeroed by the host already.
+             * This simplifies keeping secret kernel bits from userland and brings
+             * everyone to the same level wrt allocation zeroing.
              */
-            rc = gmmR0MutexAcquire(pGMM);
+            rc = VINF_SUCCESS;
+            if (!RTR0MemObjWasZeroInitialized(hMemObj))
+            {
+#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+                if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
+                {
+                    for (uint32_t iPage = 0; iPage < GMM_CHUNK_NUM_PAGES; iPage++)
+                    {
+                        void *pvPage = NULL;
+                        rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, iPage), &pvPage);
+                        AssertRCBreak(rc);
+                        RT_BZERO(pvPage, PAGE_SIZE);
+                    }
+                }
+                else
+                {
+                    /* Can do the whole large page in one go. */
+                    void *pvPage = NULL;
+                    rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, 0), &pvPage);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                        RT_BZERO(pvPage, GMM_CHUNK_SIZE);
+                }
+#else
+                RT_BZERO(pbMapping, GMM_CHUNK_SIZE);
+#endif
+            }
             if (RT_SUCCESS(rc))
             {
-                if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+                *ppChunk = pChunk;
+
+                /*
+                 * Allocate a Chunk ID and insert it into the tree.
+                 * This has to be done behind the mutex of course.
+                 */
+                rc = gmmR0MutexAcquire(pGMM);
+                if (RT_SUCCESS(rc))
                 {
-                    pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
-                    if (   pChunk->Core.Key != NIL_GMM_CHUNKID
-                        && pChunk->Core.Key <= GMM_CHUNKID_LAST)
+                    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
                     {
                         RTSpinlockAcquire(pGMM->hSpinLockTree);
                         if (RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
@@ -2309,55 +2344,46 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
 
                             gmmR0LinkChunk(pChunk, pSet);
 
-                            /* Add the chunk ID to the page descriptors if we allocated anything. */
-                            /** @todo Separate out the gmmR0AllocateChunkId() under a different lock
-                             * and avoid needing to do this while owning the giant mutex. */
-                            if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
-                            {
-                                uint32_t const idPageChunk = pChunk->Core.Key << GMM_CHUNKID_SHIFT;
-                                uint32_t       iDstPage    = *piPage;
-                                while (iDstPage-- > iDstPageFirst)
-                                    paPages[iDstPage].idPage |= idPageChunk;
-                            }
-
                             LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
                             GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
                             return VINF_SUCCESS;
                         }
+
+                        /*
+                         * Bail out.
+                         */
                         RTSpinlockRelease(pGMM->hSpinLockTree);
+                        rc = VERR_GMM_CHUNK_INSERT;
                     }
-
-                    /*
-                     * Bail out.
-                     */
-                    rc = VERR_GMM_CHUNK_INSERT;
+                    else
+                        rc = VERR_GMM_IS_NOT_SANE;
+                    gmmR0MutexRelease(pGMM);
                 }
-                else
-                    rc = VERR_GMM_IS_NOT_SANE;
-                gmmR0MutexRelease(pGMM);
+                *ppChunk = NULL;
             }
 
-            *ppChunk = NULL;
-        }
-
-        /* Undo any page allocations. */
-        if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
-        {
-            uint32_t const cToFree = pChunk->cPrivate;
-            Assert(*piPage - iDstPageFirst == cToFree);
-            for (uint32_t iDstPage = iDstPageFirst, iPage = 0; iPage < cToFree; iPage++, iDstPage++)
+            /* Undo any page allocations. */
+            if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
             {
-                paPages[iDstPageFirst].fZeroed = false;
-                if (pChunk->aPages[iPage].Private.pfn == GMM_PAGE_PFN_UNSHAREABLE)
-                    paPages[iDstPageFirst].HCPhysGCPhys = NIL_GMMPAGEDESC_PHYS;
-                else
-                    paPages[iDstPageFirst].HCPhysGCPhys = (RTHCPHYS)pChunk->aPages[iPage].Private.pfn << PAGE_SHIFT;
-                paPages[iDstPageFirst].idPage       = NIL_GMM_PAGEID;
-                paPages[iDstPageFirst].idSharedPage = NIL_GMM_PAGEID;
+                uint32_t const cToFree = pChunk->cPrivate;
+                Assert(*piPage - iDstPageFirst == cToFree);
+                for (uint32_t iDstPage = iDstPageFirst, iPage = 0; iPage < cToFree; iPage++, iDstPage++)
+                {
+                    paPages[iDstPageFirst].fZeroed = false;
+                    if (pChunk->aPages[iPage].Private.pfn == GMM_PAGE_PFN_UNSHAREABLE)
+                        paPages[iDstPageFirst].HCPhysGCPhys = NIL_GMMPAGEDESC_PHYS;
+                    else
+                        paPages[iDstPageFirst].HCPhysGCPhys = (RTHCPHYS)pChunk->aPages[iPage].Private.pfn << PAGE_SHIFT;
+                    paPages[iDstPageFirst].idPage       = NIL_GMM_PAGEID;
+                    paPages[iDstPageFirst].idSharedPage = NIL_GMM_PAGEID;
+                }
+                *piPage = iDstPageFirst;
             }
-            *piPage = iDstPageFirst;
-        }
 
+            gmmR0FreeChunkId(pGMM, pChunk->Core.Key);
+        }
+        else
+            rc = VERR_GMM_CHUNK_INSERT;
         RTMemFree(pChunk);
     }
     else
@@ -3522,20 +3548,24 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
 
     RTSpinlockRelease(pGMM->hSpinLockTree);
 
-    /*
-     * Free the Chunk ID before dropping the locks and freeing the rest.
-     */
-    gmmR0FreeChunkId(pGMM, pChunk->Core.Key);
-    pChunk->Core.Key = NIL_GMM_CHUNKID;
-
     pGMM->cFreedChunks++;
 
+    /* Drop the lock. */
     gmmR0ChunkMutexRelease(&MtxState, NULL);
     if (fRelaxedSem)
         gmmR0MutexRelease(pGMM);
 
+    /*
+     * Flush per VM chunk TLBs if we're getting remotely close to a generation wraparound.
+     */
     if (idFreeGeneration == UINT64_MAX / 4)
         gmmR0FreeChunkFlushPerVmTlbs(pGMM);
+
+    /*
+     * Free the Chunk ID and all memory associated with the chunk.
+     */
+    gmmR0FreeChunkId(pGMM, pChunk->Core.Key);
+    pChunk->Core.Key = NIL_GMM_CHUNKID;
 
     RTMemFree(pChunk->paMappingsX);
     pChunk->paMappingsX = NULL;
