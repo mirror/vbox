@@ -49,14 +49,7 @@
 #include <iprt/message.h>
 #include <unistd.h>
 #include <stdio.h>
-
-
-/** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
-/** @todo if this ever changes, dynamically allocate resizeable arrays in the
- *  context structure. */
-#define VMW_MAX_HEADS 32
-
-/* VMWare kernel driver control parts definitions. */
+#include <limits.h>
 
 #ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
@@ -64,12 +57,25 @@
 # include <sys/ioccom.h>
 #endif
 
+/** Ioctl command to query vmwgfx version information. */
+#define DRM_IOCTL_VERSION               _IOWR('d', 0x00, struct DRMVERSION)
+/** Ioctl command to set new screen layout. */
+#define DRM_IOCTL_VMW_UPDATE_LAYOUT     _IOW('d', 0x40 + 20, struct DRMVMWUPDATELAYOUT)
+/** A driver name which identifies VMWare driver. */
 #define DRM_DRIVER_NAME "vmwgfx"
+/** VMWare driver compatible version number. On previous versions resizing does not seem work. */
+#define DRM_DRIVER_VERSION_MAJOR_MIN    (2)
+#define DRM_DRIVER_VERSION_MINOR_MIN    (10)
 
-/** Counter of how often our daemon has been respawned. */
-unsigned      g_cRespawn = 0;
-/** Logging verbosity level. */
-unsigned      g_cVerbosity = 0;
+/** VMWare char device driver minor numbers range. */
+#define VMW_CONTROL_DEVICE_MINOR_START  (64)
+#define VMW_RENDER_DEVICE_MINOR_START   (128)
+#define VMW_RENDER_DEVICE_MINOR_END     (192)
+
+/** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
+/** @todo if this ever changes, dynamically allocate resizeable arrays in the
+ *  context structure. */
+#define VMW_MAX_HEADS                   (32)
 
 /** DRM version structure. */
 struct DRMVERSION
@@ -89,77 +95,121 @@ AssertCompileSize(struct DRMVERSION, 8 + 7 * sizeof(void *));
 /** Rectangle structure for geometry of a single screen. */
 struct DRMVMWRECT
 {
-        int32_t x;
-        int32_t y;
-        uint32_t w;
-        uint32_t h;
+    int32_t x;
+    int32_t y;
+    uint32_t w;
+    uint32_t h;
 };
 AssertCompileSize(struct DRMVMWRECT, 16);
 
-#define DRM_IOCTL_VERSION _IOWR('d', 0x00, struct DRMVERSION)
-
-struct DRMCONTEXT
-{
-    RTFILE hDevice;
-};
-
-static void drmConnect(struct DRMCONTEXT *pContext)
-{
-    unsigned i;
-    RTFILE hDevice;
-
-    if (pContext->hDevice != NIL_RTFILE)
-        VBClLogFatalError("%s called with bad argument\n", __func__);
-    /* Try to open the SVGA DRM device. */
-    for (i = 0; i < 128; ++i)
-    {
-        char szPath[64];
-        struct DRMVERSION version;
-        char szName[sizeof(DRM_DRIVER_NAME)];
-        int rc;
-
-        /* Control devices for drm graphics driver control devices go from
-         * controlD64 to controlD127.  Render node devices go from renderD128
-         * to renderD192.  The driver takes resize hints via the control device
-         * on pre-4.10 kernels and on the render device on newer ones.  Try
-         * both types. */
-        if (i % 2 == 0)
-            rc = RTStrPrintf(szPath, sizeof(szPath), "/dev/dri/renderD%u", i / 2 + 128);
-        else
-            rc = RTStrPrintf(szPath, sizeof(szPath), "/dev/dri/controlD%u", i / 2 + 64);
-        if (RT_FAILURE(rc))
-            VBClLogFatalError("RTStrPrintf of device path failed, rc=%Rrc\n", rc);
-        rc = RTFileOpen(&hDevice, szPath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        if (RT_FAILURE(rc))
-            continue;
-        RT_ZERO(version);
-        version.cbName = sizeof(szName);
-        version.pszName = szName;
-        rc = RTFileIoCtl(hDevice, DRM_IOCTL_VERSION, &version, sizeof(version), NULL);
-        if (   RT_SUCCESS(rc)
-            && !strncmp(szName, DRM_DRIVER_NAME, sizeof(DRM_DRIVER_NAME) - 1)
-            && (   version.cMajor > 2
-                || (version.cMajor == 2 && version.cMinor > 9)))
-            break;
-        hDevice = NIL_RTFILE;
-    }
-    pContext->hDevice = hDevice;
-}
-
 /** Preferred screen layout information for DRM_VMW_UPDATE_LAYOUT IoCtl.  The
  *  rects argument is a cast pointer to an array of drm_vmw_rect. */
-struct DRMVMWUPDATELAYOUT {
-        uint32_t cOutputs;
-        uint32_t u32Pad;
-        uint64_t ptrRects;
+struct DRMVMWUPDATELAYOUT
+{
+    uint32_t cOutputs;
+    uint32_t u32Pad;
+    uint64_t ptrRects;
 };
 AssertCompileSize(struct DRMVMWUPDATELAYOUT, 16);
 
-#define DRM_IOCTL_VMW_UPDATE_LAYOUT \
-        _IOW('d', 0x40 + 20, struct DRMVMWUPDATELAYOUT)
+/** These two parameters are mostly unused. Defined here in order to satisfy linking requirements. */
+unsigned g_cRespawn = 0;
+unsigned g_cVerbosity = 0;
 
-static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects,
-                         unsigned cHeads)
+/**
+ * Attempts to open DRM device by given path and check if it is
+ * compatible for screen resize.
+ *
+ * @return  DRM device handle on success or NIL_RTFILE otherwise.
+ * @param   szPathPattern       Path name pattern to the DRM device.
+ * @param   uInstance           Driver / device instance.
+ */
+static RTFILE drmTryDevice(const char *szPathPattern, uint8_t uInstance)
+{
+    int rc = VERR_NOT_FOUND;
+    char szPath[PATH_MAX];
+    struct DRMVERSION vmwgfxVersion;
+    RTFILE hDevice = NIL_RTFILE;
+
+    RT_ZERO(szPath);
+    RT_ZERO(vmwgfxVersion);
+
+    rc = RTStrPrintf(szPath, sizeof(szPath), szPathPattern, uInstance);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileOpen(&hDevice, szPath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            char szVmwgfxDriverName[sizeof(DRM_DRIVER_NAME)];
+            RT_ZERO(szVmwgfxDriverName);
+
+            vmwgfxVersion.cbName = sizeof(szVmwgfxDriverName);
+            vmwgfxVersion.pszName = szVmwgfxDriverName;
+
+            /* Query driver version information and check if it can be used for screen resizing. */
+            rc = RTFileIoCtl(hDevice, DRM_IOCTL_VERSION, &vmwgfxVersion, sizeof(vmwgfxVersion), NULL);
+            if (   RT_SUCCESS(rc)
+                && strncmp(szVmwgfxDriverName, DRM_DRIVER_NAME, sizeof(DRM_DRIVER_NAME) - 1) == 0
+                && (   vmwgfxVersion.cMajor >= DRM_DRIVER_VERSION_MAJOR_MIN
+                    || (   vmwgfxVersion.cMajor == DRM_DRIVER_VERSION_MAJOR_MIN
+                        && vmwgfxVersion.cMinor >= DRM_DRIVER_VERSION_MINOR_MIN)))
+            {
+                VBClLogInfo("VBoxDRMClient: found compatible device: %s\n", szPath);
+            }
+            else
+            {
+                RTFileClose(hDevice);
+                hDevice = NIL_RTFILE;
+                rc = VERR_NOT_FOUND;
+            }
+        }
+    }
+    else
+    {
+        VBClLogError("VBoxDRMClient: unable to construct path to DRM device: %Rrc\n", rc);
+    }
+
+    return RT_SUCCESS(rc) ? hDevice : NIL_RTFILE;
+}
+
+/**
+ * Attempts to find and open DRM device to be used for screen resize.
+ *
+ * @return  DRM device handle on success or NIL_RTFILE otherwise.
+ */
+static RTFILE drmOpenVmwgfx(void)
+{
+    /* Control devices for drm graphics driver control devices go from
+     * controlD64 to controlD127.  Render node devices go from renderD128
+     * to renderD192. The driver takes resize hints via the control device
+     * on pre-4.10 (???) kernels and on the render device on newer ones.
+     * At first, try to find control device and render one if not found.
+     */
+    uint8_t i;
+    RTFILE hDevice = NIL_RTFILE;
+
+    /* Lookup control device. */
+    for (i = VMW_CONTROL_DEVICE_MINOR_START; i < VMW_RENDER_DEVICE_MINOR_START; i++)
+    {
+        hDevice = drmTryDevice("/dev/dri/controlD%u", i);
+        if (hDevice != NIL_RTFILE)
+            return hDevice;
+    }
+
+    /* Lookup render device. */
+    for (i = VMW_RENDER_DEVICE_MINOR_START; i <= VMW_RENDER_DEVICE_MINOR_END; i++)
+    {
+        hDevice = drmTryDevice("/dev/dri/renderD%u", i);
+        if (hDevice != NIL_RTFILE)
+            return hDevice;
+    }
+
+    VBClLogError("VBoxDRMClient: unable to find DRM device\n");
+
+    return hDevice;
+}
+
+static void drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, unsigned cHeads)
 {
     uid_t curuid = getuid();
     if (setreuid(0, 0) != 0)
@@ -167,11 +217,9 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
     int rc;
     struct DRMVMWUPDATELAYOUT ioctlLayout;
 
-    if (pContext->hDevice == NIL_RTFILE)
-        VBClLogFatalError("%s bad device argument\n", __func__);
     ioctlLayout.cOutputs = cHeads;
     ioctlLayout.ptrRects = (uint64_t)paRects;
-    rc = RTFileIoCtl(pContext->hDevice, DRM_IOCTL_VMW_UPDATE_LAYOUT,
+    rc = RTFileIoCtl(hDevice, DRM_IOCTL_VMW_UPDATE_LAYOUT,
                      &ioctlLayout, sizeof(ioctlLayout), NULL);
     if (RT_FAILURE(rc) && rc != VERR_INVALID_PARAMETER)
         VBClLogFatalError("Failure updating layout, rc=%Rrc\n", rc);
@@ -181,16 +229,8 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
 
 int main(int argc, char *argv[])
 {
-    int rc = RTR3InitExe(argc, &argv, 0);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
-    rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        VBClLogFatalError("VbglR3InitUser failed: %Rrc", rc);
-
-    struct DRMCONTEXT drmContext = { NIL_RTFILE };
+    RTFILE hDevice = NIL_RTFILE;
     static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
-
     unsigned cEnabledMonitors;
     /* Do not acknowledge the first event we query for to pick up old events,
      * e.g. from before a guest reboot. */
@@ -199,6 +239,14 @@ int main(int argc, char *argv[])
     /** The name and handle of the PID file. */
     static const char szPidFile[RTPATH_MAX] = "/var/run/VBoxDRMClient";
     RTFILE hPidFile;
+
+    int rc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
+    rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        VBClLogFatalError("VbglR3InitUser failed: %Rrc", rc);
 
     /* Check PID file before attempting to initialize anything. */
     rc = VbglR3PidFile(szPidFile, &hPidFile);
@@ -213,9 +261,10 @@ int main(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
-    drmConnect(&drmContext);
-    if (drmContext.hDevice == NIL_RTFILE)
+    hDevice = drmOpenVmwgfx();
+    if (hDevice == NIL_RTFILE)
         return VERR_OPEN_FAILED;
+
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
     {
@@ -287,7 +336,7 @@ int main(int argc, char *argv[])
             for (unsigned i = 0; i < cEnabledMonitors; ++i)
                 printf("Monitor %u: %dx%d, (%d, %d)\n", i, (int)aEnabledMonitors[i].w, (int)aEnabledMonitors[i].h,
                        (int)aEnabledMonitors[i].x, (int)aEnabledMonitors[i].y);
-            drmSendHints(&drmContext, aEnabledMonitors, cEnabledMonitors);
+            drmSendHints(hDevice, aEnabledMonitors, cEnabledMonitors);
         }
         do
         {
@@ -299,6 +348,9 @@ int main(int argc, char *argv[])
 
     /** @todo this code never executed since we do not have yet a clean way to exit
      * main event loop above. */
+
+    RTFileClose(hDevice);
+
     VBClLogInfo("VBoxDRMClient: releasing PID file lock\n");
     VbglR3ClosePidFile(szPidFile, hPidFile);
 
