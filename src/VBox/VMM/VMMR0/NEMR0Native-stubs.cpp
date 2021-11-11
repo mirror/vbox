@@ -177,7 +177,8 @@ int nemHCNativeNotifyPhysPageAllocated(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPh
     Log5(("nemHCNativeNotifyPhysPageAllocated: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
           GCPhys, HCPhys, fPageProt, enmType, *pu2State));
     AssertFailed();
-    RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
+    RT_NOREF(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
+    return VERR_NOT_SUPPORTED;
 }
 
 
@@ -187,7 +188,7 @@ void nemHCNativeNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS H
     Log5(("nemHCNativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
           GCPhys, HCPhys, fPageProt, enmType, *pu2State));
     AssertFailed();
-    RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
+    RT_NOREF(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
 }
 
 
@@ -197,7 +198,7 @@ void nemHCNativeNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhy
     Log5(("nemHCNativeNotifyPhysPageChanged: %RGp HCPhys=%RHp->%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
           GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, *pu2State));
     AssertFailed();
-    RT_NOREF_PV(HCPhysPrev); RT_NOREF_PV(HCPhysNew); RT_NOREF_PV(enmType);
+    RT_NOREF(pVM, GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, pu2State);
 }
 
 
@@ -214,7 +215,7 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
 {
     LogFlowFunc(("pVM=%p pVCpu=%p uPausedTscValue=%RX64\n", pVM, pVCpu, uPausedTscValue));
     AssertFailed();
-    RT_NOREF(pVCpu, uPausedTscValue);
+    RT_NOREF(pVM, pVCpu, uPausedTscValue);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -225,7 +226,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLE
     Log5(("NEMHCNotifyHandlerPhysicalDeregister: %RGp LB %RGp enmKind=%d pvMemR3=%p pu2State=%p (%d)\n",
           GCPhys, cb, enmKind, pvMemR3, pu2State, *pu2State));
     AssertFailed();
-    RT_NOREF(pVM, enmKind, GCPhys, cb, pvMemR3);
+    RT_NOREF(pVM, enmKind, GCPhys, cb, pvMemR3, pu2State);
 }
 
 
